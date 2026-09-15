@@ -1,4 +1,5 @@
 {
+  "attribution-provenance": ["packages/charts/src/gantt/gantt-dependencies.tsx:6"],
   "raw-palette": {
     "packages/ai/src/commit.tsx": 12,
     "packages/ai/src/package-info.tsx": 20,
@@ -9,5 +10,13 @@
     "packages/charts/src/charts/live-x-axis.tsx": 3,
     "packages/charts/src/charts/tooltip/date-ticker.tsx": 6,
     "packages/ui/src/blocks/sidebar-04/app-sidebar.tsx": 8
-  }
+  },
+  "trusted-types-sinks": [
+    "ours::packages/editor/src/markdown-academic/math.tsx",
+    "ours::packages/editor/src/mermaid-diagram/mermaid-diagram.tsx",
+    "ours::packages/editor/src/mermaid-diagram/mermaid-viewer.tsx",
+    "package::@number-flow/react",
+    "package::mermaid",
+    "package::streamdown"
+  ]
 }

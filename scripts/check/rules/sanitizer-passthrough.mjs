@@ -1,119 +1,33 @@
-#!/usr/bin/env node
 /**
- * Sanitizer-passthrough gate (#36, hardened by #75).
+ * sanitizer-passthrough — a wrapper around a safe-by-default markdown renderer cannot
+ * hand consumers a sanitiser bypass (#36, hardened by #75).
+ * Ported from scripts/check-sanitizer-passthrough.mjs (detection verbatim; I/O via ctx).
  *
- * WHY. `MarkdownView`/`MessageResponse` wrap Streamdown, which installs its
- * sanitiser chain (`rehype-raw` → `rehype-sanitize` → `rehype-harden`) as the
- * DEFAULT VALUE of its `rehypePlugins` prop — a plain JS default parameter, not
- * a merge. A wrapper that re-exports `ComponentProps<typeof Streamdown>` (or
- * `Omit`s everything EXCEPT `rehypePlugins`) hands every consumer a full XSS
- * bypass: pass that prop and Streamdown's sanitiser is gone, letting
- * model-authored markdown execute script in the host page. Every other repo
- * gate (`typecheck`, `lint`, `test`, `build`) was green over exactly that shape
- * — a type surface is not a security control. This gate is.
+ * WHY. Streamdown installs its sanitiser chain (`rehype-raw` → `rehype-sanitize` →
+ * `rehype-harden`) as the DEFAULT VALUE of `rehypePlugins`. A wrapper that re-exports
+ * `ComponentProps<typeof Streamdown>` lets any caller pass that prop and execute
+ * model-authored script. typecheck/lint/test/build were all green over that shape.
+ * `remarkPlugins` is deliberately NOT dangerous (runs upstream of the rehype chain; see
+ * `packages/ai/src/_streamdown-safety.ts`). The `plugins` math/mermaid slots are a
+ * documented trusted-code seam (#76), not a forbidden prop — do not fold them in here.
  *
- * SCOPE (narrowed by the PR #74 review, round 1). `dangerousProps` lists only
- * props that REPLACE the sanitiser itself. `remarkPlugins` is deliberately NOT
- * one: the remark stage runs upstream of the rehype chain, Streamdown derives
- * that chain without reading `remarkPlugins`, and everything a remark plugin
- * injects is still sanitised downstream (measured — see
- * `packages/ai/src/_streamdown-safety.ts`). Listing it here would gate a
- * capability, not a hazard.
+ * CHANNELS. 0 binding resolution (fail-closed: a module that references the renderer,
+ * renders, and yields no binding is a finding) · 1 type level (`Omit<>` every dangerous
+ * prop off every props expression, including the `StreamdownProps` alias) · 2 runtime
+ * (`stripSanitizerOverrides(x)` before `{...x}` / `createElement(Tag, x)`, within the
+ * nearest preceding declaration of `x`) · 3 explicit prop outside the reviewed allowlist ·
+ * 4 key-list parity with `SANITIZER_OVERRIDE_KEYS`, both directions · 5 every props alias
+ * is really exported by the installed `.d.ts` (reads node_modules: needs `pnpm install`).
  *
- * NOT MODELLED HERE — the `plugins` prop's trust boundary (#76). Streamdown
- * APPENDS `plugins.math.rehypePlugin` to the end of its rehype pipeline (it
- * runs AFTER the sanitiser) and never routes `plugins.mermaid` through the
- * pipeline at all (`dangerouslySetInnerHTML`). Those slots stay reachable ON
- * PURPOSE — they are a documented trusted-code seam, not a passthrough to
- * close — so they are defended by a runtime dev-warning
- * (`warnOnTrustedPluginSlots`), by `docs/CSP-AND-NETWORK.md`, and by tests that
- * pin the slot OPEN. They are a different concept from `dangerousProps`: a
- * *trust boundary* rather than a *forbidden prop*. If a future renderer needs
- * that concept enforced mechanically, add it as a separate `trustBoundaryProps`
- * field with its own channel — do not fold it into `dangerousProps`, which
- * means "strip this, always".
- *
- * WHAT IT CHECKS. Five channels, plus two whole-repo invariants.
- *
- *   0. BINDING RESOLUTION (fail-closed, #75 item 1 — the load-bearing one).
- *      Every module that references the renderer's module specifier at all —
- *      named, aliased, default, namespace or dynamic `import()` — must yield a
- *      resolvable local binding for the renderer. A module that references it,
- *      contains JSX, and yields NO binding is itself a finding: silence is not
- *      evidence of safety. Grandfathered cases live in `UNRESOLVED_BASELINE`
- *      (a ratchet: it may only shrink).
- *   1. TYPE LEVEL — every props expression for the renderer must sit inside an
- *      `Omit<…, …>` naming every `dangerousProps` key. The expressions are
- *      `ComponentProps<typeof <any resolved binding>>`,
- *      `ComponentProps<<namespace alias>["<Component>"]>`, AND the renderer's
- *      own exported props type alias (`StreamdownProps`) — the last one is
- *      evasion A, which the pre-#75 literal-string match could not see. A
- *      single-property indexed access (`…>["components"]`) is exempt.
- *   2. RUNTIME LEVEL — a `<Renderer … {...anything}>` spread must be preceded
- *      by `stripSanitizerOverrides(<that identifier>)` (or an inline delete of
- *      every dangerous key off it). The identifier is whatever the code
- *      actually spreads, not the literal `props` (evasion B). The search window
- *      is bounded to the nearest preceding declaration of that identifier —
- *      i.e. roughly the enclosing function — so a compliant wrapper earlier in
- *      the file cannot vouch for a non-compliant one later (channel G).
- *   3. EXPLICIT PROP — a literal `rehypePlugins={…}` attribute on a renderer
- *      tag (or a `rehypePlugins:` key in a `createElement` props object),
- *      outside the named `explicitPropAllowlist`. This is the channel that
- *      catches "I never spread anything, I just set the prop".
- *   4. KEY-LIST PARITY — this table's `dangerousProps` must equal the runtime
- *      helper's own `SANITIZER_OVERRIDE_KEYS`, in BOTH directions. Removing a
- *      key from either side fails. If the array literal cannot be located at
- *      all, that is a finding too (the gate refuses rather than assuming).
- *   5. ALIAS REALITY — every `propsTypeAliases` entry must actually be exported
- *      by the installed renderer's `.d.ts`. A rename upstream would otherwise
- *      quietly widen channel 1's blind spot back open.
- *
- * ADDING A FUTURE SAFE-BY-DEFAULT RENDERER: add a row to SAFE_RENDERERS — and
- * then check the row's assumptions, because a row is NOT self-sufficient. It
- * needs `propsTypeAliases` that really exist in that package's `.d.ts`, a
- * `runtimeGuard` pointing at the module whose key list must stay in parity, and
- * an `explicitPropAllowlist` (possibly empty). Channel 0's binding resolver is
- * generic, but it recognises a fixed set of import forms; a renderer reached
- * some other way will surface as `unresolved-renderer-binding`, which is the
- * intended failure mode, not a bug to route around.
- *
- * HONEST LIMITS. This is a text scan, not a type checker or an AST walk.
- *   - It resolves the import forms enumerated in `resolveRendererBindings`
- *     (named / aliased / default / namespace / dynamic-import + a member or
- *     destructured binding off one of those). Anything else is reported as
- *     unresolved rather than skipped — that is the #75 fix — but "reported"
- *     is not "understood".
- *   - Channel 2's window is heuristic (nearest preceding declaration of the
- *     spread identifier). It cannot see through a helper function that does the
- *     stripping on the caller's behalf, and it will accept a strip call that is
- *     in the window but on an unreachable branch.
- *   - Channels 2 and 3 follow the RENDER, and understand exactly two forms:
- *     `<Tag …>` and `createElement(Tag, …)` (see `renderSites`), where `Tag` is
- *     any resolved binding INCLUDING a local rebind chain (`const S2 = Streamdown`).
- *     Following the import is not the same as following the render: a render
- *     written some third way resolves its binding cleanly, so the fail-closed
- *     net stays quiet and no channel scans it. `cloneElement`, a component
- *     stored in an object/array and read back out, or a factory that returns the
- *     element are the shapes that do this.
- *   - Channel 0 fires only on a module that NAMES the specifier somewhere it can
- *     see (`from "streamdown"`, `import("streamdown")`, `require("streamdown")`).
- *     A module that reaches the package through a computed string, or through a
- *     local re-export barrel that itself passes this gate, is invisible to it.
- *   - Comments and import statements are masked before scanning, by regex, not
- *     by a tokenizer.
- *   - It proves the shipped wrappers close both halves of the passthrough and
- *     that no in-tree module reaches the renderer through an indirection this
- *     script cannot follow. It does not prove every conceivable indirection is
- *     understood.
- *
- * Usage: node scripts/check-sanitizer-passthrough.mjs [root]
+ * HONEST LIMITS. A text scan, not an AST walk: it resolves the import forms listed in
+ * `resolveRendererBindings` and reports anything else as unresolved; channel 2's window is
+ * heuristic and cannot see a helper stripping on the caller's behalf; renders via
+ * `cloneElement`, an object/array lookup, or a factory are not followed; a module reaching
+ * the package through a computed string or a local re-export barrel is invisible. It
+ * proves the shipped wrappers close both halves of the passthrough — not that every
+ * conceivable indirection is understood. Adding a renderer row: check its
+ * `propsTypeAliases`, `runtimeGuard` and `explicitPropAllowlist` really hold.
  */
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
-
-import { distributablePackages, REPO_ROOT } from "./lib/distributables.mjs";
-
 /**
  * Renderers this repo wraps that ship a sanitiser as a DELETABLE prop default.
  *
@@ -178,22 +92,6 @@ export const SAFE_RENDERERS = [
 export const UNRESOLVED_BASELINE = {
   // "packages/<pkg>/src/<file>.tsx": "why the binding cannot be resolved",
 };
-
-const isOurSource = (p) =>
-  /\.(tsx?|jsx?)$/.test(p) && !/\.(test|stories)\.[jt]sx?$/.test(p) && !p.endsWith(".d.ts");
-
-function walk(dir, test, out = []) {
-  if (!existsSync(dir)) return out;
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === "node_modules" || entry.name === ".turbo" || entry.name === "dist")
-        continue;
-      walk(p, test, out);
-    } else if (test(p)) out.push(p);
-  }
-  return out;
-}
 
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const toArray = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
@@ -723,102 +621,81 @@ export function findPropsAliasDrift(dtsText, renderer) {
   return problems;
 }
 
-/** Locate the installed renderer package's `.d.ts`, searching `root` then the repo. */
-export function resolveRendererTypes(root, moduleName) {
-  const bases = [];
-  for (const base of [root, REPO_ROOT]) {
-    bases.push(join(base, "node_modules", moduleName));
-    const pkgsDir = join(base, "packages");
-    if (existsSync(pkgsDir))
-      for (const name of readdirSync(pkgsDir))
-        bases.push(join(base, "packages", name, "node_modules", moduleName));
-  }
+/** Locate the installed renderer's `.d.ts` (root node_modules, then each package's). */
+export function resolveRendererTypes(ctx, moduleName) {
+  const bases = [
+    `node_modules/${moduleName}`,
+    ...ctx.packages().map((p) => `${p.dir}/node_modules/${moduleName}`),
+  ];
   for (const dir of bases) {
-    const pj = join(dir, "package.json");
-    if (!existsSync(pj)) continue;
+    const pj = `${dir}/package.json`;
+    if (!ctx.exists(pj)) continue;
     let json;
     try {
-      json = JSON.parse(readFileSync(pj, "utf8"));
+      json = ctx.json(pj);
     } catch {
       continue;
     }
     const rel = json.types ?? json.typings ?? json?.exports?.["."]?.types;
     if (typeof rel !== "string") continue;
-    const dts = join(dir, rel);
-    if (existsSync(dts)) return dts;
+    const dts = `${dir}/${rel.replace(/^\.\//, "")}`;
+    if (ctx.exists(dts)) return dts;
   }
   return null;
 }
 
-/** Scan every distributable package's `src/` for a passthrough of a safe renderer. */
-export function scanPackages(root = REPO_ROOT) {
+const OUR_SOURCE = [
+  "**/*.{test,stories}.{ts,tsx,js,jsx}",
+  "**/*.d.ts",
+  "**/{node_modules,dist,.turbo}/**",
+];
+
+/** Every finding `{ file, line, msg }` across the distributable packages. */
+export function scan(ctx) {
   const findings = [];
-  const rel = (p) => relative(root, p).split(sep).join("/");
+  const push = (file, renderer, p) =>
+    findings.push({
+      file,
+      line: p.line ?? 1,
+      msg: `${p.kind} (${renderer.component}): ${p.detail}`,
+    });
 
   for (const renderer of SAFE_RENDERERS) {
-    // Channel 4 — key-list parity with the runtime helper.
-    const guardPath = join(root, renderer.runtimeGuard.file);
-    if (!existsSync(guardPath)) {
-      findings.push({
-        file: guardPath,
-        rel: renderer.runtimeGuard.file,
-        renderer: renderer.component,
+    const guard = renderer.runtimeGuard.file;
+    if (!ctx.exists(guard))
+      push(guard, renderer, {
         kind: "missing-runtime-guard",
-        line: 1,
-        detail: `${renderer.runtimeGuard.file} is missing — the runtime half of the #36 fix cannot be verified`,
+        detail: `${guard} is missing — the runtime half of the #36 fix cannot be verified`,
       });
-    } else {
-      for (const p of findKeyListParityProblems(readFileSync(guardPath, "utf8"), renderer))
-        findings.push({
-          file: guardPath,
-          rel: renderer.runtimeGuard.file,
-          renderer: renderer.component,
-          ...p,
-        });
-    }
+    else
+      for (const p of findKeyListParityProblems(ctx.readFile(guard), renderer))
+        push(guard, renderer, p);
 
-    // Channel 5 — the props alias still exists upstream.
-    const dts = resolveRendererTypes(root, renderer.module);
-    if (!dts) {
-      findings.push({
-        file: renderer.module,
-        rel: renderer.module,
-        renderer: renderer.component,
+    const dts = resolveRendererTypes(ctx, renderer.module);
+    if (!dts)
+      push("package.json", renderer, {
         kind: "renderer-types-unresolved",
-        line: 1,
         detail: `could not locate \`${renderer.module}\`'s type declarations (run \`pnpm install\`); the alias arm of the type check cannot be verified`,
       });
-    } else {
-      for (const p of findPropsAliasDrift(readFileSync(dts, "utf8"), renderer))
-        findings.push({ file: dts, rel: renderer.module, renderer: renderer.component, ...p });
-    }
+    else for (const p of findPropsAliasDrift(ctx.readFile(dts), renderer)) push(dts, renderer, p);
   }
 
-  for (const pkg of distributablePackages(root)) {
-    for (const file of walk(join(pkg.dir, "src"), isOurSource)) {
-      const relPath = rel(file);
-      const text = readFileSync(file, "utf8");
+  for (const pkg of ctx.packages().filter((p) => p.distributable)) {
+    for (const file of ctx.glob(`${pkg.dir}/src/**/*.{ts,tsx,js,jsx}`, { ignore: OUR_SOURCE })) {
+      const text = ctx.readFile(file);
       for (const renderer of SAFE_RENDERERS) {
         if (!referencesModule(text, renderer.module)) continue;
         const resolved = resolveRendererBindings(text, renderer);
 
         if (resolved.bindings.length === 0) {
-          // A type-only import of something OTHER than the component (e.g. a
-          // translations type) in a module that renders nothing cannot reach
-          // the renderer — not a finding, and not a blind spot either.
-          if (!rendersElements(text, file)) continue;
-          if (relPath in UNRESOLVED_BASELINE) continue;
-          findings.push({
-            file,
-            rel: relPath,
-            renderer: renderer.component,
+          // A type-only import in a module that renders nothing cannot reach the renderer.
+          if (!rendersElements(text, file) || file in UNRESOLVED_BASELINE) continue;
+          push(file, renderer, {
             kind: "unresolved-renderer-binding",
-            line: 1,
             detail:
               `references "${renderer.module}" and renders elements, but no local binding for ` +
               `\`${renderer.component}\` could be resolved — the gate cannot prove this module ` +
-              "does not pass the sanitiser through (see resolveRendererBindings for the forms " +
-              "it understands)",
+              "does not pass the sanitiser through (see resolveRendererBindings for the forms it understands)",
           });
           continue;
         }
@@ -836,7 +713,7 @@ export function scanPackages(root = REPO_ROOT) {
           ...findExplicitDangerousProps(text, resolved.bindings, renderer.dangerousProps),
         ];
 
-        const allowed = (renderer.explicitPropAllowlist ?? []).filter((a) => a.file === relPath);
+        const allowed = (renderer.explicitPropAllowlist ?? []).filter((a) => a.file === file);
         for (const problem of problems) {
           if (problem.kind === "explicit-dangerous-prop") {
             const entry = allowed.find((a) => a.prop === problem.prop);
@@ -850,7 +727,7 @@ export function scanPackages(root = REPO_ROOT) {
                 `found ${count}. A new call site needs its own review, not a bumped ceiling.`;
             }
           }
-          findings.push({ file, rel: relPath, renderer: renderer.component, ...problem });
+          push(file, renderer, problem);
         }
       }
     }
@@ -858,34 +735,194 @@ export function scanPackages(root = REPO_ROOT) {
   return findings;
 }
 
-// ───────────────────────── CLI ─────────────────────────
-function main(root = REPO_ROOT) {
-  const findings = scanPackages(root);
-  if (findings.length) {
-    console.error(`\n✖ sanitizer-passthrough: ${findings.length} finding(s):\n`);
-    for (const f of findings) {
-      console.error(`  - ${f.rel}:${f.line ?? 1} (${f.renderer}, ${f.kind}): ${f.detail}`);
-    }
-    console.error(
-      "\nA wrapper around a safe-by-default renderer (Streamdown today) must:\n" +
-        "  1. resolve to a binding this gate can follow (an exotic import form is a\n" +
-        "     finding, not a pass — silence is not evidence of safety),\n" +
-        "  2. Omit<> every dangerous prop (rehypePlugins for Streamdown) off every\n" +
-        "     props expression, including the package's own StreamdownProps alias,\n" +
-        "  3. call stripSanitizerOverrides(x) before spreading {...x} onto the renderer,\n" +
-        "     in the SAME scope, so a JS consumer / `any` / wider spread can't reach it,\n" +
-        "  4. never set a dangerous prop literally outside the reviewed allowlist, and\n" +
-        "  5. keep SAFE_RENDERERS.dangerousProps equal to the runtime helper's own key list.\n" +
-        "See packages/ai/src/_streamdown-safety.ts and issues #36 / #75.\n",
-    );
-    process.exit(1);
+// ── fixtures ─────────────────────────────────────────────────────────────────
+const streamdown = SAFE_RENDERERS[0];
+/**
+ * A fixture tree: the runtime guard (channel 4 fails closed without it), an installed
+ * streamdown `.d.ts` exporting `StreamdownProps` (channel 5), plus the planted files.
+ * Every planted `packages/<pkg>/` gets a distributable package.json.
+ */
+function tree(files, { guardKeys = streamdown.dangerousProps, dts = true } = {}) {
+  const out = {};
+  if (guardKeys !== null)
+    out[streamdown.runtimeGuard.file] =
+      `const SANITIZER_OVERRIDE_KEYS = [${guardKeys.map((k) => `"${k}"`).join(", ")}] as const;\n`;
+  if (dts) {
+    out["node_modules/streamdown/package.json"] = JSON.stringify({ types: "./dist/index.d.ts" });
+    out["node_modules/streamdown/dist/index.d.ts"] =
+      typeof dts === "string"
+        ? dts
+        : "type StreamdownProps = {};\nexport { type StreamdownProps };\n";
   }
-  console.log(
-    "✔ sanitizer-passthrough: every safe-renderer binding resolved; type + runtime + explicit-prop " +
-      "channels clean; key-list parity and props-alias reality hold.",
-  );
+  Object.assign(out, files);
+  for (const rel of Object.keys(out)) {
+    const m = /^packages\/([^/]+)\//.exec(rel);
+    if (m && !out[`packages/${m[1]}/package.json`])
+      out[`packages/${m[1]}/package.json`] = JSON.stringify({ name: `@elabs-ai/${m[1]}` });
+  }
+  return { files: out };
 }
+const mod = (...lines) => tree({ "packages/fake/src/x.tsx": lines.join("\n") });
+const IMPORT = 'import { Streamdown } from "streamdown";';
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  main(process.argv[2] ? resolve(process.argv[2]) : REPO_ROOT);
-}
+export default {
+  id: "sanitizer-passthrough",
+  scope: "packages",
+  doc: 'Wrap a safe-by-default renderer (Streamdown) only with `Omit<…, "rehypePlugins">` on every props type and `stripSanitizerOverrides(props)` before spreading props onto it; never set `rehypePlugins` outside the reviewed allowlist.',
+  baseline: "none",
+  run: scan,
+  fixtures: {
+    pass: [
+      tree({}),
+      // clean wrapper: Omit<> + strip call
+      mod(
+        'import type { ComponentProps } from "react";',
+        IMPORT,
+        'export type GoodProps = Omit<ComponentProps<typeof Streamdown>, "rehypePlugins">;',
+        "export const Good = ({ ...props }: GoodProps) => {",
+        "  stripSanitizerOverrides(props);",
+        "  return <Streamdown {...props} />;",
+        "};",
+      ),
+      // inline deletes clear channel 2; an indexed access is exempt from channel 1
+      mod(
+        IMPORT,
+        'type C = NonNullable<ComponentProps<typeof Streamdown>["components"]>;',
+        'type P = ComponentProps<typeof Streamdown>["plugins"];',
+        "export const Good = ({ ...props }) => {",
+        "  delete props.rehypePlugins;",
+        '  return <Streamdown data-slot="x" components={c} {...props} />;',
+        "};",
+      ),
+      // an Omit<> around the package's own props alias
+      mod(
+        'import { Streamdown, type StreamdownProps } from "streamdown";',
+        'export type Ok = Omit<StreamdownProps, "rehypePlugins">;',
+        "/** Accepts StreamdownProps minus the sanitiser prop. */",
+        "export const A = (p: Ok) => <Streamdown>{p.children}</Streamdown>;",
+      ),
+      // compliant createElement caller
+      mod(
+        IMPORT,
+        "export const Good = (props) => {",
+        "  stripSanitizerOverrides(props);",
+        "  return createElement(Streamdown, props);",
+        "};",
+      ),
+      // type-only i18n seam in a .ts file renders nothing
+      tree({
+        "packages/fake/src/i18n.ts":
+          'import type { StreamdownTranslations } from "streamdown";\nexport type P = Partial<StreamdownTranslations>;\n',
+      }),
+      // a module that never references the renderer
+      tree({
+        "packages/fake/src/u.tsx": "export const U = ({ ...props }) => <div {...props} />;\n",
+      }),
+      // the reviewed markdown-preview allowlist: exactly 2 sites
+      tree({
+        [streamdown.explicitPropAllowlist[0].file]: [
+          IMPORT,
+          "export const A = () => <Streamdown rehypePlugins={p}>{md}</Streamdown>;",
+          "export const B = () => <Streamdown rehypePlugins={p}>{md}</Streamdown>;",
+        ].join("\n"),
+      }),
+      // tests and stories are not shipped
+      tree({
+        "packages/fake/src/x.test.tsx": `${IMPORT}\nexport type B = ComponentProps<typeof Streamdown>;`,
+      }),
+      // the adapter shape (type namespace + dynamic import + member binding), compliant
+      mod(
+        'import type * as StreamdownExports from "streamdown";',
+        "type StreamdownModule = typeof StreamdownExports;",
+        "let streamdown: StreamdownModule | undefined;",
+        'async function load() { streamdown ??= await import("streamdown"); }',
+        "export const View = ({ ...props }) => {",
+        "  const Streamdown = streamdown?.Streamdown;",
+        "  stripSanitizerOverrides(props);",
+        "  return <Streamdown {...props} />;",
+        "};",
+      ),
+    ],
+    fail: [
+      // channel 0: referenced, renders, unresolvable → fail closed
+      mod(
+        'import * as NS from "streamdown";',
+        "const Renderer = pickRenderer(NS);",
+        "export const Bad = ({ ...rest }) => <Renderer {...rest} />;",
+      ),
+      // channel 1: bare ComponentProps, incomplete Omit, alias (evasion A), namespace-indexed
+      mod(
+        IMPORT,
+        "export type BadProps = ComponentProps<typeof Streamdown> & { loading?: boolean };",
+        "export const A = () => <Streamdown />;",
+      ),
+      mod(
+        IMPORT,
+        'export interface BadProps extends Omit<ComponentProps<typeof Streamdown>, "components"> {}',
+        "export const A = () => <Streamdown />;",
+      ),
+      mod(
+        'import { Streamdown, type StreamdownProps } from "streamdown";',
+        "export type BadA = StreamdownProps & { loading?: boolean };",
+        "export const A = (p: BadA) => <Streamdown>{p.children}</Streamdown>;",
+      ),
+      mod(
+        'import * as NS from "streamdown";',
+        'export type Bad = ComponentProps<NS["Streamdown"]>;',
+        "export const C = () => <NS.Streamdown />;",
+      ),
+      // channel 2: unstripped spread, renamed (evasion B), aliased import (D), namespace member (C)
+      mod(IMPORT, 'export const Bad = ({ ...props }) => <Streamdown data-slot="x" {...props} />;'),
+      mod(IMPORT, "export const Fine = ({ ...rest }) => <Streamdown {...rest} />;"),
+      mod(
+        'import { Streamdown as SD } from "streamdown";',
+        "export const Bad = ({ ...props }) => <SD {...props} />;",
+      ),
+      mod(
+        'import * as NS from "streamdown";',
+        "export const C = ({ ...rest }) => <NS.Streamdown {...rest} />;",
+      ),
+      // channel G: a compliant wrapper cannot vouch for a later sibling
+      mod(
+        IMPORT,
+        "export const Good = ({ ...props }) => {",
+        "  stripSanitizerOverrides(props);",
+        "  return <Streamdown {...props} />;",
+        "};",
+        "export const Bad = ({ ...props }) => <Streamdown {...props} />;",
+      ),
+      // render following: local rebind chain, createElement with the whole props bag
+      mod(
+        IMPORT,
+        "const S2 = Streamdown;",
+        "const S3 = S2;",
+        "export const Bad = ({ ...props }) => <S3 {...props} />;",
+      ),
+      mod(IMPORT, "export const Bad = (props) => createElement(Streamdown, props);"),
+      // channel 3: explicit prop, JSX and createElement key, and outside the allowlisted file
+      mod(IMPORT, "export const Bad = () => <Streamdown rehypePlugins={mine}>{md}</Streamdown>;"),
+      mod(IMPORT, "export const Bad = () => createElement(Streamdown, { rehypePlugins: [] });"),
+      // allowlisted file, but a third site
+      tree({
+        [streamdown.explicitPropAllowlist[0].file]: [
+          IMPORT,
+          "export const A = () => <Streamdown rehypePlugins={p}>{md}</Streamdown>;",
+          "export const B = () => <Streamdown rehypePlugins={p}>{md}</Streamdown>;",
+          "export const C = () => <Streamdown rehypePlugins={p}>{md}</Streamdown>;",
+        ].join("\n"),
+      }),
+      // reproduction E: the literal #36 hole, reopened
+      mod(
+        'import { Streamdown, type StreamdownProps } from "streamdown";',
+        "export const Reopened = ({ ...rest }: StreamdownProps) => <Streamdown {...rest} />;",
+      ),
+      // channel 4: guard lost the key / is missing / is unreadable
+      tree({}, { guardKeys: [] }),
+      tree({}, { guardKeys: null }),
+      tree({ [streamdown.runtimeGuard.file]: "export const NOTHING = 1;" }),
+      // channel 5: alias renamed upstream / types not installed
+      tree({}, { dts: "type StreamdownConfig = {};\nexport { type StreamdownConfig };\n" }),
+      tree({}, { dts: false }),
+    ],
+  },
+};

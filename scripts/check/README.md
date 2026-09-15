@@ -27,7 +27,7 @@ A finding: `file` (repo-relative), `line` (1-based), `msg`. Optional `key` = sta
 
 `root` · `readFile(rel)` · `exists(rel)` · `json(rel)` · `gitFiles()` (tracked + untracked, not
 ignored, cached once) · `glob(patterns, { ignore })` (`**`, `*`, `?`, `{a,b}` over `gitFiles()`) ·
-`themes.names()` (BUILT_IN_THEMES) · `themes.css()` (engine + every theme file; throws if
+`dirFiles(rel)` (file names directly in a dir, from disk — sees `node_modules`) · `themes.names()` (BUILT_IN_THEMES) · `themes.css()` (engine + every theme file; throws if
 incomplete) · `packages()` → `[{ name, dir, json, distributable }]` ·
 `eslint({ rules, patterns, ignore })` → findings. `lineOf(text, index)` is exported from
 `context.mjs`. Never import `node:fs` in a rule: fixtures run on an in-memory ctx with the same API.
