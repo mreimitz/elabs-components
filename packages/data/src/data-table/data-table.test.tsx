@@ -891,20 +891,21 @@ describe("DataTable — #330 the scroll tab stop exists only while the region ov
     expect(scrollRegion).not.toHaveAttribute("tabindex");
   });
 
-  it('gains role="region" once it overflows — required for the aria-label to compute a name', () => {
+  it('gains role="group" once it overflows — a named, non-landmark stop', () => {
     const { container } = render(<DataTable columns={columns} data={data} />);
     const scrollRegion = scrollRegionOf(container);
     // `aria-label` on a plain `<div>` (role `generic`) is not guaranteed to
-    // produce an accessible name at all — without `role="region"`, the tab
-    // stop below could be an UNNAMED one.
+    // produce an accessible name at all — the stop needs a naming-capable
+    // role, and `group` (not the `region` landmark, which collides under axe
+    // `landmark-unique` across tables) is it.
     expect(scrollRegion).not.toHaveAttribute("role");
     simulateScrollMetrics(scrollRegion, { scrollWidth: 800, clientWidth: 300, scrollLeft: 0 });
-    expect(scrollRegion).toHaveAttribute("role", "region");
+    expect(scrollRegion).toHaveAttribute("role", "group");
   });
 });
 
 describe("DataTable — virtualized scroll region has a naming-capable role", () => {
-  it('the always-focusable virtualized scroll container carries role="region"', () => {
+  it('the always-focusable virtualized scroll container carries role="group"', () => {
     const { container } = render(
       <DataTable columns={columns} data={data} enableRowVirtualization />,
     );
@@ -913,7 +914,7 @@ describe("DataTable — virtualized scroll region has a naming-capable role", ()
     expect(scroll).toHaveAttribute("aria-label");
     // Same reasoning as the non-virtualized branch above: `aria-label` alone
     // on a role-less `<div>` is not guaranteed to compute an accessible name.
-    expect(scroll).toHaveAttribute("role", "region");
+    expect(scroll).toHaveAttribute("role", "group");
   });
 });
 

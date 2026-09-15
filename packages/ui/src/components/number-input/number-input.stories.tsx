@@ -76,13 +76,17 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: { defaultValue: 5, min: 0, max: 10 },
-  // Clicks the Increase button and confirms the value increments.
+  // Clicks the Increase button and confirms the value increments. The input is a
+  // locale-formatted text spinbutton, so the displayed value is a string and the
+  // numeric value is announced via aria-valuenow.
   play: async ({ canvas, userEvent }) => {
     const input = canvas.getByRole("spinbutton");
-    await expect(input).toHaveValue(5);
+    await expect(input).toHaveValue("5");
+    await expect(input).toHaveAttribute("aria-valuenow", "5");
     const increaseBtn = canvas.getByRole("button", { name: /increase/i });
     await userEvent.click(increaseBtn);
-    await expect(input).toHaveValue(6);
+    await expect(input).toHaveValue("6");
+    await expect(input).toHaveAttribute("aria-valuenow", "6");
   },
 };
 

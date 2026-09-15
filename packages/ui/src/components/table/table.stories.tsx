@@ -104,7 +104,9 @@ export const Scrolling: Story = {
     });
     await expect(scrollRegion).toHaveAttribute("tabindex", "0");
     await expect(scrollRegion).toHaveAccessibleName("Table contents, scrollable");
-    await expect(scrollRegion).not.toHaveAttribute("role");
+    // A named, non-landmark stop: `group`, never `region` (a landmark per
+    // overflowing table collides under axe `landmark-unique`).
+    await expect(scrollRegion).toHaveAttribute("role", "group");
 
     // The region is the only focusable element the story renders, so a
     // single Tab from nothing focused reaches it — the real WCAG 2.1.1
