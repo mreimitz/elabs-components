@@ -1,0 +1,31 @@
+{
+  "removeScripts": [
+    "a11y:baseline:check",
+    "a11y:baseline:check:test",
+    "components:check",
+    "components:check:test",
+    "data-slot:check",
+    "data-slot:check:test",
+    "loading-states:check",
+    "loading-states:check:test",
+    "states:check",
+    "states:check:test",
+    "use-client:check",
+    "use-client:check:test",
+    "variants:check",
+    "variants:check:test",
+    "viewer-highlight:check",
+    "viewer-highlight:check:test"
+  ],
+  "keptScripts": [
+    {
+      "script": "a11y:baseline:run",
+      "reason": "Spawns a full Storybook vitest browser run (measurement, not a gate); unchanged. Its reporter scripts/a11y-baseline-reporter.mjs is kept."
+    }
+  ],
+  "addScripts": {
+    "a11y:baseline:update": "node scripts/a11y-baseline-update.mjs",
+    "a11y:baseline:test": "node --test scripts/a11y-baseline-reporter.test.mjs"
+  },
+  "notes": "Rules added: data-slot, use-client-source, component-registration (was components:check), variant-coverage, state-coverage, loading-states, viewer-highlight, a11y-baseline, agent-output-contract (restored from 2fa2ce6; never had npm scripts). The old a11y:baseline:check --update WRITER moved to scripts/a11y-baseline-update.mjs (--prune kept); reporter + writer unit tests moved to scripts/a11y-baseline-reporter.test.mjs — please add the two addScripts and run the test in the selftests battery. RUNNER CORE (additive, covered in run.test.mjs, documented in README): (1) baseline.mjs — a per-file finding may carry an integer `weight` (default 1, may be 0/negative); a file's count = sum of weights. Needed because data-slot's old [components, slots] pair ratchet is only expressible monotonically as the signed per-module gap components − slots (non-negative counts cannot track it). per-file `count` is now the weight sum (identical for unweighted rules). (2) run.mjs checkFixtures — a fixture may carry an optional `baseline`; pass/fail is judged with evaluate() against it (empty baseline = previous semantics: pass ⇔ 0 findings). data-slot semantics change: fails whenever components − slots rises, which is the old gate's failure set PLUS 'added N parts with fewer than N new slots' (the documented hole the old gate let pass). component-registration: baseline ratcheted 5 → 4 (nav-notifications now has stories, the old gate's advisory); its orphan advisory reads the committed brand-ui.manifest.json instead of calling packages/cli generateManifest in-process. References left for the integrator/owners: scripts/run-gates.mjs (lines ~110-127 list the removed gate names), scripts/run-gates.test.mjs:43 (components:check fixture), scripts/release-gates-baseline.json (removed names), CONTRIBUTING.md:79 (components:check), .claude/rules/conventions.md hand-written body (pnpm data-slot:check / variants:check / loading-states:check), apps/docs/.storybook/preview.tsx:196,298 (pnpm a11y:baseline:check), scripts/a11y-baseline.json $comment (regenerates with the new command on next update), packages/ui/src/components/sidebar/sidebar.tsx:155 and packages/viewer/src/core/types.ts:96 (comments naming old commands), scripts/check-gen.test.mjs:26 (comment), docs/ADR/0024, docs/ADR/0025:179, docs/rules-history/loading-states.md, docs/decisions/2026-09-01-brainless-adoption-architecture.md, docs/superpowers/** (historical mentions of deleted script/baseline paths)."
+}

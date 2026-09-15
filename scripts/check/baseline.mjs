@@ -5,6 +5,8 @@
  * written with sorted keys. A `none` rule has no entry (it must stay at 0).
  *
  * Findings with `warn: true` are advisory: printed, never counted, never baselined.
+ * A `per-file` finding may carry an integer `weight` (default 1, may be 0 or negative): the
+ * file's count is the SUM of weights, so a rule can ratchet a signed per-file quantity.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -35,7 +37,7 @@ const keyOf = (f) => f.key ?? `${f.file}::${f.msg}`;
 
 function perFile(findings) {
   const counts = {};
-  for (const f of findings) counts[f.file] = (counts[f.file] ?? 0) + 1;
+  for (const f of findings) counts[f.file] = (counts[f.file] ?? 0) + (f.weight ?? 1);
   return counts;
 }
 
@@ -56,8 +58,9 @@ export function evaluate(rule, findings, entry) {
       const counts = perFile(counted);
       const over = new Set(Object.keys(counts).filter((f) => counts[f] > (base[f] ?? 0)));
       const allowed = Object.values(base).reduce((a, b) => a + b, 0);
+      const count = Object.values(counts).reduce((a, b) => a + b, 0);
       const failing = counted.filter((f) => over.has(f.file));
-      return { count: counted.length, allowed, ok: over.size === 0, failing };
+      return { count, allowed, ok: over.size === 0, failing };
     }
     case "keys": {
       const base = new Set(Array.isArray(entry) ? entry : []);

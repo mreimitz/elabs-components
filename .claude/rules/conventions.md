@@ -195,6 +195,21 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 
 ### Components
 
+- Every `@elabs-ai/components-ui` component folder is re-exported from `src/index.ts` (or its own subpath export) and ships a `*.stories.tsx`. (`component-registration`)
+- Give every exported component's root `data-slot="<kebab-name>"` and each sub-part `data-slot="<kebab-name>-<part>"`; a module never gains a component without a slot or drops a slot without its part. (`data-slot`)
 - Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source. (`raw-palette`)
+
+### Stories
+
+- Axe stays blocking: preview.tsx keeps `a11y: { test: "error" }` and applies `scripts/a11y-baseline.json`, whose generated per-story exemptions never exceed `ratchet.maxStories`; fix a new violation, never exempt it. (`a11y-baseline`)
+- A component with a `loading`/`isStreaming` (or chart `status: ChartStatus`) prop ships a story that shows it: a `*Loading`/`*Streaming` export or a not-ready arg (`loading: true`, `status="loading"`). (`loading-states`)
+- Every allowlisted stateful component (`STATEFUL_COMPONENTS` in the rule) exports a story named for a non-happy state (`Loading`, `Empty`, `Error`, `Disabled`, `Skeleton`, `FirstRun`, `Awaiting`). (`state-coverage`)
+- Render every `cva` variant value in a story (`variant="success"` or `args: { variant: "success" }`); `argTypes.options` does not count, a default is met by a story that leaves the axis unset. (`variant-coverage`)
+
+### Packages
+
+- The manifest's `agentOutput` contract matches `statusFromToolState` (ai `tool.tsx`) and `STATUSES` (`status-badge.tsx`), names only real `@elabs-ai/components-ai` exports, and its example never calls `useChat(`. (`agent-output-contract`)
+- A client package (`ui`, `data`, `ai`, `flow`, `maps`, `charts`, `editor`, `viewer`, `terminal`) whose source uses React hooks carries `"use client"` in its source modules, not only in the build banner. (`use-client-source`)
+- A viewer adapter's `capabilities.highlight` lists only real address kinds, its renderer reads `highlights` (and `rects` for `rect`), and its `*-adapter.test.tsx` builds and paints each declared kind. (`viewer-highlight`)
 
 <!-- brand-ui:gen:check-rules:end -->
