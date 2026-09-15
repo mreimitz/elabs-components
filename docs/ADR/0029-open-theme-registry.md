@@ -4,6 +4,8 @@
 - **Date:** 2026-08-16
 - **Extends:** ADR [0003](./0003-theming-model.md) — the `data-theme` + semantic-token
   mechanism is unchanged; what changes is who is allowed to author a theme.
+- **Extended by:** ADR [0036](./0036-theme-families-and-modes.md) — theme families and colour
+  schemes, plus the downloadable `themes/` folder.
 
 ## Context
 
