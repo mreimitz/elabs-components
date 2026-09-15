@@ -171,6 +171,9 @@
   --terminal-ansi-bright-white: var(--terminal-foreground);
   --brand-mark-ring: currentColor;
   --brand-mark-tail: var(--primary);
+  --brand-logo-mark: initial;
+  --brand-logo-lockup: initial;
+  --brand-logo-lockup-aspect: initial;
   --chart-seq-1: oklch(0.841 0.03 235);
   --chart-seq-2: oklch(0.658 0.075 241.8);
   --chart-seq-3: oklch(0.582 0.09 241.8);

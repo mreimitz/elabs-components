@@ -15,6 +15,9 @@ export const THEME_TOKEN_NAMES = [
   "--border-1",
   "--border-2",
   "--border-strong",
+  "--brand-logo-lockup",
+  "--brand-logo-lockup-aspect",
+  "--brand-logo-mark",
   "--brand-mark-ring",
   "--brand-mark-tail",
   "--calc-comment",
@@ -197,5 +200,5 @@ export const THEME_TOKEN_NAMES = [
   "--warning-text",
 ] as const;
 
-/** One of the 187 semantic tokens a complete theme defines. */
+/** One of the 190 semantic tokens a complete theme defines. */
 export type ThemeTokenName = (typeof THEME_TOKEN_NAMES)[number];

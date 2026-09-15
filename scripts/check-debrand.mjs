@@ -21,9 +21,10 @@
  * an allowlist is a place for a real hit to hide — keep the pattern narrow
  * instead.
  *
- * THE ONLY EXEMPTION is this gate's own source and its self-test, which must
- * quote the names to do their job. There is no allowlist and no per-surface
- * carve-out: a hit is fixed by rewriting the string, never by exempting it.
+ * EXEMPT: this gate's own source and its self-test, which must quote the names
+ * to do their job, and the downloadable Qlik theme family (see
+ * `THEME_FAMILY_DIR`). Nothing else: a hit is fixed by rewriting the string,
+ * never by widening that list.
  *
  * Dependency-free; locates the workspace relative to this file (cwd-independent).
  *
@@ -52,6 +53,20 @@ export const BRAND_RE = /qlik|qlabs|coe[-_ ]emea/gi;
 export const SELF_FILES = new Set(["scripts/check-debrand.mjs", "scripts/check-debrand.test.mjs"]);
 
 /**
+ * The ONE deliberate carve-out beyond the gate itself (maintainer decision,
+ * 2026-09-15): the downloadable Qlik theme family, which ports the legacy look
+ * and logo on purpose, plus the two files that can only name it — the
+ * `themes/` catalogue and Storybook's generated family list. Exact paths and
+ * one folder, never a pattern: everything else in the repo stays scrubbed.
+ */
+export const THEME_FAMILY_DIR = "themes/qlik/";
+export const THEME_FAMILY_FILES = new Set([
+  "themes/README.md",
+  "apps/docs/.storybook/community-themes.generated.css",
+  "apps/docs/.storybook/community-themes.generated.ts",
+]);
+
+/**
  * The detector, exported so the self-test drives the same code CI does.
  * `files` is `[{ file, content }]` with repo-relative POSIX paths.
  */
@@ -59,6 +74,7 @@ export function findBrandHits(files) {
   const hits = [];
   for (const { file, content } of files) {
     if (SELF_FILES.has(file)) continue;
+    if (file.startsWith(THEME_FAMILY_DIR) || THEME_FAMILY_FILES.has(file)) continue;
     content.split("\n").forEach((line, i) => {
       const matches = [...line.matchAll(BRAND_RE)];
       if (matches.length) {
@@ -120,8 +136,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     );
     for (const h of hits) console.error(`  ${h.file}:${h.line}: ${h.text}`);
     console.error(
-      "\n  Rewrite the string so it says what is true of THIS repo. Do not add an" +
-        "\n  exemption — there is no allowlist, by design.",
+      "\n  Rewrite the string so it says what is true of THIS repo. Do not widen the" +
+        "\n  exemption — only the downloadable theme family is carved out, by design.",
     );
     process.exit(1);
   }

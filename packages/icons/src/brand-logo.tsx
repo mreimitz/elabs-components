@@ -160,6 +160,22 @@ function hatchOffsets(): number[] {
 }
 const HATCH = hatchOffsets();
 
+/* ── Theme logo art ───────────────────────────────────────────────────────────
+   A theme that ships its own logo (e.g. a downloadable family in `themes/`)
+   declares three tokens in its stylesheet, so every BrandLogo — and every
+   AppIcon built on it — swaps with no code change and no provider:
+
+     --brand-logo-mark          image for the square mark (`url(…)`)
+     --brand-logo-lockup        image for the lockup
+     --brand-logo-lockup-aspect lockup width ÷ height — AND the switch that hides
+                                the drawn mark below
+
+   The reference themes declare all three `initial` (guaranteed-invalid), so each
+   `var()` falls back and the drawn mark renders. A theme sets the three
+   together. The image is the theme's fixed colourway per mode; `title` stays the
+   accessible name, so pass the product name when the art carries a wordmark. */
+const LOCKUP_ASPECT = "--brand-logo-lockup-aspect";
+
 /**
  * The brand logo: a hatched circle swung over a dashed construction square, with
  * a wordmark in the `lockup` variant.
@@ -192,9 +208,27 @@ export const BrandLogo = forwardRef<SVGSVGElement, BrandLogoProps>(function Bran
   const isLockup = variant === "lockup";
   const vbWidth = isLockup ? brandLockupWidth(title) : BRAND_MARK_VIEWBOX_SIZE;
   const width = Math.round((height * vbWidth) / BRAND_MARK_VIEWBOX_SIZE);
+  // Theme-supplied logo art (see "Theme logo art" above). The reference themes
+  // declare these tokens `initial`, so every var() below takes its fallback and
+  // the drawn mark renders exactly as before.
+  const themeArtStyle: CSSProperties = {
+    backgroundImage: `var(${isLockup ? "--brand-logo-lockup" : "--brand-logo-mark"}, none)`,
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "contain",
+    // The mark stays square whatever the art, so only the lockup's width follows it.
+    ...(isLockup
+      ? { width: `calc(${height}px * var(${LOCKUP_ASPECT}, ${vbWidth / BRAND_MARK_VIEWBOX_SIZE}))` }
+      : {}),
+  };
   const toneStyle: CSSProperties | undefined =
     tone === "white"
-      ? ({ "--brand-mark-ring": "#FFFFFF", "--brand-mark-tail": "#FFFFFF" } as CSSProperties)
+      ? ({
+          "--brand-mark-ring": "#FFFFFF",
+          "--brand-mark-tail": "#FFFFFF",
+          // Theme art is a fixed-colour image, so white is reached by filter.
+          filter: "brightness(0) invert(1)",
+        } as CSSProperties)
       : undefined;
   // The ink follows the surrounding text colour by default, so the mark reads
   // correctly on a page, on dark chrome, and on a surface a consumer invents —
@@ -215,7 +249,7 @@ export const BrandLogo = forwardRef<SVGSVGElement, BrandLogoProps>(function Bran
       viewBox={`0 0 ${vbWidth} ${BRAND_MARK_VIEWBOX_SIZE}`}
       role="img"
       aria-label={title}
-      style={toneStyle ? { ...toneStyle, ...style } : style}
+      style={{ ...themeArtStyle, ...toneStyle, ...style }}
       {...props}
     >
       <title>{title}</title>
@@ -224,64 +258,71 @@ export const BrandLogo = forwardRef<SVGSVGElement, BrandLogoProps>(function Bran
           <circle cx={CIRCLE.cx} cy={CIRCLE.cy} r={CIRCLE.r} />
         </clipPath>
       </defs>
-      {/* Paint order IS the composition: the plane is laid out first, the drawing
+      {/* The drawn mark. Hidden when the theme supplies its own art: the aspect
+          token is the switch, and any positive aspect clamps opacity to 0. */}
+      <g
+        data-slot="brand-logo-art"
+        style={{ opacity: `calc(1 - var(${LOCKUP_ASPECT}, 0) * 1000)` }}
+      >
+        {/* Paint order IS the composition: the plane is laid out first, the drawing
           is struck over it. */}
-      <rect
-        x={SQUARE.x}
-        y={SQUARE.y}
-        width={SQUARE.size}
-        height={SQUARE.size}
-        fill={plane}
-        fillOpacity={0.22}
-        stroke={plane}
-        strokeWidth={2.2}
-        strokeDasharray="4.5 4.5"
-        strokeLinecap="square"
-      />
-      <g clipPath={`url(#${clipId})`} stroke={ink} strokeWidth={1.8}>
-        {HATCH.map((c) => (
-          <line
-            key={c}
-            x1={c - BRAND_MARK_VIEWBOX_SIZE}
-            y1={BRAND_MARK_VIEWBOX_SIZE}
-            x2={c}
-            y2={0}
-          />
+        <rect
+          x={SQUARE.x}
+          y={SQUARE.y}
+          width={SQUARE.size}
+          height={SQUARE.size}
+          fill={plane}
+          fillOpacity={0.22}
+          stroke={plane}
+          strokeWidth={2.2}
+          strokeDasharray="4.5 4.5"
+          strokeLinecap="square"
+        />
+        <g clipPath={`url(#${clipId})`} stroke={ink} strokeWidth={1.8}>
+          {HATCH.map((c) => (
+            <line
+              key={c}
+              x1={c - BRAND_MARK_VIEWBOX_SIZE}
+              y1={BRAND_MARK_VIEWBOX_SIZE}
+              x2={c}
+              y2={0}
+            />
+          ))}
+        </g>
+        <circle
+          cx={CIRCLE.cx}
+          cy={CIRCLE.cy}
+          r={CIRCLE.r}
+          fill="none"
+          stroke={ink}
+          strokeWidth={2.4}
+        />
+        {DOTS.map(([cx, cy]) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={2.2} fill={ink} />
         ))}
-      </g>
-      <circle
-        cx={CIRCLE.cx}
-        cy={CIRCLE.cy}
-        r={CIRCLE.r}
-        fill="none"
-        stroke={ink}
-        strokeWidth={2.4}
-      />
-      {DOTS.map(([cx, cy]) => (
-        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={2.2} fill={ink} />
-      ))}
-      <g stroke={ink} strokeWidth={1.8} strokeLinecap="round">
-        {STRAY.map(([x1, y1, x2, y2]) => (
-          <line key={`${x1}-${y1}`} x1={x1} y1={y1} x2={x2} y2={y2} />
-        ))}
-      </g>
-      {isLockup ? (
-        <text
-          x={WORDMARK_X}
-          y={BRAND_MARK_VIEWBOX_SIZE / 2}
-          fill={ink}
-          fontFamily="var(--font-display, var(--font-sans, sans-serif))"
-          fontSize={WORDMARK_SIZE}
-          fontWeight={600}
-          letterSpacing={WORDMARK_TRACKING}
-          dominantBaseline="central"
-          /* The <title> above already names the whole logo; the wordmark would
+        <g stroke={ink} strokeWidth={1.8} strokeLinecap="round">
+          {STRAY.map(([x1, y1, x2, y2]) => (
+            <line key={`${x1}-${y1}`} x1={x1} y1={y1} x2={x2} y2={y2} />
+          ))}
+        </g>
+        {isLockup ? (
+          <text
+            x={WORDMARK_X}
+            y={BRAND_MARK_VIEWBOX_SIZE / 2}
+            fill={ink}
+            fontFamily="var(--font-display, var(--font-sans, sans-serif))"
+            fontSize={WORDMARK_SIZE}
+            fontWeight={600}
+            letterSpacing={WORDMARK_TRACKING}
+            dominantBaseline="central"
+            /* The <title> above already names the whole logo; the wordmark would
              otherwise be announced a second time. */
-          aria-hidden="true"
-        >
-          {title}
-        </text>
-      ) : null}
+            aria-hidden="true"
+          >
+            {title}
+          </text>
+        ) : null}
+      </g>
     </svg>
   );
 });

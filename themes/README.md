@@ -47,6 +47,21 @@ your app.
 
    List every dark variant you register. Storybook does this for you (`pnpm gen`).
 
+## Give a theme its own logo
+
+Every `BrandLogo` and `AppIcon` shows a built-in demo mark. A theme replaces it by setting
+three tokens in its stylesheet; nothing else changes and no code is needed:
+
+```css
+--brand-logo-mark: url("data:image/svg+xml,…"); /* square mark */
+--brand-logo-lockup: url("data:image/svg+xml,…"); /* mark + wordmark */
+--brand-logo-lockup-aspect: 2.3813; /* lockup width ÷ height — also switches the demo mark off */
+```
+
+Set all three together, or all three to `initial` to keep the demo mark. The images carry
+their own colours, so give each mode its own colourway (the Qlik family does). Pass
+`title="Your product"` to the logo so screen readers announce the right name.
+
 ## Families and modes
 
 `theme.ts` gives every variant the same `family` and its own `dark` flag:

@@ -81,6 +81,25 @@ test("PASSES: only this gate's own source and self-test", () => {
   assert.equal(scan([{ file: "scripts/check-other.mjs", content: "// Qlik" }]).length, 1);
 });
 
+test("PASSES: the downloadable theme family, and nothing that merely resembles it", () => {
+  for (const file of [
+    "themes/qlik/qlik-light.css",
+    "themes/qlik/README.md",
+    "themes/README.md",
+    "apps/docs/.storybook/community-themes.generated.ts",
+  ]) {
+    assert.deepEqual(scan([{ file, content: "Qlik Bright" }]), [], file);
+  }
+  for (const file of [
+    "themes/ocean/ocean-light.css", // a sibling family
+    "themes/qlik-extra/theme.ts", // a prefix look-alike
+    "packages/tokens/src/themes.css",
+    "CHANGELOG.md",
+  ]) {
+    assert.equal(scan([{ file, content: "Qlik Bright" }]).length, 1, file);
+  }
+});
+
 // ── The noise floor (why this gate is trusted) ───────────────────────────────
 
 test("QUIET: English words starting 'coe' are not the org slug", () => {

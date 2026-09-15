@@ -43,7 +43,9 @@ describe("AppIcon", () => {
     const { container } = render(<AppIcon title="Acme" height={24} />);
     const style = (container.firstElementChild as HTMLElement).getAttribute("style") ?? "";
     const expected = Math.round((24 * brandLockupWidth("Acme")) / BRAND_MARK_VIEWBOX_SIZE);
-    expect(style).toContain(`--app-icon-w-lockup: ${expected}px`);
+    expect(style).toContain(
+      `--app-icon-w-lockup: calc(24px * var(--brand-logo-lockup-aspect, ${expected / 24}))`,
+    );
     expect(style).toContain("--app-icon-w-mark: 24px");
   });
 
