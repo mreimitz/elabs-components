@@ -195,6 +195,15 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 
 ### Components
 
+- A `useEffect`/`useLayoutEffect` that adds a listener, starts a timer/interval, creates an observer or subscribes returns a cleanup that removes/clears/disconnects/unsubscribes it. (`effect-cleanup`)
+- Never wrap a component whose props include `children` in `memo`/`React.memo` — inline children defeat the shallow compare; memoise the children-free part instead. (`memo-on-children`)
 - Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source. (`raw-palette`)
+- Every `dangerouslySetInnerHTML` has a same-line or directly-preceding comment saying why it is sanitized/trusted/escaped, and its `__html` is a sanitiser call or a `sanitized*`/`safe*` value. (`unsafe-html-justified`)
+- A component with both controlled and uncontrolled modes (`value`/`defaultValue`, `open`/`defaultOpen`, …) uses `useControllableState` (ui `lib/use-controllable-state.ts` or Radix), never a hand-rolled `useState` + `x !== undefined` pair. (`use-controllable`)
+
+### Stories
+
+- Story decorators and render wrappers never pin a fixed width above 320px (`w-[800px]`, `style={{ width: 800 }}`) without a max — use `w-full max-w-*` or `parameters.layout`. (`no-fixed-story-wrapper`)
+- A story meta for a layout-level surface (`Layout/*`, `Patterns/Templates/*`, `Patterns/Scenarios/*`, AppShell, Sidebar, DataTable, ChatShell, Hero, …) sets `parameters.layout` (`"fullscreen"`/`"padded"`) or a viewport — never the centered default. (`story-viewport-guard`)
 
 <!-- brand-ui:gen:check-rules:end -->
