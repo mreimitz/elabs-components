@@ -384,6 +384,9 @@
   "disabled-recipe": {
     "packages/ui/src/components/select/select.tsx": 1
   },
+  "effect-cleanup": {
+    "packages/editor/src/markdown-editor/slash/monaco-slash-menu.tsx": 1
+  },
   "focus-ring-only": {
     "packages/ai/src/diff-view.tsx": 2,
     "packages/ai/src/gallery.tsx": 2,
@@ -573,6 +576,21 @@
     "packages/viewer/src/adapters/code/code-adapter.tsx": 1,
     "packages/viewer/src/adapters/image/image-adapter.tsx": 1
   },
+  "memo-on-children": {
+    "packages/ai/src/_persona-rive.tsx": 2,
+    "packages/ai/src/agent-timeline.tsx": 1,
+    "packages/ai/src/chain-of-thought.tsx": 5,
+    "packages/ai/src/jsx-preview.tsx": 3,
+    "packages/ai/src/reasoning.tsx": 3,
+    "packages/ai/src/stack-trace.tsx": 8,
+    "packages/charts/src/charts/bar-chart.tsx": 1,
+    "packages/charts/src/charts/candlestick-chart.tsx": 1,
+    "packages/charts/src/charts/chart-brush-layout.tsx": 1,
+    "packages/charts/src/charts/live-line-chart.tsx": 1,
+    "packages/charts/src/charts/sankey/sankey-chart.tsx": 1,
+    "packages/charts/src/charts/time-series-chart-shell.tsx": 1,
+    "packages/charts/src/charts/tooltip/chart-tooltip.tsx": 1
+  },
   "microcopy": {
     "packages/ai/src/_chat-shell-rail.tsx": 1,
     "packages/ai/src/agent.tsx": 1,
@@ -632,6 +650,41 @@
     "packages/ui/src/components/change-review/change-review.tsx": 1,
     "packages/ui/src/components/field-row/field-row.stories.tsx": 1,
     "packages/ui/src/components/form/form.stories.tsx": 1
+  },
+  "no-fixed-story-wrapper": {
+    "packages/charts/src/by-data-shape.stories.tsx": 22,
+    "packages/charts/src/chart-card/chart-card.stories.tsx": 7,
+    "packages/charts/src/chart-frame/chart-frame.stories.tsx": 9,
+    "packages/charts/src/charts/area-chart.stories.tsx": 9,
+    "packages/charts/src/charts/bar-chart.stories.tsx": 16,
+    "packages/charts/src/charts/bump-chart.stories.tsx": 4,
+    "packages/charts/src/charts/candlestick-chart.stories.tsx": 1,
+    "packages/charts/src/charts/canvas-layer/canvas-layer.stories.tsx": 1,
+    "packages/charts/src/charts/choropleth/choropleth-chart.stories.tsx": 6,
+    "packages/charts/src/charts/composed-chart.stories.tsx": 4,
+    "packages/charts/src/charts/distribution/distribution-chart.stories.tsx": 6,
+    "packages/charts/src/charts/dumbbell-chart.stories.tsx": 7,
+    "packages/charts/src/charts/funnel-chart.stories.tsx": 9,
+    "packages/charts/src/charts/gauge.stories.tsx": 3,
+    "packages/charts/src/charts/heatmap/heatmap-chart.stories.tsx": 7,
+    "packages/charts/src/charts/line-chart.stories.tsx": 15,
+    "packages/charts/src/charts/live-line-chart.stories.tsx": 4,
+    "packages/charts/src/charts/network/network-chart.stories.tsx": 7,
+    "packages/charts/src/charts/parallel-coordinates/parallel-coordinates-chart.stories.tsx": 7,
+    "packages/charts/src/charts/pie-chart.stories.tsx": 5,
+    "packages/charts/src/charts/radar-chart.stories.tsx": 3,
+    "packages/charts/src/charts/sankey/sankey-chart.stories.tsx": 3,
+    "packages/charts/src/charts/scatter-chart.stories.tsx": 7,
+    "packages/charts/src/charts/series-pattern.stories.tsx": 9,
+    "packages/charts/src/charts/tree-chart.stories.tsx": 4,
+    "packages/charts/src/charts/treemap/treemap-chart.stories.tsx": 8,
+    "packages/charts/src/charts/unit-chart.stories.tsx": 11,
+    "packages/charts/src/charts/waterfall-chart.stories.tsx": 5,
+    "packages/data/src/data-table/data-table.stories.tsx": 3,
+    "packages/flow/src/inspector-panel/inspector-panel.stories.tsx": 1,
+    "packages/ui/src/components/alert/alert.stories.tsx": 1,
+    "packages/ui/src/components/card/card.stories.tsx": 5,
+    "packages/ui/src/components/tabs/tabs.stories.tsx": 1
   },
   "no-fixed-trigger-width": {
     "packages/editor/src/editor-toolbar/editor-toolbar.tsx": 1,
@@ -694,6 +747,10 @@
     "@elabs-ai/components-ui::Drawer",
     "@elabs-ai/components-ui::DropdownMenu"
   ],
+  "story-viewport-guard": {
+    "packages/ui/src/components/descriptions/descriptions.stories.tsx": 1,
+    "packages/ui/src/components/section-header/section-header.stories.tsx": 1
+  },
   "surface-separation": {
     "packages/charts/src/charts/chart-fallback.tsx": 1,
     "packages/editor/src/markdown-editor/directive-views.tsx": 1,
@@ -795,6 +852,51 @@
     "packages/ui/src/components/typography/prose.tsx": 1,
     "packages/ui/src/components/virtual-select/virtual-select.tsx": 2,
     "packages/ui/src/components/wizard/wizard.tsx": 3
+  },
+  "unsafe-html-justified": {
+    "packages/editor/src/markdown-academic/math.tsx": 2,
+    "packages/editor/src/mermaid-diagram/mermaid-diagram.tsx": 1,
+    "packages/editor/src/mermaid-diagram/mermaid-viewer.tsx": 1
+  },
+  "use-controllable": {
+    "packages/ai/src/context-panel.tsx": 3,
+    "packages/ai/src/environment-variables.tsx": 1,
+    "packages/ai/src/file-tree.tsx": 1,
+    "packages/ai/src/message-compare.tsx": 1,
+    "packages/ai/src/message-edit.tsx": 1,
+    "packages/ai/src/message-feedback.tsx": 1,
+    "packages/ai/src/message-table.tsx": 1,
+    "packages/ai/src/message.tsx": 1,
+    "packages/charts/src/gantt/gantt.tsx": 2,
+    "packages/editor/src/code-workspace/code-workspace.tsx": 1,
+    "packages/editor/src/markdown-workspace/markdown-workspace.tsx": 3,
+    "packages/editor/src/mermaid-workspace/mermaid-workspace.tsx": 1,
+    "packages/process/src/metric-layer-switch/metric-layer-switch.tsx": 1,
+    "packages/terminal/src/terminal-composer.tsx": 3,
+    "packages/terminal/src/terminal-permission.tsx": 2,
+    "packages/ui/src/components/advanced-group/advanced-group.tsx": 1,
+    "packages/ui/src/components/bounded-number/bounded-number.tsx": 1,
+    "packages/ui/src/components/collapsible-panel/use-collapsible-panel.ts": 1,
+    "packages/ui/src/components/color-picker/color-picker.tsx": 1,
+    "packages/ui/src/components/context-rail/context-rail.tsx": 1,
+    "packages/ui/src/components/date-range-picker/date-range-picker.tsx": 1,
+    "packages/ui/src/components/key-value-editor/key-value-editor.tsx": 1,
+    "packages/ui/src/components/list-editor/list-editor.tsx": 1,
+    "packages/ui/src/components/mention-input/mention-input.tsx": 1,
+    "packages/ui/src/components/navigation-menu/navigation-menu.tsx": 1,
+    "packages/ui/src/components/number-input/number-input.tsx": 1,
+    "packages/ui/src/components/rating/rating.tsx": 1,
+    "packages/ui/src/components/revision-timeline/revision-timeline.tsx": 2,
+    "packages/ui/src/components/segmented-field/segmented-field.tsx": 1,
+    "packages/ui/src/components/side-dock/side-dock.tsx": 1,
+    "packages/ui/src/components/sidebar/sidebar.tsx": 1,
+    "packages/ui/src/components/slider-number/slider-number.tsx": 1,
+    "packages/ui/src/components/tag-input/tag-input.tsx": 1,
+    "packages/ui/src/components/transfer/transfer.tsx": 1,
+    "packages/ui/src/components/tree-select/tree-select.tsx": 1,
+    "packages/ui/src/components/virtual-select/virtual-select.tsx": 1,
+    "packages/ui/src/components/wizard/wizard.tsx": 1,
+    "packages/viewer/src/file-viewer/file-viewer.tsx": 5
   },
   "variant-coverage": [
     "@elabs-ai/components-ai::MessageFeedback::compact=true",

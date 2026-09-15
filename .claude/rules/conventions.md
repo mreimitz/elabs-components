@@ -202,11 +202,13 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 - Every `@elabs-ai/components-ui` component folder is re-exported from `src/index.ts` (or its own subpath export) and ships a `*.stories.tsx`. (`component-registration`)
 - Give every exported component's root `data-slot="<kebab-name>"` and each sub-part `data-slot="<kebab-name>-<part>"`; a module never gains a component without a slot or drops a slot without its part. (`data-slot`)
 - A dimmed disabled state follows the house recipe: `disabled:opacity-50` plus `disabled:pointer-events-none` (Button) or `disabled:cursor-not-allowed` (Input) in the same class list. (`disabled-recipe`)
+- A `useEffect`/`useLayoutEffect` that adds a listener, starts a timer/interval, creates an observer or subscribes returns a cleanup that removes/clears/disconnects/unsubscribes it. (`effect-cleanup`)
 - Focus indicators use `focus-ring`/`focus-ring-within`/`focus-ring-inset`/`focus-ring-static`, never a hand-rolled `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring` stack. (`focus-ring-only`)
 - An exported component that spreads `...props` onto a DOM element is wrapped in `forwardRef`. (`forward-ref-required`)
 - UI text in package source (JSX text, `aria-label`/`title`/`placeholder` literals) comes from props or a labels object so apps can localize it; stories, tests, templates and registry are exempt. (`i18n-strings`)
 - Format numbers and dates with `Intl.*` and a locale prop: no `toLocaleString()`/`toLocaleDateString()`/`toLocaleTimeString()` without a locale, no `new Date(…).toString()` in JSX. (`locale-formatting`)
 - Use logical direction utilities (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`border-s`/`rounded-s`/`text-start`), never physical `ml-`/`pr-`/`left-`/`border-l`/`text-right`, so layouts mirror in RTL. (`logical-props`)
+- Never wrap a component whose props include `children` in `memo`/`React.memo` — inline children defeat the shallow compare; memoise the children-free part instead. (`memo-on-children`)
 - Route user-visible strings (`aria-label`, `placeholder`, `title`, JSX text) through the locale seam `t()` (ADR 0017); a genuinely untranslatable string carries `// i18n-exempt: <reason>`. (`microcopy`)
 - Write the curly apostrophe ’ (never a straight `'` between letters) in JSX text and `aria-label`/`placeholder`/`title`/`description` values, stories included; opt out with `// microtypography-exempt: <reason>`. (`microtypography-apostrophe`)
 - Write "…" (U+2026), never "...", in JSX text and `aria-label`/`placeholder`/`title`/`description` values, stories included; a genuine code sample carries `// microtypography-exempt: <reason>`. (`microtypography-ellipsis`)
@@ -218,13 +220,17 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 - Give each region ONE separation gesture: never a bare `border` in the same class string as a non-default fill (`bg-surface-muted`, `bg-surface-elevated`, `bg-chat-user`, `bg-<status>/N`); rails (`border-s-*`), axis dividers and `border bg-card` are fine. (`surface-separation`)
 - Compose `TimelineRoot`/`TimelineItem`/`Timeline` from `@elabs-ai/components-ui`; never declare a local `Timeline*` component or hand-roll an `absolute w-px` connector with a status-keyed style map outside `packages/ui/src/components/timeline`. (`timeline-fork`)
 - Type is a role: use `text-display|title|subtitle|body|caption|meta|kpi|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by `pnpm text-scale:check`). (`type-roles`)
+- Every `dangerouslySetInnerHTML` has a same-line or directly-preceding comment saying why it is sanitized/trusted/escaped, and its `__html` is a sanitiser call or a `sanitized*`/`safe*` value. (`unsafe-html-justified`)
+- A component with both controlled and uncontrolled modes (`value`/`defaultValue`, `open`/`defaultOpen`, …) uses `useControllableState` (ui `lib/use-controllable-state.ts` or Radix), never a hand-rolled `useState` + `x !== undefined` pair. (`use-controllable`)
 
 ### Stories
 
 - Axe stays blocking: preview.tsx keeps `a11y: { test: "error" }` and applies `scripts/a11y-baseline.json`, whose generated per-story exemptions never exceed `ratchet.maxStories`; fix a new violation, never exempt it. (`a11y-baseline`)
 - Every unit-decomposed chart story (waffle/field UnitChart, dot heatmap, `unit`-ed Bar/WaterfallChart, beaded DumbbellChart) states its unit ("one X = N") in `unitLabel`, `description` or `accessibleDescription`. (`chart-unit-caption`)
 - A component with a `loading`/`isStreaming` (or chart `status: ChartStatus`) prop ships a story that shows it: a `*Loading`/`*Streaming` export or a not-ready arg (`loading: true`, `status="loading"`). (`loading-states`)
+- Story decorators and render wrappers never pin a fixed width above 320px (`w-[800px]`, `style={{ width: 800 }}`) without a max — use `w-full max-w-*` or `parameters.layout`. (`no-fixed-story-wrapper`)
 - Every allowlisted stateful component (`STATEFUL_COMPONENTS` in the rule) exports a story named for a non-happy state (`Loading`, `Empty`, `Error`, `Disabled`, `Skeleton`, `FirstRun`, `Awaiting`). (`state-coverage`)
+- A story meta for a layout-level surface (`Layout/*`, `Patterns/Templates/*`, `Patterns/Scenarios/*`, AppShell, Sidebar, DataTable, ChatShell, Hero, …) sets `parameters.layout` (`"fullscreen"`/`"padded"`) or a viewport — never the centered default. (`story-viewport-guard`)
 - Render every `cva` variant value in a story (`variant="success"` or `args: { variant: "success" }`); `argTypes.options` does not count, a default is met by a story that leaves the axis unset. (`variant-coverage`)
 
 ### Packages
