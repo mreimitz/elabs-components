@@ -74,3 +74,6 @@ jobs:
         env:
           STORYBOOK_THEME: ${{ matrix.theme }}
         run: pnpm --filter @elabs-ai/components-docs test-storybook
+      - name: Contract tests (axe + overflow, every theme and width)
+        if: matrix.theme == 'light'
+        run: pnpm --filter @elabs-ai/components-docs test-contract

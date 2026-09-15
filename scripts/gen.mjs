@@ -38,6 +38,7 @@
  *   manifest          package source + registry + templates → brand-ui.manifest.json
  *   inventory / llms / context / doc-regions / readmes   manifest → docs
  *   community-themes  themes/ → Storybook generated css/ts
+ *   contract-tests    manifest + Default stories → __contract__ tests + apps/docs/contract
  *   conventions       scripts/check/rules → .claude/rules/conventions.md
  */
 import { spawn, spawnSync } from "node:child_process";
@@ -131,6 +132,12 @@ export const STEPS = [
       "apps/docs/.storybook/community-themes.generated.css",
       "apps/docs/.storybook/community-themes.generated.ts",
     ],
+  },
+  {
+    id: "contract-tests",
+    run: node("scripts/gen-contract-tests.mjs"),
+    check: node("scripts/gen-contract-tests.mjs", "--check"),
+    outputs: ["packages/*/src/__contract__/**", "apps/docs/contract/*.contract.test.tsx"],
   },
   {
     id: "conventions",
