@@ -2,16 +2,9 @@
  * app-spec — the ONE implementation of the app-spec contract (VP-02 #122/#123).
  *
  * The `brand-ui-new-app` interview produces an app-spec (a fenced ```json block
- * inside `app-spec.md`); `brand-ui scaffold` consumes it. Two callers need the
- * exact same reader + validator:
- *
- *   - `scripts/check-app-spec.mjs` (the `pnpm app-spec:check` CI gate), and
- *   - `planScaffold`/`emitScaffold` in `./engine.mjs` (the scaffold engine).
- *
- * Before #123 the validator lived only in the gate, so the engine could not read
- * an `app-spec.md` at all — and any second implementation would have drifted from
- * the gate on day one. It lives here for the same reason `check-anti-slop.mjs`
- * imports its rules from `./audit.mjs`: **one source of truth, imported by both.**
+ * inside `app-spec.md`); `brand-ui scaffold` consumes it through
+ * `planScaffold`/`emitScaffold` in `./engine.mjs`. The reader + validator live
+ * here so every caller shares **one source of truth.**
  *
  * Dependency-free (a small JSON-Schema subset — no ajv, no paid deps) and
  * deterministic. Expected failures are returned as `{ error }`, never thrown.

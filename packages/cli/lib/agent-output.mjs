@@ -24,11 +24,9 @@
  *   - A2UI is NOT shipped (WP-11) — it is documented ONLY as a future path,
  *     never as a usable surface.
  *
- * GATE (the teeth — `agent-output:check`, `scripts/check-agent-output.mjs`):
- *   `stateToStatus` and `statusEnum` below are AUTHORED here but VERIFIED against
+ * `stateToStatus` and `statusEnum` below are AUTHORED here and must match
  *   source (`statusFromToolState` in packages/ai/src/tool.tsx + `STATUSES` in
- *   packages/ui/.../status-badge.tsx). A divergence FAILS CI — so this contract
- *   cannot silently drift from the components it documents.
+ *   packages/ui/.../status-badge.tsx).
  */
 
 /**

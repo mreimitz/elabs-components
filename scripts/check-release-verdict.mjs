@@ -91,7 +91,14 @@
  */
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
-import { NON_BLOCKING_NAME } from "./check-merge-readiness.mjs";
+
+/**
+ * A job is blocking unless it SAYS it is not. `ci.yml` marks its one
+ * `continue-on-error` job in its own name — "E2E (Playwright, non-blocking)" —
+ * so the convention is fail-closed: a job added later is required until
+ * somebody deliberately renames it.
+ */
+export const NON_BLOCKING_NAME = /non-blocking/i;
 
 /** The workflow whose verdict counts. Its `gates` job is the blocking battery. */
 export const CI_WORKFLOW_FILE = "ci.yml";

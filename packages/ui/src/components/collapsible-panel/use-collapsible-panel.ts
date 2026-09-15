@@ -25,9 +25,6 @@
  * state-keyed defaults for a generic panel. Sidebar passes its
  * `--sidebar-width` + `group-data-[collapsible=offcanvas]` literals and gets
  * back its exact original fragments (the byte-identical re-point).
- *
- * Fork-prevention: a second gap-spacer + fixed-slide width tween outside this
- * folder fails `pnpm collapse-fork:check` (scripts/check-collapse-fork.mjs).
  */
 import { useCallback, useMemo, useState } from "react";
 import { cn } from "../../lib/cn";

@@ -884,9 +884,8 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
       //    `mixHex()` in flow-weighted-edge.tsx emits a hex string. Measure
       //    what ships, not the continuous ideal.
       //
-      // The floor is the repo's own: ROLE_SEPARATION_DELTA_E (0.05) in
-      // scripts/check-role-distinctness.mjs, re-declared rather than imported
-      // because that module is a repo script, not a package dependency.
+      // The floor is the repo's role-separation ΔE (0.05), the same value
+      // derive-theme.ts uses as ROLE_SEPARATION_DELTA_E.
       const RAMP_STOPS = 5;
       const RAMP_MIN_DELTA_E = 0.05;
 
@@ -1175,9 +1174,8 @@ describe("themes.css — --ring is brand-derived (ADR 0027, #427)", () => {
     expect(
       /--ring:\s*var\(\s*--primary\s*\)\s*;/.test(block),
       `${theme}: --ring must be declared \`var(--primary)\`. If the ring is being ` +
-        `given an independent value again, restore the DISTINCT-RUNG assertion here, ` +
-        `the 1.4.11 row in the per-theme block, and the two MUST_DIFFER rows in ` +
-        `scripts/check-role-distinctness.mjs.`,
+        `given an independent value again, restore the DISTINCT-RUNG assertion here ` +
+        `and the 1.4.11 row in the per-theme block.`,
     ).toBe(true);
   });
 

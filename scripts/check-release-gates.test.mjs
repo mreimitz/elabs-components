@@ -500,7 +500,13 @@ test("the REAL ci.yml reaches individual gates THROUGH the runner step", () => {
   });
   assert.ok(ciGates.includes("gates"), "the runner step itself is recorded");
   assert.ok(ciGates.includes("gates:selftests"));
-  for (const g of ["docs:check", "manifest:check", "csp:check", "docs:check:test", "gates:test"]) {
+  for (const g of [
+    "tokens:check",
+    "manifest:check",
+    "csp:check",
+    "tokens:check:test",
+    "gates:test",
+  ]) {
     assert.ok(ciGates.includes(g), `${g} must be reachable through the runner`);
   }
   assert.ok(ciGates.length > 150, `expected the whole expanded battery, got ${ciGates.length}`);

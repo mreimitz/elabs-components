@@ -2,9 +2,8 @@
  * @elabs-ai/components-cli — the static-audit detector (token/style/anti-slop lint).
  *
  * Extracted from `bin/brand-ui.mjs` so the rule set is (a) unit-testable
- * (`test/audit.test.mjs`) and (b) reusable by the WP-15 anti-slop CI gate
- * (`scripts/check-anti-slop.mjs`) WITHOUT duplicating the slop patterns — one
- * source of truth. Pure string ops only (no `node:fs`), so it imports cleanly
+ * (`test/audit.test.mjs`) and (b) reusable WITHOUT duplicating the slop
+ * patterns — one source of truth. Pure string ops only (no `node:fs`), so it imports cleanly
  * into a pre-build CI gate and into a consuming project's CLI alike.
  *
  * SCOPE — this is the *deterministic* pass. It catches what a regex can prove on
@@ -27,8 +26,7 @@
  * CONTENT anti-slop — the "Jane Doe effect" (taste-skill §7). The high-value add
  * the audit lacked: generic placeholder names, fake-perfect numbers, and
  * startup-slop brand names baked into shipped source. Brand-agnostic and
- * deterministic, so this exact set is BOTH the audit's content pass AND the
- * ratcheted CI gate (`scripts/check-anti-slop.mjs`). Patterns are NON-global so
+ * deterministic, so this exact set is the audit's content pass. Patterns are NON-global so
  * they're safe for per-line `.test()`; `countContentSlop` clones them with `g`.
  *
  * Deliberately NARROW (low false-positive) — placeholder content is sometimes
@@ -287,8 +285,7 @@ export const RULES = [
     msg: "two+ em-dashes in a line — use commas/colons/periods",
   },
   // — content anti-slop (WP-15 "Jane Doe effect", taste-skill §7) —
-  // Advisory in the read-only audit (placeholders can be intentional); the
-  // ratcheted CI gate (scripts/check-anti-slop.mjs) is where these get teeth.
+  // Advisory in the read-only audit (placeholders can be intentional).
   ...CONTENT_SLOP_RULES.map((r) => ({
     ...r,
     advisory: true,
