@@ -81,24 +81,9 @@ Plug into the existing gate set rather than inventing a parallel one — `manife
 
 ## Release cadence & ownership
 
-- **Cadence: on demand, by the maintainer.** There is no train and no calendar —
-  a release is cut when there is something worth shipping, with
-  **`/release <version>`** (runbook: [`docs/RELEASING.md`](./docs/RELEASING.md)).
-  You prepare and verify locally; `.github/workflows/release.yml` is the only
-  thing that publishes.
-- **Versioning is lockstep**, across all 16 sites, written only by
-  `pnpm version:set X.Y.Z` and enforced by `pnpm version:check`. No independent
-  per-package versioning, and **no Changesets** — that direction was proposed
-  (issue #104), weighed and rejected in ADR
-  [`0020`](./docs/ADR/0020-lockstep-versioning.md), which records why and what it
-  costs; do not reintroduce a `.changeset/` directory.
-- **A package-affecting change records itself in `CHANGELOG.md`.** If your branch
-  touches `packages/<pkg>/src/**` of a shipped package, add a line under
-  `## Unreleased` saying what a **consumer** gets. `pnpm changelog-entry:check`
-  (in the CI battery) fails a branch that does not — the lockstep stand-in for
-  "a changeset is required for package-affecting PRs" (#64). Test-only,
-  story-only and app-only changes are exempt; `## Unreleased` is what `/release`
-  renames into the release notes, so an unrecorded change ships undocumented.
+- **Cadence: on demand, by the maintainer.** Merging the "Release: version packages" PR
+  publishes (runbook: [`docs/RELEASING.md`](./docs/RELEASING.md)); only
+  `.github/workflows/release.yml` publishes.
 - **Deprecations, breaking changes and the support window:**
   [`docs/DEPRECATION.md`](./docs/DEPRECATION.md) — deprecate in a minor, remove
   in the next major, ship migration steps in `CHANGELOG.md`.
@@ -110,6 +95,14 @@ Plug into the existing gate set rather than inventing a parallel one — `manife
   (does this already exist across `@elabs-ai/components-*` or `registry/`?) and
   decision **D4** in [`docs/DECISIONS.md`](./docs/DECISIONS.md) (stable shared
   primitive → package; prototype-specific composition → copy-own registry block).
+
+### Changesets
+
+- A PR that changes what a consumer of a shipped package gets runs `pnpm changeset` and
+  commits the file: bump (patch / minor / major) plus one consumer-facing line.
+- Every distributable is in one `fixed` group (`.changeset/config.json`), so versions stay
+  lockstep; root, plugin and MCP versions follow via `scripts/sync-version-extras.mjs`.
+- Test-, story- and app-only PRs need no changeset.
 
 ## Registry item requirements
 

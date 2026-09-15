@@ -12,10 +12,7 @@
  * with captured output, prints one line per gate as it finishes, reports EVERY
  * failure at the end, and exits 1 if any failed.
  *
- * DISCOVERY is pure and exported (`listGates`), because the release ratchet in
- * scripts/lib/workflow-gates.mjs expands a `pnpm gates` workflow step into the
- * individual names it runs — `scripts/release-gates-baseline.json` keeps
- * recording gates, never the runner:
+ * DISCOVERY is pure and exported (`listGates`):
  *
  *   gates     = every script named `*:check`, plus GATE_EXTRAS, minus
  *               COMPOSITES (a script whose command is `pnpm <other root script>
@@ -67,10 +64,8 @@ export const SLOW_GATES = new Set(["format:check", "consumer:check"]);
  * honest instead of silently widening the battery. Name → why.
  */
 export const NOT_PER_CHANGE_GATES = new Map([
-  ["changelog:check", "release preflight: a feature branch correctly has no `## v<next>` heading"],
   ["dep-field-move:check", "reads the git INDEX (`--staged`); it is the pre-commit hook's check"],
   ["marketplace:check", "post-release smoke: asserts the PUBLISHED marketplace pointer"],
-  ["release-verdict:check", "release path only: resolves the CI verdict for a tagged commit"],
 ]);
 
 /**

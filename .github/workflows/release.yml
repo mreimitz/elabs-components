@@ -1,48 +1,39 @@
-# Publish a version tag to the public npm registry.
+# Version and publish with Changesets (docs/RELEASING.md).
 #
-# THE DIVISION OF LABOUR: you prepare and verify locally, CI publishes. This is
-# the only place `pnpm publish` runs — no release ever originates from a laptop
-# or an unverified tree.
+# Every push to `main` runs changesets/action:
+#   - pending changesets in `.changeset/`  → open/update the "Version Packages" PR
+#     (`pnpm changeset:version`: bump the fixed group, stamp root + plugin + MCP
+#     versions, refresh the lockfile). Nothing publishes.
+#   - no pending changesets (that PR was just merged) → `pnpm release:publish`
+#     publishes every fixed-group version not yet on npm, tags it and creates the
+#     GitHub Releases. When nothing is new, it publishes nothing.
 #
-# It does NOT re-run the quality battery. Since #103 the release requires the
-# battery's VERDICT for the exact commit under the tag: `release-verdict:check`
-# refuses unless every blocking job of the newest `CI` run for this SHA concluded
-# success. Re-running it here cost 29 of a 38-minute release proving something
-# `main`'s own CI was proving concurrently on the identical commit.
-#
-# Two positions are asserted by `pnpm release-gates:check` rung 1 and must not
-# be reordered: `release-verdict:check` runs BEFORE `pnpm -r publish`, in the
-# publishing job. A verdict read after an immutable publish stops nothing.
-#
-# PRACTICAL CONSEQUENCE: push `main`, let CI go green on that commit, THEN tag.
-# A tag pushed ahead of its CI run fails at step 0 with "still pending" — which
-# is the correct answer, not a flake.
+# The quality battery is `ci.yml` on the PRs that land on `main`; this workflow does
+# not re-run it. What it DOES check is the artefact: the post-publish fresh-install
+# smoke installs what the registry serves.
 name: Release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+  workflow_dispatch: # manual rerun, e.g. after adding a missing secret
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
-  contents: write # create the GitHub Release and attach assets
-  id-token: write # npm provenance (best-effort; see the publish step)
+  contents: write # version commit, tags, GitHub Releases, release assets
+  pull-requests: write # the "Version Packages" PR
+  id-token: write # npm provenance (best-effort; see the changesets step)
 
 jobs:
-  publish:
-    name: Publish to npm
+  release:
+    name: Version or publish
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    # `npm-published` decouples `publish-registry` (below) from this job's
-    # OVERALL conclusion — see the "Publish" step's `id:` and the comment on
-    # `publish-registry`'s `if:` for why (PR #58 review, "Decouple registry
-    # publication from post-publish failures"). Evaluated from the "Publish"
-    # step's own outcome regardless of what any LATER step in this job does;
-    # if the "Publish" step itself never ran (an earlier step failed first),
-    # `steps.npm-publish.outcome` is empty, so this correctly resolves falsy.
     outputs:
-      npm-published: ${{ steps.npm-publish.outcome == 'success' }}
+      published: ${{ steps.changesets.outputs.published }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,20 +54,32 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # ── AUTH, PROVED BEFORE ANYTHING EXPENSIVE. The v4.0.0 run reached the
-      #    publish with no credential at all and died on `npm error code
-      #    ENEEDAUTH` after ~6 minutes of verdict + build + preflight work:
-      #    `NODE_AUTH_TOKEN` is inert on its own — SOMETHING has to write the
-      #    `//registry.npmjs.org/:_authToken=` line, and `setup-node` only does
-      #    that when given `registry-url` (which it was not).
-      #
-      #    `registry-url` above is the fix; this step is the proof. It writes the
-      #    line into `~/.npmrc` as well, because pnpm reads that file directly
-      #    while setup-node's copy lives behind `NPM_CONFIG_USERCONFIG` — and
-      #    then asks the registry who we are. A missing, empty, expired or
-      #    wrong-account token fails HERE, where the fix is free, instead of at
-      #    the one step in this workflow that cannot be undone.
+      # Will this run publish? Only when no changesets are pending AND some
+      # distributable's tree version is not on npm yet (this also resumes a partial
+      # publish). Otherwise the publish script is left unset, so a routine push to
+      # `main` neither builds the packages nor needs the npm credential.
+      - name: Release mode
+        id: mode
+        run: |
+          pending="$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')"
+          publish=false
+          if [ "$pending" = "0" ]; then
+            for spec in $(node --input-type=module -e "import { distributablePackages } from './scripts/lib/distributables.mjs'; for (const p of distributablePackages()) console.log(p.name + '@' + p.version)"); do
+              if ! npm view "$spec" version >/dev/null 2>&1; then
+                echo "not on npm yet: $spec"
+                publish=true
+              fi
+            done
+          fi
+          echo "pending changesets: $pending; publish: $publish"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+
+      # ── AUTH, PROVED BEFORE THE IRREVERSIBLE STEP. `NODE_AUTH_TOKEN` is inert on
+      #    its own; setup-node writes the auth line only because `registry-url` is
+      #    set, and pnpm reads ~/.npmrc directly, so the line goes there too. A
+      #    missing or wrong token fails here, where the fix is free.
       - name: Registry authentication
+        if: steps.mode.outputs.publish == 'true'
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -88,160 +91,61 @@ jobs:
           printf '//registry.npmjs.org/:_authToken=%s\n' "${NPM_TOKEN}" >> "${HOME}/.npmrc"
           echo "npm identity: $(npm whoami --registry https://registry.npmjs.org)"
 
-      # ── step 0: the battery already passed on THIS commit, and here is the run
-      - name: Require the battery's verdict for this commit
-        run: pnpm release-verdict:check --out release-verdict.json
-
-      # ── the PACKAGES only. ci.yml already ran the full `pnpm build` on this
-      #    commit, but on a different runner, and publishConfig.exports points at
-      #    dist/ — so this job needs its own copy. Building apps/docs here would
-      #    add ~3 minutes for a Storybook site nothing publishes.
-      - name: Build the packages
-        run: pnpm build:packages
-
-      # ── the tag and the tree must name the same version ─────────────────────
-      - name: Tag agrees with the tree
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          tree="$(node -p "require('./package.json').version")"
-          if [ "$tag" != "$tree" ]; then
-            echo "::error::tag v$tag does not match the tree's version $tree — run 'pnpm version:set' first"
-            exit 1
-          fi
-          pnpm version:check
-
-      - name: Publish preflight
-        run: |
-          pnpm publish-ready:check
-          pnpm publish-ready:check:test
-
-      # RELEASE_NOTES.md is a REQUIRED Release asset and is extracted from the
-      # `## v<version>` section, so an un-renamed changelog must fail here —
-      # before the publish — not at `gh release create` afterwards.
-      - name: Changelog is release-ready
-        run: pnpm changelog:check
-
-      # ── the plugin pointer consumers follow must already name this version.
-      #    Needs nothing the publish produces, so it runs while a fix is still
-      #    "push main and re-tag" rather than 12 immutable versions.
-      #
-      #    The `if:` is redundant against the current `on:` (tags only) and is
-      #    kept deliberately: it is what lets `write-release-report.mjs` record
-      #    this step as `skipped` rather than `passed` on any non-tag invocation,
-      #    so a dry run can never produce a report claiming a check that never
-      #    executed. Removing it fails `pnpm release-report:test`.
-      - name: Marketplace pointer preflight
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: pnpm marketplace:check
-
-      - name: Write the validation report
-        run: pnpm release:report
-
-      # ── the irreversible step ──────────────────────────────────────────────
-      #
-      # `--access public` is explicit rather than inherited: a scoped package
-      # defaults to restricted, and the failure mode is a release that publishes
-      # but nobody can install.
-      #
-      # NPM_CONFIG_PROVENANCE is BEST-EFFORT. Provenance needs npm's OIDC support
-      # and a public repo; if the pnpm version in use ignores the setting the
-      # publish still succeeds, unattested. It is deliberately an env var and not
-      # a `--provenance` flag, because an unrecognised FLAG would abort the
-      # publish mid-release.
-      - name: Publish
-        id: npm-publish
-        run: pnpm -r publish --access public --no-git-checks
+      # `access: public` lives in .changeset/config.json (a scoped package defaults to
+      # restricted). NPM_CONFIG_PROVENANCE is an env var, not a flag, so a pnpm that
+      # ignores it still publishes (unattested) instead of aborting mid-release.
+      - name: Version PR or publish
+        id: changesets
+        uses: changesets/action@v2
+        with:
+          version-script: pnpm changeset:version
+          publish-script: ${{ steps.mode.outputs.publish == 'true' && 'pnpm release:publish' || '' }}
+          commit-message: "release: version packages"
+          pr-title: "Release: version packages"
+          create-github-releases: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
 
-      # ── the record: agent kit, plugin, rollback tarballs, ground truth ──────
-      - name: Build the release record
+      # ── after a publish: attach the agent kit + plugin zips to the CLI's release ─
+      - name: Build and attach the agent kit and plugin
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          version="$(node -p "require('./package.json').version")"
           pnpm release:agent-kit
           pnpm release:plugin
-          pnpm release:snapshot
+          gh release upload "@elabs-ai/components-cli@${version}" \
+            "release/v${version}/brand-ui-agent-kit-${version}.zip" \
+            "release/v${version}/brand-ui-plugin-${version}.zip" --clobber
 
-      # `--notes-file` reads RELEASE_BODY.md, not RELEASE_NOTES.md: GitHub rejects a
-      # release body over 125,000 characters with `HTTP 422 … body is too long`, and
-      # that rejection lands AFTER `pnpm -r publish` — the packages are out and
-      # immutable while the Release does not exist. v4.1.0 hit it at 170,178 chars.
-      # `releaseBodyFromNotes` (scripts/release-snapshot.mjs) caps the body at a line
-      # boundary and footers it with where to read the rest; the FULL notes still ship
-      # as RELEASE_NOTES.md inside release-record-<version>.zip and in CHANGELOG.md.
-      - name: Create the GitHub Release
-        run: |
-          version="${GITHUB_REF_NAME#v}"
-          gh release create "$GITHUB_REF_NAME" \
-            --title "$GITHUB_REF_NAME" \
-            --notes-file "release/v$version/RELEASE_BODY.md" \
-            release/v$version/*.tgz \
-            release/v$version/*.zip \
-            release/v$version/release-manifest.json \
-            release/v$version/validation-report.json \
-            release/v$version/validation-report.md
-
-      # ── the check `npm view` cannot make: install what the registry SERVES.
-      #    Run in this job, not a dependent one, because it reads the snapshot
-      #    folder — `release/` is git-ignored and the runner is discarded when
-      #    the job ends.
+      # ── the check `npm view` cannot make: install what the registry SERVES ─────
       - name: Post-release fresh-install smoke
-        run: pnpm release:smoke --manifest "release/v${GITHUB_REF_NAME#v}/release-manifest.json"
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.published-packages }}
+        run: |
+          printf '%s' "$PUBLISHED_PACKAGES" > "$RUNNER_TEMP/published-packages.json"
+          pnpm release:smoke --manifest "$RUNNER_TEMP/published-packages.json"
 
   # ── host the built shadcn registry on GitHub Pages (#31) ───────────────────
   #
-  # `needs: publish` — this only runs once the npm packages for this exact tag
-  # are out; a registry publish for a version whose packages failed to ship
-  # would advertise blocks nobody can `npx shadcn add` against consistently.
+  # Runs whenever the npm publish itself succeeded — `!cancelled()` opts out of the
+  # default `needs:` gate, so a failure in a post-publish step above (which cannot
+  # undo the publish) does not withhold the registry for packages already out.
   #
-  # `if:` is DELIBERATELY not the implicit default (`needs.publish` result ==
-  # success). PR #58 review, "Decouple registry publication from post-publish
-  # failures": the `publish` job's LAST three steps (release record, GitHub
-  # Release, post-release smoke) run strictly after the irreversible `pnpm -r
-  # publish`, so a failure in any of them — none of which can undo the npm
-  # publish — used to also skip this job outright (GitHub Actions' default
-  # `needs:` behaviour treats any non-success upstream conclusion as a reason
-  # to skip a downstream job). That is the wrong failure mode: the packages
-  # are already out, so the registry should still get published for them.
-  # `!cancelled()` opts out of that default gate and the second clause reads
-  # the `publish` job's own `npm-published` output (set from the "Publish"
-  # step's outcome specifically, not the job's overall conclusion) — so this
-  # job runs whenever npm publish itself succeeded, REGARDLESS of what a
-  # later step in that job did, and still correctly skips when npm publish
-  # failed or the job was cancelled.
-  #
-  # HOW: `scripts/publish-registry-pages.mjs` pushes the built JSON to a
-  # `gh-pages` branch (a plain git push, not `actions/deploy-pages`) at
-  # `r/<version>/*.json` plus a moving `r/latest/*.json` alias — see that
-  # script's header comment for why a branch push is the right mechanism here
-  # (works whether or not Pages is enabled yet, and is naturally cumulative
-  # across releases). `contents: write` at the workflow level already covers
-  # the push.
-  #
-  # THIS DOES NOT ENABLE GITHUB PAGES. Pushing a branch is an ordinary git
-  # operation; GitHub only starts SERVING it once a human sets, once,
-  # Settings → Pages → "Deploy from a branch" → gh-pages → /(root) on the repo.
-  # That switch is deliberately not flipped by this workflow — see #31.
+  # A push made with the default GITHUB_TOKEN does not trigger a Pages "Deploy from
+  # a branch" build, so checkout uses PAGES_DEPLOY_TOKEN and the first step proves it
+  # exists. This does not enable Pages; that is a one-time repo setting (#31).
   publish-registry:
     name: Publish the registry to GitHub Pages
-    needs: publish
-    if: ${{ !cancelled() && needs.publish.outputs.npm-published == 'true' }}
+    needs: release
+    if: ${{ !cancelled() && needs.release.outputs.published == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # ── AUTH, PROVED BEFORE ANYTHING ELSE (mirrors "Registry authentication"
-      #    in the `publish` job above). PR #58 review, "Use credentials that
-      #    trigger the Pages branch build": GitHub documents that a push made
-      #    with the default `GITHUB_TOKEN` does NOT trigger a "Deploy from a
-      #    branch" Pages build — see actions/toolkit#247 and
-      #    JuliaDocs/Documenter.jl#1177. `actions/checkout` below is therefore
-      #    given a maintainer-provided token instead of the implicit default,
-      #    and THIS step fails loudly, before checkout, if that secret was
-      #    never added — rather than letting `git push` deep inside
-      #    `publish-registry-pages.mjs` either fail with a confusing
-      #    permission error, or (worse) silently SUCCEED as a git push while
-      #    Pages never rebuilds, which is the failure mode this whole finding
-      #    is about.
       - name: Verify Pages deploy credential
         env:
           PAGES_DEPLOY_TOKEN: ${{ secrets.PAGES_DEPLOY_TOKEN }}
@@ -249,9 +153,8 @@ jobs:
           if [ -z "${PAGES_DEPLOY_TOKEN}" ]; then
             echo "::error::secrets.PAGES_DEPLOY_TOKEN is empty — a push made with the default" >&2
             echo "GITHUB_TOKEN does not trigger a GitHub Pages 'Deploy from a branch' build," >&2
-            echo "so the registry would appear to publish successfully while the hosted site" >&2
-            echo "never actually updates. Add a fine-grained PAT (Contents: Read and write on" >&2
-            echo "this repo) or a deploy key as the PAGES_DEPLOY_TOKEN repository secret." >&2
+            echo "so the hosted registry would never update. Add a fine-grained PAT (Contents:" >&2
+            echo "Read and write on this repo) as the PAGES_DEPLOY_TOKEN repository secret." >&2
             exit 1
           fi
 

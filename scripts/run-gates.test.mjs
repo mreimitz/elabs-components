@@ -47,9 +47,9 @@ const FIXTURE_PKG = {
     "composite:check": "pnpm a:check && pnpm b:check", // composite → excluded
     "format:check": "prettier --check .", // SLOW
     "consumer:check": "node scripts/check-consumer-install.mjs", // SLOW
-    "changelog:check": "node scripts/check-changelog.mjs", // NOT_PER_CHANGE
+    "marketplace:check": "node scripts/release-smoke.mjs --pointer-only", // NOT_PER_CHANGE
     "ci-scope:test": "node --test scripts/resolve-ci-scope.test.mjs", // own CI step
-    "release-report:test": "node --test scripts/write-release-report.test.mjs",
+    "c:check:test": "node --test scripts/write-release-report.test.mjs",
     "odd:test": "vitest run", // not the self-test shape
     "check:changed": "turbo run typecheck lint test --filter=...[origin/main]",
     build: "turbo run build",
@@ -73,7 +73,7 @@ test("gates: --all adds the slow gates back", () => {
   const all = listGates({ pkgJson: FIXTURE_PKG, kind: "gates", all: true });
   for (const slow of SLOW_GATES) assert.ok(all.includes(slow), `${slow} runs under --all`);
   assert.ok(!all.includes("composite:check"), "a composite is never a gate");
-  assert.ok(!all.includes("changelog:check"), "a not-per-change gate is never a gate");
+  assert.ok(!all.includes("marketplace:check"), "a not-per-change gate is never a gate");
 });
 
 test("gates: --docs-only drops exactly the source-only groups", () => {
@@ -91,7 +91,7 @@ test("selftests: `*:test` in the one node --test shape, minus the own-step one",
   assert.deepEqual(listGates({ pkgJson: FIXTURE_PKG, kind: "selftests" }), [
     "a:check:test",
     "b:check:test",
-    "release-report:test",
+    "c:check:test",
   ]);
   assert.deepEqual(listGates({ pkgJson: FIXTURE_PKG, kind: "selftests", docsOnly: true }), []);
   assert.equal(selfTestFile("node --test scripts/x.test.mjs"), "scripts/x.test.mjs");
