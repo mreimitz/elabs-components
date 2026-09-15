@@ -67,13 +67,21 @@ export function readThemesCss() {
       );
     }
   });
-  const css = parts.join("\n");
+  return joinThemeSources(parts, ACTIVE_THEMES);
+}
 
-  const missing = ACTIVE_THEMES.filter((t) => !css.includes(`[data-theme="${t}"]`));
+/**
+ * Concatenate already-read theme sources (engine first) and throw when the set
+ * lacks any expected theme's block. Pure — `scripts/check/context.mjs` feeds it
+ * in-memory fixture text through the same completeness check.
+ */
+export function joinThemeSources(parts, themes) {
+  const css = parts.join("\n");
+  const missing = themes.filter((t) => !css.includes(`[data-theme="${t}"]`));
   if (missing.length > 0) {
     throw new Error(
       `theme-sources: no [data-theme="…"] block found for ${missing.join(", ")} in ` +
-        `${themeSourcePaths().length} source file(s). Re-point themeSourcePath() after ` +
+        `${parts.length} source file(s). Re-point themeSourcePath() after ` +
         "a rename or a move; do NOT let the gate audit the remaining blocks silently.",
     );
   }

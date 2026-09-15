@@ -182,3 +182,19 @@ title=…` (→ `role="img"` + `aria-label`), or the icon-only control carries `
 <!-- brand-ui:gen:conventions:end -->
 
 History and measurements: `docs/rules-history/*.md` (per merged rule, kept as archive).
+
+<!-- brand-ui:gen:check-rules:start -->
+
+## Checked conventions
+
+Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `doc`, never this block; `pnpm check` enforces each line.
+
+### Themes
+
+- Every theme block (`:root` and each `[data-theme]`) defines every semantic token; only `:root` machinery (`--decoration*`, `--deco-*`, `--paper-*`, `--duration-*`, `--t-*`, `--motion-*`, `--radius*`, `--font-*`) is exempt. (`theme-parity`)
+
+### Components
+
+- Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source. (`raw-palette`)
+
+<!-- brand-ui:gen:check-rules:end -->
