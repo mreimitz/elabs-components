@@ -197,4 +197,22 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 
 - Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source. (`raw-palette`)
 
+### Packages
+
+- `@elabs-ai/components-ai` imports `ai` / `@ai-sdk/*` as types only (`import type`, inline `type` specifiers); runtime values like `useChat` belong in the consuming app (ADR 0008, D6). (`ai-sdk-types-only`)
+- `@elabs-ai/components-*` runtime deps (`dependencies`/`peerDependencies`) follow the one-way DAG `tokens → ui/icons → layer-2 leaves → process`; every package is registered in `ALLOWED`, and a shared piece moves down, never sideways. (`dep-direction`)
+- Reach heavy engines (mermaid, Rive, xterm, React Flow, media-chrome, viewer parsers) and a package's own optional peers only via dynamic `import()` or a `@lazy-boundary` module in `ai`/`terminal`/`viewer` src; never import a `@lazy-boundary` module statically. (`eager-heavy-deps`)
+- An optional peer is not also installed through a plain transitive dependency (resolved from `pnpm-lock.yaml`); the known, disclosed exceptions in the rule's `KNOWN_DEFEATS` are exact — remove one the day it goes clean. (`optional-peer-transitives`)
+
+### Registry
+
+- Every relative import in a registry item resolves both at its repo `path` and at its install `target` layout; keep `target` folders mirroring the repo tree. (`registry-resolve`)
+
+### Repo
+
+- `pnpm-lock.yaml` never repeats a sibling mapping key (a bad merge breaks `--frozen-lockfile` and silently stops CI); dedupe or regenerate with `pnpm install --lockfile-only`. (`lockfile-dup-keys`)
+- Shipped plugin skills and agents reference no repo-internal plumbing (`/file-issue`, `.claude/`, `packages/`, `apps/`, maintainer agents); end users install them without this monorepo. (`plugin-consumer-clean`)
+- The Claude plugin installs whole: `plugin.json` and `marketplace.json` agree on version, every declared skill/agent path starts `./` and resolves, the `brand-ui-start` router is user-invocable, MCP servers are http or stdio, and shared skill docs exist exactly once. (`plugin-manifest`)
+- The root `test` script runs `turbo run test --concurrency=<int>`; never raise a vitest `testTimeout` to absorb CPU oversubscription (#80). (`test-concurrency`)
+
 <!-- brand-ui:gen:check-rules:end -->

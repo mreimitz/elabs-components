@@ -1,0 +1,41 @@
+{
+  "removeScripts": [
+    "ai:types-only",
+    "ai:types-only:test",
+    "dep-direction:check",
+    "dep-direction:check:test",
+    "heavy-deps:check",
+    "heavy-deps:check:test",
+    "optional-peers:check",
+    "optional-peers:check:test",
+    "lockfile:check",
+    "lockfile:check:test",
+    "test-concurrency:check",
+    "test-concurrency:check:test",
+    "registry:resolve:check",
+    "registry:resolve:check:test",
+    "plugin:check",
+    "plugin:check:test",
+    "plugin:consumer-clean:check",
+    "plugin:consumer-clean:check:test"
+  ],
+  "keptScripts": [
+    {
+      "script": "optional-peer-types:check",
+      "reason": "Reads BUILT packages/*/dist/**/*.d.ts (gitignored, only present after `pnpm build`); ctx lists git files only, so a rule could not see the input. Must keep running after the Build step."
+    },
+    {
+      "script": "optional-peer-types:check:test",
+      "reason": "Self-test of the kept optional-peer-types script (includes a real tsc consumer check)."
+    },
+    {
+      "script": "dep-field-move:check",
+      "reason": "Reads the git INDEX (`--staged` vs HEAD) and spawns `gen-attributions.mjs --check`; it is the pre-commit hook's check. A full-tree variant is meaningless (a move needs a before/after)."
+    },
+    {
+      "script": "dep-field-move:check:test",
+      "reason": "Self-test of the kept dep-field-move script (stages a package.json; already SERIAL_SELFTESTS)."
+    }
+  ],
+  "notes": "Rules added: dep-direction, eager-heavy-deps, ai-sdk-types-only, optional-peer-transitives, lockfile-dup-keys, test-concurrency, registry-resolve, plugin-manifest (was check-plugin), plugin-consumer-clean. All baseline 'none' (every old gate was at 0 / exact) — no baseline.json entries. INTEGRATOR: (1) remove `ai:types-only` from GATE_EXTRAS and `dep-direction:check`/`heavy-deps:check`/`optional-peers:check` from the fast list in scripts/run-gates.mjs (+ the `ai:types-only` fixture line in scripts/run-gates.test.mjs); keep `optional-peer-types:check` there. (2) .githooks/pre-commit still calls `node scripts/check-registry-resolve.mjs` — that file is now a thin shim running `run.mjs --rule registry-resolve` (works, exit codes verified); optionally repoint the hook and delete the shim. (3) scripts/release-gates-baseline.json lists the removed npm scripts (release group). (4) Stale prose refs to deleted files: .claude/rules/ai.md:40 and .claude/rules/registry.md:46 (check-dep-direction.mjs → scripts/check/rules/dep-direction.mjs), .claude/rules/registry.md:54 (`pnpm registry:resolve:check` → `pnpm check --rule registry-resolve`), .claude/rules/quality-gates.md (`ALLOWED` in scripts/check-dep-direction.mjs), CLAUDE.md-adjacent dependency-line docs; docs/SKILLS.md:131; ADRs 0008/0016/0018/0019/0024/0032/0034, docs/decisions/2026-09-01-brainless-adoption-architecture.md, docs/rules-history/*.md (historical — optional); comments in scripts/check-charts-reuse.mjs:50, scripts/check-charts-test-double.mjs:160 (contract-b), scripts/gen-registry.mjs:27, apps/docs/.storybook/main.ts:84, packages/ai/src/_lazy-mermaid-absent.test.ts:37. Behaviour deltas: test-concurrency no longer accepts a TURBO_CONCURRENCY env var instead of the flag (rules are hermetic); optional-peer-transitives' two-directional baseline moved into the rule as KNOWN_DEFEATS (exact: new AND stale both fail); eager-heavy-deps' empty keys baseline became 'none'. No runner core changes; scripts/lib/distributables.mjs untouched. UNCLAIMED by any group: scripts/check-format.test.mjs (self-test for `format:check`) and scripts/check-gen.test.mjs (self-test for `brand-ui gen`) — test files with no scripts/check-*.mjs of their own; every scripts/check-*.mjs is claimed."
+}
