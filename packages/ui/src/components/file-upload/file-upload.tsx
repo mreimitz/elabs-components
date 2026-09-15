@@ -342,39 +342,56 @@ export const FileUpload = forwardRef<HTMLDivElement, FileUploadProps>(function F
 // FileUploadDropzone
 // ---------------------------------------------------------------------------
 
-export interface FileUploadDropzoneProps extends HTMLAttributes<HTMLElement> {
-  /** Label for the visually-hidden file picker link (for SR users). */
+export interface FileUploadDropzoneProps extends HTMLAttributes<HTMLDivElement> {
+  /** Label for the default "Browse files" button. */
   browseLabel?: string;
 }
 
 /**
  * FileUploadDropzone — the drag-and-drop target.
  *
- * Uses a `<label>` wrapping the hidden `<input>` so the ENTIRE zone is ONE hit
- * target — no `<div onClick>`.  Keyboard users get the Browse button as a
- * complementary path.
+ * A plain `<div>` drop surface with exactly ONE keyboard-reachable control:
+ *
+ * - Default content: a real `<button>` ("Browse files") is the tab stop; the
+ *   zone itself carries no role and no tab stop, so nothing interactive is
+ *   nested inside another interactive element.
+ * - Custom `children`: there is no inner button, so the zone itself becomes
+ *   the control (`role="button"`, a tab stop, Enter/Space). Custom children
+ *   must then be non-interactive content.
+ *
+ * A pointer click anywhere on the zone also opens the picker — a mouse
+ * convenience on top of the keyboard path above, never the only path.
  */
-export const FileUploadDropzone = forwardRef<HTMLElement, FileUploadDropzoneProps>(
-  function FileUploadDropzone({ className, children, browseLabel, ...props }, ref) {
-    const { isDragging, disabled, inputId, openPicker } = useFileUpload();
+export const FileUploadDropzone = forwardRef<HTMLDivElement, FileUploadDropzoneProps>(
+  function FileUploadDropzone(
+    { className, children, browseLabel, onClick, onKeyDown, ...props },
+    ref,
+  ) {
+    const { isDragging, disabled, openPicker } = useFileUpload();
     const { t } = useLocale();
     const resolvedBrowseLabel = browseLabel ?? t("ui.fileUpload.browseFiles");
+    // With custom children there is no inner button, so the zone owns the
+    // one keyboard path itself.
+    const isSelfControl = children != null;
 
     return (
-      // label wraps the hidden input — clicking anywhere on the zone opens the
-      // picker. A `<label>` is not itself keyboard-operable (no native
-      // Enter/Space activation and, since the input carries `tabIndex={-1}`,
-      // nothing here is in the tab order) — that leaves a custom-`children`
-      // dropzone with no keyboard path at all, so this also owns its own
-      // tab stop + Enter/Space handling.
-      <label
-        ref={ref as React.Ref<HTMLLabelElement>}
-        htmlFor={inputId}
-        tabIndex={disabled ? undefined : 0}
-        role="button"
+      <div
+        ref={ref}
+        role={isSelfControl ? "button" : undefined}
+        tabIndex={isSelfControl && !disabled ? 0 : undefined}
+        // Also on the default (role-less) zone: it marks the dimmed copy as
+        // inactive UI, which WCAG 1.4.3 exempts from contrast — the same
+        // exemption a `<label>` of a disabled control gets.
         aria-disabled={disabled || undefined}
+        onClick={(e) => {
+          onClick?.(e);
+          if (disabled || e.defaultPrevented) return;
+          openPicker();
+        }}
         onKeyDown={(e) => {
-          if (disabled) return;
+          onKeyDown?.(e);
+          if (!isSelfControl || disabled || e.defaultPrevented) return;
+          if (e.target !== e.currentTarget) return;
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             openPicker();
@@ -409,7 +426,9 @@ export const FileUploadDropzone = forwardRef<HTMLElement, FileUploadDropzoneProp
                   type="button"
                   disabled={disabled}
                   onClick={(e) => {
-                    e.preventDefault();
+                    // The zone's own click handler opens the picker; stop the
+                    // bubble so one activation opens it exactly once.
+                    e.stopPropagation();
                     openPicker();
                   }}
                   className={cn(
@@ -428,7 +447,7 @@ export const FileUploadDropzone = forwardRef<HTMLElement, FileUploadDropzoneProp
             </div>
           </>
         )}
-      </label>
+      </div>
     );
   },
 );
