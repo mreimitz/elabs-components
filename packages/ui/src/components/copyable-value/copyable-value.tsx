@@ -19,6 +19,10 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { useCopyToClipboard } from "../../lib/use-copy-to-clipboard";
 import { useLocale } from "../locale-provider";
+import { toast } from "../sonner";
+
+/** ms the copy-confirmation toast stays on screen. */
+export const COPYABLE_VALUE_TOAST_MS = 1000;
 
 export interface CopyableValueProps extends Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -79,7 +83,14 @@ export const CopyableValue = forwardRef<HTMLButtonElement, CopyableValueProps>(
           onClick={(event) => {
             onClick?.(event);
             if (!event.defaultPrevented) {
-              void copy(value);
+              // The toast is the visible confirmation; it needs an app-mounted
+              // `<Toaster />` and is a silent no-op without one, which is why
+              // the live region below stays as the always-present fallback.
+              void copy(value).then((ok) => {
+                if (ok) {
+                  toast(t("ui.copyableValue.copied"), { duration: COPYABLE_VALUE_TOAST_MS });
+                }
+              });
             }
           }}
         >

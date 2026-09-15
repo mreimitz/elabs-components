@@ -1,11 +1,21 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
+import { Toaster } from "../sonner";
 import { CopyableValue } from "./copyable-value";
 
 const meta = {
   title: "Display/CopyableValue",
   component: CopyableValue,
   tags: ["autodocs"],
+  // The copy toast needs a host; apps mount one `<Toaster />` at their root.
+  decorators: [
+    (Story) => (
+      <>
+        <Story />
+        <Toaster />
+      </>
+    ),
+  ],
   parameters: {
     docs: {
       description: {

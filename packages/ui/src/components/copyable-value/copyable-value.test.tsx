@@ -11,7 +11,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CopyableValue } from "./copyable-value";
+import { toast } from "../sonner";
+import { CopyableValue, COPYABLE_VALUE_TOAST_MS } from "./copyable-value";
+
+vi.mock("../sonner", () => ({ toast: vi.fn() }));
 
 /** Install a clipboard stub for one test; returns the writeText spy. */
 function stubClipboard(impl: () => Promise<void> = () => Promise.resolve()) {
@@ -36,6 +39,30 @@ describe("CopyableValue", () => {
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith("50012102.632741");
     });
+  });
+
+  it("shows a one-second toast once the copy succeeds", async () => {
+    vi.mocked(toast).mockClear();
+    stubClipboard();
+    render(<CopyableValue value="42">42</CopyableValue>);
+
+    fireEvent.click(screen.getByRole("button"));
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith("Copied", { duration: COPYABLE_VALUE_TOAST_MS });
+    });
+    expect(COPYABLE_VALUE_TOAST_MS).toBe(1000);
+  });
+
+  it("shows no toast when the copy fails", async () => {
+    vi.mocked(toast).mockClear();
+    stubClipboard(() => Promise.reject(new Error("denied")));
+    render(<CopyableValue value="42">42</CopyableValue>);
+
+    fireEvent.click(screen.getByRole("button"));
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("");
+    });
+    expect(toast).not.toHaveBeenCalled();
   });
 
   it("falls back to the exact value as its own display", () => {
