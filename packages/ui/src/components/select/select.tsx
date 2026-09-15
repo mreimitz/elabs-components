@@ -1,3 +1,5 @@
+"use client";
+
 import {
   forwardRef,
   useEffect,
@@ -121,7 +123,7 @@ export const SelectTrigger = forwardRef<
       data-size={size}
       title={title}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-control border border-input bg-input-background px-3 py-2 text-sm shadow-input",
+        "flex w-full items-center justify-between gap-2 rounded-control border border-input bg-input-background px-3 py-2 text-body shadow-input",
         size === "sm" ? "h-control-sm" : "h-control",
         "placeholder:text-muted-foreground focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
         // No `disabled:cursor-*` override — disabled controls keep the arrow
@@ -154,7 +156,7 @@ export const SelectContent = forwardRef<
         ref={ref}
         position={position}
         className={cn(
-          "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md bg-popover text-popover-foreground shadow-ring-md",
+          "relative z-50 max-h-96 min-w-[12rem] overflow-hidden rounded-md bg-popover text-popover-foreground shadow-ring-md",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
           "data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2",
           position === "popper" &&
@@ -190,7 +192,7 @@ export const SelectLabel = forwardRef<
   return (
     <SelectPrimitive.Label
       ref={ref}
-      className={cn("px-2 py-1.5 text-xs font-semibold text-muted-foreground", className)}
+      className={cn("px-2 py-1.5 text-meta font-semibold text-muted-foreground", className)}
       {...props}
     />
   );
@@ -204,7 +206,7 @@ export const SelectItem = forwardRef<
     <SelectPrimitive.Item
       ref={ref}
       className={cn(
-        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 ps-2 pe-8 text-sm outline-none transition-colors duration-fast",
+        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 ps-2 pe-8 text-body outline-none transition-colors duration-fast",
         "focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}

@@ -1,7 +1,8 @@
+"use client";
+
 // a2ui.exposed: yes
 import { forwardRef, useCallback, useRef, useState, type HTMLAttributes } from "react";
 import { Minus, Plus } from "lucide-react";
-import { cn } from "../../lib/cn";
 import { InputGroup, InputGroupButton, InputGroupInput } from "../input-group";
 import { useLocale } from "../locale-provider";
 
@@ -121,7 +122,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
   },
   ref,
 ) {
-  const { locale, formatNumber } = useLocale();
+  const { locale, formatNumber, t } = useLocale();
   const isControlled = valueProp !== undefined;
 
   const formatValue = useCallback(
@@ -213,7 +214,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
   return (
     <InputGroup className={className} {...props}>
       <InputGroupButton
-        aria-label="Decrease"
+        aria-label={t("ui.numberInput.decrease")}
         tabIndex={-1}
         disabled={decrementDisabled}
         onClick={() => applyStep(-step)}
@@ -246,7 +247,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
         onBlur={handleBlur}
       />
       <InputGroupButton
-        aria-label="Increase"
+        aria-label={t("ui.numberInput.increase")}
         tabIndex={-1}
         disabled={incrementDisabled}
         onClick={() => applyStep(step)}

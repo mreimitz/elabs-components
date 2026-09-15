@@ -1,10 +1,11 @@
+"use client";
+
 import {
   createContext,
   forwardRef,
   useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
   type ComponentProps,
   type ElementRef,
@@ -16,6 +17,7 @@ import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-reac
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { Button } from "../button";
+import { useLocale } from "../locale-provider";
 
 /**
  * True when the keyboard event's target already owns arrow-key semantics of
@@ -78,26 +80,19 @@ export const Carousel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
       // aria-roledescription changes the announcement, it does not name the
       // landmark. Default is overridable; pass a specific label ("Product
       // photos") when the carousel's purpose isn't generic. Issue #279.
-      "aria-label": ariaLabel = "Carousel",
+      "aria-label": ariaLabel,
       ...props
     },
     ref,
   ) {
+    const { t } = useLocale();
+    const resolvedAriaLabel = ariaLabel ?? t("ui.carousel.label");
     const [carouselRef, api] = useEmblaCarousel(
       { ...opts, axis: orientation === "horizontal" ? "x" : "y" },
       plugins,
     );
     const [canScrollPrev, setCanScrollPrev] = useState(false);
     const [canScrollNext, setCanScrollNext] = useState(false);
-    const rootRef = useRef<HTMLDivElement | null>(null);
-    const setRootRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        rootRef.current = node;
-        if (typeof ref === "function") ref(node);
-        else if (ref) (ref as { current: HTMLDivElement | null }).current = node;
-      },
-      [ref],
-    );
     const dir = useDirection();
 
     const onSelect = useCallback((a: CarouselApi) => {
@@ -132,10 +127,18 @@ export const Carousel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
         const isRtl = dir === "rtl";
         if (e.key === "ArrowLeft") {
           e.preventDefault();
-          isRtl ? scrollNext() : scrollPrev();
+          if (isRtl) {
+            scrollNext();
+          } else {
+            scrollPrev();
+          }
         } else if (e.key === "ArrowRight") {
           e.preventDefault();
-          isRtl ? scrollPrev() : scrollNext();
+          if (isRtl) {
+            scrollPrev();
+          } else {
+            scrollNext();
+          }
         }
       },
       [orientation, dir, scrollPrev, scrollNext],
@@ -174,7 +177,7 @@ export const Carousel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
           className={cn("relative", className)}
           role="region"
           aria-roledescription="carousel"
-          aria-label={ariaLabel}
+          aria-label={resolvedAriaLabel}
           {...props}
         >
           {children}
@@ -222,20 +225,28 @@ export const CarouselItem = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEle
   },
 );
 
-export function CarouselPrevious({ className, ...props }: ComponentProps<typeof Button>) {
+export const CarouselPrevious = forwardRef<
+  ElementRef<typeof Button>,
+  ComponentProps<typeof Button>
+>(function CarouselPrevious({ className, ...props }, ref) {
   const { scrollPrev, canScrollPrev, orientation } = useCarousel();
+  const { t } = useLocale();
   return (
     <Button
+      ref={ref}
       variant="outline"
       size="icon"
       disabled={!canScrollPrev}
       onClick={scrollPrev}
-      aria-label="Previous slide"
+      aria-label={t("previousSlide")}
       className={cn(
         "absolute size-8 rounded-full",
+        // Inset on narrow screens (no room for the button to sit outside
+        // the carousel box without overflowing horizontally); pushed
+        // outside the box only from `sm` up, where there's margin for it.
         orientation === "horizontal"
-          ? "-start-12 top-1/2 -translate-y-1/2"
-          : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+          ? "start-2 top-1/2 -translate-y-1/2 sm:-start-12"
+          : "top-2 left-1/2 -translate-x-1/2 rotate-90 sm:-top-12",
         className,
       )}
       {...props}
@@ -243,29 +254,33 @@ export function CarouselPrevious({ className, ...props }: ComponentProps<typeof 
       <ArrowLeft className="size-4" data-rtl-flip />
     </Button>
   );
-}
+});
 
-export function CarouselNext({ className, ...props }: ComponentProps<typeof Button>) {
-  const { scrollNext, canScrollNext, orientation } = useCarousel();
-  return (
-    <Button
-      variant="outline"
-      size="icon"
-      disabled={!canScrollNext}
-      onClick={scrollNext}
-      aria-label="Next slide"
-      className={cn(
-        "absolute size-8 rounded-full",
-        orientation === "horizontal"
-          ? "-end-12 top-1/2 -translate-y-1/2"
-          : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
-        className,
-      )}
-      {...props}
-    >
-      <ArrowRight className="size-4" data-rtl-flip />
-    </Button>
-  );
-}
+export const CarouselNext = forwardRef<ElementRef<typeof Button>, ComponentProps<typeof Button>>(
+  function CarouselNext({ className, ...props }, ref) {
+    const { scrollNext, canScrollNext, orientation } = useCarousel();
+    const { t } = useLocale();
+    return (
+      <Button
+        ref={ref}
+        variant="outline"
+        size="icon"
+        disabled={!canScrollNext}
+        onClick={scrollNext}
+        aria-label={t("nextSlide")}
+        className={cn(
+          "absolute size-8 rounded-full",
+          orientation === "horizontal"
+            ? "end-2 top-1/2 -translate-y-1/2 sm:-end-12"
+            : "bottom-2 left-1/2 -translate-x-1/2 rotate-90 sm:-bottom-12",
+          className,
+        )}
+        {...props}
+      >
+        <ArrowRight className="size-4" data-rtl-flip />
+      </Button>
+    );
+  },
+);
 
 export type { CarouselApi };

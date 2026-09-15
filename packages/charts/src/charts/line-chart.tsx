@@ -28,6 +28,7 @@ import {
   resolveRestingChartPhase,
 } from "./chart-phase";
 import { Line, type LineProps } from "./line";
+import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import { TimeSeriesChartInner } from "./time-series-chart-shell";
 
@@ -231,7 +232,10 @@ function ChartInner({
   maxInteractiveDatapoints,
   onPhaseChange,
 }: ChartInnerProps) {
-  const lines = useMemo(() => extractLineConfigs(children), [children]);
+  // See `use-stable-value.ts`: collapses back to the previous reference when
+  // the extracted series content is unchanged, even though `children` gets a
+  // fresh identity from React on every parent render.
+  const lines = useStableValue(useMemo(() => extractLineConfigs(children), [children]));
 
   const chart = (
     <TimeSeriesChartInner

@@ -156,17 +156,15 @@ export const TerminalClearButton = ({
   ...props
 }: TerminalClearButtonProps) => {
   const { onClear } = useContext(TerminalContext);
+  const { t } = useLocale();
 
   if (!onClear) {
     return null;
   }
 
-  // No generic "clear" key exists yet in @elabs-ai/components-ui's messages.ts
-  // (that file is out of scope for the #116 move) — literal until a follow-up
-  // adds one and this can become `t("clear")` like TerminalCopyButton's `t("copy")`.
   return (
     <Button
-      aria-label="Clear" // i18n-exempt: see note above — no generic "clear" locale key yet
+      aria-label={t("clear")}
       className={cn(
         "size-7 shrink-0 text-terminal-muted hover:bg-terminal-selection hover:text-terminal-foreground",
         className,
@@ -174,7 +172,7 @@ export const TerminalClearButton = ({
       data-slot="terminal-clear-button"
       onClick={onClear}
       size="icon"
-      title="Clear" // i18n-exempt: see note above — no generic "clear" locale key yet
+      title={t("clear")}
       variant="ghost"
       {...props}
     >

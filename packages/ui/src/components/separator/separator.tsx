@@ -37,6 +37,7 @@ export const Separator = forwardRef<ElementRef<typeof SeparatorPrimitive.Root>, 
     return (
       <SeparatorPrimitive.Root
         ref={ref}
+        data-slot="separator"
         decorative={decorative}
         orientation={orientation}
         className={cn(

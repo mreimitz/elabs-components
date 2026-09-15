@@ -29,8 +29,19 @@ vi.mock("monaco-editor", () => ({
       onDidBlurEditorText: vi.fn(() => ({ dispose: vi.fn() })),
       getValue: vi.fn(() => ""),
       setValue: vi.fn(),
+      // The controlled-value sync effect diffs against the MODEL's value (not
+      // the editor's) and applies the result via `executeEdits`. Every model
+      // this mock hands out shares the same value the editor's `getValue`
+      // reports (`""`), so a no-op sync never fires.
+      executeEdits: vi.fn(),
       getSelection: vi.fn(() => null),
-      getModel: vi.fn(() => ({ dispose: vi.fn(), getLineCount })),
+      getModel: vi.fn(() => ({
+        dispose: vi.fn(),
+        getLineCount,
+        getValue: vi.fn(() => ""),
+        getPositionAt: vi.fn((offset: number) => ({ lineNumber: 1, column: offset })),
+      })),
+      setModel: vi.fn(),
       updateOptions: vi.fn(),
       dispose: vi.fn(),
       getDomNode: vi.fn(() => null),
@@ -44,7 +55,11 @@ vi.mock("monaco-editor", () => ({
       addAction,
       focus: vi.fn(),
     })),
-    createModel: vi.fn(() => ({ dispose: vi.fn() })),
+    createModel: vi.fn(() => ({
+      dispose: vi.fn(),
+      getValue: vi.fn(() => ""),
+      getPositionAt: vi.fn((offset: number) => ({ lineNumber: 1, column: offset })),
+    })),
     setModelLanguage: vi.fn(),
     defineTheme: vi.fn(),
     setTheme: vi.fn(),
@@ -81,7 +96,11 @@ vi.mock("monaco-editor", () => ({
     KeyZ: 56,
   },
   Uri: { parse: (s: string) => ({ toString: () => s }) },
-  Range: class {},
+  Range: class {
+    static fromPositions(start: unknown, end: unknown) {
+      return { start, end };
+    }
+  },
   Selection: class {},
 }));
 

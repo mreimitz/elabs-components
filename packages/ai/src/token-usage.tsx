@@ -154,7 +154,7 @@ export const TokenUsageContentHeader = ({
     <div className={cn("w-full space-y-2 p-3", className)} {...props}>
       {children ?? (
         <>
-          <div className="flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center justify-between gap-3 text-meta">
             <p>{displayPct}</p>
             <p className="font-mono text-muted-foreground">
               {used} / {total}
@@ -207,7 +207,7 @@ export const TokenUsageContentFooter = ({
   return (
     <div
       className={cn(
-        "flex w-full items-center justify-between gap-3 bg-secondary p-3 text-xs",
+        "flex w-full items-center justify-between gap-3 bg-secondary p-3 text-meta",
         className,
       )}
       {...props}
@@ -259,7 +259,7 @@ export const TokenUsageInput = ({ className, children, ...props }: TokenUsageInp
   });
 
   return (
-    <div className={cn("flex items-center justify-between text-xs", className)} {...props}>
+    <div className={cn("flex items-center justify-between text-meta", className)} {...props}>
       <span className="text-muted-foreground">{t("ai.tokenUsage.input")}</span>
       <TokensWithCost costText={inputCostText} tokens={inputTokens} />
     </div>
@@ -293,7 +293,7 @@ export const TokenUsageOutput = ({ className, children, ...props }: TokenUsageOu
   });
 
   return (
-    <div className={cn("flex items-center justify-between text-xs", className)} {...props}>
+    <div className={cn("flex items-center justify-between text-meta", className)} {...props}>
       <span className="text-muted-foreground">{t("ai.tokenUsage.output")}</span>
       <TokensWithCost costText={outputCostText} tokens={outputTokens} />
     </div>
@@ -333,7 +333,7 @@ export const TokenUsageReasoning = ({
   });
 
   return (
-    <div className={cn("flex items-center justify-between text-xs", className)} {...props}>
+    <div className={cn("flex items-center justify-between text-meta", className)} {...props}>
       <span className="text-muted-foreground">{t("ai.tokenUsage.reasoning")}</span>
       <TokensWithCost costText={reasoningCostText} tokens={reasoningTokens} />
     </div>
@@ -369,7 +369,7 @@ export const TokenUsageCache = ({ className, children, ...props }: TokenUsageCac
   });
 
   return (
-    <div className={cn("flex items-center justify-between text-xs", className)} {...props}>
+    <div className={cn("flex items-center justify-between text-meta", className)} {...props}>
       <span className="text-muted-foreground">{t("ai.tokenUsage.cache")}</span>
       <TokensWithCost costText={cacheCostText} tokens={cacheTokens} />
     </div>

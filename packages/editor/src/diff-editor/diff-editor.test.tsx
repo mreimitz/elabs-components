@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Monaco can't mount in jsdom — mock it and assert the wrapper's lifecycle.
@@ -38,6 +38,10 @@ vi.mock("monaco-editor", () => ({
 
 import { DiffEditor } from "./diff-editor";
 
+// See the matching note in `../code-editor/code-editor.test.tsx` — the engine
+// loads via a dynamic `import("monaco-editor")`; flush it before asserting.
+const flush = () => act(async () => {});
+
 beforeEach(() => {
   h.models.length = 0;
   vi.clearAllMocks();
@@ -45,9 +49,10 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("DiffEditor", () => {
-  it("creates a diff editor with original + modified models", () => {
+  it("creates a diff editor with original + modified models", async () => {
     const { getByTestId } = render(<DiffEditor original="a" modified="b" language="typescript" />);
     expect(getByTestId("diff-editor")).toBeInTheDocument();
+    await flush();
     expect(h.createDiffEditor).toHaveBeenCalledTimes(1);
     expect(h.createModel).toHaveBeenNthCalledWith(1, "a", "typescript");
     expect(h.createModel).toHaveBeenNthCalledWith(2, "b", "typescript");
@@ -57,8 +62,9 @@ describe("DiffEditor", () => {
     });
   });
 
-  it("disposes the editor + both models on unmount", () => {
+  it("disposes the editor + both models on unmount", async () => {
     const { unmount } = render(<DiffEditor original="a" modified="b" />);
+    await flush();
     const [original, modified] = h.models;
     unmount();
     expect(h.diff.dispose).toHaveBeenCalledTimes(1);

@@ -105,7 +105,7 @@ export const Truncated: Story = {
 /** Streaming / partial — columns known, rows still arriving → skeleton rows. */
 export const StreamingRows: Story = {
   args: {
-    streaming: true,
+    isStreaming: true,
     spec: { title: "Loading results", columns: invoicesSpec.columns, rows: [] },
   },
 };
@@ -113,7 +113,7 @@ export const StreamingRows: Story = {
 /** Missing cells render an em-dash — a half-arrived row never crashes. */
 export const PartialRows: Story = {
   args: {
-    streaming: true,
+    isStreaming: true,
     spec: {
       title: "Streaming rows",
       columns: invoicesSpec.columns,

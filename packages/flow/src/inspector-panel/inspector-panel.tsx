@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactNode } from "react";
-import { Reveal, useCollapsiblePanel } from "@elabs-ai/components-ui";
+import { Reveal, useCollapsiblePanel, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 const INSPECTOR_PANEL_WIDTH = "18rem";
@@ -41,10 +41,10 @@ export interface InspectorPanelProps {
  * motion safe) when `open`/`defaultOpen` drive it.
  */
 export function InspectorPanel({
-  title = "Inspector",
+  title,
   children,
   onClose,
-  emptyMessage = "Select a node to see its details.",
+  emptyMessage,
   hasSelection = true,
   selectionKey,
   open,
@@ -54,6 +54,9 @@ export function InspectorPanel({
   width = INSPECTOR_PANEL_WIDTH,
   className,
 }: InspectorPanelProps) {
+  const { t } = useLocale();
+  const resolvedTitle = title ?? t("flow.inspectorPanel.title");
+  const resolvedEmptyMessage = emptyMessage ?? t("flow.inspectorPanel.emptyMessage");
   const panel = useCollapsiblePanel({
     side,
     open,
@@ -84,11 +87,11 @@ export function InspectorPanel({
         {/* Detail-tier surface: raised `card` — robust across themes (#193). */}
         <div className="flex h-full w-full flex-col bg-card">
           <div className="flex items-center justify-between border-b px-4 py-3">
-            <h3 className="text-body font-semibold text-foreground">{title}</h3>
+            <h3 className="text-body font-semibold text-foreground">{resolvedTitle}</h3>
             {onClose ? (
               <button
                 type="button"
-                aria-label="Close inspector"
+                aria-label={t("flow.inspectorPanel.close")}
                 onClick={onClose}
                 className="rounded-sm p-1 text-muted-foreground hover:text-foreground focus-ring"
               >
@@ -129,7 +132,7 @@ export function InspectorPanel({
             </Reveal>
           ) : (
             <div tabIndex={0} className="focus-ring flex-1 overflow-y-auto p-4 text-body">
-              <p className="text-muted-foreground">{emptyMessage}</p>
+              <p className="text-muted-foreground">{resolvedEmptyMessage}</p>
             </div>
           )}
         </div>

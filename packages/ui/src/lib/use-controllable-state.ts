@@ -1,4 +1,6 @@
-import { useCallback, useState } from "react";
+"use client";
+
+import { useCallback, useRef, useState } from "react";
 
 /**
  * Shared controlled/uncontrolled state primitive.
@@ -22,9 +24,16 @@ export function useControllableState<T>(
   defaultValue: T,
   onChange?: (value: T) => void,
 ): [T, (next: T) => void] {
-  const isControlled = controlledValue !== undefined;
+  // Locked on mount, not recomputed every render: once a caller passes a
+  // defined `value`, the component stays controlled even if a later render
+  // clears it to `undefined` (e.g. "no date selected"). Recomputing
+  // `value !== undefined` on every render would flip a cleared controlled
+  // value to the (stale) uncontrolled `internal` state instead of showing
+  // "empty" — see DateRangePicker (#reviewed 1.7).
+  const isControlledRef = useRef(controlledValue !== undefined);
+  const isControlled = isControlledRef.current;
   const [internal, setInternal] = useState<T>(defaultValue);
-  const value = isControlled ? controlledValue : internal;
+  const value = isControlled ? (controlledValue as T) : internal;
 
   const setValue = useCallback(
     (next: T) => {

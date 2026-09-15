@@ -66,6 +66,13 @@ describe("MessageTable — never throws / fallback", () => {
 
   it("renders skeleton rows while streaming with no rows yet", () => {
     const { container } = render(
+      <MessageTable spec={{ columns: spec.columns, rows: [] }} isStreaming />,
+    );
+    expect(container.querySelector('[aria-hidden="true"] .animate-pulse')).not.toBeNull();
+  });
+
+  it("still honors the deprecated `streaming` alias", () => {
+    const { container } = render(
       <MessageTable spec={{ columns: spec.columns, rows: [] }} streaming />,
     );
     expect(container.querySelector('[aria-hidden="true"] .animate-pulse')).not.toBeNull();

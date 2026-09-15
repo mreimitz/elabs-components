@@ -9,6 +9,7 @@ export const Switch = forwardRef<
   return (
     <SwitchPrimitive.Root
       ref={ref}
+      data-slot="switch"
       className={cn(
         "peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors duration-fast ease-standard",
         "focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -19,6 +20,7 @@ export const Switch = forwardRef<
       {...props}
     >
       <SwitchPrimitive.Thumb
+        data-slot="switch-thumb"
         className={cn(
           "pointer-events-none block size-4 rounded-full bg-background shadow-xs ring-0 transition-transform duration-fast ease-standard",
           "data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0",

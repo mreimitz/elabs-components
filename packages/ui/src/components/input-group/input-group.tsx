@@ -68,7 +68,7 @@ export const InputGroup = forwardRef<HTMLDivElement, InputGroupProps>(function I
 });
 
 export const inputGroupAddonVariants = cva(
-  "flex h-auto cursor-text items-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none [&>svg:not([class*='size-'])]:size-4",
+  "flex h-auto cursor-text items-center gap-2 py-1.5 text-body font-medium text-muted-foreground select-none [&>svg:not([class*='size-'])]:size-4",
   {
     variants: {
       align: {
@@ -98,7 +98,7 @@ export const InputGroupAddon = forwardRef<
   );
 });
 
-const inputGroupButtonVariants = cva("flex items-center gap-2 text-sm shadow-none", {
+const inputGroupButtonVariants = cva("flex items-center gap-2 text-body shadow-none", {
   variants: {
     size: {
       xs: "h-6 gap-1 rounded-sm px-2 has-[>svg]:px-2 [&>svg:not([class*='size-'])]:size-3.5",
@@ -137,7 +137,7 @@ export const InputGroupText = forwardRef<HTMLSpanElement, ComponentProps<"span">
       <span
         ref={ref}
         className={cn(
-          "flex items-center gap-2 text-sm text-muted-foreground [&_svg:not([class*='size-'])]:size-4",
+          "flex items-center gap-2 text-body text-muted-foreground [&_svg:not([class*='size-'])]:size-4",
           className,
         )}
         {...props}

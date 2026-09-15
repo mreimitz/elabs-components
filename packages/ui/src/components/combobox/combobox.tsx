@@ -1,3 +1,5 @@
+"use client";
+
 import { forwardRef, useState, type ComponentPropsWithoutRef } from "react";
 import { defaultFilter } from "cmdk";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
@@ -104,8 +106,8 @@ export const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(function Co
     options,
     value,
     onValueChange,
-    placeholder = "Select…",
-    searchPlaceholder = "Search…",
+    placeholder,
+    searchPlaceholder,
     emptyText,
     className,
     disabled = false,
@@ -118,6 +120,8 @@ export const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(function Co
   ref,
 ) {
   const { t } = useLocale();
+  const resolvedPlaceholder = placeholder ?? t("ui.combobox.placeholder");
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t("ui.combobox.searchPlaceholder");
   const [open, setOpen] = useState(false);
   const [selected, setValue] = useControllableState(value, "", onValueChange);
   const [search, setSearch] = useState("");
@@ -157,7 +161,7 @@ export const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(function Co
           data-slot="combobox"
           className={cn("w-full justify-between font-normal", triggerProps?.className, className)}
         >
-          {current ? current.label : selected || placeholder}
+          {current ? current.label : selected || resolvedPlaceholder}
           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -168,10 +172,14 @@ export const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(function Co
         // aria-dialog-name rule (rightly) flags it. Reuse the trigger's own
         // purpose label when the consumer set one, else fall back to the
         // (already-translatable) search placeholder — no new hardcoded copy.
-        aria-label={ariaLabel ?? searchPlaceholder}
+        aria-label={ariaLabel ?? resolvedSearchPlaceholder}
       >
         <Command filter={allowCustomValue ? customValueFilter : undefined}>
-          <CommandInput placeholder={searchPlaceholder} value={search} onValueChange={setSearch} />
+          <CommandInput
+            placeholder={resolvedSearchPlaceholder}
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
             <CommandEmpty>{resolvedEmptyText}</CommandEmpty>
             <CommandGroup>

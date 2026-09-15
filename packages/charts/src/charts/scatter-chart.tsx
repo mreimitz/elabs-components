@@ -10,6 +10,7 @@ import { defaultScatterColors, type LineConfig, type Margin } from "./chart-cont
 import type { ChartPhase } from "./chart-phase";
 import { Scatter, type ScatterProps } from "./scatter";
 import { ScatterChartInner } from "./scatter-chart-shell";
+import { useStableValue } from "./use-stable-value";
 
 export interface ScatterChartProps {
   /** Data array — each item should have a date field and numeric values */
@@ -106,7 +107,10 @@ function ChartInner({
   containerRef,
   onPhaseChange,
 }: ChartInnerProps) {
-  const lines = useMemo(() => extractScatterConfigs(children), [children]);
+  // See `use-stable-value.ts`: collapses back to the previous reference when
+  // the extracted series content is unchanged, even though `children` gets a
+  // fresh identity from React on every parent render.
+  const lines = useStableValue(useMemo(() => extractScatterConfigs(children), [children]));
 
   return (
     <ScatterChartInner

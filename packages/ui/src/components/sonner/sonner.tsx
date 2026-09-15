@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { Toaster as SonnerToaster, toast } from "sonner";
 import { resolveThemeIsDark } from "@elabs-ai/components-tokens";

@@ -400,6 +400,10 @@ function ChoroplethChartInner({
     innerHeight / 2 + margin.top + 50,
   ];
 
+  // NOTE: not wrapped in `useStableValue` (`../use-stable-value.ts`) — the
+  // output is `ReactNode[]` (actual elements), not JSON-serializable plain
+  // config, so a content-signature comparison isn't safe here. Stays
+  // `children`-identity-keyed.
   const { svgChildren, overlayChildren } = useMemo(() => separateChildren(children), [children]);
 
   // revealSignature replays enter.

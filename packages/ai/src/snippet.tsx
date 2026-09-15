@@ -8,18 +8,10 @@ import {
   InputGroupText,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
-import { useLocale } from "@elabs-ai/components-ui";
+import { useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import type { ComponentProps } from "react";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 
 interface SnippetContextType {
   code: string;
@@ -79,40 +71,28 @@ export type SnippetCopyButtonProps = ComponentProps<typeof InputGroupButton> & {
 export const SnippetCopyButton = ({
   onCopy,
   onError,
-  timeout = 2000,
+  timeout,
   children,
   className,
   ...props
 }: SnippetCopyButtonProps) => {
   const { t } = useLocale();
-  const [isCopied, setIsCopied] = useState(false);
-  const timeoutRef = useRef<number>(0);
   const { code } = useContext(SnippetContext);
+  // Shared implementation (`@elabs-ai/components-ui`) instead of a private
+  // copy of the same copy-to-clipboard state machine (issue-workflow.md
+  // dedupe finding) — see `CodeBlockCopyButton` for the reference usage.
+  const { copied: isCopied, copy } = useCopyToClipboard(
+    timeout === undefined ? undefined : { resetAfterMs: timeout },
+  );
 
   const copyToClipboard = useCallback(async () => {
-    if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
+    const ok = await copy(code);
+    if (ok) {
+      onCopy?.();
+    } else {
       onError?.(new Error("Clipboard API not available"));
-      return;
     }
-
-    try {
-      if (!isCopied) {
-        await navigator.clipboard.writeText(code);
-        setIsCopied(true);
-        onCopy?.();
-        timeoutRef.current = window.setTimeout(() => setIsCopied(false), timeout);
-      }
-    } catch (error) {
-      onError?.(error as Error);
-    }
-  }, [code, onCopy, onError, timeout, isCopied]);
-
-  useEffect(
-    () => () => {
-      window.clearTimeout(timeoutRef.current);
-    },
-    [],
-  );
+  }, [copy, code, onCopy, onError]);
 
   const Icon = isCopied ? CheckIcon : CopyIcon;
 

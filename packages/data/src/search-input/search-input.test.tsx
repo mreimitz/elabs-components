@@ -7,6 +7,7 @@
  * `<input>` (no placeholder-as-label), every keystroke reported to the caller,
  * and a named clear affordance that only exists when there is something to clear.
  */
+import { createRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { SearchInput } from "./search-input";
@@ -28,6 +29,26 @@ describe("SearchInput — accessible name", () => {
     const label = document.querySelector("label");
     expect(label).not.toBeNull();
     expect(label).toHaveAttribute("for", input.getAttribute("id"));
+  });
+
+  it("keeps the label wired to a consumer-supplied id instead of a stale generated one", () => {
+    render(<SearchInput value="" onValueChange={vi.fn()} id="deployment-search" />);
+    const input = screen.getByRole("textbox", { name: "Search" });
+    // The consumer's own `id` used to reach the <input> (via the trailing
+    // `...props` spread) while the <label>'s `htmlFor` kept pointing at an
+    // internally-generated id that no element actually had — breaking the
+    // label/input association `getByRole({ name })` above depends on.
+    expect(input).toHaveAttribute("id", "deployment-search");
+    expect(document.querySelector("label")).toHaveAttribute("for", "deployment-search");
+  });
+});
+
+describe("SearchInput — ref", () => {
+  it("forwards a ref to the underlying <input>", () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<SearchInput ref={ref} value="" onValueChange={vi.fn()} />);
+    expect(ref.current).toBeInstanceOf(HTMLInputElement);
+    expect(ref.current).toBe(screen.getByRole("textbox", { name: "Search" }));
   });
 });
 
@@ -71,6 +92,20 @@ describe("SearchInput — clear affordance", () => {
     render(<SearchInput value="billing" onValueChange={vi.fn()} />);
     const svg = screen.getByRole("button", { name: "Clear search" }).querySelector("svg");
     expect(svg).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("returns keyboard focus to the input after clearing (the button itself unmounts)", () => {
+    function Harness() {
+      const [value, setValue] = useState("billing");
+      return <SearchInput value={value} onValueChange={setValue} />;
+    }
+    render(<Harness />);
+    const clearButton = screen.getByRole("button", { name: "Clear search" });
+    clearButton.focus();
+    fireEvent.click(clearButton);
+    // The clear button is conditionally rendered on `value` — once it
+    // disappears, a browser drops focus to <body> unless something claims it.
+    expect(screen.getByRole("textbox", { name: "Search" })).toHaveFocus();
   });
 });
 

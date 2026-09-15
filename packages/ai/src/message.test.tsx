@@ -2,7 +2,7 @@ import { math } from "@streamdown/math";
 import { useState } from "react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   AgentMessage,
@@ -185,8 +185,47 @@ describe("MessageResponse loading (#269, loading-states.md)", () => {
   });
 });
 
+describe("MessageResponse memo comparator covers every prop, not a hand-picked field list (perf review §2)", () => {
+  it("re-renders when only `className` changes (children/isAnimating/loading held constant)", () => {
+    const { container, rerender } = render(
+      <MessageResponse className="response-a">{"same content"}</MessageResponse>,
+    );
+    // Streamdown's own root `<div>` does not forward `data-slot` (it spreads
+    // rest props onto the inner markdown renderer, not its wrapper div), so
+    // key off the fixed `size-full` class `MessageResponse` always applies.
+    const responseEl = () => container.querySelector(".size-full");
+    expect(responseEl()).toHaveClass("response-a");
+
+    rerender(<MessageResponse className="response-b">{"same content"}</MessageResponse>);
+
+    // Under the old comparator (children/isAnimating/loading only), this
+    // rerender was skipped entirely — the DOM kept `response-a` even though
+    // the caller supplied a new `className`.
+    expect(responseEl()).toHaveClass("response-b");
+    expect(responseEl()).not.toHaveClass("response-a");
+  });
+
+  it("re-renders when only `mode` changes (children/isAnimating/loading held constant)", () => {
+    // `mode="streaming"` (the default) leniently auto-closes incomplete
+    // markdown syntax; `mode="static"` renders it literally. A real,
+    // discriminating, upstream-independent signal for this prop.
+    const { container, rerender } = render(
+      <MessageResponse mode="streaming">{"**bold"}</MessageResponse>,
+    );
+    expect(container.querySelector('[data-streamdown="strong"]')).toBeInTheDocument();
+
+    rerender(<MessageResponse mode="static">{"**bold"}</MessageResponse>);
+
+    // Under the old comparator (children/isAnimating/loading only), this
+    // rerender was skipped, so the switch to `mode="static"` never took
+    // effect and the incomplete markdown stayed auto-completed.
+    expect(container.querySelector('[data-streamdown="strong"]')).not.toBeInTheDocument();
+    expect(screen.getByText("**bold")).toBeInTheDocument();
+  });
+});
+
 describe("MessageResponse plugins/components overrides (#10 — merge-not-replace semantics)", () => {
-  it("merges a real `plugins.cjk` override in (append), keeps sanitisation on, and keeps the untouched `plugins.math` default alive (#10)", () => {
+  it("merges a real `plugins.cjk` override in (append), keeps sanitisation on, and keeps the untouched `plugins.math` default alive (#10)", async () => {
     // A real, discriminating lock — NOT `plugins={{}}` (that exercises zero
     // slots and passes identically under merge, replace, or a no-op; #10
     // review I3). This test supplies a genuine `cjk` plugin (one of the two
@@ -228,7 +267,14 @@ $$x^2$$
     expect(cjkRemarkSpy).toHaveBeenCalled();
     // (2b) …and the internal `math` default the consumer did not set is
     // still active — real KaTeX markup, not the literal `$$x^2$$` text.
-    expect(document.querySelector(".katex")).toBeInTheDocument();
+    // `math` is now lazy-loaded off the source text (#perf-5) — it starts
+    // `undefined` and arrives after a dynamic import, hence `waitFor`.
+    await waitFor(
+      () => {
+        expect(document.querySelector(".katex")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 });
 
@@ -380,6 +426,30 @@ function BranchHarness(props: { branch?: number; onBranchChange?: (n: number) =>
     </MessageBranch>
   );
 }
+
+describe("MessageBranchContent — id uniqueness and content sync (perf review §2)", () => {
+  it("does not spread a caller-supplied id onto every branch (each branch keeps a unique id)", () => {
+    const { container } = render(
+      <MessageBranch>
+        <MessageBranchContent id="branch-content">
+          <div key="a">Branch A</div>
+          <div key="b">Branch B</div>
+          <div key="c">Branch C</div>
+        </MessageBranchContent>
+      </MessageBranch>,
+    );
+
+    const contentDivs = container.querySelectorAll('[data-slot="message-branch-content"]');
+    expect(contentDivs).toHaveLength(3);
+    const ids = Array.from(contentDivs).map((el) => el.getAttribute("id"));
+    // Under the bug, `{...props}` spread the literal `id="branch-content"`
+    // onto every mapped div — three duplicate DOM ids for one supplied id.
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) {
+      expect(id).toMatch(/^branch-content-\d+$/);
+    }
+  });
+});
 
 describe("MessageBranch — controlled mode (#361)", () => {
   it("is uncontrolled by default: defaultBranch + internal Next/Previous navigation are unaffected", async () => {

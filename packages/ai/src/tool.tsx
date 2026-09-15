@@ -7,6 +7,7 @@ import type { DynamicToolUIPart, ToolUIPart } from "ai";
 import { ChevronDownIcon, WrenchIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { isValidElement } from "react";
+import type { BundledLanguage } from "shiki";
 
 import { CodeBlock } from "./code-block";
 
@@ -20,6 +21,19 @@ export const Tool = ({ className, ...props }: ToolProps) => (
 );
 
 export type ToolPart = ToolUIPart | DynamicToolUIPart;
+
+/**
+ * `JSON.stringify` throws on a circular reference or a `BigInt` — both
+ * realistic shapes for tool input/output payloads a model produced. Falls
+ * back to a readable placeholder instead of crashing the message render.
+ */
+function safeJsonStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value, (_key, v) => (typeof v === "bigint" ? `${v.toString()}n` : v), 2);
+  } catch {
+    return String(value);
+  }
+}
 
 export type ToolHeaderProps = {
   title?: string;
@@ -123,23 +137,26 @@ export type ToolDetailsProps = ComponentProps<typeof Collapsible> & {
  */
 export const ToolDetails = ({
   className,
-  label = "Show technical details",
+  label,
   defaultOpen = false,
   children,
   ...props
-}: ToolDetailsProps) => (
-  <Collapsible
-    className={cn("group/tool-details not-prose", className)}
-    defaultOpen={defaultOpen}
-    {...props}
-  >
-    <CollapsibleTrigger className="flex items-center gap-1 rounded-sm text-meta text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <ChevronDownIcon className="size-3.5 transition-transform group-data-[state=open]/tool-details:rotate-180" />
-      {label}
-    </CollapsibleTrigger>
-    <CollapsibleContent className="mt-3 space-y-4">{children}</CollapsibleContent>
-  </Collapsible>
-);
+}: ToolDetailsProps) => {
+  const { t } = useLocale();
+  return (
+    <Collapsible
+      className={cn("group/tool-details not-prose", className)}
+      defaultOpen={defaultOpen}
+      {...props}
+    >
+      <CollapsibleTrigger className="flex items-center gap-1 rounded-sm text-meta text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <ChevronDownIcon className="size-3.5 transition-transform group-data-[state=open]/tool-details:rotate-180" />
+        {label ?? t("ai.tool.showTechnicalDetails")}
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-3 space-y-4">{children}</CollapsibleContent>
+    </Collapsible>
+  );
+};
 
 export type ToolInputProps = ComponentProps<"div"> & {
   input: ToolPart["input"];
@@ -153,7 +170,7 @@ export const ToolInput = ({ className, input, ...props }: ToolInputProps) => {
         {t("ai.schemaDisplay.parameters")}
       </h4>
       <div className="rounded-md bg-muted/50">
-        <CodeBlock code={JSON.stringify(input, null, 2)} language="json" />
+        <CodeBlock code={safeJsonStringify(input)} language="json" />
       </div>
     </div>
   );
@@ -197,25 +214,44 @@ export const ToolOutput = ({
 }: ToolOutputProps) => {
   const { t } = useLocale();
 
-  if (!(output || errorText || isStreaming)) {
+  // `output` is a defined-but-falsy result (`0`, `false`, `""`) for plenty of
+  // real tools (a count, a boolean check, an empty-string field) — only
+  // `undefined` means "no output (yet)".
+  const hasOutput = output !== undefined;
+
+  if (!(hasOutput || errorText || isStreaming)) {
     return null;
   }
 
   const showError = !isStreaming && Boolean(errorText);
-  const pending = isStreaming && !output && !errorText;
+  const pending = isStreaming && !hasOutput && !errorText;
 
-  let Output = <div>{output as ReactNode}</div>;
+  let Output: ReactNode = null;
 
-  if (typeof output === "object" && !isValidElement(output)) {
-    Output = <CodeBlock code={JSON.stringify(output, null, 2)} language="json" />;
-  } else if (typeof output === "string") {
-    Output = <CodeBlock code={output} language="json" />;
+  if (hasOutput) {
+    if (isValidElement(output)) {
+      Output = output;
+    } else if (typeof output === "string") {
+      // A tool result is arbitrary text, not guaranteed JSON — forcing the
+      // JSON highlighter on it mis-colours ordinary strings. Shiki's own
+      // `BundledLanguage` union (grammar-backed languages) omits its
+      // hard-coded plain-text pseudo-languages (`isPlainLang`:
+      // "plaintext" | "txt" | "text" | "plain") — `createHighlighter`/
+      // `codeToTokens` accept and special-case them with no grammar load
+      // (verified: `getLoadedLanguages()` stays empty, no throw), so this
+      // is a type-only gap, not a runtime one.
+      Output = <CodeBlock code={output} language={"text" as BundledLanguage} />;
+    } else {
+      // Objects, arrays, numbers, booleans, null, bigint — all safe to
+      // stringify for display.
+      Output = <CodeBlock code={safeJsonStringify(output)} language="json" />;
+    }
   }
 
   return (
     <div className={cn("space-y-2", className)} {...props}>
       <h4 className="text-meta uppercase text-muted-foreground">
-        {showError ? "Error" : "Result"}
+        {showError ? t("ai.tool.error") : t("ai.tool.result")}
       </h4>
       {pending ? (
         <div className="space-y-2 rounded-md bg-muted/50 p-3" role="status" aria-live="polite">

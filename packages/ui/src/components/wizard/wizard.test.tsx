@@ -64,4 +64,13 @@ describe("Wizard", () => {
     await user.click(screen.getByRole("button", { name: "Next" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Finish" })).toBeInTheDocument());
   });
+
+  it("names the completed-step indicator button — it renders only an icon", async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    // The first step's indicator now shows a checkmark glyph with no text
+    // content — without an accessible name it would be an unlabelled button.
+    expect(screen.getByRole("button", { name: "Account — completed" })).toBeInTheDocument();
+  });
 });

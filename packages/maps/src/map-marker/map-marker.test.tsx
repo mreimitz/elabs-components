@@ -78,4 +78,59 @@ describe("MapMarker", () => {
     unmount();
     expect(MockMarker.instances[0]!.addedTo).toBeNull();
   });
+
+  it("rebuilds the marker instance when `anchor` changes — MapLibre has no live setter for it", async () => {
+    const { rerender } = render(
+      <MapCanvas>
+        <MapMarker longitude={0} latitude={0} anchor="top">
+          <MapMarkerContent />
+        </MapMarker>
+      </MapCanvas>,
+    );
+    await waitFor(() => {
+      expect(MockMarker.instances).toHaveLength(1);
+      expect(MockMarker.instances[0]!.options.anchor).toBe("top");
+    });
+
+    rerender(
+      <MapCanvas>
+        <MapMarker longitude={0} latitude={0} anchor="bottom">
+          <MapMarkerContent />
+        </MapMarker>
+      </MapCanvas>,
+    );
+
+    await waitFor(() => {
+      expect(MockMarker.instances).toHaveLength(2);
+      expect(MockMarker.instances[1]!.options.anchor).toBe("bottom");
+    });
+    // The old instance is detached, not mutated in place.
+    expect(MockMarker.instances[0]!.addedTo).toBeNull();
+    expect(MockMarker.instances[1]!.addedTo).not.toBeNull();
+  });
+
+  it("never touches `document` during the render phase (SSR-safe)", async () => {
+    // `renderToStaticMarkup` never runs effects — only the plain render
+    // functions — which is exactly the environment a real SSR host runs in.
+    // Deleting `document` reproduces that host having none: the old
+    // `useMemo`-based marker construction called `document.createElement`
+    // straight out of the render function and would throw here.
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const originalDocument = globalThis.document;
+    // @ts-expect-error -- simulating a server environment with no DOM
+    delete globalThis.document;
+    try {
+      expect(() =>
+        renderToStaticMarkup(
+          <MapCanvas>
+            <MapMarker longitude={0} latitude={0}>
+              <MapMarkerContent />
+            </MapMarker>
+          </MapCanvas>,
+        ),
+      ).not.toThrow();
+    } finally {
+      globalThis.document = originalDocument;
+    }
+  });
 });

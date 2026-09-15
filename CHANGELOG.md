@@ -2,6 +2,58 @@
 
 ## Unreleased
 
+### Fixed: security, streaming performance, form controls and consistency (2026-09-15 review)
+
+**Security** — `SchemaDisplayPath` no longer injects model/tool-supplied paths as HTML
+(stored XSS). `JSXPreview` blocks `script`/`style`/`iframe`/`form`/`object`/`embed`/`link`/
+`meta`/`base` and unknown elements. `WebPreviewBody` drops `allow-same-origin` from the
+iframe sandbox unless the new `allowSameOrigin` prop is set.
+
+**Breaking-ish (check your app)**
+
+- **`@elabs-ai/components-editor`** — the `monaco` namespace moved off the root barrel to
+  `@elabs-ai/components-editor/monaco`; Monaco now loads lazily when an editor mounts, so
+  importing `CopyButton`/`EDITOR_LANGUAGES` no longer evaluates it (SSR-safe).
+- **`NumberInput`** — renders `type="text" inputMode="decimal" role="spinbutton"` with
+  locale-aware parse/format and step rounding; its `ref` now points at the `<input>`
+  (was the wrapper div). `BoundedNumber` follows.
+- **Pickers** — `Combobox`, `DatePicker`, `DateRangePicker`, `VirtualSelect`, `TreeSelect`
+  triggers fill their column (`w-full`); pass a width class to narrow them.
+- **Look** — disabled `Button`/`Input` share one `opacity-50` treatment; top-level dropdown
+  and context menus are `12rem` min-width; Sheet/AlertDialog/Drawer titles match
+  `DialogTitle`; Sheet's close button matches Dialog's.
+
+**Added** — `FileUpload` `onFilesRejected` (accept/size/count/multiple, also enforced on
+drop) + `describeFileRejection`; `Conversation` `isStreaming` (quiet live region while
+streaming); `isStreaming` on `MessageTable`/`MessageForm`/`MessageFormProvider` (old
+`streaming` kept as a deprecated alias); `ResizableHandle` `hitAreaMargins`; 131 locale
+keys replacing hard-coded English across ui, data, ai, charts, maps, flow and terminal.
+
+**Fixed**
+
+- **ai** — `CodeBlock` cache is a bounded LRU keyed on a full-content hash (no stale code,
+  no unbounded growth while streaming), highlights once, throttles while streaming;
+  `DiffView` tokenises sides separately; `PromptInput` restores text on a failed submit
+  and blocks double submit; `SpeechInput` releases the mic on unmount; `Tool` survives
+  circular/BigInt and renders falsy output; `AssetPreview` parses quoted CSV;
+  `MessageResponse` memo honours every prop; shared theme-scope observer; math/CJK
+  Streamdown plugins lazy-load; icon-only buttons named; `dark:`/palette classes removed.
+- **ui** — `Tree` no scroll-jumps or lost lazy children; `Combobox`/date pickers correct
+  controlled/uncontrolled and duplicate labels; `FileUpload` keyboard-reachable custom
+  dropzone; `ListEditor` focus follows moved rows; `SchemaForm` re-renders only the edited
+  field; `MentionInput` observer scoped; `useIsMobile` correct on first render; Sheet and
+  AlertDialog scroll tall content; `NavNotifications` stays on-screen; `Carousel` leak,
+  caret keys, vertical/RTL; `Tabs` one observer per list; `Wizard` step names; `Table`
+  region naming; `forwardRef` on `DatePicker`, `PaginationLink`, `Badge`, `Spinner`,
+  `CarouselPrevious/Next`, `ResizablePanelGroup`, `AppShell`; more `data-slot`/`"use client"`.
+- **data** — `SearchInput` `forwardRef`, consumer `id`, focus after clear; CSV serialiser
+  shared with charts (negative numbers no longer quoted as text).
+- **charts** — series memoised on content, not `children` identity; resize debounce 100 ms;
+  `AutoChart` error boundary; `LiveLineChart` pauses off-screen/hidden, honours reduced
+  motion. **maps** — `MapMarker` created in an effect, reacts to `anchor`/`className`.
+  **editor** — `CodeEditor` reacts to `path`/`options`, keeps undo on controlled updates;
+  `MermaidDiagram` serialised + debounced; template dialog no stray tooltip on open.
+
 ### Added: themes can reshape controls, tables, links, curtains, icons and headers
 
 Eighteen new theme tokens reach decisions that were fixed in components. **Every default

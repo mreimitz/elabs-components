@@ -2432,8 +2432,12 @@ function DataTableInner<TData, TValue>(
         <div
           ref={scrollRef}
           tabIndex={0}
-          // Names the focus stop (WCAG 4.1.2) without a landmark role — a `role="region"`
-          // here would add a redundant landmark over the inner real <table>.
+          // Names the focus stop (WCAG 4.1.2). `role="region"` is required for
+          // that name to compute at all — `aria-label` on a plain `<div>`
+          // (role `generic`) is not guaranteed to produce an accessible name;
+          // `generic` isn't in the set of roles accessible-name computation
+          // permits naming from.
+          role="region"
           aria-label={t("data.table.scrollRegion")}
           aria-busy={loading || undefined}
           className="relative overflow-auto rounded-lg border bg-card focus-ring"
@@ -2451,7 +2455,7 @@ function DataTableInner<TData, TValue>(
               className="absolute inset-0 z-40 flex items-center justify-center rounded-lg bg-card/80"
             >
               <Spinner aria-hidden="true" className="text-foreground" />
-              <span className="sr-only">Loading table data…</span>
+              <span className="sr-only">{t("data.table.loading")}</span>
             </div>
           )}
           <table
@@ -2497,7 +2501,7 @@ function DataTableInner<TData, TValue>(
             className="absolute inset-0 z-40 flex items-center justify-center rounded-lg bg-card/80"
           >
             <Spinner aria-hidden="true" className="text-foreground" />
-            <span className="sr-only">Loading table data…</span>
+            <span className="sr-only">{t("data.table.loading")}</span>
           </div>
         )}
         {/* The tab stop exists ONLY while the region measurably overflows: without
@@ -2505,13 +2509,17 @@ function DataTableInner<TData, TValue>(
             axe `scrollable-region-focusable`) — but adding it unconditionally would
             give every table that FITS a focus stop that does nothing and announces
             "scrollable" when it isn't. `aria-label` moves with it (WCAG 4.1.2:
-            a name for a stop that exists, none for one that doesn't). No
-            `role="region"` — that would add a redundant landmark over the real
-            <table> inside it. */}
+            a name for a stop that exists, none for one that doesn't) — and
+            `role="region"` moves with BOTH of them: `aria-label` on a plain
+            `<div>` (role `generic`) is not guaranteed to compute into an
+            accessible name at all, so without a naming-capable role this tab
+            stop could be an UNNAMED one, which is worse than the redundant
+            landmark this used to trade it for. */}
         <div
           ref={plainScrollRef}
           data-slot="data-table-scroll-region"
           tabIndex={scrollOverflows ? 0 : undefined}
+          role={scrollOverflows ? "region" : undefined}
           aria-label={scrollOverflows ? t("data.table.scrollRegion") : undefined}
           onScroll={updateScrollAffordance}
           className="overflow-auto rounded-lg focus-ring-inset"

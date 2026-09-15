@@ -370,7 +370,7 @@ function VirtualFlatRow<T>({
           <span className="truncate">{t("ui.tree.failedToLoad")}</span>
           <button
             type="button"
-            aria-label="Retry loading children"
+            aria-label={t("ui.tree.retryLoadingChildren")}
             onClick={(e) => {
               e.stopPropagation();
               onRetry(node.id);
@@ -382,7 +382,7 @@ function VirtualFlatRow<T>({
             )}
           >
             <RotateCcw className="size-3" aria-hidden="true" />
-            Retry
+            {t("ui.tree.retry")}
           </button>
         </span>
       ) : (
@@ -421,11 +421,12 @@ function VirtualFlatRow<T>({
 // ---------------------------------------------------------------------------
 
 function LoadingRow({ level }: { level: number }) {
+  const { t } = useLocale();
   const indentStyle = { paddingLeft: `${(level - 1) * 1}rem` };
   return (
     <div
       role="treeitem"
-      aria-label="Loading…"
+      aria-label={t("loading")}
       aria-disabled="true"
       tabIndex={-1}
       className="flex min-w-0 items-center gap-1.5 px-2 py-1.5"
@@ -459,13 +460,13 @@ function ErrorRow({ level, onRetry }: { level: number; onRetry: () => void }) {
           onRetry();
         }}
         className={cn(
-          "ms-1 flex items-center gap-0.5 rounded px-1 py-0.5 text-xs",
+          "ms-1 flex items-center gap-0.5 rounded px-1 py-0.5 text-meta",
           "text-muted-foreground hover:text-foreground",
           "focus-ring",
         )}
       >
         <RotateCcw className="size-3" aria-hidden="true" />
-        Retry
+        {t("ui.tree.retry")}
       </button>
     </div>
   );
@@ -917,7 +918,8 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
     (nodeId: string) => {
       const index = flatRowIndexById.get(nodeId);
       if (index === undefined) return;
-      const node = flatRows[index].node;
+      const node = flatRows[index]?.node;
+      if (!node) return;
       const hasLoadedChildren = !!node.children?.length;
       const next = new Set(expandedIds);
       if (expandedIds.has(nodeId)) {
@@ -937,8 +939,8 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
     (nodeId: string) => {
       const index = flatRowIndexById.get(nodeId);
       if (index === undefined) return;
-      const node = flatRows[index].node;
-      if (node.disabled || selectionMode === "none") return;
+      const node = flatRows[index]?.node;
+      if (!node || node.disabled || selectionMode === "none") return;
       if (selectionMode === "single") {
         setSelectedIds(new Set([nodeId]));
       } else {

@@ -48,6 +48,7 @@ import {
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { stripSanitizerOverrides, warnOnTrustedPluginSlots } from "./_streamdown-safety";
 import {
+  getStreamdownPluginsKey,
   useStreamdownMermaidOptions,
   useStreamdownPlugins,
   useStreamdownTranslations,
@@ -227,7 +228,10 @@ export const MarkdownView = ({
   const translations = useStreamdownTranslations();
   // Brand-token-derived `code` plugin, not the package's static github-*
   // default (#315 follow-up) — re-derives when the active theme changes.
-  const internalPlugins = useStreamdownPlugins();
+  // `math`/`cjk` are lazy-loaded off the raw markdown source (#perf-5, see
+  // `_streamdown-i18n.ts`) — pass `children` so they load only when this
+  // view actually needs them.
+  const internalPlugins = useStreamdownPlugins(typeof children === "string" ? children : "");
   // Same per-key merge as `components` — see the `plugins` prop doc above.
   // `math.rehypePlugin`/`mermaid` are the two slots that land in the DOM after
   // (or outside) the sanitiser chain, so replacing one is a TRUSTED-CODE
@@ -243,6 +247,9 @@ export const MarkdownView = ({
   const mermaidOptions = useStreamdownMermaidOptions();
   return (
     <Streamdown
+      // Forces a remount the first time the lazy math/cjk slot resolves —
+      // see `getStreamdownPluginsKey`'s doc in `_streamdown-i18n.ts` for why.
+      key={getStreamdownPluginsKey(internalPlugins)}
       data-slot="markdown-view"
       className={cn("space-y-3 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
       components={components}

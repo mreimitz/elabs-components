@@ -5,6 +5,16 @@ const meta = {
   title: "Forms/Combobox",
   component: Combobox,
   tags: ["autodocs"],
+  // The trigger fills its container by default (no hard-fixed width) — cap
+  // the docs canvas to a realistic form-field width instead of letting it
+  // stretch the full autodocs page.
+  decorators: [
+    (Story) => (
+      <div className="w-full max-w-md">
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     options: {
       description: "Array of `{ label, value }` options.",

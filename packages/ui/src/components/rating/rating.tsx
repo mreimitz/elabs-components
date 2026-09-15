@@ -1,3 +1,5 @@
+"use client";
+
 // a2ui.exposed: yes
 import {
   forwardRef,

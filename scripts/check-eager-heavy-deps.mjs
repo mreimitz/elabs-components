@@ -59,9 +59,12 @@ export const WATCHED_PACKAGES = ["ai", "terminal", "viewer"];
 export const HEAVY_DEPS = [
   "@rive-app/react-canvas",
   "@rive-app/react-webgl2",
+  "@streamdown/cjk",
+  "@streamdown/math",
   "@streamdown/mermaid",
   "@xterm/xterm",
   "@xyflow/react",
+  "katex",
   "media-chrome",
   "mermaid",
   // `@elabs-ai/components-viewer` file parsers (ADR 0024). These are

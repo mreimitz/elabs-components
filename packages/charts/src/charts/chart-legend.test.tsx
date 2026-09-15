@@ -7,7 +7,8 @@
  * locks the swap to the `text-meta` role. No mocking needed: `ChartLegend` is
  * a plain DOM component with no visx/ResizeObserver dependency.
  */
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChartLegend, type LegendItem } from "./chart-legend";
 
@@ -27,5 +28,27 @@ describe("ChartLegend — density-role className (#394)", () => {
     expect(percentage).not.toHaveClass("text-xs");
     // tabular-nums must survive the swap (brief: "preserve every other utility").
     expect(percentage).toHaveClass("tabular-nums");
+  });
+});
+
+describe("ChartLegend — locale-aware formatting (review: was host-locale-blind)", () => {
+  it("formats the default value under the active LocaleProvider locale, not the host locale", () => {
+    render(
+      <LocaleProvider locale="de-DE">
+        <ChartLegend items={[{ color: "var(--chart-1)", label: "Revenue", value: 21200 }]} />
+      </LocaleProvider>,
+    );
+    // de-DE groups thousands with a period, never a comma.
+    expect(screen.getByText("21.200")).toBeInTheDocument();
+  });
+
+  it("still honors an explicit caller-supplied formatValue over the locale default", () => {
+    render(
+      <ChartLegend
+        formatValue={(v) => `$${v}`}
+        items={[{ color: "var(--chart-1)", label: "Revenue", value: 42 }]}
+      />,
+    );
+    expect(screen.getByText("$42")).toBeInTheDocument();
   });
 });

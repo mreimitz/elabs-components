@@ -34,6 +34,7 @@ import {
   createContext,
   forwardRef,
   use,
+  useEffect,
   useRef,
   useCallback,
   type CSSProperties,
@@ -243,6 +244,15 @@ export const BentoGridItem = forwardRef<HTMLDivElement, BentoGridItemProps>(func
 
   // rAF ref so we only schedule one frame at a time.
   const rafRef = useRef<number>(0);
+
+  // Cancel a pending frame on unmount — otherwise a mouse move right before
+  // the tile unmounts (removed from the grid while hovered) still fires the
+  // scheduled callback after teardown.
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {

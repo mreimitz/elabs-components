@@ -1,8 +1,11 @@
+"use client";
+
 import { type CSSProperties, type ReactNode } from "react";
 import { CircleAlert } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/cn";
 import { ILLUSTRATION_ACCENT_VAR } from "../../illustrations/illustration-base";
+import { useLocale } from "../locale-provider";
 
 // ─── Variants ────────────────────────────────────────────────────────────────
 
@@ -123,13 +126,15 @@ export function StatePanel({
   icon,
   illustration,
   titleAs: Tag = "h3",
-  loadingLabel = "Loading…",
+  loadingLabel,
   size = "md",
   actions,
   className,
 }: StatePanelProps) {
+  const { t } = useLocale();
   const isLoading = kind === "loading";
   const isError = kind === "error";
+  const resolvedLoadingLabel = loadingLabel ?? t("loading");
 
   // Role: loading → status + live region; error → alert; empty → (none needed).
   const roleProps = isLoading
@@ -139,9 +144,9 @@ export function StatePanel({
       : {};
 
   // Default title / description fallbacks for error state (mirroring old ErrorState).
-  const resolvedTitle = title ?? (isError ? "Something went wrong" : undefined);
+  const resolvedTitle = title ?? (isError ? t("ui.statePanel.errorTitle") : undefined);
   const resolvedDescription =
-    description ?? (isError ? "An unexpected error occurred. Please try again." : undefined);
+    description ?? (isError ? t("ui.statePanel.errorDescription") : undefined);
 
   // Resolve displayed icon.
   let resolvedIcon: ReactNode;
@@ -167,7 +172,7 @@ export function StatePanel({
           correct there — do not "tidy" it onto -text too. */}
       {isError && (
         <span className="text-meta font-semibold uppercase tracking-widest text-destructive-text">
-          Error
+          {t("ui.statePanel.errorEyebrow")}
         </span>
       )}
 
@@ -223,21 +228,23 @@ export function StatePanel({
             <Tag
               className={cn(
                 "font-semibold text-foreground",
-                illustration ? "text-subtitle" : "text-sm",
+                illustration ? "text-subtitle" : "text-body",
               )}
             >
               {resolvedTitle}
             </Tag>
           )}
           {resolvedDescription && (
-            <p className="mx-auto max-w-sm text-sm text-muted-foreground">{resolvedDescription}</p>
+            <p className="mx-auto max-w-sm text-body text-muted-foreground">
+              {resolvedDescription}
+            </p>
           )}
         </div>
       )}
 
       {/* Loading label (visually shown as supporting text; also the live-region content). */}
-      {isLoading && loadingLabel && (
-        <span className="text-sm text-muted-foreground">{loadingLabel}</span>
+      {isLoading && resolvedLoadingLabel && (
+        <span className="text-body text-muted-foreground">{resolvedLoadingLabel}</span>
       )}
 
       {actions ? <div className="mt-1 flex items-center gap-2">{actions}</div> : null}

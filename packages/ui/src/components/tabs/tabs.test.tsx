@@ -76,6 +76,73 @@ describe("Tabs", () => {
   // scroll-into-view/320px-container behavior is layout-dependent and is
   // covered by the `OverflowScrollable` Storybook interaction test instead
   // (jsdom doesn't lay out real scroll geometry).
+  it("creates one shared observer pair per list, not one per trigger (#387)", () => {
+    const originalMutationObserver = globalThis.MutationObserver;
+    const originalResizeObserver = globalThis.ResizeObserver;
+    let mutationObserverCount = 0;
+    let resizeObserverCount = 0;
+
+    class CountingMutationObserver extends originalMutationObserver {
+      constructor(...args: ConstructorParameters<typeof MutationObserver>) {
+        super(...args);
+        mutationObserverCount += 1;
+      }
+    }
+    class CountingResizeObserver extends originalResizeObserver {
+      constructor(...args: ConstructorParameters<typeof ResizeObserver>) {
+        super(...args);
+        resizeObserverCount += 1;
+      }
+    }
+    globalThis.MutationObserver = CountingMutationObserver as typeof MutationObserver;
+    globalThis.ResizeObserver = CountingResizeObserver as typeof ResizeObserver;
+
+    try {
+      render(
+        <Tabs defaultValue="a">
+          <TabsList>
+            <TabsTrigger value="a">A</TabsTrigger>
+            <TabsTrigger value="b">B</TabsTrigger>
+            <TabsTrigger value="c">C</TabsTrigger>
+            <TabsTrigger value="d">D</TabsTrigger>
+          </TabsList>
+          <TabsContent value="a">Panel A</TabsContent>
+        </Tabs>,
+      );
+      // 4 triggers in the strip. Before the fix, each trigger owned its own
+      // MutationObserver AND ResizeObserver (4 of each here — the review's
+      // "20 callbacks per resize" was measured on a 20-tab strip).
+      const fourTriggerMutationCount = mutationObserverCount;
+      const fourTriggerResizeCount = resizeObserverCount;
+      expect(fourTriggerResizeCount).toBeGreaterThan(0);
+
+      mutationObserverCount = 0;
+      resizeObserverCount = 0;
+      render(
+        <Tabs defaultValue="a">
+          <TabsList>
+            <TabsTrigger value="a">A</TabsTrigger>
+            <TabsTrigger value="b">B</TabsTrigger>
+            <TabsTrigger value="c">C</TabsTrigger>
+            <TabsTrigger value="d">D</TabsTrigger>
+            <TabsTrigger value="e">E</TabsTrigger>
+            <TabsTrigger value="f">F</TabsTrigger>
+            <TabsTrigger value="g">G</TabsTrigger>
+            <TabsTrigger value="h">H</TabsTrigger>
+          </TabsList>
+          <TabsContent value="a">Panel A</TabsContent>
+        </Tabs>,
+      );
+      // The list owns a FIXED number of observers regardless of trigger
+      // count — doubling the trigger count must not double it.
+      expect(mutationObserverCount).toBe(fourTriggerMutationCount);
+      expect(resizeObserverCount).toBe(fourTriggerResizeCount);
+    } finally {
+      globalThis.MutationObserver = originalMutationObserver;
+      globalThis.ResizeObserver = originalResizeObserver;
+    }
+  });
+
   it("renders TabsList as a bounded scroll container with safe centering", () => {
     render(
       <Tabs defaultValue="a">

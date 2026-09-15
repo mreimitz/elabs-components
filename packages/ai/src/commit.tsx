@@ -3,11 +3,11 @@
 import { Avatar, AvatarFallback } from "@elabs-ai/components-ui";
 import { Button } from "@elabs-ai/components-ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
-import { useLocale } from "@elabs-ai/components-ui";
+import { useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { CheckIcon, CopyIcon, FileIcon, GitCommitIcon, MinusIcon, PlusIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type CommitProps = ComponentProps<typeof Collapsible>;
 
@@ -35,7 +35,7 @@ export const CommitHeader = ({ className, children, ...props }: CommitHeaderProp
 export type CommitHashProps = HTMLAttributes<HTMLSpanElement>;
 
 export const CommitHash = ({ className, children, ...props }: CommitHashProps) => (
-  <span className={cn("font-mono text-xs", className)} {...props}>
+  <span className={cn("font-mono text-meta", className)} {...props}>
     <GitCommitIcon className="me-1 inline-block size-3" />
     {children}
   </span>
@@ -44,7 +44,7 @@ export const CommitHash = ({ className, children, ...props }: CommitHashProps) =
 export type CommitMessageProps = HTMLAttributes<HTMLSpanElement>;
 
 export const CommitMessage = ({ className, children, ...props }: CommitMessageProps) => (
-  <span className={cn("font-medium text-sm", className)} {...props}>
+  <span className={cn("font-medium text-body", className)} {...props}>
     {children}
   </span>
 );
@@ -53,7 +53,7 @@ export type CommitMetadataProps = HTMLAttributes<HTMLDivElement>;
 
 export const CommitMetadata = ({ className, children, ...props }: CommitMetadataProps) => (
   <div
-    className={cn("flex items-center gap-2 text-muted-foreground text-xs", className)}
+    className={cn("flex items-center gap-2 text-muted-foreground text-meta", className)}
     {...props}
   >
     {children}
@@ -90,7 +90,7 @@ export type CommitAuthorAvatarProps = ComponentProps<typeof Avatar> & {
 
 export const CommitAuthorAvatar = ({ initials, className, ...props }: CommitAuthorAvatarProps) => (
   <Avatar className={cn("size-8", className)} {...props}>
-    <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+    <AvatarFallback className="text-meta">{initials}</AvatarFallback>
   </Avatar>
 );
 
@@ -116,7 +116,7 @@ export const CommitTimestamp = ({ date, className, children, ...props }: CommitT
   }, [updateFormatted]);
 
   return (
-    <time className={cn("text-xs", className)} dateTime={date.toISOString()} {...props}>
+    <time className={cn("text-meta", className)} dateTime={date.toISOString()} {...props}>
       {children ?? formatted}
     </time>
   );
@@ -150,43 +150,32 @@ export const CommitCopyButton = ({
   hash,
   onCopy,
   onError,
-  timeout = 2000,
+  timeout,
   children,
   className,
+  "aria-label": ariaLabel,
   ...props
 }: CommitCopyButtonProps) => {
-  const [isCopied, setIsCopied] = useState(false);
-  const timeoutRef = useRef<number>(0);
+  const { t } = useLocale();
+  // Shared implementation (`@elabs-ai/components-ui`) instead of a private
+  // copy of the same copy-to-clipboard state machine (issue-workflow.md
+  // dedupe finding) — see `CodeBlockCopyButton` for the reference usage.
+  const { copied: isCopied, copy } = useCopyToClipboard({ resetAfterMs: timeout ?? 2000 });
 
   const copyToClipboard = useCallback(async () => {
-    if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
+    const ok = await copy(hash);
+    if (ok) {
+      onCopy?.();
+    } else {
       onError?.(new Error("Clipboard API not available"));
-      return;
     }
-
-    try {
-      if (!isCopied) {
-        await navigator.clipboard.writeText(hash);
-        setIsCopied(true);
-        onCopy?.();
-        timeoutRef.current = window.setTimeout(() => setIsCopied(false), timeout);
-      }
-    } catch (error) {
-      onError?.(error as Error);
-    }
-  }, [hash, onCopy, onError, timeout, isCopied]);
-
-  useEffect(
-    () => () => {
-      window.clearTimeout(timeoutRef.current);
-    },
-    [],
-  );
+  }, [copy, hash, onCopy, onError]);
 
   const Icon = isCopied ? CheckIcon : CopyIcon;
 
   return (
     <Button
+      aria-label={ariaLabel ?? t("copy")}
       className={cn("size-7 shrink-0", className)}
       onClick={copyToClipboard}
       size="icon"
@@ -219,7 +208,7 @@ export type CommitFileProps = HTMLAttributes<HTMLDivElement>;
 export const CommitFile = ({ className, children, ...props }: CommitFileProps) => (
   <div
     className={cn(
-      "flex items-center justify-between gap-2 rounded px-2 py-1 text-sm hover:bg-muted/50",
+      "flex items-center justify-between gap-2 rounded px-2 py-1 text-body hover:bg-muted/50",
       className,
     )}
     {...props}
@@ -237,10 +226,10 @@ export const CommitFileInfo = ({ className, children, ...props }: CommitFileInfo
 );
 
 const fileStatusStyles = {
-  added: "text-green-600 dark:text-green-400",
-  deleted: "text-red-600 dark:text-red-400",
-  modified: "text-yellow-600 dark:text-yellow-400",
-  renamed: "text-blue-600 dark:text-blue-400",
+  added: "text-success-text",
+  deleted: "text-destructive-text",
+  modified: "text-warning-text",
+  renamed: "text-info-text",
 };
 
 const fileStatusLabels = {
@@ -261,7 +250,7 @@ export const CommitFileStatus = ({
   ...props
 }: CommitFileStatusProps) => (
   <span
-    className={cn("font-medium font-mono text-xs", fileStatusStyles[status], className)}
+    className={cn("font-medium font-mono text-meta", fileStatusStyles[status], className)}
     {...props}
   >
     {children ?? fileStatusLabels[status]}
@@ -277,7 +266,7 @@ export const CommitFileIcon = ({ className, ...props }: CommitFileIconProps) => 
 export type CommitFilePathProps = HTMLAttributes<HTMLSpanElement>;
 
 export const CommitFilePath = ({ className, children, ...props }: CommitFilePathProps) => (
-  <span className={cn("truncate font-mono text-xs", className)} {...props}>
+  <span className={cn("truncate font-mono text-meta", className)} {...props}>
     {children}
   </span>
 );
@@ -285,7 +274,7 @@ export const CommitFilePath = ({ className, children, ...props }: CommitFilePath
 export type CommitFileChangesProps = HTMLAttributes<HTMLDivElement>;
 
 export const CommitFileChanges = ({ className, children, ...props }: CommitFileChangesProps) => (
-  <div className={cn("flex shrink-0 items-center gap-1 font-mono text-xs", className)} {...props}>
+  <div className={cn("flex shrink-0 items-center gap-1 font-mono text-meta", className)} {...props}>
     {children}
   </div>
 );
@@ -305,7 +294,7 @@ export const CommitFileAdditions = ({
   }
 
   return (
-    <span className={cn("text-green-600 dark:text-green-400", className)} {...props}>
+    <span className={cn("text-success-text", className)} {...props}>
       {children ?? (
         <>
           <PlusIcon className="inline-block size-3" />
@@ -331,7 +320,7 @@ export const CommitFileDeletions = ({
   }
 
   return (
-    <span className={cn("text-red-600 dark:text-red-400", className)} {...props}>
+    <span className={cn("text-destructive-text", className)} {...props}>
       {children ?? (
         <>
           <MinusIcon className="inline-block size-3" />

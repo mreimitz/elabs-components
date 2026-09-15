@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { CSSProperties } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { render, waitFor } from "@testing-library/react";
-import { CodeBlock } from "./code-block";
+import { CodeBlock, CodeBlockCopyButton, highlightCode } from "./code-block";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -187,5 +187,104 @@ describe("CodeBlock isStreaming (#269, loading-states.md)", () => {
   it("shows no in-progress cue when not streaming", () => {
     const { container } = render(<CodeBlock code="const a = 1;" language="tsx" />);
     expect(container.querySelector('[role="status"]')).toBeNull();
+  });
+});
+
+describe("CodeBlockCopyButton accessible name (a11y review)", () => {
+  it("has an aria-label so the icon-only button has an accessible name", () => {
+    const { container } = render(
+      <CodeBlock code="const a = 1;" language="tsx">
+        <CodeBlockCopyButton />
+      </CodeBlock>,
+    );
+    expect(container.querySelector("button")).toHaveAccessibleName("Copy");
+  });
+
+  it("lets a consumer override the label", () => {
+    const { container } = render(
+      <CodeBlock code="const a = 1;" language="tsx">
+        <CodeBlockCopyButton aria-label="Copy snippet" />
+      </CodeBlock>,
+    );
+    expect(container.querySelector("button")).toHaveAccessibleName("Copy snippet");
+  });
+});
+
+// ─── `highlightCode` awaited helper for the perf-fix regression locks below ──
+
+function highlightAsync(
+  code: string,
+  language: Parameters<typeof highlightCode>[1],
+  el?: Element | null,
+  skipCache = false,
+): Promise<NonNullable<ReturnType<typeof highlightCode>>> {
+  return new Promise((resolve) => {
+    const cached = highlightCode(code, language, (result) => resolve(result), el, skipCache);
+    if (cached) resolve(cached);
+  });
+}
+
+const flattenTokenContent = (result: NonNullable<ReturnType<typeof highlightCode>>): string =>
+  result.tokens.map((line) => line.map((token) => token.content).join("")).join("\n");
+
+describe("highlightCode cache key — no hash collision (perf review 1.4b/1.4c)", () => {
+  it("does not collide two >200-char strings sharing a length, prefix and suffix but differing in the middle", async () => {
+    const prefix = "a".repeat(150);
+    const suffix = "b".repeat(150);
+    // Same length, same first/last 100 chars — the OLD `length:first100:last100`
+    // cache key collided on exactly this shape (a mid-string edit), showing
+    // whichever of the two resolved second on top of BOTH code blocks.
+    const codeA = `${prefix}1${suffix}`;
+    const codeB = `${prefix}2${suffix}`;
+
+    await highlightAsync(codeA, "tsx");
+    await highlightAsync(codeB, "tsx");
+
+    // Re-requesting codeA must still return a SYNCHRONOUS cache hit for its
+    // OWN content — never codeB's.
+    const againA = highlightCode(codeA, "tsx");
+    expect(againA).not.toBeNull();
+    expect(flattenTokenContent(againA!)).toBe(codeA);
+    expect(flattenTokenContent(againA!)).not.toBe(codeB);
+  });
+});
+
+describe("highlightCode tokensCache is bounded (perf review 1.4a — LRU ~200 entries)", () => {
+  it("evicts the least-recently-used entry once the cache exceeds its cap", async () => {
+    const codes = Array.from({ length: 205 }, (_, i) => `const lruEvictionProbe_${i} = ${i};`);
+
+    for (const code of codes) {
+      // Sequential on purpose: each must actually populate the cache (and
+      // become the most-recently-used entry) before the next one runs.
+
+      await highlightAsync(code, "tsx");
+    }
+
+    // The very first entry inserted is the least-recently-used once 205 > the
+    // 200-entry cap — it must have been evicted, so re-requesting it is a
+    // cache MISS (highlightCode returns null synchronously and kicks off a
+    // fresh async highlight instead).
+    expect(highlightCode(codes[0] as string, "tsx")).toBeNull();
+
+    // The most recently inserted entry is still a synchronous cache hit.
+    expect(highlightCode(codes[204] as string, "tsx")).not.toBeNull();
+  });
+});
+
+describe("highlightCode skipCache (perf review 1.4a — never permanently cache mid-stream)", () => {
+  it("does not persist a highlight into the shared cache when skipCache is set", async () => {
+    const code = "const streamingSkipCacheProbe = 'a';";
+    await highlightAsync(code, "tsx", undefined, true);
+
+    // A later, non-streaming request for the EXACT same code is a cache
+    // MISS — the streaming pass never wrote it in.
+    expect(highlightCode(code, "tsx")).toBeNull();
+  });
+
+  it("still persists an ordinary (non-streaming) highlight", async () => {
+    const code = "const nonStreamingCacheProbe = 'b';";
+    await highlightAsync(code, "tsx");
+
+    expect(highlightCode(code, "tsx")).not.toBeNull();
   });
 });

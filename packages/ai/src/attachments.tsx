@@ -192,8 +192,8 @@ export const Attachment = ({ data, onRemove, className, children, ...props }: At
           variant === "inline" && [
             "flex h-8 cursor-pointer select-none items-center gap-1.5",
             "rounded-md border border-border px-1.5",
-            "font-medium text-sm transition-colors duration-fast ease-standard motion-reduce:transition-none",
-            "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+            "font-medium text-body transition-colors duration-fast ease-standard motion-reduce:transition-none",
+            "hover:bg-accent/50 hover:text-accent-foreground",
           ],
           variant === "list" && [
             "flex w-full items-center gap-3 rounded-lg border p-3",
@@ -283,7 +283,7 @@ export const AttachmentInfo = ({
     <div className={cn("min-w-0 flex-1", className)} {...props}>
       <span className="block truncate">{label}</span>
       {showMediaType && data.mediaType && (
-        <span className="block truncate text-muted-foreground text-xs">{data.mediaType}</span>
+        <span className="block truncate text-muted-foreground text-meta">{data.mediaType}</span>
       )}
     </div>
   );
@@ -385,7 +385,10 @@ export type AttachmentEmptyProps = HTMLAttributes<HTMLDivElement>;
 
 export const AttachmentEmpty = ({ className, children, ...props }: AttachmentEmptyProps) => (
   <div
-    className={cn("flex items-center justify-center p-4 text-muted-foreground text-sm", className)}
+    className={cn(
+      "flex items-center justify-center p-4 text-muted-foreground text-body",
+      className,
+    )}
     {...props}
   >
     {children ?? "No attachments"}

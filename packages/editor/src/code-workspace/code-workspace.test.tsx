@@ -14,7 +14,14 @@ const h = vi.hoisted(() => {
     setValue: vi.fn(),
     getModel: vi.fn(() => ({
       getValueInRange: vi.fn(() => "selected"),
+      // Deliberately reports the SAME content the controlled `value` prop
+      // carries in this suite's fixtures, so the controlled-value-sync
+      // effect (added for the executeEdits-over-setValue fix) is a no-op
+      // here and doesn't perturb these unrelated tab/selection assertions.
+      getValue: vi.fn(() => "AAA"),
+      getPositionAt: vi.fn((offset: number) => ({ lineNumber: 1, column: offset })),
     })),
+    setModel: vi.fn(),
     getSelection: vi.fn(() => ({ isEmpty: () => false })),
     executeEdits: vi.fn(),
     pushUndoStop: vi.fn(),
@@ -32,7 +39,11 @@ const h = vi.hoisted(() => {
     selectionHandlers,
     selectionDisposable,
     create: vi.fn(() => editor),
-    createModel: vi.fn(() => ({ dispose: vi.fn() })),
+    createModel: vi.fn((value: string) => ({
+      dispose: vi.fn(),
+      getValue: vi.fn(() => value),
+      getPositionAt: vi.fn((offset: number) => ({ lineNumber: 1, column: offset })),
+    })),
   };
 });
 
@@ -45,6 +56,9 @@ vi.mock("monaco-editor", () => ({
     setTheme: vi.fn(),
   },
   Uri: { parse: (s: string) => ({ toString: () => s }) },
+  Range: {
+    fromPositions: (start: unknown, end: unknown) => ({ start, end }),
+  },
 }));
 
 import { createRef } from "react";
@@ -55,20 +69,28 @@ const FILES: EditorFile[] = [
   { path: "b.json", value: "{}" },
 ];
 
+// CodeEditor's underlying engine now loads via a dynamic `import("monaco-editor")`
+// (kept lazy so the barrel never evaluates Monaco just for `CopyButton`/
+// `EDITOR_LANGUAGES` — see barrel-monaco-lazy.test.ts). Flush that microtask
+// before asserting on anything the mount effect populates.
+const flush = () => act(async () => {});
+
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
 
 describe("CodeWorkspace — tabs", () => {
-  it("renders a tab per file and opens the first file with its inferred language", () => {
+  it("renders a tab per file and opens the first file with its inferred language", async () => {
     render(<CodeWorkspace files={FILES} />);
     expect(screen.getByRole("tab", { name: "a.ts" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "b.json" })).toBeInTheDocument();
+    await flush();
     expect(h.createModel).toHaveBeenCalledWith("AAA", "typescript", expect.anything());
   });
 
   it("switches the editor to the file whose tab is activated", async () => {
     const onActivePathChange = vi.fn();
     render(<CodeWorkspace files={FILES} onActivePathChange={onActivePathChange} />);
+    await flush();
     await userEvent.click(screen.getByRole("tab", { name: "b.json" }));
     expect(onActivePathChange).toHaveBeenCalledWith("b.json");
     expect(h.createModel).toHaveBeenCalledWith("{}", "json", expect.anything());
@@ -84,18 +106,14 @@ describe("CodeWorkspace — CodeWorkspaceHandle via ref", () => {
     expect(el).toBeInstanceOf(HTMLDivElement);
   });
 
-  it("exposes getActiveEditor() returning the Monaco instance after mount", () => {
+  it("exposes getActiveEditor() returning the Monaco instance after mount", async () => {
     const ref = createRef<CodeWorkspaceHandle>();
     render(<CodeWorkspace files={FILES} ref={ref} />);
-    // onMount fires synchronously inside the mocked monaco.editor.create path.
-    // The mock `create` calls onMountRef immediately after setEditor in the effect —
-    // but since monaco.editor.create is mocked synchronously and CodeEditor calls
-    // onMountRef.current?.(instance) right after create(), the instance is available.
-    // We verify getActiveEditor() returns the mock editor (or null if mount async).
+    // The engine loads via `import("monaco-editor")`, resolved as a microtask
+    // (mocked module, no real network) — flush it, then the handle reflects
+    // the mounted instance.
+    await flush();
     const active = ref.current!.getActiveEditor();
-    // The mock editor.create is called synchronously in the useEffect, so after
-    // the first render + effect flush the handle should reflect it.
-    // If it's null the store hasn't flushed yet — both are valid jsdom outcomes.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(active === null || (active as any) === h.editor).toBe(true);
   });
@@ -196,12 +214,13 @@ describe("CodeWorkspace — force-mounted panels stay out of the layout", () => 
 });
 
 describe("CodeWorkspace — tab identity survives a file-list reorder (#412 review)", () => {
-  it("keeps the active panel's id stable and does not remount Monaco when a file is prepended", () => {
+  it("keeps the active panel's id stable and does not remount Monaco when a file is prepended", async () => {
     const initial: EditorFile[] = [
       { path: "src/a.ts", value: "AAA" },
       { path: "b.json", value: "{}" },
     ];
     const { rerender } = render(<CodeWorkspace files={initial} />);
+    await flush();
     const idBefore = screen
       .getAllByRole("tabpanel", { hidden: true })
       .find((p) => p.getAttribute("data-state") === "active")!.id;

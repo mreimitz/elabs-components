@@ -21,7 +21,7 @@
  * - `"use client"` — uses hooks and relies on ResizeObserver internally.
  */
 
-import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
+import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 
@@ -183,8 +183,9 @@ interface AutoLegendProps {
 }
 
 function AutoLegend({ series }: AutoLegendProps) {
+  const { t } = useLocale();
   return (
-    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1" aria-label="Chart legend">
+    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1" aria-label={t("charts.legend.label")}>
       {series.map((s) => (
         <li key={s.key} className="flex items-center gap-1.5 text-muted-foreground text-meta">
           {/* Inline style here is intentional: the color IS a var(--chart-N) token,
@@ -241,6 +242,13 @@ function renderChart(
   spec: ChartSpec,
   series: NormalizedSeries[],
   resolvedData: Record<string, unknown>[],
+  /**
+   * `resolvedData` with `spec.x` ISO-date strings coerced to `Date` — computed
+   * ONCE per `(spec.data, spec.x)` pair in the component body (memoised), so
+   * `line`/`area`/`stream`/`candlestick` (and `scatter` under `xType: "time"`)
+   * don't each re-walk + re-allocate the whole dataset on every render.
+   */
+  timeCoercedData: Record<string, unknown>[],
   height: number,
   /**
    * Resolved in the component body, not here: `renderChart` is a plain function
@@ -255,7 +263,7 @@ function renderChart(
   switch (type) {
     // ── Line ─────────────────────────────────────────────────────────────────
     case "line": {
-      const timeData = coerceDatesToDate(resolvedData, x);
+      const timeData = timeCoercedData;
       return (
         // LineChart accepts style prop — pass height directly to suppress aspectRatio
         <LineChart
@@ -284,7 +292,7 @@ function renderChart(
     //    two readings — so forking the JSX would only duplicate it.
     case "area":
     case "stream": {
-      const timeData = coerceDatesToDate(resolvedData, x);
+      const timeData = timeCoercedData;
       return (
         // AreaChart accepts style prop — pass height directly to suppress aspectRatio
         <AreaChart
@@ -384,7 +392,7 @@ function renderChart(
     case "scatter": {
       // ScatterChart does not accept a style prop; wrap in a sized div.
       // Coerce strings → Date only when xType is "time"; otherwise pass numeric x as-is.
-      const scatterData = spec.xType === "time" ? coerceDatesToDate(resolvedData, x) : resolvedData;
+      const scatterData = spec.xType === "time" ? timeCoercedData : resolvedData;
       return (
         <div style={{ height }}>
           <ScatterChart
@@ -493,7 +501,7 @@ function renderChart(
       const highKey = named("high");
       const lowKey = named("low");
       const closeKey = named("close");
-      const ohlc: OHLCDataPoint[] = coerceDatesToDate(resolvedData, x)
+      const ohlc: OHLCDataPoint[] = timeCoercedData
         .map((row) => ({
           date: row[x] instanceof Date ? (row[x] as Date) : new Date(String(row[x] ?? "")),
           open: numberAt(row, openKey),
@@ -716,6 +724,43 @@ function renderChart(
 }
 
 // ---------------------------------------------------------------------------
+// Local error boundary (review finding)
+// ---------------------------------------------------------------------------
+// The `try/catch` around `renderChart(...)` below only covers errors thrown
+// while BUILDING the element tree (the synchronous `createElement` calls).
+// It cannot catch an error thrown later, when React actually renders/commits
+// one of those chart containers (a hook throwing on a malformed value deep in
+// a container, for instance) — only a class component's `componentDidCatch`/
+// `getDerivedStateFromError` can. Without this, that error unmounts the
+// nearest ancestor boundary (or the whole app), breaking AutoChart's documented
+// "never throws" contract.
+interface AutoChartErrorBoundaryProps {
+  children: ReactNode;
+  fallback: ReactNode;
+}
+interface AutoChartErrorBoundaryState {
+  hasError: boolean;
+}
+class AutoChartErrorBoundary extends Component<
+  AutoChartErrorBoundaryProps,
+  AutoChartErrorBoundaryState
+> {
+  override state: AutoChartErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): AutoChartErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  override componentDidCatch(error: unknown): void {
+    console.error("AutoChart: chart render failed, showing fallback", error);
+  }
+
+  override render(): ReactNode {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // AutoChart
 // ---------------------------------------------------------------------------
 
@@ -780,6 +825,12 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // Resolved here, above every early return, because it is a hook. `renderChart`
   // is a plain function and receives the result.
   const yFormat = useChartValueFormatter(spec.valueFormat, spec.currency);
+  // Memoised above every early return (rules of hooks) so a re-render that
+  // doesn't change `spec.series`/`spec.data`/`spec.x` (e.g. a `height` or
+  // `className` change from the caller) doesn't re-walk + re-allocate either —
+  // both were previously recomputed unconditionally on every render.
+  const series = useMemo(() => normalizeSeries(spec.series), [spec.series]);
+  const timeCoercedData = useMemo(() => coerceDatesToDate(spec.data, spec.x), [spec.data, spec.x]);
 
   // ── Loading vs ready ───────────────────────────────────────────────────────
   // Same box shape as ChartFallback, but a skeleton instead of message text —
@@ -859,9 +910,6 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     );
   }
 
-  // ── Normalize series ───────────────────────────────────────────────────────
-  const series = normalizeSeries(spec.series);
-
   // ── Legend items ───────────────────────────────────────────────────────────
   // Pie/donut slices are colored by DATA ROW (the `x` value), not by series, so
   // the legend must map each slice label to its palette color. Every other chart
@@ -884,7 +932,16 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // ── Render ────────────────────────────────────────────────────────────────
   let chartNode: ReactNode = null;
   try {
-    chartNode = renderChart(type, spec, series, spec.data, height, yFormat, copyValueOnActivate);
+    chartNode = renderChart(
+      type,
+      spec,
+      series,
+      spec.data,
+      timeCoercedData,
+      height,
+      yFormat,
+      copyValueOnActivate,
+    );
   } catch {
     return (
       <ChartFallback
@@ -913,7 +970,18 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   return (
     <div ref={ref} className={cn("flex w-full flex-col", className)} {...props}>
       {title ? <p className="mb-1 text-subtitle text-foreground">{title}</p> : null}
-      {chartNode}
+      {/*
+       * The `try/catch` above only covers errors thrown while BUILDING this
+       * element tree; an error thrown once React actually renders/commits one
+       * of these chart containers only a class boundary can catch (see
+       * `AutoChartErrorBoundary`'s doc comment) — without it, that error would
+       * escape AutoChart's documented "never throws" contract.
+       */}
+      <AutoChartErrorBoundary
+        fallback={<ChartFallback message="Unable to display this chart" style={{ height }} />}
+      >
+        {chartNode}
+      </AutoChartErrorBoundary>
       {showLegend ? <AutoLegend series={legendItems} /> : null}
     </div>
   );

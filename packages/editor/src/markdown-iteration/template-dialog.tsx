@@ -63,7 +63,16 @@ export function IterationTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] w-[min(48rem,92vw)] max-w-none flex-col">
+      <DialogContent
+        className="flex max-h-[85vh] w-[min(48rem,92vw)] max-w-none flex-col"
+        // Radix autofocuses the first tabbable element — the toolbar's Bold button —
+        // and its Tooltip opens on focus, so the dialog opened with a stray tooltip.
+        // Focus the dialog itself instead; Tab still reaches the toolbar first.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          (event.currentTarget as HTMLElement | null)?.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Edit {kind === "pivot" ? "pivot" : "iteration"} template</DialogTitle>
           <DialogDescription>

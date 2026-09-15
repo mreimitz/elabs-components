@@ -67,6 +67,7 @@ import { Badge } from "../badge/badge";
 import { StatePanel } from "../state-panel/state-panel";
 import { StatusIcon } from "../status-badge/status-badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../collapsible/collapsible";
+import { useLocale } from "../locale-provider";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -283,6 +284,7 @@ export type ChangeReviewHeaderProps = HTMLAttributes<HTMLDivElement>;
  */
 export const ChangeReviewHeader = forwardRef<HTMLDivElement, ChangeReviewHeaderProps>(
   function ChangeReviewHeader({ className, ...props }, ref) {
+    const { t } = useLocale();
     const { state, actions, headingId } = useChangeReview();
     const { approvedCount, totalCount, allApproved, noneApproved } = state;
 
@@ -294,10 +296,10 @@ export const ChangeReviewHeader = forwardRef<HTMLDivElement, ChangeReviewHeaderP
       >
         <div className="flex items-center gap-2 min-w-0">
           <span id={headingId} className="text-subtitle font-semibold text-foreground truncate">
-            Review changes
+            {t("ui.changeReview.heading")}
           </span>
           <Badge variant={allApproved ? "success" : approvedCount > 0 ? "info" : "secondary"}>
-            {approvedCount} of {totalCount} approved
+            {t("ui.changeReview.approvedCount", { approved: approvedCount, total: totalCount })}
           </Badge>
         </div>
 
@@ -308,20 +310,20 @@ export const ChangeReviewHeader = forwardRef<HTMLDivElement, ChangeReviewHeaderP
               variant="outline-subtle"
               disabled={noneApproved}
               onClick={actions.rejectAll}
-              aria-label="Reject all changes"
+              aria-label={t("ui.changeReview.rejectAllLabel")}
             >
               <X aria-hidden="true" />
-              Reject all
+              {t("ui.changeReview.rejectAll")}
             </Button>
             <Button
               size="sm"
               variant={allApproved ? "secondary" : "default"}
               disabled={allApproved}
               onClick={actions.approveAll}
-              aria-label="Approve all changes"
+              aria-label={t("ui.changeReview.approveAllLabel")}
             >
               <CheckCheck aria-hidden="true" />
-              Approve all
+              {t("ui.changeReview.approveAll")}
             </Button>
           </div>
         )}
@@ -357,6 +359,7 @@ function isChangeProvenance(v: unknown): v is ChangeProvenance {
  */
 export const ChangeReviewProvenance = forwardRef<HTMLDivElement, ChangeReviewProvenanceProps>(
   function ChangeReviewProvenance({ provenance, className, ...props }, ref) {
+    const { t } = useLocale();
     if (isChangeProvenance(provenance)) {
       const { author, model, timestamp, note } = provenance;
       return (
@@ -367,7 +370,7 @@ export const ChangeReviewProvenance = forwardRef<HTMLDivElement, ChangeReviewPro
             className,
           )}
           role="group"
-          aria-label="Change provenance"
+          aria-label={t("ui.changeReview.provenanceLabel")}
           {...props}
         >
           {author && (
@@ -399,7 +402,7 @@ export const ChangeReviewProvenance = forwardRef<HTMLDivElement, ChangeReviewPro
         ref={ref}
         className={cn("pb-3 text-caption text-muted-foreground", className)}
         role="group"
-        aria-label="Change provenance"
+        aria-label={t("ui.changeReview.provenanceLabel")}
         {...props}
       >
         {provenance as ReactNode}
@@ -418,14 +421,15 @@ export type ChangeReviewListProps = HTMLAttributes<HTMLOListElement>;
  */
 export const ChangeReviewList = forwardRef<HTMLOListElement, ChangeReviewListProps>(
   function ChangeReviewList({ className, children, ...props }, ref) {
+    const { t } = useLocale();
     const { hunks, headingId } = useChangeReview();
 
     if (hunks.length === 0) {
       return (
         <StatePanel
           kind="empty"
-          title="No changes to review"
-          description="When an agent proposes edits, they'll appear here for your approval."
+          title={t("ui.changeReview.emptyTitle")}
+          description={t("ui.changeReview.emptyDescription")}
           className="my-2"
         />
       );
@@ -468,10 +472,10 @@ const HUNK_STATUS_ICONS: Record<ChangeHunkStatus, ReactNode> = {
   ),
 };
 
-const HUNK_STATUS_LABELS: Record<ChangeHunkStatus, string> = {
-  added: "added",
-  removed: "removed",
-  modified: "modified",
+const HUNK_STATUS_LABEL_KEYS: Record<ChangeHunkStatus, string> = {
+  added: "ui.changeReview.statusAdded",
+  removed: "ui.changeReview.statusRemoved",
+  modified: "ui.changeReview.statusModified",
 };
 
 // ─── Checks (verification evidence) ────────────────────────────────────────────
@@ -487,9 +491,9 @@ function isLongCheckDetail(detail: string): boolean {
   return detail.length > CHECK_DETAIL_COLLAPSE_THRESHOLD || detail.includes("\n");
 }
 
-const CHECK_PHASE_LABELS: Record<"before" | "after", string> = {
-  before: "Before",
-  after: "After",
+const CHECK_PHASE_LABEL_KEYS: Record<"before" | "after", string> = {
+  before: "ui.changeReview.phaseBefore",
+  after: "ui.changeReview.phaseAfter",
 };
 
 /**
@@ -526,9 +530,10 @@ function groupChecksByPhase(
  * decorative (`aria-hidden`); the status word is what reaches assistive tech.
  */
 function ChangeCheckRow({ check }: { check: CheckResult }) {
+  const { t } = useLocale();
   const [detailOpen, setDetailOpen] = useState(false);
   const { label, ok, detail, durationMs } = check;
-  const statusWord = ok ? "Passed" : "Failed";
+  const statusWord = ok ? t("ui.changeReview.checkPassed") : t("ui.changeReview.checkFailed");
   const hasDetail = detail !== undefined && detail !== "";
   const longDetail = hasDetail && isLongCheckDetail(detail);
 
@@ -552,7 +557,7 @@ function ChangeCheckRow({ check }: { check: CheckResult }) {
           <Collapsible open={detailOpen} onOpenChange={setDetailOpen}>
             <CollapsibleTrigger
               className={cn(
-                "flex items-center gap-1 self-start rounded-sm pl-5 text-caption text-muted-foreground",
+                "flex items-center gap-1 self-start rounded-sm ps-5 text-caption text-muted-foreground",
                 "hover:text-foreground focus-ring",
               )}
             >
@@ -563,16 +568,16 @@ function ChangeCheckRow({ check }: { check: CheckResult }) {
                   detailOpen ? "rotate-180" : "rotate-0",
                 )}
               />
-              {detailOpen ? "Hide detail" : "Show detail"}
+              {detailOpen ? t("ui.changeReview.hideDetail") : t("ui.changeReview.showDetail")}
             </CollapsibleTrigger>
             <CollapsibleContent data-slot="change-review-hunk-check-detail">
-              <p className="pl-5 pt-1 text-caption text-muted-foreground break-words">{detail}</p>
+              <p className="ps-5 pt-1 text-caption text-muted-foreground break-words">{detail}</p>
             </CollapsibleContent>
           </Collapsible>
         ) : (
           <p
             data-slot="change-review-hunk-check-detail"
-            className="pl-5 text-caption text-muted-foreground break-words"
+            className="ps-5 text-caption text-muted-foreground break-words"
           >
             {detail}
           </p>
@@ -583,6 +588,7 @@ function ChangeCheckRow({ check }: { check: CheckResult }) {
 
 /** The full checks section for one hunk — grouped by phase when applicable. */
 function ChangeReviewChecks({ checks }: { checks: CheckResult[] }) {
+  const { t } = useLocale();
   const groups = groupChecksByPhase(checks);
   const showPhaseLabels = groups.some((g) => g.phase !== undefined);
 
@@ -599,7 +605,7 @@ function ChangeReviewChecks({ checks }: { checks: CheckResult[] }) {
         >
           {showPhaseLabels && group.phase && (
             <span className="text-meta font-medium text-muted-foreground">
-              {CHECK_PHASE_LABELS[group.phase]}
+              {t(CHECK_PHASE_LABEL_KEYS[group.phase])}
             </span>
           )}
           <div className="flex flex-col gap-1.5">
@@ -636,12 +642,15 @@ export interface ChangeReviewHunkProps
  */
 export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>(
   function ChangeReviewHunk({ hunk, renderHunk, className, ...props }, ref) {
+    const { t } = useLocale();
     const { state, actions } = useChangeReview();
     const { id, title, before, after, status = "modified", provenance, checks } = hunk;
     const approved = state.approved.has(id);
 
-    const statusLabel = HUNK_STATUS_LABELS[status];
-    const toggleLabel = approved ? `Reject hunk: ${title ?? id}` : `Approve hunk: ${title ?? id}`;
+    const statusLabel = t(HUNK_STATUS_LABEL_KEYS[status]);
+    const toggleLabel = t(approved ? "ui.changeReview.rejectHunk" : "ui.changeReview.approveHunk", {
+      title: title ?? id,
+    });
 
     // Quiet, no-fill diff: before = struck muted text with a "−" marker, after =
     // foreground text with a "+" marker — separated by space, NOT colored
@@ -659,7 +668,7 @@ export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>
                 >
                   −
                 </span>
-                <span className="sr-only">Before: </span>
+                <span className="sr-only">{t("ui.changeReview.beforePrefix")}</span>
                 <div className="min-w-0 break-words text-muted-foreground line-through decoration-muted-foreground/30">
                   {before}
                 </div>
@@ -670,7 +679,7 @@ export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>
                 <span aria-hidden="true" className="shrink-0 select-none font-mono text-foreground">
                   +
                 </span>
-                <span className="sr-only">After: </span>
+                <span className="sr-only">{t("ui.changeReview.afterPrefix")}</span>
                 <div className="min-w-0 break-words text-foreground">{after}</div>
               </div>
             )}
@@ -691,7 +700,7 @@ export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>
             {/* Status indicator: NON-color cue via symbol + color together */}
             <span
               role="img"
-              aria-label={`Change type: ${statusLabel}`}
+              aria-label={t("ui.changeReview.changeType", { status: statusLabel })}
               className="shrink-0 inline-flex items-center justify-center size-5"
             >
               {HUNK_STATUS_ICONS[status]}
@@ -732,7 +741,7 @@ export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>
           <div className="flex items-center gap-1.5">
             <Badge variant="success" className="animate-in fade-in-0 duration-fast ease-entrance">
               <Check aria-hidden="true" className="size-3" />
-              Approved
+              {t("ui.changeReview.approvedBadge")}
             </Badge>
           </div>
         )}

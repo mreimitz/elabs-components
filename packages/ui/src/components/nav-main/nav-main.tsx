@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Shared collapsible sidebar navigation primitive (issue #99).
  * Promoted from `registry/blocks/sidebar-02/nav-main.tsx`.
@@ -90,7 +92,7 @@ export function NavMain({ routes, className }: NavMainProps) {
                   >
                     {route.icon}
                     {!isCollapsed && (
-                      <span className="ms-2 flex-1 text-sm font-medium">{route.title}</span>
+                      <span className="ms-2 flex-1 text-body font-medium">{route.title}</span>
                     )}
                     {!isCollapsed && (
                       <span className="ms-auto">
@@ -114,7 +116,7 @@ export function NavMain({ routes, className }: NavMainProps) {
                           <SidebarMenuSubButton asChild>
                             <a
                               href={subRoute.link}
-                              className="flex items-center rounded-md px-4 py-1.5 text-sm font-medium text-sidebar-muted-foreground"
+                              className="flex items-center rounded-md px-4 py-1.5 text-body font-medium text-sidebar-muted-foreground"
                             >
                               {subRoute.title}
                             </a>
@@ -135,7 +137,9 @@ export function NavMain({ routes, className }: NavMainProps) {
                   )}
                 >
                   {route.icon}
-                  {!isCollapsed && <span className="ms-2 text-sm font-medium">{route.title}</span>}
+                  {!isCollapsed && (
+                    <span className="ms-2 text-body font-medium">{route.title}</span>
+                  )}
                 </a>
               </SidebarMenuButton>
             )}

@@ -10,6 +10,7 @@ export const Checkbox = forwardRef<
   return (
     <CheckboxPrimitive.Root
       ref={ref}
+      data-slot="checkbox"
       className={cn(
         "peer size-4 shrink-0 rounded-sm border border-input shadow-sm transition-colors duration-fast ease-standard",
         "focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",

@@ -32,7 +32,7 @@ export type QueueItemProps = ComponentProps<"li">;
 export const QueueItem = ({ className, ...props }: QueueItemProps) => (
   <li
     className={cn(
-      "group flex flex-col gap-1 rounded-md px-3 py-1 text-sm transition-colors hover:bg-muted",
+      "group flex flex-col gap-1 rounded-md px-3 py-1 text-body transition-colors hover:bg-muted",
       className,
     )}
     {...props}
@@ -90,7 +90,7 @@ export const QueueItemDescription = ({
 }: QueueItemDescriptionProps) => (
   <div
     className={cn(
-      "ms-6 text-xs",
+      "ms-6 text-meta",
       completed ? "text-muted-foreground/40 line-through" : "text-muted-foreground",
       className,
     )}
@@ -141,7 +141,7 @@ export type QueueItemFileProps = ComponentProps<"span">;
 
 export const QueueItemFile = ({ children, className, ...props }: QueueItemFileProps) => (
   <span
-    className={cn("flex items-center gap-1 rounded border bg-muted px-2 py-1 text-xs", className)}
+    className={cn("flex items-center gap-1 rounded border bg-muted px-2 py-1 text-meta", className)}
     {...props}
   >
     <PaperclipIcon size={12} />
@@ -177,7 +177,7 @@ export const QueueSectionTrigger = ({
   <CollapsibleTrigger asChild>
     <button
       className={cn(
-        "group flex w-full items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-start font-medium text-muted-foreground text-sm transition-colors hover:bg-muted",
+        "group flex w-full items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-start font-medium text-muted-foreground text-body transition-colors hover:bg-muted",
         className,
       )}
       type="button"

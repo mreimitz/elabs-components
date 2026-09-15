@@ -18,6 +18,7 @@ import {
 import { X, Upload, FileIcon, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { Button } from "../button";
+import { useLocale } from "../locale-provider";
 import { Progress } from "../progress";
 
 // ---------------------------------------------------------------------------
@@ -39,6 +40,42 @@ export interface UploadFile {
   errorMessage?: string;
 }
 
+/** Why `addFiles` (picker OR drag-and-drop) declined a file. */
+export type FileRejectionReason = "accept" | "maxSize" | "maxFiles" | "multiple";
+
+export interface FileRejection {
+  file: File;
+  reason: FileRejectionReason;
+}
+
+/**
+ * Match a file against an `<input accept>`-style pattern list (comma-separated
+ * extensions like `.png`, exact MIME types like `image/png`, or wildcards like
+ * `image/*`). Drag-and-drop delivers files straight from `DataTransfer` — the
+ * browser only enforces `accept` for the native picker dialog, never for a
+ * drop — so this has to be re-applied by hand for the drop path to actually
+ * "respect `accept`".
+ */
+function fileMatchesAccept(file: File, accept: string | undefined): boolean {
+  if (!accept) return true;
+  const patterns = accept
+    .split(",")
+    .map((p) => p.trim().toLowerCase())
+    .filter(Boolean);
+  if (patterns.length === 0) return true;
+  const name = file.name.toLowerCase();
+  const type = file.type.toLowerCase();
+  return patterns.some((pattern) => {
+    if (pattern.startsWith(".")) return name.endsWith(pattern);
+    if (pattern.endsWith("/*")) return type.startsWith(pattern.slice(0, -1));
+    return type === pattern;
+  });
+}
+
+function makeUploadFileId(file: File): string {
+  return `${file.name}-${Date.now()}-${Math.random()}`;
+}
+
 // ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
@@ -58,6 +95,22 @@ interface FileUploadContextValue {
   inputId: string;
 }
 
+/** Read `accept`/`multiple`/`maxSize`/`maxFiles` off a rejection for a default message. */
+export function describeFileRejection(rejection: FileRejection): string {
+  switch (rejection.reason) {
+    case "accept":
+      return `${rejection.file.name} is not an accepted file type.`;
+    case "maxSize":
+      return `${rejection.file.name} is too large.`;
+    case "maxFiles":
+      return `${rejection.file.name} was not added — the file limit was reached.`;
+    case "multiple":
+      return `${rejection.file.name} was not added — only one file is allowed.`;
+    default:
+      return `${rejection.file.name} was not added.`;
+  }
+}
+
 const FileUploadContext = createContext<FileUploadContextValue | null>(null);
 
 function useFileUpload(): FileUploadContextValue {
@@ -75,6 +128,12 @@ export interface FileUploadProps extends HTMLAttributes<HTMLDivElement> {
   files?: UploadFile[];
   /** Called when files are added or removed. */
   onFilesChange?: (files: UploadFile[]) => void;
+  /**
+   * Called with the files a picker selection OR a drag-and-drop declined —
+   * wrong type (`accept`), over `maxSize`, over `maxFiles`, or extra files
+   * dropped when `multiple` is false — each with its {@link FileRejectionReason}.
+   */
+  onFilesRejected?: (rejections: FileRejection[]) => void;
   /** Accepted MIME types / extensions (forwarded to <input accept>). */
   accept?: string;
   /** Allow multiple files at once. */
@@ -102,6 +161,7 @@ export const FileUpload = forwardRef<HTMLDivElement, FileUploadProps>(function F
   {
     files: filesProp,
     onFilesChange,
+    onFilesRejected,
     accept,
     multiple = false,
     maxSize,
@@ -134,19 +194,45 @@ export const FileUpload = forwardRef<HTMLDivElement, FileUploadProps>(function F
 
   const addFiles = useCallback(
     (incoming: File[]) => {
-      const toAdd = incoming.filter((f) => {
-        if (maxSize && f.size > maxSize) return false;
-        return true;
-      });
+      const rejections: FileRejection[] = [];
+
+      // A drop can deliver more files than the native picker ever would —
+      // `multiple` is only enforced by the browser for the `<input>` dialog,
+      // never for `DataTransfer`, so re-apply it here for the drop path too.
+      let candidates = incoming;
+      if (!multiple && candidates.length > 1) {
+        rejections.push(
+          ...candidates.slice(1).map((file) => ({ file, reason: "multiple" as const })),
+        );
+        candidates = candidates.slice(0, 1);
+      }
+
+      const toAdd: File[] = [];
+      for (const f of candidates) {
+        if (!fileMatchesAccept(f, accept)) {
+          rejections.push({ file: f, reason: "accept" });
+          continue;
+        }
+        if (maxSize && f.size > maxSize) {
+          rejections.push({ file: f, reason: "maxSize" });
+          continue;
+        }
+        toAdd.push(f);
+      }
 
       const next = [...files];
       for (const f of toAdd) {
-        if (maxFiles && next.length >= maxFiles) break;
-        next.push({ id: `${f.name}-${Date.now()}-${Math.random()}`, file: f });
+        if (maxFiles && next.length >= maxFiles) {
+          rejections.push({ file: f, reason: "maxFiles" });
+          continue;
+        }
+        next.push({ id: makeUploadFileId(f), file: f });
       }
+
       commit(next);
+      if (rejections.length > 0) onFilesRejected?.(rejections);
     },
-    [files, maxSize, maxFiles, commit],
+    [files, accept, multiple, maxSize, maxFiles, commit, onFilesRejected],
   );
 
   const removeFile = useCallback(
@@ -269,17 +355,31 @@ export interface FileUploadDropzoneProps extends HTMLAttributes<HTMLElement> {
  * complementary path.
  */
 export const FileUploadDropzone = forwardRef<HTMLElement, FileUploadDropzoneProps>(
-  function FileUploadDropzone(
-    { className, children, browseLabel = "Browse files", ...props },
-    ref,
-  ) {
+  function FileUploadDropzone({ className, children, browseLabel, ...props }, ref) {
     const { isDragging, disabled, inputId, openPicker } = useFileUpload();
+    const { t } = useLocale();
+    const resolvedBrowseLabel = browseLabel ?? t("ui.fileUpload.browseFiles");
 
     return (
-      // label wraps the hidden input — clicking anywhere on the zone opens the picker
+      // label wraps the hidden input — clicking anywhere on the zone opens the
+      // picker. A `<label>` is not itself keyboard-operable (no native
+      // Enter/Space activation and, since the input carries `tabIndex={-1}`,
+      // nothing here is in the tab order) — that leaves a custom-`children`
+      // dropzone with no keyboard path at all, so this also owns its own
+      // tab stop + Enter/Space handling.
       <label
         ref={ref as React.Ref<HTMLLabelElement>}
         htmlFor={inputId}
+        tabIndex={disabled ? undefined : 0}
+        role="button"
+        aria-disabled={disabled || undefined}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openPicker();
+          }
+        }}
         data-slot="file-upload-dropzone"
         data-dragging={isDragging || undefined}
         data-disabled={disabled || undefined}
@@ -300,8 +400,10 @@ export const FileUploadDropzone = forwardRef<HTMLElement, FileUploadDropzoneProp
               <Upload className="size-5 text-muted-foreground" aria-hidden="true" />
             </div>
             <div className="flex flex-col items-center gap-1 text-center">
-              <p className="text-sm font-medium text-foreground">Drag & drop files here</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-body font-medium text-foreground">
+                {t("ui.fileUpload.dragDropHere")}
+              </p>
+              <p className="text-meta text-muted-foreground">
                 or{" "}
                 <button
                   type="button"
@@ -320,7 +422,7 @@ export const FileUploadDropzone = forwardRef<HTMLElement, FileUploadDropzoneProp
                     "disabled:pointer-events-none disabled:opacity-50",
                   )}
                 >
-                  {browseLabel}
+                  {resolvedBrowseLabel}
                 </button>
               </p>
             </div>
@@ -344,6 +446,7 @@ export type FileUploadListProps = HTMLAttributes<HTMLUListElement>;
 export const FileUploadList = forwardRef<HTMLUListElement, FileUploadListProps>(
   function FileUploadList({ className, children, ...props }, ref) {
     const { files } = useFileUpload();
+    const { t } = useLocale();
     if (files.length === 0 && !children) return null;
 
     return (
@@ -355,7 +458,7 @@ export const FileUploadList = forwardRef<HTMLUListElement, FileUploadListProps>(
       <ul
         ref={ref}
         aria-live="polite"
-        aria-label="Selected files"
+        aria-label={t("ui.fileUpload.selectedFiles")}
         data-slot="file-upload-list"
         className={cn("flex flex-col gap-2", className)}
         {...props}
@@ -420,10 +523,10 @@ export const FileUploadItem = forwardRef<HTMLLIElement, FileUploadItemProps>(
       >
         <div className="flex items-center gap-2">
           {statusIcon[resolvedStatus]}
-          <span className="flex-1 min-w-0 truncate text-sm text-foreground">
+          <span className="flex-1 min-w-0 truncate text-body text-foreground">
             {uploadFile.file.name}
           </span>
-          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
             {formatFileSize(uploadFile.file.size)}
           </span>
           <Button
@@ -445,7 +548,7 @@ export const FileUploadItem = forwardRef<HTMLLIElement, FileUploadItemProps>(
           // #124: this is running text (the rejection reason), so it takes the
           // >=4.5:1 ink rung `text-destructive-text` — not the 3:1 mark rung the
           // `statusIcon.error` glyph above correctly keeps.
-          <p role="alert" className="text-xs text-destructive-text">
+          <p role="alert" className="text-meta text-destructive-text">
             {resolvedError}
           </p>
         )}

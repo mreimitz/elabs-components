@@ -12,7 +12,11 @@ export default defineConfig([
     // (Monaco touches browser globals at import). esbuild strips the per-module
     // "use client" directives when it bundles, so the 47 in src/ never reach
     // dist/ — re-assert it here or RSC consumers break on import.
-    entry: { index: "src/index.ts", "markdown/index": "src/markdown/index.ts" },
+    entry: {
+      index: "src/index.ts",
+      "markdown/index": "src/markdown/index.ts",
+      monaco: "src/monaco.ts",
+    },
     format: ["esm"],
     dts: true,
     sourcemap: true,

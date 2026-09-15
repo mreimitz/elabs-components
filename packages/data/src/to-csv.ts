@@ -4,10 +4,12 @@
  * `toCsv` is pure + SSR-safe (no DOM, no deps). `downloadCsv` delegates the
  * browser save mechanics to `@elabs-ai/components-ui`'s shared `downloadBlob` (one home for
  * the Blob → `<a download>` dance; @elabs-ai/components-ui is already a peer dep here).
- * ChartFrame uses its own local copy of `toCsv` in @elabs-ai/components-charts to avoid a
- * cross-sibling dependency (charts → data is not allowed per the one-way rule).
+ * Value stringification + injection-guarded field quoting live in
+ * `@elabs-ai/components-ui`'s `csv` lib (`csvStringifyValue`/`csvQuoteField`) — the shared
+ * home so `@elabs-ai/components-charts`'s ChartFrame serializer can reuse the same logic
+ * without a charts → data dependency (not allowed per the one-way rule).
  */
-import { downloadBlob } from "@elabs-ai/components-ui";
+import { csvQuoteField, csvStringifyValue, downloadBlob } from "@elabs-ai/components-ui";
 
 export type CsvColumn<TData> = { key: keyof TData & string; header?: string };
 
@@ -25,33 +27,8 @@ export interface DownloadCsvOptions<TData> extends ToCsvOptions<TData> {
   filename?: string;
 }
 
-/** RFC 4180 injection guard prefixes. */
-const INJECTION_PREFIXES = ["=", "+", "-", "@"];
-
-function stringifyValue(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
-}
-
-function quoteField(field: string, delimiter: string): string {
-  // CSV-injection guard: prefix with a single quote if the field starts with a
-  // formula trigger character.
-  if (INJECTION_PREFIXES.some((p) => field.startsWith(p))) {
-    field = "'" + field;
-  }
-  // RFC 4180: quote iff the field contains delimiter, double-quote, CR, or LF.
-  if (
-    field.includes(delimiter) ||
-    field.includes('"') ||
-    field.includes("\n") ||
-    field.includes("\r")
-  ) {
-    return '"' + field.replaceAll('"', '""') + '"';
-  }
-  return field;
-}
+const stringifyValue = csvStringifyValue;
+const quoteField = csvQuoteField;
 
 /**
  * Serialize rows to a CSV string (no DOM access — safe for SSR / jsdom).

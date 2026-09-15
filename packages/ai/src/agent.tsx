@@ -31,9 +31,9 @@ export const AgentHeader = memo(({ className, name, model, ...props }: AgentHead
   <div className={cn("flex w-full items-center justify-between gap-4 p-3", className)} {...props}>
     <div className="flex items-center gap-2">
       <BotIcon className="size-4 text-muted-foreground" />
-      <span className="font-medium text-sm">{name}</span>
+      <span className="font-medium text-body">{name}</span>
       {model && (
-        <Badge className="font-mono text-xs" variant="secondary">
+        <Badge className="font-mono text-meta" variant="secondary">
           {model}
         </Badge>
       )}
@@ -56,10 +56,10 @@ export const AgentInstructions = memo(
     const { t } = useLocale();
     return (
       <div className={cn("space-y-2", className)} {...props}>
-        <span className="font-medium text-muted-foreground text-sm">
+        <span className="font-medium text-muted-foreground text-body">
           {t("ai.agent.instructions")}
         </span>
-        <div className="rounded-md bg-muted/50 p-3 text-muted-foreground text-sm">
+        <div className="rounded-md bg-muted/50 p-3 text-muted-foreground text-body">
           <p>{children}</p>
         </div>
       </div>
@@ -73,7 +73,7 @@ export const AgentTools = memo(({ className, ...props }: AgentToolsProps) => {
   const { t } = useLocale();
   return (
     <div className={cn("space-y-2", className)}>
-      <span className="font-medium text-muted-foreground text-sm">{t("ai.agent.tools")}</span>
+      <span className="font-medium text-muted-foreground text-body">{t("ai.agent.tools")}</span>
       <Accordion className="rounded-md border" {...props} />
     </div>
   );
@@ -93,7 +93,7 @@ export const AgentTool = memo(({ className, tool, value, ...props }: AgentToolPr
 
   return (
     <AccordionItem className={cn("border-b last:border-b-0", className)} value={value} {...props}>
-      <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
+      <AccordionTrigger className="px-3 py-2 text-body hover:no-underline">
         {description ?? "No description"}
       </AccordionTrigger>
       <AccordionContent className="px-3 pb-3">
@@ -109,14 +109,19 @@ export type AgentOutputProps = ComponentProps<"div"> & {
   schema: string;
 };
 
-export const AgentOutput = memo(({ className, schema, ...props }: AgentOutputProps) => (
-  <div className={cn("space-y-2", className)} {...props}>
-    <span className="font-medium text-muted-foreground text-sm">Output Schema</span>
-    <div className="rounded-md bg-muted/50">
-      <CodeBlock code={schema} language="typescript" />
+export const AgentOutput = memo(({ className, schema, ...props }: AgentOutputProps) => {
+  const { t } = useLocale();
+  return (
+    <div className={cn("space-y-2", className)} {...props}>
+      <span className="font-medium text-muted-foreground text-body">
+        {t("ai.agent.outputSchema")}
+      </span>
+      <div className="rounded-md bg-muted/50">
+        <CodeBlock code={schema} language="typescript" />
+      </div>
     </div>
-  </div>
-));
+  );
+});
 
 Agent.displayName = "Agent";
 AgentHeader.displayName = "AgentHeader";

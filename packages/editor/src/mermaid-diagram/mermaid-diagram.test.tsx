@@ -7,9 +7,10 @@ const renderMock = vi.fn(async (_id: string, chart: string) => {
     svg: `<svg data-chart="ok"><g class="node"><rect></rect><text>Microsoft Graph API</text></g><g class="node"><rect></rect><text>Worker</text></g></svg>`,
   };
 });
+const initializeMock = vi.fn();
 
 vi.mock("mermaid", () => ({
-  default: { initialize: vi.fn(), render: renderMock },
+  default: { initialize: initializeMock, render: renderMock },
 }));
 
 import { MermaidDiagram } from "./mermaid-diagram";

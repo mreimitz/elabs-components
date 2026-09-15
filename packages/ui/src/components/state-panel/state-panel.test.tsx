@@ -122,7 +122,7 @@ describe("StatePanel", () => {
     expect(wrapper?.className ?? "").not.toContain("size-10");
   });
 
-  it("illustration path renders the title at the subtitle role, distinct from the icon path's text-sm (#47)", () => {
+  it("illustration path renders the title at the subtitle role, distinct from the icon path's text-body (#47)", () => {
     // A 112px+ illustration needs a heavier title to group with — bumping the
     // title to `text-subtitle` (styling-and-tokens.md's typography-scale
     // roles) only on the illustration path, so the plain `icon` path (a
@@ -132,13 +132,13 @@ describe("StatePanel", () => {
     );
     const titleWithIllustration = withIllustration.querySelector("h3");
     expect(titleWithIllustration?.className ?? "").toContain("text-subtitle");
-    expect(titleWithIllustration?.className ?? "").not.toMatch(/\btext-sm\b/);
+    expect(titleWithIllustration?.className ?? "").not.toMatch(/\btext-body\b/);
 
     const { container: withIcon } = render(
       <StatePanel kind="empty" title="No items" icon={<span data-testid="i" />} />,
     );
     const titleWithIcon = withIcon.querySelector("h3");
-    expect(titleWithIcon?.className ?? "").toMatch(/\btext-sm\b/);
+    expect(titleWithIcon?.className ?? "").toMatch(/\btext-body\b/);
     expect(titleWithIcon?.className ?? "").not.toContain("text-subtitle");
   });
 

@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import {
   Command,
   CommandDialog,
+  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -349,5 +350,19 @@ describe("Command — CommandSeparator a11y (#157)", () => {
     // Never exposed with its `role="separator"` — a listbox can't own one.
     expect(screen.queryByRole("separator")).toBeNull();
     expect(screen.getByRole("listbox")).toBeInTheDocument();
+  });
+});
+
+describe("CommandEmpty — merges className instead of replacing it", () => {
+  it("keeps the base py-6/text-center classes alongside a caller className", () => {
+    render(
+      <Command>
+        <CommandList>
+          <CommandEmpty className="custom-empty">No results</CommandEmpty>
+        </CommandList>
+      </Command>,
+    );
+    const empty = screen.getByText("No results");
+    expect(empty).toHaveClass("py-6", "text-center", "custom-empty");
   });
 });

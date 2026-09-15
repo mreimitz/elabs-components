@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Card, CardDescription, CardTitle } from "./card";
 
 describe("Card", () => {
@@ -101,6 +101,28 @@ describe("Card", () => {
     const region = card.querySelector("[role='region']");
     expect(region).not.toBeNull();
     expect(region).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("with `detail` + hover, cancels its pending conceal rAF on unmount", () => {
+    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(42);
+    const cafSpy = vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+    const { unmount } = render(
+      <Card data-testid="card" detailReveal="hover" detail={<button>More</button>}>
+        main
+      </Card>,
+    );
+    const card = screen.getByTestId("card");
+    // focus-out schedules the conceal rAF this test is locking cleanup for.
+    fireEvent.focusOut(card);
+    expect(rafSpy).toHaveBeenCalled();
+
+    unmount();
+    // Without cancelling it, the scheduled frame is still pending after
+    // teardown and fires against a component that no longer exists.
+    expect(cafSpy).toHaveBeenCalledWith(42);
+
+    rafSpy.mockRestore();
+    cafSpy.mockRestore();
   });
 
   it("with `detail` + hover, detail region is labelled (landmark navigation, #141)", () => {

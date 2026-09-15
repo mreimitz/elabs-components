@@ -1,6 +1,6 @@
 import { createRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   MentionInput,
@@ -613,5 +613,55 @@ describe("onQueryChange", () => {
 
     await user.keyboard("{Escape}");
     expect(onQueryChange).toHaveBeenLastCalledWith(null);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Mirror re-measure — scoped MutationObserver (perf review §3.3)
+// ---------------------------------------------------------------------------
+
+describe("mirror re-measure observer scope", () => {
+  /**
+   * Regression lock for the fix: the observer that used to watch `<html>`
+   * AND `<body>` for `class`/`style`/`data-theme`/`data-density`/
+   * `data-decoration` now watches only the field's closest `[data-theme]`
+   * ancestor (`<html>` here, since jsdom's default document carries none),
+   * filtered to `data-theme`/`data-density`/`data-decoration` — so a
+   * `style` mutation on `<body>` (what Radix's scroll-lock does on every
+   * `Sheet`/`Dialog`/`Popover` open, anywhere in the app) no longer causes a
+   * re-measure, while a real theme/density/decoration attribute flip still
+   * does.
+   */
+  it("ignores an unrelated body style mutation but reacts to a theme attribute flip", async () => {
+    render(<Harness />);
+    // Let the mount-time layout effects (which call getComputedStyle
+    // themselves) settle before counting.
+    await Promise.resolve();
+    const spy = vi.spyOn(window, "getComputedStyle");
+    spy.mockClear();
+
+    // Simulate Radix's scroll-lock: an inline style write on <body>, nothing
+    // to do with this field's own theme/density/decoration.
+    document.body.style.paddingRight = "17px";
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(spy).not.toHaveBeenCalled();
+    document.body.style.removeProperty("padding-right");
+
+    // A real theme attribute flip on the scope the observer actually
+    // watches (<html>, the field's closest `[data-theme]` ancestor — there
+    // is none here, so it falls back to the document root) DOES trigger a
+    // re-measure.
+    try {
+      await act(async () => {
+        document.documentElement.setAttribute("data-theme", "dark");
+        await vi.waitFor(() => {
+          expect(spy).toHaveBeenCalled();
+        });
+      });
+    } finally {
+      document.documentElement.removeAttribute("data-theme");
+      spy.mockRestore();
+    }
   });
 });

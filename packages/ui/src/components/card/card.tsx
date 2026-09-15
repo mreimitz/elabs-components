@@ -2,6 +2,7 @@
 
 import {
   forwardRef,
+  useEffect,
   useRef,
   useState,
   useCallback,
@@ -110,12 +111,22 @@ function CardWithHoverDetail({
 }: CardProps) {
   const [isRevealed, setIsRevealed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const concealRafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (concealRafRef.current !== null) cancelAnimationFrame(concealRafRef.current);
+    };
+  }, []);
 
   const reveal = useCallback(() => setIsRevealed(true), []);
   const conceal = useCallback(() => {
     // Only conceal if focus has truly left the card (not moved to detail).
     // Use requestAnimationFrame so the new focusIn event fires first.
-    requestAnimationFrame(() => {
+    // Tracked in a ref so it can be cancelled if the card unmounts before the
+    // frame fires (a focus-out right before navigation away, say).
+    concealRafRef.current = requestAnimationFrame(() => {
+      concealRafRef.current = null;
       if (containerRef.current && !containerRef.current.contains(document.activeElement)) {
         setIsRevealed(false);
       }
@@ -142,6 +153,7 @@ function CardWithHoverDetail({
   return (
     <div
       ref={containerRef}
+      data-slot="card"
       className={cn(
         cardVariants({ interactive }),
         cardDetailVariants({ detailPlacement, detailReveal: "hover" }),
@@ -161,6 +173,7 @@ function CardWithHoverDetail({
         role="region"
         aria-label={detailLabel}
         aria-hidden={!isRevealed}
+        data-slot="card-detail"
         className={cn("overflow-hidden bg-background p-6", dividerEdge, dividerColor)}
       >
         {detail}
@@ -189,6 +202,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     return (
       <div
         ref={ref}
+        data-slot="card"
         className={cn(cardVariants({ interactive }), className)}
         style={style}
         {...props}
@@ -230,6 +244,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
   return (
     <div
       ref={ref}
+      data-slot="card"
       className={cn(
         cardVariants({ interactive }),
         cardDetailVariants({ detailPlacement, detailReveal }),
@@ -243,6 +258,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
       <div
         role="region"
         aria-label={detailLabel}
+        data-slot="card-detail"
         className={cn("overflow-hidden bg-background p-6", dividerEdge, dividerColor)}
       >
         {detail}
@@ -253,7 +269,14 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
 
 export const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   function CardHeader({ className, ...props }, ref) {
-    return <div ref={ref} className={cn("flex flex-col gap-1.5 p-6", className)} {...props} />;
+    return (
+      <div
+        ref={ref}
+        data-slot="card-header"
+        className={cn("flex flex-col gap-1.5 p-6", className)}
+        {...props}
+      />
+    );
   },
 );
 
@@ -276,7 +299,14 @@ export const CardTitle = forwardRef<HTMLDivElement, CardTitleProps>(function Car
   { className, as: Tag = "div", ...props },
   ref,
 ) {
-  return <Tag ref={ref} className={cn("text-title leading-none", className)} {...props} />;
+  return (
+    <Tag
+      ref={ref}
+      data-slot="card-title"
+      className={cn("text-title leading-none", className)}
+      {...props}
+    />
+  );
 });
 
 export interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {
@@ -293,11 +323,12 @@ export const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionP
     return (
       <p
         ref={ref}
+        data-slot="card-description"
         // `text-balance` sets `text-wrap: balance`. #336's real defect was an
         // invalid, misspelled utility name that emitted zero CSS (NOT a
         // tailwind-merge conflict) — this is the real, registered class.
         className={cn(
-          "text-sm text-balance text-muted-foreground",
+          "text-body text-balance text-muted-foreground",
           measure && "max-w-prose",
           className,
         )}
@@ -312,6 +343,7 @@ export const CardAction = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
     return (
       <div
         ref={ref}
+        data-slot="card-action"
         className={cn("col-start-2 row-span-2 row-start-1 self-start justify-self-end", className)}
         {...props}
       />
@@ -321,12 +353,21 @@ export const CardAction = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
 
 export const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   function CardContent({ className, ...props }, ref) {
-    return <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />;
+    return (
+      <div ref={ref} data-slot="card-content" className={cn("p-6 pt-0", className)} {...props} />
+    );
   },
 );
 
 export const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   function CardFooter({ className, ...props }, ref) {
-    return <div ref={ref} className={cn("flex items-center p-6 pt-0", className)} {...props} />;
+    return (
+      <div
+        ref={ref}
+        data-slot="card-footer"
+        className={cn("flex items-center p-6 pt-0", className)}
+        {...props}
+      />
+    );
   },
 );

@@ -81,7 +81,7 @@ export function NavNotifications({
           variant="ghost"
           size="icon"
           className={cn("rounded-full", className)}
-          aria-label="Open notifications"
+          aria-label={t("ui.navNotifications.trigger")}
         >
           <BellIcon className="size-5" />
         </Button>
@@ -113,13 +113,13 @@ export function NavNotifications({
               <AvatarFallback>{fallback}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="text-sm font-medium">{text}</span>
-              <span className="text-xs text-muted-foreground">{time}</span>
+              <span className="text-body font-medium">{text}</span>
+              <span className="text-meta text-muted-foreground">{time}</span>
             </div>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="justify-center text-sm text-muted-foreground">
+        <DropdownMenuItem className="justify-center text-body text-muted-foreground">
           {viewAllLabel}
         </DropdownMenuItem>
       </DropdownMenuContent>

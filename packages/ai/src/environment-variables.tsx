@@ -4,18 +4,10 @@ import { Badge } from "@elabs-ai/components-ui";
 import { Button } from "@elabs-ai/components-ui";
 import { Switch } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
-import { useLocale } from "@elabs-ai/components-ui";
+import { useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
 import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 interface EnvironmentVariablesContextType {
   showValues: boolean;
@@ -86,7 +78,7 @@ export const EnvironmentVariablesTitle = ({
   children,
   ...props
 }: EnvironmentVariablesTitleProps) => (
-  <h3 className={cn("font-medium text-sm", className)} {...props}>
+  <h3 className={cn("font-medium text-body", className)} {...props}>
     {children ?? "Environment Variables"}
   </h3>
 );
@@ -102,7 +94,7 @@ export const EnvironmentVariablesToggle = ({
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <span className="text-muted-foreground text-xs">
+      <span className="text-muted-foreground text-meta">
         {showValues ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
       </span>
       <Switch
@@ -159,7 +151,7 @@ export const EnvironmentVariableName = ({
   const { name } = useContext(EnvironmentVariableContext);
 
   return (
-    <span className={cn("font-mono text-sm", className)} {...props}>
+    <span className={cn("font-mono text-body", className)} {...props}>
       {children ?? name}
     </span>
   );
@@ -180,7 +172,7 @@ export const EnvironmentVariableValue = ({
   return (
     <span
       className={cn(
-        "font-mono text-muted-foreground text-sm",
+        "font-mono text-muted-foreground text-body",
         !showValues && "select-none",
         className,
       )}
@@ -234,15 +226,19 @@ export type EnvironmentVariableCopyButtonProps = ComponentProps<typeof Button> &
 export const EnvironmentVariableCopyButton = ({
   onCopy,
   onError,
-  timeout = 2000,
+  timeout,
   copyFormat = "value",
   children,
   className,
+  "aria-label": ariaLabel,
   ...props
 }: EnvironmentVariableCopyButtonProps) => {
-  const [isCopied, setIsCopied] = useState(false);
-  const timeoutRef = useRef<number>(0);
+  const { t } = useLocale();
   const { name, value } = useContext(EnvironmentVariableContext);
+  // Shared implementation (`@elabs-ai/components-ui`) instead of a private
+  // copy of the same copy-to-clipboard state machine (issue-workflow.md
+  // dedupe finding) — see `CodeBlockCopyButton` for the reference usage.
+  const { copied: isCopied, copy } = useCopyToClipboard({ resetAfterMs: timeout ?? 2000 });
 
   const getTextToCopy = useCallback((): string => {
     const formatMap = {
@@ -254,32 +250,19 @@ export const EnvironmentVariableCopyButton = ({
   }, [name, value, copyFormat]);
 
   const copyToClipboard = useCallback(async () => {
-    if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-      onError?.(new Error("Clipboard API not available"));
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(getTextToCopy());
-      setIsCopied(true);
+    const ok = await copy(getTextToCopy());
+    if (ok) {
       onCopy?.();
-      timeoutRef.current = window.setTimeout(() => setIsCopied(false), timeout);
-    } catch (error) {
-      onError?.(error as Error);
+    } else {
+      onError?.(new Error("Clipboard API not available"));
     }
-  }, [getTextToCopy, onCopy, onError, timeout]);
-
-  useEffect(
-    () => () => {
-      window.clearTimeout(timeoutRef.current);
-    },
-    [],
-  );
+  }, [copy, getTextToCopy, onCopy, onError]);
 
   const Icon = isCopied ? CheckIcon : CopyIcon;
 
   return (
     <Button
+      aria-label={ariaLabel ?? t("copy")}
       className={cn("size-6 shrink-0", className)}
       onClick={copyToClipboard}
       size="icon"
@@ -298,7 +281,7 @@ export const EnvironmentVariableRequired = ({
   children,
   ...props
 }: EnvironmentVariableRequiredProps) => (
-  <Badge className={cn("text-xs", className)} variant="secondary" {...props}>
+  <Badge className={cn("text-meta", className)} variant="secondary" {...props}>
     {children ?? "Required"}
   </Badge>
 );

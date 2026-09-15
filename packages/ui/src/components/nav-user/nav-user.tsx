@@ -54,9 +54,9 @@ export function NavUser({ user }: NavUserProps) {
                 {user.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
                 <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-start text-sm leading-tight">
+              <div className="grid flex-1 text-start text-body leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate text-meta">{user.email}</span>
               </div>
               <ChevronsUpDown className="ms-auto size-4" />
             </SidebarMenuButton>
@@ -68,14 +68,14 @@ export function NavUser({ user }: NavUserProps) {
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-start text-body">
                 <Avatar className="h-8 w-8 rounded-lg">
                   {user.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
                   <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-start text-sm leading-tight">
+                <div className="grid flex-1 text-start text-body leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate text-meta">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>

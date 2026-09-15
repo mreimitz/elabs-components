@@ -1,8 +1,8 @@
 "use client";
 
-import { useId, useRef, type ReactNode } from "react";
-import { cn } from "@elabs-ai/components-ui";
-import { intFmt } from "./chart-formatters";
+import { useId, useMemo, useRef, type ReactNode } from "react";
+import { cn, useLocale } from "@elabs-ai/components-ui";
+import { useChartFormatters } from "./chart-formatters";
 import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";
 
@@ -51,7 +51,7 @@ export interface ChartLegendProps {
   showValue?: boolean;
   /** Show percentage value. Default: true when showProgress is true */
   showPercentage?: boolean;
-  /** Format function for displaying values. Default: toLocaleString() */
+  /** Format function for displaying values. Default: locale-aware (LocaleProvider). */
   formatValue?: (value: number) => string;
   /** Title shown above the legend */
   title?: string;
@@ -113,6 +113,8 @@ interface ProgressItemProps {
   showValue: boolean;
   showPercentage: boolean;
   formatValue: (value: number) => string;
+  /** Locale-aware percentage formatter (0–100 scale in, e.g. "42%" out). */
+  formatPercentage: (value: number) => string;
   labelClassName: string;
   valueClassName: string;
   high: boolean;
@@ -124,6 +126,7 @@ function ProgressItem({
   showValue,
   showPercentage,
   formatValue,
+  formatPercentage,
   labelClassName,
   valueClassName,
   high,
@@ -172,7 +175,7 @@ function ProgressItem({
       {/* Percentage */}
       {showPercentage && (
         <span className="col-start-3 text-legend-muted-foreground text-meta tabular-nums">
-          {percentage.toFixed(0)}%
+          {formatPercentage(percentage)}
         </span>
       )}
     </div>
@@ -234,7 +237,7 @@ export function ChartLegend({
   showMarker = true,
   showValue = true,
   showPercentage,
-  formatValue = intFmt,
+  formatValue,
   title,
   className = "",
   titleClassName = "text-sm font-semibold",
@@ -245,6 +248,19 @@ export function ChartLegend({
 }: ChartLegendProps) {
   // Default showPercentage to true when showProgress is true
   const displayPercentage = showPercentage ?? showProgress;
+
+  // Locale-aware defaults (were the host-locale `intFmt` and a bare
+  // `toFixed(0)`) — bound to the active `LocaleProvider` locale so a legend
+  // under `<LocaleProvider locale="de-DE">` reads "1.234" / "42 %", not
+  // whatever the host machine happens to be set to. A caller-supplied
+  // `formatValue` still wins outright.
+  const { intFmt } = useChartFormatters();
+  const { locale } = useLocale();
+  const resolvedFormatValue = formatValue ?? intFmt;
+  const formatPercentage = useMemo(() => {
+    const fmt = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+    return (value: number) => fmt.format(value / 100);
+  }, [locale]);
 
   // Detect high decoration on the legend container
   const containerRef = useRef<HTMLDivElement>(null);
@@ -303,7 +319,8 @@ export function ChartLegend({
           >
             {showProgress && item.maxValue ? (
               <ProgressItem
-                formatValue={formatValue}
+                formatPercentage={formatPercentage}
+                formatValue={resolvedFormatValue}
                 high={high}
                 item={item}
                 labelClassName={labelClassName}
@@ -314,7 +331,7 @@ export function ChartLegend({
               />
             ) : (
               <SimpleItem
-                formatValue={formatValue}
+                formatValue={resolvedFormatValue}
                 high={high}
                 item={item}
                 labelClassName={labelClassName}

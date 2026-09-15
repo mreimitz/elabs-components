@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 
 import { useMap } from "../map-canvas/map-context";
 
@@ -37,6 +38,7 @@ export function MapPopup({
   ...popupOptions
 }: MapPopupProps) {
   const { map } = useMap();
+  const { t } = useLocale();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const container = useMemo(() => document.createElement("div"), []);
@@ -100,7 +102,7 @@ export function MapPopup({
         <button
           type="button"
           onClick={handleClose}
-          aria-label="Close popup"
+          aria-label={t("maps.popup.close")}
           className="absolute top-1 right-1 z-10 inline-flex size-5 items-center justify-center rounded-sm text-foreground transition-colors duration-fast hover:bg-muted focus-ring-inset"
         >
           <X className="size-3.5" aria-hidden="true" />

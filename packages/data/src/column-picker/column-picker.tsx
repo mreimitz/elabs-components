@@ -20,16 +20,17 @@ export interface ColumnPickerProps<TData> extends ButtonHTMLAttributes<HTMLButto
 }
 
 function ColumnPickerInner<TData>(
-  { table, label = "Columns", className, ...props }: ColumnPickerProps<TData>,
+  { table, label, className, ...props }: ColumnPickerProps<TData>,
   ref: Ref<HTMLButtonElement>,
 ) {
   const { t } = useLocale();
+  const resolvedLabel = label ?? t("data.columnPicker.label");
   const columns = table.getAllColumns().filter((c) => c.getCanHide());
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button ref={ref} variant="outline" size="sm" className={cn(className)} {...props}>
-          {label}
+          {resolvedLabel}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[12rem]">

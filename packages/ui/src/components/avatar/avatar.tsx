@@ -9,6 +9,7 @@ export const Avatar = forwardRef<
   return (
     <AvatarPrimitive.Root
       ref={ref}
+      data-slot="avatar"
       className={cn("relative flex size-9 shrink-0 overflow-hidden rounded-full", className)}
       {...props}
     />
@@ -21,6 +22,7 @@ export const AvatarImage = forwardRef<
   return (
     <AvatarPrimitive.Image
       ref={ref}
+      data-slot="avatar-image"
       className={cn(
         "aspect-square size-full animate-in fade-in duration-base ease-entrance",
         className,
@@ -36,8 +38,9 @@ export const AvatarFallback = forwardRef<
   return (
     <AvatarPrimitive.Fallback
       ref={ref}
+      data-slot="avatar-fallback"
       className={cn(
-        "flex size-full items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground",
+        "flex size-full items-center justify-center rounded-full bg-muted text-meta font-medium text-muted-foreground",
         className,
       )}
       {...props}

@@ -13,7 +13,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Spinner, StatePanel } from "@elabs-ai/components-ui";
+import { Spinner, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 import { MapContext, type BasemapTheme } from "./map-context";
@@ -142,6 +142,7 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
   },
   ref,
 ) {
+  const { t } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
   const [initFailed, setInitFailed] = useState(false);
@@ -334,8 +335,8 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
       <div className={cn("relative h-full w-full", className)}>
         <StatePanel
           kind="error"
-          title="Map unavailable"
-          description="This browser can’t render WebGL maps."
+          title={t("maps.canvas.unavailableTitle")}
+          description={t("maps.canvas.unavailableDescription")}
           className="h-full"
         />
       </div>

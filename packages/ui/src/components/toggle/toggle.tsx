@@ -21,7 +21,7 @@ export const toggleVariants = cva(
   // asChild wrapper overwrites data-state="on" with "closed" — aria-pressed
   // (Toggle) and aria-checked (ToggleGroupItem) are set by the toggle primitive
   // alone and survive the merge. (#214)
-  "inline-flex items-center justify-center gap-2 rounded-control text-sm font-control transition-colors duration-fast ease-standard hover:bg-muted hover:text-muted-foreground focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground data-[state=on]:font-semibold aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:font-semibold aria-checked:bg-accent aria-checked:text-accent-foreground aria-checked:font-semibold [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 rounded-control text-body font-control transition-colors duration-fast ease-standard hover:bg-muted hover:text-muted-foreground focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground data-[state=on]:font-semibold aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:font-semibold aria-checked:bg-accent aria-checked:text-accent-foreground aria-checked:font-semibold [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -61,6 +61,7 @@ export const Toggle = forwardRef<
   return (
     <TogglePrimitive.Root
       ref={ref}
+      data-slot="toggle"
       className={cn(toggleVariants({ variant, size }), className)}
       {...props}
     />

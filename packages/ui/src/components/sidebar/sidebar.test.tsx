@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import {
   Sidebar,
@@ -9,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarTrigger,
 } from "./sidebar";
 
 function renderFrame() {
@@ -74,5 +76,37 @@ describe("SidebarProvider", () => {
     expect(active.className).toContain("data-[active=true]:before:w-1");
     expect(active.className).toContain("data-[active=true]:font-semibold");
     expect(resting).toHaveAttribute("data-active", "false");
+  });
+
+  it("does not re-bind the global keydown listener on every toggle", async () => {
+    const user = userEvent.setup();
+    const addSpy = vi.spyOn(window, "addEventListener");
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    render(
+      <SidebarProvider>
+        <Sidebar>chrome</Sidebar>
+        <SidebarInset>
+          <SidebarTrigger />
+        </SidebarInset>
+      </SidebarProvider>,
+    );
+    const keydownAddCallsAtMount = addSpy.mock.calls.filter((c) => c[0] === "keydown").length;
+    expect(keydownAddCallsAtMount).toBe(1);
+
+    // Each click flips `open`, which recreates `toggleSidebar` (it closes
+    // over `setOpen`, which closes over `open`) — a `useEffect` depending on
+    // that callback directly would tear down and re-add the `keydown`
+    // listener on every single toggle.
+    await user.click(screen.getByRole("button"));
+    await user.click(screen.getByRole("button"));
+    await user.click(screen.getByRole("button"));
+
+    const keydownAddCallsAfterToggles = addSpy.mock.calls.filter((c) => c[0] === "keydown").length;
+    const keydownRemoveCalls = removeSpy.mock.calls.filter((c) => c[0] === "keydown").length;
+    expect(keydownAddCallsAfterToggles).toBe(1);
+    expect(keydownRemoveCalls).toBe(0);
+
+    addSpy.mockRestore();
+    removeSpy.mockRestore();
   });
 });

@@ -117,7 +117,7 @@ describe("Combobox (options interaction)", () => {
     await userEvent.click(screen.getByRole("combobox"));
     const options = await screen.findAllByRole("option", { name: "Production" });
     expect(options).toHaveLength(2);
-    await userEvent.click(options[1]);
+    await userEvent.click(options[1]!);
     expect(onValueChange).toHaveBeenCalledWith("prod-eu");
   });
 });

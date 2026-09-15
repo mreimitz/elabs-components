@@ -6,9 +6,12 @@
  * select interaction and accessibility are covered by the Storybook stories
  * (run via `pnpm --filter @elabs-ai/components-docs test-storybook` or the MCP story tests).
  */
+import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { DateRangePicker } from "./date-range-picker";
+import userEvent from "@testing-library/user-event";
+import { DateRangePicker, type DateRange } from "./date-range-picker";
+import { LocaleProvider } from "../locale-provider";
 
 describe("DateRangePicker", () => {
   it("renders the placeholder on the trigger when no range is set", () => {
@@ -58,5 +61,77 @@ describe("DateRangePicker", () => {
     render(<DateRangePicker className="my-custom-class" />);
     const button = screen.getByRole("button");
     expect(button.className).toContain("my-custom-class");
+  });
+
+  it("does not hard-fix the trigger width — fills its container by default", () => {
+    render(<DateRangePicker />);
+    expect(screen.getByRole("button").className).not.toMatch(/\bw-72\b/);
+  });
+
+  it("spreads extra props (e.g. data-testid) onto the trigger button", () => {
+    render(<DateRangePicker data-testid="range-trigger" />);
+    expect(screen.getByTestId("range-trigger")).toBeInTheDocument();
+  });
+
+  it("formats the range label using the active locale", () => {
+    const from = new Date(2024, 0, 5);
+    const to = new Date(2024, 0, 20);
+    render(
+      <LocaleProvider locale="de-DE">
+        <DateRangePicker value={{ from, to }} />
+      </LocaleProvider>,
+    );
+    // de-DE renders "5. Jan. 2024" style — distinct from the en-US default.
+    expect(screen.getByRole("button").textContent).not.toMatch(/Jan 5, 2024/);
+  });
+
+  // #reviewed 1.7 — clearing a controlled range to `undefined` must not fall
+  // through to a stale uncontrolled `internal` value: once controlled, the
+  // component must stay controlled for its whole lifetime.
+  it("collapses to a single month below the sm breakpoint (phone-width popover)", async () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: 375,
+    });
+    try {
+      const user = userEvent.setup();
+      render(<DateRangePicker />);
+      await user.click(screen.getByRole("button"));
+      const grids = await screen.findAllByRole("grid");
+      expect(grids).toHaveLength(1);
+    } finally {
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: originalWidth,
+      });
+    }
+  });
+
+  it("shows the placeholder (not a stale value) when a controlled range is cleared to undefined", async () => {
+    function Harness() {
+      const [range, setRange] = useState<DateRange | undefined>({
+        from: new Date(2024, 0, 5),
+        to: new Date(2024, 0, 20),
+      });
+      return (
+        <>
+          <DateRangePicker value={range} onValueChange={setRange} placeholder="Pick a range" />
+          <button type="button" onClick={() => setRange(undefined)}>
+            Clear
+          </button>
+        </>
+      );
+    }
+    const user = userEvent.setup();
+    render(<Harness />);
+    const trigger = screen.getByRole("button", { name: /–/ });
+    expect(trigger.textContent).not.toBe("Pick a range");
+
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+
+    expect(trigger).toHaveTextContent("Pick a range");
   });
 });

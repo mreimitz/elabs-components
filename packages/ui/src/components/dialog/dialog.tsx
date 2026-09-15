@@ -1,3 +1,5 @@
+"use client";
+
 import {
   forwardRef,
   useCallback,
@@ -11,6 +13,7 @@ import {
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/cn";
+import { useLocale } from "../locale-provider";
 import { Heading, Text } from "../typography";
 
 /**
@@ -94,6 +97,7 @@ export const DialogContent = forwardRef<
   ComponentPropsWithoutRef<typeof DialogPrimitive.Content> &
     VariantProps<typeof dialogContentVariants>
 >(function DialogContent({ className, children, size, onOpenAutoFocus, ...props }, ref) {
+  const { t } = useLocale();
   const contentRef = useRef<HTMLDivElement | null>(null);
   const setRefs = useCallback(
     (node: HTMLDivElement | null) => {
@@ -154,7 +158,7 @@ export const DialogContent = forwardRef<
         <DialogPrimitive.Close
           data-slot="dialog-close"
           className="absolute end-4 top-4 rounded-md p-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus-ring"
-          aria-label="Close"
+          aria-label={t("close")}
         >
           <svg
             width="16"
@@ -217,7 +221,7 @@ export const DialogDescription = forwardRef<
     <DialogPrimitive.Description
       ref={ref}
       data-slot="dialog-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-body text-muted-foreground", className)}
       {...props}
     />
   );

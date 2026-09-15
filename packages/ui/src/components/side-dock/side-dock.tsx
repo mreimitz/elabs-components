@@ -216,9 +216,22 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
     typeof window !== "undefined" ? window.innerWidth : FALLBACK_VIEWPORT_WIDTH,
   );
   useEffect(() => {
-    const onResize = () => setViewportWidth(window.innerWidth);
+    // `resize` can fire dozens of times per second while a window is being
+    // dragged — coalesce every event inside one frame into a single state
+    // update via rAF, instead of re-rendering on each raw event.
+    let rafId: number | null = null;
+    const onResize = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        setViewportWidth(window.innerWidth);
+      });
+    };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   const isWidthControlled = width !== undefined;

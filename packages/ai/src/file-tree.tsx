@@ -5,6 +5,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   fileIconFor,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -50,7 +51,7 @@ const FileTreeContext = createContext<FileTreeContextType>({
 const fileTreeVariants = cva("", {
   variants: {
     variant: {
-      code: "rounded-lg border bg-background font-mono text-sm",
+      code: "rounded-lg border bg-background font-mono text-body",
       document: "text-body",
     },
   },
@@ -158,6 +159,7 @@ export const FileTreeFolder = ({
   children,
   ...props
 }: FileTreeFolderProps) => {
+  const { t } = useLocale();
   const { expandedPaths, togglePath, selectedPath, onSelect } = useContext(FileTreeContext);
   const isExpanded = expandedPaths.has(path);
   const isSelected = selectedPath === path;
@@ -184,10 +186,15 @@ export const FileTreeFolder = ({
           >
             <CollapsibleTrigger asChild>
               <button
+                aria-label={t(
+                  isExpanded ? "ai.fileTree.collapseFolder" : "ai.fileTree.expandFolder",
+                  { name },
+                )}
                 className="flex shrink-0 cursor-pointer items-center border-none bg-transparent p-0"
                 type="button"
               >
                 <ChevronRightIcon
+                  aria-hidden="true"
                   className={cn(
                     "size-4 shrink-0 text-muted-foreground transition-transform",
                     isExpanded && "rotate-90",
@@ -353,6 +360,7 @@ export type ProducedAssetTreeProps = Omit<
  */
 export const ProducedAssetTree = forwardRef<HTMLDivElement, ProducedAssetTreeProps>(
   function ProducedAssetTree({ assets, selectedId, onSelect, ...props }, ref) {
+    const { t } = useLocale();
     const assetsById = useMemo(() => new Map(assets.map((asset) => [asset.id, asset])), [assets]);
     const handleSelect = useCallback(
       (path: string) => {
@@ -370,7 +378,9 @@ export const ProducedAssetTree = forwardRef<HTMLDivElement, ProducedAssetTreePro
         {...props}
       >
         {assets.length === 0 ? (
-          <p className="px-2 py-1 text-body text-muted-foreground">No assets produced yet.</p>
+          <p className="px-2 py-1 text-body text-muted-foreground">
+            {t("ai.fileTree.noAssetsProduced")}
+          </p>
         ) : (
           assets.map((asset) => {
             const Icon = assetIcon(asset);

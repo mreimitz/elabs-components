@@ -28,6 +28,7 @@ import {
   resolveRestingChartPhase,
 } from "./chart-phase";
 import { PatternArea } from "./pattern-area";
+import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import { TimeSeriesChartInner } from "./time-series-chart-shell";
 
@@ -233,7 +234,11 @@ function ChartInner({
   seams,
   labelBands,
 }: ChartInnerProps) {
-  const lines = useMemo(() => extractAreaConfigs(children), [children]);
+  // `children` gets a fresh identity every parent render; `useStableValue`
+  // collapses back to the previous reference when the series content hasn't
+  // actually changed, so downstream memoization (scales, ChartProvider) doesn't
+  // recompute on an unrelated re-render.
+  const lines = useStableValue(useMemo(() => extractAreaConfigs(children), [children]));
 
   const chart = (
     // The provider wraps the WHOLE `TimeSeriesChartInner` tree, not `children`
@@ -380,7 +385,7 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={10}>
+      <ParentSize debounceTime={100}>
         {({ width, height }) => (
           <ChartInner
             animationDuration={animationDuration}

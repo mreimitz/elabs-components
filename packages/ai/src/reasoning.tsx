@@ -9,6 +9,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
+  getStreamdownPluginsKey,
   useStreamdownMermaidOptions,
   useStreamdownPlugins,
   useStreamdownTranslations,
@@ -155,12 +156,12 @@ const defaultGetThinkingMessage = (
   t: (key: string, vars?: Record<string, string | number>) => string,
 ) => {
   if (isStreaming || duration === 0) {
-    return <Shimmer duration={1}>Thinking…</Shimmer>;
+    return <Shimmer duration={1}>{t("ai.reasoning.thinking")}</Shimmer>;
   }
   if (duration === undefined) {
     return <p>{t("ai.reasoning.thoughtDefault")}</p>;
   }
-  return <p>Thought for {duration} seconds</p>;
+  return <p>{t("ai.reasoning.thoughtForDuration", { duration })}</p>;
 };
 
 export const ReasoningTrigger = memo(
@@ -171,7 +172,7 @@ export const ReasoningTrigger = memo(
     return (
       <CollapsibleTrigger
         className={cn(
-          "flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground",
+          "flex w-full items-center gap-2 text-muted-foreground text-body transition-colors hover:text-foreground",
           className,
         )}
         {...props}
@@ -213,7 +214,10 @@ export const ReasoningContent = memo(({ className, children, ...props }: Reasoni
   const translations = useStreamdownTranslations();
   // Brand-token-derived `code` plugin, not the package's static github-*
   // default (#315 follow-up) — re-derives when the active theme changes.
-  const plugins = useStreamdownPlugins();
+  // `math`/`cjk` are lazy-loaded off the raw text (#perf-5, see
+  // `_streamdown-i18n.ts`) — pass `children` so they load only when this
+  // reasoning block actually needs them.
+  const plugins = useStreamdownPlugins(typeof children === "string" ? children : "");
   // The TOP-LEVEL Streamdown `mermaid` prop — catches a failed diagram
   // render, including a missing `mermaid` optional peer (issue #33).
   const mermaidOptions = useStreamdownMermaidOptions();
@@ -221,14 +225,21 @@ export const ReasoningContent = memo(({ className, children, ...props }: Reasoni
   return (
     <CollapsibleContent
       className={cn(
-        "mt-4 text-sm",
+        "mt-4 text-body",
         "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=open]:[--tw-ease:var(--ease-entrance)] data-[state=closed]:[--tw-ease:var(--ease-exit)]",
         className,
       )}
       {...props}
     >
       {typeof children === "string" ? (
-        <Streamdown plugins={plugins} translations={translations} mermaid={mermaidOptions}>
+        <Streamdown
+          // Forces a remount the first time the lazy math/cjk slot resolves —
+          // see `getStreamdownPluginsKey`'s doc in `_streamdown-i18n.ts` for why.
+          key={getStreamdownPluginsKey(plugins)}
+          plugins={plugins}
+          translations={translations}
+          mermaid={mermaidOptions}
+        >
           {children}
         </Streamdown>
       ) : (

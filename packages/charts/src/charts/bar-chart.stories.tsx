@@ -32,8 +32,10 @@ const monthlyData = [
 /** Default grouped bar chart with two series and a tooltip. */
 export const Default: Story = {
   render: () => (
-    // Charts require a concrete height; w-[560px] h-72 gives a comfortable 560×288 canvas.
-    <div className="h-72 w-[560px]">
+    // Charts require a concrete height; h-72 + a 560px cap gives a comfortable
+    // canvas that still shrinks to fit a narrow (phone-width) canvas instead
+    // of forcing a horizontal scrollbar.
+    <div className="h-72 w-full max-w-[560px]">
       <BarChart data={monthlyData} xDataKey="month">
         <Grid horizontal />
         <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />

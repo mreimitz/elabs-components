@@ -88,7 +88,7 @@ interface MessageFormContextValue {
   submitted: boolean;
   submitting: boolean;
   disabled: boolean;
-  streaming: boolean;
+  isStreaming: boolean;
   formId: string;
   headingId: string;
 }
@@ -145,6 +145,8 @@ export interface MessageFormProviderProps {
   /** In-flight submit: controls disabled, the submit button shows a spinner. */
   submitting?: boolean;
   /** The spec is still streaming in (renders a skeleton when no fields yet). */
+  isStreaming?: boolean;
+  /** @deprecated Use `isStreaming`. */
   streaming?: boolean;
   children: ReactNode;
 }
@@ -161,9 +163,11 @@ export function MessageFormProvider({
   disabled = false,
   submitted = false,
   submitting = false,
+  isStreaming,
   streaming = false,
   children,
 }: MessageFormProviderProps) {
+  const resolvedStreaming = isStreaming ?? streaming;
   const formId = useId();
   const headingId = `${formId}-title`;
 
@@ -231,7 +235,7 @@ export function MessageFormProvider({
       submitted,
       submitting,
       disabled,
-      streaming,
+      isStreaming: resolvedStreaming,
       formId,
       headingId,
     }),
@@ -246,7 +250,7 @@ export function MessageFormProvider({
       submitted,
       submitting,
       disabled,
-      streaming,
+      resolvedStreaming,
       formId,
       headingId,
     ],
@@ -570,9 +574,9 @@ export type MessageFormFieldsProps = HTMLAttributes<HTMLDivElement>;
 /** Renders every field in the spec, in order. A skeleton while streaming empty. */
 export const MessageFormFields = forwardRef<HTMLDivElement, MessageFormFieldsProps>(
   function MessageFormFields({ className, ...props }, ref) {
-    const { spec, streaming } = useMessageFormContext();
+    const { spec, isStreaming } = useMessageFormContext();
 
-    if (spec.fields.length === 0 && streaming) {
+    if (spec.fields.length === 0 && isStreaming) {
       return (
         <div ref={ref} className={cn("flex flex-col gap-4", className)} {...props}>
           <span className="sr-only" role="status" aria-live="polite">
@@ -771,6 +775,8 @@ export interface MessageFormProps extends Omit<
   /** In-flight submit: controls disabled, spinner on submit. */
   submitting?: boolean;
   /** The spec is still streaming (renders a skeleton when no fields yet). */
+  isStreaming?: boolean;
+  /** @deprecated Use `isStreaming`. */
   streaming?: boolean;
 }
 
@@ -789,12 +795,14 @@ export const MessageForm = forwardRef<HTMLDivElement, MessageFormProps>(function
     disabled,
     submitted,
     submitting,
+    isStreaming,
     streaming,
     className,
     ...props
   },
   ref,
 ) {
+  const resolvedStreaming = isStreaming ?? streaming;
   const result = normalizeFormSpec(spec);
   if (!result.ok) {
     return (
@@ -806,7 +814,7 @@ export const MessageForm = forwardRef<HTMLDivElement, MessageFormProps>(function
   const empty = normalized.fields.length === 0;
 
   // Not streaming + no fields → the spec is structurally valid but useless.
-  if (empty && !streaming) {
+  if (empty && !resolvedStreaming) {
     return (
       <MessageFormFallback
         ref={ref}
@@ -826,7 +834,7 @@ export const MessageForm = forwardRef<HTMLDivElement, MessageFormProps>(function
       disabled={disabled}
       submitted={submitted}
       submitting={submitting}
-      streaming={streaming}
+      isStreaming={resolvedStreaming}
     >
       <div ref={ref} className={cn("w-full", className)} {...props}>
         <MessageFormRoot>

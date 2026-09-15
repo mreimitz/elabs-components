@@ -1,4 +1,4 @@
-import { type HTMLAttributes } from "react";
+import { forwardRef, type HTMLAttributes } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/cn";
 
@@ -23,6 +23,16 @@ export const badgeVariants = cva(
 export interface BadgeProps
   extends HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {}
 
-export function Badge({ className, variant, ...props }: BadgeProps) {
-  return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
-}
+export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge(
+  { className, variant, ...props },
+  ref,
+) {
+  return (
+    <span
+      ref={ref}
+      data-slot="badge"
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
+    />
+  );
+});

@@ -3,7 +3,7 @@ import { createContext, forwardRef, use, type HTMLAttributes } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/cn";
 
-const descriptionsVariants = cva("grid gap-x-6 gap-y-3 text-sm", {
+const descriptionsVariants = cva("grid gap-x-6 gap-y-3 text-body", {
   variants: {
     columns: {
       1: "grid-cols-1",

@@ -35,6 +35,29 @@ export const Default: Story = {
 };
 
 /**
+ * `isStreaming` suppresses the live-region chatter while tokens are still
+ * arriving (`aria-live="off"` + `aria-busy`) — see the prop's doc on
+ * `ConversationProps` for why a `"polite"` region would otherwise announce
+ * every incoming token.
+ */
+export const Streaming: Story = {
+  render: () => (
+    <div className="flex h-72 flex-col rounded-lg border">
+      <Conversation isStreaming>
+        <ConversationContent>
+          <Message from="user">
+            <MessageContent>Summarize the deploy log.</MessageContent>
+          </Message>
+          <Message from="assistant">
+            <MessageContent>Deploying to production</MessageContent>
+          </Message>
+        </ConversationContent>
+      </Conversation>
+    </div>
+  ),
+};
+
+/**
  * **Layout lock (#72).** With zero messages, `ConversationEmptyState` must render
  * vertically centred in the conversation canvas — not pinned to the top with a
  * gap of empty space below (the original bug: `ConversationContent` never grew

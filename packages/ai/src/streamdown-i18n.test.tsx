@@ -13,6 +13,7 @@ import { LocaleProvider } from "@elabs-ai/components-ui";
 import { MessageResponse } from "./message";
 import { MarkdownView } from "./markdown-view";
 import { Reasoning, ReasoningContent } from "./reasoning";
+import { _debugActiveThemeScopeCount } from "./_theme-scope-store";
 
 const CODE_MARKDOWN = "```js\nconst a = 1;\n```";
 // `MarkdownView` re-maps `code` onto `ProseInlineCode`, so its Streamdown chrome
@@ -104,6 +105,28 @@ describe("Streamdown chrome microcopy (#310)", () => {
     );
 
     expect(await screen.findByRole("button", { name: "Copiar" })).toBeInTheDocument();
+  });
+});
+
+describe("useReactiveCodePlugin shares ONE theme-scope observer (perf review §3.3)", () => {
+  it("registers a single tracked scope for many simultaneously-mounted MessageResponse instances", () => {
+    const before = _debugActiveThemeScopeCount();
+
+    const { unmount } = render(
+      <>
+        <MessageResponse>{CODE_MARKDOWN}</MessageResponse>
+        <MessageResponse>{CODE_MARKDOWN}</MessageResponse>
+        <MessageResponse>{CODE_MARKDOWN}</MessageResponse>
+      </>,
+    );
+
+    // Under the old per-hook `MutationObserver`, a message-dense conversation
+    // registered one observer PER instance; the shared store collapses every
+    // instance watching the same `<html>` scope into exactly one.
+    expect(_debugActiveThemeScopeCount()).toBe(before + 1);
+
+    unmount();
+    expect(_debugActiveThemeScopeCount()).toBe(before);
   });
 });
 

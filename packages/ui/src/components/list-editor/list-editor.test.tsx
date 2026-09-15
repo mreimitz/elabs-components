@@ -69,6 +69,30 @@ describe("ListEditor", () => {
     expect(onValueChange).toHaveBeenCalledWith(["b", "a"]);
   });
 
+  it("keeps keyboard focus on the moved row's own move-down button after a non-boundary move", async () => {
+    render(<ListEditor defaultValue={["a", "b", "c", "d"]} />);
+    const moveDown = screen.getByRole("button", { name: "Move item 2 down" });
+    moveDown.focus();
+    await userEvent.keyboard("{Enter}");
+    // Row "b" moved from position 2 to position 3 — index-keyed rows would
+    // leave focus sitting on whatever the DOM slot at the old position now
+    // renders (the row that got swapped INTO it), not on the row the user
+    // actually moved.
+    expect(screen.getByRole("button", { name: "Move item 3 down" })).toHaveFocus();
+  });
+
+  it("redirects focus to the complementary button when a move disables the one just pressed", async () => {
+    render(<ListEditor defaultValue={["a", "b", "c"]} />);
+    const moveUp = screen.getByRole("button", { name: "Move item 2 up" });
+    moveUp.focus();
+    await userEvent.keyboard("{Enter}");
+    // "b" is now row 1 (the top) — its own "move up" is now disabled, and a
+    // browser blurs a focused element the moment it goes disabled. Focus
+    // must land on that same row's still-enabled "move down" button instead
+    // of falling through to <body>.
+    expect(screen.getByRole("button", { name: "Move item 1 down" })).toHaveFocus();
+  });
+
   it("hides reorder buttons when reorderable=false", () => {
     render(<ListEditor defaultValue={["a", "b"]} reorderable={false} />);
     // Anchored at the start — "Remove item 1" contains the substring "move

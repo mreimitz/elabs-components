@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ComponentProps,
   type CSSProperties,
@@ -118,6 +119,17 @@ export const SidebarProvider = forwardRef<
     return isMobile ? setOpenMobile((o) => !o) : setOpen((o) => !o);
   }, [isMobile, setOpen]);
 
+  // `toggleSidebar` is a NEW function on every `open` change (it closes over
+  // `setOpen`, which itself closes over `open`) — a `useEffect` depending on
+  // it directly would tear down and re-add the global `keydown` listener on
+  // every single toggle. A ref holding the latest callback keeps the listener
+  // registration stable across toggles; only `isNested` (which never changes
+  // after mount) re-runs the effect.
+  const toggleSidebarRef = useRef(toggleSidebar);
+  useEffect(() => {
+    toggleSidebarRef.current = toggleSidebar;
+  }, [toggleSidebar]);
+
   useEffect(() => {
     // Same reasoning as the cookie write above: the global keyboard shortcut
     // belongs to the ONE app frame, not to every nested provider a compound
@@ -126,12 +138,12 @@ export const SidebarProvider = forwardRef<
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
-        toggleSidebar();
+        toggleSidebarRef.current();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isNested, toggleSidebar]);
+  }, [isNested]);
 
   const state = open ? "expanded" : "collapsed";
 
@@ -273,7 +285,7 @@ export const Sidebar = forwardRef<
         >
           <SheetHeader className="sr-only">
             <SheetTitle>{t("ui.sidebar.title")}</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetDescription>{t("ui.sidebar.mobileDescription")}</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
@@ -335,6 +347,7 @@ export const Sidebar = forwardRef<
 
 export const SidebarTrigger = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
   function SidebarTrigger({ className, onClick, ...props }, ref) {
+    const { t } = useLocale();
     const { isMobile, open, openMobile, toggleSidebar } = useSidebar();
     // `toggleSidebar` flips `openMobile` below the mobile breakpoint and `open`
     // above it, so the state this button EXPOSES has to be read the same way —
@@ -368,7 +381,7 @@ export const SidebarTrigger = forwardRef<HTMLButtonElement, ComponentProps<typeo
         {...props}
       >
         <PanelLeftIcon />
-        <span className="sr-only">Toggle Sidebar</span>
+        <span className="sr-only">{t("ui.sidebar.toggle")}</span>
       </Button>
     );
   },
@@ -376,16 +389,17 @@ export const SidebarTrigger = forwardRef<HTMLButtonElement, ComponentProps<typeo
 
 export const SidebarRail = forwardRef<HTMLButtonElement, ComponentProps<"button">>(
   function SidebarRail({ className, ...props }, ref) {
+    const { t } = useLocale();
     const { toggleSidebar } = useSidebar();
     return (
       <button
         ref={ref}
         data-sidebar="rail"
         data-slot="sidebar-rail"
-        aria-label="Toggle Sidebar"
+        aria-label={t("ui.sidebar.toggle")}
         tabIndex={-1}
         onClick={toggleSidebar}
-        title="Toggle Sidebar"
+        title={t("ui.sidebar.toggle")}
         className={cn(
           "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex",
           "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",

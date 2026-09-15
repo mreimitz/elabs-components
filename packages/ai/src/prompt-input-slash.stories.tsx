@@ -28,7 +28,7 @@ function Field({ commands = COMMANDS }: { commands?: SlashCommand[] }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState("");
   return (
-    <div className="mx-auto w-[28rem]">
+    <div className="mx-auto w-full max-w-[28rem]">
       <PromptInput onSubmit={() => undefined}>
         <PromptInputSlash
           commands={commands}

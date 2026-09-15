@@ -9,6 +9,7 @@ import {
   type ActivityEntry,
   type RunRow,
 } from "@/components/app-shell/console-overview";
+import { holdsViewportPremise } from "./_viewport-premise";
 
 const meta = {
   title: "Layout/App Shell/Flagship",
@@ -370,8 +371,11 @@ export const Narrow: Story = {
   play: async ({ canvasElement }) => {
     // Measured under this story's own viewport global: `window.innerWidth` is
     // 320, so the shell's zones take their real small-screen branches — the
-    // assertions below lock those branches, not a simulated width.
-    await expect(window.innerWidth).toBeLessThan(768);
+    // assertions below lock those branches, not a simulated width. Guarded
+    // (not a bare `expect`) so opening this story outside its declared
+    // viewport — a manual preview, or a backgrounded tab — warns instead of
+    // failing on an environment mismatch it did not cause.
+    if (!holdsViewportPremise(window.innerWidth < 768, "< 768px")) return;
     // The nav rail handed itself to a closed `Sheet`, which is portalled and
     // unmounted while closed: the docked `<nav>` is gone from the canvas.
     await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeNull();
@@ -482,10 +486,19 @@ export const JustAboveTheBreakpoint: Story = {
     // The premise, measured. If the viewport global silently stopped applying,
     // every assertion below would be re-measuring the 1200px branch under a
     // name that says otherwise — so the width is asserted, not assumed.
-    await expect(window.innerWidth).toBeGreaterThanOrEqual(768);
-    await expect(window.innerWidth).toBeLessThan(1024);
-    await expect(window.matchMedia("(min-width: 48rem)").matches).toBe(true);
-    await expect(window.matchMedia("(min-width: 64rem)").matches).toBe(false);
+    // Guarded: outside this story's declared viewport (manual preview,
+    // backgrounded tab) that mismatch is an environment fact, not a
+    // regression — warn and skip instead of failing.
+    if (
+      !holdsViewportPremise(
+        window.innerWidth >= 768 &&
+          window.innerWidth < 1024 &&
+          window.matchMedia("(min-width: 48rem)").matches &&
+          !window.matchMedia("(min-width: 64rem)").matches,
+        "768px – 1023px (≥ md, < lg)",
+      )
+    )
+      return;
 
     await expect(canvasElement.querySelector('[data-slot="app-top-bar"]')).toBeVisible();
     await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeVisible();

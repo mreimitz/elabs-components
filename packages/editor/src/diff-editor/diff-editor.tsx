@@ -1,6 +1,10 @@
 "use client";
 
-import * as monaco from "monaco-editor";
+// Type-only — see the matching note in `../code-editor/code-editor.tsx`. The
+// engine loads at RUNTIME via `import("monaco-editor")` in the mount effect
+// below (`monacoRef`), so importing this module (e.g. transitively, via the
+// barrel) never evaluates Monaco.
+import type * as monaco from "monaco-editor";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   forwardRef,
@@ -15,6 +19,9 @@ import { applyBrandTheme } from "../lib/monaco-theme-bridge";
 import { useDataTheme } from "../lib/use-data-theme";
 
 export type MonacoDiffEditor = monaco.editor.IStandaloneDiffEditor;
+
+/** Same pattern as `code-editor.tsx`'s `MonacoNamespace`. */
+type MonacoNamespace = typeof monaco;
 
 export interface DiffEditorProps extends Omit<HTMLAttributes<HTMLDivElement>, "defaultValue"> {
   /** Left/original document. */
@@ -32,7 +39,7 @@ export interface DiffEditorProps extends Omit<HTMLAttributes<HTMLDivElement>, "d
   /** Passthrough Monaco diff options (merged over the defaults). */
   options?: monaco.editor.IStandaloneDiffEditorConstructionOptions;
   /** Called once the diff editor + monaco namespace are ready. */
-  onMount?: (editor: MonacoDiffEditor, monacoApi: typeof monaco) => void;
+  onMount?: (editor: MonacoDiffEditor, monacoApi: MonacoNamespace) => void;
 }
 
 const BASE_OPTIONS: monaco.editor.IStandaloneDiffEditorConstructionOptions = {
@@ -68,6 +75,10 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
   const containerRef = useRef<HTMLDivElement>(null);
   const [editor, setEditor] = useState<MonacoDiffEditor | null>(null);
   const { theme, revision } = useDataTheme();
+  // Populated once the dynamic `import("monaco-editor")` below resolves.
+  // `editor` (React state) is only ever set AFTER this ref, so every other
+  // effect that reads both may assume: `editor` truthy implies this truthy.
+  const monacoRef = useRef<MonacoNamespace | null>(null);
 
   const onMountRef = useRef(onMount);
   onMountRef.current = onMount;
@@ -76,28 +87,39 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
     editor,
   ]);
 
-  // Mount once.
+  // Mount once. Monaco itself loads lazily (see the top-of-file note) — merely
+  // importing this module never evaluates the engine.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    let cancelled = false;
+    let instance: MonacoDiffEditor | null = null;
+    let originalModel: monaco.editor.ITextModel | null = null;
+    let modifiedModel: monaco.editor.ITextModel | null = null;
 
-    const instance = monaco.editor.createDiffEditor(container, {
-      ...BASE_OPTIONS,
-      readOnly,
-      renderSideBySide,
-      ...options,
+    import("monaco-editor").then((monacoApi) => {
+      if (cancelled) return;
+      monacoRef.current = monacoApi;
+      instance = monacoApi.editor.createDiffEditor(container, {
+        ...BASE_OPTIONS,
+        readOnly,
+        renderSideBySide,
+        ...options,
+      });
+      originalModel = monacoApi.editor.createModel(original, language);
+      modifiedModel = monacoApi.editor.createModel(modified, language);
+      instance.setModel({ original: originalModel, modified: modifiedModel });
+      // Theme is applied by the effect below once `setEditor` runs.
+      setEditor(instance);
+      onMountRef.current?.(instance, monacoApi);
     });
-    const originalModel = monaco.editor.createModel(original, language);
-    const modifiedModel = monaco.editor.createModel(modified, language);
-    instance.setModel({ original: originalModel, modified: modifiedModel });
-    // Theme is applied by the effect below once `setEditor` runs.
-    setEditor(instance);
-    onMountRef.current?.(instance, monaco);
 
     return () => {
-      instance.dispose();
-      originalModel.dispose();
-      modifiedModel.dispose();
+      cancelled = true;
+      instance?.dispose();
+      originalModel?.dispose();
+      modifiedModel?.dispose();
+      monacoRef.current = null;
       setEditor(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,10 +136,11 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
   }, [editor, modified]);
 
   useEffect(() => {
+    const monacoApi = monacoRef.current;
     const models = editor?.getModel();
-    if (!models) return;
-    monaco.editor.setModelLanguage(models.original, language);
-    monaco.editor.setModelLanguage(models.modified, language);
+    if (!models || !monacoApi) return;
+    monacoApi.editor.setModelLanguage(models.original, language);
+    monacoApi.editor.setModelLanguage(models.modified, language);
   }, [editor, language]);
 
   useEffect(() => {
@@ -125,9 +148,10 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
   }, [editor, readOnly, renderSideBySide]);
 
   useEffect(() => {
-    if (!editor) return;
+    const monacoApi = monacoRef.current;
+    if (!editor || !monacoApi) return;
     try {
-      applyBrandTheme(monaco, theme);
+      applyBrandTheme(monacoApi, theme);
     } catch (err) {
       console.error("[@elabs-ai/components-editor] failed to apply brand theme", err);
     }

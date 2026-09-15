@@ -5,6 +5,15 @@ const meta = {
   title: "Forms/DatePicker",
   component: DatePicker,
   tags: ["autodocs"],
+  // The trigger fills its container by default (no hard-fixed width) — cap
+  // the docs canvas to a realistic form-field width.
+  decorators: [
+    (Story) => (
+      <div className="w-full max-w-xs">
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     value: {
       description: "Controlled selected date.",

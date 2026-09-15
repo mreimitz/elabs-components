@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, downloadBlob } from "@elabs-ai/components-ui";
+import { Button, downloadBlob, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { UIMessage } from "ai";
 import { ArrowDownIcon, DownloadIcon } from "lucide-react";
@@ -8,14 +8,27 @@ import type { ComponentProps } from "react";
 import { useCallback } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
-export type ConversationProps = ComponentProps<typeof StickToBottom>;
+export type ConversationProps = ComponentProps<typeof StickToBottom> & {
+  /**
+   * The assistant response is still arriving (loading-states.md
+   * `isStreaming`). `role="log"` otherwise announces every incoming token to
+   * assistive tech as it streams in — deafening. While `true`, `aria-live`
+   * is suppressed (`"off"`) and `aria-busy` is set; once streaming ends,
+   * `aria-live` returns to `"polite"` so the settled content is what
+   * actually gets announced.
+   * @default false
+   */
+  isStreaming?: boolean;
+};
 
-export const Conversation = ({ className, ...props }: ConversationProps) => (
+export const Conversation = ({ className, isStreaming = false, ...props }: ConversationProps) => (
   <StickToBottom
     className={cn("relative flex-1 overflow-y-hidden", className)}
     initial="smooth"
     resize="smooth"
     role="log"
+    aria-live={isStreaming ? "off" : "polite"}
+    aria-busy={isStreaming || undefined}
     {...props}
   />
 );
@@ -68,8 +81,8 @@ export const ConversationEmptyState = ({
       <>
         {icon && <div className="text-muted-foreground">{icon}</div>}
         <div className="space-y-1">
-          <h3 className="font-medium text-sm">{title}</h3>
-          {description && <p className="text-muted-foreground text-sm">{description}</p>}
+          <h3 className="font-medium text-body">{title}</h3>
+          {description && <p className="text-muted-foreground text-body">{description}</p>}
         </div>
         {actions ? <div className="mt-1 flex items-center gap-2">{actions}</div> : null}
       </>
@@ -84,6 +97,7 @@ export const ConversationScrollButton = ({
   ...props
 }: ConversationScrollButtonProps) => {
   const { isAtBottom, scrollToBottom } = useStickToBottomContext();
+  const { t } = useLocale();
 
   const handleScrollToBottom = useCallback(() => {
     scrollToBottom();
@@ -93,9 +107,16 @@ export const ConversationScrollButton = ({
     !isAtBottom && (
       <Button
         className={cn(
-          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full dark:bg-background dark:hover:bg-muted",
+          // Was `dark:bg-background dark:hover:bg-muted` — a hardcoded-dark
+          // branch invisible to any other registered theme (styling-and-tokens.md).
+          // `bg-background` already matches the `outline` variant's own default;
+          // the quieter `hover:bg-muted` (in place of `outline`'s default
+          // `hover:bg-accent`) now applies in every theme, not only the two
+          // shipped ones.
+          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full bg-background hover:bg-muted",
           className,
         )}
+        aria-label={t("ai.turnStatus.scrollToBottom")}
         onClick={handleScrollToBottom}
         size="icon"
         type="button"
@@ -138,6 +159,7 @@ export const ConversationDownload = ({
   children,
   ...props
 }: ConversationDownloadProps) => {
+  const { t } = useLocale();
   const handleDownload = useCallback(() => {
     const markdown = messagesToMarkdown(messages, formatMessage);
     downloadBlob(new Blob([markdown], { type: "text/markdown" }), filename);
@@ -146,9 +168,12 @@ export const ConversationDownload = ({
   return (
     <Button
       className={cn(
-        "absolute top-4 end-4 rounded-full dark:bg-background dark:hover:bg-muted",
+        // See `ConversationScrollButton` — was a hardcoded-dark-only branch;
+        // `bg-background hover:bg-muted` now applies in every theme.
+        "absolute top-4 end-4 rounded-full bg-background hover:bg-muted",
         className,
       )}
+      aria-label={t("ai.conversation.download")}
       onClick={handleDownload}
       size="icon"
       type="button"

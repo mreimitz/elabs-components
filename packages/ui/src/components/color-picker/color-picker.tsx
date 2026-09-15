@@ -1,3 +1,5 @@
+"use client";
+
 // a2ui.exposed: yes
 import {
   forwardRef,
@@ -10,6 +12,7 @@ import {
 } from "react";
 import { cn } from "../../lib/cn";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
+import { useLocale } from "../locale-provider";
 
 // ---------------------------------------------------------------------------
 // Token vocabulary
@@ -194,12 +197,14 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
     onValueChange,
     swatches = COLOR_TOKENS,
     allowCustom = false,
-    "aria-label": ariaLabel = "Pick color",
+    "aria-label": ariaLabel,
     className,
     ...props
   },
   ref,
 ) {
+  const { t } = useLocale();
+  const resolvedAriaLabel = ariaLabel ?? t("ui.colorPicker.pickColor");
   const isControlled = valueProp !== undefined;
   const [internalValue, setInternalValue] = useState<ColorToken | string>(
     defaultValue ?? "chart-1",
@@ -259,11 +264,11 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
         <PopoverTrigger asChild>
           <button
             type="button"
-            aria-label={ariaLabel}
+            aria-label={resolvedAriaLabel}
             aria-haspopup="dialog"
             aria-expanded={open}
             className={cn(
-              "inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm",
+              "inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-body shadow-sm",
               "transition-[color,box-shadow] duration-fast",
               "hover:bg-accent hover:text-accent-foreground",
               "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
@@ -271,7 +276,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
             )}
           >
             <TriggerSwatch value={current} />
-            <span className="text-muted-foreground">{current || "None"}</span>
+            <span className="text-muted-foreground">{current || t("ui.colorPicker.none")}</span>
           </button>
         </PopoverTrigger>
 
@@ -279,7 +284,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
           <div
             ref={groupRef}
             role="radiogroup"
-            aria-label="Color swatches"
+            aria-label={t("ui.colorPicker.swatches")}
             className="flex flex-wrap gap-1.5"
             onKeyDown={handleGroupKeyDown}
           >
@@ -296,18 +301,19 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
           {allowCustom && (
             <div className="mt-3 border-t border-border pt-3">
               {/* Custom hex is NOT theme-aware — it will not adapt to theme changes. */}
-              <p className="mb-1.5 text-xs text-muted-foreground">
+              <p className="mb-1.5 text-meta text-muted-foreground">
                 {/* #124: inline running text — ink rung, not the 3:1 mark rung. */}
-                Custom hex <span className="text-warning-text">(not theme-aware)</span>
+                {t("ui.colorPicker.customHexLabel")}{" "}
+                <span className="text-warning-text">{t("ui.colorPicker.notThemeAware")}</span>
               </p>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={customHex}
-                  placeholder="#3b82f6"
+                  placeholder="#3b82f6" // i18n-exempt: example hex value, not prose
                   maxLength={7}
                   spellCheck={false}
-                  aria-label="Custom hex color"
+                  aria-label={t("ui.colorPicker.customHex")}
                   onChange={(e) => setCustomHex(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -316,7 +322,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
                     }
                   }}
                   className={cn(
-                    "h-8 w-28 rounded-md border border-input bg-background px-2 text-sm",
+                    "h-8 w-28 rounded-md border border-input bg-background px-2 text-body",
                     "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     "placeholder:text-muted-foreground",
                   )}
@@ -325,7 +331,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
                   type="button"
                   onClick={handleCustomSubmit}
                   className={cn(
-                    "h-8 rounded-md border border-input bg-background px-2 text-sm",
+                    "h-8 rounded-md border border-input bg-background px-2 text-body",
                     "hover:bg-accent hover:text-accent-foreground",
                     "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                   )}

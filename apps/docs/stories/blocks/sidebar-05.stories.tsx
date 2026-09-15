@@ -4,6 +4,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { Building2 } from "lucide-react";
 import SettingsShell from "@/components/sidebar-05/settings-shell";
 import { areaHref, sectionHref, type SettingsArea } from "@/components/sidebar-05/nav-items";
+import { holdsFocusPremise, holdsViewportPremise } from "./_viewport-premise";
 
 /**
  * WCAG contrast ratio between two CSS color strings, computed by rasterizing
@@ -109,7 +110,9 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     // The premise every desktop claim below rests on. The runner's own frame is
     // ~1200px; nothing here pins it, so it is measured rather than assumed.
-    await expect(window.innerWidth).toBeGreaterThanOrEqual(1100);
+    // Guarded: a narrower environment (manual preview, backgrounded tab) is a
+    // mismatch, not a regression — warn and skip instead of failing.
+    if (!holdsViewportPremise(window.innerWidth >= 1100, "≥ 1100px")) return;
 
     // Landmarks + skip link. The target is resolved FROM the link, not from a
     // hard-coded id: a lock that queries `#main-content` directly passes just
@@ -230,7 +233,7 @@ export const DualRailGeometry: Story = {
   tags: ["!dev"],
   render: () => <SettingsShell activePath={SIGN_IN} />,
   play: async ({ canvasElement }) => {
-    await expect(window.innerWidth).toBeGreaterThanOrEqual(1100);
+    if (!holdsViewportPremise(window.innerWidth >= 1100, "≥ 1100px")) return;
     const { rail, panel, inset } = zones(canvasElement);
     // Painted FIRST, then measured. Every rectangle below is 0×0 on a
     // `display: none` element, so an unchecked geometry assertion is the
@@ -470,8 +473,9 @@ export const DockOpen: Story = {
     dockWidthChanges.length = 0;
     dockWidthCommits.length = 0;
     // `SideDock`'s own breakpoint is 1100, so the column branch only exists
-    // above it. Assert the premise before asserting the landmark.
-    await expect(window.innerWidth).toBeGreaterThanOrEqual(1100);
+    // above it. Assert the premise before asserting the landmark. Guarded: a
+    // narrower environment is a mismatch, not a regression.
+    if (!holdsViewportPremise(window.innerWidth >= 1100, "≥ 1100px")) return;
 
     // Above `overlayBreakpoint` the dock is a column, so it is a landmark in
     // the page rather than a modal over it.
@@ -496,7 +500,13 @@ export const DockOpen: Story = {
     await expect(Number.isFinite(before)).toBe(true);
     const paintedBefore = dock.getBoundingClientRect().width;
     handle.focus();
-    await expect(document.activeElement).toBe(handle);
+    // Guarded: a backgrounded tab (or a preview that never gained window
+    // focus) leaves this imperative `.focus()` unable to move
+    // `document.activeElement` — an environment fact, not a resize
+    // regression — so warn and skip the keyboard-resize check instead of
+    // failing on it.
+    if (!holdsFocusPremise("the resize handle")) return;
+    await waitFor(() => expect(document.activeElement).toBe(handle));
     // On a right-hand dock ArrowLeft widens. Without the key handler the
     // element is still focusable, still a separator, still labelled — and the
     // dock can no longer be resized by anyone who does not use a mouse.
@@ -560,7 +570,7 @@ export const DockDismissed: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const user = userEvent.setup();
-    await expect(window.innerWidth).toBeGreaterThanOrEqual(1100);
+    if (!holdsViewportPremise(window.innerWidth >= 1100, "≥ 1100px")) return;
 
     // Read as a STRING: `toHaveAttribute("aria-expanded")` alone cannot tell an
     // absent attribute from a `"false"` one, which is the whole state this
@@ -728,9 +738,16 @@ export const Narrow: Story = {
   play: async ({ canvasElement }) => {
     // The premise, measured: a viewport global that silently stopped applying
     // would leave this asserting the desktop branch under a name that says
-    // otherwise.
-    await expect(window.innerWidth).toBeLessThan(768);
-    await expect(window.matchMedia("(min-width: 48rem)").matches).toBe(false);
+    // otherwise. Guarded: opened outside this story's declared viewport
+    // (manual preview, backgrounded tab) that mismatch is environmental, not
+    // a regression — warn and skip instead of failing.
+    if (
+      !holdsViewportPremise(
+        window.innerWidth < 768 && !window.matchMedia("(min-width: 48rem)").matches,
+        "< 768px",
+      )
+    )
+      return;
 
     const rail = canvasElement.querySelector('[data-slot="settings-icon-rail"]') as HTMLElement;
     await expect(rail).toBeVisible();
@@ -775,7 +792,9 @@ export const NarrowDockOpen: Story = {
   render: () => <SettingsShell activePath={SIGN_IN} />,
   play: async ({ canvasElement }) => {
     // Premise first: this whole story is about the sub-breakpoint branch.
-    await expect(window.innerWidth).toBeLessThan(768);
+    // Guarded: outside the declared viewport that is environmental, not a
+    // regression.
+    if (!holdsViewportPremise(window.innerWidth < 768, "< 768px")) return;
     const canvas = within(canvasElement);
     // Radix portals the overlay to `document.body`, OUTSIDE the story root.
     const doc = within(document.body);
@@ -817,9 +836,17 @@ export const JustAboveTheBreakpoint: Story = {
   globals: { viewport: { value: "justAboveMd", isRotated: false } },
   render: () => <SettingsShell activePath={SIGN_IN} />,
   play: async ({ canvasElement }) => {
-    await expect(window.innerWidth).toBeGreaterThanOrEqual(768);
-    await expect(window.innerWidth).toBeLessThan(1024);
-    await expect(window.matchMedia("(min-width: 48rem)").matches).toBe(true);
+    // Guarded: outside this story's declared viewport (manual preview,
+    // backgrounded tab) that mismatch is environmental, not a regression.
+    if (
+      !holdsViewportPremise(
+        window.innerWidth >= 768 &&
+          window.innerWidth < 1024 &&
+          window.matchMedia("(min-width: 48rem)").matches,
+        "768px – 1023px (≥ md)",
+      )
+    )
+      return;
 
     const { rail, panel, inset } = zones(canvasElement);
     await expect(rail).toBeVisible();

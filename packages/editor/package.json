@@ -36,6 +36,10 @@
     "./monaco-environment": {
       "types": "./src/lib/monaco-environment.ts",
       "default": "./src/lib/monaco-environment.ts"
+    },
+    "./monaco": {
+      "types": "./src/monaco.ts",
+      "default": "./src/monaco.ts"
     }
   },
   "publishConfig": {
@@ -61,6 +65,10 @@
       "./monaco-environment": {
         "types": "./dist/lib/monaco-environment.d.ts",
         "default": "./dist/lib/monaco-environment.js"
+      },
+      "./monaco": {
+        "types": "./dist/monaco.d.ts",
+        "default": "./dist/monaco.js"
       }
     }
   },

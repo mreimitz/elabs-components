@@ -43,6 +43,7 @@ export { applyBrandTheme, buildBrandThemeData, brandThemeId } from "./lib/monaco
 export { useDataTheme, type DataThemeState } from "./lib/use-data-theme";
 export { EDITOR_LANGUAGES, languageLabel, type EditorLanguage } from "./lib/languages";
 
-// Re-export the monaco namespace so consumers can build custom editors / wire
-// commands without adding a direct dependency.
-export * as monaco from "monaco-editor";
+// The `monaco-editor` namespace moved to its own subpath — see `./monaco.ts`.
+// Re-exporting it here pulled Monaco into every consumer of this barrel, even
+// one only importing `CopyButton`/`EDITOR_LANGUAGES`:
+//   import { monaco } from "@elabs-ai/components-editor/monaco";
