@@ -4,5 +4,5 @@
     "types": ["react", "react-dom", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", "**/*.stories.tsx"]
+  "exclude": ["node_modules", "dist", "**/*.stories.tsx", "src/__contract__"]
 }
