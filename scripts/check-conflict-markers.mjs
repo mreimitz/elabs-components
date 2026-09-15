@@ -12,8 +12,8 @@
  * markers — staging a conflicted path is exactly how a human signals "resolved" —
  * and nothing else in the enforcement chain checked. See issue #379.
  *
- * Every other repo-wide invariant here ships with teeth (`manifest:check`,
- * `format:check`, `dep-direction:check`, …); this is the one that was missing.
+ * Every other repo-wide invariant here ships with teeth (`gen:check`,
+ * `format:check`, the `dep-direction` rule, …); this is the one that was missing.
  *
  * Two shapes, matching the repo's "commit-time teeth + CI backstop" doctrine
  * (#239 precedent):

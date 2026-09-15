@@ -242,7 +242,7 @@ export function renderReadmeRegion(
     "",
     license ?? (isPrivate ? "UNLICENSED — private." : "UNLICENSED"),
     // Prettier inserts a blank line before a trailing HTML comment. Emitting it
-    // here keeps `gen -> format -> gen:readmes:check` convergent; without it the
+    // here keeps `gen -> format -> gen:check` convergent; without it the
     // formatter and the generator fight and the gate can never go green.
     "",
     END,

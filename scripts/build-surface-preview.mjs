@@ -51,7 +51,7 @@ import { scanJsxTags, scanImports } from "../packages/cli/lib/engine.mjs";
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(SCRIPT_DIR);
 
-/** Where the generated consumer templates live (`pnpm gen:templates` owns them). */
+/** Where the generated consumer templates live (`pnpm gen` owns them). */
 export const TEMPLATES_DIR = join(REPO_ROOT, "docs", "playbooks", "templates");
 /** The engine stylesheet — the Tailwind bridge, `:root` and the dials. */
 export const THEMES_CSS = join(REPO_ROOT, "packages", "tokens", "src", "themes.css");

@@ -266,7 +266,7 @@ function fixtureWorktree(version) {
 }
 
 test("FLAGS: the DEFAULT BRANCH pointer is on the previous version (tree says otherwise)", () => {
-  // The trap: the tag's own tree is already on 2.0.0 (version-sync:check forced it),
+  // The trap: the tag's own tree is already on 2.0.0 (the version-sync check forced it),
   // so only reading `main` can see that consumers still get 1.9.0.
   const root = fixtureWorktree("2.0.0");
   try {
@@ -390,7 +390,7 @@ test("under CI an unreadable pointer FAILS instead of falling back to the tautol
   assert.equal(
     inCi.failures.length,
     1,
-    "the worktree copy agrees, but version-sync:check forced that",
+    "the worktree copy agrees, but the version-sync check forced that",
   );
   const local = judgeMarketplacePointer({ pointer, version: "2.0.0", repo: "o/r", ci: false });
   assert.deepEqual(local.failures, []);

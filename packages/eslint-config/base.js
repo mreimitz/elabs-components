@@ -39,7 +39,7 @@ export const baseConfig = [
       ],
       "@typescript-eslint/no-explicit-any": "warn",
       // Icon policy (WP-12 #119): Lucide is the default icon library; @elabs-ai/components-icons holds
-      // brand/product icons. No other icon set — see .claude/rules/icons.md.
+      // brand/product icons. No other icon set — see .claude/rules/conventions.md (Icons).
       "no-restricted-imports": [
         "error",
         {
@@ -73,13 +73,13 @@ export const baseConfig = [
                 "@icons-pack/*",
               ],
               message:
-                "Use lucide-react (default, generic glyphs) or @elabs-ai/components-icons (brand icons). Other icon sets are not allowed — see .claude/rules/icons.md.",
+                "Use lucide-react (default, generic glyphs) or @elabs-ai/components-icons (brand icons). Other icon sets are not allowed — see .claude/rules/conventions.md (Icons).",
             },
             {
               // Deep-path imports bypass the package entry + can pull a duplicate copy.
               group: ["lucide-react/*"],
               message:
-                'Import named icons from the lucide-react root, not deep paths — e.g. `import { Bell } from "lucide-react"`. See .claude/rules/icons.md.',
+                'Import named icons from the lucide-react root, not deep paths — e.g. `import { Bell } from "lucide-react"`. See .claude/rules/conventions.md (Icons).',
             },
           ],
         },

@@ -190,7 +190,10 @@ function stripLine(src, re) {
  * Apply the full story → consumer-template transform. Returns
  * { code, title, description, packages }.
  */
-export function transformStory({ src, pkgName, name, relFile }) {
+export function transformStory({ src: storySrc, pkgName, name, relFile }) {
+  // Story docblocks still name the pre-consolidation `pnpm gen:templates`; the
+  // consumer copy names the command that exists today.
+  const src = storySrc.replaceAll("pnpm gen:templates", "pnpm gen");
   const title = extractTitle(src);
   const description = leadingBlockComment(src) || `Full-screen ${name} template.`;
 
@@ -254,9 +257,9 @@ export function transformStory({ src, pkgName, name, relFile }) {
 /**
  * The generated artifacts live under `docs/playbooks/` — a Prettier-formatted
  * tree (`pnpm format:check`). So the generator must emit Prettier-STABLE output
- * or `templates:check` and `format:check` would fight forever. We run every
+ * or `gen:check` and `format:check` would fight forever. We run every
  * output through Prettier with the repo's own config (one authority, the same
- * contract `gen.mjs` uses), so `gen:templates` emits exactly what `format:check`
+ * contract `gen.mjs` uses), so `pnpm gen` emits exactly what `format:check`
  * expects. Prettier is a devDependency present in the monorepo (where this runs).
  */
 async function formatForFile(file, content) {

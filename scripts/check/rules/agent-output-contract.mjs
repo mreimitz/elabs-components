@@ -2,7 +2,7 @@
  * agent-output-contract — the manifest's `agentOutput` block matches the components.
  * Restored from scripts/check-agent-output.mjs (deleted in 4564b4a, recovered from 2fa2ce6).
  *
- * `agentOutput` (authored in packages/cli/lib/agent-output.mjs, emitted by `pnpm manifest`)
+ * `agentOutput` (authored in packages/cli/lib/agent-output.mjs, emitted by `pnpm gen`)
  * documents the brand-ui-owned projection of the AI SDK message model. The components own
  * the truth: `statusFromToolState` in packages/ai/src/tool.tsx and `STATUSES` in
  * status-badge.tsx. Drift means an agent following the contract emits a state the UI
@@ -44,7 +44,7 @@ export function diffAgentOutput({ agentOutput, aiComponentNames, srcStateToStatu
   const problems = [];
   const paths = agentOutput?.paths;
   if (!paths?.conversation)
-    return ["manifest.agentOutput.paths.conversation is missing — run `pnpm manifest`."];
+    return ["manifest.agentOutput.paths.conversation is missing — run `pnpm gen`."];
   const conv = paths.conversation;
   const tool = (conv.parts || []).find((p) => p.kind === "tool");
   if (!tool) {
@@ -153,7 +153,7 @@ export default {
     }).map((msg) => ({
       file: MANIFEST,
       line: 1,
-      msg: `${msg} Fix packages/cli/lib/agent-output.mjs + \`pnpm manifest\`, or the source.`,
+      msg: `${msg} Fix packages/cli/lib/agent-output.mjs + \`pnpm gen\`, or the source.`,
     }));
   },
   fixtures: {

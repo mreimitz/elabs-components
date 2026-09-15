@@ -133,7 +133,7 @@ export function SettingsTopBar({
       // The bar carries no fill of its own — it sits on the same `bg-background`
       // canvas `SidebarInset` paints — so the rule under it is the SOLE
       // structural cue between chrome and content and takes the strong rung
-      // (WCAG 1.4.11; see .claude/rules/styling-and-tokens.md).
+      // (WCAG 1.4.11; see .claude/rules/conventions.md).
       className={cn(
         "flex h-14 shrink-0 items-center gap-2 border-b border-border-strong px-3",
         className,

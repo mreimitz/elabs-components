@@ -77,7 +77,7 @@ export default {
     if (error) return [error];
     const out = [];
     for (const [module, components] of componentsByModule(mf)) {
-      if (!ctx.exists(module)) continue; // stale manifest: `pnpm manifest`'s problem
+      if (!ctx.exists(module)) continue; // stale manifest: `pnpm gen`'s problem
       const text = ctx.readFile(module);
       const found = [...text.matchAll(DATA_SLOT_RE)];
       out.push({

@@ -1,6 +1,6 @@
 /**
  * loading-states — a not-ready prop ships a story that shows it (#267).
- * Ported from scripts/check-loading-states.mjs. See .claude/rules/loading-states.md.
+ * Ported from scripts/check-loading-states.mjs. See .claude/rules/conventions.md (Loading & streaming states).
  *
  * A manifest component whose prop blob has `loading?: boolean`, `isStreaming?: boolean`
  * or `status?: ChartStatus` (the charts-only alias) needs a story file that imports/renders

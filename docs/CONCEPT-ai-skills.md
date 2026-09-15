@@ -206,7 +206,7 @@ Phase 3 wrapper over the _same_ engine.
   Useful to consumers too — though a consumer theme needs none of that, only
   `defineTheme` + the provider's `themes` prop (ADR 0029).
 - `brand-ui-registry` → `/new-registry-item` (package vs registry decision,
-  `registry:validate`, build/publish).
+  `pnpm check --rule registry-validate`, build/publish).
 - (release stays a command; optionally `brand-ui-release`.)
 
 ### Track C — `brand-ui-audit` (quality, the differentiator)

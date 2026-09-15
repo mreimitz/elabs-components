@@ -18,12 +18,12 @@ export const stripComments = (src) =>
 
 /** Component names of the given packages from the manifest → Map<name, pkg>; throws if missing. */
 export function manifestComponentNames(ctx, packages) {
-  if (!ctx.exists(MANIFEST)) throw new Error(`${MANIFEST} not found — run \`pnpm manifest\``);
+  if (!ctx.exists(MANIFEST)) throw new Error(`${MANIFEST} not found — run \`pnpm gen\``);
   const manifest = ctx.json(MANIFEST);
   const names = new Map();
   for (const pkg of packages) {
     const info = manifest?.packages?.[pkg];
-    if (!info) throw new Error(`${MANIFEST} is missing packages["${pkg}"] — run \`pnpm manifest\``);
+    if (!info) throw new Error(`${MANIFEST} is missing packages["${pkg}"] — run \`pnpm gen\``);
     for (const c of info.components ?? [])
       if (c?.name && !names.has(c.name)) names.set(c.name, pkg);
   }

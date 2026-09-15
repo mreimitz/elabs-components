@@ -4,7 +4,7 @@
 /**
  * Flow workspace template — the canonical full-screen flow-workspace
  * composition (app-shell + branded React Flow canvas). This story is the
- * single source of truth: `pnpm gen:templates` derives the consumer template
+ * single source of truth: `pnpm gen` derives the consumer template
  * source (`docs/playbooks/templates/flow-workspace.tsx`) from it.
  * Remember `import "@xyflow/react/dist/style.css"` is wired in Storybook preview.
  * Verify across every theme with globals=theme:<slug>.

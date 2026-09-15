@@ -468,7 +468,7 @@ export const ShippingASubset: Story = {
  *
  * DELIBERATELY PARTIAL, and it says so on the page: a real theme must define
  * every name in `THEME_TOKEN_NAMES` (123 of them), which is what
- * `pnpm theme-parity:check` holds the shipped themes to and what a consumer
+ * `pnpm check --rule theme-parity` holds the shipped themes to and what a consumer
  * asserts in their own test. What is declared here is the subset the sample
  * composition renders; anything omitted falls back to `:root` — the exact
  * failure mode a coverage assertion exists to catch, shown honestly rather than

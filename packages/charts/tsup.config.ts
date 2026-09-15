@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 // Two passes, because the `./test` double module must NOT bundle any @visx/d3
 // engine even though esbuild would happily tree-shake-in a shared chunk if it
 // ran in the SAME pass as the main barrel (a shared-chunk dependency edge is
-// exactly what `pnpm charts:test-double:check`'s engine-isolation rung exists
+// exactly what the `charts-test-double` check rule's engine-isolation rung exists
 // to catch at the SOURCE level, before a bundler could ever paper over it).
 // Entries use the object form so output paths are explicit: tsup derives the
 // out-dir from the common base of a pass's entries, so an array would emit

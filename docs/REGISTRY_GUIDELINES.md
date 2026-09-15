@@ -7,7 +7,7 @@ complementing the **imported** `@elabs-ai/components-*` packages.
 
 ```
 registry/
-  registry.json     # the manifest (validated by pnpm registry:validate)
+  registry.json     # the manifest (validated by pnpm check --rule registry-validate)
   components/        # registry:ui — self-contained primitives
   blocks/            # registry:block — compositions using @elabs-ai/components-* packages
   templates/         # whole pages/features composed of blocks
@@ -35,7 +35,7 @@ array; each item has `$schema`, `name`, `type`, `title`, `description`,
 
 1. Create the source file(s) under the right folder.
 2. Add an entry to `registry/registry.json` (use the `/new-registry-item` command).
-3. `pnpm registry:validate` — confirms shape and that every `files[].path` exists.
+3. `pnpm check --rule registry-validate` — confirms shape and that every `files[].path` exists.
 4. (Optional) `pnpm dlx shadcn@latest build registry/registry.json --output registry/__output`
    to emit the per-item JSON for static hosting.
 
@@ -76,7 +76,7 @@ fix up import aliases.
 
 ## How to test an item
 
-- `pnpm registry:validate` (structure + file existence).
+- `pnpm check --rule registry-validate` (structure + file existence).
 - Dry-run install into a scratch app: `npx shadcn add <url-or-name>`.
 - Confirm the copied file type-checks against the consumer's deps.
 
@@ -96,7 +96,7 @@ fix up import aliases.
 
 ## The registry IS published by a release (#106, superseded by #31)
 
-`pnpm registry:validate` runs on every PR, and — since #31 —
+`pnpm check --rule registry-validate` runs on every PR, and — since #31 —
 `.github/workflows/release.yml` also runs `pnpm registry:build` and publishes
 the output to GitHub Pages via its `publish-registry` job (see "Distribution"
 above). #106 originally documented the opposite as a **deliberate** decision,

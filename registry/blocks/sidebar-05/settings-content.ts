@@ -26,7 +26,7 @@ export interface SettingRow {
   /**
    * Set on the rows a section counts in its `attention` total. The string is
    * the WORD half of the mark — the coloured dot beside it is the other half,
-   * and colour alone would be a 1.4.1 failure (see .claude/rules/accessibility.md).
+   * and colour alone would be a 1.4.1 failure (see .claude/rules/conventions.md).
    */
   attention?: string;
 }

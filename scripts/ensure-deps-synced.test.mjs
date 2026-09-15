@@ -1,6 +1,6 @@
 // scripts/ensure-deps-synced.test.mjs — self-test for the deps-sync hook helper.
 // Proves the lockfile-change detection and skip logic can't silently rot, per
-// .claude/rules/quality-gates.md ("Self-tested gates"). Runs with `node --test`
+// CONTRIBUTING.md ("Self-maintaining repo"). Runs with `node --test`
 // (in `pnpm check:test`); needs `git` but no network / node_modules.
 import test from "node:test";
 import assert from "node:assert/strict";

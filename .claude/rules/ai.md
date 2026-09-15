@@ -45,4 +45,4 @@ React + token CLI look-alike — never a terminal emulator.
 - `data-slot="terminal-<name>[-<part>]"`; not-ready = `loading`/`isStreaming` only, one
   `role="status"` per region; `motion-reduce:` → static glyph.
 
-History: `docs/rules-history/ai-chat-components.md`, `ai-sdk-vs-a2ui.md`, `terminal-components.md`.
+History: `docs/rules-history/ai-chat-components.md`, `terminal-components.md`.

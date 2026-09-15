@@ -290,7 +290,7 @@ export function judgeMarketplacePointer({ pointer, version, repo, ci = Boolean(p
   } else {
     warnings.push(
       `marketplace.json read from ${where}: ${pointer.error}.\n` +
-        "      This is TAUTOLOGICAL on a tag checkout (version-sync:check already asserts it) — pass\n" +
+        "      This is TAUTOLOGICAL on a tag checkout (the version-sync check already asserts it) — pass\n" +
         "      --repo <owner>/<name> with `gh` authenticated to check the branch consumers follow.",
     );
   }
@@ -430,10 +430,9 @@ async function main(argv) {
     }
 
     // The pointer a plugin consumer follows lives on the DEFAULT BRANCH, not on
-    // the tag this job checked out (see resolveMarketplacePointer). The same
-    // verdict release.yml's `marketplace:check` preflight ran before the publish
-    // — kept here because the preflight saves the release, this proves the end
-    // state (a revert can land between the two).
+    // the tag this job checked out (see resolveMarketplacePointer). Checked
+    // after the publish: a revert can land on the default branch between the
+    // version bump and this job.
     const verdict = judgeMarketplacePointer({
       pointer: resolveMarketplacePointer({ root, repo }),
       version,

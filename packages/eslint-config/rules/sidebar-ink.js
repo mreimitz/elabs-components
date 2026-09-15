@@ -25,8 +25,8 @@
  * non-breaking and surfaces the fix in the edit→lint loop for coding agents to
  * self-correct, without turning an unrelated PR's `pnpm lint` red the moment a
  * new violation is discovered elsewhere in the repo. See
- * .claude/rules/quality-gates.md "Enforcement over reminders" and
- * .claude/rules/styling-and-tokens.md "Surface separation".
+ * CONTRIBUTING.md "Self-maintaining repo (enforcement over reminders)" and
+ * .claude/rules/conventions.md "Styling & tokens".
  *
  * SLOT-CONTENT BLIND SPOT (PR #87 review finding, sidebar-02's `app-sidebar.tsx`
  * line 136): the ancestor walk above only sees the AUTHORED JSX tree, but a
@@ -292,7 +292,7 @@ const rule = {
     schema: [],
     messages: {
       canvasInkInChrome:
-        '"{{cls}}" is canvas ink on the sidebar CHROME ground (bg-sidebar) — use "{{replacement}}" instead. Canvas ink is tuned against --background/--card, not --sidebar, and can fail contrast there (#66: 1.00:1, #50: ~2.29:1). See .claude/rules/styling-and-tokens.md "Surface separation".',
+        '"{{cls}}" is canvas ink on the sidebar CHROME ground (bg-sidebar) — use "{{replacement}}" instead. Canvas ink is tuned against --background/--card, not --sidebar, and can fail contrast there (#66: 1.00:1, #50: ~2.29:1). See .claude/rules/conventions.md "Styling & tokens".',
     },
   },
   create(context) {

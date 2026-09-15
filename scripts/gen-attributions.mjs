@@ -16,7 +16,7 @@
  * nothing fails — the notice silently misstates what the product actually ships.
  * So the dataset is DERIVED from the repo on every run, and `--check` refuses a
  * stale committed copy (the manifest-gate pattern, per the "enforcement over
- * reminders" rule in .claude/rules/quality-gates.md).
+ * reminders" rule in CONTRIBUTING.md).
  *
  * Three inputs, two of them derived:
  *   1. npm dependencies  — every non-`@elabs-ai/*` runtime `dependencies`
@@ -74,7 +74,7 @@ export function distributablePackages(packagesDir) {
  * `author` is a string in some manifests and an object in others, and the string
  * form often carries `<email>` and `(https://homepage)`. Both are stripped: a
  * copyright line wants a name, and an embedded URL would also register the
- * author's homepage as a reachable origin in `pnpm origins:check` — turning the
+ * author's homepage as a reachable origin in the `remote-origins` check rule — turning the
  * network inventory into a list of maintainers' blogs.
  */
 export function normalizeAuthor(author) {
@@ -92,7 +92,7 @@ export function normalizeAuthor(author) {
 /**
  * Link a dependency to its npm page rather than to its own homepage.
  *
- * Not a cosmetic choice. `pnpm origins:check` inventories every `https://` origin
+ * Not a cosmetic choice. the `remote-origins` check rule inventories every `https://` origin
  * reachable from shipped source, and each one must be declared in
  * `scripts/remote-origins-allowlist.json` with a CSP directive and an escape
  * hatch — deliberately, so nobody adds a network origin silently. Emitting each
@@ -155,7 +155,7 @@ export function collectDependencies(packagesDir) {
  * `name` — the face's own capitalisation. Deriving it from the directory would
  *   title-case each hyphen segment and ship "Ibm Plex Mono".
  * `url` — the upstream project, so every attribution carries a link a reader can
- *   follow (see `.claude/rules/attribution.md`). All four are on `github.com`,
+ *   follow (see `CONTRIBUTING.md`, "Borrowed from another project?"). All four are on `github.com`,
  *   already an allowlisted origin.
  * `copyrightFallback` — the notice from the UPSTREAM licence, used only when the
  *   repackaged `OFL.txt` we ship carries no copyright header of its own (see
@@ -332,7 +332,7 @@ const SECTIONS = [
   {
     category: "source",
     heading: "Adapted & vendored source",
-    lead: "Code and design we took from another project — vendored, adapted, ported or re-expressed. Adding to this list is required whenever we borrow again; see [`.claude/rules/attribution.md`](.claude/rules/attribution.md).",
+    lead: "Code and design we took from another project — vendored, adapted, ported or re-expressed. Adding to this list is required whenever we borrow again; see [`CONTRIBUTING.md`](CONTRIBUTING.md#borrowed-from-another-project-credit-it-in-the-same-change).",
     columns: ["Project", "Licence", "Copyright", "Used in", "What we took"],
     row: (e) => [link(e), cell(e.license), cell(e.copyright), pkgs(e), cell(e.note)],
   },
@@ -441,7 +441,7 @@ Do **not** hand-add an npm dependency — those are harvested from the manifests
 and a hand-written duplicate goes stale the moment the dependency moves.
 
 The full rule, and what enforces it, is in
-[\`.claude/rules/attribution.md\`](.claude/rules/attribution.md).
+[\`CONTRIBUTING.md\`](CONTRIBUTING.md#borrowed-from-another-project-credit-it-in-the-same-change).
 
 ${MD_START}
 ${MD_END}
@@ -497,7 +497,7 @@ if (process.argv.includes("--check")) {
   // Every attribution must be identifiable and followable: a name, and a link
   // that resolves. GitHub is preferred where the upstream has a repo, but not
   // required — OpenStreetMap and CARTO have no repo, and dependencies carry
-  // their npm page. See `.claude/rules/attribution.md`.
+  // their npm page. See `CONTRIBUTING.md` ("Borrowed from another project?").
   const unlinked = dataset.filter((e) => !e.name?.trim() || !e.url?.trim());
   if (unlinked.length) {
     console.error(

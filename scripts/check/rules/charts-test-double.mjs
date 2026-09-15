@@ -192,7 +192,7 @@ export default {
   run(ctx) {
     const out = [];
     if (!ctx.exists(MANIFEST))
-      return [{ file: MANIFEST, line: 1, msg: `${MANIFEST} not found — run \`pnpm manifest\`` }];
+      return [{ file: MANIFEST, line: 1, msg: `${MANIFEST} not found — run \`pnpm gen\`` }];
     const chartsPkg = ctx.json(MANIFEST)?.packages?.["@elabs-ai/components-charts"];
     if (!chartsPkg)
       return [

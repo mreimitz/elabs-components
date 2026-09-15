@@ -19,8 +19,8 @@
  *    the generated templates (`docs/playbooks/templates/<archetype>.tsx`, derived
  *    from the Storybook stories by `pnpm gen`) and playbooks
  *    (`docs/playbooks/<archetype>.md`) — never re-derive them. The app-spec reader
- *    + validator come from `./app-spec.mjs`, the SAME module the `pnpm
- *    app-spec:check` gate imports, so contract and consumer cannot drift.
+ *    + validator come from `./app-spec.mjs`, the SAME module the CLI's app-spec
+ *    tests import, so contract and consumer cannot drift.
  *  - **Plan by default, write only when asked** — `planScaffold` is read-only;
  *    `emitScaffold` is the separate, explicit write. `codemod` never edits a file;
  *    migration stays read-only until plan approval (VP-03 #125).
@@ -236,7 +236,7 @@ export function resolveTemplateFile(archetype, { root, bundledDir = BUNDLED_TEMP
 /**
  * The module specifiers a template imports, or `null` when the template file is
  * unreachable. Parsed from the generated source, never hand-listed: `pnpm
- * gen:templates` regenerates those files from the Storybook stories, so a
+ * gen` regenerates those files from the Storybook stories, so a
  * hand-kept table would drift the moment a template gains a package.
  *
  * `null` (not `[]`) is deliberate — an empty list is indistinguishable from "this
