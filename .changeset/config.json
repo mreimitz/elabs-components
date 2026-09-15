@@ -1,0 +1,33 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-cli",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-editor",
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-maps",
+      "@elabs-ai/components-marketing",
+      "@elabs-ai/components-process",
+      "@elabs-ai/components-terminal",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@elabs-ai/components-viewer"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@elabs-ai/components-docs",
+    "@elabs-ai/components-eslint-config",
+    "@elabs-ai/components-typescript-config",
+    "@elabs-ai/components-registry-blocks"
+  ]
+}

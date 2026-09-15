@@ -36,7 +36,7 @@
  *     `consumerNpmrc()` writes is what docs/CONSUMING.md tells a consumer to use,
  *     and is exactly enough: `@scope:registry=…` + the auth line.
  *   - **The marketplace pointer is read from the DEFAULT BRANCH, not this checkout.**
- *     Reading the tag's own working tree is tautological: `pnpm version:check` in the
+ *     Reading the tag's own working tree is tautological: `pnpm version-sync:check` in the
  *     same job already asserted that file agrees with the root version. A
  *     `/plugin marketplace add <path-to-this-repo>` consumer follows
  *     `main` — so if `git push origin main` was skipped, or the version commit was
@@ -59,15 +59,15 @@
  * publish-only preflight AND keeps it inside the post-release smoke: the
  * preflight is what saves the release, the smoke is what proves the end state.
  *
- *   pnpm release:smoke                        # uses release/v<version>/release-manifest.json
+ *   pnpm release:smoke                        # every distributable package at the root version
  *   pnpm marketplace:check                    # ONLY step 4, safe to run before the publish
  *   node scripts/release-smoke.mjs --version 2.0.0 --manifest <path> --registry <url>
  *
  * Flags:
  *   --pointer-only    run ONLY the marketplace-pointer assertion (no install, no
- *                     manifest needed) — the pre-publish preflight
+ *                     package list needed) — the pre-publish preflight
  *   --version <v>     released version (default: the root package.json version)
- *   --manifest <p>    release-manifest.json to read the package set from
+ *   --manifest <p>    JSON package list to install instead of the derived distributables
  *   --registry <url>  registry the RELEASE SCOPES map to in the generated `.npmrc`
  *                     (default: https://npm.pkg.github.com). Never the process-wide
  *                     default — public deps must still resolve from npmjs.org.
@@ -84,7 +84,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { REPO_ROOT } from "./lib/distributables.mjs";
+import { REPO_ROOT, distributablePackages } from "./lib/distributables.mjs";
 
 /**
  * Where a release lands by default — the PUBLIC npm registry.
@@ -96,9 +96,12 @@ import { REPO_ROOT } from "./lib/distributables.mjs";
  */
 export const DEFAULT_REGISTRY = "https://registry.npmjs.org/";
 
-/** The published package names a release-manifest records. Pure. */
+/**
+ * The package names a package list records — `{ packages: [{ name }] }` or a bare
+ * `[{ name, version }]` array (changesets/action's `published-packages`). Pure.
+ */
 export function packagesFromManifest(manifest) {
-  const rows = manifest?.packages;
+  const rows = Array.isArray(manifest) ? manifest : manifest?.packages;
   if (!Array.isArray(rows) || rows.length === 0) return [];
   return rows.map((p) => p.name).filter(Boolean);
 }
@@ -184,7 +187,7 @@ export function parseMarketplaceVersion(text) {
 
 /**
  * The plugin pointer in THIS checkout. On the release path that is the tag's own
- * tree, which `pnpm version:check` has already vouched for — so it is the
+ * tree, which `pnpm version-sync:check` has already vouched for — so it is the
  * OFFLINE FALLBACK, not the assertion. See `resolveMarketplacePointer`.
  */
 export function marketplaceVersion(root) {
@@ -204,7 +207,7 @@ function runGh(args) {
  * branch**, fetched over the GitHub API.
  *
  * Why not the working tree: on a `v*` tag run the tree is the tag's, and the same
- * job's `pnpm version:check` already asserted that file equals the root version —
+ * job's `pnpm version-sync:check` already asserted that file equals the root version —
  * so comparing it to the released version is unfalsifiable. `main` is a different
  * ref: RELEASING.md § 4 pushes `main` and the tag as two separate commands, and a
  * revert can move `main` afterwards. Both leave consumers on the previous plugin
@@ -259,7 +262,7 @@ export function resolveMarketplacePointer({ root, repo, gh = runGh } = {}) {
  *
  * Returns `{ failures, logs, warnings }`. The CI branch matters: falling back to
  * the working tree there would re-create the tautology this check exists to kill
- * (`pnpm version:check` already forced the tag's own copy to agree), so an
+ * (`pnpm version-sync:check` already forced the tag's own copy to agree), so an
  * unresolvable pointer is a failure under CI and a loud warning locally.
  */
 export function judgeMarketplacePointer({ pointer, version, repo, ci = Boolean(process.env.CI) }) {
@@ -282,12 +285,12 @@ export function judgeMarketplacePointer({ pointer, version, repo, ci = Boolean(p
   } else if (ci) {
     failures.push(
       `the marketplace pointer could not be verified against the default branch — ${pointer.error}. ` +
-        "The local read agrees, but `pnpm version:check` already asserted that, so it proves nothing.",
+        "The local read agrees, but `pnpm version-sync:check` already asserted that, so it proves nothing.",
     );
   } else {
     warnings.push(
       `marketplace.json read from ${where}: ${pointer.error}.\n` +
-        "      This is TAUTOLOGICAL on a tag checkout (version:check already asserts it) — pass\n" +
+        "      This is TAUTOLOGICAL on a tag checkout (version-sync:check already asserts it) — pass\n" +
         "      --repo <owner>/<name> with `gh` authenticated to check the branch consumers follow.",
     );
   }
@@ -338,20 +341,20 @@ async function main(argv) {
     return 0;
   }
 
-  const manifestPath =
-    argValue(argv, "--manifest") ?? join(root, "release", `v${version}`, "release-manifest.json");
-
-  if (!existsSync(manifestPath)) {
-    console.error(
-      `✖ release:smoke: no release-manifest.json at ${manifestPath} — run \`pnpm release:snapshot\` ` +
-        "first (the package set is DERIVED from it, never retyped).",
-    );
+  // The package set is DERIVED, never retyped: the workspace's distributables by
+  // default, or an explicit list (`--manifest`: a JSON file holding either
+  // `{ packages: [{ name }] }` or changesets/action's `published-packages` array).
+  const manifestPath = argValue(argv, "--manifest");
+  if (manifestPath && !existsSync(manifestPath)) {
+    console.error(`✖ release:smoke: no package list at ${manifestPath}.`);
     return 1;
   }
-  const names = packagesFromManifest(JSON.parse(readFileSync(manifestPath, "utf8")));
+  const names = manifestPath
+    ? packagesFromManifest(JSON.parse(readFileSync(manifestPath, "utf8")))
+    : distributablePackages(root).map((p) => p.name);
   if (names.length === 0) {
     console.error(
-      "✖ release:smoke: the release manifest names ZERO packages — the smoke would pass " +
+      "✖ release:smoke: the package set names ZERO packages — the smoke would pass " +
         "vacuously by installing nothing.",
     );
     return 1;

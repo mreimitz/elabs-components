@@ -1,0 +1,47 @@
+{
+  "addDevDependencies": {
+    "@changesets/cli": "^3.0.3"
+  },
+  "addScripts": {
+    "changeset": "changeset",
+    "changeset:version": "changeset version && node scripts/sync-version-extras.mjs && pnpm install --lockfile-only",
+    "release:publish": "pnpm build:packages && changeset publish",
+    "version-sync:check": "node scripts/sync-version-extras.mjs --check",
+    "version-sync:check:test": "node --test scripts/sync-version-extras.test.mjs"
+  },
+  "removeScripts": [
+    "version:set",
+    "version:check",
+    "version:check:test",
+    "changelog-entry:check",
+    "changelog-entry:check:test",
+    "changelog:check",
+    "changelog:check:test",
+    "release-gates:check",
+    "release-gates:check:test",
+    "release-verdict:check",
+    "release-verdict:check:test",
+    "publish-ready:check",
+    "publish-ready:check:test",
+    "release:report",
+    "release-report:test",
+    "release:snapshot",
+    "release:snapshot:test",
+    "release-tag-target",
+    "release-tag-target:test",
+    "registry:published:check",
+    "registry:published:check:test"
+  ],
+  "ciEdits": [
+    "No workflow step names a removed script: gates.yml runs them only via `pnpm gates` discovery, so removing the package.json scripts drops them from CI. Remaining edits are stale comments/permissions:",
+    ".github/workflows/gates.yml: drop header comments about `release-gates:check` rung 2 / `scripts/release-gates-baseline.json` (lines ~3-33, ~129-130, ~173-174) and `check-release-verdict.mjs` (~27, ~45); drop the `pages: read` permission (~50-58) and the GH_TOKEN comment (~140-145) that exist only for `registry:published:check` (keep GH_TOKEN if another gate still needs it); the `fetch-depth: 0` comment (~63) cites `changelog-entry:check` — keep full history only if another gate needs it.",
+    ".github/workflows/ci.yml: header comment (lines 3-10) says the file name is load-bearing for `check-release-verdict.mjs` and `release-gates:check` — no longer true, delete; `pages: read` (~33-41) was only for `registry:published:check` — remove.",
+    "Optional: a PR check that warns when a package-affecting PR has no changeset (`pnpm changeset status --since=origin/main`) — not added; it exits 1 on any package change without a changeset, including test-only edits, so only wire it if that strictness is wanted."
+  ],
+  "runGatesEdits": [
+    "scripts/run-gates.mjs NOT_PER_CHANGE_GATES: remove the `changelog:check` and `release-verdict:check` entries (scripts deleted). Keep `marketplace:check` (still `release-smoke.mjs --pointer-only`); its reason text can become 'release path: asserts the marketplace pointer on the default branch'.",
+    "scripts/run-gates.mjs header comment lines ~15-17 reference the release ratchet and `scripts/release-gates-baseline.json` — delete.",
+    "scripts/run-gates.test.mjs FIXTURE_PKG: `\"changelog:check\": \"node scripts/check-changelog.mjs\" // NOT_PER_CHANGE` must be swapped for a name still in NOT_PER_CHANGE_GATES (e.g. `marketplace:check`) once the entry is removed, and line ~76's assertion updated; `release-report:test` (lines ~52, ~94) is a synthetic fixture and still passes, but rename it (e.g. `c:check:test`) to avoid naming a deleted script."
+  ],
+  "notes": "Uses changesets/action@v2 (not @v1): @changesets/cli latest is 3.0.3 and action v2 validates CLI v3; v1 is for CLI v2. v2 needs `changeset publish` (not `pnpm -r publish`) so tags/GitHub Releases are created from CHANGESETS_OUTPUT. `scripts/sync-version-extras.mjs` writes the ROOT package.json version at release time (inside `pnpm changeset:version` in the Version PR) — that is runtime, allowed. Repo setting needed: Actions > General > 'Allow GitHub Actions to create and approve pull requests'. KEPT for S2-safety to migrate into the check runner: scripts/check-remote-origins.mjs (+test) and scripts/remote-origins-allowlist.json (`origins:check`, `origins:check:test` scripts stay). DELETED: scripts/check-registry-published.mjs (+test) — release plumbing, red for infra reasons; nothing now verifies the hosted Pages registry returns 200. scripts/lib/workflow-gates.mjs and scripts/lib/semver-lite.mjs KEPT: still imported by check-{microtypography,viewer-highlight-coverage,package-json-dep-moves,tailwind-sources}.test.mjs and publish-registry-pages.mjs. Stale references outside S3 ownership: docs/ADR/0020-lockstep-versioning.md says 'no Changesets' and should be superseded/amended; docs/ADR/0028, docs/ADR/0030, CHANGELOG.md (history, leave), .gitattributes lines 7-9 (cites check-changelog-entry.mjs), scripts/gen-package-readmes.mjs:330, scripts/gen-attributions.mjs:60, scripts/resolve-ci-scope.mjs:17 + .test.mjs:9,62, scripts/check-a11y-baseline.mjs:258, scripts/check-microtypography.test.mjs:127, scripts/validate-registry.mjs:36, scripts/lib/registry-homepage.mjs:5,20, scripts/publish-registry-pages.mjs:82 + .test.mjs:5, scripts/lib/distributables.mjs:6, scripts/lib/workflow-gates.mjs header (comments only; no code import breaks). Root CHANGELOG.md `## Unreleased` is no longer written by releases; per-package CHANGELOG.md files are generated by changesets from now on."
+}
