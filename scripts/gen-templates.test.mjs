@@ -1,6 +1,6 @@
 /**
  * gen-templates.test.mjs — locks the template generator (a `pnpm gen` step).
- * Run: `node --test scripts/gen-templates.test.mjs` (`pnpm gen:templates:test`).
+ * Run: `node --test scripts/gen-templates.test.mjs` (in `pnpm check:test`).
  *
  * Hermetic: every test builds a MINIMAL temp repo root (a `packages/<pkg>/src/
  * templates-<name>.stories.tsx` fixture + a `package.json`), then drives the same

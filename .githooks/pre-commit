@@ -6,17 +6,17 @@
 #    (`<<<<<<<`/`=======`/`>>>>>>>`) — the #379 incident (PR #375 merged commit
 #    7ac0d12 with markers committed verbatim into 6 tracked files). This ABORTS the commit rather than best-effort-fixing it: there is no safe
 #    way to auto-resolve a merge on the committer's behalf.
-#    The CI gate (`pnpm conflict-markers:check`) is the backstop for a
+#    `pnpm check` in CI (rule `conflict-markers`) is the backstop for a
 #    `--no-verify` bypass.
 # 3) When a commit stages anything under `registry/`, regenerate the DERIVED
 #    `registry/registry.json` from the block source and stage it, then HARD
-#    BLOCK if `validate-registry.mjs` or `check-registry-resolve.mjs` fails —
-#    a manifest that lies ships a broken `shadcn add` to a consumer, and no CI
-#    workflow runs these today.
+#    BLOCK if `validate-registry.mjs` or the `registry-resolve` check rule fails —
+#    a manifest that lies ships a broken `shadcn add` to a consumer (CI's
+#    `pnpm check` runs both too).
 # 4) Run Prettier over the staged Prettier-supported files and re-stage the
 #    (idempotent) result — so `format:check` doesn't go red on direct commits
 #    from contributors without the `.claude/hooks/format-after-edit.sh` agent
-#    hook. `pnpm format:check` in CI (blocking `gates` job) stays the backstop
+#    hook. `pnpm format:check` in CI (the `quality` job) stays the backstop
 #    for a `--no-verify` bypass or a machine that never ran `pnpm install`
 #    (`core.hooksPath` unset). (#239 — "Enforcement over reminders": the format
 #    convention now has commit-time teeth, not just a CI post-hoc check.)
@@ -51,8 +51,8 @@ fi
 # detected, `check-package-json-dep-moves.mjs --staged` doesn't just print a
 # reminder — it AUTOMATICALLY spawns `gen-attributions.mjs --check` itself and
 # surfaces its real result, so nobody has to remember to run it by hand. Wiring
-# is best-effort: `pnpm attributions:check` is already a
-# blocking CI gate, so a failure here never blocks the commit — it surfaces the
+# is best-effort: `pnpm gen:check` (attributions) is already a
+# blocking CI step, so a failure here never blocks the commit — it surfaces the
 # same failure CI would, just earlier and with more context (which dependency,
 # which fields). See scripts/check-package-json-dep-moves.mjs and
 # @.claude/rules/attribution.md.
@@ -68,8 +68,7 @@ fi
 # drifted: fabricated `registryDependencies`, a stale forked `button`, theme
 # token values copied out of themes.css. Regenerate + stage it, then HARD BLOCK if the result is invalid or has an import
 # that would not resolve after `shadcn add` rewrites paths. These
-# two are blocking: a broken manifest ships a broken install to a consumer, and
-# there is no CI backstop for it today.
+# two are blocking: a broken manifest ships a broken install to a consumer.
 if printf '%s\n' "$staged" | grep -Eq '^registry/'; then
   if command -v node >/dev/null 2>&1; then
     node scripts/gen-registry.mjs >/dev/null 2>&1 || true
@@ -77,7 +76,7 @@ if printf '%s\n' "$staged" | grep -Eq '^registry/'; then
       git add -- registry/registry.json
       echo "pre-commit: regenerated registry/registry.json from the block source."
     }
-    if ! node scripts/validate-registry.mjs || ! node scripts/check-registry-resolve.mjs; then
+    if ! node scripts/validate-registry.mjs || ! node scripts/check/run.mjs --rule registry-resolve; then
       echo "pre-commit: aborting commit — the registry manifest is invalid or an item's imports would not resolve after install (see above)." >&2
       exit 1
     fi

@@ -34,7 +34,7 @@
  * statically imported into the barrel) and a LEAK inside its public sibling;
  * only the compiler's own output can tell the two apart. It mirrors
  * the old `heavy-deps:check` script's shape (now check rule `eager-heavy-deps`) (ratchet baseline, `--warn`/
- * `--update`, self-tested, wired in `gates.yml`) with that one deliberate
+ * `--update`, self-tested, run in CI right after the build) with that one deliberate
  * difference.
  *
  * A missing `dist/` (no build has run yet) is normal, not a failure — the
@@ -267,7 +267,7 @@ function main(argv) {
       "  safely, since it is never statically imported into the barrel) proving the\n" +
       "  mirror stays assignable to the real type. See `packages/ai/src/persona.tsx`,\n" +
       "  `packages/ai/src/_persona-rive.tsx`, and the ADR 0019 amendment (issue #101).\n" +
-      "\n  Run `pnpm optional-peer-types:check --update` once the finding is understood\n" +
+      "\n  Run `node scripts/check-optional-peer-types.mjs --update` once the finding is understood\n" +
       "  and the baseline is the intended fix (rare — most cases want the pattern above).",
   );
   return warnOnly ? 0 : 1;

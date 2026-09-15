@@ -72,7 +72,7 @@ export {
 
 /**
  * The token contract every theme must cover (ADR 0029) — GENERATED from
- * `themes.css`, kept fresh by `pnpm token-contract:check`. Assert your own
+ * `themes.css`, kept fresh by `pnpm check` (command `token-contract`). Assert your own
  * theme's stylesheet against it so a missing token fails your build instead of
  * falling back to `:root` and rendering wrong.
  */

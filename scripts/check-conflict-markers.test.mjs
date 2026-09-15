@@ -1,7 +1,7 @@
 /**
  * check-conflict-markers.test.mjs — self-test for the conflict-marker gate (#379 Part B).
  * Run in CI: `node --test scripts/check-conflict-markers.test.mjs`
- * (`pnpm conflict-markers:check:test`).
+ * (`pnpm check:test`).
  *
  * PR #375 merged commit 7ac0d12 with literal, unresolved `<<<<<<<`/`=======`/
  * `>>>>>>>` markers in 6 tracked files — nothing in the enforcement chain would

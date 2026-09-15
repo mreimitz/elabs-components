@@ -12,7 +12,7 @@
  *   - file-backed items list `files[]` and every referenced file exists on disk
  *   - theme items define `cssVars`
  *
- * Run with: `pnpm registry:validate` (or `node scripts/validate-registry.mjs`).
+ * Run with: `node scripts/validate-registry.mjs` (also `pnpm check`, command `registry-validate`).
  * Exits non-zero on any error so it can gate CI / `prepare-release`.
  */
 import { readFileSync, existsSync } from "node:fs";

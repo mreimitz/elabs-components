@@ -318,7 +318,7 @@ function writeConsumerAppFixture({ peerPackageName, declaredPeerRange, pinnedPee
 // node:test's own timeout (the event loop is blocked). In a sandboxed or offline
 // shell the registry connect hangs forever — four orphaned
 // `pnpm install --ignore-workspace` children from earlier sessions were found
-// still running 1.5 days later, and `pnpm gates:selftests` hung on this file.
+// still running 1.5 days later, and the self-test battery hung on this file.
 // So: (a) every child spawn carries a hard timeout + SIGKILL, and (b) when the
 // registry cannot be reached within 20 s the two tests SKIP with a reason
 // instead of hanging — LOCALLY only: `CI` set means never skip, so a registry

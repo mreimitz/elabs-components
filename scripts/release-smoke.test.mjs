@@ -1,7 +1,7 @@
 /**
  * release-smoke.test.mjs — self-test for the post-release fresh-install smoke
  * (#106, #71). Run in CI: `node --test scripts/release-smoke.test.mjs`
- * (`pnpm release:smoke:test`).
+ * (`pnpm check:test`).
  *
  * The smoke itself needs a published release and registry auth, so CI cannot run
  * its network path. What CI CAN lock is the thing that makes the smoke worth
@@ -21,7 +21,7 @@
  *     sends public transitive deps to GitHub Packages, which 404s them), and the
  *     generated `.npmrc` maps only the release scopes;
  *   - the pointer check resolves the DEFAULT BRANCH, not the tag's working tree
- *     (where `pnpm version-sync:check` has already forced agreement).
+ *     (where the `version-sync` check has already forced agreement).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -236,7 +236,7 @@ test("the REAL repo's marketplace pointer agrees with the lockstep version", () 
 });
 
 // The check that is NOT tautological: the pointer as served by the DEFAULT
-// BRANCH. A tag checkout's own copy is forced to agree by `pnpm version-sync:check`
+// BRANCH. A tag checkout's own copy is forced to agree by the `version-sync` check
 // in the same job, so reading it proves nothing — while a skipped
 // `git push origin main` (RELEASING.md § 4 pushes main and the tag separately)
 // or a later revert leaves real consumers on the previous plugin.

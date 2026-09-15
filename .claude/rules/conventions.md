@@ -185,7 +185,7 @@ History and measurements: `docs/rules-history/*.md` (per merged rule, kept as ar
 
 ## Checked conventions
 
-Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `doc`, never this block; `pnpm check` enforces each line.
+Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pnpm gen`). Edit a rule's `doc`, never this block; `pnpm check` enforces each line.
 
 ### Themes
 
@@ -278,5 +278,13 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 - The Claude plugin installs whole: `plugin.json` and `marketplace.json` agree on version, every declared skill/agent path starts `./` and resolves, the `brand-ui-start` router is user-invocable, MCP servers are http or stdio, and shared skill docs exist exactly once. (`plugin-manifest`)
 - The root `test` script runs `turbo run test --concurrency=<int>`; never raise a vitest `testTimeout` to absorb CPU oversubscription (#80). (`test-concurrency`)
 - Every app aliases `decode-named-character-reference` and `hast-util-from-html-isomorphic` via `require.resolve(…)`, declares both as direct devDependencies, and `docs/CSP-AND-NETWORK.md` still documents both. (`tt-aliases`)
+
+### External commands
+
+- Keep `registry/registry.json` a valid shadcn registry: unique named items, valid types, real https homepage, every listed file on disk. (`registry-validate`: `node scripts/validate-registry.mjs`)
+- Keep the shipped theme token contract (`THEME_TOKEN_NAMES`) in sync with the theme stylesheets. (`token-contract`: `node packages/tokens/scripts/gen-theme-token-names.mjs --check`)
+- Author token values in the DTCG source (`packages/tokens/tokens/`); the generated theme stylesheets must match a fresh `tokens:build`. (`tokens-fresh`: `node scripts/check-tokens-fresh.mjs`)
+- The Trusted-Types alias snippet in docs/CSP-AND-NETWORK.md must resolve (in node_modules) to each package's DOM-free build. (`tt-aliases-resolve`: `node scripts/check-tt-aliases.mjs`)
+- Keep the root, plugin manifests and MCP `SERVER_INFO` versions equal to the fixed package group's version. (`version-sync`: `node scripts/sync-version-extras.mjs --check`)
 
 <!-- brand-ui:gen:check-rules:end -->

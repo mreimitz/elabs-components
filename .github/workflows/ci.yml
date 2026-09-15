@@ -1,14 +1,5 @@
-# The battery, run on every PR and every push to `main`.
-#
-# The FILE NAME is load-bearing: `scripts/check-release-verdict.mjs` looks up
-# runs of `ci.yml` for the exact commit under a release tag (CI_WORKFLOW_FILE),
-# and refuses to publish unless every blocking job of the newest such run
-# concluded success. Renaming this file silently removes the release's only
-# proof — change CI_WORKFLOW_FILE in the same commit if it ever moves.
-#
-# All gate steps live in the reusable `gates.yml`, never here: one place to add
-# a gate, and `pnpm release-gates:check` can follow the `uses:` edge to see the
-# whole set.
+# CI: every quality check, on every PR and every push to main.
+# What each step covers: docs/GATES.md. Release/publish lives in release.yml.
 name: CI
 
 on:
@@ -16,27 +7,70 @@ on:
   push:
     branches: [main]
 
-# Cancel superseded runs on a branch, but never on `main` — a `main` run is the
-# verdict a future tag inherits, so it must be allowed to finish.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+permissions:
+  contents: read
+
 jobs:
-  gates:
-    # A reusable workflow can only be granted a SUBSET of the caller's own
-    # permissions — GitHub's docs put it as "permissions can only be
-    # maintained or reduced, not elevated, throughout the chain." Without
-    # this block the job fell back to the repo's default workflow permission
-    # ("Read repository contents and packages permissions" — restrictive),
-    # which grants `contents: read` but NOT `pages: read`. `gates.yml`
-    # requests both (#60, `registry:published:check`'s `isPagesConfigured()`),
-    # so that request exceeded what this caller held and GitHub rejected the
-    # whole run before any job started ("workflow file issue", 0 jobs, no
-    # check runs) rather than merely denying the one step that needed it.
-    # Declaring the same two scopes here is what lets the grant reach the
-    # callee at all.
-    permissions:
-      contents: read # actions/checkout (gates.yml)
-      pages: read # gh api repos/:owner/:repo/pages (registry:published:check)
-    uses: ./.github/workflows/gates.yml
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Format
+        run: pnpm format:check
+      - name: Check (rules + external commands)
+        run: pnpm check
+      - name: Check self-tests (rule fixtures + scripts/**/*.test.mjs)
+        run: pnpm check:test
+      - name: Unit tests
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+      - name: Built-output checks (CSS assets, optional-peer types)
+        run: |
+          node scripts/check-css-assets.mjs
+          node scripts/check-optional-peer-types.mjs
+      - name: Generated artifacts are fresh
+        run: pnpm gen:check
+      - name: Consumer install smoke
+        run: pnpm consumer:check
+
+  storybook:
+    name: Storybook interaction + axe (${{ matrix.theme }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        theme: [light, dark]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm --filter @elabs-ai/components-docs exec playwright install --with-deps chromium
+      - name: Story tests
+        env:
+          STORYBOOK_THEME: ${{ matrix.theme }}
+        run: pnpm --filter @elabs-ai/components-docs test-storybook

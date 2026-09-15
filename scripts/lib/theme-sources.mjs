@@ -17,7 +17,7 @@
  * the same self-containment convention every other repo-root gate follows across
  * the `packages/tokens` ⇄ `scripts/` boundary. The two cannot drift silently:
  * both derive the theme list from the same `theme-types.ts`, and
- * `pnpm tokens:check` + `pnpm theme-parity:check` read the same files.
+ * `scripts/check-tokens-fresh.mjs` + the `theme-parity` check rule read the same files.
  *
  * Dependency-free, ESM, cwd-independent.
  */

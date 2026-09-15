@@ -39,19 +39,18 @@
  * on the first chunk of content — never decoded as text.
  *
  * The full-tree scan is ALSO the `conflict-markers` rule in `node scripts/check/run.mjs`;
- * this script stays for the `--staged` pre-commit hook and the CI pre-install step.
+ * this script stays for the `--staged` pre-commit hook.
  * Dependency-free; ESM; cwd-independent. CLI self-test:
- * `scripts/check-conflict-markers.test.mjs` (`pnpm conflict-markers:check:test`).
+ * `scripts/check-conflict-markers.test.mjs` (`pnpm check:test`).
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-// Detection lives in the check rule (one implementation); this script keeps the two
-// entry points the runner cannot serve: `--staged` (index content, pre-commit) and the
-// CI pre-install scan. The rule module is dependency-free, so this still runs before
-// `pnpm install`.
+// Detection lives in the check rule (one implementation); this script keeps the entry
+// point the runner cannot serve: `--staged` (index content, pre-commit). The rule module
+// is dependency-free, so this runs before `pnpm install`.
 import { findConflictMarkers, looksBinary } from "./check/rules/conflict-markers.mjs";
 
 export { findConflictMarkers, looksBinary };

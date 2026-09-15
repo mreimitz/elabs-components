@@ -39,7 +39,7 @@ export function renderBaseline(stories, maxStories) {
   });
   return [
     "{",
-    `  "$comment": "GENERATED — do not hand-edit. \`pnpm a11y:baseline:run\` measures, \`pnpm a11y:baseline:update\` writes. Every story listed here has a PRE-EXISTING axe violation and is downgraded to addon-a11y's report-only mode by apps/docs/.storybook/preview.tsx; every story NOT listed fails CI on any violation. \`ratchet.maxStories\` only ever goes DOWN (#316).",`,
+    `  "$comment": "GENERATED — do not hand-edit. \`pnpm a11y:baseline:run\` measures, \`node scripts/a11y-baseline-update.mjs\` writes. Every story listed here has a PRE-EXISTING axe violation and is downgraded to addon-a11y's report-only mode by apps/docs/.storybook/preview.tsx; every story NOT listed fails CI on any violation. \`ratchet.maxStories\` only ever goes DOWN (#316).",`,
     `  "ratchet": { "maxStories": ${maxStories} },`,
     body.length === 0 ? `  "stories": {}` : `  "stories": {\n${body.join(",\n")}\n  }`,
     "}",

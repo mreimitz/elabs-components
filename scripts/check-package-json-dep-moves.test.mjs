@@ -24,7 +24,7 @@ import {
   detectDependencyFieldMoves,
   resolveStagedExitCode,
 } from "./check-package-json-dep-moves.mjs";
-import { collectGates } from "./lib/workflow-gates.mjs";
+import { SERIAL_SELFTESTS, selfTestFiles } from "./check/run.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "..");
@@ -244,21 +244,11 @@ test("the pre-commit hook runs the staged-move detector", () => {
   assert.match(hook, /check-package-json-dep-moves\.mjs/);
 });
 
-test("package.json wires both the plain and self-test scripts", () => {
-  const p = JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
-  assert.equal(
-    p.scripts["dep-field-move:check"],
-    "node scripts/check-package-json-dep-moves.mjs --staged",
-  );
-  assert.equal(
-    p.scripts["dep-field-move:check:test"],
-    "node --test scripts/check-package-json-dep-moves.test.mjs",
-  );
-});
-
-// gates.yml runs the self-tests as ONE `pnpm gates:selftests` step (#326), so
-// "wired" means reachable through the runner's discovery, not a literal line.
-test("the self-test is wired into gates.yml's Gate self-tests step", () => {
-  const gates = readFileSync(path.join(REPO_ROOT, ".github", "workflows", "gates.yml"), "utf8");
-  assert.ok(collectGates(gates).has("dep-field-move:check:test"));
+// `pnpm check:test` discovers every scripts/**/*.test.mjs; this one stages into the real
+// git index, so it must be in the serial batch that runs after everything else.
+test("check:test runs this self-test serially, after the parallel batch", () => {
+  const { parallel, serial } = selfTestFiles(REPO_ROOT);
+  assert.ok(SERIAL_SELFTESTS.includes("scripts/check-package-json-dep-moves.test.mjs"));
+  assert.ok(serial.includes("scripts/check-package-json-dep-moves.test.mjs"));
+  assert.ok(!parallel.includes("scripts/check-package-json-dep-moves.test.mjs"));
 });

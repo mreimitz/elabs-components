@@ -42,7 +42,8 @@ Merging the Version PR leaves no pending changesets, so the next run publishes:
 3. `pnpm release:publish` = `pnpm build:packages && changeset publish` — `access: public`,
    provenance via `NPM_CONFIG_PROVENANCE` (best-effort), git tags and a GitHub Release per
    package (`@elabs-ai/components-<pkg>@<version>`);
-4. `release:agent-kit` + `release:plugin` zips, attached to the `@elabs-ai/components-cli` Release;
+4. `release:agent-kit` + `release:plugin` zips, attached to the `@elabs-ai/components-cli` Release
+   (check the plugin locally first: `claude plugin validate . --strict`);
 5. **`pnpm release:smoke`** — installs every published package **from the registry** in a
    scratch dir, asserts each `exports` entry is in the tarball, runs the published CLI
    (`info --json`, `docs Button`) and checks the marketplace pointer on the default branch;

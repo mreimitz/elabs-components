@@ -1,8 +1,18 @@
 # `check` — one runner, one rule per convention
 
 `node scripts/check/run.mjs` (`pnpm check`) runs every `rules/*.mjs` in one process over one shared
-repo context. Flags: `--rule a,b` · `--scope s` · `--verbose` · `--json` · `--list` ·
+repo context, then spawns the external checks in `commands.mjs` in parallel. Flags: `--rule a,b`
+(rule or command ids) · `--scope s` (rules only) · `--verbose` · `--json` · `--list` ·
 `--update-baseline [--force]` · `--test` · `--docs [--check]`.
+
+`--test` (`pnpm check:test`) runs every `scripts/**/*.test.mjs` through `node:test` — including
+`fixtures.test.mjs` (every rule's fixtures) and `run.test.mjs` (this runner) — then the files in
+`SERIAL_SELFTESTS` one at a time. A new `*.test.mjs` under `scripts/` is picked up automatically.
+
+## External commands — `commands.mjs`
+
+`{ id, cmd: [argv…], doc }`, run from the repo root. Only for checks a rule cannot be: they need
+node_modules, a build tool or their own CLI. Their `doc` lines join the generated conventions.
 
 ## Rule contract
 
@@ -51,7 +61,7 @@ incomplete) · `packages()` → `[{ name, dir, json, distributable }]` ·
    Ratchet arithmetic tests are not needed — the runner owns them.
 3. Seed `baseline.json` from the old baseline in the new shape, then prove parity: old script and
    `run.mjs --rule <id>` agree on counts, and a planted violation fails both.
-4. `node scripts/check/run.mjs --test && node scripts/check/run.mjs --docs`. Leave the old script;
+4. `node --test scripts/check/fixtures.test.mjs && node scripts/check/run.mjs --docs`. Leave the old script;
    the integrator removes it.
 
 Shapes: a **list baseline** (`["pkg::Export::prop=value"]`) → `baseline: "keys"` + `key` per
