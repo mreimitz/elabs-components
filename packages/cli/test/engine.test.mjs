@@ -230,7 +230,7 @@ test("planScaffold: an unreachable template is a hard error, never a {tokens,ui}
   const empty = mkdtempSync(join(tmpdir(), "brand-ui-no-templates-"));
   try {
     for (const opts of [
-      { root: empty, bundledDir: empty }, // a checkout that never ran gen:templates
+      { root: empty, bundledDir: empty }, // a checkout that never ran `pnpm gen`
       { bundledDir: empty }, // consumer mode with the bundle missing
     ]) {
       const r = planScaffold(

@@ -114,10 +114,8 @@ const CASES: Case[] = [
   {
     // Finding 3: pre-fix, a zero-chroma primary derived a --ring identical to
     // --accent-foreground (both oklch(0 0 0), ΔE 0.0000) — a direct collision
-    // with the MUST_DIFFER pair ["--accent-foreground", "--ring"] enforced on
-    // committed theme CSS by scripts/check-role-distinctness.mjs. A
-    // runtime-derived patch can't be seen by that gate, so the invariant has
-    // to be enforced here instead (see the "ring/accent-fg ΔE" case below).
+    // between two roles that must stay distinct. A runtime-derived patch is
+    // never committed theme CSS, so the invariant has to be enforced here (see the "ring/accent-fg ΔE" case below).
     name: "FIX ROUND 1 finding 3: zero-chroma primary must not collapse --ring onto --accent-foreground",
     options: { primary: "oklch(0 0 0)" },
   },
@@ -191,10 +189,9 @@ describe("deriveTheme", () => {
     });
 
     it("--ring and --accent-foreground stay perceptibly distinct (ΔE >= 0.05 OKLab)", () => {
-      // FIX ROUND 1 finding 3: scripts/check-role-distinctness.mjs's MUST_DIFFER
-      // includes ["--accent-foreground", "--ring"] for committed theme CSS. That
-      // gate cannot see a runtime-derived patch, so deriveTheme must enforce the
-      // same pair on its OWN emitted output — this is the exact assertion the
+      // FIX ROUND 1 finding 3: ["--accent-foreground", "--ring"] must stay
+      // distinct. A runtime-derived patch is not committed theme CSS, so
+      // deriveTheme must enforce the same pair on its OWN emitted output — this is the exact assertion the
       // original 10-case suite was missing, which is why the zero-chroma
       // collision (both oklch(0 0 0)) shipped without any test failing.
       const ring = parseOklch(result["--ring"]!);

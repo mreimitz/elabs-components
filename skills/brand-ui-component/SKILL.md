@@ -6,7 +6,8 @@ argument-hint: "<package> <Name> [purpose]"
 allowed-tools:
   - Bash(pnpm brand-ui *)
   - Bash(pnpm --filter *)
-  - Bash(pnpm agent-docs)
+  - Bash(pnpm gen)
+  - Bash(pnpm gen:check)
 ---
 
 # brand-ui-component (maintainer)
@@ -40,7 +41,7 @@ Import across packages via `@elabs-ai/components-*`, never relative paths.
 
 ## 3. Build to the rules
 
-Follow `.claude/rules/component-api.md`, `styling-and-tokens.md`, `accessibility.md`:
+Follow `.claude/rules/conventions.md` (Component API, Styling & tokens, Accessibility):
 
 - `forwardRef` + spread `...props` + `className` merged with `cn()` last.
 - Variants via `class-variance-authority`; export the `xxxVariants` fn and all
@@ -56,21 +57,15 @@ Co-locate `name.tsx`, `index.ts`, `name.stories.tsx` (with `tags: ["autodocs"]`)
 
 - `pnpm --filter @elabs-ai/components-<pkg> typecheck && pnpm --filter @elabs-ai/components-<pkg> lint && pnpm --filter @elabs-ai/components-<pkg> test` must pass (three separate invocations — pnpm chains only the first script).
 - Verify it renders in both themes (Storybook).
-- Run `pnpm agent-docs` so the new component lands in the manifest AND its 5
-  downstream generators (inventory/llms/context/gen — `component-inventory.md`,
-  `llms.txt`, `brand-ui-context.md`, the `pnpm gen`-owned doc regions, package
-  READMEs) — not just the manifest alone (#396). In practice this already runs
-  automatically at commit time via `.githooks/pre-commit`
-  (`scripts/run-agent-docs-cascade.mjs`) when the commit touches
-  `packages/*/src/**`; run it by hand here only to see the result before
-  committing, or in an environment without the git hook wired.
+- Run `pnpm gen` so the new component reaches the manifest and every generated
+  doc surface at once (`pnpm gen:check` confirms nothing is stale).
 - Audit it: `pnpm brand-ui audit packages/<pkg>/src/components/<name>` and, for
   visual/contrast, the `brand-ui-audit` skill.
 
 ## 5. Done = quality gates pass
 
 Types exported, composable, semantic tokens, theme-safe, accessible, story + smoke
-test, barrel export, green typecheck/lint/test (see `.claude/rules/quality-gates.md`).
+test, barrel export, green typecheck/lint/test (see the definition of done in `CONTRIBUTING.md`).
 Findings during the work → `/file-issue`, don't silently patch unrelated things.
 
 ## Composition patterns
@@ -78,4 +73,4 @@ Findings during the work → `/file-issue`, don't silently patch unrelated thing
 Build compound, not configurable: avoid boolean-prop modes (use explicit variants),
 share a context not props, lift state into a provider exposing `state`/`actions`/`meta`,
 prefer children over render-props. Keep `forwardRef`; prefer `use()`. See
-`.claude/rules/component-api.md` → Composition patterns.
+`.claude/rules/conventions.md` → Component API.

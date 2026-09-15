@@ -96,7 +96,7 @@ into `fixtures/consumer-smoke`.
 `tokens` → `ui`/`icons` → `terminal`. It may depend on
 `@elabs-ai/components-tokens`, `-icons` and `-ui`, and **nothing may depend on
 it**. In particular `@elabs-ai/components-ai` must never import it — that is a
-sideways edge and `pnpm dep-direction:check` fails on it. A chat transcript that
+sideways edge and `pnpm check --rule dep-direction` fails on it. A chat transcript that
 wants to show a terminal receives one as `children`.
 
 A terminal emulator's optional peers exist to reproduce a shell, not to render a

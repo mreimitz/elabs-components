@@ -69,7 +69,7 @@ need a rung the slots don't name.
 
 **The border ramp is deliberately TWO rungs, not three or four.**
 `--border`/`--border-strong` is a BINARY WCAG 1.4.11 contract
-(`styling-and-tokens.md`'s decision test: _"if I deleted this line, could a
+(the `conventions.md` rule's decision test: _"if I deleted this line, could a
 sighted user still tell the two regions apart? Yes → the subtle rung. No →
 the ≥3:1 rung."_) — every boundary in the system answers that question one of
 exactly two ways, so `--border-1`/`--border-2` alias those two answers and
@@ -156,10 +156,9 @@ steps a reader has to memorise rather than see.
   contrast against `--chart-background` and strict monotonicity (in OKLab L _and_
   in contrast) live in `packages/tokens/src/charts-contrast.test.ts`; the 0.05
   OKLab ΔE floor on adjacent steps, on all ten diverging pairs, and on
-  accent-vs-ladder lives in `scripts/check-role-distinctness.mjs`
-  (`pnpm roles:check`).
+  accent-vs-ladder is enforced by `pnpm check` (the role-distinctness rule).
 - **Adding a theme means authoring all four families.** They are per-theme
-  semantic tokens, so `pnpm theme-parity:check` requires every block to declare
+  semantic tokens, so `pnpm check --rule theme-parity` requires every block to declare
   every one of them; a missing ramp step falls back to `:root` and renders a
   ladder with a rung from another theme in it.
 
@@ -192,7 +191,7 @@ steps a reader has to memorise rather than see.
 2. **Adding a visual concept = adding a token** in _every_ theme block + a
    mapping in `@theme inline`. Then use `bg-foo` / `text-foo`.
 3. **Every theme overrides every token.** Missing tokens fall back to `:root`.
-   In-repo themes are gated by `pnpm theme-parity:check`; a consumer's theme
+   In-repo themes are gated by `pnpm check --rule theme-parity`; a consumer's theme
    lives where that gate cannot reach, so the contract ships as data —
    `THEME_TOKEN_NAMES`, asserted in the consumer's own test.
 4. **Contrast:** body text ≥ 4.5:1 (WCAG AA) in every theme. The
@@ -218,6 +217,6 @@ steps a reader has to memorise rather than see.
   - variant API so consumers don't change).
 - **Icons:** add brand icons under `packages/icons/src/sample-icons/` using the
   `createIcon` factory. `lucide-react` is the **default** library for generic UI
-  glyphs (not a fallback) — see @.claude/rules/icons.md.
+  glyphs (not a fallback) — see `.claude/rules/conventions.md` (Icons).
 
 Use the `/new-theme` command to add a brand/theme end-to-end.

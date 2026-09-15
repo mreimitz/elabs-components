@@ -36,9 +36,7 @@ export function main() {
     const src = join(REPO_ROOT, from);
     const dest = join(PKG_DIR, to);
     if (!existsSync(src)) {
-      console.error(
-        `bundle-assets: ${from} is missing — run \`pnpm gen:templates && pnpm manifest\` first.`,
-      );
+      console.error(`bundle-assets: ${from} is missing — run \`pnpm gen\` first.`);
       process.exit(1);
     }
     rmSync(dest, { recursive: true, force: true });

@@ -1,10 +1,10 @@
-/* GENERATED from packages/charts/src/templates-dashboard.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/charts/src/templates-dashboard.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen dashboard template (single source of truth: the Storybook story). */
 
 /**
  * Dashboard template — the canonical full-screen dashboard composition
  * (app-shell + MetricGrid + MetricCard). This story is the single source of
- * truth: `pnpm gen:templates` derives the consumer template source
+ * truth: `pnpm gen` derives the consumer template source
  * (`docs/playbooks/templates/dashboard.tsx`) from it.
  * Verify across every theme with globals=theme:<slug>.
  */

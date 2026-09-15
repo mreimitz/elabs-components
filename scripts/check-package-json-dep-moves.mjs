@@ -2,12 +2,12 @@
 /**
  * check-package-json-dep-moves.mjs — a staged `package.json` edit that moves a
  * dependency between `dependencies` / `peerDependencies` / `devDependencies` /
- * `optionalDependencies` should trigger `attributions:check` (or
- * `gen:attributions`) automatically, not rely on the implementer remembering (#42).
+ * `optionalDependencies` should trigger `gen-attributions.mjs --check` (or
+ * `pnpm gen`) automatically, not rely on the implementer remembering (#42).
  *
  * Why this matters: `usedBy` in `scripts/attributions.sources.json` records which
  * `@elabs-ai/components-*` packages actually REACH a consumer through a given
- * upstream dependency (see @.claude/rules/attribution.md). Moving a package from
+ * upstream dependency (see CONTRIBUTING.md ("Borrowed from another project?")). Moving a package from
  * `devDependencies` to `dependencies` (or to `peerDependencies`) changes exactly
  * that fact — the dependency now genuinely ships to consumers where it didn't
  * before — and nothing forced a re-run of the attribution dataset when that
@@ -22,13 +22,13 @@
  *   - a removed dependency,
  *   - any change to a field this script doesn't track (`scripts`, `exports`, …).
  *
- * The CI gate (`pnpm attributions:check`) is still the actual enforcement point —
+ * The CI gate (`pnpm gen:check`, attributions step) is still the actual enforcement point —
  * it is already blocking. What THIS closes is the gap the issue names precisely:
  * nothing made that gate run automatically at the moment a move happens, so it
  * only ever caught a stale dataset later, in CI, with less context. So `--staged`
  * mode (the real `.githooks/pre-commit` path) does not just print a reminder — it
  * literally SPAWNS `node scripts/gen-attributions.mjs --check` the moment a move
- * is found and adopts its exit code, so "a move was staged" and "attributions:check
+ * is found and adopts its exit code, so "a move was staged" and "gen-attributions --check
  * ran" happen in the same breath, with no step where an implementer has to
  * remember to run it themselves. The pre-commit wiring around this script is
  * still best-effort/non-blocking (mirrors step 2's manifest-cascade philosophy —
@@ -205,7 +205,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     printFindings(findings);
     console.error(
       "\nA dependency field move can change which @elabs-ai/components-* packages a dependency " +
-        "reaches a consumer through (see .claude/rules/attribution.md) — automatically running " +
+        "reaches a consumer through (see CONTRIBUTING.md § Borrowed from another project?) — automatically running " +
         "`gen-attributions.mjs --check` now (#42):\n",
     );
     const result = spawnSync(
@@ -229,8 +229,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     printFindings(findings);
     console.error(
       "\nIf this changes which @elabs-ai/components-* packages a dependency reaches a consumer through, " +
-        "update `usedBy` in scripts/attributions.sources.json and run `pnpm gen:attributions` " +
-        "(see .claude/rules/attribution.md). Run `pnpm attributions:check` to verify.",
+        "update `usedBy` in scripts/attributions.sources.json and run `pnpm gen` " +
+        "(see CONTRIBUTING.md § Borrowed from another project?). Run `pnpm gen:check` to verify.",
     );
     process.exit(2);
   } else {

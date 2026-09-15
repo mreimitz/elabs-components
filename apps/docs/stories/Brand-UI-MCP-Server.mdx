@@ -25,7 +25,7 @@ which only exists while `pnpm storybook` runs.
 ## How it works
 
 ```
-your component source ──pnpm manifest──▶ brand-ui.manifest.json ──▶ brand-ui MCP ──▶ agent
+your component source ──pnpm gen───────▶ brand-ui.manifest.json ──▶ brand-ui MCP ──▶ agent
                          (committed artifact, CI-gated)            (reads it live)
 ```
 
@@ -36,11 +36,11 @@ committed, deterministic artifact kept fresh automatically:
 
 - a **pre-commit hook** regenerates + stages the manifest when component/token/registry
   inputs change,
-- the **`manifest:check` CI gate** fails the build if the committed manifest is stale,
-- the `/new-component` & `brand-ui-component` workflows run `pnpm manifest`.
+- the **`pnpm gen:check` CI step** fails the build if the committed manifest is stale,
+- the `/new-component` & `brand-ui-component` workflows run `pnpm gen`.
 
 So adding or changing a component flows to the MCP automatically — there is nothing to
-hand-maintain. (During active dev, run `pnpm manifest` to reflect _uncommitted_ edits
+hand-maintain. (During active dev, run `pnpm gen` to reflect _uncommitted_ edits
 immediately.)
 
 The protocol is plain newline-delimited JSON-RPC 2.0, implemented directly (no SDK

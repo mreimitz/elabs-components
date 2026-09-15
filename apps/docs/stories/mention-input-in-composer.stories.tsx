@@ -47,7 +47,7 @@ import {
  * rejected:
  *
  * - It is **configuration where composition already works**
- *   (`.claude/rules/component-api.md` § Composition patterns). `Composer` is a
+ *   (`.claude/rules/conventions.md` § Component API). `Composer` is a
  *   single function, not a compound `Composer.Root` / `Composer.Field` pair, so
  *   the slot could not be a real composition seam — just an opaque node.
  * - Its correctness would rest on an **invariant the type cannot express**: the

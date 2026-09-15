@@ -19,7 +19,7 @@
  * injection from both packages. Keeping the two in sync matters: if a Radix
  * upgrade drops the patch, these rules stay correct and merely become redundant;
  * if these rules are deleted, native scrollbars reappear inside every ScrollArea
- * and Select. `pnpm csp-sinks:check` fails the build if the injection returns.
+ * and Select. `pnpm check --rule trusted-types-patches` fails if the injection returns.
  *
  * `nonce` is deliberately not reproduced: it exists to satisfy a CSP that
  * whitelists inline styles, which is precisely the configuration a strict policy

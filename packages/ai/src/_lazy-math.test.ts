@@ -7,7 +7,7 @@ import { needsMathPlugin, preloadMath, useLazyMathPlugin } from "./_lazy-math";
  * The KaTeX-carrying `@streamdown/math` module is mocked so this file tests
  * the lazy wrapper's *behaviour*. That the real dependency is genuinely
  * absent from the entry chunk is a property of the BUILD, not of jsdom — see
- * `pnpm heavy-deps:check` (`scripts/check-eager-heavy-deps.mjs`), which
+ * `pnpm check --rule eager-heavy-deps`, which
  * asserts no `packages/ai/src` module statically imports `@streamdown/math`
  * or `katex`.
  */

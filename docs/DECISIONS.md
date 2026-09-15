@@ -21,13 +21,13 @@ decisions **here**, regenerate there. Everything between the two markers is the 
 <!-- prettier-ignore -->
 | # | Decision | The short answer | Detail rule |
 | --- | --- | --- | --- |
-| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decision-routing.md`](../.claude/rules/decision-routing.md) |
-| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) |
+| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decisions.md`](../.claude/rules/decisions.md) |
+| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai.md`](../.claude/rules/ai.md) |
 | **D3** | Which package | `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai) | `skills/brand-ui/SKILL.md` (generated table) |
 | **D4** | Import vs copy-own | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry). | [`registry.md`](../.claude/rules/registry.md) |
-| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`scope-and-non-goals.md`](../.claude/rules/scope-and-non-goals.md) |
-| **D6** | Dependency & import discipline | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph. | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) · [`styling-and-tokens.md`](../.claude/rules/styling-and-tokens.md) |
-| **D7** | Maintainer decisions | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory). | [`quality-gates.md`](../.claude/rules/quality-gates.md) |
+| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`decisions.md`](../.claude/rules/decisions.md) |
+| **D6** | Dependency & import discipline | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph. | [`ai.md`](../.claude/rules/ai.md) · [`conventions.md`](../.claude/rules/conventions.md) |
+| **D7** | Maintainer decisions | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory). | [`CONTRIBUTING.md`](../CONTRIBUTING.md) |
 
 <!-- DECISIONS:SUMMARY:END -->
 
@@ -44,7 +44,7 @@ are not re-stated here.
 | To build an app/screen _with_ components (you or the agent write the code) | **Build-with** — import `@elabs-ai/components-*` / copy-own blocks | The default. ~99% of work. "Aware-of-library."          |
 | The agent to _emit_ the UI at runtime (it designs the screen)              | **Generative UI** — A2UI (see D2)                                  | Rare, phase-gated (WP-11). Don't reach here by default. |
 
-Apply it with the routing checklist in [`decision-routing.md`](../.claude/rules/decision-routing.md).
+Apply it with the routing checklist in [`decisions.md`](../.claude/rules/decisions.md).
 
 ## D2 — Rendering agent output: message vs surface vs ad-hoc
 
@@ -56,7 +56,7 @@ Apply it with the routing checklist in [`decision-routing.md`](../.claude/rules/
 
 Mental model: **AI SDK = "what the agent said" (a chat). A2UI = "what the agent wants you to
 show" (a screen). A2UI rides _inside_ the AI SDK chat.** Full distinction + import discipline
-in [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md). The A2UI concept paper was
+in [`ai.md`](../.claude/rules/ai.md). The A2UI concept paper was
 removed when this fork was debranded; this section and that rule are what survive of it.
 
 ## D5 — Scope boundary (what brand-ui is NOT)
@@ -68,7 +68,7 @@ removed when this fork was debranded; this section and that rule are what surviv
 > the component packages.
 
 This caps the "are we building our own SDK?" drift. Detail + what-belongs-where:
-[`scope-and-non-goals.md`](../.claude/rules/scope-and-non-goals.md). Human home: `PROJECT.md`
+[`decisions.md`](../.claude/rules/decisions.md). Human home: `PROJECT.md`
 Non-goals. The durable _why_: ADR [`0007`](./ADR/0007-presentation-layer-scope-boundary.md).
 
 ## D6 — Dependency & import discipline
@@ -77,14 +77,13 @@ Non-goals. The durable _why_: ADR [`0007`](./ADR/0007-presentation-layer-scope-b
   the message model (`UIMessage`, `ToolUIPart`, …); it must **never** import the runtime
   (`useChat`, `@ai-sdk/*` providers, `streamText`). The moment it does, a shallow coupling
   becomes lock-in. _(Verified today: 12 files `import type`, 0 runtime imports; `ai` is a peer
-  dep `^6.0.0`.)_ A CI gate + edit-time hook enforce this; rationale in ADR
+  dep `^6.0.0`.)_ A CI gate enforces this; rationale in ADR
   [`0008`](./ADR/0008-ai-sdk-types-only-dependency.md).
 - **Alias the SDK types behind a brand-ui seam** (a seam, not armor) so a major bump — or a
   second message model (A2UI/AG-UI) — is a mapping edit, not a repo-wide sweep.
 - Existing discipline stays canonical in its rules — semantic tokens only
-  ([`styling-and-tokens.md`](../.claude/rules/styling-and-tokens.md)); `forwardRef`+`cn`+`cva`
-  ([`component-api.md`](../.claude/rules/component-api.md)); Radix for overlays; the one-way
-  dependency graph ([`design-system.md`](../.claude/rules/design-system.md)).
+  ([`conventions.md`](../.claude/rules/conventions.md)); `forwardRef`+`cn`+`cva` (same rule);
+  Radix for overlays; the one-way dependency graph (`CLAUDE.md` § Packages).
 
 ---
 

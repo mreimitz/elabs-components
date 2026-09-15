@@ -81,7 +81,7 @@ const config: StorybookConfig = {
       // `shadcn add` writes, so a block references a sibling block through the
       // consumer-side `@/components/<item>/…` alias (shadcn rewrites it at
       // install; a relative import may not cross an item boundary — see
-      // scripts/check-registry-resolve.mjs). Mapping the same alias here is what
+      // the `registry-resolve` check rule). Mapping the same alias here is what
       // lets a story render the SHIPPED file instead of a copy of it.
       "@/components": join(REPO_ROOT, "registry/blocks"),
     };

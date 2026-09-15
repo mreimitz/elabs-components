@@ -25,7 +25,7 @@
  * Discovery is by GLOB (packages slash star slash src slash templates-<name>
  * .stories.tsx) so a NEW template story is picked up automatically.
  *
- *   pnpm gen:templates          # regenerate docs/playbooks/templates/**
+ *   pnpm gen                    # regenerates docs/playbooks/templates/** (step `templates`)
  *
  * Output (rides into the agent kit for free — build-agent-kit copies docs/playbooks):
  *   docs/playbooks/templates/<name>.tsx   the generated consumer source
@@ -33,7 +33,7 @@
  *
  * Flags:
  *   --check   diff the regenerated set against the committed files; do NOT write.
- *             (used by `scripts/check-templates-fresh.mjs` / `pnpm templates:check`)
+ *             (`pnpm gen:check` runs it after the writer for determinism)
  *
  * Deterministic + dependency-free (sorted output, no clock). Locates the repo
  * root relative to this file, so it is cwd-independent.
@@ -190,7 +190,10 @@ function stripLine(src, re) {
  * Apply the full story → consumer-template transform. Returns
  * { code, title, description, packages }.
  */
-export function transformStory({ src, pkgName, name, relFile }) {
+export function transformStory({ src: storySrc, pkgName, name, relFile }) {
+  // Story docblocks still name the pre-consolidation `pnpm gen:templates`; the
+  // consumer copy names the command that exists today.
+  const src = storySrc.replaceAll("pnpm gen:templates", "pnpm gen");
   const title = extractTitle(src);
   const description = leadingBlockComment(src) || `Full-screen ${name} template.`;
 
@@ -240,7 +243,7 @@ export function transformStory({ src, pkgName, name, relFile }) {
     .trimEnd();
 
   const header =
-    `/* GENERATED from ${relFile} by pnpm gen:templates — do not edit. */\n` +
+    `/* GENERATED from ${relFile} by pnpm gen — do not edit. */\n` +
     `/* Full-screen ${name} template (single source of truth: the Storybook story). */\n`;
 
   const code = header + "\n" + out + "\n";
@@ -254,9 +257,9 @@ export function transformStory({ src, pkgName, name, relFile }) {
 /**
  * The generated artifacts live under `docs/playbooks/` — a Prettier-formatted
  * tree (`pnpm format:check`). So the generator must emit Prettier-STABLE output
- * or `templates:check` and `format:check` would fight forever. We run every
+ * or `gen:check` and `format:check` would fight forever. We run every
  * output through Prettier with the repo's own config (one authority, the same
- * contract `gen.mjs` uses), so `gen:templates` emits exactly what `format:check`
+ * contract `gen.mjs` uses), so `pnpm gen` emits exactly what `format:check`
  * expects. Prettier is a devDependency present in the monorepo (where this runs).
  */
 async function formatForFile(file, content) {
@@ -356,7 +359,7 @@ if (invokedDirectly) {
       console.error(
         "✖ generated templates are STALE:\n" +
           stale.map((f) => "  - " + f).join("\n") +
-          "\n  Run `pnpm gen:templates` and commit the result.\n" +
+          "\n  Run `pnpm gen` and commit the result.\n" +
           "  (Generated from the Storybook stories; never hand-edit docs/playbooks/templates/**.)",
       );
       process.exit(1);

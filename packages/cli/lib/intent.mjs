@@ -370,7 +370,7 @@ export const INTENT = {
     stateTokens: {
       frame: "AppShell itself is bg-background text-foreground (the content canvas)",
       chrome:
-        "bg-sidebar — owned by the composed Sidebar, and it must stay RECESSED below the canvas (L(--background) − L(--sidebar) ≥ 0.02, `pnpm surface-elevation:check`)",
+        "bg-sidebar — owned by the composed Sidebar, and it must stay RECESSED below the canvas (L(--background) − L(--sidebar) ≥ 0.02, `pnpm check --rule surface-elevation`)",
     },
     antiPatterns: [
       "Deep wrapper nesting inside the shell — keep the DOM shallow; one element, one job.",
@@ -542,7 +542,7 @@ export const INTENT = {
   },
 
   // ── @elabs-ai/components-viewer — read a file the app did not write ──
-  // Sourced from .claude/rules/viewer-components.md and docs/ADR/0024-viewer-package.md.
+  // Sourced from .claude/rules/flow-maps-editor.md (Viewer) and docs/ADR/0024-viewer-package.md.
 
   FileViewer: {
     purpose:
@@ -567,7 +567,7 @@ export const INTENT = {
   },
 
   // ── @elabs-ai/components-ai — the complex agent/chat surfaces ────
-  // Sourced from .claude/rules/ai-chat-components.md, .claude/rules/loading-states.md
+  // Sourced from .claude/rules/ai.md, .claude/rules/conventions.md (Loading & streaming states)
   // and docs/DECISIONS.md D2/D5 (render the model's output; never own the model call).
 
   Message: {
@@ -899,7 +899,7 @@ export const INTENT = {
     },
     antiPatterns: [
       "Reaching for it in a console transcript — the console counterpart of a three-state agent checklist is TerminalTodoList.",
-      "Rendering a parse/validation error while the plan is still arriving — a half-streamed plan is not a failure (loading-states.md).",
+      "Rendering a parse/validation error while the plan is still arriving — a half-streamed plan is not a failure (conventions.md, Loading & streaming states).",
       "Using Plan for a finished run — a settled trace is a Task; Plan is the intent, not the record.",
       "Hand-rolling the streaming affordance — pass `isStreaming` and let the shipped Shimmer carry it.",
       "Wrapping a pending decision in an assertive live region — it contains focusable controls, so it is a labelled group; only the settled outcome announces.",
@@ -985,7 +985,7 @@ export const INTENT = {
       error: "text-terminal-ansi-red",
     },
     antiPatterns: [
-      'Rendering `kind="error"` while a turn is still streaming — errors are for settled, terminal failures only (`.claude/rules/loading-states.md`).',
+      'Rendering `kind="error"` while a turn is still streaming — errors are for settled, terminal failures only (`.claude/rules/conventions.md`, Loading & streaming states).',
       "Relying on colour alone to distinguish `error` — the glyph and the `gutterLabel` word are the load-bearing channels; colour is redundant.",
       "Reaching for a vendor mode/effort union on `kind` — the axis is closed to `user`/`agent`/`output`/`error`, nothing else (#117 acceptance criterion).",
       "Formatting `exitCode` yourself into a string — pass the number and let the component render the affordance.",
@@ -1104,7 +1104,7 @@ export const INTENT = {
     },
     antiPatterns: [
       "Relying on the recoloured `⏺` alone to tell success from error — only `success` keeps that literal glyph; `error`/`pending` each get their own shape (`✗`/`○`) plus `gutterLabel`'s announced word, never colour alone.",
-      'Setting `role="alert"` while `status="pending"` — a still-running call is not a settled failure (`.claude/rules/loading-states.md`); only `error` fires the alert.',
+      'Setting `role="alert"` while `status="pending"` — a still-running call is not a settled failure (`.claude/rules/conventions.md`, Loading & streaming states); only `error` fires the alert.',
       "Reaching for the 7-state canonical `Status` or `TimelineStatus` — neither matches this grammar's exact `success`/`error`/`pending` vocabulary or its live-not-yet-settled meaning of `pending`.",
       'Reproducing upstream\'s inert `"(ctrl+o to expand)"` hint as decorative text — the expand affordance is a real, localized, focusable `CollapsibleTrigger`, so a keyboard user never needs to know a CLI chord.',
       "Putting expansion state in `TerminalSurface`'s context — it is per-row Radix `Collapsible` state, same as every other disclosure in this family.",
@@ -1329,7 +1329,7 @@ export const INTENT = {
     antiPatterns: [
       "Rendering a produced document with it — markdown assets go through MarkdownView; CodeBlock is for code.",
       "Hand-rolling a copy button — CodeBlockCopyButton already handles the copied-state swap and its label.",
-      "Loading the highlighter eagerly on a page that may never show code — Shiki is a heavy dependency (heavy-deps:check).",
+      "Loading the highlighter eagerly on a page that may never show code — Shiki is a heavy dependency (the `eager-heavy-deps` rule in `pnpm check`).",
     ],
   },
 
@@ -1352,7 +1352,7 @@ export const INTENT = {
     category: "ai",
     relationships: { pairsWith: ["Plan", "Reasoning", "Task"] },
     antiPatterns: [
-      "Using it as a skeleton — a layout-shaped placeholder is `Skeleton`; Shimmer is text-only (loading-states.md).",
+      "Using it as a skeleton — a layout-shaped placeholder is `Skeleton`; Shimmer is text-only (conventions.md, Loading & streaming states).",
       "Wrapping non-string children — it takes a string; anything else defeats the per-character sweep.",
       "Adding your own animation on top — the sweep already gates on `useReducedMotion`; a second one will not.",
     ],
@@ -1388,7 +1388,7 @@ export const INTENT = {
   },
 
   // ── @elabs-ai/components-charts ──────────────────────────────────
-  // Sourced from .claude/rules/chart-components.md + .claude/rules/loading-states.md
+  // Sourced from .claude/rules/charts.md + .claude/rules/conventions.md (Loading & streaming states)
   // (the chart-scoped `status` alias) + the styling rule's tokens-only line.
 
   AutoChart: {
@@ -1817,7 +1817,7 @@ export const INTENT = {
   // are not charts: each is a bare SVG element or <g> with no provider, so it
   // composes inside ANY container's children — and inside the heatmap, waterfall,
   // dumbbell, unit and treemap containers of the wave that follows. Sourced from
-  // the marks' own docblocks + .claude/rules/chart-components.md (the aria-hidden
+  // the marks' own docblocks + .claude/rules/charts.md (the aria-hidden
   // chart body) + the styling rule's tokens-only line.
 
   HaloText: {
@@ -2062,7 +2062,7 @@ export const INTENT = {
   },
 
   // ── @elabs-ai/components-maps ────────────────────────────────────
-  // Sourced from .claude/rules/map-components.md (token paints, attribution, WebGL).
+  // Sourced from .claude/rules/flow-maps-editor.md (Maps: token paints, attribution, WebGL).
 
   MapCanvas: {
     purpose: "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.",
@@ -2153,7 +2153,7 @@ export const INTENT = {
   },
 
   // ── @elabs-ai/components-icons ───────────────────────────────────
-  // Sourced from .claude/rules/icons.md (Lucide is the default; this package is
+  // Sourced from .claude/rules/conventions.md (Icons: Lucide is the default; this package is
   // for brand/product vocabulary) + the AppIcon convention.
 
   Icon: {
@@ -2193,7 +2193,7 @@ export const INTENT = {
   },
 
   // ── @elabs-ai/components-tokens ──────────────────────────────────
-  // Sourced from .claude/rules/theming.md + the decoration dial policy.
+  // Sourced from .claude/rules/conventions.md (Theming) + the decoration dial policy.
 
   ThemeProvider: {
     purpose:
@@ -2895,7 +2895,7 @@ export const INTENT = {
       pairsWith: ["Composer", "PromptInput"],
     },
     antiPatterns: [
-      "Adding a provider by pasting a new origin inline — every shipped https origin has to be allow-listed and documented (`pnpm origins:check`).",
+      "Adding a provider by pasting a new origin inline — every shipped https origin has to be allow-listed and documented (`pnpm check --rule remote-origins`).",
       "Sending anything but the prompt — the deep link leaves your app, so it must not carry conversation or user data.",
       "Presenting it as a primary action — it is an escape hatch beside the answer, not the way to continue the chat.",
     ],

@@ -93,12 +93,12 @@ Import from `@elabs-ai/components-terminal`. Part of brand-ui — see the root `
   - avoid: Reproducing upstream's `"  ⎿ "` / four-space character padding — that is `ch`-unit alignment; `TerminalRow`'s gutter grid track does the same job without it.
 - TerminalToolCall — A single tool invocation dressed as a CLI line: a status glyph (success/error/pending), the tool name plus its optional argument in parentheses, a result summary on a `⎿` row, and detail behind a real disclosure.
   - avoid: Relying on the recoloured `⏺` alone to tell success from error — only `success` keeps that literal glyph; `error`/`pending` each get their own shape (`✗`/`○`) plus `gutterLabel`'s announced word, never colour alone.
-  - avoid: Setting `role="alert"` while `status="pending"` — a still-running call is not a settled failure (`.claude/rules/loading-states.md`); only `error` fires the alert.
+  - avoid: Setting `role="alert"` while `status="pending"` — a still-running call is not a settled failure (`.claude/rules/conventions.md`, Loading & streaming states); only `error` fires the alert.
   - avoid: Reaching for the 7-state canonical `Status` or `TimelineStatus` — neither matches this grammar's exact `success`/`error`/`pending` vocabulary or its live-not-yet-settled meaning of `pending`.
   - avoid: Reproducing upstream's inert `"(ctrl+o to expand)"` hint as decorative text — the expand affordance is a real, localized, focusable `CollapsibleTrigger`, so a keyboard user never needs to know a CLI chord.
   - avoid: Putting expansion state in `TerminalSurface`'s context — it is per-row Radix `Collapsible` state, same as every other disclosure in this family.
 - TerminalTranscriptRow (kind=user*|agent|output|error) — One line of an agent transcript on top of TerminalRow: a closed kind axis (user/agent/output/error) that carries who spoke and whether it failed as a glyph, a colour and an accessible label.
-  - avoid: Rendering `kind="error"` while a turn is still streaming — errors are for settled, terminal failures only (`.claude/rules/loading-states.md`).
+  - avoid: Rendering `kind="error"` while a turn is still streaming — errors are for settled, terminal failures only (`.claude/rules/conventions.md`, Loading & streaming states).
   - avoid: Relying on colour alone to distinguish `error` — the glyph and the `gutterLabel` word are the load-bearing channels; colour is redundant.
   - avoid: Reaching for a vendor mode/effort union on `kind` — the axis is closed to `user`/`agent`/`output`/`error`, nothing else (#117 acceptance criterion).
   - avoid: Formatting `exitCode` yourself into a string — pass the number and let the component render the affordance.

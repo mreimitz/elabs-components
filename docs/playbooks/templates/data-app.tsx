@@ -1,10 +1,10 @@
-/* GENERATED from packages/data/src/templates-data-app.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/data/src/templates-data-app.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen data-app template (single source of truth: the Storybook story). */
 
 /**
  * Data app template — the canonical full-screen data-app composition
  * (app-shell + DataTable with toolbar). This story is the single source of
- * truth: `pnpm gen:templates` derives the consumer template source
+ * truth: `pnpm gen` derives the consumer template source
  * (`docs/playbooks/templates/data-app.tsx`) from it.
  * Verify across every theme with globals=theme:<slug>.
  */

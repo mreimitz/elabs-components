@@ -137,7 +137,7 @@ const noRawFontSize = makeRule({
   messageId: "rawFontSize",
   messages: {
     rawFontSize:
-      'Type is a role, not a size — "{{cls}}" is a raw font size. Use a text-<role> utility ({{role}}) or a <Heading>/<Text> component. Raw sizes break the hierarchy and aren\'t theme-aware. See .claude/rules/styling-and-tokens.md (Typography scale).',
+      'Type is a role, not a size — "{{cls}}" is a raw font size. Use a text-<role> utility ({{role}}) or a <Heading>/<Text> component. Raw sizes break the hierarchy and aren\'t theme-aware. See .claude/rules/conventions.md (Styling & tokens).',
   },
   test: (cls) =>
     FONT_SIZE_NAMED_RE.test(cls) || FONT_SIZE_ARBITRARY_RE.test(cls)
@@ -149,7 +149,7 @@ const noRawColor = makeRule({
   messageId: "rawColor",
   messages: {
     rawColor:
-      'Colour is a token, not a palette — "{{cls}}" is a raw colour. Use a semantic token (text-foreground, text-muted-foreground, bg-card, bg-primary + text-primary-foreground, bg-success/10, border-border, …). Raw palette/hex bypasses every theme (light, dark) and breaks contrast. See .claude/rules/styling-and-tokens.md.',
+      'Colour is a token, not a palette — "{{cls}}" is a raw colour. Use a semantic token (text-foreground, text-muted-foreground, bg-card, bg-primary + text-primary-foreground, bg-success/10, border-border, …). Raw palette/hex bypasses every theme (light, dark) and breaks contrast. See .claude/rules/conventions.md.',
   },
   test: (cls) => (PALETTE_RE.test(cls) || COLOR_ARBITRARY_RE.test(cls) ? { cls } : null),
 });

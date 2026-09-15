@@ -8,7 +8,7 @@ which licence, and where it is used.
 [`scripts/attributions.sources.json`](scripts/attributions.sources.json) (things
 that cannot be derived — source we adapted, data we serve) plus the repo's own
 dependency manifests and the licence files shipped with each vendored font. Run
-`pnpm gen:attributions` to regenerate it; `pnpm attributions:check` fails on a
+`pnpm gen` to regenerate it; `pnpm gen:check` fails on a
 stale copy. The same dataset drives the in-app `AttributionPanel`
 (`@elabs-ai/components-ui`), so the page and the product cannot disagree.
 
@@ -18,14 +18,14 @@ If you vendor, adapt, port or copy anything from another project — or take a
 design or technique from one — add it to
 [`scripts/attributions.sources.json`](scripts/attributions.sources.json) with a
 name, a licence, a copyright line and a canonical URL (the GitHub repo where one
-exists), then run `pnpm gen:attributions` **in the same change**. A comment in a
+exists), then run `pnpm gen` **in the same change**. A comment in a
 source file saying "adapted from X" is a useful pointer, not an attribution.
 
 Do **not** hand-add an npm dependency — those are harvested from the manifests
 and a hand-written duplicate goes stale the moment the dependency moves.
 
-The full rule, and what enforces it, is in
-[`.claude/rules/attribution.md`](.claude/rules/attribution.md).
+The full rule is in [`CONTRIBUTING.md`](CONTRIBUTING.md) (“Borrowed from another project?”);
+`pnpm check --rule attribution-provenance` enforces it.
 
 <!-- brand-ui:gen:attributions:start -->
 
@@ -42,7 +42,7 @@ Data served to the user at runtime. These credits are **obliged by a licence or 
 
 ## Adapted & vendored source
 
-Code and design we took from another project — vendored, adapted, ported or re-expressed. Adding to this list is required whenever we borrow again; see [`.claude/rules/attribution.md`](.claude/rules/attribution.md).
+Code and design we took from another project — vendored, adapted, ported or re-expressed. Adding to this list is required whenever we borrow again; see [`CONTRIBUTING.md`](CONTRIBUTING.md#borrowed-from-another-project-credit-it-in-the-same-change).
 
 | Project                                                                             | Licence                      | Copyright                                                                        | Used in                                                                               | What we took                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ----------------------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

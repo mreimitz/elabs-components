@@ -7,11 +7,9 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash(node:*), Bash(pnpm:*), mcp__s
 You are adding an item to the internal registry (`registry/`). Read
 `@.claude/rules/registry.md` and `docs/REGISTRY_GUIDELINES.md` first.
 
-For a non-trivial item — deciding component vs. block vs. template, keeping
-`dependencies`/`registryDependencies` accurate, or a multi-file block/template —
-delegate the curation to the **`brand-ui-registry-curator`** agent (Task tool): it
-owns registry hygiene end-to-end and re-runs `pnpm registry:validate`. For a simple
-single-file `registry:ui` you can follow the steps below directly.
+For a multi-file block/template, take extra care that `dependencies` and
+`registryDependencies` list exactly what the files import, and re-run
+`pnpm check --rule registry-validate` after every change to `registry/registry.json`.
 
 Steps:
 
@@ -30,7 +28,7 @@ Steps:
    - `dependencies` (npm + `@elabs-ai/components-*`), `registryDependencies` (other items)
    - `files[]` with `path` (relative to repo root) + `type` (+ `target` for
      `registry:page`/`registry:file`)
-4. Run `pnpm registry:validate` and fix any errors. If the Storybook dev server is
+4. Run `pnpm check --rule registry-validate` and fix any errors. If the Storybook dev server is
    running, run `mcp__storybook__run-story-tests` + `mcp__storybook__preview-stories`
    on the item across themes; otherwise verify it renders manually.
 5. Optionally dry-run the shadcn build: `pnpm dlx shadcn@latest build registry/registry.json --output registry/__output`.

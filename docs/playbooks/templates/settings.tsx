@@ -1,10 +1,10 @@
-/* GENERATED from packages/ui/src/templates-settings.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/ui/src/templates-settings.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen settings template (single source of truth: the Storybook story). */
 
 /**
  * Settings template — the canonical full-screen settings composition
  * (app-shell + Descriptions + Wizard). This story is the single source of
- * truth: `pnpm gen:templates` derives the consumer template source
+ * truth: `pnpm gen` derives the consumer template source
  * (`docs/playbooks/templates/settings.tsx`) from it.
  * Verify across every theme with globals=theme:<slug>.
  */

@@ -36,7 +36,7 @@
  * schema instead of replacing the pipeline outright.
  *
  * THIS LIST HAS A PARITY COUNTERPART, AND EDITING ONE SIDE FAILS CI (#75).
- * `scripts/check-sanitizer-passthrough.mjs` declares the same key set as
+ * `scripts/check/rules/sanitizer-passthrough.mjs` declares the same key set as
  * `SAFE_RENDERERS[streamdown].dangerousProps` and reads THIS array literal back
  * out of this file, asserting set-equality in BOTH directions — so removing a
  * key here (the runtime stops stripping it) and removing a key there (the gate
@@ -153,7 +153,7 @@ export function warnOnTrustedPluginSlots(overrides: object | undefined, internal
 
   if (isPluginObject(consumer.mermaid) && consumer.mermaid !== defaults.mermaid) {
     // The message describes React's `dangerouslySetInnerHTML` in prose rather than
-    // naming the identifier: `pnpm csp-sinks:check` preserves string literals on
+    // naming the identifier: the `trusted-types-sinks` check preserves string literals on
     // purpose (a sink hidden in a string is still a sink), so spelling the prop out
     // inside this warning makes the gate read THIS file as a new HTML-assigning
     // module. Comments like this one are stripped by that gate, so the name is safe

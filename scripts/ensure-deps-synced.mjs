@@ -24,9 +24,9 @@
 // not break the git operation that triggered it.
 //
 // The detection logic (`lockfileChanged` / `shouldSkip`) is exported and
-// self-tested by `scripts/ensure-deps-synced.test.mjs` (`pnpm deps-sync:test`),
+// self-tested by `scripts/ensure-deps-synced.test.mjs` (in `pnpm check:test`),
 // per the repo rule "a convention ships with its teeth" — see
-// .claude/rules/quality-gates.md ("Self-tested gates").
+// CONTRIBUTING.md ("Self-maintaining repo").
 // -----------------------------------------------------------------------------
 import { execFileSync, spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";

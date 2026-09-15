@@ -57,7 +57,7 @@ export interface SettingsSectionPanelProps extends Omit<
  * The row's announced name, authored rather than accumulated. Left to the DOM
  * the name would be "<label><summary><count>" with no separators and no word
  * for what the number means — a name nobody chose (see
- * .claude/rules/accessibility.md). The count is IN the name on purpose: it is
+ * .claude/rules/conventions.md). The count is IN the name on purpose: it is
  * the reason to open that section.
  */
 function rowAccessibleName(label: string, summary: string, attention: number | undefined): string {

@@ -7,7 +7,7 @@ complementing the **imported** `@elabs-ai/components-*` packages.
 
 ```
 registry/
-  registry.json     # the manifest (validated by pnpm registry:validate)
+  registry.json     # the manifest (validated by pnpm check --rule registry-validate)
   components/        # registry:ui — self-contained primitives
   blocks/            # registry:block — compositions using @elabs-ai/components-* packages
   templates/         # whole pages/features composed of blocks
@@ -35,7 +35,7 @@ array; each item has `$schema`, `name`, `type`, `title`, `description`,
 
 1. Create the source file(s) under the right folder.
 2. Add an entry to `registry/registry.json` (use the `/new-registry-item` command).
-3. `pnpm registry:validate` — confirms shape and that every `files[].path` exists.
+3. `pnpm check --rule registry-validate` — confirms shape and that every `files[].path` exists.
 4. (Optional) `pnpm dlx shadcn@latest build registry/registry.json --output registry/__output`
    to emit the per-item JSON for static hosting.
 
@@ -67,11 +67,8 @@ npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/data-table.j
 npx shadcn add https://mreimitz.github.io/elabs-components/r/4.0.0/data-table.json
 ```
 
-`pnpm registry:published:check` (wired into `.github/workflows/gates.yml`) gates
-this: it fails a build only if a **published** item stops resolving (real
-rot); until Pages is enabled and a version has shipped, it prints a skip
-notice and passes, since there is nothing to check yet. See that script's
-header comment for the full design.
+No automated check watches the published URLs; once Pages is enabled and a
+version has shipped, spot-check an item with the `npx shadcn add` command above.
 
 The alternative that needs no hosting at all still works: copy the item's
 source straight out of `registry/blocks/<name>/` into the consuming repo and
@@ -79,7 +76,7 @@ fix up import aliases.
 
 ## How to test an item
 
-- `pnpm registry:validate` (structure + file existence).
+- `pnpm check --rule registry-validate` (structure + file existence).
 - Dry-run install into a scratch app: `npx shadcn add <url-or-name>`.
 - Confirm the copied file type-checks against the consumer's deps.
 
@@ -90,7 +87,7 @@ fix up import aliases.
   data table with toolbar). `registry:block`.
 - **Template** (full-screen archetype) — NOT a registry item. Generated from the
   Storybook `templates-*` stories into `docs/playbooks/templates/` via
-  `pnpm gen:templates` (single source of truth = the story).
+  `pnpm gen` (single source of truth = the story).
 
 ## Package vs. registry
 
@@ -99,7 +96,7 @@ fix up import aliases.
 
 ## The registry IS published by a release (#106, superseded by #31)
 
-`pnpm registry:validate` runs on every PR, and — since #31 —
+`pnpm check --rule registry-validate` runs on every PR, and — since #31 —
 `.github/workflows/release.yml` also runs `pnpm registry:build` and publishes
 the output to GitHub Pages via its `publish-registry` job (see "Distribution"
 above). #106 originally documented the opposite as a **deliberate** decision,

@@ -1,9 +1,8 @@
 # Storybook Guidelines
 
 How stories are organized, titled, and documented in this repo. The sidebar order
-is declared in `apps/docs/.storybook/preview.tsx` (`options.storySort.order`) and
-gated by `pnpm storybook-groups:check`, which also holds the group list below and
-the no-spaces naming rule to it; the rest are conventions. Background: the
+is declared in `apps/docs/.storybook/preview.tsx` (`options.storySort.order`); the
+group list below and the naming rules are conventions kept by review. Background: the
 2026-06-15 IA review in `docs/review/`.
 
 ## Sidebar taxonomy (top-level groups, in order)
@@ -20,8 +19,8 @@ scramble — Docs, Foundations and Patterns.
 
 **This numbered list must match `storySort.order` group for group, in the same
 order.** The two had already drifted once — the array carried Terminal, Viewer and
-Maps while this list stopped at 20 entries — so `pnpm storybook-groups:check` now
-fails when they diverge; see "Adding a group" below.
+Maps while this list stopped at 20 entries — so update both in the same change; see
+"Adding a group" below.
 
 1. **Docs** — in reading order (explicit in `storySort.order`, NOT alphabetical):
    **Introduction** (what it is) → **Getting Started** (how to consume) → the
@@ -134,11 +133,8 @@ signpost the other on both stories (via `parameters.docs.description.component`)
 - `tags: ["autodocs"]` so it gets a docs page.
 - `parameters.docs.description.component` — one sentence saying what this is,
   and, when a sibling answers a nearby question, a second naming it and linking
-  [Choosing between similar components]. **Gated** by `pnpm story-descriptions:check`
-  (#152): a story file with no description, or with one too short to say
-  anything, fails. Pre-existing gaps are a ratchet baseline
-  (`scripts/story-description-baseline.json`) that only shrinks — a NEW story
-  cannot be added to it.
+  [Choosing between similar components]. A story file with no description, or one
+  too short to say anything, is a review finding (#152).
 - Curated `argTypes` for the public props on primitives: a one-line `description`,
   a sensible `control`, and `table: { category }` grouping. Don't rely on inferred
   controls alone — they're noisy and weaker for the agent/MCP surface.
@@ -151,29 +147,23 @@ signpost the other on both stories (via `parameters.docs.description.component`)
 ## Adding a group
 
 Add it to `preview.tsx`'s `storySort.order` in the right tier, and to the numbered
-list above — same groups, same order. **`pnpm storybook-groups:check`
-(`scripts/check-storybook-groups.mjs`, blocking in CI) is what makes this
-load-bearing** — it is no longer a comment-enforced convention. Four rungs, and a
-title it cannot read is a failure rather than a skip:
+list above — same groups, same order. Nothing checks this automatically, so review a
+new story title against these rules:
 
-1. **Orphan group** — a story whose first title segment is not in `storySort.order`
-   fails, named by `file:line`. (This is the 2026-06-15 IA review's finding, which
+1. **Orphan group** — a story's first title segment must be in `storySort.order`;
+   an unlisted group sorts to the bottom. (The 2026-06-15 IA review's finding, which
    recurred within three months as `Foundation/Toolbar` and
    `Typography/MatchHighlight`.)
-2. **Segment naming** — a space in any segment after the group fails, except the
+2. **Segment naming** — no space in any segment after the group, except the
    sanctioned prose surfaces: `Docs/*`, `Patterns/{Templates,Scenarios,Blocks}/*`,
-   `Layout/App Shell/*` and `Foundations/Spacing & Radius`. They are an explicit,
-   commented allowlist in the script; extending it is a taxonomy decision.
-3. **Doc parity** — the numbered list above must name the same groups in the same
-   order as the array, so this section cannot drift from the code again (it already
-   had: the array carried Terminal, Viewer and Maps while the list stopped at 20).
-4. **Stale group** — a group in the array that no story titles into any more fails
-   too, so a folded-away group (RM-004's `Providers`) cannot be left behind.
-
-Run `node scripts/check-storybook-groups.mjs --list` to see every title the gate
-resolves, with its file and line.
+   `Layout/App Shell/*` and `Foundations/Spacing & Radius`. Extending that list is a
+   taxonomy decision.
+3. **Doc parity** — the numbered list above names the same groups in the same order
+   as the array.
+4. **Stale group** — remove a group from the array once no story titles into it
+   (RM-004's `Providers`).
 
 The array has to stay **inline** in `preview.tsx`: Storybook derives the order in
 `index.json` by statically parsing that file, and its parser throws on any
 identifier — an imported const, a local const in the same file, and a spread all
-fail the build. A gate reading the array must parse the literal in place.
+fail the build. Any tool reading the array must parse the literal in place.

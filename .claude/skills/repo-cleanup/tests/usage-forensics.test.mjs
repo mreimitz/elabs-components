@@ -218,7 +218,7 @@ test("--since bounds the observation window", async () => {
 
 test("transcript dir is derived from the repo path", () => {
   // The fixture root deliberately avoids a `/Users/<name>` or `/home/<name>` shape:
-  // this repo's `pnpm machine-paths:check` gate scans every TRACKED file for one and
+  // this repo's `machine-paths` check rule (`pnpm check`) scans every TRACKED file for one and
   // cannot tell a synthetic fixture from a leaked local path. The slug logic under
   // test is root-agnostic, so any absolute path with a space exercises it identically.
   const d = transcriptDirFor("/srv/x/Documents/my repo", { userClaudeDir: "/opt/.claude" });

@@ -115,7 +115,7 @@ it regardless of what your app's manifest says. A hoisting layout
 additionally makes `import("mermaid")` resolve, so the runtime capability-gap
 panel never renders for you; skipping the peer still means you never have to
 declare `mermaid` yourself, and a genuinely unresolved engine still fails
-actionably rather than crashing. `pnpm optional-peers:check` (issue #94)
+actionably rather than crashing. `pnpm check --rule optional-peer-transitives` (issue #94)
 tracks this as a defeated optional peer and will fail the day it is fixed
 upstream.
 
@@ -178,6 +178,6 @@ Heavy engines load on demand rather than riding in your entry chunk:
   `preloadMermaid()` to warm it early on a surface you know renders diagrams.
 - **The Rive WebGL2 runtime** loads only when a `Persona` mounts.
 
-Both are enforced by `pnpm heavy-deps:check`. See ADR 0019. The remaining eager
+Both are enforced by `pnpm check --rule eager-heavy-deps`. See ADR 0019. The remaining eager
 engines (React Flow, xterm, media-chrome) are tracked in that gate's baseline
 (the React Flow canvas set is a separate, intentional surface — see ADR 0018).

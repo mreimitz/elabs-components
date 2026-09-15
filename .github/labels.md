@@ -1,9 +1,7 @@
 # Labels
 
-The `type:*` / `severity:*` / `area:*` taxonomy that `.claude/rules/issue-workflow.md`
-("Labels follow `.github/labels.md`") and `docs/ISSUE_WORKFLOW.md` ("Labels") promise, and
-that `.claude/agents/brand-ui-root-cause-analyst.md`'s `LABELS:` line and
-`/file-issue`/`/session-retro` apply when filing an issue.
+The `type:*` / `severity:*` / `area:*` taxonomy that `docs/ISSUE_WORKFLOW.md` ("Labels")
+promises and that `/file-issue` applies when filing an issue.
 
 Run this once against the repo (idempotent — `gh label create` no-ops with "already
 exists", which the `|| true` swallows):
@@ -15,7 +13,7 @@ gh label create "type:regression" -c "#d73a4a" -d "Worked before; broken now" 2>
 gh label create "type:a11y"       -c "#d73a4a" -d "Accessibility violation (keyboard, ARIA, contrast, semantics)" 2>/dev/null || true
 gh label create "type:visual"     -c "#d73a4a" -d "Visual/UX defect — hierarchy, spacing, theming, consistency" 2>/dev/null || true
 gh label create "type:tech-debt"  -c "#fbca04" -d "Not user-visible; cleanup, drift, or a convention without teeth" 2>/dev/null || true
-gh label create "type:process"    -c "#6f42c1" -d "Agent process / workflow issue (session-retro)" 2>/dev/null || true
+gh label create "type:process"    -c "#6f42c1" -d "Agent process / workflow issue" 2>/dev/null || true
 
 # --- severity: how bad -------------------------------------------------------
 gh label create "severity:P0" -c "#b60205" -d "Blocking — broken build, data loss, security, or a hard accessibility failure" 2>/dev/null || true
@@ -42,20 +40,18 @@ gh label create "area:governance" -c "#1d76db" -d "CLAUDE.md / .claude/rules / .
 gh label create "area:test"       -c "#1d76db" -d "Test infrastructure / CI gates, not a shipped package" 2>/dev/null || true
 
 # --- cross-cutting (bare, not area:-prefixed) ---------------------------------
-gh label create "meta" -c "#c5def5" -d "About how the agent works, not product code (session-retro)" 2>/dev/null || true
+gh label create "meta" -c "#c5def5" -d "About how the agent works, not product code" 2>/dev/null || true
 ```
 
 ## Notes
 
 - **Every filed issue carries one `type:*`, one `severity:*`, and one `area:*`** (a
-  `[meta]` / `/session-retro` issue also carries the bare `meta` label — see
-  `.github/ISSUE_TEMPLATE/session-retro.md`).
+  `[meta]` issue about the agent's own process also carries the bare `meta` label).
 - **`area:*` names either a `@elabs-ai/components-<pkg>` package** (matching the package
   list in `CLAUDE.md`) **or one of the four cross-cutting surfaces** — `docs`,
   `governance`, `registry`, `test` — that don't map to a single package.
 - If the GitHub connector or `gh` rejects an unknown label at issue-creation time
   (e.g. this script has not been run yet), `/file-issue` retries without labels and
-  keeps the `LABELS:` line inside the issue body instead — see
+  keeps the `Labels` line inside the issue body instead — see
   `.claude/commands/file-issue.md`.
-- Adding a package (`CLAUDE.md` "Adding a new package or a public subpath export")
-  should add its `area:<pkg>` row here in the same change.
+- Adding a package should add its `area:<pkg>` row here in the same change.

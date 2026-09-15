@@ -121,7 +121,7 @@ export function ChartEditorialAlmanac({
           second channel: every cell's value, reachable with its row and
           column, for assistive tech that can't compare blob radii. No new
           focusable element (`sr-only`, no interactive parts) — same seam as
-          ChartFrame's flip-to-table (.claude/rules/chart-components.md). */}
+          ChartFrame's flip-to-table (.claude/rules/charts.md). */}
       <table className="sr-only">
         <caption>{summary}</caption>
         <thead>

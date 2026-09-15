@@ -15,9 +15,6 @@
  *     parts. Keeps the editor-facing `done|active|pending` API unchanged by
  *     mapping in via `fromTimelineStatus` at the boundary.
  *
- * Fork-prevention: a Timeline re-implementation outside this folder fails
- * `pnpm timeline-fork:check` (scripts/check-timeline-fork.mjs).
- *
  * Deliberately NOT on this rail (a different grammar, not an oversight —
  * RM-014, #133): `RevisionTimeline` (@elabs-ai/components-ui). Its rail is a
  * multi-lane commit DAG whose node colour is LANE IDENTITY (the chart ramp),

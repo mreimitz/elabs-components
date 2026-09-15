@@ -21,6 +21,14 @@ It is also built to be **read and edited**. Nothing is hidden behind a clever
 abstraction, every component is plain TypeScript you can open and change, and the whole
 system is legible to coding agents through a CLI, an MCP server and a generated manifest.
 
+## Scope
+
+brand-ui is a **presentation layer**, not an SDK or a runtime. It renders messages,
+surfaces and components; it never owns model calls, streaming, transport or providers —
+that stays in the consuming app. It is also not a finished, single-brand visual identity
+or a locked component library: components are source you're meant to read and edit. Full
+statement: decision **D5** in [`docs/DECISIONS.md`](docs/DECISIONS.md).
+
 ---
 
 ## Highlights
@@ -36,9 +44,9 @@ system is legible to coding agents through a CLI, an MCP server and a generated 
 - **Agent-native.** A `brand-ui` CLI and an MCP server expose real props, real tokens
   and a static design-system linter, so an AI assistant extends the system from ground
   truth instead of guessing.
-- **Self-maintaining.** 75 automated gates keep conventions true — token discipline,
+- **Self-maintaining.** Automated gates keep conventions true — token discipline,
   contrast ratios, one-way package dependencies, focus-ring contracts, motion tokens,
-  microcopy, bundle weight and documentation accuracy.
+  microcopy, bundle weight and documentation accuracy. Catalogue: `docs/GATES.md`.
 - **Two ways to consume.** Import stable primitives from the packages, or copy-own
   prototype compositions from the shadcn-compatible registry and edit them freely.
 
@@ -64,8 +72,8 @@ names below link to their npm page.
 | [`@elabs-ai/components-marketing`](https://www.npmjs.com/package/@elabs-ai/components-marketing) | Hero, feature grid, stats band, CTA, logo strip — for the page in front of the product                                             |
 | [`@elabs-ai/components-cli`](https://www.npmjs.com/package/@elabs-ai/components-cli)             | The `brand-ui` CLI and MCP server: project context, component search, real props, static audit, app scaffolding, migration tooling |
 
-Dependencies flow one way — `tokens` → `ui`/`icons` → everything else — and a gate
-(`pnpm dep-direction:check`) fails any change that points an edge sideways or upward.
+Dependencies flow one way — `tokens` → `ui`/`icons` → everything else — and a rule
+(`pnpm check --rule dep-direction`) fails any change that points an edge sideways or upward.
 
 > The **Packages** panel on this repository's GitHub sidebar stays empty by design. It
 > only lists GitHub Packages (`npm.pkg.github.com`), a different registry that would
@@ -210,9 +218,9 @@ server that answers from the committed manifest (works with Storybook down), and
 **`storybook`** server that exposes live previews and browser-based test runs while the
 dev server is up.
 
-The repository also carries its own operating manual — 28 rules, 31 architecture
-decision records, 16 slash commands, 15 specialised review agents and 20 edit-time
-hooks. Start at [`CLAUDE.md`](CLAUDE.md) or [`AGENTS.md`](AGENTS.md).
+The repository also carries its own operating manual — a small set of rules
+(`.claude/rules/`), 31 architecture decision records, slash commands, review agents and
+edit-time hooks. Start at [`CLAUDE.md`](CLAUDE.md) or [`AGENTS.md`](AGENTS.md).
 
 ---
 
@@ -232,9 +240,9 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm build
 pnpm --filter @elabs-ai/components-docs test-storybook   # interaction + axe, in a real browser
 ```
 
-75 gate scripts (`pnpm <name>:check`) enforce the conventions above, and 72 of them
-ship a self-test that plants a broken fixture and asserts the gate fails — because a
-gate that silently stops firing is worse than no gate at all.
+Gate scripts (`pnpm <name>:check`, catalogued in `docs/GATES.md`) enforce the conventions
+above, most shipping a self-test that plants a broken fixture and asserts the gate
+fails — because a gate that silently stops firing is worse than no gate at all.
 
 **Browser floor:** Chrome/Edge 119, Safari 16.4, Firefox 128 (set by CSS relative
 colour syntax). Below it the colour system still works and the decoration dial
@@ -261,7 +269,7 @@ pnpm build                # build every package
 pnpm test                 # unit + smoke
 pnpm storybook            # docs and reference implementation
 pnpm format               # prettier
-pnpm registry:validate    # validate the copy-own registry
+pnpm check --rule registry-validate   # validate the copy-own registry
 pnpm --filter @elabs-ai/components-ui test   # scope any task to one package
 ```
 
@@ -292,7 +300,7 @@ Setup, branch style, the component workflow, testing expectations and the pull-r
 checklist are in [`CONTRIBUTING.md`](CONTRIBUTING.md). In short: components use semantic
 tokens, compose with `forwardRef` + `className` + `cva`, lean on Radix for interactive
 behaviour, ship a co-located story and test, export their types, work in both themes,
-and pass the gate battery before they are considered done.
+and pass `pnpm check` before they are considered done.
 
 ## Attribution
 
@@ -312,8 +320,9 @@ Published and public, and still actively developed:
 - **MIT licensed** ([`LICENSE`](LICENSE)). Several dependencies listed in
   [`ATTRIBUTION.md`](ATTRIBUTION.md) oblige their own notices to travel with the code —
   that file is generated from the repository, so it cannot drift from what ships.
-- **CI runs on every push and pull request.** The gate battery lives in one reusable
-  workflow; a release publishes only against a green verdict for the exact commit it
-  tags, and never re-runs the battery to get it.
+- **CI runs on every push and pull request.** One workflow runs typecheck, lint,
+  format, the `pnpm check` rules and their self-tests, tests, build, generated-file
+  freshness, a consumer install check and the Storybook tests in both themes; releases go
+  through Changesets.
 - **The API is not frozen.** Breaking changes go out as majors and are recorded in
   [`CHANGELOG.md`](CHANGELOG.md).

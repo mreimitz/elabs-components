@@ -1,11 +1,11 @@
-/* GENERATED from packages/marketing/src/templates-marketing.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/marketing/src/templates-marketing.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen marketing template (single source of truth: the Storybook story). */
 
 /**
  * Marketing landing template — the canonical full-screen presales/landing
  * composition: sticky nav + Hero + StatsBand + FeatureGrid + UseCaseCard row +
  * LogoStrip + CTASection + footer (the standard section order). This story is
- * the single source of truth: `pnpm gen:templates` derives the consumer
+ * the single source of truth: `pnpm gen` derives the consumer
  * template source (`docs/playbooks/templates/marketing.tsx`) from it.
  *
  * Verify across both themes with globals=theme:<slug>

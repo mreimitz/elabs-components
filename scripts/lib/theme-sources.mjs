@@ -17,7 +17,7 @@
  * the same self-containment convention every other repo-root gate follows across
  * the `packages/tokens` ⇄ `scripts/` boundary. The two cannot drift silently:
  * both derive the theme list from the same `theme-types.ts`, and
- * `pnpm tokens:check` + `pnpm theme-parity:check` read the same files.
+ * `scripts/check-tokens-fresh.mjs` + the `theme-parity` check rule read the same files.
  *
  * Dependency-free, ESM, cwd-independent.
  */
@@ -67,13 +67,21 @@ export function readThemesCss() {
       );
     }
   });
-  const css = parts.join("\n");
+  return joinThemeSources(parts, ACTIVE_THEMES);
+}
 
-  const missing = ACTIVE_THEMES.filter((t) => !css.includes(`[data-theme="${t}"]`));
+/**
+ * Concatenate already-read theme sources (engine first) and throw when the set
+ * lacks any expected theme's block. Pure — `scripts/check/context.mjs` feeds it
+ * in-memory fixture text through the same completeness check.
+ */
+export function joinThemeSources(parts, themes) {
+  const css = parts.join("\n");
+  const missing = themes.filter((t) => !css.includes(`[data-theme="${t}"]`));
   if (missing.length > 0) {
     throw new Error(
       `theme-sources: no [data-theme="…"] block found for ${missing.join(", ")} in ` +
-        `${themeSourcePaths().length} source file(s). Re-point themeSourcePath() after ` +
+        `${parts.length} source file(s). Re-point themeSourcePath() after ` +
         "a rename or a move; do NOT let the gate audit the remaining blocks silently.",
     );
   }

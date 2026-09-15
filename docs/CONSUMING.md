@@ -555,7 +555,7 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   runtime capability-gap panel never renders for you; the optional-peer
   declaration still means you never have to declare `mermaid` yourself, and a
   genuinely unresolved engine still fails actionably rather than crashing.
-  `pnpm optional-peers:check` (issue #94) tracks this as a defeated optional
+  `pnpm check --rule optional-peer-transitives` (issue #94) tracks this as a defeated optional
   peer and will fail the day it is fixed upstream.
 
 - **`@elabs-ai/components-terminal`** — the terminal surfaces. `Terminal` (the

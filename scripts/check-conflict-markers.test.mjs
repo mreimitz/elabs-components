@@ -1,7 +1,7 @@
 /**
  * check-conflict-markers.test.mjs — self-test for the conflict-marker gate (#379 Part B).
  * Run in CI: `node --test scripts/check-conflict-markers.test.mjs`
- * (`pnpm conflict-markers:check:test`).
+ * (`pnpm check:test`).
  *
  * PR #375 merged commit 7ac0d12 with literal, unresolved `<<<<<<<`/`=======`/
  * `>>>>>>>` markers in 6 tracked files — nothing in the enforcement chain would
@@ -19,7 +19,6 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { findConflictMarkers } from "./check-conflict-markers.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GATE = path.join(HERE, "check-conflict-markers.mjs");
@@ -32,63 +31,8 @@ function runGate(args) {
   });
 }
 
-// ── findConflictMarkers: the pure scanner ──────────────────────────────────────
-
-test("PURE: detects all three marker lines of a real unresolved conflict", () => {
-  const content = [
-    "line before",
-    "<<<<<<< HEAD",
-    "our version",
-    "=======",
-    "their version",
-    ">>>>>>> origin/main",
-    "line after",
-  ].join("\n");
-  const hits = findConflictMarkers(content);
-  assert.deepEqual(
-    hits.map((h) => h.line),
-    [2, 4, 6],
-  );
-});
-
-test("PURE: a bare `=======` with NO preceding `<<<<<<<` is a Markdown setext heading, not a hit", () => {
-  const content = ["Title", "=======", "", "Some prose."].join("\n");
-  assert.deepEqual(findConflictMarkers(content), []);
-});
-
-test("PURE: a `>>>>>>>` or `<<<<<<<` string embedded MID-LINE is not a hit (line-anchored)", () => {
-  const content = [
-    'const sep = ">>>>>>>";',
-    "  // <<<<<<< not at line start",
-    "prefix<<<<<<<",
-  ].join("\n");
-  assert.deepEqual(findConflictMarkers(content), []);
-});
-
-test("PURE: exactly 7 characters is required — 8 does not match", () => {
-  const content = ["<<<<<<<<", "========", ">>>>>>>>"].join("\n");
-  assert.deepEqual(findConflictMarkers(content), []);
-});
-
-test("PURE: exactly 7 followed by end-of-line or whitespace both count", () => {
-  const content = ["<<<<<<<", "<<<<<<< HEAD"].join("\n");
-  assert.deepEqual(
-    findConflictMarkers(content).map((h) => h.line),
-    [1, 2],
-  );
-});
-
-test("PURE: once `<<<<<<<` has appeared, EVERY later bare `=======` in the file counts", () => {
-  const content = ["<<<<<<< HEAD", "a", "=======", "b", "Title", "=======", "c"].join("\n");
-  assert.deepEqual(
-    findConflictMarkers(content).map((h) => h.line),
-    [1, 3, 6],
-  );
-});
-
-test("PURE: an empty file has no markers", () => {
-  assert.deepEqual(findConflictMarkers(""), []);
-});
+// Pure detection cases are fixtures in scripts/check/rules/conflict-markers.mjs
+// (`node scripts/check/run.mjs --test`); this file covers the CLI file selection only.
 
 // ── CLI, in a real throwaway git repo ──────────────────────────────────────────
 

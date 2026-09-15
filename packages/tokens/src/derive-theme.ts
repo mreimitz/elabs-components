@@ -92,7 +92,7 @@
  * byte-for-byte the value that is returned.
  *
  * `--ring` also actively steers away from colliding with `--accent-foreground`
- * (`MUST_DIFFER` in `scripts/check-role-distinctness.mjs`) — both can land on
+ * — both can land on
  * the same achromatic point (e.g. primary black on both, `deriveTheme({
  * primary: "oklch(0 0 0)" })`) since the ring's anchor is `--primary`'s own
  * lightness and the ink pick is also achromatic (fix round 1, finding 3). See
@@ -209,8 +209,7 @@ const RING_HUE_TOLERANCE_DEG = 20;
 
 /**
  * Perceptual distinctness floor, as an OKLab ΔE — the SAME constant
- * `scripts/check-role-distinctness.mjs` (`ROLE_SEPARATION_DELTA_E`) and
- * `themes-contrast.test.ts` apply to committed theme tokens. `deriveTheme`
+ * `themes-contrast.test.ts` applies to committed theme tokens. `deriveTheme`
  * emits a runtime patch those gates never see (they only read committed
  * theme CSS), so the same invariant — `(--accent-foreground, --ring)` is a
  * `MUST_DIFFER` pair — has to be enforced here instead (fix round 1, issue
@@ -273,8 +272,7 @@ function formatOklch(o: Oklch): string {
 
 /**
  * OKLab ΔE (Euclidean distance in L/a/b) between two {@link Oklch} colors —
- * mirrors the ΔE definition `scripts/check-role-distinctness.mjs` and
- * `themes-contrast.test.ts` already use, INCLUDING the `Math.hypot` call
+ * mirrors the ΔE definition `themes-contrast.test.ts` already uses, INCLUDING the `Math.hypot` call
  * (fix round 2, issue #39, finding E): a plain `Math.sqrt(dL**2+da**2+db**2)`
  * disagrees with `Math.hypot(dL,da,db)` by exactly one ulp at the 0.05 floor
  * (`oklch(0 0.05 116.5)` vs `oklch(0 0 0)`: `sqrt` → 0.05, `hypot` →

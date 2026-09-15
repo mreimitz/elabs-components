@@ -13,8 +13,8 @@
  * canvas hosts one console session as the focus pane, with an ordinary
  * `Card` inspector rail sitting beside it — never inside it, which is the
  * deliberate choice that keeps the console's own ink discipline
- * (`.claude/rules/terminal-components.md` § "Colour comes from the terminal
- * token group") from ever fighting an app surface's ink.
+ * (`.claude/rules/ai.md` § Terminal: colour comes from the terminal
+ * token group) from ever fighting an app surface's ink.
  *
  * Compose-only: every element is an existing `@elabs-ai/components-terminal`
  * / `@elabs-ai/components-ui` / `@elabs-ai/components-icons` primitive,
@@ -256,7 +256,7 @@ function SessionRail({ state }: { state: SessionState }) {
             {/* The icon carries the tone (mark rung, judged at 3:1); the
              * words stay neutral app ink — colour is never the only channel,
              * and never the ONLY carrier of an accent tone either
-             * (.claude/rules/styling-and-tokens.md § status rungs). */}
+             * (.claude/rules/conventions.md § Styling & tokens, status rung). */}
             <ShieldAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
             <div className="space-y-1">
               <p className="text-body font-medium text-foreground">Waiting for your approval</p>
@@ -413,8 +413,8 @@ function AgentSessionScreen({ state }: { state: SessionState }) {
   /*
    * Pin the transcript to its newest line, the way a real console does. The
    * package owns no scroll container by contract (see
-   * `.claude/rules/terminal-components.md` § "This package owns no scroll
-   * container"), so the viewport AND its scroll position are the caller's job —
+   * `.claude/rules/ai.md` § Terminal: the package owns no scroll
+   * container), so the viewport AND its scroll position are the caller's job —
    * this is the composition showing how, not a `TerminalSurface` behaviour.
    * `useLayoutEffect` so it lands before paint and the screen never flashes the
    * top of the transcript first.
@@ -534,7 +534,7 @@ function AgentSessionScreen({ state }: { state: SessionState }) {
               // remain composable. Never reach for an opacity or alpha wash to
               // recede a console region — the light canvas would bleed through
               // `text-terminal-foreground`'s dark ground, the inverse-ink failure
-              // `.claude/rules/terminal-components.md` warns about.
+              // `.claude/rules/ai.md` § Terminal warns about.
             />
 
             <TerminalStatusBar
@@ -626,7 +626,7 @@ export const AwaitingPermission: Story = {
     await expect(composer).toBeInTheDocument();
     // The composer is visually RECESSED while a decision is pending, never
     // functionally disabled — it stays a real, focusable, enabled control
-    // (`.claude/rules/interaction-guidelines.md`'s `aria-disabled`-only rule
+    // (`.claude/rules/conventions.md`'s `aria-disabled`-only rule
     // for "nothing to submit" doesn't even come up here, because nothing is
     // disabled at all).
     await expect(composer).toBeEnabled();

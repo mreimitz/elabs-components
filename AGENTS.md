@@ -72,13 +72,13 @@ is GENERATED into this region by `pnpm gen` — edit the decisions there, not he
 <!-- prettier-ignore -->
 | # | Decision | The short answer | Detail rule |
 | --- | --- | --- | --- |
-| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decision-routing.md`](../.claude/rules/decision-routing.md) |
-| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) |
+| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decisions.md`](.claude/rules/decisions.md) |
+| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai.md`](.claude/rules/ai.md) |
 | **D3** | Which package | `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai) | `skills/brand-ui/SKILL.md` (generated table) |
-| **D4** | Import vs copy-own | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry). | [`registry.md`](../.claude/rules/registry.md) |
-| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`scope-and-non-goals.md`](../.claude/rules/scope-and-non-goals.md) |
-| **D6** | Dependency & import discipline | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph. | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) · [`styling-and-tokens.md`](../.claude/rules/styling-and-tokens.md) |
-| **D7** | Maintainer decisions | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory). | [`quality-gates.md`](../.claude/rules/quality-gates.md) |
+| **D4** | Import vs copy-own | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry). | [`registry.md`](.claude/rules/registry.md) |
+| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`decisions.md`](.claude/rules/decisions.md) |
+| **D6** | Dependency & import discipline | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph. | [`ai.md`](.claude/rules/ai.md) · [`conventions.md`](.claude/rules/conventions.md) |
+| **D7** | Maintainer decisions | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory). | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 
 <!-- brand-ui:gen:decisions:end -->
 
@@ -91,10 +91,8 @@ pnpm build        # turbo build (tsup libs, storybook)
 pnpm lint
 pnpm typecheck
 pnpm test         # vitest (unit/smoke)
-pnpm test:e2e     # playwright E2E (auto-starts playground + Storybook)
-pnpm registry:validate
-pnpm storybook         # Storybook on :6006
-pnpm playground   # Vite dev server on :5173
+pnpm check        # every repo convention rule (+ registry-validate)
+pnpm storybook    # Storybook on :6006
 # scope: pnpm --filter @elabs-ai/components-ui test
 ```
 
@@ -108,42 +106,25 @@ visual review).
 - Variants via `class-variance-authority`. Export all public types.
 - Radix primitives for interactive behavior; React Aria only where it clearly helps.
 
-## Token rules
-
-- Semantic tokens only. **No raw hex/arbitrary colors outside
-  `packages/tokens/src/themes.css`** (or registry theme items).
-- Adding a visual concept = add the token to every theme block + map it in
-  `@theme inline`.
-
-## Theming rules
-
-- `data-theme` attribute selects the theme; `:root` is a neutral light base/fallback.
-  Two themes: light (default), dark. Keep
-  `THEMES`/`THEME_META` in sync with the CSS. Use the `new-theme` workflow.
+Full conventions (styling/tokens, theming, accessibility, loading states, icons):
+[`.claude/rules/conventions.md`](.claude/rules/conventions.md). Canonical decisions:
+[`docs/DECISIONS.md`](docs/DECISIONS.md) + [`.claude/rules/decisions.md`](.claude/rules/decisions.md).
+Package-specific rules are path-scoped: `ai.md`, `charts.md`, `data.md`,
+`flow-maps-editor.md`, `registry.md`, `storybook-mcp.md`.
 
 ## Common tasks
 
-- New component → `.claude/commands/new-component.md` (or
-  `docs/COMPONENT_GUIDELINES.md`).
+- New component → `.claude/commands/new-component.md`.
 - New theme → `.claude/commands/new-theme.md`.
-- New registry item → `.claude/commands/new-registry-item.md` → delegates non-trivial
-  curation to the `brand-ui-registry-curator` agent.
-- Update docs / ADR / Storybook intro / package docs → the `brand-ui-docs-writer`
-  agent (keeps `CLAUDE.md` lean, pushes detail into `.claude/rules/*` + `docs/`).
-- Review → `.claude/commands/review-component.md`.
-- Functional browser QA → `.claude/commands/qa-flows.md` (agent-browser skill).
-- Visual/UX validation → `.claude/commands/visual-review.md` →
-  `brand-ui-visual-ux-reviewer` agent (UI/UX design skills + agent-browser).
-- E2E specs live in `apps/e2e/tests/`; add a Playwright test when you fix a bug
-  found by the agent layers, to lock it in deterministically.
-- File a finding → `.claude/commands/file-issue.md` → `brand-ui-root-cause-analyst` agent
-  (deep RCA) → GitHub issue. Finders report, they don't fix. See
-  `docs/ISSUE_WORKFLOW.md` and `.claude/rules/issue-workflow.md`.
-- Repo-tier architecture audit → `.claude/commands/repo-architect-review.md` → four
-  `repo-architect-*` auditors + `repo-architect-synthesizer` → scorecard + findings
-  register vs. the enterprise-gap baseline. Advisory + gated; finders report.
-  Deterministic pass: `pnpm arch:garden`. Rubric: `.claude/rules/architecture-review.md`;
-  ADR `docs/ADR/0009-repo-architecture-review.md`.
+- New registry item → `.claude/commands/new-registry-item.md`.
+- Review → `.claude/commands/review-component.md` → `brand-ui-reviewer` agent
+  (component/a11y/visual-ux/root-cause in one pass).
+- File a finding → `.claude/commands/file-issue.md`. Finders report, they don't fix —
+  see `docs/ISSUE_WORKFLOW.md`.
+- Release → `.claude/commands/release.md` → `brand-ui-release` agent.
+- Repo hygiene sweep → `.claude/commands/repo-cleanup.md`.
+- E2E specs live in `apps/e2e/tests/`; add a Playwright test when you fix a bug found
+  by review, to lock it in deterministically.
 
 ## Files you should not edit casually
 
@@ -154,222 +135,21 @@ visual review).
 - `.claude/settings.json` and `.claude/hooks/*` — safety-critical.
 - `registry/registry.json` — keep valid (run the validator).
 
-## Validate before you finish (command contract)
-
-Compliant agents auto-run these and make them **green before reporting done** — do
-the same. Run from the repo root (scope to one package with `pnpm --filter @elabs-ai/components-<pkg> <task>`):
+## Validate before you finish
 
 ```bash
-pnpm typecheck && pnpm lint && pnpm test && pnpm build   # every change
-pnpm gates                      # every change — the whole root gate battery below, in parallel, reporting EVERY red gate instead of stopping at the first (#326); CI runs exactly this. `pnpm gates:all` adds format:check + consumer:check
-pnpm gates:selftests            # every gate's own self-test, one node:test run over all the *.test.mjs files; CI runs exactly this
-pnpm gates:test                 # self-test for the parallel runner (discovery, --docs-only, a red gate never hides the others)
-pnpm check:changed              # typecheck + lint + test for the packages changed vs origin/main only (turbo --filter=...[origin/main])
-pnpm conflict-markers:check     # every change — no tracked file contains a literal, unresolved Git conflict marker (#379)
-pnpm conflict-markers:check:test # self-test for the conflict-marker gate
-pnpm debrand:check              # every change — no tracked file names the upstream organisation this repo was forked from (no exemptions beyond the gate's own source)
-pnpm debrand:check:test         # self-test for the debrand gate + its pre-commit wiring
-pnpm registry:validate          # if registry/ touched
-pnpm registry:validate:test     # self-test for the registry `homepage`-placeholder gate (#264)
-pnpm registry:resolve:check     # if registry/ touched — every relative import resolves in both the repo tree AND the install (target) tree
-pnpm registry:resolve:check:test # self-test for the registry relative-import resolution gate
-pnpm registry:published:check   # every already-published registry item is still reachable at its hosted GitHub Pages URL (#31); skips (exit 0) until the maintainer enables Pages and a version has released — never fails on a new, unreleased item
-pnpm registry:published:check:test # self-test for the published-registry reachability gate
-pnpm registry:publish:test      # self-test for scripts/publish-registry-pages.mjs's planning logic (the mutating `pnpm registry:publish` itself only runs from release.yml, never as a per-change check)
-pnpm manifest:check             # manifest is fresh + deterministic (never hand-edit it; run `pnpm manifest`)
-pnpm manifest:check:test        # self-test for the manifest freshness gate
-pnpm components:check           # every @elabs-ai/components-ui component is barrel-registered AND story-covered (ratchet vs scripts/components-story-baseline.json; `-- --update` only ratchets down)
-pnpm components:check:test      # self-test for the component-registration gate + its story ratchet
-pnpm variants:check             # if a component with cva variants changed — every variant value must appear in a rendered story (#388; ratchet)
-pnpm variants:check:test        # self-test for the variant-coverage gate
-pnpm docs-links:check           # every Storybook `?path=` cross-link in a docs MDX page or a story description resolves to a real story TITLE — story ids are derived from titles, so a retitle silently 404s every link that named it
-pnpm docs-links:check:test      # self-test for the docs cross-link gate
-pnpm storybook-groups:check     # every story's top-level group is listed in preview.tsx's `storySort.order` (an unlisted one sorts to the bottom in import order), no listed group is stale, the component segment carries no spaces outside the sanctioned prose surfaces, and docs/STORYBOOK_GUIDELINES.md's numbered list names the same groups in the same order (#151)
-pnpm storybook-groups:check:test # self-test for the Storybook taxonomy gate
-pnpm tailwind-sources:check     # every workspace package with real Tailwind class strings is named by a resolvable @source directive in every app CSS file that has any — Tailwind v4 does not auto-scan workspace packages (#348)
-pnpm tailwind-sources:check:test # self-test for the @source coverage gate
-pnpm story-descriptions:check   # every indexed *.stories.tsx carries a `parameters.docs.description.component` — the sentence a reader needs to tell two look-alike components apart, and the hook the `Docs/Choosing between similar components` index hangs off (#152; ratchet, so the 163 files still without one are a todo list that only shrinks)
-pnpm story-descriptions:check:test # self-test for the story-description gate
-pnpm docs:check                 # docs match reality (theme count, workflow refs, @elabs-ai/components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
-pnpm paused-surfaces-drift:check # the deleted "paused surfaces" theme-pause concept must stay fully gone — no live mechanism, no rule doc, no dangling citation reappearing on its own (#35)
-pnpm paused-surfaces-drift:check:test # self-test for the paused-surfaces drift-lock gate
-pnpm skills:currency:check      # playbook/skill/plugin prose (docs/playbooks/**, skills/*/SKILL.md, .claude-plugin/*.json) agrees with brand-ui.manifest.json on theme count + package-name scope — the .md-only docs:check walk never reaches these files (#29)
-pnpm skills:currency:check:test # self-test for the skills-currency gate
-pnpm source-theme-count:check      # product SOURCE (packages/*/src/**, incl. .css, and apps/docs/stories/**) agrees with BUILT_IN_THEMES on theme count — the two prose-only gates above never reach component/story comments or rendered Storybook copy (#29)
-pnpm source-theme-count:check:test # self-test for the source-theme-count gate
-pnpm inventory:check            # component-inventory.md is generated from the manifest, not hand-edited (run `pnpm inventory`)
-pnpm llms:check                 # llms.txt hub + per-package spokes are fresh vs. the manifest (run `pnpm llms`)
-pnpm context:check              # generated agent-context blocks (CLAUDE.md/AGENTS.md/Cursor) are fresh (run `pnpm context`)
-pnpm gen:check                  # generated doc regions (package tables, decision summary) are fresh (run `pnpm gen`)
-pnpm agent-docs-cascade:check:test  # self-test for the pre-commit manifest→inventory/llms/context/gen cascade wiring (`pnpm agent-docs` for the manual command; #396). WARNING: its `finally` runs `git checkout HEAD --` over the generated agent-doc artifacts, so it DISCARDS uncommitted edits to AGENTS.md/CLAUDE.md/package READMEs — commit those first
-pnpm attributions:check         # ATTRIBUTION.md + AttributionPanel's dataset are derived from the repo, not hand-kept — a stale copy fails, as does an entry with no name/URL or a licence-REQUIRED notice with no copyright line (run `pnpm gen:attributions`)
-pnpm attributions:check:test    # self-test for the attribution generator + stale-gate
-pnpm attribution:provenance:check       # if you borrowed from another project — shipped source may not say "adapted/vendored/ported from X" unless X is credited in scripts/attributions.sources.json (see .claude/rules/attribution.md)
-pnpm attribution:provenance:check:test  # self-test for the attribution-provenance gate
-pnpm attribution:comments:check         # every gh/MCP GitHub-posting instruction in .claude/commands, .claude/agents, .claude/hooks, skills/** must reference the comment-attribution helper/marker (#78) — this repo has no separate bot identity, so an unmarked comment is indistinguishable from a maintainer ruling (see .claude/rules/issue-workflow.md)
-pnpm attribution:comments:check:test    # self-test for the comment-attribution gate + hook
-pnpm dep-field-move:check       # if a staged package.json moves a dependency between dependencies/devDependencies/peerDependencies/optionalDependencies — automatically runs attributions:check itself (best-effort wiring in .githooks/pre-commit; `pnpm attributions:check` in CI is still the blocking backstop) (#42)
-pnpm dep-field-move:check:test  # self-test for the dependency-field-move detector
-pnpm csp-sinks:check            # no NEW Trusted-Types sink (innerHTML/dangerouslySetInnerHTML) in our source or a direct dep, and the Radix scroll-area/select patches still applied — a dropped patch renders a BLANK WINDOW for strict-CSP consumers with a green test suite
-pnpm csp-sinks:check:test       # self-test for the Trusted-Types sink gate
-pnpm sanitizer-passthrough:check       # no @elabs-ai/components-* wrapper re-exposes a safe renderer's sanitiser-override prop (Streamdown's rehypePlugins) without closing both the type-level Omit and the runtime strip (#36)
-pnpm sanitizer-passthrough:check:test  # self-test for the sanitizer-passthrough gate
-pnpm intent:check               # if packages/cli/lib/intent.mjs touched — every authored intent entry names a real export, every `stateTokens` class resolves as a WHOLE class in real source, every package is covered (no zero-`avoid:` llms spoke), ai/chart entries carry >= 3 anti-patterns, and no NEW uncovered ai/charts root export (ratchet vs scripts/intent-coverage-baseline.json) (upstream#60)
-pnpm intent:check:test          # self-test for the intent-coverage gate
-pnpm issue-citations:check      # no bare #N issue citation collides with a live fork issue; marked upstream#N where they do (upstream#63)
-pnpm issue-citations:check:test # self-test for the issue-citations gate
-pnpm playbooks:check            # if docs/playbooks/ touched — every playbook has front matter and reached the manifest, the agent-context file and `brand-ui search` (run `pnpm agent-docs`) (#66/#84)
-pnpm playbooks:check:test       # self-test for the playbook-registration gate
-pnpm cadence:check:test         # self-test for the Stop session-cadence nudge (.claude/hooks/session-cadence-nudge.sh, #67)
-pnpm consultation-claims:check:test  # self-test for the Stop consultation-claims nudge (.claude/hooks/gate-consultation-claims.sh) — a Write/Edit claiming a named-agent consultation with no matching prior Task dispatch in the transcript is caught (#42)
-pnpm format:check               # or fix with `pnpm format`
-pnpm ai:types-only              # if @elabs-ai/components-ai touched — the AI SDK (`ai`/`@ai-sdk/*`) is types-only, never runtime (D6 / ADR-0008)
-pnpm lucide:check               # if any `lucide-react` import touched — one Lucide version across the workspace
-pnpm charts:reuse:check         # if @elabs-ai/components-charts touched — charts must not redefine @elabs-ai/components-ui component names
-pnpm charts:test-double:check   # if packages/charts/src/test/** or its wiring touched — the ./test double stays in parity with the real components, pulls no @visx/d3/motion engine, and exports/publishConfig/tsup.config.ts agree (#364)
-pnpm chart-hairline:check       # if packages/charts/src/** touched — chart furniture (grids, axis rules, links, rings, edges) paints ONE ink (`--chart-grid`) at ONE weight (`CHART_HAIRLINE_WIDTH`), never dimmed by a stroke opacity
-pnpm chart-hairline:check:test  # self-test for the chart-furniture hairline gate
-pnpm charts:honesty:check       # if packages/charts/src/{charts,marks}/** touched — bars never break the axis, area/radius encodings scale by sqrt(v), demo data is deterministic (no `Math.random`), and a unit-decomposed chart states its unit (RM-039, #265)
-pnpm charts:honesty:check:test  # self-test for the charts honesty gate
-pnpm process:reuse:check        # if @elabs-ai/components-process touched — the layer-3 package must not redefine a flow/charts/data/ui component name, author a raw SVG mark, import an unwrapped @xyflow/react primitive, reach a layer-2 sibling sideways, or pull an engine into /core (ADR 0034)
-pnpm process:reuse:check:test   # self-test for the process reuse-audit gate
-pnpm process:test-double:check       # if packages/process/src/test/** or its wiring touched — the ./test double stays in parity with the real components, pulls no react-flow/visx/d3/motion engine, and exports/publishConfig/tsup.config.ts agree (RM-053, #228)
-pnpm process:test-double:check:test  # self-test for the process test-double gate
-pnpm dep-direction:check        # if any packages/*/package.json touched — @elabs-ai/components-* deps follow the one-way DAG (tokens/icons → ui → domain, #184)
-pnpm dep-direction:check:test   # self-test for the dependency-direction gate
-pnpm agents:check               # if .claude/agents/ touched — agent names plugin-scoped, unique, name↔filename
-pnpm agents:check:test          # self-test for the agent-name gate
-pnpm close-issues:check:test    # self-test for the /close-issues delegation nudge (Stop hook + --ledger)
-pnpm bash-output:check:test     # self-test for the unbounded-Bash-output nudge (PreToolUse hook + its registration)
-pnpm plugin:check               # if .claude-plugin/ or skills/ touched — plugin manifest valid, marketplace in sync, declared paths resolve, router present
-pnpm plugin:check:test          # self-test for the plugin-manifest gate
-pnpm plugin:consumer-clean:check  # if .claude-plugin/ or skills/ touched — shipped skills/agents are free of repo-internal references
-pnpm plugin:consumer-clean:check:test  # self-test for the consumer-clean gate
-pnpm plugin:agents:check        # if .claude-plugin/ or skills/ touched — plugin.json `agents` matches the shipped agent files (run `pnpm plugin:agents`)
-pnpm plugin:agents:check:test   # self-test for the plugin-agents gate
-pnpm app-spec:check             # if skills/brand-ui-new-app/ touched — the app-spec.example validates against app-spec.schema.json
-pnpm app-spec:check:test        # self-test for the app-spec contract gate
-pnpm rules:scoping:check        # if .claude/rules/ or CLAUDE.md touched — package rules are `paths:`-scoped (lazy), not always-on/@-imported
-pnpm rules:scoping:check:test   # self-test for the rule-scoping gate
-pnpm theme-parity:check         # if themes.css touched — every theme block defines every semantic token (#89)
-pnpm theme-parity:check:test    # self-test for the theme-parity gate
-pnpm community-themes:check     # if themes/ touched — every downloadable family is complete, AA-readable and wired into Storybook (ADR 0036)
-pnpm community-themes:check:test # self-test for the community-themes gate
-pnpm roles:check                # if themes.css touched — roles that co-occur (ring/primary, ring/chart-1, chart-N/chart-M) stay ≥0.05 OKLab ΔE apart; parity checks presence, contrast checks surfaces, neither sees two roles collapsing onto one colour (#385)
-pnpm roles:check:test           # self-test for the role-distinctness gate
-pnpm surface-elevation:check    # if themes.css touched — app chrome (--sidebar) stays recessed below the content canvas (--background) in every theme (#187)
-pnpm surface-elevation:check:test  # self-test for the surface-elevation gate
-pnpm surface:preview:test       # self-test for the composed-surface preview generator (rung 2 of the visual loop, #57) — every archetype × theme builds self-contained, themed, with no colour literal outside the inlined tokens. Build one with `pnpm surface:preview -- --archetype <name> --theme <slug> --out <file.html>`.
-pnpm tokens:check               # if tokens/ or themes.css touched — themes.css matches the DTCG source (run `pnpm --filter @elabs-ai/components-tokens tokens:build`)
-pnpm tokens:check:test          # self-test for the tokens-freshness gate
-pnpm tokens:dup-blocks:check    # if themes.css touched — no duplicate [data-theme] color blocks (a 2nd block silently wins the cascade, #196)
-pnpm tokens:dup-blocks:check:test  # self-test for the duplicate-theme-block gate
-pnpm decoration:check           # if decoration.css or the --deco-* tokens changed — `background-attachment: fixed` stays pointer-gated (touch jank #29), the ground fade masks a ::before layer not the host (#257), relative-color inks keep an @supports fallback
-pnpm decoration:check:test      # self-test for the decoration-CSS gate
-pnpm decoration-collapse:check       # if decoration.css touched — a role-fill collapse (≥2 of bg-primary/secondary/destructive/success/warning/info reduced to one declaration set) must ship a compensating [data-status] non-colour channel in the same high-decoration scope (#391)
-pnpm decoration-collapse:check:test  # self-test for the decoration-collapse gate
-pnpm audit-artifact:check       # if themes.css touched — the committed cross-theme WCAG audit (apps/e2e/reports/theme-aa-audit.md) is fresh and names no deleted theme (#78; run `pnpm audit-artifact`)
-pnpm audit-artifact:check:test  # self-test for the AA audit-artifact gate
-pnpm a11y:baseline:check        # always — axe is BLOCKING in the Storybook job (preview.tsx `a11y.test: "error"`); this gates the per-story exemption list: generated, wiring intact, ceiling only shrinks (#78 AC3 / #316). Re-measure with `pnpm a11y:baseline:run`, then `--update` (add `--prune` to ratchet down).
-pnpm a11y:baseline:check:test   # self-test for the axe ratchet gate
-pnpm merge:check:test           # self-test for the merge guard (#386): branch protection is unavailable on this plan (403 "Upgrade to GitHub Pro"), so `pnpm merge:check` refuses while a blocking check is FAILING or still PENDING and `.claude/hooks/gate-pr-merge-readiness.sh` blocks `gh pr merge`. This asserts both halves are still wired. (Run `pnpm merge:check` itself before merging a PR — it needs a PR context, so it is not a CI gate.)
-pnpm css-assets:check           # if a package's shipped CSS or its deps changed — every relative url()/@import in an exported stylesheet resolves in dist, and bare @imports are real deps (not devDeps). Add `--require-dist` after `pnpm build`.
-pnpm css-assets:check:test      # self-test for the shipped-CSS asset gate
-pnpm gen:readmes:check          # if a package was added/renamed or its purpose changed — every publishable package's README carries the getting-started guide, and that README is what a consumer SEES on the GitHub Packages page after `pnpm add`. Generator-owned region; run `pnpm gen:readmes`. The license/install story is derived from each package's own package.json (license, private), never hardcoded — #28.
-pnpm gen:readmes:check:test     # self-test for the README generator's stale + license-drift gates
-pnpm consumer:check             # if a package's build/exports/deps changed — packs every distributable package, installs the tarballs into a throwaway Vite app OUTSIDE the workspace and builds it. The ONLY check that consumes dist/ the way a consumer does (everything else resolves src/ via the exports map), so it is the only one that sees stripped "use client" directives, missing fonts, orphaned CSS or a subpath pointing at raw .ts. Slow — it is a real install + build.
-pnpm consumer:check:test        # self-test for the published-artifact gate
-pnpm version:check              # if any version site changed — all 16 lockstep sites agree (11 packages + CLI + root + both plugin manifests + SERVER_INFO in the CLI's MCP server). `pnpm version:set X.Y.Z` is the only writer.
-pnpm version:check:test         # self-test for the lockstep-version gate
-pnpm publish-ready:check        # before a release — nothing is still private, every package has repository + directory + publishConfig.registry, .npmrc maps every published scope to that registry. The scope-equals-repo-owner rule is GitHub-Packages-only (requiresOwnerScope) and does not apply on npmjs.org. Release-time only (not a per-PR gate).
-pnpm publish-ready:check:test   # self-test for the publish-readiness preflight
-pnpm token-contract:check       # if packages/tokens changed — the exported THEME_TOKEN_NAMES contract is regenerated and non-empty (a consumer asserts their own theme against it)
-pnpm motion:check               # if a component's animation classes changed — motion uses the gated duration-*/ease-* utilities, never raw durations, and movement carries a motion-reduce: neutralizer
-pnpm motion:check:test          # self-test for the motion-token gate
-pnpm sidebar-drift:check        # if the sidebar block or its copy-own twin changed — the two copies have not drifted apart
-pnpm sidebar-drift:check:test   # self-test for the sidebar-drift gate
-pnpm lockfile:check             # if pnpm-lock.yaml changed — the lockfile agrees with every manifest (no hand-edited or stale entry)
-pnpm lockfile:check:test        # self-test for the lockfile gate
-pnpm deps-sync:test             # self-test for the auto-install-on-lockfile-change git hooks
-pnpm gen:registry:check         # if registry/ changed — the generated registry artifacts are fresh (run `pnpm gen:registry`)
-pnpm gen:registry:check:test    # self-test for the registry generator's stale gate
-pnpm templates:check            # if a scaffold template changed — every template still compiles against the current component API
-pnpm templates:check:test       # self-test for the template-freshness gate
-pnpm test-concurrency:check     # if the root package.json test script is touched — turbo's fan-out concurrency is bounded (either --concurrency=<int> or TURBO_CONCURRENCY env var) to prevent CPU oversubscription and intermittent test flakiness (#80)
-pnpm test-concurrency:check:test # self-test for the test-concurrency gate
-pnpm agent-output:check         # if an agent/skill's output contract changed — the shipped agents still declare the output shape their callers parse
-pnpm agent-output:check:test    # self-test for the agent-output-contract gate
-pnpm heavy-deps:check           # if @elabs-ai/components-ai, -terminal or -viewer touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
-pnpm heavy-deps:check:test      # self-test for the eager-heavy-dependency ratchet
-pnpm optional-peers:check       # if a packages/*/package.json optional peer changed — an optional peer a plain transitive dependency drags in anyway is DEFEATED: it installs for every consumer, so the capability-gap panel never renders and the "install only what you use" promise is false. Baselined per package; a new defeat fails (#94)
-pnpm optional-peers:check:test  # self-test for the defeated-optional-peer gate
-pnpm optional-peer-types:check       # if a package's built .d.ts changed — an optional peer's OWN TYPE must never leak into a package's generated declarations (module specifier reachable from the root barrel), which breaks skipLibCheck:false consumers who don't install that peer (#101)
-pnpm optional-peer-types:check:test  # self-test for the optional-peer-type-leak gate
-pnpm origins:check              # if a packages/*/src file gained a URL — every remote origin is allowlisted (scripts/remote-origins-allowlist.json) AND documented in docs/CSP-AND-NETWORK.md
-pnpm origins:check:test         # self-test for the remote-origin inventory gate
-pnpm tt-aliases:check           # if apps/*/vite config or the CSP doc changed — the published Trusted-Types aliases stay dogfooded and resolve to DOM-free builds
-pnpm tt-aliases:check:test      # self-test for the trusted-types alias gate
-pnpm csp:check                  # if apps/playground/csp-policy.json, its vite config or the CSP doc changed — the policy the playground SERVES (dev + preview) matches docs/CSP-AND-NETWORK.md §2.7 and every relaxation has a named carve-out (#314; no silent widening)
-pnpm csp:check:test             # self-test for the CSP dogfood gate
-pnpm microcopy:check            # user-visible strings (aria-label/placeholder/title/JSX text) go through `t()` from useLocale, not hardcoded English (ADR 0017; ratchet, baseline only goes down)
-pnpm microcopy:check:test       # self-test for the microcopy ratchet
-pnpm microtypography:check      # `…` not `...` (hard, un-ratcheted) and curly `’` not straight `'` (ratchet, baseline only goes down) in attributes/JSX text, including `.stories.tsx` (#70)
-pnpm microtypography:check:test # self-test for the micro-typography gate
-pnpm text-scale:check           # type is a role, not a size — raw font-size utilities are ratcheted (#187; baseline only goes down)
-pnpm text-scale:check:test      # self-test for the type-scale ratchet
-pnpm separation:check           # one focal separation gesture — bare `border` + non-default fill co-occurrence is ratcheted (#187)
-pnpm separation:check:test      # self-test for the surface-separation ratchet
-pnpm rung:check                 # a bare status-fill utility (text-destructive, …) used as running text vs a mark — ratcheted (#124; ~39% completeness, see script header)
-pnpm rung:check:test            # self-test for the status-fill-as-text ratchet
-pnpm elevation:check            # one stacked shadow ramp (ADR 0020) — ring rung ≡ plain rung + hairline, layer ink stays tokened, the shadowless dial keeps its unlayered cascade, and no raw / arbitrary / `border`+floating-`shadow-*` double edge in source
-pnpm elevation:check:test       # self-test for the elevation-ramp gate
-pnpm palette:check              # semantic tokens only — raw Tailwind palette utilities (text-yellow-600, …) are ratcheted (#189/#182)
-pnpm palette:check:test         # self-test for the raw-palette ratchet
-pnpm loading-states:check       # a loading/isStreaming/(chart) status prop must SHOW its not-ready state in a story — ratcheted (#267)
-pnpm loading-states:check:test  # self-test for the loading-states gate
-pnpm data-slot:check            # stable selectors — a module that gains a component must gain a `data-slot=` declaration (#312; per-module [components, slots] ratchet — counts declarations, not per-part coverage)
-pnpm data-slot:check:test       # self-test for the stable-selector ratchet
-pnpm viewer-highlight:check     # a viewer adapter's `capabilities.highlight` is a promise — every declared address kind must be real, read by the renderer, and covered by a test asserting on a painted mark (ADR 0025)
-pnpm viewer-highlight:check:test # self-test for the highlight-capability gate
-pnpm states:check               # state-story coverage (empty/error/disabled/first-run) for the audited components — ratcheted (#247)
-pnpm states:check:test          # self-test for the state-coverage ratchet
-pnpm baseline-provenance:check  # every committed variant-coverage/loading-states/state-coverage baseline entry is REPRODUCIBLE by that gate's own `--update` (fabricated/stale entries fail) AND was not ADDED since the base ref (git-provenance rung, catches a real violation laundered via a hand-edit) (#400)
-pnpm baseline-provenance:check:test # self-test for the ratchet-baseline provenance meta-gate
-pnpm worktree-branch:check      # a worktree carrying an `.expected-branch` marker may only commit on that branch; ALSO blocks a commit on `main` in the PRIMARY checkout while another worktree is marked, unless `ALLOW_MAIN_COMMIT=1` — silent no-op with no orchestration in flight (#403)
-pnpm worktree-branch:check:test # self-test for the worktree-branch guard (drives the real .githooks/pre-commit end to end)
-pnpm worktrees:check            # a `/close-issues` worktree whose branch has LANDED and whose tree is clean must be torn down — a leftover copy is scanned as real TypeScript projects and its marker keeps blocking commits on `main`; deletes nothing, prints the removal commands
-pnpm worktrees:check:test       # self-test for the stale-worktree gate (builds real repos: a landed+clean unit must fail, live/dirty/unreadable ones must pass)
-pnpm slop:check                 # content anti-slop — the "Jane Doe effect" (John Doe / 99.99% / Acme) in shipped source is ratcheted (#107)
-pnpm slop:check:test            # self-test for the anti-slop ratchet
-pnpm collapse-fork:check        # one collapse mechanism — no gap-spacer + fixed-slide width tween outside useCollapsiblePanel (#190)
-pnpm collapse-fork:check:test   # self-test for the collapse-fork gate
-pnpm timeline-fork:check        # one Timeline rail — no Timeline* re-declaration / hand-rolled connector+status rail outside @elabs-ai/components-ui (#190)
-pnpm timeline-fork:check:test   # self-test for the timeline-fork gate
-pnpm machine-paths:check        # no absolute machine paths (e.g. /Users/...) committed in tracked source
-pnpm machine-paths:check:test   # self-test for the machine-paths gate
-pnpm skills:build:check:test    # if scripts/build-skills.mjs or .gitignore's harness-mirror block changed — .cursor/.gemini/.agents/.github skill mirrors stay git-ignored (#294)
-pnpm biome-ignore:check         # this repo lints with ESLint, not Biome — a `biome-ignore` comment is inert and hides a live warning; suppress with `// eslint-disable-next-line <rule> -- <reason>` (#185)
-pnpm biome-ignore:check:test    # self-test for the biome-ignore gate
-pnpm release-gates:check        # if a workflow changed — the publishing job asks for the battery's verdict BEFORE it publishes, and no recorded gate vanished from gates.yml (#103)
-pnpm release-gates:check:test   # self-test for the release-gate verdict + ratchet gate
-pnpm release-tag-target:test    # self-test for the resolver that picks WHICH commit the release tag names (the PR head CI proved, not the untested merge commit)
-pnpm release-verdict:check:test # self-test for the gate that authorises a publish (blocking jobs of ci.yml's run for the exact tagged SHA must all be green; fails closed)
-pnpm ci-scope:test              # self-test for the classifier that authorises CI's documentation-only fast path — it must never call a source change "prose" (runs on EVERY CI path, including the fast one)
-pnpm changelog-entry:check      # if packages/<pkg>/src changed — the branch must add a line under CHANGELOG.md's `## Unreleased` (the lockstep stand-in for a changeset, #64 / ADR 0020)
-pnpm changelog-entry:check:test # self-test for the CHANGELOG-entry gate
-pnpm use-client:check           # if a client package's source changed — every package that uses React hooks carries a "use client" directive on ≥1 module, so RSC apps hydrate it correctly (#324)
-pnpm use-client:check:test      # self-test for the "use client" source gate
-pnpm --filter @elabs-ai/components-docs test-storybook   # if a component/story changed (interaction + axe)
+pnpm check:changed   # typecheck + lint + test scoped to your diff vs origin/main
+pnpm check          # every repo convention rule in one runner (--rule <id>, --list)
+pnpm check:test     # rule fixtures + every scripts/**/*.test.mjs
+pnpm format:check    # or fix with `pnpm format`
+pnpm --filter @elabs-ai/components-docs test-storybook  # if a component/story changed
 ```
 
-Add a story + smoke test for any new component (see `.claude/rules/quality-gates.md`).
-The gate list itself lives once, in the reusable `.github/workflows/gates.yml`, which
-`.github/workflows/ci.yml` calls on every PR and push to `main`. Since 2026-08-10
-`.github/workflows/release.yml` no longer re-runs it — it **requires the verdict**
-instead (`pnpm release-verdict:check`: every blocking job of `ci.yml`'s newest run for
-the exact tagged commit must have concluded success, and every ambiguous state refuses).
-So push `main`, let those jobs go green on that commit, and only then tag (#103).
+The full rule catalogue (what each one asserts, escape hatches) lives in
+[`docs/GATES.md`](docs/GATES.md); `pnpm check --list` prints it. CI (`ci.yml`) runs the
+whole pipeline on every push, so don't re-run everything per commit.
 
 **Honest completion:** never report "done"/"validated" for a path you did not run —
-lead with what you did NOT verify. Confirm components render across all **three** themes
-(light, dark) via Storybook, not from memory. Don't introduce paid deps, secrets, or absolute machine paths.
+lead with what you did NOT verify. Confirm components render in both themes (light,
+dark) via Storybook, not from memory. Don't introduce paid deps, secrets, or absolute
+machine paths.

@@ -104,14 +104,13 @@ and geospatial/MapLibre surfaces in `@elabs-ai/components-maps`.
 
 ## Step 4 — Implement
 
-Read `@.claude/rules/component-api.md`, `@.claude/rules/styling-and-tokens.md`,
-`@.claude/rules/accessibility.md`. Then:
+Read `@.claude/rules/conventions.md`. Then:
 
 - `forwardRef` + spread `...props` + accept `className`, merged with `cn()`
 - **semantic tokens only** (`bg-primary`, `text-muted-foreground`) — never raw hex
 - if a new visual concept needs a new `--token`, scaffold it into **all theme
   blocks** in `packages/tokens/src/themes.css` (not just `:root`) so the
-  theme-token-parity gate (`pnpm theme-parity:check`, #89) passes by construction
+  `theme-parity` rule (`pnpm check --rule theme-parity`, #89) passes by construction
 - `class-variance-authority` if the component has meaningful variants
 - prefer a Radix primitive for any interactive/overlay behavior
 - export all public types
@@ -119,20 +118,15 @@ Read `@.claude/rules/component-api.md`, `@.claude/rules/styling-and-tokens.md`,
 ## Step 5 — Wire up & verify
 
 1. Add the export to the package barrel `packages/<pkg>/src/index.ts`.
-2. Verify against `@.claude/rules/quality-gates.md`.
+2. Verify against the definition of done in `CONTRIBUTING.md`.
 3. Run `pnpm --filter @elabs-ai/components-<pkg> typecheck` and the package tests; fix issues.
 4. **Verify the story.** If the Storybook dev server is running, run
    `mcp__storybook__run-story-tests` on the new story (fix until green) and
    `mcp__storybook__preview-stories` to show the user the rendered result (spot-check
    `light` + `dark`); otherwise run `pnpm --filter @elabs-ai/components-docs test-storybook`. See
    @.claude/rules/storybook-mcp.md.
-5. **Regenerate the manifest AND its downstream generators**: `pnpm agent-docs`
-   (not just `pnpm manifest`) — the new export must reach
-   `component-inventory.md`, `llms.txt`, `brand-ui-context.md`, the `pnpm
-gen`-owned doc regions and package READMEs, not just `brand-ui.manifest.json`
-   (#396). This runs automatically at commit time via `.githooks/pre-commit`
-   when the commit touches `packages/*/src/**` — running it here just surfaces
-   the result before you commit.
+5. **Regenerate**: `pnpm gen`, so the new export reaches `brand-ui.manifest.json` and
+   every generated doc surface at once (`pnpm gen:check` confirms nothing is stale).
 6. In your summary, note what was added (or extended/merged/replaced), the
    dedupe decision and why, and any follow-ups.
 

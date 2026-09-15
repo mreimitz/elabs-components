@@ -75,7 +75,7 @@ shadowless surfaces) are plain selectors and still apply. `@property` failing to
 `--decoration` stops interpolating; with the inks already neutralized, nothing
 depends on it.
 
-Verified by `pnpm decoration:check` (`scripts/check-decoration-css.mjs`), which
+Verified by `pnpm check --rule decoration-css`, which
 fails if the inks are ever declared without that `@supports` fallback.
 
 ## Touch devices
@@ -92,4 +92,4 @@ it scrolls with the element instead of the viewport. The same gate enforces this
 - **Node**: see `engines` in the root `package.json` for the build/tooling floor.
 - **React**: 18.2 or 19, declared as a peer dependency by every package.
 - **Screen readers / assistive tech**: see
-  [`.claude/rules/accessibility.md`](../.claude/rules/accessibility.md).
+  [`.claude/rules/conventions.md`](../.claude/rules/conventions.md) (Accessibility).

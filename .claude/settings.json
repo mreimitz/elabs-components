@@ -89,32 +89,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-dangerous-commands.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-dangerous-commands.sh\""
           },
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-merge-review-gate.sh"
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gate-pr-merge-readiness.sh"
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/check-git-add-all.sh"
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/warn-unbounded-output.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|mcp__github__add_issue_comment|mcp__github__create_issue",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gate-comment-attribution.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-git-add-all.sh\""
           }
         ]
       }
@@ -125,37 +104,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-dispatch.sh\""
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gate-completion-claims.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-after-edit.sh\""
           },
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gate-consultation-claims.sh"
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-cadence-nudge.sh"
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gate-design-first.sh"
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/close-issues-delegation-nudge.sh"
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stale-worktree-nudge.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-component-boundaries.sh\""
           }
         ]
       }

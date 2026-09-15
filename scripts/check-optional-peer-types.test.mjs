@@ -6,7 +6,7 @@
  * `readDts`) — no real build is required to exercise the core logic. The
  * final tests assert the real committed tree matches the committed baseline
  * and specifically that issue #101's two named peers stay clean, mirroring
- * `check-eager-heavy-deps.test.mjs`'s closing shape.
+ * the former eager-heavy-deps self-test's closing shape.
  *
  * The LAST test in this file is the brief's own regression check: a REAL
  * `tsc --noEmit` (`skipLibCheck: false`) run against a throwaway consumer

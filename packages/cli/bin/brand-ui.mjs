@@ -3,7 +3,7 @@
  * brand-ui — the deterministic backend for the brand-ui AI skills.
  *
  *   brand-ui info [--json]          Project context (packages, themes, registry)
- *   brand-ui manifest [--write]     Generate the component manifest
+ *   brand-ui manifest [--write|--check]  Generate the component manifest (+ stale-gate)
  *   brand-ui context [--check]      Generate portable agent context files (+ stale-gate)
  *   brand-ui gen [--check]          Generate doc regions (package tables, decisions) (+ stale-gate)
  *   brand-ui search <query>         Find components / registry items / archetype playbooks
@@ -189,6 +189,23 @@ async function cmdManifest() {
     resolved = null;
   }
   const manifest = generateManifest(root, { resolved });
+  if (flags.has("--check")) {
+    // Stale-gate without a write: equal to disk modulo the `generatedAt` stamp
+    // (the same rule writeManifest uses to keep the stamp idempotent).
+    let current = null;
+    try {
+      current = JSON.parse(readFileSync(join(root, "brand-ui.manifest.json"), "utf8"));
+    } catch {
+      /* missing or unreadable → stale */
+    }
+    const norm = (m) => JSON.stringify({ ...m, generatedAt: 0 });
+    if (!current || norm(current) !== norm(manifest)) {
+      console.error("✖ brand-ui.manifest.json is STALE — run `pnpm gen` and commit the result.");
+      process.exit(1);
+    }
+    console.log("✔ brand-ui.manifest.json is fresh.");
+    return;
+  }
   if (flags.has("--write")) {
     writeManifest(root, manifest);
     console.log(
@@ -219,7 +236,7 @@ function cmdContext() {
       console.error(
         "✖ brand-ui context files are STALE:\n" +
           stale.map((f) => "  - " + rel(f)).join("\n") +
-          "\n  Run `pnpm context` and commit the result.\n" +
+          "\n  Run `pnpm gen` and commit the result.\n" +
           "  (Generated from brand-ui.manifest.json; only edit OUTSIDE the markers.)",
       );
       process.exit(1);
@@ -522,7 +539,7 @@ function cmdDocs() {
         }
       }
       // Resolved inherited props (react-docgen-typescript). Only present after
-      // `pnpm manifest` ran with the devDep installed; absent → this is skipped.
+      // `pnpm gen` ran with the devDep installed; absent → this is skipped.
       const resolved = hit.props.resolved;
       if (resolved && Object.keys(resolved).length) {
         console.log("props (inherited, resolved):");
@@ -898,7 +915,7 @@ const commands = {
 const GENERAL_HELP = `brand-ui <command>
 
   info [--json]          Project context: packages, themes, tokens, registry, rules
-  manifest [--write]     Generate the component manifest (ground truth for the skill)
+  manifest [--write|--check]  Generate the component manifest (ground truth for the skill)
   context [--check]      Generate portable agent context files (docs context)
   gen [--check]          Generate doc regions (package tables, decision summary) in the hand docs
   mcp                    Persistent MCP server (stdio) over the engine — works with Storybook down
@@ -945,7 +962,7 @@ It is the ONLY write in the brownfield path — no source file is ever touched.`
 const SUBCOMMAND_HELP = {
   info: "usage: brand-ui info [--json]\n  Project context: packages, themes, tokens, registry, rules",
   manifest:
-    "usage: brand-ui manifest [--write]\n  Generate the component manifest (ground truth for the skill)",
+    "usage: brand-ui manifest [--write|--check]\n  Generate the component manifest (ground truth for the skill)",
   context:
     "usage: brand-ui context [--check]\n  Generate portable agent context files (docs context)",
   gen: "usage: brand-ui gen [--check]\n  Generate doc regions (package tables, decision summary) in the hand docs",

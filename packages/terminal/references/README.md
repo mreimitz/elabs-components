@@ -19,7 +19,7 @@ it is what stops "what did we base this on?" drift once the original reading is 
 | Dataset entry | `scripts/attributions.sources.json` (`id: "brainless"`)       |
 
 The copyright line above was read off the upstream `LICENSE` file on 2026-09-01 and matches the
-attribution dataset byte for byte. Per `.claude/rules/attribution.md` a license is never verified
+attribution dataset byte for byte. Per the attribution rule in `CONTRIBUTING.md` a license is never verified
 from a badge, a README claim or memory.
 
 **No upstream code, styling or terminal palette is shipped.** What crossed over is anatomy, state
@@ -79,7 +79,7 @@ about the captured grammar, not the captures themselves. That is one rung better
 one rung short of the frames.
 
 Nothing here is a rendering observation. No cross-theme or accessibility claim follows from it;
-those are made against a real rendered story, per `.claude/rules/quality-gates.md`.
+those are made against a real rendered story, per `CONTRIBUTING.md` (definition of done).
 
 ## Per-component notes
 

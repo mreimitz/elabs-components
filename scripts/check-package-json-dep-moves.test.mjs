@@ -4,7 +4,7 @@
 // A staged package.json edit that moves a dependency between dependencies /
 // peerDependencies / devDependencies / optionalDependencies changes what
 // `scripts/attributions.sources.json`'s `usedBy` records as true — a dependency
-// that starts shipping to consumers, or stops. Nothing forced attributions:check
+// that starts shipping to consumers, or stops. Nothing forced gen-attributions --check
 // to re-run when that happened inside an ordinary package.json edit. This plants
 // the exact fixture shape (the issue's own "Test to add" spec): a package.json
 // diff moving a dependency INTO peerDependencies, asserted to be caught; plus
@@ -24,7 +24,7 @@ import {
   detectDependencyFieldMoves,
   resolveStagedExitCode,
 } from "./check-package-json-dep-moves.mjs";
-import { collectGates } from "./lib/workflow-gates.mjs";
+import { SERIAL_SELFTESTS, selfTestFiles } from "./check/run.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "..");
@@ -114,21 +114,21 @@ test("unparsable JSON never throws — returns no moves", () => {
 });
 
 // --- Staged-mode exit-code contract (the AC2 "automatically triggers
-// attributions:check" behaviour, tested without spawning the real checker) ----
+// gen-attributions --check" behaviour, tested without spawning the real checker) ----
 
 test("resolveStagedExitCode: no findings → 0, regardless of an attributions result", () => {
   assert.equal(resolveStagedExitCode([], null), 0);
   assert.equal(resolveStagedExitCode([], 1), 0);
 });
 
-test("resolveStagedExitCode: findings + attributions:check passed (0) → 0", () => {
+test("resolveStagedExitCode: findings + gen-attributions --check passed (0) → 0", () => {
   assert.equal(
     resolveStagedExitCode([{ name: "ai", from: "devDependencies", to: "peerDependencies" }], 0),
     0,
   );
 });
 
-test("resolveStagedExitCode: findings + attributions:check FAILED (1) → 1 (the trigger has teeth)", () => {
+test("resolveStagedExitCode: findings + gen-attributions --check FAILED (1) → 1 (the trigger has teeth)", () => {
   assert.equal(
     resolveStagedExitCode([{ name: "ai", from: "devDependencies", to: "peerDependencies" }], 1),
     1,
@@ -145,7 +145,7 @@ test("resolveStagedExitCode: findings + attributions never ran (null, e.g. spawn
 // --- CLI (--staged mode) — the REAL pre-commit path, against this repo's own
 // git index, proving the auto-trigger fires end-to-end (not just the pure fn) --
 
-test("CLI --staged: a real staged dependency-field move in THIS repo auto-runs attributions:check", () => {
+test("CLI --staged: a real staged dependency-field move in THIS repo auto-runs gen-attributions --check", () => {
   // Uses a real, low-risk leaf package.json (packages/cli's `prettier` devDependency)
   // temporarily staged as a `dependencies` entry, then restored in `finally` —
   // the same technique used to hand-verify this gate end-to-end during
@@ -181,13 +181,13 @@ test("CLI --staged: a real staged dependency-field move in THIS repo auto-runs a
     const r = spawnSync("node", [CHECKER, "--staged"], { cwd: REPO_ROOT, encoding: "utf8" });
     assert.match(r.stderr, /"prettier" moved devDependencies → dependencies/);
     assert.match(r.stderr, /automatically running/);
-    // attributions:check's own output is inherited straight through — on
+    // gen-attributions --check's own output is inherited straight through — on
     // PASS it prints "✔ attributions: ..." to stdout, on FAIL "✖ attributions:
     // ..." to stderr (gen-attributions.mjs's own console.log/console.error
     // split), so assert on whichever stream actually carried it rather than
     // assuming this repo's current dataset happens to pass for this fixture.
     assert.match(r.stdout + r.stderr, /attributions:/);
-    // Whatever attributions:check concluded, it genuinely ran and its result
+    // Whatever gen-attributions --check concluded, it genuinely ran and its result
     // was adopted — the exit code is never the detector's own "2", proving
     // the trigger, not just a print statement, determined the outcome.
     assert.ok([0, 1].includes(r.status), `expected 0 or 1, got ${r.status}`);
@@ -244,21 +244,11 @@ test("the pre-commit hook runs the staged-move detector", () => {
   assert.match(hook, /check-package-json-dep-moves\.mjs/);
 });
 
-test("package.json wires both the plain and self-test scripts", () => {
-  const p = JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
-  assert.equal(
-    p.scripts["dep-field-move:check"],
-    "node scripts/check-package-json-dep-moves.mjs --staged",
-  );
-  assert.equal(
-    p.scripts["dep-field-move:check:test"],
-    "node --test scripts/check-package-json-dep-moves.test.mjs",
-  );
-});
-
-// gates.yml runs the self-tests as ONE `pnpm gates:selftests` step (#326), so
-// "wired" means reachable through the runner's discovery, not a literal line.
-test("the self-test is wired into gates.yml's Gate self-tests step", () => {
-  const gates = readFileSync(path.join(REPO_ROOT, ".github", "workflows", "gates.yml"), "utf8");
-  assert.ok(collectGates(gates).has("dep-field-move:check:test"));
+// `pnpm check:test` discovers every scripts/**/*.test.mjs; this one stages into the real
+// git index, so it must be in the serial batch that runs after everything else.
+test("check:test runs this self-test serially, after the parallel batch", () => {
+  const { parallel, serial } = selfTestFiles(REPO_ROOT);
+  assert.ok(SERIAL_SELFTESTS.includes("scripts/check-package-json-dep-moves.test.mjs"));
+  assert.ok(serial.includes("scripts/check-package-json-dep-moves.test.mjs"));
+  assert.ok(!parallel.includes("scripts/check-package-json-dep-moves.test.mjs"));
 });

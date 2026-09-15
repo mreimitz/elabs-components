@@ -14,7 +14,7 @@ import { reactConfig } from "@elabs-ai/components-eslint-config/react";
  * This is the issue's own documented alternative to `eslint . --max-warnings=0`,
  * which stays infeasible here: the package still carries 39 pre-existing
  * `brand/no-raw-font-size` + `brand/no-raw-color` warnings that are already governed
- * by their own ratchets (`pnpm text-scale:check`, `pnpm palette:check`), so the
+ * by their own ratchets (`pnpm check --rule text-scale,raw-palette`), so the
  * blanket flag would both turn CI red and double-govern those baselines.
  *
  * That residual is a DIFFERENT debt class that post-dates #185 (the `brand/*` rules

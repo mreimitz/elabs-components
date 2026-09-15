@@ -2,7 +2,7 @@
  * gen-package-readmes.test.mjs — locks issue #28 (published READMEs said
  * private/UNLICENSED while the packages are public MIT).
  * Run in CI: `node --test scripts/gen-package-readmes.test.mjs`
- * (`pnpm gen:readmes:check:test`).
+ * (`pnpm check:test`).
  *
  * The generator must derive the license/install story from each package's own
  * `package.json` (`license`, `private`) rather than a hardcoded private-repo
@@ -264,7 +264,7 @@ test("REAL repo: packages/viewer/README.md's generated Install block stays free 
   );
 });
 
-test("the REAL repo currently passes gen:readmes:check (CLI run)", () => {
+test("the REAL repo currently passes gen-package-readmes --check (CLI run)", () => {
   assert.doesNotThrow(() => {
     execFileSync(process.execPath, ["scripts/gen-package-readmes.mjs", "--check"], {
       cwd: REPO_ROOT,

@@ -1,10 +1,10 @@
-/* GENERATED from packages/ai/src/templates-ai-assistant.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/ai/src/templates-ai-assistant.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen ai-assistant template (single source of truth: the Storybook story). */
 
 /**
  * AI assistant template — the canonical full-screen AI assistant composition
  * (app-shell + chat shell: Conversation + PromptInput). This story is the
- * single source of truth: `pnpm gen:templates` derives the consumer template
+ * single source of truth: `pnpm gen` derives the consumer template
  * source (`docs/playbooks/templates/ai-assistant.tsx`) from it.
  * Verify across both themes with globals=theme:<slug>.
  */

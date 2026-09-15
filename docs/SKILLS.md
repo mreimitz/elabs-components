@@ -14,20 +14,21 @@ the library itself. Concept and rationale: [CONCEPT-ai-skills.md](./CONCEPT-ai-s
 | **`brand-ui-component`**  | maintainer            | Scaffold/extend a component with the dedupe gate + quality gates + manifest refresh.                                                                                                                                                                                                                                                                                               |
 | **`brand-ui-theme`**      | maintainer + consumer | Create/retune themes and global tokens (radius, surfaces, re-brand).                                                                                                                                                                                                                                                                                                               |
 | **`brand-ui-registry`**   | maintainer            | Curate the shadcn-compatible registry (package vs block, validate, build).                                                                                                                                                                                                                                                                                                         |
-| **`brand-ui-new-app`**    | consumer              | Define-to-build: guided interview (quick 3-question or full 7-stage) → `app-spec.md` → annotated scaffold from template + playbook + starter `CLAUDE.md`. Entry point: `/new-app`.                                                                                                                                                                                                 |
+| **`brand-ui-new-app`**    | consumer              | Define-to-build: guided interview (quick 3-question or full 7-stage) → `app-spec.md` → annotated scaffold from template + playbook + starter `CLAUDE.md`. Entry point: `/brand-ui-new-app`.                                                                                                                                                                                        |
 | **`brand-ui-migrate`**    | consumer              | Brownfield adoption: profile the repo, map every component to a verdict, emit `migration/{repo-profile,analysis,plan}.md`, then walk the strangler-fig phases with the user approving each. Read-only until the plan is approved. Entry point: `/brand-ui-migrate`.                                                                                                                |
 | **`brand-ui-enterprise`** | consumer              | Enterprise design-judgment layer over brand-ui: classify the surface (professional/consumer/marketing), pick the app-shell archetype (tool/workspace vs admin console), stand up the mandatory baseline (shell, theme switcher, settings, toasts, detail panel), model objects → screens. Defers props to `brand-ui`, scoring to `brand-ui-audit`, scaffold to `brand-ui-new-app`. |
 
 Plus the brand-ui **subagents** — Claude Code/Cowork agents shipped via the
-plugin (`plugin.json` → `"agents": "./.claude/agents"`). The headline evaluator:
+plugin (`plugin.json` → `"agents"`, listing `agents/*.md`). The headline evaluator:
 
 | Agent                   | What it does                                                                                                                                                                                                                                                                                                          |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`brand-ui-reviewer`** | The honest evaluator. One entry point that bundles the deterministic detector + cross-theme visual review + accessibility/ethics into a two-pass, scored health report, then routes findings to `/file-issue`. Read-only. Invoke as a subagent (`@brand-ui-reviewer`) or it runs the `brand-ui-audit` skill's rubric. |
 
-…alongside the rest of `.claude/agents/` (component-builder, accessibility-reviewer,
-root-cause-analyst, design-system-architect, docs-writer, registry-curator, and the
-`repo-architect-*` cluster). Subagents activate in Claude Code + Cowork, not plain chat.
+…alongside `brand-ui-accessibility-reviewer` and `brand-ui-visual-ux-reviewer` in the
+plugin. Maintainer agents for this repo (`brand-ui-component-builder`, `brand-ui-docs-writer`,
+`brand-ui-release`) live in `.claude/agents/` and are not shipped. Subagents activate in
+Claude Code + Cowork, not plain chat.
 
 Backed by the **`@elabs-ai/components-cli`** engine (`packages/cli`) — the deterministic backend
 the skills call so they never guess:
@@ -54,7 +55,7 @@ brand-ui codemod <map.json>    # plan AST codemods [--dry-run|--apply] — read-
 ```
 
 `scaffold` reads the fenced `json` **Machine spec** block out of an `app-spec.md`
-(the same schema + validator `pnpm app-spec:check` gates), applies it to the
+(validated against the schema in `packages/cli/lib/app-spec.mjs`), applies it to the
 archetype template, and — with `--write` — emits a **runnable** app: `index.html`,
 `src/App.tsx`, `src/main.tsx` (`ThemeProvider` + the token stylesheet),
 `src/styles.css` (the `@import` + one `@source` per installed package),
@@ -67,8 +68,7 @@ answer stays a `TODO(spec):` comment and is reported back. A spec with
 `pnpm add`, engine peers **at the ranges the packages declare**, the CSS lines —
 `docs/CONSUMING.md` §1-4). Emitting into a folder that already holds some of those
 files is reported `partial` (exit 1), never a silent success. The
-`brand-ui-scaffold-builder` subagent drives spec → emit → typecheck / lint /
-`brand-ui audit` → report.
+`brand-ui-new-app` skill drives spec → emit → typecheck / lint / `brand-ui audit` → report.
 
 The published CLI **ships the archetype templates** (`files: ["templates", …]`,
 copied by `prepack` — `packages/cli/scripts/bundle-assets.mjs`) alongside the
@@ -83,7 +83,7 @@ private GitHub Packages dependency (`pnpm add -D @elabs-ai/components-cli`, see
 ## Ground truth, no drift
 
 `brand-ui.manifest.json` is generated from the package barrels + `themes.css`
-tokens + the registry. Regenerate it in `build` (or `pnpm manifest`) so the
+tokens + the registry. Regenerate it in `build` (or `pnpm gen`) so the
 `brand-ui` skill's knowledge of components/props/tokens can never lag the code —
 the "read the package, don't trust memory" guarantee.
 
@@ -128,7 +128,7 @@ skills/                       # canonical skills (source of truth)
 .mcp.json                     # Storybook MCP (auto-adopted as the plugin's MCP config)
 packages/cli/                 # @elabs-ai/components-cli — the engine (info/search/docs/manifest/audit + scaffold/scan/map/codemod)
 brand-ui.manifest.json        # generated ground truth
-scripts/check-plugin.mjs      # plugin-manifest gate (pnpm plugin:check)
+scripts/check/rules/plugin-manifest.mjs  # plugin-manifest rule (pnpm check --rule plugin-manifest)
 scripts/build-skills.mjs      # optional multi-harness mirror
 ```
 

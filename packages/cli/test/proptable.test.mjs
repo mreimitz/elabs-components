@@ -361,7 +361,7 @@ test("extractPropTable: the interface form is unchanged (no-regression pair)", (
 
 test("extractPropTable never throws on a type alias with no terminating top-level `;` (parser must stay total)", () => {
   // Malformed/truncated input must never throw — `extractPropTable` runs during
-  // `pnpm manifest`, invoked by the pre-commit hook; a throw breaks the commit
+  // `pnpm gen`, invoked by the pre-commit hook; a throw breaks the commit
   // path for the whole repo. The spec calls this the graceful bail: fall back
   // to today's (pre-#77) object-literal-only parse.
   const src = `export type FooProps = Omit<Bar, "x"> & { a?: string }`; // no trailing `;`

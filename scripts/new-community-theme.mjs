@@ -14,7 +14,7 @@
  * given oklch hue; status colours (destructive / success / warning / info) and
  * the rest of the chart ramp are left alone so their meaning survives. Lightness
  * and chroma are untouched. Then edit the values by hand and run
- * `pnpm community-themes:check`.
+ * `pnpm check --rule community-themes`.
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -188,7 +188,9 @@ async function main(argv) {
 
   await writeScaffold({ folder, slug, label, hue, schemes });
   console.log(`new-community-theme: wrote themes/${slug}/ (${schemes.join(" + ")})`);
-  console.log("next: edit the colours, then run `pnpm community-themes:check` and `pnpm gen`.");
+  console.log(
+    "next: edit the colours, then run `pnpm check --rule community-themes` and `pnpm gen`.",
+  );
   return 0;
 }
 

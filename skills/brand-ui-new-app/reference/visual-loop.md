@@ -94,6 +94,6 @@ minimum **register / expressiveness** it is offered at and its motion note.
 ## Review the result like a designer
 
 After scaffolding a surface, review it for interaction & front-end hygiene and,
-for anything bigger than a tweak, run the `brand-ui-visual-ux-reviewer` — the loop
+for anything bigger than a tweak, run the `brand-ui-reviewer` agent — the loop
 is for _choosing_, the reviewers are for _verifying_ the rendered result. Report
 the findings to the user (the reviewers report; they don't fix).

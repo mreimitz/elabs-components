@@ -1,6 +1,6 @@
 /**
  * validate-registry.test.mjs — self-test for the registry `homepage` guard (#264).
- * Run in CI: `node --test scripts/validate-registry.test.mjs` (`pnpm registry:validate:test`).
+ * Run: `node --test scripts/validate-registry.test.mjs` (in CI via `pnpm check:test`).
  *
  * All fixtures are INLINE values (hermetic — never real files), mirroring
  * check-docs-accuracy.test.mjs / check-motion-tokens.test.mjs. A gate that can
@@ -55,7 +55,7 @@ test("PASSES: a real https:// homepage", () => {
 
 // ── CLI: the REAL repo currently passes the gate ────────────────────────────
 
-test("the REAL repo currently passes registry:validate (CLI run)", () => {
+test("the REAL repo currently passes registry-validate (CLI run)", () => {
   const out = execFileSync("node", [path.join(HERE, "validate-registry.mjs")], {
     encoding: "utf8",
   });

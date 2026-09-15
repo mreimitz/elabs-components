@@ -10,22 +10,12 @@ registry/__output
 # Excluded so the stale-gate diffs the generator's exact output, not Prettier's.
 brand-ui.manifest.json
 # Generated agent docs (WP-03 #87/#156/#82) — same single-source rule: their
-# stale-gates (`pnpm inventory:check` / `llms:check` / `context:check`) diff the
+# freshness check (`pnpm gen:check`) diffs the
 # generator's exact output, so Prettier must not reformat them.
 apps/docs/public/component-inventory.md
 apps/docs/public/brand-ui-context.md
 apps/docs/public/llms.txt
 apps/docs/public/llms/
-# Generated cross-theme WCAG audit (#78) — same single-source rule: its stale-gate
-# (`pnpm audit-artifact:check`) diffs the generator's exact output byte-for-byte,
-# so Prettier's table padding must not touch it.
-apps/e2e/reports/theme-aa-audit.md
-# Regression-lock fixture (comment-attribution #78) — the exact, historical
-# machine-drafted comment body that motivated the gate, copied verbatim from
-# `.claude/scratch/close-issues/20260830-195822/comments/adj-26.md`. Prettier
-# reformatting it is harmless to the test but breaks the "verbatim artifact"
-# claim, so it stays byte-for-byte.
-scripts/fixtures/comment-attribution/adj-26-unmarked.md
 # Review evidence (#288-#307) — the six contact sheets are captured browser output
 # accompanying 166 screenshots. They are artifacts of a review run, not source, and
 # their value is being exactly what was rendered, so Prettier must not rewrite them.

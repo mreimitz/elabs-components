@@ -12,8 +12,8 @@
  * markers — staging a conflicted path is exactly how a human signals "resolved" —
  * and nothing else in the enforcement chain checked. See issue #379.
  *
- * Every other repo-wide invariant here ships with teeth (`manifest:check`,
- * `format:check`, `dep-direction:check`, …); this is the one that was missing.
+ * Every other repo-wide invariant here ships with teeth (`gen:check`,
+ * `format:check`, the `dep-direction` rule, …); this is the one that was missing.
  *
  * Two shapes, matching the repo's "commit-time teeth + CI backstop" doctrine
  * (#239 precedent):
@@ -38,53 +38,25 @@
  * Binary tracked files (images, fonts, …) are skipped via a null-byte heuristic
  * on the first chunk of content — never decoded as text.
  *
- * Dependency-free; ESM; cwd-independent. Exports the pure scanner for the
- * self-test (`scripts/check-conflict-markers.test.mjs`, `pnpm conflict-markers:check:test`).
+ * The full-tree scan is ALSO the `conflict-markers` rule in `node scripts/check/run.mjs`;
+ * this script stays for the `--staged` pre-commit hook.
+ * Dependency-free; ESM; cwd-independent. CLI self-test:
+ * `scripts/check-conflict-markers.test.mjs` (`pnpm check:test`).
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
+// Detection lives in the check rule (one implementation); this script keeps the entry
+// point the runner cannot serve: `--staged` (index content, pre-commit). The rule module
+// is dependency-free, so this runs before `pnpm install`.
+import { findConflictMarkers, looksBinary } from "./check/rules/conflict-markers.mjs";
+
+export { findConflictMarkers, looksBinary };
+
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(SCRIPT_DIR); // scripts/ → repo root
-
-/** Exactly 7 repeats of the marker char, at line start, then whitespace or EOL. */
-export const MARKER_RE = /^(<{7}|={7}|>{7})(\s|$)/;
-
-/**
- * Scan file content for unresolved conflict markers.
- * Returns `[{ line, text }]`, 1-based `line`, `text` the (truncated) line
- * content — sorted by line, ascending. Pure — exported for the self-test.
- */
-export function findConflictMarkers(content) {
-  const hits = [];
-  let sawOpen = false;
-  const lines = String(content).split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const m = line.match(MARKER_RE);
-    if (!m) continue;
-    const ch = m[1][0];
-    if (ch === "<") {
-      sawOpen = true;
-      hits.push({ line: i + 1, text: line.slice(0, 80) });
-    } else if (ch === ">") {
-      hits.push({ line: i + 1, text: line.slice(0, 80) });
-    } else if (sawOpen) {
-      // ch === "=" and a `<<<<<<<` has already appeared earlier in this file —
-      // otherwise this is almost certainly a Markdown setext heading underline.
-      hits.push({ line: i + 1, text: line.slice(0, 80) });
-    }
-  }
-  return hits;
-}
-
-/** Heuristic: does this buffer look binary (a null byte in the first 8000 bytes)? */
-export function looksBinary(buf) {
-  const scan = buf.length > 8000 ? buf.subarray(0, 8000) : buf;
-  return scan.includes(0);
-}
 
 // ───────────────────────────────── CLI ────────────────────────────────────────
 function git(root, args) {
@@ -132,22 +104,21 @@ function main(argv) {
       } catch {
         continue; // e.g. a deleted path — nothing to scan
       }
-      if (looksBinary(Buffer.from(content, "utf8"))) continue;
+      if (looksBinary(content)) continue;
       for (const hit of findConflictMarkers(content)) violations.push({ file, ...hit });
     }
   } else {
     for (const file of trackedFiles(root)) {
       const abs = join(root, file);
       if (!existsSync(abs)) continue; // staged-for-delete but still tracked in HEAD, etc.
-      let buf;
+      let text;
       try {
-        buf = readFileSync(abs);
+        text = readFileSync(abs, "utf8");
       } catch {
         continue;
       }
-      if (looksBinary(buf)) continue;
-      for (const hit of findConflictMarkers(buf.toString("utf8")))
-        violations.push({ file, ...hit });
+      if (looksBinary(text)) continue;
+      for (const hit of findConflictMarkers(text)) violations.push({ file, ...hit });
     }
   }
 

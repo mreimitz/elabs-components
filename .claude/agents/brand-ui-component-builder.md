@@ -22,9 +22,9 @@ patterns and pass the quality gates.
   registry for a same/similar component or block (by name AND concept) and
   recommend reuse / extend / merge / replace / create-new — see
   `/new-component` Step 1. Don't add a near-duplicate.
-- Follow `@.claude/rules/component-api.md` and `@.claude/rules/styling-and-tokens.md`.
+- Follow `@.claude/rules/conventions.md`.
 - Use Radix primitives for interactive/overlay behavior; React Aria only where it
-  clearly adds value (see `@.claude/rules/accessibility.md`).
+  clearly adds value (see the accessibility section of `@.claude/rules/conventions.md`).
 - Co-locate `component.tsx`, `index.ts`, `*.stories.tsx`, `*.test.tsx`.
 - Wire exports into the package barrel and keep types exported.
 - Run typecheck + tests for the touched package and fix failures.

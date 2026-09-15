@@ -6,8 +6,7 @@
 # Node >= 20, pnpm >= 9
 corepack enable          # or: npm i -g pnpm
 pnpm install
-pnpm storybook                # Storybook on :6006
-pnpm playground          # Vite on :5173
+pnpm storybook           # Storybook on :6006
 ```
 
 ## Branch style
@@ -42,19 +41,30 @@ Keep changes scoped to one concern per PR where possible.
 - Update `docs/` or `.claude/rules/` when you change a convention.
 - Notable decisions get an ADR in `docs/ADR/`.
 
+## Definition of done
+
+A change is done when: `pnpm --filter @elabs-ai/components-<pkg> typecheck && lint &&
+test` are green for every package touched; the component has a co-located story
+(`tags: ["autodocs"]`) verified in both themes (`light`, `dark`) via Storybook; public
+types are exported and the barrel export is updated; semantic tokens only, no raw hex;
+and `/review-component` (or the `brand-ui-reviewer` agent for anything bigger than a
+tweak) has run. `pnpm check:changed` scopes typecheck/lint/test to your diff;
+`pnpm check` runs every repo convention rule and `pnpm check:test` their self-tests.
+Full catalogue: `docs/GATES.md`.
+
 ## Borrowed from another project? Credit it in the same change
 
 If you vendor, adapt, port, copy or re-express anything from another project —
 code, a design, sample data, an image, a technique — add it to
 `scripts/attributions.sources.json` (name, canonical URL, licence and copyright
-read from the upstream's actual LICENSE file) and run `pnpm gen:attributions`.
-That regenerates both [`ATTRIBUTION.md`](ATTRIBUTION.md) and the in-product
-`AttributionPanel` from one dataset.
+read from the upstream's actual LICENSE file — never from a badge or README) and
+run `pnpm gen`. That regenerates both [`ATTRIBUTION.md`](ATTRIBUTION.md)
+and the in-product `AttributionPanel` from one dataset.
 
 A comment saying `// Adapted from foo` is a useful pointer, but it is **not** an
-attribution — `pnpm attribution:provenance:check` fails on one whose upstream is
+attribution — `pnpm check --rule attribution-provenance` fails on one whose upstream is
 not credited. Never hand-add an npm dependency; those are harvested from the
-manifests. Full rule: [`.claude/rules/attribution.md`](.claude/rules/attribution.md).
+manifests.
 
 ## Self-maintaining repo (enforcement over reminders)
 
@@ -65,31 +75,16 @@ registered, a new inventory that must stay fresh, a new rule everything must fol
 not hand-kept) and/or a gate/hook (so a violation _fails CI_, not merely _warns in a
 doc_). A convention documented only in prose is incomplete and will drift.
 
-Plug into the existing gate set rather than inventing a parallel one — `pnpm docs:check`,
-`manifest:check`, `components:check`, `agents:check`, `ai:types-only`, `lucide:check`,
-`charts:reuse:check` (each with a `*:check:test` self-test so the gate can't silently
-rot). Full principle: `.claude/rules/quality-gates.md` → "Enforcement over reminders".
+Plug into the existing machinery rather than inventing a parallel one: a generator joins
+`pnpm gen` (freshness via `pnpm gen:check`), a rule joins `pnpm check` as one
+`scripts/check/rules/<id>.mjs` with pass/fail fixtures that `pnpm check:test` runs, so the
+rule can't silently rot (`scripts/check/README.md`). Catalogue: `docs/GATES.md`.
 
 ## Release cadence & ownership
 
-- **Cadence: on demand, by the maintainer.** There is no train and no calendar —
-  a release is cut when there is something worth shipping, with
-  **`/release <version>`** (runbook: [`docs/RELEASING.md`](./docs/RELEASING.md)).
-  You prepare and verify locally; `.github/workflows/release.yml` is the only
-  thing that publishes.
-- **Versioning is lockstep**, across all 16 sites, written only by
-  `pnpm version:set X.Y.Z` and enforced by `pnpm version:check`. No independent
-  per-package versioning, and **no Changesets** — that direction was proposed
-  (issue #104), weighed and rejected in ADR
-  [`0020`](./docs/ADR/0020-lockstep-versioning.md), which records why and what it
-  costs; do not reintroduce a `.changeset/` directory.
-- **A package-affecting change records itself in `CHANGELOG.md`.** If your branch
-  touches `packages/<pkg>/src/**` of a shipped package, add a line under
-  `## Unreleased` saying what a **consumer** gets. `pnpm changelog-entry:check`
-  (in the CI battery) fails a branch that does not — the lockstep stand-in for
-  "a changeset is required for package-affecting PRs" (#64). Test-only,
-  story-only and app-only changes are exempt; `## Unreleased` is what `/release`
-  renames into the release notes, so an unrecorded change ships undocumented.
+- **Cadence: on demand, by the maintainer.** Merging the "Release: version packages" PR
+  publishes (runbook: [`docs/RELEASING.md`](./docs/RELEASING.md)); only
+  `.github/workflows/release.yml` publishes.
 - **Deprecations, breaking changes and the support window:**
   [`docs/DEPRECATION.md`](./docs/DEPRECATION.md) — deprecate in a minor, remove
   in the next major, ship migration steps in `CHANGELOG.md`.
@@ -97,35 +92,42 @@ rot). Full principle: `.claude/rules/quality-gates.md` → "Enforcement over rem
   (automatic review requests; branch protection is not available on this repo's
   plan, so it documents ownership rather than blocking a merge).
 - **Does a new component earn a place in a package?** There is no separate RFC
-  process — use the two gates that already exist: the **dedupe/reuse audit** at
-  the top of `.claude/rules/quality-gates.md` (does this already exist across
-  `@elabs-ai/components-*` or `registry/`?) and decision **D4** in
-  [`docs/DECISIONS.md`](./docs/DECISIONS.md) (stable shared primitive → package;
-  prototype-specific composition → copy-own registry block).
+  process — use the two checks that already exist: a **dedupe/reuse audit** first
+  (does this already exist across `@elabs-ai/components-*` or `registry/`?) and
+  decision **D4** in [`docs/DECISIONS.md`](./docs/DECISIONS.md) (stable shared
+  primitive → package; prototype-specific composition → copy-own registry block).
+
+### Changesets
+
+- A PR that changes what a consumer of a shipped package gets runs `pnpm changeset` and
+  commits the file: bump (patch / minor / major) plus one consumer-facing line.
+- Every distributable is in one `fixed` group (`.changeset/config.json`), so versions stay
+  lockstep; root, plugin and MCP versions follow via `scripts/sync-version-extras.mjs`.
+- Test-, story- and app-only PRs need no changeset.
 
 ## Registry item requirements
 
 - Source file(s) under `registry/` + an entry in `registry/registry.json`.
 - Accurate `dependencies`/`registryDependencies`/`files[]`; `target` for pages.
-- `pnpm registry:validate` must pass. See `docs/REGISTRY_GUIDELINES.md`.
+- `pnpm check --rule registry-validate` must pass. See `docs/REGISTRY_GUIDELINES.md`.
 
 ## Pull request checklist
 
 - [ ] `pnpm typecheck` passes
 - [ ] `pnpm lint` passes
 - [ ] `pnpm test` passes (unit/smoke)
-- [ ] `pnpm test:e2e` passes (Playwright; `pnpm test:e2e:install` first) — and add
-      an E2E test for any new flow
 - [ ] `pnpm build` passes
 - [ ] `pnpm format:check` clean
-- [ ] `pnpm registry:validate` passes (if registry touched)
+- [ ] `pnpm check` and `pnpm check:test` pass
+- [ ] `pnpm check --rule registry-validate` passes (if registry touched)
 - [ ] Stories added/updated; component works in both themes
 - [ ] Public types exported; barrel export updated
 - [ ] No raw colors outside `themes.css`; no paid deps; no secrets/absolute paths
 - [ ] Docs/ADR updated if conventions changed
 - [ ] Anything borrowed from another project is credited in
-      `scripts/attributions.sources.json` and `pnpm gen:attributions` was run
+      `scripts/attributions.sources.json` and `pnpm gen` was run
 - [ ] Enforcement over reminders: a new convention ships with a generator and/or a
       gate/hook (not just a doc note) — see "Self-maintaining repo" above
 
-Run `/prepare-release` to execute the full gate locally before opening a PR.
+CI runs the full pipeline on every push; run `pnpm check` and `pnpm check:test` locally
+before opening a PR.

@@ -18,7 +18,7 @@ export const REPO_ROOT = join(HERE, "..", "..");
 const THEME_TYPES_TS = join(REPO_ROOT, "packages", "tokens", "src", "theme-types.ts");
 
 /** Parse a `export const NAME = ["a", "b"] as const;` string array. */
-function parseStringArray(text, name) {
+export function parseStringArray(text, name) {
   const m = text.match(new RegExp(`export const ${name}\\s*=\\s*\\[([^\\]]*)\\]`));
   if (!m) throw new Error(`Could not parse ${name} from ${THEME_TYPES_TS}`);
   return [...m[1].matchAll(/["']([^"']+)["']/g)].map((x) => x[1]);

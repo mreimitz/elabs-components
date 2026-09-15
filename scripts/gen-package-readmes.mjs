@@ -242,7 +242,7 @@ export function renderReadmeRegion(
     "",
     license ?? (isPrivate ? "UNLICENSED — private." : "UNLICENSED"),
     // Prettier inserts a blank line before a trailing HTML comment. Emitting it
-    // here keeps `gen -> format -> gen:readmes:check` convergent; without it the
+    // here keeps `gen -> format -> gen:check` convergent; without it the
     // formatter and the generator fight and the gate can never go green.
     "",
     END,
@@ -369,7 +369,7 @@ function runCli() {
       console.error(
         `✖ package README license sections DISAGREE with package.json (${licenseMismatches.length}):\n` +
           licenseMismatches.map((s) => "  - " + s).join("\n") +
-          "\n\n  Run `pnpm gen:readmes` and commit the result.",
+          "\n\n  Run `pnpm gen` and commit the result.",
       );
       process.exit(1);
     }
@@ -377,7 +377,7 @@ function runCli() {
       console.error(
         `✖ package READMEs are STALE (${stale.length}):\n` +
           stale.map((s) => "  - " + s).join("\n") +
-          "\n\n  Run `pnpm gen:readmes` and commit the result.\n" +
+          "\n\n  Run `pnpm gen` and commit the result.\n" +
           "  These READMEs are what a consumer sees on the GitHub Packages page.",
       );
       process.exit(1);

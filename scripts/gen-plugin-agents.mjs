@@ -14,10 +14,10 @@
  * formatting (canonical 2-space JSON + trailing newline — the same shape Prettier
  * emits, so `format:check` stays green). It is idempotent.
  *
- *   pnpm plugin:agents          # rewrite plugin.json's agents array from agents/*.md
- *   pnpm plugin:agents:check    # diff-only; non-zero exit on drift (CI gate)
+ *   node scripts/gen-plugin-agents.mjs          # rewrite plugin.json's agents array (a `pnpm gen` step)
+ *   node scripts/gen-plugin-agents.mjs --check  # diff-only; non-zero exit on drift (`pnpm gen:check`)
  *
- * The self-test (`pnpm plugin:agents:check:test`) plants an extra agents/*.md and
+ * The self-test (`scripts/gen-plugin-agents.test.mjs`, in `pnpm check:test`) plants an extra agents/*.md and
  * asserts `--check` fails, so the gate itself can't silently rot.
  *
  * Deterministic + dependency-free. Locates the repo root relative to this file, so
@@ -91,7 +91,7 @@ if (invokedDirectly) {
       console.error(
         "✖ plugin.json `agents` is STALE — it does not match agents/*.md:\n" +
           agents.map((a) => "  - " + a).join("\n") +
-          "\n  Run `pnpm plugin:agents` and commit the result.\n" +
+          "\n  Run `pnpm gen` and commit the result.\n" +
           "  (The agents array is generated from agents/*.md; never hand-edit it.)",
       );
       process.exit(1);

@@ -1,7 +1,7 @@
 /**
  * release-smoke.test.mjs — self-test for the post-release fresh-install smoke
  * (#106, #71). Run in CI: `node --test scripts/release-smoke.test.mjs`
- * (`pnpm release:smoke:test`).
+ * (`pnpm check:test`).
  *
  * The smoke itself needs a published release and registry auth, so CI cannot run
  * its network path. What CI CAN lock is the thing that makes the smoke worth
@@ -21,7 +21,7 @@
  *     sends public transitive deps to GitHub Packages, which 404s them), and the
  *     generated `.npmrc` maps only the release scopes;
  *   - the pointer check resolves the DEFAULT BRANCH, not the tag's working tree
- *     (where `pnpm version:check` has already forced agreement).
+ *     (where the `version-sync` check has already forced agreement).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -76,6 +76,16 @@ test("the package set comes from the release manifest, never a literal", () => {
     ],
   });
   assert.deepEqual(names, ["@x/ui", "@x/maps"]);
+});
+
+test("changesets/action's published-packages array is accepted as a package list", () => {
+  assert.deepEqual(
+    packagesFromManifest([
+      { name: "@elabs-ai/components-ui", version: "4.1.1" },
+      { name: "@elabs-ai/components-cli", version: "4.1.1" },
+    ]),
+    ["@elabs-ai/components-ui", "@elabs-ai/components-cli"],
+  );
 });
 
 test("a manifest naming ZERO packages yields an empty set (the CLI refuses it)", () => {
@@ -226,7 +236,7 @@ test("the REAL repo's marketplace pointer agrees with the lockstep version", () 
 });
 
 // The check that is NOT tautological: the pointer as served by the DEFAULT
-// BRANCH. A tag checkout's own copy is forced to agree by `pnpm version:check`
+// BRANCH. A tag checkout's own copy is forced to agree by the `version-sync` check
 // in the same job, so reading it proves nothing — while a skipped
 // `git push origin main` (RELEASING.md § 4 pushes main and the tag separately)
 // or a later revert leaves real consumers on the previous plugin.
@@ -256,7 +266,7 @@ function fixtureWorktree(version) {
 }
 
 test("FLAGS: the DEFAULT BRANCH pointer is on the previous version (tree says otherwise)", () => {
-  // The trap: the tag's own tree is already on 2.0.0 (version:check forced it),
+  // The trap: the tag's own tree is already on 2.0.0 (the version-sync check forced it),
   // so only reading `main` can see that consumers still get 1.9.0.
   const root = fixtureWorktree("2.0.0");
   try {
@@ -377,15 +387,18 @@ test("under CI an unreadable pointer FAILS instead of falling back to the tautol
     error: "gh: not authenticated",
   };
   const inCi = judgeMarketplacePointer({ pointer, version: "2.0.0", repo: "o/r", ci: true });
-  assert.equal(inCi.failures.length, 1, "the worktree copy agrees, but version:check forced that");
+  assert.equal(
+    inCi.failures.length,
+    1,
+    "the worktree copy agrees, but the version-sync check forced that",
+  );
   const local = judgeMarketplacePointer({ pointer, version: "2.0.0", repo: "o/r", ci: false });
   assert.deepEqual(local.failures, []);
   assert.match(local.warnings[0], /TAUTOLOGICAL/);
 });
 
 test("CLI --pointer-only needs no manifest and no install (the pre-publish preflight)", async () => {
-  // The post-release smoke refuses to run without a release-manifest.json; the
-  // preflight must work before one exists, since it runs before the publish.
+  // The preflight must work with no package list at all, since it runs before the publish.
   const root = fixtureWorktree("9.9.9");
   try {
     writeFileSync(
@@ -398,7 +411,6 @@ test("CLI --pointer-only needs no manifest and no install (the pre-publish prefl
       root,
       "--pointer-only",
     ]);
-    assert.ok(!/no release-manifest\.json/.test(stderr), "must not require the manifest");
     assert.equal(code, 0, stderr || stdout);
     assert.match(stdout, /✔ marketplace:check/);
   } finally {
@@ -429,7 +441,7 @@ test("CLI --pointer-only EXITS 1 when the pointer names another version", async 
 
 // ── the CLI refuses to pass vacuously ─────────────────────────────────────────
 
-test("FAILS LOUDLY when the release manifest names zero packages (CLI run)", async () => {
+test("FAILS LOUDLY when the package list names zero packages (CLI run)", async () => {
   const root = mkdtempSync(join(tmpdir(), "brand-ui-smoke-vacuous-"));
   try {
     writeFileSync(
@@ -452,8 +464,8 @@ test("FAILS LOUDLY when the release manifest names zero packages (CLI run)", asy
   }
 });
 
-test("FAILS LOUDLY when there is no release manifest to derive the set from (CLI run)", async () => {
-  const root = mkdtempSync(join(tmpdir(), "brand-ui-smoke-nomanifest-"));
+test("FAILS LOUDLY when the workspace yields no distributables to derive the set from (CLI run)", async () => {
+  const root = mkdtempSync(join(tmpdir(), "brand-ui-smoke-nopackages-"));
   try {
     writeFileSync(
       join(root, "package.json"),
@@ -461,7 +473,7 @@ test("FAILS LOUDLY when there is no release manifest to derive the set from (CLI
     );
     const { code, stderr } = await run([join(HERE, "release-smoke.mjs"), "--root", root]);
     assert.equal(code, 1);
-    assert.match(stderr, /no release-manifest\.json/);
+    assert.match(stderr, /ZERO packages/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

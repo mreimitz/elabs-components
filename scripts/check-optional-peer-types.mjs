@@ -33,21 +33,21 @@
  * from an optional peer is FINE inside a `@lazy-boundary` module (never
  * statically imported into the barrel) and a LEAK inside its public sibling;
  * only the compiler's own output can tell the two apart. It mirrors
- * `pnpm heavy-deps:check`'s general shape (ratchet baseline, `--warn`/
- * `--update`, self-tested, wired in `gates.yml`) with that one deliberate
+ * the `eager-heavy-deps` check rule's shape (ratchet baseline, `--warn`/
+ * `--update`, self-tested, run in CI right after the build) with that one deliberate
  * difference.
  *
  * A missing `dist/` (no build has run yet) is normal, not a failure — the
  * package is silently skipped, same convention as `check-css-assets.mjs`.
  *
- * ## The baseline is one-directional, like `heavy-deps:check`
+ * ## The baseline is one-directional, like the `eager-heavy-deps` rule
  *
  * `scripts/optional-peer-types-baseline.json` records today's known leaks.
  * It seeds ONE entry: `@elabs-ai/components-ai`'s `ai` (the Vercel AI SDK)
  * peer, which leaks through the `UIMessage`/`ToolUIPart`/… types every chat
  * component's public props reference. That is a real, already-known gap —
- * tracked separately (see the package's own `ai-sdk-vs-a2ui.md` rule, which
- * keeps `ai` types-only/never-runtime, a narrower and already-enforced
+ * tracked separately (see `.claude/rules/ai.md` and the `ai-sdk-types-only` check rule, which
+ * keep `ai` types-only/never-runtime, a narrower and already-enforced
  * property) — and deliberately NOT fixed as a drive-by inside this change,
  * which owns exactly the two peers issue #101 named as still open
  * (`media-chrome`, `@rive-app/react-webgl2`). Baselined entries may go stale
@@ -135,7 +135,7 @@ function stripComments(source) {
  *
  * `.d.ts` output never carries `import type` — rollup's declaration bundler
  * already erases pure-type-only imports on the way in — so unlike the
- * source-level `heavy-deps:check` gate there is no `type` keyword to
+ * source-level `eager-heavy-deps` check rule there is no `type` keyword to
  * special-case here: every specifier this finds is one the COMPILER decided
  * the public surface still needs.
  *
@@ -267,7 +267,7 @@ function main(argv) {
       "  safely, since it is never statically imported into the barrel) proving the\n" +
       "  mirror stays assignable to the real type. See `packages/ai/src/persona.tsx`,\n" +
       "  `packages/ai/src/_persona-rive.tsx`, and the ADR 0019 amendment (issue #101).\n" +
-      "\n  Run `pnpm optional-peer-types:check --update` once the finding is understood\n" +
+      "\n  Run `node scripts/check-optional-peer-types.mjs --update` once the finding is understood\n" +
       "  and the baseline is the intended fix (rare — most cases want the pattern above).",
   );
   return warnOnly ? 0 : 1;

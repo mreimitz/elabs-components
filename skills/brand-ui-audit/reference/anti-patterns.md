@@ -51,8 +51,8 @@ are perceptual and live in the rendered/visual pass.
 
 The content the audit lacked before WP-15 — generic, machine-generated copy that
 makes a real product read as a demo. Brand-agnostic. The unambiguous ones are
-deterministic (`[bracketed]`) and **ratcheted in CI** (`pnpm slop:check` — finders
-report, the gate has the teeth); the softer ones are advisory.
+deterministic (`[bracketed]`) and reported by `brand-ui audit`; the softer ones are
+advisory.
 
 - **Generic placeholder names** ("John Doe", "Jane Doe", "Sarah Chan"). `[slop-generic-name]`
   → a realistic, domain-specific name for the surface (a finance app's user list
