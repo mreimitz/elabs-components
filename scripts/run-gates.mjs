@@ -109,16 +109,7 @@ export const DOCS_ONLY_SKIP = new Set([
   "loading-states:check",
   "use-client:check",
   "optional-peer-types:check",
-  "lucide:check",
-  "charts:reuse:check",
-  "charts:test-double:check",
-  "chart-hairline:check",
-  "process:reuse:check",
-  "process:test-double:check",
-  "charts:honesty:check",
   "viewer-highlight:check",
-  "microcopy:check",
-  "microtypography:check",
 ]);
 
 /** The one command shape a self-test may have; the capture is the test file. */

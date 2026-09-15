@@ -84,7 +84,7 @@ test("gates: --docs-only drops exactly the source-only groups", () => {
   assert.ok(DOCS_ONLY_SKIP.has("tokens:check") && DOCS_ONLY_SKIP.has("components:check"));
   assert.ok(DOCS_ONLY_SKIP.has("token-contract:check"));
   // The set is the two former gates.yml groups: token/theme and contract gates not yet in the check runner.
-  assert.equal(DOCS_ONLY_SKIP.size, 28);
+  assert.equal(DOCS_ONLY_SKIP.size, 19);
 });
 
 test("selftests: `*:test` in the one node --test shape, minus the own-step one", () => {
