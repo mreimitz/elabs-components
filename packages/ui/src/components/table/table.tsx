@@ -31,12 +31,14 @@ import { useLocale } from "../locale-provider";
  * compound focus ring (`focus-ring-inset` — the wrapper's own edge is the
  * scroll clip, so an outside ring would be cut, `.claude/rules/theming.md`).
  *
- * `role="region"` is REQUIRED alongside that `aria-label`, not optional
- * decoration: `aria-label` on a plain `<div>` (role `generic`) is not
- * guaranteed to compute into an accessible name at all — `generic` is not in
- * the set of roles the accessible-name spec permits naming from. Without a
- * naming-capable role, `tabIndex={0}` makes the wrapper a stop with NO name,
- * which is worse than the "redundant landmark" this used to trade it for.
+ * A naming-capable role is REQUIRED alongside that `aria-label`: `aria-label`
+ * on a plain `<div>` (role `generic`) is prohibited by ARIA 1.2 and not
+ * guaranteed to compute into a name, so `tabIndex={0}` alone would make an
+ * UNNAMED stop. That role is `group`, NOT `region`: `region` is a landmark,
+ * and every overflowing table on a page would add one more landmark with the
+ * same name (axe `landmark-unique`) over a real `<table>` that already has
+ * its own semantics. `group` names the stop without joining landmark
+ * navigation — the no-redundant-landmark call `DataTable` made first (#330).
  */
 export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(function Table(
   { className, ...props },
@@ -74,7 +76,7 @@ export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElemen
       ref={scrollRef}
       data-slot="table-scroll-region"
       tabIndex={scrollOverflows ? 0 : undefined}
-      role={scrollOverflows ? "region" : undefined}
+      role={scrollOverflows ? "group" : undefined}
       aria-label={scrollOverflows ? t("ui.table.scrollRegion") : undefined}
       onScroll={updateScrollAffordance}
       className="relative w-full overflow-auto focus-ring-inset"

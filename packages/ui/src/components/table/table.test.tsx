@@ -136,7 +136,7 @@ describe("Table — #366 the scroll wrapper's tab stop exists only while it meas
     expect(scrollRegion).not.toHaveAttribute("tabindex");
   });
 
-  it('adds role="region" once it overflows — required for the aria-label to compute a name', () => {
+  it('adds role="group" once it overflows — a named, non-landmark stop', () => {
     const { container } = render(
       <Table>
         <TableBody>
@@ -148,11 +148,9 @@ describe("Table — #366 the scroll wrapper's tab stop exists only while it meas
     );
     const scrollRegion = scrollRegionOf(container);
     // `aria-label` on a plain `<div>` (role `generic`) is not guaranteed to
-    // produce an accessible name at all — `generic` isn't in the set of roles
-    // the accessible-name computation permits naming from. Without
-    // `role="region"`, the tab stop this wrapper adds while overflowing could
-    // be an UNNAMED stop, which is worse than the "redundant landmark" this
-    // used to avoid.
+    // produce an accessible name at all, so the overflowing stop needs a
+    // naming-capable role — `group`, never the `region` landmark, which would
+    // collide (axe `landmark-unique`) as soon as two tables overflow on a page.
     expect(scrollRegion).not.toHaveAttribute("role");
     setScrollMetrics(scrollRegion, {
       scrollWidth: 300,
@@ -160,6 +158,8 @@ describe("Table — #366 the scroll wrapper's tab stop exists only while it meas
       scrollHeight: 800,
       clientHeight: 200,
     });
-    expect(scrollRegion).toHaveAttribute("role", "region");
+    expect(scrollRegion).toHaveAttribute("role", "group");
+    expect(screen.queryByRole("region")).toBeNull();
+    expect(screen.getByRole("group", { name: "Table contents, scrollable" })).toBe(scrollRegion);
   });
 });
