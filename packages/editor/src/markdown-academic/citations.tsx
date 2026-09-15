@@ -16,7 +16,7 @@
  * pre-pass over the source) so an inline `[1]` and bibliography entry 1 always agree.
  */
 import { cn } from "@elabs-ai/components-ui/lib/cn";
-import { Separator } from "@elabs-ai/components-ui";
+import { Separator, useLocale } from "@elabs-ai/components-ui";
 import {
   createContext,
   forwardRef,
@@ -249,6 +249,7 @@ function hoverTitle(data: CitationData): string {
 }
 
 function CiteLink({ entry, label }: { entry: ResolvedCitation; label: string }) {
+  const { t } = useLocale();
   // For numeric style the visible label is a bare "[1]" — give AT a real name
   // (the `title` tooltip is for mouse users and is not reliably announced).
   const name = entry.data ? hoverTitle(entry.data) : entry.key;
@@ -256,7 +257,7 @@ function CiteLink({ entry, label }: { entry: ResolvedCitation; label: string }) 
     <a
       href={`#ref-${cssId(entry.key)}`}
       title={entry.data ? hoverTitle(entry.data) : undefined}
-      aria-label={`Citation: ${name}`}
+      aria-label={t("editor.citations.citationLabel", { name })}
       // #317/#399 — the on-surface `-text` rung, NOT the `--primary` FILL: an
       // inline cite is body text inside a paragraph and owes WCAG 1.4.3 AA
       // (4.5:1), which `--primary` missed at 4.29-4.31:1 in light. The
@@ -292,6 +293,7 @@ function readCite(rest: TagProps): CitePayload | null {
 
 /** Renderer for the inline `<brand-cite>` element produced by the transform. */
 export function InlineCite({ node: _n, children: _c, ...rest }: TagProps) {
+  const { t } = useLocale();
   const ctx = useContext(CitationContext);
   const payload = readCite(rest);
   if (!payload) return null;
@@ -302,7 +304,7 @@ export function InlineCite({ node: _n, children: _c, ...rest }: TagProps) {
   if (!anyResolved) {
     // Graceful: nothing resolved → keep the literal, marked for sighted + AT.
     return (
-      <span className="text-muted-foreground" title="Unresolved citation">
+      <span className="text-muted-foreground" title={t("editor.citations.unresolvedCitation")}>
         {payload.original}
       </span>
     );
@@ -324,7 +326,10 @@ export function InlineCite({ node: _n, children: _c, ...rest }: TagProps) {
             {entry?.data ? (
               <CiteLink entry={entry} label={label} />
             ) : (
-              <span className="text-muted-foreground" title={`Unresolved: @${it.key}`}>
+              <span
+                className="text-muted-foreground"
+                title={t("editor.citations.unresolvedKey", { key: it.key })}
+              >
                 {label}
               </span>
             )}
@@ -387,9 +392,11 @@ export interface BibliographyProps extends Omit<HTMLAttributes<HTMLElement>, "ch
  * One focal separation gesture — a top `Separator` — over a quiet label + list.
  */
 export const Bibliography = forwardRef<HTMLElement, BibliographyProps>(function Bibliography(
-  { entries, style, title = "References", className, ...props },
+  { entries, style, title: titleProp, className, ...props },
   ref,
 ) {
+  const { t } = useLocale();
+  const title = titleProp ?? t("editor.citations.references");
   const ctx = useContext(CitationContext);
   const labelId = useId();
   const list = entries ?? ctx?.order ?? [];

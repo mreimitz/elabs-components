@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T20:36:43.141Z",
+  "generatedAt": "2026-09-15T21:08:12.736Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 252,
+  "tokenCount": 253,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -233,6 +233,7 @@
     "--link",
     "--overlay",
     "--overlay-blur",
+    "--scrim",
     "--table-header-weight",
     "--table-stripe",
     "--table-row-hover",

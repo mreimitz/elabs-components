@@ -28,6 +28,7 @@ import {
   TagInput,
   ToggleGroup,
   ToggleGroupItem,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 
@@ -79,6 +80,7 @@ export function IterationBuilderDialog({
   evaluate,
   interpolate,
 }: IterationBuilderDialogProps) {
+  const { t } = useLocale();
   const kind = value?.kind ?? kindProp;
   const isPivot = kind === "pivot";
   const ids = useId();
@@ -130,19 +132,26 @@ export function IterationBuilderDialog({
     onOpenChange(false);
   };
 
-  const noun = isPivot ? "pivot" : "iteration";
+  const noun = isPivot
+    ? t("editor.iterationBuilder.pivotNoun")
+    : t("editor.iterationBuilder.iterationNoun");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[88vh] w-[min(56rem,94vw)] max-w-none flex-col">
         <DialogHeader>
           <DialogTitle>
-            {value ? "Edit" : "Insert"} {noun}
+            {t(
+              value ? "editor.iterationBuilder.editTitle" : "editor.iterationBuilder.insertTitle",
+              {
+                noun,
+              },
+            )}
           </DialogTitle>
           <DialogDescription>
             {isPivot
-              ? "Pick the row and column values, then write the per-cell template. The matrix below fills in live."
-              : "Add the list values, then write the per-row template. The result below fills in live."}
+              ? t("editor.iterationBuilder.pivotDescription")
+              : t("editor.iterationBuilder.iterationDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -151,47 +160,53 @@ export function IterationBuilderDialog({
           <div className="flex min-w-0 flex-col gap-4">
             {!isPivot ? (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`${ids}-as`}>Bind name</Label>
+                <Label htmlFor={`${ids}-as`}>{t("editor.iterationBuilder.bindName")}</Label>
                 <Input
                   id={`${ids}-as`}
                   value={asName}
                   spellCheck={false}
                   autoComplete="off"
-                  placeholder="item"
+                  placeholder={t("editor.iterationBuilder.bindNamePlaceholder")}
                   onChange={(e) => setAsName(e.target.value)}
                 />
                 <p className="text-meta text-muted-foreground">
-                  Use <code>{`{{${asName.trim() || "item"}.name}}`}</code> in the template.
+                  {t("editor.iterationBuilder.bindNameHintPrefix")}
+                  <code>{`{{${asName.trim() || "item"}.name}}`}</code>
+                  {t("editor.iterationBuilder.bindNameHintSuffix")}
                 </p>
               </div>
             ) : null}
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`${ids}-values`}>{isPivot ? "Row values" : "Values"}</Label>
+              <Label htmlFor={`${ids}-values`}>
+                {isPivot
+                  ? t("editor.iterationBuilder.rowValues")
+                  : t("editor.iterationBuilder.values")}
+              </Label>
               <TagInput
                 id={`${ids}-values`}
                 value={values}
                 onValueChange={setValues}
                 delimiter={[",", "\n"]}
-                placeholder="Type a value, press Enter…"
+                placeholder={t("editor.iterationBuilder.valuePlaceholder")}
               />
             </div>
 
             {isPivot ? (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`${ids}-cols`}>Column values</Label>
+                <Label htmlFor={`${ids}-cols`}>{t("editor.iterationBuilder.columnValues")}</Label>
                 <TagInput
                   id={`${ids}-cols`}
                   value={cols}
                   onValueChange={setCols}
                   delimiter={[",", "\n"]}
-                  placeholder="Type a value, press Enter…"
+                  placeholder={t("editor.iterationBuilder.valuePlaceholder")}
                 />
               </div>
             ) : null}
 
             <div className="flex flex-col gap-1.5">
-              <Label id={`${ids}-layout`}>Layout</Label>
+              <Label id={`${ids}-layout`}>{t("editor.iterationBuilder.layout")}</Label>
               <ToggleGroup
                 type="single"
                 variant="segmented"
@@ -216,23 +231,27 @@ export function IterationBuilderDialog({
           {/* Right column — the per-cell TEMPLATE + the live populated preview. */}
           <div className="flex min-h-0 min-w-0 flex-col gap-4">
             <div className="flex min-h-0 flex-col gap-1.5">
-              <Label>Per-{isPivot ? "cell" : "row"} template</Label>
+              <Label>
+                {isPivot
+                  ? t("editor.iterationBuilder.perCellTemplate")
+                  : t("editor.iterationBuilder.perRowTemplate")}
+              </Label>
               <div className="h-44 min-h-0 overflow-hidden rounded-md border border-border">
                 <MarkdownWorkspace
                   value={template}
                   onChange={setTemplate}
                   defaultMode="source"
                   className="h-full"
-                  aria-label="Per-cell template"
+                  aria-label={t("editor.iterationBuilder.perCellTemplate")}
                 />
               </div>
             </div>
 
             <div className="flex min-h-0 flex-col gap-1.5">
-              <Label>Live preview</Label>
+              <Label>{t("editor.iterationBuilder.livePreview")}</Label>
               <div
                 role="region"
-                aria-label="Live preview"
+                aria-label={t("editor.iterationBuilder.livePreview")}
                 className="min-h-0 flex-1 overflow-auto rounded-md border border-border bg-card p-3"
               >
                 <MarkdownPreview
@@ -249,9 +268,11 @@ export function IterationBuilderDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("editor.iterationBuilder.cancel")}
           </Button>
-          <Button onClick={save}>{value ? "Save" : "Insert"}</Button>
+          <Button onClick={save}>
+            {value ? t("editor.iterationBuilder.save") : t("editor.iterationBuilder.insert")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

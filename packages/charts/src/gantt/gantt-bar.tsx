@@ -994,12 +994,16 @@ export function GanttBar({
                 animate={{ clipPath: "inset(0 0% 0 0)" }}
                 transition={enterTransition}
               >
-                {/* Progress fill */}
+                {/* Progress fill. `bg-scrim` is a theme-invariant darkening
+                    tint (never `--foreground`-derived, unlike `--overlay`,
+                    which would lighten instead of darken in a dark theme) —
+                    it has to keep darkening the bar regardless of the
+                    arbitrary, data-driven `color` underneath. */}
                 {task.progress !== undefined && task.progress > 0 && (
                   <span
                     aria-hidden="true"
                     data-slot="gantt-bar-progress"
-                    className="absolute inset-y-0 start-0 rounded-s bg-black/20"
+                    className="absolute inset-y-0 start-0 rounded-s bg-scrim"
                     style={{ width: `${Math.min(task.progress * 100, 100)}%` }}
                   />
                 )}

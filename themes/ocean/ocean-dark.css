@@ -186,6 +186,7 @@
   --link: var(--primary-text);
   --overlay: color-mix(in oklab, var(--foreground) 50%, transparent);
   --overlay-blur: 8px;
+  --scrim: oklch(0 0 0 / 0.2);
   --table-header-weight: var(--control-weight);
   --table-stripe: color-mix(in oklab, var(--foreground) 5%, transparent);
   --table-row-hover: color-mix(in oklab, var(--foreground) 10%, transparent);

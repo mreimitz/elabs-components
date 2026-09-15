@@ -8,6 +8,7 @@
  * Same visual grammar (bg-popover, accent selection) for consistency with the
  * slash popup and Monaco's own themed suggest widget.
  */
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, type HTMLAttributes } from "react";
 
@@ -38,17 +39,19 @@ export const CompletionMenu = forwardRef<HTMLDivElement, CompletionMenuProps>(
       activeIndex,
       onSelect,
       idPrefix = "brand-completions",
-      emptyLabel = "No suggestions",
+      emptyLabel: emptyLabelProp,
       className,
       ...props
     },
     ref,
   ) {
+    const { t } = useLocale();
+    const emptyLabel = emptyLabelProp ?? t("editor.completions.noSuggestions");
     return (
       <div
         ref={ref}
         role="listbox"
-        aria-label="Suggestions"
+        aria-label={t("editor.completions.suggestions")}
         className={cn(
           "max-h-[min(280px,50vh)] w-64 overflow-y-auto overflow-x-hidden rounded-md bg-popover p-1 text-popover-foreground shadow-ring-md",
           className,

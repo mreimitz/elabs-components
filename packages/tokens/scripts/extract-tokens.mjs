@@ -125,6 +125,7 @@ const DESCRIPTIONS = {
   "--legend-muted": "Muted chart legend surface (alias).",
   "--legend-muted-foreground": "Muted chart legend text (alias).",
   "--legend-track": "Chart legend track/rail (alias).",
+  "--scrim": "Theme-invariant darkening tint for a scrim over an arbitrary data-driven fill.",
   "--rule": "Reprographic drawn rule (hairline).",
   "--rule-strong": "Stronger reprographic rule.",
   "--grid-line": "Graph-paper minor grid line.",

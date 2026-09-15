@@ -22,6 +22,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { Columns2, Eye, Focus, SquareCode } from "lucide-react";
@@ -219,6 +220,7 @@ export const MarkdownWorkspace = forwardRef<MarkdownWorkspaceHandle, MarkdownWor
     },
     ref,
   ) {
+    const { t } = useLocale();
     // The source/split Insert menu defaults to the SAME commands as the WYSIWYG
     // slash menu, so both surfaces insert the same blocks (A4).
     const slashCommandList =
@@ -704,13 +706,14 @@ export const MarkdownWorkspace = forwardRef<MarkdownWorkspaceHandle, MarkdownWor
                       size="sm"
                       pressed={focusWritingOn}
                       onPressedChange={setFocusWritingOn}
-                      aria-label="Focus writing"
+                      aria-label={t("editor.markdownWorkspace.focusWriting")}
                       className="h-6 gap-1.5 px-2 text-caption"
                     >
-                      <Focus className="size-3.5" aria-hidden="true" /> Focus
+                      <Focus className="size-3.5" aria-hidden="true" />{" "}
+                      {t("editor.markdownWorkspace.focus")}
                     </Toggle>
                   </TooltipTrigger>
-                  <TooltipContent>Typewriter scrolling · inactive paragraphs dim</TooltipContent>
+                  <TooltipContent>{t("editor.markdownWorkspace.focusWritingHint")}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ) : null}

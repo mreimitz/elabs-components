@@ -775,5 +775,10 @@
   "chart-accent": {
     "$type": "color",
     "$value": "var(--chart-1)"
+  },
+  "scrim": {
+    "$type": "color",
+    "$value": "oklch(0 0 0 / 0.2)",
+    "$description": "Theme-invariant darkening tint for a scrim painted over an arbitrary data-driven fill (e.g. the Gantt progress fill); never derives from --foreground, which inverts across themes."
   }
 }

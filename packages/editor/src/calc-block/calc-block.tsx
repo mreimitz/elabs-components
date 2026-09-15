@@ -32,6 +32,7 @@
  * color is never the only signal (var-def = weight, unresolved = dotted underline),
  * so roles stay distinct in the high-contrast theme.
  */
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { TriangleAlert } from "lucide-react";
 import { forwardRef, useId, useMemo, type HTMLAttributes, type ReactNode } from "react";
@@ -239,6 +240,7 @@ function renderSource(text: string, tokens: CalcToken[]): ReactNode {
 
 /** The right-hand cell: a value, a calm error marker, or nothing. */
 function ResultCell({ result }: { result: CalcLineResult }): ReactNode {
+  const { t } = useLocale();
   if (result.error) {
     // Native `title` (not a Radix Tooltip) so CalcBlock is self-contained — it
     // renders inside MarkdownPreview / a story with no TooltipProvider ancestor.
@@ -246,7 +248,7 @@ function ResultCell({ result }: { result: CalcLineResult }): ReactNode {
       <span
         className="inline-flex shrink-0 text-calc-warning"
         title={result.error.message}
-        aria-label={`Error: ${result.error.message}`}
+        aria-label={t("editor.calcBlock.error", { message: result.error.message })}
       >
         <TriangleAlert className="size-3.5" aria-hidden="true" />
       </span>
@@ -255,7 +257,7 @@ function ResultCell({ result }: { result: CalcLineResult }): ReactNode {
   if (result.value) {
     return (
       <div className="brand-calc-tok--result shrink-0 tabular-nums text-calc-result">
-        <span className="sr-only">equals </span>
+        <span className="sr-only">{t("editor.calcBlock.equals")}</span>
         <span>{result.value.display}</span>
       </div>
     );
@@ -270,7 +272,7 @@ export const CalcBlock = forwardRef<HTMLDivElement, CalcBlockProps>(function Cal
     title,
     showTotal = true,
     total,
-    totalLabel = "Total",
+    totalLabel: totalLabelProp,
     markers = true,
     readOnly: _readOnly,
     className,
@@ -278,6 +280,8 @@ export const CalcBlock = forwardRef<HTMLDivElement, CalcBlockProps>(function Cal
   },
   ref,
 ) {
+  const { t } = useLocale();
+  const totalLabel = totalLabelProp ?? t("editor.calcBlock.total");
   // Author markers are stripped BEFORE evaluation: the math engine sees clean
   // lines, and because markers are trailing, token columns stay aligned with the
   // rendered (cleaned) text. `lines`/`evalSource` are the marker-free versions.
@@ -376,7 +380,9 @@ export const CalcBlock = forwardRef<HTMLDivElement, CalcBlockProps>(function Cal
       </div>
 
       {empty ? (
-        <p className="px-4 py-6 text-body text-muted-foreground">Empty calc block.</p>
+        <p className="px-4 py-6 text-body text-muted-foreground">
+          {t("editor.calcBlock.emptyBlock")}
+        </p>
       ) : (
         <div className="flex flex-col gap-y-1 px-4 py-3 font-mono text-code leading-relaxed">
           {rows}

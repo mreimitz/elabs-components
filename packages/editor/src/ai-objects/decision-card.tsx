@@ -24,6 +24,7 @@ import {
   CardContent,
   CardHeader,
   Separator,
+  useLocale,
   type BadgeProps,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
@@ -51,11 +52,12 @@ const STATUS_BADGE_VARIANT: Record<DecisionStatus, BadgeProps["variant"]> = {
   superseded: "secondary",
 };
 
-const STATUS_LABELS: Record<DecisionStatus, string> = {
-  accepted: "Accepted",
-  rejected: "Rejected",
-  proposed: "Proposed",
-  superseded: "Superseded",
+/** Status → translation key (see `editor.decisionCard.status.*` in messages.ts). */
+const STATUS_LABEL_KEYS: Record<DecisionStatus, string> = {
+  accepted: "editor.decisionCard.statusAccepted",
+  rejected: "editor.decisionCard.statusRejected",
+  proposed: "editor.decisionCard.statusProposed",
+  superseded: "editor.decisionCard.statusSuperseded",
 };
 
 const STATUS_ICONS: Record<DecisionStatus, ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -113,11 +115,12 @@ export const DecisionCard = forwardRef<HTMLElement, DecisionCardProps>(function 
   { status: rawStatus, date, alternatives, children, className, ...props },
   ref,
 ) {
+  const { t } = useLocale();
   const status: DecisionStatus = isDecisionStatus(rawStatus ?? "")
     ? (rawStatus as DecisionStatus)
     : "proposed";
   const badgeVariant = STATUS_BADGE_VARIANT[status];
-  const label = STATUS_LABELS[status];
+  const label = t(STATUS_LABEL_KEYS[status]);
   const Icon = STATUS_ICONS[status];
 
   const altItems = alternatives
@@ -130,7 +133,7 @@ export const DecisionCard = forwardRef<HTMLElement, DecisionCardProps>(function 
   return (
     <section
       ref={ref}
-      aria-label={`Decision: ${label}`}
+      aria-label={t("editor.decisionCard.label", { label })}
       className={cn("not-prose", className)}
       {...props}
     >
@@ -158,9 +161,12 @@ export const DecisionCard = forwardRef<HTMLElement, DecisionCardProps>(function 
             <Separator />
             <div className="px-6 py-4">
               <p className="mb-2 text-meta font-medium text-muted-foreground">
-                Alternatives considered
+                {t("editor.decisionCard.alternativesConsidered")}
               </p>
-              <ul className="flex flex-wrap gap-1.5" aria-label="Alternatives considered">
+              <ul
+                className="flex flex-wrap gap-1.5"
+                aria-label={t("editor.decisionCard.alternativesConsidered")}
+              >
                 {altItems.map((alt) => (
                   <li key={alt}>
                     <Badge variant="outline" className="text-meta">

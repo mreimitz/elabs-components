@@ -14,6 +14,7 @@
  * Semantic tokens only; matches the `Command` popover look (bg-popover, accent
  * selection, muted group headings).
  */
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, type HTMLAttributes } from "react";
 
@@ -43,12 +44,14 @@ export const SlashMenu = forwardRef<HTMLDivElement, SlashMenuProps>(function Sla
     activeId,
     onSelect,
     idPrefix = "brand-slash",
-    emptyLabel = "No matching blocks",
+    emptyLabel: emptyLabelProp,
     className,
     ...props
   },
   ref,
 ) {
+  const { t } = useLocale();
+  const emptyLabel = emptyLabelProp ?? t("editor.slashMenu.noMatchingBlocks");
   const groups = groupSlashCommands(commands);
 
   return (
@@ -57,7 +60,7 @@ export const SlashMenu = forwardRef<HTMLDivElement, SlashMenuProps>(function Sla
       // The editor surface carries `role="textbox"`; this list is its popup. The
       // plugin sets `aria-controls`/`aria-activedescendant` on the textbox.
       role="listbox"
-      aria-label="Insert block"
+      aria-label={t("editor.slashMenu.insertBlock")}
       className={cn(
         "max-h-[min(320px,60vh)] w-72 overflow-y-auto overflow-x-hidden rounded-md bg-popover p-1 text-popover-foreground shadow-ring-md",
         className,

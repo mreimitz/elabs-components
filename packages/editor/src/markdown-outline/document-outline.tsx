@@ -6,6 +6,7 @@
  * `useMarkdownOutline`, drive `activeId` from your scroll observer, and handle
  * `onSelect` (e.g. scroll the matching `data-sourcepos` block into view).
  */
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 
@@ -31,11 +32,12 @@ export interface DocumentOutlineProps extends Omit<HTMLAttributes<HTMLElement>, 
 
 export const DocumentOutline = forwardRef<HTMLElement, DocumentOutlineProps>(
   function DocumentOutline({ items, activeId, onSelect, itemActions, className, ...props }, ref) {
+    const { t } = useLocale();
     const minLevel = items.reduce<number>((min, it) => Math.min(min, it.level), 6);
     return (
       <nav
         ref={ref}
-        aria-label="Document outline"
+        aria-label={t("editor.documentOutline.label")}
         className={cn("text-body", className)}
         {...props}
       >
@@ -75,7 +77,9 @@ export const DocumentOutline = forwardRef<HTMLElement, DocumentOutlineProps>(
           })}
         </ul>
         {items.length === 0 ? (
-          <p className="px-2 py-1 text-caption text-muted-foreground">No headings yet.</p>
+          <p className="px-2 py-1 text-caption text-muted-foreground">
+            {t("editor.documentOutline.empty")}
+          </p>
         ) : null}
       </nav>
     );

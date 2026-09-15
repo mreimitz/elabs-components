@@ -18,6 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -47,6 +48,7 @@ export function IterationTemplateDialog({
   kind = "iterate",
   mode = "split",
 }: IterationTemplateDialogProps) {
+  const { t } = useLocale();
   const [draft, setDraft] = useState(template);
 
   // Re-seed the draft whenever the dialog (re)opens against a new template.
@@ -74,10 +76,17 @@ export function IterationTemplateDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Edit {kind === "pivot" ? "pivot" : "iteration"} template</DialogTitle>
+          <DialogTitle>
+            {kind === "pivot"
+              ? t("editor.templateDialog.editPivotTitle")
+              : t("editor.templateDialog.editIterationTitle")}
+          </DialogTitle>
           <DialogDescription>
-            The per-{unit} template. Use <code>{"{{token}}"}</code> placeholders (e.g.{" "}
-            <code>{"{{item.name}}"}</code>) — each is filled per {unit} when the block renders.
+            {t("editor.templateDialog.descriptionPrefix", { unit })}
+            <code>{"{{token}}"}</code>
+            {t("editor.templateDialog.descriptionMiddle")}
+            <code>{"{{item.name}}"}</code>
+            {t("editor.templateDialog.descriptionSuffix", { unit })}
           </DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1">
@@ -86,14 +95,14 @@ export function IterationTemplateDialog({
             onChange={setDraft}
             defaultMode={mode}
             className="h-full"
-            aria-label="Iteration template editor"
+            aria-label={t("editor.templateDialog.editorLabel")}
           />
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("editor.templateDialog.cancel")}
           </Button>
-          <Button onClick={save}>Save template</Button>
+          <Button onClick={save}>{t("editor.templateDialog.saveTemplate")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

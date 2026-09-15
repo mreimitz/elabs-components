@@ -13,7 +13,7 @@
  * never show a diagram never download the engine. Invalid sources render an
  * inline error block (message + source), never a thrown render.
  */
-import { Button, Dialog, DialogContent, DialogTitle } from "@elabs-ai/components-ui";
+import { Button, Dialog, DialogContent, DialogTitle, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { Download, Maximize2 } from "lucide-react";
 import { forwardRef, useEffect, useRef, useState, type HTMLAttributes } from "react";
@@ -160,7 +160,7 @@ export const MermaidDiagram = forwardRef<HTMLDivElement, MermaidDiagramProps>(
   function MermaidDiagram(
     {
       chart,
-      label = "Diagram",
+      label: labelProp,
       copyable = true,
       expandable = true,
       highlightTerm,
@@ -170,6 +170,8 @@ export const MermaidDiagram = forwardRef<HTMLDivElement, MermaidDiagramProps>(
     },
     ref,
   ) {
+    const { t } = useLocale();
+    const label = labelProp ?? t("editor.mermaidDiagram.label");
     const hostRef = useRef<HTMLDivElement | null>(null);
     const svgHostRef = useRef<HTMLDivElement | null>(null);
     const [svg, setSvg] = useState<string | null>(null);
@@ -293,7 +295,7 @@ export const MermaidDiagram = forwardRef<HTMLDivElement, MermaidDiagramProps>(
               <Button
                 variant="outline"
                 size="icon-sm"
-                aria-label="Expand diagram"
+                aria-label={t("editor.mermaidDiagram.expand")}
                 onClick={() => setExpanded(true)}
               >
                 <Maximize2 className="size-3.5" />
@@ -302,7 +304,7 @@ export const MermaidDiagram = forwardRef<HTMLDivElement, MermaidDiagramProps>(
             <Button
               variant="outline"
               size="icon-sm"
-              aria-label="Download diagram as SVG"
+              aria-label={t("editor.mermaidDiagram.downloadSvg")}
               onClick={downloadSvg}
             >
               <Download className="size-3.5" />
@@ -311,7 +313,7 @@ export const MermaidDiagram = forwardRef<HTMLDivElement, MermaidDiagramProps>(
               <CopyButton
                 value={chart}
                 label={false}
-                aria-label="Copy diagram source"
+                aria-label={t("editor.mermaidDiagram.copySource")}
                 size="icon-sm"
               />
             ) : null}
@@ -322,7 +324,9 @@ export const MermaidDiagram = forwardRef<HTMLDivElement, MermaidDiagramProps>(
             role="alert"
             className="space-y-2 border-s-2 border-s-destructive bg-destructive/10 p-3 text-body"
           >
-            <p className="font-medium text-destructive-text">Diagram failed to render</p>
+            <p className="font-medium text-destructive-text">
+              {t("editor.mermaidDiagram.renderFailed")}
+            </p>
             <p className="text-muted-foreground">{error}</p>
             <pre className="overflow-x-auto rounded bg-muted p-2 font-mono text-code text-foreground">
               {chart}
@@ -343,7 +347,7 @@ export const MermaidDiagram = forwardRef<HTMLDivElement, MermaidDiagramProps>(
         ) : (
           <div
             role="status"
-            aria-label="Rendering diagram…"
+            aria-label={t("editor.mermaidDiagram.rendering")}
             className="h-24 animate-pulse rounded-md bg-surface-muted motion-reduce:animate-none"
           />
         )}

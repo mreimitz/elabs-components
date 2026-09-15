@@ -6,6 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
@@ -45,6 +46,7 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
   },
   ref,
 ) {
+  const { t } = useLocale();
   return (
     <div
       ref={ref}
@@ -63,8 +65,12 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
 
         {onLanguageChange ? (
           <Select value={language} onValueChange={onLanguageChange}>
-            <SelectTrigger size="sm" className="h-7 w-[140px]" aria-label="Language">
-              <SelectValue placeholder="Language" />
+            <SelectTrigger
+              size="sm"
+              className="h-7 w-[140px]"
+              aria-label={t("editor.editorToolbar.language")}
+            >
+              <SelectValue placeholder={t("editor.editorToolbar.language")} />
             </SelectTrigger>
             <SelectContent>
               {languages.map((l) => (

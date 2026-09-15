@@ -18,7 +18,7 @@
  * `KnowledgeCard` is standalone (no `resolve` → sources rendered as plain labels).
  * The `knowledgeDirective({ resolve })` factory wires the hook for directive use.
  */
-import { Card, CardContent, CardFooter } from "@elabs-ai/components-ui";
+import { Card, CardContent, CardFooter, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { BookOpen, FileText } from "lucide-react";
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
@@ -49,6 +49,7 @@ interface SourceRowProps {
 }
 
 function SourceRow({ path, resolve }: SourceRowProps) {
+  const { t } = useLocale();
   const resolved = resolve ? resolve(path) : null;
   const display = resolved?.title ?? path;
 
@@ -60,7 +61,7 @@ function SourceRow({ path, resolve }: SourceRowProps) {
         target="_blank"
         // #399 — a source link is TEXT: the `--link` ink, not the fill.
         className="flex min-w-0 items-center gap-1.5 text-meta text-link underline-offset-2 hover:underline focus-ring"
-        aria-label={`Source: ${display}`}
+        aria-label={t("editor.knowledgeCard.source", { name: display })}
       >
         <FileText className="size-3 shrink-0" aria-hidden="true" />
         <span className="truncate">{display}</span>
@@ -71,7 +72,7 @@ function SourceRow({ path, resolve }: SourceRowProps) {
   return (
     <span
       className="flex min-w-0 items-center gap-1.5 text-meta text-muted-foreground"
-      aria-label={`Source (unresolved): ${display}`}
+      aria-label={t("editor.knowledgeCard.sourceUnresolved", { name: display })}
     >
       <FileText className="size-3 shrink-0" aria-hidden="true" />
       <span className="truncate">{display}</span>
@@ -102,6 +103,7 @@ export const KnowledgeCard = forwardRef<HTMLElement, KnowledgeCardProps>(functio
   { sources, resolve, children, className, ...props },
   ref,
 ) {
+  const { t } = useLocale();
   const sourcePaths = sources
     ? sources
         .split(",")
@@ -112,7 +114,7 @@ export const KnowledgeCard = forwardRef<HTMLElement, KnowledgeCardProps>(functio
   return (
     <section
       ref={ref}
-      aria-label="Knowledge fact"
+      aria-label={t("editor.knowledgeCard.label")}
       className={cn("not-prose", className)}
       {...props}
     >
@@ -120,15 +122,22 @@ export const KnowledgeCard = forwardRef<HTMLElement, KnowledgeCardProps>(functio
         <CardContent className="pt-4">
           <div className="mb-2 flex items-center gap-1.5">
             <BookOpen className="size-3.5 shrink-0 text-info-text" aria-hidden="true" />
-            <span className="text-meta font-medium text-info-text">Knowledge</span>
+            <span className="text-meta font-medium text-info-text">
+              {t("editor.knowledgeCard.heading")}
+            </span>
           </div>
           <div className="text-body text-foreground">{children}</div>
         </CardContent>
 
         {sourcePaths.length > 0 ? (
           <CardFooter className="flex-col items-start gap-1 border-t border-border pt-3">
-            <p className="text-meta font-medium text-muted-foreground">Sources</p>
-            <ul className="flex w-full flex-col gap-1" aria-label="Sources">
+            <p className="text-meta font-medium text-muted-foreground">
+              {t("editor.knowledgeCard.sources")}
+            </p>
+            <ul
+              className="flex w-full flex-col gap-1"
+              aria-label={t("editor.knowledgeCard.sources")}
+            >
               {sourcePaths.map((path) => (
                 <li key={path} className="min-w-0">
                   <SourceRow path={path} resolve={resolve} />

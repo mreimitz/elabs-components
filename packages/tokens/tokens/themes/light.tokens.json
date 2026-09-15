@@ -662,5 +662,9 @@
     "$type": "color",
     "$value": "var(--chart-1)",
     "$description": "The single hero colour the \"wire\" palette draws over the mono ladder. Aliased to --chart-1 so a re-brand reaches it for free."
+  },
+  "scrim": {
+    "$type": "color",
+    "$value": "oklch(0 0 0 / 0.2)"
   }
 }

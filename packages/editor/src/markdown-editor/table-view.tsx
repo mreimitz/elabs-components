@@ -42,6 +42,7 @@ import { Plugin, PluginKey } from "@milkdown/kit/prose/state";
 import type { EditorView } from "@milkdown/kit/prose/view";
 import { $prose } from "@milkdown/kit/utils";
 import { isInTable } from "@milkdown/kit/prose/tables";
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { usePluginViewContext } from "@prosemirror-adapter/react";
 import type { usePluginViewFactory } from "@prosemirror-adapter/react";
@@ -137,39 +138,49 @@ function ToolbarDivider() {
  */
 function TableControlsView() {
   const { view } = usePluginViewContext();
+  const { t } = useLocale();
   const inTable = isInTable(view.state);
   const run = (key: Parameters<typeof dispatchCommand>[1]) => () => dispatchCommand(view, key);
 
   if (!inTable) return null;
 
+  const addRowAbove = t("editor.tableView.addRowAbove");
+  const addRowBelow = t("editor.tableView.addRowBelow");
+  const deleteRow = t("editor.tableView.deleteRow");
+  const addColLeft = t("editor.tableView.addColumnLeft");
+  const addColRight = t("editor.tableView.addColumnRight");
+  const deleteCol = t("editor.tableView.deleteColumn");
+
   return (
     <div
       role="toolbar"
-      aria-label="Table controls"
+      aria-label={t("editor.tableView.tableControls")}
       className={cn(
         "flex flex-wrap items-center gap-1 px-2 py-1.5",
         "border-t border-border-strong bg-surface-muted",
       )}
     >
       {/* Row group */}
-      <span className="mr-1 select-none text-caption text-muted-foreground">Row</span>
+      <span className="mr-1 select-none text-caption text-muted-foreground">
+        {t("editor.tableView.row")}
+      </span>
       <ToolbarButton
-        ariaLabel="Add row above"
-        title="Add row above"
+        ariaLabel={addRowAbove}
+        title={addRowAbove}
         onClick={run(addRowBeforeCommand.key)}
       >
         ↑+
       </ToolbarButton>
       <ToolbarButton
-        ariaLabel="Add row below"
-        title="Add row below"
+        ariaLabel={addRowBelow}
+        title={addRowBelow}
         onClick={run(addRowAfterCommand.key)}
       >
         ↓+
       </ToolbarButton>
       <ToolbarButton
-        ariaLabel="Delete row"
-        title="Delete row"
+        ariaLabel={deleteRow}
+        title={deleteRow}
         variant="destructive"
         onClick={run(deleteSelectedCellsCommand.key)}
       >
@@ -179,24 +190,26 @@ function TableControlsView() {
       <ToolbarDivider />
 
       {/* Column group */}
-      <span className="mr-1 select-none text-caption text-muted-foreground">Col</span>
+      <span className="mr-1 select-none text-caption text-muted-foreground">
+        {t("editor.tableView.col")}
+      </span>
       <ToolbarButton
-        ariaLabel="Add column left"
-        title="Add column left"
+        ariaLabel={addColLeft}
+        title={addColLeft}
         onClick={run(addColBeforeCommand.key)}
       >
         ←+
       </ToolbarButton>
       <ToolbarButton
-        ariaLabel="Add column right"
-        title="Add column right"
+        ariaLabel={addColRight}
+        title={addColRight}
         onClick={run(addColAfterCommand.key)}
       >
         →+
       </ToolbarButton>
       <ToolbarButton
-        ariaLabel="Delete column"
-        title="Delete column"
+        ariaLabel={deleteCol}
+        title={deleteCol}
         variant="destructive"
         onClick={run(deleteSelectedCellsCommand.key)}
       >

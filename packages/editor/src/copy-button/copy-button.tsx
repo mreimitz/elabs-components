@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, useCopyToClipboard } from "@elabs-ai/components-ui";
+import { Button, useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useCallback, type ComponentProps } from "react";
@@ -21,10 +21,13 @@ export function CopyButton({ value, label = true, className, ...props }: CopyBut
   // hook, so this button and `CopyableValue` cannot drift on timing or on what
   // happens where there is no clipboard.
   const { copied, copy } = useCopyToClipboard();
+  const { t } = useLocale();
 
   const onClick = useCallback(() => {
     void copy(value);
   }, [copy, value]);
+
+  const text = copied ? t("editor.copyButton.copied") : t("copy");
 
   return (
     <Button
@@ -34,7 +37,7 @@ export function CopyButton({ value, label = true, className, ...props }: CopyBut
       type="button"
       className={cn("h-7 gap-1.5", className)}
       onClick={onClick}
-      aria-label={copied ? "Copied" : "Copy"}
+      aria-label={text}
     >
       {copied ? (
         <CheckIcon
@@ -45,7 +48,7 @@ export function CopyButton({ value, label = true, className, ...props }: CopyBut
       ) : (
         <CopyIcon className="size-4" aria-hidden="true" />
       )}
-      {label ? <span className="text-xs">{copied ? "Copied" : "Copy"}</span> : null}
+      {label ? <span className="text-xs">{text}</span> : null}
     </Button>
   );
 }

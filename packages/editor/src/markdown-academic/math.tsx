@@ -14,6 +14,7 @@
  * a contained error, never crashes the page). a11y: `output: "htmlAndMathml"`
  * emits MathML (read by assistive tech) alongside the visual HTML.
  */
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import katex from "katex";
 import { useMemo, type HTMLAttributes } from "react";
@@ -96,13 +97,14 @@ export interface MathProps extends Omit<HTMLAttributes<HTMLElement>, "children">
 
 /** Inline math (`$…$`) → KaTeX, in the text flow. */
 export function MathInline({ tex, className, ...props }: MathProps) {
+  const { t } = useLocale();
   const { html, error } = useMemo(() => renderKatex(tex, false), [tex]);
   if (error) {
     return (
       <code
         className={cn("text-destructive-text", className)}
-        aria-label={`Math (could not render): ${tex}`}
-        title="Could not render math"
+        aria-label={t("editor.math.renderErrorLabel", { tex })}
+        title={t("editor.math.renderError")}
         {...props}
       >
         {tex}
@@ -125,6 +127,7 @@ export function MathInline({ tex, className, ...props }: MathProps) {
 
 /** Block math (`$$…$$`) → centered display KaTeX. */
 export function MathBlock({ tex, className, ...props }: MathProps) {
+  const { t } = useLocale();
   const { html, error } = useMemo(() => renderKatex(tex, true), [tex]);
   if (error) {
     return (
@@ -133,8 +136,8 @@ export function MathBlock({ tex, className, ...props }: MathProps) {
           "overflow-x-auto rounded-md bg-surface-muted p-3 text-destructive-text",
           className,
         )}
-        aria-label={`Math (could not render): ${tex}`}
-        title="Could not render math"
+        aria-label={t("editor.math.renderErrorLabel", { tex })}
+        title={t("editor.math.renderError")}
         {...props}
       >
         <code>{tex}</code>

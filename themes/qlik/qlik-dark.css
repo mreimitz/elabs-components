@@ -224,6 +224,7 @@
   --link: oklch(0.728 0.126 245.7);
   --overlay: oklch(0 0 0 / 0.6);
   --overlay-blur: 0px;
+  --scrim: oklch(0 0 0 / 0.2);
   --table-header-weight: 600;
   --table-stripe: transparent;
   --table-row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);

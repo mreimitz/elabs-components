@@ -993,6 +993,13 @@
   /* Modal curtain (`bg-overlay`, `backdrop-blur-overlay`). */
   --overlay: color-mix(in oklab, var(--foreground) 50%, transparent);
   --overlay-blur: 8px;
+  /* Theme-invariant darkening tint (`bg-scrim`) for a scrim painted OVER an
+     arbitrary data-driven fill (e.g. the Gantt progress fill on a `taskTypes`
+     color) — unlike `--overlay` above, this must never derive from
+     `--foreground` (which is light in a dark theme and would LIGHTEN instead
+     of darken). A fixed literal, same value in every theme — see the
+     `--shadow-color` note in the ELEVATION block for the identical reasoning. */
+  --scrim: oklch(0 0 0 / 0.2);
   /* Table furniture (DataTable): header label weight, zebra stripe, row hover,
      and a row hairline width drawn in striped mode (0 = stripes alone). */
   --table-header-weight: var(--control-weight);
@@ -1405,6 +1412,7 @@
   --color-link: var(--link);
   --color-overlay: var(--overlay);
   --blur-overlay: var(--overlay-blur);
+  --color-scrim: var(--scrim);
   --color-table-stripe: var(--table-stripe);
   --color-table-row-hover: var(--table-row-hover);
 

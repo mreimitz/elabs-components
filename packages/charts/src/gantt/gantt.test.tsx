@@ -486,6 +486,16 @@ describe("Gantt", () => {
     expect(firstTooltip).toMatch(/info/);
   });
 
+  it("the progress fill uses the theme-invariant `bg-scrim` tint, never a raw black utility", () => {
+    render(<Gantt tasks={baseTasks} style={{ height: 400 }} />);
+    const fills = document.querySelectorAll('[data-slot="gantt-bar-progress"]');
+    expect(fills.length).toBeGreaterThan(0);
+    for (const fill of fills) {
+      expect(fill.className).toMatch(/\bbg-scrim\b/);
+      expect(fill.className).not.toMatch(/bg-black/);
+    }
+  });
+
   it("renders the loading state with role=status when loading=true", () => {
     render(<Gantt tasks={[]} loading style={{ height: 280 }} />);
     const status = screen.getByRole("status");

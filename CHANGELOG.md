@@ -54,6 +54,16 @@ keys replacing hard-coded English across ui, data, ai, charts, maps, flow and te
   **editor** — `CodeEditor` reacts to `path`/`options`, keeps undo on controlled updates;
   `MermaidDiagram` serialised + debounced; template dialog no stray tooltip on open.
 
+### Added: a theme-invariant scrim token for data-driven fills
+
+- **`@elabs-ai/components-tokens`** — `--scrim` (utility `bg-scrim`), a fixed darkening tint
+  (`oklch(0 0 0 / 0.2)`, identical in every theme) for a scrim painted over an arbitrary,
+  data-driven fill — unlike `--overlay`, it never derives from `--foreground`, so it keeps
+  darkening rather than inverting in a dark theme. `THEME_TOKEN_NAMES` grows from 208 to
+  209 — a consumer theme checked against it must add `--scrim`.
+- **`@elabs-ai/components-charts`** — `Gantt`'s progress-fill now uses `bg-scrim` instead of
+  a raw `bg-black/20`.
+
 ### Added: themes can reshape controls, tables, links, curtains, icons and headers
 
 Eighteen new theme tokens reach decisions that were fixed in components. **Every default
@@ -101,6 +111,15 @@ only what its brand needs (table in `themes/README.md`).
 - **Downloadable themes** — the repo's top-level `themes/` folder holds copy-in theme families,
   starting with Ocean and one more family (both light + dark), each able to bring its own
   logo (see `themes/README.md`). The recipe is in `docs/CONSUMING.md` §5.1.
+
+### Added: `@elabs-ai/components-editor` labels are now translatable
+
+- All user-visible chrome (visible text, `aria-label`s, placeholders, titles, tooltips)
+  across the editor package — decision/knowledge cards, the calc block, copy button, editor
+  toolbar, citations/math, slash menu, table controls, directive node-views, the iteration
+  builder and template dialogs, document outline, markdown toolbar, markdown workspace, and
+  the Mermaid diagram/viewer — now resolves through `useLocale().t()` instead of hard-coded
+  English. 122 new `editor.*` keys in `messages.ts`; default English output is unchanged.
 
 ## v4.1.0 — 2026-09-08
 

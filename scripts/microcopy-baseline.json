@@ -1,22 +1,4 @@
 {
   "packages/ai/src/_chat-shell-rail.tsx": 1,
-  "packages/ai/src/open-in-chat.tsx": 5,
-  "packages/editor/src/ai-objects/decision-card.tsx": 1,
-  "packages/editor/src/ai-objects/knowledge-card.tsx": 4,
-  "packages/editor/src/calc-block/calc-block.tsx": 1,
-  "packages/editor/src/copy-button/copy-button.tsx": 2,
-  "packages/editor/src/editor-toolbar/editor-toolbar.tsx": 2,
-  "packages/editor/src/markdown-academic/citations.tsx": 1,
-  "packages/editor/src/markdown-academic/math.tsx": 2,
-  "packages/editor/src/markdown-editor/completions/completions-menu.tsx": 1,
-  "packages/editor/src/markdown-editor/directive-views.tsx": 5,
-  "packages/editor/src/markdown-editor/slash/slash-menu.tsx": 1,
-  "packages/editor/src/markdown-editor/table-view.tsx": 9,
-  "packages/editor/src/markdown-iteration/iteration-builder-dialog.tsx": 9,
-  "packages/editor/src/markdown-iteration/template-dialog.tsx": 2,
-  "packages/editor/src/markdown-outline/document-outline.tsx": 2,
-  "packages/editor/src/markdown-toolbar/markdown-toolbar.tsx": 8,
-  "packages/editor/src/markdown-workspace/markdown-workspace.tsx": 2,
-  "packages/editor/src/mermaid-diagram/mermaid-diagram.tsx": 5,
-  "packages/editor/src/mermaid-diagram/mermaid-viewer.tsx": 6
+  "packages/ai/src/open-in-chat.tsx": 5
 }

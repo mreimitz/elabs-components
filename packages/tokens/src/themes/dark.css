@@ -387,6 +387,9 @@
   --link: var(--primary-text);
   --overlay: color-mix(in oklab, var(--foreground) 50%, transparent);
   --overlay-blur: 8px;
+  /* Theme-invariant darkening tint (`bg-scrim`) — see the :root comment in
+     themes.css. Same literal as light: black still darkens on a dark ground. */
+  --scrim: oklch(0 0 0 / 0.2);
   --table-header-weight: var(--control-weight);
   --table-stripe: color-mix(in oklab, var(--foreground) 5%, transparent);
   --table-row-hover: color-mix(in oklab, var(--foreground) 10%, transparent);

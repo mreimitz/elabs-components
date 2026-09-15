@@ -5,7 +5,7 @@
  * drag-pan, fit/100% controls, and a left search panel that filters the
  * RENDERED nodes, highlights every hit and zooms to the selected one.
  */
-import { Button, Input } from "@elabs-ai/components-ui";
+import { Button, Input, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { Maximize, Minus, Plus } from "lucide-react";
 import {
@@ -79,6 +79,7 @@ export function diagramNodeLabel(node: Element): string {
 }
 
 export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
+  const { t } = useLocale();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const [transform, setTransform] = useState<Transform>({ scale: 1, tx: 0, ty: 0 });
@@ -188,10 +189,10 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
     if (!container) return;
     userDrivenRef.current = true;
     const rect = container.getBoundingClientRect();
-    setTransform((t) => {
-      const scale = clampScale(t.scale * factor);
-      const px = (clientX - rect.left - t.tx) / t.scale;
-      const py = (clientY - rect.top - t.ty) / t.scale;
+    setTransform((prev) => {
+      const scale = clampScale(prev.scale * factor);
+      const px = (clientX - rect.left - prev.tx) / prev.scale;
+      const py = (clientY - rect.top - prev.ty) / prev.scale;
       return { scale, tx: clientX - rect.left - px * scale, ty: clientY - rect.top - py * scale };
     });
   }, []);
@@ -210,13 +211,13 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
     if (!container || !svgEl || !node) return;
     userDrivenRef.current = true;
     setActiveHit(id);
-    setTransform((t) => {
+    setTransform((prev) => {
       const nodeRect = node.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
       // Node center in svg-space (invert the current transform).
-      const cx = (nodeRect.left + nodeRect.width / 2 - containerRect.left - t.tx) / t.scale;
-      const cy = (nodeRect.top + nodeRect.height / 2 - containerRect.top - t.ty) / t.scale;
-      const scale = clampScale(Math.max(t.scale, 1.25));
+      const cx = (nodeRect.left + nodeRect.width / 2 - containerRect.left - prev.tx) / prev.scale;
+      const cy = (nodeRect.top + nodeRect.height / 2 - containerRect.top - prev.ty) / prev.scale;
+      const scale = clampScale(Math.max(prev.scale, 1.25));
       return {
         scale,
         tx: containerRect.width / 2 - cx * scale,
@@ -239,8 +240,8 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag) return;
-    setTransform((t) => ({
-      ...t,
+    setTransform((prev) => ({
+      ...prev,
       tx: drag.tx + (e.clientX - drag.x),
       ty: drag.ty + (e.clientY - drag.y),
     }));
@@ -256,8 +257,8 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
         <Input
           autoFocus
           type="search"
-          placeholder="Find in diagram…"
-          aria-label="Find in diagram"
+          placeholder={t("editor.mermaidViewer.findPlaceholder")}
+          aria-label={t("editor.mermaidViewer.findLabel")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           spellCheck={false}
@@ -265,8 +266,8 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
         />
         <p aria-live="polite" className="px-1 pt-1.5 text-meta text-muted-foreground tabular-nums">
           {q.length >= 2
-            ? `${matches.length} ${matches.length === 1 ? "node" : "nodes"}`
-            : `${hits.length} nodes · type to filter`}
+            ? t("editor.mermaidViewer.matchCount", { count: matches.length })
+            : t("editor.mermaidViewer.nodeCountHint", { count: hits.length })}
         </p>
         <ul className="m-0 mt-1 min-h-0 flex-1 list-none overflow-auto p-0">
           {(q.length >= 2 ? matches : hits).map((hit) => (
@@ -297,7 +298,7 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
           <Button
             variant="outline"
             size="icon-sm"
-            aria-label="Zoom out"
+            aria-label={t("editor.mermaidViewer.zoomOut")}
             onClick={() => zoomCenter(1 / 1.25)}
           >
             <Minus className="size-3.5" />
@@ -305,7 +306,7 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
           <Button
             variant="outline"
             size="icon-sm"
-            aria-label="Zoom in"
+            aria-label={t("editor.mermaidViewer.zoomIn")}
             onClick={() => zoomCenter(1.25)}
           >
             <Plus className="size-3.5" />
@@ -314,10 +315,10 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
             variant="outline"
             size="sm"
             className="h-7 px-2 font-mono text-meta tabular-nums"
-            aria-label="Reset zoom to 100%"
+            aria-label={t("editor.mermaidViewer.resetZoom")}
             onClick={() => {
               userDrivenRef.current = true;
-              setTransform((t) => ({ ...t, scale: 1 }));
+              setTransform((prev) => ({ ...prev, scale: 1 }));
             }}
           >
             {Math.round(transform.scale * 100)}%
@@ -325,7 +326,7 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
           <Button
             variant="outline"
             size="icon-sm"
-            aria-label="Fit diagram"
+            aria-label={t("editor.mermaidViewer.fitDiagram")}
             onClick={() => {
               // An explicit fit hands control back: keep fitting on resize.
               userDrivenRef.current = false;

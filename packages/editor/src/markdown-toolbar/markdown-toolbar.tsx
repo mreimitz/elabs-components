@@ -19,6 +19,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
@@ -65,18 +66,31 @@ export interface MarkdownToolbarProps extends HTMLAttributes<HTMLDivElement> {
 /** A command that actually carries a source-mode snippet. */
 type InsertableCommand = SlashCommand & { snippet: string };
 
-const DIRECTIVE_SNIPPETS: { label: string; snippet: string }[] = [
-  { label: "Card", snippet: `:::card{title="Title"}\nContent\n:::` },
-  { label: "Callout", snippet: `:::callout{type="info" title="Note"}\nMessage\n:::` },
-  { label: "Metric", snippet: `::metric{label="Label" value="0" description="detail"}` },
+// The `title=`/`label=` values below are example CONTENT dropped into the user's
+// document (the same seeds `brand-slash-commands.ts` uses), not UI chrome — left
+// as literal English placeholder text the author overwrites.
+const DIRECTIVE_SNIPPETS: { labelKey: string; snippet: string }[] = [
   {
-    label: "Timeline",
-    snippet: `:::timeline\n- (done) Step one\n- (active) Step two\n- (pending) Step three\n:::`,
+    labelKey: "editor.markdownToolbar.directiveCard",
+    snippet: `:::card{title="Title"}\nContent\n:::`, // i18n-exempt: example document content
+  },
+  {
+    labelKey: "editor.markdownToolbar.directiveCallout",
+    snippet: `:::callout{type="info" title="Note"}\nMessage\n:::`, // i18n-exempt: example document content
+  },
+  {
+    labelKey: "editor.markdownToolbar.directiveMetric",
+    snippet: `::metric{label="Label" value="0" description="detail"}`, // i18n-exempt: example document content
+  },
+  {
+    labelKey: "editor.markdownToolbar.directiveTimeline",
+    snippet: `:::timeline\n- (done) Step one\n- (active) Step two\n- (pending) Step three\n:::`, // i18n-exempt: example document content
   },
 ];
 
 export const MarkdownToolbar = forwardRef<HTMLDivElement, MarkdownToolbarProps>(
   function MarkdownToolbar({ editor, actions, insertCommands, className, ...props }, ref) {
+    const { t } = useLocale();
     const disabled = !editor;
     const run = (fn: (e: MonacoCodeEditor) => void) => () => {
       if (editor) fn(editor);
@@ -121,7 +135,7 @@ export const MarkdownToolbar = forwardRef<HTMLDivElement, MarkdownToolbarProps>(
         <div
           ref={ref}
           role="toolbar"
-          aria-label="Markdown formatting"
+          aria-label={t("editor.markdownToolbar.label")}
           className={cn(
             "flex h-10 shrink-0 items-center gap-0.5 border-b border-border bg-surface px-2",
             className,
@@ -129,21 +143,25 @@ export const MarkdownToolbar = forwardRef<HTMLDivElement, MarkdownToolbarProps>(
           {...props}
         >
           <IconButton
-            label="Bold"
+            label={t("editor.markdownToolbar.bold")}
             icon={<Bold className="size-4" />}
             onClick={run((e) => wrapSelection(e, "**"))}
           />
           <IconButton
-            label="Italic"
+            label={t("editor.markdownToolbar.italic")}
             icon={<Italic className="size-4" />}
             onClick={run((e) => wrapSelection(e, "*"))}
           />
           <IconButton
-            label="Inline code"
+            label={t("editor.markdownToolbar.inlineCode")}
             icon={<Code2 className="size-4" />}
             onClick={run((e) => wrapSelection(e, "`"))}
           />
-          <IconButton label="Link" icon={<Link2 className="size-4" />} onClick={run(insertLink)} />
+          <IconButton
+            label={t("editor.markdownToolbar.link")}
+            icon={<Link2 className="size-4" />}
+            onClick={run(insertLink)}
+          />
 
           <Separator orientation="vertical" className="mx-1 h-5" />
 
@@ -157,14 +175,14 @@ export const MarkdownToolbar = forwardRef<HTMLDivElement, MarkdownToolbarProps>(
                     size="sm"
                     disabled={disabled}
                     className="gap-1"
-                    aria-label="Heading level"
+                    aria-label={t("editor.markdownToolbar.headingLevel")}
                   >
                     <Heading className="size-4" />
                     <ChevronDown className="size-3" />
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
-              <TooltipContent>Heading</TooltipContent>
+              <TooltipContent>{t("editor.markdownToolbar.heading")}</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="start">
               {([1, 2, 3] as const).map((level) => (
@@ -172,29 +190,29 @@ export const MarkdownToolbar = forwardRef<HTMLDivElement, MarkdownToolbarProps>(
                   key={level}
                   onSelect={run((e) => toggleLinePrefix(e, `${"#".repeat(level)} `))}
                 >
-                  Heading {level}
+                  {t("editor.markdownToolbar.headingLevelItem", { level })}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
           <IconButton
-            label="Quote"
+            label={t("editor.markdownToolbar.quote")}
             icon={<Quote className="size-4" />}
             onClick={run((e) => toggleLinePrefix(e, "> "))}
           />
           <IconButton
-            label="Bullet list"
+            label={t("editor.markdownToolbar.bulletList")}
             icon={<List className="size-4" />}
             onClick={run((e) => toggleLinePrefix(e, "- "))}
           />
           <IconButton
-            label="Numbered list"
+            label={t("editor.markdownToolbar.numberedList")}
             icon={<ListOrdered className="size-4" />}
             onClick={run((e) => toggleLinePrefix(e, "1. "))}
           />
           <IconButton
-            label="Divider"
+            label={t("editor.markdownToolbar.divider")}
             icon={<Minus className="size-4" />}
             onClick={run(insertHorizontalRule)}
           />
@@ -211,14 +229,14 @@ export const MarkdownToolbar = forwardRef<HTMLDivElement, MarkdownToolbarProps>(
                     size="sm"
                     disabled={disabled}
                     className="gap-1"
-                    aria-label="Insert block"
+                    aria-label={t("editor.markdownToolbar.insertBlock")}
                   >
                     <SquarePlus className="size-4" />
-                    <span className="text-xs">Insert</span>
+                    <span className="text-xs">{t("editor.markdownToolbar.insert")}</span>
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
-              <TooltipContent>Insert brand block</TooltipContent>
+              <TooltipContent>{t("editor.markdownToolbar.insertBrandBlock")}</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="start">
               {insertGroups && insertGroups.length > 0
@@ -244,12 +262,12 @@ export const MarkdownToolbar = forwardRef<HTMLDivElement, MarkdownToolbarProps>(
                       ))}
                     </Fragment>
                   ))
-                : DIRECTIVE_SNIPPETS.map(({ label, snippet }) => (
+                : DIRECTIVE_SNIPPETS.map(({ labelKey, snippet }) => (
                     <DropdownMenuItem
-                      key={label}
+                      key={labelKey}
                       onSelect={run((e) => insertDirective(e, snippet))}
                     >
-                      {label}
+                      {t(labelKey)}
                     </DropdownMenuItem>
                   ))}
             </DropdownMenuContent>

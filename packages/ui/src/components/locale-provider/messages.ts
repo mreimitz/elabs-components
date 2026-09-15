@@ -607,6 +607,160 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.testResults.skippedCount": { one: "{count} skipped", other: "{count} skipped" },
   "ai.testResults.testsPassed": "{passed}/{total} tests passed",
 
+  // ── @elabs-ai/components-editor ───────────────────────────────────────────
+  // DecisionCard (ai-objects). Status vocabulary + the card's own accessible name
+  // and the "Alternatives considered" section (shared by its heading and its list's
+  // aria-label).
+  "editor.decisionCard.statusAccepted": "Accepted",
+  "editor.decisionCard.statusRejected": "Rejected",
+  "editor.decisionCard.statusProposed": "Proposed",
+  "editor.decisionCard.statusSuperseded": "Superseded",
+  "editor.decisionCard.label": "Decision: {label}",
+  "editor.decisionCard.alternativesConsidered": "Alternatives considered",
+  // KnowledgeCard (ai-objects).
+  "editor.knowledgeCard.label": "Knowledge fact",
+  "editor.knowledgeCard.heading": "Knowledge",
+  "editor.knowledgeCard.sources": "Sources",
+  "editor.knowledgeCard.source": "Source: {name}",
+  "editor.knowledgeCard.sourceUnresolved": "Source (unresolved): {name}",
+  // CalcBlock. `equals` is the sr-only prefix read before a computed value —
+  // intentionally ends in a space so it reads as a prefix (mirrors `ai.diffView.addedLine`).
+  "editor.calcBlock.error": "Error: {message}",
+  "editor.calcBlock.equals": "equals ",
+  "editor.calcBlock.total": "Total",
+  "editor.calcBlock.emptyBlock": "Empty calc block.",
+  // CopyButton. The "Copy" state reuses the shared generic `copy` key.
+  "editor.copyButton.copied": "Copied",
+  // EditorToolbar.
+  "editor.editorToolbar.language": "Language",
+  // Citations (markdown-academic).
+  "editor.citations.citationLabel": "Citation: {name}",
+  "editor.citations.unresolvedCitation": "Unresolved citation",
+  "editor.citations.unresolvedKey": "Unresolved: @{key}",
+  "editor.citations.references": "References",
+  // Math (markdown-academic).
+  "editor.math.renderError": "Could not render math",
+  "editor.math.renderErrorLabel": "Math (could not render): {tex}",
+  // CompletionMenu (markdown-editor).
+  "editor.completions.suggestions": "Suggestions",
+  "editor.completions.noSuggestions": "No suggestions",
+  // SlashMenu (markdown-editor).
+  "editor.slashMenu.insertBlock": "Insert block",
+  "editor.slashMenu.noMatchingBlocks": "No matching blocks",
+  // TableControlsView (markdown-editor/table-view — the WYSIWYG GFM table toolbar).
+  "editor.tableView.tableControls": "Table controls",
+  "editor.tableView.row": "Row",
+  "editor.tableView.col": "Col",
+  "editor.tableView.addRowAbove": "Add row above",
+  "editor.tableView.addRowBelow": "Add row below",
+  "editor.tableView.deleteRow": "Delete row",
+  "editor.tableView.addColumnLeft": "Add column left",
+  "editor.tableView.addColumnRight": "Add column right",
+  "editor.tableView.deleteColumn": "Delete column",
+  // Directive node-views (markdown-editor/directive-views — Milkdown WYSIWYG).
+  "editor.directiveViews.cardTitle": "Card title",
+  "editor.directiveViews.calloutTitle": "Callout title",
+  "editor.directiveViews.unknownBlock": "Unknown block: {name}",
+  "editor.directiveViews.unknownInlineBlock": "Unknown inline block:",
+  "editor.directiveViews.metricLabel": "Metric label",
+  "editor.directiveViews.metricLabelPlaceholder": "Label",
+  "editor.directiveViews.metricValue": "Metric value",
+  "editor.directiveViews.metricValuePlaceholder": "0",
+  "editor.directiveViews.editIteration": "Edit iteration…",
+  "editor.directiveViews.changeLayout": "Change layout",
+  "editor.directiveViews.transpose": "Transpose",
+  "editor.directiveViews.convertToStatic": "Convert to static",
+  "editor.directiveViews.needsEmbeddedValues": "— needs embedded values",
+  "editor.directiveViews.pivot": "Pivot",
+  "editor.directiveViews.iterate": "Iterate",
+  "editor.directiveViews.perItem": "· per {as}",
+  "editor.directiveViews.templateSuffix": "— template",
+  "editor.directiveViews.iterationActions": "Iteration actions",
+  "editor.directiveViews.iterationActionsTitle": "Iteration actions…",
+  // IterationBuilderDialog (markdown-iteration) — the guided iterate/pivot authoring modal.
+  "editor.iterationBuilder.pivotNoun": "pivot",
+  "editor.iterationBuilder.iterationNoun": "iteration",
+  "editor.iterationBuilder.editTitle": "Edit {noun}",
+  "editor.iterationBuilder.insertTitle": "Insert {noun}",
+  "editor.iterationBuilder.pivotDescription":
+    "Pick the row and column values, then write the per-cell template. The matrix below fills in live.",
+  "editor.iterationBuilder.iterationDescription":
+    "Add the list values, then write the per-row template. The result below fills in live.",
+  "editor.iterationBuilder.bindName": "Bind name",
+  "editor.iterationBuilder.bindNamePlaceholder": "item",
+  "editor.iterationBuilder.bindNameHintPrefix": "Use ",
+  "editor.iterationBuilder.bindNameHintSuffix": " in the template.",
+  "editor.iterationBuilder.rowValues": "Row values",
+  "editor.iterationBuilder.values": "Values",
+  "editor.iterationBuilder.valuePlaceholder": "Type a value, press Enter…",
+  "editor.iterationBuilder.columnValues": "Column values",
+  "editor.iterationBuilder.layout": "Layout",
+  "editor.iterationBuilder.perCellTemplate": "Per-cell template",
+  "editor.iterationBuilder.perRowTemplate": "Per-row template",
+  "editor.iterationBuilder.livePreview": "Live preview",
+  "editor.iterationBuilder.cancel": "Cancel",
+  "editor.iterationBuilder.save": "Save",
+  "editor.iterationBuilder.insert": "Insert",
+  // IterationTemplateDialog (markdown-iteration) — the lighter template-only modal.
+  "editor.templateDialog.editPivotTitle": "Edit pivot template",
+  "editor.templateDialog.editIterationTitle": "Edit iteration template",
+  "editor.templateDialog.descriptionPrefix": "The per-{unit} template. Use ",
+  "editor.templateDialog.descriptionMiddle": " placeholders (e.g. ",
+  "editor.templateDialog.descriptionSuffix":
+    ") — each is filled per {unit} when the block renders.",
+  "editor.templateDialog.editorLabel": "Iteration template editor",
+  "editor.templateDialog.cancel": "Cancel",
+  "editor.templateDialog.saveTemplate": "Save template",
+  // DocumentOutline (markdown-outline).
+  "editor.documentOutline.label": "Document outline",
+  "editor.documentOutline.empty": "No headings yet.",
+  // MarkdownToolbar (the source-pane formatting bar). Directive snippet labels
+  // are the Insert menu's fallback item text (`DIRECTIVE_SNIPPETS`); the snippet
+  // MARKDOWN they insert is example document content, not UI chrome, and stays
+  // English (see the `i18n-exempt` comments at each snippet).
+  "editor.markdownToolbar.label": "Markdown formatting",
+  "editor.markdownToolbar.bold": "Bold",
+  "editor.markdownToolbar.italic": "Italic",
+  "editor.markdownToolbar.inlineCode": "Inline code",
+  "editor.markdownToolbar.link": "Link",
+  "editor.markdownToolbar.headingLevel": "Heading level",
+  "editor.markdownToolbar.heading": "Heading",
+  "editor.markdownToolbar.headingLevelItem": "Heading {level}",
+  "editor.markdownToolbar.quote": "Quote",
+  "editor.markdownToolbar.bulletList": "Bullet list",
+  "editor.markdownToolbar.numberedList": "Numbered list",
+  "editor.markdownToolbar.divider": "Divider",
+  "editor.markdownToolbar.insertBlock": "Insert block",
+  "editor.markdownToolbar.insert": "Insert",
+  "editor.markdownToolbar.insertBrandBlock": "Insert brand block",
+  "editor.markdownToolbar.directiveCard": "Card",
+  "editor.markdownToolbar.directiveCallout": "Callout",
+  "editor.markdownToolbar.directiveMetric": "Metric",
+  "editor.markdownToolbar.directiveTimeline": "Timeline",
+  // MarkdownWorkspace's focus-writing toggle.
+  "editor.markdownWorkspace.focusWriting": "Focus writing",
+  "editor.markdownWorkspace.focus": "Focus",
+  "editor.markdownWorkspace.focusWritingHint": "Typewriter scrolling · inactive paragraphs dim",
+  // MermaidDiagram (the inline renderer).
+  "editor.mermaidDiagram.label": "Diagram",
+  "editor.mermaidDiagram.expand": "Expand diagram",
+  "editor.mermaidDiagram.downloadSvg": "Download diagram as SVG",
+  "editor.mermaidDiagram.copySource": "Copy diagram source",
+  "editor.mermaidDiagram.renderFailed": "Diagram failed to render",
+  "editor.mermaidDiagram.rendering": "Rendering diagram…",
+  // MermaidViewer (the expanded zoom/pan/search surface). `nodeCountHint` mirrors
+  // the ORIGINAL (pre-i18n) copy exactly, including its always-plural "nodes" —
+  // it is a static hint ("N nodes · type to filter"), not a real plural form, so
+  // it stays a plain interpolated string rather than a `PluralMessage`.
+  "editor.mermaidViewer.findPlaceholder": "Find in diagram…",
+  "editor.mermaidViewer.findLabel": "Find in diagram",
+  "editor.mermaidViewer.matchCount": { one: "{count} node", other: "{count} nodes" },
+  "editor.mermaidViewer.nodeCountHint": "{count} nodes · type to filter",
+  "editor.mermaidViewer.zoomOut": "Zoom out",
+  "editor.mermaidViewer.zoomIn": "Zoom in",
+  "editor.mermaidViewer.resetZoom": "Reset zoom to 100%",
+  "editor.mermaidViewer.fitDiagram": "Fit diagram",
+
   // ── @elabs-ai/components-viewer (ADR 0024) ─────────────────────────
   // FileViewer chrome. Every control here is icon-only, so these ARE the
   // accessible names — a non-English screen-reader user has no workaround.

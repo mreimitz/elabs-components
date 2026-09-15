@@ -46,6 +46,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { editorViewCtx, parserCtx, serializerCtx } from "@milkdown/kit/core";
@@ -177,6 +178,7 @@ function InlineEdit({ value, onCommit, ariaLabel, placeholder, className }: Inli
 
 /** `:::name` block directives → live @brand component with an editable body. */
 function ContainerDirectiveView() {
+  const { t } = useLocale();
   const { contentRef } = useNodeViewContext();
   const { name, attributes, update } = useDirectiveAttrs();
 
@@ -189,8 +191,8 @@ function ContainerDirectiveView() {
         <CardHeader className="pb-3">
           <CardTitle>
             <InlineEdit
-              ariaLabel="Card title"
-              placeholder="Card title"
+              ariaLabel={t("editor.directiveViews.cardTitle")}
+              placeholder={t("editor.directiveViews.cardTitle")}
               value={attributes.title ?? ""}
               onCommit={(v) => update("title", v)}
             />
@@ -213,7 +215,7 @@ function ContainerDirectiveView() {
             flow, so its label must not join the document heading outline (see #21). */}
         <div className="mb-1 font-medium leading-none tracking-tight">
           <InlineEdit
-            ariaLabel="Callout title"
+            ariaLabel={t("editor.directiveViews.calloutTitle")}
             placeholder={capitalize(attributes.type ?? "note")}
             value={attributes.title ?? ""}
             onCommit={(v) => update("title", v)}
@@ -250,7 +252,9 @@ function ContainerDirectiveView() {
       className="brand-directive brand-directive--unknown"
       data-brand-directive={name}
     >
-      <div className="mb-1 font-medium leading-none tracking-tight">Unknown block: {name}</div>
+      <div className="mb-1 font-medium leading-none tracking-tight">
+        {t("editor.directiveViews.unknownBlock", { name })}
+      </div>
       <AlertDescription>{body}</AlertDescription>
     </Alert>
   );
@@ -492,6 +496,7 @@ function IterationMenuItems({
  * inline (today's behaviour, unchanged).
  */
 function IterationDirectiveView() {
+  const { t } = useLocale();
   const { contentRef, node, getPos, setAttrs } = useNodeViewContext();
   const { name, attributes } = useDirectiveAttrs();
   const [, getInstance] = useInstance();
@@ -577,7 +582,7 @@ function IterationDirectiveView() {
       attributes: attributes as Record<string, string>,
     }).cells.length > 0;
 
-  const disabledHint = "— needs embedded values";
+  const disabledHint = t("editor.directiveViews.needsEmbeddedValues");
 
   const convertToStatic = () => {
     const template = readBodyMarkdown(getInstance as GetEditor, node);
@@ -589,14 +594,14 @@ function IterationDirectiveView() {
     {
       type: "item",
       id: "edit",
-      label: "Edit iteration…",
+      label: t("editor.directiveViews.editIteration"),
       icon: <Pencil className="size-4" aria-hidden="true" />,
       onSelect: requestEdit,
     },
     {
       type: "layout",
       id: "layout",
-      label: "Change layout",
+      label: t("editor.directiveViews.changeLayout"),
       icon: <LayoutGrid className="size-4" aria-hidden="true" />,
       value: (attributes.layout as IterationLayout) || ITERATION_LAYOUTS[kind][0]!,
       options: ITERATION_LAYOUTS[kind],
@@ -607,7 +612,9 @@ function IterationDirectiveView() {
           {
             type: "item",
             id: "transpose",
-            label: hasEmbeddedData ? "Transpose" : `Transpose ${disabledHint}`,
+            label: hasEmbeddedData
+              ? t("editor.directiveViews.transpose")
+              : `${t("editor.directiveViews.transpose")} ${disabledHint}`,
             icon: <ArrowLeftRight className="size-4" aria-hidden="true" />,
             onSelect: transpose,
             disabled: !hasEmbeddedData,
@@ -617,7 +624,9 @@ function IterationDirectiveView() {
     {
       type: "item",
       id: "convert-to-static",
-      label: hasEmbeddedData ? "Convert to static" : `Convert to static ${disabledHint}`,
+      label: hasEmbeddedData
+        ? t("editor.directiveViews.convertToStatic")
+        : `${t("editor.directiveViews.convertToStatic")} ${disabledHint}`,
       icon: <FileText className="size-4" aria-hidden="true" />,
       onSelect: convertToStatic,
       disabled: !hasEmbeddedData,
@@ -627,11 +636,15 @@ function IterationDirectiveView() {
   const header = (
     <div className="mb-1.5 flex items-center gap-1.5 text-meta font-medium text-info-text">
       <Icon className="size-3.5 shrink-0" aria-hidden="true" />
-      <span>{isPivot ? "Pivot" : "Iterate"}</span>
+      <span>{isPivot ? t("editor.directiveViews.pivot") : t("editor.directiveViews.iterate")}</span>
       {!isPivot && attributes.as ? (
-        <span className="font-normal text-muted-foreground">· per {attributes.as}</span>
+        <span className="font-normal text-muted-foreground">
+          {t("editor.directiveViews.perItem", { as: attributes.as })}
+        </span>
       ) : null}
-      <span className="font-normal text-muted-foreground">— template</span>
+      <span className="font-normal text-muted-foreground">
+        {t("editor.directiveViews.templateSuffix")}
+      </span>
       {onEdit ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -639,8 +652,8 @@ function IterationDirectiveView() {
               type="button"
               // `data-directive-chrome` routes the click to the browser, not ProseMirror.
               data-directive-chrome=""
-              aria-label="Iteration actions"
-              title="Iteration actions…"
+              aria-label={t("editor.directiveViews.iterationActions")}
+              title={t("editor.directiveViews.iterationActionsTitle")}
               className="ms-auto inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground focus-ring"
             >
               <MoreHorizontal className="size-4" aria-hidden="true" />
@@ -700,6 +713,7 @@ function IterationDirectiveView() {
 
 /** `::name` leaf directives (e.g. `::metric`) → live, atomic @brand component. */
 function LeafDirectiveView() {
+  const { t } = useLocale();
   const { name, attributes, update } = useDirectiveAttrs();
 
   if (name !== "metric") {
@@ -708,7 +722,7 @@ function LeafDirectiveView() {
         className="brand-directive brand-directive--leaf brand-directive--unknown rounded-md border border-destructive/40 bg-surface-muted p-3 text-sm text-muted-foreground"
         data-brand-leaf={name}
       >
-        Unknown inline block: <code>::{name}</code>
+        {t("editor.directiveViews.unknownInlineBlock")} <code>::{name}</code>
       </div>
     );
   }
@@ -720,16 +734,16 @@ function LeafDirectiveView() {
       data-brand-leaf="metric"
       label={
         <InlineEdit
-          ariaLabel="Metric label"
-          placeholder="Label"
+          ariaLabel={t("editor.directiveViews.metricLabel")}
+          placeholder={t("editor.directiveViews.metricLabelPlaceholder")}
           value={attributes.label ?? ""}
           onCommit={(v) => update("label", v)}
         />
       }
       value={
         <InlineEdit
-          ariaLabel="Metric value"
-          placeholder="0"
+          ariaLabel={t("editor.directiveViews.metricValue")}
+          placeholder={t("editor.directiveViews.metricValuePlaceholder")}
           value={attributes.value ?? ""}
           onCommit={(v) => update("value", v)}
           className="min-w-[1ch]"

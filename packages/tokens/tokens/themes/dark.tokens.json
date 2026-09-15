@@ -642,5 +642,9 @@
   "chart-accent": {
     "$type": "color",
     "$value": "var(--chart-1)"
+  },
+  "scrim": {
+    "$type": "color",
+    "$value": "oklch(0 0 0 / 0.2)"
   }
 }
