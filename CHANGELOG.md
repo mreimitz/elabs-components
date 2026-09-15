@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Added: theme families with a separate light/dark mode (ADR 0036)
+
+- **`@elabs-ai/components-tokens`** — `defineTheme` accepts optional `family` and
+  `familyLabel`, which group variants such as `ocean-light` / `ocean-dark` into one family.
+  `useTheme()` adds `families`, `family`, `colorScheme`, `setFamily` and `setColorScheme`,
+  and the new helpers `groupThemeFamilies`, `resolveThemeVariant`, `themeFamilyIdOf` and
+  `themeSchemeOf` are exported. **Purely additive**: a theme without `family` behaves exactly
+  as before, and the built-in `light` / `dark` now belong to the `default` family.
+- **`@elabs-ai/components-ui`** — once two or more families are registered, `ThemeSwitcher`
+  shows a **Theme** group and a separate **Mode** group (Light / Dark / System). The Mode
+  group is hidden when a family ships only one scheme. With a single family it renders as
+  before. New message keys: `ui.themeSwitcher.theme`, `.mode`, `.light` and `.dark`.
+- **Downloadable themes** — the repo's top-level `themes/` folder holds copy-in theme families,
+  starting with Ocean (light + dark). The recipe is in `docs/CONSUMING.md` §5.1.
+
 ## v4.1.0 — 2026-09-08
 
 ### Added: two new packages ship to the registry for the first time
