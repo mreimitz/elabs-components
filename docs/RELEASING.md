@@ -39,7 +39,7 @@ Merging the Version PR leaves no pending changesets, so the next run publishes:
 1. **Release mode** — publishes only if some distributable's version is not on npm yet
    (a routine push builds nothing; a partial publish resumes);
 2. **Registry authentication** — fails loudly if `secrets.NPM_TOKEN` is empty, then `npm whoami`;
-3. `pnpm release:publish` = `pnpm build:packages && changeset publish` — `access: public`,
+3. `pnpm release:publish` = `turbo run build --filter=./packages/* && changeset publish` — `access: public`,
    provenance via `NPM_CONFIG_PROVENANCE` (best-effort), git tags and a GitHub Release per
    package (`@elabs-ai/components-<pkg>@<version>`);
 4. `release:agent-kit` + `release:plugin` zips, attached to the `@elabs-ai/components-cli` Release

@@ -4,7 +4,7 @@
  *
  * Incident: 6 credits in `scripts/attributions.sources.json` while ~15 real borrowings
  * (Milkdown vendored, anyview's registry, blocks.so sidebars, …) existed only as source
- * comments. `attributions:check` proves outputs match the dataset, never that the
+ * comments. `gen-attributions.mjs --check` proves outputs match the dataset, never that the
  * dataset matches the repo. A comment is a pointer, not an attribution.
  *
  * Detection: strong phrases only (`adapted|vendored|borrowed|forked|copied|ported from`,
@@ -106,7 +106,7 @@ const src = (body, rel = "packages/ui/src/a.tsx") => tree({ [rel]: body });
 export default {
   id: "attribution-provenance",
   scope: "packages",
-  doc: "When shipped source says code was adapted/vendored/borrowed/forked/copied/ported from somewhere, credit that upstream in `scripts/attributions.sources.json` (then `pnpm gen:attributions`) in the same change.",
+  doc: "When shipped source says code was adapted/vendored/borrowed/forked/copied/ported from somewhere, credit that upstream in `scripts/attributions.sources.json` (then `pnpm gen`) in the same change.",
   baseline: "keys",
   run(ctx) {
     const aliases = creditedAliases(ctx);

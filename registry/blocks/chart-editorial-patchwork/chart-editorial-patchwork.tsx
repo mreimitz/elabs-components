@@ -5,7 +5,7 @@
  *
  * Adapted from lieflat-charts' "L10 Radial Patchwork" card — events on a 24 h
  * clock face, density shown by OVERLAID TRANSLUCENT SECTORS instead of a bar or
- * a line. Per `.claude/rules/styling-and-tokens.md`, transparency is otherwise
+ * a line. Per `.claude/rules/conventions.md`, transparency is otherwise
  * avoided in this system — this block is the one sanctioned use of it, kept to a
  * narrow, tested `fill-opacity` range (0.07–0.16) so overlaps compound instead of
  * ever reading as a single loud wash. See

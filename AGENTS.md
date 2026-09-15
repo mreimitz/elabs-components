@@ -91,10 +91,8 @@ pnpm build        # turbo build (tsup libs, storybook)
 pnpm lint
 pnpm typecheck
 pnpm test         # vitest (unit/smoke)
-pnpm test:e2e     # playwright E2E (auto-starts playground + Storybook)
-pnpm registry:validate
-pnpm storybook         # Storybook on :6006
-pnpm playground   # Vite dev server on :5173
+pnpm check        # every repo convention rule (+ registry-validate)
+pnpm storybook    # Storybook on :6006
 # scope: pnpm --filter @elabs-ai/components-ui test
 ```
 

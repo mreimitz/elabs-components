@@ -14,7 +14,7 @@
  *   node scripts/gen-community-themes.mjs          # write (part of `pnpm gen`)
  *   node scripts/gen-community-themes.mjs --check  # exit 1 when stale
  *
- * Freshness is also asserted by `pnpm community-themes:check`.
+ * Freshness is also asserted by `pnpm check --rule community-themes`.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";

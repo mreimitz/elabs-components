@@ -26,7 +26,7 @@
  * Output: release/v<version>/brand-ui-plugin-<version>.zip
  *
  * Guard: refuses to build if marketplace.json's plugin entry version has drifted
- * from plugin.json's (the `plugin:check` invariant) — bump both in lockstep.
+ * from plugin.json's (the `plugin-manifest` check rule's invariant) — bump both in lockstep.
  *
  *   node scripts/build-plugin.mjs
  *
@@ -58,7 +58,7 @@ const marketplaceJson = JSON.parse(
   readFileSync(join(root, ".claude-plugin/marketplace.json"), "utf8"),
 );
 
-// Guard: marketplace entry version must match plugin.json (the plugin:check invariant).
+// Guard: marketplace entry version must match plugin.json (the plugin-manifest rule's invariant).
 const mEntry = (marketplaceJson.plugins ?? []).find((p) => p.name === pluginJson.name);
 if (!mEntry) {
   console.error(`build-plugin: marketplace.json has no plugin entry named "${pluginJson.name}".`);

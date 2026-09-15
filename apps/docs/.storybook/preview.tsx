@@ -193,7 +193,7 @@ const withTheme: Decorator = (Story, context) => {
 
 /**
  * Story ids whose axe violations pre-date the ratchet (#316). Generated, never
- * hand-kept — see `scripts/a11y-baseline.json` and `pnpm a11y:baseline:check`.
+ * hand-kept — see `scripts/a11y-baseline.json` and `pnpm check --rule a11y-baseline`.
  */
 const A11Y_BASELINE = new Set(Object.keys(a11yBaseline.stories));
 
@@ -295,7 +295,7 @@ const preview: Preview = {
     // .toHaveNoViolations()` run for every story; the pre-existing offenders
     // measured on 2026-08-01 (84 of 230 story files) are downgraded one by one
     // from `scripts/a11y-baseline.json` in `beforeEach` above, and that baseline
-    // can only shrink (`pnpm a11y:baseline:check`).
+    // can only shrink (`pnpm check --rule a11y-baseline`).
     a11y: { test: "error" },
     layout: "centered",
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },

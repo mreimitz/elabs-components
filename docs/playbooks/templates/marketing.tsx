@@ -5,7 +5,7 @@
  * Marketing landing template — the canonical full-screen presales/landing
  * composition: sticky nav + Hero + StatsBand + FeatureGrid + UseCaseCard row +
  * LogoStrip + CTASection + footer (the standard section order). This story is
- * the single source of truth: `pnpm gen:templates` derives the consumer
+ * the single source of truth: `pnpm gen` derives the consumer
  * template source (`docs/playbooks/templates/marketing.tsx`) from it.
  *
  * Verify across both themes with globals=theme:<slug>

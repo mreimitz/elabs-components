@@ -186,7 +186,7 @@ export function readThemesCss() {
  * literals for the same reason `blankComments` is duplicated (this file stays
  * self-contained across the `packages/tokens` ⇄ repo-root `scripts/` boundary).
  * They cannot drift silently: `pnpm check` (command `token-contract`) and
- * `pnpm theme-parity:check` both derive from the same themes.css, so a change to
+ * the `theme-parity` rule both derive from the same themes.css, so a change to
  * one regex and not the other shows up as a contract/parity disagreement.
  */
 const ROOT_ONLY_RE = /^--(decoration($|-)|deco-|duration-|t-|motion-|radius($|-)|font-)/;

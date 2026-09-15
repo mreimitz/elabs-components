@@ -264,7 +264,7 @@ test("REAL repo: packages/viewer/README.md's generated Install block stays free 
   );
 });
 
-test("the REAL repo currently passes gen:readmes:check (CLI run)", () => {
+test("the REAL repo currently passes gen-package-readmes --check (CLI run)", () => {
   assert.doesNotThrow(() => {
     execFileSync(process.execPath, ["scripts/gen-package-readmes.mjs", "--check"], {
       cwd: REPO_ROOT,

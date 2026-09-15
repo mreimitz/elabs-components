@@ -55,7 +55,7 @@ test("PASSES: a real https:// homepage", () => {
 
 // ── CLI: the REAL repo currently passes the gate ────────────────────────────
 
-test("the REAL repo currently passes registry:validate (CLI run)", () => {
+test("the REAL repo currently passes registry-validate (CLI run)", () => {
   const out = execFileSync("node", [path.join(HERE, "validate-registry.mjs")], {
     encoding: "utf8",
   });

@@ -73,8 +73,8 @@ const RAMPS: Ramp[] = [
     // correlation matrix, signed bars, a choropleth of net change) must
     // honour: add a second, non-hue channel — a sign glyph (+/−), a
     // texture/hatch, or a value label — see
-    // .claude/rules/chart-components.md "Diverging ramp: sign needs a
-    // second channel" and .claude/rules/accessibility.md's greyscale
+    // .claude/rules/charts.md "Mark colour & furniture" (diverging data needs a
+    // non-hue channel) and .claude/rules/conventions.md's greyscale
     // decision test.
     blurb:
       "Signed data around a meaningful zero: signed bars, a correlation matrix. The negative arm rides the blue family and the positive arm the brand lime, meeting at a neutral middle. The mid clears 3:1 like every other step, because a zero-valued cell is still a drawn cell. Sign is carried by HUE ALONE — mirrored steps differ by only ~0.002-0.003 in greyscale lightness (see the docblock above), so a consuming container must add a second, non-hue channel (a sign glyph, a texture, or a value label) to stay legible in greyscale or print.",
@@ -157,7 +157,7 @@ export const Default: Story = {
  * n)` and gets these back in order.
  *
  * **The rule this story demonstrates (issue #178a/#178b — colour is never the
- * only channel, `.claude/rules/accessibility.md`):** once an arrangement of
+ * only channel, `.claude/rules/conventions.md` § Accessibility):** once an arrangement of
  * cells carries a per-cell VALUE, colour can no longer be the sole channel.
  * Every cell below carries `role="img"` + `aria-label` naming its position and
  * bucket — mirroring `PlaceholderBars` in

@@ -4,7 +4,7 @@
 /**
  * Dashboard template — the canonical full-screen dashboard composition
  * (app-shell + MetricGrid + MetricCard). This story is the single source of
- * truth: `pnpm gen:templates` derives the consumer template source
+ * truth: `pnpm gen` derives the consumer template source
  * (`docs/playbooks/templates/dashboard.tsx`) from it.
  * Verify across every theme with globals=theme:<slug>.
  */

@@ -269,7 +269,7 @@ pnpm build                # build every package
 pnpm test                 # unit + smoke
 pnpm storybook            # docs and reference implementation
 pnpm format               # prettier
-pnpm registry:validate    # validate the copy-own registry
+pnpm check --rule registry-validate   # validate the copy-own registry
 pnpm --filter @elabs-ai/components-ui test   # scope any task to one package
 ```
 

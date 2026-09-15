@@ -66,7 +66,7 @@ test("normalizeAuthor: accepts both manifest shapes, strips email AND homepage",
 });
 
 // Dependencies link to npm, NOT to their own homepages — otherwise every new dep
-// injects an arbitrary origin into the `origins:check` security inventory. This
+// injects an arbitrary origin into the `remote-origins` security inventory. This
 // asserts the single-origin property that keeps that inventory meaningful.
 test("npmUrl: every dependency resolves to the one npm origin", () => {
   assert.equal(npmUrl("clsx"), "https://www.npmjs.com/package/clsx");

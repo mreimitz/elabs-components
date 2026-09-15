@@ -11,9 +11,6 @@ registry/__output/
 
 # Release staging + pack-time artifacts (throwaway; see docs/RELEASING.md)
 release/
-# Written by `pnpm release-verdict:check --out` in the release job: which CI run
-# authorised the publish. Consumed by `pnpm release:report`, never committed.
-release-verdict.json
 # The CLI ships the manifest + the archetype templates via its `prepack` copy
 # (packages/cli/scripts/bundle-assets.mjs); both copies are generated — the
 # canonical sources are the repo-root manifest and docs/playbooks/templates/**.

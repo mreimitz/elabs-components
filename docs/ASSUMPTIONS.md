@@ -97,7 +97,7 @@ A full `pnpm install` for this monorepo (Storybook + Vite + React Flow + TanStac
 
 - All JSON parses: every `package.json` (11), `turbo.json`, `tsconfig*.json`,
   `registry/registry.json`, `.claude/settings.json`.
-- `pnpm registry:validate` → ✓ 8 items, all referenced files exist on disk.
+- `pnpm check --rule registry-validate` → ✓ 8 items, all referenced files exist on disk.
 - Import resolution audit: 175 source files scanned; all 187 relative + 46
   `@elabs-ai/components-*` imports resolve to real files (no broken paths/typos).
 - Token consistency: 48 semantic tokens; every `@theme inline` `var()` maps to a
@@ -117,7 +117,7 @@ pnpm typecheck
 pnpm lint
 pnpm test
 pnpm build
-pnpm registry:validate
+pnpm check --rule registry-validate
 ```
 
 If `pnpm install` reports peer-dependency warnings, they are non-fatal

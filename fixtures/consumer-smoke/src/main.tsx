@@ -45,7 +45,7 @@ import { ChatShell } from "@elabs-ai/components-ai";
 // dependencies, `streamdown` and `@streamdown/mermaid`, each declare
 // `mermaid` as their own plain, non-optional dependency, so this fixture
 // cannot prove mermaid's absence the way it proves the other two (issue #94,
-// `pnpm optional-peers:check`).
+// `pnpm check --rule optional-peer-transitives`).
 import { AudioPlayer, MarkdownView, Persona } from "@elabs-ai/components-ai";
 import { CanvasShell } from "@elabs-ai/components-flow";
 import { MapCanvas } from "@elabs-ai/components-maps";

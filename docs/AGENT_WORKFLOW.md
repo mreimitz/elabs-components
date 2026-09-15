@@ -20,7 +20,7 @@ How a coding agent (Claude Code or otherwise) should work in this repo.
   in every theme. (Only for a theme that SHIPS from the package — a consumer
   registers their own with `defineTheme` + `<ThemeProvider themes={…}>`.)
 - **New registry item:** `/new-registry-item <name> <type>` — add source +
-  manifest entry, run `pnpm registry:validate`.
+  manifest entry, run `pnpm check --rule registry-validate`.
 - **Review (component, a11y, visual/UX):** `/review-component <path>` — a finder; it
   reports, it doesn't fix.
 - **Release:** `/release` (`/release --check` validates without publishing).
@@ -45,7 +45,7 @@ visual/UX and root-cause review), `brand-ui-docs-writer` (docs), `brand-ui-relea
 
 - `pnpm typecheck` / `pnpm lint` / `pnpm test` / `pnpm build` (Turbo runs them
   across affected packages; scope with `--filter @elabs-ai/components-<pkg>`).
-- `pnpm registry:validate` for registry changes.
+- `pnpm check --rule registry-validate` for registry changes.
 - Hooks run automatically: formatting on edit, danger-blocking on Bash, boundary
   warnings on edit.
 

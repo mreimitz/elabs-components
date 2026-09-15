@@ -4,7 +4,7 @@
 /**
  * Settings template — the canonical full-screen settings composition
  * (app-shell + Descriptions + Wizard). This story is the single source of
- * truth: `pnpm gen:templates` derives the consumer template source
+ * truth: `pnpm gen` derives the consumer template source
  * (`docs/playbooks/templates/settings.tsx`) from it.
  * Verify across every theme with globals=theme:<slug>.
  */

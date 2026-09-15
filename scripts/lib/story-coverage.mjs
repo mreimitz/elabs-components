@@ -31,7 +31,7 @@ export function readManifest(ctx, id) {
       error: {
         file: MANIFEST,
         line: 1,
-        msg: `${id}: ${MANIFEST} not found — run \`pnpm manifest\`.`,
+        msg: `${id}: ${MANIFEST} not found — run \`pnpm gen\`.`,
       },
     };
   try {

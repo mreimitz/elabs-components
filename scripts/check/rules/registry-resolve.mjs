@@ -3,7 +3,7 @@
  * tree (`files[].path`) and the install tree (`files[].target`, what `npx shadcn add` writes).
  * Ported from the former scripts/check-registry-resolve.mjs.
  *
- * `registry:validate` only checks that each `path` exists; it never follows imports. The
+ * `registry-validate` only checks that each `path` exists; it never follows imports. The
  * registry-blocks unit shipped 13 `../data/<file>` imports that resolved in the repo but not at
  * the target layout while validation stayed green. Theme/style items have no imports to follow.
  *
@@ -48,7 +48,7 @@ export function checkItemResolution(item, { readFile, fileExists }) {
     try {
       source = readFile(normalize(file.path));
     } catch {
-      continue; // registry:validate fails a missing path
+      continue; // registry-validate fails a missing path
     }
     for (const { spec, index } of findRelativeImports(source)) {
       if (!resolvesAgainst(dirOf(file.path), spec, fileExists))

@@ -3,9 +3,9 @@
  * gen-theme-token-names.mjs — generate the THEME TOKEN CONTRACT (ADR 0029).
  *
  * Theming is open: a consumer authors a `[data-theme="…"]` block and registers
- * it. "Every theme overrides every token" (@.claude/rules/theming.md) is the one
+ * it. "Every theme overrides every token" (@.claude/rules/conventions.md § Theming) is the one
  * rule that makes that safe — a theme missing a token silently falls back to
- * `:root` and usually renders wrong. `pnpm theme-parity:check` enforces it for
+ * `:root` and usually renders wrong. `pnpm check --rule theme-parity` enforces it for
  * the themes in THIS repo; a consumer's theme lives in THEIR repo, where our
  * gate cannot reach.
  *

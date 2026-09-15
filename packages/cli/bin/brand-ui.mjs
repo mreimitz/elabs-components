@@ -236,7 +236,7 @@ function cmdContext() {
       console.error(
         "✖ brand-ui context files are STALE:\n" +
           stale.map((f) => "  - " + rel(f)).join("\n") +
-          "\n  Run `pnpm context` and commit the result.\n" +
+          "\n  Run `pnpm gen` and commit the result.\n" +
           "  (Generated from brand-ui.manifest.json; only edit OUTSIDE the markers.)",
       );
       process.exit(1);
@@ -539,7 +539,7 @@ function cmdDocs() {
         }
       }
       // Resolved inherited props (react-docgen-typescript). Only present after
-      // `pnpm manifest` ran with the devDep installed; absent → this is skipped.
+      // `pnpm gen` ran with the devDep installed; absent → this is skipped.
       const resolved = hit.props.resolved;
       if (resolved && Object.keys(resolved).length) {
         console.log("props (inherited, resolved):");

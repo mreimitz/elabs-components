@@ -6,8 +6,7 @@
 # Node >= 20, pnpm >= 9
 corepack enable          # or: npm i -g pnpm
 pnpm install
-pnpm storybook                # Storybook on :6006
-pnpm playground          # Vite on :5173
+pnpm storybook           # Storybook on :6006
 ```
 
 ## Branch style
@@ -110,19 +109,17 @@ rule can't silently rot (`scripts/check/README.md`). Catalogue: `docs/GATES.md`.
 
 - Source file(s) under `registry/` + an entry in `registry/registry.json`.
 - Accurate `dependencies`/`registryDependencies`/`files[]`; `target` for pages.
-- `pnpm registry:validate` must pass. See `docs/REGISTRY_GUIDELINES.md`.
+- `pnpm check --rule registry-validate` must pass. See `docs/REGISTRY_GUIDELINES.md`.
 
 ## Pull request checklist
 
 - [ ] `pnpm typecheck` passes
 - [ ] `pnpm lint` passes
 - [ ] `pnpm test` passes (unit/smoke)
-- [ ] `pnpm test:e2e` passes (Playwright; `pnpm test:e2e:install` first) — and add
-      an E2E test for any new flow
 - [ ] `pnpm build` passes
 - [ ] `pnpm format:check` clean
 - [ ] `pnpm check` and `pnpm check:test` pass
-- [ ] `pnpm registry:validate` passes (if registry touched)
+- [ ] `pnpm check --rule registry-validate` passes (if registry touched)
 - [ ] Stories added/updated; component works in both themes
 - [ ] Public types exported; barrel export updated
 - [ ] No raw colors outside `themes.css`; no paid deps; no secrets/absolute paths

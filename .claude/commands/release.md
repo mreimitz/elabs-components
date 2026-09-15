@@ -17,7 +17,7 @@ Report a green/red table, then stop:
 1. `git status` — nothing unexpected staged; no secrets, `.env` or machine-specific paths.
 2. `pnpm check:changed` and `pnpm check` (includes the version-sync rule).
 3. `pnpm changeset status` — which packages a merge would release, at which bump.
-4. `pnpm css-assets:check --require-dist` after `pnpm build:packages`, and
+4. `node scripts/check-css-assets.mjs --require-dist` after `pnpm build`, and
    **`pnpm consumer:check`** (packs + installs the tarballs into a throwaway app — release-blocking).
 
 ## Release

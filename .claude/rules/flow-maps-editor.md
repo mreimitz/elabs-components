@@ -59,4 +59,4 @@ Decoration dial policy → `conventions.md` (tokens-level, not specific to these
 - Not-ready: `loading` only (no `isStreaming`); `unsupported-format`/`parser-missing` is a
   gap, not a failure — `StatePanel kind="empty"`, `role="status"`, never a destructive panel.
 
-History: `docs/rules-history/{react-flow,map,editor,viewer}-components.md`, `decoration.md`.
+History: `docs/rules-history/{react-flow,editor,viewer}-components.md`, `decoration.md`.

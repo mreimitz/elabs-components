@@ -227,7 +227,7 @@ Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pn
 - Give each region ONE separation gesture: never a bare `border` in the same class string as a non-default fill (`bg-surface-muted`, `bg-surface-elevated`, `bg-chat-user`, `bg-<status>/N`); rails (`border-s-*`), axis dividers and `border bg-card` are fine. (`surface-separation`)
 - Set type with a role (`text-display|title|subtitle|body|caption|meta|kpi|code` or `<Heading>`/`<Text>`), never a raw size utility (`text-sm`, `text-xl`, `text-[17px]`) in package source or stories. (`text-scale`)
 - Compose `TimelineRoot`/`TimelineItem`/`Timeline` from `@elabs-ai/components-ui`; never declare a local `Timeline*` component or hand-roll an `absolute w-px` connector with a status-keyed style map outside `packages/ui/src/components/timeline`. (`timeline-fork`)
-- Type is a role: use `text-display|title|subtitle|body|caption|meta|kpi|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by `pnpm text-scale:check`). (`type-roles`)
+- Type is a role: use `text-display|title|subtitle|body|caption|meta|kpi|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by the `text-scale` rule). (`type-roles`)
 - Every `dangerouslySetInnerHTML` has a same-line or directly-preceding comment saying why it is sanitized/trusted/escaped, and its `__html` is a sanitiser call or a `sanitized*`/`safe*` value. (`unsafe-html-justified`)
 - A component with both controlled and uncontrolled modes (`value`/`defaultValue`, `open`/`defaultOpen`, …) uses `useControllableState` (ui `lib/use-controllable-state.ts` or Radix), never a hand-rolled `useState` + `x !== undefined` pair. (`use-controllable`)
 
@@ -245,7 +245,7 @@ Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pn
 
 - The manifest's `agentOutput` contract matches `statusFromToolState` (ai `tool.tsx`) and `STATUSES` (`status-badge.tsx`), names only real `@elabs-ai/components-ai` exports, and its example never calls `useChat(`. (`agent-output-contract`)
 - `@elabs-ai/components-ai` imports `ai` / `@ai-sdk/*` as types only (`import type`, inline `type` specifiers); runtime values like `useChat` belong in the consuming app (ADR 0008, D6). (`ai-sdk-types-only`)
-- When shipped source says code was adapted/vendored/borrowed/forked/copied/ported from somewhere, credit that upstream in `scripts/attributions.sources.json` (then `pnpm gen:attributions`) in the same change. (`attribution-provenance`)
+- When shipped source says code was adapted/vendored/borrowed/forked/copied/ported from somewhere, credit that upstream in `scripts/attributions.sources.json` (then `pnpm gen`) in the same change. (`attribution-provenance`)
 - In `@elabs-ai/components-charts`, never declare a runtime export named like a `@elabs-ai/components-ui` component (use a chart-scoped name such as `ChartTooltipContent`) and never import `@base-ui/*`. (`charts-reuse`)
 - Keep `@elabs-ai/components-charts/test` a faithful, engine-free double: export every real component from `src/test/index.ts`, never import @visx/d3/motion or a chart barrel at runtime from `src/test/**`, keep `./test` in exports + publishConfig.exports + tsup, and keep `/test` subpaths out of the manifest. (`charts-test-double`)
 - `@elabs-ai/components-*` runtime deps (`dependencies`/`peerDependencies`) follow the one-way DAG `tokens → ui/icons → layer-2 leaves → process`; every package is registered in `ALLOWED`, and a shared piece moves down, never sideways. (`dep-direction`)

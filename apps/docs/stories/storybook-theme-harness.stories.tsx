@@ -2,7 +2,7 @@
 //
 // `test-storybook` (`@storybook/addon-vitest` + `@storybook/addon-a11y`,
 // `parameters.a11y.test: "error"`) is the mechanized proof of "Theme-safe"
-// (`.claude/rules/quality-gates.md`). That proof is only real if the harness
+// (`CONTRIBUTING.md` § Definition of done). That proof is only real if the harness
 // actually applies a theme before axe runs — #402 found that it silently
 // evaluated every story against the unbranded `:root` fallback palette
 // instead, because the `withThemeByDataAttribute` decorator's effect never

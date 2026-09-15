@@ -4,7 +4,7 @@
 /**
  * AI assistant template — the canonical full-screen AI assistant composition
  * (app-shell + chat shell: Conversation + PromptInput). This story is the
- * single source of truth: `pnpm gen:templates` derives the consumer template
+ * single source of truth: `pnpm gen` derives the consumer template
  * source (`docs/playbooks/templates/ai-assistant.tsx`) from it.
  * Verify across both themes with globals=theme:<slug>.
  */
