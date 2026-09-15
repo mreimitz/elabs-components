@@ -1,6 +1,6 @@
 /**
  * gen-registry.test.mjs — self-test for the derived-registry gate.
- * Run in CI: `node --test scripts/gen-registry.test.mjs` (`pnpm gen:registry:check:test`).
+ * Run in CI: `node --test scripts/gen-registry.test.mjs` (`pnpm gen:registry:test`).
  *
  * The gate exists because a hand-written manifest drifted from the code it
  * described: `sidebar-02` shipped five fabricated `registryDependencies` and a
@@ -136,7 +136,7 @@ test("FRESH: the committed registry.json equals what the source derives", () => 
   assert.deepEqual(
     renderRegistry(authored),
     committed,
-    "registry/registry.json is stale — run `pnpm gen:registry`.",
+    "registry/registry.json is stale — run `pnpm gen`.",
   );
 });
 

@@ -1,11 +1,11 @@
 /**
- * check-templates-fresh.test.mjs — locks the generated-template stale-gate.
- * Run in CI: `node --test scripts/check-templates-fresh.test.mjs`.
+ * gen-templates.test.mjs — locks the template generator (a `pnpm gen` step).
+ * Run: `node --test scripts/gen-templates.test.mjs` (`pnpm gen:templates:test`).
  *
  * Hermetic: every test builds a MINIMAL temp repo root (a `packages/<pkg>/src/
  * templates-<name>.stories.tsx` fixture + a `package.json`), then drives the same
- * `computeTemplates` / `writeTemplates` / `staleTemplates` the gate uses — never
- * the real repo files. (Style mirrors check-gen.test.mjs / check-manifest.)
+ * `computeTemplates` / `writeTemplates` / `staleTemplates` the generator uses — never
+ * the real repo files. (Style mirrors packages/cli/test/gen.test.mjs.)
  *
  * Asserts the self-test contract:
  *   1. a freshly written set is reported FRESH (no false positives),

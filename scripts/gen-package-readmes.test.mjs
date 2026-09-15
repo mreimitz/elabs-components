@@ -2,7 +2,7 @@
  * gen-package-readmes.test.mjs — locks issue #28 (published READMEs said
  * private/UNLICENSED while the packages are public MIT).
  * Run in CI: `node --test scripts/gen-package-readmes.test.mjs`
- * (`pnpm gen:readmes:check:test`).
+ * (`pnpm gen:readmes:test`).
  *
  * The generator must derive the license/install story from each package's own
  * `package.json` (`license`, `private`) rather than a hardcoded private-repo

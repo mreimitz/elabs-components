@@ -1,6 +1,6 @@
 /**
- * check-gen.test.mjs — locks the #87/#96 doc-truth generator (`brand-ui gen`).
- * Run in CI: `node --test scripts/check-gen.test.mjs`.
+ * gen.test.mjs — locks the #87/#96 doc-truth generator (`brand-ui gen`).
+ * Run: `pnpm --filter @elabs-ai/components-cli test` (moved from scripts/check-gen.test.mjs).
  *
  * Hermetic: every test builds a MINIMAL temp repo root (its own
  * `brand-ui.manifest.json`, `docs/DECISIONS.md` with the SUMMARY markers, and the
@@ -18,7 +18,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { computeGen, writeGen, checkGen } from "../packages/cli/lib/gen.mjs";
+import { computeGen, writeGen, checkGen } from "../lib/gen.mjs";
 
 /**
  * A minimal agent-output contract (enough fields for renderAgentOutputGuidance).

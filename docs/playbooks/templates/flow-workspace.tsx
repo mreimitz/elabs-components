@@ -1,4 +1,4 @@
-/* GENERATED from packages/flow/src/templates-flow-workspace.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/flow/src/templates-flow-workspace.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen flow-workspace template (single source of truth: the Storybook story). */
 
 /**

@@ -1,0 +1,53 @@
+{
+  "addScripts": {
+    "gen": "node scripts/gen.mjs",
+    "gen:check": "node scripts/gen.mjs --check",
+    "gen:test": "node --test scripts/gen.test.mjs",
+    "gen:templates:test": "node --test scripts/gen-templates.test.mjs",
+    "gen:plugin-agents:test": "node --test scripts/gen-plugin-agents.test.mjs",
+    "gen:attributions:test": "node --test scripts/gen-attributions.test.mjs",
+    "gen:readmes:test": "node --test scripts/gen-package-readmes.test.mjs",
+    "gen:registry:test": "node --test scripts/gen-registry.test.mjs"
+  },
+  "removeScripts": [
+    "agent-docs",
+    "agent-docs:check",
+    "attributions:check",
+    "attributions:check:test",
+    "context",
+    "context:check",
+    "format:check:test",
+    "gen:attributions",
+    "gen:check:test",
+    "gen:readmes",
+    "gen:readmes:check",
+    "gen:readmes:check:test",
+    "gen:registry",
+    "gen:registry:check",
+    "gen:registry:check:test",
+    "gen:templates",
+    "inventory",
+    "inventory:check",
+    "llms",
+    "llms:check",
+    "manifest",
+    "manifest:check",
+    "manifest:check:test",
+    "plugin:agents",
+    "plugin:agents:check",
+    "plugin:agents:check:test",
+    "templates:check",
+    "templates:check:test"
+  ],
+  "ciEdits": [
+    "No workflow step calls a removed alias directly: gates.yml discovers `*:check` / `*:test` from package.json via scripts/run-gates.mjs, so the new `gen:check` becomes a gate and the renamed `gen:*:test` self-tests are picked up automatically once package.json changes.",
+    "release.yml runs `pnpm release:agent-kit`, whose package.json body is `pnpm gen:templates && pnpm manifest && pnpm llms && node scripts/build-agent-kit.mjs` — rewrite to `node scripts/gen.mjs --only templates,registry,manifest,llms && node scripts/build-agent-kit.mjs` (or `pnpm gen && node scripts/build-agent-kit.mjs`). Release branch owns it.",
+    "scripts/release-gates-baseline.json lists removed gates (attributions:check(+:test), context:check, format:check:test, gen:check:test, gen:readmes:check(+:test), gen:registry:check(+:test), inventory:check, llms:check, manifest:check(+:test), plugin:agents:check(+:test), templates:check(+:test)); scripts/check-release-gates.test.mjs uses `manifest:check` as a fixture name (fixture only, probably fine). Release branch owns both.",
+    "scripts/run-gates.mjs doc comment (line ~22) and scripts/run-gates.test.mjs:128 mention the `agent-docs:check` composite — harmless once removed, update wording.",
+    "`gen:check` does a read-only pass (own checks in parallel, ~0.6 s on a fresh tree) and only rewrites+restores outputs when something is already stale; safe in the parallel gate battery on a green tree."
+  ],
+  "preCommitEdits": [
+    "None required: .githooks/pre-commit calls `node scripts/gen-registry.mjs` directly (still valid; the writer now emits Prettier-formatted JSON). Comment at .githooks/pre-commit:54 mentions `pnpm attributions:check` → `pnpm gen:check`."
+  ],
+  "notes": "Doc/prose references to rewrite to `pnpm gen` / `pnpm gen:check` (not edited by S2-gen): CONTRIBUTING.md:61,135 (gen:attributions); .claude/commands/new-component.md:128-129 (`pnpm manifest` then `pnpm gen`, `pnpm agent-docs`); .claude/rules/registry.md:22,28,32,52,53 (gen:templates, gen:registry, gen:registry:check); .claude/rules/storybook-mcp.md:15 (`pnpm manifest`); .claude/rules/conventions.md:43 is GENERATED from a scripts/check rule doc (`pnpm manifest`) — fix in that rule; skills/brand-ui-component/SKILL.md:9-10 (allowed-tools Bash(pnpm agent-docs), Bash(pnpm manifest)) and :61-62; skills/brand-ui-registry/SKILL.md:29; docs/SKILLS.md:86; docs/RELEASING.md:508 (`pnpm agent-docs`); docs/REGISTRY_GUIDELINES.md:93; docs/playbooks/README.md:31,61 (outside gen markers); docs/playbooks/{dashboard,data-app,ai-assistant,flow-workspace,marketing,settings}.md (`pnpm gen:templates`); apps/docs/stories/Brand-UI-MCP-Server.mdx:28,40,43; ATTRIBUTION.md:11,21 (hand prose outside markers); registry/registry.items.json $comment; .prettierignore:13; .repo-cleanup.yml:30; template stories packages/{ai,charts,data,flow,marketing,ui}/src/templates-*.stories.tsx header comments; packages/ui attribution-panel.tsx:108 + .stories.tsx:13. Owned by other lanes: scripts/check-*.mjs error messages saying `run pnpm manifest` (state-coverage, loading-states, data-slot, charts-reuse, process-reuse, components-registered, charts-test-double, variant-coverage, attribution-provenance, package-json-dep-moves, registry-published); packages/cli read-only surfaces still saying `pnpm context` / `pnpm inventory` / `pnpm manifest` / `pnpm gen:templates` / check-manifest.mjs (bin/brand-ui.mjs context message, lib/render-docs.mjs:17,162,617 — :162 is inside generated inventory output, so changing it regenerates apps/docs/public/component-inventory.md; lib/engine.mjs, lib/core.mjs, lib/gen.mjs:10, scripts/bundle-assets.mjs:40). Behaviour notes: (1) old `manifest:check` left a regenerated manifest on disk when stale; `gen:check` restores the tree — to see the diff, run `pnpm gen` then `git diff`. (2) scripts/check-format.test.mjs deleted: it only proved Prettier itself flags unformatted input (its assertions pass under Prettier defaults, the .prettierrc copy is optional), so it guarded no repo config; `format:check` stays. (3) scripts/check-gen.test.mjs moved to packages/cli/test/gen.test.mjs (it unit-tests packages/cli/lib/gen.mjs marker preservation/propagation, now run by the cli package's `node --test`); scripts/check-templates-fresh.test.mjs renamed scripts/gen-templates.test.mjs (transform + stale logic coverage kept). (4) brand-ui.manifest.json at HEAD is stale vs source (pre-existing: a new `allowSameOrigin` prop entry and two changed prop descriptions); not committed here. (5) `tokens:build` kept separate (package build, not docs generation)."
+}

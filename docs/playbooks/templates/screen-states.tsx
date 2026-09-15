@@ -1,4 +1,4 @@
-/* GENERATED from packages/ui/src/templates-screen-states.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/ui/src/templates-screen-states.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen screen-states template (single source of truth: the Storybook story). */
 
 /**

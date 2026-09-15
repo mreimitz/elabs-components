@@ -25,7 +25,7 @@
  * Discovery is by GLOB (packages slash star slash src slash templates-<name>
  * .stories.tsx) so a NEW template story is picked up automatically.
  *
- *   pnpm gen:templates          # regenerate docs/playbooks/templates/**
+ *   pnpm gen                    # regenerates docs/playbooks/templates/** (step `templates`)
  *
  * Output (rides into the agent kit for free — build-agent-kit copies docs/playbooks):
  *   docs/playbooks/templates/<name>.tsx   the generated consumer source
@@ -33,7 +33,7 @@
  *
  * Flags:
  *   --check   diff the regenerated set against the committed files; do NOT write.
- *             (used by `scripts/check-templates-fresh.mjs` / `pnpm templates:check`)
+ *             (`pnpm gen:check` runs it after the writer for determinism)
  *
  * Deterministic + dependency-free (sorted output, no clock). Locates the repo
  * root relative to this file, so it is cwd-independent.
@@ -240,7 +240,7 @@ export function transformStory({ src, pkgName, name, relFile }) {
     .trimEnd();
 
   const header =
-    `/* GENERATED from ${relFile} by pnpm gen:templates — do not edit. */\n` +
+    `/* GENERATED from ${relFile} by pnpm gen — do not edit. */\n` +
     `/* Full-screen ${name} template (single source of truth: the Storybook story). */\n`;
 
   const code = header + "\n" + out + "\n";
@@ -356,7 +356,7 @@ if (invokedDirectly) {
       console.error(
         "✖ generated templates are STALE:\n" +
           stale.map((f) => "  - " + f).join("\n") +
-          "\n  Run `pnpm gen:templates` and commit the result.\n" +
+          "\n  Run `pnpm gen` and commit the result.\n" +
           "  (Generated from the Storybook stories; never hand-edit docs/playbooks/templates/**.)",
       );
       process.exit(1);

@@ -1,4 +1,4 @@
-/* GENERATED from packages/marketing/src/templates-marketing.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/marketing/src/templates-marketing.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen marketing template (single source of truth: the Storybook story). */
 
 /**

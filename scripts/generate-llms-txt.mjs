@@ -75,7 +75,7 @@ if (check) {
     console.error(
       "✖ llms.txt is STALE — it does not match the manifest:\n" +
         stale.map((s) => "  - " + s).join("\n") +
-        "\n  Run `pnpm llms` and commit the result.\n" +
+        "\n  Run `pnpm gen` and commit the result.\n" +
         "  (Generated from brand-ui.manifest.json; never hand-edit it.)",
     );
     process.exit(1);
