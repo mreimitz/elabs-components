@@ -102,14 +102,7 @@ export const DOCS_ONLY_SKIP = new Set([
   "text-scale:check",
   "motion:check",
   // Component and package contracts
-  "components:check",
-  "data-slot:check",
-  "variants:check",
-  "states:check",
-  "loading-states:check",
-  "use-client:check",
   "optional-peer-types:check",
-  "viewer-highlight:check",
 ]);
 
 /** The one command shape a self-test may have; the capture is the test file. */

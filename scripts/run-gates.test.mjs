@@ -40,7 +40,6 @@ const FIXTURE_PKG = {
     "b:check": "node scripts/check-b.mjs",
     "b:check:test": "node --test scripts/check-b.test.mjs",
     "tokens:check": "node scripts/check-tokens-fresh.mjs", // in DOCS_ONLY_SKIP
-    "components:check": "node scripts/check-components-registered.mjs", // in DOCS_ONLY_SKIP
     "registry:validate": "node scripts/validate-registry.mjs", // GATE_EXTRAS
     check: "node scripts/check/run.mjs", // GATE_EXTRAS
     "token-contract:check": "pnpm --filter @scope/tokens tokens:names:check", // NOT a composite
@@ -62,7 +61,6 @@ test("gates: `*:check` + the two extras, minus composites, slow and not-per-chan
     "a:check",
     "b:check",
     "check",
-    "components:check",
     "registry:validate",
     "token-contract:check",
     "tokens:check",
@@ -81,10 +79,10 @@ test("gates: --docs-only drops exactly the source-only groups", () => {
   // `token-contract:check` is a `pnpm --filter …` gate, but it sat in the
   // "Tokens and themes" group, so the fast path skipped it too.
   assert.deepEqual(docs, ["a:check", "b:check", "check", "registry:validate"]);
-  assert.ok(DOCS_ONLY_SKIP.has("tokens:check") && DOCS_ONLY_SKIP.has("components:check"));
+  assert.ok(DOCS_ONLY_SKIP.has("tokens:check"));
   assert.ok(DOCS_ONLY_SKIP.has("token-contract:check"));
   // The set is the two former gates.yml groups: token/theme and contract gates not yet in the check runner.
-  assert.equal(DOCS_ONLY_SKIP.size, 19);
+  assert.equal(DOCS_ONLY_SKIP.size, 12);
 });
 
 test("selftests: `*:test` in the one node --test shape, minus the own-step one", () => {

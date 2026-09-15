@@ -123,7 +123,11 @@ export async function runRules(rules, ctx) {
   );
 }
 
-/** Fixture problems for one rule (empty = every fail fixture finds ≥1, every pass finds 0). */
+/**
+ * Fixture problems for one rule (empty = every fail fixture breaks its baseline, every pass
+ * fixture keeps it). A fixture's baseline is its optional `baseline` entry, else empty — so
+ * for an unweighted rule "pass" means 0 findings and "fail" means ≥ 1.
+ */
 export async function checkFixtures(rule) {
   const problems = [];
   const run = runnerFor(rule);
@@ -136,11 +140,12 @@ export async function checkFixtures(rule) {
         const findings = ((await run(createMemoryContext(list[i].files))) ?? []).filter(
           (f) => !f.warn,
         );
-        if (kind === "pass" && findings.length > 0)
+        const { ok, failing } = evaluate(rule, findings, list[i].baseline);
+        if (kind === "pass" && !ok)
           problems.push(
-            `${rule.id}: fixtures.pass[${i}] yielded ${findings.length} finding(s): ${findings[0].msg}`,
+            `${rule.id}: fixtures.pass[${i}] yielded ${failing.length} finding(s): ${failing[0]?.msg}`,
           );
-        if (kind === "fail" && findings.length === 0)
+        if (kind === "fail" && ok)
           problems.push(`${rule.id}: fixtures.fail[${i}] yielded 0 findings`);
       } catch (err) {
         problems.push(`${rule.id}: fixtures.${kind}[${i}] threw: ${err.message}`);

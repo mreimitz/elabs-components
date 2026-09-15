@@ -199,6 +199,8 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 - Draw chart furniture with `--chart-grid` at full opacity and `CHART_HAIRLINE_WIDTH` (never a dimming `opacity`/`strokeOpacity` or another numeric `strokeWidth`), and never alias `--chart-grid` to `var(--border)`; one element may opt out with `// chart-hairline-exempt: <reason>`. (`chart-hairline`)
 - In `@elabs-ai/components-charts`, draw bars from a zero-including domain (`resolveBarValueDomain` / `resolveYDomain(…, { includeZero: true })`), scale area radii by `sqrt(value / max)`, and never call `Math.random` (use `seededRnd`); a reasoned exception carries `// honesty:allow <reason>`. (`charts-honesty`)
 - Build a collapsing side panel on `useCollapsiblePanel` (`@elabs-ai/components-ui`); never hand-roll a `transition-[…width…]` tween plus an off-screen `[calc(var(--x)*-1)]` slide outside `packages/ui/src/components/collapsible-panel`. (`collapse-fork`)
+- Every `@elabs-ai/components-ui` component folder is re-exported from `src/index.ts` (or its own subpath export) and ships a `*.stories.tsx`. (`component-registration`)
+- Give every exported component's root `data-slot="<kebab-name>"` and each sub-part `data-slot="<kebab-name>-<part>"`; a module never gains a component without a slot or drops a slot without its part. (`data-slot`)
 - A dimmed disabled state follows the house recipe: `disabled:opacity-50` plus `disabled:pointer-events-none` (Button) or `disabled:cursor-not-allowed` (Input) in the same class list. (`disabled-recipe`)
 - Focus indicators use `focus-ring`/`focus-ring-within`/`focus-ring-inset`/`focus-ring-static`, never a hand-rolled `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring` stack. (`focus-ring-only`)
 - An exported component that spreads `...props` onto a DOM element is wrapped in `forwardRef`. (`forward-ref-required`)
@@ -219,10 +221,15 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 
 ### Stories
 
+- Axe stays blocking: preview.tsx keeps `a11y: { test: "error" }` and applies `scripts/a11y-baseline.json`, whose generated per-story exemptions never exceed `ratchet.maxStories`; fix a new violation, never exempt it. (`a11y-baseline`)
 - Every unit-decomposed chart story (waffle/field UnitChart, dot heatmap, `unit`-ed Bar/WaterfallChart, beaded DumbbellChart) states its unit ("one X = N") in `unitLabel`, `description` or `accessibleDescription`. (`chart-unit-caption`)
+- A component with a `loading`/`isStreaming` (or chart `status: ChartStatus`) prop ships a story that shows it: a `*Loading`/`*Streaming` export or a not-ready arg (`loading: true`, `status="loading"`). (`loading-states`)
+- Every allowlisted stateful component (`STATEFUL_COMPONENTS` in the rule) exports a story named for a non-happy state (`Loading`, `Empty`, `Error`, `Disabled`, `Skeleton`, `FirstRun`, `Awaiting`). (`state-coverage`)
+- Render every `cva` variant value in a story (`variant="success"` or `args: { variant: "success" }`); `argTypes.options` does not count, a default is met by a story that leaves the axis unset. (`variant-coverage`)
 
 ### Packages
 
+- The manifest's `agentOutput` contract matches `statusFromToolState` (ai `tool.tsx`) and `STATUSES` (`status-badge.tsx`), names only real `@elabs-ai/components-ai` exports, and its example never calls `useChat(`. (`agent-output-contract`)
 - `@elabs-ai/components-ai` imports `ai` / `@ai-sdk/*` as types only (`import type`, inline `type` specifiers); runtime values like `useChat` belong in the consuming app (ADR 0008, D6). (`ai-sdk-types-only`)
 - When shipped source says code was adapted/vendored/borrowed/forked/copied/ported from somewhere, credit that upstream in `scripts/attributions.sources.json` (then `pnpm gen:attributions`) in the same change. (`attribution-provenance`)
 - In `@elabs-ai/components-charts`, never declare a runtime export named like a `@elabs-ai/components-ui` component (use a chart-scoped name such as `ChartTooltipContent`) and never import `@base-ui/*`. (`charts-reuse`)
@@ -237,6 +244,8 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 - Wrap a safe-by-default renderer (Streamdown) only with `Omit<…, "rehypePlugins">` on every props type and `stripSanitizerOverrides(props)` before spreading props onto it; never set `rehypePlugins` outside the reviewed allowlist. (`sanitizer-passthrough`)
 - Keep `@radix-ui/react-scroll-area` and `@radix-ui/react-select` patched (registered in `pnpm.patchedDependencies`, installed dist free of HTML sinks); after a version bump re-apply the patch with `pnpm patch`. (`trusted-types-patches`)
 - Never assign HTML (`dangerouslySetInnerHTML`, `.innerHTML =`, `insertAdjacentHTML`, `document.write`) in package source or add a dependency that does — it blanks a Trusted-Types app; static markup belongs in CSS or JSX, and an unavoidable engine sink is baselined and documented in `docs/CSP-AND-NETWORK.md`. (`trusted-types-sinks`)
+- A client package (`ui`, `data`, `ai`, `flow`, `maps`, `charts`, `editor`, `viewer`, `terminal`) whose source uses React hooks carries `"use client"` in its source modules, not only in the build banner. (`use-client-source`)
+- A viewer adapter's `capabilities.highlight` lists only real address kinds, its renderer reads `highlights` (and `rects` for `rect`), and its `*-adapter.test.tsx` builds and paints each declared kind. (`viewer-highlight`)
 
 ### Registry
 

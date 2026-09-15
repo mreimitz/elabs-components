@@ -22,6 +22,10 @@ export default {
 
 A finding: `file` (repo-relative), `line` (1-based), `msg`. Optional `key` = stable identity for
 `keys` baselines (default `file::msg`). Optional `warn: true` = advisory: printed, never counted.
+Optional integer `weight` (per-file only; default 1, may be 0 or negative): a file's count is the
+sum of weights — for a signed per-file quantity (e.g. `data-slot`'s components − slots).
+A fixture may carry an optional `baseline` entry (same shape as the rule's `baseline.json` entry):
+`pass` must keep it, `fail` must break it. Without one the baseline is empty (pass = 0 findings).
 
 ## `ctx` — the only door to the repo
 

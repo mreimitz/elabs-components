@@ -105,6 +105,13 @@ test("per-file and keys baselines ratchet by file / identity", () => {
   );
   assert.equal(evaluate(pf, [f("c", { warn: true })], {}).ok, true, "advisory never counts");
   assert.deepEqual(raises(pf, { a: 2 }, nextEntry(pf, [f("a"), f("a"), f("a")])), ["a  2 → 3"]);
+  // weight: a signed per-file quantity (sum of weights), still ratcheting by file
+  assert.deepEqual(nextEntry(pf, [f("a", { weight: -3 }), f("b", { weight: 0 })]), { a: -3, b: 0 });
+  assert.equal(evaluate(pf, [f("a", { weight: -2 })], { a: -3 }).ok, false, "-3 → -2 rises");
+  assert.equal(evaluate(pf, [f("a", { weight: -4 })], { a: -3 }).ok, true);
+  assert.equal(evaluate(pf, [f("n", { weight: 1 })], {}).ok, false, "new file starts at 0");
+  assert.equal(evaluate(pf, [f("a", { weight: 2 }), f("a")], { a: 3 }).count, 3);
+  assert.deepEqual(raises(pf, { a: -3 }, { a: -1 }), ["a  -3 → -1"]);
 
   const keys = { baseline: "keys" };
   assert.equal(evaluate(keys, [f("a", { key: "k1" })], ["k1", "k2"]).ok, true);
@@ -171,6 +178,18 @@ test("fixture harness catches a fail fixture that finds nothing and a pass fixtu
     fixtures: { pass: [{ files: {} }], fail: [{ files: {} }] },
   };
   assert.equal((await checkFixtures(noisy)).length, 1);
+
+  // A fixture may carry its own `baseline`; weighted per-file findings judge against it.
+  const signed = {
+    id: "signed",
+    baseline: "per-file",
+    run: (ctx) => [{ file: "m", line: 1, msg: "d", weight: Number(ctx.readFile("d.txt")) }],
+    fixtures: {
+      pass: [{ files: { "d.txt": "-1" } }, { files: { "d.txt": "2" }, baseline: { m: 2 } }],
+      fail: [{ files: { "d.txt": "1" } }, { files: { "d.txt": "-1" }, baseline: { m: -2 } }],
+    },
+  };
+  assert.deepEqual(await checkFixtures(signed), []);
 
   // End to end: `--test` exits non-zero for the lazy rule.
   const s = sandbox({
