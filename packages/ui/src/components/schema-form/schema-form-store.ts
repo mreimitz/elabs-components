@@ -201,9 +201,22 @@ export interface SchemaFormMeta {
 
 const EMPTY_ERRORS: Record<string, string | null> = {};
 
+/**
+ * `effectiveValue` mints a FRESH `[]` for an unset list/multi-enum/key-value/
+ * file field on every call. A controlled form whose `values` omit such a field
+ * would then never match its cached snapshot, so `getFieldSnapshot` would
+ * return a new object on every `useSyncExternalStore` read — an infinite
+ * re-render loop ("Maximum update depth exceeded"). Two empty arrays are the
+ * same value for rendering purposes.
+ */
+function sameFieldValue(a: FormValue, b: FormValue): boolean {
+  if (Object.is(a, b)) return true;
+  return Array.isArray(a) && Array.isArray(b) && a.length === 0 && b.length === 0;
+}
+
 function fieldSnapshotEqual(a: FieldSnapshot, b: FieldSnapshot): boolean {
   return (
-    Object.is(a.value, b.value) &&
+    sameFieldValue(a.value, b.value) &&
     a.invalid === b.invalid &&
     a.errorText === b.errorText &&
     a.visible === b.visible &&

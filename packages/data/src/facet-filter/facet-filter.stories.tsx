@@ -95,7 +95,10 @@ export const ToolbarAlignment: Story = {
           <SelectItem value="staging">Staging</SelectItem>
         </SelectContent>
       </Select>
-      <DatePicker placeholder="Pick a date" />
+      {/* DatePicker's trigger fills its container by default (`w-full`, like Input), which
+          in a wrapping flex row claims a line of its own. In a toolbar it sizes to its
+          content instead — the same per-toolbar sizing Select and Input get here. */}
+      <DatePicker placeholder="Pick a date" className="w-auto" />
       <Input className="w-40" aria-label="Search services" placeholder="e.g. billing…" />
       <Button variant="outline">Reset</Button>
     </div>

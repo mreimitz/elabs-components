@@ -541,6 +541,15 @@ function FileControl({
       file,
     }));
   }, [value]);
+  // `FileUpload.addFiles` also declines a wrong-type file (`accept`) before it
+  // reaches `files` — right for a bare FileUpload, but here that would make the
+  // "wrong type" designed state unreachable for a drop (the file would just
+  // vanish, exactly the `maxSize` failure mode noted below). `addFiles` commits
+  // the accepted list and THEN reports rejections, synchronously, so remember
+  // the last committed list and re-admit the `accept` rejections onto it for
+  // `checkFileIssue` to render with a visible error.
+  const lastCommittedRef = useRef<File[]>([]);
+  const maxFiles = field.multiple ? field.maxFiles : 1;
   return (
     <FileUpload
       id={id}
@@ -554,15 +563,20 @@ function FileControl({
       // unreachable (the file the user picked would just vanish with no
       // feedback). Enforcement instead happens entirely in `checkFileIssue`
       // below, which renders the oversized file WITH an error item.
-      maxFiles={field.multiple ? field.maxFiles : 1}
+      maxFiles={maxFiles}
       disabled={disabled}
       files={controlledFiles}
-      onFilesChange={(list) =>
-        setValue(
-          field.name,
-          list.map((u) => u.file),
-        )
-      }
+      onFilesChange={(list) => {
+        const next = list.map((u) => u.file);
+        lastCommittedRef.current = next;
+        setValue(field.name, next);
+      }}
+      onFilesRejected={(rejections) => {
+        const wrongType = rejections.filter((r) => r.reason === "accept").map((r) => r.file);
+        if (wrongType.length === 0) return;
+        const merged = [...lastCommittedRef.current, ...wrongType];
+        setValue(field.name, maxFiles ? merged.slice(0, maxFiles) : merged);
+      }}
     >
       <FileUploadDropzone />
       <FileControlList field={field} />

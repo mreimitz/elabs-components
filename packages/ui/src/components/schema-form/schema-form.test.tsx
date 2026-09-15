@@ -1,6 +1,6 @@
 import { Profiler, type ProfilerOnRenderCallback } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   SchemaForm,
@@ -398,6 +398,22 @@ describe("SchemaForm — validation (submit) + focus-first-invalid", () => {
     expect(screen.getAllByText("This file type isn't accepted.").length).toBeGreaterThan(0);
   });
 
+  it("keeps a DROPPED wrong-type file visible with its inline error instead of silently dropping it", async () => {
+    render(
+      <SchemaForm
+        spec={{
+          formName: "f",
+          fields: [{ type: "file", name: "creds", label: "Credentials", accept: ".json" }],
+        }}
+      />,
+    );
+    const dropzone = document.querySelector("[data-slot='file-upload-dropzone']")!;
+    const badFile = new File(["x"], "creds.exe", { type: "application/x-msdownload" });
+    fireEvent.drop(dropzone, { dataTransfer: { files: [badFile] } });
+    expect(await screen.findByText("creds.exe")).toBeInTheDocument();
+    expect(screen.getAllByText("This file type isn't accepted.").length).toBeGreaterThan(0);
+  });
+
   it("auto-reveals a collapsed advanced-group branch that holds the first invalid field, and focuses it", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
@@ -504,6 +520,23 @@ describe("SchemaForm — file field is controlled", () => {
 });
 
 describe("SchemaForm — controlled + submitted", () => {
+  it("renders a controlled form whose `values` omit its array-valued fields without a render loop", () => {
+    // An unset file/list field resolves to a fresh `[]` on every snapshot read;
+    // unless that counts as unchanged, `useSyncExternalStore` loops forever.
+    render(
+      <SchemaForm
+        spec={{
+          formName: "f",
+          fields: [
+            { type: "file", name: "creds", label: "Credentials" },
+            { type: "list", name: "tags", label: "Tags" },
+          ],
+        }}
+        values={{}}
+      />,
+    );
+    expect(screen.getByText("Credentials")).toBeInTheDocument();
+  });
   it("reflects controlled values and calls onChange", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T21:20:58.154Z",
+  "generatedAt": "2026-09-15T22:35:08.377Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -33778,14 +33778,14 @@
         },
         "FileUploadDropzone": {
           "extends": [
-            "HTMLAttributes<HTMLElement>"
+            "HTMLAttributes<HTMLDivElement>"
           ],
           "props": [
             {
               "name": "browseLabel",
               "optional": true,
               "type": "string",
-              "description": "Label for the visually-hidden file picker link (for SR users)."
+              "description": "Label for the default \"Browse files\" button."
             }
           ]
         },

@@ -2432,12 +2432,13 @@ function DataTableInner<TData, TValue>(
         <div
           ref={scrollRef}
           tabIndex={0}
-          // Names the focus stop (WCAG 4.1.2). `role="region"` is required for
-          // that name to compute at all — `aria-label` on a plain `<div>`
-          // (role `generic`) is not guaranteed to produce an accessible name;
-          // `generic` isn't in the set of roles accessible-name computation
-          // permits naming from.
-          role="region"
+          // Names the focus stop (WCAG 4.1.2). A naming-capable role is required
+          // for that name to compute at all — `aria-label` on a plain `<div>`
+          // (role `generic`) is not guaranteed to produce an accessible name.
+          // `group`, not `region`: a landmark per table would be redundant over
+          // the real <table> and collide under axe `landmark-unique` when two
+          // tables share a page.
+          role="group"
           aria-label={t("data.table.scrollRegion")}
           aria-busy={loading || undefined}
           className="relative overflow-auto rounded-lg border bg-card focus-ring"
@@ -2510,16 +2511,17 @@ function DataTableInner<TData, TValue>(
             give every table that FITS a focus stop that does nothing and announces
             "scrollable" when it isn't. `aria-label` moves with it (WCAG 4.1.2:
             a name for a stop that exists, none for one that doesn't) — and
-            `role="region"` moves with BOTH of them: `aria-label` on a plain
+            `role="group"` moves with BOTH of them: `aria-label` on a plain
             `<div>` (role `generic`) is not guaranteed to compute into an
-            accessible name at all, so without a naming-capable role this tab
-            stop could be an UNNAMED one, which is worse than the redundant
-            landmark this used to trade it for. */}
+            accessible name, so the stop needs a naming-capable role. `group`,
+            never the `region` landmark: that would be redundant over the real
+            <table> and collide (axe `landmark-unique`) with every other
+            overflowing table on the page. */}
         <div
           ref={plainScrollRef}
           data-slot="data-table-scroll-region"
           tabIndex={scrollOverflows ? 0 : undefined}
-          role={scrollOverflows ? "region" : undefined}
+          role={scrollOverflows ? "group" : undefined}
           aria-label={scrollOverflows ? t("data.table.scrollRegion") : undefined}
           onScroll={updateScrollAffordance}
           className="overflow-auto rounded-lg focus-ring-inset"

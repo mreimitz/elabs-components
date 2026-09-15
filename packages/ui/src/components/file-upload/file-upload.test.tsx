@@ -15,21 +15,28 @@ function makeUploadFile(name = "test.txt", size = 1024): UploadFile {
 }
 
 describe("FileUpload", () => {
-  it("renders the dropzone with a label pointing to the hidden input", () => {
+  it("default dropzone exposes exactly one control: the Browse files button", () => {
     render(
       <FileUpload>
         <FileUploadDropzone />
       </FileUpload>,
     );
-    // The label wraps the input — label's htmlFor matches input's id
-    const label = document.querySelector("label[data-slot='file-upload-dropzone']");
-    expect(label).not.toBeNull();
-    const inputId = label!.getAttribute("for");
-    expect(inputId).toBeTruthy();
-    const input = document.getElementById(inputId!);
-    expect(input).not.toBeNull();
-    expect(input!.tagName.toLowerCase()).toBe("input");
-    expect(input).toHaveAttribute("type", "file");
+    const dropzone = document.querySelector("[data-slot='file-upload-dropzone']")!;
+    // The zone is a plain drop surface — no role, no tab stop — so the inner
+    // button is never nested inside another interactive element (axe
+    // `nested-interactive` / `aria-allowed-role`).
+    expect(dropzone.tagName.toLowerCase()).toBe("div");
+    expect(dropzone).not.toHaveAttribute("role");
+    expect(dropzone).not.toHaveAttribute("tabIndex");
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+
+    const input = document.querySelector("input[type='file']") as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, "click");
+    fireEvent.click(screen.getByRole("button", { name: "Browse files" }));
+    // One activation opens the picker once (the zone's click must not re-fire it).
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    fireEvent.click(dropzone);
+    expect(clickSpy).toHaveBeenCalledTimes(2);
   });
 
   it("hidden file input has sr-only class (visually hidden but real)", () => {
@@ -206,9 +213,11 @@ describe("FileUpload", () => {
         <FileUploadDropzone>Drop it here</FileUploadDropzone>
       </FileUpload>,
     );
-    const dropzone = screen.getByText("Drop it here").closest("label")!;
     // With custom `children` there is no fallback "Browse files" button —
-    // the zone itself must be a tab stop and answer Enter/Space.
+    // the zone itself must be the one control: a tab stop answering Enter/Space.
+    const dropzone = screen.getByRole("button");
+    expect(dropzone).toHaveTextContent("Drop it here");
+    expect(dropzone).toHaveAttribute("data-slot", "file-upload-dropzone");
     expect(dropzone).toHaveAttribute("tabIndex", "0");
 
     const input = document.querySelector("input[type='file']") as HTMLInputElement;

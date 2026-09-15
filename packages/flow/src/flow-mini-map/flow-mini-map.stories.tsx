@@ -135,6 +135,23 @@ export const Default: Story = {
       return (hi! + 0.05) / (lo! + 0.05);
     };
 
+    // Measure the SETTLED paint, not the frame the theme switched in. The preview's
+    // `ThemeBoundary` writes `data-theme` in an effect, after the canvas has already
+    // rendered once under the `:root` (light) fallback. The storybook Vitest project runs
+    // with `reducedMotion: "reduce"`, and the tokens' reduced-motion backstop clamps
+    // `transition-duration` to 0.01ms on EVERY element — whose `transition-property`
+    // defaults to `all` — so the light→dark swap becomes a one-frame colour transition.
+    // Read synchronously, `getComputedStyle` still returns the transition's START value
+    // (the light panel's white) while the node rects, mounted after the switch, are
+    // already dark: a false 2.47:1 in the dark theme only. Awaiting the running
+    // transitions on the panel and its rects reads what the browser actually paints.
+    await Promise.all(
+      minimap.getAnimations({ subtree: true }).map((animation) =>
+        // A transition superseded by another change rejects `finished`; the settled
+        // value is still what the readback below measures.
+        animation.finished.catch(() => undefined),
+      ),
+    );
     const panelBackground = getComputedStyle(minimap).backgroundColor;
 
     // The whole point of this helper is that a blank minimap must FAIL the check — lock
