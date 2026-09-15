@@ -767,3 +767,105 @@ describe("ThemeProvider — tokenOverrides (#17)", () => {
     });
   });
 });
+
+describe("ThemeProvider — theme families and colour schemes (ADR 0036)", () => {
+  const oceanLight = defineTheme({
+    value: "ocean-light",
+    label: "Ocean light",
+    dark: false,
+    family: "ocean",
+    familyLabel: "Ocean",
+  });
+  const oceanDark = defineTheme({
+    value: "ocean-dark",
+    label: "Ocean dark",
+    dark: true,
+    family: "ocean",
+  });
+  const dusk = defineTheme({ value: "dusk", label: "Dusk", dark: true, family: "dusk" });
+  const sand = defineTheme({ value: "sand", label: "Sand", dark: false, family: "sand" });
+  const registry = [...BUILT_IN_THEME_DEFINITIONS, oceanLight, oceanDark, dusk, sand];
+
+  it("derives family and colorScheme from the active theme", () => {
+    mount(
+      <ThemeProvider themes={registry} defaultTheme="ocean-dark">
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(latest?.families.map((f) => f.id)).toEqual(["default", "ocean", "dusk", "sand"]);
+    expect(latest?.family).toBe("ocean");
+    expect(latest?.colorScheme).toBe("dark");
+  });
+
+  it("setColorScheme switches within the family and persists the variant name", () => {
+    mount(
+      <ThemeProvider themes={registry} defaultTheme="ocean-light">
+        <Probe />
+      </ThemeProvider>,
+    );
+    act(() => latest?.setColorScheme("dark"));
+    expect(latest?.theme).toBe("ocean-dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("ocean-dark");
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe("ocean-dark");
+  });
+
+  it("setFamily keeps the current scheme when the family has it", () => {
+    mount(
+      <ThemeProvider themes={registry} defaultTheme="dark">
+        <Probe />
+      </ThemeProvider>,
+    );
+    act(() => latest?.setFamily("ocean"));
+    expect(latest?.theme).toBe("ocean-dark");
+  });
+
+  it("setFamily remembers the intended scheme across a single-scheme family", () => {
+    mount(
+      <ThemeProvider themes={registry} defaultTheme="dark">
+        <Probe />
+      </ThemeProvider>,
+    );
+    act(() => latest?.setFamily("sand"));
+    expect(latest?.theme).toBe("sand");
+    act(() => latest?.setFamily("ocean"));
+    expect(latest?.theme).toBe("ocean-dark");
+  });
+
+  it("ignores (and warns about) an unknown family or a missing scheme", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mount(
+      <ThemeProvider themes={registry} defaultTheme="dusk">
+        <Probe />
+      </ThemeProvider>,
+    );
+    act(() => latest?.setFamily("nope"));
+    act(() => latest?.setColorScheme("light"));
+    expect(latest?.theme).toBe("dusk");
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it("groups AFTER allowedThemes, so a dropped variant makes the family single-scheme", () => {
+    mount(
+      <ThemeProvider themes={registry} allowedThemes={["ocean-light"]}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(latest?.families.map((f) => [f.id, f.schemes])).toEqual([["ocean", ["light"]]]);
+  });
+
+  it("warns when two variants of one family share a scheme", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const oceanDark2 = defineTheme({
+      value: "ocean-dark-2",
+      label: "Ocean 2",
+      dark: true,
+      family: "ocean",
+    });
+    mount(
+      <ThemeProvider themes={[oceanLight, oceanDark, oceanDark2]}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"ocean-dark-2" and "ocean-dark"'));
+  });
+});

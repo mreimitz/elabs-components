@@ -12,10 +12,16 @@ rare. Read `@.claude/rules/theming.md` and `docs/TOKEN_GUIDELINES.md` first.
 none of the steps below. They write a `[data-theme]` stylesheet in their own app,
 register it with `<ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS,
 defineTheme({…})]}>`, and assert coverage against `THEME_TOKEN_NAMES` — the
-recipe is `docs/CONSUMING.md` §5.1. Only run this command when the theme should
-SHIP from `@elabs-ai/components-tokens`.
+recipe is `docs/CONSUMING.md` §5.1.
 
-Steps:
+**Default path — a downloadable family** (ADR 0036): `pnpm theme:new <slug>
+--label "<Label>" --hue <0-360> [--only light|dark]` scaffolds `themes/<slug>/`
+from the reference themes. Tune the values, then `pnpm community-themes:check`
+(every token, AA ink pairs, `theme.ts` agrees with the CSS) and `pnpm gen`
+(Storybook's Theme/Mode toolbar picks it up). Add a row to `themes/README.md`.
+Stop here unless the theme should SHIP from `@elabs-ai/components-tokens`.
+
+Built-in path (rare) — steps:
 
 1. Create `packages/tokens/src/themes/<name>.css` — its own file, a sibling of
    `light.css`/`dark.css`, holding one `[data-theme="<name>"]` block that

@@ -144,3 +144,77 @@ export const RestrictedProvider: Story = {
     await waitFor(() => expect(body.queryByRole("menu")).not.toBeInTheDocument());
   },
 };
+
+/**
+ * Theme families (ADR 0036). Once two or more families declare `family`, the
+ * switcher offers a **Theme** group and — for a family with both schemes — a
+ * separate **Mode** group (Light / Dark / System). `ocean-*` are the
+ * downloadable family in repo-root `themes/ocean/`, whose CSS this Storybook
+ * imports.
+ */
+const oceanThemes = [
+  defineTheme({
+    value: "ocean-light",
+    label: "Ocean Light",
+    dark: false,
+    family: "ocean",
+    familyLabel: "Ocean",
+  }),
+  defineTheme({ value: "ocean-dark", label: "Ocean Dark", dark: true, family: "ocean" }),
+];
+const FAMILY_REGISTRY = [...BUILT_IN_THEME_DEFINITIONS, ...oceanThemes];
+
+export const WithThemeFamilies: Story = {
+  decorators: [
+    (Story) => (
+      <ThemeProvider themes={FAMILY_REGISTRY} defaultTheme="light" storageKey={null}>
+        <div className="flex min-h-32 items-center justify-center">
+          <Story />
+        </div>
+      </ThemeProvider>
+    ),
+  ],
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const root = canvasElement.ownerDocument.documentElement;
+    const body = within(canvasElement.ownerDocument.body);
+    await userEvent.click(canvas.getByRole("button", { name: "Theme" }));
+    await userEvent.click(await body.findByRole("menuitemradio", { name: "Ocean" }));
+    await waitFor(() => expect(root).toHaveAttribute("data-theme", "ocean-light"));
+    await userEvent.click(canvas.getByRole("button", { name: "Theme" }));
+    await userEvent.click(await body.findByRole("menuitemradio", { name: "Dark" }));
+    await waitFor(() => expect(root).toHaveAttribute("data-theme", "ocean-dark"));
+    await waitFor(() => expect(body.queryByRole("menu")).not.toBeInTheDocument());
+  },
+};
+
+/**
+ * A family that ships only one scheme shows no Mode group. `Dusk` borrows the
+ * reference `dark` block as its only variant.
+ */
+const duskTheme = defineTheme({
+  value: "dark",
+  label: "Dusk",
+  dark: true,
+  family: "dusk",
+  familyLabel: "Dusk (dark only)",
+});
+
+export const SingleModeFamily: Story = {
+  decorators: [
+    (Story) => (
+      <ThemeProvider themes={[...oceanThemes, duskTheme]} defaultTheme="dark" storageKey={null}>
+        <div className="flex min-h-32 items-center justify-center">
+          <Story />
+        </div>
+      </ThemeProvider>
+    ),
+  ],
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const body = within(canvasElement.ownerDocument.body);
+    await userEvent.click(canvas.getByRole("button", { name: "Theme" }));
+    await expect(await body.findByRole("menuitemradio", { name: /Dusk/ })).toBeChecked();
+    await expect(body.queryByRole("menuitemradio", { name: "Light" })).not.toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(body.queryByRole("menu")).not.toBeInTheDocument());
+  },
+};

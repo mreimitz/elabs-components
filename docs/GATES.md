@@ -462,6 +462,14 @@ request` — which is why a release now lands through a PR (see
   subagent cost; detection and the `stop_hook_active` guard are unchanged. Self-tested by
   `pnpm cadence:check:test`, which also asserts the hook is still registered in
   `.claude/settings.json` and that its source carries no `exit 2`.
+- **Downloadable theme families are complete + readable (`pnpm community-themes:check`,
+  ADR 0036).** Every folder under repo-root `themes/` holds `<slug>-light.css` and/or
+  `<slug>-dark.css` (one matching `[data-theme]` block, matching `color-scheme`), declares
+  every `THEME_TOKEN_NAMES` token and nothing outside the contract, clears WCAG AA on the
+  core ink pairs, and registers each variant in `theme.ts` with the right `dark` + `family`.
+  Deliberately NOT the built-in battery: these themes never join `BUILT_IN_THEMES`. An
+  empty `themes/` fails. Scaffold with `pnpm theme:new`; self-tested by
+  `pnpm community-themes:check:test`.
 
 ## Running the battery
 

@@ -1,14 +1,26 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useState, type HTMLAttributes } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState, type HTMLAttributes } from "react";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
-import { useTheme, type ThemeDefinition, type ThemeName } from "@elabs-ai/components-tokens";
+import {
+  groupThemeFamilies,
+  resolveThemeVariant,
+  themeSchemeOf,
+  useTheme,
+  type ThemeDefinition,
+  type ThemeName,
+  type ThemeScheme,
+} from "@elabs-ai/components-tokens";
 
 import { Button } from "../button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../tooltip";
@@ -129,15 +141,35 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
     const labelOf = (name: ThemeName) => offered.find((d) => d.value === name)?.label ?? name;
     const isDark = (name: ThemeName) => offered.find((d) => d.value === name)?.dark ?? false;
 
-    // `?? theme` (the active theme), never a "light"/"dark" literal: with an open
-    // registry those names may not exist at all in this app.
-    const lightTheme: ThemeName = pickByDarkness(offered, false) ?? theme;
-    const darkTheme: ThemeName = pickByDarkness(offered, true) ?? theme;
-
     // The concrete theme to DISPLAY as current: the controlled preference when
     // it names one, otherwise the theme actually applied via the provider.
     const resolvedTheme: ThemeName =
       isControlled && preference !== undefined && preference !== "system" ? preference : theme;
+
+    // ADR 0036 — the family layout is OPT-IN: only when the offered list (not the
+    // provider's `families`, so the `themes` prop still narrows) holds two or
+    // more DECLARED families. An undeclared `[daylight, midnight]` pair keeps
+    // today's toggle byte-for-byte.
+    const families = groupThemeFamilies(offered);
+    const useFamilies = mode === "auto" && families.filter((f) => f.declared).length >= 2;
+    const activeFamily = useFamilies
+      ? (families.find(
+          (f) => f.light?.value === resolvedTheme || f.dark?.value === resolvedTheme,
+        ) ?? families[0])
+      : undefined;
+    // "System" is scoped to the active family in the family layout.
+    const scope: readonly ThemeDefinition[] = activeFamily
+      ? [activeFamily.light, activeFamily.dark].filter((d): d is ThemeDefinition => d !== undefined)
+      : offered;
+
+    // `?? theme` (the active theme), never a "light"/"dark" literal: with an open
+    // registry those names may not exist at all in this app.
+    const lightTheme: ThemeName = pickByDarkness(scope, false) ?? theme;
+    const darkTheme: ThemeName = pickByDarkness(scope, true) ?? theme;
+
+    // The scheme the user last chose, so dark → a light-only family → a
+    // two-scheme family lands on dark again (mirrors the provider's `setFamily`).
+    const intendedSchemeRef = useRef<ThemeScheme | undefined>(undefined);
 
     // Hydrate the "system" choice from localStorage and apply it on mount —
     // uncontrolled mode only. Controlled mode's "system" state comes from the
@@ -195,6 +227,85 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
     }, [switchTheme, darkTheme, lightTheme, isControlled, onPreferenceChange]);
 
     const TriggerIcon = isSystem ? Monitor : isDark(resolvedTheme) ? Moon : Sun;
+
+    // ---- Family layout (≥2 declared families): family group + scheme group ----
+    if (activeFamily) {
+      const activeScheme = offered.find((d) => d.value === resolvedTheme);
+      const intended =
+        intendedSchemeRef.current ?? (activeScheme ? themeSchemeOf(activeScheme) : "light");
+      const pickFamily = (familyId: string) => {
+        // System re-resolves against the OS immediately on a family change
+        // instead of waiting for the next `change` event.
+        const scheme: ThemeScheme = isSystem ? (prefersDark() ? "dark" : "light") : intended;
+        const next = resolveThemeVariant(families, familyId, scheme);
+        if (next === undefined) return;
+        intendedSchemeRef.current = intended;
+        if (isSystem) switchTheme(next);
+        else pickTheme(next);
+      };
+      const pickScheme = (value: string) => {
+        if (value === "system") {
+          pickSystem();
+          return;
+        }
+        const scheme = value as ThemeScheme;
+        const next = activeFamily[scheme]?.value;
+        if (next === undefined) return;
+        intendedSchemeRef.current = scheme;
+        pickTheme(next);
+      };
+      const schemeValue = isSystem ? "system" : activeScheme ? themeSchemeOf(activeScheme) : "";
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              ref={ref}
+              variant="outline"
+              size={ICON_SIZE[size]}
+              aria-label={t("ui.themeSwitcher.theme")}
+              className={className}
+              {...props}
+            >
+              <TriggerIcon />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{t("ui.themeSwitcher.theme")}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={activeFamily.id} onValueChange={pickFamily}>
+              {families.map((f) => (
+                <DropdownMenuRadioItem key={f.id} value={f.id}>
+                  {f.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            {activeFamily.schemes.length === 2 ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>{t("ui.themeSwitcher.mode")}</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={schemeValue} onValueChange={pickScheme}>
+                  <DropdownMenuRadioItem value="light">
+                    <Sun aria-hidden="true" />
+                    {t("ui.themeSwitcher.light")}
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="dark">
+                    <Moon aria-hidden="true" />
+                    {t("ui.themeSwitcher.dark")}
+                  </DropdownMenuRadioItem>
+                  {showSystem ? (
+                    <DropdownMenuRadioItem value="system">
+                      <Monitor aria-hidden="true" />
+                      {t("ui.themeSwitcher.system")}
+                    </DropdownMenuRadioItem>
+                  ) : null}
+                </DropdownMenuRadioGroup>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
     const useDropdown = mode === "dropdown" || (mode === "auto" && safeThemes.length > 2);
 
     // ---- Dropdown mode (>2 themes) ----
@@ -206,7 +317,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
               ref={ref}
               variant="outline"
               size={ICON_SIZE[size]}
-              aria-label="Theme"
+              aria-label={t("ui.themeSwitcher.theme")}
               className={className}
               {...props}
             >

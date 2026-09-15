@@ -38,7 +38,6 @@ const config: StorybookConfig = {
   // own under the one-way dep rule — apps compose siblings freely.
   stories: ["../stories/**/*.mdx", "../stories/**/*.stories.@(ts|tsx)", ...packageStoryGlobs()],
   addons: [
-    getAbsolutePath("@storybook/addon-themes"),
     getAbsolutePath("@storybook/addon-a11y"),
     getAbsolutePath("@storybook/addon-docs"),
     getAbsolutePath("@chromatic-com/storybook"),

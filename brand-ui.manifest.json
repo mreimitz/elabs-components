@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-08T08:14:40.514Z",
+  "generatedAt": "2026-09-15T13:03:46.407Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -28453,12 +28453,20 @@
           "module": "packages/tokens/src/theme-types.ts"
         },
         {
+          "name": "ThemeFamily",
+          "module": "packages/tokens/src/theme-types.ts"
+        },
+        {
           "name": "ThemeName",
           "module": "packages/tokens/src/theme-types.ts"
         },
         {
           "name": "ThemeProviderProps",
           "module": "packages/tokens/src/theme-provider.tsx"
+        },
+        {
+          "name": "ThemeScheme",
+          "module": "packages/tokens/src/theme-types.ts"
         },
         {
           "name": "ThemeTokenName",
@@ -28473,6 +28481,10 @@
         {
           "name": "deriveTheme",
           "module": "packages/tokens/src/derive-theme.ts"
+        },
+        {
+          "name": "groupThemeFamilies",
+          "module": "packages/tokens/src/theme-types.ts"
         },
         {
           "name": "isBuiltInThemeName",
@@ -28503,8 +28515,20 @@
           "module": "packages/tokens/src/theme-types.ts"
         },
         {
+          "name": "resolveThemeVariant",
+          "module": "packages/tokens/src/theme-types.ts"
+        },
+        {
           "name": "resolveTokenColor",
           "module": "packages/tokens/src/resolve-token-color.ts"
+        },
+        {
+          "name": "themeFamilyIdOf",
+          "module": "packages/tokens/src/theme-types.ts"
+        },
+        {
+          "name": "themeSchemeOf",
+          "module": "packages/tokens/src/theme-types.ts"
         }
       ],
       "props": {

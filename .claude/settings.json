@@ -81,11 +81,7 @@
     "ask": ["Bash(pnpm publish:*)"]
   },
   "enabledMcpjsonServers": ["storybook"],
-  "autoCompactWindow": 300000,
   "disableClaudeAiConnectors": true,
-  "enabledPlugins": {
-    "brand-ui@brand-ui": false
-  },
   "hooks": {
     "PreToolUse": [
       {
@@ -164,5 +160,9 @@
         ]
       }
     ]
-  }
+  },
+  "enabledPlugins": {
+    "storybook@storybook": true
+  },
+  "autoCompactWindow": 300000
 }
