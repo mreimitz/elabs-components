@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { BentoGrid, BentoGridItem } from "./bento-grid";
 
@@ -115,5 +115,26 @@ describe("BentoGridItem", () => {
       </BentoGridItem>,
     );
     expect(screen.getByTestId("item").className).toMatch(/from-primary/);
+  });
+
+  it("cancels a pending spotlight rAF on unmount", () => {
+    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(7);
+    const cafSpy = vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+    const { unmount } = render(
+      <BentoGridItem spotlight data-testid="item">
+        content
+      </BentoGridItem>,
+    );
+    const item = screen.getByTestId("item");
+    fireEvent.mouseMove(item, { clientX: 10, clientY: 10 });
+    expect(rafSpy).toHaveBeenCalled();
+
+    unmount();
+    // A mouse move right before the tile unmounts (removed from the grid
+    // while hovered) must not leave a scheduled frame pending after teardown.
+    expect(cafSpy).toHaveBeenCalledWith(7);
+
+    rafSpy.mockRestore();
+    cafSpy.mockRestore();
   });
 });

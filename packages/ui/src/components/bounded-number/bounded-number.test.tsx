@@ -18,7 +18,7 @@ describe("BoundedNumber", () => {
   it("hides the empty label once a value is set", () => {
     render(<BoundedNumber aria-label="Limit" defaultValue={250} />);
     expect(screen.queryByText("No limit")).not.toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: "Limit" })).toHaveValue(250);
+    expect(screen.getByRole("spinbutton", { name: "Limit" })).toHaveValue("250");
   });
 
   it("hides the empty label while focused so the field reads as truly empty", async () => {

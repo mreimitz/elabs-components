@@ -30,7 +30,10 @@ const chartData = [
 
 export const Default: Story = {
   render: () => (
-    <div className="h-72 w-[560px]">
+    // A fluid width capped at 560px keeps the chart comfortable on desktop
+    // while letting it shrink to fit a narrow (phone-width) canvas instead of
+    // forcing a horizontal scrollbar.
+    <div className="h-72 w-full max-w-[560px]">
       <LineChart data={chartData} aspectRatio={undefined}>
         <Grid horizontal />
         <Line dataKey="users" curve={curveNatural} stroke="var(--chart-1)" />

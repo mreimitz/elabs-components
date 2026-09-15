@@ -102,7 +102,7 @@ function AgentEventCheckRow({ check }: { check: CheckResult }) {
       {detail !== undefined && detail !== "" && (
         <p
           data-slot="agent-event-check-detail"
-          className="pl-5 text-caption text-muted-foreground break-words"
+          className="ps-5 text-caption text-muted-foreground break-words"
         >
           {detail}
         </p>

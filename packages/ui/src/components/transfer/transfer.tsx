@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../card";
 import { Checkbox } from "../checkbox";
 import { Input } from "../input";
 import { ScrollArea } from "../scroll-area";
+import { useLocale } from "../locale-provider";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ function TransferPanel({
   titleId,
   rowIdBase,
 }: PanelProps) {
+  const { t } = useLocale();
   // When a search is active, filter visible items; move operations affect VISIBLE enabled items.
   const visibleItems = useMemo(() => {
     if (!searchQuery) return items;
@@ -109,10 +111,12 @@ function TransferPanel({
           <Checkbox
             checked={someChecked ? "indeterminate" : allChecked}
             onCheckedChange={(v) => onCheckAll(v === true)}
-            aria-label={`Select all in ${typeof title === "string" ? title : "panel"}`}
+            aria-label={t("ui.transfer.selectAllIn", {
+              title: typeof title === "string" ? title : t("ui.transfer.panelFallback"),
+            })}
             disabled={enabledVisible.length === 0}
           />
-          <CardTitle id={titleId} className="text-sm">
+          <CardTitle id={titleId} className="text-body">
             {title}
           </CardTitle>
         </div>
@@ -124,15 +128,17 @@ function TransferPanel({
       {showSearch && (
         <div className="px-3 pb-2">
           <label htmlFor={searchInputId} className="sr-only">
-            Search {typeof title === "string" ? title : "items"}
+            {t("ui.transfer.searchIn", {
+              title: typeof title === "string" ? title : t("ui.transfer.itemsFallback"),
+            })}
           </label>
           <Input
             id={searchInputId}
             type="search"
-            placeholder="Search…"
+            placeholder={t("ui.transfer.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-7 text-xs"
+            className="h-7 text-meta"
           />
         </div>
       )}
@@ -140,8 +146,8 @@ function TransferPanel({
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full min-h-[200px]">
           {visibleItems.length === 0 ? (
-            <p className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
-              No items
+            <p className="flex h-[200px] items-center justify-center text-body text-muted-foreground">
+              {t("ui.transfer.empty")}
             </p>
           ) : (
             <ul role="list" className="flex flex-col py-1">
@@ -156,7 +162,7 @@ function TransferPanel({
                   <li
                     key={item.value}
                     className={cn(
-                      "flex select-none items-center gap-2 px-3 py-1.5 text-sm",
+                      "flex select-none items-center gap-2 px-3 py-1.5 text-body",
                       "hover:bg-accent hover:text-accent-foreground",
                       item.disabled && "opacity-50 hover:bg-transparent hover:text-foreground",
                     )}
@@ -198,13 +204,18 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
     defaultTargetKeys,
     onChange,
     showSearch = false,
-    titles = ["Source", "Target"],
+    titles,
     renderItem = (item) => item.label,
     className,
     ...props
   },
   ref,
 ) {
+  const { t } = useLocale();
+  const resolvedTitles: [ReactNode, ReactNode] = titles ?? [
+    t("ui.transfer.defaultSourceTitle"),
+    t("ui.transfer.defaultTargetTitle"),
+  ];
   const isControlled = controlledTargetKeys !== undefined;
 
   // Uncontrolled internal state
@@ -273,13 +284,13 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
     );
     if (toMove.size === 0) return;
     applyMove([...targetKeys, ...toMove]);
-    setAnnouncement(`${toMove.size} item${toMove.size === 1 ? "" : "s"} moved to the target list.`);
+    setAnnouncement(t("ui.transfer.movedToTarget", { count: toMove.size }));
     setSourceChecked((prev) => {
       const next = new Set(prev);
       toMove.forEach((v) => next.delete(v));
       return next;
     });
-  }, [sourceChecked, dataSource, targetKeys, targetSet, applyMove]);
+  }, [sourceChecked, dataSource, targetKeys, targetSet, applyMove, t]);
 
   /** Move ALL visible enabled source items → target */
   const handleMoveAllRight = useCallback(() => {
@@ -290,11 +301,9 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
     if (toAdd.length === 0) return;
     const next = [...new Set([...targetKeys, ...toAdd])];
     applyMove(next);
-    setAnnouncement(
-      `${toAdd.length} item${toAdd.length === 1 ? "" : "s"} moved to the target list.`,
-    );
+    setAnnouncement(t("ui.transfer.movedToTarget", { count: toAdd.length }));
     setSourceChecked(new Set());
-  }, [visibleSourceEnabled, targetKeys, applyMove]);
+  }, [visibleSourceEnabled, targetKeys, applyMove, t]);
 
   /** Move target-panel checked items → source */
   const handleMoveCheckedLeft = useCallback(() => {
@@ -306,26 +315,22 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
     );
     if (toRemove.size === 0) return;
     applyMove(targetKeys.filter((k) => !toRemove.has(k)));
-    setAnnouncement(
-      `${toRemove.size} item${toRemove.size === 1 ? "" : "s"} moved to the source list.`,
-    );
+    setAnnouncement(t("ui.transfer.movedToSource", { count: toRemove.size }));
     setTargetChecked((prev) => {
       const next = new Set(prev);
       toRemove.forEach((v) => next.delete(v));
       return next;
     });
-  }, [targetChecked, dataSource, targetKeys, targetSet, applyMove]);
+  }, [targetChecked, dataSource, targetKeys, targetSet, applyMove, t]);
 
   /** Move ALL visible enabled target items → source */
   const handleMoveAllLeft = useCallback(() => {
     const toRemove = new Set(visibleTargetEnabled.map((it) => it.value));
     if (toRemove.size === 0) return;
     applyMove(targetKeys.filter((k) => !toRemove.has(k)));
-    setAnnouncement(
-      `${toRemove.size} item${toRemove.size === 1 ? "" : "s"} moved to the source list.`,
-    );
+    setAnnouncement(t("ui.transfer.movedToSource", { count: toRemove.size }));
     setTargetChecked(new Set());
-  }, [visibleTargetEnabled, targetKeys, applyMove]);
+  }, [visibleTargetEnabled, targetKeys, applyMove, t]);
 
   // ── Per-panel check handlers ──────────────────────────────────────────────
 
@@ -402,7 +407,7 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
 
       {/* ── Source panel ─────────────────────────────── */}
       <TransferPanel
-        title={titles[0]}
+        title={resolvedTitles[0]}
         items={sourceItems}
         checked={sourceChecked}
         onCheckItem={handleSourceCheckItem}
@@ -420,12 +425,12 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
       <div
         className="flex flex-col items-center justify-center gap-1"
         role="group"
-        aria-label="Move controls"
+        aria-label={t("ui.transfer.moveControls")}
       >
         <Button
           variant="outline"
           size="icon-sm"
-          aria-label="Move selected right"
+          aria-label={t("ui.transfer.moveSelectedRight")}
           disabled={!canMoveCheckedRight}
           onClick={handleMoveCheckedRight}
         >
@@ -434,7 +439,7 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
         <Button
           variant="outline"
           size="icon-sm"
-          aria-label="Move all right"
+          aria-label={t("ui.transfer.moveAllRight")}
           disabled={!canMoveAllRight}
           onClick={handleMoveAllRight}
         >
@@ -443,7 +448,7 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
         <Button
           variant="outline"
           size="icon-sm"
-          aria-label="Move selected left"
+          aria-label={t("ui.transfer.moveSelectedLeft")}
           disabled={!canMoveCheckedLeft}
           onClick={handleMoveCheckedLeft}
           className="mt-2"
@@ -453,7 +458,7 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
         <Button
           variant="outline"
           size="icon-sm"
-          aria-label="Move all left"
+          aria-label={t("ui.transfer.moveAllLeft")}
           disabled={!canMoveAllLeft}
           onClick={handleMoveAllLeft}
         >
@@ -463,7 +468,7 @@ export const Transfer = forwardRef<HTMLDivElement, TransferProps>(function Trans
 
       {/* ── Target panel ─────────────────────────────── */}
       <TransferPanel
-        title={titles[1]}
+        title={resolvedTitles[1]}
         items={targetItems}
         checked={targetChecked}
         onCheckItem={handleTargetCheckItem}

@@ -25,6 +25,27 @@ describe("FileTree folder icons", () => {
   });
 });
 
+describe("FileTreeFolder expand/collapse control (accessibility.md — icon-only controls need aria-label)", () => {
+  it("names the chevron toggle, and flips the name with expanded state", async () => {
+    const user = userEvent.setup();
+    render(
+      <FileTree defaultExpanded={new Set()}>
+        <FileTreeFolder path="src" name="src">
+          <FileTreeFile path="src/index.ts" name="index.ts" />
+        </FileTreeFolder>
+      </FileTree>,
+    );
+
+    const toggle = screen.getByRole("button", { name: "Expand src" });
+    expect(toggle).toBeInTheDocument();
+
+    await user.click(toggle);
+
+    expect(screen.getByRole("button", { name: "Collapse src" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Expand src" })).not.toBeInTheDocument();
+  });
+});
+
 describe("FileTree variant axis (#193, research 04 §4 ASSET-1)", () => {
   it("keeps the IDE look by default (code variant — non-breaking)", () => {
     const { container } = render(

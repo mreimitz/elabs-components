@@ -73,6 +73,7 @@ import {
 import { cva, type VariantProps } from "class-variance-authority";
 import { ChevronRight, GitBranch, GitCommitHorizontal, GitMerge, Plus, Minus } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useLocale } from "../locale-provider";
 
 // ─── Public data types ────────────────────────────────────────────────────────
 
@@ -937,6 +938,7 @@ export const RevisionTimeline = forwardRef<HTMLDivElement, RevisionTimelineProps
     },
     ref,
   ) {
+    const { t } = useLocale();
     const resolvedDensity: RevisionTimelineDensity = density ?? "comfortable";
 
     // Collapse/expand mode is opt-in: active only when `branches` are supplied.
@@ -1059,7 +1061,7 @@ export const RevisionTimeline = forwardRef<HTMLDivElement, RevisionTimelineProps
         const from = summaryOf.get(e.from) ?? e.from;
         const to = summaryOf.get(e.to) ?? e.to;
         if (from === to) continue; // collapsed into a single node
-        const key = `${from} ${to}`;
+        const key = `${from}\u0000${to}`;
         if (seen.has(key)) continue; // de-dup coincident remaps
         seen.add(key);
         out.push({ from, to });
@@ -1102,7 +1104,10 @@ export const RevisionTimeline = forwardRef<HTMLDivElement, RevisionTimelineProps
               {groups.map((group) => (
                 <div key={group.dayKey}>
                   {groupBy === "day" && <DayHeader label={group.dayLabel} />}
-                  <ol role="list" aria-label={groupBy === "day" ? group.dayLabel : "Revisions"}>
+                  <ol
+                    role="list"
+                    aria-label={groupBy === "day" ? group.dayLabel : t("ui.revisionTimeline.label")}
+                  >
                     {group.items.map((it) => {
                       if (it.kind === "summary") {
                         return (

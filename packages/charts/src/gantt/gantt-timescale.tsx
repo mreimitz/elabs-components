@@ -18,7 +18,7 @@
 
 import { useMemo, type HTMLAttributes } from "react";
 import { scaleTime } from "@visx/scale";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, useLocale } from "@elabs-ai/components-ui";
 import { useGantt } from "./gantt-context";
 import { GANTT_UNIT_MS } from "./gantt";
 import type { GanttFormatDate, GanttScale, GanttTimeUnit } from "./gantt";
@@ -243,6 +243,7 @@ export function GanttTimescale({
 }: GanttTimescaleProps) {
   const { meta } = useGantt();
   const { scales, formatDate: fmt } = meta;
+  const { t } = useLocale();
 
   const scale = useMemo(
     () =>
@@ -259,7 +260,7 @@ export function GanttTimescale({
   return (
     <div
       role="img"
-      aria-label="Timeline"
+      aria-label={t("charts.gantt.timeline")}
       className={cn("relative border-b border-border bg-muted/30", className)}
       style={{ width: canvasWidth, minWidth: canvasWidth, height: headerHeight }}
       {...props}

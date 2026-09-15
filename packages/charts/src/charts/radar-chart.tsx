@@ -290,7 +290,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={10}>
+      <ParentSize debounceTime={100}>
         {({ width, height }) => (
           <RadarChartInner
             animate={animate}

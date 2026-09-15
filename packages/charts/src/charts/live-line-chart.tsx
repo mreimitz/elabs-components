@@ -4,6 +4,7 @@ import { localPoint } from "@visx/event";
 import { ParentSize } from "@visx/responsive";
 import { scaleLinear, scaleTime } from "@visx/scale";
 import { bisector } from "d3-array";
+import { useInView, useReducedMotion } from "motion/react";
 import {
   Children,
   forwardRef,
@@ -24,6 +25,7 @@ import { ChartProvider, type LineConfig, type Margin, type TooltipData } from ".
 import { hmsTimeFmt } from "./chart-formatters";
 import { DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import type { LiveLineProps } from "./live-line";
+import { useStableValue } from "./use-stable-value";
 import { wrapSingleYScale } from "./y-axis-scales";
 
 // ---------------------------------------------------------------------------
@@ -341,7 +343,10 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
     [data, value, exaggerate],
   );
 
-  const lines = useMemo(() => extractLiveLineConfigs(children), [children]);
+  // See `use-stable-value.ts`: collapses back to the previous reference when
+  // the extracted series content is unchanged, even though `children` gets a
+  // fresh identity from React on every parent render.
+  const lines = useStableValue(useMemo(() => extractLiveLineConfigs(children), [children]));
 
   // Leading offset (used in rAF for tooltip)
   const xTickUnitMs = windowMs / (numXTicks - 1);
@@ -353,10 +358,49 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
   const lastFrameCommitRef = useRef(0);
   const lastTooltipKeyRef = useRef<string | null>(null);
 
+  // Pause the animation loop when the chart is out of view or the tab isn't
+  // visible — an unconditional `requestAnimationFrame` loop wastes CPU/battery
+  // rendering frames nobody can see. `useInView` (motion/react) tracks
+  // viewport intersection of the chart's own container; `tabHidden` tracks
+  // the Page Visibility API. Either being false stops scheduling further
+  // frames — the effect below re-schedules the moment both flip back to true
+  // (both are in its dependency array).
+  const isInView = useInView(containerRef, { amount: 0 });
+  const [tabHidden, setTabHidden] = useState(
+    () => typeof document !== "undefined" && document.visibilityState === "hidden",
+  );
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      setTabHidden(document.visibilityState === "hidden");
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+  const isActive = isInView && !tabHidden;
+
+  // `prefers-reduced-motion`: skip the value/range lerp smoothing (jump
+  // straight to the target on every tick) instead of animating toward it. The
+  // loop itself keeps running — this drives a live/streaming value, not a
+  // decorative animation — only the interpolation is neutralized.
+  const prefersReducedMotion = useReducedMotion() === true;
+  const effectiveLerpSpeed = prefersReducedMotion ? 1 : lerpSpeed;
+
+  useEffect(() => {
+    if (!isActive) {
+      // Out of view / tab hidden: don't schedule anything. `isActive` flipping
+      // back to true re-runs this effect (it's in the dependency array below)
+      // and resumes the loop from here.
+      return;
+    }
     let raf: number;
     const tick = () => {
-      const next = nextAnimFrame(animRef.current, targetRange, value, lerpSpeed, pausedRef.current);
+      const next = nextAnimFrame(
+        animRef.current,
+        targetRange,
+        value,
+        effectiveLerpSpeed,
+        pausedRef.current,
+      );
       animRef.current = next;
 
       const nextTooltip = resolveLiveTooltip(
@@ -404,7 +448,17 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [targetRange, value, lerpSpeed, leadingMs, windowMs, xTickUnitMs, innerWidth, innerHeight]);
+  }, [
+    targetRange,
+    value,
+    effectiveLerpSpeed,
+    leadingMs,
+    windowMs,
+    xTickUnitMs,
+    innerWidth,
+    innerHeight,
+    isActive,
+  ]);
 
   const domainEndMs = frame.now + leadingMs;
 

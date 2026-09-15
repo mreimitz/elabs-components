@@ -30,6 +30,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { HTMLAttributes, ReactNode } from "react";
@@ -72,18 +73,87 @@ interface ParsedCsv {
   rows: string[][];
 }
 
-/** Minimal preview-grade CSV split (no quoted-comma handling — it's a glance, not a grid). */
+/**
+ * A small RFC 4180-ish CSV tokenizer: handles quoted fields (commas and
+ * newlines inside quotes don't end the field/row) and the `""` escaped-quote
+ * convention. Single pass over the raw string — no line pre-split, so a
+ * quoted field spanning multiple lines survives intact. Still preview-grade
+ * (unquoted cells are trimmed for the glance table), not a full CSV grammar.
+ */
+function parseCsvRows(content: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let wasQuoted = false;
+  let inQuotes = false;
+
+  const endField = () => {
+    row.push(wasQuoted ? field : field.trim());
+    field = "";
+    wasQuoted = false;
+  };
+  const endRow = () => {
+    endField();
+    rows.push(row);
+    row = [];
+  };
+
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i];
+
+    if (inQuotes) {
+      if (ch === '"') {
+        if (content[i + 1] === '"') {
+          field += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"' && field === "") {
+      inQuotes = true;
+      wasQuoted = true;
+      continue;
+    }
+
+    if (ch === ",") {
+      endField();
+      continue;
+    }
+
+    if (ch === "\r") {
+      continue;
+    }
+
+    if (ch === "\n") {
+      endRow();
+      continue;
+    }
+
+    field += ch;
+  }
+
+  // A trailing field/row with no terminating newline.
+  if (field !== "" || row.length > 0) {
+    endRow();
+  }
+
+  return rows;
+}
+
 function parseCsv(content: string): ParsedCsv {
-  const lines = content
-    .trim()
-    .split(/\r?\n/)
-    .filter((line) => line.length > 0);
-  const [head = "", ...rest] = lines;
-  const split = (line: string) => line.split(",").map((cell) => cell.trim());
-  return { header: split(head), rows: rest.map(split) };
+  const rows = parseCsvRows(content.trim()).filter((r) => !(r.length === 1 && r[0] === ""));
+  const [header = [], ...rest] = rows;
+  return { header, rows: rest };
 }
 
 const CsvPreview = ({ content }: { content: string }) => {
+  const { t } = useLocale();
   const { header, rows } = useMemo(() => parseCsv(content), [content]);
   return (
     <div className="flex flex-col gap-2">
@@ -109,7 +179,7 @@ const CsvPreview = ({ content }: { content: string }) => {
         </TableBody>
       </Table>
       <p className="text-meta text-muted-foreground">
-        {rows.length} {rows.length === 1 ? "row" : "rows"}
+        {t("ai.assetPreview.rowCount", { count: rows.length })}
       </p>
     </div>
   );
@@ -135,6 +205,7 @@ export const AssetPreview = ({
   className,
   ...props
 }: AssetPreviewProps) => {
+  const { t } = useLocale();
   const [mode, setMode] = useState<AssetPreviewMode>(defaultMode);
   const injectedRenderer = useAssetPreviewRenderer();
   const content = asset.content ?? "";
@@ -150,7 +221,7 @@ export const AssetPreview = ({
   if (injected !== null) {
     body = injected;
   } else if (asset.type !== "image" && content.length === 0) {
-    body = <p className="text-body text-muted-foreground">No preview available…</p>;
+    body = <p className="text-body text-muted-foreground">{t("ai.assetPreview.noPreview")}</p>;
   } else if (showRaw) {
     body = <CodeBlock code={content} language={assetLanguage(asset)} wrap />;
   } else {
@@ -197,7 +268,7 @@ export const AssetPreview = ({
               className={cn(!showRaw && "bg-accent text-accent-foreground")}
               onClick={() => setMode("preview")}
             >
-              Preview
+              {t("ai.assetPreview.preview")}
             </Button>
             <Button
               type="button"
@@ -207,7 +278,7 @@ export const AssetPreview = ({
               className={cn(showRaw && "bg-accent text-accent-foreground")}
               onClick={() => setMode("raw")}
             >
-              Raw
+              {t("ai.assetPreview.raw")}
             </Button>
           </ArtifactActions>
         ) : null}

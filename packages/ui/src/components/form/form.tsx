@@ -1,3 +1,5 @@
+"use client";
+
 import {
   createContext,
   forwardRef,
@@ -114,7 +116,7 @@ export const FormDescription = forwardRef<
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-body text-muted-foreground", className)}
       {...props}
     />
   );
@@ -132,7 +134,7 @@ export const FormMessage = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLP
         className={cn(
           // #124: the error message body is running text — ink rung, not the
           // 3:1 mark rung `text-destructive` guarantees.
-          "text-sm font-medium text-destructive-text animate-in fade-in slide-in-from-top-1 ease-entrance",
+          "text-body font-medium text-destructive-text animate-in fade-in slide-in-from-top-1 ease-entrance",
           className,
         )}
         {...props}

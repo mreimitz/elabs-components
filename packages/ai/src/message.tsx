@@ -8,6 +8,7 @@ import { useLocale } from "@elabs-ai/components-ui";
 import { cva, type VariantProps } from "class-variance-authority";
 import { stripSanitizerOverrides, warnOnTrustedPluginSlots } from "./_streamdown-safety";
 import {
+  getStreamdownPluginsKey,
   useStreamdownMermaidOptions,
   useStreamdownPlugins,
   useStreamdownTranslations,
@@ -433,19 +434,20 @@ export const MessageBranch = ({
 
 export type MessageBranchContentProps = HTMLAttributes<HTMLDivElement>;
 
-export const MessageBranchContent = ({ children, ...props }: MessageBranchContentProps) => {
-  const { currentBranch, setBranches, branches } = useMessageBranch();
+export const MessageBranchContent = ({ children, id, ...props }: MessageBranchContentProps) => {
+  const { currentBranch, setBranches } = useMessageBranch();
   const childrenArray = useMemo(
     () => (Array.isArray(children) ? children : [children]),
     [children],
   );
 
-  // Use useEffect to update branches when they change
+  // Always resync — an earlier length-gate (`branches.length !==
+  // childrenArray.length`) skipped this when a branch's CONTENT changed
+  // (e.g. an edited message) without the branch COUNT changing, leaving
+  // `context.branches` stale relative to what is actually rendered.
   useEffect(() => {
-    if (branches.length !== childrenArray.length) {
-      setBranches(childrenArray);
-    }
-  }, [childrenArray, branches, setBranches]);
+    setBranches(childrenArray);
+  }, [childrenArray, setBranches]);
 
   return childrenArray.map((branch, index) => (
     <div
@@ -454,6 +456,10 @@ export const MessageBranchContent = ({ children, ...props }: MessageBranchConten
         index === currentBranch ? "block" : "hidden",
       )}
       data-slot="message-branch-content"
+      // Spreading a caller-supplied `id` onto every mapped branch produced
+      // duplicate DOM ids (one per branch); suffix it per index instead so
+      // each branch keeps a unique, stable id.
+      id={id ? `${id}-${index}` : undefined}
       key={branch.key}
       {...props}
     >
@@ -624,7 +630,12 @@ export const MessageResponse = memo(
     const { t } = useLocale();
     // Brand-token-derived `code` plugin, not the package's static github-*
     // default (#315 follow-up) — re-derives when the active theme changes.
-    const internalPlugins = useStreamdownPlugins();
+    // `math`/`cjk` are lazy-loaded off the raw markdown source (#perf-5, see
+    // `_streamdown-i18n.ts`) — pass `props.children` so they load only when
+    // this message actually needs them.
+    const internalPlugins = useStreamdownPlugins(
+      typeof props.children === "string" ? props.children : "",
+    );
     // MERGED per key over the internal defaults — the same semantics as
     // `MarkdownView`'s `plugins` prop (#10 fix round, M4): a consumer entry
     // wins for its key; every key the consumer does not set keeps the
@@ -676,6 +687,9 @@ export const MessageResponse = memo(
           "[&_p]:text-body [&_li]:text-body [&_code]:text-code",
           className,
         )}
+        // Forces a remount the first time the lazy math/cjk slot resolves —
+        // see `getStreamdownPluginsKey`'s doc in `_streamdown-i18n.ts` for why.
+        key={getStreamdownPluginsKey(internalPlugins)}
         data-slot="message-response"
         plugins={plugins}
         translations={translations}
@@ -684,10 +698,20 @@ export const MessageResponse = memo(
       />
     );
   },
-  (prevProps, nextProps) =>
-    prevProps.children === nextProps.children &&
-    nextProps.isAnimating === prevProps.isAnimating &&
-    nextProps.loading === prevProps.loading,
+  // A hand-picked field list (`children`/`isAnimating`/`loading`) silently
+  // went stale as `MessageResponseProps` grew: `className`, `components`,
+  // `plugins`, `mode` and every other `Streamdown` prop passed through
+  // `...props` were never compared, so a caller-driven change to any of them
+  // (e.g. toggling `mode="static"`/`"streaming"`, swapping `components`, or
+  // overriding a `plugins` slot) rendered stale content until an unrelated
+  // prop also changed. Compare every own key on BOTH sides with `Object.is`
+  // instead, so a newly added prop is covered for free.
+  (prevProps, nextProps) => {
+    const prevKeys = Object.keys(prevProps) as (keyof MessageResponseProps)[];
+    const nextKeys = Object.keys(nextProps) as (keyof MessageResponseProps)[];
+    if (prevKeys.length !== nextKeys.length) return false;
+    return prevKeys.every((key) => Object.is(prevProps[key], nextProps[key]));
+  },
 );
 
 MessageResponse.displayName = "MessageResponse";

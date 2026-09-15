@@ -1,6 +1,13 @@
 "use client";
 
-import * as monaco from "monaco-editor";
+// Type-only: the barrel (`.`) exports this component alongside lightweight
+// chrome (`CopyButton`, `EDITOR_LANGUAGES`) that must stay import-safe without
+// Monaco. A `monaco-editor` VALUE import here would be evaluated the moment
+// anything imports the barrel, pulling megabytes of Monaco + touching browser
+// globals even for a consumer that only wants `CopyButton`. The engine is
+// loaded at RUNTIME via `import("monaco-editor")` inside the mount effect
+// below — see `monacoRef`.
+import type * as monaco from "monaco-editor";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   forwardRef,
@@ -19,6 +26,14 @@ export type MonacoCodeEditor = monaco.editor.IStandaloneCodeEditor;
 
 /** A Monaco editor action (system command + optional hotkey + palette/menu entry). */
 export type EditorAction = monaco.editor.IActionDescriptor;
+
+/**
+ * The runtime value type handed back by `import("monaco-editor")` — same
+ * namespace as the type-only `monaco` import above (`typeof` a type-only
+ * namespace import resolves to the module's own type), used for `monacoRef`
+ * and `onMount`'s second argument.
+ */
+type MonacoNamespace = typeof monaco;
 
 export interface CodeEditorProps extends Omit<
   HTMLAttributes<HTMLDivElement>,
@@ -58,7 +73,7 @@ export interface CodeEditorProps extends Omit<
    */
   contextMenu?: "brand" | "monaco" | "none";
   /** Called once the editor instance + monaco namespace are ready. */
-  onMount?: (editor: MonacoCodeEditor, monacoApi: typeof monaco) => void;
+  onMount?: (editor: MonacoCodeEditor, monacoApi: MonacoNamespace) => void;
   /**
    * Declarative Monaco editor actions — each registers a command (run on its
    * `keybindings`, in the command palette, and optionally the context menu via
@@ -71,6 +86,38 @@ export interface CodeEditorProps extends Omit<
    * re-registering on every render.
    */
   actions?: EditorAction[];
+}
+
+/**
+ * The smallest single edit that turns `oldValue` into `newValue`, found by
+ * trimming the common prefix and suffix. Used instead of a wholesale
+ * `editor.setValue()` when syncing a controlled `value`: `setValue` replaces
+ * the entire model in one shot, which wipes the undo stack and always resets
+ * the cursor to the start of the document. Routing the same change through
+ * `editor.executeEdits` with just the differing middle span keeps it a single
+ * coalescable undo entry and leaves the cursor/selection outside the edited
+ * span untouched by Monaco's own position mapping.
+ */
+function computeMinimalEdit(
+  oldValue: string,
+  newValue: string,
+): { start: number; endOld: number; text: string } {
+  const maxCommon = Math.min(oldValue.length, newValue.length);
+  let start = 0;
+  while (start < maxCommon && oldValue.charCodeAt(start) === newValue.charCodeAt(start)) {
+    start++;
+  }
+  let endOld = oldValue.length;
+  let endNew = newValue.length;
+  while (
+    endOld > start &&
+    endNew > start &&
+    oldValue.charCodeAt(endOld - 1) === newValue.charCodeAt(endNew - 1)
+  ) {
+    endOld--;
+    endNew--;
+  }
+  return { start, endOld, text: newValue.slice(start, endNew) };
 }
 
 const BASE_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
@@ -119,6 +166,15 @@ export const CodeEditor = forwardRef<MonacoCodeEditor | null, CodeEditorProps>(f
   const containerRef = useRef<HTMLDivElement>(null);
   const [editor, setEditor] = useState<MonacoCodeEditor | null>(null);
   const { theme, revision } = useDataTheme();
+  // The CURRENT model, tracked outside React state: a `path` change swaps it
+  // (see the effect below) without waiting on a re-render, and unmount must
+  // dispose whichever model is live at that point, not the one from mount.
+  const modelRef = useRef<monaco.editor.ITextModel | null>(null);
+  // The dynamically-imported `monaco-editor` module, once loaded. `editor`
+  // (React state) is only ever set AFTER this ref is populated (see the mount
+  // effect), so every other effect below that reads both may assume: `editor`
+  // truthy implies `monacoRef.current` truthy.
+  const monacoRef = useRef<MonacoNamespace | null>(null);
 
   // Latest callbacks via refs so the mount effect can run exactly once.
   const onChangeRef = useRef(onChange);
@@ -130,64 +186,139 @@ export const CodeEditor = forwardRef<MonacoCodeEditor | null, CodeEditorProps>(f
     editor,
   ]);
 
-  // Mount once.
+  // Mount once. Monaco itself loads lazily (`import("monaco-editor")`) so the
+  // engine is only fetched/evaluated once a `CodeEditor` actually mounts, never
+  // merely by importing this module (see the top-of-file note). `cancelled`
+  // guards against the component unmounting (or `container` going away) before
+  // the dynamic import resolves.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    let cancelled = false;
+    let instance: MonacoCodeEditor | null = null;
+    let model: monaco.editor.ITextModel | null = null;
+    let sub: { dispose(): void } | null = null;
 
-    const model = monaco.editor.createModel(
-      value ?? defaultValue ?? "",
-      language,
-      path ? monaco.Uri.parse(`inmemory://brand/${path}`) : undefined,
-    );
-    const instance = monaco.editor.create(container, {
-      ...BASE_OPTIONS,
-      readOnly,
-      // Disable Monaco's own menu unless explicitly opted into; "brand" renders
-      // brand-ui's ContextMenu around the editor instead.
-      contextmenu: contextMenu === "monaco",
-      // Monaco's accessible name comes from this construction option (it writes it
-      // onto its inner screen-reader <textarea>), not from a wrapper-div attribute.
-      ...(ariaLabel !== undefined ? { ariaLabel } : null),
-      model,
-      ...options,
+    import("monaco-editor").then((monacoApi) => {
+      if (cancelled) return;
+      monacoRef.current = monacoApi;
+      model = monacoApi.editor.createModel(
+        value ?? defaultValue ?? "",
+        language,
+        path ? monacoApi.Uri.parse(`inmemory://brand/${path}`) : undefined,
+      );
+      modelRef.current = model;
+      instance = monacoApi.editor.create(container, {
+        ...BASE_OPTIONS,
+        readOnly,
+        // Disable Monaco's own menu unless explicitly opted into; "brand" renders
+        // brand-ui's ContextMenu around the editor instead.
+        contextmenu: contextMenu === "monaco",
+        // Monaco's accessible name comes from this construction option (it writes it
+        // onto its inner screen-reader <textarea>), not from a wrapper-div attribute.
+        ...(ariaLabel !== undefined ? { ariaLabel } : null),
+        model,
+        ...options,
+      });
+      sub = instance.onDidChangeModelContent(() => {
+        onChangeRef.current?.(instance!.getValue());
+      });
+      // Monaco now mounts asynchronously, so stamp the initial aria-* onto its
+      // textarea right away — otherwise it is briefly exposed without a name
+      // until the aria sync effect below runs on the next commit.
+      const textarea = instance.getDomNode()?.querySelector("textarea");
+      if (textarea) {
+        if (ariaLabel !== undefined) textarea.setAttribute("aria-label", ariaLabel);
+        if (ariaInvalid !== undefined) textarea.setAttribute("aria-invalid", String(ariaInvalid));
+        if (ariaDescribedBy !== undefined)
+          textarea.setAttribute("aria-describedby", ariaDescribedBy);
+      }
+      // `setEditor` triggers the theming effect below; keeping theme application
+      // there (not here) guarantees it never blocks editor setup.
+      setEditor(instance);
+      onMountRef.current?.(instance, monacoApi);
     });
-    const sub = instance.onDidChangeModelContent(() => {
-      onChangeRef.current?.(instance.getValue());
-    });
-    // `setEditor` triggers the theming effect below; keeping theme application
-    // there (not here) guarantees it never blocks editor setup.
-    setEditor(instance);
-    onMountRef.current?.(instance, monaco);
 
     return () => {
-      sub.dispose();
-      instance.dispose();
-      model.dispose();
+      cancelled = true;
+      sub?.dispose();
+      instance?.dispose();
+      model?.dispose();
+      modelRef.current = null;
+      monacoRef.current = null;
       setEditor(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Controlled value sync (only when it diverges, to preserve cursor/undo).
+  // `path` drives the model's URI, which Monaco never lets you change on an
+  // existing model — a later `path` change (e.g. `CodeWorkspace` switching
+  // files) was previously just ignored. Swap in a fresh model carrying the
+  // CURRENT value/language under the new URI, and dispose the old one; a
+  // per-file undo stack is Monaco's normal behavior for a model swap.
   useEffect(() => {
-    if (!editor || value === undefined) return;
-    if (value !== editor.getValue()) editor.setValue(value);
+    const monacoApi = monacoRef.current;
+    if (!editor || !monacoApi) return;
+    const current = modelRef.current;
+    const currentUri = current?.uri?.toString();
+    const nextUri = path ? monacoApi.Uri.parse(`inmemory://brand/${path}`).toString() : undefined;
+    if (currentUri === nextUri) return;
+
+    const nextModel = monacoApi.editor.createModel(
+      current?.getValue() ?? value ?? defaultValue ?? "",
+      language,
+      path ? monacoApi.Uri.parse(`inmemory://brand/${path}`) : undefined,
+    );
+    editor.setModel(nextModel);
+    modelRef.current = nextModel;
+    current?.dispose();
+    // `value`/`defaultValue`/`language` are read once, at the moment of the
+    // swap, to seed the new model — not tracked as reactive deps here; the
+    // controlled-value and language effects below correct them independently.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, path]);
+
+  // Controlled value sync — only when it diverges, and via the smallest
+  // `executeEdits` span rather than `setValue()`: a full-document `setValue`
+  // wipes the undo stack and always resets the cursor to the start.
+  useEffect(() => {
+    const monacoApi = monacoRef.current;
+    if (!editor || !monacoApi || value === undefined) return;
+    const model = editor.getModel();
+    if (!model) return;
+    const current = model.getValue();
+    if (value === current) return;
+    const { start, endOld, text } = computeMinimalEdit(current, value);
+    const range = monacoApi.Range.fromPositions(
+      model.getPositionAt(start),
+      model.getPositionAt(endOld),
+    );
+    editor.executeEdits("controlled-value-sync", [{ range, text }]);
   }, [editor, value]);
 
   useEffect(() => {
+    const monacoApi = monacoRef.current;
     const model = editor?.getModel();
-    if (model) monaco.editor.setModelLanguage(model, language);
+    if (model && monacoApi) monacoApi.editor.setModelLanguage(model, language);
   }, [editor, language]);
 
   useEffect(() => {
     editor?.updateOptions({ readOnly, contextmenu: contextMenu === "monaco" });
   }, [editor, readOnly, contextMenu]);
 
+  // `options` after mount: the construction-time spread only ever applied it
+  // once. A caller changing `options` (e.g. toggling `minimap`) now reaches
+  // the live editor via `updateOptions`, same as `readOnly`/`contextMenu` above.
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || !options) return;
+    editor.updateOptions(options);
+  }, [editor, options]);
+
+  useEffect(() => {
+    const monacoApi = monacoRef.current;
+    if (!editor || !monacoApi) return;
     try {
-      applyBrandTheme(monaco, theme);
+      applyBrandTheme(monacoApi, theme);
     } catch (err) {
       console.error("[@elabs-ai/components-editor] failed to apply brand theme", err);
     }

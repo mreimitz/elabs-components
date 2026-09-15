@@ -82,6 +82,19 @@ describe("toCsv", () => {
     expect(csv).toContain("'@baz");
   });
 
+  it("does NOT quote a plain negative number as an injection risk (#review false positive)", () => {
+    const rows = [{ val: -5 } as unknown as Row];
+    const csv = toCsv(rows);
+    expect(csv).toContain("-5");
+    expect(csv).not.toContain("'-5");
+  });
+
+  it("does not quote a leading-plus number either", () => {
+    const rows = [{ val: "+12.5" } as Row];
+    const csv = toCsv(rows);
+    expect(csv).not.toContain("'+12.5");
+  });
+
   it("null → empty string", () => {
     const rows = [{ val: null } as Row];
     const csv = toCsv(rows);

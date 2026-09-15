@@ -19,6 +19,7 @@ import { Badge } from "../badge";
 import { Button } from "../button";
 import { Input } from "../input";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
+import { useLocale } from "../locale-provider";
 import { type VirtualSelectOption, useVirtualListbox } from "./use-virtual-listbox";
 
 export type { VirtualSelectOption };
@@ -85,9 +86,9 @@ export const VirtualSelect = forwardRef<HTMLButtonElement, VirtualSelectProps>(
       value,
       defaultValue,
       onValueChange,
-      placeholder = "Select…",
-      searchPlaceholder = "Search…",
-      emptyText = "No results.",
+      placeholder,
+      searchPlaceholder,
+      emptyText,
       estimateOptionHeight = 32,
       maxListHeight = "18rem",
       className,
@@ -95,6 +96,11 @@ export const VirtualSelect = forwardRef<HTMLButtonElement, VirtualSelectProps>(
     },
     ref,
   ) {
+    const { t } = useLocale();
+    const resolvedPlaceholder = placeholder ?? t("ui.virtualSelect.placeholder");
+    const resolvedSearchPlaceholder = searchPlaceholder ?? t("ui.virtualSelect.searchPlaceholder");
+    const resolvedEmptyText = emptyText ?? t("noResults");
+
     // ------------------------------------------------------------------
     // Controlled / uncontrolled
     // ------------------------------------------------------------------
@@ -134,6 +140,15 @@ export const VirtualSelect = forwardRef<HTMLButtonElement, VirtualSelectProps>(
       () => options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase())),
       [options, query],
     );
+
+    // O(1) label lookup for the trigger's selected chips — `selected.map(find)`
+    // is O(selected.length * options.length) and options lists here can be
+    // large (that's the whole point of virtualizing).
+    const optionByValue = useMemo(() => {
+      const map = new Map<string, VirtualSelectOption>();
+      for (const o of options) map.set(o.value, o);
+      return map;
+    }, [options]);
 
     // ------------------------------------------------------------------
     // Virtualizer
@@ -184,26 +199,45 @@ export const VirtualSelect = forwardRef<HTMLButtonElement, VirtualSelectProps>(
     const listboxId = `${uid}-listbox`;
     const optionId = (index: number) => `${uid}-option-${index}`;
 
-    // Focus the search input when the popover opens
+    // Focus the search input when the popover opens. The timeout id is
+    // tracked so it can be cancelled on unmount (or a rapid re-close) —
+    // otherwise it fires after the component (and `searchRef`'s DOM node)
+    // is gone, or focuses a NEW popover's input on a fast toggle.
+    const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(
+      () => () => {
+        if (focusTimeoutRef.current != null) clearTimeout(focusTimeoutRef.current);
+      },
+      [],
+    );
+
     const handleOpenChange = useCallback((next: boolean) => {
       setOpen(next);
+      if (focusTimeoutRef.current != null) {
+        clearTimeout(focusTimeoutRef.current);
+        focusTimeoutRef.current = null;
+      }
       if (next) {
         // Defer one frame so Radix has mounted the portal
-        setTimeout(() => searchRef.current?.focus(), 0);
+        focusTimeoutRef.current = setTimeout(() => {
+          focusTimeoutRef.current = null;
+          searchRef.current?.focus();
+        }, 0);
       }
     }, []);
 
     // ------------------------------------------------------------------
     // Trigger label
     // ------------------------------------------------------------------
-    const selectedLabels = selected.map((v) => {
-      const opt = options.find((o) => o.value === v);
-      return { value: v, label: opt?.label ?? v };
-    });
+    const selectedLabels = selected.map((v) => ({
+      value: v,
+      label: optionByValue.get(v)?.label ?? v,
+    }));
 
     const triggerContent =
       selectedLabels.length === 0 ? (
-        <span className="text-muted-foreground">{placeholder}</span>
+        <span className="text-muted-foreground">{resolvedPlaceholder}</span>
       ) : multiple ? (
         <>
           {selectedLabels.slice(0, 2).map((l) => (
@@ -247,7 +281,7 @@ export const VirtualSelect = forwardRef<HTMLButtonElement, VirtualSelectProps>(
             aria-expanded={open}
             aria-haspopup="listbox"
             aria-controls={listboxId}
-            className={cn("h-auto min-h-9 w-64 justify-between font-normal", className)}
+            className={cn("h-auto min-h-9 w-full justify-between font-normal", className)}
             {...props}
           >
             <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1 text-start">
@@ -258,7 +292,7 @@ export const VirtualSelect = forwardRef<HTMLButtonElement, VirtualSelectProps>(
         </PopoverTrigger>
 
         <PopoverContent
-          className="w-64 p-0"
+          className="w-[var(--radix-popover-trigger-width)] min-w-64 p-0"
           align="start"
           // Prevent Radix from stealing focus so it can go to the input
           onOpenAutoFocus={(e) => e.preventDefault()}
@@ -270,17 +304,21 @@ export const VirtualSelect = forwardRef<HTMLButtonElement, VirtualSelectProps>(
               type="text"
               autoComplete="off"
               spellCheck={false}
-              placeholder={searchPlaceholder}
+              placeholder={resolvedSearchPlaceholder}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => onInputKeyDown(e)}
-              aria-label={searchPlaceholder}
+              aria-label={resolvedSearchPlaceholder}
               aria-autocomplete="list"
               aria-controls={listboxId}
               aria-activedescendant={
                 activeIndex >= 0 && activeMounted ? optionId(activeIndex) : undefined
               }
-              className="h-8 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              // Border/shadow removed (sits inside the popover's own bordered
+              // header strip) but the base `Input` focus-ring is kept — no
+              // compound ring lives elsewhere on this control, so silencing it
+              // would leave a re-focused search box with no visible indicator.
+              className="h-8 border-0 shadow-none"
             />
           </div>
 
@@ -318,7 +356,7 @@ export const VirtualSelect = forwardRef<HTMLButtonElement, VirtualSelectProps>(
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
                       className={cn(
-                        "flex cursor-pointer select-none items-center rounded-sm px-2 text-sm outline-none",
+                        "flex cursor-pointer select-none items-center rounded-sm px-2 text-body outline-none",
                         "transition-colors duration-fast motion-reduce:transition-none",
                         isActive && "bg-accent text-accent-foreground",
                         !isActive && "hover:bg-accent hover:text-accent-foreground",
@@ -349,9 +387,9 @@ export const VirtualSelect = forwardRef<HTMLButtonElement, VirtualSelectProps>(
             <div
               role="status"
               aria-live="polite"
-              className="px-2 py-6 text-center text-sm text-muted-foreground"
+              className="px-2 py-6 text-center text-body text-muted-foreground"
             >
-              {emptyText}
+              {resolvedEmptyText}
             </div>
           ) : null}
         </PopoverContent>

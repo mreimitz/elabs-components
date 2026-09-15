@@ -12,6 +12,15 @@ const meta = {
   parameters: {
     layout: "centered",
   },
+  // The trigger fills its container by default (no hard-fixed width) — cap
+  // the docs canvas to a realistic form-field width.
+  decorators: [
+    (Story) => (
+      <div className="w-80">
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     value: {
       description: "Controlled date range `{ from, to }`.",

@@ -1,10 +1,11 @@
 "use client";
 
 import MapLibreGL, { type MarkerOptions, type PopupOptions } from "maplibre-gl";
-import { createContext, use, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { createContext, use, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 
 import { useMap } from "../map-canvas/map-context";
 
@@ -63,6 +64,7 @@ export function MapMarker({
   ...markerOptions
 }: MapMarkerProps) {
   const { map } = useMap();
+  const [marker, setMarker] = useState<MapLibreGL.Marker | null>(null);
 
   const callbacksRef = useRef({
     onClick,
@@ -81,12 +83,33 @@ export function MapMarker({
     onDragEnd,
   };
 
-  const marker = useMemo(() => {
+  const { anchor, className, offset, rotation, rotationAlignment, pitchAlignment } = markerOptions;
+
+  // `longitude`/`latitude`/`draggable` at construction time only — the sync
+  // effect below corrects them on the very next commit, and are read from a
+  // ref here so they don't force a rebuild on every position change (see the
+  // `anchor`/`className` note below for what SHOULD force one).
+  const initialRef = useRef({ longitude, latitude, draggable });
+  initialRef.current = { longitude, latitude, draggable };
+
+  // Builds (and tears down) the actual MapLibre `Marker` instance. This is a
+  // real `useEffect`, never `useMemo`: `useMemo`'s initializer runs during
+  // RENDER — including on the server, where `document` doesn't exist — and
+  // React offers no guarantee it runs only once (it may discard and recompute
+  // a memoized value), which would silently leak marker instances/listeners.
+  //
+  // `anchor` and `className` have no MapLibre setter (`Marker` bakes both into
+  // its constructor), so they are the only options that must REBUILD the
+  // instance; every other option (position, draggable, offset, rotation,
+  // alignment) has a live setter and is kept in sync by the effect further
+  // below without ever recreating the marker.
+  useEffect(() => {
     const markerInstance = new MapLibreGL.Marker({
-      ...markerOptions,
+      anchor,
+      className,
       element: document.createElement("div"),
-      draggable,
-    }).setLngLat([longitude, latitude]);
+      draggable: initialRef.current.draggable,
+    }).setLngLat([initialRef.current.longitude, initialRef.current.latitude]);
 
     const handleClick = (e: MouseEvent) => callbacksRef.current.onClick?.(e);
     const handleMouseEnter = (e: MouseEvent) => callbacksRef.current.onMouseEnter?.(e);
@@ -113,24 +136,25 @@ export function MapMarker({
     markerInstance.on("drag", handleDrag);
     markerInstance.on("dragend", handleDragEnd);
 
-    return markerInstance;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- instance created once; position/options are synced by the effect below
-  }, []);
+    setMarker(markerInstance);
+  }, [anchor, className]);
 
+  // Attaches/detaches the CURRENT marker instance to the map — its own effect
+  // so both a `map` change and an `anchor`/`className`-driven rebuild above
+  // are handled the same way, without a double `remove()`.
   useEffect(() => {
-    if (!map) return;
+    if (!map || !marker) return;
 
     marker.addTo(map);
 
     return () => {
       marker.remove();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `marker` is stable (created once above)
-  }, [map]);
-
-  const { offset, rotation, rotationAlignment, pitchAlignment } = markerOptions;
+  }, [map, marker]);
 
   useEffect(() => {
+    if (!marker) return;
+
     const current = marker.getLngLat();
     if (current.lng !== longitude || current.lat !== latitude) {
       marker.setLngLat([longitude, latitude]);
@@ -159,6 +183,14 @@ export function MapMarker({
       marker.setPitchAlignment(pitchAlignment ?? "auto");
     }
   }, [marker, longitude, latitude, draggable, offset, rotation, rotationAlignment, pitchAlignment]);
+
+  // No marker yet (first client tick after mount, or the moment an
+  // `anchor`/`className` rebuild is in flight) — render nothing rather than
+  // a sub-component (`MapMarkerContent` et al.) reaching into a null marker,
+  // and nothing at all on the server.
+  if (!marker) {
+    return null;
+  }
 
   return <MarkerContext.Provider value={{ marker, map }}>{children}</MarkerContext.Provider>;
 }
@@ -189,11 +221,12 @@ function DefaultMarkerIcon() {
 }
 
 function PopupCloseButton({ onClick }: { onClick: () => void }) {
+  const { t } = useLocale();
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label="Close popup"
+      aria-label={t("maps.popup.close")}
       className="absolute top-1 right-1 z-10 inline-flex size-5 items-center justify-center rounded-sm text-foreground transition-colors duration-fast hover:bg-muted focus-ring-inset"
     >
       <X className="size-3.5" aria-hidden="true" />

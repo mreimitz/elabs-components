@@ -82,9 +82,9 @@ export function TeamSwitcher({ teams, logoClassName, className }: TeamSwitcherPr
               >
                 <Logo className="size-4" />
               </div>
-              <div className="grid flex-1 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden">
+              <div className="grid flex-1 text-start text-body leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-semibold">{activeTeam.name}</span>
-                <span className="truncate text-xs">{activeTeam.plan}</span>
+                <span className="truncate text-meta">{activeTeam.plan}</span>
               </div>
               {/* Decorative, so it simply goes. */}
               <ChevronsUpDown className="ms-auto group-data-[collapsible=icon]:hidden" />
@@ -96,7 +96,7 @@ export function TeamSwitcher({ teams, logoClassName, className }: TeamSwitcherPr
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
+            <DropdownMenuLabel className="text-meta text-muted-foreground">
               {t("ui.teamSwitcher.label")}
             </DropdownMenuLabel>
             {teams.map((team, index) => (

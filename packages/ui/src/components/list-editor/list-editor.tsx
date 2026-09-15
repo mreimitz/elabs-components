@@ -3,7 +3,9 @@
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type HTMLAttributes,
   type ReactNode,
@@ -77,10 +79,48 @@ export const ListEditor = forwardRef<HTMLDivElement, ListEditorProps>(function L
     [isControlled, onValueChange],
   );
 
+  // `rows` is a bare `string[]` with no identity of its own — keying each
+  // row's DOM by its ARRAY INDEX means a reorder swaps which row's data a
+  // given DOM node (and its focused "Move up" button) renders, not which
+  // node holds the moved row's data. A stable per-row id, generated once and
+  // carried through add/remove/move in lockstep with `rows`, lets React
+  // (and thus keyboard focus) follow the actual row instead of the slot.
+  const idCounterRef = useRef(0);
+  const makeId = useCallback(() => `list-editor-row-${idCounterRef.current++}`, []);
+  const [rowIds, setRowIds] = useState<string[]>(() => rows.map(() => makeId()));
+  const lastRowsRef = useRef(rows);
+  const upButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const downButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const pendingFocusRef = useRef<{ id: string; want: "up" | "down" } | null>(null);
+
+  // Safety net for a `rows` change that did NOT come from add/remove/move
+  // below (e.g. a controlled `value` reset by the app) — keeps `rowIds` the
+  // same length as `rows` without guessing at a diff.
+  useEffect(() => {
+    if (rows === lastRowsRef.current) return;
+    lastRowsRef.current = rows;
+    setRowIds((prev) => {
+      if (prev.length === rows.length) return prev;
+      if (rows.length > prev.length) {
+        return [...prev, ...Array.from({ length: rows.length - prev.length }, () => makeId())];
+      }
+      return prev.slice(0, rows.length);
+    });
+  }, [rows, makeId]);
+
+  useEffect(() => {
+    const pending = pendingFocusRef.current;
+    if (!pending) return;
+    pendingFocusRef.current = null;
+    const map = pending.want === "up" ? upButtonRefs.current : downButtonRefs.current;
+    map.get(pending.id)?.focus();
+  }, [rowIds]);
+
   const addRow = useCallback(() => {
     if (max !== undefined && rows.length >= max) return;
     commit([...rows, ""]);
-  }, [rows, max, commit]);
+    setRowIds((ids) => [...ids, makeId()]);
+  }, [rows, max, commit, makeId]);
 
   const updateRow = useCallback(
     (index: number, next: string) => {
@@ -92,6 +132,7 @@ export const ListEditor = forwardRef<HTMLDivElement, ListEditorProps>(function L
   const removeRow = useCallback(
     (index: number) => {
       commit(rows.filter((_, i) => i !== index));
+      setRowIds((ids) => ids.filter((_, i) => i !== index));
     },
     [rows, commit],
   );
@@ -103,9 +144,31 @@ export const ListEditor = forwardRef<HTMLDivElement, ListEditorProps>(function L
       const next = [...rows];
       const [moved] = next.splice(index, 1);
       next.splice(target, 0, moved!);
+      const movedId = rowIds[index]!;
       commit(next);
+      setRowIds((ids) => {
+        const nextIds = [...ids];
+        const [id] = nextIds.splice(index, 1);
+        nextIds.splice(target, 0, id!);
+        return nextIds;
+      });
+
+      // The button the user just pressed keeps focus by default (same id ⇒
+      // same DOM node, just repositioned). The one case that needs help: the
+      // row landed at the top/bottom, so THIS direction's button is now
+      // `disabled` — a browser blurs a focused element the instant it goes
+      // disabled, dropping focus to <body>. Redirect to the row's other
+      // reorder button instead, which stays enabled.
+      const activated: "up" | "down" = direction === -1 ? "up" : "down";
+      const willDisable =
+        (activated === "up" && target === 0) ||
+        (activated === "down" && target === rows.length - 1);
+      pendingFocusRef.current = {
+        id: movedId,
+        want: willDisable ? (activated === "up" ? "down" : "up") : activated,
+      };
     },
-    [rows, commit],
+    [rows, rowIds, commit],
   );
 
   const atMax = max !== undefined && rows.length >= max;
@@ -123,56 +186,67 @@ export const ListEditor = forwardRef<HTMLDivElement, ListEditorProps>(function L
         </p>
       ) : (
         <div className="flex flex-col gap-2">
-          {rows.map((row, index) => (
-            <div key={index} data-slot="list-editor-row" className="flex items-center gap-1">
-              <Input
-                data-slot="list-editor-item"
-                value={row}
-                placeholder={placeholder}
-                disabled={disabled}
-                aria-label={t("ui.listEditor.itemLabel", { n: index + 1 })}
-                onChange={(event) => updateRow(index, event.target.value)}
-                className="flex-1"
-              />
-              {reorderable && (
-                <>
-                  <Button
-                    data-slot="list-editor-move-up"
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    disabled={disabled || index === 0}
-                    aria-label={t("ui.listEditor.moveUp", { n: index + 1 })}
-                    onClick={() => moveRow(index, -1)}
-                  >
-                    <ChevronUp aria-hidden="true" />
-                  </Button>
-                  <Button
-                    data-slot="list-editor-move-down"
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    disabled={disabled || index === rows.length - 1}
-                    aria-label={t("ui.listEditor.moveDown", { n: index + 1 })}
-                    onClick={() => moveRow(index, 1)}
-                  >
-                    <ChevronDown aria-hidden="true" />
-                  </Button>
-                </>
-              )}
-              <Button
-                data-slot="list-editor-remove"
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                disabled={disabled}
-                aria-label={t("ui.listEditor.removeItem", { n: index + 1 })}
-                onClick={() => removeRow(index)}
-              >
-                <X aria-hidden="true" />
-              </Button>
-            </div>
-          ))}
+          {rows.map((row, index) => {
+            const rowId = rowIds[index] ?? String(index);
+            return (
+              <div key={rowId} data-slot="list-editor-row" className="flex items-center gap-1">
+                <Input
+                  data-slot="list-editor-item"
+                  value={row}
+                  placeholder={placeholder}
+                  disabled={disabled}
+                  aria-label={t("ui.listEditor.itemLabel", { n: index + 1 })}
+                  onChange={(event) => updateRow(index, event.target.value)}
+                  className="flex-1"
+                />
+                {reorderable && (
+                  <>
+                    <Button
+                      ref={(el) => {
+                        if (el) upButtonRefs.current.set(rowId, el);
+                        else upButtonRefs.current.delete(rowId);
+                      }}
+                      data-slot="list-editor-move-up"
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={disabled || index === 0}
+                      aria-label={t("ui.listEditor.moveUp", { n: index + 1 })}
+                      onClick={() => moveRow(index, -1)}
+                    >
+                      <ChevronUp aria-hidden="true" />
+                    </Button>
+                    <Button
+                      ref={(el) => {
+                        if (el) downButtonRefs.current.set(rowId, el);
+                        else downButtonRefs.current.delete(rowId);
+                      }}
+                      data-slot="list-editor-move-down"
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={disabled || index === rows.length - 1}
+                      aria-label={t("ui.listEditor.moveDown", { n: index + 1 })}
+                      onClick={() => moveRow(index, 1)}
+                    >
+                      <ChevronDown aria-hidden="true" />
+                    </Button>
+                  </>
+                )}
+                <Button
+                  data-slot="list-editor-remove"
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={disabled}
+                  aria-label={t("ui.listEditor.removeItem", { n: index + 1 })}
+                  onClick={() => removeRow(index)}
+                >
+                  <X aria-hidden="true" />
+                </Button>
+              </div>
+            );
+          })}
         </div>
       )}
       <Button

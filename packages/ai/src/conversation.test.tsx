@@ -16,6 +16,7 @@ import type { UIMessage } from "ai";
 import {
   Conversation,
   ConversationContent,
+  ConversationDownload,
   ConversationEmptyState,
   messagesToMarkdown,
 } from "./conversation";
@@ -69,6 +70,46 @@ describe("Conversation — transcript region", () => {
     expect(screen.getByRole("log")).toHaveClass("extra");
     expect(screen.getByRole("log")).toHaveClass("flex-1");
   });
+
+  it('defaults to aria-live="polite" and no aria-busy (not streaming)', () => {
+    render(
+      <Conversation>
+        <ConversationContent>x</ConversationContent>
+      </Conversation>,
+    );
+    const log = screen.getByRole("log");
+    expect(log).toHaveAttribute("aria-live", "polite");
+    expect(log).not.toHaveAttribute("aria-busy");
+  });
+
+  it('suppresses aria-live and sets aria-busy while isStreaming (perf review §2 — role="log" must not announce every token)', () => {
+    render(
+      <Conversation isStreaming>
+        <ConversationContent>x</ConversationContent>
+      </Conversation>,
+    );
+    const log = screen.getByRole("log");
+    expect(log).toHaveAttribute("aria-live", "off");
+    expect(log).toHaveAttribute("aria-busy", "true");
+  });
+
+  it("returns to aria-live=polite once streaming settles, so the final content is announced", () => {
+    const { rerender } = render(
+      <Conversation isStreaming>
+        <ConversationContent>partial</ConversationContent>
+      </Conversation>,
+    );
+    expect(screen.getByRole("log")).toHaveAttribute("aria-live", "off");
+
+    rerender(
+      <Conversation isStreaming={false}>
+        <ConversationContent>final</ConversationContent>
+      </Conversation>,
+    );
+    const log = screen.getByRole("log");
+    expect(log).toHaveAttribute("aria-live", "polite");
+    expect(log).not.toHaveAttribute("aria-busy");
+  });
 });
 
 describe("ConversationEmptyState", () => {
@@ -105,6 +146,18 @@ describe("ConversationEmptyState", () => {
   it("omits the actions wrapper entirely when no actions are passed", () => {
     const { container } = render(<ConversationEmptyState />);
     expect(container.querySelectorAll("button")).toHaveLength(0);
+  });
+});
+
+describe("ConversationDownload — accessible name (accessibility.md)", () => {
+  it("names the icon-only download control", () => {
+    render(<ConversationDownload messages={messages} />);
+    expect(screen.getByRole("button", { name: "Download conversation" })).toBeInTheDocument();
+  });
+
+  it("lets a caller override the accessible name", () => {
+    render(<ConversationDownload aria-label="Export chat" messages={messages} />);
+    expect(screen.getByRole("button", { name: "Export chat" })).toBeInTheDocument();
   });
 });
 

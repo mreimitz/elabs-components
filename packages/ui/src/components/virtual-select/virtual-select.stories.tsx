@@ -58,6 +58,15 @@ const meta = {
       },
     },
   },
+  // The trigger fills its container by default (no hard-fixed width) — cap
+  // the docs canvas to a realistic form-field width.
+  decorators: [
+    (Story) => (
+      <div className="w-72">
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     options: {
       description:

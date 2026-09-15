@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T20:52:57.129Z",
+  "generatedAt": "2026-09-15T20:59:00.704Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -6977,7 +6977,14 @@
           "extends": [
             "ComponentProps<typeof StickToBottom>"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "isStreaming",
+              "optional": true,
+              "type": "boolean",
+              "description": "The assistant response is still arriving (loading-states.md `isStreaming`). `role=\"log\"` otherwise announces every incoming token to assistive tech as it streams in — deafening. While `true`, `aria-live` is suppressed (`\"off\"`) and `aria-busy` is set; once streaming ends, `aria-live` returns to `\"polite\"` so the settled content is what actually gets announced. @default false"
+            }
+          ]
         },
         "ConversationContent": {
           "extends": [
@@ -8018,10 +8025,16 @@
               "description": "In-flight submit: controls disabled, spinner on submit."
             },
             {
-              "name": "streaming",
+              "name": "isStreaming",
               "optional": true,
               "type": "boolean",
               "description": "The spec is still streaming (renders a skeleton when no fields yet)."
+            },
+            {
+              "name": "streaming",
+              "optional": true,
+              "type": "boolean",
+              "description": "@deprecated Use `isStreaming`."
             }
           ]
         },
@@ -8109,10 +8122,16 @@
               "description": "In-flight submit: controls disabled, the submit button shows a spinner."
             },
             {
-              "name": "streaming",
+              "name": "isStreaming",
               "optional": true,
               "type": "boolean",
               "description": "The spec is still streaming in (renders a skeleton when no fields yet)."
+            },
+            {
+              "name": "streaming",
+              "optional": true,
+              "type": "boolean",
+              "description": "@deprecated Use `isStreaming`."
             },
             {
               "name": "children",
@@ -8225,10 +8244,16 @@
               "description": "Per-cell render override for custom composition."
             },
             {
-              "name": "streaming",
+              "name": "isStreaming",
               "optional": true,
               "type": "boolean",
               "description": "The spec is still streaming (columns-but-no-rows shows skeleton rows)."
+            },
+            {
+              "name": "streaming",
+              "optional": true,
+              "type": "boolean",
+              "description": "@deprecated Use `isStreaming`."
             }
           ]
         },
@@ -16991,7 +17016,7 @@
               "name": "formatValue",
               "optional": true,
               "type": "(value: number) => string",
-              "description": "Format function for displaying values. Default: toLocaleString()"
+              "description": "Format function for displaying values. Default: locale-aware (LocaleProvider)."
             },
             {
               "name": "title",
@@ -18832,7 +18857,7 @@
               "name": "formatValue",
               "optional": true,
               "type": "(v: number) => string",
-              "description": "Value formatter"
+              "description": "Value formatter. Default: locale-aware, up to 2 fraction digits."
             },
             {
               "name": "allowDecimals",
@@ -22093,7 +22118,7 @@
               "name": "label",
               "optional": true,
               "type": "string",
-              "description": "Visually-hidden accessible label. Defaults to \"Search\"."
+              "description": "Visually-hidden accessible label. Defaults to the localized \"Search\" microcopy."
             },
             {
               "name": "containerClassName",
@@ -31830,6 +31855,14 @@
           "module": "packages/ui/src/components/model-picker/model-picker-state.ts"
         },
         {
+          "name": "csvQuoteField",
+          "module": "packages/ui/src/lib/csv.ts"
+        },
+        {
+          "name": "csvStringifyValue",
+          "module": "packages/ui/src/lib/csv.ts"
+        },
+        {
           "name": "defaultMentionFilter",
           "module": "packages/ui/src/components/mention-input/mention-value.ts"
         },
@@ -33332,7 +33365,9 @@
           ]
         },
         "DateRangePicker": {
-          "extends": [],
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLButtonElement>,\n  \"onSelect\" | \"children\" | \"value\" | \"defaultValue\"\n>"
+          ],
           "props": [
             {
               "name": "value",
@@ -33696,6 +33731,12 @@
               "optional": true,
               "type": "(files: UploadFile[]) => void",
               "description": "Called when files are added or removed."
+            },
+            {
+              "name": "onFilesRejected",
+              "optional": true,
+              "type": "(rejections: FileRejection[]) => void",
+              "description": "Called with the files a picker selection OR a drag-and-drop declined — wrong type (`accept`), over `maxSize`, over `maxFiles`, or extra files dropped when `multiple` is false — each with its {@link FileRejectionReason}."
             },
             {
               "name": "accept",
@@ -35472,7 +35513,7 @@
               "name": "label",
               "optional": true,
               "type": "string",
-              "description": "Accessible label; defaults to \"Loading\"."
+              "description": "Accessible label; defaults to the localized \"Loading…\" microcopy."
             }
           ]
         },

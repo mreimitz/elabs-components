@@ -270,4 +270,30 @@ describe("SideDock", () => {
     expect(document.activeElement).not.toBe(document.body);
     expect(document.activeElement).toBe(trigger);
   });
+
+  it("coalesces a burst of resize events into one rAF-scheduled update", () => {
+    const rafCallbacks: FrameRequestCallback[] = [];
+    const rafSpy = vi
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((cb: FrameRequestCallback) => {
+        rafCallbacks.push(cb);
+        return rafCallbacks.length;
+      });
+
+    render(
+      <SideDock title="Assistant" open overlayBreakpoint={COLUMN_BREAKPOINT}>
+        Body
+      </SideDock>,
+    );
+    rafCallbacks.length = 0; // clear anything scheduled at mount
+
+    // A window drag fires `resize` many times per frame — every one of these
+    // must coalesce into a SINGLE scheduled frame, not one per event.
+    fireEvent(window, new Event("resize"));
+    fireEvent(window, new Event("resize"));
+    fireEvent(window, new Event("resize"));
+    expect(rafCallbacks).toHaveLength(1);
+
+    rafSpy.mockRestore();
+  });
 });

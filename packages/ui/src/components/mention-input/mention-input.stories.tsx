@@ -77,7 +77,7 @@ function Field({
 }) {
   const id = useId();
   return (
-    <div className="w-[28rem] space-y-2">
+    <div className="w-full max-w-[28rem] space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <MentionInput options={options} {...props}>
         <MentionInputTextarea id={id} placeholder="Type @ to mention someone…" />
@@ -193,7 +193,7 @@ export const SerializedOutput: Story = {
     const payload = useMemo(() => serializeMentions(value), [value]);
 
     return (
-      <div className="w-[28rem] space-y-4">
+      <div className="w-full max-w-[28rem] space-y-4">
         <div className="space-y-2">
           <Label htmlFor={id}>Comment</Label>
           <MentionInput options={ROSTER} value={value} onValueChange={setValue}>
@@ -235,7 +235,7 @@ export const AsyncRoster: Story = {
     const [options, setOptions] = useState<MentionOption[]>([]);
 
     return (
-      <div className="w-[28rem] space-y-2">
+      <div className="w-full max-w-[28rem] space-y-2">
         <Label htmlFor={id}>Assign reviewers</Label>
         <MentionInput
           options={options}

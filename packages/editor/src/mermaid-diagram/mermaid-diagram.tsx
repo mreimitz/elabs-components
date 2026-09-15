@@ -68,6 +68,39 @@ const TOKEN_VARS: Record<string, string> = {
 let renderSeq = 0;
 
 /**
+ * Serializes every `mermaid.initialize()` + `mermaid.render()` pair across
+ * every `MermaidDiagram` instance on the page.
+ *
+ * The `mermaid` package configures itself through ONE module-level global
+ * (`mermaid.initialize`/`setConfig`) — `render()` takes no per-call config —
+ * so two diagrams rendering concurrently (e.g. under different `data-theme`
+ * scopes, or just two diagrams mounting together) can interleave: instance A
+ * calls `initialize({theme: A})`, then before A's `render()` finishes reading
+ * it, instance B calls `initialize({theme: B})` and A's diagram comes out
+ * themed as B. Routing every render through this queue makes "initialize,
+ * then render" atomic with respect to every other instance.
+ */
+let mermaidRenderQueue: Promise<unknown> = Promise.resolve();
+
+function withMermaidLock<T>(task: () => Promise<T>): Promise<T> {
+  const result = mermaidRenderQueue.then(task, task);
+  // Never let a failed render break the chain for the next caller.
+  mermaidRenderQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
+
+/**
+ * How long to let `chart` sit unchanged before actually rendering it — a
+ * source streamed in token-by-token (an LLM authoring one live) would
+ * otherwise trigger a full mermaid parse + layout on every partial,
+ * malformed intermediate string.
+ */
+const RENDER_DEBOUNCE_MS = 300;
+
+/**
  * Search-hit strokes for rendered nodes — token-driven, shared by the inline
  * render and the expanded viewer (a `<style>` is document-global wherever it
  * mounts, so one copy per diagram instance is enough).
@@ -151,7 +184,10 @@ export const MermaidDiagram = forwardRef<HTMLDivElement, MermaidDiagramProps>(
       a.href = url;
       a.download = `${label.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "diagram"}.svg`;
       a.click();
-      URL.revokeObjectURL(url);
+      // Defer the revoke past the current task: some browsers (Safari) start
+      // the save asynchronously off the click and cancel it if the object URL
+      // is invalidated too early.
+      setTimeout(() => URL.revokeObjectURL(url), 0);
     };
     // Bumped by the observer when the governing data-theme changes.
     const [themeVersion, setThemeVersion] = useState(0);
@@ -173,43 +209,52 @@ export const MermaidDiagram = forwardRef<HTMLDivElement, MermaidDiagramProps>(
         setError(null);
         return;
       }
-      (async () => {
-        try {
-          const mermaid = (await import("mermaid")).default;
+      // Debounce: a `chart` fed from a streaming source changes on every
+      // token, and a mermaid parse + layout is not cheap enough to run on
+      // every one of those partial, often-invalid intermediate strings — wait
+      // for the source to sit still for RENDER_DEBOUNCE_MS first.
+      const timer = setTimeout(() => {
+        void withMermaidLock(async () => {
           if (cancelled) return;
-          mermaid.initialize({
-            startOnLoad: false,
-            securityLevel: "strict",
-            suppressErrorRendering: true,
-            theme: "base",
-            themeVariables: resolveThemeVariables(host),
-          });
-          const render = (source: string) => mermaid.render(`brand-mermaid-${++renderSeq}`, source);
-          let out;
           try {
-            out = await render(chart);
-          } catch (firstErr) {
-            // Reserved-keyword node ids ("graph[...]", "end[...]") are the
-            // most common authoring mistake — remediate the id (labels stay)
-            // and retry once instead of failing the reader.
-            const token = offendingToken(
-              firstErr instanceof Error ? firstErr.message : String(firstErr),
-            );
-            const fixed = token ? remediateReservedIds(chart, token) : null;
-            if (!fixed) throw firstErr;
-            out = await render(fixed);
+            const mermaid = (await import("mermaid")).default;
+            if (cancelled) return;
+            mermaid.initialize({
+              startOnLoad: false,
+              securityLevel: "strict",
+              suppressErrorRendering: true,
+              theme: "base",
+              themeVariables: resolveThemeVariables(host),
+            });
+            const render = (source: string) =>
+              mermaid.render(`brand-mermaid-${++renderSeq}`, source);
+            let out;
+            try {
+              out = await render(chart);
+            } catch (firstErr) {
+              // Reserved-keyword node ids ("graph[...]", "end[...]") are the
+              // most common authoring mistake — remediate the id (labels stay)
+              // and retry once instead of failing the reader.
+              const token = offendingToken(
+                firstErr instanceof Error ? firstErr.message : String(firstErr),
+              );
+              const fixed = token ? remediateReservedIds(chart, token) : null;
+              if (!fixed) throw firstErr;
+              out = await render(fixed);
+            }
+            if (cancelled) return;
+            setSvg(out.svg);
+            setError(null);
+          } catch (err) {
+            if (cancelled) return;
+            setSvg(null);
+            setError(err instanceof Error ? err.message : String(err));
           }
-          if (cancelled) return;
-          setSvg(out.svg);
-          setError(null);
-        } catch (err) {
-          if (cancelled) return;
-          setSvg(null);
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      })();
+        });
+      }, RENDER_DEBOUNCE_MS);
       return () => {
         cancelled = true;
+        clearTimeout(timer);
       };
     }, [chart, themeVersion]);
 

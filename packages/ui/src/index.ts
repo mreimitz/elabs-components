@@ -21,6 +21,11 @@ export { useIsMobile } from "./lib/use-mobile";
 // Browser file-download mechanics — one home for the Blob/URL → <a download> dance
 // (shared by ConversationDownload, downloadCsv, and Gallery). SSR-guarded.
 export { downloadBlob, downloadUrl } from "./lib/download";
+// Shared CSV (RFC 4180) value stringification + injection-guarded field
+// quoting — one home for logic `@elabs-ai/components-data`'s `toCsv` and
+// `@elabs-ai/components-charts`'s ChartFrame serializer both need (charts may
+// not depend on data, so both build on this instead).
+export { csvStringifyValue, csvQuoteField } from "./lib/csv";
 // Clipboard write + transient "copied" flag — one implementation for the
 // editor's copy button and `CopyableValue`, so the timing and the
 // "no clipboard in this context" answer are defined once.

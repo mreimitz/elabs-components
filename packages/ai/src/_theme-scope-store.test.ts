@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   _debugActiveThemeScopeCount,
@@ -10,11 +10,6 @@ afterEach(() => {
   document.documentElement.removeAttribute("data-theme");
   document.body.innerHTML = "";
 });
-
-// jsdom's MutationObserver, like a real browser's, delivers records as a
-// microtask — a synchronous `act()` around the mutation returns before the
-// callback (and the resulting `setState`) runs.
-const flushMutationObserver = () => act(() => Promise.resolve());
 
 describe("getThemeScope", () => {
   it("resolves the nearest data-theme ancestor, falling back to <html>", () => {
@@ -28,18 +23,16 @@ describe("getThemeScope", () => {
 });
 
 describe("useThemeScopeRevision (perf review §3.3)", () => {
-  it("bumps the revision when the scoped element's data-theme mutates", () => {
+  it("bumps the revision when the scoped element's data-theme mutates", async () => {
     const { result } = renderHook(() => useThemeScopeRevision(document.documentElement));
     const before = result.current;
 
-    act(() => {
-      document.documentElement.setAttribute("data-theme", "dark");
-    });
+    document.documentElement.setAttribute("data-theme", "dark");
 
-    expect(result.current).toBe(before + 1);
+    await waitFor(() => expect(result.current).toBe(before + 1));
   });
 
-  it("shares ONE MutationObserver across every subscriber of the same scope", () => {
+  it("shares ONE MutationObserver across every subscriber of the same scope", async () => {
     const before = _debugActiveThemeScopeCount();
     const hookA = renderHook(() => useThemeScopeRevision(document.documentElement));
     const hookB = renderHook(() => useThemeScopeRevision(document.documentElement));
@@ -51,12 +44,10 @@ describe("useThemeScopeRevision (perf review §3.3)", () => {
     // MutationObserver on the same ancestor.
     expect(_debugActiveThemeScopeCount()).toBe(before + 1);
 
-    act(() => {
-      document.documentElement.setAttribute("data-theme", "dark");
-    });
+    document.documentElement.setAttribute("data-theme", "dark");
 
     // Every subscriber still gets notified through the single observer.
-    expect(hookA.result.current).toBe(1);
+    await waitFor(() => expect(hookA.result.current).toBe(1));
     expect(hookB.result.current).toBe(1);
     expect(hookC.result.current).toBe(1);
 
@@ -67,7 +58,7 @@ describe("useThemeScopeRevision (perf review §3.3)", () => {
     expect(_debugActiveThemeScopeCount()).toBe(before); // the observer is disconnected once unused
   });
 
-  it("scopes to the closest [data-theme] ancestor, not always <html>", () => {
+  it("scopes to the closest [data-theme] ancestor, not always <html>", async () => {
     const outer = document.createElement("div");
     outer.setAttribute("data-theme", "light");
     const inner = document.createElement("div");
@@ -79,16 +70,14 @@ describe("useThemeScopeRevision (perf review §3.3)", () => {
     const before = result.current;
 
     // A mutation on the OUTER (non-closest) ancestor must not affect a
-    // consumer scoped to the inner region.
-    act(() => {
-      outer.setAttribute("data-theme", "light-updated");
-    });
+    // consumer scoped to the inner region. There is nothing to `waitFor`
+    // here (a NEGATIVE assertion), so flush the microtask queue directly.
+    outer.setAttribute("data-theme", "light-updated");
+    await Promise.resolve();
     expect(result.current).toBe(before);
 
     // A mutation on the actually-closest scope element does.
-    act(() => {
-      inner.setAttribute("data-theme", "light");
-    });
-    expect(result.current).toBe(before + 1);
+    inner.setAttribute("data-theme", "light");
+    await waitFor(() => expect(result.current).toBe(before + 1));
   });
 });

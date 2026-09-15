@@ -54,6 +54,46 @@ describe("AssetPreview (#193, research 04 §5 ASSET-4)", () => {
   });
 });
 
+// The old parser split every line on a bare `,` — a comma, an escaped quote,
+// or a newline INSIDE a quoted field corrupted the row/column count.
+describe("AssetPreview CSV parsing — quoted fields (review #1)", () => {
+  it("keeps a comma inside a quoted field as part of that one cell", () => {
+    const asset: ContextAsset = {
+      id: "quoted-comma",
+      name: "quoted-comma.csv",
+      type: "csv",
+      content: 'name,note\n"Acme, Inc.",big account',
+    };
+    render(<AssetPreview asset={asset} />);
+    expect(screen.getByText("Acme, Inc.")).toBeInTheDocument();
+    expect(screen.getByText("1 row")).toBeInTheDocument();
+  });
+
+  it("unescapes a doubled quote inside a quoted field", () => {
+    const asset: ContextAsset = {
+      id: "escaped-quote",
+      name: "escaped-quote.csv",
+      type: "csv",
+      content: 'name,note\n"Say ""hi""",greeting',
+    };
+    render(<AssetPreview asset={asset} />);
+    expect(screen.getByText('Say "hi"')).toBeInTheDocument();
+  });
+
+  it("keeps a newline inside a quoted field from starting a new row", () => {
+    const asset: ContextAsset = {
+      id: "embedded-newline",
+      name: "embedded-newline.csv",
+      type: "csv",
+      content: 'name,note\n"multi\nline",x\nsecond,y',
+    };
+    render(<AssetPreview asset={asset} />);
+    // Two data rows total — the embedded newline must NOT read as a third.
+    expect(screen.getByText("2 rows")).toBeInTheDocument();
+    expect(screen.getByText("second")).toBeInTheDocument();
+  });
+});
+
 /**
  * The seam that lets a format this package cannot parse (a PDF, a spreadsheet,
  * a video) show up in the rail without `@elabs-ai/components-ai`

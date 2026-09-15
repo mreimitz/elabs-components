@@ -6,7 +6,8 @@ import { useLocale } from "../locale-provider";
 
 export const Breadcrumb = forwardRef<HTMLElement, ComponentProps<"nav">>(
   function Breadcrumb(props, ref) {
-    return <nav ref={ref} aria-label="breadcrumb" {...props} />;
+    const { t } = useLocale();
+    return <nav ref={ref} aria-label={t("ui.breadcrumb.label")} {...props} />;
   },
 );
 export const BreadcrumbList = forwardRef<HTMLOListElement, ComponentProps<"ol">>(
@@ -15,7 +16,7 @@ export const BreadcrumbList = forwardRef<HTMLOListElement, ComponentProps<"ol">>
       <ol
         ref={ref}
         className={cn(
-          "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground",
+          "flex flex-wrap items-center gap-1.5 break-words text-body text-muted-foreground",
           className,
         )}
         {...props}

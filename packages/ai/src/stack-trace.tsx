@@ -3,20 +3,11 @@
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
 import { Button } from "@elabs-ai/components-ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
-import { useLocale } from "@elabs-ai/components-ui";
+import { useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { AlertTriangleIcon, CheckIcon, ChevronDownIcon, CopyIcon } from "lucide-react";
 import type { ComponentProps } from "react";
-import {
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, memo, useCallback, useContext, useMemo } from "react";
 
 // Regex patterns for parsing stack traces
 const STACK_FRAME_WITH_PARENS_REGEX = /^at\s+(.+?)\s+\((.+):(\d+):(\d+)\)$/;
@@ -188,7 +179,7 @@ export const StackTrace = memo(
       <StackTraceContext.Provider value={contextValue}>
         <div
           className={cn(
-            "not-prose w-full overflow-hidden rounded-lg border bg-background font-mono text-sm",
+            "not-prose w-full overflow-hidden rounded-lg border bg-background font-mono text-body",
             className,
           )}
           {...props}
@@ -293,42 +284,35 @@ export const StackTraceCopyButton = memo(
   ({
     onCopy,
     onError,
-    timeout = 2000,
+    timeout,
     className,
     children,
+    "aria-label": ariaLabel,
     ...props
   }: StackTraceCopyButtonProps) => {
-    const [isCopied, setIsCopied] = useState(false);
-    const timeoutRef = useRef<number>(0);
+    const { t } = useLocale();
     const { raw } = useStackTrace();
+    // Shared implementation (`@elabs-ai/components-ui`) instead of a private
+    // copy of the same copy-to-clipboard state machine (issue-workflow.md
+    // dedupe finding) — see `CodeBlockCopyButton` for the reference usage.
+    const { copied: isCopied, copy } = useCopyToClipboard(
+      timeout === undefined ? undefined : { resetAfterMs: timeout },
+    );
 
     const copyToClipboard = useCallback(async () => {
-      if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-        onError?.(new Error("Clipboard API not available"));
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(raw);
-        setIsCopied(true);
+      const ok = await copy(raw);
+      if (ok) {
         onCopy?.();
-        timeoutRef.current = window.setTimeout(() => setIsCopied(false), timeout);
-      } catch (error) {
-        onError?.(error as Error);
+      } else {
+        onError?.(new Error("Clipboard API not available"));
       }
-    }, [raw, onCopy, onError, timeout]);
-
-    useEffect(
-      () => () => {
-        window.clearTimeout(timeoutRef.current);
-      },
-      [],
-    );
+    }, [copy, raw, onCopy, onError]);
 
     const Icon = isCopied ? CheckIcon : CopyIcon;
 
     return (
       <Button
+        aria-label={ariaLabel ?? t("copy")}
         className={cn("size-7", className)}
         onClick={copyToClipboard}
         size="icon"
@@ -440,7 +424,7 @@ export const StackTraceFrames = memo(
         {framesToShow.map((frame) => (
           <div
             className={cn(
-              "text-xs",
+              "text-meta",
               frame.isInternal ? "text-muted-foreground/50" : "text-foreground/90",
             )}
             key={frame.raw}
@@ -464,7 +448,7 @@ export const StackTraceFrames = memo(
           </div>
         ))}
         {framesToShow.length === 0 && (
-          <div className="text-muted-foreground text-xs">{t("ai.stackTrace.empty")}</div>
+          <div className="text-muted-foreground text-meta">{t("ai.stackTrace.empty")}</div>
         )}
       </div>
     );

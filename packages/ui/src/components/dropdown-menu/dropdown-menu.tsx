@@ -109,7 +109,7 @@ export const DropdownMenuContent = forwardRef<
         ref={ref}
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-[10rem] overflow-hidden rounded-md bg-popover p-1 text-popover-foreground shadow-ring-md",
+          "z-50 min-w-[12rem] overflow-hidden rounded-md bg-popover p-1 text-popover-foreground shadow-ring-md",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
           "data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2",
           className,
@@ -128,7 +128,7 @@ export const DropdownMenuItem = forwardRef<
     <DropdownMenuPrimitive.Item
       ref={ref}
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-fast",
+        "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast",
         "focus:bg-accent focus:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "[&_svg]:size-4 [&_svg]:shrink-0",
@@ -147,7 +147,7 @@ export const DropdownMenuLabel = forwardRef<
   return (
     <DropdownMenuPrimitive.Label
       ref={ref}
-      className={cn("px-2 py-1.5 text-xs font-semibold text-muted-foreground", className)}
+      className={cn("px-2 py-1.5 text-meta font-semibold text-muted-foreground", className)}
       {...props}
     />
   );
@@ -172,7 +172,7 @@ export function DropdownMenuShortcut({
 }: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
-      className={cn("ms-auto text-xs tracking-widest text-muted-foreground", className)}
+      className={cn("ms-auto text-meta tracking-widest text-muted-foreground", className)}
       {...props}
     />
   );

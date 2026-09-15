@@ -19,6 +19,7 @@ const AlertDialogOverlay = forwardRef<
   return (
     <AlertDialogPrimitive.Overlay
       ref={ref}
+      data-slot="alert-dialog-overlay"
       className={cn(
         "fixed inset-0 z-50 bg-overlay backdrop-blur-overlay data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         className,
@@ -37,6 +38,7 @@ export const AlertDialogContent = forwardRef<
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         ref={ref}
+        data-slot="alert-dialog-content"
         className={cn(
           // `max-h` + `overflow-y-auto`: without a height ceiling, a long body
           // (a big diff, a long list of items to confirm) overflows past both
@@ -52,11 +54,18 @@ export const AlertDialogContent = forwardRef<
 });
 
 export function AlertDialogHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col gap-1.5 text-start", className)} {...props} />;
+  return (
+    <div
+      data-slot="alert-dialog-header"
+      className={cn("flex flex-col gap-1.5 text-start", className)}
+      {...props}
+    />
+  );
 }
 export function AlertDialogFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
+      data-slot="alert-dialog-footer"
       className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
       {...props}
     />
@@ -67,9 +76,11 @@ export const AlertDialogTitle = forwardRef<
   ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
 >(function AlertDialogTitle({ className, ...props }, ref) {
   return (
+    // `text-title`, matching `DialogTitle` (#286) — was `text-lg font-semibold`.
     <AlertDialogPrimitive.Title
       ref={ref}
-      className={cn("text-lg font-semibold", className)}
+      data-slot="alert-dialog-title"
+      className={cn("text-title leading-none", className)}
       {...props}
     />
   );
@@ -81,7 +92,8 @@ export const AlertDialogDescription = forwardRef<
   return (
     <AlertDialogPrimitive.Description
       ref={ref}
-      className={cn("text-sm text-muted-foreground", className)}
+      data-slot="alert-dialog-description"
+      className={cn("text-body text-muted-foreground", className)}
       {...props}
     />
   );
@@ -91,7 +103,12 @@ export const AlertDialogAction = forwardRef<
   ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
 >(function AlertDialogAction({ className, ...props }, ref) {
   return (
-    <AlertDialogPrimitive.Action ref={ref} className={cn(buttonVariants(), className)} {...props} />
+    <AlertDialogPrimitive.Action
+      ref={ref}
+      data-slot="alert-dialog-action"
+      className={cn(buttonVariants(), className)}
+      {...props}
+    />
   );
 });
 export const AlertDialogCancel = forwardRef<
@@ -101,6 +118,7 @@ export const AlertDialogCancel = forwardRef<
   return (
     <AlertDialogPrimitive.Cancel
       ref={ref}
+      data-slot="alert-dialog-cancel"
       className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}
     />

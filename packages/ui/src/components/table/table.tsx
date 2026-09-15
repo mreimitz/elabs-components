@@ -1,3 +1,5 @@
+"use client";
+
 import {
   forwardRef,
   useCallback,
@@ -23,13 +25,18 @@ import { useLocale } from "../locale-provider";
  * affordance itself.
  *
  * A table that FITS must stay a byte-identical no-op: no `tabIndex`, no
- * `aria-label`, no ring — an unconditional stop would announce "scrollable"
- * on content that never scrolls. Only a table that measurably overflows
- * gets the tab stop, its accessible name (WCAG 4.1.2) and the compound focus
- * ring (`focus-ring-inset` — the wrapper's own edge is the scroll clip, so an
- * outside ring would be cut, `.claude/rules/theming.md`). No `role="region"`:
- * both existing precedents (`DataTable`, `SheetTable`) decided against a
- * redundant landmark over a real `<table>`, and this wrapper adds none either.
+ * `aria-label`, no `role`, no ring — an unconditional stop would announce
+ * "scrollable" on content that never scrolls. Only a table that measurably
+ * overflows gets the tab stop, its accessible name (WCAG 4.1.2) and the
+ * compound focus ring (`focus-ring-inset` — the wrapper's own edge is the
+ * scroll clip, so an outside ring would be cut, `.claude/rules/theming.md`).
+ *
+ * `role="region"` is REQUIRED alongside that `aria-label`, not optional
+ * decoration: `aria-label` on a plain `<div>` (role `generic`) is not
+ * guaranteed to compute into an accessible name at all — `generic` is not in
+ * the set of roles the accessible-name spec permits naming from. Without a
+ * naming-capable role, `tabIndex={0}` makes the wrapper a stop with NO name,
+ * which is worse than the "redundant landmark" this used to trade it for.
  */
 export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(function Table(
   { className, ...props },
@@ -67,6 +74,7 @@ export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElemen
       ref={scrollRef}
       data-slot="table-scroll-region"
       tabIndex={scrollOverflows ? 0 : undefined}
+      role={scrollOverflows ? "region" : undefined}
       aria-label={scrollOverflows ? t("ui.table.scrollRegion") : undefined}
       onScroll={updateScrollAffordance}
       className="relative w-full overflow-auto focus-ring-inset"

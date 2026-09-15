@@ -1,7 +1,26 @@
+import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { LocaleProvider } from "../locale-provider";
-import { PaginationEllipsis, PaginationNext, PaginationPrevious } from "./pagination";
+import {
+  PaginationEllipsis,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "./pagination";
+
+describe("PaginationLink — forwardRef", () => {
+  it("forwards its ref to the rendered <a>", () => {
+    const ref = createRef<HTMLAnchorElement>();
+    render(
+      <PaginationLink ref={ref} href="#2">
+        2
+      </PaginationLink>,
+    );
+    expect(ref.current).toBeInstanceOf(HTMLAnchorElement);
+    expect(ref.current).toBe(screen.getByText("2"));
+  });
+});
 
 /**
  * Pagination had no test file before #18 — its three microcopy sites

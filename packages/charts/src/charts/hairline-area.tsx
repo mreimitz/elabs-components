@@ -1,6 +1,7 @@
 "use client";
 
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
+import { useChartValueFormatter } from "./chart-formatters";
 import { HaloText } from "../marks/halo-text";
 import { seededRnd } from "../marks/seeded-rnd";
 
@@ -49,6 +50,7 @@ export function HairlineArea({
   const { renderData, xScale, innerHeight, xAccessor } = useChartStable();
   const yScale = useYScale(yAxisId);
   const ink = stroke || chartCssVars.foreground;
+  const formatPeakValue = useChartValueFormatter("number");
 
   const getX = (d: Record<string, unknown>) => xScale(xAccessor(d)) ?? 0;
   const getValue = (d: Record<string, unknown>) => {
@@ -106,7 +108,7 @@ export function HairlineArea({
             x={getX(peakDatum)}
             y={getY(peakDatum) - 8}
           >
-            {peakValue.toLocaleString()}
+            {formatPeakValue(peakValue)}
           </HaloText>
         </>
       ) : null}

@@ -8,11 +8,17 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // Disabled treatment is ONE rule for every variant, inherited from the
+        // base string above (`disabled:pointer-events-none disabled:opacity-50`)
+        // — no per-variant fill swap. A solid-fill variant fading via opacity
+        // still reads as "off" against `--muted`/`--background` in both themes;
+        // keeping one mechanism (vs. a bg-muted swap on some variants only) is
+        // what made Input's disabled state internally inconsistent (#286).
         default:
-          "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+          "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+          "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         // The calm "outlined but quiet" rung (#194, research 02 §3a). `outline` uses
         // the form-field `border-input` token, `outline-subtle` uses `border-border`.

@@ -1,3 +1,5 @@
+"use client";
+
 // a2ui.exposed: yes
 import {
   forwardRef,
@@ -229,7 +231,7 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
           aria-invalid={error ? "true" : undefined}
           data-slot="input-group-control"
           className={cn(
-            "min-w-[6rem] flex-1 bg-transparent text-sm outline-none",
+            "min-w-[6rem] flex-1 bg-transparent text-body outline-none",
             "placeholder:text-muted-foreground",
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
@@ -241,7 +243,7 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
       </InputGroup>
       {error && (
         // #124: running text (the validation message) — ink rung.
-        <p role="alert" className="text-xs text-destructive-text">
+        <p role="alert" className="text-meta text-destructive-text">
           {error}
         </p>
       )}

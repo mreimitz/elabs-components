@@ -382,7 +382,7 @@ export const ContextPanel = forwardRef<HTMLDivElement, ContextPanelProps>(functi
         >
           <SheetHeader className="sr-only">
             <SheetTitle>{t("ai.contextPanel.title")}</SheetTitle>
-            <SheetDescription>Displays the chat context panel.</SheetDescription>
+            <SheetDescription>{t("ai.contextPanel.description")}</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>

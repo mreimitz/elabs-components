@@ -131,9 +131,12 @@ export class MockMarker {
   addedTo: MockMap | null = null;
   popup: unknown = null;
   lngLat = { lng: 0, lat: 0 };
+  /** The full options object the component constructed the marker with. */
+  options: Record<string, any>;
 
-  constructor(options: { element?: HTMLElement } = {}) {
+  constructor(options: { element?: HTMLElement } & Record<string, any> = {}) {
     this.element = options.element ?? document.createElement("div");
+    this.options = options;
     MockMarker.instances.push(this);
   }
 

@@ -156,6 +156,70 @@ describe("FileUpload", () => {
     expect(onFilesChange).toHaveBeenCalledWith([]);
   });
 
+  it("drag-and-drop rejects files that don't match `accept` and reports why", () => {
+    const onFilesChange = vi.fn();
+    const onFilesRejected = vi.fn();
+    render(
+      <FileUpload
+        files={[]}
+        onFilesChange={onFilesChange}
+        onFilesRejected={onFilesRejected}
+        accept=".png"
+      >
+        <FileUploadDropzone />
+      </FileUpload>,
+    );
+    const dropzone = document.querySelector("[data-slot='file-upload-dropzone']")!;
+    const wrongType = new File(["x"], "notes.txt", { type: "text/plain" });
+    fireEvent.drop(dropzone, { dataTransfer: { files: [wrongType] } });
+
+    // A drop bypasses the native <input accept> filter entirely — without
+    // this, a dragged-in .txt would be added even though the picker would
+    // never have offered it.
+    expect(onFilesChange).toHaveBeenCalledWith([]);
+    expect(onFilesRejected).toHaveBeenCalledWith([{ file: wrongType, reason: "accept" }]);
+  });
+
+  it("drag-and-drop of several files when multiple=false keeps only the first, rejects the rest", () => {
+    const onFilesChange = vi.fn();
+    const onFilesRejected = vi.fn();
+    render(
+      <FileUpload files={[]} onFilesChange={onFilesChange} onFilesRejected={onFilesRejected}>
+        <FileUploadDropzone />
+      </FileUpload>,
+    );
+    const dropzone = document.querySelector("[data-slot='file-upload-dropzone']")!;
+    const first = new File(["a"], "a.txt", { type: "text/plain" });
+    const second = new File(["b"], "b.txt", { type: "text/plain" });
+    fireEvent.drop(dropzone, { dataTransfer: { files: [first, second] } });
+
+    // `multiple` is only enforced by the browser for the picker dialog, never
+    // for a raw DataTransfer drop.
+    expect(onFilesChange.mock.calls[0]![0]).toHaveLength(1);
+    expect(onFilesChange.mock.calls[0]![0][0].file.name).toBe("a.txt");
+    expect(onFilesRejected).toHaveBeenCalledWith([{ file: second, reason: "multiple" }]);
+  });
+
+  it("a custom-children dropzone still opens the picker on Enter/Space (keyboard reachable)", () => {
+    render(
+      <FileUpload>
+        <FileUploadDropzone>Drop it here</FileUploadDropzone>
+      </FileUpload>,
+    );
+    const dropzone = screen.getByText("Drop it here").closest("label")!;
+    // With custom `children` there is no fallback "Browse files" button —
+    // the zone itself must be a tab stop and answer Enter/Space.
+    expect(dropzone).toHaveAttribute("tabIndex", "0");
+
+    const input = document.querySelector("input[type='file']") as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, "click");
+    fireEvent.keyDown(dropzone, { key: "Enter" });
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+
+    fireEvent.keyDown(dropzone, { key: " " });
+    expect(clickSpy).toHaveBeenCalledTimes(2);
+  });
+
   it("disabled prop disables the file input and remove buttons", () => {
     const f = makeUploadFile();
     render(

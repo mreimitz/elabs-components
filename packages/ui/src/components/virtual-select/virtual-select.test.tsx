@@ -12,8 +12,8 @@
  *   - Virtualizer scroll behavior with 10,000 options
  *   - Cross-theme visual correctness
  */
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { VirtualSelect } from "./virtual-select";
 import type { VirtualSelectOption } from "./virtual-select";
 
@@ -102,5 +102,31 @@ describe("VirtualSelect defaultValue (uncontrolled)", () => {
   it("shows the pre-selected label on mount", () => {
     render(<VirtualSelect options={OPTIONS} defaultValue="gamma" />);
     expect(screen.getByText("Gamma")).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Deferred autofocus timer — cancelled on unmount (#reviewed)
+// ---------------------------------------------------------------------------
+
+describe("VirtualSelect autofocus timer cleanup", () => {
+  it("cancels the pending search-input autofocus timeout when unmounted before it fires", () => {
+    vi.useFakeTimers();
+    try {
+      const { unmount } = render(<VirtualSelect options={OPTIONS} />);
+      const trigger = screen.getByRole("combobox");
+      // Opening schedules a deferred `searchRef.current?.focus()`.
+      fireEvent.click(trigger);
+      const pendingBeforeUnmount = vi.getTimerCount();
+      expect(pendingBeforeUnmount).toBeGreaterThan(0);
+
+      unmount();
+
+      // The pending timer must be cancelled on unmount — left uncancelled, it
+      // stays scheduled and fires later against a torn-down `searchRef`.
+      expect(vi.getTimerCount()).toBeLessThan(pendingBeforeUnmount);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

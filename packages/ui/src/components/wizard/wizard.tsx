@@ -232,8 +232,12 @@ export const WizardSteps = forwardRef<HTMLOListElement, WizardStepsProps>(functi
               type="button"
               disabled={!isClickable}
               onClick={() => goTo(index)}
+              // The completed state renders only a checkmark glyph (hidden
+              // from AT below) — with no text content, the button would
+              // otherwise have no accessible name at all.
+              aria-label={isComplete ? `${meta.title} — completed` : undefined}
               className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-medium tabular-nums",
+                "flex size-7 shrink-0 items-center justify-center rounded-full border text-meta font-medium tabular-nums",
                 "focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isActive && "border-primary bg-primary text-primary-foreground",
                 // #399 — the step NUMBER is text on a `/10` wash, not plate ink
@@ -248,14 +252,14 @@ export const WizardSteps = forwardRef<HTMLOListElement, WizardStepsProps>(functi
             <span className="flex min-w-0 flex-col">
               <span
                 className={cn(
-                  "truncate text-sm font-medium",
+                  "truncate text-body font-medium",
                   isActive ? "text-foreground" : "text-muted-foreground",
                 )}
               >
                 {meta.title}
               </span>
               {meta.description && (
-                <span className="truncate text-xs text-muted-foreground">{meta.description}</span>
+                <span className="truncate text-meta text-muted-foreground">{meta.description}</span>
               )}
             </span>
           </li>
@@ -309,7 +313,11 @@ export const WizardStep = forwardRef<HTMLDivElement, WizardStepProps>(function W
       role="group"
       aria-labelledby={`${baseId}-step-${step}`}
       tabIndex={-1}
-      className={cn("min-w-0 flex-1 focus-visible:outline-none", className)}
+      // Programmatically focused on step change (`regionRef.current?.focus()`
+      // above) — `focus-ring` gives that a visible indicator instead of
+      // silently discarding the browser's default outline (mirrors
+      // `DialogBody`'s same tabIndex={-1}-container precedent).
+      className={cn("min-w-0 flex-1 focus-ring", className)}
       {...props}
     >
       {children}

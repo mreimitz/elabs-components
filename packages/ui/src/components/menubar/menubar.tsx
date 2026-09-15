@@ -25,6 +25,7 @@ export const Menubar = forwardRef<
   return (
     <MenubarPrimitive.Root
       ref={ref}
+      data-slot="menubar"
       className={cn("flex h-9 items-center gap-1 rounded-md bg-card p-1 shadow-ring-sm", className)}
       {...props}
     />
@@ -38,8 +39,9 @@ export const MenubarTrigger = forwardRef<
   return (
     <MenubarPrimitive.Trigger
       ref={ref}
+      data-slot="menubar-trigger"
       className={cn(
-        "flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none transition-colors duration-fast focus:bg-accent data-[state=open]:bg-accent",
+        "flex cursor-default select-none items-center rounded-sm px-3 py-1 text-body font-medium outline-none transition-colors duration-fast focus:bg-accent data-[state=open]:bg-accent",
         className,
       )}
       {...props}
@@ -58,6 +60,7 @@ export const MenubarContent = forwardRef<
     <MenubarPrimitive.Portal>
       <MenubarPrimitive.Content
         ref={ref}
+        data-slot="menubar-content"
         align={align}
         alignOffset={alignOffset}
         sideOffset={sideOffset}
@@ -80,8 +83,9 @@ export const MenubarItem = forwardRef<
   return (
     <MenubarPrimitive.Item
       ref={ref}
+      data-slot="menubar-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         inset && "ps-8",
         className,
       )}
@@ -97,8 +101,9 @@ export const MenubarSubTrigger = forwardRef<
   return (
     <MenubarPrimitive.SubTrigger
       ref={ref}
+      data-slot="menubar-sub-trigger"
       className={cn(
-        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-fast focus:bg-accent data-[state=open]:bg-accent",
+        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast focus:bg-accent data-[state=open]:bg-accent",
         inset && "ps-8",
         className,
       )}
@@ -117,6 +122,7 @@ export const MenubarSubContent = forwardRef<
   return (
     <MenubarPrimitive.SubContent
       ref={ref}
+      data-slot="menubar-sub-content"
       className={cn(
         "z-50 min-w-[8rem] overflow-hidden rounded-md bg-popover p-1 text-popover-foreground shadow-ring-md",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
@@ -135,9 +141,10 @@ export const MenubarCheckboxItem = forwardRef<
   return (
     <MenubarPrimitive.CheckboxItem
       ref={ref}
+      data-slot="menubar-checkbox-item"
       checked={checked}
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-sm outline-none transition-colors duration-fast focus:bg-accent",
+        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent",
         className,
       )}
       {...props}
@@ -159,8 +166,9 @@ export const MenubarRadioItem = forwardRef<
   return (
     <MenubarPrimitive.RadioItem
       ref={ref}
+      data-slot="menubar-radio-item"
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-sm outline-none transition-colors duration-fast focus:bg-accent",
+        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent",
         className,
       )}
       {...props}
@@ -182,6 +190,7 @@ export const MenubarSeparator = forwardRef<
   return (
     <MenubarPrimitive.Separator
       ref={ref}
+      data-slot="menubar-separator"
       className={cn("-mx-1 my-1 h-px bg-border", className)}
       {...props}
     />
@@ -191,7 +200,8 @@ export const MenubarSeparator = forwardRef<
 export function MenubarShortcut({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
-      className={cn("ms-auto text-xs tracking-widest text-muted-foreground", className)}
+      data-slot="menubar-shortcut"
+      className={cn("ms-auto text-meta tracking-widest text-muted-foreground", className)}
       {...props}
     />
   );

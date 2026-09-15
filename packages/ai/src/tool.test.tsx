@@ -61,3 +61,68 @@ describe("ToolOutput isStreaming (#269, loading-states.md)", () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+// A tool that returns a count of 0, a boolean check of false, or an empty
+// string is a REAL, defined result — only `undefined` means "no output yet".
+// The old `!(output || errorText || isStreaming)` guard treated all three as
+// "nothing to show" and rendered null outright.
+describe("ToolOutput — defined-but-falsy output renders (review #1)", () => {
+  it("renders a numeric 0 result instead of returning null", () => {
+    render(<ToolOutput output={0} errorText={undefined} />);
+    expect(screen.getByText("Result")).toBeInTheDocument();
+    expect(screen.getByText("0")).toBeInTheDocument();
+  });
+
+  it("renders a boolean false result instead of returning null", () => {
+    const { container } = render(<ToolOutput output={false} errorText={undefined} />);
+    expect(screen.getByText("Result")).toBeInTheDocument();
+    expect(container.querySelector('[data-language="json"]')).not.toBeNull();
+  });
+
+  it("renders an empty-string result (not the pending skeleton, not null)", () => {
+    const { container } = render(<ToolOutput output="" errorText={undefined} />);
+    expect(screen.getByText("Result")).toBeInTheDocument();
+    expect(container.querySelector('[role="status"]')).toBeNull();
+  });
+});
+
+describe("ToolOutput — string output renders as plain text, not forced JSON (review #1)", () => {
+  it("renders a plain-text (non-JSON) string result without the JSON highlighter", () => {
+    const { container } = render(
+      <ToolOutput output="just a plain sentence, not json" errorText={undefined} />,
+    );
+    expect(screen.getByText("just a plain sentence, not json")).toBeInTheDocument();
+    expect(container.querySelector('[data-language="text"]')).not.toBeNull();
+    expect(container.querySelector('[data-language="json"]')).toBeNull();
+  });
+
+  it("still renders an object result through the JSON highlighter", () => {
+    const { container } = render(<ToolOutput output={{ ok: true }} errorText={undefined} />);
+    expect(container.querySelector('[data-language="json"]')).not.toBeNull();
+  });
+});
+
+describe("ToolOutput/ToolInput — JSON.stringify never crashes the render (review #1)", () => {
+  it("falls back gracefully for a circular output object instead of throwing", () => {
+    const circular: Record<string, unknown> = { name: "circular" };
+    circular.self = circular;
+
+    expect(() => render(<ToolOutput output={circular} errorText={undefined} />)).not.toThrow();
+    expect(screen.getByText("Result")).toBeInTheDocument();
+  });
+
+  it("renders a BigInt field in the output instead of throwing", () => {
+    expect(() =>
+      render(<ToolOutput output={{ total: 10n }} errorText={undefined} />),
+    ).not.toThrow();
+    expect(screen.getByText("Result")).toBeInTheDocument();
+    expect(screen.getByText(/10n/)).toBeInTheDocument();
+  });
+
+  it("falls back gracefully for circular tool input instead of throwing", () => {
+    const circular: Record<string, unknown> = { query: "x" };
+    circular.self = circular;
+
+    expect(() => render(<ToolInput input={circular} />)).not.toThrow();
+  });
+});

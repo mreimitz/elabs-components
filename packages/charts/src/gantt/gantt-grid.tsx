@@ -32,7 +32,7 @@ import {
   type ReactNode,
 } from "react";
 import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, useLocale } from "@elabs-ai/components-ui";
 import type { GanttColumn, GanttFormatDate, GanttSort } from "./gantt";
 import { useGantt, type ResolvedTask } from "./gantt-context";
 
@@ -109,6 +109,7 @@ function ColumnResizeHandle({
   width: number;
   onColumnResize: (columnId: string, width: number) => void;
 }) {
+  const { t } = useLocale();
   const startRef = useRef<{ x: number; w: number } | null>(null);
   // Cleanup for an in-flight resize's window listeners (also runs on unmount).
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -144,7 +145,7 @@ function ColumnResizeHandle({
       type="button"
       aria-hidden="true"
       tabIndex={-1}
-      title="Drag to resize column"
+      title={t("charts.gantt.dragToResizeColumn")}
       onPointerDown={onPointerDown}
       className="absolute inset-y-0 end-0 z-10 w-1 cursor-col-resize hover:bg-foreground/30"
     />

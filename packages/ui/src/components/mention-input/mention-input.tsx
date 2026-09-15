@@ -154,6 +154,45 @@ const MIRRORED_PROPERTIES = [
   "wordBreak",
 ] as const satisfies readonly (keyof CSSStyleDeclaration & string)[];
 
+/**
+ * Extra keys `readMirrorStyle` writes onto the mirror style object BESIDES
+ * `MIRRORED_PROPERTIES` (some of which — `paddingRight`, `whiteSpace` — it
+ * overrides rather than adds). Used by `stylesEqual` below so the "did
+ * anything actually change" check compares every key the object can carry,
+ * without re-deriving that list from an object literal on every call.
+ */
+const EXTRA_MIRROR_KEYS = [
+  "position",
+  "left",
+  "top",
+  "width",
+  "height",
+  "borderStyle",
+  "borderColor",
+  "overflow",
+  "margin",
+] as const;
+
+/**
+ * Field-by-field comparison of two mirror style snapshots (perf review §3.3:
+ * "two JSON.stringify per callback"). Both objects always carry the exact
+ * same key set (`MIRRORED_PROPERTIES` + `EXTRA_MIRROR_KEYS`), so a plain
+ * per-key `!==` walk is both cheaper and exact — `JSON.stringify` also
+ * silently drops `undefined`-valued keys and is sensitive to key order in a
+ * way this object's construction never guarantees.
+ */
+function stylesEqual(a: CSSProperties, b: CSSProperties): boolean {
+  const record = a as Record<string, unknown>;
+  const other = b as Record<string, unknown>;
+  for (const key of MIRRORED_PROPERTIES) {
+    if (record[key] !== other[key]) return false;
+  }
+  for (const key of EXTRA_MIRROR_KEYS) {
+    if (record[key] !== other[key]) return false;
+  }
+  return true;
+}
+
 function readMirrorStyle(textarea: HTMLTextAreaElement): CSSProperties {
   const computed = getComputedStyle(textarea);
   const style: Record<string, string | number> = {};
@@ -540,9 +579,7 @@ export const MentionInput = forwardRef<HTMLDivElement, MentionInputProps>(functi
     const element = textareaRef.current;
     if (!element) return;
     const next = readMirrorStyle(element);
-    setMirrorStyle((previous) =>
-      previous && JSON.stringify(previous) === JSON.stringify(next) ? previous : next,
-    );
+    setMirrorStyle((previous) => (previous && stylesEqual(previous, next) ? previous : next));
   }, []);
 
   useLayoutEffect(() => {
@@ -571,14 +608,27 @@ export const MentionInput = forwardRef<HTMLDivElement, MentionInputProps>(functi
 
       // Theme / density / decoration switches re-resolve the INHERITED font and
       // type scale, and a stale snapshot misaligns every chip on the surface.
-      const rootObserver = new MutationObserver(remeasureMirror);
-      for (const node of [document.documentElement, document.body]) {
-        rootObserver.observe(node, {
+      //
+      // Scoped to the field's OWN nearest `[data-theme]` ancestor (falling
+      // back to `<html>` when the field isn't inside a scoped region), never
+      // the whole document — and filtered to only the three attributes a
+      // theme/density/decoration switch actually writes, never generic
+      // `class`/`style` on `<html>`/`<body>`. The broader, document-wide
+      // observer this replaced fired on every Radix `Sheet`/`Dialog`/`Popover`
+      // scroll-lock ANYWHERE in the app (it toggles inline `style` —
+      // `overflow`, `padding-right` — on `<body>` on every open/close), which
+      // has nothing to do with this field's own metrics (perf review §3.3).
+      const themeScope =
+        element.closest("[data-theme]") ??
+        (typeof document !== "undefined" ? document.documentElement : null);
+      if (themeScope) {
+        const themeObserver = new MutationObserver(remeasureMirror);
+        themeObserver.observe(themeScope, {
           attributes: true,
-          attributeFilter: ["data-theme", "data-density", "data-decoration", "class", "style"],
+          attributeFilter: ["data-theme", "data-density", "data-decoration"],
         });
+        teardown.push(() => themeObserver.disconnect());
       }
-      teardown.push(() => rootObserver.disconnect());
     }
 
     // A web font landing after first paint changes every advance width. This

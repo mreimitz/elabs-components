@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * The context-run-collapsing hunk-windowing algorithm behind `DiffView`
  * (`@elabs-ai/components-ai`, #102, where it shipped as the private

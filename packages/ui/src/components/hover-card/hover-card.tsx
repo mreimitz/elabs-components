@@ -12,6 +12,7 @@ export const HoverCardContent = forwardRef<
   return (
     <HoverCardPrimitive.Content
       ref={ref}
+      data-slot="hover-card-content"
       align={align}
       sideOffset={sideOffset}
       className={cn(

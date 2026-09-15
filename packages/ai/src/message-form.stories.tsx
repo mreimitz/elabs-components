@@ -17,7 +17,14 @@
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { MessageForm } from "./message-form";
+import {
+  MessageForm,
+  MessageFormFields,
+  MessageFormProvider,
+  MessageFormRoot,
+  MessageFormSubmit,
+  MessageFormTitle,
+} from "./message-form";
 import type { FormSpec, FormValues } from "./message-form-spec";
 
 const meta = {
@@ -95,7 +102,7 @@ export const Default: Story = {
  */
 export const StreamingPartial: Story = {
   args: {
-    streaming: true,
+    isStreaming: true,
     spec: {
       formName: "book_demo",
       title: "Book a demo",
@@ -111,9 +118,35 @@ export const StreamingPartial: Story = {
 /** Streaming with nothing parsed yet → a layout-shaped skeleton. */
 export const StreamingSkeleton: Story = {
   args: {
-    streaming: true,
+    isStreaming: true,
     spec: { formName: "book_demo", title: "Book a demo", fields: [] },
   },
+};
+
+/**
+ * The compound composition — `MessageFormProvider` + the parts directly,
+ * instead of the `MessageForm` convenience wrapper (see the file-level doc
+ * comment's "compound structure" section). `isStreaming` lives on the
+ * provider itself since it is the one that owns the lifted form state; a
+ * custom layout that skips `MessageForm` still needs to pass it through here.
+ */
+export const ProviderStreaming: Story = {
+  render: () => (
+    <MessageFormProvider
+      isStreaming
+      spec={{
+        formName: "book_demo",
+        title: "Book a demo",
+        fields: [{ type: "string", name: "fullName", label: "Full name", required: true }],
+      }}
+    >
+      <MessageFormRoot>
+        <MessageFormTitle />
+        <MessageFormFields />
+        <MessageFormSubmit />
+      </MessageFormRoot>
+    </MessageFormProvider>
+  ),
 };
 
 /** Empty (not streaming) → a calm fallback, never broken UI. */

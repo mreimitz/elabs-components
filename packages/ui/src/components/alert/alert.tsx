@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/cn";
 
 export const alertVariants = cva(
-  "relative w-full rounded-lg border px-4 py-3 text-sm [&>svg]:absolute [&>svg]:start-4 [&>svg]:top-4 [&>svg]:size-4 [&>svg]:text-current [&>svg~*]:ps-7",
+  "relative w-full rounded-lg border px-4 py-3 text-body [&>svg]:absolute [&>svg]:start-4 [&>svg]:top-4 [&>svg]:size-4 [&>svg]:text-current [&>svg~*]:ps-7",
   {
     variants: {
       variant: {
@@ -34,7 +34,13 @@ export const Alert = forwardRef<
   ref,
 ) {
   return (
-    <div ref={ref} role={role} className={cn(alertVariants({ variant }), className)} {...props} />
+    <div
+      ref={ref}
+      role={role}
+      data-slot="alert"
+      className={cn(alertVariants({ variant }), className)}
+      {...props}
+    />
   );
 });
 
@@ -56,6 +62,7 @@ export const AlertTitle = forwardRef<HTMLHeadingElement, AlertTitleProps>(functi
   return (
     <Tag
       ref={ref}
+      data-slot="alert-title"
       className={cn("mb-1 font-medium leading-none tracking-tight", className)}
       {...props}
     />
@@ -82,8 +89,9 @@ export const AlertDescription = forwardRef<HTMLParagraphElement, AlertDescriptio
     return (
       <div
         ref={ref}
+        data-slot="alert-description"
         className={cn(
-          "text-sm [&_p]:leading-relaxed text-muted-foreground",
+          "text-body [&_p]:leading-relaxed text-muted-foreground",
           measure && "max-w-prose",
           className,
         )}

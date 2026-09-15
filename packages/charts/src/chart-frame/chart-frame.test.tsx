@@ -217,6 +217,56 @@ describe("ChartFrame source", () => {
     clickSpy.mockRestore();
     global.Blob = OriginalBlob;
   });
+
+  it("does not quote a plain negative number as a CSV-injection risk", () => {
+    global.URL.createObjectURL = vi.fn(() => "blob:mock");
+    global.URL.revokeObjectURL = vi.fn();
+    let captured = "";
+    const OriginalBlob = global.Blob;
+    // @ts-expect-error minimal test stub — only the constructor is exercised
+    global.Blob = class {
+      constructor(parts: BlobPart[]) {
+        captured = parts.join("");
+      }
+    };
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    render(
+      <ChartFrame title="Revenue" data={[{ delta: -12 }]}>
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Download CSV"));
+
+    expect(captured).toContain("-12");
+    expect(captured).not.toContain("'-12");
+
+    clickSpy.mockRestore();
+    global.Blob = OriginalBlob;
+  });
+
+  it("defers revoking the object URL past the click (Safari-safe)", () => {
+    vi.useFakeTimers();
+    global.URL.createObjectURL = vi.fn(() => "blob:mock");
+    const revokeSpy = vi.fn();
+    global.URL.revokeObjectURL = revokeSpy;
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    render(
+      <ChartFrame title="Revenue" data={sampleData}>
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Download CSV"));
+
+    // Not revoked synchronously — the click handler must have returned first.
+    expect(revokeSpy).not.toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(revokeSpy).toHaveBeenCalledWith("blob:mock");
+
+    clickSpy.mockRestore();
+    vi.useRealTimers();
+  });
 });
 
 // SVG/PNG export (RM-042): export-svg/export-png degrade the same way

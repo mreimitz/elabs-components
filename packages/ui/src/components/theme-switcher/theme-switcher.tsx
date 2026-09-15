@@ -342,14 +342,14 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
               <DropdownMenuItem onSelect={() => pickSystem()}>
                 <Monitor />
                 <span>{t("ui.themeSwitcher.system")}</span>
-                {isSystem ? <Check className="ml-auto" /> : null}
+                {isSystem ? <Check className="ms-auto" /> : null}
               </DropdownMenuItem>
             ) : null}
             {offered.map((d) => (
               <DropdownMenuItem key={d.value} onSelect={() => pickTheme(d.value)}>
                 {d.dark ? <Moon /> : <Sun />}
                 <span>{d.label}</span>
-                {!isSystem && resolvedTheme === d.value ? <Check className="ml-auto" /> : null}
+                {!isSystem && resolvedTheme === d.value ? <Check className="ms-auto" /> : null}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

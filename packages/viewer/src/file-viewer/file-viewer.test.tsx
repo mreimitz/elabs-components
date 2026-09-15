@@ -1,4 +1,4 @@
-import { createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -208,6 +208,40 @@ describe("FileViewer — chrome", () => {
     // A row holding a generic glyph and a blank name reads as a broken render.
     expect(document.querySelector('[data-slot="file-viewer-toolbar"]')).toBeNull();
     expect(screen.queryByRole("button", { name: /Download/ })).not.toBeInTheDocument();
+  });
+
+  it("surfaces a terminal error (role=alert) when the download read rejects, instead of swallowing it", async () => {
+    // A `url` source routes through `fetch` for `.bytes()` — reject it to
+    // exercise the toolbar's download failure path. (The main content pane
+    // fails to load too, from the same mocked fetch — scope assertions to the
+    // toolbar so the two independent error surfaces aren't conflated.)
+    const fetchMock = vi.fn().mockRejectedValue(new Error("network down"));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      render(
+        <FileViewer
+          source={{
+            kind: "url",
+            url: "https://example.com/notes.txt",
+            name: "notes.txt",
+            mediaType: "text/plain",
+          }}
+          registry={textOnlyRegistry()}
+        />,
+      );
+
+      const toolbar = document.querySelector('[data-slot="file-viewer-toolbar"]') as HTMLElement;
+      const downloadButton = within(toolbar).getByRole("button", { name: "Download notes.txt" });
+      expect(within(toolbar).queryByRole("alert")).not.toBeInTheDocument();
+
+      await userEvent.click(downloadButton);
+
+      expect(await within(toolbar).findByRole("alert")).toHaveTextContent(
+        "notes.txt couldn't be read. It may have moved, or you may not have access.",
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("makes the scrolling content pane a real keyboard stop", async () => {

@@ -38,6 +38,12 @@ export interface AppShellProps {
  * (no built-in responsive behavior of its own) has no such fallback; give it
  * one explicitly, e.g. by rendering a `<Sheet>` alongside `topNav` in the
  * consuming app.
+ *
+ * The `SidebarProvider` + `Sidebar` + `SidebarTrigger` composition above is
+ * regression-locked in `app-shell.test.tsx` at a mobile viewport width: no
+ * AppShell code change is needed to reach navigation below `md`, because
+ * `SidebarProvider` is a plain React context and is never blocked by this
+ * component's internal wrapper `<div>`.
  */
 export const AppShell = forwardRef<HTMLDivElement, AppShellProps>(function AppShell(
   { sidebar, topNav, children, className, mainClassName, mainId = "main-content" },

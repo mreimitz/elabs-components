@@ -207,6 +207,10 @@ function GaugeInner({
 }: GaugeInnerProps) {
   const prefersReducedMotion = useReducedMotion();
   const themeActiveGradientId = `gauge-theme-active-${useId().replace(/:/g, "")}`;
+  // NOTE: not wrapped in `useStableValue` (`use-stable-value.ts`) — its output
+  // is actual `ReactElement[]`, not JSON-serializable plain config, so a
+  // content-signature comparison isn't safe here. `defsChildren` stays
+  // `children`-identity-keyed.
   const defsChildren = useMemo(() => collectDefsElements(children), [children]);
 
   const notchTransition: Transition = prefersReducedMotion

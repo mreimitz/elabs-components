@@ -55,6 +55,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
   cn,
+  csvQuoteField,
+  csvStringifyValue,
   useLocale,
 } from "@elabs-ai/components-ui";
 import {
@@ -69,23 +71,12 @@ import { exactValueString } from "../charts/value-format";
 
 // ── Minimal local CSV serializer (RFC 4180 + injection guard) ─────────────────
 // The canonical reusable version lives in @elabs-ai/components-data (`toCsv`). This local
-// copy keeps @elabs-ai/components-charts free of a sibling dependency.
+// copy keeps @elabs-ai/components-charts free of a sibling dependency; value
+// stringification + injection-guarded quoting come from @elabs-ai/components-ui's shared
+// `csv` lib, the same one `toCsv` builds on, so both stay in sync.
 
-const INJECTION_PREFIXES = ["=", "+", "-", "@"];
-
-function localStringify(v: unknown): string {
-  if (v === null || v === undefined) return "";
-  if (v instanceof Date) return v.toISOString();
-  if (typeof v === "object") return JSON.stringify(v);
-  return String(v);
-}
-
-function localQuote(field: string, delim: string): string {
-  if (INJECTION_PREFIXES.some((p) => field.startsWith(p))) field = "'" + field;
-  if (field.includes(delim) || field.includes('"') || field.includes("\n") || field.includes("\r"))
-    return '"' + field.replaceAll('"', '""') + '"';
-  return field;
-}
+const localStringify = csvStringifyValue;
+const localQuote = csvQuoteField;
 
 function localToCsv(
   rows: Record<string, unknown>[],
@@ -121,7 +112,10 @@ function localDownloadCsv(
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Defer the revoke past the current task: some browsers (Safari) start the
+  // save asynchronously off the click and cancel it if the object URL is
+  // invalidated too early.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 // ── Summary stats for default detail panel ───────────────────────────────────
@@ -224,13 +218,15 @@ function ChartFrameToolbar() {
                 size="sm"
                 pressed={state.view === "table"}
                 onPressedChange={actions.toggleView}
-                aria-label="Flip to table view"
+                aria-label={t("charts.chartFrame.flipToTable")}
               >
                 <TableIcon aria-hidden="true" />
               </Toggle>
             </TooltipTrigger>
             <TooltipContent>
-              {state.view === "table" ? "Show chart" : "Show as table"}
+              {state.view === "table"
+                ? t("charts.chartFrame.showChart")
+                : t("charts.chartFrame.showAsTable")}
             </TooltipContent>
           </Tooltip>
         )}
@@ -241,13 +237,13 @@ function ChartFrameToolbar() {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Download CSV"
+                aria-label={t("charts.chartFrame.downloadCsv")}
                 onClick={actions.download}
               >
                 <Download aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Download CSV</TooltipContent>
+            <TooltipContent>{t("charts.chartFrame.downloadCsv")}</TooltipContent>
           </Tooltip>
         )}
 
@@ -289,13 +285,13 @@ function ChartFrameToolbar() {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Expand chart"
+                aria-label={t("charts.chartFrame.expandChart")}
                 onClick={() => actions.setExpanded(true)}
               >
                 <Maximize2 aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Expand</TooltipContent>
+            <TooltipContent>{t("charts.chartFrame.expand")}</TooltipContent>
           </Tooltip>
         )}
       </div>
@@ -312,6 +308,7 @@ function DefaultDetail() {
   // The summary is a glanceable panel in a narrow pane, so it compacts — and
   // each figure carries its own unrounded value to the clipboard.
   const format = useChartValueFormatter();
+  const { t } = useLocale();
 
   /*
    * Title/description already appear in the dialog header — this panel adds the
@@ -327,9 +324,11 @@ function DefaultDetail() {
    */
   return (
     <div className="flex h-full flex-col gap-4 p-4">
-      <h3 className="text-sm font-semibold text-card-foreground">Summary</h3>
+      <h3 className="text-sm font-semibold text-card-foreground">
+        {t("charts.chartFrame.summary")}
+      </h3>
       {rows.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No data to summarize.</p>
+        <p className="text-xs text-muted-foreground">{t("charts.chartFrame.noDataToSummarize")}</p>
       ) : (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
@@ -382,6 +381,7 @@ function ChartFrameModal({
 }) {
   const { state, actions, meta } = useChartFrame();
   const { title, description, rows, columns } = meta;
+  const { t } = useLocale();
 
   /*
    * The two-pane expand layout is NOT local any more — it is
@@ -408,10 +408,10 @@ function ChartFrameModal({
   return (
     <Dialog open={state.expanded} onOpenChange={actions.setExpanded}>
       <ExpandDialog
-        title={title ?? "Chart"}
+        title={title ?? t("charts.chartFrame.defaultTitle")}
         description={description}
         detail={detailContent}
-        detailLabel="Chart summary"
+        detailLabel={t("charts.chartFrame.summaryDetailLabel")}
       >
         <div
           key={state.view}

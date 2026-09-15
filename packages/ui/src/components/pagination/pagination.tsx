@@ -5,10 +5,11 @@ import { buttonVariants } from "../button";
 import { useLocale } from "../locale-provider";
 
 export function Pagination({ className, ...props }: ComponentProps<"nav">) {
+  const { t } = useLocale();
   return (
     <nav
       role="navigation"
-      aria-label="pagination"
+      aria-label={t("ui.pagination.label")}
       className={cn("mx-auto flex w-full justify-center", className)}
       {...props}
     />
@@ -27,19 +28,22 @@ export const PaginationItem = forwardRef<HTMLLIElement, ComponentProps<"li">>(
   },
 );
 type PaginationLinkProps = { isActive?: boolean } & ComponentProps<"a">;
-export function PaginationLink({ className, isActive, ...props }: PaginationLinkProps) {
-  return (
-    <a
-      aria-current={isActive ? "page" : undefined}
-      className={cn(
-        buttonVariants({ variant: isActive ? "outline" : "ghost", size: "icon" }),
-        "cursor-pointer",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+export const PaginationLink = forwardRef<HTMLAnchorElement, PaginationLinkProps>(
+  function PaginationLink({ className, isActive, ...props }, ref) {
+    return (
+      <a
+        ref={ref}
+        aria-current={isActive ? "page" : undefined}
+        className={cn(
+          buttonVariants({ variant: isActive ? "outline" : "ghost", size: "icon" }),
+          "cursor-pointer",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
 export function PaginationPrevious({ className, ...props }: ComponentProps<"a">) {
   const { t } = useLocale();
   return (

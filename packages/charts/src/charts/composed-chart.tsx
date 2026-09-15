@@ -29,6 +29,7 @@ import {
 import { Line, type LineProps } from "./line";
 import { SeriesBar, type SeriesBarProps } from "./series-bar";
 import { TimeSeriesChartInner } from "./time-series-chart-shell";
+import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 
 export interface ComposedChartProps {
@@ -274,7 +275,12 @@ function ChartInner({
   maxInteractiveDatapoints,
   onPhaseChange,
 }: ChartInnerProps) {
-  const { lines, barDataKeys } = useMemo(() => extractComposedSeries(children), [children]);
+  // See `use-stable-value.ts`: collapses back to the previous reference when
+  // the extracted series content is unchanged, even though `children` gets a
+  // fresh identity from React on every parent render.
+  const { lines, barDataKeys } = useStableValue(
+    useMemo(() => extractComposedSeries(children), [children]),
+  );
 
   const composedStackOffsets = useMemo(() => {
     if (!(stacked && barDataKeys.length > 0)) {

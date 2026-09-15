@@ -116,16 +116,22 @@ describe("MessageForm — never throws / fallback", () => {
   });
 
   it("renders a skeleton (not a fallback) for an empty spec while streaming", () => {
-    const { container } = render(<MessageForm spec={{ formName: "x", fields: [] }} streaming />);
+    const { container } = render(<MessageForm spec={{ formName: "x", fields: [] }} isStreaming />);
     expect(screen.queryByText(/no fields/i)).not.toBeInTheDocument();
     // Skeleton placeholders are aria-hidden decoration.
+    expect(container.querySelector('[aria-hidden="true"] .animate-pulse')).not.toBeNull();
+  });
+
+  it("still honors the deprecated `streaming` alias", () => {
+    const { container } = render(<MessageForm spec={{ formName: "x", fields: [] }} streaming />);
+    expect(screen.queryByText(/no fields/i)).not.toBeInTheDocument();
     expect(container.querySelector('[aria-hidden="true"] .animate-pulse')).not.toBeNull();
   });
 
   it("drops half-arrived fields while streaming instead of crashing", () => {
     render(
       <MessageForm
-        streaming
+        isStreaming
         spec={{
           formName: "x",
           fields: [

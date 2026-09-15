@@ -1,3 +1,5 @@
+"use client";
+
 import {
   createContext,
   forwardRef,
@@ -150,6 +152,7 @@ export const NavigationMenu = forwardRef<
     <NavigationMenuGuardContext.Provider value={guard}>
       <NavigationMenuPrimitive.Root
         ref={ref}
+        data-slot="navigation-menu"
         value={currentValue}
         onValueChange={handleValueChange}
         className={cn("relative z-10 flex max-w-max flex-1 items-center justify-center", className)}
@@ -169,6 +172,7 @@ export const NavigationMenuList = forwardRef<
   return (
     <NavigationMenuPrimitive.List
       ref={ref}
+      data-slot="navigation-menu-list"
       className={cn("group flex flex-1 list-none items-center justify-center gap-1", className)}
       {...props}
     />
@@ -183,13 +187,18 @@ export const NavigationMenuItem = forwardRef<
   const value = valueProp ?? autoValue;
   return (
     <NavigationMenuItemValueContext.Provider value={value}>
-      <NavigationMenuPrimitive.Item ref={ref} value={value} {...props} />
+      <NavigationMenuPrimitive.Item
+        ref={ref}
+        data-slot="navigation-menu-item"
+        value={value}
+        {...props}
+      />
     </NavigationMenuItemValueContext.Provider>
   );
 });
 
 export const navigationMenuTriggerStyle = cva(
-  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent",
+  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-body font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent",
 );
 
 export const NavigationMenuTrigger = forwardRef<
@@ -211,6 +220,7 @@ export const NavigationMenuTrigger = forwardRef<
   return (
     <NavigationMenuPrimitive.Trigger
       ref={ref}
+      data-slot="navigation-menu-trigger"
       className={cn(navigationMenuTriggerStyle(), "group", className)}
       onPointerEnter={(event) => {
         onPointerEnter?.(event);
@@ -242,8 +252,9 @@ export const NavigationMenuContent = forwardRef<
   return (
     <NavigationMenuPrimitive.Content
       ref={ref}
+      data-slot="navigation-menu-content"
       className={cn(
-        "left-0 top-0 w-full p-2 md:absolute md:w-auto",
+        "start-0 top-0 w-full p-2 md:absolute md:w-auto",
         "data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out",
         "data-[motion=from-end]:slide-in-from-right-2 data-[motion=from-start]:slide-in-from-left-2 data-[motion=to-end]:slide-out-to-right-2 data-[motion=to-start]:slide-out-to-left-2",
         "data-[motion^=from-]:[--tw-ease:var(--ease-entrance)]",
@@ -261,9 +272,10 @@ export const NavigationMenuViewport = forwardRef<
   ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Viewport>
 >(function NavigationMenuViewport({ className, ...props }, ref) {
   return (
-    <div className="absolute left-0 top-full flex justify-center">
+    <div className="absolute start-0 top-full flex justify-center">
       <NavigationMenuPrimitive.Viewport
         ref={ref}
+        data-slot="navigation-menu-viewport"
         className={cn(
           "relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow md:w-[var(--radix-navigation-menu-viewport-width)]",
           "origin-top transition-[width,height] duration-base ease-standard data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:zoom-in-90 data-[state=closed]:zoom-out-95",

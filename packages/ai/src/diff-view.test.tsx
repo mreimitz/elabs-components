@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type DiffLine } from "@elabs-ai/components-ui";
 import { DiffView } from "./diff-view";
@@ -159,6 +159,56 @@ describe("DiffView — pager (absorbs CodexDiff)", () => {
       within(region).getByText("Arrow keys scroll, Page Up/Down page, Home/End jump"),
     ).toBeInTheDocument();
     expect(within(region).getByText("0%")).toBeInTheDocument();
+  });
+});
+
+describe("DiffView — old/new sides tokenize SEPARATELY (perf review §2 — a deleted comment opener must not swallow the added side)", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-theme");
+    for (const token of [
+      "--code-foreground",
+      "--code-comment",
+      "--code-keyword",
+      "--code-number",
+    ]) {
+      document.documentElement.style.removeProperty(token);
+    }
+  });
+
+  it("does not let an unterminated block comment on the del side swallow the add side's tokens", async () => {
+    // Distinct resolved colors per scope (comment vs. keyword vs. number) so
+    // a merged/degenerate single-token line is distinguishable from a real,
+    // multi-token breakdown — see the module doc comment on `useDiffTokens`.
+    document.documentElement.setAttribute("data-theme", "light");
+    document.documentElement.style.setProperty("--code-foreground", "oklch(0.1 0 0)");
+    document.documentElement.style.setProperty("--code-comment", "oklch(0.5 0 0)");
+    document.documentElement.style.setProperty("--code-keyword", "oklch(0.3 0.2 260)");
+    document.documentElement.style.setProperty("--code-number", "oklch(0.4 0.2 140)");
+
+    const lines: DiffLine[] = [
+      { type: "del", oldNumber: 1, text: "/* unterminated" },
+      { type: "add", newNumber: 1, text: "const value = 1;" },
+    ];
+
+    const { container } = renderDiffView(<DiffView language="tsx" lines={lines} />);
+
+    // Combining old+new into ONE document (the bug) makes Shiki carry the
+    // del line's still-open `/*` across the line boundary, so the ENTIRE add
+    // line becomes one comment-colored token. Tokenized as its own document,
+    // `const value = 1;` is real code and splits into several distinctly
+    // colored spans.
+    await waitFor(() => {
+      const addLineText = container.querySelector(
+        '[data-diff-type="add"] [data-slot="diff-view-line-text"]',
+      );
+      const spans = addLineText?.querySelectorAll("span[style]") ?? [];
+      expect(spans.length).toBeGreaterThan(1);
+    });
+
+    const addLineText = container.querySelector(
+      '[data-diff-type="add"] [data-slot="diff-view-line-text"]',
+    );
+    expect(addLineText?.textContent).toContain("const value = 1;");
   });
 });
 

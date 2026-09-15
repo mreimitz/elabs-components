@@ -116,6 +116,8 @@ export interface MessageTableProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   /** Per-cell render override for custom composition. */
   renderCell?: RenderCell;
   /** The spec is still streaming (columns-but-no-rows shows skeleton rows). */
+  isStreaming?: boolean;
+  /** @deprecated Use `isStreaming`. */
   streaming?: boolean;
 }
 
@@ -145,12 +147,14 @@ export const MessageTable = forwardRef<HTMLDivElement, MessageTableProps>(functi
     onSortChange,
     maxRows,
     renderCell,
+    isStreaming,
     streaming = false,
     className,
     ...props
   },
   ref,
 ) {
+  const resolvedStreaming = isStreaming ?? streaming;
   const { t } = useLocale();
   const reactId = useId();
   const isControlled = sortProp !== undefined;
@@ -181,7 +185,7 @@ export const MessageTable = forwardRef<HTMLDivElement, MessageTableProps>(functi
 
   // No columns: skeleton while streaming, otherwise a fallback.
   if (columns.length === 0) {
-    if (streaming) {
+    if (resolvedStreaming) {
       return (
         <div ref={ref} className={cn("w-full", className)} {...props}>
           <span className="sr-only" role="status" aria-live="polite">
@@ -256,7 +260,7 @@ export const MessageTable = forwardRef<HTMLDivElement, MessageTableProps>(functi
         </p>
       )}
       <div className="overflow-hidden rounded-md border border-border">
-        {streaming && cappedRows.length === 0 && (
+        {resolvedStreaming && cappedRows.length === 0 && (
           <span className="sr-only" role="status" aria-live="polite">
             Loading table…
           </span>
@@ -264,7 +268,7 @@ export const MessageTable = forwardRef<HTMLDivElement, MessageTableProps>(functi
         <Table
           aria-labelledby={titleId}
           aria-label={title ? undefined : t("ai.messageTable.label")}
-          aria-busy={(streaming && cappedRows.length === 0) || undefined}
+          aria-busy={(resolvedStreaming && cappedRows.length === 0) || undefined}
         >
           {truncatedCount > 0 && (
             <TableCaption className="mb-2 mt-3 px-3 text-caption">
@@ -322,7 +326,7 @@ export const MessageTable = forwardRef<HTMLDivElement, MessageTableProps>(functi
             </TableRow>
           </TableHeader>
           <TableBody>
-            {cappedRows.length === 0 && streaming ? (
+            {cappedRows.length === 0 && resolvedStreaming ? (
               [0, 1, 2].map((i) => (
                 <TableRow key={`skeleton-${i}`} aria-hidden="true">
                   {columns.map((column) => (

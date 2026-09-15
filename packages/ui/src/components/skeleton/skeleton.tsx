@@ -7,6 +7,7 @@ export type SkeletonProps = HTMLAttributes<HTMLDivElement>;
 export function Skeleton({ className, ...props }: SkeletonProps) {
   return (
     <div
+      data-slot="skeleton"
       className={cn("animate-pulse rounded-md bg-muted", className)}
       aria-hidden="true"
       {...props}

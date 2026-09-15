@@ -36,6 +36,21 @@ if (typeof globalThis.ResizeObserver === "undefined") {
   } as unknown as typeof ResizeObserver;
 }
 
+// jsdom does not implement `IntersectionObserver` either. Embla Carousel
+// (`Carousel`) calls it unconditionally on mount to track which slides are in
+// view, so rendering one under jsdom would otherwise throw. Standard no-op
+// stub, same shape as the `ResizeObserver` one above.
+if (typeof globalThis.IntersectionObserver === "undefined") {
+  globalThis.IntersectionObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  } as unknown as typeof IntersectionObserver;
+}
+
 // NOTE: deliberately NO `Element.prototype.scrollIntoView` stub here. A stub in
 // THIS package's setup would only make @elabs-ai/components-ui's own
 // tests pass while every other jsdom consumer of a `@elabs-ai/components-ui`

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import {
@@ -136,7 +136,7 @@ describe("PromptInput — failed submit restores the composer (#1.9)", () => {
 });
 
 describe("PromptInput — in-flight guard blocks a duplicate submit (#1.9)", () => {
-  it("does not call onSubmit twice for a double Enter on an attachment-only message before the first submit settles", () => {
+  it("does not call onSubmit twice for a double Enter on an attachment-only message before the first submit settles", async () => {
     // Attachments are only cleared once onSubmit resolves, so the submit
     // control stays enabled (canSubmit = files.length > 0) while the first
     // call is still pending — an in-flight ref, not the affordance, must
@@ -154,11 +154,22 @@ describe("PromptInput — in-flight guard blocks a duplicate submit (#1.9)", () 
     fireEvent.change(screen.getByLabelText("Upload files"), { target: { files: [file] } });
 
     const textarea = screen.getByPlaceholderText("Ask…");
+    // Both Enters fire back-to-back, with NO await between them — the guard
+    // that matters here is the synchronous `isSubmittingRef` set before
+    // `handleSubmit`'s first `await` (the blob→data-URL conversion), not
+    // React re-rendering the (still-canSubmit) affordance in between.
     fireEvent.keyDown(textarea, { key: "Enter" });
     fireEvent.keyDown(textarea, { key: "Enter" });
 
-    expect(onSubmit).toHaveBeenCalledTimes(1);
-    resolveSubmit?.();
+    // `handleSubmit` is async — `onSubmit` itself isn't called until after the
+    // attachment's blob→data-URL conversion microtask, so wait for it rather
+    // than asserting synchronously.
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    // Let the pending `onSubmit` promise's resolution (and the resulting
+    // `clear()`/state update) settle inside `act` before the test ends.
+    await act(async () => {
+      resolveSubmit?.();
+    });
   });
 });
 

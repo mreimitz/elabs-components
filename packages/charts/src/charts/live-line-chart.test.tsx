@@ -34,6 +34,24 @@ vi.mock("@visx/responsive", () => {
 global.requestAnimationFrame = (_cb) => 0;
 global.cancelAnimationFrame = () => {};
 
+// LiveLineChart's visibility-gated animation loop mounts framer-motion's
+// `useInView`, which reads the global directly — jsdom has no
+// IntersectionObserver at all (RM-038; same stub as auto-chart.test.tsx).
+if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
+  class StubIntersectionObserver {
+    readonly root = null;
+    readonly rootMargin = "";
+    readonly thresholds: readonly number[] = [];
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+  }
+  (globalThis as Record<string, unknown>).IntersectionObserver = StubIntersectionObserver;
+}
+
 import { LiveLine } from "./live-line";
 import { LiveLineChart, type LiveLineChartProps, type LiveLinePoint } from "./live-line-chart";
 import { LiveXAxis } from "./live-x-axis";

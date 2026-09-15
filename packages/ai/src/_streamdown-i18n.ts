@@ -29,14 +29,15 @@ import {
   useStreamdownTranslations,
   type StreamdownTranslationKey,
 } from "@elabs-ai/components-ui";
-import { cjk } from "@streamdown/cjk";
 import { createCodePlugin } from "@streamdown/code";
-import { math } from "@streamdown/math";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { StreamdownTranslations } from "streamdown";
 import { buildCodeBlockTheme } from "./_code-block-theme";
+import { useLazyCjkPlugin } from "./_lazy-cjk";
+import { useLazyMathPlugin } from "./_lazy-math";
 import { lazyMermaid } from "./_lazy-mermaid";
 import { MermaidErrorPanel } from "./_mermaid-error-panel";
+import { useThemeScopeRevision } from "./_theme-scope-store";
 
 /**
  * Reactive replacement for `@streamdown/code`'s pre-configured `code` export
@@ -55,24 +56,25 @@ import { MermaidErrorPanel } from "./_mermaid-error-panel";
  * theme the active `data-theme` resolves to — so whichever slot the `.dark`
  * selector picks, it's the CORRECT theme for whatever is actually active.
  *
- * Re-derives on every `data-theme` mutation (a `MutationObserver` on
- * `<html>`, mirroring `code-block.tsx`'s own) and returns a NEW plugin object
+ * Re-derives on every `data-theme` mutation and returns a NEW plugin object
  * each time, because Streamdown only re-reads `plugins.code.getThemes()` when
  * the `plugins.code` object's REFERENCE changes (see streamdown's internal
  * `shikiTheme` memo) — a mutated-in-place plugin would never be picked up.
+ *
+ * The mutation watch itself comes from the SHARED, ref-counted store in
+ * `./_theme-scope-store` (perf review §3.3) rather than a `MutationObserver`
+ * instantiated per hook call — every simultaneously-mounted
+ * `MessageResponse`/`MarkdownView` (and every `CodeBlock`) in a message-dense
+ * conversation now shares exactly one observer per distinct scope element,
+ * instead of one each. This hook has no element of its own to scope to (it
+ * runs before Streamdown renders anything), so it resolves to the document's
+ * theme scope (`getThemeScope(null)` → closest `[data-theme]` on `<html>`,
+ * same as its prior always-`<html>` behaviour) — a genuinely region-scoped
+ * derivation would need a ref to the rendered surface, which no current call
+ * site (`message.tsx`, `markdown-view.tsx`, `reasoning.tsx`) has available.
  */
 function useReactiveCodePlugin() {
-  const [revision, setRevision] = useState(0);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const observer = new MutationObserver(() => setRevision((r) => r + 1));
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    });
-    return () => observer.disconnect();
-  }, []);
+  const revision = useThemeScopeRevision(null);
 
   return useMemo(() => {
     const theme = buildCodeBlockTheme();
@@ -85,15 +87,65 @@ function useReactiveCodePlugin() {
  * The plugin set every `@elabs-ai/components-ai` markdown surface renders with.
  *
  * `mermaid` is the LAZY plugin (`./_lazy-mermaid`): the engine + d3 + DOMPurify
- * load on first diagram render, not in the entry chunk of every consumer. `code`
- * is the reactive, brand-token-derived plugin above (#315) — never the
+ * load on first diagram render, not in the entry chunk of every consumer.
+ * `math`/`cjk` are ALSO lazy (`./_lazy-math`, `./_lazy-cjk`, #perf-5): KaTeX
+ * (~600 KB) and the CJK remark plugins load only once `text` — the raw
+ * markdown source about to render — actually needs them, sniffed by a cheap
+ * regex rather than shipped unconditionally in every consumer's entry chunk.
+ * Both resolve to `undefined` (the slot is simply absent) until their content
+ * cue fires and the dynamic import resolves; see the two modules' docs for the
+ * one-paint tradeoff this makes and why it can't be avoided the way Mermaid's
+ * render-time laziness is.
+ *
+ * `code` is the reactive, brand-token-derived plugin above (#315) — never the
  * `@streamdown/code` package's static `github-light`/`github-dark` default.
  * Memoized so Streamdown sees a referentially stable `plugins` prop except when
- * the active theme actually changes.
+ * the active theme (or a lazy slot) actually changes.
+ *
+ * @param text The raw markdown source about to render — used only to decide
+ *   whether the math/CJK plugins are needed. Pass `""` to never load them
+ *   speculatively.
  */
-export function useStreamdownPlugins() {
+export function useStreamdownPlugins(text = "") {
   const code = useReactiveCodePlugin();
-  return useMemo(() => ({ cjk, code, math, mermaid: lazyMermaid }), [code]);
+  const math = useLazyMathPlugin(text);
+  const cjk = useLazyCjkPlugin(text);
+  return useMemo(() => ({ cjk, code, math, mermaid: lazyMermaid }), [cjk, code, math]);
+}
+
+/**
+ * A React `key` for the `<Streamdown>` element that renders with
+ * {@link useStreamdownPlugins}'s result — pass it as `key={getStreamdownPluginsKey(plugins)}`
+ * on the `<Streamdown>` JSX, never inside the `plugins` object itself.
+ *
+ * Why this exists (#perf-5 follow-up): Streamdown v2.5.0's `rehypePlugins`/
+ * `remarkPlugins` are `useMemo`'d with `plugins.math`/`plugins.cjk` in their
+ * dependency arrays, and its `Block`/`Streamdown` components' custom `memo`
+ * comparators do check plugin reference equality — on paper, a fresh
+ * `plugins.math` object arriving after the lazy `import()` resolves should be
+ * enough to make Streamdown rebuild its processing pipeline with the math
+ * plugin included. Empirically (verified directly against the real
+ * `streamdown` package, not a mock) it does not: once a block has rendered
+ * once without `plugins.math`/`plugins.cjk`, Streamdown's internal processor
+ * cache keeps serving the plugin-less result even after the reference
+ * changes, and the literal `$$…$$`/CJK-remark-less markdown source stays
+ * un-rendered indefinitely.
+ *
+ * Forcing React to unmount and remount the `<Streamdown>` element — by
+ * changing its `key` — sidesteps that internal cache entirely (a fresh
+ * instance has no stale cache to serve) and reliably picks up the lazily
+ * loaded plugin. The cost is a one-time full remount of that Streamdown
+ * instance the first time its lazy math/CJK slot resolves — at most once per
+ * mounted instance, since after that the key is stable again. Filed for
+ * upstream investigation; if a future `streamdown` release fixes the
+ * underlying cache, this key can be dropped without changing any call site's
+ * behavior (an unchanging key is a no-op).
+ */
+export function getStreamdownPluginsKey(plugins: {
+  readonly cjk?: unknown;
+  readonly math?: unknown;
+}): string {
+  return `${plugins.math ? "math" : "no-math"}:${plugins.cjk ? "cjk" : "no-cjk"}`;
 }
 
 /**

@@ -10,7 +10,7 @@ describe("SliderNumber", () => {
       "aria-valuenow",
       "0.5",
     );
-    expect(screen.getByRole("spinbutton", { name: "Temperature" })).toHaveValue(0.5);
+    expect(screen.getByRole("spinbutton", { name: "Temperature" })).toHaveValue("0.5");
   });
 
   it("rounds slider-driven and typed values identically (lockstep)", async () => {

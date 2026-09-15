@@ -251,7 +251,7 @@ export const ConfirmationActions = ({ className, ...props }: ConfirmationActions
 export type ConfirmationActionProps = ComponentProps<typeof Button>;
 
 export const ConfirmationAction = ({ className, ...props }: ConfirmationActionProps) => (
-  <Button className={cn("h-8 px-3 text-sm", className)} type="button" {...props} />
+  <Button className={cn("h-8 px-3 text-body", className)} type="button" {...props} />
 );
 
 export type ConfirmationApproveProps = ConfirmationActionProps;

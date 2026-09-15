@@ -88,7 +88,7 @@ describe("SnippetCopyButton", () => {
     await waitFor(() => expect(onError).toHaveBeenCalled());
   });
 
-  it("reports an UNAVAILABLE clipboard through onError (insecure context / old browser)", () => {
+  it("reports an UNAVAILABLE clipboard through onError (insecure context / old browser)", async () => {
     Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
     const onError = vi.fn();
     render(
@@ -98,7 +98,11 @@ describe("SnippetCopyButton", () => {
       </Snippet>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Copy" }));
-    expect(onError).toHaveBeenCalled();
+    // The shared `useCopyToClipboard` hook (`@elabs-ai/components-ui`) always
+    // resolves `copy()` on a microtask, even for the synchronous
+    // "clipboard missing" case — so this needs a `waitFor`, unlike a
+    // hand-rolled synchronous check would have.
+    await waitFor(() => expect(onError).toHaveBeenCalled());
   });
 
   it("fires onCopy once the write resolves", async () => {

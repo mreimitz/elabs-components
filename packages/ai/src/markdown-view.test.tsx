@@ -1,5 +1,5 @@
 import { math } from "@streamdown/math";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MarkdownView } from "./markdown-view";
@@ -93,7 +93,7 @@ A paragraph with [a link](https://example.com) and \`inline\` code.
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });
 
-  it("merges a real `plugins.cjk` override in (append), keeps sanitisation on, and keeps the untouched `plugins.math` default alive (#10)", () => {
+  it("merges a real `plugins.cjk` override in (append), keeps sanitisation on, and keeps the untouched `plugins.math` default alive (#10)", async () => {
     // A real, discriminating lock — NOT `plugins={{}}` (that exercises zero
     // slots and passes identically under merge, replace, or a no-op; #10
     // review I3). This test supplies a genuine `cjk` plugin (one of the two
@@ -135,7 +135,11 @@ $$x^2$$
     expect(cjkRemarkSpy).toHaveBeenCalled();
     // (2b) …and the internal `math` default the consumer did not set is
     // still active — real KaTeX markup, not the literal `$$x^2$$` text.
-    expect(document.querySelector(".katex")).toBeInTheDocument();
+    // `math` is now lazy-loaded off the source text (#perf-5) — it starts
+    // `undefined` and arrives after a dynamic import, hence `waitFor`.
+    await waitFor(() => {
+      expect(document.querySelector(".katex")).toBeInTheDocument();
+    });
   });
 });
 

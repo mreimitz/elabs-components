@@ -7,6 +7,7 @@ import { cn } from "../../lib/cn";
 import { Badge } from "../badge";
 import { Button } from "../button";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
+import { useLocale } from "../locale-provider";
 import { Tree, type TreeNode } from "../tree";
 
 export interface TreeSelectProps<T = unknown> extends Omit<
@@ -47,18 +48,11 @@ function findLabel<T>(nodes: TreeNode<T>[], id: string): ReactNode | undefined {
  * selection; composes `Tree` for all keyboard/SR behaviour.
  */
 export const TreeSelect = forwardRef<HTMLButtonElement, TreeSelectProps>(function TreeSelect(
-  {
-    nodes,
-    value,
-    defaultValue,
-    onValueChange,
-    multiple = false,
-    placeholder = "Select…",
-    className,
-    ...props
-  },
+  { nodes, value, defaultValue, onValueChange, multiple = false, placeholder, className, ...props },
   ref,
 ) {
+  const { t } = useLocale();
+  const resolvedPlaceholder = placeholder ?? t("ui.treeSelect.placeholder");
   const [open, setOpen] = useState(false);
   const treeId = useId();
   const isControlled = value !== undefined;
@@ -88,12 +82,12 @@ export const TreeSelect = forwardRef<HTMLButtonElement, TreeSelectProps>(functio
           aria-haspopup="tree"
           aria-expanded={open}
           aria-controls={treeId}
-          className={cn("h-auto min-h-9 w-64 justify-between font-normal", className)}
+          className={cn("h-auto min-h-9 w-full justify-between font-normal", className)}
           {...props}
         >
           <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1 text-start">
             {labels.length === 0 ? (
-              <span className="text-muted-foreground">{placeholder}</span>
+              <span className="text-muted-foreground">{resolvedPlaceholder}</span>
             ) : multiple ? (
               <>
                 {labels.slice(0, 2).map((l) => (
@@ -106,7 +100,10 @@ export const TreeSelect = forwardRef<HTMLButtonElement, TreeSelectProps>(functio
                   </Badge>
                 ))}
                 {labels.length > 2 ? (
-                  <Badge variant="secondary" aria-label={`and ${labels.length - 2} more selected`}>
+                  <Badge
+                    variant="secondary"
+                    aria-label={t("ui.treeSelect.moreSelected", { count: labels.length - 2 })}
+                  >
                     +{labels.length - 2}
                   </Badge>
                 ) : null}
@@ -118,7 +115,7 @@ export const TreeSelect = forwardRef<HTMLButtonElement, TreeSelectProps>(functio
           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-1" align="start">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-64 p-1" align="start">
         <Tree
           id={treeId}
           nodes={nodes}

@@ -1,7 +1,32 @@
+"use client";
+
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
 import { BotIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+/**
+ * Tracks the ACTIVE theme's own `color-scheme` (`resolveThemeIsDark`), not the
+ * two shipped `light`/`dark` themes — a consumer-authored dark theme still
+ * gets an inverted (visible) logo with no registration step (theming.md:
+ * "Use semantic tokens, not `dark:` — `@custom-variant dark` covers only the
+ * themes shipped HERE"). Mirrors `Toaster`'s `useDocumentThemeMode`
+ * (`packages/ui/src/components/sonner/sonner.tsx`).
+ */
+function useIsDarkTheme(): boolean {
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const el = document.documentElement;
+    const read = () => setIsDark(resolveThemeIsDark(el));
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => obs.disconnect();
+  }, []);
+  return isDark;
+}
 
 /**
  * Where provider logos are fetched from by default.
@@ -106,6 +131,7 @@ export const ModelProviderLogo = ({
   ...props
 }: ModelProviderLogoProps) => {
   const [failed, setFailed] = useState(false);
+  const isDark = useIsDarkTheme();
 
   // A blocked/missing logo must not leave a broken-image glyph in the row.
   if (failed) {
@@ -122,7 +148,7 @@ export const ModelProviderLogo = ({
     <img
       {...props}
       alt={`${provider} logo`}
-      className={cn("size-3 dark:invert", className)}
+      className={cn("size-3", isDark && "invert", className)}
       height={12}
       onError={(event) => {
         setFailed(true);
@@ -138,12 +164,20 @@ export const ModelProviderLogo = ({
 
 export type ModelProviderLogoGroupProps = ComponentProps<"div">;
 
-export const ModelProviderLogoGroup = ({ className, ...props }: ModelProviderLogoGroupProps) => (
-  <div
-    className={cn(
-      "flex shrink-0 items-center -space-x-1 [&>img]:rounded-full [&>img]:bg-background [&>img]:p-px [&>img]:ring-1 dark:[&>img]:bg-foreground",
-      className,
-    )}
-    {...props}
-  />
-);
+export const ModelProviderLogoGroup = ({ className, ...props }: ModelProviderLogoGroupProps) => {
+  // Same active-theme signal as the single logo above (not the two shipped
+  // `light`/`dark` themes) — the backdrop swaps to `--foreground` so a
+  // transparent-background SVG still reads against a dark chip in ANY dark
+  // theme a consumer registers.
+  const isDark = useIsDarkTheme();
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center -space-x-1 [&>img]:rounded-full [&>img]:p-px [&>img]:ring-1",
+        isDark ? "[&>img]:bg-foreground" : "[&>img]:bg-background",
+        className,
+      )}
+      {...props}
+    />
+  );
+};

@@ -1,3 +1,5 @@
+"use client";
+
 import { forwardRef, useContext, type ComponentPropsWithoutRef, type ElementRef } from "react";
 import { OTPInput, OTPInputContext } from "input-otp";
 import { Minus } from "lucide-react";
@@ -41,7 +43,7 @@ export const InputOTPSlot = forwardRef<
     <div
       ref={ref}
       className={cn(
-        "relative flex size-9 items-center justify-center border-y border-e border-input text-sm shadow-sm transition-[color,border-color,box-shadow] duration-fast ease-standard first:rounded-s-md first:border-s last:rounded-e-md",
+        "relative flex size-9 items-center justify-center border-y border-e border-input text-body shadow-sm transition-[color,border-color,box-shadow] duration-fast ease-standard first:rounded-s-md first:border-s last:rounded-e-md",
         // The OTP slot IS the field's focus indicator: the real focused element is
         // InputOTP's visually-hidden <input>, and `isActive` is the caret's slot. It
         // therefore carries the compound indicator (#67) — the state is JS-driven, so

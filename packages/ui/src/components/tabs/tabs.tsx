@@ -1,3 +1,5 @@
+"use client";
+
 import {
   createContext,
   forwardRef,
@@ -88,7 +90,7 @@ export const tabsListVariants = cva(
 );
 
 export const tabsTriggerVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap text-sm font-control transition-colors duration-fast disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap text-body font-control transition-colors duration-fast disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -132,10 +134,102 @@ export interface TabsListProps
 export const TabsList = forwardRef<ElementRef<typeof TabsPrimitive.List>, TabsListProps>(
   function TabsList({ className, variant, ...props }, ref) {
     const resolved = variant ?? "segmented";
+    const innerRef = useRef<HTMLDivElement | null>(null);
+    const mergedRef = useMemo(() => mergeRefs(ref, innerRef), [ref]);
+    // Honours the in-app tri-state motion preference on `ThemeProvider` as well
+    // as the OS setting, and degrades to OS-only outside a provider.
+    const reducedMotion = useReducedMotion();
+
+    // Keep the tab that BECOMES active inside the strip's visible bounds.
+    //
+    // ONE set of observers per LIST, not one per trigger (#387 perf finding:
+    // N triggers used to mean N independent `MutationObserver`s (each
+    // watching only its own node) plus N independent `ResizeObserver`s (each
+    // ALSO watching this same shared strip) — a resize of a 20-tab strip fired
+    // 20 redundant callbacks. Watching the list's subtree in one callback
+    // gets the same behaviour for the cost of one.
+    //
+    // Watching attributes rather than reacting to a render is still
+    // load-bearing: Radix flips `data-state` on the trigger it renders, and
+    // only ITS OWN context consumer re-renders — this component does not, so
+    // a render-driven effect would never observe an activation at all
+    // (measured: 8 effect runs for 8 triggers at mount, zero on any later
+    // activation). A MutationObserver fires on a genuine inactive → active
+    // TRANSITION and never at mount, which is what stops a freshly-mounted
+    // Tabs from scrolling anything (#344 shipped a version that scrolled the
+    // page 900px on every mount).
+    useEffect(() => {
+      const node = innerRef.current;
+      if (!node) return;
+
+      const scrollActiveIntoView = () => {
+        const active = node.querySelector<HTMLElement>(
+          '[data-slot="tabs-trigger"][data-state="active"]',
+        );
+        if (active) scrollTriggerIntoStrip(active, reducedMotion ? "auto" : "smooth");
+      };
+
+      const activationObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          const el = mutation.target as HTMLElement;
+          if (el.getAttribute("data-state") === "active") {
+            scrollTriggerIntoStrip(el, reducedMotion ? "auto" : "smooth");
+            break;
+          }
+        }
+      });
+      activationObserver.observe(node, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["data-state"],
+      });
+
+      // A relayout AFTER the scroll invalidates the target it was computed
+      // from: a webfont swapping in on a cold load (measured — a
+      // mono-everything theme's wider mono face left the last tab 45px
+      // outside the strip), or the strip itself being resized. One
+      // `ResizeObserver` instance covers both — it watches the strip AND
+      // every trigger inside it, not a second instance per trigger.
+      let resizeObserver: ResizeObserver | undefined;
+      if (typeof ResizeObserver === "function") {
+        resizeObserver = new ResizeObserver(scrollActiveIntoView);
+        resizeObserver.observe(node);
+        for (const trigger of node.querySelectorAll<HTMLElement>('[data-slot="tabs-trigger"]')) {
+          resizeObserver.observe(trigger);
+        }
+      }
+
+      // A dynamic tab list can add/remove triggers later — keep the single
+      // `ResizeObserver`'s target set in sync instead of spinning up a new
+      // observer per trigger mount.
+      const childListObserver = new MutationObserver((mutations) => {
+        if (!resizeObserver) return;
+        for (const mutation of mutations) {
+          mutation.addedNodes.forEach((added) => {
+            if (added instanceof HTMLElement && added.matches('[data-slot="tabs-trigger"]')) {
+              resizeObserver!.observe(added);
+            }
+          });
+          mutation.removedNodes.forEach((removed) => {
+            if (removed instanceof HTMLElement && removed.matches('[data-slot="tabs-trigger"]')) {
+              resizeObserver!.unobserve(removed);
+            }
+          });
+        }
+      });
+      childListObserver.observe(node, { childList: true, subtree: true });
+
+      return () => {
+        activationObserver.disconnect();
+        resizeObserver?.disconnect();
+        childListObserver.disconnect();
+      };
+    }, [reducedMotion]);
+
     return (
       <TabsVariantContext.Provider value={resolved}>
         <TabsPrimitive.List
-          ref={ref}
+          ref={mergedRef}
           data-slot="tabs-list"
           data-variant={resolved}
           className={cn(tabsListVariants({ variant: resolved }), className)}
@@ -151,58 +245,10 @@ export const TabsTrigger = forwardRef<
   ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(function TabsTrigger({ className, ...props }, ref) {
   const variant = use(TabsVariantContext);
-  const innerRef = useRef<HTMLButtonElement>(null);
-  const mergedRef = useMemo(() => mergeRefs(ref, innerRef), [ref]);
-  // Honours the in-app tri-state motion preference on `ThemeProvider` as well
-  // as the OS setting, and degrades to OS-only outside a provider.
-  const reducedMotion = useReducedMotion();
-
-  // Keep the tab that BECOMES active inside the strip's visible bounds.
-  //
-  // Watching the attribute rather than reacting to a render is load-bearing on
-  // both counts:
-  //  - Radix flips `data-state` on the trigger it renders INSIDE this wrapper,
-  //    and only its own context consumer re-renders — this component does not.
-  //    A render-driven effect therefore never observes an activation at all
-  //    (measured: 8 effect runs for 8 triggers at mount, zero on any later
-  //    activation), so the scroll only ever ran when the CONSUMER's own state
-  //    changed.
-  //  - A MutationObserver fires on a genuine inactive → active TRANSITION and
-  //    never at mount, which is what stops a freshly-mounted Tabs from
-  //    scrolling anything (#344 shipped a version that scrolled the page 900px
-  //    on every mount).
-  useEffect(() => {
-    const node = innerRef.current;
-    if (!node) return;
-
-    const scrollIfActive = () => {
-      if (node.getAttribute("data-state") !== "active") return;
-      scrollTriggerIntoStrip(node, reducedMotion ? "auto" : "smooth");
-    };
-
-    const observer = new MutationObserver(scrollIfActive);
-    observer.observe(node, { attributes: true, attributeFilter: ["data-state"] });
-
-    // A relayout AFTER the scroll invalidates the target it was computed from:
-    // a webfont swapping in on a cold load (measured — a mono-everything theme's
-    // wider mono face left the last tab 45px outside the strip), or the strip
-    // being resized. Re-measure whenever the tab or the strip changes size;
-    // the delta check makes every unaffected pass a no-op.
-    const resizeObserver =
-      typeof ResizeObserver === "function" ? new ResizeObserver(scrollIfActive) : undefined;
-    resizeObserver?.observe(node);
-    const strip = node.closest<HTMLElement>('[role="tablist"]');
-    if (strip) resizeObserver?.observe(strip);
-
-    return () => {
-      observer.disconnect();
-      resizeObserver?.disconnect();
-    };
-  }, [reducedMotion]);
 
   return (
     <TabsPrimitive.Trigger
-      ref={mergedRef}
+      ref={ref}
       data-slot="tabs-trigger"
       className={cn(tabsTriggerVariants({ variant }), className)}
       {...props}

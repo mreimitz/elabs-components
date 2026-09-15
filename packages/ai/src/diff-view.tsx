@@ -59,6 +59,7 @@ import { cva } from "class-variance-authority";
 import type { BundledLanguage, ThemedToken } from "shiki";
 import { highlightCode } from "./code-block";
 import { Shimmer } from "./shimmer";
+import { getThemeScope } from "./_theme-scope-store";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 //
@@ -139,41 +140,27 @@ const MARKER_TONE: Record<"add" | "del" | "context", string> = {
   context: "text-muted-foreground",
 };
 
-// ─── Theme scope (mirrors code-block.tsx's private helper — not a fork of it) ──
-
-const getThemeScope = (el: Element | null): Element | null =>
-  el?.closest("[data-theme]") ??
-  (typeof document !== "undefined" ? document.documentElement : null);
+// `getThemeScope` (nearest `[data-theme]` ancestor, defaulting to `<html>`)
+// comes from the shared `_theme-scope-store` module — the exact same helper
+// `code-block.tsx` uses, not a second copy of it.
 
 // ─── Intra-line syntax highlighting ────────────────────────────────────────
 
 type TokenizedResult = NonNullable<ReturnType<typeof highlightCode>>;
 
 /**
- * Highlights only the lines that are real source (`add` / `del` / `context`)
- * as one combined document, so Shiki sees genuine surrounding context instead
- * of tokenizing each line in isolation, then maps the result back onto the
- * original line indices. `hunk` / `meta` lines are diff headers, not code, and
- * are excluded from the document entirely.
+ * Highlights ONE side's combined document (see `useDiffTokens` below) and
+ * returns the raw Shiki result once it resolves. `isStreaming` is forwarded
+ * to `highlightCode`'s `skipCache` — a streaming diff re-tokenizes a growing
+ * document on every line, and every intermediate value is never seen again,
+ * so permanently caching it is pure waste (perf review 1.4a/§3.2).
  */
-function useDiffTokens(
-  lines: DiffLine[],
+function useSideTokens(
+  combinedCode: string,
   language: BundledLanguage | undefined,
   scopeEl: Element | null,
-): Map<number, ThemedToken[]> | null {
-  const codeIndices = useMemo(
-    () =>
-      lines
-        .map((line, index) => ({ line, index }))
-        .filter(({ line }) => line.type !== "hunk" && line.type !== "meta")
-        .map(({ index }) => index),
-    [lines],
-  );
-  const combinedCode = useMemo(
-    () => codeIndices.map((index) => lines[index]?.text ?? "").join("\n"),
-    [codeIndices, lines],
-  );
-
+  isStreaming: boolean,
+): TokenizedResult | null {
   const [result, setResult] = useState<TokenizedResult | null>(null);
 
   useEffect(() => {
@@ -189,22 +176,90 @@ function useDiffTokens(
         if (!cancelled) setResult(r);
       },
       scopeEl,
+      isStreaming,
     );
     if (cached) setResult(cached);
     return () => {
       cancelled = true;
     };
-  }, [combinedCode, language, scopeEl]);
+  }, [combinedCode, language, scopeEl, isStreaming]);
+
+  return result;
+}
+
+/**
+ * Highlights the OLD file (`del` + `context` lines) and the NEW file (`add` +
+ * `context` lines) as two SEPARATE Shiki documents, then maps each back onto
+ * the original line indices. `hunk` / `meta` lines are diff headers, not
+ * code, and are excluded from both documents.
+ *
+ * The two sides used to be combined into ONE document (every real line,
+ * `del`/`add`/`context` alike, joined in original order). That let a
+ * still-open construct on one side leak its tokenizer STATE across the
+ * boundary onto the other — a deleted, unterminated `/*` opened a block
+ * comment that swallowed the immediately-following ADDED line as commented-out
+ * text, even though the two lines never coexist in either real version of the
+ * file. Tokenizing old/new as their own documents means Shiki only ever sees
+ * genuine same-version context around a construct.
+ */
+function useDiffTokens(
+  lines: DiffLine[],
+  language: BundledLanguage | undefined,
+  scopeEl: Element | null,
+  isStreaming: boolean,
+): Map<number, ThemedToken[]> | null {
+  const oldIndices = useMemo(
+    () =>
+      lines
+        .map((line, index) => ({ line, index }))
+        .filter(({ line }) => line.type === "del" || line.type === "context")
+        .map(({ index }) => index),
+    [lines],
+  );
+  const newIndices = useMemo(
+    () =>
+      lines
+        .map((line, index) => ({ line, index }))
+        .filter(({ line }) => line.type === "add" || line.type === "context")
+        .map(({ index }) => index),
+    [lines],
+  );
+
+  const oldCode = useMemo(
+    () => oldIndices.map((index) => lines[index]?.text ?? "").join("\n"),
+    [oldIndices, lines],
+  );
+  const newCode = useMemo(
+    () => newIndices.map((index) => lines[index]?.text ?? "").join("\n"),
+    [newIndices, lines],
+  );
+
+  const oldResult = useSideTokens(oldCode, language, scopeEl, isStreaming);
+  const newResult = useSideTokens(newCode, language, scopeEl, isStreaming);
 
   return useMemo(() => {
-    if (!language || !result) return null;
+    if (!language) return null;
     const map = new Map<number, ThemedToken[]>();
-    codeIndices.forEach((originalIndex, i) => {
-      const tokenLine = result.tokens[i];
-      if (tokenLine) map.set(originalIndex, tokenLine);
-    });
+    // `del` lines exist ONLY in the old-file document.
+    if (oldResult) {
+      oldIndices.forEach((originalIndex, i) => {
+        if (lines[originalIndex]?.type !== "del") return;
+        const tokenLine = oldResult.tokens[i];
+        if (tokenLine) map.set(originalIndex, tokenLine);
+      });
+    }
+    // `add` AND `context` lines come from the new-file document — a `context`
+    // line reads identically in both versions, and picking one consistently
+    // (rather than whichever side happened to resolve last) keeps its color
+    // stable across re-highlights.
+    if (newResult) {
+      newIndices.forEach((originalIndex, i) => {
+        const tokenLine = newResult.tokens[i];
+        if (tokenLine) map.set(originalIndex, tokenLine);
+      });
+    }
     return map;
-  }, [codeIndices, result, language]);
+  }, [oldIndices, newIndices, oldResult, newResult, language, lines]);
 }
 
 /** Renders pre-highlighted tokens; colour only (a diff row doesn't need bold/italic/underline). */
@@ -573,7 +628,7 @@ export const DiffView = forwardRef<HTMLDivElement, DiffViewProps>(function DiffV
     () => (maxLines ? lines.slice(0, maxLines) : lines),
     [lines, maxLines],
   );
-  const tokens = useDiffTokens(clippedLines, language, scopeEl);
+  const tokens = useDiffTokens(clippedLines, language, scopeEl, isStreaming);
   const { rows, expand } = useDiffRows(clippedLines, contextLines);
 
   const RowComponent = variant === "split" ? SplitRow : InlineRow;

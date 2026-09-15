@@ -32,6 +32,7 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // ── Generic (shared across packages — reuse these before minting a new key) ──
   close: "Close",
   copy: "Copy",
+  clear: "Clear",
   previous: "Previous",
   next: "Next",
   previousSlide: "Previous slide",
@@ -139,6 +140,8 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.schemaForm.testAction.success": "Connected",
   "ui.schemaForm.testAction.failure": "Test failed",
   // Pagination's ellipsis (sr-only — the visible glyph is decorative).
+  "ui.breadcrumb.label": "breadcrumb",
+  "ui.pagination.label": "pagination",
   "ui.pagination.morePages": "More pages",
   // Pagination's prev/next links — the ACCESSIBLE NAME (`aria-label`), distinct
   // from the visible `previous`/`next` text below it: an `aria-label` overrides
@@ -178,11 +181,99 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // `viewer.content` vs this), so a translator can phrase either
   // independently and neither package depends on a string owned by another.
   "ui.table.scrollRegion": "Table contents, scrollable",
+  // NumberInput's step buttons (#4 i18n sweep).
+  "ui.numberInput.decrease": "Decrease",
+  "ui.numberInput.increase": "Increase",
+  // Combobox/VirtualSelect/TreeSelect each keep their own placeholder pair
+  // (English text coincides, but a translator may phrase a search box
+  // differently per surface — same rationale as `ui.table.scrollRegion`).
+  "ui.combobox.placeholder": "Select…",
+  "ui.combobox.searchPlaceholder": "Search…",
+  "ui.virtualSelect.placeholder": "Select…",
+  "ui.virtualSelect.searchPlaceholder": "Search…",
+  "ui.treeSelect.placeholder": "Select…",
+  "ui.treeSelect.moreSelected": "and {count} more selected",
+  "ui.fileUpload.selectedFiles": "Selected files",
+  "ui.fileUpload.dragDropHere": "Drag & drop files here",
+  "ui.fileUpload.browseFiles": "Browse files",
+  // Sidebar's mobile Sheet description (sr-only) and the collapse/expand
+  // trigger's shared name (SidebarTrigger's sr-only text + SidebarRail's
+  // aria-label/title).
+  "ui.sidebar.mobileDescription": "Displays the mobile sidebar.",
+  "ui.sidebar.toggle": "Toggle Sidebar",
+  "ui.revisionTimeline.label": "Revisions",
+  "ui.tree.retry": "Retry",
+  "ui.tree.retryLoadingChildren": "Retry loading children",
+  // Spinner's bare default label — kept WITHOUT an ellipsis (unlike the
+  // generic `loading` key) to stay byte-identical to its pre-i18n default.
+  "ui.spinner.label": "Loading",
+  "ui.statePanel.errorTitle": "Something went wrong",
+  "ui.statePanel.errorDescription": "An unexpected error occurred. Please try again.",
+  "ui.statePanel.errorEyebrow": "Error",
+  "ui.carousel.label": "Carousel",
+  // Transfer (#4 i18n sweep). `panelFallback`/`itemsFallback` back the two
+  // spots where the panel title isn't a plain string (a ReactNode) and the
+  // sr-only text falls back to a generic word instead.
+  "ui.transfer.selectAllIn": "Select all in {title}",
+  "ui.transfer.panelFallback": "panel",
+  "ui.transfer.searchIn": "Search {title}",
+  "ui.transfer.itemsFallback": "items",
+  "ui.transfer.searchPlaceholder": "Search…",
+  "ui.transfer.empty": "No items",
+  "ui.transfer.defaultSourceTitle": "Source",
+  "ui.transfer.defaultTargetTitle": "Target",
+  "ui.transfer.movedToTarget": {
+    one: "{count} item moved to the target list.",
+    other: "{count} items moved to the target list.",
+  },
+  "ui.transfer.movedToSource": {
+    one: "{count} item moved to the source list.",
+    other: "{count} items moved to the source list.",
+  },
+  "ui.transfer.moveControls": "Move controls",
+  "ui.transfer.moveSelectedRight": "Move selected right",
+  "ui.transfer.moveAllRight": "Move all right",
+  "ui.transfer.moveSelectedLeft": "Move selected left",
+  "ui.transfer.moveAllLeft": "Move all left",
+  // ChangeReview (#4 i18n sweep).
+  "ui.changeReview.heading": "Review changes",
+  "ui.changeReview.approvedCount": "{approved} of {total} approved",
+  "ui.changeReview.rejectAll": "Reject all",
+  "ui.changeReview.rejectAllLabel": "Reject all changes",
+  "ui.changeReview.approveAll": "Approve all",
+  "ui.changeReview.approveAllLabel": "Approve all changes",
+  "ui.changeReview.provenanceLabel": "Change provenance",
+  "ui.changeReview.emptyTitle": "No changes to review",
+  "ui.changeReview.emptyDescription":
+    "When an agent proposes edits, they'll appear here for your approval.",
+  "ui.changeReview.statusAdded": "added",
+  "ui.changeReview.statusRemoved": "removed",
+  "ui.changeReview.statusModified": "modified",
+  "ui.changeReview.phaseBefore": "Before",
+  "ui.changeReview.phaseAfter": "After",
+  "ui.changeReview.checkPassed": "Passed",
+  "ui.changeReview.checkFailed": "Failed",
+  "ui.changeReview.showDetail": "Show detail",
+  "ui.changeReview.hideDetail": "Hide detail",
+  "ui.changeReview.rejectHunk": "Reject hunk: {title}",
+  "ui.changeReview.approveHunk": "Approve hunk: {title}",
+  "ui.changeReview.changeType": "Change type: {status}",
+  "ui.changeReview.beforePrefix": "Before: ",
+  "ui.changeReview.afterPrefix": "After: ",
+  "ui.changeReview.approvedBadge": "Approved",
+  "ui.navNotifications.trigger": "Open notifications",
+  "ui.colorPicker.pickColor": "Pick color",
+  "ui.colorPicker.none": "None",
+  "ui.colorPicker.swatches": "Color swatches",
+  "ui.colorPicker.customHexLabel": "Custom hex",
+  "ui.colorPicker.notThemeAware": "(not theme-aware)",
+  "ui.colorPicker.customHex": "Custom hex color",
 
   // ── @elabs-ai/components-data ─────────────────────────────────────────────────────────────
   // The scroll region's accessible name is rendered ONLY when the table actually
   // overflows its container, so it is never announced for a table that fits.
   "data.table.scrollRegion": "Table contents, scrollable",
+  "data.table.loading": "Loading table data…",
   // Fallback name for a row's activation control when the row's first cell holds
   // no primitive value to name it after (see `rowActionLabel`).
   "data.table.rowAction": "Activate row",
@@ -237,6 +328,10 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "data.table.reorderRoleDescription": "sortable",
   "data.facetFilter.clearFilters": "Clear filters",
   "data.columnPicker.toggleColumns": "Toggle columns",
+  "data.columnPicker.label": "Columns",
+  "data.searchInput.label": "Search",
+  "data.searchInput.placeholder": "Search…",
+  "data.searchInput.clear": "Clear search",
 
   // ── @elabs-ai/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton
@@ -259,6 +354,43 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // drift apart in translation.
   "charts.chartFrame.exportSvg": "Export as SVG",
   "charts.chartFrame.exportPng": "Export as PNG",
+  "charts.chartFrame.flipToTable": "Flip to table view",
+  "charts.chartFrame.showChart": "Show chart",
+  "charts.chartFrame.showAsTable": "Show as table",
+  "charts.chartFrame.downloadCsv": "Download CSV",
+  "charts.chartFrame.expandChart": "Expand chart",
+  "charts.chartFrame.expand": "Expand",
+  "charts.chartFrame.summary": "Summary",
+  "charts.chartFrame.noDataToSummarize": "No data to summarize.",
+  "charts.chartFrame.defaultTitle": "Chart",
+  "charts.chartFrame.summaryDetailLabel": "Chart summary",
+  "charts.legend.label": "Chart legend",
+  "charts.gantt.timeline": "Timeline",
+  "charts.gantt.dragToResizeColumn": "Drag to resize column",
+  "charts.gantt.viewControls": "Gantt view controls",
+  "charts.gantt.viewMode": "View mode",
+  "charts.gantt.viewModeLabel": "View mode:",
+  "charts.gantt.taskList": "Task list",
+  "charts.gantt.taskListLabel": "Tasks",
+  "charts.gantt.noTasksToDisplay": "No tasks to display",
+  "charts.gantt.unitDay": "Day",
+  "charts.gantt.unitWeek": "Week",
+  "charts.gantt.unitMonth": "Month",
+  "charts.gantt.unitQuarter": "Quarter",
+  "charts.gantt.unitHour": "Hour",
+  "charts.gantt.unitMinute": "Minute",
+  "charts.gantt.unitSecond": "Second",
+  "charts.gantt.unitMillisecond": "Millisecond",
+
+  // ── @elabs-ai/components-maps ─────────────────────────────────────────────────────────────
+  "maps.popup.close": "Close popup",
+  "maps.canvas.unavailableTitle": "Map unavailable",
+  "maps.canvas.unavailableDescription": "This browser can’t render WebGL maps.",
+
+  // ── @elabs-ai/components-flow ─────────────────────────────────────────────────────────────
+  "flow.inspectorPanel.close": "Close inspector",
+  "flow.inspectorPanel.title": "Inspector",
+  "flow.inspectorPanel.emptyMessage": "Select a node to see its details.",
 
   // ── @elabs-ai/components-ai ───────────────────────────────────────────────────────────────
   // Namespaced `ai.<area>.<key>` so package microcopy can't collide with the
@@ -276,6 +408,7 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.promptInput.stop": "Stop",
   "ai.agent.instructions": "Instructions",
   "ai.agent.tools": "Tools",
+  "ai.agent.outputSchema": "Output Schema",
   "ai.codeBlock.generating": "Generating…",
   "ai.composer.placeholder": "Ask me anything…",
   "ai.tokenUsage.usage": "Model context usage",
@@ -289,6 +422,7 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // The mobile Sheet's sr-only title (#18) — distinct from `contextPanel.toggle`,
   // which labels the button that opens/closes it.
   "ai.contextPanel.title": "Context panel",
+  "ai.contextPanel.description": "Displays the chat context panel.",
   "ai.environmentVariables.toggleVisibility": "Toggle value visibility",
   "ai.gallery.label": "Image gallery",
   "ai.gallery.expandImage": "Expand image",
@@ -298,8 +432,11 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // Shared by Tool's technical view and SchemaDisplay's request panel.
   "ai.schemaDisplay.parameters": "Parameters",
   "ai.schemaDisplay.response": "Response",
+  "ai.schemaDisplay.requestBody": "Request Body",
   // ReasoningTrigger's default not-yet-timed message (before `duration` is known).
   "ai.reasoning.thoughtDefault": "Thought for a few seconds",
+  "ai.reasoning.thinking": "Thinking…",
+  "ai.reasoning.thoughtForDuration": "Thought for {duration} seconds",
   "ai.stackTrace.empty": "No stack frames",
   "ai.webPreview.noConsoleOutput": "No console output",
   // PlanTrigger's icon-only collapse/expand control (sr-only).
@@ -444,6 +581,31 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.streamdown.copyLink": "Copy link",
   "ai.streamdown.copied": "Copied",
   "ai.streamdown.openLink": "Open link",
+  // Tool (#4 i18n sweep).
+  "ai.tool.showTechnicalDetails": "Show technical details",
+  "ai.tool.error": "Error",
+  "ai.tool.result": "Result",
+  // AssetPreview.
+  "ai.assetPreview.rowCount": { one: "{count} row", other: "{count} rows" },
+  "ai.assetPreview.noPreview": "No preview available…",
+  "ai.assetPreview.preview": "Preview",
+  "ai.assetPreview.raw": "Raw",
+  // WebPreview's sandboxed iframe accessible name.
+  "ai.webPreview.previewTitle": "Preview",
+  // FileTree's expand/collapse chevron control.
+  "ai.fileTree.expandFolder": "Expand {name}",
+  "ai.fileTree.collapseFolder": "Collapse {name}",
+  "ai.fileTree.noAssetsProduced": "No assets produced yet.",
+  "ai.conversation.download": "Download conversation",
+  // OpenInChat. `provider` is a brand name (ChatGPT, Claude, …) — kept
+  // untranslated data, interpolated into the translated "Open in …" phrase.
+  "ai.openInChat.trigger": "Open in chat",
+  "ai.openInChat.openInProvider": "Open in {provider}",
+  // TestResults.
+  "ai.testResults.passedCount": { one: "{count} passed", other: "{count} passed" },
+  "ai.testResults.failedCount": { one: "{count} failed", other: "{count} failed" },
+  "ai.testResults.skippedCount": { one: "{count} skipped", other: "{count} skipped" },
+  "ai.testResults.testsPassed": "{passed}/{total} tests passed",
 
   // ── @elabs-ai/components-viewer (ADR 0024) ─────────────────────────
   // FileViewer chrome. Every control here is icon-only, so these ARE the

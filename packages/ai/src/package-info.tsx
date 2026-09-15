@@ -35,17 +35,17 @@ export const PackageInfoName = ({ className, children, ...props }: PackageInfoNa
   return (
     <div className={cn("flex items-center gap-2", className)} {...props}>
       <PackageIcon className="size-4 text-muted-foreground" />
-      <span className="font-medium font-mono text-sm">{children ?? name}</span>
+      <span className="font-medium font-mono text-body">{children ?? name}</span>
     </div>
   );
 };
 
 const changeTypeStyles: Record<ChangeType, string> = {
-  added: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  major: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  minor: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  patch: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  removed: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400",
+  added: "bg-info/10 text-info-text",
+  major: "bg-destructive/10 text-destructive-text",
+  minor: "bg-warning/10 text-warning-text",
+  patch: "bg-success/10 text-success-text",
+  removed: "bg-muted text-muted-foreground",
 };
 
 const changeTypeIcons: Record<ChangeType, React.ReactNode> = {
@@ -71,7 +71,7 @@ export const PackageInfoChangeType = ({
 
   return (
     <Badge
-      className={cn("gap-1 text-xs capitalize", changeTypeStyles[changeType], className)}
+      className={cn("gap-1 text-meta capitalize", changeTypeStyles[changeType], className)}
       variant="secondary"
       {...props}
     >
@@ -93,7 +93,7 @@ export const PackageInfoVersion = ({ className, children, ...props }: PackageInf
   return (
     <div
       className={cn(
-        "mt-2 flex items-center gap-2 font-mono text-muted-foreground text-sm",
+        "mt-2 flex items-center gap-2 font-mono text-muted-foreground text-body",
         className,
       )}
       {...props}
@@ -154,7 +154,7 @@ export const PackageInfoDescription = ({
   children,
   ...props
 }: PackageInfoDescriptionProps) => (
-  <p className={cn("mt-2 text-muted-foreground text-sm", className)} {...props}>
+  <p className={cn("mt-2 text-muted-foreground text-body", className)} {...props}>
     {children}
   </p>
 );
@@ -175,7 +175,7 @@ export const PackageInfoDependencies = ({
   ...props
 }: PackageInfoDependenciesProps) => (
   <div className={cn("space-y-2", className)} {...props}>
-    <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+    <span className="font-medium text-muted-foreground text-meta uppercase tracking-wide">
       Dependencies
     </span>
     <div className="space-y-1">{children}</div>
@@ -194,11 +194,11 @@ export const PackageInfoDependency = ({
   children,
   ...props
 }: PackageInfoDependencyProps) => (
-  <div className={cn("flex items-center justify-between text-sm", className)} {...props}>
+  <div className={cn("flex items-center justify-between text-body", className)} {...props}>
     {children ?? (
       <>
         <span className="font-mono text-muted-foreground">{name}</span>
-        {version && <span className="font-mono text-xs">{version}</span>}
+        {version && <span className="font-mono text-meta">{version}</span>}
       </>
     )}
   </div>

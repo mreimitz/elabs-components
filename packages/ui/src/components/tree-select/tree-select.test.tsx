@@ -37,4 +37,9 @@ describe("TreeSelect", () => {
     render(<TreeSelect nodes={nodes} multiple value={["apple", "banana", "carrot"]} />);
     expect(screen.getByText("+1")).toBeInTheDocument();
   });
+
+  it("does not hard-fix the trigger width — fills its container by default", () => {
+    render(<TreeSelect nodes={nodes} />);
+    expect(screen.getByRole("combobox").className).not.toMatch(/\bw-64\b/);
+  });
 });

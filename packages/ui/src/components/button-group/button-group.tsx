@@ -44,7 +44,7 @@ export const ButtonGroupText = forwardRef<
     <Comp
       ref={ref}
       className={cn(
-        "flex items-center gap-2 rounded-md border bg-muted px-4 text-sm font-medium shadow-sm [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
+        "flex items-center gap-2 rounded-md border bg-muted px-4 text-body font-medium shadow-sm [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}

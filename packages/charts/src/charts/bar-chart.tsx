@@ -56,6 +56,7 @@ import {
 } from "./chart-phase";
 import { generateCategoricalSkeletonData } from "./generate-chart-skeleton-data";
 import { useScheduledTooltip } from "./use-scheduled-tooltip";
+import { useStableValue } from "./use-stable-value";
 import { useTextMeasurerOf } from "./use-text-measurer";
 import {
   buildYScalesForLines,
@@ -485,9 +486,15 @@ const ChartCore = memo(function ChartCore({
   // alike.
   const children = useMemo(() => applyBarPalette(childrenProp, palette), [childrenProp, palette]);
 
-  // Extract bar configs synchronously from children
-  const lines = useMemo(() => extractBarConfigs(children), [children]);
-  const zeroLineSetting = useMemo(() => extractZeroLineSetting(children), [children]);
+  // Extract bar configs synchronously from children. `children` gets a new
+  // identity from React on every parent render even when nothing relevant
+  // changed; `useStableValue` collapses the extracted result back to its
+  // previous reference when the content is unchanged, so `contextValue`
+  // below (and the scales it drives) don't rebuild on an unrelated re-render.
+  const lines = useStableValue(useMemo(() => extractBarConfigs(children), [children]));
+  const zeroLineSetting = useStableValue(
+    useMemo(() => extractZeroLineSetting(children), [children]),
+  );
 
   // While loading, render layout-shaped placeholder categories/bars instead of
   // the (likely empty) real data — mirrors the chart dataKeys so the
@@ -565,7 +572,9 @@ const ChartCore = memo(function ChartCore({
   // bounded by `maxExtent`, a constant cap, never by the current margin. That is
   // what makes ONE pass exact instead of a fixpoint loop. A `ResizeObserver` on
   // the rendered label band would reintroduce the cycle and oscillate.
-  const categoryAxisConfig = useMemo(() => extractCategoryAxisConfig(children), [children]);
+  const categoryAxisConfig = useStableValue(
+    useMemo(() => extractCategoryAxisConfig(children), [children]),
+  );
   const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
 
   const categoryEntries = useMemo(
@@ -1121,7 +1130,7 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={10}>
+      <ParentSize debounceTime={100}>
         {({ width, height }) => (
           <ChartInner
             animationDuration={animationDuration}

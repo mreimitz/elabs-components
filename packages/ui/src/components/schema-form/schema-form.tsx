@@ -46,10 +46,11 @@
 import {
   createContext,
   forwardRef,
+  memo,
   use,
-  useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -86,15 +87,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../tabs";
 
 import {
   checkFileIssue,
-  collectValidatableFields,
   fieldLabel,
-  findFieldByName,
-  initialFormValues,
-  isFieldVisible,
   normalizeFormSpec,
   optionLabel,
   optionValue,
-  validateForm,
   type FieldSpec,
   type FormSpec,
   type FormSubmitState,
@@ -104,49 +100,26 @@ import {
   type GroupItemSpec,
   type NormalizedFormSpec,
 } from "./schema-form-spec";
+import {
+  SchemaFormStore,
+  useBranchHasError,
+  useEffectiveValues,
+  useFieldSnapshot,
+  useSchemaFormMeta,
+  useVisibleFieldNames,
+  type SchemaFormStoreProps,
+} from "./schema-form-store";
 
-// ─── Context ────────────────────────────────────────────────────────────────
+// ─── Context (carries only the STABLE store instance — see schema-form-store.ts) ──
 
-interface SchemaFormContextValue {
-  spec: NormalizedFormSpec;
-  values: FormValues;
-  /**
-   * `values` with every field's default/empty fallback applied (via
-   * `effectiveValue`) and every currently-hidden field's subtree stripped —
-   * the SAME object `mergedValues`/submit/validation resolve against. Every
-   * `visibleWhen` check (the render loops AND `SchemaFormField` itself) must
-   * read THIS, never raw `values`: a controlled form can omit a controller
-   * field that carries a spec default, in which case the rendered control
-   * already shows the default (`effectiveValue`) while raw `values` is still
-   * `undefined` — checking raw `values` there hides a field validation then
-   * requires, with no visible control left to fix it.
-   */
-  effectiveValues: FormValues;
-  /** Per-field error text, only populated after a submit attempt. */
-  errors: Record<string, string | null>;
-  setValue: (name: string, value: FormValue) => void;
-  submit: () => void;
-  reset: () => void;
-  /** True once submit has been attempted (drives error visibility). */
-  attempted: boolean;
-  submitted: boolean;
-  submitting: boolean;
-  disabled: boolean;
-  loading: boolean;
-  /** A terminal, form-level submission error (e.g. "Couldn't save settings"). */
-  error: ReactNode;
-  formId: string;
-  headingId: string;
-}
+const SchemaFormStoreContext = createContext<SchemaFormStore | null>(null);
 
-const SchemaFormContext = createContext<SchemaFormContextValue | null>(null);
-
-function useSchemaFormContext(): SchemaFormContextValue {
-  const ctx = use(SchemaFormContext);
-  if (!ctx) {
+function useSchemaFormStore(): SchemaFormStore {
+  const store = use(SchemaFormStoreContext);
+  if (!store) {
     throw new Error("SchemaForm sub-components must be rendered inside <SchemaFormProvider>.");
   }
-  return ctx;
+  return store;
 }
 
 /** Stable DOM id for a field's primary control (used for label + focus). */
@@ -158,39 +131,6 @@ function descId(formId: string, name: string): string {
 }
 function errorId(formId: string, name: string): string {
   return `${formId}-error-${name}`;
-}
-
-/** The effective value for a field (state value, else its default/empty). */
-function effectiveValue(field: FieldSpec, values: FormValues): FormValue {
-  const v = values[field.name];
-  if (v !== undefined) return v;
-  if (field.type === "group") return field.default ?? field.groups[0]?.key;
-  if ("default" in field && field.default !== undefined) return field.default;
-  if (field.type === "boolean") return false;
-  if (field.type === "multi-enum" || field.type === "list") return [];
-  if (field.type === "key-value") return [];
-  if (field.type === "file") return [];
-  return undefined;
-}
-
-/** Remove every field's key (recursively, including nested group branches) from `values`. */
-function stripFields(fields: FieldSpec[], values: FormValues): void {
-  for (const field of fields) {
-    delete values[field.name];
-    if (field.type === "group") {
-      for (const group of field.groups) stripFields(group.fields, values);
-    }
-  }
-}
-
-/** The active branch of a `variant: "tabs"` group, given its own (possibly-just-computed) value. */
-function activeTabBranch(field: GroupFieldSpec, activeKey: FormValue): GroupItemSpec | undefined {
-  const key = typeof activeKey === "string" ? activeKey : undefined;
-  return (
-    field.groups.find((g) => g.key === key) ??
-    field.groups.find((g) => g.key === field.default) ??
-    field.groups[0]
-  );
 }
 
 // ─── Provider ───────────────────────────────────────────────────────────────
@@ -237,187 +177,54 @@ export function SchemaFormProvider({
   children,
 }: SchemaFormProviderProps) {
   const formId = useId();
-  const headingId = `${formId}-title`;
 
-  const isControlled = valuesProp !== undefined;
-  const [internalValues, setInternalValues] = useState<FormValues>(() =>
-    initialFormValues(spec.fields),
-  );
-  const [attempted, setAttempted] = useState(false);
+  const storeProps: SchemaFormStoreProps = {
+    spec,
+    valuesProp,
+    onChange,
+    onSubmit,
+    disabled,
+    submitted,
+    submitting,
+    loading,
+    error,
+  };
+  // Created once (lazy initializer) and then kept in sync on every render via
+  // `syncProps` below — see schema-form-store.ts's module doc comment for why
+  // the store, not React context, is what field-level readers subscribe to.
+  const [store] = useState(() => new SchemaFormStore(storeProps, formId));
+  // `syncProps` runs here, IN render, so a non-memoized descendant
+  // re-rendering this same pass reads fresh values; the resulting `changed`
+  // flag is only ACTED ON (`store.notify()`) from the layout effect below —
+  // see `syncProps`'s doc comment for why calling it synchronously here
+  // instead would trip React's "setState while rendering a different
+  // component" guard against an already-mounted, memoized `SchemaFormField`.
+  const changed = store.syncProps(storeProps);
+  useLayoutEffect(() => {
+    if (changed) store.notify();
+  });
 
-  // Re-seed the UNCONTROLLED values when the caller swaps in a genuinely
-  // different spec (a different `formName`) — otherwise a parent that
-  // fetches a new spec into the same mounted <SchemaForm> would keep
-  // showing the PREVIOUS spec's typed-in values (and even submit them
-  // under fields the new spec never declared). Keyed on `formName`, not
-  // object identity: `SchemaForm`'s wrapper calls `normalizeFormSpec(spec)`
-  // fresh on every render (unmemoized), so an identity/reference check
-  // would reset on every keystroke. Controlled forms are unaffected — the
-  // caller already owns `values` and decides when to reset them. This is
-  // the "adjust state during render" pattern (not a useEffect) so the reset
-  // is visible in the SAME render as the new spec, with no stale-values frame.
-  const lastFormNameRef = useRef(spec.formName);
-  if (!isControlled && lastFormNameRef.current !== spec.formName) {
-    lastFormNameRef.current = spec.formName;
-    setInternalValues(initialFormValues(spec.fields));
-  }
-
-  const resolvedValues = isControlled ? (valuesProp as FormValues) : internalValues;
-
-  const setValue = useCallback(
-    (name: string, value: FormValue) => {
-      const base = isControlled ? (valuesProp as FormValues) : internalValues;
-      const next: FormValues = { ...base, [name]: value };
-      if (!isControlled) setInternalValues(next);
-      onChange?.(next);
-    },
-    [isControlled, valuesProp, internalValues, onChange],
-  );
-
-  const mergedValues = useCallback(
-    (base: FormValues) => {
-      const merged: FormValues = { ...base };
-      const fill = (fields: FieldSpec[]) => {
-        for (const field of fields) {
-          // A field (or, for a hidden `group`, its whole subtree) whose
-          // `visibleWhen` does not currently hold must not participate in
-          // submission — strip it rather than merely skip re-computing it,
-          // because `merged` starts as a spread of `base` and so already
-          // carries any stale value the field held from BEFORE its
-          // controller made it hidden (e.g. a secret typed in while an
-          // "oauth" branch was active, still present after switching to
-          // "apikey"). Mirrors `collectValidatableFields`'s own
-          // visibility check so what's validated/submitted never disagrees
-          // with what's shown.
-          if (!isFieldVisible(field, merged)) {
-            delete merged[field.name];
-            if (field.type === "group") {
-              for (const group of field.groups) stripFields(group.fields, merged);
-            }
-            continue;
-          }
-          merged[field.name] = effectiveValue(field, merged);
-          if (field.type !== "group") continue;
-          if (field.variant === "tabs") {
-            // Only the ACTIVE branch's fields participate — mirrors
-            // `collectValidatableFields`'s own active-branch resolution, so
-            // what gets validated and what gets submitted agree. The
-            // inactive branch(es) are stripped from `merged` rather than
-            // left as-is: a value typed into "API key" before switching to
-            // "OAuth" must not still ride along (and be treated as valid)
-            // once OAuth is what actually submits.
-            const active = activeTabBranch(field, merged[field.name]);
-            for (const group of field.groups) {
-              if (group === active) fill(group.fields);
-              else stripFields(group.fields, merged);
-            }
-          } else {
-            // `variant: "advanced"` — nothing is mutually exclusive; every
-            // branch is always live.
-            for (const group of field.groups) fill(group.fields);
-          }
-        }
-      };
-      fill(spec.fields);
-      return merged;
-    },
-    [spec.fields],
-  );
-
-  // The field to focus after an invalid submit, applied from a `useEffect`
-  // below rather than synchronously here. `setAttempted(true)` (which is
-  // what makes an error-containing `AdvancedGroup` branch open itself — see
-  // `AdvancedGroupBranch`) and this focus request are dispatched in the same
-  // synchronous call, so React batches them into ONE commit; a synchronous
-  // `document.getElementById(...).focus()` right here would run against the
-  // PRE-update DOM and can never find a control that only exists once the
-  // just-opened disclosure mounts its content. Deferring to an effect lets
-  // it run after React has committed (and Radix has mounted) the newly-open
-  // group. A fresh object on every call (not just the name) guarantees the
+  // The field to focus after an invalid submit. `store.submit()` calls this
+  // listener synchronously (in the same click/Enter handler that also flips
+  // `attempted`, which is what makes an error-containing `AdvancedGroup`
+  // branch open itself — see `AdvancedGroupBranch`), so React batches both
+  // updates into ONE commit; the actual `.focus()` call happens from the
+  // `useEffect` below, which runs AFTER that commit (and after Radix has
+  // mounted the newly-open group) — a synchronous `document.getElementById`
+  // right here would run against the PRE-update DOM and could never find a
+  // control that only exists once the just-opened disclosure mounts its
+  // content. A fresh object on every call (not just the name) guarantees the
   // effect re-fires even when the SAME field is invalid on consecutive
   // submit attempts, where a primitive dependency wouldn't change.
   const [pendingFocus, setPendingFocus] = useState<{ name: string } | null>(null);
-
-  const submit = useCallback(() => {
-    setAttempted(true);
-    const merged = mergedValues(resolvedValues);
-
-    const errs = validateForm(spec.fields, merged);
-    const invalidNames = Object.keys(errs).filter((name) => errs[name]);
-    if (invalidNames.length > 0) {
-      // Focus the first field with an error (a11y: don't leave the user hunting).
-      const firstInvalid = collectValidatableFields(spec.fields, merged).find((f) => errs[f.name]);
-      if (firstInvalid) setPendingFocus({ name: firstInvalid.name });
-      return;
-    }
-    onSubmit?.({ formName: spec.formName, values: merged });
-  }, [resolvedValues, mergedValues, spec.fields, spec.formName, onSubmit]);
-
+  useEffect(() => store.onPendingFocus((name) => setPendingFocus({ name })), [store]);
   useEffect(() => {
     if (!pendingFocus || typeof document === "undefined") return;
-    const el = document.getElementById(controlId(formId, pendingFocus.name));
+    const el = document.getElementById(controlId(store.formId, pendingFocus.name));
     el?.focus();
-  }, [pendingFocus, formId]);
+  }, [pendingFocus, store]);
 
-  const reset = useCallback(() => {
-    setAttempted(false);
-    const seeded = initialFormValues(spec.fields);
-    if (!isControlled) setInternalValues(seeded);
-    onChange?.(seeded);
-  }, [isControlled, spec.fields, onChange]);
-
-  // Errors only surface after a submit attempt; then they live-update on change.
-  const errors = useMemo<Record<string, string | null>>(() => {
-    if (!attempted) return {};
-    return validateForm(spec.fields, mergedValues(resolvedValues));
-  }, [attempted, resolvedValues, mergedValues, spec.fields]);
-
-  // Same object `submit`/`errors` already resolve visibility against (see
-  // `SchemaFormContextValue.effectiveValues`) — computed once per render so
-  // every render-time `isFieldVisible` check agrees with validation/submit.
-  const effectiveValues = useMemo(
-    () => mergedValues(resolvedValues),
-    [mergedValues, resolvedValues],
-  );
-
-  const value = useMemo<SchemaFormContextValue>(
-    () => ({
-      spec,
-      values: resolvedValues,
-      effectiveValues,
-      errors,
-      setValue,
-      submit,
-      reset,
-      attempted,
-      submitted,
-      submitting,
-      disabled,
-      loading,
-      error,
-      formId,
-      headingId,
-    }),
-    [
-      spec,
-      resolvedValues,
-      effectiveValues,
-      errors,
-      setValue,
-      submit,
-      reset,
-      attempted,
-      submitted,
-      submitting,
-      disabled,
-      loading,
-      error,
-      formId,
-      headingId,
-    ],
-  );
-
-  return <SchemaFormContext value={value}>{children}</SchemaFormContext>;
+  return <SchemaFormStoreContext value={store}>{children}</SchemaFormStoreContext>;
 }
 
 // ─── Field control renderers ──────────────────────────────────────────────────
@@ -774,7 +581,6 @@ function GroupTabsControl({
   describedBy,
   setValue,
 }: FieldControlProps & { field: GroupFieldSpec }) {
-  const { effectiveValues } = useSchemaFormContext();
   const active =
     (typeof value === "string" ? value : undefined) ?? field.default ?? field.groups[0]?.key;
   return (
@@ -797,28 +603,29 @@ function GroupTabsControl({
           {group.description && (
             <p className="text-caption text-muted-foreground">{group.description}</p>
           )}
-          {group.fields
-            .filter((child) => isFieldVisible(child, effectiveValues))
-            .map((child) => (
-              <SchemaFormField key={child.name} name={child.name} />
-            ))}
+          <GroupTabsBranch group={group} />
         </TabsContent>
       ))}
     </Tabs>
   );
 }
 
-/** Does any field in this branch (including nested group branches) currently have an error? */
-function branchHasError(fields: FieldSpec[], errors: Record<string, string | null>): boolean {
-  for (const field of fields) {
-    if (errors[field.name]) return true;
-    if (field.type === "group") {
-      for (const group of field.groups) {
-        if (branchHasError(group.fields, errors)) return true;
-      }
-    }
-  }
-  return false;
+/**
+ * One tab branch's visible fields — its own `useVisibleFieldNames`
+ * subscription, so a `visibleWhen` inside THIS branch re-evaluates
+ * independent of `GroupTabsControl`'s (and its parent `SchemaFormField`'s)
+ * own re-render.
+ */
+function GroupTabsBranch({ group }: { group: GroupItemSpec }) {
+  const store = useSchemaFormStore();
+  const visibleNames = useVisibleFieldNames(store, group.fields);
+  return (
+    <>
+      {visibleNames.map((name) => (
+        <SchemaFormField key={name} name={name} />
+      ))}
+    </>
+  );
 }
 
 /**
@@ -832,9 +639,11 @@ function branchHasError(fields: FieldSpec[], errors: Record<string, string | nul
  * disclosure never re-imposes itself over a deliberate user action).
  */
 function AdvancedGroupBranch({ group }: { group: GroupItemSpec }) {
-  const { errors, effectiveValues } = useSchemaFormContext();
+  const store = useSchemaFormStore();
+  const hasError = useBranchHasError(store, group.fields);
+  const visibleNames = useVisibleFieldNames(store, group.fields);
   const [manualOpen, setManualOpen] = useState<boolean | undefined>(undefined);
-  const open = manualOpen ?? branchHasError(group.fields, errors);
+  const open = manualOpen ?? hasError;
   return (
     <AdvancedGroup
       title={group.label}
@@ -842,11 +651,9 @@ function AdvancedGroupBranch({ group }: { group: GroupItemSpec }) {
       open={open}
       onOpenChange={setManualOpen}
     >
-      {group.fields
-        .filter((child) => isFieldVisible(child, effectiveValues))
-        .map((child) => (
-          <SchemaFormField key={child.name} name={child.name} />
-        ))}
+      {visibleNames.map((name) => (
+        <SchemaFormField key={name} name={name} />
+      ))}
     </AdvancedGroup>
   );
 }
@@ -884,37 +691,44 @@ export interface SchemaFormFieldProps extends Omit<HTMLAttributes<HTMLDivElement
  * the same spec would render a hidden field in a custom layout while
  * validation/submission (which always excludes it) disagree.
  */
-export const SchemaFormField = forwardRef<HTMLDivElement, SchemaFormFieldProps>(
-  function SchemaFormField({ name, className, ...props }, ref) {
-    const ctx = useSchemaFormContext();
-    const field = findFieldByName(ctx.spec.fields, name);
+export const SchemaFormField = memo(
+  forwardRef<HTMLDivElement, SchemaFormFieldProps>(function SchemaFormField(
+    { name, className, ...props },
+    ref,
+  ) {
+    // Hooks run unconditionally, ahead of the `!field`/`!visible` early
+    // returns below (rules-of-hooks) — this is exactly what makes typing in
+    // field A skip re-rendering field B: `useFieldSnapshot` bails out (via
+    // `useSyncExternalStore`'s `Object.is` check on the cached snapshot) for
+    // every OTHER mounted `SchemaFormField`, so only the field whose own
+    // snapshot changed re-renders.
+    const store = useSchemaFormStore();
+    const meta = useSchemaFormMeta(store);
+    const snapshot = useFieldSnapshot(store, name);
+    const field = store.getField(name);
     if (!field) return null;
-    if (!isFieldVisible(field, ctx.effectiveValues)) return null;
+    if (!snapshot.visible) return null;
 
-    const id = controlId(ctx.formId, name);
-    const labelId = `${ctx.formId}-label-${name}`;
-    const value = effectiveValue(field, ctx.values);
-    const error = ctx.errors[name] ?? null;
-    const invalid = Boolean(error);
-    const controlDisabled = ctx.disabled || ctx.submitted || ctx.submitting;
-    const readOnly = ctx.submitted;
+    const id = controlId(meta.formId, name);
+    const labelId = `${meta.formId}-label-${name}`;
+    const invalid = snapshot.invalid;
     const description = field.description;
     const hasDesc = Boolean(description);
     const describedBy =
-      [hasDesc ? descId(ctx.formId, name) : null, invalid ? errorId(ctx.formId, name) : null]
+      [hasDesc ? descId(meta.formId, name) : null, invalid ? errorId(meta.formId, name) : null]
         .filter(Boolean)
         .join(" ") || undefined;
 
     const controlProps: FieldControlProps = {
       field,
-      value,
+      value: snapshot.value,
       invalid,
-      disabled: controlDisabled,
-      readOnly,
+      disabled: snapshot.disabled,
+      readOnly: snapshot.readOnly,
       id,
       labelId,
       describedBy,
-      setValue: ctx.setValue,
+      setValue: store.setValue,
     };
 
     const isBoolean = field.type === "boolean";
@@ -970,18 +784,18 @@ export const SchemaFormField = forwardRef<HTMLDivElement, SchemaFormFieldProps>(
         )}
 
         {hasDesc && (
-          <p id={descId(ctx.formId, name)} className="text-caption text-muted-foreground">
+          <p id={descId(meta.formId, name)} className="text-caption text-muted-foreground">
             {description}
           </p>
         )}
         {invalid && (
-          <p id={errorId(ctx.formId, name)} className="text-caption text-destructive-text">
-            {error}
+          <p id={errorId(meta.formId, name)} className="text-caption text-destructive-text">
+            {snapshot.errorText}
           </p>
         )}
       </div>
     );
-  },
+  }),
 );
 
 // ─── Fields (all) ─────────────────────────────────────────────────────────────
@@ -991,7 +805,10 @@ export type SchemaFormFieldsProps = HTMLAttributes<HTMLDivElement>;
 /** Renders every top-level field in the spec, in order. A skeleton while `loading` with no fields. */
 export const SchemaFormFields = forwardRef<HTMLDivElement, SchemaFormFieldsProps>(
   function SchemaFormFields({ className, ...props }, ref) {
-    const { spec, loading, effectiveValues } = useSchemaFormContext();
+    const store = useSchemaFormStore();
+    const meta = useSchemaFormMeta(store);
+    const visibleNames = useVisibleFieldNames(store, meta.spec.fields);
+    const { spec, loading } = meta;
 
     if (spec.fields.length === 0 && loading) {
       return (
@@ -1021,11 +838,9 @@ export const SchemaFormFields = forwardRef<HTMLDivElement, SchemaFormFieldsProps
         className={cn("flex flex-col gap-4", className)}
         {...props}
       >
-        {spec.fields
-          .filter((field) => isFieldVisible(field, effectiveValues))
-          .map((field) => (
-            <SchemaFormField key={field.name} name={field.name} />
-          ))}
+        {visibleNames.map((name) => (
+          <SchemaFormField key={name} name={name} />
+        ))}
       </div>
     );
   },
@@ -1047,7 +862,8 @@ export type SchemaFormErrorProps = HTMLAttributes<HTMLDivElement>;
 /** A terminal, form-level submission error (e.g. "Couldn't save settings"). Renders nothing when absent. */
 export const SchemaFormError = forwardRef<HTMLDivElement, SchemaFormErrorProps>(
   function SchemaFormError({ className, ...props }, ref) {
-    const { error } = useSchemaFormContext();
+    const store = useSchemaFormStore();
+    const { error } = useSchemaFormMeta(store);
     if (!error) return null;
     return (
       <div
@@ -1099,7 +915,8 @@ export interface SchemaFormSubmitProps extends Omit<HTMLAttributes<HTMLButtonEle
 export const SchemaFormSubmit = forwardRef<HTMLButtonElement, SchemaFormSubmitProps>(
   function SchemaFormSubmit({ label, className, onClick, ...props }, ref) {
     const { t } = useLocale();
-    const { spec, submitting, submitted, disabled, loading } = useSchemaFormContext();
+    const store = useSchemaFormStore();
+    const { spec, submitting, submitted, disabled, loading } = useSchemaFormMeta(store);
 
     if (submitted) {
       return (
@@ -1152,7 +969,7 @@ export const SchemaFormSubmit = forwardRef<HTMLButtonElement, SchemaFormSubmitPr
 /**
  * `SchemaFormTestAction`'s lifecycle: `idle` → `pending` while `onTest` is in
  * flight → `success`/`failure` once it settles. Deliberately local component
- * state, NOT part of `SchemaFormContextValue` — so it can never affect field
+ * state, NOT part of the `SchemaFormStore` — so it can never affect field
  * validity or gate `submit()` (issue #22 maintainer ruling, 2026-09-01: a
  * form/group-level test-action slot, kept separate from field validity and
  * never gating submit — not per-field `validateAsync` in the validation
@@ -1201,13 +1018,9 @@ export const SchemaFormTestAction = forwardRef<HTMLDivElement, SchemaFormTestAct
     ref,
   ) {
     const { t } = useLocale();
-    const {
-      effectiveValues,
-      disabled: formDisabled,
-      loading,
-      submitted,
-      submitting,
-    } = useSchemaFormContext();
+    const store = useSchemaFormStore();
+    const { disabled: formDisabled, loading, submitted, submitting } = useSchemaFormMeta(store);
+    const effectiveValues = useEffectiveValues(store);
     const [status, setStatus] = useState<SchemaFormTestActionStatus>("idle");
     const [failureMessage, setFailureMessage] = useState<string | null>(null);
 
@@ -1339,7 +1152,8 @@ export type SchemaFormRootProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmi
 export const SchemaFormRoot = forwardRef<HTMLFormElement, SchemaFormRootProps>(
   function SchemaFormRoot({ className, children, ...props }, ref) {
     const { t } = useLocale();
-    const { submit, headingId, spec, disabled, submitting, loading } = useSchemaFormContext();
+    const store = useSchemaFormStore();
+    const { headingId, spec, disabled, submitting, loading } = useSchemaFormMeta(store);
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       // The submit control's `aria-disabled` is a signal, not a lock — this is
@@ -1347,7 +1161,7 @@ export const SchemaFormRoot = forwardRef<HTMLFormElement, SchemaFormRootProps>(
       // too (see `SchemaFormSubmit`): the fields are still a skeleton, so
       // there is nothing real to validate/submit yet.
       if (disabled || submitting || loading) return;
-      submit();
+      store.submit();
     };
     return (
       <form
@@ -1373,7 +1187,8 @@ export type SchemaFormTitleProps = HTMLAttributes<HTMLParagraphElement>;
 /** The form heading. Its id is the `<form>`'s `aria-labelledby` target. */
 export const SchemaFormTitle = forwardRef<HTMLParagraphElement, SchemaFormTitleProps>(
   function SchemaFormTitle({ className, children, ...props }, ref) {
-    const { headingId, spec } = useSchemaFormContext();
+    const store = useSchemaFormStore();
+    const { headingId, spec } = useSchemaFormMeta(store);
     const content = children ?? spec.title;
     if (!content) return null;
     return (
@@ -1394,7 +1209,8 @@ export type SchemaFormDescriptionProps = HTMLAttributes<HTMLParagraphElement>;
 /** Supplemental description under the title. */
 export const SchemaFormDescription = forwardRef<HTMLParagraphElement, SchemaFormDescriptionProps>(
   function SchemaFormDescription({ className, children, ...props }, ref) {
-    const { spec } = useSchemaFormContext();
+    const store = useSchemaFormStore();
+    const { spec } = useSchemaFormMeta(store);
     const content = children ?? spec.description;
     if (!content) return null;
     return (
@@ -1494,7 +1310,13 @@ export const SchemaForm = forwardRef<HTMLDivElement, SchemaFormProps>(function S
   },
   ref,
 ) {
-  const result = normalizeFormSpec(spec);
+  // Memoized on `spec`'s reference: a parent re-rendering with the SAME spec
+  // object (the common case once a spec is loaded) must not re-walk/re-
+  // validate it on every keystroke elsewhere in the app — `SchemaFormStore`
+  // itself already relies on `spec` reference-equality to skip its own
+  // recompute (see `syncProps`), so this keeps that contract meaningful one
+  // level up.
+  const result = useMemo(() => normalizeFormSpec(spec), [spec]);
   if (!result.ok) {
     return (
       <SchemaFormFallback ref={ref} message={result.reason} className={className} {...props} />

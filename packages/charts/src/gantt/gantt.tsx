@@ -57,6 +57,7 @@ import {
   TooltipProvider,
   Skeleton,
   Tree,
+  useLocale,
   type TreeNode,
 } from "@elabs-ai/components-ui";
 import { GanttProvider, useGantt, type ResolvedTask } from "./gantt-context";
@@ -663,9 +664,10 @@ function GanttLoadingState({
   rowHeight?: number;
   rowCount?: number;
 }) {
+  const { t } = useLocale();
   return (
     <div role="status" aria-live="polite" className="flex min-h-0 flex-1 overflow-hidden">
-      <span className="sr-only">Loading…</span>
+      <span className="sr-only">{t("loading")}</span>
 
       {/* Left pane: label skeletons */}
       <div
@@ -714,37 +716,39 @@ export interface GanttToolbarProps extends HTMLAttributes<HTMLDivElement> {}
 /** Toolbar presets when `viewModes` is not supplied — unchanged from v1. */
 const DEFAULT_VIEW_MODES: GanttTimeUnit[] = ["day", "week", "month", "quarter"];
 
-const VIEW_MODE_LABELS: Record<GanttTimeUnit, string> = {
-  day: "Day",
-  week: "Week",
-  month: "Month",
-  quarter: "Quarter",
-  hour: "Hour",
-  minute: "Minute",
-  second: "Second",
-  millisecond: "Millisecond",
+// Module-level: holds message KEYS, not resolved text — `t()` needs a hook,
+// unavailable at module scope (see `change-review.tsx`'s `*_KEYS` pattern).
+const VIEW_MODE_LABEL_KEYS: Record<GanttTimeUnit, string> = {
+  day: "charts.gantt.unitDay",
+  week: "charts.gantt.unitWeek",
+  month: "charts.gantt.unitMonth",
+  quarter: "charts.gantt.unitQuarter",
+  hour: "charts.gantt.unitHour",
+  minute: "charts.gantt.unitMinute",
+  second: "charts.gantt.unitSecond",
+  millisecond: "charts.gantt.unitMillisecond",
 };
 
 function GanttToolbar({ className, ...props }: GanttToolbarProps) {
   const { state, actions, meta } = useGantt();
+  const { t } = useLocale();
   const offered = meta.viewModes ?? DEFAULT_VIEW_MODES;
   // Keep the active unit reachable (and pressed) even when it is outside the
   // offered set — e.g. `defaultViewMode="auto"` resolving to `second`.
   const modes = offered.includes(state.viewMode) ? offered : [state.viewMode, ...offered];
-  const labels = VIEW_MODE_LABELS;
 
   return (
     <div
       role="toolbar"
       data-slot="gantt-toolbar"
-      aria-label="Gantt view controls"
+      aria-label={t("charts.gantt.viewControls")}
       className={cn("flex items-center gap-1 border-b border-border px-2 py-1", className)}
       {...props}
     >
       <Calendar aria-hidden="true" className="size-4 text-muted-foreground" />
-      <span className="sr-only">View mode:</span>
+      <span className="sr-only">{t("charts.gantt.viewModeLabel")}</span>
       {/* Segmented control via the brand-ui ButtonGroup (connected buttons). */}
-      <ButtonGroup aria-label="View mode">
+      <ButtonGroup aria-label={t("charts.gantt.viewMode")}>
         {modes.map((mode) => (
           <Button
             key={mode}
@@ -754,7 +758,7 @@ function GanttToolbar({ className, ...props }: GanttToolbarProps) {
             aria-pressed={state.viewMode === mode}
             className="h-7 px-2 text-caption"
           >
-            {labels[mode]}
+            {t(VIEW_MODE_LABEL_KEYS[mode])}
           </Button>
         ))}
       </ButtonGroup>
@@ -788,6 +792,7 @@ function GanttRowList({
 }: GanttRowListProps) {
   const { state, actions, meta } = useGantt();
   const { flatTasks, rowHeight, columns, visibleTasks } = meta;
+  const { t } = useLocale();
 
   // With a column grid, columns 1..N render as an aria-hidden overlay; reserve
   // their width on the right so the Tree's name (column 0) truncates before them.
@@ -839,7 +844,7 @@ function GanttRowList({
        * Children appear with the Tree's built-in expand/collapse behavior.
        */}
       <Tree
-        aria-label="Task list"
+        aria-label={t("charts.gantt.taskList")}
         nodes={treeNodes}
         selectionMode="single"
         selectedIds={selectedIds}
@@ -1225,6 +1230,7 @@ function GanttBody({
   ...props
 }: GanttBodyProps) {
   const { meta } = useGantt();
+  const { t } = useLocale();
   // Header height tracks the number of stacked timescale rows so the corner cell
   // and the (optional) column-header strip stay aligned with the timescale.
   const headerHeight = getHeaderHeight(meta.scales.length);
@@ -1327,7 +1333,7 @@ function GanttBody({
             {meta.columns && meta.columns.length > 0 ? (
               <GanttColumnHeader columns={meta.columns} height={headerHeight} />
             ) : (
-              <span className="sr-only">Tasks</span>
+              <span className="sr-only">{t("charts.gantt.taskListLabel")}</span>
             )}
           </div>
           {/* Timescale header — scrolls horizontally with the canvas */}
@@ -1445,6 +1451,7 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
   },
   ref,
 ) {
+  const { t } = useLocale();
   const resolvedDensity: "comfortable" | "compact" = density ?? "comfortable";
   const resolvedRowHeight = rowHeightProp ?? ROW_HEIGHT[resolvedDensity];
 
@@ -1568,7 +1575,7 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
           className="flex flex-1 flex-col items-center justify-center gap-2 py-12 text-muted-foreground"
         >
           <Calendar className="size-8 opacity-40" aria-hidden="true" />
-          <p className="text-body">No tasks to display</p>
+          <p className="text-body">{t("charts.gantt.noTasksToDisplay")}</p>
         </div>
       </div>
     );

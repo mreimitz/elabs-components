@@ -158,7 +158,7 @@ export const WebPreviewUrl = ({ value, onChange, onKeyDown, ...props }: WebPrevi
 
   return (
     <Input
-      className="h-8 flex-1 text-sm"
+      className="h-8 flex-1 text-body"
       onChange={onChange ?? handleChange}
       onKeyDown={handleKeyDown}
       placeholder={t("ai.webPreview.urlPlaceholder")}
@@ -218,7 +218,7 @@ export const WebPreviewBody = ({
         // oxlint-disable-next-line eslint-plugin-react(iframe-missing-sandbox)
         sandbox={sandbox}
         src={(src ?? url) || undefined}
-        title="Preview"
+        title={t("ai.webPreview.previewTitle")}
         {...props}
       />
       {loading === true ? (
@@ -257,7 +257,7 @@ export const WebPreviewConsole = ({
 
   return (
     <Collapsible
-      className={cn("border-t bg-muted/50 font-mono text-sm", className)}
+      className={cn("border-t bg-muted/50 font-mono text-body", className)}
       onOpenChange={setConsoleOpen}
       open={consoleOpen}
       {...props}
@@ -289,7 +289,7 @@ export const WebPreviewConsole = ({
             logs.map((log) => (
               <div
                 className={cn(
-                  "text-xs",
+                  "text-meta",
                   // #124: console log lines are running text — ink rung, not
                   // the mark rung. `text-yellow-600` was also a raw, untokened
                   // Tailwind palette colour (styling-and-tokens.md); replaced

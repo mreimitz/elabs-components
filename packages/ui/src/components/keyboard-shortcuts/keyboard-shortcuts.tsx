@@ -101,7 +101,7 @@ export const KeyboardShortcuts = forwardRef<HTMLDivElement, KeyboardShortcutsPro
             </label>
             <Search
               aria-hidden="true"
-              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             />
             <Input
               id={searchId}
@@ -110,7 +110,7 @@ export const KeyboardShortcuts = forwardRef<HTMLDivElement, KeyboardShortcutsPro
               placeholder={t("ui.keyboardShortcuts.searchPlaceholder")}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="pl-8"
+              className="ps-8"
             />
           </div>
         )}

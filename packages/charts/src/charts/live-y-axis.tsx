@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useChartStable } from "./chart-context";
+import { useChartValueFormatter } from "./chart-formatters";
 
 // ---------------------------------------------------------------------------
 // Interval picker (inspired by liveline's pickInterval)
@@ -80,7 +81,7 @@ export interface LiveYAxisProps {
   minGap?: number;
   /** Position. Default: "left" */
   position?: "left" | "right";
-  /** Value formatter */
+  /** Value formatter. Default: locale-aware, up to 2 fraction digits. */
   formatValue?: (v: number) => string;
   /** Allow decimal tick values. Default: true */
   allowDecimals?: boolean;
@@ -107,12 +108,16 @@ export function LiveYAxis(props: LiveYAxisProps) {
 const LiveYAxisInner = memo(function LiveYAxisInner({
   minGap = 36,
   position = "left",
-  formatValue = (v: number) => v.toFixed(2),
+  formatValue,
   allowDecimals = true,
   container,
 }: LiveYAxisProps & { container: HTMLDivElement }) {
   const { yScale, margin, innerHeight } = useChartStable();
   const intervalRef = useRef(0);
+  // Locale-aware default (was a hardcoded `toFixed(2)`) — a caller-supplied
+  // `formatValue` still wins outright.
+  const defaultFormatValue = useChartValueFormatter("number", undefined, 2);
+  const formatValue_ = formatValue ?? defaultFormatValue;
 
   const domain = yScale.domain() as [number, number];
   const minVal = domain[0];
@@ -161,13 +166,13 @@ const LiveYAxisInner = memo(function LiveYAxisInner({
           return {
             value,
             y,
-            label: formatValue(value),
+            label: formatValue_(value),
             key: value.toPrecision(10),
             edgeAlpha: edgeOpacity(y, innerHeight),
           };
         })
         .filter((t) => t.y >= -10 && t.y <= innerHeight + 10),
-    [stableTickValues, yScale, innerHeight, formatValue],
+    [stableTickValues, yScale, innerHeight, formatValue_],
   );
 
   const isLeft = position === "left";

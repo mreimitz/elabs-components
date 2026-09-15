@@ -1,3 +1,4 @@
+import { Profiler, type ProfilerOnRenderCallback } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -98,6 +99,13 @@ const defaultedConditionalSpec: FormSpec = {
     },
   ],
 };
+
+/** `SchemaFormProvider.spec` is a `NormalizedFormSpec` — normalize a plain `FormSpec` fixture once, up front, so tests can pass it directly. */
+function normalizeSpecOrThrow(spec: FormSpec) {
+  const result = normalizeFormSpec(spec);
+  if (!result.ok) throw new Error(`expected spec to normalize: ${result.reason}`);
+  return result.spec;
+}
 
 describe("SchemaForm — rendering", () => {
   it("renders the title, fields, and a submit button", () => {
@@ -896,5 +904,85 @@ describe("SchemaFormTestAction", () => {
     expect(button).toBeDisabled();
     await user.click(button);
     expect(onTest).not.toHaveBeenCalled();
+  });
+});
+
+// Perf review §3.4: "one context carries all values → every keystroke
+// re-renders every field and re-runs isFieldVisible across the spec". Each
+// `SchemaFormField` gets its OWN `<Profiler>` (React's own render-counting
+// primitive — no new dependency) so a "commit" of one field can be told
+// apart from a genuine re-render of another: `Profiler`'s `onRender` fires
+// once per commit for every Profiler whose subtree was part of that commit,
+// but `SchemaFormField` is wrapped in `memo` and reads its own value via a
+// per-field `useSyncExternalStore` snapshot — a keystroke in one field must
+// not change the CACHED snapshot object identity for any other field, so its
+// memo bails and its own nested Profiler never re-fires.
+describe("SchemaForm — per-field subscription (#review 3.4: one context re-renders every field)", () => {
+  function renderCounts() {
+    const counts: Record<string, number> = {};
+    const onRender: ProfilerOnRenderCallback = (id) => {
+      counts[id] = (counts[id] ?? 0) + 1;
+    };
+    return { counts, onRender };
+  }
+
+  it("typing in one field does not re-render a sibling field", async () => {
+    const user = userEvent.setup();
+    const { counts, onRender } = renderCounts();
+    render(
+      <SchemaFormProvider spec={normalizeSpecOrThrow(simpleSpec)}>
+        <SchemaFormRoot>
+          <Profiler id="name" onRender={onRender}>
+            <SchemaFormField name="name" />
+          </Profiler>
+          <Profiler id="email" onRender={onRender}>
+            <SchemaFormField name="email" />
+          </Profiler>
+        </SchemaFormRoot>
+      </SchemaFormProvider>,
+    );
+
+    // Both fields commit once on mount.
+    expect(counts.name).toBe(1);
+    expect(counts.email).toBe(1);
+
+    await user.type(screen.getByLabelText(/Name/), "Ada");
+
+    // The typed-in field re-renders once per keystroke; its untouched
+    // sibling's `useFieldSnapshot` bails (same cached snapshot reference),
+    // so its `memo`-wrapped `SchemaFormField` — and the `Profiler` around
+    // it — never fires again.
+    expect(counts.name).toBe(1 + "Ada".length);
+    expect(counts.email).toBe(1);
+  });
+
+  it("typing in one group branch's field does not re-render a field from a sibling branch of the same group", async () => {
+    const user = userEvent.setup();
+    const { counts, onRender } = renderCounts();
+    render(
+      <SchemaFormProvider spec={normalizeSpecOrThrow(groupSpec)}>
+        <SchemaFormRoot>
+          <Profiler id="apiKey" onRender={onRender}>
+            <SchemaFormField name="apiKey" />
+          </Profiler>
+          <Profiler id="clientId" onRender={onRender}>
+            <SchemaFormField name="clientId" />
+          </Profiler>
+        </SchemaFormRoot>
+      </SchemaFormProvider>,
+    );
+
+    expect(counts.apiKey).toBe(1);
+    // `apiKey` and `clientId` live in two different branches of the SAME
+    // `group` field (`store.getField` resolves a nested field by name via
+    // its recursive field map) — the per-field snapshot cache is keyed by
+    // name, not by which branch a field happens to sit in, so this still
+    // isolates them from each other.
+    expect(counts.clientId).toBe(1);
+
+    await user.type(screen.getByLabelText(/API key/), "sk-live");
+
+    expect(counts.apiKey).toBe(1 + "sk-live".length);
+    expect(counts.clientId).toBe(1);
   });
 });

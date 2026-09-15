@@ -1,6 +1,6 @@
 "use client";
 
-import { StatusBadge, StatusIcon, type Status } from "@elabs-ai/components-ui";
+import { StatusBadge, StatusIcon, useLocale, type Status } from "@elabs-ai/components-ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { ChevronRightIcon } from "lucide-react";
@@ -64,7 +64,7 @@ export const TestResultsDuration = ({
 
   return (
     <span
-      className={cn("shrink-0 text-muted-foreground text-sm tabular-nums", className)}
+      className={cn("shrink-0 text-muted-foreground text-body tabular-nums", className)}
       {...props}
     >
       {children ?? formatDuration(summary.duration)}
@@ -76,6 +76,7 @@ export type TestResultsSummaryProps = HTMLAttributes<HTMLDivElement>;
 
 export const TestResultsSummary = ({ className, children, ...props }: TestResultsSummaryProps) => {
   const { summary } = useContext(TestResultsContext);
+  const { t } = useLocale();
 
   if (!summary) {
     return null;
@@ -86,16 +87,16 @@ export const TestResultsSummary = ({ className, children, ...props }: TestResult
       {children ?? (
         <>
           <StatusBadge size="sm" status="complete">
-            {summary.passed} passed
+            {t("ai.testResults.passedCount", { count: summary.passed })}
           </StatusBadge>
           {summary.failed > 0 && (
             <StatusBadge size="sm" status="failed">
-              {summary.failed} failed
+              {t("ai.testResults.failedCount", { count: summary.failed })}
             </StatusBadge>
           )}
           {summary.skipped > 0 && (
             <StatusBadge size="sm" status="skipped">
-              {summary.skipped} skipped
+              {t("ai.testResults.skippedCount", { count: summary.skipped })}
             </StatusBadge>
           )}
         </>
@@ -134,6 +135,7 @@ export const TestResultsProgress = ({
   ...props
 }: TestResultsProgressProps) => {
   const { summary } = useContext(TestResultsContext);
+  const { t, formatNumber } = useLocale();
 
   if (!summary) {
     return null;
@@ -156,11 +158,14 @@ export const TestResultsProgress = ({
               style={{ width: `${failedPercent}%` }}
             />
           </div>
-          <div className="flex justify-between text-muted-foreground text-xs tabular-nums">
+          <div className="flex justify-between text-muted-foreground text-meta tabular-nums">
             <span>
-              {summary.passed}/{summary.total} tests passed
+              {t("ai.testResults.testsPassed", { passed: summary.passed, total: summary.total })}
             </span>
-            <span>{passedPercent.toFixed(0)}%</span>
+            <span>
+              {formatNumber(passedPercent, { maximumFractionDigits: 0 })}
+              {"%"}
+            </span>
           </div>
         </>
       )}
@@ -247,7 +252,7 @@ export const TestSuiteName = ({ className, children, ...props }: TestSuiteNamePr
     >
       <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform duration-fast ease-standard motion-reduce:transition-none group-data-[state=open]:rotate-90" />
       <TestStatusIcon status={status} />
-      <span className="min-w-0 flex-1 truncate font-medium text-sm">{children ?? name}</span>
+      <span className="min-w-0 flex-1 truncate font-medium text-body">{children ?? name}</span>
     </CollapsibleTrigger>
   );
 };
@@ -265,20 +270,35 @@ export const TestSuiteStats = ({
   className,
   children,
   ...props
-}: TestSuiteStatsProps) => (
-  <div
-    className={cn("ms-auto flex shrink-0 items-center gap-3 text-xs tabular-nums", className)}
-    {...props}
-  >
-    {children ?? (
-      <>
-        {passed > 0 && <span className="text-success-text">{passed} passed</span>}
-        {failed > 0 && <span className="text-destructive-text">{failed} failed</span>}
-        {skipped > 0 && <span className="text-muted-foreground">{skipped} skipped</span>}
-      </>
-    )}
-  </div>
-);
+}: TestSuiteStatsProps) => {
+  const { t } = useLocale();
+  return (
+    <div
+      className={cn("ms-auto flex shrink-0 items-center gap-3 text-meta tabular-nums", className)}
+      {...props}
+    >
+      {children ?? (
+        <>
+          {passed > 0 && (
+            <span className="text-success-text">
+              {t("ai.testResults.passedCount", { count: passed })}
+            </span>
+          )}
+          {failed > 0 && (
+            <span className="text-destructive-text">
+              {t("ai.testResults.failedCount", { count: failed })}
+            </span>
+          )}
+          {skipped > 0 && (
+            <span className="text-muted-foreground">
+              {t("ai.testResults.skippedCount", { count: skipped })}
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
 
 export type TestSuiteContentProps = ComponentProps<typeof CollapsibleContent>;
 
@@ -328,7 +348,7 @@ export const TestDuration = ({ className, children, ...props }: TestDurationProp
 
   return (
     <span
-      className={cn("shrink-0 text-muted-foreground text-xs tabular-nums", className)}
+      className={cn("shrink-0 text-muted-foreground text-meta tabular-nums", className)}
       {...props}
     >
       {children ?? `${duration}ms`}
@@ -365,7 +385,7 @@ export const Test = ({ name, status, duration, className, children, ...props }: 
   return (
     <TestContext.Provider value={contextValue}>
       <div
-        className={cn("flex min-w-0 items-center gap-2 ps-10 pe-4 py-2 text-sm", className)}
+        className={cn("flex min-w-0 items-center gap-2 ps-10 pe-4 py-2 text-body", className)}
         {...props}
       >
         {children ?? (
@@ -391,7 +411,7 @@ export const TestError = ({ className, children, ...props }: TestErrorProps) => 
 export type TestErrorMessageProps = HTMLAttributes<HTMLParagraphElement>;
 
 export const TestErrorMessage = ({ className, children, ...props }: TestErrorMessageProps) => (
-  <p className={cn("font-medium text-destructive-text text-sm", className)} {...props}>
+  <p className={cn("font-medium text-destructive-text text-body", className)} {...props}>
     {children}
   </p>
 );
@@ -400,7 +420,7 @@ export type TestErrorStackProps = HTMLAttributes<HTMLPreElement>;
 
 export const TestErrorStack = ({ className, children, ...props }: TestErrorStackProps) => (
   <pre
-    className={cn("mt-2 overflow-auto font-mono text-destructive-text text-xs", className)}
+    className={cn("mt-2 overflow-auto font-mono text-destructive-text text-meta", className)}
     {...props}
   >
     {children}
