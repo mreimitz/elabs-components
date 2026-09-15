@@ -68,8 +68,9 @@ const SANITIZE = [
   // not here") — meaningless in a vendored kit; rewrite to consumer-neutral text.
   ["packages/cli/lib/render-docs.mjs", "the brand-ui doc generator"],
   ["packages/cli/lib/agent-output.mjs", "the brand-ui agent-output contract"],
-  [".claude/rules/icons.md", "the brand-ui icons rule"],
-  [".claude/rules/theming.md", "reference/theming.md"],
+  // icons.md + theming.md were consolidated into conventions.md (rule simplification,
+  // 2026-09) — both topics now live at this one path.
+  [".claude/rules/conventions.md", "the brand-ui conventions rule"],
   [".claude/commands/new-theme.md", "the brand-ui-theme skill"],
   [".claude/rules/", "the brand-ui rules"],
   ["apps/e2e/reports/visual-ux-", "reports/visual-ux-"],

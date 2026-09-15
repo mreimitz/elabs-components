@@ -21,6 +21,14 @@ It is also built to be **read and edited**. Nothing is hidden behind a clever
 abstraction, every component is plain TypeScript you can open and change, and the whole
 system is legible to coding agents through a CLI, an MCP server and a generated manifest.
 
+## Scope
+
+brand-ui is a **presentation layer**, not an SDK or a runtime. It renders messages,
+surfaces and components; it never owns model calls, streaming, transport or providers —
+that stays in the consuming app. It is also not a finished, single-brand visual identity
+or a locked component library: components are source you're meant to read and edit. Full
+statement: decision **D5** in [`docs/DECISIONS.md`](docs/DECISIONS.md).
+
 ---
 
 ## Highlights
@@ -36,9 +44,9 @@ system is legible to coding agents through a CLI, an MCP server and a generated 
 - **Agent-native.** A `brand-ui` CLI and an MCP server expose real props, real tokens
   and a static design-system linter, so an AI assistant extends the system from ground
   truth instead of guessing.
-- **Self-maintaining.** 75 automated gates keep conventions true — token discipline,
+- **Self-maintaining.** Automated gates keep conventions true — token discipline,
   contrast ratios, one-way package dependencies, focus-ring contracts, motion tokens,
-  microcopy, bundle weight and documentation accuracy.
+  microcopy, bundle weight and documentation accuracy. Catalogue: `docs/GATES.md`.
 - **Two ways to consume.** Import stable primitives from the packages, or copy-own
   prototype compositions from the shadcn-compatible registry and edit them freely.
 
@@ -210,9 +218,9 @@ server that answers from the committed manifest (works with Storybook down), and
 **`storybook`** server that exposes live previews and browser-based test runs while the
 dev server is up.
 
-The repository also carries its own operating manual — 28 rules, 31 architecture
-decision records, 16 slash commands, 15 specialised review agents and 20 edit-time
-hooks. Start at [`CLAUDE.md`](CLAUDE.md) or [`AGENTS.md`](AGENTS.md).
+The repository also carries its own operating manual — a small set of rules
+(`.claude/rules/`), 31 architecture decision records, slash commands, review agents and
+edit-time hooks. Start at [`CLAUDE.md`](CLAUDE.md) or [`AGENTS.md`](AGENTS.md).
 
 ---
 
@@ -232,9 +240,9 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm build
 pnpm --filter @elabs-ai/components-docs test-storybook   # interaction + axe, in a real browser
 ```
 
-75 gate scripts (`pnpm <name>:check`) enforce the conventions above, and 72 of them
-ship a self-test that plants a broken fixture and asserts the gate fails — because a
-gate that silently stops firing is worse than no gate at all.
+Gate scripts (`pnpm <name>:check`, catalogued in `docs/GATES.md`) enforce the conventions
+above, most shipping a self-test that plants a broken fixture and asserts the gate
+fails — because a gate that silently stops firing is worse than no gate at all.
 
 **Browser floor:** Chrome/Edge 119, Safari 16.4, Firefox 128 (set by CSS relative
 colour syntax). Below it the colour system still works and the decoration dial
