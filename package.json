@@ -199,7 +199,11 @@
     "version:set": "node scripts/set-version.mjs",
     "viewer-highlight:check": "node scripts/check-viewer-highlight-coverage.mjs",
     "viewer-highlight:check:test": "node --test scripts/check-viewer-highlight-coverage.test.mjs",
-    "token-contract:check": "pnpm --filter @elabs-ai/components-tokens tokens:names:check"
+    "token-contract:check": "pnpm --filter @elabs-ai/components-tokens tokens:names:check",
+    "check": "node scripts/check/run.mjs",
+    "check:test": "node scripts/check/run.mjs --test && node --test scripts/check/run.test.mjs",
+    "check:docs": "node scripts/check/run.mjs --docs",
+    "check:update": "node scripts/check/run.mjs --update-baseline"
   },
   "devDependencies": {
     "@elabs-ai/components-eslint-config": "workspace:*",

@@ -52,7 +52,7 @@ import { fileURLToPath } from "node:url";
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 /** Gates whose script name does not end in `:check` but that ARE blocking gates. */
-export const GATE_EXTRAS = ["registry:validate", "ai:types-only"];
+export const GATE_EXTRAS = ["registry:validate", "ai:types-only", "check"];
 
 /**
  * Gates that take longer than the whole rest of the battery. Skipped by default
