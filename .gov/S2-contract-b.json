@@ -1,0 +1,32 @@
+{
+  "removeScripts": [
+    "chart-hairline:check",
+    "chart-hairline:check:test",
+    "charts:honesty:check",
+    "charts:honesty:check:test",
+    "charts:reuse:check",
+    "charts:reuse:check:test",
+    "charts:test-double:check",
+    "charts:test-double:check:test",
+    "lucide:check",
+    "microcopy:check",
+    "microcopy:check:test",
+    "microtypography:check",
+    "microtypography:check:test",
+    "process:reuse:check",
+    "process:reuse:check:test",
+    "process:test-double:check",
+    "process:test-double:check:test"
+  ],
+  "keptScripts": [
+    {
+      "script": "tt-aliases:check",
+      "reason": "Trimmed to the node_modules half: require.resolve of decode-named-character-reference / hast-util-from-html-isomorphic must land on the DOM-free build. That resolves real installed packages, which ctx cannot do; the file-reading half (alias applied, devDependency declared, doc names both) moved to rule tt-aliases."
+    },
+    {
+      "script": "tt-aliases:check:test",
+      "reason": "Self-test of the kept resolution half (2 cases)."
+    }
+  ],
+  "notes": "Rules added: microcopy (per-file), ai-microcopy-a11y (none; was an invariant test inside check-microcopy.test.mjs), microtypography-ellipsis (none) + microtypography-apostrophe (per-file) — the old gate's two axes, `// microtypography-exempt: <reason>` kept; lucide-version; chart-hairline; charts-honesty (rules 1-3, none) + chart-unit-caption (rule 4, keys `<file>#<Story>`); charts-reuse; process-reuse; charts-test-double; process-test-double; tt-aliases. Restored from 2fa2ce6 as rules: surface-separation (per-file, 3), status-rung (none; old baseline was {}), timeline-fork, collapse-fork. microcopy baseline seeded from the current tree (135, every file <= its old count; old file said 143). No runner core changes. Integrator follow-ups outside my ownership: package.json scripts above; scripts/run-gates.mjs GATES list (lines ~120-129) names the removed scripts; scripts/release-gates-baseline.json lists them; .claude/rules/{ai,charts,data}.md, CONTRIBUTING.md, docs/ADR/0017,0024,0034,0035 and docs/CSP-AND-NETWORK.md cite the old `pnpm <x>:check` names; package source comments (packages/charts/src/test/*, packages/charts/tsup.config.ts, packages/process/src/*, packages/ai/src/_streamdown-i18n.ts, packages/ui/src/components/locale-provider/messages.ts, packages/ui/src/lib/streamdown-translations.ts, packages/data/src/data-table/data-table.tsx) cite old gate names — left untouched per instructions. Comment-only mentions of deleted scripts remain in scripts/check-dep-direction.test.mjs, check-elevation.mjs, check-motion-tokens.mjs, check-viewer-highlight-coverage.mjs (other owners). check-test-concurrency left to S2-arch."
+}
