@@ -7,11 +7,9 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash(node:*), Bash(pnpm:*), mcp__s
 You are adding an item to the internal registry (`registry/`). Read
 `@.claude/rules/registry.md` and `docs/REGISTRY_GUIDELINES.md` first.
 
-For a non-trivial item — deciding component vs. block vs. template, keeping
-`dependencies`/`registryDependencies` accurate, or a multi-file block/template —
-delegate the curation to the **`brand-ui-registry-curator`** agent (Task tool): it
-owns registry hygiene end-to-end and re-runs `pnpm registry:validate`. For a simple
-single-file `registry:ui` you can follow the steps below directly.
+For a multi-file block/template, take extra care that `dependencies` and
+`registryDependencies` list exactly what the files import, and re-run
+`pnpm registry:validate` after every change to `registry/registry.json`.
 
 Steps:
 

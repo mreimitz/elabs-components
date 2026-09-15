@@ -126,13 +126,9 @@ Read `@.claude/rules/component-api.md`, `@.claude/rules/styling-and-tokens.md`,
    `mcp__storybook__preview-stories` to show the user the rendered result (spot-check
    `light` + `dark`); otherwise run `pnpm --filter @elabs-ai/components-docs test-storybook`. See
    @.claude/rules/storybook-mcp.md.
-5. **Regenerate the manifest AND its downstream generators**: `pnpm agent-docs`
-   (not just `pnpm manifest`) — the new export must reach
-   `component-inventory.md`, `llms.txt`, `brand-ui-context.md`, the `pnpm
-gen`-owned doc regions and package READMEs, not just `brand-ui.manifest.json`
-   (#396). This runs automatically at commit time via `.githooks/pre-commit`
-   when the commit touches `packages/*/src/**` — running it here just surfaces
-   the result before you commit.
+5. **Regenerate**: `pnpm manifest` then `pnpm gen`, so the new export reaches
+   `brand-ui.manifest.json` and the generated doc regions (`pnpm agent-docs`
+   refreshes every generated surface at once).
 6. In your summary, note what was added (or extended/merged/replaced), the
    dedupe decision and why, and any follow-ups.
 

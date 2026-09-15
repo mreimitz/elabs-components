@@ -111,8 +111,8 @@ the axis values, never the preset name alone:
   override defeats). Only a **person** may choose it, for themselves, from a
   motion control in the app's own settings (`useMotionPreference()`), so the
   spec's `taste.motion` accepts only `system` (the default — full motion whenever
-  the OS is neutral) or `reduced` (calm regardless of the OS). `pnpm app-spec:check`
-  **fails** a spec that says `full`. If someone asks Expressive for "more motion",
+  the OS is neutral) or `reduced` (calm regardless of the OS). `brand-ui scaffold`
+  **rejects** a spec that says `full`. If someone asks Expressive for "more motion",
   say this: `system` already animates fully for everyone who hasn't asked
   otherwise — the difference `full` makes is only to people who asked for less.
 - Preview the chosen preset at loop rung 1 in the chosen theme where possible.
