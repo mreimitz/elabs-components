@@ -36,7 +36,7 @@
  *     `consumerNpmrc()` writes is what docs/CONSUMING.md tells a consumer to use,
  *     and is exactly enough: `@scope:registry=…` + the auth line.
  *   - **The marketplace pointer is read from the DEFAULT BRANCH, not this checkout.**
- *     Reading the tag's own working tree is tautological: `pnpm version-sync:check` in the
+ *     Reading the tag's own working tree is tautological: the `version-sync` check in the
  *     same job already asserted that file agrees with the root version. A
  *     `/plugin marketplace add <path-to-this-repo>` consumer follows
  *     `main` — so if `git push origin main` was skipped, or the version commit was
@@ -51,7 +51,7 @@
  * which is what step 3 runs.
  *
  * STEP 4 IS ALSO AVAILABLE ON ITS OWN, BEFORE THE PUBLISH (`--pointer-only`,
- * wired as `pnpm marketplace:check`). The pointer check is the one assertion here
+ * run as `node scripts/release-smoke.mjs --pointer-only`). The pointer check is the one assertion here
  * that needs nothing the publish produces — `resolveMarketplacePointer` is two
  * `gh api` calls against the default branch — so running it only after publishing
  * would discover "the tag was pushed without `git push origin main`" once twelve
@@ -60,7 +60,7 @@
  * preflight is what saves the release, the smoke is what proves the end state.
  *
  *   pnpm release:smoke                        # every distributable package at the root version
- *   pnpm marketplace:check                    # ONLY step 4, safe to run before the publish
+ *   node scripts/release-smoke.mjs --pointer-only  # ONLY step 4, safe to run before the publish
  *   node scripts/release-smoke.mjs --version 2.0.0 --manifest <path> --registry <url>
  *
  * Flags:
@@ -187,7 +187,7 @@ export function parseMarketplaceVersion(text) {
 
 /**
  * The plugin pointer in THIS checkout. On the release path that is the tag's own
- * tree, which `pnpm version-sync:check` has already vouched for — so it is the
+ * tree, which the `version-sync` check has already vouched for — so it is the
  * OFFLINE FALLBACK, not the assertion. See `resolveMarketplacePointer`.
  */
 export function marketplaceVersion(root) {
@@ -207,7 +207,7 @@ function runGh(args) {
  * branch**, fetched over the GitHub API.
  *
  * Why not the working tree: on a `v*` tag run the tree is the tag's, and the same
- * job's `pnpm version-sync:check` already asserted that file equals the root version —
+ * job's `version-sync` check already asserted that file equals the root version —
  * so comparing it to the released version is unfalsifiable. `main` is a different
  * ref: RELEASING.md § 4 pushes `main` and the tag as two separate commands, and a
  * revert can move `main` afterwards. Both leave consumers on the previous plugin
@@ -262,7 +262,7 @@ export function resolveMarketplacePointer({ root, repo, gh = runGh } = {}) {
  *
  * Returns `{ failures, logs, warnings }`. The CI branch matters: falling back to
  * the working tree there would re-create the tautology this check exists to kill
- * (`pnpm version-sync:check` already forced the tag's own copy to agree), so an
+ * (the `version-sync` check already forced the tag's own copy to agree), so an
  * unresolvable pointer is a failure under CI and a loud warning locally.
  */
 export function judgeMarketplacePointer({ pointer, version, repo, ci = Boolean(process.env.CI) }) {
@@ -285,7 +285,7 @@ export function judgeMarketplacePointer({ pointer, version, repo, ci = Boolean(p
   } else if (ci) {
     failures.push(
       `the marketplace pointer could not be verified against the default branch — ${pointer.error}. ` +
-        "The local read agrees, but `pnpm version-sync:check` already asserted that, so it proves nothing.",
+        "The local read agrees, but the `version-sync` check already asserted that, so it proves nothing.",
     );
   } else {
     warnings.push(
@@ -315,7 +315,7 @@ async function main(argv) {
   const version =
     argValue(argv, "--version") ?? JSON.parse(readFileSync(rootPkgPath, "utf8")).version;
 
-  // ── The pre-publish preflight (`pnpm marketplace:check`) ────────────────────
+  // ── The pre-publish preflight (`--pointer-only`) ─────────────────────────────
   // Everything else here needs the publish to have happened; this does not. Run
   // it while a fix is still "push main and re-tag" rather than 12 burnt versions.
   if (argv.includes("--pointer-only")) {

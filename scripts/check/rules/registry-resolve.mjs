@@ -1,13 +1,13 @@
 /**
  * registry-resolve — every relative import inside a registry item resolves in BOTH the repo
  * tree (`files[].path`) and the install tree (`files[].target`, what `npx shadcn add` writes).
- * Ported from scripts/check-registry-resolve.mjs.
+ * Ported from the former scripts/check-registry-resolve.mjs.
  *
  * `registry:validate` only checks that each `path` exists; it never follows imports. The
  * registry-blocks unit shipped 13 `../data/<file>` imports that resolved in the repo but not at
  * the target layout while validation stayed green. Theme/style items have no imports to follow.
  *
- * `scripts/check-registry-resolve.mjs` remains as a thin entrypoint for `.githooks/pre-commit`.
+ * `.githooks/pre-commit` runs it as `node scripts/check/run.mjs --rule registry-resolve`.
  */
 const REGISTRY = "registry/registry.json";
 const CANDIDATE_SUFFIXES = ["", ".ts", ".tsx", ".js", ".jsx", "/index.ts", "/index.tsx"];

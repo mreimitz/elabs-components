@@ -1,6 +1,6 @@
 /**
  * gen-registry.test.mjs — self-test for the derived-registry gate.
- * Run in CI: `node --test scripts/gen-registry.test.mjs` (`pnpm gen:registry:test`).
+ * Run: `node --test scripts/gen-registry.test.mjs` (in CI via `pnpm check:test`).
  *
  * The gate exists because a hand-written manifest drifted from the code it
  * described: `sidebar-02` shipped five fabricated `registryDependencies` and a

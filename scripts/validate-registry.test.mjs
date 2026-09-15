@@ -1,6 +1,6 @@
 /**
  * validate-registry.test.mjs — self-test for the registry `homepage` guard (#264).
- * Run in CI: `node --test scripts/validate-registry.test.mjs` (`pnpm registry:validate:test`).
+ * Run: `node --test scripts/validate-registry.test.mjs` (in CI via `pnpm check:test`).
  *
  * All fixtures are INLINE values (hermetic — never real files), mirroring
  * check-docs-accuracy.test.mjs / check-motion-tokens.test.mjs. A gate that can

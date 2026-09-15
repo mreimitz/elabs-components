@@ -35,7 +35,7 @@
  *
  * Deterministic (same inputs → byte-identical output), dependency-free, and
  * cwd-independent. The pure half is exported for the self-test
- * (`pnpm surface:preview:test`).
+ * (`pnpm check:test`).
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";

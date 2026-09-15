@@ -14,7 +14,7 @@
 //      every non-`--clean` invocation) is idempotent and additive-only, against
 //      hermetic mkdtemp fixtures — never the real repo tree.
 //
-// Run: node --test scripts/build-skills.test.mjs   (pnpm skills:build:check:test)
+// Run: node --test scripts/build-skills.test.mjs   (in pnpm check:test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";

@@ -34,7 +34,7 @@ export function findBaselineViolations(baseline) {
   const sorted = [...ids].sort();
   if (ids.some((id, i) => id !== sorted[i]))
     out.push(
-      "`stories` keys are not sorted — the file is generated, run `pnpm a11y:baseline:update`.",
+      "`stories` keys are not sorted — the file is generated, run `node scripts/a11y-baseline-update.mjs`.",
     );
   for (const id of ids) {
     if (!STORY_ID.test(id)) out.push(`"${id}" is not a Storybook story id.`);
@@ -152,7 +152,7 @@ export default {
           BASELINE,
           downs.map(
             (id) =>
-              `${id} is now axe-clean — ratchet down with \`pnpm a11y:baseline:update --prune\``,
+              `${id} is now axe-clean — ratchet down with \`node scripts/a11y-baseline-update.mjs --prune\``,
           ),
           true,
         );

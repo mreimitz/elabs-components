@@ -17,7 +17,7 @@
  *   node scripts/gen-plugin-agents.mjs          # rewrite plugin.json's agents array (a `pnpm gen` step)
  *   node scripts/gen-plugin-agents.mjs --check  # diff-only; non-zero exit on drift (`pnpm gen:check`)
  *
- * The self-test (`pnpm gen:plugin-agents:test`) plants an extra agents/*.md and
+ * The self-test (`scripts/gen-plugin-agents.test.mjs`, in `pnpm check:test`) plants an extra agents/*.md and
  * asserts `--check` fails, so the gate itself can't silently rot.
  *
  * Deterministic + dependency-free. Locates the repo root relative to this file, so

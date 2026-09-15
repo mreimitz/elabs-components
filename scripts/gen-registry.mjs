@@ -24,7 +24,7 @@
  *   - `registryDependencies` — the `@/components/<item>/…` imports its files
  *                          actually make, resolved against the other items
  *
- * The mirrored layout is load-bearing. `scripts/check-registry-resolve.mjs`
+ * The mirrored layout is load-bearing. the `registry-resolve` check rule
  * resolves every RELATIVE import against both the repo tree and the install
  * tree, and it builds the install tree from one item's own targets — so a
  * relative import may never cross an item boundary. Cross-item references go

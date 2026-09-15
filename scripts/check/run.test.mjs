@@ -11,7 +11,14 @@ import { fileURLToPath } from "node:url";
 import { evaluate, nextEntry, raises } from "./baseline.mjs";
 import { createMemoryContext, globMatcher } from "./context.mjs";
 import { validateRules } from "./registry.mjs";
-import { DOCS_END, DOCS_START, checkFixtures, main } from "./run.mjs";
+import {
+  DOCS_END,
+  DOCS_START,
+  SERIAL_SELFTESTS,
+  checkFixtures,
+  main,
+  selfTestFiles,
+} from "./run.mjs";
 
 const RUN = join(dirname(fileURLToPath(import.meta.url)), "run.mjs");
 
@@ -68,6 +75,90 @@ test("default run: at/under baseline passes, above fails with a findings list", 
   assert.equal(await main(over.args, over.io), 1);
   assert.ok(over.out.some((l) => l.startsWith("✖ no-bad: 3 findings (baseline 2)")));
   assert.ok(over.out.some((l) => l.includes("a.txt:1  BAD")));
+});
+
+test("external commands: run after the rules, a failing one exits 1, --rule/--scope/--list/--json/--docs", async () => {
+  const s = sandbox({ bad: 0 });
+  const commandsFile = join(dirname(s.rules), "commands.mjs");
+  const node = (code) => ["node", "-e", code];
+  const write = (ok) =>
+    writeFileSync(
+      commandsFile,
+      `export const COMMANDS = ${JSON.stringify([
+        { id: "cmd-ok", cmd: node("console.log('fine')"), doc: "Always passes." },
+        {
+          id: "cmd-maybe",
+          cmd: node(ok ? "process.exit(0)" : "console.error('broken thing'); process.exit(3)"),
+          doc: "Passes when told to.",
+        },
+      ])};\n`,
+    );
+  const args = [...s.args, "--commands-file", commandsFile];
+
+  write(true);
+  assert.equal(await main(args, s.io), 0, s.out.join("\n"));
+  assert.ok(s.out.includes("✔ cmd-ok: exit 0"));
+  assert.ok(s.out.some((l) => l.startsWith("✔ check: 3/3 pass (1 rules + 2 commands")));
+
+  write(false);
+  s.out.length = 0;
+  // A fresh import: the module URL is cached, so point at a copy.
+  const failing = join(dirname(s.rules), "commands-failing.mjs");
+  writeFileSync(failing, readFileSync(commandsFile, "utf8"));
+  const failArgs = [...s.args, "--commands-file", failing];
+  assert.equal(await main(failArgs, s.io), 1);
+  assert.ok(s.out.includes("✖ cmd-maybe: exit 3"));
+  assert.ok(s.out.some((l) => l.includes("broken thing")));
+  assert.ok(s.out.some((l) => l.startsWith("✖ check: 2/3")));
+
+  s.out.length = 0;
+  assert.equal(
+    await main([...failArgs, "--rule", "no-bad"], s.io),
+    0,
+    "--rule <rule> skips commands",
+  );
+  assert.equal(await main([...failArgs, "--scope", "repo"], s.io), 0, "--scope skips commands");
+  assert.equal(
+    await main([...failArgs, "--rule", "cmd-maybe"], s.io),
+    1,
+    "--rule <command> runs it",
+  );
+
+  s.out.length = 0;
+  assert.equal(await main([...failArgs, "--list"], s.io), 0);
+  assert.ok(s.out.some((l) => l.startsWith("cmd-maybe\tcommand\t")));
+
+  s.out.length = 0;
+  assert.equal(await main([...failArgs, "--json"], s.io), 1);
+  const json = JSON.parse(s.out.join("\n"));
+  assert.equal(json.ok, false);
+  assert.deepEqual(
+    json.commands.map((c) => [c.id, c.ok]),
+    [
+      ["cmd-ok", true],
+      ["cmd-maybe", false],
+    ],
+  );
+
+  assert.equal(await main([...failArgs, "--docs"], s.io), 0);
+  assert.ok(
+    readFileSync(s.conventions, "utf8").includes("- Passes when told to. (`cmd-maybe`: `node -e"),
+  );
+});
+
+test("--rules-dir without --commands-file runs no commands", async () => {
+  const s = sandbox({ bad: 0 });
+  assert.equal(await main(s.args, s.io), 0);
+  assert.ok(s.out.some((l) => l.startsWith("✔ check: 1/1 rules pass")));
+});
+
+test("self-test discovery: every scripts/**/*.test.mjs, the index-staging test serial", () => {
+  const { parallel, serial } = selfTestFiles();
+  assert.ok(parallel.includes("scripts/check/run.test.mjs"));
+  assert.ok(parallel.includes("scripts/check/fixtures.test.mjs"));
+  assert.deepEqual(serial, SERIAL_SELFTESTS);
+  assert.ok(parallel.every((f) => f.startsWith("scripts/") && f.endsWith(".test.mjs")));
+  assert.ok(!parallel.some((f) => f.includes("node_modules")));
 });
 
 test("a throwing rule fails the run", async () => {
