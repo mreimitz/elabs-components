@@ -17,6 +17,15 @@ const twMerge = extendTailwindMerge({
       "font-size": [{ text: TEXT_ROLES }],
       // `font-display` is the display-face seam (sibling of font-mono, #187).
       "font-family": [{ font: ["display"] }],
+      // Theme-driven control/table knobs (themes.css § CONTROL UTILITIES and the
+      // `@theme inline` bridge) — so a caller's `h-8` / `rounded-none` /
+      // `font-bold` / `shadow-none` still replaces the token default.
+      "font-weight": [{ font: ["control", "table-header"] }],
+      rounded: [{ rounded: ["control"] }],
+      shadow: [{ shadow: ["input"] }],
+      h: [{ h: ["control", "control-sm", "control-lg", "header"] }],
+      size: [{ size: ["control", "control-sm", "control-lg"] }],
+      "min-w": [{ "min-w": ["control", "control-sm", "control-lg"] }],
     },
   },
 });

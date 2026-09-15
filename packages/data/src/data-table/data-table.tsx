@@ -415,6 +415,12 @@ export interface DataTableProps<TData, TValue> extends Omit<
    */
   zebra?: boolean;
 
+  /**
+   * Draw a quiet `--rule` hairline between columns (header and body). Off by
+   * default. Pinned cells keep their own seam and never take a divider.
+   */
+  columnDividers?: boolean;
+
   // ── Row drag-reorder (#13) ───────────────────────────────────────────────
   /**
    * Opt-in row drag-reorder. Off by default — an existing table renders
@@ -537,6 +543,14 @@ function isActiveTextSelection(): boolean {
  */
 const PINNED_SEAM_CLASS =
   "after:pointer-events-none after:absolute after:inset-y-0 after:w-px after:bg-border-strong after:content-['']";
+
+/**
+ * Opt-in `columnDividers` hairline. `--rule`, not `--border-strong`: the column
+ * is already told apart by alignment and whitespace, so this line is a
+ * redundant boundary (ADR 0010). A real border is fine here, unlike the pinned
+ * seam above — pinned cells never take it.
+ */
+const COLUMN_DIVIDER_CLASS = "border-e border-rule last:border-e-0";
 
 /**
  * Ids of leaf columns whose ORIGINAL `ColumnDef` declares no `size` (#333).
@@ -835,6 +849,7 @@ function DataTableInner<TData, TValue>(
     maxBodyHeight = "32rem",
 
     zebra = true,
+    columnDividers = false,
 
     // Row drag-reorder (#13)
     enableRowReorder = false,
@@ -1776,7 +1791,7 @@ function DataTableInner<TData, TValue>(
                     // must stay byte-identical to the body's so an
                     // end-aligned numeric column's header lines up with its
                     // own values.
-                    "h-10 px-3 text-start align-middle font-medium text-muted-foreground",
+                    "h-10 px-3 text-start align-middle font-table-header text-muted-foreground",
                     // #69: a numeric column's `meta` overrides the default
                     // `text-start` — placed right after the base string so
                     // tailwind-merge lets it win over that default.
@@ -1811,6 +1826,7 @@ function DataTableInner<TData, TValue>(
                     // it must not read as a "boundary + fill in one class string"
                     // redundancy (separation:check).
                     geometry?.edgeClass,
+                    columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
                   )}
                 >
                   {header.isPlaceholder ? null : canSort ? (
@@ -1967,17 +1983,25 @@ function DataTableInner<TData, TValue>(
    * under virtualization (a CSS `even:`/`odd:` variant would "swim" as the
    * windowed `<tr>`s recycle).
    *
-   * - zebra (default): a gentle `foreground/5` wash on alternate rows is the ONE
+   * - zebra (default): a gentle `--table-stripe` wash on alternate rows is the ONE
    *   separation gesture; rows carry NO divider (#173's strong divider was the cue
    *   only because nothing else was — the stripe replaces it, so a border would now
-   *   be redundant per the surface-separation rule).
+   *   be redundant per the surface-separation rule). A theme that turns the stripe
+   *   off (`--table-stripe: transparent`) sets `--table-row-rule-width` to put the
+   *   strong divider back as the sole cue; it is `0px` by default, so the stock
+   *   stripe carries no border and no extra pixel.
    * - lines (`zebra={false}`): the classic `border-border-strong` divider between
    *   rows; `last:border-b-0` so the final divider doesn't double with the
    *   container's own bottom border (which reads as a heavy edge / shadow).
    */
   function rowSeparationClass(rowIndex: number): string {
     if (!zebra) return "border-b border-border-strong last:border-b-0";
-    return rowIndex % 2 === 1 ? "bg-foreground/5" : "";
+    return cn(
+      "border-b-(length:--table-row-rule-width) border-border-strong last:border-b-0",
+      // Separate cn() argument: the stripe and the (theme-gated) rule are
+      // alternative cues, never both at once — see the jsdoc above.
+      rowIndex % 2 === 1 && "bg-table-stripe",
+    );
   }
 
   /**
@@ -2015,8 +2039,8 @@ function DataTableInner<TData, TValue>(
     return cn(
       "bg-card",
       "before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:content-['']",
-      zebra && rowIndex % 2 === 1 && "before:bg-foreground/5",
-      "group-hover/row:before:bg-foreground/10",
+      zebra && rowIndex % 2 === 1 && "before:bg-table-stripe",
+      "group-hover/row:before:bg-table-row-hover",
       "group-data-[state=selected]/row:before:bg-accent",
     );
   }
@@ -2084,7 +2108,7 @@ function DataTableInner<TData, TValue>(
           // (only movement is neutralized); the gated duration-fast/ease-standard
           // pair already collapses toward ~0ms via --motion-factor when the user
           // or OS asks for reduced motion, matching the header sort button.
-          "transition-colors duration-fast ease-standard hover:bg-foreground/10 data-[state=selected]:bg-accent",
+          "transition-colors duration-fast ease-standard hover:bg-table-row-hover data-[state=selected]:bg-accent",
           // #13: the dragged row's live `transform` (set inline via `extras.style`,
           // see `SortableDataRow`) is what actually MOVES it — this class only
           // makes that movement glide instead of snapping, through the gated
@@ -2153,6 +2177,7 @@ function DataTableInner<TData, TValue>(
                 geometry && pinnedCellFillClass(rowIndex),
                 // Separate cn() argument — see pinnedCellGeometry's edgeClass.
                 geometry?.edgeClass,
+                columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
               )}
             >
               {clickable && cellIndex === 0 && (
@@ -2199,7 +2224,11 @@ function DataTableInner<TData, TValue>(
         {visibleColumns.map((column) => (
           <td
             key={column.id}
-            className={cn("px-3 py-2 align-middle", numericColumnClasses(column.columnDef.meta))}
+            className={cn(
+              "px-3 py-2 align-middle",
+              numericColumnClasses(column.columnDef.meta),
+              columnDividers && COLUMN_DIVIDER_CLASS,
+            )}
           >
             <Skeleton className="h-4 w-full" />
           </td>

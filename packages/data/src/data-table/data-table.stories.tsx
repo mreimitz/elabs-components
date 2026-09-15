@@ -98,6 +98,21 @@ export const Lines: Story = {
   render: () => <DataTable columns={columns} data={rows} zebra={false} />,
 };
 
+// ─── Column dividers ────────────────────────────────────────────────────────
+
+/**
+ * `columnDividers` adds a quiet `--rule` hairline between columns, in the header
+ * and the body. Off by default; pinned columns keep their own seam instead.
+ */
+export const ColumnDividers: Story = {
+  render: () => <DataTable columns={columns} data={rows} zebra={false} columnDividers />,
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector("thead th");
+    await expect(header).not.toBeNull();
+    await expect(getComputedStyle(header as Element).borderInlineEndWidth).toBe("1px");
+  },
+};
+
 // ─── Sorted ───────────────────────────────────────────────────────────────────
 
 export const Sorted: Story = {

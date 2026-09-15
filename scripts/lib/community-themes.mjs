@@ -65,6 +65,22 @@ export function readTokenNames(path = TOKEN_NAMES_TS) {
   return [...readFileSync(path, "utf8").matchAll(/^\s*"(--[\w-]+)",?$/gm)].map((m) => m[1]);
 }
 
+/**
+ * Engine custom properties a theme MAY redeclare although they are not contract
+ * tokens (no theme has to): the font families, the radius base, and the type
+ * scale base layer — `--type-size|leading|weight|tracking-<role>` for every
+ * role the engine declares. The density dial multiplies size/leading FROM these,
+ * so a theme's redeclaration composes with it. Roles are read from themes.css,
+ * so a typo'd role (which would silently do nothing) is still reported.
+ */
+export function readThemeOverridable(path = THEMES_CSS) {
+  const css = blankComments(readFileSync(path, "utf8"));
+  const typeScale = new Set(
+    [...css.matchAll(/(--type-(?:size|leading|weight|tracking)-[\w-]+)\s*:/g)].map((m) => m[1]),
+  );
+  return (name) => name.startsWith("--font-") || name === "--radius-base" || typeScale.has(name);
+}
+
 /** `--token: value;` declarations of a CSS block body, comments blanked first. */
 export function declarations(body) {
   const map = new Map();
@@ -206,6 +222,7 @@ export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root
   const folder = join(dir, slug);
   const variants = [];
   const contract = new Set(tokenNames);
+  const overridable = readThemeOverridable();
 
   if (!SLUG_RE.test(slug)) errors.push(`folder name "${slug}" must be kebab-case (a-z, 0-9, -)`);
 
@@ -247,9 +264,7 @@ export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root
     if (missing.length > 0) {
       errors.push(`${where}: missing ${missing.length} contract token(s): ${missing.join(", ")}`);
     }
-    const unknown = [...decls.keys()].filter(
-      (t) => !contract.has(t) && !t.startsWith("--font-") && t !== "--radius-base",
-    );
+    const unknown = [...decls.keys()].filter((t) => !contract.has(t) && !overridable(t));
     if (unknown.length > 0) {
       errors.push(`${where}: token(s) outside the contract: ${unknown.join(", ")}`);
     }

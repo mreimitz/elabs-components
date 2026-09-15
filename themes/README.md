@@ -74,6 +74,27 @@ no `[data-theme]` block. The scheme files then name the face in `--font-sans` /
 `pnpm gen` wires the fonts file into Storybook. Themes need no entry in `ATTRIBUTION.md`.
 See [Qlik](./qlik/).
 
+## Change the shape of controls, not just their colour
+
+Every theme carries these tokens. Their defaults match the built-in look, so change only
+the ones your brand needs:
+
+| Token                                                                                    | What it changes                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--control-size`                                                                         | Button, input, select and toggle height, counted in spacing steps (`9` = 36 px, `8` = 32 px) so the density setting still shrinks them. Small and large sizes are one step either side. |
+| `--control-radius`, `--control-weight`                                                   | Corner radius and label weight of those controls and of tab labels.                                                                                                                     |
+| `--input-background`, `--input-shadow`                                                   | The ground and resting shadow of text fields and select triggers (`none` for flat fields).                                                                                              |
+| `--primary-hover`, `--primary-active` (and `--destructive-*`)                            | Filled-button hover and pressed colours. Set solid colours to darken on interaction.                                                                                                    |
+| `--link`                                                                                 | Hyperlink colour, when links should not use the brand colour.                                                                                                                           |
+| `--overlay`, `--overlay-blur`                                                            | The curtain behind dialogs and sheets.                                                                                                                                                  |
+| `--table-header-weight`, `--table-stripe`, `--table-row-hover`, `--table-row-rule-width` | Data table header weight, zebra stripe, row hover, and a row hairline. To swap stripes for lines, set the stripe to `transparent` and the rule width to `1px`.                          |
+| `--icon-stroke`                                                                          | Line-icon stroke width.                                                                                                                                                                 |
+| `--header-size`                                                                          | Top bar height in spacing steps (`14` = 56 px).                                                                                                                                         |
+
+A theme may also redeclare the type scale — `--type-size-<role>`, `--type-leading-<role>`,
+`--type-weight-<role>`, `--type-tracking-<role>` for any role the engine defines — to retune
+headings for its typeface. The density setting still scales sizes from your values.
+
 ## Families and modes
 
 `theme.ts` gives every variant the same `family` and its own `dark` flag:

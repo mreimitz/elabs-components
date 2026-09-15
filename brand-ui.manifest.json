@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T15:12:38.090Z",
+  "generatedAt": "2026-09-15T17:33:18.943Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 234,
+  "tokenCount": 252,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -221,6 +221,24 @@
     "--brand-logo-mark",
     "--brand-logo-lockup",
     "--brand-logo-lockup-aspect",
+    "--control-size",
+    "--control-radius",
+    "--control-weight",
+    "--input-background",
+    "--input-shadow",
+    "--primary-hover",
+    "--primary-active",
+    "--destructive-hover",
+    "--destructive-active",
+    "--link",
+    "--overlay",
+    "--overlay-blur",
+    "--table-header-weight",
+    "--table-stripe",
+    "--table-row-hover",
+    "--table-row-rule-width",
+    "--icon-stroke",
+    "--header-size",
     "--chart-seq-1",
     "--chart-seq-2",
     "--chart-seq-3",
@@ -12224,7 +12242,7 @@
           },
           "stateTokens": {
             "surface": "bg-card text-card-foreground — a raised card above the canvas",
-            "link": "text-primary-text for what's-new links, underlined on hover",
+            "link": "text-link for what's-new links, underlined on hover",
             "focus": "ring-2 ring-ring ring-offset-2 ring-offset-background on quick actions"
           },
           "antiPatterns": [
@@ -18000,7 +18018,7 @@
               "name": "inactiveFillOpacity",
               "optional": true,
               "type": "number",
-              "description": "SVG `fill-opacity` for inactive / track notches (0–1). Default **0.8** (foreground default is **1**)."
+              "description": "SVG `fill-opacity` for inactive / track notches (0–1). Default **1** — the track is full-opacity furniture ink."
             },
             {
               "name": "activeFillOpacity",
@@ -21915,6 +21933,12 @@
               "description": "Gentle alternating row stripes (\"zebra\") as the row-separation cue, instead of a hairline divider between every row. Default `true` — the stripe is the single separation gesture, so rows carry no divider (a divider on a striped row would be a redundant boundary). Set `false` for the classic line model (a `border-border-strong` divider between rows, no stripes)."
             },
             {
+              "name": "columnDividers",
+              "optional": true,
+              "type": "boolean",
+              "description": "Draw a quiet `--rule` hairline between columns (header and body). Off by default. Pinned cells keep their own seam and never take a divider."
+            },
+            {
               "name": "enableRowReorder",
               "optional": true,
               "type": "boolean",
@@ -22093,7 +22117,7 @@
             "rowHover": "hover:bg-foreground/10 (a foreground-tint wash, so it beats the zebra stripe in the same direction on light AND dark)",
             "rowSelected": "data-[state=selected]:bg-accent",
             "header": "bg-surface-muted when sticky, else bg-surface-muted/60 + border-b border-border-strong (the header bottom is the SOLE cue between header and first row → the strong rung, #173)",
-            "rowDivider": "zebra={false}: border-b border-border-strong last:border-b-0; zebra rows use bg-foreground/5 instead (the stripe replaces the divider)"
+            "rowDivider": "zebra={false}: border-b border-border-strong last:border-b-0; zebra rows use bg-table-stripe instead (the stripe replaces the divider)"
           },
           "antiPatterns": [
             "Forking table state into the toolbar — pass the table instance via toolbar={(table) => …}; don't duplicate sorting/filter state.",
@@ -31542,6 +31566,14 @@
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
         },
         {
+          "name": "TabsListProps",
+          "module": "packages/ui/src/components/tabs/tabs.tsx"
+        },
+        {
+          "name": "TabsVariant",
+          "module": "packages/ui/src/components/tabs/tabs.tsx"
+        },
+        {
           "name": "TagInputProps",
           "module": "packages/ui/src/components/tag-input/tag-input.tsx"
         },
@@ -32076,6 +32108,14 @@
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
         },
         {
+          "name": "tabsListVariants",
+          "module": "packages/ui/src/components/tabs/tabs.tsx"
+        },
+        {
+          "name": "tabsTriggerVariants",
+          "module": "packages/ui/src/components/tabs/tabs.tsx"
+        },
+        {
           "name": "textVariants",
           "module": "packages/ui/src/components/typography/typography.tsx"
         },
@@ -32427,6 +32467,30 @@
             "size": "md"
           },
           "source": "statusBadgeVariants"
+        },
+        "TabsList": {
+          "variants": {
+            "variant": [
+              "segmented",
+              "underline"
+            ]
+          },
+          "defaultVariants": {
+            "variant": "segmented"
+          },
+          "source": "tabsListVariants"
+        },
+        "TabsTrigger": {
+          "variants": {
+            "variant": [
+              "segmented",
+              "underline"
+            ]
+          },
+          "defaultVariants": {
+            "variant": "segmented"
+          },
+          "source": "tabsTriggerVariants"
         },
         "Toggle": {
           "variants": {
@@ -35564,6 +35628,13 @@
             }
           ]
         },
+        "TabsList": {
+          "extends": [
+            "ComponentPropsWithoutRef<typeof TabsPrimitive.List>",
+            "VariantProps<typeof tabsListVariants>"
+          ],
+          "props": []
+        },
         "TagInput": {
           "extends": [
             "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"defaultValue\" | \"onChange\"\n>"
@@ -36320,7 +36391,7 @@
             ]
           },
           "stateTokens": {
-            "overlay": "AlertDialogOverlay: bg-foreground/50 + backdrop-blur-sm",
+            "overlay": "AlertDialogOverlay: bg-overlay + backdrop-blur-overlay",
             "surface": "AlertDialogContent: bg-card text-card-foreground + shadow-ring-lg (ADR 0020 — the hairline is the shadow's last layer, so there is no border)",
             "focus": "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) — inherited: Action/Cancel are buttonVariants"
           },
@@ -36413,7 +36484,7 @@
             ]
           },
           "stateTokens": {
-            "hover": "bg-primary/90 (variant default)",
+            "hover": "bg-primary-hover (variant default; active: bg-primary-active)",
             "focus": "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-2 ring-offset-background",
             "disabled": "opacity-50 pointer-events-none"
           },
@@ -36503,7 +36574,7 @@
             ]
           },
           "stateTokens": {
-            "overlay": "DialogOverlay: bg-foreground/50 + backdrop-blur-sm (a semantic token — never a raw black)",
+            "overlay": "DialogOverlay: bg-overlay + backdrop-blur-overlay (a semantic token — never a raw black)",
             "surface": "DialogContent: bg-card text-card-foreground + shadow-ring-lg (ADR 0020 — a floating surface bakes its hairline into the shadow; it carries NO border)",
             "focus": "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67), on the close button"
           },
@@ -36527,7 +36598,7 @@
             ]
           },
           "stateTokens": {
-            "rest": "border-input + bg-background (the subtle form-field hairline, ADR 0010)",
+            "rest": "border-input + bg-input-background + shadow-input (the subtle form-field hairline, ADR 0010)",
             "focus": "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-1 ring-offset-background (the border does NOT change)",
             "disabled": "opacity-50 cursor-not-allowed + bg-muted",
             "invalid": "border-destructive + ring-destructive (aria-invalid)"
@@ -36670,7 +36741,7 @@
             ]
           },
           "stateTokens": {
-            "overlay": "SheetOverlay: bg-foreground/50 + backdrop-blur-sm (a semantic token — never a raw black)",
+            "overlay": "SheetOverlay: bg-overlay + backdrop-blur-overlay (a semantic token — never a raw black)",
             "surface": "SheetContent: bg-card text-card-foreground + shadow-ring-lg, plus the anchored edge only (border-t / border-b / border-l / border-r per side)",
             "focus": "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67), on the close button"
           },

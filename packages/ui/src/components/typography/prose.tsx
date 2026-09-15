@@ -116,10 +116,10 @@ export const ProseLink = forwardRef<HTMLAnchorElement, ProseLinkProps>(function 
       ref={ref}
       href={href}
       className={cn(
-        // #399 — `text-primary-text`, not the `text-primary` FILL rung: a prose
-        // link is ordinary body text and owes WCAG 1.4.3 AA (4.5:1), which the
+        // #399 — `text-link` (defaults to `--primary-text`), not the `text-primary`
+        // FILL rung: a prose link is ordinary body text and owes WCAG 1.4.3 AA (4.5:1), which the
         // fill only guarantees at the 1.4.11 mark bar (3:1).
-        "font-medium text-primary-text underline underline-offset-4 hover:no-underline focus-ring",
+        "font-medium text-link underline underline-offset-4 hover:no-underline focus-ring",
         className,
       )}
       {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}

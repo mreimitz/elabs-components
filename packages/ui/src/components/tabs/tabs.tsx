@@ -1,5 +1,7 @@
 import {
+  createContext,
   forwardRef,
+  use,
   useEffect,
   useMemo,
   useRef,
@@ -7,6 +9,7 @@ import {
   type ElementRef,
 } from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
+import { cva, type VariantProps } from "class-variance-authority";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { cn } from "../../lib/cn";
 import { mergeRefs } from "../../lib/merge-refs";
@@ -68,26 +71,86 @@ function scrollTriggerIntoStrip(trigger: HTMLElement, behavior: ScrollBehavior) 
  * start-alignment on overflow while staying visually identical when the
  * strip fits (see #344).
  */
-export const TabsList = forwardRef<
-  ElementRef<typeof TabsPrimitive.List>,
-  ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(function TabsList({ className, ...props }, ref) {
-  return (
-    <TabsPrimitive.List
-      ref={ref}
-      className={cn(
-        "inline-flex h-9 max-w-full items-center justify-center-safe overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground",
-        className,
-      )}
-      {...props}
-    />
-  );
-});
+export const tabsListVariants = cva(
+  "max-w-full items-center overflow-x-auto text-muted-foreground",
+  {
+    variants: {
+      variant: {
+        // Recessed pill track with a raised active segment.
+        segmented: "inline-flex h-9 justify-center-safe rounded-lg bg-muted p-1",
+        // Line tabs: a transparent start-aligned row over a 1px rule; the active
+        // tab's 2px underline sits on top of it (see `tabsTriggerVariants`).
+        underline: "flex w-full justify-start border-b border-rule",
+      },
+    },
+    defaultVariants: { variant: "segmented" },
+  },
+);
+
+export const tabsTriggerVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap text-sm font-control transition-colors duration-fast disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        segmented: cn(
+          "rounded-control px-3 py-1",
+          // `ring-offset-1`, not `-2`: the compound indicator's reach is
+          // `ring-offset` + 2px ring + 1px contour, and `TabsList` is an
+          // `overflow-x-auto` strip with `p-1` (4px). At offset 2 the reach is 5px
+          // and the scroll box clips the contour on three sides (#67 fix round 2,
+          // measured on `patterns-templates-object-detail-hub--default` tab stop
+          // 9); at offset 1 it is exactly 4px and the loop closes.
+          "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+        ),
+        underline: cn(
+          // The underline is a bottom BORDER inside the fixed height, transparent
+          // at rest, so activation never shifts layout. No negative margin to
+          // overlap the list's rule: the list scrolls (`overflow-x-auto`), which
+          // would clip anything hanging past its padding box. The strip has no
+          // padding for an outer ring either, so the indicator is drawn inset.
+          "h-12 rounded-none border-b-2 border-transparent px-4 hover:text-foreground",
+          "focus-ring-inset",
+          "data-[state=active]:border-primary data-[state=active]:text-foreground",
+        ),
+      },
+    },
+    defaultVariants: { variant: "segmented" },
+  },
+);
+
+export type TabsVariant = NonNullable<VariantProps<typeof tabsListVariants>["variant"]>;
+
+// The list owns the variant; its triggers read it, so a strip never mixes two.
+const TabsVariantContext = createContext<TabsVariant>("segmented");
+
+export interface TabsListProps
+  extends
+    ComponentPropsWithoutRef<typeof TabsPrimitive.List>,
+    VariantProps<typeof tabsListVariants> {}
+
+export const TabsList = forwardRef<ElementRef<typeof TabsPrimitive.List>, TabsListProps>(
+  function TabsList({ className, variant, ...props }, ref) {
+    const resolved = variant ?? "segmented";
+    return (
+      <TabsVariantContext.Provider value={resolved}>
+        <TabsPrimitive.List
+          ref={ref}
+          data-slot="tabs-list"
+          data-variant={resolved}
+          className={cn(tabsListVariants({ variant: resolved }), className)}
+          {...props}
+        />
+      </TabsVariantContext.Provider>
+    );
+  },
+);
 
 export const TabsTrigger = forwardRef<
   ElementRef<typeof TabsPrimitive.Trigger>,
   ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(function TabsTrigger({ className, ...props }, ref) {
+  const variant = use(TabsVariantContext);
   const innerRef = useRef<HTMLButtonElement>(null);
   const mergedRef = useMemo(() => mergeRefs(ref, innerRef), [ref]);
   // Honours the in-app tri-state motion preference on `ThemeProvider` as well
@@ -140,19 +203,8 @@ export const TabsTrigger = forwardRef<
   return (
     <TabsPrimitive.Trigger
       ref={mergedRef}
-      className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-colors duration-fast",
-        // `ring-offset-1`, not `-2`: the compound indicator's reach is
-        // `ring-offset` + 2px ring + 1px contour, and `TabsList` is an
-        // `overflow-x-auto` strip with `p-1` (4px). At offset 2 the reach is 5px
-        // and the scroll box clips the contour on three sides (#67 fix round 2,
-        // measured on `patterns-templates-object-detail-hub--default` tab stop
-        // 9); at offset 1 it is exactly 4px and the loop closes.
-        "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-        "disabled:pointer-events-none disabled:opacity-50",
-        "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground data-[state=active]:shadow-sm",
-        className,
-      )}
+      data-slot="tabs-trigger"
+      className={cn(tabsTriggerVariants({ variant }), className)}
       {...props}
     />
   );

@@ -20,12 +20,13 @@ import { ProseLink } from "./prose";
 afterEach(cleanup);
 
 describe("ProseLink — #399 on-surface brand-accent rung", () => {
-  it("renders text-primary-text, never the text-primary fill rung", () => {
+  // `text-link` reads `--link`, which the reference themes alias to `--primary-text`.
+  it("renders the link ink, never the text-primary fill rung", () => {
     render(<ProseLink href="https://example.com">docs</ProseLink>);
 
     const link = screen.getByRole("link", { name: "docs" });
     const classes = link.className.split(/\s+/);
-    expect(classes).toContain("text-primary-text");
+    expect(classes).toContain("text-link");
     expect(classes).not.toContain("text-primary");
   });
 

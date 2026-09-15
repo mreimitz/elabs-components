@@ -592,11 +592,35 @@ describe("DataTable — zebra striping (default) vs lines", () => {
     const rows = container.querySelectorAll("tbody tr");
     expect(rows.length).toBe(3);
     // 2nd row (index 1) is striped; 1st/3rd are not — the stripe is the cue.
-    expect(rows[0]?.className).not.toContain("bg-foreground/5");
-    expect(rows[1]?.className).toContain("bg-foreground/5");
-    expect(rows[2]?.className).not.toContain("bg-foreground/5");
-    // No row carries a divider (a border on a striped region would be redundant).
-    rows.forEach((r) => expect(r.className).not.toContain("border-b"));
+    expect(rows[0]?.className).not.toContain("bg-table-stripe");
+    expect(rows[1]?.className).toContain("bg-table-stripe");
+    expect(rows[2]?.className).not.toContain("bg-table-stripe");
+    // No row carries a fixed divider (a border on a striped region would be
+    // redundant). The only row rule is the theme-gated width, `0px` by default,
+    // for a theme that turns the stripe off.
+    rows.forEach((r) => {
+      const classes = r.className.split(/\s+/);
+      expect(classes).not.toContain("border-b");
+      expect(classes).toContain("border-b-(length:--table-row-rule-width)");
+    });
+  });
+
+  it("draws column dividers only when asked", () => {
+    const plain = render(<DataTable columns={columns} data={data} />);
+    plain.container
+      .querySelectorAll("th, td")
+      .forEach((c) => expect(c.className.split(/\s+/)).not.toContain("border-e"));
+    plain.unmount();
+
+    const { container } = render(<DataTable columns={columns} data={data} columnDividers />);
+    const cells = container.querySelectorAll("thead th, tbody td");
+    expect(cells.length).toBeGreaterThan(0);
+    cells.forEach((c) => {
+      const classes = c.className.split(/\s+/);
+      expect(classes).toContain("border-e");
+      expect(classes).toContain("border-rule");
+      expect(classes).toContain("last:border-e-0");
+    });
   });
 
   it("draws border-strong dividers and no stripes when zebra is disabled", () => {
@@ -605,7 +629,7 @@ describe("DataTable — zebra striping (default) vs lines", () => {
     rows.forEach((r) => {
       expect(r.className).toContain("border-b");
       expect(r.className).toContain("border-border-strong");
-      expect(r.className).not.toContain("bg-foreground/5");
+      expect(r.className).not.toContain("bg-table-stripe");
     });
     // Last row drops its divider so it doesn't double with the container border.
     expect(rows[rows.length - 1]?.className).toContain("last:border-b-0");
@@ -1177,7 +1201,7 @@ describe("DataTable — #337 onRowClick + rowClassName", () => {
     const betaRow = screen.getByText("Beta").closest("tr")!;
     expect(betaRow).toHaveClass("is-highlighted");
     // Beta is row index 1 — the zebra stripe class must still be present.
-    expect(betaRow.className).toContain("bg-foreground/5");
+    expect(betaRow.className).toContain("bg-table-stripe");
   });
 
   it("gives a clickable row a pointer cursor and a focus ring driven by its activation button", () => {
@@ -1393,10 +1417,10 @@ describe("DataTable — #333 pinned cells compose with the row wash, not overpai
     expect(odd!.className).toContain("bg-card");
     // Only the striped row re-applies the wash, on the decorative ::before layer
     // — this is the bug #333 reports: a single opaque fill erased the stripe.
-    expect(odd!.className).toContain("before:bg-foreground/5");
-    expect(even!.className).not.toContain("before:bg-foreground/5");
+    expect(odd!.className).toContain("before:bg-table-stripe");
+    expect(even!.className).not.toContain("before:bg-table-stripe");
     // Hover/selected are re-applied from the row group in both cases.
-    expect(even!.className).toContain("group-hover/row:before:bg-foreground/10");
+    expect(even!.className).toContain("group-hover/row:before:bg-table-row-hover");
     expect(container.querySelector("tbody tr")!.className).toContain("group/row");
   });
 
@@ -1411,7 +1435,7 @@ describe("DataTable — #333 pinned cells compose with the row wash, not overpai
     );
     for (const cell of pinned(container, "left")) {
       expect(cell.className).toContain("bg-card");
-      expect(cell.className).not.toContain("before:bg-foreground/5");
+      expect(cell.className).not.toContain("before:bg-table-stripe");
     }
     // The row divider is still the separation cue and is untouched by pinning.
     expect(container.querySelector("tbody tr")!.className).toContain("border-border-strong");

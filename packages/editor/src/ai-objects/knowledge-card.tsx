@@ -58,8 +58,8 @@ function SourceRow({ path, resolve }: SourceRowProps) {
         href={resolved.href}
         rel="noopener noreferrer"
         target="_blank"
-        // #399 — a source link is TEXT: on-surface `-text` rung, not the fill.
-        className="flex min-w-0 items-center gap-1.5 text-meta text-primary-text underline-offset-2 hover:underline focus-ring"
+        // #399 — a source link is TEXT: the `--link` ink, not the fill.
+        className="flex min-w-0 items-center gap-1.5 text-meta text-link underline-offset-2 hover:underline focus-ring"
         aria-label={`Source: ${display}`}
       >
         <FileText className="size-3 shrink-0" aria-hidden="true" />

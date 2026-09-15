@@ -21,7 +21,7 @@ export const toggleVariants = cva(
   // asChild wrapper overwrites data-state="on" with "closed" — aria-pressed
   // (Toggle) and aria-checked (ToggleGroupItem) are set by the toggle primitive
   // alone and survive the merge. (#214)
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors duration-fast ease-standard hover:bg-muted hover:text-muted-foreground focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground data-[state=on]:font-semibold aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:font-semibold aria-checked:bg-accent aria-checked:text-accent-foreground aria-checked:font-semibold [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 rounded-control text-sm font-control transition-colors duration-fast ease-standard hover:bg-muted hover:text-muted-foreground focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground data-[state=on]:font-semibold aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:font-semibold aria-checked:bg-accent aria-checked:text-accent-foreground aria-checked:font-semibold [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -44,7 +44,11 @@ export const toggleVariants = cva(
         segmented:
           "border-0 bg-transparent text-muted-foreground hover:bg-transparent hover:text-foreground aria-checked:bg-surface-elevated aria-checked:text-foreground aria-checked:font-medium aria-checked:shadow-sm aria-pressed:bg-surface-elevated aria-pressed:text-foreground aria-pressed:font-medium aria-pressed:shadow-sm data-[state=on]:bg-surface-elevated data-[state=on]:text-foreground data-[state=on]:font-medium data-[state=on]:shadow-sm",
       },
-      size: { default: "h-9 px-2.5 min-w-9", sm: "h-8 px-2 min-w-8", lg: "h-10 px-3 min-w-10" },
+      size: {
+        default: "h-control px-2.5 min-w-control",
+        sm: "h-control-sm px-2 min-w-control-sm",
+        lg: "h-control-lg px-3 min-w-control-lg",
+      },
     },
     defaultVariants: { variant: "default", size: "default" },
   },

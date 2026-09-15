@@ -97,7 +97,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
             data-slot="icon-button"
             tabIndex={disabled ? 0 : undefined}
             className={cn(
-              "inline-flex rounded-md",
+              "inline-flex rounded-control",
               // While disabled this span IS the focus target (the button is out
               // of the tab order), so it must carry the system's focus ring —
               // without this it falls back to the UA default outline, which is

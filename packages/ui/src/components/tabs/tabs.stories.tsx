@@ -265,3 +265,51 @@ export const ProgrammaticActivation: Story = {
     await expect(window.scrollY).toBe(0);
   },
 };
+
+/**
+ * `variant="underline"` — line tabs: a transparent row over a 1px rule, the
+ * active tab marked by a 2px `--primary` underline and foreground ink. Label
+ * weight follows the theme's `--control-weight`. Keyboard behaviour is Radix's,
+ * identical to the segmented default.
+ */
+export const Underline: Story = {
+  render: () => (
+    <Tabs defaultValue="overview" className="w-[28rem]">
+      <TabsList variant="underline">
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="activity">Activity</TabsTrigger>
+        <TabsTrigger value="settings">Settings</TabsTrigger>
+      </TabsList>
+      <TabsContent value="overview" className="text-body text-muted-foreground">
+        Overview panel.
+      </TabsContent>
+      <TabsContent value="activity" className="text-body text-muted-foreground">
+        Activity panel.
+      </TabsContent>
+      <TabsContent value="settings" className="text-body text-muted-foreground">
+        Settings panel.
+      </TabsContent>
+    </Tabs>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const overview = canvas.getByRole("tab", { name: "Overview" });
+    const activity = canvas.getByRole("tab", { name: "Activity" });
+
+    // The underline is a 2px border on every trigger (transparent at rest), so
+    // activating a tab never changes its box.
+    await expect(getComputedStyle(activity).borderBottomWidth).toBe("2px");
+    await expect(getComputedStyle(overview).borderBottomColor).not.toBe(
+      getComputedStyle(activity).borderBottomColor,
+    );
+    const restingHeight = activity.getBoundingClientRect().height;
+
+    await userEvent.click(overview);
+    await userEvent.keyboard("{ArrowRight}");
+    await expect(activity).toHaveFocus();
+    await expect(activity).toHaveAttribute("aria-selected", "true");
+    await expect(activity.getBoundingClientRect().height).toBe(restingHeight);
+    // The panel mounts on switch and fades in (gated entrance) — wait for it to settle.
+    const panel = await canvas.findByText("Activity panel.");
+    await waitFor(() => expect(panel).toBeVisible());
+  },
+};

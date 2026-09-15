@@ -7,7 +7,7 @@
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
 **Themes (2):** dark, light (default)
-**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 234
+**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 252
 
 ## Packages
 
@@ -445,8 +445,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TableRow | component |  | `@elabs-ai/components-ui` |  |
 | Tabs | component |  | `@elabs-ai/components-ui` | Switch between peer views in the same context without navigating away. |
 | TabsContent | component |  | `@elabs-ai/components-ui` |  |
-| TabsList | component |  | `@elabs-ai/components-ui` |  |
-| TabsTrigger | component |  | `@elabs-ai/components-ui` |  |
+| TabsList | component | variant=segmented*\|underline | `@elabs-ai/components-ui` |  |
+| TabsTrigger | component | variant=segmented*\|underline | `@elabs-ai/components-ui` |  |
 | TagInput | component |  | `@elabs-ai/components-ui` |  |
 | TeamSwitcher | component |  | `@elabs-ai/components-ui` |  |
 | Text | component | variant=lead\|body*\|caption\|meta\|kpi\|code · tone=default*\|muted\|primary | `@elabs-ai/components-ui` |  |

@@ -965,6 +965,45 @@
   --brand-logo-lockup: initial;
   --brand-logo-lockup-aspect: initial;
 
+  /* ── Component geometry & state knobs ──────────────────────────────────────
+     Decisions a theme could not reach before: control shape/weight, field
+     surface, filled-button states, links, the modal curtain, table furniture,
+     icon stroke and header height. Every default reproduces the pre-knob look
+     exactly, so a theme that leaves them alone renders unchanged.
+
+     Heights are counted in `--spacing` STEPS, not lengths: the density dial
+     rescales `--spacing` per region, and a length resolved on the theme element
+     would stop a compact region from shrinking its controls. `9` == `h-9`.
+     Utilities: `h-control` / `h-control-sm|lg` / `size-control*` / `min-w-control*`,
+     `rounded-control`, `font-control`, `h-header` (themes.css § CONTROL UTILITIES). */
+  --control-size: 9;
+  --control-radius: calc(var(--radius) - 2px);
+  --control-weight: 500;
+  /* Form-field ground and resting lift (`bg-input-background`, `shadow-input`). */
+  --input-background: var(--background);
+  --input-shadow: var(--shadow-sm);
+  /* Filled-button states. The defaults are the old `/90` wash, so hover and
+     press look as before; a brand that DARKENS on interaction sets solid fills. */
+  --primary-hover: color-mix(in oklab, var(--primary) 90%, transparent);
+  --primary-active: color-mix(in oklab, var(--primary) 90%, transparent);
+  --destructive-hover: color-mix(in oklab, var(--destructive) 90%, transparent);
+  --destructive-active: color-mix(in oklab, var(--destructive) 90%, transparent);
+  /* Hyperlink ink (`text-link`) — the brand's text rung unless a theme splits it. */
+  --link: var(--primary-text);
+  /* Modal curtain (`bg-overlay`, `backdrop-blur-overlay`). */
+  --overlay: color-mix(in oklab, var(--foreground) 50%, transparent);
+  --overlay-blur: 8px;
+  /* Table furniture (DataTable): header label weight, zebra stripe, row hover,
+     and a row hairline width drawn in striped mode (0 = stripes alone). */
+  --table-header-weight: var(--control-weight);
+  --table-stripe: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --table-row-hover: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --table-row-rule-width: 0px;
+  /* Stroke of every line icon drawn at the default width (Lucide + `Icon`). */
+  --icon-stroke: 2;
+  /* App header bar height in `--spacing` steps (`h-header`); `14` == `h-14`. */
+  --header-size: 14;
+
   /* ── Chart ramps — RM-018 ─────────────────────────────────────────────────
      ORDERED ramps, for the charts where LIGHTNESS IS DATA (heatmap, calendar,
      treemap, matrix, choropleth, signed bars). The categorical `--chart-1..12`
@@ -1350,6 +1389,24 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Component geometry & state knobs (see :root). INLINE so each utility reads
+     the live theme var. Theme keys differ from the runtime names on purpose: a
+     `--radius-control: var(--radius-control)` bridge would be a cycle. */
+  --radius-control: var(--control-radius);
+  --font-weight-control: var(--control-weight);
+  --font-weight-table-header: var(--table-header-weight);
+  --color-input-background: var(--input-background);
+  --shadow-input: var(--input-shadow);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-destructive-active: var(--destructive-active);
+  --color-link: var(--link);
+  --color-overlay: var(--overlay);
+  --blur-overlay: var(--overlay-blur);
+  --color-table-stripe: var(--table-stripe);
+  --color-table-row-hover: var(--table-row-hover);
 
   /* Motion — `duration-fast`/`duration-base`/`duration-slow`/`duration-slower`
      utilities resolve to the GATED effective durations, so every hand-rolled
@@ -1779,6 +1836,15 @@
     word-break: keep-all;
   }
 
+  /* Line-icon stroke — theme-driven (`--icon-stroke`). Only icons still at the
+     library default width (`stroke-width="2"`) follow it: an icon a component
+     draws at a deliberate width keeps it. CSS beats the SVG presentation
+     attribute, and base layer lets a `stroke-*` utility still win. */
+  svg.lucide[stroke-width="2"],
+  svg[data-slot="icon"][stroke-width="2"] {
+    stroke-width: var(--icon-stroke);
+  }
+
   /* Pointer affordance for interactive controls — theme-invariant, automatic.
      Tailwind v4's Preflight dropped the v3 `button, [role=button] { cursor:
      pointer }` reset (native <button> defaults to the arrow), so without this
@@ -1977,6 +2043,48 @@
   @apply ring-2 ring-inset ring-[var(--focus-ring-color,var(--ring))];
   outline: 1px solid var(--ring-contour);
   outline-offset: -3px;
+}
+
+/* ---------------------------------------------------------------------------
+   CONTROL UTILITIES — heights read `--control-size` / `--header-size` as a
+   count of `--spacing` steps, resolved on the element itself, so a
+   `[data-density]` region still rescales them. `h-control` == `h-9` and
+   `h-header` == `h-14` under the default tokens. The sm/lg rungs sit one step
+   either side, matching the old `h-8`/`h-10` pairing. Registered with
+   tailwind-merge in `@elabs-ai/components-ui`'s `cn()`.
+   --------------------------------------------------------------------------- */
+@utility h-control {
+  height: calc(var(--spacing) * var(--control-size));
+}
+@utility h-control-sm {
+  height: calc(var(--spacing) * (var(--control-size) - 1));
+}
+@utility h-control-lg {
+  height: calc(var(--spacing) * (var(--control-size) + 1));
+}
+@utility size-control {
+  width: calc(var(--spacing) * var(--control-size));
+  height: calc(var(--spacing) * var(--control-size));
+}
+@utility size-control-sm {
+  width: calc(var(--spacing) * (var(--control-size) - 1));
+  height: calc(var(--spacing) * (var(--control-size) - 1));
+}
+@utility size-control-lg {
+  width: calc(var(--spacing) * (var(--control-size) + 1));
+  height: calc(var(--spacing) * (var(--control-size) + 1));
+}
+@utility min-w-control {
+  min-width: calc(var(--spacing) * var(--control-size));
+}
+@utility min-w-control-sm {
+  min-width: calc(var(--spacing) * (var(--control-size) - 1));
+}
+@utility min-w-control-lg {
+  min-width: calc(var(--spacing) * (var(--control-size) + 1));
+}
+@utility h-header {
+  height: calc(var(--spacing) * var(--header-size));
 }
 
 /* ---------------------------------------------------------------------------

@@ -63,7 +63,7 @@ export const INTENT = {
       avoidNextTo: ["another primary Button"],
     },
     stateTokens: {
-      hover: "bg-primary/90 (variant default)",
+      hover: "bg-primary-hover (variant default; active: bg-primary-active)",
       focus:
         "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-2 ring-offset-background",
       disabled: "opacity-50 pointer-events-none",
@@ -91,7 +91,7 @@ export const INTENT = {
     },
     stateTokens: {
       overlay:
-        "DialogOverlay: bg-foreground/50 + backdrop-blur-sm (a semantic token — never a raw black)",
+        "DialogOverlay: bg-overlay + backdrop-blur-overlay (a semantic token — never a raw black)",
       surface:
         "DialogContent: bg-card text-card-foreground + shadow-ring-lg (ADR 0020 — a floating surface bakes its hairline into the shadow; it carries NO border)",
       focus:
@@ -118,7 +118,7 @@ export const INTENT = {
       pairsWith: ["Button"],
     },
     stateTokens: {
-      overlay: "AlertDialogOverlay: bg-foreground/50 + backdrop-blur-sm",
+      overlay: "AlertDialogOverlay: bg-overlay + backdrop-blur-overlay",
       surface:
         "AlertDialogContent: bg-card text-card-foreground + shadow-ring-lg (ADR 0020 — the hairline is the shadow's last layer, so there is no border)",
       focus:
@@ -138,7 +138,7 @@ export const INTENT = {
       pairsWith: ["Label", "FormMessage"],
     },
     stateTokens: {
-      rest: "border-input + bg-background (the subtle form-field hairline, ADR 0010)",
+      rest: "border-input + bg-input-background + shadow-input (the subtle form-field hairline, ADR 0010)",
       focus:
         "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-1 ring-offset-background (the border does NOT change)",
       disabled: "opacity-50 cursor-not-allowed + bg-muted",
@@ -312,7 +312,7 @@ export const INTENT = {
     },
     stateTokens: {
       overlay:
-        "SheetOverlay: bg-foreground/50 + backdrop-blur-sm (a semantic token — never a raw black)",
+        "SheetOverlay: bg-overlay + backdrop-blur-overlay (a semantic token — never a raw black)",
       surface:
         "SheetContent: bg-card text-card-foreground + shadow-ring-lg, plus the anchored edge only (border-t / border-b / border-l / border-r per side)",
       focus:
@@ -393,7 +393,7 @@ export const INTENT = {
       header:
         "bg-surface-muted when sticky, else bg-surface-muted/60 + border-b border-border-strong (the header bottom is the SOLE cue between header and first row → the strong rung, #173)",
       rowDivider:
-        "zebra={false}: border-b border-border-strong last:border-b-0; zebra rows use bg-foreground/5 instead (the stripe replaces the divider)",
+        "zebra={false}: border-b border-border-strong last:border-b-0; zebra rows use bg-table-stripe instead (the stripe replaces the divider)",
     },
     antiPatterns: [
       "Forking table state into the toolbar — pass the table instance via toolbar={(table) => …}; don't duplicate sorting/filter state.",
@@ -3026,7 +3026,7 @@ export const INTENT = {
     },
     stateTokens: {
       surface: "bg-card text-card-foreground — a raised card above the canvas",
-      link: "text-primary-text for what's-new links, underlined on hover",
+      link: "text-link for what's-new links, underlined on hover",
       focus: "ring-2 ring-ring ring-offset-2 ring-offset-background on quick actions",
     },
     antiPatterns: [

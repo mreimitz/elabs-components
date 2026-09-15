@@ -5,11 +5,20 @@
 [data-theme="qlik-dark"] {
   color-scheme: dark;
   --radius-base: 0.25rem;
+  /* Product type scale: 24/32 page titles, 20/26 section titles, and no negative tracking —
+     the engine tracking is tuned for Inter, not Source Sans. Body stays 14/20. */
+  --type-size-display: 1.5rem;
+  --type-leading-display: 2rem;
+  --type-tracking-display: 0em;
+  --type-size-title: 1.25rem;
+  --type-leading-title: 1.625rem;
+  --type-tracking-title: 0em;
+  --type-tracking-subtitle: 0em;
   --font-sans:
     "Source Sans 3", "Source Sans Pro", Inter, var(--font-cjk-sans), "Helvetica Neue", Helvetica,
     Arial, sans-serif;
   --font-display:
-    Inter, "Source Sans 3", "Source Sans Pro", var(--font-cjk-sans), "Helvetica Neue", Helvetica,
+    "Source Sans 3", "Source Sans Pro", Inter, var(--font-cjk-sans), "Helvetica Neue", Helvetica,
     Arial, sans-serif;
   --font-mono: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-family: var(--font-sans);
@@ -160,7 +169,7 @@
   --sidebar-border: oklch(0.356 0 0);
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-muted-foreground: oklch(0.851 0 0);
-  --sidebar-primary: var(--primary);
+  --sidebar-primary: var(--sidebar-foreground);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-ring: var(--ring);
   --success: oklch(0.736 0.158 151);
@@ -203,4 +212,22 @@
   --brand-logo-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='115 105 298 288'%3E%3Cpath d='M326.63 336.35C307.83 351.27 284.05 360.19 258.18 360.19 197.32 360.19 147.99 310.86 147.99 250 147.99 223.85 157.11 199.83 172.33 180.93L152.16 160.62C131.79 184.76 119.51 215.94 119.51 250 119.51 326.59 181.6 388.67 258.18 388.67 291.88 388.67 322.77 376.64 346.8 356.66L326.63 336.35Z' fill='%23FFFFFF'/%3E%3Cpath d='M369.4 381.55 407.6 381.55 366.4 336.67C385.44 312.93 396.84 282.8 396.84 249.99 396.84 173.4 334.75 111.32 258.17 111.32 215.64 111.32 177.59 130.47 152.15 160.62L172.32 180.93C192.52 155.86 223.47 139.81 258.17 139.81 319.03 139.81 368.36 189.14 368.36 250 368.36 284.99 352.05 316.16 326.62 336.35L345.51 355.37 346.58 356.46 369.39 381.56Z' fill='%2300873D'/%3E%3C/svg%3E");
   --brand-logo-lockup: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='119 111 662 278'%3E%3Crect x='444.93' y='117.39' width='27.6' height='264.09' fill='%23FFFFFF'/%3E%3Crect x='519.96' y='197.03' width='27.47' height='184.45' fill='%23FFFFFF'/%3E%3Ccircle cx='533.98' cy='136.23' r='18.84' fill='%23FFFFFF'/%3E%3Cpath d='M740.71 197.01 702.38 197.01 622.94 266.59 622.78 117.39 595.31 117.39 595.31 381.48 622.78 381.48 622.78 296.28 704.39 381.48 742.59 381.48 645.31 282.85 740.71 197.01Z' fill='%23FFFFFF'/%3E%3Cpath d='M780.5 368.45 780.5 381.55 778.22 381.55 778.22 372.63 774.27 381.55 773.06 381.55 769.11 372.64 769.11 381.55 766.83 381.55 766.83 368.45 769.6 368.45 773.67 378.06 777.72 368.45 780.5 368.45Z' fill='%23FFFFFF'/%3E%3Cpath d='M764.55 368.45 764.55 370.45 760.57 370.45 760.57 381.55 758.29 381.55 758.29 370.45 754.31 370.45 754.31 368.45 764.55 368.45Z' fill='%23FFFFFF'/%3E%3Cpath d='M326.63 336.35C307.83 351.27 284.05 360.19 258.18 360.19 197.32 360.19 147.99 310.86 147.99 250 147.99 223.85 157.11 199.83 172.33 180.93L152.16 160.62C131.79 184.76 119.51 215.94 119.51 250 119.51 326.59 181.6 388.67 258.18 388.67 291.88 388.67 322.77 376.64 346.8 356.66L326.63 336.35Z' fill='%23FFFFFF'/%3E%3Cpath d='M369.4 381.55 407.6 381.55 366.4 336.67C385.44 312.93 396.84 282.8 396.84 249.99 396.84 173.4 334.75 111.32 258.17 111.32 215.64 111.32 177.59 130.47 152.15 160.62L172.32 180.93C192.52 155.86 223.47 139.81 258.17 139.81 319.03 139.81 368.36 189.14 368.36 250 368.36 284.99 352.05 316.16 326.62 336.35L345.51 355.37 346.58 356.46 369.39 381.56Z' fill='%2300873D'/%3E%3C/svg%3E");
   --brand-logo-lockup-aspect: 2.3813;
+  --control-size: 8;
+  --control-radius: var(--radius);
+  --control-weight: 600;
+  --input-background: var(--background);
+  --input-shadow: none;
+  --primary-hover: color-mix(in oklab, var(--primary) 90%, transparent);
+  --primary-active: color-mix(in oklab, var(--primary) 90%, transparent);
+  --destructive-hover: color-mix(in oklab, var(--destructive) 90%, transparent);
+  --destructive-active: color-mix(in oklab, var(--destructive) 90%, transparent);
+  --link: oklch(0.728 0.126 245.7);
+  --overlay: oklch(0 0 0 / 0.6);
+  --overlay-blur: 0px;
+  --table-header-weight: 600;
+  --table-stripe: transparent;
+  --table-row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --table-row-rule-width: 1px;
+  --icon-stroke: 1.5;
+  --header-size: 12;
 }

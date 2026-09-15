@@ -87,6 +87,27 @@ describe("check-community-themes", () => {
     );
   });
 
+  it("accepts a type-scale override but not a made-up type role", async () => {
+    const override = (f) => {
+      f["ocean-light.css"] = f["ocean-light.css"].replace(
+        "{\n",
+        "{\n  --type-size-display: 1.5rem;\n  --type-leading-display: 2rem;\n  --type-weight-title: 700;\n  --type-tracking-subtitle: 0em;\n",
+      );
+    };
+    const ok = await fixture(override);
+    assert.equal(ok.ok, true, ok.lines.join("\n"));
+    assertFails(
+      await fixture((f) => {
+        override(f);
+        f["ocean-dark.css"] = f["ocean-dark.css"].replace(
+          "{\n",
+          "{\n  --type-size-headline: 2rem;\n",
+        );
+      }),
+      /outside the contract: --type-size-headline/,
+    );
+  });
+
   it("fails unreadable body text", async () => {
     assertFails(
       await fixture((f) => {

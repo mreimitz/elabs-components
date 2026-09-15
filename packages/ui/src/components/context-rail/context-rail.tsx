@@ -162,7 +162,7 @@ const COUNT_BADGE_POSITION = "end-0 -top-1 h-4 min-w-4 px-0.5";
 // The rail's own header band. Two jobs, and both are geometry the rail cannot
 // leave to its children:
 //
-// 1. EXPANDED it is `h-14` — the same 56px an app shell's top bar carries
+// 1. EXPANDED it is `h-header` (56px by default) — the same height an app shell's top bar carries
 //    (`AppShell`, and both shipped shell blocks) — and it holds the section
 //    heading AND the switcher in ONE row. Before this, the switcher row (32px,
 //    flush at y=0) and a separately-bordered heading (53px) stacked to 85px, so
@@ -177,7 +177,7 @@ const COUNT_BADGE_POSITION = "end-0 -top-1 h-4 min-w-4 px-0.5";
 //    centres the FIRST icon in the same 56px band as the top bar's controls, so
 //    the two rails' first rows agree.
 const CONTEXT_RAIL_HEADER =
-  "flex h-14 shrink-0 items-center gap-2 border-b border-border-strong px-2 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-stretch group-data-[collapsible=icon]:border-b-0 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:pt-3 group-data-[collapsible=icon]:pb-2";
+  "flex h-header shrink-0 items-center gap-2 border-b border-border-strong px-2 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-stretch group-data-[collapsible=icon]:border-b-0 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:pt-3 group-data-[collapsible=icon]:pb-2";
 
 function ContextRailSwitcher({
   sections,
@@ -491,10 +491,10 @@ const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailNarrowProps>(
                     above; this is the visible heading the body sits under. */}
                 <h2
                   data-slot="context-rail-heading"
-                  // `h-14`, matching the wide branch's header band and the app
+                  // `h-header`, matching the wide branch's header band and the app
                   // shell's top bar — the sheet is the same rail at a narrower
                   // width, so its header keeps the same height.
-                  className="flex h-14 shrink-0 items-center truncate border-b border-border-strong px-4 text-title"
+                  className="flex h-header shrink-0 items-center truncate border-b border-border-strong px-4 text-title"
                 >
                   {activeSection.label}
                 </h2>

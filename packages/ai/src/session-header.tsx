@@ -194,7 +194,7 @@ export const SessionHeader = forwardRef<HTMLDivElement, SessionHeaderProps>(func
                   {item.href != null ? (
                     <a
                       href={item.href}
-                      className="text-primary-text underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      className="text-link underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                       {item.label}
                     </a>

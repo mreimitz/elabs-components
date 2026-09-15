@@ -17,7 +17,7 @@ export const TopNav = forwardRef<HTMLElement, TopNavProps>(function TopNav(
     <header
       ref={ref}
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-surface-elevated/80 px-4 backdrop-blur",
+        "sticky top-0 z-30 flex h-header items-center gap-4 border-b bg-surface-elevated/80 px-4 backdrop-blur",
         className,
       )}
       {...props}

@@ -23,6 +23,7 @@ export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(
   return (
     <svg
       ref={ref}
+      data-slot="icon"
       width={size}
       height={size}
       viewBox="0 0 24 24"

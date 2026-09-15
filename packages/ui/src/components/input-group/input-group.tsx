@@ -7,11 +7,11 @@ import { Textarea } from "../textarea";
 
 export const inputGroupVariants = cva(
   cn(
-    "group/input-group relative flex w-full flex-wrap items-center rounded-md transition-[color,box-shadow] duration-fast ease-standard",
+    "group/input-group relative flex w-full flex-wrap items-center rounded-control transition-[color,box-shadow] duration-fast ease-standard",
     // Grow to fit a textarea even when it's nested (e.g. wrapped in a
     // `display:contents` body like PromptInputBody). `:has(>textarea)`
     // misses through that wrapper, so match any descendant textarea.
-    "h-9 has-[textarea]:h-auto",
+    "h-control has-[textarea]:h-auto",
     // The compound indicator is the wrapper's, not the control's — the control
     // is borderless and full-bleed, so a ring around IT would draw inside the
     // well. `focus-ring-static` paints BOTH layers; the only geometry knob is
@@ -29,7 +29,7 @@ export const inputGroupVariants = cva(
       variant: {
         // The form-field look: the strong `--input` boundary is the field's
         // sole structural cue, so it stays on the strong rung.
-        outline: "border border-input shadow-sm",
+        outline: "border border-input shadow-input",
         // The composer look (#194, research 08 §C.1/§D): a soft fill with the
         // focus-within ring carrying focus — NO hard border. Separation comes
         // from the fill (the chat footer already draws its own `border-t`).

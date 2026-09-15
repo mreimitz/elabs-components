@@ -4,15 +4,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/cn";
 
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap touch-manipulation rounded-md text-body font-medium transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard active:scale-[0.98] motion-reduce:active:scale-100 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap touch-manipulation rounded-control text-body font-control transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard active:scale-[0.98] motion-reduce:active:scale-100 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+          "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+          "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         // The calm "outlined but quiet" rung (#194, research 02 §3a). `outline` uses
         // the form-field `border-input` token, `outline-subtle` uses `border-border`.
@@ -24,17 +24,17 @@ export const buttonVariants = cva(
         "outline-subtle":
           "border border-border bg-background hover:bg-accent hover:text-accent-foreground",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        // #399 — a link button is TEXT on the page, so it takes the on-surface
-        // `-text` rung; `bg-primary` above keeps the fill rung.
-        link: "text-primary-text underline-offset-4 hover:underline",
+        // #399 — a link button is TEXT on the page: `--link` defaults to the
+        // on-surface `--primary-text` rung; `bg-primary` above keeps the fill rung.
+        link: "text-link underline-offset-4 hover:underline",
       },
       size: {
-        sm: "h-8 rounded-md px-3 text-meta",
-        default: "h-9 px-4 py-2",
-        lg: "h-10 rounded-md px-6",
-        icon: "size-9",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
+        sm: "h-control-sm px-3 text-meta",
+        default: "h-control px-4 py-2",
+        lg: "h-control-lg px-6",
+        icon: "size-control",
+        "icon-sm": "size-control-sm",
+        "icon-lg": "size-control-lg",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

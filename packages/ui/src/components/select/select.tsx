@@ -121,8 +121,8 @@ export const SelectTrigger = forwardRef<
       data-size={size}
       title={title}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm",
-        size === "sm" ? "h-8" : "h-9",
+        "flex w-full items-center justify-between gap-2 rounded-control border border-input bg-input-background px-3 py-2 text-sm shadow-input",
+        size === "sm" ? "h-control-sm" : "h-control",
         "placeholder:text-muted-foreground focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
         // No `disabled:cursor-*` override — disabled controls keep the arrow
         // automatically (interaction-guidelines.md), matching Combobox's

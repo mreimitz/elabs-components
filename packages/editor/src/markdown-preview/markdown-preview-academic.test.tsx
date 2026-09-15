@@ -201,7 +201,7 @@ describe("MarkdownPreview — citations + bibliography", () => {
   // `packages/tokens/src/themes-contrast.test.ts`; this row is the CLASS-NAME
   // lock that keeps these two call sites pointed at it. It is not a contrast
   // proof on its own — the token test is.
-  it("uses the on-surface text rung (text-primary-text), not the --primary fill (#317/#399 — color-contrast)", async () => {
+  it("uses the link ink (text-link → --primary-text), not the --primary fill (#317/#399 — color-contrast)", async () => {
     const { container } = render(
       <MarkdownPreview resolveCitation={resolveCitation}>
         {`See [@smith2020] and [@jones2019].\n\n::bibliography`}
@@ -212,13 +212,13 @@ describe("MarkdownPreview — citations + bibliography", () => {
     );
 
     const inlineCite = container.querySelector('a[href="#ref-smith2020"]') as HTMLAnchorElement;
-    expect(inlineCite.className.split(/\s+/)).toContain("text-primary-text");
+    expect(inlineCite.className.split(/\s+/)).toContain("text-link");
     expect(inlineCite.className.split(/\s+/)).not.toContain("text-primary");
 
     const bibLink = container.querySelector(
       'li[id="ref-jones2019"] a[href^="https://doi.org/"]',
     ) as HTMLAnchorElement;
-    expect(bibLink.className.split(/\s+/)).toContain("text-primary-text");
+    expect(bibLink.className.split(/\s+/)).toContain("text-link");
     expect(bibLink.className.split(/\s+/)).not.toContain("text-primary");
   });
 });

@@ -165,7 +165,7 @@ export function FootnoteRef({ node: _n, children: _c, ...rest }: TagProps) {
         data-footnote-ref=""
         aria-label={`Footnote ${n}`}
         // #399 — a footnote marker is superscript body text: `-text` rung.
-        className="px-0.5 font-medium text-primary-text underline tabular-nums hover:underline focus-visible:rounded-sm focus-ring"
+        className="px-0.5 font-medium text-link underline tabular-nums hover:underline focus-visible:rounded-sm focus-ring"
       >
         {n}
       </a>

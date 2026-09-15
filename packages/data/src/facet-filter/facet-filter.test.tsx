@@ -57,7 +57,7 @@ describe("FacetFilter — trigger", () => {
 
   /**
    * #346 — the trigger must take Button's DEFAULT size rung, not `sm`, so a
-   * toolbar mixing FacetFilter with Select/Input/DatePicker (all h-9) lines up.
+   * toolbar mixing FacetFilter with Select/Input/DatePicker (all `h-control`) lines up.
    * jsdom applies no Tailwind, so the class rung is what is assertable here; the
    * MEASURED proof lives in the `ToolbarAlignment` story's play function, which
    * compares real `getBoundingClientRect()` boxes in a browser.
@@ -67,8 +67,8 @@ describe("FacetFilter — trigger", () => {
       <FacetFilter title="Status" options={options} selected={[]} onSelectedChange={vi.fn()} />,
     );
     const trigger = screen.getByRole("button", { name: "Status" });
-    expect(trigger).toHaveClass("h-9");
-    expect(trigger).not.toHaveClass("h-8");
+    expect(trigger).toHaveClass("h-control");
+    expect(trigger).not.toHaveClass("h-control-sm");
   });
 });
 

@@ -374,6 +374,25 @@
   --brand-logo-mark: initial;
   --brand-logo-lockup: initial;
   --brand-logo-lockup-aspect: initial;
+  /* Component geometry & state knobs — identity defaults (see themes.css :root). */
+  --control-size: 9;
+  --control-radius: calc(var(--radius) - 2px);
+  --control-weight: 500;
+  --input-background: var(--background);
+  --input-shadow: var(--shadow-sm);
+  --primary-hover: color-mix(in oklab, var(--primary) 90%, transparent);
+  --primary-active: color-mix(in oklab, var(--primary) 90%, transparent);
+  --destructive-hover: color-mix(in oklab, var(--destructive) 90%, transparent);
+  --destructive-active: color-mix(in oklab, var(--destructive) 90%, transparent);
+  --link: var(--primary-text);
+  --overlay: color-mix(in oklab, var(--foreground) 50%, transparent);
+  --overlay-blur: 8px;
+  --table-header-weight: var(--control-weight);
+  --table-stripe: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --table-row-hover: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --table-row-rule-width: 0px;
+  --icon-stroke: 2;
+  --header-size: 14;
 
   /* ── Chart ramps — RM-018 ─────────────────────────────────────────────────
      ORDERED ramps, for the charts where LIGHTNESS IS DATA (heatmap, calendar,

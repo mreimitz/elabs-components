@@ -399,8 +399,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Tabs for sequential steps — use a stepper/wizard; tabs are for peer, non-sequential views.
   - avoid: More than ~7 tabs — consider a Select or a sidebar nav.
 - TabsContent
-- TabsList
-- TabsTrigger
+- TabsList (variant=segmented*|underline)
+- TabsTrigger (variant=segmented*|underline)
 - TagInput
 - TeamSwitcher
 - Text (variant=lead|body*|caption|meta|kpi|code · tone=default*|muted|primary)

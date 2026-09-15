@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### Added: themes can reshape controls, tables, links, curtains, icons and headers
+
+Eighteen new theme tokens reach decisions that were fixed in components. **Every default
+reproduces the previous look**, so existing themes and apps render unchanged; a theme sets
+only what its brand needs (table in `themes/README.md`).
+
+- **`@elabs-ai/components-tokens`** — `--control-size` / `--control-radius` /
+  `--control-weight`, `--input-background` / `--input-shadow`, `--primary-hover` /
+  `--primary-active` / `--destructive-hover` / `--destructive-active`, `--link`,
+  `--overlay` / `--overlay-blur`, `--table-header-weight` / `--table-stripe` /
+  `--table-row-hover` / `--table-row-rule-width`, `--icon-stroke` and `--header-size`, with
+  utilities `h-control(-sm|-lg)`, `size-control*`, `min-w-control*`, `h-header`,
+  `rounded-control`, `font-control`, `font-table-header`, `shadow-input`,
+  `bg-input-background`, `bg-primary-hover`/`-active`, `text-link`, `bg-overlay`,
+  `backdrop-blur-overlay`, `bg-table-stripe`, `bg-table-row-hover`. Heights count spacing
+  steps, so the density setting still resizes controls. `THEME_TOKEN_NAMES` grows from 190
+  to 208 — a consumer theme checked against it must add the new tokens (copying the
+  defaults from `themes/light.css` is enough).
+- **`@elabs-ai/components-ui`** — Button, IconButton, Input, Textarea, Select, Toggle,
+  ToggleGroup, InputGroup and Tabs read the control tokens; Dialog, AlertDialog, Sheet and
+  Drawer the curtain; TopNav and ContextRail's header band `--header-size`; `Table` header
+  the table weight. **`Tabs`**: `TabsList` gains `variant="underline"` (line tabs with a
+  2 px active underline) beside the default `"segmented"`; `tabsListVariants`,
+  `tabsTriggerVariants`, `TabsListProps` and `TabsVariant` are exported.
+- **`@elabs-ai/components-data`** — `DataTable` reads the table tokens and gains
+  `columnDividers` (a quiet rule between columns; off by default).
+- **Links** in `ProseLink`/`MarkdownView`, `Button variant="link"`, citations, footnotes,
+  knowledge-card sources and session-header items use `--link`.
+- **`@elabs-ai/components-icons`** — `Icon` renders `data-slot="icon"`; it and every Lucide
+  icon at the default width follow `--icon-stroke`. Icons drawn at a deliberate width keep it.
+- **Downloadable themes** may now redeclare the type-scale base (`--type-size|leading|weight|tracking-<role>`).
+
 ### Added: theme families with a separate light/dark mode (ADR 0036)
 
 - **`@elabs-ai/components-tokens`** — `defineTheme` accepts optional `family` and
