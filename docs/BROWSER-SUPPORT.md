@@ -92,4 +92,4 @@ it scrolls with the element instead of the viewport. The same gate enforces this
 - **Node**: see `engines` in the root `package.json` for the build/tooling floor.
 - **React**: 18.2 or 19, declared as a peer dependency by every package.
 - **Screen readers / assistive tech**: see
-  [`.claude/rules/accessibility.md`](../.claude/rules/accessibility.md).
+  [`.claude/rules/conventions.md`](../.claude/rules/conventions.md) (Accessibility).

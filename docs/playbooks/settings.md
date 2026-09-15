@@ -65,7 +65,7 @@ const [saving, setSaving] = useState(false);
 </Button>
 ```
 
-Form hygiene (from `interaction-guidelines.md`): every `Input` gets
+Form hygiene (from the `conventions.md` rule, Interaction essentials): every `Input` gets
 `autocomplete` + correct `type`; errors render **inline next to the field**
 (`role="alert"`), focus the first error on submit; never block paste; warn
 before navigating away with unsaved changes.

@@ -50,12 +50,12 @@ Read [`.claude/rules/conventions.md`](.claude/rules/conventions.md) (component A
 <!-- prettier-ignore -->
 | # | Decision | The short answer | Detail rule |
 | --- | --- | --- | --- |
-| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decision-routing.md`](../.claude/rules/decision-routing.md) |
-| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) |
+| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decisions.md`](../.claude/rules/decisions.md) |
+| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai.md`](../.claude/rules/ai.md) |
 | **D3** | Which package | `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai) | `skills/brand-ui/SKILL.md` (generated table) |
 | **D4** | Import vs copy-own | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry). | [`registry.md`](../.claude/rules/registry.md) |
-| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`scope-and-non-goals.md`](../.claude/rules/scope-and-non-goals.md) |
-| **D6** | Dependency & import discipline | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph. | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) · [`styling-and-tokens.md`](../.claude/rules/styling-and-tokens.md) |
-| **D7** | Maintainer decisions | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory). | [`quality-gates.md`](../.claude/rules/quality-gates.md) |
+| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`decisions.md`](../.claude/rules/decisions.md) |
+| **D6** | Dependency & import discipline | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph. | [`ai.md`](../.claude/rules/ai.md) · [`conventions.md`](../.claude/rules/conventions.md) |
+| **D7** | Maintainer decisions | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory). | [`CONTRIBUTING.md`](../CONTRIBUTING.md) |
 
 <!-- brand-ui:gen:decisions:end -->

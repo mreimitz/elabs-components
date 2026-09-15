@@ -42,7 +42,7 @@ Import across packages via `@elabs-ai/components-*`, never relative paths.
 
 ## 3. Build to the rules
 
-Follow `.claude/rules/component-api.md`, `styling-and-tokens.md`, `accessibility.md`:
+Follow `.claude/rules/conventions.md` (Component API, Styling & tokens, Accessibility):
 
 - `forwardRef` + spread `...props` + `className` merged with `cn()` last.
 - Variants via `class-variance-authority`; export the `xxxVariants` fn and all
@@ -67,7 +67,7 @@ Co-locate `name.tsx`, `index.ts`, `name.stories.tsx` (with `tags: ["autodocs"]`)
 ## 5. Done = quality gates pass
 
 Types exported, composable, semantic tokens, theme-safe, accessible, story + smoke
-test, barrel export, green typecheck/lint/test (see `.claude/rules/quality-gates.md`).
+test, barrel export, green typecheck/lint/test (see the definition of done in `CONTRIBUTING.md`).
 Findings during the work → `/file-issue`, don't silently patch unrelated things.
 
 ## Composition patterns
@@ -75,4 +75,4 @@ Findings during the work → `/file-issue`, don't silently patch unrelated thing
 Build compound, not configurable: avoid boolean-prop modes (use explicit variants),
 share a context not props, lift state into a provider exposing `state`/`actions`/`meta`,
 prefer children over render-props. Keep `forwardRef`; prefer `use()`. See
-`.claude/rules/component-api.md` → Composition patterns.
+`.claude/rules/conventions.md` → Component API.

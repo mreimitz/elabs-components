@@ -11,8 +11,8 @@ allowed-tools:
 
 # brand-ui-registry (maintainer)
 
-Front door to `.claude/commands/new-registry-item.md`, the `registry-curator`
-agent, and `.claude/rules/registry.md`. The registry distributes **copy-own** code
+Front door to `.claude/commands/new-registry-item.md` and
+`.claude/rules/registry.md`. The registry distributes **copy-own** code
 via the shadcn CLI; stable primitives stay as imported `@elabs-ai/components-*` packages.
 
 ## Decision: package vs registry

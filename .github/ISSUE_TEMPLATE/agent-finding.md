@@ -1,17 +1,15 @@
 ---
 name: Agent finding
-about: A defect, regression, visual/UX problem, or accessibility violation surfaced by a finder agent, a failing test, or human feedback, and diagnosed via deep root-cause analysis before filing.
+about: A defect, regression, visual/UX problem, or accessibility violation surfaced by a review, a failing test, or human feedback, with its root cause located before filing.
 title: "[area] "
 labels: ""
 assignees: ""
 ---
 
 <!--
-This structure is canonical — see .claude/rules/issue-workflow.md ("Implementation-ready")
-and docs/ISSUE_WORKFLOW.md ("What a filed issue contains"). It mirrors the spec the
-brand-ui-root-cause-analyst agent produces (.claude/agents/brand-ui-root-cause-analyst.md),
-filed via `/file-issue`. Every finding goes through that deep RCA before an issue is
-opened — do not skip straight to this template with an undiagnosed symptom.
+Usually filed via `/file-issue` (.claude/commands/file-issue.md; workflow in
+docs/ISSUE_WORKFLOW.md), which writes a shorter capped body. When filing by hand, locate
+the root cause (file:line) first — do not file an undiagnosed symptom.
 
 LABELS: type:<bug|a11y|visual|tech-debt|regression>, severity:<P0|P1|P2>,
 area:<ui|data|ai|flow|maps|charts|marketing|editor|viewer|terminal|process|tokens|icons|docs|registry|test>

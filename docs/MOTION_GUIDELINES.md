@@ -234,7 +234,7 @@ writing; apply when convenient:
 
 - Extend `.claude/hooks/validate-component-boundaries.sh` to warn on raw
   `duration-<n>` / `ease-(in|out|in-out)` literals in component source.
-- Add a motion line to `.claude/rules/quality-gates.md` and the `/new-theme`
+- Add a motion line to the definition of done in `CONTRIBUTING.md` and the `/new-theme`
   prompt (so a new theme consciously sets its `--motion-factor`).
 
 See `docs/ADR/0005-motion-system.md` for the rationale.

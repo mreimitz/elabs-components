@@ -7,7 +7,7 @@ compositions; prefer them over bespoke markup.
 > `playbooks/` — one page per archetype: dashboard, data-app,
 > ai-assistant, flow-workspace, settings, marketing. For a full screen, read
 > the playbook before composing from the snippets below. To scaffold a
-> brand-new app, use the `brand-ui-new-app` skill (`/new-app`).
+> brand-new app, use the `brand-ui-new-app` skill (`/brand-ui-new-app`).
 
 ## App shell (sidebar)
 
