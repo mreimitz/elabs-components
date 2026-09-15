@@ -1,0 +1,19 @@
+{
+  "removeScripts": [
+    "scripts/check-edit-dispatch.test.mjs",
+    "scripts/check-session-cadence.test.mjs",
+    "scripts/check-unbounded-output.test.mjs",
+    "scripts/check-close-issues-delegation.test.mjs",
+    "scripts/check-consultation-claims.mjs",
+    "scripts/check-consultation-claims.test.mjs",
+    "scripts/check-comment-attribution.mjs",
+    "scripts/check-comment-attribution.test.mjs",
+    "scripts/check-merge-readiness.mjs",
+    "scripts/check-merge-readiness.test.mjs",
+    "scripts/post-issue-comment.mjs",
+    "scripts/lib/comment-attribution.mjs",
+    ".claude/scripts/arch-evidence-pack.mjs",
+    ".claude/scripts/session-digest.mjs"
+  ],
+  "notes": "S1-claude cut hooks 23->4, agents 15->4, commands 16->7. The four hook self-tests above test deleted hooks (post-edit-dispatch, session-cadence-nudge, warn-unbounded-output, close-issues-delegation-nudge) and will fail once run: remove them and their package.json entries dispatch:check:test, cadence:check:test, bash-output:check:test, close-issues:check:test (plus any run-gates.mjs / CI wiring). Also remove package.json attribution:comments:check(+:test), consultation-claims:check:test, merge:check(+:test). .claude/scripts/arch-evidence-pack.mjs served only /repo-architect-review and session-digest.mjs only /session-retro (both deleted); remove them with package.json arch:evidence and arch:garden. Comment-only stale mentions (no behaviour): scripts/check-ai-sdk-types-only.mjs:20 (hook), scripts/check-components-registered.mjs:7 (hook), scripts/check-manifest.test.mjs:9 and scripts/check-stale-worktrees.mjs:28 (close-issues.md), scripts/check-docs-accuracy.mjs:670 (session-retro.md), .githooks/pre-commit:13 (close-issues.md). .github/ISSUE_TEMPLATE/session-retro.md and .github/labels.md reference /session-retro; .github/ISSUE_TEMPLATE/agent-finding.md references root-cause-analyst/attribution. check-agent-names.mjs still validates .claude/agents/*.md and should pass with the 4 remaining agents (not run by S1)."
+}

@@ -54,5 +54,5 @@ reason it can name — that is the whole point of the register.
   **override** that keeps `--motion-factor: 1` _through_ an OS reduce request (and
   escapes the third-party animation cap), so as an app default it suppresses a
   stated user preference. `full` is reachable only from a motion control the
-  person operates themselves (`useMotionPreference()`); `pnpm app-spec:check`
+  person operates themselves (`useMotionPreference()`); the app-spec schema
   rejects a spec that defaults to it.

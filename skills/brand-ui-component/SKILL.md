@@ -7,6 +7,8 @@ allowed-tools:
   - Bash(pnpm brand-ui *)
   - Bash(pnpm --filter *)
   - Bash(pnpm agent-docs)
+  - Bash(pnpm manifest)
+  - Bash(pnpm gen)
 ---
 
 # brand-ui-component (maintainer)
@@ -56,14 +58,9 @@ Co-locate `name.tsx`, `index.ts`, `name.stories.tsx` (with `tags: ["autodocs"]`)
 
 - `pnpm --filter @elabs-ai/components-<pkg> typecheck && pnpm --filter @elabs-ai/components-<pkg> lint && pnpm --filter @elabs-ai/components-<pkg> test` must pass (three separate invocations — pnpm chains only the first script).
 - Verify it renders in both themes (Storybook).
-- Run `pnpm agent-docs` so the new component lands in the manifest AND its 5
-  downstream generators (inventory/llms/context/gen — `component-inventory.md`,
-  `llms.txt`, `brand-ui-context.md`, the `pnpm gen`-owned doc regions, package
-  READMEs) — not just the manifest alone (#396). In practice this already runs
-  automatically at commit time via `.githooks/pre-commit`
-  (`scripts/run-agent-docs-cascade.mjs`) when the commit touches
-  `packages/*/src/**`; run it by hand here only to see the result before
-  committing, or in an environment without the git hook wired.
+- Run `pnpm manifest` then `pnpm gen` so the new component reaches the manifest
+  and the generated doc regions (`pnpm agent-docs` refreshes every generated
+  surface at once).
 - Audit it: `pnpm brand-ui audit packages/<pkg>/src/components/<name>` and, for
   visual/contrast, the `brand-ui-audit` skill.
 

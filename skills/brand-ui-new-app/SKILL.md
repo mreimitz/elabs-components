@@ -81,6 +81,30 @@ Layout options come from the curated arsenal — **`reference/patterns.md`** —
 filtered by the spec's taste profile (calm/product is the default; brand and
 high-expressiveness patterns are opt-in).
 
+## Design pass (every net-new screen, before its code)
+
+The same pass applies when adding one new screen or page to an existing app.
+Settle these before writing route code, and record them in `app-spec.md`:
+
+1. **Intent, one sentence** — who opens it and what answer or decision they leave
+   with. "Tells ops which orders need action today", not "a directory of orders".
+2. **References** — look at 2–3 comparable products or screens first; name what
+   this one must match or beat.
+3. **2–3 distinct concepts** — different approaches ("reading desk" vs "mission
+   control" vs "guided wizard"), not parameter tweaks of one layout. Score them
+   against the intent, recommend one, confirm it, and mock it as a story before
+   wiring it into the app.
+4. **The full state grid, designed with the happy path** — ready · loading
+   (layout-shaped `Skeleton`) · empty (`StatePanel kind="empty"`: icon, title, one
+   sentence, one action) · error (`StatePanel kind="error"`: what happened, how to
+   fix it) · first-run (a real onboarding moment, not the empty state relabelled).
+5. **Non-component layers** — illustration (or deliberately none), motion that
+   must be felt (gated `duration-*`/`ease-*` + `motion-reduce:`), fix-oriented
+   microcopy, and what reads first.
+
+Component lists come last. A layout that repeats a second time is a pattern —
+name it and extend the library or a registry block instead of a third copy.
+
 ## Scaffold (generated FROM the spec — run the CLI, don't hand-roll it)
 
 `brand-ui scaffold` is the deterministic half. It reads the spec's fenced `json`
@@ -99,7 +123,7 @@ hand-roll the files it emits (step 3) — the CLI is what makes the flow repeata
 2. **Write `app-spec.md` first** (template: `reference/app-spec-template.md`). It
    carries a single fenced `json` **Machine spec** block — the contract the CLI
    reads (schema: `reference/app-spec.schema.json`, validated by
-   `pnpm app-spec:check`; example:
+   `brand-ui scaffold --dry-run`; example:
    `reference/app-spec.example.md`). Keep the prose and the `json` block in sync.
 
 3. **Emit.**
