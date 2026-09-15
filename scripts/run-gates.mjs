@@ -91,16 +91,7 @@ export const OWN_STEP_SELFTESTS = new Set(["ci-scope:test"]);
 export const DOCS_ONLY_SKIP = new Set([
   // Tokens and themes
   "tokens:check",
-  "tokens:dup-blocks:check",
   "token-contract:check",
-  "theme-parity:check",
-  "palette:check",
-  "decoration:check",
-  "decoration-collapse:check",
-  "surface-elevation:check",
-  "elevation:check",
-  "text-scale:check",
-  "motion:check",
   // Component and package contracts
   "optional-peer-types:check",
 ]);

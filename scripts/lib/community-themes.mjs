@@ -11,7 +11,7 @@
  * "complete + readable": every contract token declared, `color-scheme` and the
  * registry entry agree with the file, and the core ink pairs clear WCAG AA.
  *
- * Shared by `check-community-themes.mjs` (the gate), `gen-community-themes.mjs`
+ * Shared by the `community-themes` check rule, `gen-community-themes.mjs`
  * (Storybook wiring) and `new-community-theme.mjs` (the scaffolder).
  * ESM, cwd-independent; Prettier (a root devDependency) is loaded lazily for
  * `formatForPath` only.
@@ -19,7 +19,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { blankComments } from "../check-elevation.mjs";
+import { blankComments } from "../check/lib/css.mjs";
 import { REPO_ROOT, THEMES_CSS } from "./theme-sources.mjs";
 
 export const COMMUNITY_THEMES_DIR = join(REPO_ROOT, "themes");
@@ -62,7 +62,12 @@ export async function formatForPath(path, content) {
 
 /** The token contract, parsed from the generated TS (no TS toolchain needed). */
 export function readTokenNames(path = TOKEN_NAMES_TS) {
-  return [...readFileSync(path, "utf8").matchAll(/^\s*"(--[\w-]+)",?$/gm)].map((m) => m[1]);
+  return tokenNamesFrom(readFileSync(path, "utf8"));
+}
+
+/** `readTokenNames` over the generated TS text. */
+export function tokenNamesFrom(source) {
+  return [...source.matchAll(/^\s*"(--[\w-]+)",?$/gm)].map((m) => m[1]);
 }
 
 /**
@@ -74,7 +79,12 @@ export function readTokenNames(path = TOKEN_NAMES_TS) {
  * so a typo'd role (which would silently do nothing) is still reported.
  */
 export function readThemeOverridable(path = THEMES_CSS) {
-  const css = blankComments(readFileSync(path, "utf8"));
+  return themeOverridableFrom(readFileSync(path, "utf8"));
+}
+
+/** `readThemeOverridable` over the engine CSS text. */
+export function themeOverridableFrom(cssText) {
+  const css = blankComments(cssText);
   const typeScale = new Set(
     [...css.matchAll(/(--type-(?:size|leading|weight|tracking)-[\w-]+)\s*:/g)].map((m) => m[1]),
   );
@@ -101,7 +111,12 @@ export function themeBlocks(cssText) {
 
 /** The engine's `:root` declarations — the cascade fallback for `var()` aliases. */
 export function readRootDeclarations(path = THEMES_CSS) {
-  const m = blankComments(readFileSync(path, "utf8")).match(/:root\s*\{([\s\S]*?)\n\}/);
+  return rootDeclarationsFrom(readFileSync(path, "utf8"));
+}
+
+/** `readRootDeclarations` over the engine CSS text. */
+export function rootDeclarationsFrom(cssText) {
+  const m = blankComments(cssText).match(/:root\s*\{([\s\S]*?)\n\}/);
   return declarations(m?.[1] ?? "");
 }
 
@@ -213,20 +228,31 @@ export function listFamilies(dir = COMMUNITY_THEMES_DIR) {
     .sort();
 }
 
+/** Filesystem I/O for `auditFamily` (the default); the check rule passes a repo-context one. */
+export const FS_IO = {
+  readdir: (path) => readdirSync(path),
+  read: (path) => readFileSync(path, "utf8"),
+  exists: (path) => existsSync(path),
+};
+
 /**
  * Audit one family folder. Returns `{ slug, variants, errors }` where each
- * variant is `{ scheme, name, file, definition }`.
+ * variant is `{ scheme, name, file, definition }`. `io` and `overridable` default to
+ * the filesystem; pass both to audit through another reader.
  */
-export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root } = {}) {
+export function auditFamily(
+  slug,
+  { dir = COMMUNITY_THEMES_DIR, tokenNames, root, io = FS_IO, overridable } = {},
+) {
   const errors = [];
   const folder = join(dir, slug);
   const variants = [];
   const contract = new Set(tokenNames);
-  const overridable = readThemeOverridable();
+  overridable ??= readThemeOverridable();
 
   if (!SLUG_RE.test(slug)) errors.push(`folder name "${slug}" must be kebab-case (a-z, 0-9, -)`);
 
-  const files = readdirSync(folder);
+  const files = io.readdir(folder);
   const cssFiles = files.filter((f) => f.endsWith(".css"));
   const expected = SCHEMES.map((s) => `${slug}-${s}.css`);
   const fontsFile = `${slug}-fonts.css`;
@@ -235,11 +261,11 @@ export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root
       errors.push(`unexpected stylesheet ${f} (only ${expected.join(" / ")} / ${fontsFile})`);
   }
   const fonts = cssFiles.includes(fontsFile) ? join(folder, fontsFile) : null;
-  if (fonts) errors.push(...auditFontsFile(fonts, folder, fontsFile));
+  if (fonts) errors.push(...auditFontsFile(fonts, folder, fontsFile, io));
 
   let definitions = [];
   if (!files.includes("theme.ts")) errors.push("missing theme.ts");
-  else definitions = readThemeDefinitions(readFileSync(join(folder, "theme.ts"), "utf8"));
+  else definitions = readThemeDefinitions(io.read(join(folder, "theme.ts")));
   if (!files.includes("README.md")) errors.push("missing README.md");
 
   for (const scheme of SCHEMES) {
@@ -247,7 +273,7 @@ export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root
     if (!cssFiles.includes(file)) continue;
     const name = `${slug}-${scheme}`;
     const where = `${file}`;
-    const blocks = themeBlocks(readFileSync(join(folder, file), "utf8"));
+    const blocks = themeBlocks(io.read(join(folder, file)));
     if (blocks.length !== 1 || blocks[0].name !== name) {
       errors.push(`${where}: must hold exactly one [data-theme="${name}"] block`);
       continue;
@@ -323,9 +349,9 @@ export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root
  * block — colour lives in the scheme files) and every `url()` it names present
  * under `fonts/`.
  */
-export function auditFontsFile(path, folder, where) {
+export function auditFontsFile(path, folder, where, io = FS_IO) {
   const errors = [];
-  const css = blankComments(readFileSync(path, "utf8"));
+  const css = blankComments(io.read(path));
   if (/\[data-theme=/.test(css)) errors.push(`${where}: must not hold a [data-theme] block`);
   const faces = [...css.matchAll(/@font-face\s*\{/g)].length;
   if (faces === 0) errors.push(`${where}: no @font-face rule`);
@@ -335,7 +361,7 @@ export function auditFontsFile(path, folder, where) {
       errors.push(`${where}: ${ref} must be a relative ./fonts/<face>/ file`);
       continue;
     }
-    if (!existsSync(join(folder, ref))) errors.push(`${where}: ${ref} does not exist`);
+    if (!io.exists(join(folder, ref))) errors.push(`${where}: ${ref} does not exist`);
   }
   return errors;
 }
