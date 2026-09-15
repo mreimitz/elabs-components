@@ -5,7 +5,7 @@
  */
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 
@@ -41,7 +41,9 @@ async function fixture(mutate = () => {}, { slug = "ocean", schemes = ["light", 
   files["README.md"] = scaffoldReadme({ slug, label: "Ocean", schemes });
   mutate(files);
   for (const [name, content] of Object.entries(files)) {
-    if (content !== undefined) writeFileSync(join(folder, name), content);
+    if (content === undefined) continue;
+    mkdirSync(dirname(join(folder, name)), { recursive: true }); // `fonts/<face>/…` entries
+    writeFileSync(join(folder, name), content);
   }
   return await runCheck({ dir });
 }
@@ -173,6 +175,24 @@ describe("check-community-themes", () => {
     await writeScaffold({ folder, slug: "ocean", label: "Ocean", hue: 235, schemes: ["dark"] });
     const result = await runCheck({ dir });
     assert.equal(result.ok, true, result.lines.join("\n"));
+  });
+
+  it("accepts a fonts stylesheet whose files ship with it", async () => {
+    const result = await fixture((f) => {
+      f["ocean-fonts.css"] =
+        '@font-face { font-family: "Ocean Sans"; src: url("./fonts/ocean-sans/ocean-sans.woff2") format("woff2"); }';
+      f["fonts/ocean-sans/ocean-sans.woff2"] = "";
+    });
+    assert.equal(result.ok, true, result.lines.join("\n"));
+  });
+
+  it("fails a fonts stylesheet that names a missing file or holds a theme block", async () => {
+    const result = await fixture((f) => {
+      f["ocean-fonts.css"] =
+        '[data-theme="ocean-light"] { --primary: oklch(0.5 0 0); }\n@font-face { font-family: "Ocean Sans"; src: url("./fonts/ocean-sans/missing.woff2") format("woff2"); }';
+    });
+    assertFails(result, /ocean-fonts\.css: must not hold a \[data-theme\] block/);
+    assertFails(result, /\.\/fonts\/ocean-sans\/missing\.woff2 does not exist/);
   });
 
   it("fails a stray stylesheet and a missing README", async () => {

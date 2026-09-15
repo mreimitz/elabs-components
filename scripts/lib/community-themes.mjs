@@ -5,7 +5,9 @@
  * These themes are NOT shipped: they are never in `BUILT_IN_THEMES`, never feed
  * `THEME_TOKEN_NAMES`, never appear in the audit artifact. Each family folder is
  * `themes/<slug>/` holding `<slug>-light.css` and/or `<slug>-dark.css` plus a
- * `theme.ts` of `defineTheme(...)` entries. The bar (maintainer decision) is
+ * `theme.ts` of `defineTheme(...)` entries — and, when the family ships its own
+ * typeface, an optional `<slug>-fonts.css` of `@font-face` rules whose files live
+ * under `fonts/<face>/`. Themes need no attribution (maintainer decision). The bar is
  * "complete + readable": every contract token declared, `color-scheme` and the
  * registry entry agree with the file, and the core ink pairs clear WCAG AA.
  *
@@ -210,10 +212,13 @@ export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root
   const files = readdirSync(folder);
   const cssFiles = files.filter((f) => f.endsWith(".css"));
   const expected = SCHEMES.map((s) => `${slug}-${s}.css`);
+  const fontsFile = `${slug}-fonts.css`;
   for (const f of cssFiles) {
-    if (!expected.includes(f))
-      errors.push(`unexpected stylesheet ${f} (only ${expected.join(" / ")})`);
+    if (!expected.includes(f) && f !== fontsFile)
+      errors.push(`unexpected stylesheet ${f} (only ${expected.join(" / ")} / ${fontsFile})`);
   }
+  const fonts = cssFiles.includes(fontsFile) ? join(folder, fontsFile) : null;
+  if (fonts) errors.push(...auditFontsFile(fonts, folder, fontsFile));
 
   let definitions = [];
   if (!files.includes("theme.ts")) errors.push("missing theme.ts");
@@ -283,7 +288,7 @@ export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root
       if (definition.family !== slug) errors.push(`theme.ts: "${name}" must set family: "${slug}"`);
       if (!definition.label) errors.push(`theme.ts: "${name}" needs a label`);
     }
-    variants.push({ scheme, name, file: join(folder, file), definition });
+    variants.push({ scheme, name, file: join(folder, file), definition, fonts });
   }
 
   if (variants.length === 0 && errors.length === 0) {
@@ -295,5 +300,27 @@ export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root
     errors.push("theme.ts: set familyLabel on at least one definition");
   }
 
-  return { slug, variants, errors };
+  return { slug, variants, fonts, errors };
+}
+
+/**
+ * A family's optional `<slug>-fonts.css`: only `@font-face` rules (never a theme
+ * block — colour lives in the scheme files) and every `url()` it names present
+ * under `fonts/`.
+ */
+export function auditFontsFile(path, folder, where) {
+  const errors = [];
+  const css = blankComments(readFileSync(path, "utf8"));
+  if (/\[data-theme=/.test(css)) errors.push(`${where}: must not hold a [data-theme] block`);
+  const faces = [...css.matchAll(/@font-face\s*\{/g)].length;
+  if (faces === 0) errors.push(`${where}: no @font-face rule`);
+  for (const m of css.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)) {
+    const ref = m[1];
+    if (!ref.startsWith("./fonts/")) {
+      errors.push(`${where}: ${ref} must be a relative ./fonts/<face>/ file`);
+      continue;
+    }
+    if (!existsSync(join(folder, ref))) errors.push(`${where}: ${ref} does not exist`);
+  }
+  return errors;
 }

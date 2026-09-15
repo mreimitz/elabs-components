@@ -7,18 +7,21 @@ or alongside them.
 These themes are not published with the npm packages. To use one, copy its folder into
 your app.
 
-| Family            | Modes        |
-| ----------------- | ------------ |
-| [Ocean](./ocean/) | light + dark |
-| [Qlik](./qlik/)   | light + dark |
+| Family            | Modes                              |
+| ----------------- | ---------------------------------- |
+| [Ocean](./ocean/) | light + dark                       |
+| [Qlik](./qlik/)   | light + dark · ships Source Sans 3 |
 
 ## Use a theme
 
 1. **Copy the folder**, e.g. `themes/ocean/` into `src/themes/ocean/` in your app.
-2. **Import its stylesheets** after the token engine:
+2. **Import its stylesheets** after the token engine — a family that ships its own
+   typeface has a `<slug>-fonts.css` too; import it first (it only registers the
+   `@font-face`s, the scheme files select them):
 
    ```ts
    import "@elabs-ai/components-tokens/styles.css";
+   import "./themes/qlik/qlik-fonts.css"; // only families that ship a face
    import "./themes/ocean/ocean-light.css";
    import "./themes/ocean/ocean-dark.css";
    ```
@@ -61,6 +64,15 @@ three tokens in its stylesheet; nothing else changes and no code is needed:
 Set all three together, or all three to `initial` to keep the demo mark. The images carry
 their own colours, so give each mode its own colourway (the Qlik family does). Pass
 `title="Your product"` to the logo so screen readers announce the right name.
+
+## Ship a typeface with a theme
+
+A family may vendor its own face: put the `.woff2` files under `fonts/<face>/` and register
+them in `<slug>-fonts.css` — `@font-face` rules only, `url("./fonts/<face>/…")` paths,
+no `[data-theme]` block. The scheme files then name the face in `--font-sans` /
+`--font-display`. `pnpm community-themes:check` verifies every referenced file exists and
+`pnpm gen` wires the fonts file into Storybook. Themes need no entry in `ATTRIBUTION.md`.
+See [Qlik](./qlik/).
 
 ## Families and modes
 

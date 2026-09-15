@@ -6,6 +6,7 @@
  *
  * Emits, under `apps/docs/.storybook/`:
  *   - `community-themes.generated.css` — one `@import` per family stylesheet
+ *     (a family's `<slug>-fonts.css` first, when it ships one)
  *   - `community-themes.generated.ts`  — the families' `ThemeDefinition`s as
  *     plain data (parsed from each `theme.ts`; the docs app never imports the
  *     `themes/` folder's TS, which lives outside any workspace package)
@@ -58,10 +59,12 @@ export function renderDarkVariant(variants) {
 }
 
 export function renderCss(variants) {
-  const imports = variants.map(
-    (v) => `@import "${relative(STORYBOOK_DIR, v.file).split("\\").join("/")}";`,
-  );
-  return [`/* ${HEADER} */`, ...imports, renderDarkVariant(variants), ""].join("\n");
+  const rel = (file) => `@import "${relative(STORYBOOK_DIR, file).split("\\").join("/")}";`;
+  // A family's `<slug>-fonts.css` (its self-hosted typeface) loads before the scheme
+  // files that select it — once per family, not once per variant.
+  const fonts = [...new Set(variants.map((v) => v.fonts).filter(Boolean))].map(rel);
+  const imports = variants.map((v) => rel(v.file));
+  return [`/* ${HEADER} */`, ...fonts, ...imports, renderDarkVariant(variants), ""].join("\n");
 }
 
 export function renderTs(variants) {
