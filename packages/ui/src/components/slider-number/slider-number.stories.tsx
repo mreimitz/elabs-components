@@ -109,7 +109,10 @@ export const DragThenReset: Story = {
     thumb.focus();
     await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");
     const numberInput = canvas.getByRole("spinbutton", { name: "Temperature" });
-    await expect(numberInput).toHaveValue(0.3);
+    // Text spinbutton (locale-formatted): string display + numeric aria-valuenow.
+    await expect(numberInput).toHaveValue("0.3");
+    await expect(numberInput).toHaveAttribute("aria-valuenow", "0.3");
+    await expect(thumb).toHaveAttribute("aria-valuenow", "0.3");
 
     const resetBtn = canvas.getByRole("button", { name: "Reset" });
     await expect(resetBtn).not.toBeDisabled();
