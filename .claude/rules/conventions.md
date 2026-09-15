@@ -199,17 +199,29 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 
 ### Packages
 
+- `@elabs-ai/components-ai` imports `ai` / `@ai-sdk/*` as types only (`import type`, inline `type` specifiers); runtime values like `useChat` belong in the consuming app (ADR 0008, D6). (`ai-sdk-types-only`)
 - When shipped source says code was adapted/vendored/borrowed/forked/copied/ported from somewhere, credit that upstream in `scripts/attributions.sources.json` (then `pnpm gen:attributions`) in the same change. (`attribution-provenance`)
+- `@elabs-ai/components-*` runtime deps (`dependencies`/`peerDependencies`) follow the one-way DAG `tokens → ui/icons → layer-2 leaves → process`; every package is registered in `ALLOWED`, and a shared piece moves down, never sideways. (`dep-direction`)
+- Reach heavy engines (mermaid, Rive, xterm, React Flow, media-chrome, viewer parsers) and a package's own optional peers only via dynamic `import()` or a `@lazy-boundary` module in `ai`/`terminal`/`viewer` src; never import a `@lazy-boundary` module statically. (`eager-heavy-deps`)
+- An optional peer is not also installed through a plain transitive dependency (resolved from `pnpm-lock.yaml`); the known, disclosed exceptions in the rule's `KNOWN_DEFEATS` are exact — remove one the day it goes clean. (`optional-peer-transitives`)
 - Declare every `https://` origin shipped source can reach (including upstream URLs in `attributions.generated.ts`) in `scripts/remote-origins-allowlist.json` with its kind, CSP directive and escape hatch, and name it in `docs/CSP-AND-NETWORK.md`. (`remote-origins`)
 - Wrap a safe-by-default renderer (Streamdown) only with `Omit<…, "rehypePlugins">` on every props type and `stripSanitizerOverrides(props)` before spreading props onto it; never set `rehypePlugins` outside the reviewed allowlist. (`sanitizer-passthrough`)
 - Keep `@radix-ui/react-scroll-area` and `@radix-ui/react-select` patched (registered in `pnpm.patchedDependencies`, installed dist free of HTML sinks); after a version bump re-apply the patch with `pnpm patch`. (`trusted-types-patches`)
 - Never assign HTML (`dangerouslySetInnerHTML`, `.innerHTML =`, `insertAdjacentHTML`, `document.write`) in package source or add a dependency that does — it blanks a Trusted-Types app; static markup belongs in CSS or JSX, and an unavoidable engine sink is baselined and documented in `docs/CSP-AND-NETWORK.md`. (`trusted-types-sinks`)
 
+### Registry
+
+- Every relative import in a registry item resolves both at its repo `path` and at its install `target` layout; keep `target` folders mirroring the repo tree. (`registry-resolve`)
+
 ### Repo
 
 - Resolve every Git merge conflict before committing: no line may start with a `<<<<<<<` / `=======` / `>>>>>>>` marker. (`conflict-markers`)
 - Keep `docs/csp-policy.json` and the `csp:published`/`csp:dev` blocks in `docs/CSP-AND-NETWORK.md` §2.7 identical, and justify every non-`'self'` relaxation with a carve-out whose `why` names the reason. (`csp-policy`)
+- `pnpm-lock.yaml` never repeats a sibling mapping key (a bad merge breaks `--frozen-lockfile` and silently stops CI); dedupe or regenerate with `pnpm install --lockfile-only`. (`lockfile-dup-keys`)
 - Never commit a machine-specific absolute home path (`/Users/<name>/…`, `/home/<name>/…`); write it relative to the repo root. (`machine-paths`)
 - Suppress lint findings with `// eslint-disable-next-line <rule> -- <reason>`, never a `biome-ignore` comment (this repo has no Biome, so it is inert). (`no-biome-ignore`)
+- Shipped plugin skills and agents reference no repo-internal plumbing (`/file-issue`, `.claude/`, `packages/`, `apps/`, maintainer agents); end users install them without this monorepo. (`plugin-consumer-clean`)
+- The Claude plugin installs whole: `plugin.json` and `marketplace.json` agree on version, every declared skill/agent path starts `./` and resolves, the `brand-ui-start` router is user-invocable, MCP servers are http or stdio, and shared skill docs exist exactly once. (`plugin-manifest`)
+- The root `test` script runs `turbo run test --concurrency=<int>`; never raise a vitest `testTimeout` to absorb CPU oversubscription (#80). (`test-concurrency`)
 
 <!-- brand-ui:gen:check-rules:end -->

@@ -49,7 +49,7 @@ import { fileURLToPath } from "node:url";
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 /** Gates whose script name does not end in `:check` but that ARE blocking gates. */
-export const GATE_EXTRAS = ["registry:validate", "ai:types-only", "check"];
+export const GATE_EXTRAS = ["registry:validate", "check"];
 
 /**
  * Gates that take longer than the whole rest of the battery. Skipped by default
@@ -108,9 +108,6 @@ export const DOCS_ONLY_SKIP = new Set([
   "states:check",
   "loading-states:check",
   "use-client:check",
-  "dep-direction:check",
-  "heavy-deps:check",
-  "optional-peers:check",
   "optional-peer-types:check",
   "lucide:check",
   "charts:reuse:check",

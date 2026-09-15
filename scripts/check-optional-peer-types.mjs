@@ -33,14 +33,14 @@
  * from an optional peer is FINE inside a `@lazy-boundary` module (never
  * statically imported into the barrel) and a LEAK inside its public sibling;
  * only the compiler's own output can tell the two apart. It mirrors
- * `pnpm heavy-deps:check`'s general shape (ratchet baseline, `--warn`/
+ * the old `heavy-deps:check` script's shape (now check rule `eager-heavy-deps`) (ratchet baseline, `--warn`/
  * `--update`, self-tested, wired in `gates.yml`) with that one deliberate
  * difference.
  *
  * A missing `dist/` (no build has run yet) is normal, not a failure — the
  * package is silently skipped, same convention as `check-css-assets.mjs`.
  *
- * ## The baseline is one-directional, like `heavy-deps:check`
+ * ## The baseline is one-directional, like the old `heavy-deps:check`
  *
  * `scripts/optional-peer-types-baseline.json` records today's known leaks.
  * It seeds ONE entry: `@elabs-ai/components-ai`'s `ai` (the Vercel AI SDK)
@@ -135,7 +135,7 @@ function stripComments(source) {
  *
  * `.d.ts` output never carries `import type` — rollup's declaration bundler
  * already erases pure-type-only imports on the way in — so unlike the
- * source-level `heavy-deps:check` gate there is no `type` keyword to
+ * source-level `eager-heavy-deps` check rule there is no `type` keyword to
  * special-case here: every specifier this finds is one the COMPILER decided
  * the public surface still needs.
  *

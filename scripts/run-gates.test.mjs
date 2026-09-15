@@ -42,7 +42,7 @@ const FIXTURE_PKG = {
     "tokens:check": "node scripts/check-tokens-fresh.mjs", // in DOCS_ONLY_SKIP
     "components:check": "node scripts/check-components-registered.mjs", // in DOCS_ONLY_SKIP
     "registry:validate": "node scripts/validate-registry.mjs", // GATE_EXTRAS
-    "ai:types-only": "node scripts/check-ai-sdk-types-only.mjs", // GATE_EXTRAS
+    check: "node scripts/check/run.mjs", // GATE_EXTRAS
     "token-contract:check": "pnpm --filter @scope/tokens tokens:names:check", // NOT a composite
     "composite:check": "pnpm a:check && pnpm b:check", // composite → excluded
     "format:check": "prettier --check .", // SLOW
@@ -60,8 +60,8 @@ const FIXTURE_PKG = {
 test("gates: `*:check` + the two extras, minus composites, slow and not-per-change", () => {
   assert.deepEqual(listGates({ pkgJson: FIXTURE_PKG, kind: "gates" }), [
     "a:check",
-    "ai:types-only",
     "b:check",
+    "check",
     "components:check",
     "registry:validate",
     "token-contract:check",
@@ -80,11 +80,11 @@ test("gates: --docs-only drops exactly the source-only groups", () => {
   const docs = listGates({ pkgJson: FIXTURE_PKG, kind: "gates", docsOnly: true });
   // `token-contract:check` is a `pnpm --filter …` gate, but it sat in the
   // "Tokens and themes" group, so the fast path skipped it too.
-  assert.deepEqual(docs, ["a:check", "ai:types-only", "b:check", "registry:validate"]);
+  assert.deepEqual(docs, ["a:check", "b:check", "check", "registry:validate"]);
   assert.ok(DOCS_ONLY_SKIP.has("tokens:check") && DOCS_ONLY_SKIP.has("components:check"));
   assert.ok(DOCS_ONLY_SKIP.has("token-contract:check"));
-  // The set is the two former gates.yml groups: 11 tokens/themes + 20 contracts.
-  assert.equal(DOCS_ONLY_SKIP.size, 31);
+  // The set is the two former gates.yml groups: token/theme and contract gates not yet in the check runner.
+  assert.equal(DOCS_ONLY_SKIP.size, 28);
 });
 
 test("selftests: `*:test` in the one node --test shape, minus the own-step one", () => {
@@ -124,7 +124,7 @@ test("the REAL package.json: every not-per-change and slow name still exists, no
     assert.ok(pkg.scripts[name], `${name} is named in the runner but no longer a script`);
   }
   const gates = listGates({ pkgJson: pkg, kind: "gates" });
-  assert.ok(gates.length > 50, `expected the whole battery, got ${gates.length}`);
+  assert.ok(gates.length > 10, `expected the whole battery, got ${gates.length}`);
   assert.ok(!gates.includes("agent-docs:check"), "the composite must be excluded");
   assert.ok(gates.includes("token-contract:check"), "the --filter gate must be included");
   for (const n of DOCS_ONLY_SKIP)
