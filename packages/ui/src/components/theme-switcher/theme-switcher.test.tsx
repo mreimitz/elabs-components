@@ -7,6 +7,7 @@ import {
   BUILT_IN_THEME_DEFINITIONS,
   defineTheme,
   ThemeProvider,
+  useTheme,
 } from "@elabs-ai/components-tokens";
 
 import { ThemeSwitcher } from "./theme-switcher";
@@ -249,5 +250,186 @@ describe("ThemeSwitcher — consumer themes (ADR 0029)", () => {
     expect(["parchment", "midnight"]).toContain(
       document.documentElement.getAttribute("data-theme"),
     );
+  });
+});
+
+describe("ThemeSwitcher — theme families (ADR 0036)", () => {
+  const oceanLight = defineTheme({
+    value: "ocean-light",
+    label: "Ocean light",
+    dark: false,
+    family: "ocean",
+    familyLabel: "Ocean",
+  });
+  const oceanDark = defineTheme({
+    value: "ocean-dark",
+    label: "Ocean dark",
+    dark: true,
+    family: "ocean",
+  });
+  const dusk = defineTheme({
+    value: "dusk",
+    label: "Dusk",
+    dark: true,
+    family: "dusk",
+    familyLabel: "Dusk",
+  });
+  const midnight = defineTheme({ value: "midnight", label: "Midnight", dark: true });
+  const daylight = defineTheme({ value: "daylight", label: "Daylight", dark: false });
+  const REGISTRY = [...BUILT_IN_THEME_DEFINITIONS, oceanLight, oceanDark, dusk];
+
+  async function openMenu() {
+    await userEvent.click(screen.getByRole("button", { name: "Theme" }));
+    return screen.findByRole("menu");
+  }
+
+  it("BACKWARD COMPAT: the default provider still renders the cycle toggle", () => {
+    setup(<ThemeSwitcher />);
+    expect(screen.getByRole("button", { name: /theme:/i })).toBeInTheDocument();
+  });
+
+  it("BACKWARD COMPAT: built-ins plus one undeclared theme stays a flat dropdown", async () => {
+    render(
+      <ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, midnight]}>
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    const menu = await openMenu();
+    expect(within(menu).queryAllByRole("menuitemradio")).toHaveLength(0);
+    expect(within(menu).getByText("Midnight")).toBeInTheDocument();
+  });
+
+  it("BACKWARD COMPAT: an undeclared two-theme pair stays a light/dark toggle", () => {
+    render(
+      <ThemeProvider themes={[daylight, midnight]} defaultTheme="daylight">
+        <ThemeSwitcher showSystem={false} />
+      </ThemeProvider>,
+    );
+    expect(screen.getByRole("button", { name: /theme:/i })).toHaveAccessibleName(
+      "Theme: Daylight. Activate to switch to Midnight.",
+    );
+  });
+
+  it("offers families and a separate mode group once two families are declared", async () => {
+    render(
+      <ThemeProvider themes={REGISTRY} defaultTheme="light">
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    const menu = await openMenu();
+    const radios = within(menu).getAllByRole("menuitemradio");
+    expect(radios.map((r) => r.textContent)).toEqual([
+      "Default",
+      "Ocean",
+      "Dusk",
+      "Light",
+      "Dark",
+      "System",
+    ]);
+    expect(within(menu).getByRole("menuitemradio", { name: "Default" })).toBeChecked();
+    expect(within(menu).getByRole("menuitemradio", { name: "Light" })).toBeChecked();
+  });
+
+  it("switching family keeps the chosen mode", async () => {
+    render(
+      <ThemeProvider themes={REGISTRY} defaultTheme="dark">
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    await openMenu();
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Ocean" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("ocean-dark");
+  });
+
+  it("switching mode stays within the family", async () => {
+    render(
+      <ThemeProvider themes={REGISTRY} defaultTheme="ocean-light">
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    await openMenu();
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Dark" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("ocean-dark");
+  });
+
+  it("hides the mode group for a single-mode family", async () => {
+    render(
+      <ThemeProvider themes={REGISTRY} defaultTheme="dusk">
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    const menu = await openMenu();
+    expect(within(menu).queryByRole("menuitemradio", { name: "Light" })).not.toBeInTheDocument();
+    expect(within(menu).queryByText("Mode")).not.toBeInTheDocument();
+  });
+
+  it("remembers dark across a light-only family", async () => {
+    const sand = defineTheme({ value: "sand", label: "Sand", dark: false, family: "sand" });
+    render(
+      <ThemeProvider themes={[...REGISTRY, sand]} defaultTheme="dark">
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    await openMenu();
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "sand" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("sand");
+    await openMenu();
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Ocean" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("ocean-dark");
+  });
+
+  it("checks the right family when a second same-scheme variant is active", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const oceanDeep = defineTheme({
+      value: "ocean-deep",
+      label: "Ocean deep",
+      dark: true,
+      family: "ocean",
+    });
+    render(
+      <ThemeProvider themes={[...REGISTRY, oceanDeep]} defaultTheme="ocean-deep">
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    const menu = await openMenu();
+    expect(within(menu).getByRole("menuitemradio", { name: "Ocean" })).toBeChecked();
+    expect(within(menu).getByRole("menuitemradio", { name: "Default" })).not.toBeChecked();
+    warn.mockRestore();
+  });
+
+  it("forgets a remembered mode once another control changes the theme", async () => {
+    function ExternalLight() {
+      const { setTheme } = useTheme();
+      return (
+        <button type="button" onClick={() => setTheme("light")}>
+          External light
+        </button>
+      );
+    }
+    render(
+      <ThemeProvider themes={REGISTRY} defaultTheme="light">
+        <ThemeSwitcher />
+        <ExternalLight />
+      </ThemeProvider>,
+    );
+    await openMenu();
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Dark" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await userEvent.click(screen.getByRole("button", { name: "External light" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await openMenu();
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Ocean" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("ocean-light");
+  });
+
+  it("forced dropdown mode keeps the flat list even with families", async () => {
+    render(
+      <ThemeProvider themes={REGISTRY}>
+        <ThemeSwitcher mode="dropdown" />
+      </ThemeProvider>,
+    );
+    const menu = await openMenu();
+    expect(within(menu).queryAllByRole("menuitemradio")).toHaveLength(0);
+    expect(within(menu).getByText("Ocean dark")).toBeInTheDocument();
   });
 });

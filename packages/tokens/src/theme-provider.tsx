@@ -25,8 +25,14 @@ import {
   type MotionPreference,
   type TasteProfile,
   type TasteRegister,
+  groupThemeFamilies,
+  resolveThemeVariant,
+  themeFamilyIdOf,
+  themeSchemeOf,
   type ThemeDefinition,
+  type ThemeFamily,
   type ThemeName,
+  type ThemeScheme,
 } from "./theme-types";
 import { THEME_TOKEN_NAMES, type ThemeTokenName } from "./theme-token-names.generated";
 
@@ -48,6 +54,19 @@ interface ThemeContextValue {
   themeDefinitions: readonly ThemeDefinition[];
   /** Set the active theme. */
   setTheme: (theme: ThemeName) => void;
+  /**
+   * `themeDefinitions` grouped into families (ADR 0036) — each with up to one
+   * light and one dark variant, after `allowedThemes` narrowing.
+   */
+  families: readonly ThemeFamily[];
+  /** Family id of the active theme; `theme` itself while the active theme is unregistered. */
+  family: string;
+  /** Scheme of the active theme; `undefined` only while the active theme is unregistered. */
+  colorScheme: ThemeScheme | undefined;
+  /** Switch family, keeping the intended scheme when the family has it. Unknown id: no-op. */
+  setFamily: (familyId: string) => void;
+  /** Switch scheme within the active family. Scheme absent in the family: no-op. */
+  setColorScheme: (scheme: ThemeScheme) => void;
   /** The user's motion preference (over the OS setting and theme default). */
   motionPreference: MotionPreference;
   /** Set the motion preference. */
@@ -305,7 +324,12 @@ function resolveDefaultTheme(requested: ThemeName, allowedThemes: readonly Theme
  */
 function registryKey(themes: readonly ThemeDefinition[] | undefined): string | null {
   if (!themes) return null;
-  return themes.map((t) => `${t.value}|${t.label}|${t.dark}|${t.decorationLevel ?? ""}`).join(",");
+  return themes
+    .map(
+      (t) =>
+        `${t.value}|${t.label}|${t.dark}|${t.decorationLevel ?? ""}|${t.family ?? ""}|${t.familyLabel ?? ""}`,
+    )
+    .join(",");
 }
 
 /**
@@ -613,6 +637,35 @@ export function ThemeProvider({
     () => new Map(themeDefinitions.map((t) => [t.value, t])),
     [themeDefinitions],
   );
+  /** Families over the NARROWED list, so `allowedThemes` can make a family single-scheme. */
+  const families = useMemo(() => groupThemeFamilies(themeDefinitions), [themeDefinitions]);
+
+  // ADR 0036 §2 — grouping is pure; the provider reports what it had to drop.
+  useEffect(() => {
+    const slots = new Map<string, ThemeName>();
+    const labels = new Map<string, string>();
+    for (const t of themeDefinitions) {
+      const id = themeFamilyIdOf(t);
+      const slot = `${id}|${themeSchemeOf(t)}`;
+      const first = slots.get(slot);
+      if (first === undefined) slots.set(slot, t.value);
+      else {
+        warnDev(
+          `ThemeProvider: "${t.value}" and "${first}" are both ${themeSchemeOf(t)} variants of ` +
+            `family "${id}" — "${first}" is used; "${t.value}" is reachable only via setTheme.`,
+        );
+      }
+      if (t.familyLabel === undefined) continue;
+      const label = labels.get(id);
+      if (label === undefined) labels.set(id, t.familyLabel);
+      else if (label !== t.familyLabel) {
+        warnDev(
+          `ThemeProvider: family "${id}" has conflicting labels "${label}" and ` +
+            `"${t.familyLabel}" — using "${label}".`,
+        );
+      }
+    }
+  }, [themeDefinitions]);
 
   const requestedTheme = defaultTheme ?? DEFAULT_THEME;
 
@@ -625,6 +678,11 @@ export function ThemeProvider({
       resolveAllowedThemes(resolveRegistry(themeRegistry), allowedThemes).map((t) => t.value),
     ),
   );
+  /**
+   * The scheme the user last chose (ADR 0036 §3) — in memory only; after a
+   * reload it is the persisted variant's own scheme. Seeded lazily below.
+   */
+  const intendedSchemeRef = useRef<ThemeScheme | undefined>(undefined);
   const [motionPreference, setMotionState] = useState<MotionPreference>(defaultMotionPreference);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [decoration, setDecorationState] = useState<DecorationLevel | null>(defaultDecoration);
@@ -658,6 +716,8 @@ export function ThemeProvider({
     }
     setThemeState(initial);
     applyTheme(initial, attributeTarget);
+    const initialDefinition = themesByName.get(initial);
+    if (initialDefinition) intendedSchemeRef.current = themeSchemeOf(initialDefinition);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -770,13 +830,56 @@ export function ThemeProvider({
         );
         return;
       }
+      const definition = themesByName.get(next);
+      if (definition) intendedSchemeRef.current = themeSchemeOf(definition);
       setThemeState(next);
       applyTheme(next, attributeTarget);
       if (storageKey && typeof window !== "undefined") {
         window.localStorage.setItem(storageKey, next);
       }
     },
-    [storageKey, attributeTarget, themes],
+    [storageKey, attributeTarget, themes, themesByName],
+  );
+
+  const activeDefinition = themesByName.get(theme);
+  const family = activeDefinition ? themeFamilyIdOf(activeDefinition) : theme;
+  const colorScheme = activeDefinition ? themeSchemeOf(activeDefinition) : undefined;
+
+  const setFamily = useCallback(
+    (familyId: string) => {
+      const target = families.find((f) => f.id === familyId);
+      if (!target) {
+        warnDev(
+          `ThemeProvider: setFamily("${familyId}") ignored — not one of this provider's ` +
+            `families [${families.map((f) => f.id).join(", ")}].`,
+        );
+        return;
+      }
+      // Resolve against the INTENDED scheme, not the active one: dark → a
+      // light-only family → a two-scheme family lands on dark again.
+      const intended = intendedSchemeRef.current;
+      const next = resolveThemeVariant(families, familyId, intended ?? "light");
+      if (next === undefined) return;
+      setTheme(next);
+      // Landing on a single-scheme family must not overwrite what the user chose.
+      if (intended !== undefined) intendedSchemeRef.current = intended;
+    },
+    [families, setTheme],
+  );
+
+  const setColorScheme = useCallback(
+    (scheme: ThemeScheme) => {
+      const next = families.find((f) => f.id === family)?.[scheme]?.value;
+      if (next === undefined) {
+        warnDev(
+          `ThemeProvider: setColorScheme("${scheme}") ignored — family "${family}" has no ` +
+            `${scheme} variant.`,
+        );
+        return;
+      }
+      setTheme(next);
+    },
+    [families, family, setTheme],
   );
 
   const setMotionPreference = useCallback(
@@ -836,6 +939,11 @@ export function ThemeProvider({
       themes,
       themeDefinitions,
       setTheme,
+      families,
+      family,
+      colorScheme,
+      setFamily,
+      setColorScheme,
       motionPreference,
       setMotionPreference,
       prefersReducedMotion,
@@ -861,6 +969,11 @@ export function ThemeProvider({
     themeDefinitions,
     themesByName,
     setTheme,
+    families,
+    family,
+    colorScheme,
+    setFamily,
+    setColorScheme,
     motionPreference,
     setMotionPreference,
     prefersReducedMotion,

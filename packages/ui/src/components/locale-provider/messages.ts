@@ -161,6 +161,11 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.tree.failedToLoad": "Failed to load",
   // ThemeSwitcher's "follow the OS" option, in both dropdown and toggle modes.
   "ui.themeSwitcher.system": "System",
+  // Group labels + scheme names in the family layout (ADR 0036).
+  "ui.themeSwitcher.theme": "Theme",
+  "ui.themeSwitcher.mode": "Mode",
+  "ui.themeSwitcher.light": "Light",
+  "ui.themeSwitcher.dark": "Dark",
   "ui.navNotifications.label": "Notifications",
   "ui.teamSwitcher.label": "Teams",
   "ui.teamSwitcher.addTeam": "Add team",

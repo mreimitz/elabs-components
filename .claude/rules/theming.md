@@ -27,6 +27,9 @@ theme. `:root` is the complete light fallback.
   `useTheme().themes` (`ThemeSwitcher` does). `themes` = what exists,
   `allowedThemes` = what is exposed.
 - `/new-theme` adds a repo theme. Body text: WCAG AA 4.5:1 in every theme.
+- Families (ADR 0036, `docs/ADR/`): one `data-theme` per variant; `family`
+  is metadata. Downloadable families live in repo-root `themes/<slug>/` (`pnpm theme:new`,
+  gate `pnpm community-themes:check`) and NEVER join `BUILT_IN_THEMES`.
 - Distinct roles, distinct values: two semantic tokens never share one literal
   (`themes-contrast.test.ts`). An INTENTIONAL mirror is `var()` — `--sidebar-primary: var(--primary)`,
   `--chart-1: var(--primary)`. Must stay literals: anything the contrast tests assert on, and

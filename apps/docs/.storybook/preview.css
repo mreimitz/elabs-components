@@ -16,6 +16,10 @@
 @import "@elabs-ai/components-tokens/themes/light.css";
 @import "@elabs-ai/components-tokens/themes/dark.css";
 
+/* The downloadable theme families in repo-root themes/ (ADR 0036), so each one is
+   previewable from the Theme / Mode toolbar. GENERATED — run `pnpm gen`. */
+@import "./community-themes.generated.css";
+
 /* Tailwind v4 cannot auto-scan workspace packages resolved via node_modules,
    so point it at each package's source explicitly. Add new packages here. */
 @source "../../../packages/ui/src/**/*.{ts,tsx}";

@@ -47,7 +47,8 @@ Headless: `STORYBOOK_THEME=<slug>` pins the run (unset = `light` only):
 cd apps/docs && STORYBOOK_THEME=dark pnpm exec vitest --project storybook run <name>
 ```
 
-A per-story `parameters.themes.themeOverride` or toolbar global wins.
+A per-story `parameters.themes.themeOverride` or toolbar global wins. Toolbar: `theme` =
+family id (`default`, `ocean`) + `mode` = `light|dark`; a variant slug in `theme` wins as-is.
 
 ## Workflow
 

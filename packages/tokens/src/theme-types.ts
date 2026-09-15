@@ -69,6 +69,109 @@ export interface ThemeDefinition {
    * itself is set per region/document — see @.claude/rules/decoration.md.
    */
   decorationLevel?: DecorationLevel;
+  /**
+   * Family id shared by a theme's light and dark variants (ADR 0036) — e.g.
+   * `ocean-light` and `ocean-dark` both declare `family: "ocean"`. Omitted ⇒
+   * the theme's own `value` is its family id. Declared explicitly, never
+   * inferred from the name (ADR 0029).
+   */
+  family?: string;
+  /** Switcher label for the family. The first definition that sets it wins. */
+  familyLabel?: string;
+}
+
+/** One of the two colour schemes a theme family can offer (ADR 0036). */
+export type ThemeScheme = "light" | "dark";
+
+/**
+ * A theme family DERIVED from a flat registry by `groupThemeFamilies` — up to
+ * one light and one dark variant. Never registered directly; the registry stays
+ * a list of `ThemeDefinition`s.
+ */
+export interface ThemeFamily {
+  id: string;
+  /** `familyLabel` ?? (undeclared family: the definition's `label`) ?? `id`. */
+  label: string;
+  light?: ThemeDefinition;
+  dark?: ThemeDefinition;
+  /** Schemes present, light first. Length 1 ⇒ single-scheme family (no scheme switch). */
+  schemes: readonly ThemeScheme[];
+  /** True when at least one member set `family` explicitly. */
+  declared: boolean;
+}
+
+/** The scheme a definition belongs to, from its registry `dark` flag. */
+export function themeSchemeOf(definition: Pick<ThemeDefinition, "dark">): ThemeScheme {
+  return definition.dark ? "dark" : "light";
+}
+
+/** The family id a definition belongs to: `family` when declared, else its `value`. */
+export function themeFamilyIdOf(definition: Pick<ThemeDefinition, "value" | "family">): string {
+  return definition.family ?? definition.value;
+}
+
+/**
+ * Group a registry into families, in order of each family's first appearance.
+ * When two members share a scheme the FIRST fills the slot (the later one stays
+ * reachable by name via `setTheme`); when `familyLabel`s conflict the first wins.
+ * Pure — the provider reports those conflicts, not this.
+ */
+export function groupThemeFamilies(
+  definitions: readonly ThemeDefinition[],
+): readonly ThemeFamily[] {
+  const byId = new Map<
+    string,
+    {
+      id: string;
+      label?: string;
+      light?: ThemeDefinition;
+      dark?: ThemeDefinition;
+      declared: boolean;
+    }
+  >();
+  for (const definition of definitions) {
+    const id = themeFamilyIdOf(definition);
+    let entry = byId.get(id);
+    if (!entry) {
+      entry = { id, declared: false };
+      byId.set(id, entry);
+    }
+    if (definition.family !== undefined) entry.declared = true;
+    if (entry.label === undefined && definition.familyLabel !== undefined) {
+      entry.label = definition.familyLabel;
+    }
+    const scheme = themeSchemeOf(definition);
+    if (entry[scheme] === undefined) entry[scheme] = definition;
+  }
+  return [...byId.values()].map((entry) => {
+    const schemes: ThemeScheme[] = [];
+    if (entry.light) schemes.push("light");
+    if (entry.dark) schemes.push("dark");
+    // An undeclared single-member family is just that theme — show its own label.
+    const fallback = entry.declared ? undefined : (entry.light ?? entry.dark)?.label;
+    return {
+      id: entry.id,
+      label: entry.label ?? fallback ?? entry.id,
+      light: entry.light,
+      dark: entry.dark,
+      schemes,
+      declared: entry.declared,
+    };
+  });
+}
+
+/**
+ * The variant name for `familyId` in `scheme` — the requested scheme when the
+ * family has it, else the family's only scheme. `undefined` for an unknown family.
+ */
+export function resolveThemeVariant(
+  families: readonly ThemeFamily[],
+  familyId: string,
+  scheme: ThemeScheme,
+): ThemeName | undefined {
+  const family = families.find((f) => f.id === familyId);
+  if (!family) return undefined;
+  return (family[scheme] ?? family.light ?? family.dark)?.value;
 }
 
 /**
@@ -102,6 +205,8 @@ export const BUILT_IN_THEME_META: Record<BuiltInThemeName, ThemeDefinition> = {
     value: "light",
     label: "Light",
     dark: false,
+    family: "default",
+    familyLabel: "Default",
     description:
       "Reference light theme — brand primary on near-white neutral surfaces; neutral grey text, 4px radius.",
   },
@@ -109,6 +214,8 @@ export const BUILT_IN_THEME_META: Record<BuiltInThemeName, ThemeDefinition> = {
     value: "dark",
     label: "Dark",
     dark: true,
+    family: "default",
+    familyLabel: "Default",
     description:
       "Reference dark theme — warm charcoal surfaces with off-white text; the same brand primary, 4px radius.",
   },

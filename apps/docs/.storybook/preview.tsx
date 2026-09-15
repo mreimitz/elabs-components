@@ -1,14 +1,20 @@
 import type { Decorator, Preview } from "@storybook/react-vite";
-import { DecoratorHelpers } from "@storybook/addon-themes";
+import { addons } from "storybook/preview-api";
 import {
   BUILT_IN_THEME_DEFINITIONS,
   DEFAULT_DENSITY,
   DEFAULT_MOTION_PREFERENCE,
-  DEFAULT_THEME,
+  groupThemeFamilies,
 } from "@elabs-ai/components-tokens";
 import { useEffect, type ReactNode } from "react";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
 import "./preview.css";
+import { COMMUNITY_THEME_DEFINITIONS } from "./community-themes.generated";
+import {
+  THEME_FAMILIES_EVENT,
+  resolveToolbarTheme,
+  type ToolbarThemeFamily,
+} from "./theme-toolbar";
 import "@xyflow/react/dist/style.css";
 // Wire Monaco's language workers so @elabs-ai/components-editor stories get IntelliSense.
 import "@elabs-ai/components-editor/monaco-environment";
@@ -97,20 +103,23 @@ const withDensity: Decorator = (Story, context) => {
 };
 
 /**
- * Registers the "theme" global + the manager's toolbar theme switcher
- * (channel-driven, dev-server-only UI) — exactly what `withThemeByDataAttribute`
- * does internally. Kept as a direct call to the addon's own helper so the live
- * Storybook dev toolbar and `globals=theme:<slug>` keep working unchanged; see
- * `withTheme` below for why the returned DECORATOR is no longer used (#402).
- *
- * The toolbar lists the BUILT-IN themes (ADR 0029) — this Storybook is the
- * library's own docs app, so its registry is the shipped reference pair. An app
- * that registers its own themes drives the list from its provider instead.
+ * The Theme / Mode toolbar (ADR 0036). The registry is the built-in Default
+ * family plus every downloadable family in repo-root `themes/` (wired by
+ * `scripts/gen-community-themes.mjs`). The preview publishes a plain summary on
+ * the channel; `manager.tsx` renders a Theme select and — only for a family with
+ * both schemes — a Mode select. `channel.last()` lets a manager that mounts
+ * later still read it. See `theme-toolbar.ts` for the global contract.
  */
-DecoratorHelpers.initializeThemeState(
-  BUILT_IN_THEME_DEFINITIONS.map((d) => d.value),
-  DEFAULT_THEME,
-);
+const TOOLBAR_FAMILIES: readonly ToolbarThemeFamily[] = groupThemeFamilies([
+  ...BUILT_IN_THEME_DEFINITIONS,
+  ...COMMUNITY_THEME_DEFINITIONS,
+]).map((f) => ({
+  id: f.id,
+  label: f.label,
+  schemes: f.schemes,
+  variants: { light: f.light?.value, dark: f.dark?.value },
+}));
+addons.getChannel().emit(THEME_FAMILIES_EVENT, TOOLBAR_FAMILIES);
 
 /**
  * Writes `data-theme` onto `document.documentElement`, exactly as
@@ -165,14 +174,16 @@ const THEME_FROM_ENV = (import.meta as unknown as { env?: Record<string, string 
   ?.STORYBOOK_THEME;
 
 const withTheme: Decorator = (Story, context) => {
-  // Mirrors `withThemeByDataAttribute`'s own resolution order: a per-story
-  // `parameters.themes.themeOverride` wins, then the toolbar/URL `theme`
-  // global (`globals=theme:<slug>`), then `STORYBOOK_THEME`, then the shipped
-  // default.
+  // Resolution order: a per-story `parameters.themes.themeOverride` wins, then
+  // the toolbar/URL `theme` global (a family id or a variant name —
+  // `globals=theme:<slug>`), then `STORYBOOK_THEME`, then the Default family.
+  // `mode` only applies when the winner is a family id.
   const themeOverride = (context.parameters.themes as { themeOverride?: string } | undefined)
     ?.themeOverride;
-  const selected = DecoratorHelpers.pluckThemeFromContext(context);
-  const theme = themeOverride || selected || THEME_FROM_ENV || DEFAULT_THEME;
+  const selected = context.globals.theme as string | undefined;
+  const mode = context.globals.mode as string | undefined;
+  const theme =
+    themeOverride || resolveToolbarTheme(TOOLBAR_FAMILIES, selected || THEME_FROM_ENV, mode);
   return (
     <ThemeBoundary theme={theme}>
       <Story />
@@ -222,6 +233,10 @@ const preview: Preview = {
     }
   },
   decorators: [withDensity, withDecoration, withMotionPreference, withTheme],
+  // `theme` + `mode` are driven by the custom toolbar in `manager.tsx`, so they
+  // are declared here without a built-in `toolbar` entry. Empty = Default family,
+  // light (or `STORYBOOK_THEME`).
+  initialGlobals: { theme: "", mode: "" },
   globalTypes: {
     decoration: {
       description:

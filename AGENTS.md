@@ -253,6 +253,8 @@ pnpm rules:scoping:check        # if .claude/rules/ or CLAUDE.md touched — pac
 pnpm rules:scoping:check:test   # self-test for the rule-scoping gate
 pnpm theme-parity:check         # if themes.css touched — every theme block defines every semantic token (#89)
 pnpm theme-parity:check:test    # self-test for the theme-parity gate
+pnpm community-themes:check     # if themes/ touched — every downloadable family is complete, AA-readable and wired into Storybook (ADR 0036)
+pnpm community-themes:check:test # self-test for the community-themes gate
 pnpm roles:check                # if themes.css touched — roles that co-occur (ring/primary, ring/chart-1, chart-N/chart-M) stay ≥0.05 OKLab ΔE apart; parity checks presence, contrast checks surfaces, neither sees two roles collapsing onto one colour (#385)
 pnpm roles:check:test           # self-test for the role-distinctness gate
 pnpm surface-elevation:check    # if themes.css touched — app chrome (--sidebar) stays recessed below the content canvas (--background) in every theme (#187)

@@ -250,6 +250,33 @@ expect(missing).toEqual([]);
 A theme missing a token silently falls back to the neutral `:root` base, which
 usually looks _almost_ right — which is why this is worth one test.
 
+#### Ready-made theme families (`themes/` in the repo)
+
+The repo's top-level `themes/` folder holds downloadable theme **families**
+(ADR 0036): one folder per family, with a light and/or a dark variant
+(`ocean-light.css`, `ocean-dark.css`), a `theme.ts` of definitions and a README.
+Copy the folder into your app, import its CSS, and register it:
+
+```tsx
+import "./themes/ocean/ocean-light.css";
+import "./themes/ocean/ocean-dark.css";
+import { oceanThemes } from "./themes/ocean/theme";
+
+// Replace the defaults…
+<ThemeProvider themes={oceanThemes} defaultTheme="ocean-light">
+// …or offer them next to Default.
+<ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, ...oceanThemes]}>
+```
+
+A definition's `family` / `familyLabel` group variants: `useTheme()` exposes
+`families`, `family`, `colorScheme`, `setFamily` and `setColorScheme`, and
+`ThemeSwitcher` shows a **Theme** group plus a **Mode** group (hidden when the
+family ships one scheme) once two or more families are registered. Themes
+without `family` behave exactly as before. **Registering a dark variant also
+requires redeclaring `@custom-variant dark` to include it**: a few library
+components still use `dark:` classes, which otherwise match only the built-in
+`dark` theme. `themes/README.md` has the line.
+
 ### 5.2 Runtime token overrides (patch a color without a theme)
 
 Sometimes you don't want a whole new theme — you want to patch 1-2 tokens at
