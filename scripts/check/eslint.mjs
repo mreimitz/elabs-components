@@ -19,6 +19,7 @@ export const REPO_ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))
 export const PLUGINS = {
   brand: "packages/eslint-config/rules/brand-tokens.js",
   "sidebar-a11y": "packages/eslint-config/rules/sidebar-ink.js",
+  conventions: "packages/eslint-config/rules/product-conventions.js",
 };
 
 const RESOLVE_FROM = ["packages/eslint-config/package.json", "packages/ui/package.json"];

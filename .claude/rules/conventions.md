@@ -195,6 +195,16 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 
 ### Components
 
+- A dimmed disabled state follows the house recipe: `disabled:opacity-50` plus `disabled:pointer-events-none` (Button) or `disabled:cursor-not-allowed` (Input) in the same class list. (`disabled-recipe`)
+- Focus indicators use `focus-ring`/`focus-ring-within`/`focus-ring-inset`/`focus-ring-static`, never a hand-rolled `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring` stack. (`focus-ring-only`)
+- An exported component that spreads `...props` onto a DOM element is wrapped in `forwardRef`. (`forward-ref-required`)
+- UI text in package source (JSX text, `aria-label`/`title`/`placeholder` literals) comes from props or a labels object so apps can localize it; stories, tests, templates and registry are exempt. (`i18n-strings`)
+- Format numbers and dates with `Intl.*` and a locale prop: no `toLocaleString()`/`toLocaleDateString()`/`toLocaleTimeString()` without a locale, no `new Date(…).toString()` in JSX. (`locale-formatting`)
+- Use logical direction utilities (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`border-s`/`rounded-s`/`text-start`), never physical `ml-`/`pr-`/`left-`/`border-l`/`text-right`, so layouts mirror in RTL. (`logical-props`)
+- Triggers (`*Trigger` components, `data-slot="*-trigger"`) size with `min-w-*`/`w-full`, never a fixed `w-40`/`w-[180px]`. (`no-fixed-trigger-width`)
+- List keys are stable ids from the item, never the `.map` index (`key={i}`); placeholder lists (`Array.from({ length })`, `(_, i)`) are exempt. (`no-index-key-reorderable`)
+- Radius comes from the `rounded-*` scale (backed by `--radius`), never an arbitrary `rounded-[6px]`. (`radius-rungs`)
 - Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source. (`raw-palette`)
+- Type is a role: use `text-display|title|subtitle|body|caption|meta|kpi|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by `pnpm text-scale:check`). (`type-roles`)
 
 <!-- brand-ui:gen:check-rules:end -->
