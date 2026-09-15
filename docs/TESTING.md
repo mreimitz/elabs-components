@@ -29,7 +29,7 @@ Every story runs as an interaction test and is asserted with axe
 component cannot ship an unnamed button with green CI. Pre-existing violations are
 exempted per story from `scripts/a11y-baseline.json`, whose ceiling only goes down.
 CI runs this as the blocking **Storybook interaction + axe** job in
-`.github/workflows/gates.yml`, reached from both `ci.yml` and `release.yml`.
+`.github/workflows/ci.yml` (light and dark).
 
 > **The Playwright E2E suite is gone.** `apps/e2e` and the `apps/playground` app it
 > drove were deleted on 2026-08-02 (80a12fb), and the removal was completed on
@@ -60,4 +60,4 @@ rest as GitHub issues. The fix is then implemented from the issue (by
 | Before a PR                      | `pnpm typecheck lint test build` + `test-storybook` |
 | Before a demo                    | `/review-component` on the demo's screens           |
 | New theme/component visual check | `/review-component`                                 |
-| CI (automatic)                   | the `gates.yml` battery, called by `ci.yml`         |
+| CI (automatic)                   | `ci.yml` (check, tests, build, Storybook)           |

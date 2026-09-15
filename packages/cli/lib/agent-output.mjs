@@ -32,7 +32,7 @@
 /**
  * The tool-state → Status projection brand-ui OWNS (statusFromToolState,
  * packages/ai/src/tool.tsx). Authored here so it ships in the manifest; the
- * `agent-output:check` gate asserts it equals the real switch (drift = CI fail).
+ * `agent-output-contract` rule (`pnpm check`) asserts it equals the real switch (drift = CI fail).
  * @type {Record<string, string>}
  */
 export const TOOL_STATE_TO_STATUS = {
@@ -64,7 +64,7 @@ export const STATUS_ENUM = [
  * A worked `UIMessage[]` literal — the DATA an agent produces (NOT a `useChat`
  * call: the agent emits data, the app owns the runtime). Field names beyond the
  * brand-ui-consumed subset belong to the AI SDK (the authority). The
- * `agent-output:check` gate asserts this example contains no `useChat(` so the
+ * `agent-output-contract` rule (`pnpm check`) asserts this example contains no `useChat(` so the
  * D6 boundary stays honest.
  */
 const CONVERSATION_EXAMPLE = [
@@ -197,7 +197,7 @@ export const AGENT_OUTPUT = {
  * (spans @elabs-ai/components-ai's two surfaces + @elabs-ai/components-ui's Status), so unlike `collectIntent`
  * it is NOT filtered per package. Deterministic: authored key order, no clock.
  * Name accuracy (`consumedBy` ∈ @elabs-ai/components-ai, the state/status maps) is enforced by
- * the `agent-output:check` gate, not by mutating the manifest here.
+ * the `agent-output-contract` rule (`pnpm check`), not by mutating the manifest here.
  * @returns {typeof AGENT_OUTPUT}
  */
 export function collectAgentOutput() {

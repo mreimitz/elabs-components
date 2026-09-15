@@ -6,6 +6,8 @@ argument-hint: "[add|validate|build] [name]"
 allowed-tools:
   - Bash(pnpm brand-ui *)
   - Bash(pnpm registry:*)
+  - Bash(pnpm check)
+  - Bash(pnpm gen)
   - Bash(pnpm dlx shadcn@latest *)
 ---
 
@@ -26,7 +28,7 @@ Item types: `registry:ui` (self-contained primitive), `registry:block` (composit
 importing installed `@elabs-ai/components-*` — list them in `dependencies`), and `registry:theme`
 (token set via `cssVars`). Full-screen **templates** are NOT registry items — they are
 generated from the Storybook `templates-*` stories into `docs/playbooks/templates/`
-(`pnpm gen:templates`); don't re-add them here.
+(`pnpm gen`); don't re-add them here.
 
 ## Add / edit an item
 
@@ -38,7 +40,7 @@ generated from the Storybook `templates-*` stories into `docs/playbooks/template
 
 ## Validate + build
 
-- `pnpm registry:validate` after every change (must pass).
+- `pnpm check` after every change (validates `registry.json`; must pass).
 - `pnpm registry:build` (or `pnpm dlx shadcn@latest build registry/registry.json`)
   to produce the hosted JSON.
 - `brand-ui search <name>` should then surface the item; consumers add it with

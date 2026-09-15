@@ -133,7 +133,7 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - CodeBlock — Shiki-highlighted code block with a copy button, filename and language selector.
   - avoid: Rendering a produced document with it — markdown assets go through MarkdownView; CodeBlock is for code.
   - avoid: Hand-rolling a copy button — CodeBlockCopyButton already handles the copied-state swap and its label.
-  - avoid: Loading the highlighter eagerly on a page that may never show code — Shiki is a heavy dependency (heavy-deps:check).
+  - avoid: Loading the highlighter eagerly on a page that may never show code — Shiki is a heavy dependency (the `eager-heavy-deps` rule in `pnpm check`).
 - CodeBlockActions
 - CodeBlockContainer
 - CodeBlockContent
@@ -390,7 +390,7 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
   - avoid: Putting destructive node actions in it with no confirm/undo — deleting a node loses its edges too.
   - avoid: Filling it with icon-only buttons and no labels — every icon-only control needs an accessible name.
 - OpenIn — A menu that hands the current prompt off to an external chat product via a deep link.
-  - avoid: Adding a provider by pasting a new origin inline — every shipped https origin has to be allow-listed and documented (`pnpm origins:check`).
+  - avoid: Adding a provider by pasting a new origin inline — every shipped https origin has to be allow-listed and documented (`pnpm check --rule remote-origins`).
   - avoid: Sending anything but the prompt — the deep link leaves your app, so it must not carry conversation or user data.
   - avoid: Presenting it as a primary action — it is an escape hatch beside the answer, not the way to continue the chat.
 - OpenInChatGPT
@@ -432,7 +432,7 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - PERSONA_SOURCES
 - Plan — A Card-shaped, collapsible plan the agent proposes before it starts executing — and the decision the human returns.
   - avoid: Reaching for it in a console transcript — the console counterpart of a three-state agent checklist is TerminalTodoList.
-  - avoid: Rendering a parse/validation error while the plan is still arriving — a half-streamed plan is not a failure (loading-states.md).
+  - avoid: Rendering a parse/validation error while the plan is still arriving — a half-streamed plan is not a failure (conventions.md, Loading & streaming states).
   - avoid: Using Plan for a finished run — a settled trace is a Task; Plan is the intent, not the record.
   - avoid: Hand-rolling the streaming affordance — pass `isStreaming` and let the shipped Shimmer carry it.
   - avoid: Wrapping a pending decision in an assertive live region — it contains focusable controls, so it is a labelled group; only the settled outcome announces.
@@ -573,7 +573,7 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
   - avoid: Rendering an empty shell when every segment is absent — the bar renders nothing at all.
   - avoid: Putting the stop affordance here — stopping belongs to the running turn, not to ambient chrome.
 - Shimmer — Motion-aware shimmering TEXT affordance for an in-progress ("Thinking…") line.
-  - avoid: Using it as a skeleton — a layout-shaped placeholder is `Skeleton`; Shimmer is text-only (loading-states.md).
+  - avoid: Using it as a skeleton — a layout-shaped placeholder is `Skeleton`; Shimmer is text-only (conventions.md, Loading & streaming states).
   - avoid: Wrapping non-string children — it takes a string; anything else defeats the per-character sweep.
   - avoid: Adding your own animation on top — the sweep already gates on `useReducedMotion`; a second one will not.
 - Snippet — One-line copyable command or value, built on the ui InputGroup.

@@ -70,7 +70,7 @@ their own colours, so give each mode its own colourway (the Qlik family does). P
 A family may vendor its own face: put the `.woff2` files under `fonts/<face>/` and register
 them in `<slug>-fonts.css` — `@font-face` rules only, `url("./fonts/<face>/…")` paths,
 no `[data-theme]` block. The scheme files then name the face in `--font-sans` /
-`--font-display`. `pnpm community-themes:check` verifies every referenced file exists and
+`--font-display`. `pnpm check --rule community-themes` verifies every referenced file exists and
 `pnpm gen` wires the fonts file into Storybook. Themes need no entry in `ATTRIBUTION.md`.
 See [Qlik](./qlik/).
 
@@ -119,7 +119,7 @@ This copies the current default themes into `themes/<slug>/`. It renames the sel
 tints the brand and neutral colours toward `--hue`, leaving status colours alone. Then:
 
 1. Edit the colour values in the `.css` files (`oklch()`).
-2. `pnpm community-themes:check` — every token must be present, and body text must be
+2. `pnpm check --rule community-themes` — every token must be present, and body text must be
    readable (WCAG AA 4.5:1) in each mode.
 3. `pnpm gen` — adds the family to the Storybook theme picker so you can preview it on
    real components.

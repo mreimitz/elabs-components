@@ -14,7 +14,7 @@ Read `docs/RELEASING.md` before acting — it is the procedure of record.
 ## 1. Preflight — stop on anything red
 
 - `pnpm changeset status` names what would ship. Nothing pending → nothing to release.
-- `pnpm version-sync:check` — root, plugin manifests and MCP `SERVER_INFO` agree with the packages.
+- `pnpm check` (version-sync rule) — root, plugin manifests and MCP `SERVER_INFO` agree with the packages.
 - `pnpm consumer:check` — packs and installs the packages the way a consumer does; the only
   check that sees `dist/`. A failure blocks the release; never skip it.
 

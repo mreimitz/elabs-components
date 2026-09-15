@@ -1,6 +1,6 @@
 <!-- GENERATED FILE — do not edit by hand.
-     Source: brand-ui.manifest.json (via `pnpm inventory`).
-     Regenerate after any component/token change; the inventory:check gate fails on drift. -->
+     Source: brand-ui.manifest.json (via `pnpm gen`).
+     Regenerate after any component/token change; `pnpm gen:check` fails on drift. -->
 
 # brand-ui component inventory
 

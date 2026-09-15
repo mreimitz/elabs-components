@@ -19,7 +19,7 @@ continuously re-proven, and verify against your own build.
 
 Three gates still keep the page internally honest: `pnpm check --rule remote-origins` (every
 `https://` origin in shipped source is allowlisted and listed here),
-`pnpm tt-aliases:check` (the §2.2 snippet still resolves to the DOM-free builds —
+`pnpm check --rule tt-aliases` (the §2.2 snippet still resolves to the DOM-free builds —
 this one does execute, against the real filesystem), and `pnpm check --rule csp-policy` (§2.7
 matches `docs/csp-policy.json` and every relaxation carries a named carve-out).
 
@@ -265,7 +265,7 @@ webpack and Next.js take the same `resolve.alias` shape (in Next, inside
 **pnpm wrinkle:** both packages are _transitive_, so under pnpm's isolated layout
 `require.resolve` throws from your app root. Add them as direct `devDependencies`
 (or hoist them via `.npmrc`) for the alias to resolve. This repo dogfoods exactly
-that in `apps/docs`, and `pnpm tt-aliases:check` resolves both packages for real
+that in `apps/docs`, and `pnpm check --rule tt-aliases` resolves both packages for real
 on every CI run — so this snippet, unlike §2.7, is still continuously proven.
 
 **Cost, honestly:** the `decode-named-character-reference` DOM-free build pulls

@@ -317,7 +317,7 @@ export const RULES = [
  * LINE-scoped carve-out (consistent with this file's single-line-regex scope,
  * see the file header) keyed off the component name or an explicit
  * `data-service-logo` marker attribute — not a blanket colorRule exemption.
- * See docs/TOKEN_GUIDELINES.md and .claude/rules/icons.md.
+ * See docs/TOKEN_GUIDELINES.md and .claude/rules/conventions.md (Icons).
  */
 const SERVICE_LOGO_MARKER = /\bServiceLogo\b|\bdata-service-logo\b/;
 
@@ -543,7 +543,7 @@ export function scanText(
     for (const rule of RULES) {
       if (exempt.has(rule.id)) continue; // file-scoped exemption / opt-out marker
       if (isThemeFile && rule.colorRule) continue; // themes.css owns raw color
-      if (rule.colorRule && SERVICE_LOGO_MARKER.test(line)) continue; // registered service mark — its own brand colour (icons.md)
+      if (rule.colorRule && SERVICE_LOGO_MARKER.test(line)) continue; // registered service mark — its own brand colour (conventions.md, Icons)
       if (isCss && rule.copyRule) continue; // no JSX/prose copy in .css
       const target = rule.colorRule ? codeOnlyLines[i] : line;
       if (rule.re.test(target)) {

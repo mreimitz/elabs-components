@@ -12,7 +12,7 @@ paths:
 - **`brand-ui`** (persistent; `.mcp.json`, `brand-ui mcp` stdio;
   `mcp__brand-ui__{info,search,docs,tokens,audit}`) — what exists, how to use it: props,
   variants, intent, tokens, search, audit. Works with Storybook down; fresh once
-  `pnpm manifest` ran.
+  `pnpm gen` ran.
 - **`storybook`** (`@storybook/addon-mcp`; only while `pnpm storybook` runs, at
   `http://localhost:6006/mcp`) — see it render, test it: previews, interaction + axe tests,
   cross-theme checks.

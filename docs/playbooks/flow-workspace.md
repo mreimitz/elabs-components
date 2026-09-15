@@ -9,7 +9,7 @@ packages: ["@elabs-ai/components-ui", "@elabs-ai/components-flow", "@elabs-ai/co
 # Playbook — Flow workspace (node-and-edge canvas)
 
 Visual pipeline/workflow editor: branded React Flow canvas, typed nodes,
-selection-driven inspector. Template source: `templates/flow-workspace.tsx` (generated from this Storybook story by `pnpm gen:templates`).
+selection-driven inspector. Template source: `templates/flow-workspace.tsx` (generated from this Storybook story by `pnpm gen`).
 
 **Which canvas?** App canvases use `@elabs-ai/components-flow`'s `CanvasShell`. The
 `Canvas` in `@elabs-ai/components-ai` is for agent/chat visualizations (see #183). If

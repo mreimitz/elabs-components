@@ -110,7 +110,7 @@ Read `@.claude/rules/conventions.md`. Then:
 - **semantic tokens only** (`bg-primary`, `text-muted-foreground`) — never raw hex
 - if a new visual concept needs a new `--token`, scaffold it into **all theme
   blocks** in `packages/tokens/src/themes.css` (not just `:root`) so the
-  theme-token-parity gate (`pnpm theme-parity:check`, #89) passes by construction
+  `theme-parity` rule (`pnpm check --rule theme-parity`, #89) passes by construction
 - `class-variance-authority` if the component has meaningful variants
 - prefer a Radix primitive for any interactive/overlay behavior
 - export all public types
@@ -125,9 +125,8 @@ Read `@.claude/rules/conventions.md`. Then:
    `mcp__storybook__preview-stories` to show the user the rendered result (spot-check
    `light` + `dark`); otherwise run `pnpm --filter @elabs-ai/components-docs test-storybook`. See
    @.claude/rules/storybook-mcp.md.
-5. **Regenerate**: `pnpm manifest` then `pnpm gen`, so the new export reaches
-   `brand-ui.manifest.json` and the generated doc regions (`pnpm agent-docs`
-   refreshes every generated surface at once).
+5. **Regenerate**: `pnpm gen`, so the new export reaches `brand-ui.manifest.json` and
+   every generated doc surface at once (`pnpm gen:check` confirms nothing is stale).
 6. In your summary, note what was added (or extended/merged/replaced), the
    dedupe decision and why, and any follow-ups.
 

@@ -23,7 +23,7 @@
  *      field order; no timestamps (the manifest stale-gate diffs content).
  *
  * The runtime read path (`brand-ui info/search/docs/context`) never imports this
- * module — only `generateManifest` does, during `pnpm manifest` (a maintainer/CI
+ * module — only `generateManifest` does, during `pnpm gen` (a maintainer/CI
  * build step). The committed manifest stays the artifact consumers read.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -52,7 +52,7 @@ async function loadDocgen() {
   //   1. The existing test suite + committed manifest are built around the floor;
   //      flipping the default means committing the enriched manifest and updating
   //      those tests.
-  //   2. `manifest:check` regenerates-and-diffs in CI, so the committed enriched
+  //   2. `pnpm gen:check` regenerates-and-diffs in CI, so the committed enriched
   //      manifest must reproduce byte-for-byte on CI's OS/TS. That is LIKELY (types
   //      are toolchain-derived and paths are sanitized) but unproven cross-OS.
   // Enabling-by-default is therefore a clean, CI-determinism-gated follow-up — no

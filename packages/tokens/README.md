@@ -97,7 +97,7 @@ issue #427) — a theme's `--ring` must satisfy all of:
 4. **`--sidebar-ring: var(--ring)`** is the sanctioned mirror — an override
    reaches sidebar focus automatically. Never re-declare it with a literal.
 5. **Overriding it is supported**, in a `[data-theme="…"]`-scoped block,
-   provided (1)–(3) still hold. Verify with `pnpm roles:check` and
+   provided (1)–(3) still hold. Verify with `pnpm check --rule role-distinctness` and
    `pnpm --filter @elabs-ai/components-tokens test`. **Prefer
    forking the theme (`/new-theme`) over patching one token.**
 6. `:root`'s blue ring is **not** an exception — `:root`'s `--primary` is a
@@ -128,7 +128,7 @@ Before you ship it, check the same three constraints the contract states:
 Then verify against the repo's own gates:
 
 ```bash
-pnpm roles:check
+pnpm check --rule role-distinctness
 pnpm --filter @elabs-ai/components-tokens test
 ```
 

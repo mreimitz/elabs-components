@@ -23,7 +23,7 @@ local RFC-4180 serializer, never `toCsv`.
 
 `vi.mock("@elabs-ai/components-charts", async () => import("@elabs-ai/components-charts/test"))`
 — it VALIDATES (`assertChartContract`, throws `ChartContractError`), never mocks as a no-op.
-Gate `pnpm charts:test-double:check` (`src/test/**` never imports an engine or a barrel).
+`pnpm check --rule charts-test-double` (`src/test/**` never imports an engine or a barrel).
 
 ## Drill-down
 
@@ -38,11 +38,11 @@ shape; use `ChartDatapointLayer`, a positioned sibling of real `<button>`s.
 - Diverging data (`--chart-div-*`) carries sign by hue alone — every consumer adds a
   non-hue channel (glyph, hatch, label); greyscale test applies.
 - Furniture (grid, axis rules, links) paints ONE ink (`--chart-grid`) at FULL opacity, one
-  weight (`CHART_HAIRLINE_WIDTH`) — never `strokeOpacity < 1`. Gate `pnpm chart-hairline:check`.
+  weight (`CHART_HAIRLINE_WIDTH`) — never `strokeOpacity < 1`. `pnpm check --rule chart-hairline`.
 
 ## Honesty (RM-039)
 
-`pnpm charts:honesty:check`: bar/length marks are zero-based
+`pnpm check --rule charts-honesty`: bar/length marks are zero-based
 (`resolveBarValueDomain`/`resolveYDomain({includeZero:true})`); area/radius marks scale by
 sqrt (`areaRadius()`); no `Math.random()` (use `seededRnd`); a unit-decomposed chart states
 its unit visibly.

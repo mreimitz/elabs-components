@@ -21,7 +21,7 @@ packages:
 # Playbook — Marketing / presales landing page
 
 Standalone pitch page: nav → hero → proof → capability → relevance → trust →
-ask. Template source: `templates/marketing.tsx` (generated from this Storybook story by `pnpm gen:templates`).
+ask. Template source: `templates/marketing.tsx` (generated from this Storybook story by `pnpm gen`).
 
 ## Building blocks
 

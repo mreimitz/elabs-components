@@ -67,11 +67,8 @@ npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/data-table.j
 npx shadcn add https://mreimitz.github.io/elabs-components/r/4.0.0/data-table.json
 ```
 
-`pnpm registry:published:check` (wired into `.github/workflows/gates.yml`) gates
-this: it fails a build only if a **published** item stops resolving (real
-rot); until Pages is enabled and a version has shipped, it prints a skip
-notice and passes, since there is nothing to check yet. See that script's
-header comment for the full design.
+No automated check watches the published URLs; once Pages is enabled and a
+version has shipped, spot-check an item with the `npx shadcn add` command above.
 
 The alternative that needs no hosting at all still works: copy the item's
 source straight out of `registry/blocks/<name>/` into the consuming repo and
@@ -90,7 +87,7 @@ fix up import aliases.
   data table with toolbar). `registry:block`.
 - **Template** (full-screen archetype) — NOT a registry item. Generated from the
   Storybook `templates-*` stories into `docs/playbooks/templates/` via
-  `pnpm gen:templates` (single source of truth = the story).
+  `pnpm gen` (single source of truth = the story).
 
 ## Package vs. registry
 

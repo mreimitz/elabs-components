@@ -50,7 +50,8 @@ test` are green for every package touched; the component has a co-located story
 types are exported and the barrel export is updated; semantic tokens only, no raw hex;
 and `/review-component` (or the `brand-ui-reviewer` agent for anything bigger than a
 tweak) has run. `pnpm check:changed` scopes typecheck/lint/test to your diff;
-`pnpm gates` runs the full per-change gate battery. Full catalogue: `docs/GATES.md`.
+`pnpm check` runs every repo convention rule and `pnpm check:test` their self-tests.
+Full catalogue: `docs/GATES.md`.
 
 ## Borrowed from another project? Credit it in the same change
 
@@ -58,11 +59,11 @@ If you vendor, adapt, port, copy or re-express anything from another project —
 code, a design, sample data, an image, a technique — add it to
 `scripts/attributions.sources.json` (name, canonical URL, licence and copyright
 read from the upstream's actual LICENSE file — never from a badge or README) and
-run `pnpm gen:attributions`. That regenerates both [`ATTRIBUTION.md`](ATTRIBUTION.md)
+run `pnpm gen`. That regenerates both [`ATTRIBUTION.md`](ATTRIBUTION.md)
 and the in-product `AttributionPanel` from one dataset.
 
 A comment saying `// Adapted from foo` is a useful pointer, but it is **not** an
-attribution — `pnpm attribution:provenance:check` fails on one whose upstream is
+attribution — `pnpm check --rule attribution-provenance` fails on one whose upstream is
 not credited. Never hand-add an npm dependency; those are harvested from the
 manifests.
 
@@ -75,9 +76,10 @@ registered, a new inventory that must stay fresh, a new rule everything must fol
 not hand-kept) and/or a gate/hook (so a violation _fails CI_, not merely _warns in a
 doc_). A convention documented only in prose is incomplete and will drift.
 
-Plug into the existing gate set rather than inventing a parallel one — `manifest:check`,
-`components:check`, `ai:types-only`, `lucide:check`, `charts:reuse:check` (each with a
-`*:check:test` self-test so the gate can't silently rot). Catalogue: `docs/GATES.md`.
+Plug into the existing machinery rather than inventing a parallel one: a generator joins
+`pnpm gen` (freshness via `pnpm gen:check`), a rule joins `pnpm check` as one
+`scripts/check/rules/<id>.mjs` with pass/fail fixtures that `pnpm check:test` runs, so the
+rule can't silently rot (`scripts/check/README.md`). Catalogue: `docs/GATES.md`.
 
 ## Release cadence & ownership
 
@@ -119,14 +121,16 @@ Plug into the existing gate set rather than inventing a parallel one — `manife
       an E2E test for any new flow
 - [ ] `pnpm build` passes
 - [ ] `pnpm format:check` clean
+- [ ] `pnpm check` and `pnpm check:test` pass
 - [ ] `pnpm registry:validate` passes (if registry touched)
 - [ ] Stories added/updated; component works in both themes
 - [ ] Public types exported; barrel export updated
 - [ ] No raw colors outside `themes.css`; no paid deps; no secrets/absolute paths
 - [ ] Docs/ADR updated if conventions changed
 - [ ] Anything borrowed from another project is credited in
-      `scripts/attributions.sources.json` and `pnpm gen:attributions` was run
+      `scripts/attributions.sources.json` and `pnpm gen` was run
 - [ ] Enforcement over reminders: a new convention ships with a generator and/or a
       gate/hook (not just a doc note) — see "Self-maintaining repo" above
 
-Run `pnpm gates:all` to execute the full gate battery locally before opening a PR.
+CI runs the full pipeline on every push; run `pnpm check` and `pnpm check:test` locally
+before opening a PR.

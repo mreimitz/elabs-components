@@ -75,7 +75,7 @@ shadowless surfaces) are plain selectors and still apply. `@property` failing to
 `--decoration` stops interpolating; with the inks already neutralized, nothing
 depends on it.
 
-Verified by `pnpm decoration:check` (`scripts/check-decoration-css.mjs`), which
+Verified by `pnpm check --rule decoration-css`, which
 fails if the inks are ever declared without that `@supports` fallback.
 
 ## Touch devices

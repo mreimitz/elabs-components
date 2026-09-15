@@ -27,20 +27,20 @@ Canonical decisions (D1–D7): `docs/DECISIONS.md` + `decisions.md`.
 - Children over render-props; `renderX` only when the parent hands data back (`renderItem`).
 - `data-slot`: root `data-slot="<kebab-name>"`, each sub-part
   `data-slot="<kebab-name>-<part>"`. A preset wrapping a base component KEEPS the base
-  root slot (`UserMessage` emits `data-slot="message"`). Gate `pnpm data-slot:check`.
+  root slot (`UserMessage` emits `data-slot="message"`). `pnpm check --rule data-slot`.
 - Controlled/uncontrolled mirrors the platform; if both, `isControlled = value !== undefined`,
   never flip modes.
 - Export every public prop/type. Verify real props via `mcp__storybook__get-documentation`
   or the `.tsx` — never guess.
 - `*.stories.tsx` exercises every variant + key state (default/hover/focus/disabled,
-  loading/error/empty where relevant); gate `pnpm variants:check` — a new `cva` value
-  ships its story.
+  loading/error/empty where relevant); a new `cva` value ships its story
+  (`pnpm check --rule variant-coverage`).
 - `"use client"` on any component using hooks/effects an RSC app may consume.
 - A component's `index.ts` re-exports only its own surface — no barrels-of-everything.
 - A public subpath export (e.g. `@elabs-ai/components-<pkg>/markdown/frontmatter`) is
   warranted only when it has a lighter/different dependency tree AND a real consumer
   needs the leaf alone — never for API organization. Add it in `exports` +
-  `publishConfig.exports` + `tsup.config.ts`, run `pnpm manifest`, route through
+  `publishConfig.exports` + `tsup.config.ts`, run `pnpm gen`, route through
   `brand-ui-reviewer`.
 
 ## Styling & tokens
@@ -91,7 +91,7 @@ focus-visible:ring-ring`. Retarget: `focus-ring [--focus-ring-color:var(--sideba
   fallback. Two reference themes ship: `light` (default), `dark`.
 - CSS values are generated from the DTCG source (`packages/tokens/tokens/`) — author there,
   run `tokens:build`; never hand-edit `themes.css` values.
-- Every theme overrides every token (`pnpm theme-parity:check`). `color-scheme: light|dark`
+- Every theme overrides every token (`pnpm check --rule theme-parity`). `color-scheme: light|dark`
   in every theme block is load-bearing — anything swapping an asset by darkness reads it
   via `resolveThemeIsDark(el)`, never a registry lookup.
 - `ThemeProvider` writes/persists `data-theme`; `useTheme()` reads/sets it. Consumer themes:
@@ -110,7 +110,7 @@ focus-visible:ring-ring`. Retarget: `focus-ring [--focus-ring-color:var(--sideba
   `::before` layer that fades; mask the layer, never the host. `data-decoration="N"` or
   `<DecorationProvider level={N}>` dials a subtree; `ThemeProvider`/`useDecoration()`
   persist an override. At most one focal drafting gesture per region; when unsure, omit.
-  Gates: `pnpm decoration:check`, `pnpm decoration-collapse:check`, `pnpm elevation:check`.
+  Checked: `pnpm check --rule decoration-css,decoration-collapse,elevation`.
 
 ## Accessibility
 
@@ -152,8 +152,6 @@ Not-ready UI is prop-driven only (D5) — a component never fetches or reads `us
 - Never hand-roll `animate-pulse bg-muted` boxes — use `Skeleton`/`Spinner`/`StatePanel`/
   `Shimmer`. Skeletons `aria-hidden`; one `role="status" aria-live="polite"` per region.
   Reserve the final box size (CLS); `Shimmer` gates on `useReducedMotion`.
-- Gate `pnpm loading-states:check`: a manifest-listed component with a not-ready prop needs
-  a story at the not-ready value.
 
 ## Icons
 

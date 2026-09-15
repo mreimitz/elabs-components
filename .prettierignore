@@ -10,7 +10,7 @@ registry/__output
 # Excluded so the stale-gate diffs the generator's exact output, not Prettier's.
 brand-ui.manifest.json
 # Generated agent docs (WP-03 #87/#156/#82) — same single-source rule: their
-# stale-gates (`pnpm inventory:check` / `llms:check` / `context:check`) diff the
+# freshness check (`pnpm gen:check`) diffs the
 # generator's exact output, so Prettier must not reformat them.
 apps/docs/public/component-inventory.md
 apps/docs/public/brand-ui-context.md

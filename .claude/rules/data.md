@@ -38,10 +38,10 @@ paths:
 - `/core` (event-log model, DFG derivation, variant grouping, conformance math) is
   framework-free: no React/React Flow/visx/`@elabs-ai/components-*` import, pure and
   deterministic (no `Date.now()`/randomness/I/O).
-- `pnpm process:reuse:check` fails a name collision with `ui`/`flow`/`charts`/`data`, a raw
+- `pnpm check --rule process-reuse` fails a name collision with `ui`/`flow`/`charts`/`data`, a raw
   SVG primitive, an unwrapped `@xyflow/react` export, a sideways import, or an engine in
   `/core`. Escape hatch: `// process-reuse-exempt: <reason>`.
-- `pnpm process:test-double:check` guards `/test`: double completeness, engine isolation,
+- `pnpm check --rule process-test-double` guards `/test`: double completeness, engine isolation,
   `exports`/`publishConfig.exports`/`tsup.config.ts` wiring, manifest exclusion.
 
 History: `docs/rules-history/data-components.md`, `process-components.md`.
