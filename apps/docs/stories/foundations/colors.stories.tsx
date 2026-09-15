@@ -299,7 +299,7 @@ export const FocusRingVsStatus: Story = {
     <div className="max-w-2xl space-y-3">
       {/* Supplementary evidence for issue #427 / ADR 0027 — a purpose-built
           story is explicitly NOT the primary sweep for a token-value change
-          (Meta #161); a brand-ui-visual-ux-reviewer pass on a real,
+          (Meta #161); a brand-ui-reviewer visual pass on a real,
           unmodified app screen is. This exists so the semantic-collision
           question stays re-checkable after any future --ring retune. */}
       <p className="m-0 max-w-prose text-caption text-muted-foreground">

@@ -93,8 +93,7 @@ the note above). It flags, per file:line:
 - **Content anti-slop — the "Jane Doe effect" (WP-15)** — `slop-generic-name`
   ("John/Jane Doe"), `slop-fake-number` ("99.99%"), `slop-brand-name`
   ("Acme/Nexus"), `marketing-buzzword` (filler verbs). Advisory here (placeholders
-  can be intentional); the **ratcheted `pnpm slop:check` CI gate** is where these
-  get teeth — the audit reports, the gate enforces.
+  can be intentional); the audit reports them, and a reviewer decides.
 
 These are cheap, exact, and CI-friendly. The register-gated/perceptual tells
 (anti-card, 3-equal-cards, motion intensity) and rendered contrast stay in Pass 2.

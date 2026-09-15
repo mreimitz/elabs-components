@@ -9,7 +9,7 @@ and `npx skills add <path-to-this-repo>` reads it directly.
 - `brand-ui-component/` — maintainer: scaffold/extend a component.
 - `brand-ui-theme/` — themes + global tokens.
 - `brand-ui-registry/` — curate the shadcn-compatible registry.
-- `brand-ui-new-app/` — define-to-build: guided interview → `app-spec.md` → annotated app scaffold + starter `CLAUDE.md` (entry point: `/new-app`).
+- `brand-ui-new-app/` — define-to-build: guided interview → `app-spec.md` → annotated app scaffold + starter `CLAUDE.md` (entry point: `/brand-ui-new-app`).
 - `brand-ui-migrate/` — brownfield adoption: scan → map → phased plan → reviewed migration of an app that already exists (entry point: `/brand-ui-migrate`).
 - `brand-ui-enterprise/` — enterprise design-judgment layer: classify the surface (professional/consumer/marketing), pick the app-shell archetype, stand up the mandatory baseline, model objects → screens. Defers props to `brand-ui`, scoring to `brand-ui-audit`.
 

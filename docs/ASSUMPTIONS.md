@@ -46,7 +46,7 @@ Web access was available; key facts were verified against official docs
   dependency on Lucide. `lucide-react` is the **default** library for generic UI
   glyphs and is declared directly by the packages that use it
   (`@elabs-ai/components-ui`, `@elabs-ai/components-ai`, `@elabs-ai/components-editor`) — see
-  @.claude/rules/icons.md.
+  `.claude/rules/conventions.md` (Icons).
 
 ## Placeholder brand (replace these)
 

@@ -99,8 +99,8 @@ corrected several points; the build was updated to match:
 | Add / compose                                     | `/new-component`                        | **nothing** (must read source) |
 | Rules enforcement (tokens-only, forwardRef, a11y) | `.claude/rules/*` + `/review-component` | **nothing**                    |
 | Theming                                           | `/new-theme`                            | **nothing**                    |
-| Quality audit                                     | `/visual-review`, `/qa-flows`           | **nothing**                    |
-| Ship                                              | `/prepare-release`                      | n/a                            |
+| Quality audit                                     | `/review-component`                     | **nothing**                    |
+| Ship                                              | `/release --check`                      | n/a                            |
 
 Everything in `.claude/` today is **monorepo-internal**. A consumer who runs
 `npx shadcn add <brand-registry-url>` gets components but **zero** guidance on
@@ -205,7 +205,7 @@ Phase 3 wrapper over the _same_ engine.
   `BUILT_IN_THEMES`/`BUILT_IN_THEME_META`, registry theme item, contrast check).
   Useful to consumers too — though a consumer theme needs none of that, only
   `defineTheme` + the provider's `themes` prop (ADR 0029).
-- `brand-ui-registry` → `brand-ui-registry-curator` (package vs registry decision,
+- `brand-ui-registry` → `/new-registry-item` (package vs registry decision,
   `registry:validate`, build/publish).
 - (release stays a command; optionally `brand-ui-release`.)
 

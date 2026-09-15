@@ -48,7 +48,7 @@ in-chart data-label values (weight 800, vs. the lighter axis-label weight).
 
 ## Quality gates
 
-Every component must pass the checklist in `.claude/rules/quality-gates.md`:
+Every component must pass the definition of done in `CONTRIBUTING.md`:
 types exported, composable, semantic tokens, theme-safe, accessible, story, test,
 barrel export, no paid deps. Run `/review-component <path>` to audit.
 

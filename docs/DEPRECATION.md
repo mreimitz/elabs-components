@@ -76,7 +76,7 @@ Consumer-facing migration guidance lives in
   — the procedure is [`RELEASING.md` § 7 Rollback](./RELEASING.md#7-rollback).
 - **Escalation is a GitHub issue.** An internal consumer who hits a regression, a
   broken migration, or a removal they cannot absorb files one — see
-  `.claude/rules/issue-workflow.md`. That is the supported channel; a Slack
+  [`ISSUE_WORKFLOW.md`](./ISSUE_WORKFLOW.md). That is the supported channel; a Slack
   message is not a record.
 
 ## 5. Checklist for the person doing the deprecating

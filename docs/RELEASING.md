@@ -108,7 +108,6 @@ git push -u origin release/v2.1.0
 gh pr create --fill                           # <- THIS is the one battery run
 
 gh pr checks                                  # wait for the blocking job
-pnpm merge:check                              # refuses while anything blocking is red OR pending
 gh pr merge <n> --merge
 
 git fetch origin --tags
@@ -316,8 +315,8 @@ finish too, and today that means the Storybook interaction + axe job, which is
 `continue-on-error: true` and time-boxed at 25 minutes. Waiting on the run would put
 those 25 minutes back on the release, in front of the tag instead of behind it. A job
 is blocking **unless its name says otherwise** (`/non-blocking/i`) — the same
-fail-closed convention `pnpm merge:check` uses, imported from it so there is one
-definition. Rename a job and it becomes required again; add a job and it is required
+fail-closed convention, defined once as `NON_BLOCKING_NAME` in
+`scripts/check-release-verdict.mjs`. Rename a job and it becomes required again; add a job and it is required
 from the first run. An empty jobs list, or one with nothing blocking in it, refuses:
 "I found nothing that had to pass" is not "everything passed".
 

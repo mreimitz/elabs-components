@@ -5,8 +5,9 @@ How a coding agent (Claude Code or otherwise) should work in this repo.
 ## Orientation
 
 1. Read `CLAUDE.md` (and `AGENTS.md` for non-Claude agents).
-2. Skim the relevant `.claude/rules/*` for the task (component API, tokens,
-   theming, accessibility, registry, data/ai/flow).
+2. Skim the relevant `.claude/rules/*` for the task: `conventions.md` (component API,
+   tokens, theming, accessibility), `decisions.md`, and the path-scoped package rules
+   (`ai.md`, `charts.md`, `data.md`, `flow-maps-editor.md`, `registry.md`).
 3. Check existing siblings before writing new code — match patterns.
 
 ## Common tasks
@@ -20,29 +21,25 @@ How a coding agent (Claude Code or otherwise) should work in this repo.
   registers their own with `defineTheme` + `<ThemeProvider themes={…}>`.)
 - **New registry item:** `/new-registry-item <name> <type>` — add source +
   manifest entry, run `pnpm registry:validate`.
-- **Review:** `/review-component <path>` against the quality gates.
-- **Release check:** `/prepare-release` — runs all gates; lists publish commands.
-- **Browser QA / visual review:** `/qa-flows`, `/visual-review` (finders — they
-  report, they don't fix).
-- **File a finding:** `/file-issue <report|test|description>` — deep root-cause
-  analysis + an implementation-ready GitHub issue. See `docs/ISSUE_WORKFLOW.md`.
+- **Review (component, a11y, visual/UX):** `/review-component <path>` — a finder; it
+  reports, it doesn't fix.
+- **Release:** `/release` (`/release --check` validates without publishing).
+- **New app or screen:** the `brand-ui-new-app` skill.
+- **File a finding:** `/file-issue <report|test|description>` — fixes what is small,
+  files the rest as an implementation-ready GitHub issue. See `docs/ISSUE_WORKFLOW.md`.
 
-## Issue workflow (find → diagnose → file → fix)
+## Issue workflow (find → fix or file → fix from the issue)
 
-Findings (tests, finder agents, feedback) become GitHub issues; nobody fixes ad
-hoc. Finders report → `brand-ui-root-cause-analyst` does deep RCA + designs the fix →
-`/file-issue` dedupes and opens the issue → `brand-ui-component-builder` implements from it
-and adds the locking test. Full detail: `docs/ISSUE_WORKFLOW.md` and
-`.claude/rules/issue-workflow.md`.
+Findings (tests, reviews, feedback) are fixed in the change that found them or become
+GitHub issues. `/file-issue` triages and dedupes → `brand-ui-component-builder`
+implements from the issue and adds the locking test. Full detail: `docs/ISSUE_WORKFLOW.md`.
 
 ## Subagents
 
 Delegate to the specialized agents in `.claude/agents/` when useful:
-`brand-ui-design-system-architect` (structure/tokens), `brand-ui-component-builder` (implementation),
-`brand-ui-scaffold-builder` (app-spec → running app, via `brand-ui scaffold --write`),
-`brand-ui-accessibility-reviewer` (a11y audit), `brand-ui-visual-ux-reviewer` (visual/UX),
-`brand-ui-root-cause-analyst` (deep RCA → issue spec), `brand-ui-registry-curator` (registry),
-`brand-ui-docs-writer` (docs).
+`brand-ui-component-builder` (implementation), `brand-ui-reviewer` (component, a11y,
+visual/UX and root-cause review), `brand-ui-docs-writer` (docs), `brand-ui-release`
+(release).
 
 ## Validating changes
 
