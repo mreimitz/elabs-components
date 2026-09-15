@@ -331,15 +331,6 @@ test("gates.yml runs the gate in the BLOCKING job, and its self-test too", () =>
   assert.ok(blocking.has("tailwind-sources:check:test"));
 });
 
-test("AGENTS.md's command contract names the gate (docs:check cross-checks this against ci.yml)", () => {
-  const md = readFileSync(path.join(REPO_ROOT, "AGENTS.md"), "utf8");
-  assert.ok(
-    md.includes("pnpm tailwind-sources:check"),
-    'AGENTS.md\'s "Validate before you finish" contract must name the gate',
-  );
-  assert.ok(md.includes("pnpm tailwind-sources:check:test"));
-});
-
 // ── 5. end-to-end: the CLI (not just the pure function) passes on the real repo ──
 
 test("the REAL repo currently passes tailwind-sources:check (CLI run)", () => {

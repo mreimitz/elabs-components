@@ -172,10 +172,3 @@ test("microtypography:check and its :test are wired into gates.yml's blocking jo
   assert.ok(blocking.has("microtypography:check"), "gate step missing from gates.yml");
   assert.ok(blocking.has("microtypography:check:test"), "self-test step missing from gates.yml");
 });
-
-test("microtypography:check is registered in AGENTS.md's Validate-before-you-finish contract", async () => {
-  const { readFileSync } = await import("node:fs");
-  const agentsMd = readFileSync(join(REPO_ROOT, "AGENTS.md"), "utf8");
-  assert.match(agentsMd, /pnpm microtypography:check\b/);
-  assert.match(agentsMd, /pnpm microtypography:check:test\b/);
-});

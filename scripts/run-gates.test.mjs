@@ -47,7 +47,7 @@ const FIXTURE_PKG = {
     "composite:check": "pnpm a:check && pnpm b:check", // composite → excluded
     "format:check": "prettier --check .", // SLOW
     "consumer:check": "node scripts/check-consumer-install.mjs", // SLOW
-    "merge:check": "node scripts/check-merge-readiness.mjs", // NOT_PER_CHANGE
+    "changelog:check": "node scripts/check-changelog.mjs", // NOT_PER_CHANGE
     "ci-scope:test": "node --test scripts/resolve-ci-scope.test.mjs", // own CI step
     "release-report:test": "node --test scripts/write-release-report.test.mjs",
     "odd:test": "vitest run", // not the self-test shape
@@ -73,7 +73,7 @@ test("gates: --all adds the slow gates back", () => {
   const all = listGates({ pkgJson: FIXTURE_PKG, kind: "gates", all: true });
   for (const slow of SLOW_GATES) assert.ok(all.includes(slow), `${slow} runs under --all`);
   assert.ok(!all.includes("composite:check"), "a composite is never a gate");
-  assert.ok(!all.includes("merge:check"), "a not-per-change gate is never a gate");
+  assert.ok(!all.includes("changelog:check"), "a not-per-change gate is never a gate");
 });
 
 test("gates: --docs-only drops exactly the source-only groups", () => {
@@ -83,8 +83,8 @@ test("gates: --docs-only drops exactly the source-only groups", () => {
   assert.deepEqual(docs, ["a:check", "ai:types-only", "b:check", "registry:validate"]);
   assert.ok(DOCS_ONLY_SKIP.has("tokens:check") && DOCS_ONLY_SKIP.has("components:check"));
   assert.ok(DOCS_ONLY_SKIP.has("token-contract:check"));
-  // The set is the two former gates.yml groups: 14 tokens/themes + 24 contracts.
-  assert.equal(DOCS_ONLY_SKIP.size, 38);
+  // The set is the two former gates.yml groups: 11 tokens/themes + 20 contracts.
+  assert.equal(DOCS_ONLY_SKIP.size, 31);
 });
 
 test("selftests: `*:test` in the one node --test shape, minus the own-step one", () => {

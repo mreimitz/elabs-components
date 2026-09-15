@@ -70,7 +70,6 @@ export const NOT_PER_CHANGE_GATES = new Map([
   ["changelog:check", "release preflight: a feature branch correctly has no `## v<next>` heading"],
   ["dep-field-move:check", "reads the git INDEX (`--staged`); it is the pre-commit hook's check"],
   ["marketplace:check", "post-release smoke: asserts the PUBLISHED marketplace pointer"],
-  ["merge:check", "needs a PR context (`gh pr` checks); run before `gh pr merge`"],
   ["release-verdict:check", "release path only: resolves the CI verdict for a tagged commit"],
 ]);
 
@@ -100,14 +99,11 @@ export const DOCS_ONLY_SKIP = new Set([
   "tokens:dup-blocks:check",
   "token-contract:check",
   "theme-parity:check",
-  "roles:check",
   "palette:check",
   "decoration:check",
   "decoration-collapse:check",
   "surface-elevation:check",
   "elevation:check",
-  "separation:check",
-  "rung:check",
   "text-scale:check",
   "motion:check",
   // Component and package contracts
@@ -128,13 +124,9 @@ export const DOCS_ONLY_SKIP = new Set([
   "process:reuse:check",
   "process:test-double:check",
   "charts:honesty:check",
-  "timeline-fork:check",
-  "collapse-fork:check",
-  "sidebar-drift:check",
   "viewer-highlight:check",
   "microcopy:check",
   "microtypography:check",
-  "intent:check",
 ]);
 
 /** The one command shape a self-test may have; the capture is the test file. */
@@ -323,21 +315,12 @@ export function fileVerdicts(events) {
  * Self-tests that write to and stage files in the REAL repository, and therefore
  * cannot share it with anything else.
  *
- * `agent-docs-cascade:check:test` appends a probe export to a shipped component,
- * `git add`s it, runs the real pre-commit hook, then `git reset HEAD -- .`;
  * `dep-field-move:check:test` rewrites a package.json, stages it and runs the
- * checker `--staged`. Run concurrently they interleave: one test's blanket reset
- * unstages the other's fixture mid-assertion (reproduced: `The input did not
- * match /"prettier" moved devDependencies → dependencies/. Input: ''`), or the
- * other's `git add` lands inside the first's revert check (`REAL cascade test
- * failed to fully revert its own footprint`). The old sequential CI step could
- * not produce either. They run last, one at a time; everything else still runs
+ * checker `--staged`; run concurrently with another staging test they
+ * interleave. They run last, one at a time; everything else still runs
  * `concurrency` at a time.
  */
-export const SERIAL_SELFTESTS = new Set([
-  "agent-docs-cascade:check:test",
-  "dep-field-move:check:test",
-]);
+export const SERIAL_SELFTESTS = new Set(["dep-field-move:check:test"]);
 
 export async function runSelfTests(
   entries,
