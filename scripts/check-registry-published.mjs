@@ -142,8 +142,7 @@ const GH_API_TIMEOUT_MS = 10_000;
 /**
  * The default `execImpl` for {@link isPagesConfigured} — shells out to
  * `gh api repos/:owner/:repo/pages`, the authoritative GitHub Pages
- * Settings-configuration endpoint (same `gh api repos/:owner/:repo/...`
- * idiom `check-merge-readiness.mjs` already uses against this exact repo).
+ * Settings-configuration endpoint.
  * Returns the raw stdout string on success; throws (with `.stderr` set,
  * matching `execFileSync`'s own error shape) on any failure — a 404
  * because Pages was never enabled, no `gh` binary, no auth, a rate limit,

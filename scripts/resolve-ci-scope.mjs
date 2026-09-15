@@ -14,14 +14,12 @@
  * ## What this is NOT allowed to do
  *
  * The obvious fix — `paths-ignore:` on the workflow — is WRONG here and must not
- * be reintroduced. Two things read the CI job's verdict for an exact commit:
- * `check-release-verdict.mjs` (a `v*` tag publishes only against a green
- * blocking job for the tagged SHA) and `check-merge-readiness.mjs` (both refuse
- * when a blocking check has not reported). A workflow that does not RUN produces
- * no verdict, so `paths-ignore` would not "skip CI on docs" — it would make
- * every docs commit unmergeable and unreleasable, and both guards are
- * deliberately fail-closed. The job must always run and always conclude; only
- * its CONTENTS may shrink.
+ * be reintroduced. `check-release-verdict.mjs` reads the CI job's verdict for an
+ * exact commit (a `v*` tag publishes only against a green blocking job for the
+ * tagged SHA, and refuses when it has not reported). A workflow that does not
+ * RUN produces no verdict, so `paths-ignore` would not "skip CI on docs" — it
+ * would make every docs commit unreleasable. The job must always run and always
+ * conclude; only its CONTENTS may shrink.
  *
  * ## Why a reduced battery is still sound
  *

@@ -32,7 +32,7 @@ test("source, config and asset paths are never documentation", () => {
     "package.json",
     "pnpm-lock.yaml",
     ".github/workflows/gates.yml",
-    "scripts/check-debrand.mjs",
+    "scripts/check-conflict-markers.mjs",
     "docs/csp-policy.json",
     "packages/tokens/src/fonts/OFL.txt",
     "apps/docs/.storybook/preview.tsx",
