@@ -42,19 +42,29 @@ Keep changes scoped to one concern per PR where possible.
 - Update `docs/` or `.claude/rules/` when you change a convention.
 - Notable decisions get an ADR in `docs/ADR/`.
 
+## Definition of done
+
+A change is done when: `pnpm --filter @elabs-ai/components-<pkg> typecheck && lint &&
+test` are green for every package touched; the component has a co-located story
+(`tags: ["autodocs"]`) verified in both themes (`light`, `dark`) via Storybook; public
+types are exported and the barrel export is updated; semantic tokens only, no raw hex;
+and `/review-component` (or the `brand-ui-reviewer` agent for anything bigger than a
+tweak) has run. `pnpm check:changed` scopes typecheck/lint/test to your diff;
+`pnpm gates` runs the full per-change gate battery. Full catalogue: `docs/GATES.md`.
+
 ## Borrowed from another project? Credit it in the same change
 
 If you vendor, adapt, port, copy or re-express anything from another project —
 code, a design, sample data, an image, a technique — add it to
 `scripts/attributions.sources.json` (name, canonical URL, licence and copyright
-read from the upstream's actual LICENSE file) and run `pnpm gen:attributions`.
-That regenerates both [`ATTRIBUTION.md`](ATTRIBUTION.md) and the in-product
-`AttributionPanel` from one dataset.
+read from the upstream's actual LICENSE file — never from a badge or README) and
+run `pnpm gen:attributions`. That regenerates both [`ATTRIBUTION.md`](ATTRIBUTION.md)
+and the in-product `AttributionPanel` from one dataset.
 
 A comment saying `// Adapted from foo` is a useful pointer, but it is **not** an
 attribution — `pnpm attribution:provenance:check` fails on one whose upstream is
 not credited. Never hand-add an npm dependency; those are harvested from the
-manifests. Full rule: [`.claude/rules/attribution.md`](.claude/rules/attribution.md).
+manifests.
 
 ## Self-maintaining repo (enforcement over reminders)
 
@@ -65,10 +75,9 @@ registered, a new inventory that must stay fresh, a new rule everything must fol
 not hand-kept) and/or a gate/hook (so a violation _fails CI_, not merely _warns in a
 doc_). A convention documented only in prose is incomplete and will drift.
 
-Plug into the existing gate set rather than inventing a parallel one — `pnpm docs:check`,
-`manifest:check`, `components:check`, `agents:check`, `ai:types-only`, `lucide:check`,
-`charts:reuse:check` (each with a `*:check:test` self-test so the gate can't silently
-rot). Full principle: `.claude/rules/quality-gates.md` → "Enforcement over reminders".
+Plug into the existing gate set rather than inventing a parallel one — `manifest:check`,
+`components:check`, `ai:types-only`, `lucide:check`, `charts:reuse:check` (each with a
+`*:check:test` self-test so the gate can't silently rot). Catalogue: `docs/GATES.md`.
 
 ## Release cadence & ownership
 
@@ -97,11 +106,10 @@ rot). Full principle: `.claude/rules/quality-gates.md` → "Enforcement over rem
   (automatic review requests; branch protection is not available on this repo's
   plan, so it documents ownership rather than blocking a merge).
 - **Does a new component earn a place in a package?** There is no separate RFC
-  process — use the two gates that already exist: the **dedupe/reuse audit** at
-  the top of `.claude/rules/quality-gates.md` (does this already exist across
-  `@elabs-ai/components-*` or `registry/`?) and decision **D4** in
-  [`docs/DECISIONS.md`](./docs/DECISIONS.md) (stable shared primitive → package;
-  prototype-specific composition → copy-own registry block).
+  process — use the two checks that already exist: a **dedupe/reuse audit** first
+  (does this already exist across `@elabs-ai/components-*` or `registry/`?) and
+  decision **D4** in [`docs/DECISIONS.md`](./docs/DECISIONS.md) (stable shared
+  primitive → package; prototype-specific composition → copy-own registry block).
 
 ## Registry item requirements
 
@@ -128,4 +136,4 @@ rot). Full principle: `.claude/rules/quality-gates.md` → "Enforcement over rem
 - [ ] Enforcement over reminders: a new convention ships with a generator and/or a
       gate/hook (not just a doc note) — see "Self-maintaining repo" above
 
-Run `/prepare-release` to execute the full gate locally before opening a PR.
+Run `pnpm gates:all` to execute the full gate battery locally before opening a PR.

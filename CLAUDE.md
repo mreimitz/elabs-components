@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Project memory for Claude Code — lean by design; the binding detail lives in `.claude/rules/`.
+Project memory for Claude Code — lean by design; binding detail lives in `.claude/rules/`.
 
 ## Purpose
 
@@ -28,71 +28,21 @@ pnpm workspaces + Turborepo · TypeScript · React 19 · Tailwind CSS v4 (CSS va
 - `@elabs-ai/components-process` — process mining / event-log analysis; the one layer-3 package (ADR 0034).
 - Apps: `apps/docs` (Storybook); `fixtures/consumer-smoke` (install-shape smoke test).
 
-## Architecture rules
-
-- Dependencies flow one way: `tokens` → `ui`/`icons` → `data`/`ai`/`flow`/`maps`/`charts`/`marketing`/`editor`/`viewer`/`terminal` → `process`.
-  `process` is the one **layer-3** package (ADR 0034): it composes `flow`/`charts`/`data`/`ui`
-  and nothing depends on it. Primitives go DOWN into the base package that owns them;
-  compositions go UP. Layer-2 leaves still never import each other.
-- Import across packages via `@elabs-ai/components-*`, never relative paths.
-- Two consumption modes: import stable primitives; copy-own prototype blocks via the registry (`npx shadcn add`).
-- Packages export TypeScript source (apps transpile it); `tsup` builds `dist/` for distribution.
+Dependencies flow one way: `tokens` → `ui`/`icons` → `data`/`ai`/`flow`/`maps`/`charts`/`marketing`/`editor`/`viewer`/`terminal` → `process` (the one layer-3 composite, ADR 0034). Import across packages via `@elabs-ai/components-*`, never relative paths.
 
 ## Commands
 
-- `pnpm install` · `pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm format`
-- `pnpm check:changed` (typecheck/lint/test scoped to the diff vs `origin/main`) · `pnpm gates` (every gate, in parallel)
-- `pnpm storybook` · `pnpm --filter @elabs-ai/components-docs test-storybook` (stories as interaction + a11y tests)
-- `pnpm registry:validate` · scope anything with `--filter @elabs-ai/components-<pkg>`
+`pnpm install` · `dev` · `build` · `lint` · `typecheck` · `test` · `format` · `gates` (the per-change gate battery, parallel) · `check:changed` (scoped to your diff) · `storybook` · `gen` (regenerate generated doc regions)
 
-## Coding standards
+## Conventions
 
-- `forwardRef` + spread `...props` + accept `className` merged via `cn()`.
-- Variants via `class-variance-authority`; export public types.
-- Semantic tokens only — **no raw hex outside `packages/tokens/src/themes.css`**.
-- Radix primitives for interactive/overlay behavior; React Aria only where it clearly helps.
+Read [`.claude/rules/conventions.md`](.claude/rules/conventions.md) (component API, styling/tokens, theming, accessibility, loading states, icons) and [`.claude/rules/decisions.md`](.claude/rules/decisions.md) (D1–D7, canonical in `docs/DECISIONS.md`). Package-specific detail is path-scoped — `ai.md`, `charts.md`, `data.md`, `flow-maps-editor.md`, `registry.md`, `storybook-mcp.md` — loaded only when a matching file is touched. Definition of done, review routing and the gate catalogue: `CONTRIBUTING.md` and `docs/GATES.md`.
 
-## Component creation workflow
-
-Use `/new-component <pkg> <Name> [purpose]`: `tsx`, `index.ts`, `*.stories.tsx`, `*.test.tsx`, tokens, barrel export,
-then `pnpm --filter @elabs-ai/components-<pkg> typecheck && pnpm --filter @elabs-ai/components-<pkg> lint && pnpm --filter @elabs-ai/components-<pkg> test`. Audit with `/review-component`.
-
-## Storybook MCP (agent tooling)
-
-With `pnpm storybook` running (MCP at `http://localhost:6006/mcp`) prefer `mcp__storybook__*` over grepping source: real props, previews, interaction + a11y tests.
-**Never hallucinate a component prop — verify it via the MCP docs tools first.**
-Start the server (background) to verify UI and stop it when done; never for non-UI work. See the storybook-mcp rule.
-
-## Theming rules
-
-Themes are `data-theme` blocks in `themes.css`, exposed via `@theme inline`; every theme overrides every token. Add one with `/new-theme`.
-**Two themes ship: `light` (default) and `dark`.**
-The **decoration dial** (`--decoration` 0–10, orthogonal to color) adds drafting texture to any theme; see the decoration + theming rules.
-
-## Registry rules
-
-Stable primitives → packages; prototype compositions → registry blocks/templates.
-Keep `registry/registry.json` valid (`pnpm registry:validate`). See the registry rule.
-
-## Safety rules
+## Safety
 
 - Never commit secrets, `.env`, or machine-specific absolute paths.
+- No raw hex outside `packages/tokens/src/themes.css`; no paid dependencies.
 - No destructive commands; no force pushes (hooks enforce this).
-- No paid dependencies; don't build closed abstractions that block editing.
-
-## Quality gates
-
-Run the scoped checks locally (`pnpm check:changed`); the full battery is CI (`pnpm gates` mirrors it).
-Definition of done: [the quality-gates rule](.claude/rules/quality-gates.md).
-
-## Issue workflow
-
-Fix small in-scope findings directly; file only what you leave behind — `/file-issue` batches
-findings into root-caused GitHub issues (finders report, builders fix). See the issue-workflow rule.
-
-## Detailed rules
-
-**Canonical decisions** (D1–D7): `docs/DECISIONS.md` is the single source; the table below is a generated, stale-gated mirror — edit there, then run `pnpm gen`.
 
 <!-- brand-ui:gen:decisions:start -->
 <!-- Generated from the DECISIONS:SUMMARY region of `docs/DECISIONS.md` — edit decisions there, not here. -->
@@ -109,8 +59,3 @@ findings into root-caused GitHub issues (finders report, builders fix). See the 
 | **D7** | Maintainer decisions | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory). | [`quality-gates.md`](../.claude/rules/quality-gates.md) |
 
 <!-- brand-ui:gen:decisions:end -->
-
-- **Cross-cutting rules load on EVERY session** (no `paths:` frontmatter): `design-system`, `design-first`, `component-api`, `styling-and-tokens`, `theming`, `accessibility`, `interaction-guidelines`, `conceptual-framing`, `quality-gates`, `issue-workflow`, `icons`, `storybook-mcp`, `decision-routing`, `scope-and-non-goals`, `loading-states`, `attribution`.
-- **Package/area rules are path-scoped** (`paths:` frontmatter, loaded only when a matching file is touched): chart-components, editor-components, viewer-components, react-flow-components, map-components, data-components, ai-chat-components, ai-sdk-vs-a2ui, decoration, terminal-components, process-components, registry, architecture-review.
-
-Always-on governance is budgeted (72 KB total, 8 KB per rule — `pnpm rules:scoping:check`); history lives in `docs/rules-history/`.

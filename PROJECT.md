@@ -100,6 +100,6 @@ reasoning behind each major choice.
 
 ## Quality gates
 
-See `.claude/rules/quality-gates.md`. Every component: typed, composable,
-token-driven, theme-safe, accessible, story + smoke test, barrel export, green
-`typecheck`/`lint`/`test`, no paid deps.
+See `.claude/rules/conventions.md` and `CONTRIBUTING.md` → "Definition of done". Every
+component: typed, composable, token-driven, theme-safe, accessible, story + smoke test,
+barrel export, green `typecheck`/`lint`/`test`, no paid deps.
