@@ -1,4 +1,4 @@
-/* GENERATED from packages/charts/src/templates-dashboard.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/charts/src/templates-dashboard.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen dashboard template (single source of truth: the Storybook story). */
 
 /**

@@ -35,7 +35,7 @@ if (check) {
   if (current !== next) {
     console.error(
       "✖ component-inventory.md is STALE — it does not match the manifest.\n" +
-        "  Run `pnpm inventory` and commit the result.\n" +
+        "  Run `pnpm gen` and commit the result.\n" +
         "  (It is generated from brand-ui.manifest.json; never hand-edit it.)",
     );
     process.exit(1);

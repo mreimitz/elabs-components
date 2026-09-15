@@ -369,7 +369,7 @@ function runCli() {
       console.error(
         `✖ package README license sections DISAGREE with package.json (${licenseMismatches.length}):\n` +
           licenseMismatches.map((s) => "  - " + s).join("\n") +
-          "\n\n  Run `pnpm gen:readmes` and commit the result.",
+          "\n\n  Run `pnpm gen` and commit the result.",
       );
       process.exit(1);
     }
@@ -377,7 +377,7 @@ function runCli() {
       console.error(
         `✖ package READMEs are STALE (${stale.length}):\n` +
           stale.map((s) => "  - " + s).join("\n") +
-          "\n\n  Run `pnpm gen:readmes` and commit the result.\n" +
+          "\n\n  Run `pnpm gen` and commit the result.\n" +
           "  These READMEs are what a consumer sees on the GitHub Packages page.",
       );
       process.exit(1);

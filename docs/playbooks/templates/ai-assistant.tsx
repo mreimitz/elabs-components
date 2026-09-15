@@ -1,4 +1,4 @@
-/* GENERATED from packages/ai/src/templates-ai-assistant.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/ai/src/templates-ai-assistant.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen ai-assistant template (single source of truth: the Storybook story). */
 
 /**

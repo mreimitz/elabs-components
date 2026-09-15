@@ -1,4 +1,4 @@
-/* GENERATED from packages/data/src/templates-data-app.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/data/src/templates-data-app.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen data-app template (single source of truth: the Storybook story). */
 
 /**

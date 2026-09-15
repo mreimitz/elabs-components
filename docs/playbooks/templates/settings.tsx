@@ -1,4 +1,4 @@
-/* GENERATED from packages/ui/src/templates-settings.stories.tsx by pnpm gen:templates — do not edit. */
+/* GENERATED from packages/ui/src/templates-settings.stories.tsx by pnpm gen — do not edit. */
 /* Full-screen settings template (single source of truth: the Storybook story). */
 
 /**

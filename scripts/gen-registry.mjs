@@ -235,7 +235,7 @@ export function renderRegistry(authoredRegistry, deps = {}) {
   };
 }
 
-function main() {
+async function main() {
   const check = process.argv.includes("--check");
 
   if (!existsSync(ITEMS_PATH)) {
@@ -255,7 +255,7 @@ function main() {
     if (!same) {
       console.error(
         "✖ registry/registry.json is STALE — it disagrees with the block source.\n" +
-          "  Run `pnpm gen:registry` and commit the result.\n" +
+          "  Run `pnpm gen` and commit the result.\n" +
           "  `files`, `dependencies` and `registryDependencies` are derived; author\n" +
           "  name/title/description/root in registry/registry.items.json instead.",
       );
@@ -265,10 +265,15 @@ function main() {
     return;
   }
 
-  writeFileSync(OUT_PATH, next);
+  // Write the Prettier-formatted form (the committed shape `format:check` keeps), so a
+  // regeneration of an unchanged source is a byte-level no-op — `pnpm gen --check`
+  // diffs bytes, not parsed values.
+  const prettier = await import("prettier");
+  const options = (await prettier.resolveConfig(OUT_PATH)) ?? {};
+  writeFileSync(OUT_PATH, await prettier.format(next, { ...options, filepath: OUT_PATH }));
   console.log(`✔ registry/registry.json written — ${authored.items.length} items.`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+  await main();
 }
