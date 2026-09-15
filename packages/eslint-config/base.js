@@ -3,6 +3,7 @@ import tseslint from "typescript-eslint";
 import prettier from "eslint-config-prettier";
 import brandTokens from "./rules/brand-tokens.js";
 import sidebarInk from "./rules/sidebar-ink.js";
+import productConventions from "./rules/product-conventions.js";
 
 /**
  * Shared, framework-agnostic ESLint flat config for all @brand packages.
@@ -84,6 +85,28 @@ export const baseConfig = [
         },
       ],
     },
+  },
+  {
+    // Product conventions as class-string rules (./rules/product-conventions.js). "warn" keeps
+    // `pnpm lint` non-breaking; `pnpm check` runs the same rules at error level against a
+    // per-file ratchet (scripts/check/rules/<id>.mjs). Tests and stories are exempt, as there.
+    files: ["**/*.{ts,tsx,js,jsx,mts,cts}"],
+    ignores: ["**/*.test.{ts,tsx,js,jsx}", "**/*.stories.{ts,tsx,js,jsx}"],
+    plugins: { conventions: productConventions },
+    rules: {
+      "conventions/radius-rungs": "warn",
+      "conventions/focus-ring-only": "warn",
+      "conventions/disabled-recipe": "warn",
+      "conventions/logical-props": "warn",
+    },
+  },
+  {
+    // type-roles is scoped to .tsx component source; stories stay on brand/no-raw-font-size
+    // + the text-scale ratchet.
+    files: ["**/*.tsx"],
+    ignores: ["**/*.test.tsx", "**/*.stories.tsx"],
+    plugins: { conventions: productConventions },
+    rules: { "conventions/type-roles": "warn" },
   },
   {
     // Tests legitimately demo raw sizes/colours AND assert on raw class strings
