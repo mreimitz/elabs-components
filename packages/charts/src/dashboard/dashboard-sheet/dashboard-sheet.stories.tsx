@@ -1,17 +1,20 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 
-import opsFlow from "../core/__fixtures__/ops-flow.json";
-import salesOverview from "../core/__fixtures__/sales-overview.json";
 import { cellRect } from "../core/layout";
 import type { DashboardSpec, TileSpec } from "../core/spec";
+import { opsFlowSpec } from "../fixtures/ops-flow";
+import { salesOverviewSpec } from "../fixtures/sales-overview";
 import { DashboardProvider, DashboardSheet, createPlaceholderTileKind } from "./index";
 
 const TILES = ["kpi", "chart", "text", "placeholder"].map((kind) =>
   createPlaceholderTileKind(kind),
 );
-const SALES = salesOverview as unknown as DashboardSpec;
-const OPS = opsFlow as unknown as DashboardSpec;
+// RM-077's typed fixtures (`../fixtures/*`) — the same RM-070 golden layouts, but with real
+// 24-row seeded datasets on every `chart` tile instead of the raw JSON's 2-point placeholder
+// arrays (`withRealRows`, `../fixtures/apply-rows.ts`).
+const SALES: DashboardSpec = salesOverviewSpec;
+const OPS: DashboardSpec = opsFlowSpec;
 
 const LAZY: DashboardSpec = {
   version: 1,
