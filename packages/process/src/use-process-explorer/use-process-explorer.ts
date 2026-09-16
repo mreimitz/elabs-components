@@ -62,7 +62,7 @@ import { discoverGraph } from "../core/discover-graph";
 import { durationStats } from "../core/duration-stats";
 import { extractVariants, variantKey } from "../core/extract-variants";
 import type { FilterSpec } from "../core/filter-log";
-import { filterLog } from "../core/filter-log";
+import { filterLog, filterNormalizedLog } from "../core/filter-log";
 import { reconcileGraph } from "../core";
 import type { EventLog, FrequencyMode, PerformanceAgg, ProcessGraph, Variant } from "../core/types";
 import {
@@ -138,6 +138,17 @@ export interface UseProcessExplorerResult {
   applyIntent(intent: FilterIntent): void;
   clearIntent(index: number): void;
   intents: FilterIntent[];
+  /**
+   * How many cases EACH active intent alone excludes — parallel to {@link intents} (same
+   * index), for `ProcessFilterBar` (RM-056, #205)'s per-chip "excluded N" count. For intent
+   * `i`, this is the case count filtered by every intent BEFORE `i` minus the case count
+   * filtered by every intent up to and including `i` — so it isolates what `i` itself
+   * removes from the chain, not what the whole chain removes. `[]` when no intents are
+   * active. Computed with one `filterNormalizedLog` call per prefix (`n + 1` calls for `n`
+   * intents, reusing each prefix's count for both the term it ends and the term it starts),
+   * never `n²` — additive field, `intents`/`applyIntent`/`clearIntent` are unchanged.
+   */
+  excludedByIntent: number[];
   filteredLog: EventLog;
   /**
    * Per-element states the active filter contributes — pass straight into `ProcessMap`'s
@@ -419,6 +430,19 @@ export function useProcessExplorer(
     [log, intents],
   );
 
+  // One `filterNormalizedLog` call per prefix (`0..intents.length`, so `n + 1` for `n`
+  // intents) — `prefixCaseCounts[i]` is the case count after applying only the first `i`
+  // intents. Each intent's own excluded count is then just the drop between two adjacent
+  // prefixes, so nothing here is O(intents²) (RM-056, #205).
+  const excludedByIntent = useMemo(() => {
+    if (intents.length === 0) return [];
+    const prefixCaseCounts: number[] = [];
+    for (let i = 0; i <= intents.length; i += 1) {
+      prefixCaseCounts.push(filterNormalizedLog(log, intents.slice(0, i)).totals.cases);
+    }
+    return intents.map((_, i) => prefixCaseCounts[i]! - prefixCaseCounts[i + 1]!);
+  }, [log, intents]);
+
   // Two independent discoveries — see the module docblock. `variants`, `kpis` and `rework`
   // read the FILTERED one; `graph` reads BOTH, full first through abstraction, then
   // reconciled against filtered (Invariant F: filtering re-inks, never removes).
@@ -529,6 +553,7 @@ export function useProcessExplorer(
     applyIntent,
     clearIntent,
     intents,
+    excludedByIntent,
     filteredLog,
     selectionStates,
     hiddenCounts: graph.hidden,

@@ -264,6 +264,50 @@ describe("useProcessExplorer — filter intents (the RM-052 acceptance criterion
   });
 });
 
+describe("useProcessExplorer — excludedByIntent (RM-056, #205)", () => {
+  it("is empty with no active intents", () => {
+    const { result } = renderHook(() => useProcessExplorer(orderToCash));
+    expect(result.current.excludedByIntent).toEqual([]);
+  });
+
+  it("hand-computed against the fixture: a three-intent chain, each entry the MARGINAL exclusion", () => {
+    // Fixture cases: case-1/2 (happy path), case-3 (Reject Order), case-4 (Amend Order,
+    // then the happy path), case-5 (happy path, Send Invoice before Ship).
+    const { result } = renderHook(() => useProcessExplorer(orderToCash));
+
+    // A: drop case-3 (the only case with "Reject Order") — 5 cases -> 4, excludes 1.
+    act(() => result.current.applyIntent({ kind: "without", activity: "Reject Order" }));
+    // B: of the remaining 4 (case-1/2/4/5), keep only "Amend Order" — just case-4 — so B
+    // alone (on top of A) excludes the other 3 (case-1/2/5).
+    act(() => result.current.applyIntent({ kind: "with", activity: "Amend Order" }));
+    // C: of the remaining 1 (case-4), "endsWith Receive Payment" still holds — excludes 0.
+    act(() => result.current.applyIntent({ kind: "endsWith", activity: "Receive Payment" }));
+
+    expect(result.current.intents).toEqual([
+      { kind: "without", activity: "Reject Order" },
+      { kind: "with", activity: "Amend Order" },
+      { kind: "endsWith", activity: "Receive Payment" },
+    ]);
+    expect(result.current.excludedByIntent).toEqual([1, 3, 0]);
+    // The chain's own final case count agrees with the KPI strip's own number — no
+    // double counting between the per-chip figures and the whole-chain total.
+    expect(result.current.kpis.cases).toBe(1);
+  });
+
+  it("stays parallel to `intents` after clearIntent drops an entry from the middle", () => {
+    const { result } = renderHook(() => useProcessExplorer(orderToCash));
+    act(() => result.current.applyIntent({ kind: "without", activity: "Reject Order" }));
+    act(() => result.current.applyIntent({ kind: "with", activity: "Amend Order" }));
+    expect(result.current.excludedByIntent).toEqual([1, 3]);
+
+    act(() => result.current.clearIntent(0));
+    expect(result.current.intents).toEqual([{ kind: "with", activity: "Amend Order" }]);
+    // Recomputed from scratch against the NEW chain — "with Amend Order" alone, against
+    // the full 5-case log, excludes the 4 cases that never touch "Amend Order".
+    expect(result.current.excludedByIntent).toEqual([4]);
+  });
+});
+
 describe("useProcessExplorer — selectionStates.variants (RM-052 round 3, #227, G2)", () => {
   it('marks each id of an active "variant" intent "selected"', () => {
     const { result } = renderHook(() => useProcessExplorer(orderToCash));
