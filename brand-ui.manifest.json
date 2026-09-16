@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T11:49:21.038Z",
+  "generatedAt": "2026-09-16T11:55:58.893Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25990,6 +25990,16 @@
           "module": "packages/process/src/case-timeline/case-timeline.tsx"
         },
         {
+          "name": "CompareKpiStrip",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/compare-kpi-strip.tsx"
+        },
+        {
+          "name": "CompareSide",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/compare-side.tsx"
+        },
+        {
           "name": "CONFORMANCE_OVERLAY_DEFAULT_METRIC",
           "kind": "value",
           "module": "packages/process/src/conformance-overlay/conformance-overlay.tsx"
@@ -26030,6 +26040,11 @@
           "module": "packages/process/src/process-map/use-process-layout.ts"
         },
         {
+          "name": "DIFF_STATE_TOKEN",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
+        },
+        {
           "name": "DOTTED_CHART_DEFAULT_LABELS",
           "kind": "value",
           "module": "packages/process/src/dotted-chart/dotted-chart-labels.ts"
@@ -26043,6 +26058,11 @@
           "name": "DottedChart",
           "kind": "value",
           "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "EMPTY_PROCESS_GRAPH",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
         },
         {
           "name": "EMPTY_PROCESS_MAP_HOVER",
@@ -26143,6 +26163,11 @@
           "name": "ProcessActivityNode",
           "kind": "value",
           "module": "packages/process/src/process-map/process-activity-node.tsx"
+        },
+        {
+          "name": "ProcessCompare",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/process-compare.tsx"
         },
         {
           "name": "ProcessFilterBar",
@@ -26288,6 +26313,26 @@
         {
           "name": "CaseTimelineProps",
           "module": "packages/process/src/case-timeline/case-timeline.tsx"
+        },
+        {
+          "name": "CompareKpiStripProps",
+          "module": "packages/process/src/process-compare/compare-kpi-strip.tsx"
+        },
+        {
+          "name": "CompareKpiStripSide",
+          "module": "packages/process/src/process-compare/compare-kpi-strip.tsx"
+        },
+        {
+          "name": "CompareSideInput",
+          "module": "packages/process/src/process-compare/compare-model.ts"
+        },
+        {
+          "name": "CompareSideKpis",
+          "module": "packages/process/src/process-compare/compare-model.ts"
+        },
+        {
+          "name": "CompareSideProps",
+          "module": "packages/process/src/process-compare/compare-side.tsx"
         },
         {
           "name": "ComputeDotsOptions",
@@ -26436,6 +26481,18 @@
         {
           "name": "ProcessActivityRow",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessCompareMode",
+          "module": "packages/process/src/process-compare/process-compare.tsx"
+        },
+        {
+          "name": "ProcessCompareProps",
+          "module": "packages/process/src/process-compare/process-compare.tsx"
+        },
+        {
+          "name": "ProcessCompareSide",
+          "module": "packages/process/src/process-compare/process-compare.tsx"
         },
         {
           "name": "ProcessEdgeDenominators",
@@ -26676,6 +26733,18 @@
           "module": "packages/process/src/case-table/columns.ts"
         },
         {
+          "name": "diffColorScale",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
+        },
+        {
+          "name": "diffStateByActivity",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
+        },
+        {
+          "name": "diffToProcessGraph",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
+        },
+        {
           "name": "edgeMetricLabel",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -26730,6 +26799,10 @@
         {
           "name": "resolveActivityFrequencyMode",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "resolveCompareKpis",
+          "module": "packages/process/src/process-compare/compare-model.ts"
         },
         {
           "name": "resolveConformanceStates",
@@ -26891,6 +26964,47 @@
               "optional": false,
               "type": "EventRow[]",
               "description": "This case's own events, straight from `core`'s `EventLog.events`."
+            }
+          ]
+        },
+        "CompareKpiStrip": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "a",
+              "optional": false,
+              "type": "CompareKpiStripSide"
+            },
+            {
+              "name": "b",
+              "optional": false,
+              "type": "CompareKpiStripSide"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "CompareSide": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "The host-supplied name for this side (\"Before\", \"Q1\", the log's own file name, …)."
+            },
+            {
+              "name": "map",
+              "optional": false,
+              "type": "Omit<ProcessMapProps, \"className\">",
+              "description": "Forwarded to `ProcessMap` verbatim — everything this side's canvas needs."
             }
           ]
         },
@@ -27219,6 +27333,58 @@
               "optional": true,
               "type": "Partial<PerformanceSpectrumLabels>",
               "description": "Override any user-visible string."
+            }
+          ]
+        },
+        "ProcessCompare": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">"
+          ],
+          "props": [
+            {
+              "name": "a",
+              "optional": false,
+              "type": "ProcessCompareSide"
+            },
+            {
+              "name": "b",
+              "optional": false,
+              "type": "ProcessCompareSide"
+            },
+            {
+              "name": "mode",
+              "optional": true,
+              "type": "ProcessCompareMode",
+              "description": "@default \"side-by-side\""
+            },
+            {
+              "name": "metric",
+              "optional": false,
+              "type": "ProcessMapProps[\"metric\"]"
+            },
+            {
+              "name": "abstraction",
+              "optional": false,
+              "type": "AbstractionOptions",
+              "description": "Shared abstraction, synced across both sides (or the one superimposed map)."
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "FlowLayoutDirection",
+              "description": "@default \"TB\""
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "Neither side has a graph yet. Renders every map's own loading panel. @default false"
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the region. Defaults to the localized `process.compare.label`."
             }
           ]
         },
@@ -27739,6 +27905,14 @@
               "module": "packages/process/src/core/token-replay.ts"
             },
             {
+              "name": "DiffEntry",
+              "module": "packages/process/src/core/diff-graphs.ts"
+            },
+            {
+              "name": "DiffState",
+              "module": "packages/process/src/core/diff-graphs.ts"
+            },
+            {
               "name": "DiscoverGraphOptions",
               "module": "packages/process/src/core/discover-graph.ts"
             },
@@ -27825,6 +27999,10 @@
             {
               "name": "ProcessGraph",
               "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "ProcessGraphDiff",
+              "module": "packages/process/src/core/diff-graphs.ts"
             },
             {
               "name": "ProcessWorkerHandle",
@@ -27947,6 +28125,10 @@
             {
               "name": "detectRework",
               "module": "packages/process/src/core/detect-rework.ts"
+            },
+            {
+              "name": "diffGraphs",
+              "module": "packages/process/src/core/diff-graphs.ts"
             },
             {
               "name": "discoverGraph",

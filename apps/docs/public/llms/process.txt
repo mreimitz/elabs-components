@@ -12,6 +12,8 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - CASE_TABLE_COLUMN_LABEL_KEYS
 - CaseTable
 - CaseTimeline
+- CompareKpiStrip
+- CompareSide
 - CONFORMANCE_OVERLAY_DEFAULT_METRIC
 - CONFORMANCE_STATE_DEFAULT_LABELS
 - CONFORMANCE_STATE_ENCODING
@@ -20,9 +22,11 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - ConformanceOverlay
 - ConformanceStateMark
 - DEFAULT_LAYOUT_DEBOUNCE_MS
+- DIFF_STATE_TOKEN
 - DOTTED_CHART_DEFAULT_LABELS
 - DOTTED_CHART_DOT_RADIUS
 - DottedChart
+- EMPTY_PROCESS_GRAPH
 - EMPTY_PROCESS_MAP_HOVER
 - GHOST_OPACITY
 - HAPPY_PATH_EDITOR_DEFAULT_LABELS
@@ -46,6 +50,7 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
   - avoid: Registering it directly as a React Flow node type outside `ProcessMap` — it reads the map's hover/selection context and expects `buildProcessMapModel`'s node data.
   - avoid: Dropping the printed value and keeping only the fill saturation — saturation is the third channel, never the first.
   - avoid: Hand-rolling a focus ring on it — it composes `FlowNode`, which already owns the compound indicator and the `ring-2 ring-ring` selection ring.
+- ProcessCompare
 - ProcessFilterBar
 - ProcessKpiStrip
 - ProcessMap — Directly-follows process map: activities as nodes, transitions as edges, both painted from one metric choice, with an accessible table twin.

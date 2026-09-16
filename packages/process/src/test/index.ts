@@ -24,12 +24,14 @@ export type { ProcessContractSpec, ProcessDoublePayload, ProcessSelection } from
 // Doubles
 export {
   PerformanceSpectrumDouble,
+  ProcessCompareDouble,
   ProcessKpiStripDouble,
   ProcessMapDouble,
   VariantExplorerDouble,
 } from "./doubles";
 export type {
   PerformanceSpectrumDoubleProps,
+  ProcessCompareDoubleProps,
   ProcessKpiStripDoubleProps,
   ProcessMapDoubleProps,
   VariantExplorerDoubleProps,

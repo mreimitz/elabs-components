@@ -173,3 +173,7 @@ export type {
   SegmentDefinition,
   SegmentOccurrence,
 } from "./segments";
+
+// diffGraphs — RM-064
+export { diffGraphs } from "./diff-graphs";
+export type { DiffEntry, DiffState, ProcessGraphDiff } from "./diff-graphs";
