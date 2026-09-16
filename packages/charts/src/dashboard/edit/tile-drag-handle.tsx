@@ -66,7 +66,7 @@ export interface TileDragHandleProps extends ButtonHTMLAttributes<HTMLButtonElem
   title: string;
 }
 
-/** The tile's move button: a real `<button>` at the header's start, `Move <title>`. */
+/** The tile's move button: a real `<button>` at the header’s start, `Move <title>`. */
 export const TileDragHandle = forwardRef<HTMLButtonElement, TileDragHandleProps>(
   function TileDragHandle({ title, className, ...props }, ref) {
     const edit = useDashboardEdit();
