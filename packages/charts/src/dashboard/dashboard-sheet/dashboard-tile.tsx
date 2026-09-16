@@ -1,0 +1,252 @@
+"use client";
+
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type HTMLAttributes,
+} from "react";
+import { Skeleton, StatePanel, cn } from "@elabs-ai/components-ui";
+
+import { ChartFrame, type ChartFrameMenuApi } from "../../chart-frame/chart-frame";
+import type { ChartDensity, ChartInteractions } from "../../charts/chart-config-context";
+import { EMPTY_SELECTION } from "../core/selection";
+import type { DashboardMode } from "../core/store";
+import { DashboardTileHeader } from "./dashboard-tile-header";
+import { DashboardTileMenu } from "./dashboard-tile-menu";
+import { useDashboardSheetContext } from "./sheet-context";
+import type { DashboardTileFrameProps, DashboardTileProps } from "./tile-registry";
+import { useCellRect } from "./use-cell-rect";
+import { useDashboard, useDashboardActions, useDashboardContext } from "./use-dashboard";
+
+/** Density tier from a tile's pixel size: `xs` < 200×100, `sm` < 400×200, `md` < 800×400, else `lg`. */
+export function tileDensity(width: number, height: number): ChartDensity {
+  if (width < 200 || height < 100) return "xs";
+  if (width < 400 || height < 200) return "sm";
+  if (width < 800 || height < 400) return "md";
+  return "lg";
+}
+
+const VIEW_INTERACTIONS: Required<ChartInteractions> = {
+  passive: true,
+  active: true,
+  select: true,
+  edit: false,
+};
+const EDIT_INTERACTIONS: Required<ChartInteractions> = {
+  passive: false,
+  active: false,
+  select: false,
+  edit: true,
+};
+
+/** Interaction layers for a mode: view mounts passive/active/select, edit mounts only edit. */
+export function tileInteractions(mode: DashboardMode): Required<ChartInteractions> {
+  return mode === "edit" ? EDIT_INTERACTIONS : VIEW_INTERACTIONS;
+}
+
+export interface DashboardTileRootProps extends HTMLAttributes<HTMLDivElement> {
+  /** The tile's id in the spec. */
+  tileId: string;
+}
+
+/**
+ * One tile, absolutely positioned at its `cellRect` on the nearest sheet/container grid.
+ * Header, hover toolbar and menu compose `ChartFrame chrome="tile"`; the body mounts once it
+ * nears the viewport (a `Skeleton` holds its size until then).
+ */
+export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
+  function DashboardTile({ tileId, className, style, onFocus, ...props }, forwardedRef) {
+    const { registry, labels, onNavigate, onRefresh } = useDashboardContext();
+    const sheet = useDashboardSheetContext();
+    const actions = useDashboardActions();
+    const tile = useDashboard((s) => s.spec.tiles.find((t) => t.id === tileId));
+    const mode = useDashboard((s) => s.mode);
+    const kind = tile ? registry.get(tile.kind) : undefined;
+    const capabilities = kind?.capabilities ?? {};
+    const selection = useDashboard((s) =>
+      capabilities.consumesSelection ? s.selection : EMPTY_SELECTION,
+    );
+    const hover = useDashboard((s) => (capabilities.consumesHover ? s.hover : null));
+    const variables = useDashboard((s) => s.variables);
+    const rect = useCellRect(tile?.layout ?? { x: 0, y: 0, w: 1, h: 1 });
+
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const setRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        rootRef.current = node;
+        if (typeof forwardedRef === "function") forwardedRef(node);
+        else if (forwardedRef) forwardedRef.current = node;
+      },
+      [forwardedRef],
+    );
+
+    const observe = sheet?.observe ?? null;
+    const renderAll = !sheet || sheet.renderAll;
+    const [intersected, setIntersected] = useState(false);
+    const mounted = renderAll || intersected;
+    useEffect(() => {
+      if (mounted || !observe || !rootRef.current) return;
+      return observe(rootRef.current, () => setIntersected(true));
+    }, [mounted, observe]);
+
+    const titleId = useId();
+    const expandedRef = useRef(false);
+    const onExpandChange = useCallback((open: boolean) => {
+      // Radix returns focus to the element that opened the dialog; a menu item is gone by
+      // then, so land on the tile itself.
+      if (expandedRef.current && !open) setTimeout(() => rootRef.current?.focus(), 0);
+      expandedRef.current = open;
+    }, []);
+
+    const width = rect?.width ?? 0;
+    const height = rect?.height ?? 0;
+    const density = tileDensity(width, height);
+    const interactions = tileInteractions(mode);
+
+    const emit = useMemo<DashboardTileProps["emit"]>(
+      () => ({
+        select: actions.select,
+        hover: (h) => actions.setHover(h ? { ...h, tileId } : null),
+        setVariable: actions.setVariable,
+        navigate: (sheetId) => onNavigate?.(sheetId),
+        openBookmark: actions.applyBookmark,
+        refresh: () => onRefresh?.(tileId),
+      }),
+      [actions, tileId, onNavigate, onRefresh],
+    );
+
+    if (!tile) return null;
+
+    const chrome = sheet?.chrome ?? true;
+    const title = tile.title ?? "";
+    const header =
+      chrome && tile.title ? (
+        <DashboardTileHeader
+          titleId={titleId}
+          title={title}
+          subtitle={tile.subtitle}
+          density={density}
+        />
+      ) : undefined;
+    const menuItems = sheet?.menuItems?.(tile);
+    const menuSlot = chrome
+      ? (api: ChartFrameMenuApi) => (
+          <DashboardTileMenu
+            tile={tile}
+            api={api}
+            density={density}
+            labels={labels}
+            menuItems={menuItems}
+          />
+        )
+      : undefined;
+    const expand = capabilities.expand ?? true;
+    const frameOwned = Boolean(kind && capabilities.frame);
+
+    const frame: DashboardTileFrameProps = {
+      chrome: chrome ? "tile" : "bare",
+      title: tile.title,
+      source: tile.source,
+      headerSlot: header,
+      menuSlot,
+      density,
+      interactions,
+      onExpandChange,
+    };
+
+    const skeleton = <Skeleton className="size-full rounded-md" />;
+    let content;
+    if (!kind) {
+      content = (
+        <StatePanel
+          kind="empty"
+          size="sm"
+          titleAs="h4"
+          title={labels.unknownKind(tile.kind)}
+          description={density === "xs" ? undefined : labels.unknownKindDescription}
+          className="size-full"
+        />
+      );
+    } else if (mounted) {
+      const Component = kind.component;
+      const tileProps: DashboardTileProps = {
+        tile,
+        size: { w: tile.layout.w, h: tile.layout.h, width, height },
+        mode,
+        interactions,
+        selection,
+        hover,
+        variables,
+        emit,
+        density,
+        frame,
+      };
+      content = <Component {...tileProps} />;
+    }
+
+    const body =
+      frameOwned && mounted ? (
+        content
+      ) : (
+        <ChartFrame
+          chrome={frame.chrome}
+          title={tile.title}
+          source={tile.source}
+          headerSlot={header}
+          menuSlot={menuSlot}
+          density={density}
+          interactions={interactions}
+          features={expand && kind ? ["expand"] : []}
+          onExpandChange={onExpandChange}
+        >
+          {content ?? skeleton}
+        </ChartFrame>
+      );
+
+    const active = sheet ? sheet.activeTileId === tileId : true;
+
+    return (
+      <div
+        ref={setRef}
+        role="group"
+        tabIndex={sheet ? (active ? 0 : -1) : undefined}
+        aria-labelledby={header ? titleId : undefined}
+        aria-label={header ? undefined : title || labels.untitledTile(tile.kind)}
+        data-slot="dashboard-tile"
+        data-tile-id={tile.id}
+        data-tile-kind={tile.kind}
+        data-density={density}
+        data-tile-body-mounted={mounted ? "" : undefined}
+        className={cn(
+          "group/tile absolute flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-3 shadow-xs focus-ring",
+          "transition-[transform,width,height] duration-base ease-standard motion-reduce:transition-none",
+          className,
+        )}
+        style={{
+          // cellRect is physical (origin top-left), so the anchor is too.
+          left: 0,
+          top: 0,
+          width,
+          height,
+          transform: rect ? `translate(${rect.x}px, ${rect.y}px)` : undefined,
+          visibility: rect ? undefined : "hidden",
+          ...style,
+        }}
+        onFocus={(event) => {
+          if (event.target === event.currentTarget) sheet?.setActiveTileId(tileId);
+          onFocus?.(event);
+        }}
+        {...props}
+      >
+        <div data-slot="dashboard-tile-body" className="flex min-h-0 flex-1 flex-col">
+          {body}
+        </div>
+      </div>
+    );
+  },
+);
