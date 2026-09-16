@@ -43,3 +43,7 @@ export type {
 
 // ProcessFilterBar — RM-056
 export * from "./process-filter-bar";
+
+// CaseTable / CaseTimeline — RM-055
+export * from "./case-table";
+export * from "./case-timeline";

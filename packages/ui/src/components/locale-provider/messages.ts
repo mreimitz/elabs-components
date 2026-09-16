@@ -1142,4 +1142,30 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
     one: "{count} activity hidden by abstraction",
     other: "{count} activities hidden by abstraction",
   },
+  // CaseTable (RM-055, issue #204). A column configuration over `data`'s
+  // DataTable — see `.claude/rules/data.md`'s "primitives go down, compositions
+  // go up". `conformance*` labels the three-state badge; `conformance` itself
+  // is host-supplied (never fabricated here — same rule as `ProcessKpiStrip`'s
+  // own conformance tile).
+  "process.caseTable.columnCaseId": "Case",
+  "process.caseTable.columnStart": "Start",
+  "process.caseTable.columnEnd": "End",
+  "process.caseTable.columnDuration": "Duration",
+  "process.caseTable.columnEventCount": "Events",
+  "process.caseTable.columnVariant": "Variant",
+  "process.caseTable.columnConformance": "Conformance",
+  "process.caseTable.conformanceConforming": "Conforming",
+  "process.caseTable.conformanceNonConforming": "Non-conforming",
+  "process.caseTable.conformanceUnknown": "Unknown",
+  "process.caseTable.exportCsv": "Export CSV",
+  "process.caseTable.empty": "No cases to display.",
+  "process.caseTable.tableLabel": "Cases",
+  // CaseTimeline (RM-055, issue #204). A thin `charts/Gantt` wrapper — one row
+  // per activity instance, waiting time as gap bands, overlapping instances
+  // flagged parallel. `parallelLabel` is the non-colour channel WCAG 1.4.1
+  // requires alongside the `info` tone the bar itself carries.
+  "process.caseTimeline.label": "Case timeline",
+  "process.caseTimeline.parallelLabel": "Parallel",
+  "process.caseTimeline.parallelSuffix": "parallel with another activity",
+  "process.caseTimeline.gapLabel": "Waiting, {duration}",
 };

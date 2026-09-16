@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T08:55:19.426Z",
+  "generatedAt": "2026-09-16T08:56:00.499Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25766,6 +25766,21 @@
           "module": "packages/process/src/core/activity-color-scale.ts"
         },
         {
+          "name": "CASE_TABLE_COLUMN_LABEL_KEYS",
+          "kind": "value",
+          "module": "packages/process/src/case-table/columns.ts"
+        },
+        {
+          "name": "CaseTable",
+          "kind": "value",
+          "module": "packages/process/src/case-table/case-table.tsx"
+        },
+        {
+          "name": "CaseTimeline",
+          "kind": "value",
+          "module": "packages/process/src/case-timeline/case-timeline.tsx"
+        },
+        {
           "name": "DEFAULT_LAYOUT_DEBOUNCE_MS",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
@@ -25930,6 +25945,34 @@
         {
           "name": "BuildProcessMapModelOptions",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "CaseRow",
+          "module": "packages/process/src/core/cases-from-log.ts"
+        },
+        {
+          "name": "CaseTableProps",
+          "module": "packages/process/src/case-table/case-table.tsx"
+        },
+        {
+          "name": "CaseTimelineGap",
+          "module": "packages/process/src/case-timeline/case-timeline-model.ts"
+        },
+        {
+          "name": "CaseTimelineInstance",
+          "module": "packages/process/src/case-timeline/case-timeline-model.ts"
+        },
+        {
+          "name": "CaseTimelineModelOptions",
+          "module": "packages/process/src/case-timeline/case-timeline-model.ts"
+        },
+        {
+          "name": "CaseTimelineProps",
+          "module": "packages/process/src/case-timeline/case-timeline.tsx"
+        },
+        {
+          "name": "CreateCaseTableColumnsOptions",
+          "module": "packages/process/src/case-table/columns.ts"
         },
         {
           "name": "FilterIntent",
@@ -26118,12 +26161,24 @@
           "module": "packages/process/src/process-map/use-process-layout.ts"
         },
         {
+          "name": "buildCaseTimelineInstances",
+          "module": "packages/process/src/case-timeline/case-timeline-model.ts"
+        },
+        {
           "name": "buildProcessMapModel",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "casesFromLog",
+          "module": "packages/process/src/core/cases-from-log.ts"
+        },
+        {
           "name": "computeAutoAbstraction",
           "module": "packages/process/src/abstraction-controls/auto-abstraction.ts"
+        },
+        {
+          "name": "createCaseTableColumns",
+          "module": "packages/process/src/case-table/columns.ts"
         },
         {
           "name": "edgeMetricLabel",
@@ -26229,6 +26284,66 @@
               "optional": true,
               "type": "string",
               "description": "Accessible name for the control group. Default from locale."
+            }
+          ]
+        },
+        "CaseTable": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "cases",
+              "optional": false,
+              "type": "CaseRow[]"
+            },
+            {
+              "name": "columns",
+              "optional": true,
+              "type": "ColumnDef<CaseRow>[]",
+              "description": "Column configuration over `DataTable`. Defaults to `createCaseTableColumns`'s set."
+            },
+            {
+              "name": "onCaseOpen",
+              "optional": true,
+              "type": "(caseId: string) => void",
+              "description": "Fired when a row is activated (click, or Enter/Space on its keyboard activation target)."
+            },
+            {
+              "name": "exportFileName",
+              "optional": true,
+              "type": "string",
+              "description": "File name for the CSV export. Default `\"cases.csv\"`."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean"
+            },
+            {
+              "name": "emptyMessage",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Message shown when there are no cases and not loading."
+            }
+          ]
+        },
+        "CaseTimeline": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">",
+            "CaseTimelineModelOptions"
+          ],
+          "props": [
+            {
+              "name": "caseId",
+              "optional": false,
+              "type": "string"
+            },
+            {
+              "name": "events",
+              "optional": false,
+              "type": "EventRow[]",
+              "description": "This case's own events, straight from `core`'s `EventLog.events`."
             }
           ]
         },
@@ -26699,6 +26814,10 @@
               "module": "packages/process/src/core/fixtures/generate-bpi-2012-subset.ts"
             },
             {
+              "name": "CaseRow",
+              "module": "packages/process/src/core/cases-from-log.ts"
+            },
+            {
               "name": "CreateProcessWorkerOptions",
               "module": "packages/process/src/core/worker/create-process-worker.ts"
             },
@@ -26847,6 +26966,10 @@
             {
               "name": "caseMatchesFilters",
               "module": "packages/process/src/core/filter-log.ts"
+            },
+            {
+              "name": "casesFromLog",
+              "module": "packages/process/src/core/cases-from-log.ts"
             },
             {
               "name": "clampWidth",

@@ -9,6 +9,9 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - AbstractionControls
 - ACTIVITY_COLOR_SLOTS
 - ACTIVITY_OTHER_TOKEN
+- CASE_TABLE_COLUMN_LABEL_KEYS
+- CaseTable
+- CaseTimeline
 - DEFAULT_LAYOUT_DEBOUNCE_MS
 - EMPTY_PROCESS_MAP_HOVER
 - GHOST_OPACITY

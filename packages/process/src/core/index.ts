@@ -128,3 +128,7 @@ export type {
   ActivityColorLegendEntry,
   ActivityColorScale,
 } from "./activity-color-scale";
+
+// casesFromLog — RM-055
+export { casesFromLog } from "./cases-from-log";
+export type { CaseRow } from "./cases-from-log";
