@@ -1,5 +1,5 @@
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // @visx/responsive uses ResizeObserver + real DOM measurement to derive width/height,
 // which jsdom cannot provide. Mock ParentSize to supply a fixed viewport so the
@@ -22,24 +22,31 @@ vi.mock("@visx/responsive", () => {
   };
 });
 
-// SankeyLink's AnimatedLink calls SVGPathElement.getTotalLength() in a useLayoutEffect
-// for path-reveal animation — jsdom SVG elements don't implement this geometry API.
-// Mock the module so link rendering is a no-op in unit tests; real link rendering +
-// animation is covered by the Storybook browser tests.
-vi.mock("./sankey-link", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const React = require("react");
-  const SankeyLink = () => React.createElement("g", { "data-testid": "sankey-link-mock" });
-  SankeyLink.displayName = "SankeyLink";
-  return { SankeyLink, default: SankeyLink };
-});
-
 import { sankey, sankeyCenter } from "d3-sankey";
 import { maxColumnNodeCount, resolveEffectiveNodePadding, SankeyChart } from "./sankey-chart";
 import { SankeyLink } from "./sankey-link";
 import { SankeyNode } from "./sankey-node";
 
 afterEach(cleanup);
+
+// `SankeyLink`'s `AnimatedLink` measures its rendered path with
+// `getTotalLength()` — a forced-layout SVG geometry API jsdom does not
+// implement. #258: stub the ONE method rather than mock the whole module, so
+// `SankeyLink` mounts for real — same pattern as `sankey-link.test.tsx`.
+let measure: ReturnType<typeof vi.fn>;
+
+beforeEach(() => {
+  measure = vi.fn(() => 128);
+  Object.defineProperty(SVGElement.prototype, "getTotalLength", {
+    configurable: true,
+    writable: true,
+    value: measure,
+  });
+});
+
+afterEach(() => {
+  Reflect.deleteProperty(SVGElement.prototype, "getTotalLength");
+});
 
 // #276 — a fixed `nodePadding` d3-sankey cannot afford collapses every node
 // rect in the tallest column to 0px (`350 - 39 * 24 < 0` for the Threads

@@ -1,22 +1,5 @@
 import { cleanup, fireEvent, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-
-// SankeyLink's AnimatedLink calls SVGPathElement.getTotalLength() in a
-// useLayoutEffect for its path-reveal animation — jsdom SVG elements don't
-// implement this geometry API (same rationale as sankey-chart.test.tsx).
-// `vi.mock` replaces the module for the WHOLE file, so every render below —
-// aggregate-mode included — gets the mocked `<g data-testid="sankey-link-mock">`
-// stand-in, never a real `<SankeyLink>`; real link rendering + animation is
-// covered by the Storybook browser tests. Keep `getDefaultNodeColor` real
-// since `sankey-threads.tsx` imports it.
-vi.mock("./sankey-link", async (importOriginal) => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
-  const React = require("react");
-  const actual = await importOriginal<typeof import("./sankey-link")>();
-  const SankeyLink = () => React.createElement("g", { "data-testid": "sankey-link-mock" });
-  SankeyLink.displayName = "SankeyLink";
-  return { ...actual, SankeyLink, default: SankeyLink };
-});
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // @visx/responsive derives width/height from ResizeObserver + real layout, which jsdom
 // cannot provide. Supply a fixed viewport so the sankey layout engine gets concrete
@@ -56,6 +39,23 @@ import {
 } from "./sankey-threads";
 
 afterEach(cleanup);
+
+// `SankeyLink`'s `AnimatedLink` measures its rendered path with
+// `getTotalLength()` — a forced-layout SVG geometry API jsdom does not
+// implement. #258: stub the ONE method (same pattern as `sankey-link.test.tsx`)
+// instead of mocking the whole module, so the "aggregate mode" describe block
+// below mounts a REAL `<SankeyLink>`.
+beforeEach(() => {
+  Object.defineProperty(SVGElement.prototype, "getTotalLength", {
+    configurable: true,
+    writable: true,
+    value: () => 128,
+  });
+});
+
+afterEach(() => {
+  Reflect.deleteProperty(SVGElement.prototype, "getTotalLength");
+});
 
 // ─────────────────────────────────────────────────────────────────────────
 // Pure helpers — each one is a computation an RM-037 acceptance bullet
@@ -392,11 +392,16 @@ describe("SankeyChart aggregate mode — unaffected by RM-037 (byte-identical)",
    * Recaptured again: node A (no inflow, no `category: "source"`) now reads its
    * outflow, "42 sessions", instead of "0 sessions" — an intentional fix; the
    * geometry is still unchanged.
-   * Recaptured for #182 — RM-017: `HaloText` now sets `aria-hidden="true"` on
-   * its own root, so each node label gains that one attribute; geometry unchanged.
+   * Recaptured for #258: `SankeyLink` is no longer module-mocked (the whole
+   * point of that fix), so the golden DOM now carries a REAL link — its
+   * gradient `<defs>` and `<path>` — instead of the `data-testid="sankey-link-mock"`
+   * stand-in. `getTotalLength()` is stubbed to a constant 128 (this file's
+   * `beforeEach`), which is why the path carries `stroke-dasharray="128 128"`.
+   * The node geometry this test exists to protect is byte-for-byte the same
+   * as before this recapture.
    */
   const EXPECTED_AGGREGATE_DOM =
-    '<div class="relative w-full" style="aspect-ratio: 2 / 1;"><div data-testid="parent-size"><div class="relative h-full w-full"><svg aria-hidden="true" height="400" width="800"><g transform="translate(180,40)"><g data-testid="sankey-link-mock"></g><g class="sankey-nodes"><g style="cursor: pointer;"><rect fill="var(--chart-1)" height="320" rx="4" ry="4" width="16" x="0" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text aria-hidden="true" data-slot="sankey-node-name" fill="var(--chart-label)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="font-medium text-[13px]" dy="0.35em" text-anchor="end" y="160" style="opacity: 0; transform: translateX(8px);">A</text><text aria-hidden="true" data-slot="sankey-node-value" fill="var(--chart-foreground-muted)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="text-[11px]" dy="0.35em" text-anchor="end" y="176" style="opacity: 0; transform: translateX(8px);">42 sessions</text></g><g style="cursor: pointer;"><rect fill="var(--chart-2)" height="320" rx="4" ry="4" width="16" x="424" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text aria-hidden="true" data-slot="sankey-node-name" fill="var(--chart-label)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="font-medium text-[13px]" dy="0.35em" text-anchor="start" y="160" style="opacity: 0; transform: translateX(432px);">B</text><text aria-hidden="true" data-slot="sankey-node-value" fill="var(--chart-foreground-muted)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="text-[11px]" dy="0.35em" text-anchor="start" y="176" style="opacity: 0; transform: translateX(432px);">42 sessions</text></g></g></g></svg></div></div></div>';
+    '<div class="relative w-full" style="aspect-ratio: 2 / 1;"><div data-testid="parent-size"><div class="relative h-full w-full"><svg aria-hidden="true" height="400" width="800"><g transform="translate(180,40)"><g class="sankey-links"><defs><linearGradient gradientUnits="userSpaceOnUse" id="link-gradient-0" x1="16" x2="424" y1="0" y2="0"><stop offset="0%" stop-color="var(--chart-1)" stop-opacity="1"></stop><stop offset="100%" stop-color="var(--chart-2)" stop-opacity="1"></stop></linearGradient></defs><path d="M16,160C220,160,220,160,424,160" fill="none" stroke="url(#link-gradient-0)" stroke-dasharray="128 128" stroke-width="320" stroke-dashoffset="0" opacity="0.5" style="cursor: pointer;"></path></g><g class="sankey-nodes"><g style="cursor: pointer;"><rect fill="var(--chart-1)" height="320" rx="4" ry="4" width="16" x="0" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text data-slot="sankey-node-name" fill="var(--chart-label)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="font-medium text-[13px]" dy="0.35em" text-anchor="end" y="160" style="opacity: 0; transform: translateX(8px);">A</text><text data-slot="sankey-node-value" fill="var(--chart-foreground-muted)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="text-[11px]" dy="0.35em" text-anchor="end" y="176" style="opacity: 0; transform: translateX(8px);">42 sessions</text></g><g style="cursor: pointer;"><rect fill="var(--chart-2)" height="320" rx="4" ry="4" width="16" x="424" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text data-slot="sankey-node-name" fill="var(--chart-label)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="font-medium text-[13px]" dy="0.35em" text-anchor="start" y="160" style="opacity: 0; transform: translateX(432px);">B</text><text data-slot="sankey-node-value" fill="var(--chart-foreground-muted)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="text-[11px]" dy="0.35em" text-anchor="start" y="176" style="opacity: 0; transform: translateX(432px);">42 sessions</text></g></g></g></svg></div></div></div>';
 
   it("omitting `mode` renders byte-identical DOM to `main` (pre-RM-037)", () => {
     const { container } = renderAggregate(undefined);
