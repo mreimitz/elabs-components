@@ -11,7 +11,7 @@ function PlaceholderTile({ tile, size, density }: DashboardTileProps<Placeholder
   return (
     <div
       data-slot="placeholder-tile"
-      className="flex size-full min-h-0 flex-col items-center justify-center gap-1 rounded-md bg-surface-muted p-2 text-center"
+      className="flex size-full min-h-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-md bg-surface-muted text-center"
     >
       <span className="text-meta text-muted-foreground">{tile.content?.note ?? tile.kind}</span>
       {density === "xs" ? null : (

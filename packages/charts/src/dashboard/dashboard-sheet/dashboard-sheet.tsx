@@ -4,6 +4,7 @@ import {
   forwardRef,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -71,7 +72,10 @@ function visibleTileIds(state: DashboardState): string {
   );
 }
 
-/** Pixel height of a grid `width` wide: square cells in `fit`, the lowest tile's bottom in `flow`. */
+/**
+ * Pixel height of a grid `width` wide when the host gives no height: square cells in `fit`
+ * (the fallback), the lowest tile's bottom in `flow`.
+ */
 function gridHeight(grid: GridSpec, width: number, cells: Cell[]): number {
   const gap = grid.gap ?? DEFAULT_GRID_GAP;
   if (grid.mode === "fit") {
@@ -103,8 +107,10 @@ type SheetItem =
  * cells stay addressable for the edit layer), containers as tabs over an inner grid, one
  * roving tab stop across tiles (arrow keys, Home, End — reading order), lazy tile bodies.
  *
- * Height: `fit` keeps square cells (`rows × cell`), so an `extendable` sheet that gained rows
- * grows and the page scrolls; `flow` is the lowest bottom (`y + h` rows × `rowHeight` plus gaps).
+ * Height: `fit` fills its host — the sheet is `h-full`, so a host with a definite height is
+ * divided into `rows` (row height = host height ÷ rows, no scrolling). A host without a
+ * definite height (auto-sized, measured 0) falls back to square cells (`rows × cell width`),
+ * so the page scrolls instead. `flow` is the lowest bottom (`y + h` rows × `rowHeight` plus gaps).
  */
 export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
   function DashboardSheet(
@@ -143,11 +149,32 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
     }, [spec, visible]);
 
     const width = bounds.width;
-    const height = gridHeight(
+    const fit = spec.grid.mode === "fit";
+    const intrinsicHeight = gridHeight(
       spec.grid,
       width,
       [...spec.tiles.filter((t) => !t.container), ...(spec.containers ?? [])].map((t) => t.layout),
     );
+
+    // `fit` fills a definite host height; without one it falls back to square cells, drawn by an
+    // in-flow spacer. The host is "auto" when the `h-full` root collapses to 0 without the
+    // spacer, or measures exactly the spacer's height with it (read from the DOM after commit so
+    // a lagging measurement cannot flip the mode back and forth while resizing).
+    const spacerRef = useRef<HTMLDivElement | null>(null);
+    const [autoHeight, setAutoHeight] = useState(false);
+    useLayoutEffect(() => {
+      const root = rootRef.current;
+      if (!fit || !root || width <= 0) return;
+      const rootHeight = root.getBoundingClientRect().height;
+      if (!autoHeight) {
+        if (rootHeight <= 0) setAutoHeight(true);
+        return;
+      }
+      const spacerHeight = spacerRef.current?.getBoundingClientRect().height ?? 0;
+      if (rootHeight > 0 && Math.abs(rootHeight - spacerHeight) > 1) setAutoHeight(false);
+    }, [fit, width, bounds.height, autoHeight, intrinsicHeight]);
+    const fillsHost = fit && !autoHeight;
+    const height = fillsHost ? bounds.height : intrinsicHeight;
 
     useEffect(() => {
       if (
@@ -160,7 +187,7 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
     }, [spec.id, spec.tiles.length]);
 
     // One IntersectionObserver per sheet, rooted at the nearest scroller, one viewport of margin.
-    const measured = width > 0;
+    const measured = width > 0 && height > 0;
     const [observe, setObserve] = useState<DashboardSheetContextValue["observe"]>(null);
     const [observerReady, setObserverReady] = useState(false);
     useEffect(() => {
@@ -244,13 +271,22 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
         aria-label={spec.title ?? labels.sheet}
         data-slot="dashboard-sheet"
         data-grid-mode={spec.grid.mode}
-        className={cn("relative w-full", className)}
-        style={{ height, ...style }}
+        data-fill={fit ? (fillsHost ? "host" : "square") : undefined}
+        className={cn("relative w-full", fit && "h-full", className)}
+        style={fit ? style : { height, ...style }}
         onKeyDown={onSheetKeyDown}
         {...props}
       >
         <DashboardSheetContext.Provider value={sheetContext}>
           <DashboardGridContext.Provider value={gridContext}>
+            {fit && autoHeight ? (
+              <div
+                ref={spacerRef}
+                aria-hidden="true"
+                data-slot="dashboard-sheet-spacer"
+                style={{ height: intrinsicHeight }}
+              />
+            ) : null}
             {measured && observerReady
               ? items.map((item) =>
                   item.type === "tile" ? (

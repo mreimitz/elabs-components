@@ -63,6 +63,35 @@ describe("DashboardSheet", () => {
     expect(screen.getByRole("region", { name: SALES.title })).toBeInTheDocument();
   });
 
+  it("fills a definite host height in fit mode (row height = host height ÷ rows)", () => {
+    const original = HTMLElement.prototype.getBoundingClientRect;
+    const spy = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        if (this.dataset.slot === "dashboard-sheet") return new DOMRect(0, 0, 1200, 600);
+        return original.call(this);
+      });
+    try {
+      renderSheet();
+      const sheet = screen.getByRole("region", { name: SALES.title });
+      expect(sheet).toHaveAttribute("data-fill", "host");
+      expect(sheet.style.height).toBe("");
+      const tile = SALES.tiles.find((t) => !t.visibleWhen)!;
+      const el = document.querySelector<HTMLElement>(`[data-tile-id="${tile.id}"]`)!;
+      const rect = cellRect(tile.layout, SALES.grid, { width: 1200, height: 600 });
+      expect(parseFloat(el.style.height)).toBeCloseTo(rect.height, 0);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("falls back to square cells when the host has no definite height", () => {
+    renderSheet();
+    const sheet = screen.getByRole("region", { name: SALES.title });
+    expect(sheet).toHaveAttribute("data-fill", "square");
+    expect(sheet.querySelector("[data-slot=dashboard-sheet-spacer]")).not.toBeNull();
+  });
+
   it("toggles a visibleWhen tile through setVariable", () => {
     renderSheet();
     const note = () => document.querySelector('[data-tile-id="detail-note"]');

@@ -42,16 +42,24 @@ type Story = StoryObj<typeof meta>;
 export const Fit24x12: Story = {
   name: "Fit 24×12",
   render: (args) => (
-    <DashboardProvider spec={SALES} tiles={TILES}>
-      <DashboardSheet {...args} />
-    </DashboardProvider>
+    <div data-testid="host" className="h-[480px] max-h-[80vh] w-full">
+      <DashboardProvider spec={SALES} tiles={TILES}>
+        <DashboardSheet {...args} />
+      </DashboardProvider>
+    </div>
   ),
   play: async ({ canvasElement }) => {
+    const host = within(canvasElement).getByTestId("host");
     const sheet = await within(canvasElement).findByRole("region", { name: SALES.title });
     await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(8));
+    // A definite host height is divided into rows: the sheet fills it and nothing scrolls.
+    await expect(sheet).toHaveAttribute("data-fill", "host");
     const box = sheet.getBoundingClientRect();
+    await expect(Math.abs(box.height - host.getBoundingClientRect().height)).toBeLessThanOrEqual(1);
+    await expect(host.scrollHeight).toBeLessThanOrEqual(host.clientHeight + 1);
     const size = { width: box.width, height: box.height };
-    for (const tile of SALES.tiles.filter((t) => !t.visibleWhen)) {
+    const visibleTiles = SALES.tiles.filter((t) => !t.visibleWhen);
+    for (const tile of visibleTiles) {
       const el = sheet.querySelector(`[data-tile-id="${tile.id}"]`) as HTMLElement;
       const want = cellRect(tile.layout, SALES.grid, size);
       await waitFor(() => {
@@ -62,15 +70,32 @@ export const Fit24x12: Story = {
         expect(Math.abs(got.height - want.height)).toBeLessThanOrEqual(1);
       });
     }
+    // The lowest tile reaches the sheet's bottom edge when the layout spans every row.
+    const rows = SALES.grid.rows ?? 12;
+    if (visibleTiles.some((t) => t.layout.y + t.layout.h === rows)) {
+      const bottom = Math.max(
+        ...Array.from(sheet.querySelectorAll("[data-tile-id]")).map(
+          (el) => el.getBoundingClientRect().bottom,
+        ),
+      );
+      await expect(Math.abs(bottom - box.bottom)).toBeLessThanOrEqual(1);
+    }
+
     const tiles = Array.from(sheet.querySelectorAll<HTMLElement>("[data-tile-id]"));
     tiles[0]!.focus();
     await userEvent.keyboard("{ArrowRight}");
     await expect(tiles[1]).toHaveFocus();
-    within(tiles[1]!).getByRole("button", { name: "Full screen" }).focus();
+    // Full screen through the kebab menu: the inline expand button hides at xs/sm density,
+    // and the test browser's width decides the density.
+    const owner = tiles[1]!;
+    within(owner).getByRole("button", { name: "More actions" }).focus();
+    await userEvent.keyboard("{Enter}");
+    const item = await within(document.body).findByRole("menuitem", { name: "Full screen" });
+    await waitFor(() => expect(item).toHaveFocus());
     await userEvent.keyboard("{Enter}");
     await within(document.body).findByRole("dialog");
     await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(tiles[1]).toHaveFocus());
+    await waitFor(() => expect(owner).toHaveFocus());
   },
 };
 
@@ -143,6 +168,13 @@ export const NarrowContainer: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
+    // No definite host height: fit falls back to square cells.
+    await waitFor(() =>
+      expect(canvasElement.querySelector("[data-slot=dashboard-sheet]")).toHaveAttribute(
+        "data-fill",
+        "square",
+      ),
+    );
     await waitFor(() =>
       expect(canvasElement.querySelector('[data-tile-id="kpi-revenue"]')).toHaveAttribute(
         "data-density",

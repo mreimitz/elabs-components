@@ -28,8 +28,13 @@ spec replaces it and becomes the saved baseline; when the store is dirty the edi
 `useCellRect(cell)`.
 
 `DashboardSheet` measures its width and positions every visible tile (`visibleWhen` via
-`compileCondition`) at `cellRect` with absolute transforms. Height: `fit` keeps square cells
-(`rows × cell`); `flow` is the lowest tile bottom. Containers render as `ui/Tabs` over an inner
+`compileCondition`) at `cellRect` with absolute transforms. Height: `fit` fills its host like a
+Qlik sheet — the sheet is `h-full`, so a host with a definite height is split into `rows` (row
+height = host height ÷ rows, column width = host width ÷ columns, no scrolling). **Fallback:** a
+host with no definite height (auto-sized, so the sheet measures 0) gets square cells
+(`rows × cell width`) drawn by an in-flow spacer, and the page scrolls; `data-fill="host" |
+"square"` on the sheet says which applied. Give the host a height (`h-dvh`, `flex-1 min-h-0`, a
+fixed panel) to get the no-scroll sheet. `flow` is the lowest tile bottom. Containers render as `ui/Tabs` over an inner
 grid `layout.w` columns wide. One roving tab stop spans the tiles (arrow keys, Home, End, reading
 order). Tile bodies mount once they enter a one-viewport band around the nearest scroller
 (`renderAll` mounts all).
