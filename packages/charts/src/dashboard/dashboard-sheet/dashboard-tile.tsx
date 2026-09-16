@@ -14,6 +14,7 @@ import { Skeleton, StatePanel, cn } from "@elabs-ai/components-ui";
 
 import { ChartFrame, type ChartFrameMenuApi } from "../../chart-frame/chart-frame";
 import type { ChartDensity, ChartInteractions } from "../../charts/chart-config-context";
+import { resolveInteractions, tileSelectionView } from "../core/interactions";
 import { EMPTY_SELECTION } from "../core/selection";
 import type { DashboardMode } from "../core/store";
 import { dispatchAnchoredContextMenu } from "../edit/context-menu-anchor";
@@ -98,9 +99,31 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     const gridMode = useDashboard((s) => s.spec.grid.mode);
     const kind = tile ? registry.get(tile.kind) : undefined;
     const capabilities = kind?.capabilities ?? {};
-    const selection = useDashboard((s) =>
+    const driverSelection = useDashboard((s) =>
       capabilities.consumesSelection ? s.selection : EMPTY_SELECTION,
     );
+    // interaction graph — RM-082: the tile sees the driver selection minus fields an emitter's
+    // `highlight`/`none` pair shields it from, with a `highlight` painted through the same
+    // `selectionStates` tri-state (the `selection` prop) — no new prop, token or state.
+    const interactionSpec = useDashboard((s) => s.spec);
+    const highlight = useDashboard((s) => (capabilities.consumesSelection ? s.highlight : null));
+    const origins = useDashboard((s) => s.selectionOrigins);
+    const interactionMap = useMemo(() => resolveInteractions(interactionSpec), [interactionSpec]);
+    const selection = useMemo(
+      () =>
+        capabilities.consumesSelection
+          ? tileSelectionView({
+              tileId,
+              snapshot: driverSelection,
+              map: interactionMap,
+              origins,
+              highlight,
+            })
+          : driverSelection,
+      [capabilities.consumesSelection, tileId, driverSelection, interactionMap, origins, highlight],
+    );
+    const highlighted = Boolean(highlight?.targets.has(tileId));
+    const emitsSelection = Boolean(tile?.emits?.selection);
     const hover = useDashboard((s) => (capabilities.consumesHover ? s.hover : null));
     const variables = useDashboard((s) => s.variables);
     // Edit mode (RM-078): top-level tiles move/resize through the edit layer, which paints the
@@ -150,7 +173,10 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
 
     const emit = useMemo<DashboardTileProps["emit"]>(
       () => ({
-        select: actions.select,
+        // interaction graph — RM-082: a tile that declares `emits.selection` publishes through
+        // the graph; any other (the filter tile) writes globally.
+        select: (field, values, opts) =>
+          actions.select(field, values, opts, emitsSelection ? { fromTileId: tileId } : undefined),
         hover: (h) => actions.setHover(h ? { ...h, tileId } : null),
         setVariable: actions.setVariable,
         navigate: (sheetId) => onNavigate?.(sheetId),
@@ -158,7 +184,7 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         refresh: () => onRefresh?.(tileId),
         action: (id) => onAction?.(id),
       }),
-      [actions, tileId, onNavigate, onRefresh, onAction],
+      [actions, tileId, emitsSelection, onNavigate, onRefresh, onAction],
     );
 
     if (!tile) return null;
@@ -317,6 +343,8 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         data-editing={editable ? "" : undefined}
         data-focused={editable && focused ? "" : undefined}
         data-dragging={session ? session.kind : undefined}
+        // A test/host hook only (nothing is styled off it): tells a `highlight` from a filter.
+        data-highlighted={highlighted ? "" : undefined}
         className={cn(
           "group/tile absolute flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-3 shadow-xs focus-ring",
           "transition-[transform,width,height] duration-base ease-standard motion-reduce:transition-none",
