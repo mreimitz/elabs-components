@@ -299,6 +299,8 @@ function renderChart(
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
         >
           <Grid horizontal />
           {series.map((s) => (
@@ -329,6 +331,10 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
+          hoverCategory={links.hoverCategory}
+          onHoverCategory={links.onHoverCategory}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
         >
           <Grid horizontal />
           {series.map((s) => (
@@ -398,6 +404,8 @@ function renderChart(
       return (
         <div style={{ height }}>
           <PieChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={pieData}
             innerRadius={innerRadius}
             className="h-full"
@@ -425,6 +433,8 @@ function renderChart(
       return (
         <div style={{ height }}>
           <ScatterChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={scatterData}
             xDataKey={x}
             xScale={spec.xType === "number" ? "linear" : "time"}
@@ -572,6 +582,8 @@ function renderChart(
         // taller box.
         <div style={{ minHeight: height }}>
           <HeatmapChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={resolvedData}
             x={x}
             y={yKey}
@@ -617,6 +629,8 @@ function renderChart(
       return (
         <div style={{ minHeight: height }}>
           <DumbbellChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={resolvedData}
             category={x}
             startKey={startKey}
@@ -640,6 +654,8 @@ function renderChart(
       }));
       return (
         <UnitChart
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
           data={unitData}
           layout="waffle"
           style={{ height }}
@@ -664,6 +680,8 @@ function renderChart(
         // dumbbell convention above, rather than a fixed box that can force a
         // wide container into a degenerate row of slivers (#306).
         <TreemapChart
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
           data={hierarchy}
           // A spec is model output: an invented palette falls back to the
           // documented mono default rather than reaching the layout (#306).
