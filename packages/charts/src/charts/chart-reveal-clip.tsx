@@ -139,51 +139,50 @@ export interface ChartRevealClipProps {
   onEnterPlay?: () => void;
 }
 
+export interface ChartRevealGateOptions {
+  /** Only the enter reveal can be held; a conceal never is. Default `"reveal"`. */
+  mode?: ChartRevealClipMode;
+  /** See `ChartRevealClipProps.revealOn`. Default `"mount"`. */
+  revealOn?: ChartRevealOn;
+  /** See `ChartRevealClipProps.viewportRef`. */
+  viewportRef?: RefObject<Element | null>;
+  /** See `ChartRevealClipProps.replayOnClick`. Default `false`. */
+  replayOnClick?: boolean;
+  /** See `ChartRevealClipProps.shouldReplayOnClick`. */
+  shouldReplayOnClick?: (event: MouseEvent) => boolean;
+  /** See `ChartRevealClipProps.replayCount`. Default `0`. */
+  replayCount?: number;
+}
+
+export interface ChartRevealGate {
+  /**
+   * The enter reveal must not play yet: `revealOn="inView"` and the observed
+   * element has never intersected, no replay has happened, and the person has
+   * not asked for reduced motion (a reduced-motion render never withholds data).
+   */
+  held: boolean;
+  /** Pointer + keyboard replays since mount — ONE counter (#176). */
+  replayEpoch: number;
+  /** Explicit `prefers-reduced-motion: reduce` (`useReducedMotion() === true`). */
+  prefersReducedMotion: boolean;
+}
+
 /**
- * Left-to-right clip reveal for cartesian series.
- * Grows clip rect width from 0 → full (true LTR; scaleX is avoided — it reveals from center).
- *
- * ## Reduced motion is a BRANCH, not a shorter duration (#177)
- *
- * This primitive neutralizes ITSELF under `prefers-reduced-motion`, the same
- * way `DrawPath`, `Gauge`, `ShimmeringText`, `useGridShimmer`,
- * `useAnimatedYDomains` and `GanttBar` do — a caller never has to remember it.
- * A reduced-motion reveal renders the finished, full-width `<rect>` with no
- * `motion.rect` in the DOM at all (and no in-view hold, so the series is
- * visible whether or not it ever scrolls in); a reduced-motion conceal renders
- * its finished, zero-width `<rect>` and fires `onComplete` immediately, so a
- * caller sequencing on that callback advances instead of stalling.
- * `animating={false}` stays available as the explicit caller override and
- * behaves exactly as before.
- *
- * ## The replay affordance has two halves
- *
- * `replayOnClick` is the pointer half (a listener on `viewportRef`'s element);
- * `replayCount` is the keyboard half (a real `<button>` the caller renders
- * outside the `aria-hidden` chart body). They share one internal counter, so
- * they behave identically. Wire both — see `replayOnClick`'s note.
+ * The RM-020 reveal gate — `revealOn="inView"`, `replayOnClick` and
+ * `replayCount` — as ONE hook, so every chart that owns an enter reveal reads
+ * the same decision instead of re-implementing it. `ChartRevealClip` (and so
+ * `LineChart`/`AreaChart` via `time-series-chart-shell.tsx`) and `BarChart`,
+ * whose bars grow on their own `revealEpoch` rather than through a clip, all
+ * call this (#175).
  */
-export function ChartRevealClip({
-  clipPathId,
-  height,
-  targetWidth,
-  enterTransition,
-  revealEpoch,
-  padding = 0,
-  animating = true,
+export function useChartRevealGate({
   mode = "reveal",
-  onComplete,
   revealOn = "mount",
   viewportRef,
   replayOnClick = false,
   shouldReplayOnClick,
   replayCount = 0,
-  onEnterPlay,
-}: ChartRevealClipProps) {
-  const transition = clipRevealTransition(enterTransition);
-  const paddedWidth = Math.max(0, targetWidth + padding * 2);
-  const paddedHeight = height + padding * 2;
-
+}: ChartRevealGateOptions): ChartRevealGate {
   if (
     process.env.NODE_ENV !== "production" &&
     mode === "reveal" &&
@@ -210,8 +209,8 @@ export function ChartRevealClip({
 
   const [clickEpoch, setClickEpoch] = useState(0);
   // Pointer replays and keyboard replays are ONE signal: the caller's
-  // `replayCount` and this component's own click counter add together, so
-  // either path releases the view gate and remounts the reveal the same way.
+  // `replayCount` and this hook's own click counter add together, so either
+  // path releases the view gate and remounts the reveal the same way.
   const replayEpoch = clickEpoch + replayCount;
 
   useEffect(() => {
@@ -244,7 +243,84 @@ export function ChartRevealClip({
   // Under reduced motion the reveal renders in its finished state, so there is
   // nothing left to hold back — holding would hide the series outright from
   // someone who asked for less motion, not less data.
-  const held = heldForView && !prefersReducedMotion;
+  return { held: heldForView && !prefersReducedMotion, prefersReducedMotion, replayEpoch };
+}
+
+/**
+ * Left-to-right clip reveal for cartesian series.
+ * Grows clip rect width from 0 → full (true LTR; scaleX is avoided — it reveals from center).
+ *
+ * ## Reduced motion is a BRANCH, not a shorter duration (#177)
+ *
+ * This primitive neutralizes ITSELF under `prefers-reduced-motion`, the same
+ * way `DrawPath`, `Gauge`, `ShimmeringText`, `useGridShimmer`,
+ * `useAnimatedYDomains` and `GanttBar` do — a caller never has to remember it.
+ * A reduced-motion reveal renders the finished, full-width `<rect>` with no
+ * `motion.rect` in the DOM at all (and no in-view hold, so the series is
+ * visible whether or not it ever scrolls in); a reduced-motion conceal renders
+ * its finished, zero-width `<rect>` and fires `onComplete` immediately, so a
+ * caller sequencing on that callback advances instead of stalling.
+ * `animating={false}` stays available as the explicit caller override and
+ * behaves exactly as before.
+ *
+ * ## The replay affordance has two halves
+ *
+ * `replayOnClick` is the pointer half (a listener on `viewportRef`'s element);
+ * `replayCount` is the keyboard half (a real `<button>` the caller renders
+ * outside the `aria-hidden` chart body). They share one internal counter, so
+ * they behave identically. Wire both — see `replayOnClick`'s note.
+ */
+export function ChartRevealClip({
+  revealOn,
+  viewportRef,
+  replayOnClick,
+  shouldReplayOnClick,
+  replayCount,
+  ...viewProps
+}: ChartRevealClipProps) {
+  const gate = useChartRevealGate({
+    mode: viewProps.mode,
+    replayCount,
+    replayOnClick,
+    revealOn,
+    shouldReplayOnClick,
+    viewportRef,
+  });
+  return <ChartRevealClipView {...viewProps} gate={gate} />;
+}
+
+export interface ChartRevealClipViewProps extends Omit<
+  ChartRevealClipProps,
+  "revealOn" | "viewportRef" | "replayOnClick" | "shouldReplayOnClick" | "replayCount"
+> {
+  /** A gate the caller already owns (`useChartRevealGate`). */
+  gate: ChartRevealGate;
+}
+
+/**
+ * `ChartRevealClip`'s rendering, driven by a gate the CALLER computed. Internal
+ * (not exported from the package): a chart shell that must also pause its own
+ * phase timer while the reveal is held calls `useChartRevealGate` once and
+ * hands the result here, so one observer and one click listener serve both.
+ */
+export function ChartRevealClipView({
+  clipPathId,
+  height,
+  targetWidth,
+  enterTransition,
+  revealEpoch,
+  padding = 0,
+  animating = true,
+  mode = "reveal",
+  onComplete,
+  onEnterPlay,
+  gate,
+}: ChartRevealClipViewProps) {
+  const transition = clipRevealTransition(enterTransition);
+  const paddedWidth = Math.max(0, targetWidth + padding * 2);
+  const paddedHeight = height + padding * 2;
+  const { prefersReducedMotion, replayEpoch } = gate;
+  const held = mode === "reveal" && gate.held;
 
   useEffect(() => {
     if (mode === "reveal" && animating && !held) {

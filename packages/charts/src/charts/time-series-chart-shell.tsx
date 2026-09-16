@@ -36,7 +36,7 @@ import {
   DEFAULT_Y_DOMAIN_TWEEN_MS,
   isChartInteractionPhase,
 } from "./chart-phase";
-import { type ChartRevealOn, ChartRevealClip } from "./chart-reveal-clip";
+import { type ChartRevealOn, ChartRevealClipView, useChartRevealGate } from "./chart-reveal-clip";
 import { isInvalidDate } from "./chart-x-value-utils";
 import { decimateTimeSeries, maxRenderPointsForWidth } from "./decimate-time-series";
 import { filterDataByXDomain } from "./filter-data-by-x-domain";
@@ -275,6 +275,23 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     return generateChartSkeletonFromTarget(data, primaryKey);
   }, [data, lines]);
 
+  // ONE reveal gate (#175) drives both the clip below and the phase timer, so
+  // an in-view hold cannot lapse into "ready" off-screen and a replay also
+  // replays after the reveal has settled. Only hand it a real element when a
+  // caller actually opted in — `useInView` observes any non-null
+  // `viewportRef.current` regardless of `revealOn`, so passing it
+  // unconditionally would mount an `IntersectionObserver` for every default
+  // `"mount"` chart (a behaviour change, and undefined in environments — like
+  // this package's own jsdom unit tests — with no `IntersectionObserver`).
+  const revealGate = useChartRevealGate({
+    replayOnClick,
+    revealOn,
+    viewportRef: revealOn === "inView" || replayOnClick ? containerRef : undefined,
+  });
+  // Hold the phase only when a clip reveal will actually render (mirrors
+  // `useClipReveal` below); with no clip there is nothing to hold back.
+  const holdReveal = revealGate.held && !staticPreview && animationDuration > 0 && data.length > 1;
+
   const {
     chartPhase,
     plotData,
@@ -289,6 +306,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     chartStatus,
     revealSignature,
     skeletonData,
+    holdReveal,
+    replayEpoch: revealGate.replayEpoch,
     skipEnterReveal: staticPreview,
     targetData: data,
     yDomainTweenDuration,
@@ -773,28 +792,17 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       <defs>
         {defsChildren}
         {useClipReveal ? (
-          <ChartRevealClip
+          <ChartRevealClipView
             animating={isRevealAnimating || isRevealConcealing}
             clipPathId={clipPathId}
             enterTransition={effectiveEnterTransition}
+            gate={revealGate}
             height={innerHeight + 20}
             mode={isRevealConcealing ? "conceal" : "reveal"}
             onComplete={isRevealConcealing ? notifyRevealConcealComplete : undefined}
             padding={revealClipPadding}
-            replayOnClick={replayOnClick}
             revealEpoch={isRevealConcealing ? concealEpoch : revealEpoch}
-            revealOn={revealOn}
             targetWidth={innerWidth}
-            // Only hand `ChartRevealClip` a real element to observe when a
-            // caller actually opted into `revealOn="inView"` or
-            // `replayOnClick` (#175) — `useInView` starts observing as soon
-            // as `viewportRef.current` is non-null, regardless of `revealOn`,
-            // so passing it unconditionally would mount an
-            // `IntersectionObserver` for every default `"mount"` chart (a
-            // real behaviour change, and undefined in environments — like
-            // this package's own jsdom unit tests — with no
-            // `IntersectionObserver` polyfill).
-            viewportRef={revealOn === "inView" || replayOnClick ? containerRef : undefined}
           />
         ) : null}
       </defs>
