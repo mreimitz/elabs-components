@@ -14,6 +14,7 @@
 export * from "./core";
 
 // Provider/Sheet/Tile/hooks — RM-074
+export * from "./dashboard-sheet";
 
 // Built-in tiles — RM-075
 

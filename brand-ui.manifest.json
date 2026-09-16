@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T14:11:47.720Z",
+  "generatedAt": "2026-09-16T14:42:32.284Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21877,9 +21877,49 @@
         "@elabs-ai/components-charts/dashboard": {
           "components": [
             {
+              "name": "DASHBOARD_TILE_WARNING_THRESHOLD",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
+            },
+            {
               "name": "DashboardExpressionError",
               "kind": "value",
               "module": "packages/charts/src/dashboard/core/expression.ts"
+            },
+            {
+              "name": "DashboardGridContext",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
+            },
+            {
+              "name": "DashboardProvider",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-provider.tsx"
+            },
+            {
+              "name": "DashboardSheet",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
+            },
+            {
+              "name": "DashboardTile",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "DashboardTileHeader",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-header.tsx"
+            },
+            {
+              "name": "DashboardTileMenu",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-menu.tsx"
+            },
+            {
+              "name": "DEFAULT_DASHBOARD_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/labels.ts"
             },
             {
               "name": "DEFAULT_GRID_COLUMNS",
@@ -21912,7 +21952,43 @@
               "module": "packages/charts/src/dashboard/core/validate.ts"
             }
           ],
-          "hooks": [],
+          "hooks": [
+            {
+              "name": "useCellRect",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
+            },
+            {
+              "name": "useDashboard",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
+            },
+            {
+              "name": "useDashboardActions",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
+            },
+            {
+              "name": "useHover",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-hover.ts"
+            },
+            {
+              "name": "useSelection",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-selection.ts"
+            },
+            {
+              "name": "useTile",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-tile.ts"
+            },
+            {
+              "name": "useVariable",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-variable.ts"
+            }
+          ],
           "types": [
             {
               "name": "CellRect",
@@ -21943,12 +22019,40 @@
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
             {
+              "name": "DashboardCellSize",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardChangeMeta",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-provider.tsx"
+            },
+            {
+              "name": "DashboardContextValue",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
+            },
+            {
+              "name": "DashboardGridContextValue",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
+            },
+            {
               "name": "DashboardHover",
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
             {
+              "name": "DashboardLabels",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/labels.ts"
+            },
+            {
               "name": "DashboardMode",
               "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardProviderProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-provider.tsx"
+            },
+            {
+              "name": "DashboardSheetProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
             },
             {
               "name": "DashboardSpecNormalization",
@@ -21965,6 +22069,46 @@
             {
               "name": "DashboardStore",
               "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardTileCapabilities",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileFrameProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileHeaderProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-header.tsx"
+            },
+            {
+              "name": "DashboardTileKind",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileKinds",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileMenuItem",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-menu.tsx"
+            },
+            {
+              "name": "DashboardTileMenuProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-menu.tsx"
+            },
+            {
+              "name": "DashboardTileProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileRootProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "FieldSelection",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-selection.ts"
             },
             {
               "name": "History",
@@ -21985,6 +22129,10 @@
             {
               "name": "NormalizeDashboardSpecOptions",
               "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
+              "name": "PlaceholderTileContent",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
             },
             {
               "name": "SelectionDriver",
@@ -22021,6 +22169,10 @@
             {
               "name": "TilePatch",
               "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "TileRegistry",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
             }
           ],
           "otherExports": [
@@ -22061,8 +22213,16 @@
               "module": "packages/charts/src/dashboard/core/local-selection-driver.ts"
             },
             {
+              "name": "createPlaceholderTileKind",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
+            },
+            {
               "name": "createSelectionSnapshot",
               "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "createTileRegistry",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
             },
             {
               "name": "extendRows",
@@ -22085,6 +22245,10 @@
               "module": "packages/charts/src/dashboard/core/validate.ts"
             },
             {
+              "name": "placeholderTileKind",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
+            },
+            {
               "name": "resolveCollisions",
               "module": "packages/charts/src/dashboard/core/layout.ts"
             },
@@ -22095,6 +22259,14 @@
             {
               "name": "stackForNarrow",
               "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "tileDensity",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "tileInteractions",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
             },
             {
               "name": "validateDashboardSpec",

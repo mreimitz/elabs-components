@@ -18,6 +18,33 @@ The main `@elabs-ai/components-charts` barrel never re-exports anything from thi
 | `chrome/`          | toolbar, selection bar, asset and properties panels                                        | RM-076 onward  |
 | `test/`            | engine-free test double                                                                    | RM-077         |
 
+## Rendering
+
+`DashboardProvider` creates one store per sheet (normalised spec) and provides
+`{ store, registry }`. When the `spec` prop changes identity and the store is clean, the new
+spec replaces it and becomes the saved baseline; when the store is dirty the edits win and
+`onChange(spec, { conflict: true, incoming })` fires. Hooks: `useDashboard(selector, equality?)`,
+`useDashboardActions()`, `useTile(id)`, `useSelection(field?)`, `useVariable(name)`, `useHover()`,
+`useCellRect(cell)`.
+
+`DashboardSheet` measures its width and positions every visible tile (`visibleWhen` via
+`compileCondition`) at `cellRect` with absolute transforms. Height: `fit` fills its host like a
+Qlik sheet — the sheet is `h-full`, so a host with a definite height is split into `rows` (row
+height = host height ÷ rows, column width = host width ÷ columns, no scrolling). **Fallback:** a
+host with no definite height (auto-sized, so the sheet measures 0) gets square cells
+(`rows × cell width`) drawn by an in-flow spacer, and the page scrolls; `data-fill="host" |
+"square"` on the sheet says which applied. Give the host a height (`h-dvh`, `flex-1 min-h-0`, a
+fixed panel) to get the no-scroll sheet. `flow` is the lowest tile bottom. Containers render as `ui/Tabs` over an inner
+grid `layout.w` columns wide. One roving tab stop spans the tiles (arrow keys, Home, End, reading
+order). Tile bodies mount once they enter a one-viewport band around the nearest scroller
+(`renderAll` mounts all).
+
+`DashboardTile` composes `ChartFrame chrome="tile"`: `DashboardTileHeader` goes into `headerSlot`
+and `DashboardTileMenu` (hover toolbar + kebab) into `menuSlot`, so there is one header. A kind
+with `capabilities.frame` renders its own `ChartFrame` and spreads `props.frame`. Density: `xs` <
+200×100 px, `sm` < 400×200, `md` < 800×400, else `lg`. Interactions: view mounts
+passive/active/select; edit mounts only edit. An unknown kind renders a `ui/StatePanel` naming it.
+
 ## Rules
 
 Binding rules: `.claude/rules/dashboard.md`. Machine check: `pnpm check --rule dashboard-reuse`

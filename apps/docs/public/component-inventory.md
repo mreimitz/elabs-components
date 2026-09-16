@@ -1288,13 +1288,28 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Y_AXIS_MAX_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_MIN_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | YAxis | component |  | `@elabs-ai/components-charts` |  |
+| DASHBOARD_TILE_WARNING_THRESHOLD | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardExpressionError | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardGridContext | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardProvider | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardSheet | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardTile | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardTileHeader | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardTileMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_DASHBOARD_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_COLUMNS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_GAP | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_ROWS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_ROW_HEIGHT | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | EMPTY_SELECTION | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | GRID_DENSITY_PRESETS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| useCellRect | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboard | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboardActions | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useHover | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useSelection | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useTile | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useVariable | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 
 ## @elabs-ai/components-marketing
 
