@@ -44,8 +44,21 @@ const CELL_WIDTH = 56;
 const CELL_HEIGHT = 44;
 const MARGIN_LEFT = 92;
 const MARGIN_TOP = 24;
-const MIN_RADIUS = 3;
 const MAX_RADIUS = 16;
+
+/**
+ * Blob radius for a value. A reader compares filled blobs by AREA, so area — not
+ * radius — must be proportional to value: `r = rMax · sqrt(value / max)`. A
+ * linear radius under-stated mid-range cells by up to 39% of drawn area (#299).
+ * Zero-based and unclamped on purpose: a minimum radius would re-inflate the
+ * smallest cells, and a zero cell already draws a `QuietDot` instead.
+ *
+ * If you copied this block before that fix, re-add it — your copy scales linearly.
+ */
+function areaRadius(value: number, max: number): number {
+  if (max <= 0 || value <= 0) return 0;
+  return MAX_RADIUS * Math.sqrt(value / max);
+}
 
 function firstSeenOrder(values: string[]): string[] {
   return Array.from(new Set(values));
@@ -90,16 +103,11 @@ export function ChartEditorialAlmanac({
   const columns = xOrder ?? firstSeenOrder(data.map((cell) => cell.x));
   const rows = yOrder ?? firstSeenOrder(data.map((cell) => cell.y));
   const values = data.map((cell) => cell.value).filter((v) => v > 0);
-  const minValue = Math.min(...values, 0);
   const maxValue = Math.max(...values, 1);
   const width = MARGIN_LEFT + columns.length * CELL_WIDTH + 140;
   const height = MARGIN_TOP + rows.length * CELL_HEIGHT + 16;
 
-  const radiusFor = (value: number) => {
-    if (maxValue === minValue) return (MIN_RADIUS + MAX_RADIUS) / 2;
-    const t = (value - minValue) / (maxValue - minValue);
-    return MIN_RADIUS + t * (MAX_RADIUS - MIN_RADIUS);
-  };
+  const radiusFor = (value: number) => areaRadius(value, maxValue);
 
   const peak = data.reduce<AlmanacCell | undefined>(
     (best, cell) => (!best || cell.value > best.value ? cell : best),
@@ -111,7 +119,9 @@ export function ChartEditorialAlmanac({
   return (
     <div
       aria-label={accessibleLabel}
-      className="w-full max-w-[640px] overflow-x-auto rounded-lg border border-border bg-card p-4"
+      // A scroll container at narrow widths, so it stays a tab stop — and gets the
+      // house ring, drawn inset so the scroll box cannot clip it (#307).
+      className="focus-ring-inset w-full max-w-[640px] overflow-x-auto rounded-lg border border-border bg-card p-4"
       role="figure"
       tabIndex={0}
     >
