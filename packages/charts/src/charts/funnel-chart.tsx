@@ -14,7 +14,6 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { HaloText } from "../marks/halo-text";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
@@ -132,9 +131,11 @@ export interface FunnelChartProps {
   labelAlign?: "center" | "start" | "end";
   /**
    * Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered
-   * as a `HaloText` annotation (lieflat L13's "62% GET THROUGH" margin note —
+   * as a small opaque plate (lieflat L13's "62% GET THROUGH" margin note —
    * the number funnel readers actually want, distinct from the existing
-   * `showPercentage` badge which is always "% of the first stage").
+   * `showPercentage` badge which is always "% of the first stage"). The
+   * plate carries its own ground/ink pair (like `SegmentLabel`'s percentage
+   * pill), so it stays legible on any band fill in any theme — see #239.
    * - `"between"` places one annotation at the boundary between each pair of
    *   adjacent segments.
    * - `"margin"` stacks all transitions in a column near the funnel's leading
@@ -1110,54 +1111,55 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
           {/* Stage-to-stage conversion (lieflat L13) — % of the previous
               stage, one annotation per boundary. Decorative-by-default like
               every other mark layer in this package: the interactive stage
-              overlay below carries the equivalent as a native `title`. */}
+              overlay below carries the equivalent as a native `title`.
+              Rendered as an opaque HTML plate, NOT `HaloText` — `HaloText`'s
+              ground-tuned defaults (`--chart-foreground` ink) measure
+              9.58:1 against this package's theme-invariant lime band in
+              `light` but only 1.23:1 in `dark`, because the band doesn't
+              move with the theme and the ink does (#239). A plate with its
+              own `bg-card`/`text-muted-foreground` pair is theme-safe by
+              construction, the same reason `SegmentLabel`'s percentage pill
+              reads correctly in every theme — quieter than that pill
+              (smaller role, muted ink, no bold) so the derived metric stays
+              secondary. */}
           {showConversion && n > 1 && (
-            <svg
+            <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full"
-              preserveAspectRatio="none"
-              role="presentation"
+              className="pointer-events-none absolute inset-0"
               // Above every segment, hovered ones included (zIndex 10), and
               // below the hover overlays (20) — otherwise the fills cover it.
               style={{ zIndex: 15 }}
-              viewBox={`0 0 ${W} ${H}`}
             >
               {Array.from({ length: n - 1 }, (_, i) => {
                 const idx = i + 1;
                 const conv = conversions[idx] ?? 0;
                 const label = formatPercentage(conv);
                 const convKey = `conversion-${idx}`;
+                const plate = (
+                  <span
+                    className="whitespace-nowrap rounded-full bg-card px-2 py-0.5 text-caption text-muted-foreground shadow-xs"
+                    data-slot="funnel-chart-conversion"
+                  >
+                    {label}
+                  </span>
+                );
 
                 if (showConversion === "between") {
-                  if (horiz) {
-                    const x = segW * idx + gap * i + gap / 2;
-                    return (
-                      <HaloText
-                        dominantBaseline="middle"
-                        fontSize={11}
-                        fontWeight={700}
-                        key={convKey}
-                        textAnchor="middle"
-                        x={x}
-                        y={H / 2}
-                      >
-                        {label}
-                      </HaloText>
-                    );
-                  }
-                  const y = segH * idx + gap * i + gap / 2;
+                  const positionStyle: CSSProperties = horiz
+                    ? {
+                        left: segW * idx + gap * i + gap / 2,
+                        top: H / 2,
+                        transform: "translate(-50%, -50%)",
+                      }
+                    : {
+                        left: W / 2,
+                        top: segH * idx + gap * i + gap / 2,
+                        transform: "translate(-50%, -50%)",
+                      };
                   return (
-                    <HaloText
-                      dominantBaseline="middle"
-                      fontSize={11}
-                      fontWeight={700}
-                      key={convKey}
-                      textAnchor="middle"
-                      x={W / 2}
-                      y={y}
-                    >
-                      {label}
-                    </HaloText>
+                    <div className="absolute" key={convKey} style={positionStyle}>
+                      {plate}
+                    </div>
                   );
                 }
 
@@ -1165,38 +1167,16 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
                 // (left for horizontal, top for vertical) rather than on
                 // each individual boundary.
                 const frac = n > 2 ? i / (n - 2) : 0.5;
-                if (horiz) {
-                  const y = H * (0.18 + frac * 0.64);
-                  return (
-                    <HaloText
-                      dominantBaseline="middle"
-                      fontSize={11}
-                      fontWeight={700}
-                      key={convKey}
-                      textAnchor="start"
-                      x={10}
-                      y={y}
-                    >
-                      {label}
-                    </HaloText>
-                  );
-                }
-                const x = W * (0.18 + frac * 0.64);
+                const positionStyle: CSSProperties = horiz
+                  ? { left: 10, top: H * (0.18 + frac * 0.64), transform: "translateY(-50%)" }
+                  : { left: W * (0.18 + frac * 0.64), top: 10, transform: "translateX(-50%)" };
                 return (
-                  <HaloText
-                    dominantBaseline="hanging"
-                    fontSize={11}
-                    fontWeight={700}
-                    key={convKey}
-                    textAnchor="middle"
-                    x={x}
-                    y={10}
-                  >
-                    {label}
-                  </HaloText>
+                  <div className="absolute" key={convKey} style={positionStyle}>
+                    {plate}
+                  </div>
                 );
               })}
-            </svg>
+            </div>
           )}
 
           {/* Label overlays — one per segment, positioned over each segment cell.

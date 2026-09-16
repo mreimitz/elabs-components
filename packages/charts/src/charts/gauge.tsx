@@ -12,9 +12,16 @@ import {
   useMemo,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-stat-flow";
 import { HaloText } from "../marks/halo-text";
 import { PieCenterShell } from "./pie-center-shell";
+
+// Radial gap (px) reserved between the dial's outer edge and a milestone's
+// halo-text number, matching `RingTickRing`'s `leaderReserve` idiom
+// (`ring.tsx`) — a short dotted leader connects the dot to the label so the
+// two read as one mark instead of two disconnected scales (#248).
+const MILESTONE_LEADER_RESERVE = 18;
 
 function isDefsComponent(child: ReactElement): boolean {
   const typeLabel =
@@ -77,7 +84,7 @@ const DEFAULT_NOTCH_ENTER_TRANSITION: Transition = {
   damping: 20,
 };
 
-export interface GaugeProps {
+export interface GaugeProps extends ChartA11yProps {
   /** Fill level 0–100 */
   value: number;
   /** Number of arc notches */
@@ -156,9 +163,12 @@ export interface GaugeProps {
   /** Scales notch stagger delays relative to default timing (1 = reference). */
   enterStaggerScale?: number;
   /**
-   * Milestone values (0–100) marked with a small halo-text dot + number inside
-   * the notch band — e.g. `[25, 50, 75, 100]` (lieflat F11). Unset (default)
-   * renders no milestones, so an existing `Gauge` is unaffected.
+   * Milestone values (0–100) marked with a small dot on the dial and a
+   * halo-text number just **outside** the notch band, joined by a short
+   * dotted leader — e.g. `[25, 50, 75, 100]` (lieflat F11). Setting
+   * `milestones` reserves a small radial margin so the leader + label never
+   * clip the gauge's own box; a `Gauge` with `milestones` unset renders its
+   * pre-existing, unaffected geometry. #248.
    */
   milestones?: number[];
   /**
@@ -171,7 +181,10 @@ export interface GaugeProps {
   remainingLabel?: (remaining: number) => string;
 }
 
-interface GaugeInnerProps extends Omit<GaugeProps, "className" | "minWidth"> {
+interface GaugeInnerProps extends Omit<
+  GaugeProps,
+  "className" | "minWidth" | "accessibleLabel" | "accessibleDescription"
+> {
   width: number;
   height: number;
 }
@@ -225,10 +238,16 @@ function GaugeInner({
   const resolvedActiveFillOpacity = activeFillOpacity ?? DEFAULT_ACTIVE_FILL_OPACITY;
   const resolvedInactiveFillOpacity = inactiveFillOpacity ?? DEFAULT_INACTIVE_FILL_OPACITY;
 
+  const hasMilestones = Boolean(milestones && milestones.length > 0);
+  // Milestone labels sit outside the dial (`MILESTONE_LEADER_RESERVE` + a
+  // little label air), so the dial itself pulls in by that much when
+  // `milestones` is set — never when it is unset, so a plain `Gauge` keeps
+  // its exact pre-existing geometry (#248).
+  const milestoneReserve = hasMilestones ? MILESTONE_LEADER_RESERVE + 10 : 0;
   const size = Math.min(width, height);
   const centerX = width / 2;
   const centerY = height / 2;
-  const outerRadius = size * 0.42;
+  const outerRadius = size * 0.42 - milestoneReserve;
   const innerRadiusBase = size * 0.28;
   const defaultRadialDepth = outerRadius - innerRadiusBase;
   const depthFactor = Math.min(100, Math.max(5, notchLengthPercent)) / 100;
@@ -313,27 +332,36 @@ function GaugeInner({
     useThemePaletteGradient,
   ]);
 
-  // Milestone dots + numbers (F11) — placed inside the notch band, on the same
-  // arc the fill sweeps, so a milestone reads as "part of the dial" rather than
-  // a separate overlay. Angle is mapped over `availableAngle` (the same span
-  // the notches occupy), not the raw start/end angle, so a milestone at 100
-  // lands at the outer edge of the last notch.
+  // Milestone dots + numbers (F11) — the dot sits mid-band, on the same arc
+  // the fill sweeps (angle mapped over `availableAngle`, so a milestone at
+  // 100 lands at the outer edge of the last notch). The NUMBER sits just
+  // outside the dial (`MILESTONE_LEADER_RESERVE`), joined to its dot by a
+  // short dotted leader — the same idiom `RingTickRing` uses for outside
+  // labels (`ring.tsx`) — so a dot and its number read as one mark rather
+  // than two disconnected scales (#248). `labelRadius` is always strictly
+  // greater than `outerRadius`, so a label can never sit on the notch band.
   const milestoneMarks = useMemo(() => {
     if (!milestones || milestones.length === 0) {
       return [];
     }
     const dotRadius = (outerRadius + innerRadius) / 2;
-    const labelRadius = Math.max(innerRadius - 14, dotRadius * 0.5);
+    const leaderRadius = outerRadius + MILESTONE_LEADER_RESERVE;
+    const labelRadius = leaderRadius + 2;
     return milestones.map((m) => {
       const clamped = Math.min(100, Math.max(0, m));
       const angle = startAngle + (clamped / 100) * availableAngle;
       const radians = (angle * Math.PI) / 180;
+      const cos = Math.cos(radians);
+      const sin = Math.sin(radians);
       return {
         value: m,
-        dotX: centerX + Math.cos(radians) * dotRadius,
-        dotY: centerY + Math.sin(radians) * dotRadius,
-        labelX: centerX + Math.cos(radians) * labelRadius,
-        labelY: centerY + Math.sin(radians) * labelRadius,
+        dotX: centerX + cos * dotRadius,
+        dotY: centerY + sin * dotRadius,
+        leaderX: centerX + cos * leaderRadius,
+        leaderY: centerY + sin * leaderRadius,
+        labelX: centerX + cos * labelRadius,
+        labelY: centerY + sin * labelRadius,
+        labelOnRightHalf: cos >= 0,
       };
     });
   }, [milestones, outerRadius, innerRadius, startAngle, availableAngle, centerX, centerY]);
@@ -497,11 +525,21 @@ function GaugeInner({
                   stroke="var(--chart-background)"
                   strokeWidth={1.5}
                 />
+                <line
+                  data-slot="gauge-milestone-leader"
+                  stroke="var(--chart-foreground-muted)"
+                  strokeDasharray="1.5 2.5"
+                  strokeWidth={1}
+                  x1={mark.dotX}
+                  x2={mark.leaderX}
+                  y1={mark.dotY}
+                  y2={mark.leaderY}
+                />
                 <HaloText
                   dominantBaseline="middle"
                   fontSize={9}
                   fontWeight={600}
-                  textAnchor="middle"
+                  textAnchor={mark.labelOnRightHalf ? "start" : "end"}
                   x={mark.labelX}
                   y={mark.labelY}
                 >
@@ -527,7 +565,15 @@ function GaugeInner({
           suffix={suffix}
         />
         {remainingLabel ? (
-          <div className="mt-1 text-center text-meta text-muted-foreground uppercase tracking-wide">
+          // Budgeted to the donut hole's own chord, not the gauge's whole
+          // box — an `absolute inset-0 items-center` overlay is otherwise
+          // free to grow across the tick arc (#248). `innerRadius * 2 * 0.9`
+          // leaves a small margin inside the hole; `text-balance` keeps a
+          // wrapped two-line caption from breaking raggedly.
+          <div
+            className="mt-1 text-center text-balance text-meta text-muted-foreground uppercase tracking-wide"
+            style={{ maxWidth: innerRadius * 2 * 0.9 }}
+          >
             {remainingLabel(Math.max(totalNotches - activeNotches, 0))}
           </div>
         ) : null}
@@ -545,18 +591,43 @@ export function Gauge({
   height: heightProp,
   className,
   minWidth = 300,
+  accessibleLabel,
+  accessibleDescription,
   ...props
 }: GaugeProps) {
+  const {
+    role,
+    "aria-label": ariaLabel,
+    "aria-describedby": ariaDescribedby,
+    tabIndex,
+    descId,
+  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+
   if (widthProp != null && heightProp != null) {
     return (
-      <div className={cn("relative inline-flex max-w-full", className)}>
+      <div
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative inline-flex max-w-full", className)}
+        role={role}
+        tabIndex={tabIndex}
+      >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
         <GaugeInner height={heightProp} width={widthProp} {...props} />
       </div>
     );
   }
 
   return (
-    <div className={cn("relative w-full max-w-full", className)} style={{ minWidth }}>
+    <div
+      aria-describedby={ariaDescribedby}
+      aria-label={ariaLabel}
+      className={cn("relative w-full max-w-full", className)}
+      role={role}
+      style={{ minWidth }}
+      tabIndex={tabIndex}
+    >
+      <ChartA11yLabel descId={descId} description={accessibleDescription} />
       <div className="mx-auto aspect-[21/16] w-full max-w-[560px]">
         <ParentSize debounceTime={10}>
           {({ width, height }) =>
