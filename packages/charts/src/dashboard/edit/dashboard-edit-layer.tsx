@@ -12,6 +12,9 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
+  Children,
+  Fragment,
+  isValidElement,
   useCallback,
   useEffect,
   useMemo,
@@ -370,10 +373,79 @@ export function DashboardEditLayer({
   };
   const onDragEnd = (_event: DragEndEvent) => commit();
 
+  // tile chrome — RM-081 (follow-up 4): every focused, non-container top-level tile gets its
+  // resize handles + focus outline + size badge at `TILE_CHROME_Z`, so they stay usable even when
+  // the tile's own body is covered by a higher-`z` neighbour. Follow-up 3 appended these after ALL
+  // tiles, which broke RM-078's Tab order (tile → its handles → next tile); see `interleaved`
+  // below. Still inside `DndContext` (the handles' `useDraggable` needs it). `start()` always adds
+  // the gesture's own tile to `focus`, so the actively dragging/resizing tile is covered too.
+  const renderTileChrome = useCallback(
+    (tileId: string): ReactNode => {
+      if (width <= 0 || !focus.includes(tileId)) return null;
+      const tile = spec.tiles.find((item) => item.id === tileId);
+      if (!tile || tile.container) return null;
+      // The dragging/resizing tile's own live target; every other focused tile's live preview
+      // from a group drag, else its committed cells.
+      const cells =
+        session && session.tileId === tile.id
+          ? session.target
+          : (session?.layout.find((item) => item.id === tile.id) ?? tile.layout);
+      const rect = cellRect(cells, grid, { width, height });
+      const title = tile.title || labels.untitledTile(tile.kind);
+      return (
+        <div
+          key={`chrome-${tile.id}`}
+          data-slot="dashboard-tile-chrome"
+          // Deliberately NOT `data-tile-id`: this is a chrome overlay, not the tile itself, and
+          // several plays/tests count/select `[data-tile-id]` expecting one match per real tile.
+          data-tile-chrome-for={tile.id}
+          className="pointer-events-none absolute rounded-lg"
+          style={{
+            left: 0,
+            top: 0,
+            width: rect.width,
+            height: rect.height,
+            transform: `translate(${rect.x}px, ${rect.y}px)`,
+            // z-order — RM-081: always above every tile, focused or not (`TILE_CHROME_Z`).
+            zIndex: TILE_CHROME_Z,
+          }}
+        >
+          <div
+            aria-hidden="true"
+            data-slot="dashboard-tile-chrome-outline"
+            className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-ring"
+          />
+          <TileResizeHandles tileId={tile.id} title={title} />
+          <TileSizeBadge cell={cells} />
+        </div>
+      );
+    },
+    [width, height, focus, spec, session, grid, labels],
+  );
+
   const context = useMemo<DashboardEditContextValue>(
     () => ({ session, messages, pitch, reducedMotion, resizeBy, commit, cancel }),
     [session, messages, pitch, reducedMotion, resizeBy, commit, cancel],
   );
+
+  // tile chrome — RM-081 (follow-up 4): interleave each tile's chrome as its IMMEDIATE next DOM
+  // sibling. `children` is `DashboardSheet`'s top-level list (`<DashboardTile tileId>` or a
+  // container); `DashboardTile`'s root is its own tile `<div>` (the context-menu wrapper adds no
+  // DOM), so `[tile, chrome]` puts the handles in Tab order right after the tile's own controls
+  // and before the next tile — while they still paint at `TILE_CHROME_Z` in the sheet's
+  // stacking context.
+  // Always wrap in the same keyed Fragment (chrome or not) so focusing a tile never changes the
+  // element type at its position — a type change would remount the tile and drop DOM focus.
+  const interleaved = Children.toArray(children).map((child, index) => {
+    if (!isValidElement<{ tileId?: unknown }>(child)) return child;
+    const tileId = typeof child.props.tileId === "string" ? child.props.tileId : null;
+    return (
+      <Fragment key={child.key ?? index}>
+        {child}
+        {tileId ? renderTileChrome(tileId) : null}
+      </Fragment>
+    );
+  });
 
   const ghost = session && width > 0 ? cellRect(session.target, grid, { width, height }) : null;
 
@@ -383,19 +455,6 @@ export function DashboardEditLayer({
   // edit mode is enough.
   const topLevel = useMemo(() => topLevelLayout(spec), [spec]);
 
-  // tile chrome — RM-081 (follow-up 3): every focused, non-container top-level tile gets its own
-  // resize handles + focus outline + size badge painted HERE, never as the tile's own DOM
-  // descendants — so they stay usable even when the tile's own (unraised) body is covered by a
-  // higher-`z` neighbour (see the `TILE_RAISED_Z` comment at dashboard-tile.tsx). `start()` always
-  // adds the gesture's own tile to `focus`, so the actively dragging/resizing tile is covered by
-  // this same loop — no separate union needed.
-  const chromeTiles = useMemo(
-    () =>
-      focus
-        .map((id) => spec.tiles.find((item) => item.id === id))
-        .filter((item): item is (typeof spec.tiles)[number] => Boolean(item) && !item?.container),
-    [focus, spec],
-  );
   const marquee = useDashboardMarquee({
     sheetRef,
     grid,
@@ -438,51 +497,7 @@ export function DashboardEditLayer({
         onDragEnd={onDragEnd}
         onDragCancel={cancel}
       >
-        {children}
-        {width > 0
-          ? // tile chrome — RM-081 (follow-up 3): rendered INSIDE `DndContext` — `TileResizeHandles`'
-            // `useDraggable` calls must sit inside the same provider as the tile's own move handle,
-            // even though this overlay is now a chrome-band SIBLING of the tile, not its descendant.
-            chromeTiles.map((tile) => {
-              // The dragging/resizing tile's own live target; every other focused tile's live
-              // preview from a group drag, else its committed cells.
-              const cells =
-                session && session.tileId === tile.id
-                  ? session.target
-                  : (session?.layout.find((item) => item.id === tile.id) ?? tile.layout);
-              const rect = cellRect(cells, grid, { width, height });
-              const title = tile.title || labels.untitledTile(tile.kind);
-              return (
-                <div
-                  key={tile.id}
-                  data-slot="dashboard-tile-chrome"
-                  // Deliberately NOT `data-tile-id`: this is a chrome overlay, not the tile
-                  // itself, and several plays/tests count/select `[data-tile-id]` expecting
-                  // exactly one match per real tile.
-                  data-tile-chrome-for={tile.id}
-                  className="pointer-events-none absolute rounded-lg"
-                  style={{
-                    left: 0,
-                    top: 0,
-                    width: rect.width,
-                    height: rect.height,
-                    transform: `translate(${rect.x}px, ${rect.y}px)`,
-                    // z-order — RM-081: see the marquee/ghost comment below (dashboard-tile.tsx's
-                    // `TILE_CHROME_Z`) — always above every tile, focused or not.
-                    zIndex: TILE_CHROME_Z,
-                  }}
-                >
-                  <div
-                    aria-hidden="true"
-                    data-slot="dashboard-tile-chrome-outline"
-                    className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-ring"
-                  />
-                  <TileResizeHandles tileId={tile.id} title={title} />
-                  <TileSizeBadge cell={cells} />
-                </div>
-              );
-            })
-          : null}
+        {interleaved}
       </DndContext>
       {marquee.rect ? (
         // z-order — RM-081: chrome always paints above every tile, however high a tile's own

@@ -85,6 +85,39 @@ const Z_ORDER_SPEC: DashboardSpec = {
 };
 
 /**
+ * RM-081 follow-up 4: three fit-mode tiles where chart-2 (`z: 1`) covers chart-1's bottom-right
+ * corner — the Tab-order play checks chart-1's handles are still next in Tab order AND still
+ * hit-testable while covered. chart-3 sits apart, below, so reading order is chart-1, chart-2, chart-3.
+ */
+const TAB_COVERED_SPEC: DashboardSpec = {
+  ...EDIT_FIT_SPEC,
+  id: "edit-tab-covered",
+  tiles: [
+    {
+      id: "chart-1",
+      kind: "chart",
+      title: "Revenue",
+      layout: { x: 0, y: 0, w: 8, h: 8 },
+      content: {},
+    },
+    {
+      id: "chart-2",
+      kind: "chart",
+      title: "Orders",
+      layout: { x: 4, y: 4, w: 8, h: 8, z: 1 },
+      content: {},
+    },
+    {
+      id: "chart-3",
+      kind: "chart",
+      title: "Margin",
+      layout: { x: 16, y: 8, w: 8, h: 4 },
+      content: {},
+    },
+  ],
+};
+
+/**
  * chart-1 (kind `chart`) + metric-1 (kind `metric`, RM-081 follow-up 2, F2) — drives the
  * "Paste and replace" acceptance bullet through the real context menu, not just the jsdom
  * unit test `tile-context-menu.test.tsx` already covers.
@@ -730,6 +763,117 @@ export const TileOperations: Story = {
         );
         expect(layoutOf("metric-1")).toMatchObject(metric1LayoutBefore);
         expect(store().getState().history.past).toBe(past + 1);
+      },
+    );
+  },
+};
+
+/** Where a Tab stop landed: the owning tile (or `<id>:chrome`) plus the element's accessible name. */
+function tabStop(el: Element | null): string {
+  if (!el) return "(none)";
+  const html = el as HTMLElement;
+  const chrome = html.closest<HTMLElement>("[data-tile-chrome-for]");
+  const tile = html.closest<HTMLElement>("[data-tile-id]");
+  const owner = chrome
+    ? `${chrome.dataset.tileChromeFor}:chrome`
+    : (tile?.dataset.tileId ?? html.dataset.slot ?? html.tagName.toLowerCase());
+  const name =
+    html.getAttribute("aria-label") ??
+    (html.getAttribute("aria-labelledby")
+      ? html.ownerDocument.getElementById(html.getAttribute("aria-labelledby")!)?.textContent
+      : null) ??
+    html.textContent?.trim() ??
+    "";
+  return `${owner} | ${html.dataset.slot ?? html.tagName.toLowerCase()} | ${name}`;
+}
+
+/** Real `userEvent.tab()` from tile 1's root until focus lands inside another tile (max 30). */
+async function tabUntilNextTile(sheet: HTMLElement, fromId: string): Promise<string[]> {
+  const tile = sheet.querySelector<HTMLElement>(`[data-tile-id="${fromId}"]`)!;
+  tile.focus();
+  await waitFor(() =>
+    expect(sheet.querySelector(`[data-tile-chrome-for="${fromId}"]`)).not.toBeNull(),
+  );
+  const stops = [tabStop(sheet.ownerDocument.activeElement)];
+  for (let i = 0; i < 30; i += 1) {
+    await userEvent.tab();
+    const active = sheet.ownerDocument.activeElement;
+    stops.push(tabStop(active));
+    const owner = active?.closest<HTMLElement>("[data-tile-id]")?.dataset.tileId;
+    if (owner && owner !== fromId) break;
+  }
+  return stops;
+}
+
+export const TabOrder: Story = {
+  name: "Tab order (RM-081 follow-up 4)",
+  render: () => <TileOpsSheet spec={EDIT_FIT_SPEC} />,
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const sheet = await canvas.findByRole("region", { name: EDIT_FIT_SPEC.title });
+    await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(4));
+
+    // Tile 1's own tab stops: its root, then its header controls (drag handle, kebab), then its
+    // eight resize handles in RM-078's order — all BEFORE any other tile's controls.
+    const tile1Stops = [
+      "chart-1 | dashboard-tile | Revenue",
+      "chart-1 | tile-drag-handle | Move Revenue",
+      "chart-1 | dashboard-tile-menu-trigger | More actions",
+      ...[
+        "top-left",
+        "top",
+        "top-right",
+        "right",
+        "bottom-right",
+        "bottom",
+        "bottom-left",
+        "left",
+      ].map((edge) => `chart-1:chrome | tile-resize-handles-handle | Resize Revenue from ${edge}`),
+    ];
+    // The chrome overlay is the tile root's IMMEDIATE next DOM sibling (never appended after
+    // every tile, the follow-up 3 regression).
+    const chromeFollowsTile = (id: string) => {
+      const chrome = sheet.querySelector<HTMLElement>(`[data-tile-chrome-for="${id}"]`)!;
+      expect(chrome.previousElementSibling).toBe(sheet.querySelector(`[data-tile-id="${id}"]`));
+    };
+
+    await step("Tab from tile 1: its own controls, then its 8 handles, then tile 2", async () => {
+      const stops = await tabUntilNextTile(sheet, "chart-1");
+      chromeFollowsTile("chart-1");
+      expect(stops).toEqual([...tile1Stops, "chart-2 | tile-drag-handle | Move Orders"]);
+    });
+
+    await step(
+      "Same with tile 1 covered by a higher-z tile 2; its handle stays hit-testable",
+      async () => {
+        await reset(TAB_COVERED_SPEC);
+        await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(3));
+        const stops = await tabUntilNextTile(sheet, "chart-1");
+        chromeFollowsTile("chart-1");
+        expect(stops).toEqual([...tile1Stops, "chart-2 | tile-drag-handle | Move Orders"]);
+
+        const tile1 = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+        const tile2 = sheet.querySelector<HTMLElement>('[data-tile-id="chart-2"]')!;
+        // chart-2 really does cover chart-1 inside the overlap: higher computed z-index, and it
+        // wins hit-testing at the overlap's centre (cell 6,6).
+        expect(Number(getComputedStyle(tile2).zIndex)).toBeGreaterThan(
+          Number(getComputedStyle(tile1).zIndex),
+        );
+        const p = pitch(sheet, TAB_COVERED_SPEC);
+        const box = sheet.getBoundingClientRect();
+        const doc = sheet.ownerDocument;
+        expect(
+          doc
+            .elementFromPoint(box.left + 6.5 * p.width, box.top + 6.5 * p.height)
+            ?.closest("[data-tile-id]"),
+        ).toBe(tile2);
+        // …yet chart-1's bottom-right handle, which sits inside that covered corner, still wins.
+        const handle = within(sheet).getByRole("button", {
+          name: "Resize Revenue from bottom-right",
+        });
+        const hr = handle.getBoundingClientRect();
+        const hit = doc.elementFromPoint(hr.left + hr.width / 2, hr.top + hr.height / 2);
+        expect(hit === handle || handle.contains(hit)).toBe(true);
       },
     );
   },
