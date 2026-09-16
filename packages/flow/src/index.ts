@@ -44,3 +44,13 @@ export * from "./flow-weighted-edge";
 
 // FlowSelfLoopEdge — RM-044
 export * from "./flow-self-loop-edge";
+
+// elkjs adapter — RM-067
+export {
+  layoutFlowElk,
+  type FlowElkEngine,
+  type FlowElkGraph,
+  type FlowLayoutElkOptions,
+  type FlowLayoutElkResult,
+} from "./flow-layout/layout-flow-elk";
+export { pinBackbone, type FlowElkBackbone } from "./flow-layout/backbone";

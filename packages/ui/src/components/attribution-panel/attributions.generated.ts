@@ -2,7 +2,7 @@
 // Run `pnpm gen` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm gen:check` fails on a stale copy.
 //
-// 116 entries (data: 2, source: 18, font: 2, dependency: 94).
+// 117 entries (data: 2, source: 18, font: 2, dependency: 95).
 
 import type { Attribution } from "./attribution-types";
 
@@ -1076,6 +1076,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     usedBy: ["@elabs-ai/components-charts"],
     required: false,
     note: null,
+  },
+  {
+    version: "0.12.0",
+    note: "elkjs adapter — RM-067. The Eclipse Layout Kernel, behind layoutFlowElk. An OPTIONAL peer dependency, so the derived dependency list (plain `dependencies` only) cannot see it; it is credited here instead. Never bundled into the package: loaded with import() from the host's own install, and used under EPL-2.0. The licence text (LICENSE.md) names no holder; the copyright line is read verbatim from the header of elkjs's own lib/elk-api.d.ts.",
+    id: "elkjs",
+    category: "dependency",
+    name: "elkjs",
+    license: "EPL-2.0 OR GPL-3.0-or-later",
+    copyright: "Copyright (c) 2019 TypeFox and others",
+    url: "https://github.com/kieler/elkjs",
+    usedBy: ["@elabs-ai/components-flow"],
+    required: false,
   },
   {
     id: "embla-carousel-react",

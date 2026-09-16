@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T11:44:14.062Z",
+  "generatedAt": "2026-09-16T12:04:12.155Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23432,6 +23432,7 @@
         "@elabs-ai/components-tokens": "workspace:*",
         "@elabs-ai/components-ui": "workspace:*",
         "@xyflow/react": "^12.11.1",
+        "elkjs": "^0.12.0",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -23720,6 +23721,18 @@
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
         },
         {
+          "name": "FlowElkBackbone",
+          "module": "packages/flow/src/flow-layout/backbone.ts"
+        },
+        {
+          "name": "FlowElkEngine",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
+          "name": "FlowElkGraph",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
           "name": "FlowGroupNodeData",
           "module": "packages/flow/src/flow-group-node/flow-group-node.tsx"
         },
@@ -23742,6 +23755,14 @@
         {
           "name": "FlowLayoutDirection",
           "module": "packages/flow/src/flow-layout/flow-layout.ts"
+        },
+        {
+          "name": "FlowLayoutElkOptions",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
+          "name": "FlowLayoutElkResult",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
         },
         {
           "name": "FlowLayoutOptions",
@@ -23934,6 +23955,10 @@
           "module": "packages/flow/src/flow-layout/flow-layout.ts"
         },
         {
+          "name": "layoutFlowElk",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
           "name": "layoutGraph",
           "module": "packages/flow/src/flow-layout/layout-graph.ts"
         },
@@ -23944,6 +23969,10 @@
         {
           "name": "pickClosestHandles",
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
+        },
+        {
+          "name": "pinBackbone",
+          "module": "packages/flow/src/flow-layout/backbone.ts"
         },
         {
           "name": "positionToSide",
@@ -27353,6 +27382,12 @@
               "optional": true,
               "type": "string",
               "description": "Accessible name for the canvas region. Defaults to the localized `process.map.label` message."
+            },
+            {
+              "name": "layoutEngine",
+              "optional": true,
+              "type": "\"dagre\" | \"elk\"",
+              "description": "The layout engine. `\"elk\"` lays the map out with `@elabs-ai/components-flow`'s `layoutFlowElk` — elkjs, an optional peer, loaded lazily on first use; when it is not installed the map falls back to dagre with a development-only warning. @default \"dagre\""
             }
           ]
         },
