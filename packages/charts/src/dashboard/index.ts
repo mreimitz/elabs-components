@@ -36,5 +36,6 @@ export * from "./edit";
 // Interactions editor — RM-082
 
 // Export — RM-084
+export * from "./export";
 
 // Presentation/Theme/Workbook — RM-087
