@@ -22,7 +22,8 @@ declare global {
   }
 }
 
-const TILES = ["chart", "text"].map((kind) => createPlaceholderTileKind(kind));
+// "metric" is registered only for the paste-and-replace play below (`PASTE_REPLACE_SPEC`).
+const TILES = ["chart", "text", "metric"].map((kind) => createPlaceholderTileKind(kind));
 
 /**
  * A diagonal-staggered 3-tile layout (same geometry as `core/store.test.ts`'s `tileOpsSpec`,
@@ -53,6 +54,58 @@ const ALIGN_SPEC: DashboardSpec = {
       title: "Margin",
       layout: { x: 14, y: 8, w: 6, h: 4 },
       content: {},
+    },
+  ],
+};
+
+/**
+ * Two overlapping `fit`-mode tiles (RM-081 follow-up 2, F1): chart-1 covers cells (0,0)–(8,8),
+ * chart-2 (4,4)–(12,12) — an 4×4-cell overlap the Bring forward/Send backward play below reads
+ * paint order from.
+ */
+const Z_ORDER_SPEC: DashboardSpec = {
+  ...EDIT_FIT_SPEC,
+  id: "edit-z-order",
+  tiles: [
+    {
+      id: "chart-1",
+      kind: "chart",
+      title: "Revenue",
+      layout: { x: 0, y: 0, w: 8, h: 8 },
+      content: {},
+    },
+    {
+      id: "chart-2",
+      kind: "chart",
+      title: "Orders",
+      layout: { x: 4, y: 4, w: 8, h: 8 },
+      content: {},
+    },
+  ],
+};
+
+/**
+ * chart-1 (kind `chart`) + metric-1 (kind `metric`, RM-081 follow-up 2, F2) — drives the
+ * "Paste and replace" acceptance bullet through the real context menu, not just the jsdom
+ * unit test `tile-context-menu.test.tsx` already covers.
+ */
+const PASTE_REPLACE_SPEC: DashboardSpec = {
+  ...EDIT_FIT_SPEC,
+  id: "edit-paste-replace",
+  tiles: [
+    {
+      id: "chart-1",
+      kind: "chart",
+      title: "Revenue",
+      layout: { x: 0, y: 0, w: 6, h: 4 },
+      content: { note: "chart-1-content" },
+    },
+    {
+      id: "metric-1",
+      kind: "metric",
+      title: "Active users",
+      layout: { x: 10, y: 0, w: 4, h: 3 },
+      content: { note: "metric-1-content" },
     },
   ],
 };
@@ -505,23 +558,67 @@ export const TileOperations: Story = {
     });
 
     await step(
-      "Bring forward (via the tile's own context menu, built into DashboardTile) raises chart-1 above chart-2",
+      "Bring forward / Send backward (via the tile's own context menu, built into DashboardTile) " +
+        "reorders an overlapping fit-mode pair's PAINT order — never their DOM order",
       async () => {
-        const before = layoutOf("chart-1").z ?? 0;
-        const trigger = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+        await reset(Z_ORDER_SPEC);
+        const p2 = pitch(sheet, Z_ORDER_SPEC);
+        const box = sheet.getBoundingClientRect();
+        // A point inside the overlap (cells 4–8 on both axes): the centre of cell (6, 6).
+        const overlapPoint = { x: box.left + 6.5 * p2.width, y: box.top + 6.5 * p2.height };
+        const bodyDoc = canvasElement.ownerDocument;
+        const tileA = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+        const tileB = sheet.querySelector<HTMLElement>('[data-tile-id="chart-2"]')!;
+        const domOrder = () =>
+          Array.from(sheet.querySelectorAll<HTMLElement>("[data-tile-id]")).map(
+            (el) => el.dataset.tileId,
+          );
+        const topTileAt = (point: { x: number; y: number }) =>
+          bodyDoc.elementFromPoint(point.x, point.y)?.closest("[data-tile-id]");
+
         // A real right-click sequence (Radix's `ContextMenuTrigger` listens for the native
         // `contextmenu` event a browser fires from it) — matches the recipe Shift+F10 itself
         // uses in `useDashboardShortcuts`. `DashboardTile` wraps itself in
         // `DashboardTileContextMenu` in edit mode (RM-081 follow-up 1) — no host composition.
-        await userEvent.pointer({ keys: "[MouseRight]", target: trigger });
-        // `ContextMenuContent` portals to `document.body`, outside `canvasElement`.
-        const body = within(canvasElement.ownerDocument.body);
-        const bringForward = await body.findByRole("menuitem", { name: "Bring forward" });
-        await userEvent.click(bringForward);
-        await waitForMenuClosed(body);
-        await waitFor(() => expect(layoutOf("chart-1").z ?? 0).toBeGreaterThan(before));
-        const otherZ = layoutOf("chart-2").z ?? layoutOf("chart-3").z ?? 0;
-        expect((layoutOf("chart-1").z ?? 0) > otherZ).toBe(true);
+        const chooseMenuItem = async (trigger: HTMLElement, name: string) => {
+          await userEvent.pointer({ keys: "[MouseRight]", target: trigger });
+          // `ContextMenuContent` portals to `document.body`, outside `canvasElement`.
+          const body = within(bodyDoc.body);
+          await userEvent.click(await body.findByRole("menuitem", { name }));
+          await waitForMenuClosed(body);
+          // Radix returns focus to the trigger (the tile root) on close, which — via
+          // `DashboardTile`'s own `onFocus` handler — makes it the sole multi-select focus.
+          // A focused tile is deliberately RAISED above `TILE_CHROME_Z`'s ordinary band (so its
+          // own resize handles can never be covered), which would otherwise mask the very z-order
+          // change this play asserts. Clear it the same way "Escape clears focus" does elsewhere
+          // in this file, so what remains is exactly `layout.z`'s own paint order.
+          store().getState().actions.setFocus([]);
+        };
+
+        expect(domOrder()).toEqual(["chart-1", "chart-2"]);
+
+        const pastBeforeForward = store().getState().history.past;
+        await chooseMenuItem(tileA, "Bring forward");
+        await waitFor(() =>
+          expect(Number(getComputedStyle(tileB).zIndex))
+            // z-order — RM-081 follow-up 2 (F1): a REAL computed-style/paint-order check, not a
+            // readback of the store field `bringForward` itself just wrote.
+            .toBeLessThan(Number(getComputedStyle(tileA).zIndex)),
+        );
+        expect(domOrder()).toEqual(["chart-1", "chart-2"]); // reading order never reorders
+        expect(topTileAt(overlapPoint)).toBe(tileA);
+        expect(store().getState().history.past).toBe(pastBeforeForward + 1);
+
+        const pastBeforeBackward = store().getState().history.past;
+        await chooseMenuItem(tileA, "Send backward");
+        await waitFor(() =>
+          expect(Number(getComputedStyle(tileA).zIndex)).toBeLessThan(
+            Number(getComputedStyle(tileB).zIndex),
+          ),
+        );
+        expect(domOrder()).toEqual(["chart-1", "chart-2"]);
+        expect(topTileAt(overlapPoint)).toBe(tileB);
+        expect(store().getState().history.past).toBe(pastBeforeBackward + 1);
       },
     );
 
@@ -576,6 +673,39 @@ export const TileOperations: Story = {
         await waitFor(() => expect(layoutOf("chart-1")).toMatchObject({ x: 0 }));
         expect(layoutOf("chart-2")).toMatchObject({ x: 0 });
         expect(layoutOf("chart-3")).toMatchObject({ x: 0 });
+        expect(store().getState().history.past).toBe(past + 1);
+      },
+    );
+
+    await step(
+      // RM-081 follow-up 2 (F2): the acceptance text's own "Paste and replace" sub-bullet,
+      // as a real driven-browser play — the prior jsdom-only coverage (tile-context-menu.test.tsx)
+      // stays, but this is the literal play the Acceptance text names.
+      "Copy chart-1, then “Paste and replace” on metric-1 swaps its kind/content and keeps its own layout",
+      async () => {
+        await reset(PASTE_REPLACE_SPEC);
+        const past = store().getState().history.past;
+        const body = within(canvasElement.ownerDocument.body);
+
+        const chart1 = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+        await userEvent.pointer({ keys: "[MouseRight]", target: chart1 });
+        await userEvent.click(await body.findByRole("menuitem", { name: "Copy" }));
+        await waitForMenuClosed(body);
+
+        const metric1LayoutBefore = { ...layoutOf("metric-1") };
+        const metric1 = sheet.querySelector<HTMLElement>('[data-tile-id="metric-1"]')!;
+        await userEvent.pointer({ keys: "[MouseRight]", target: metric1 });
+        await userEvent.click(await body.findByRole("menuitem", { name: "Paste and replace" }));
+        await waitForMenuClosed(body);
+
+        await waitFor(() =>
+          expect(
+            store()
+              .getState()
+              .spec.tiles.find((t) => t.id === "metric-1"),
+          ).toMatchObject({ id: "metric-1", kind: "chart", content: { note: "chart-1-content" } }),
+        );
+        expect(layoutOf("metric-1")).toMatchObject(metric1LayoutBefore);
         expect(store().getState().history.past).toBe(past + 1);
       },
     );

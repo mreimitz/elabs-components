@@ -38,6 +38,7 @@ import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { cellRect, collides, correctBounds } from "../core/layout";
 import type { GridSpec, TileLayout } from "../core/spec";
+import { TILE_CHROME_Z } from "../dashboard-sheet/dashboard-tile";
 import {
   useDashboard,
   useDashboardActions,
@@ -423,7 +424,11 @@ export function DashboardEditLayer({
       >
         {children}
       </DndContext>
-      {marquee.rect ? <DashboardMarquee rect={marquee.rect} /> : null}
+      {marquee.rect ? (
+        // z-order — RM-081: chrome always paints above every tile, however high a tile's own
+        // `layout.z` climbs (see `TILE_CHROME_Z` at dashboard-tile.tsx).
+        <DashboardMarquee rect={marquee.rect} style={{ zIndex: TILE_CHROME_Z }} />
+      ) : null}
       {selectionRect ? (
         <DashboardSelectionToolbar
           ids={focus}
@@ -437,7 +442,7 @@ export function DashboardEditLayer({
           data-slot="dashboard-edit-layer-ghost"
           data-reject={session?.ok ? undefined : ""}
           className={cn(
-            "pointer-events-none absolute z-20 flex items-center justify-center rounded-lg border-dashed",
+            "pointer-events-none absolute flex items-center justify-center rounded-lg border-dashed",
             session?.ok ? "border-ring" : "border-destructive text-destructive",
           )}
           style={{
@@ -447,6 +452,8 @@ export function DashboardEditLayer({
             height: ghost.height,
             borderWidth: CHART_HAIRLINE_WIDTH,
             transform: `translate(${ghost.x}px, ${ghost.y}px)`,
+            // z-order — RM-081: see the marquee comment above.
+            zIndex: TILE_CHROME_Z,
           }}
         >
           {session?.ok ? null : <Ban className="size-5" />}
@@ -496,8 +503,15 @@ function DashboardSelectionToolbar({ ids, left, top }: DashboardSelectionToolbar
     <Toolbar
       aria-label={t("charts.dashboard.tileOps.selectionToolbarLabel")}
       data-slot="dashboard-selection-toolbar"
-      className="absolute z-30 rounded-lg bg-popover p-1 text-popover-foreground shadow-ring-md"
-      style={{ left, top: top - 8, transform: "translate(-50%, -100%)" }}
+      className="absolute rounded-lg bg-popover p-1 text-popover-foreground shadow-ring-md"
+      style={{
+        left,
+        top: top - 8,
+        transform: "translate(-50%, -100%)",
+        // z-order — RM-081: see the marquee/ghost comment above (dashboard-tile.tsx's
+        // `TILE_CHROME_Z`) — always above every tile.
+        zIndex: TILE_CHROME_Z + 10,
+      }}
     >
       {ALIGN_BUTTONS.map(({ edge, icon: Icon, key }) => (
         <ToolbarButton

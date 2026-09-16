@@ -54,6 +54,21 @@ export function tileInteractions(mode: DashboardMode): Required<ChartInteraction
   return mode === "edit" ? EDIT_INTERACTIONS : VIEW_INTERACTIONS;
 }
 
+// z-order — RM-081: `fit`-mode tiles stack by `layout.z` (`flow` tiles can't overlap, so they
+// never set a z-index at all). Ordinary tiles are clamped to a fixed band so unbounded growth
+// from repeated Bring forward/Send backward clicks can never climb into the edit-layer chrome's
+// own stacking (dashboard-edit-layer.tsx's ghost/marquee/selection toolbar all paint at
+// `TILE_CHROME_Z` or above). A focused or actively-dragging tile is raised to `TILE_RAISED_Z` —
+// above every ordinary tile, still under the chrome — so its own resize handles/drag handle/
+// size badge (rendered as its DOM descendants) can never be hidden by a neighbour with a higher
+// stored `z`. The raise is an inline style only; `layout.z` itself is never touched by focus.
+/** Band ordinary `fit`-mode tiles clamp their `layout.z` into. */
+export const TILE_Z_BAND = 100;
+/** Stacking of a focused/dragging tile (ephemeral — never written to `layout.z`). */
+export const TILE_RAISED_Z = 500;
+/** Floor every edit-layer chrome element (ghost, marquee, selection toolbar) paints at. */
+export const TILE_CHROME_Z = 1000;
+
 export interface DashboardTileRootProps extends HTMLAttributes<HTMLDivElement> {
   /** The tile's id in the spec. */
   tileId: string;
@@ -74,6 +89,8 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     const actions = useDashboardActions();
     const tile = useDashboard((s) => s.spec.tiles.find((t) => t.id === tileId));
     const mode = useDashboard((s) => s.mode);
+    // z-order — RM-081: `layout.z` only ever stacks in `fit` mode (`flow` tiles can't overlap).
+    const gridMode = useDashboard((s) => s.spec.grid.mode);
     const kind = tile ? registry.get(tile.kind) : undefined;
     const capabilities = kind?.capabilities ?? {};
     const selection = useDashboard((s) =>
@@ -263,6 +280,13 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     const active = sheet ? sheet.activeTileId === tileId : true;
     const session = edit?.session?.tileId === tileId ? edit.session : null;
     const showEditChrome = editable && (focused || session !== null);
+    // z-order — RM-081: see the comment at `TILE_Z_BAND`/`TILE_RAISED_Z`/`TILE_CHROME_Z` above.
+    const zIndex =
+      gridMode === "fit"
+        ? showEditChrome
+          ? TILE_RAISED_Z
+          : Math.max(-TILE_Z_BAND, Math.min(TILE_Z_BAND, tile.layout.z ?? 0))
+        : undefined;
 
     const tileElement = (
       <div
@@ -295,6 +319,7 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
           height,
           transform: rect ? `translate(${rect.x}px, ${rect.y}px)` : undefined,
           visibility: rect ? undefined : "hidden",
+          zIndex,
           ...style,
         }}
         onFocus={(event) => {
