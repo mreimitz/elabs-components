@@ -84,8 +84,12 @@ export function DashboardProvider({
       spec,
       driver,
       mode,
-      // interaction graph — RM-082
-      onNavigate: (sheetId, context) => callbacks.current.onNavigate?.(sheetId, context),
+      // interaction graph — RM-082: forward `context` only when a drill supplies it, so a plain
+      // navigate still calls the host with exactly `(sheetId)`.
+      onNavigate: (sheetId, context) =>
+        context
+          ? callbacks.current.onNavigate?.(sheetId, context)
+          : callbacks.current.onNavigate?.(sheetId),
     }),
   );
 
@@ -149,7 +153,9 @@ export function DashboardProvider({
       labels: mergedLabels,
       // interaction graph — RM-082
       onNavigate: (sheetId: string, context?: DashboardNavigateContext) =>
-        callbacks.current.onNavigate?.(sheetId, context),
+        context
+          ? callbacks.current.onNavigate?.(sheetId, context)
+          : callbacks.current.onNavigate?.(sheetId),
       onRefresh,
       onAction: (id) => callbacks.current.onAction?.(id),
     }),
