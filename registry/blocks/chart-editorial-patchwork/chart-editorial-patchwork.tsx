@@ -33,6 +33,16 @@
  * reach ≥3:1 against the card in every theme — and that edge is the mark's
  * compliant cue. The fill keeps its band and still carries relative weight.
  *
+ * ## Category channel (#293)
+ *
+ * Category was hue-only (`fill={var(--chart-N)}`), and hue alone fails WCAG
+ * 1.4.1 in greyscale — worse, the fill's own opacity wash (weight) swings
+ * lightness further than hue separates categories. The #298 outline above
+ * now also carries a per-category `strokeDasharray` (solid/dashed/dotted, in
+ * first-seen order) — one stroke, two channels, so neither fix clobbers the
+ * other. The legend swatch repeats the identical signature so the key
+ * matches the dial, and the `sr-only` summary names each category's outline.
+ *
  * ## Layout (#303)
  *
  * The ring radius is DERIVED from the box, outside-in: edge padding, then half
@@ -53,7 +63,12 @@
  */
 
 import { CHART_HAIRLINE_WIDTH, HairlineFloor } from "@elabs-ai/components-charts";
-import { categoryTokenIndex, DAILY_EVENTS, type PatchworkEvent } from "./data/daily-events";
+import {
+  categoryStrokeSignature,
+  categoryTokenIndex,
+  DAILY_EVENTS,
+  type PatchworkEvent,
+} from "./data/daily-events";
 
 export interface ChartEditorialPatchworkProps {
   data?: PatchworkEvent[];
@@ -136,7 +151,11 @@ export function ChartEditorialPatchwork({
   const outerR = labelR - LABEL_GAP;
   const innerR = size * 0.16;
   const categories = Array.from(new Set(data.map((event) => event.category)));
-  const summary = `${data.length} events across ${categories.length} categories: ${categories.join(", ")}.`;
+  // Names the per-category visual channel (#293) — a reader who can't tell
+  // hues apart (or a screen-reader user, who never sees them) still has this.
+  const summary = `${data.length} events across ${categories.length} categories, each its own outline: ${categories
+    .map((category) => `${category} (${categoryStrokeSignature(categories, category).label})`)
+    .join(", ")}.`;
 
   return (
     <div
@@ -174,6 +193,7 @@ export function ChartEditorialPatchwork({
         {data.map((event, i) => {
           const a = angleDeg(event.hour);
           const opacity = sectorOpacity(event.weight);
+          const signature = categoryStrokeSignature(categories, event.category);
           return (
             <path
               d={wedgePath(
@@ -190,6 +210,8 @@ export function ChartEditorialPatchwork({
               fillOpacity={opacity}
               key={`${event.category}-${event.hour}-${i}`}
               stroke="var(--border-strong)"
+              strokeDasharray={signature.dasharray}
+              strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={WEDGE_OUTLINE_WIDTH}
             />
@@ -231,21 +253,34 @@ export function ChartEditorialPatchwork({
       </svg>
 
       <ul className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1">
-        {categories.map((category) => (
-          <li
-            className="flex items-center gap-1.5 text-caption text-muted-foreground"
-            key={category}
-          >
-            <span
-              aria-hidden="true"
-              className="size-2.5 rounded-full"
-              style={{
-                backgroundColor: `var(--chart-${categoryTokenIndex(categories, category)})`,
-              }}
-            />
-            {category}
-          </li>
-        ))}
+        {categories.map((category) => {
+          const signature = categoryStrokeSignature(categories, category);
+          return (
+            <li
+              className="flex items-center gap-1.5 text-caption text-muted-foreground"
+              key={category}
+            >
+              {/* Same stroke signature as the wedge (dasharray + neutral
+                  --border-strong outline) — the swatch is the legend's half
+                  of the #293/#298 shared key, not a plain colour dot. */}
+              <svg aria-hidden="true" className="size-2.5 shrink-0" viewBox="0 0 10 10">
+                <circle
+                  cx={5}
+                  cy={5}
+                  data-category={category}
+                  data-slot="chart-editorial-patchwork-legend-swatch"
+                  fill={`var(--chart-${categoryTokenIndex(categories, category)})`}
+                  r={3.75}
+                  stroke="var(--border-strong)"
+                  strokeDasharray={signature.dasharray}
+                  strokeLinecap="round"
+                  strokeWidth={1}
+                />
+              </svg>
+              {category}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
