@@ -33,6 +33,7 @@ export {
 export {
   fieldSpecSchema,
   formSpecSchema,
+  formSectionSchema,
   enumOptionSchema,
   keyValueRowSchema,
   stringFieldSchema,
@@ -73,6 +74,7 @@ export {
   type GroupFieldSpec,
   type FieldSpec,
   type FormSpec,
+  type FormSectionSpec,
   type FormValue,
   type FormValues,
   type FormSubmitState,

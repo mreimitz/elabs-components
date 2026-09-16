@@ -72,6 +72,20 @@ function pitchOf(grid: GridSpec, width: number, height: number): CellPitch | nul
 
 const NO_BREAK_SPACE = String.fromCharCode(0xa0);
 
+// External drops — RM-080
+/**
+ * A sheet's drop target for drags that start OUTSIDE its `DndContext` (the asset panel runs its
+ * own). `cellAt` maps a viewport point to the grid cell under it, or `null` off the sheet.
+ */
+export interface DashboardExternalDropTarget {
+  cellAt(point: { x: number; y: number }): { x: number; y: number } | null;
+}
+const externalDropTargets = new WeakMap<object, DashboardExternalDropTarget>();
+/** The edit-mode sheet's external drop target for a store, while one is mounted. */
+export function getDashboardDropTarget(store: object): DashboardExternalDropTarget | undefined {
+  return externalDropTargets.get(store);
+}
+
 const sameCells = (a: TileLayout, b: TileLayout) =>
   a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
 
@@ -97,6 +111,27 @@ export function DashboardEditLayer({
   const pitch = useMemo(() => pitchOf(grid, width, height), [grid, width, height]);
   const pitchRef = useRef(pitch);
   pitchRef.current = pitch;
+
+  // External drops — RM-080: expose the hit cell for drags from outside this DndContext.
+  useEffect(() => {
+    const target: DashboardExternalDropTarget = {
+      cellAt({ x, y }) {
+        const el = sheetRef.current;
+        const size = pitchRef.current;
+        if (!el || !size) return null;
+        const box = el.getBoundingClientRect();
+        if (x < box.left || x > box.right || y < box.top || y > box.bottom) return null;
+        const g = store.getState().spec.grid;
+        const col = Math.min(g.columns - 1, Math.max(0, Math.floor((x - box.left) / size.width)));
+        const row = Math.max(0, Math.floor((y - box.top) / size.height));
+        return { x: col, y: g.mode === "fit" ? Math.min((g.rows ?? 12) - 1, row) : row };
+      },
+    };
+    externalDropTargets.set(store, target);
+    return () => {
+      if (externalDropTargets.get(store) === target) externalDropTargets.delete(store);
+    };
+  }, [store, sheetRef]);
 
   const [session, setSessionState] = useState<DashboardEditSession | null>(null);
   const sessionRef = useRef<DashboardEditSession | null>(null);

@@ -564,3 +564,36 @@ export const FromJsonSchema: Story = {
     return <SchemaForm spec={spec} onSubmit={(state) => console.info("submit", state)} />;
   },
 };
+
+// SchemaForm sections — RM-080
+const sectionedSpec: FormSpec = {
+  formName: "tile_properties",
+  title: "Tile properties",
+  fields: [
+    { type: "string", name: "id", label: "Tile id", readOnly: true, default: "chart-1" },
+    { type: "string", name: "title", label: "Title" },
+    { type: "string", name: "subtitle", label: "Subtitle" },
+    { type: "string", name: "visibleWhen", label: "Show when" },
+    { type: "integer", name: "minW", label: "Minimum width (cells)", min: 1 },
+  ],
+  sections: [
+    { id: "general", label: "General", fields: ["title", "subtitle"] },
+    { id: "visibility", label: "Visibility", fields: ["visibleWhen"] },
+    { id: "size", label: "Size", fields: ["minW"], collapsed: true },
+  ],
+};
+
+/** `sections` groups fields into disclosures; `readOnly` shows a value as text. */
+export const Sections: Story = {
+  args: { spec: sectionedSpec },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("chart-1")).toBeInTheDocument();
+    await expect(canvas.queryByRole("textbox", { name: "Tile id" })).toBeNull();
+    await expect(canvas.queryByLabelText(/Minimum width/)).toBeNull();
+    await userEvent.click(canvas.getByRole("button", { name: "Size" }));
+    await waitFor(() => expect(canvas.getByLabelText(/Minimum width/)).toBeVisible());
+    await userEvent.click(canvas.getByRole("button", { name: "General" }));
+    await waitFor(() => expect(canvas.queryByLabelText("Title")).toBeNull());
+  },
+};

@@ -31,6 +31,7 @@ export * from "./edit";
 // already re-exported by the `export * from "./chrome"` above (RM-076) — nothing new here.
 
 // Panels — RM-080
+// DashboardAssetPanel, DashboardPropertiesPanel and their forms ship through `./chrome` above.
 
 // Interactions editor — RM-082
 

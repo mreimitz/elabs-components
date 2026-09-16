@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T17:34:10.552Z",
+  "generatedAt": "2026-09-16T18:04:41.289Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21883,6 +21883,11 @@
         "@elabs-ai/components-charts/dashboard": {
           "components": [
             {
+              "name": "CONTENT_FIELD_PREFIX",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
+            },
+            {
               "name": "DASHBOARD_EDIT_SHIFT_STEP",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/cell-coordinate-getter.ts"
@@ -21891,6 +21896,11 @@
               "name": "DASHBOARD_TILE_WARNING_THRESHOLD",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
+            },
+            {
+              "name": "DashboardAssetPanel",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-asset-panel.tsx"
             },
             {
               "name": "DashboardEditLayer",
@@ -21916,6 +21926,11 @@
               "name": "DashboardMarquee",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/marquee.tsx"
+            },
+            {
+              "name": "DashboardPropertiesPanel",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-properties-panel.tsx"
             },
             {
               "name": "DashboardProvider",
@@ -21956,6 +21971,11 @@
               "name": "DEFAULT_DASHBOARD_LABELS",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/labels.ts"
+            },
+            {
+              "name": "DEFAULT_DASHBOARD_PANEL_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
             },
             {
               "name": "DEFAULT_FILTER_TILE_LABELS",
@@ -22134,6 +22154,18 @@
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
             {
+              "name": "DashboardAssetDragData",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-asset-panel.tsx"
+            },
+            {
+              "name": "DashboardAssetPanelProps",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-asset-panel.tsx"
+            },
+            {
+              "name": "DashboardAssetSheet",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-asset-panel.tsx"
+            },
+            {
               "name": "DashboardCellSize",
               "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
             },
@@ -22162,6 +22194,10 @@
               "module": "packages/charts/src/dashboard/edit/edit-context.ts"
             },
             {
+              "name": "DashboardExternalDropTarget",
+              "module": "packages/charts/src/dashboard/edit/dashboard-edit-layer.tsx"
+            },
+            {
               "name": "DashboardGridContextValue",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
             },
@@ -22184,6 +22220,14 @@
             {
               "name": "DashboardMode",
               "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardPanelLabels",
+              "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
+            },
+            {
+              "name": "DashboardPropertiesPanelProps",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-properties-panel.tsx"
             },
             {
               "name": "DashboardProviderProps",
@@ -22452,6 +22496,10 @@
               "module": "packages/charts/src/dashboard/core/layout.ts"
             },
             {
+              "name": "commonTileForm",
+              "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
+            },
+            {
               "name": "compact",
               "module": "packages/charts/src/dashboard/core/layout.ts"
             },
@@ -22572,6 +22620,10 @@
               "module": "packages/charts/src/dashboard/core/history.ts"
             },
             {
+              "name": "getDashboardDropTarget",
+              "module": "packages/charts/src/dashboard/edit/dashboard-edit-layer.tsx"
+            },
+            {
               "name": "headingTileKind",
               "module": "packages/charts/src/dashboard/tiles/heading-tile.tsx"
             },
@@ -22582,6 +22634,10 @@
             {
               "name": "imageTileKind",
               "module": "packages/charts/src/dashboard/tiles/image-tile.tsx"
+            },
+            {
+              "name": "isTextField",
+              "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
             },
             {
               "name": "metricTileKind",
@@ -22624,6 +22680,22 @@
               "module": "packages/charts/src/dashboard/core/layout.ts"
             },
             {
+              "name": "resolvePanelLabels",
+              "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
+            },
+            {
+              "name": "sheetForm",
+              "module": "packages/charts/src/dashboard/chrome/sheet-form.ts"
+            },
+            {
+              "name": "sheetFormValues",
+              "module": "packages/charts/src/dashboard/chrome/sheet-form.ts"
+            },
+            {
+              "name": "sheetSpecFromValues",
+              "module": "packages/charts/src/dashboard/chrome/sheet-form.ts"
+            },
+            {
               "name": "snapSize",
               "module": "packages/charts/src/dashboard/core/layout.ts"
             },
@@ -22640,8 +22712,16 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
             },
             {
+              "name": "tileFormValues",
+              "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
+            },
+            {
               "name": "tileInteractions",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "tilePatchFromValues",
+              "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
             },
             {
               "name": "topLevelLayout",
@@ -22658,6 +22738,10 @@
             {
               "name": "withBuiltInTiles",
               "module": "packages/charts/src/dashboard/tiles/built-in-tiles.ts"
+            },
+            {
+              "name": "withConfigForm",
+              "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
             }
           ]
         }
@@ -34141,6 +34225,10 @@
           "module": "packages/ui/src/lib/trigger-query.ts"
         },
         {
+          "name": "FormSectionSpec",
+          "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
           "name": "FormSpec",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
         },
@@ -34993,6 +35081,10 @@
         {
           "name": "formatLastOpened",
           "module": "packages/ui/src/components/workspace-picker/workspace-picker-state.ts"
+        },
+        {
+          "name": "formSectionSchema",
+          "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
         },
         {
           "name": "formSpecSchema",

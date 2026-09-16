@@ -84,6 +84,9 @@ import {
 } from "../file-upload";
 import { AdvancedGroup } from "../advanced-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../tabs";
+import { ChevronRight } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../collapsible";
+import { Descriptions, DescriptionsItem } from "../descriptions";
 
 import {
   checkFileIssue,
@@ -745,6 +748,32 @@ export const SchemaFormField = memo(
       setValue: store.setValue,
     };
 
+    if (field.type !== "group" && field.readOnly) {
+      return (
+        <div
+          ref={ref}
+          data-slot="schema-form-field"
+          data-readonly=""
+          className={cn("flex flex-col gap-1.5", className)}
+          {...props}
+        >
+          <Descriptions layout="vertical">
+            <DescriptionsItem
+              label={fieldLabel(field)}
+              numeric={field.type === "number" || field.type === "integer"}
+            >
+              {readOnlyText(snapshot.value)}
+            </DescriptionsItem>
+          </Descriptions>
+          {hasDesc && (
+            <p id={descId(meta.formId, name)} className="text-caption text-muted-foreground">
+              {description}
+            </p>
+          )}
+        </div>
+      );
+    }
+
     const isBoolean = field.type === "boolean";
     const isGroup = field.type === "group";
     // A multi-value control renders a labelled REGION, not one focusable
@@ -852,13 +881,91 @@ export const SchemaFormFields = forwardRef<HTMLDivElement, SchemaFormFieldsProps
         className={cn("flex flex-col gap-4", className)}
         {...props}
       >
-        {visibleNames.map((name) => (
-          <SchemaFormField key={name} name={name} />
-        ))}
+        {spec.sections
+          ? (() => {
+              const grouped = new Set(spec.sections.flatMap((section) => section.fields));
+              const visible = new Set(visibleNames);
+              return (
+                <>
+                  {visibleNames
+                    .filter((name) => !grouped.has(name))
+                    .map((name) => (
+                      <SchemaFormField key={name} name={name} />
+                    ))}
+                  {spec.sections.map((section) => {
+                    const names = section.fields.filter((name) => visible.has(name));
+                    if (names.length === 0) return null;
+                    return (
+                      <SchemaFormSection
+                        key={section.id}
+                        label={section.label}
+                        collapsed={section.collapsed}
+                      >
+                        {names.map((name) => (
+                          <SchemaFormField key={name} name={name} />
+                        ))}
+                      </SchemaFormSection>
+                    );
+                  })}
+                </>
+              );
+            })()
+          : visibleNames.map((name) => <SchemaFormField key={name} name={name} />)}
       </div>
     );
   },
 );
+
+/** A read-only field's value as text; an empty value renders an em dash. */
+function readOnlyText(value: FormValue): string {
+  if (value === undefined || value === "") return "—";
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "—";
+    return value
+      .map((item) =>
+        typeof item === "string"
+          ? item
+          : item instanceof File
+            ? item.name
+            : `${item.key}: ${item.value}`,
+      )
+      .join(", ");
+  }
+  return String(value);
+}
+
+/** One `FormSpec.sections` entry: a disclosure over its fields. */
+function SchemaFormSection({
+  label,
+  collapsed,
+  children,
+}: {
+  label: string;
+  collapsed?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Collapsible
+      defaultOpen={!collapsed}
+      data-slot="schema-form-section"
+      className="group/section flex flex-col gap-3 border-t border-border-strong pt-3"
+    >
+      <CollapsibleTrigger
+        data-slot="schema-form-section-trigger"
+        className="focus-ring flex w-full items-center gap-1 rounded-sm text-start text-subtitle text-foreground"
+      >
+        <ChevronRight
+          aria-hidden="true"
+          className="size-4 shrink-0 transition-transform group-data-[state=open]/section:rotate-90 motion-reduce:transition-none"
+        />
+        {label}
+      </CollapsibleTrigger>
+      <CollapsibleContent data-slot="schema-form-section-content" className="flex flex-col gap-4">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 function SchemaFormSkeletonAnnouncement() {
   const { t } = useLocale();

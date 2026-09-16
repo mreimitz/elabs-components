@@ -1019,3 +1019,46 @@ describe("SchemaForm — per-field subscription (#review 3.4: one context re-ren
     expect(counts.clientId).toBe(1);
   });
 });
+
+// SchemaForm sections — RM-080
+describe("SchemaForm sections and readOnly", () => {
+  const spec: FormSpec = {
+    formName: "sections",
+    fields: [
+      { type: "string", name: "free", label: "Free" },
+      { type: "string", name: "id", label: "Id", readOnly: true, default: "abc" },
+      { type: "string", name: "title", label: "Title" },
+      { type: "integer", name: "minW", label: "Min width" },
+    ],
+    sections: [
+      { id: "general", label: "General", fields: ["title"] },
+      { id: "size", label: "Size", fields: ["minW"], collapsed: true },
+    ],
+  };
+
+  it("renders ungrouped fields first, then collapsible sections", async () => {
+    render(<SchemaForm spec={spec} />);
+    const free = screen.getByLabelText("Free");
+    const general = screen.getByRole("button", { name: "General" });
+    expect(free.compareDocumentPosition(general) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByLabelText("Title")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Min width")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Size" }));
+    expect(screen.getByLabelText("Min width")).toBeInTheDocument();
+    await userEvent.click(general);
+    expect(screen.queryByLabelText("Title")).toBeNull();
+  });
+
+  it("renders a readOnly field as text, not a control", () => {
+    render(<SchemaForm spec={spec} />);
+    expect(screen.getByText("abc")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Id" })).toBeNull();
+  });
+
+  it("keeps the normalized shape unchanged when no sections are declared", () => {
+    const result = normalizeFormSpec({ formName: "x", fields: [] });
+    expect(result.ok && "sections" in result.spec).toBe(false);
+    const withBad = normalizeFormSpec({ formName: "x", fields: [], sections: [{ id: 1 }] });
+    expect(withBad.ok && "sections" in withBad.spec).toBe(false);
+  });
+});
