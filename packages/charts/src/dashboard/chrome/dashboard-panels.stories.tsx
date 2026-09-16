@@ -27,7 +27,7 @@ const PANELS_SPEC: DashboardSpec = {
       id: "chart-1",
       kind: "chart",
       title: "Revenue by month",
-      layout: { x: 0, y: 0, w: 8, h: 4 },
+      layout: { x: 0, y: 0, w: 8, h: 9 },
       content: {
         type: "bar",
         x: "month",
@@ -104,6 +104,12 @@ type Story = StoryObj<typeof meta>;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const store = () => window.__dashboardStore as DashboardStore;
+const specTiles = () =>
+  store()
+    .getState()
+    .spec.tiles.map((t) => ({ kind: t.kind, ...t.layout }));
+const propertiesDock = (root: HTMLElement) =>
+  root.querySelector<HTMLElement>('[data-dashboard-panel="properties"]')!;
 const tileOf = (kind: string) =>
   store()
     .getState()
@@ -164,22 +170,33 @@ export const Default: Story = {
     await step("drag Metric onto cell (8,0) creates a metric tile there", async () => {
       const row = canvas.getByRole("option", { name: "Metric" });
       await pointerDragTo(row, cellCentre(sheet, PANELS_SPEC, 8, 0));
-      await waitFor(() =>
-        expect(tileOf("metric")?.layout).toMatchObject({ x: 8, y: 0, w: 4, h: 2 }),
-      );
+      await waitFor(() => expect(store().getState().spec.tiles).toHaveLength(2));
+      const tiles = specTiles();
+      await expect(tiles).toEqual([
+        { kind: "chart", x: 0, y: 0, w: 8, h: 9 },
+        { kind: "metric", x: 8, y: 0, w: 4, h: 2 },
+      ]);
     });
 
-    await step("keyboard: search Text + Enter places it at the first empty slot", async () => {
+    await step("keyboard: search Text + Enter places it, announces it, keeps focus", async () => {
       const search = canvas.getAllByRole("combobox", { name: "Tiles" })[0]!;
       await userEvent.click(search);
       await userEvent.keyboard("Text{Enter}");
-      await waitFor(() => expect(tileOf("text")).toBeDefined());
-      await expect(tileOf("text")!.layout).toMatchObject({ x: 12, y: 0, w: 6, h: 3 });
+      await waitFor(() => expect(store().getState().spec.tiles).toHaveLength(3));
+      const tiles = specTiles();
+      await expect(tiles[2]).toEqual({ kind: "text", x: 12, y: 0, w: 6, h: 3 });
+      const status = canvasElement.querySelector('[data-slot="dashboard-asset-panel-status"]');
+      await waitFor(() => expect(status).toHaveTextContent("Text added at column 13, row 1."));
+      // Focus stays in the search box so the next asset can be placed straight away.
+      await expect(document.activeElement).toBe(search);
     });
 
     await step("the sheet form's Title renames the sheet region", async () => {
       store().getState().actions.setFocus([]);
-      const title = await canvas.findByLabelText("Title");
+      const dock = within(propertiesDock(canvasElement));
+      await dock.findByText("Sheet properties");
+      const title = dock.getByRole("textbox", { name: "Title" });
+      await waitFor(() => expect(title).toHaveValue("Revenue review"));
       await userEvent.clear(title);
       await userEvent.type(title, "Revenue, Q1");
       await userEvent.tab();
@@ -188,18 +205,23 @@ export const Default: Story = {
 
     await step("tile Title edit commits once on blur", async () => {
       store().getState().actions.setFocus(["chart-1"]);
-      const title = await canvas.findByLabelText("Title");
-      await waitFor(() => expect(title).toHaveValue("Revenue by month"));
+      const dock = within(propertiesDock(canvasElement));
+      const title = await dock.findByDisplayValue("Revenue by month");
+      await expect(title).toHaveAccessibleName("Title");
       const before = store().getState().history.past;
       await userEvent.clear(title);
       await userEvent.type(title, "Revenue peaked in February");
       await userEvent.tab();
-      await waitFor(() => expect(store().getState().history.past).toBe(before + 1));
-      await expect(canvas.getAllByText("Revenue peaked in February").length).toBeGreaterThan(0);
+      await waitFor(() => expect(tileOf("chart")?.title).toBe("Revenue peaked in February"));
+      const after = store().getState().history.past;
+      await expect(after).toBe(before + 1);
+      await within(sheet).findByText("Revenue peaked in February");
     });
 
     await step("a visibleWhen syntax error shows and does not commit", async () => {
-      const field = canvas.getByLabelText("Show when");
+      const field = within(propertiesDock(canvasElement)).getByRole("textbox", {
+        name: "Show when",
+      });
       await userEvent.type(field, "variables.x &&");
       await userEvent.tab();
       await canvas.findByRole("alert");
@@ -211,7 +233,7 @@ export const Default: Story = {
 export const Library: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole("region", { name: "Revenue review" });
+    const sheet = await canvas.findByRole("region", { name: "Revenue review" });
     await userEvent.click(canvas.getByRole("tab", { name: "Library" }));
     await userEvent.click(await canvas.findByRole("option", { name: "Definitions note" }));
     await waitFor(() =>
@@ -221,7 +243,9 @@ export const Library: Story = {
           .spec.tiles.find((t) => t.ref === "lib-note"),
       ).toBeDefined(),
     );
-    await canvas.findByText("Revenue is recognised on delivery.");
+    // The placed tile is focused, so the properties panel also shows its body in a textarea;
+    // the tile itself renders the body once, inside the sheet.
+    await within(sheet).findByText("Revenue is recognised on delivery.");
   },
 };
 

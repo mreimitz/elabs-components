@@ -10,7 +10,16 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { forwardRef, useMemo, useState, type PointerEventHandler, type ReactNode } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEventHandler,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import {
   Command,
   CommandEmpty,
@@ -23,6 +32,7 @@ import {
   TabsList,
   TabsTrigger,
   toast,
+  useCommandActiveItemId,
   type SideDockProps,
 } from "@elabs-ai/components-ui";
 
@@ -124,6 +134,39 @@ function AssetRow({
   );
 }
 
+/**
+ * Keeps `aria-activedescendant` on the search box and list pointing at the highlighted row.
+ * cmdk 1.1.1 writes it from a `selectedItemId` it recomputes before React commits the filtered
+ * list, so after a search it can name a row that is no longer rendered (axe
+ * `aria-valid-attr-value`). `useCommandActiveItemId` reads the committed DOM; this re-applies it
+ * whenever cmdk rewrites the attribute. Remove once `ui/Command` corrects the attribute itself.
+ */
+function ActiveDescendantSync({ rootRef }: { rootRef: RefObject<HTMLDivElement | null> }) {
+  const active = useCommandActiveItemId();
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const targets = [...root.querySelectorAll<HTMLElement>("[cmdk-input], [cmdk-list]")];
+    const apply = () => {
+      for (const el of targets) {
+        const current = el.getAttribute("aria-activedescendant");
+        if (active === undefined) {
+          if (current !== null) el.removeAttribute("aria-activedescendant");
+        } else if (current !== active) {
+          el.setAttribute("aria-activedescendant", active);
+        }
+      }
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    for (const el of targets) {
+      observer.observe(el, { attributes: true, attributeFilter: ["aria-activedescendant"] });
+    }
+    return () => observer.disconnect();
+  }, [active, rootRef]);
+  return null;
+}
+
 function AssetList({
   labels,
   label,
@@ -133,8 +176,15 @@ function AssetList({
   label: string;
   children: ReactNode;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   return (
-    <Command label={label} data-slot="dashboard-asset-panel-list" className="bg-transparent">
+    <Command
+      ref={rootRef}
+      label={label}
+      data-slot="dashboard-asset-panel-list"
+      className="bg-transparent"
+    >
+      <ActiveDescendantSync rootRef={rootRef} />
       <CommandInput placeholder={labels.search} aria-label={label} />
       <CommandList>
         <CommandEmpty>{labels.noResults}</CommandEmpty>
@@ -162,6 +212,8 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
     const library = useDashboard((s) => s.spec.library);
     const bookmarks = useDashboard((s) => s.spec.bookmarks);
     const [dragging, setDragging] = useState<DashboardAssetDragData | null>(null);
+    // Placement is announced here; DOM focus stays on the row or search box that placed the tile.
+    const [announcement, setAnnouncement] = useState("");
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 3 } }));
 
     const place = (asset: DashboardAssetDragData, at?: { x: number; y: number }) => {
@@ -185,8 +237,17 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
         actions.setGrid({ rows: extended.rows, extensions: extensions + 1 });
         return actions.addTile(tile);
       });
-      if (id) actions.setFocus([id]);
-      else toast(labels.noRoom);
+      if (!id) {
+        toast(labels.noRoom);
+        return;
+      }
+      actions.setFocus([id]);
+      const added = store.getState().spec.tiles.find((t) => t.id === id);
+      if (added) {
+        const message = labels.placed(asset.label, added.layout.x, added.layout.y);
+        // A repeated message still re-announces: alternate a trailing no-break space.
+        setAnnouncement((prev) => (prev === message ? `${message}\u00a0` : message));
+      }
     };
 
     const onDragStart = ({ active }: DragStartEvent) =>
@@ -297,6 +358,14 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
             ) : null}
           </DragOverlay>
         </DndContext>
+        <div
+          role="status"
+          aria-live="polite"
+          data-slot="dashboard-asset-panel-status"
+          className="sr-only"
+        >
+          {announcement}
+        </div>
       </SideDock>
     );
   },

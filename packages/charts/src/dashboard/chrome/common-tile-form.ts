@@ -20,6 +20,8 @@ export interface DashboardPanelLabels {
   search: string;
   noResults: string;
   noRoom: string;
+  /** Announced (polite) after a row places a tile; `x`/`y` are zero-based cells. */
+  placed: (label: string, x: number, y: number) => string;
   sheetSection: { general: string; grid: string; theme: string; actions: string };
   sheetFields: {
     title: string;
@@ -70,6 +72,7 @@ export const DEFAULT_DASHBOARD_PANEL_LABELS: DashboardPanelLabels = {
   search: "Search…",
   noResults: "Nothing matches.",
   noRoom: "There is no room on the sheet for this tile.",
+  placed: (label, x, y) => `${label} added at column ${x + 1}, row ${y + 1}.`,
   sheetSection: { general: "General", grid: "Grid", theme: "Theme", actions: "Actions" },
   sheetFields: {
     title: "Title",
