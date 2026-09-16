@@ -3,12 +3,14 @@
 /**
  * RM-020 — `revealOn="inView"` + `replayOnClick` on `ChartRevealClip`.
  *
- * These demos exercise the RM-020 primitive DIRECTLY. `LineChart` / `AreaChart`
- * / `BarChart` don't yet expose `revealOn`/`replayOnClick` on their public
- * props — wiring the chart shells (`time-series-chart-shell.tsx`,
- * `use-chart-phase-orchestrator.ts`) and `LineChart`/`AreaChart` through to
- * `ChartRevealClip`'s new props is tracked as follow-up work; this story
- * demonstrates the mechanism those shells will delegate to.
+ * These demos exercise the RM-020 primitive DIRECTLY, via a minimal
+ * chart-shaped harness rather than a real `LineChart`/`AreaChart`/`BarChart` —
+ * kept that way so this story's geometry (viewport height, spacer height,
+ * `amount: 0.3` threshold) stays exactly reasoned-about and the play
+ * function's assertions stay about the PRIMITIVE, not about a real chart's own
+ * rendered height. `LineChart` and `AreaChart` forward `revealOn`/
+ * `replayOnClick` straight through to this same primitive on their public
+ * props since #175 (`BarChart` does not yet — see `MOTION_GUIDELINES.md`).
  */
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -29,7 +31,8 @@ const meta: Meta = {
           "(keyboard) — demonstrated on the primitive itself. The reveal neutralizes itself " +
           "under `prefers-reduced-motion`: it renders its finished state with no animation, " +
           "without the caller passing anything. Not a chart to render data with — for that, " +
-          "see `Charts/LineChart` (this feature isn't wired into `LineChart`'s public props yet).",
+          'see `Charts/LineChart` (`<LineChart revealOn="inView" replayOnClick />` forwards ' +
+          "straight through to this same primitive, #175).",
       },
     },
   },
