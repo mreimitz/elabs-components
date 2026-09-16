@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T09:39:49.670Z",
+  "generatedAt": "2026-09-16T11:22:57.976Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12838,6 +12838,11 @@
           "module": "packages/charts/src/charts/chart-child-passthrough.ts"
         },
         {
+          "name": "CHART_DENSITY_SM_MAX_TICKS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
           "name": "CHART_HAIRLINE_WIDTH",
           "kind": "value",
           "module": "packages/charts/src/chart-hairline.ts"
@@ -13014,6 +13019,11 @@
         },
         {
           "name": "DEFAULT_CHART_CONFIG",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
+          "name": "DEFAULT_CHART_INTERACTIONS",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
@@ -14067,6 +14077,10 @@
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
         {
+          "name": "ChartDensity",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
           "name": "ChartExportKind",
           "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
@@ -14089,6 +14103,10 @@
         {
           "name": "ChartInteractionProps",
           "module": "packages/charts/src/charts/chart-datapoint.ts"
+        },
+        {
+          "name": "ChartInteractions",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
         {
           "name": "ChartLegendProps",
@@ -15681,6 +15699,10 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "thinToDensity",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
           "name": "unitMarkDelayMs",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -16953,7 +16975,8 @@
             {
               "name": "value",
               "optional": true,
-              "type": "Partial<ChartConfigValue>"
+              "type": "Partial<Omit<ChartConfigValue, \"interactions\">> & { interactions?: ChartInteractions }",
+              "description": "Partial overrides. `interactions` may itself be partial — missing keys keep their defaults (`edit: false`, the rest `true`)."
             },
             {
               "name": "children",
@@ -17083,6 +17106,42 @@
               "optional": true,
               "type": "ReactNode",
               "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal, under the chart in both — never appended to the summary statistics; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent. A string that overflows the row stays fully recoverable — a native `title` and, once it measurably overflows, a keyboard-reachable tooltip (#184). A non-string node keeps only the CSS caps with no overflow recovery — keep it short, or accept it may be visually truncated with no fallback."
+            },
+            {
+              "name": "chrome",
+              "optional": true,
+              "type": "ChartFrameChrome",
+              "description": "Surface drawn around the chart (RM-072). Default `\"card\"` — byte-identical to a frame without the prop. See `ChartFrameChrome`."
+            },
+            {
+              "name": "headerSlot",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "`chrome=\"tile\"` only: replaces the default title/description header."
+            },
+            {
+              "name": "menuSlot",
+              "optional": true,
+              "type": "ReactNode | ((api: ChartFrameMenuApi) => ReactNode)",
+              "description": "`chrome=\"tile\"` only: replaces the inline toolbar. A function receives the frame's actions, so a host kebab menu can open the expand modal, flip to the table or export without reaching into context."
+            },
+            {
+              "name": "onExpandChange",
+              "optional": true,
+              "type": "(open: boolean) => void",
+              "description": "Fires when the expand modal opens or closes, however it was triggered."
+            },
+            {
+              "name": "interactions",
+              "optional": true,
+              "type": "ChartInteractions",
+              "description": "Which interaction layers the chart mounts (`passive` tooltips, `active` brush/datapoint targets, `select` datapoint activation, `edit`). Defaults: all `true` except `edit: false`. Forwarded to every chart family through `useChartConfig()`."
+            },
+            {
+              "name": "density",
+              "optional": true,
+              "type": "ChartDensity",
+              "description": "Furniture tier (`\"xs\" | \"sm\" | \"md\" | \"lg\"`, default `\"md\"`). Forwarded to every chart family through `useChartConfig()`; the frame itself drops `description` and the source row at `xs` and clamps the title to one line at `xs`/`sm`."
             },
             {
               "name": "children",
@@ -31776,6 +31835,10 @@
           "module": "packages/ui/src/components/metric-card/metric-card.tsx"
         },
         {
+          "name": "MetricCardSize",
+          "module": "packages/ui/src/components/metric-card/metric-card.tsx"
+        },
+        {
           "name": "ModelPickerBody",
           "module": "packages/ui/src/components/model-picker/model-picker-state.ts"
         },
@@ -34884,7 +34947,13 @@
               "name": "visual",
               "optional": true,
               "type": "ReactNode",
-              "description": "Optional inline visual (e.g. a sparkline) shown under the value/description."
+              "description": "Optional inline visual shown under the value/description."
+            },
+            {
+              "name": "sparkline",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Trend slot rendered directly under the value (RM-072) — pass a `<Sparkline …/>` from `@elabs-ai/components-charts`. Hidden at `size=\"sm\"`."
             },
             {
               "name": "evidence",

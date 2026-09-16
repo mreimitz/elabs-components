@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 32 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 192 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 194 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1073,6 +1073,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CanvasLayer | component |  | `@elabs-ai/components-charts` | The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor. |
 | CATEGORICAL_SOFT_CAP | component |  | `@elabs-ai/components-charts` |  |
 | CHART_CLIP_PASSTHROUGH | component |  | `@elabs-ai/components-charts` |  |
+| CHART_DENSITY_SM_MAX_TICKS | component |  | `@elabs-ai/components-charts` |  |
 | CHART_HAIRLINE_WIDTH | component |  | `@elabs-ai/components-charts` |  |
 | CHART_SPEC_PALETTES | component |  | `@elabs-ai/components-charts` |  |
 | CHART_STAGGER_BAR_MS | component |  | `@elabs-ai/components-charts` |  |
@@ -1109,6 +1110,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CONTINUOUS_MIN_OPACITY | component |  | `@elabs-ai/components-charts` |  |
 | DateTicker | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_CONFIG | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_CHART_INTERACTIONS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_LIFECYCLE | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_STATUS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CIRCULAR_CURVENESS | component |  | `@elabs-ai/components-charts` |  |
