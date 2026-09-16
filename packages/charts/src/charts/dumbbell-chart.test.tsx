@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // react-use-measure uses ResizeObserver for layout measurement, which jsdom
@@ -12,6 +12,7 @@ vi.mock("react-use-measure", () => ({
 import {
   buildDumbbellRows,
   computeDumbbellDomain,
+  deriveDumbbellMargin,
   DumbbellChart,
   sortDumbbellRows,
   spaceSlopeLabels,
@@ -19,6 +20,9 @@ import {
 } from "./dumbbell-chart";
 
 afterEach(cleanup);
+
+/** Deterministic stand-in for canvas `measureText`: 7px per character. */
+const measure7 = (text: string) => text.length * 7;
 
 const onboardingData = [
   { step: "Sign up", before: 100, after: 100 },
@@ -172,6 +176,150 @@ describe("spaceSlopeLabels", () => {
       expect(v).toBeGreaterThanOrEqual(0);
       expect(v).toBeLessThanOrEqual(100);
     }
+  });
+});
+
+// #240 — DumbbellChart budgeted space for text it never measured: every
+// margin was a hard-coded constant, so the longest label in a chart could
+// clip past the SVG edge. `deriveDumbbellMargin` replaces the constant with a
+// measured requirement, floored at the old constant (short-label charts are
+// pixel-unchanged) and capped at `MAX_MARGIN_FRACTION` of the container width
+// (one pathological label can't squeeze the plot to nothing).
+describe("deriveDumbbellMargin", () => {
+  const floor = { top: 24, right: 120, bottom: 24, left: 120 };
+  const shortRows: DumbbellRow[] = [
+    { index: 0, datum: {}, category: "Email", start: 9800, end: 12100, delta: 2300, extra: [] },
+  ];
+  const identity = (n: number) => String(n);
+
+  it("floors at the constant when every label already fits (short-label charts are pixel-unchanged)", () => {
+    const margin = deriveDumbbellMargin({
+      rows: shortRows,
+      variant: "slope",
+      orientation: "horizontal",
+      floor,
+      width: 640,
+      measure: measure7,
+      formatValue: identity,
+    });
+    expect(margin.left).toBe(floor.left);
+    expect(margin.right).toBe(floor.right);
+  });
+
+  it("grows margin.left/right past the floor for a slope chart's longest labels", () => {
+    const longRows: DumbbellRow[] = [
+      {
+        index: 0,
+        datum: {},
+        category: "Organic search",
+        start: 42000,
+        end: 51500,
+        delta: 9500,
+        extra: [],
+      },
+    ];
+    const margin = deriveDumbbellMargin({
+      rows: longRows,
+      variant: "slope",
+      orientation: "horizontal",
+      floor,
+      width: 900,
+      measure: measure7,
+      formatValue: identity,
+    });
+    // "Organic search 42000" = 20 chars * 7px + 10px gutter = 150, over the 120 floor.
+    expect(margin.left).toBeGreaterThan(floor.left);
+    expect(margin.left).toBe(20 * 7 + 10);
+  });
+
+  it("caps the derived margin at MAX_MARGIN_FRACTION of the container width, never below the floor", () => {
+    const pathologicalRows: DumbbellRow[] = [
+      {
+        index: 0,
+        datum: {},
+        category: "A".repeat(200),
+        start: 1,
+        end: 2,
+        delta: 1,
+        extra: [],
+      },
+    ];
+    const width = 400;
+    const margin = deriveDumbbellMargin({
+      rows: pathologicalRows,
+      variant: "slope",
+      orientation: "horizontal",
+      floor,
+      width,
+      measure: measure7,
+      formatValue: identity,
+    });
+    expect(margin.left).toBeLessThanOrEqual(width * 0.4);
+    expect(margin.left).toBeGreaterThanOrEqual(floor.left);
+  });
+
+  it("never shrinks the cap below the floor for a very narrow container", () => {
+    const margin = deriveDumbbellMargin({
+      rows: [
+        { index: 0, datum: {}, category: "A".repeat(50), start: 1, end: 2, delta: 1, extra: [] },
+      ],
+      variant: "slope",
+      orientation: "horizontal",
+      floor,
+      width: 50, // 40% of 50 = 20px, well under the 120px floor
+      measure: measure7,
+      formatValue: identity,
+    });
+    expect(margin.left).toBe(floor.left);
+  });
+
+  it("grows only margin.left for orientation='horizontal' dumbbell (category label)", () => {
+    const longRows: DumbbellRow[] = [
+      {
+        index: 0,
+        datum: {},
+        category: "Add payment method",
+        start: 41,
+        end: 68,
+        delta: 27,
+        extra: [],
+      },
+    ];
+    const margin = deriveDumbbellMargin({
+      rows: longRows,
+      variant: "dumbbell",
+      orientation: "horizontal",
+      floor,
+      width: 640,
+      measure: measure7,
+      formatValue: identity,
+    });
+    expect(margin.left).toBeGreaterThan(floor.left);
+    expect(margin.right).toBe(floor.right);
+  });
+
+  it("leaves the margin at the floor for orientation='vertical' dumbbell — its fallback is truncation, not margin growth", () => {
+    const longRows: DumbbellRow[] = [
+      {
+        index: 0,
+        datum: {},
+        category: "Add payment method",
+        start: 41,
+        end: 68,
+        delta: 27,
+        extra: [],
+      },
+    ];
+    const margin = deriveDumbbellMargin({
+      rows: longRows,
+      variant: "dumbbell",
+      orientation: "vertical",
+      floor: { top: 24, right: 32, bottom: 40, left: 40 },
+      width: 640,
+      measure: measure7,
+      formatValue: identity,
+    });
+    expect(margin).toEqual({ top: 24, right: 32, bottom: 40, left: 40 });
   });
 });
 
@@ -376,5 +524,55 @@ describe('DumbbellChart — variant="slope"', () => {
     } finally {
       warnSpy.mockRestore();
     }
+  });
+
+  // #240 — the slope labels carried no `data-slot`, unlike the category/delta
+  // labels, so nothing had a stable selector to lock the clipping/gap
+  // regressions against.
+  it("gives the start/end slope labels a data-slot (required for the #240 geometry locks)", () => {
+    const { container } = render(
+      <DumbbellChart
+        data={[{ channel: "Organic search", lastYear: 42000, thisYear: 51500 }]}
+        category="channel"
+        startKey="lastYear"
+        endKey="thisYear"
+        variant="slope"
+      />,
+    );
+    expect(
+      container.querySelector('[data-slot="dumbbell-chart-slope-label-start"]'),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-slot="dumbbell-chart-slope-label-end"]'),
+    ).toBeInTheDocument();
+  });
+
+  // #240 — a vertical category label wider than its column used to render as a
+  // run-on string over its neighbour. The chosen fallback is truncation: an
+  // ellipsis, with the full name still reachable via the row's tooltip title.
+  it("ellipsizes a vertical category label wider than its column instead of overlapping the next one", () => {
+    const longLabel = "This category name is far wider than any single column";
+    const { container, getAllByText } = render(
+      <DumbbellChart
+        data={[
+          { step: longLabel, before: 10, after: 20 },
+          { step: "Short", before: 5, after: 8 },
+        ]}
+        category="step"
+        startKey="before"
+        endKey="after"
+        orientation="vertical"
+      />,
+    );
+    const labels = container.querySelectorAll('[data-slot="dumbbell-chart-category-label"]');
+    expect(labels).toHaveLength(2);
+    const longLabelText = labels[0]?.textContent ?? "";
+    expect(longLabelText).not.toBe(longLabel);
+    expect(longLabelText.endsWith("…")).toBe(true);
+    // The full name survives — the tooltip renders it as its title on hover
+    // (`buildTooltipRows`'s caller passes `hoveredRow.category` untruncated).
+    const hitAreas = container.querySelectorAll('[data-slot="dumbbell-chart-hit-area"]');
+    fireEvent.mouseEnter(hitAreas[0] as Element);
+    expect(getAllByText(longLabel).length).toBeGreaterThan(0);
   });
 });
