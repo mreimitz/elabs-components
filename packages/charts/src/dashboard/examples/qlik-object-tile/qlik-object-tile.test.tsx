@@ -5,6 +5,15 @@ import type { DashboardSpec } from "../../core/spec";
 import { DashboardProvider, DashboardSheet } from "../../dashboard-sheet";
 import { qlikObjectTileKind } from "./qlik-object-tile";
 
+// `DashboardSheet` (`grid: { mode: "fit" }`) sizes tiles off `react-use-measure`'s container
+// rect — jsdom reports 0x0, so without this mock no tile renders (see `dashboard-sheet.test.tsx`).
+vi.mock("react-use-measure", () => ({
+  default: () => [
+    () => {},
+    { width: 1200, height: 600, top: 0, left: 0, right: 1200, bottom: 600, x: 0, y: 0 },
+  ],
+}));
+
 const SPEC: DashboardSpec = {
   version: 1,
   id: "qlik-object-test",
