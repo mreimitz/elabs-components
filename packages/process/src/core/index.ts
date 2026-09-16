@@ -116,3 +116,7 @@ export type { ProcessWorkerRequest, ProcessWorkerResponse } from "./worker/proce
 // EDGE_KEY_SEPARATOR — RM-050 (the edge-key convention abstraction and the
 // performance layer both index on; discovery has always used it internally)
 export { EDGE_KEY_SEPARATOR } from "./discover-graph";
+
+// casesFromLog — RM-055
+export { casesFromLog } from "./cases-from-log";
+export type { CaseRow } from "./cases-from-log";
