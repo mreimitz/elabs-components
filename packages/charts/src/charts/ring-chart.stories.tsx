@@ -229,12 +229,6 @@ async function expectSelectionStates(root: HTMLElement) {
   }
 }
 
-const selectionRegionData = [
-  { region: "EMEA", step: 1, revenue: 42, target: 50 },
-  { region: "APAC", step: 2, revenue: 31, target: 36 },
-  { region: "AMER", step: 3, revenue: 55, target: 48 },
-];
-
 /**
  * `selectionStates` paints the host’s tri-state on rings: selected marks carry a
  * `--ring` outline, excluded marks dim AND carry a non-hue channel, so the three
