@@ -19,7 +19,7 @@ export const DropdownMenuSubTrigger = forwardRef<
       ref={ref}
       data-slot="dropdown-menu-sub-trigger"
       className={cn(
-        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast focus:bg-accent data-[state=open]:bg-accent",
+        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset data-[state=open]:bg-accent",
         inset && "ps-8",
         className,
       )}
@@ -59,7 +59,7 @@ export const DropdownMenuRadioItem = forwardRef<
       ref={ref}
       data-slot="dropdown-menu-radio-item"
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent",
+        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset",
         className,
       )}
       {...props}
@@ -84,7 +84,7 @@ export const DropdownMenuCheckboxItem = forwardRef<
       checked={checked}
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent",
+        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset",
         className,
       )}
       {...props}
@@ -129,7 +129,7 @@ export const DropdownMenuItem = forwardRef<
       ref={ref}
       className={cn(
         "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast",
-        "focus:bg-accent focus:text-accent-foreground",
+        "focus:bg-accent focus:text-accent-foreground focus-ring-inset",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "[&_svg]:size-4 [&_svg]:shrink-0",
         inset && "ps-8",

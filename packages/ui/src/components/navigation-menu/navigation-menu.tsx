@@ -198,7 +198,7 @@ export const NavigationMenuItem = forwardRef<
 });
 
 export const navigationMenuTriggerStyle = cva(
-  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-body font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent",
+  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-body font-medium outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-ring disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent",
 );
 
 export const NavigationMenuTrigger = forwardRef<

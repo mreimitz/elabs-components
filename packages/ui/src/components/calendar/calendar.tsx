@@ -51,8 +51,13 @@ export function Calendar({
         range_start: "day-range-start rounded-s-md",
         range_end: "day-range-end rounded-e-md",
         range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+        // `focus:bg-primary focus:text-primary-foreground` was dead CSS: this
+        // class targets react-day-picker v9's `<td role="gridcell">` slot,
+        // which is never focusable — the actual focusable `DayButton`
+        // already inherits `focus-visible:ring-2 focus-visible:ring-ring`
+        // from `buttonVariants({ variant: "ghost" })` (#308).
         selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
         today: "bg-accent text-accent-foreground",
         outside: "day-outside text-muted-foreground aria-selected:text-muted-foreground",
         disabled: "text-muted-foreground opacity-50",

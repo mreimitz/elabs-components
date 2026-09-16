@@ -112,3 +112,45 @@ export const Default: Story = {
     await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
   },
 };
+
+/**
+ * Locks WCAG 1.4.11 (#308): `NavigationMenuTrigger` painted `hover:` and
+ * `focus:` identically, with the fill alone (no ring/outline layer) as the
+ * only signal — not a visible indicator. Keyboard (Tab) focus must now paint
+ * a real compound ring (`focus-ring`: a `boxShadow` layer, or a non-zero,
+ * non-`none` `outline`), and the resting trigger must carry neither layer.
+ *
+ * NOTE: this does not additionally assert "a mouse click shows no ring" —
+ * confirmed BOTH before and after this fix (and independent of story order),
+ * a real click on this trigger still lands the browser in `:focus-visible`
+ * in this environment. `NavigationMenuTrigger` sits in Radix's roving-
+ * tabindex collection, which manages its focus imperatively rather than via
+ * the browser's native click-to-focus default action — the same class of
+ * "script-triggered focus" `CompoundFocusIndicator` (`button.stories.tsx`)
+ * already notes as unreliable against `:focus-visible`. Converting `focus:`
+ * to `focus-visible:` is still the correct, spec-aligned fix (mouse-click
+ * suppression is now possible, keyed on the browser's own determination);
+ * whether Radix's roving-focus internals let the browser actually make that
+ * determination for a plain click is a separate, deeper defect — flagged as
+ * a residual follow-up, not fixed here.
+ */
+export const KeyboardFocusIndicator: Story = {
+  name: "Keyboard focus indicator (#308)",
+  render: Default.render,
+  play: async ({ canvas, userEvent }) => {
+    const trigger = canvas.getByRole("button", { name: /products/i });
+
+    const resting = getComputedStyle(trigger);
+    await expect(resting.boxShadow).toBe("none");
+    await expect(resting.outlineStyle).toBe("none");
+
+    // Tab rather than .focus(): `:focus-visible` is what `focus-ring` keys
+    // on, and a programmatic focus does not reliably match it.
+    await userEvent.tab();
+    await expect(trigger).toHaveFocus();
+    const afterTab = getComputedStyle(trigger);
+    const tabHasRing = afterTab.boxShadow !== "none";
+    const tabHasOutline = afterTab.outlineStyle !== "none" && parseFloat(afterTab.outlineWidth) > 0;
+    await expect(tabHasRing || tabHasOutline).toBe(true);
+  },
+};
