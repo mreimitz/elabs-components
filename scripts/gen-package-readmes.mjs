@@ -78,6 +78,12 @@ const EXTRAS = {
   [`${SCOPE}/components-cli`]: [
     "Provides the `brand-ui` binary. Bundles the component manifest, so it answers with no monorepo, no network and no dev server.",
   ],
+  [`${SCOPE}/components-process`]: [
+    '`@xyflow/react` is a **required** peer — `ProcessMap` builds on `@elabs-ai/components-flow`\'s `CanvasShell`. Install it, and `import "@xyflow/react/dist/style.css"` once, same as `-flow`.',
+    "`@elabs-ai/components-process/core` is React-free — safe to import from a worker or a plain Node script (event-log model, directly-follows derivation, variant grouping, conformance math, no engine or DOM dependency).",
+    "Pre-aggregated input path: skip `discoverGraph`/`useProcessExplorer` entirely and hand `ProcessMap` a `ProcessGraph`/`Variant[]` your own backend or aggregation engine already computed — see `docs/examples/process-explorer-external-selection`.",
+    "The worker threshold (`createProcessWorker`, `useProcessExplorer`'s `workerThreshold`, default `50_000` events) only applies to the LOCAL discovery path — irrelevant once you feed a pre-aggregated graph, since there is no local computation to move off-thread.",
+  ],
 };
 
 /**
