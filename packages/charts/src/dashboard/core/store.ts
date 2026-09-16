@@ -67,6 +67,15 @@ export interface DashboardUiState {
   assets: boolean;
   /** RM-080's properties panel. */
   properties: boolean;
+  /**
+   * responsive layout — RM-084 follow-up 1: which layout `moveTile`/`resizeTile` write to.
+   * `"base"` (default) writes the tile's own `layout`, same as before this existed; `"md"`/
+   * `"sm"` write `spec.layouts[target]` instead, seeded from that breakpoint's current
+   * EFFECTIVE layout (the author's override when there is one, else the base layout) — the
+   * base `layout` is never touched while this isn't `"base"`. Ephemeral: never persisted,
+   * never a history entry of its own (only the moves/resizes it routes are).
+   */
+  layoutTarget: "base" | "md" | "sm";
 }
 
 /** The shared hover channel (R15): ephemeral, never persisted, never in history. */
@@ -150,6 +159,8 @@ export interface DashboardActions {
   setFocus(ids: string[]): void;
   /** UI slice — RM-079: open or close a chrome side panel (RM-080's asset/properties panels). */
   setPanel(panel: keyof DashboardUiState, open: boolean): void;
+  /** responsive layout — RM-084 follow-up 1: which layout `moveTile`/`resizeTile` write to. */
+  setLayoutTarget(target: DashboardUiState["layoutTarget"]): void;
   undo(): void;
   redo(): void;
   /** Fold every spec change inside `fn` into one undo step. */
@@ -313,6 +324,19 @@ function applyScopedLayout(spec: DashboardSpec, layout: readonly TileLayout[]): 
   };
 }
 
+// responsive layout — RM-084 follow-up 1
+/** Every top-level (non-container-child) tile/container's OWN `layout`, id included, spec
+ * order — the same shape `dashboard-sheet.tsx`'s `resolveBreakpointLayout` builds as its
+ * `"lg"` base; duplicated here (small, framework-free) rather than imported, since `core/`
+ * may not depend on a React module (`dashboard-reuse`) and `dashboard-sheet.tsx`'s version
+ * isn't exported from a non-React module either — keep both in sync by hand. */
+function baseTopLevelLayout(spec: DashboardSpec): TileLayout[] {
+  return [
+    ...spec.tiles.filter((t) => !t.container).map((t) => ({ id: t.id, ...t.layout })),
+    ...(spec.containers ?? []).map((c) => ({ id: c.id, ...c.layout })),
+  ];
+}
+
 function uniqueId(spec: DashboardSpec, base: string): string {
   const used = new Set([
     ...spec.tiles.map((t) => t.id),
@@ -407,6 +431,33 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
           });
         commit(next);
         return true;
+      };
+
+      // responsive layout — RM-084 follow-up 1: `moveTile`/`resizeTile` route here instead of
+      // `place` when `ui.layoutTarget` isn't `"base"` — collision-resolves `moved` against the
+      // target breakpoint's current EFFECTIVE top-level layout (the author's own override when
+      // there is one, else the base layout) and writes the WHOLE resulting array to
+      // `spec.layouts[target]` only. `tile.layout` (the base layout) is never touched.
+      const placeInLayoutTarget = (
+        moved: TileLayout,
+        strategy: CollisionStrategy,
+        target: "md" | "sm",
+      ): boolean => {
+        const spec = history.present;
+        const scope = spec.layouts?.[target] ?? baseTopLevelLayout(spec);
+        const { layout, ok } = resolveCollisions(scope, moved, spec.grid, strategy);
+        if (!ok) return false;
+        commit({ ...spec, layouts: { ...spec.layouts, [target]: layout } });
+        return true;
+      };
+
+      /** The cell `id` currently occupies at `target`'s effective layout (its override entry,
+       * or the base layout when the target has none yet) — the starting point for a move/
+       * resize `moveTile`/`resizeTile` merges its `to`/`size` patch onto. */
+      const currentCellAt = (id: string, target: "md" | "sm"): TileLayout | undefined => {
+        const spec = history.present;
+        const scope = spec.layouts?.[target] ?? baseTopLevelLayout(spec);
+        return scope.find((item) => item.id === id);
       };
 
       // interaction graph — RM-082: the resolved map, cached per spec identity.
@@ -508,11 +559,28 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
         moveTile(id, to, opts) {
           const tile = tileById(id);
           if (!tile) return false;
+          const target = get().ui.layoutTarget;
+          // responsive layout — RM-084 follow-up 1: a container child has no per-breakpoint
+          // override concept (`resolveBreakpointLayout` only ever covers top-level items), so
+          // it always writes its own base layout regardless of `ui.layoutTarget`.
+          if (target !== "base" && tile.container === undefined) {
+            const current = currentCellAt(id, target) ?? { ...tile.layout, id };
+            return placeInLayoutTarget({ ...current, ...to, id }, opts?.strategy ?? "push", target);
+          }
           return place(id, { ...tile.layout, ...to, id }, opts?.strategy ?? "push");
         },
         resizeTile(id, size, opts) {
           const tile = tileById(id);
           if (!tile) return false;
+          const target = get().ui.layoutTarget;
+          if (target !== "base" && tile.container === undefined) {
+            const current = currentCellAt(id, target) ?? { ...tile.layout, id };
+            return placeInLayoutTarget(
+              { ...current, ...size, id },
+              opts?.strategy ?? "push",
+              target,
+            );
+          }
           return place(id, { ...tile.layout, ...size, id }, opts?.strategy ?? "push");
         },
         addTile(input, at) {
@@ -702,6 +770,11 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
           if (ui[panel] === open) return;
           set({ ui: { ...ui, [panel]: open } });
         },
+        setLayoutTarget(target) {
+          const ui = get().ui;
+          if (ui.layoutTarget === target) return;
+          set({ ui: { ...ui, layoutTarget: target } });
+        },
         undo() {
           if (history.undo() !== undefined) sync();
         },
@@ -824,7 +897,7 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
         focus: [],
         dirty: false,
         history: historyState(),
-        ui: { assets: false, properties: false },
+        ui: { assets: false, properties: false, layoutTarget: "base" },
         // interaction graph — RM-082
         highlight: null,
         selectionOrigins: {},
