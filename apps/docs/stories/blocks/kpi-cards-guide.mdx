@@ -20,9 +20,26 @@ question a reader is actually asking, not by which chart looks nicest.
 | What changed most?                     | `kpi-movers-01`            |
 | How big is it in human terms?          | `kpi-ratio-unit-01`        |
 | What is the headline?                  | `kpi-hero-satellites-01`   |
+| Should I act?                          | `kpi-status-threshold-01`  |
 | Give me the whole picture in one table | `infographic-scorecard-01` |
 
-Every block reads from one shared, shipped part — `kpi-card-parts` — so
+## Which infographic?
+
+An infographic is an argument, not a chart: a headline that states the
+finding, one chart built to prove it, a few direct labels on the marks, and
+a one-line note on how to read it.
+
+| Question                    | Block                             | What it shows                                                      |
+| --------------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| What drove the change?      | `infographic-variance-bridge-01`  | Revenue bridge split by driver, the dominant driver called out     |
+| What happened, and when?    | `infographic-annotated-trend-01`  | 20-week trend with up to three events labelled on their data point |
+| Which depot is the outlier? | `infographic-small-multiples-01`  | Same-scale sparkline grid, the outlier ringed                      |
+| Who improved, who slipped?  | `infographic-before-after-01`     | Q2 → Q3 slope chart, biggest riser and faller emphasised           |
+| How far from the benchmark? | `infographic-gap-to-benchmark-01` | Sorted dumbbell against a benchmark, the widest gaps emphasised    |
+| Do customers stay?          | `infographic-cohort-retention-01` | Triangular cohort retention heatmap, one cohort called out         |
+| Where does the money go?    | `infographic-part-to-whole-01`    | Two-level cost treemap, one highlighted tile                       |
+
+Every KPI card reads from one shared, shipped part — `kpi-card-parts` — so
 `npx shadcn add <block>` pulls it automatically.
 
 ## Design rules every block follows
