@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { seededRnd } from "../../marks/seeded-rnd";
 import type { ChartDatapoint } from "../chart-datapoint";
 import { NetworkChart, type NetworkDatapointDatum } from "./network-chart";
@@ -269,8 +269,11 @@ export const Ownership: Story = {
  * back to its settled position on release, because the settled layout IS the
  * answer and a dragged position would be a lie about the data.
  *
- * Dragging is a pointer affordance. The keyboard path is unchanged and still
- * complete: one tab stop into the chart, arrows across every node.
+ * Dragging is a pointer affordance. The keyboard path sits beside it: one tab
+ * stop into the chart, arrows across every node, each target named with its
+ * degree. That path is mounted by `onDatapointClick` (or `copyValueOnActivate`),
+ * not by `draggable` — so this story sets a handler, and its play function
+ * proves the path is really there (#274).
  */
 export const Draggable: Story = {
   args: {
@@ -278,13 +281,29 @@ export const Draggable: Story = {
     nodes: serviceNodes,
     links: serviceLinks,
     draggable: true,
-    accessibleDescription: "Twelve services, force-laid-out; nodes can be dragged and spring back.",
+    onDatapointClick: fn(),
+    accessibleLabel: "Twelve services, force-laid-out",
+    accessibleDescription: "Nodes can be dragged aside and spring back.",
   },
   render: (args) => (
     <div className="h-[440px] w-[720px]">
       <NetworkChart {...args} />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Every node is a keyboard target, named with its degree …
+    const buttons = await waitFor(() => {
+      const found = canvas.getAllByRole("button");
+      expect(found).toHaveLength(serviceNodes.length);
+      return found;
+    });
+    await expect(canvas.getByRole("button", { name: /^Gateway,/ })).toHaveAccessibleName(
+      "Gateway, Edge, value 12, 5 links",
+    );
+    // … behind ONE tab stop.
+    await expect(buttons.filter((b) => b.getAttribute("tabindex") === "0")).toHaveLength(1);
+  },
 };
 
 /* ── #349: the keyboard drill-down path ───────────────────────────────────── */
