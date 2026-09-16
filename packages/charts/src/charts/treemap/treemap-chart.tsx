@@ -42,7 +42,13 @@ import {
   type TreemapPalette,
   validateTreemapData,
 } from "./treemap-layout";
-import { type ChartSelectionProps, ChartSelectionProvider } from "../chart-selection";
+import {
+  type ChartSelectionProps,
+  ChartSelectionMark,
+  ChartSelectionProvider,
+  resolveMarkPaint,
+  useChartSelection,
+} from "../chart-selection";
 
 export type { TreemapNode, TreemapPalette } from "./treemap-layout";
 
@@ -227,6 +233,9 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
       }),
     [data, sz.w, sz.h, depth, gap, palette, otherThreshold],
   );
+
+  // Selection input (RM-073): keyed by the leaf name (the category).
+  const selection = useChartSelection();
 
   const focusedGroupSource: TreemapNode | null =
     activeGroupIndex != null ? (data.children?.[activeGroupIndex] ?? null) : null;
@@ -463,7 +472,12 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
               }
               const labelCenterY = box.y + box.height / 2;
               const isActive = datapointsEnabled;
-              return (
+              const selectionPaint = resolveMarkPaint(selection, {
+                category: leaf.name,
+                datum: leaf as unknown as Record<string, unknown>,
+                seriesKey: leaf.groupName ?? undefined,
+              });
+              const leafNode = (
                 <g data-slot="treemap-leaf" key={leaf.id}>
                   <motion.rect
                     animate={{ x: box.x, y: box.y, width: box.width, height: box.height }}
@@ -511,6 +525,19 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                     </HaloText>
                   )}
                 </g>
+              );
+              // Unresolved → the leaf is returned untouched (opt-out DOM unchanged).
+              return selectionPaint["data-selection"] === undefined ? (
+                leafNode
+              ) : (
+                <ChartSelectionMark
+                  channel="hatch"
+                  key={leaf.id}
+                  paint={selectionPaint}
+                  shape={<rect height={box.height} width={box.width} x={box.x} y={box.y} />}
+                >
+                  {leafNode}
+                </ChartSelectionMark>
               );
             })}
           </svg>

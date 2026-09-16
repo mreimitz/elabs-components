@@ -4,7 +4,7 @@
  */
 
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@visx/responsive", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
@@ -17,6 +17,10 @@ vi.mock("@visx/responsive", () => {
     }) => React.createElement(React.Fragment, null, children({ width: 560, height: 288 })),
   };
 });
+
+vi.mock("react-use-measure", () => ({
+  default: () => [() => undefined, { width: 560, height: 288 }],
+}));
 
 import { Area } from "./area";
 import { AreaChart } from "./area-chart";
@@ -34,6 +38,11 @@ import { PieChart } from "./pie-chart";
 import PieSlice from "./pie-slice";
 import Ring from "./ring";
 import { RingChart } from "./ring-chart";
+import { DumbbellChart } from "./dumbbell-chart";
+import { Scatter } from "./scatter";
+import { ScatterChart } from "./scatter-chart";
+import { TreemapChart } from "./treemap";
+import { UnitChart } from "./unit-chart";
 
 beforeAll(() => {
   if (typeof globalThis.ResizeObserver === "undefined") {
@@ -227,5 +236,110 @@ describe.each(FAMILIES)("$name selectionStates", ({ channel, render: element }) 
     );
     expect(names.some((name) => name?.endsWith(", selected"))).toBe(true);
     expect(names.some((name) => name?.endsWith(", excluded"))).toBe(true);
+  });
+});
+
+// ── Measured families (RM-073): Scatter, Treemap, Unit, Dumbbell ─────────────
+
+const MEASURED: typeof FAMILIES = [
+  {
+    name: "ScatterChart",
+    channel: "chart-selection-mark-hollow",
+    // Scatter has a continuous x; key the resolver on the datum's region instead.
+    render: ({ selectionStates, ...props }) => (
+      <ScatterChart
+        data={data.map((d, index) => ({ ...d, step: index + 1 }))}
+        selectionStates={
+          selectionStates
+            ? (_category: unknown, _series?: string, datum?: Record<string, unknown>) =>
+                byLabel(String(datum?.region))
+            : undefined
+        }
+        xDataKey="step"
+        xScale="linear"
+        {...props}
+      >
+        <Scatter animate={false} dataKey="sales" />
+      </ScatterChart>
+    ),
+  },
+  {
+    name: "TreemapChart",
+    channel: "chart-selection-mark-hatch",
+    render: (props) => (
+      <div style={{ height: 300, width: 600 }}>
+        <TreemapChart
+          data={{
+            name: "Sales",
+            children: data.map((d) => ({ name: d.region, value: d.sales })),
+          }}
+          depth={1}
+          {...props}
+        />
+      </div>
+    ),
+  },
+  {
+    name: "UnitChart",
+    channel: "chart-selection-mark-hollow",
+    render: (props) => (
+      <UnitChart
+        data={data.map((d) => ({ label: d.region, value: d.sales }))}
+        layout="waffle"
+        {...props}
+      />
+    ),
+  },
+  {
+    name: "DumbbellChart",
+    channel: "chart-selection-mark-dash",
+    render: (props) => (
+      <DumbbellChart
+        category="region"
+        data={data.map((d) => ({ ...d, target: d.sales + 5 }))}
+        endKey="target"
+        startKey="sales"
+        {...props}
+      />
+    ),
+  },
+];
+
+describe.each(MEASURED)("$name selectionStates", ({ channel, render: element }) => {
+  const normalise = (html: string) => html.replace(/_r_[a-z0-9]+_/g, "_r_");
+
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 300,
+      height: 300,
+      left: 0,
+      right: 600,
+      toJSON: () => ({}),
+      top: 0,
+      width: 600,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("renders byte-identical DOM when selectionStates is absent", () => {
+    const plain = normalise(render(element({})).container.innerHTML);
+    cleanup();
+    const withDim = normalise(render(element({ dimExcluded: true })).container.innerHTML);
+    expect(withDim).toBe(plain);
+    expect(plain).not.toContain("data-selection");
+  });
+
+  it("paints the three states apart without hue", () => {
+    const { container } = render(element({ selectionStates: byLabel }));
+    const excluded = container.querySelector('[data-selection="excluded"]');
+    const selected = container.querySelector('[data-selection="selected"]');
+    expect(container.querySelector('[data-selection="associated"]')).not.toBeNull();
+    expect(excluded?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+    expect(excluded?.querySelector(`[data-slot="${channel}"]`)).not.toBeNull();
+    expect(selected?.querySelector('[data-slot$="-outline"]')).not.toBeNull();
   });
 });

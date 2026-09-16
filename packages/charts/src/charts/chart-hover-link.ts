@@ -13,7 +13,7 @@
 
 import { createContext, createElement, type ReactNode, use, useEffect, useRef } from "react";
 
-import { chartCssVars, useChart } from "./chart-context";
+import { type ChartStableContextValue, chartCssVars, useChart } from "./chart-context";
 import type { ChartSelectionCategory } from "./chart-selection";
 import { ChartTooltipIndicator } from "./tooltip/tooltip-indicator";
 
@@ -94,7 +94,7 @@ export function useChartHoverLink(): ChartHoverLinkProps | null {
  * time axis.
  */
 export function chartRowCategory(
-  chart: ReturnType<typeof useChart>,
+  chart: Pick<ChartStableContextValue, "data" | "dateLabels" | "xAccessor" | "xScaleType">,
   index: number,
 ): ChartSelectionCategory | undefined {
   const row = chart.data[index];

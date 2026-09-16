@@ -69,7 +69,13 @@ import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "./series-
 import { useHighDecorationOf } from "./use-high-decoration";
 import { useTextMeasurerOf } from "./use-text-measurer";
 import type { ChartValueFormat } from "./value-format";
-import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
+import {
+  type ChartSelectionProps,
+  ChartSelectionMark,
+  ChartSelectionProvider,
+  resolveMarkPaint,
+  useChartSelection,
+} from "./chart-selection";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -535,6 +541,33 @@ function DumbbellPlot({
   const innerWidth = Math.max(width - margin.left - margin.right, 0);
   const innerHeight = Math.max(height - margin.top - margin.bottom, 0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  // Selection input (RM-073): one row is one category. The excluded channel is a
+  // dashed connector + hollow ends; unresolved → the row is returned untouched.
+  const selection = useChartSelection();
+  const paintRow = (
+    row: DumbbellRow,
+    node: React.ReactNode,
+    ends: { x1: number; y1: number; x2: number; y2: number },
+  ): React.ReactNode => {
+    const paint = resolveMarkPaint(selection, { category: row.category, datum: row.datum });
+    if (paint["data-selection"] === undefined) return node;
+    return (
+      <ChartSelectionMark
+        channel="dash"
+        key={row.index}
+        paint={paint}
+        shape={
+          <g>
+            <line x1={ends.x1} x2={ends.x2} y1={ends.y1} y2={ends.y2} />
+            <circle cx={ends.x1} cy={ends.y1} r={MARKER_RADIUS} />
+            <circle cx={ends.x2} cy={ends.y2} r={MARKER_RADIUS} />
+          </g>
+        }
+      >
+        {node}
+      </ChartSelectionMark>
+    );
+  };
   const datapointsEnabled = useChartDatapointsEnabled();
   const activateDatapoint = useActivateDatapoint();
   const formatValue = useChartValueFormatter(valueFormat);
@@ -722,7 +755,8 @@ function DumbbellPlot({
                   measure,
                 ).display;
                 const isFaded = hoveredIndex != null && hoveredIndex !== row.index;
-                return (
+                return paintRow(
+                  row,
                   <g key={row.index} opacity={isFaded ? 0.35 : 1}>
                     <line
                       stroke={color}
@@ -768,7 +802,8 @@ function DumbbellPlot({
                     >
                       {endDisplay}
                     </HaloText>
-                  </g>
+                  </g>,
+                  { x1: slopeStartX, x2: slopeEndX, y1: y1, y2: y2 },
                 );
               })
             : rows.map((row, i) => {
@@ -791,7 +826,8 @@ function DumbbellPlot({
                   : Math.max(margin.left - LABEL_GUTTER, 0);
                 const categoryDisplay = ellipsize(row.category, categoryBudget, measure).display;
 
-                return (
+                return paintRow(
+                  row,
                   <g key={row.index} opacity={isFaded ? 0.35 : 1}>
                     {/* Track hairline */}
                     {isVertical ? (
@@ -969,7 +1005,10 @@ function DumbbellPlot({
                       x={rect.x}
                       y={rect.y}
                     />
-                  </g>
+                  </g>,
+                  isVertical
+                    ? { x1: crossCenter, x2: crossCenter, y1: startPos, y2: endPos }
+                    : { x1: startPos, x2: endPos, y1: crossCenter, y2: crossCenter },
                 );
               })}
         </g>
