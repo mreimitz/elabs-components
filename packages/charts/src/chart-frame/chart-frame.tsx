@@ -68,6 +68,7 @@ import {
 import { findChartSvg, type ChartExportKind } from "./export-svg";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 import { exactValueString } from "../charts/value-format";
+import { ChartSourceRow } from "../chart-card/chart-card";
 
 // ── Minimal local CSV serializer (RFC 4180 + injection guard) ─────────────────
 // The canonical reusable version lives in @elabs-ai/components-data (`toCsv`). This local
@@ -390,38 +391,37 @@ function ChartFrameModal({
    * chart-domain: the title fallback, the data summary, and the view↔table
    * crossfade below.
    *
-   * `ExpandDialog` has no dedicated footer slot, so the source row rides
-   * inside the detail pane as its own bottom-anchored block — untouched
-   * (byte-identical `detail ?? <DefaultDetail />`) when `source` is absent.
+   * The source row rides UNDER the enlarged chart/table (the `children`
+   * pane), not inside the detail/summary pane (#184) — it is attribution
+   * for the view, not for the statistics beside it, and `detail` stays
+   * byte-identical (`detail ?? <DefaultDetail />`) whether or not `source`
+   * is set. It also now shares the card's truncate-and-recover behaviour
+   * instead of wrapping, so the row behaves the same way in both containers.
    */
-  const detailContent = source ? (
-    <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1">{detail ?? <DefaultDetail />}</div>
-      <p className="shrink-0 border-t p-4 text-chart-source text-chart-foreground-muted uppercase">
-        {source}
-      </p>
-    </div>
-  ) : (
-    (detail ?? <DefaultDetail />)
-  );
-
   return (
     <Dialog open={state.expanded} onOpenChange={actions.setExpanded}>
       <ExpandDialog
         title={title ?? t("charts.chartFrame.defaultTitle")}
         description={description}
-        detail={detailContent}
+        detail={detail ?? <DefaultDetail />}
         detailLabel={t("charts.chartFrame.summaryDetailLabel")}
       >
-        <div
-          key={state.view}
-          className="size-full animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"
-        >
-          {state.view === "table" ? (
-            renderTable(rows, columns)
-          ) : (
-            <div className="h-full">{children}</div>
-          )}
+        <div className="flex h-full flex-col">
+          <div
+            key={state.view}
+            className="min-h-0 flex-1 animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"
+          >
+            {state.view === "table" ? (
+              renderTable(rows, columns)
+            ) : (
+              <div className="h-full">{children}</div>
+            )}
+          </div>
+          {source ? (
+            // `pt-2` (tighter than the view pane's own `p-4`) reads as a
+            // footnote closer to the pane's edge than to the chart above it.
+            <ChartSourceRow source={source} className="shrink-0 pt-2" />
+          ) : null}
         </div>
       </ExpandDialog>
     </Dialog>
@@ -489,9 +489,14 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * Attribution / provenance footer — e.g. "Source: Internal analytics,
    * updated daily". Renders as the card's all-caps, letter-spaced source row
    * (the fourth part of lieflat's card contract) inline and in the expand
-   * modal; when it is a plain string it also lands as a trailing
+   * modal, under the chart in both — never appended to the summary
+   * statistics; when it is a plain string it also lands as a trailing
    * `# source: …` comment row in the downloaded CSV, and as a bottom row in
-   * an SVG/PNG export. Hidden when absent.
+   * an SVG/PNG export. Hidden when absent. A string that overflows the row
+   * stays fully recoverable — a native `title` and, once it measurably
+   * overflows, a keyboard-reachable tooltip (#184). A non-string node keeps
+   * only the CSS caps with no overflow recovery — keep it short, or accept
+   * it may be visually truncated with no fallback.
    */
   source?: ReactNode;
   /** The chart content. Rendered in both inline and expanded modal positions. */
@@ -674,10 +679,11 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           </div>
         </CardContent>
         {source ? (
-          <CardFooter className="pt-0">
-            <p className="w-full truncate text-chart-source text-chart-foreground-muted uppercase">
-              {source}
-            </p>
+          // `pb-3` (tighter than the card's default `pb-6`) reads as a
+          // footnote sitting close to the card's edge, not a fourth content
+          // block equidistant from the chart above and the edge below (#184).
+          <CardFooter className="pt-0 pb-3">
+            <ChartSourceRow source={source} className="w-full" />
           </CardFooter>
         ) : null}
       </Card>

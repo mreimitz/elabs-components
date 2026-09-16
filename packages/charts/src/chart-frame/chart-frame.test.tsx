@@ -188,8 +188,80 @@ describe("ChartFrame source", () => {
       </ChartFrame>,
     );
     fireEvent.click(screen.getByLabelText("Expand chart"));
-    // Two occurrences now: the inline card footer + the modal's detail pane.
+    // Two occurrences now: the inline card footer + the modal's view pane.
     expect(screen.getAllByText("Source: Internal analytics")).toHaveLength(2);
+  });
+
+  // #184 W0-10: the row rides with the chart in both containers now, never
+  // appended to the summary statistics pane, and behaves the same way
+  // (truncate + recoverable-on-overflow) in both.
+  it("attaches the modal's source row to the view pane, not the summary/detail pane", () => {
+    render(
+      <ChartFrame title="Revenue" data={sampleData} source="Source: Internal analytics">
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Expand chart"));
+
+    // The dialog renders through a portal, outside the render `container`.
+    const viewPane = document.querySelector('[data-slot="expand-dialog-view"]');
+    const detailPane = document.querySelector('[data-slot="expand-dialog-detail"]');
+    expect(viewPane).toHaveTextContent("Source: Internal analytics");
+    expect(detailPane).not.toHaveTextContent("Source: Internal analytics");
+    // The detail pane keeps showing its usual data summary, untouched.
+    expect(detailPane).toHaveTextContent("Rows:");
+  });
+
+  // #184: a source that overflows its row must stay recoverable in full — by
+  // hover (native `title`) at minimum, by keyboard once it measurably
+  // overflows — identically inline and inside the expand modal.
+  describe("overflow recovery (#184)", () => {
+    const longSource =
+      "Source: Internal analytics platform, aggregated nightly from three regional warehouses";
+
+    it("sets a native title on a string source in both the card footer and the modal", () => {
+      render(
+        <ChartFrame title="Revenue" data={sampleData} source={longSource}>
+          <div>chart</div>
+        </ChartFrame>,
+      );
+      fireEvent.click(screen.getByLabelText("Expand chart"));
+      for (const row of screen.getAllByText(longSource)) {
+        expect(row).toHaveAttribute("title", longSource);
+      }
+    });
+
+    it("adds no tab stop for a source that fits its row", () => {
+      render(
+        <ChartFrame title="Revenue" data={sampleData} source="Short source">
+          <div>chart</div>
+        </ChartFrame>,
+      );
+      expect(screen.getByText("Short source")).not.toHaveAttribute("tabindex");
+    });
+
+    it("gains a tab stop and a keyboard-reachable tooltip once the inline row measurably overflows", () => {
+      const { rerender } = render(
+        <ChartFrame title="Revenue" data={sampleData} source={longSource}>
+          <div>chart</div>
+        </ChartFrame>,
+      );
+      const row = screen.getByText(longSource);
+      // jsdom never lays out real text, so overflow is simulated — same idiom
+      // as `packages/ui/src/components/table/table.test.tsx`.
+      Object.defineProperty(row, "scrollWidth", { configurable: true, value: 900 });
+      Object.defineProperty(row, "clientWidth", { configurable: true, value: 240 });
+      rerender(
+        <ChartFrame title="Revenue" data={sampleData} source={longSource}>
+          <div>chart</div>
+        </ChartFrame>,
+      );
+      expect(row).toHaveAttribute("tabindex", "0");
+      fireEvent.focus(row);
+      const describedBy = row.getAttribute("aria-describedby");
+      expect(describedBy).toBeTruthy();
+      expect(document.getElementById(describedBy!)).toHaveTextContent(longSource);
+    });
   });
 
   it("appends a trailing '# source: …' comment row to the downloaded CSV", () => {

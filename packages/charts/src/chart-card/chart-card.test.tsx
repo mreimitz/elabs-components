@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { ChartCard } from "./chart-card";
 
 describe("ChartCard", () => {
@@ -96,6 +96,77 @@ describe("ChartCard", () => {
         </ChartCard>,
       );
       expect(screen.queryByText(/source/i)).not.toBeInTheDocument();
+    });
+
+    // #184: a source that overflows its row must stay recoverable in full —
+    // by hover (native `title`) at minimum, by keyboard (the tab stop + the
+    // accessible Tooltip) once it measurably overflows. A source that FITS
+    // must gain neither, or a short caption would grow a spurious tooltip.
+    describe("overflow recovery (#184)", () => {
+      const longSource =
+        "Source: Internal analytics platform, aggregated nightly from three regional warehouses";
+
+      it("sets a native title on a string source so it is recoverable by hover even before it is measured", () => {
+        render(
+          <ChartCard title="Monthly Revenue" source={longSource}>
+            <div>chart</div>
+          </ChartCard>,
+        );
+        expect(screen.getByText(longSource)).toHaveAttribute("title", longSource);
+      });
+
+      it("adds no tab stop for a source that fits its row", () => {
+        render(
+          <ChartCard title="Monthly Revenue" source="Short source">
+            <div>chart</div>
+          </ChartCard>,
+        );
+        const row = screen.getByText("Short source");
+        // jsdom reports 0 for scrollWidth/clientWidth, i.e. never overflowing.
+        expect(row).not.toHaveAttribute("tabindex");
+        expect(row).not.toHaveAttribute("aria-describedby");
+      });
+
+      it("gains a tab stop and a keyboard-reachable tooltip once the row measurably overflows", () => {
+        const { rerender } = render(
+          <ChartCard title="Monthly Revenue" source={longSource}>
+            <div>chart</div>
+          </ChartCard>,
+        );
+        const row = screen.getByText(longSource);
+        // jsdom never lays out real text, so overflow is simulated — same
+        // idiom as `packages/ui/src/components/table/table.test.tsx`.
+        Object.defineProperty(row, "scrollWidth", { configurable: true, value: 900 });
+        Object.defineProperty(row, "clientWidth", { configurable: true, value: 240 });
+        // No dependency array on the row's measuring effect: any re-render
+        // re-measures, so re-rendering with the same props is enough to pick
+        // up the metrics just set on the (unchanged) DOM node.
+        rerender(
+          <ChartCard title="Monthly Revenue" source={longSource}>
+            <div>chart</div>
+          </ChartCard>,
+        );
+        expect(row).toHaveAttribute("tabindex", "0");
+        expect(row).toHaveAttribute("title", longSource);
+
+        // Radix only wires `aria-describedby` up while the tooltip is open —
+        // a keyboard user reaches that by focusing the (now-focusable) row.
+        fireEvent.focus(row);
+        const describedBy = row.getAttribute("aria-describedby");
+        expect(describedBy).toBeTruthy();
+        expect(document.getElementById(describedBy!)).toHaveTextContent(longSource);
+      });
+
+      it("keeps caps CSS-driven, not literal uppercase in the DOM, and keeps the row a <p>", () => {
+        render(
+          <ChartCard title="Monthly Revenue" source="source: mixed Case Text">
+            <div>chart</div>
+          </ChartCard>,
+        );
+        const row = screen.getByText("source: mixed Case Text");
+        expect(row.tagName).toBe("P");
+        expect(row.textContent).toBe("source: mixed Case Text");
+      });
     });
   });
 });

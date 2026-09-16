@@ -187,9 +187,10 @@ export const Loading: Story = {
 
 /**
  * The card contract's fourth part (lieflat) — an attribution/provenance
- * footer, shown inline and (via the play function below) inside the expand
- * modal's detail pane too. A plain-string `source` also rides the downloaded
- * CSV as a trailing `# source: …` comment row.
+ * footer, shown inline and (via the play function below) under the chart
+ * inside the expand modal too — never appended to the summary/detail pane
+ * (#184). A plain-string `source` also rides the downloaded CSV as a
+ * trailing `# source: …` comment row.
  */
 export const WithSource: Story = {
   render: () => (

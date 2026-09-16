@@ -1,6 +1,13 @@
 "use client";
 
-import { type HTMLAttributes, type ReactNode, forwardRef } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type HTMLAttributes,
+  type ReactNode,
+  forwardRef,
+} from "react";
 import {
   Card,
   CardContent,
@@ -9,9 +16,71 @@ import {
   CardHeader,
   CardTitle,
   Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
   useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+
+/**
+ * The card contract's fourth part — the attribution/source row (RM-019).
+ * Always `truncate`s so a long source cannot blow out the footer; a string
+ * source gets a native `title` unconditionally (cheap, hover-recoverable) and,
+ * once the row measurably overflows, the keyboard-reachable `Tooltip` too, so
+ * the full text is recoverable without a mouse and without selecting text
+ * (#184). A short source gains neither the tab stop nor the tooltip. A
+ * non-string `source` keeps only the CSS-driven caps — see the `source`
+ * docblock on `ChartCardProps`/`ChartFrameProps` for why that case is the
+ * caller's responsibility.
+ *
+ * The `<p>` stays the same element regardless of `overflows` — only its
+ * trailing `TooltipContent` sibling is conditional — so a mid-lifecycle flip
+ * (a resize, a shorter `source` arriving) never remounts the row itself.
+ */
+export function ChartSourceRow({ source, className }: { source: ReactNode; className?: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [overflows, setOverflows] = useState(false);
+  const text = typeof source === "string" ? source : undefined;
+
+  // No dependency array: re-measures on every commit (mount, content change,
+  // container resize via the observer below) rather than trying to enumerate
+  // every input that can change the row's intrinsic vs. available width.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setOverflows(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  });
+
+  const showTooltip = Boolean(text) && overflows;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <p
+            ref={ref}
+            tabIndex={showTooltip ? 0 : undefined}
+            title={text}
+            className={cn(
+              "truncate text-chart-source text-chart-foreground-muted uppercase",
+              className,
+            )}
+          >
+            {source}
+          </p>
+        </TooltipTrigger>
+        {showTooltip ? <TooltipContent>{text}</TooltipContent> : null}
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
@@ -46,7 +115,11 @@ export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
   /**
    * Attribution / provenance footer — e.g. "Source: Internal analytics,
    * updated daily". Renders as the card's all-caps, letter-spaced source row
-   * (the fourth part of lieflat's card contract); hidden when absent.
+   * (the fourth part of lieflat's card contract); hidden when absent. A
+   * string that overflows the row stays fully recoverable — a native `title`
+   * and, once it measurably overflows, a keyboard-reachable tooltip (#184). A
+   * non-string node keeps only the CSS caps with no overflow recovery — keep
+   * it short, or accept it may be visually truncated with no fallback.
    */
   source?: ReactNode;
 }
@@ -100,10 +173,11 @@ export const ChartCard = forwardRef<HTMLDivElement, ChartCardProps>(function Cha
         </div>
       </CardContent>
       {source ? (
-        <CardFooter className="pt-0">
-          <p className="w-full truncate text-chart-source text-chart-foreground-muted uppercase">
-            {source}
-          </p>
+        // `pb-3` (tighter than the card's default `pb-6`) reads as a
+        // footnote sitting close to the card's edge, not a fourth content
+        // block equidistant from the chart above and the edge below (#184).
+        <CardFooter className="pt-0 pb-3">
+          <ChartSourceRow source={source} className="w-full" />
         </CardFooter>
       ) : null}
     </Card>
