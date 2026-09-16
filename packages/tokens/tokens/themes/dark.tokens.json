@@ -565,27 +565,27 @@
   },
   "chart-seq-1": {
     "$type": "color",
-    "$value": "oklch(0.382 0.03 241.8)"
+    "$value": "oklch(0.454 0.03 241.8)"
   },
   "chart-seq-2": {
     "$type": "color",
-    "$value": "oklch(0.533 0.07 241.8)"
+    "$value": "oklch(0.535 0.05 241.8)"
   },
   "chart-seq-3": {
     "$type": "color",
-    "$value": "oklch(0.606 0.08 241.8)"
+    "$value": "oklch(0.616 0.055 241.8)"
   },
   "chart-seq-4": {
     "$type": "color",
-    "$value": "oklch(0.684 0.085 241.8)"
+    "$value": "oklch(0.697 0.06 241.8)"
   },
   "chart-seq-5": {
     "$type": "color",
-    "$value": "oklch(0.763 0.08 241.8)"
+    "$value": "oklch(0.779 0.06 241.8)"
   },
   "chart-seq-6": {
     "$type": "color",
-    "$value": "oklch(0.85 0.065 241.8)"
+    "$value": "oklch(0.86 0.055 241.8)"
   },
   "chart-seq-7": {
     "$type": "color",
@@ -613,7 +613,7 @@
   },
   "chart-mono-1": {
     "$type": "color",
-    "$value": "oklch(0.383 0.008 257)"
+    "$value": "oklch(0.454 0.008 257)"
   },
   "chart-mono-2": {
     "$type": "color",
@@ -621,23 +621,23 @@
   },
   "chart-mono-3": {
     "$type": "color",
-    "$value": "oklch(0.609 0.012 257)"
+    "$value": "oklch(0.616 0.01 257)"
   },
   "chart-mono-4": {
     "$type": "color",
-    "$value": "oklch(0.687 0.012 257)"
+    "$value": "oklch(0.697 0.01 257)"
   },
   "chart-mono-5": {
     "$type": "color",
-    "$value": "oklch(0.766 0.01 257)"
+    "$value": "oklch(0.779 0.01 257)"
   },
   "chart-mono-6": {
     "$type": "color",
-    "$value": "oklch(0.852 0.008 257)"
+    "$value": "oklch(0.86 0.008 257)"
   },
   "chart-mono-7": {
     "$type": "color",
-    "$value": "oklch(0.942 0.005 257)"
+    "$value": "oklch(0.941 0.005 257)"
   },
   "chart-accent": {
     "$type": "color",

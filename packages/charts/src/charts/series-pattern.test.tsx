@@ -73,6 +73,17 @@ describe("makeSeriesPattern — raw <pattern> for a series (#164)", () => {
     expect(children.length).toBe(2); // faint ground rect + ink shape
   });
 
+  // #255 — PieChart and SankeyNode render this helper from a `.map()`, and both
+  // call sites forgot a list identity. The identity lives in the helper, keyed
+  // by the collision-free pattern id, so no call site has to remember it.
+  it("carries its pattern id as the React list identity", () => {
+    const a = makeSeriesPattern(0, "bp-series-x-0", "var(--chart-1)");
+    const b = makeSeriesPattern(1, "bp-series-x-1", "var(--chart-2)");
+    expect(a.key).toBe("bp-series-x-0");
+    expect(b.key).toBe("bp-series-x-1");
+    expect(a.key).not.toBe(b.key);
+  });
+
   it("uses the dots geometry (circle) for index 1", () => {
     const el = makeSeriesPattern(1, "id1", "var(--chart-1)");
     const children = (el.props as { children: { type: string }[] }).children;
