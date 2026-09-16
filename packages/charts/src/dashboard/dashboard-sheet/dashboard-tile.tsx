@@ -19,8 +19,6 @@ import type { DashboardMode } from "../core/store";
 import { previewLayoutFor, useDashboardEdit } from "../edit/edit-context";
 import { DashboardTileContextMenu } from "../edit/tile-context-menu";
 import { TileDragHandle, useTileMove } from "../edit/tile-drag-handle";
-import { TileResizeHandles } from "../edit/tile-resize-handles";
-import { TileSizeBadge } from "../edit/tile-size-badge";
 import { DashboardTileHeader } from "./dashboard-tile-header";
 import { DashboardTileMenu } from "./dashboard-tile-menu";
 import { useDashboardSheetContext } from "./sheet-context";
@@ -54,19 +52,25 @@ export function tileInteractions(mode: DashboardMode): Required<ChartInteraction
   return mode === "edit" ? EDIT_INTERACTIONS : VIEW_INTERACTIONS;
 }
 
-// z-order — RM-081: `fit`-mode tiles stack by `layout.z` (`flow` tiles can't overlap, so they
-// never set a z-index at all). Ordinary tiles are clamped to a fixed band so unbounded growth
-// from repeated Bring forward/Send backward clicks can never climb into the edit-layer chrome's
-// own stacking (dashboard-edit-layer.tsx's ghost/marquee/selection toolbar all paint at
-// `TILE_CHROME_Z` or above). A focused or actively-dragging tile is raised to `TILE_RAISED_Z` —
-// above every ordinary tile, still under the chrome — so its own resize handles/drag handle/
-// size badge (rendered as its DOM descendants) can never be hidden by a neighbour with a higher
-// stored `z`. The raise is an inline style only; `layout.z` itself is never touched by focus.
+// z-order — RM-081 (follow-up 3): `fit`-mode tiles stack by `layout.z` (`flow` tiles can't
+// overlap, so they never set a z-index at all). Ordinary tiles are clamped to a fixed band so
+// unbounded growth from repeated Bring forward/Send backward clicks can never climb into the
+// edit-layer chrome's own stacking (dashboard-edit-layer.tsx's ghost/marquee/selection toolbar/
+// per-tile handle overlay all paint at `TILE_CHROME_Z` or above). Only a tile with an ACTIVE
+// drag/resize session (this tile is the one gesture in progress) is raised to `TILE_RAISED_Z` —
+// merely being focused no longer raises a tile: a real user's tile stays focused after Bring
+// forward/Send backward closes its context menu (Radix returns focus to the trigger), and if
+// focus alone raised it, Send backward — the common case — would never visibly change anything.
+// A focused-but-not-dragging tile's resize handles and focus outline are NOT its own DOM
+// descendants any more; they paint in the edit layer's chrome band, positioned from the tile's
+// own `cellRect`, so they stay usable even when the tile's own (unraised) body is covered by a
+// higher-`z` neighbour. The raise is an inline style only; `layout.z` itself is never touched by
+// focus or by a session.
 /** Band ordinary `fit`-mode tiles clamp their `layout.z` into. */
 export const TILE_Z_BAND = 100;
-/** Stacking of a focused/dragging tile (ephemeral — never written to `layout.z`). */
+/** Stacking of a tile with an active drag/resize session (ephemeral — never written to `layout.z`). */
 export const TILE_RAISED_Z = 500;
-/** Floor every edit-layer chrome element (ghost, marquee, selection toolbar) paints at. */
+/** Floor every edit-layer chrome element (ghost, marquee, selection toolbar, tile handle overlay) paints at. */
 export const TILE_CHROME_Z = 1000;
 
 export interface DashboardTileRootProps extends HTMLAttributes<HTMLDivElement> {
@@ -279,11 +283,12 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
 
     const active = sheet ? sheet.activeTileId === tileId : true;
     const session = edit?.session?.tileId === tileId ? edit.session : null;
-    const showEditChrome = editable && (focused || session !== null);
-    // z-order — RM-081: see the comment at `TILE_Z_BAND`/`TILE_RAISED_Z`/`TILE_CHROME_Z` above.
+    // z-order — RM-081 (follow-up 3): see the comment at `TILE_Z_BAND`/`TILE_RAISED_Z`/
+    // `TILE_CHROME_Z` above — only THIS tile's own active drag/resize session raises it; being
+    // merely focused does not.
     const zIndex =
       gridMode === "fit"
-        ? showEditChrome
+        ? session !== null
           ? TILE_RAISED_Z
           : Math.max(-TILE_Z_BAND, Math.min(TILE_Z_BAND, tile.layout.z ?? 0))
         : undefined;
@@ -307,7 +312,6 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         className={cn(
           "group/tile absolute flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-3 shadow-xs focus-ring",
           "transition-[transform,width,height] duration-base ease-standard motion-reduce:transition-none",
-          "data-focused:border-ring",
           edit?.reducedMotion && "transition-none",
           className,
         )}
@@ -347,12 +351,6 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
           <div className="absolute start-1 top-1 z-10" {...move.headerProps}>
             {dragHandle}
           </div>
-        ) : null}
-        {showEditChrome ? (
-          <>
-            <TileResizeHandles tileId={tileId} title={accessibleTitle} />
-            <TileSizeBadge cell={session?.target ?? tile.layout} />
-          </>
         ) : null}
       </div>
     );

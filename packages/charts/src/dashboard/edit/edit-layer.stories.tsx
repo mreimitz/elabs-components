@@ -305,7 +305,9 @@ export const Fit24x12: Story = {
         await userEvent.keyboard("{ArrowRight}");
         await sleep(30);
       }
-      const badge = tile.querySelector('[data-slot="tile-size-badge"]') as HTMLElement;
+      // RM-081 (follow-up 3): the size badge paints in the edit layer's chrome band, a sibling
+      // of the tile, positioned from its own `cellRect` — not a DOM descendant any more.
+      const badge = sheet.querySelector('[data-slot="tile-size-badge"]') as HTMLElement;
       await expect(badge).toHaveTextContent("(4,1) ⤢ 6 × 4");
       await expect(announcer(sheet)).toHaveTextContent("Moved to column 4, row 1");
       await userEvent.keyboard("{Enter}");
@@ -559,7 +561,10 @@ export const TileOperations: Story = {
 
     await step(
       "Bring forward / Send backward (via the tile's own context menu, built into DashboardTile) " +
-        "reorders an overlapping fit-mode pair's PAINT order — never their DOM order",
+        "reorders an overlapping fit-mode pair's PAINT order — never their DOM order — with the " +
+        "acted-on tile STAYING focused throughout, exactly like a real user (RM-081 follow-up 3: " +
+        "a focused-but-idle tile no longer raises its own z-index, so Send backward, the common " +
+        "case, stays visible even though Radix returns focus to the tile on menu close)",
       async () => {
         await reset(Z_ORDER_SPEC);
         const p2 = pitch(sheet, Z_ORDER_SPEC);
@@ -581,28 +586,32 @@ export const TileOperations: Story = {
         // uses in `useDashboardShortcuts`. `DashboardTile` wraps itself in
         // `DashboardTileContextMenu` in edit mode (RM-081 follow-up 1) — no host composition.
         const chooseMenuItem = async (trigger: HTMLElement, name: string) => {
+          // A real right-click lands DOM focus on its target first (the browser's native
+          // mousedown-focus behaviour) before Radix's `contextmenu` handler ever runs — put the
+          // trigger in that same state explicitly rather than relying on whatever a PRIOR step
+          // happened to leave focused.
+          trigger.focus();
           await userEvent.pointer({ keys: "[MouseRight]", target: trigger });
           // `ContextMenuContent` portals to `document.body`, outside `canvasElement`.
           const body = within(bodyDoc.body);
           await userEvent.click(await body.findByRole("menuitem", { name }));
           await waitForMenuClosed(body);
           // Radix returns focus to the trigger (the tile root) on close, which — via
-          // `DashboardTile`'s own `onFocus` handler — makes it the sole multi-select focus.
-          // A focused tile is deliberately RAISED above `TILE_CHROME_Z`'s ordinary band (so its
-          // own resize handles can never be covered), which would otherwise mask the very z-order
-          // change this play asserts. Clear it the same way "Escape clears focus" does elsewhere
-          // in this file, so what remains is exactly `layout.z`'s own paint order.
-          store().getState().actions.setFocus([]);
+          // `DashboardTile`'s own `onFocus` handler — makes it the sole multi-select focus. A
+          // real user never deselects after a menu action, so this play deliberately does NOT
+          // clear it (RM-081 follow-up 3 — the earlier version of this play did, which is why it
+          // passed while the shipped product did not).
         };
 
         expect(domOrder()).toEqual(["chart-1", "chart-2"]);
 
         const pastBeforeForward = store().getState().history.past;
         await chooseMenuItem(tileA, "Bring forward");
+        await waitFor(() => expect(tileA).toHaveFocus());
         await waitFor(() =>
           expect(Number(getComputedStyle(tileB).zIndex))
-            // z-order — RM-081 follow-up 2 (F1): a REAL computed-style/paint-order check, not a
-            // readback of the store field `bringForward` itself just wrote.
+            // z-order — RM-081 follow-up 3: a REAL computed-style/paint-order check, taken WHILE
+            // chart-1 is still focused — not after an artificial focus-clear.
             .toBeLessThan(Number(getComputedStyle(tileA).zIndex)),
         );
         expect(domOrder()).toEqual(["chart-1", "chart-2"]); // reading order never reorders
@@ -611,14 +620,28 @@ export const TileOperations: Story = {
 
         const pastBeforeBackward = store().getState().history.past;
         await chooseMenuItem(tileA, "Send backward");
+        await waitFor(() => expect(tileA).toHaveFocus());
         await waitFor(() =>
           expect(Number(getComputedStyle(tileA).zIndex)).toBeLessThan(
             Number(getComputedStyle(tileB).zIndex),
           ),
         );
         expect(domOrder()).toEqual(["chart-1", "chart-2"]);
+        // chart-1 is STILL focused here — the case the earlier play's focus-clear hid: without
+        // the follow-up 3 fix, a focused tile was raised regardless, and this assertion failed.
         expect(topTileAt(overlapPoint)).toBe(tileB);
         expect(store().getState().history.past).toBe(pastBeforeBackward + 1);
+
+        // RM-081 follow-up 3: chart-1 is focused AND now visually covered by chart-2 in the
+        // overlap — its resize handle must still be hit-testable (it paints in the edit layer's
+        // chrome band, above every tile, per `TILE_CHROME_Z`), never hidden behind chart-2.
+        const handle = within(sheet).getByRole("button", {
+          name: "Resize Revenue from bottom-right",
+        });
+        const hr = handle.getBoundingClientRect();
+        const handlePoint = { x: hr.left + hr.width / 2, y: hr.top + hr.height / 2 };
+        const hitAtHandle = bodyDoc.elementFromPoint(handlePoint.x, handlePoint.y);
+        expect(hitAtHandle === handle || handle.contains(hitAtHandle)).toBe(true);
       },
     );
 

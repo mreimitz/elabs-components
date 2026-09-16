@@ -62,6 +62,8 @@ import {
   topLevelLayout,
 } from "./geometry";
 import { DashboardMarquee, useDashboardMarquee } from "./marquee";
+import { TileResizeHandles } from "./tile-resize-handles";
+import { TileSizeBadge } from "./tile-size-badge";
 
 /** What a draggable carries in `data.current`. */
 export interface DashboardEditDragData {
@@ -380,6 +382,20 @@ export function DashboardEditLayer({
   // (`useDashboardMarquee`'s own listeners). No host composition required: `DashboardSheet` +
   // edit mode is enough.
   const topLevel = useMemo(() => topLevelLayout(spec), [spec]);
+
+  // tile chrome — RM-081 (follow-up 3): every focused, non-container top-level tile gets its own
+  // resize handles + focus outline + size badge painted HERE, never as the tile's own DOM
+  // descendants — so they stay usable even when the tile's own (unraised) body is covered by a
+  // higher-`z` neighbour (see the `TILE_RAISED_Z` comment at dashboard-tile.tsx). `start()` always
+  // adds the gesture's own tile to `focus`, so the actively dragging/resizing tile is covered by
+  // this same loop — no separate union needed.
+  const chromeTiles = useMemo(
+    () =>
+      focus
+        .map((id) => spec.tiles.find((item) => item.id === id))
+        .filter((item): item is (typeof spec.tiles)[number] => Boolean(item) && !item?.container),
+    [focus, spec],
+  );
   const marquee = useDashboardMarquee({
     sheetRef,
     grid,
@@ -423,6 +439,50 @@ export function DashboardEditLayer({
         onDragCancel={cancel}
       >
         {children}
+        {width > 0
+          ? // tile chrome — RM-081 (follow-up 3): rendered INSIDE `DndContext` — `TileResizeHandles`'
+            // `useDraggable` calls must sit inside the same provider as the tile's own move handle,
+            // even though this overlay is now a chrome-band SIBLING of the tile, not its descendant.
+            chromeTiles.map((tile) => {
+              // The dragging/resizing tile's own live target; every other focused tile's live
+              // preview from a group drag, else its committed cells.
+              const cells =
+                session && session.tileId === tile.id
+                  ? session.target
+                  : (session?.layout.find((item) => item.id === tile.id) ?? tile.layout);
+              const rect = cellRect(cells, grid, { width, height });
+              const title = tile.title || labels.untitledTile(tile.kind);
+              return (
+                <div
+                  key={tile.id}
+                  data-slot="dashboard-tile-chrome"
+                  // Deliberately NOT `data-tile-id`: this is a chrome overlay, not the tile
+                  // itself, and several plays/tests count/select `[data-tile-id]` expecting
+                  // exactly one match per real tile.
+                  data-tile-chrome-for={tile.id}
+                  className="pointer-events-none absolute rounded-lg"
+                  style={{
+                    left: 0,
+                    top: 0,
+                    width: rect.width,
+                    height: rect.height,
+                    transform: `translate(${rect.x}px, ${rect.y}px)`,
+                    // z-order — RM-081: see the marquee/ghost comment below (dashboard-tile.tsx's
+                    // `TILE_CHROME_Z`) — always above every tile, focused or not.
+                    zIndex: TILE_CHROME_Z,
+                  }}
+                >
+                  <div
+                    aria-hidden="true"
+                    data-slot="dashboard-tile-chrome-outline"
+                    className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-ring"
+                  />
+                  <TileResizeHandles tileId={tile.id} title={title} />
+                  <TileSizeBadge cell={cells} />
+                </div>
+              );
+            })
+          : null}
       </DndContext>
       {marquee.rect ? (
         // z-order — RM-081: chrome always paints above every tile, however high a tile's own
