@@ -57,11 +57,77 @@ describe("assertProcessContract", () => {
     ).toThrow(ProcessContractError);
   });
 
+  // DottedChart — RM-059
+  it("passes for a non-empty log with parsable timestamps, and throws otherwise", () => {
+    const spec: ProcessContractSpec = { dataProp: "log" };
+    const row = { caseId: "c1", activity: "A", timestamp: "2026-01-05T09:00:00Z" };
+    expect(() =>
+      assertProcessContract("DottedChartDouble", { log: { events: [row] } }, spec),
+    ).not.toThrow();
+    expect(() => assertProcessContract("DottedChartDouble", { log: { events: [] } }, spec)).toThrow(
+      ProcessContractError,
+    );
+    expect(() =>
+      assertProcessContract(
+        "DottedChartDouble",
+        { log: { events: [{ ...row, timestamp: "nope" }] } },
+        spec,
+      ),
+    ).toThrow(/parsable timestamps/);
+  });
+
   it("throws when a required prop is undefined", () => {
     const spec: ProcessContractSpec = { dataProp: "graph", requiredProps: ["onSelectionChange"] };
     expect(() => assertProcessContract("ProcessMapDouble", { graph: emptyGraph }, spec)).toThrow(
       /missing required prop "onSelectionChange"/,
     );
+  });
+});
+
+// PerformanceSpectrum — RM-060
+describe("assertProcessContract — log + segment order", () => {
+  const LOG_SPEC: ProcessContractSpec = { dataProp: "log", segmentOrder: true };
+  const log = {
+    events: [
+      { caseId: "c1", activity: "A", timestamp: 0 },
+      { caseId: "c1", activity: "B", timestamp: 10 },
+    ],
+  };
+
+  it("throws when the log prop is not an EventLog", () => {
+    expect(() => assertProcessContract("PerformanceSpectrumDouble", {}, LOG_SPEC)).toThrow(
+      /"log" prop must be an EventLog/,
+    );
+  });
+
+  it("passes when the order resolves to a segment present in the log", () => {
+    expect(() =>
+      assertProcessContract("PerformanceSpectrumDouble", { log }, LOG_SPEC),
+    ).not.toThrow();
+    expect(() =>
+      assertProcessContract(
+        "PerformanceSpectrumDouble",
+        { log, order: [{ from: "A", to: "B" }] },
+        LOG_SPEC,
+      ),
+    ).not.toThrow();
+  });
+
+  it("throws when the order resolves to nothing in the log", () => {
+    expect(() =>
+      assertProcessContract(
+        "PerformanceSpectrumDouble",
+        { log, order: [{ from: "B", to: "A" }] },
+        LOG_SPEC,
+      ),
+    ).toThrow(/resolves to no segment/);
+    expect(() =>
+      assertProcessContract(
+        "PerformanceSpectrumDouble",
+        { log, order: { variantId: "x" } },
+        LOG_SPEC,
+      ),
+    ).toThrow(ProcessContractError);
   });
 });
 

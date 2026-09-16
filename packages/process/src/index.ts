@@ -5,7 +5,7 @@
  * `-charts`, `-data` and `-ui`, and nothing depends on it. The binding rule is
  * "primitives go down, compositions go up" — a generic edge, mark, table, scale or
  * control belongs in the base package that owns it, never here. See
- * `.claude/rules/process-components.md` and `pnpm process:reuse:check`.
+ * `.claude/rules/data.md` ("Process mining" section) and `pnpm check --rule process-reuse`.
  *
  * Wave-1 items APPEND their exports at the end of the block below, each under a
  * `// <Name> — RM-NNN` comment, so concurrent branches merge as appends.
@@ -47,3 +47,33 @@ export * from "./process-filter-bar";
 // CaseTable / CaseTimeline — RM-055
 export * from "./case-table";
 export * from "./case-timeline";
+
+// DottedChart — RM-059
+export * from "./dotted-chart";
+
+// PerformanceSpectrum — RM-060
+export * from "./performance-spectrum";
+
+// ConformanceOverlay / ViolationList / HappyPathEditor — RM-062
+export * from "./conformance-overlay";
+export * from "./violation-list";
+export * from "./happy-path-editor";
+
+// ProcessCompare — RM-064
+export * from "./process-compare";
+
+// ProcessReplay — RM-065
+export * from "./process-replay";
+
+// Object-centric — RM-066
+export type {
+  AbstractedObjectCentricGraph,
+  ObjectCentricActivityStats,
+  ObjectCentricGraph,
+  ObjectTypeActivityCounts,
+} from "./core/discover-object-centric-graph";
+export { OBJECT_TYPE_ABSTRACTION_DEFAULT_LABELS } from "./abstraction-controls/abstraction-controls";
+export type {
+  ObjectTypeAbstraction,
+  ObjectTypeAbstractionLabels,
+} from "./abstraction-controls/abstraction-controls";

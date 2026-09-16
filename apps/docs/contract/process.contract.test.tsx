@@ -110,6 +110,183 @@ describe("CaseTable contract (browser)", () => {
   }
 });
 
+// ── CompareKpiStrip (packages/process/src/process-compare/compare-kpi-strip.tsx) ────────────────────────────────────────
+import * as stories_compare_kpi_strip from "../../../packages/process/src/process-compare/compare-kpi-strip.stories";
+describe("CompareKpiStrip contract (browser)", () => {
+  const meta = stories_compare_kpi_strip.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_compare_kpi_strip as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "process-processcompare-comparekpistrip--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "process-processcompare-comparekpistrip--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
+// ── ConformanceOverlay (packages/process/src/conformance-overlay/conformance-overlay.tsx) ────────────────────────────────────────
+import * as stories_conformance_overlay from "../../../packages/process/src/conformance-overlay/conformance-overlay.stories";
+describe("ConformanceOverlay contract (browser)", () => {
+  const meta = stories_conformance_overlay.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_conformance_overlay as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "process-conformanceoverlay--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "process-conformanceoverlay--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
+// ── HappyPathEditor (packages/process/src/happy-path-editor/happy-path-editor.tsx) ────────────────────────────────────────
+import * as stories_happy_path_editor from "../../../packages/process/src/happy-path-editor/happy-path-editor.stories";
+describe("HappyPathEditor contract (browser)", () => {
+  const meta = stories_happy_path_editor.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_happy_path_editor as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "process-happypatheditor--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "process-happypatheditor--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
 // ── ProcessKpiStrip (packages/process/src/process-kpi-strip/process-kpi-strip.tsx) ────────────────────────────────────────
 import * as stories_process_kpi_strip from "../../../packages/process/src/process-kpi-strip/process-kpi-strip.stories";
 describe("ProcessKpiStrip contract (browser)", () => {
@@ -151,6 +328,65 @@ describe("ProcessKpiStrip contract (browser)", () => {
 
         contractIt(
           "process-processkpistrip--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
+// ── ViolationList (packages/process/src/violation-list/violation-list.tsx) ────────────────────────────────────────
+import * as stories_violation_list from "../../../packages/process/src/violation-list/violation-list.stories";
+describe("ViolationList contract (browser)", () => {
+  const meta = stories_violation_list.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_violation_list as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "process-violationlist--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "process-violationlist--default",
           theme,
           width,
           "overflow",

@@ -4,7 +4,19 @@ import { describe, expect, it } from "vitest";
 import { discoverGraph } from "../core/discover-graph";
 import { extractVariants } from "../core/extract-variants";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
-import { ProcessKpiStripDouble, ProcessMapDouble, VariantExplorerDouble } from "./doubles";
+import { liftHappyPath } from "../core/reference-model";
+import { tokenReplay } from "../core/token-replay";
+import {
+  ConformanceOverlayDouble,
+  DottedChartDouble,
+  HappyPathEditorDouble,
+  PerformanceSpectrumDouble,
+  ProcessKpiStripDouble,
+  ProcessMapDouble,
+  ProcessReplayDouble,
+  VariantExplorerDouble,
+  ViolationListDouble,
+} from "./doubles";
 import { readProcessDoubleProps } from "./contract";
 
 const log = generateSyntheticLog({ cases: 20, seed: 7 });
@@ -44,8 +56,82 @@ describe("process test doubles", () => {
     expect(node).toBeInstanceOf(HTMLDivElement);
   });
 
+  // DottedChart — RM-059
+  it("DottedChartDouble mounts and records the event count", () => {
+    const { container } = render(<DottedChartDouble log={log} />);
+    const el = container.querySelector('[data-process-double="DottedChartDouble"]');
+    expect(readProcessDoubleProps(el as Element)?.dataLength).toBe(log.events.length);
+  });
+
+  it("DottedChartDouble rejects an empty log or an unparsable timestamp", () => {
+    expect(() => render(<DottedChartDouble log={{ events: [] }} />)).toThrow(/DottedChartDouble/);
+    expect(() =>
+      render(
+        <DottedChartDouble log={{ events: [{ caseId: "c", activity: "A", timestamp: "nope" }] }} />,
+      ),
+    ).toThrow(/parsable timestamps/);
+  });
+
+  // PerformanceSpectrum — RM-060
+  it("PerformanceSpectrumDouble records the event count and accepts the default order", () => {
+    const { container } = render(<PerformanceSpectrumDouble log={log} />);
+    const el = container.querySelector('[data-process-double="PerformanceSpectrumDouble"]');
+    expect(readProcessDoubleProps(el as Element)?.dataLength).toBe(log.events.length);
+  });
+
+  it("PerformanceSpectrumDouble accepts a variant path and rejects an order absent from the log", () => {
+    expect(() =>
+      render(<PerformanceSpectrumDouble log={log} order={{ variantId: variants[0]!.id }} />),
+    ).not.toThrow();
+    expect(() =>
+      render(<PerformanceSpectrumDouble log={log} order={[{ from: "Nope", to: "Never" }]} />),
+    ).toThrow(/resolves to no segment/);
+  });
+
   it("throws a contract error when required data is missing (a broken test fails loudly)", () => {
     // @ts-expect-error -- deliberately omitting the required `graph` prop
     expect(() => render(<ProcessMapDouble />)).toThrow(/ProcessMapDouble/);
+  });
+});
+
+describe("RM-062 doubles", () => {
+  const path = { id: "p", label: "Path", steps: [{ activity: "A" }, { activity: "B" }] };
+  const conformance = tokenReplay(log, liftHappyPath(path));
+
+  it("ConformanceOverlayDouble records the replayed case count and needs a graph", () => {
+    const { container } = render(
+      <ConformanceOverlayDouble graph={graph} conformance={conformance} />,
+    );
+    const el = container.querySelector('[data-process-double="ConformanceOverlayDouble"]');
+    expect(readProcessDoubleProps(el as Element)?.dataLength).toBe(conformance.traces.length);
+    // @ts-expect-error -- deliberately omitting the required `graph` prop
+    expect(() => render(<ConformanceOverlayDouble conformance={conformance} />)).toThrow(
+      /missing required prop "graph"/,
+    );
+  });
+
+  it("ViolationListDouble rejects a non-ConformanceResult", () => {
+    // @ts-expect-error -- deliberately passing the wrong shape
+    expect(() => render(<ViolationListDouble conformance={graph} />)).toThrow(/ConformanceResult/);
+  });
+
+  it("HappyPathEditorDouble records the step count and requires onChange", () => {
+    const { container } = render(<HappyPathEditorDouble value={path} onChange={() => {}} />);
+    const el = container.querySelector('[data-process-double="HappyPathEditorDouble"]');
+    expect(readProcessDoubleProps(el as Element)?.dataLength).toBe(2);
+    // @ts-expect-error -- deliberately omitting the required `onChange` prop
+    expect(() => render(<HappyPathEditorDouble value={path} />)).toThrow(/onChange/);
+  });
+});
+
+describe("RM-065 doubles", () => {
+  it("ProcessReplayDouble records the event count and needs a graph", () => {
+    const { container } = render(<ProcessReplayDouble graph={graph} log={log} />);
+    const el = container.querySelector('[data-process-double="ProcessReplayDouble"]');
+    expect(readProcessDoubleProps(el as Element)?.dataLength).toBe(log.events.length);
+    // @ts-expect-error -- deliberately omitting the required `graph` prop
+    expect(() => render(<ProcessReplayDouble log={log} />)).toThrow(
+      /missing required prop "graph"/,
+    );
   });
 });

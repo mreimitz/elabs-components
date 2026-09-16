@@ -1,6 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
+import { conformanceRateSeries } from "../core/conformance";
+import { liftHappyPath } from "../core/reference-model";
+import { tokenReplay } from "../core/token-replay";
+import {
+  CONFORMANCE_FIXTURE_LOG,
+  CONFORMANCE_FIXTURE_PATH,
+} from "../conformance-overlay/conformance-fixture";
 import { ProcessKpiStrip } from "./process-kpi-strip";
+
+const conformanceModel = liftHappyPath(CONFORMANCE_FIXTURE_PATH);
 
 const meta = {
   title: "Process/ProcessKpiStrip",
@@ -80,6 +89,25 @@ export const WithTrends: Story = {
       const sparkline = canvas.getByRole("img", { name: new RegExp(`^${label}, `) });
       await expect(sparkline).not.toHaveAccessibleName(label);
     }
+  },
+};
+
+/**
+ * RM-062: the conformance tile reads a token-replay result directly (its mean fitness) and
+ * plots `conformanceRateSeries` as its sparkline.
+ */
+export const ConformanceFromReplay: Story = {
+  args: {
+    kpis,
+    conformance: tokenReplay(CONFORMANCE_FIXTURE_LOG, conformanceModel),
+    conformanceSeries: conformanceRateSeries(CONFORMANCE_FIXTURE_LOG, conformanceModel, "month"),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("91.7%")).toBeVisible();
+    await expect(canvas.getByRole("img", { name: /^Conformance,/ })).toHaveAccessibleName(
+      "Conformance, 5-period trend, falling from 100% to 75%",
+    );
   },
 };
 

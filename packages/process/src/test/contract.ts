@@ -18,17 +18,37 @@
  * `vi.mock("@elabs-ai/components-process", () => import("@elabs-ai/components-process/test"))`
  * the way `@elabs-ai/components-charts` consumers do — that rename is out of this item's scope.
  */
-import type { ProcessGraph, Variant } from "../core/types";
+import { toEpochMs } from "../core/event-log";
+import { discoverGraph } from "../core/discover-graph";
+import { extractVariants } from "../core/extract-variants";
+import {
+  segmentOrderByFrequency,
+  segmentOrderForVariant,
+  segmentsFor,
+  type SegmentDefinition,
+} from "../core/segments";
+import type { ConformanceResult } from "../core/conformance";
+import type { HappyPath } from "../core/reference-model";
+import type { EventLog, ProcessGraph, Variant } from "../core/types";
 
 /** Selection carried by a process view's coordinated-selection contract (RM-068 completes it). */
 export type ProcessSelection = null | { kind: "node"; id: string } | { kind: "edge"; id: string };
 
 /** What {@link assertProcessContract} checks for one double. */
 export interface ProcessContractSpec {
-  /** Name of the prop carrying the double's primary data payload. */
-  dataProp: "graph" | "variants";
+  /**
+   * Name of the prop carrying the double's primary data payload. `conformance` is a
+   * `ConformanceResult` and `value` a `HappyPath` (RM-062).
+   */
+  dataProp: "graph" | "variants" | "log" | "conformance" | "value";
   /** Other props the real component requires; the double must not silently accept `undefined`. */
   requiredProps?: string[];
+  /**
+   * PerformanceSpectrum — RM-060: the `order` prop (default `"frequency"`) must resolve to
+   * at least one segment that actually occurs in `log`, or the real view renders only its
+   * empty panel — almost always a test wired to the wrong activity names.
+   */
+  segmentOrder?: boolean;
 }
 
 /** Thrown by {@link assertProcessContract} when a double is used with an invalid prop shape. */
@@ -48,11 +68,57 @@ function isProcessGraph(value: unknown): value is ProcessGraph {
   );
 }
 
+function isEventLog(value: unknown): value is EventLog {
+  return !!value && typeof value === "object" && Array.isArray((value as EventLog).events);
+}
+
+/** How many occurrences `order` (as `PerformanceSpectrum` reads it) finds in `log`. */
+function countSpectrumOccurrences(log: EventLog, order: unknown, limit: unknown): number {
+  const cap = typeof limit === "number" ? Math.max(0, Math.floor(limit)) : 12;
+  let definitions: SegmentDefinition[] = [];
+  if (order === undefined || order === "frequency") {
+    definitions = segmentOrderByFrequency(discoverGraph(log), cap);
+  } else if (Array.isArray(order)) {
+    definitions = (order as SegmentDefinition[]).slice(0, cap);
+  } else if (order && typeof order === "object" && "variantId" in order) {
+    const id = (order as { variantId: unknown }).variantId;
+    const variant = extractVariants(log).find((v) => v.id === id);
+    definitions = variant ? segmentOrderForVariant(variant).slice(0, cap) : [];
+  }
+  return segmentsFor(log, definitions).length;
+}
+
 function isVariantArray(value: unknown): value is Variant[] {
   return (
     Array.isArray(value) &&
     value.every((entry) => typeof entry === "object" && entry !== null && "sequence" in entry)
   );
+}
+
+// DottedChart — RM-059
+/** A non-empty event log whose every row carries a parsable timestamp. */
+function isTimedEventLog(value: unknown): value is EventLog {
+  const events = (value as EventLog | null | undefined)?.events;
+  return (
+    Array.isArray(events) &&
+    events.length > 0 &&
+    events.every(
+      (row) => !!row && typeof row === "object" && Number.isFinite(toEpochMs(row.timestamp)),
+    )
+  );
+}
+
+function isConformanceResult(value: unknown): value is ConformanceResult {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    Array.isArray((value as ConformanceResult).traces) &&
+    typeof (value as ConformanceResult).deviationCounts === "object"
+  );
+}
+
+function isHappyPath(value: unknown): value is HappyPath {
+  return !!value && typeof value === "object" && Array.isArray((value as HappyPath).steps);
 }
 
 /**
@@ -79,6 +145,35 @@ export function assertProcessContract(
       `"variants" prop must be a Variant[], got ${typeof data}`,
     );
   }
+  if (spec.dataProp === "log" && !isTimedEventLog(data)) {
+    throw new ProcessContractError(
+      componentName,
+      `"log" prop must be an EventLog with non-empty events and parsable timestamps`,
+    );
+  }
+  if (
+    spec.segmentOrder &&
+    isEventLog(data) &&
+    data.events.length > 0 &&
+    countSpectrumOccurrences(data, props.order, props.segmentLimit) === 0
+  ) {
+    throw new ProcessContractError(
+      componentName,
+      `"order" resolves to no segment that occurs in "log"`,
+    );
+  }
+  if (spec.dataProp === "conformance" && !isConformanceResult(data)) {
+    throw new ProcessContractError(
+      componentName,
+      `"conformance" prop must be a ConformanceResult, got ${typeof data}`,
+    );
+  }
+  if (spec.dataProp === "value" && !isHappyPath(data)) {
+    throw new ProcessContractError(
+      componentName,
+      `"value" prop must be a HappyPath, got ${typeof data}`,
+    );
+  }
   for (const key of spec.requiredProps ?? []) {
     if (props[key] === undefined) {
       throw new ProcessContractError(componentName, `missing required prop "${key}"`);
@@ -103,9 +198,15 @@ export function buildProcessDoublePayload(
   const dataLength =
     spec.dataProp === "graph" && isProcessGraph(data)
       ? data.activities.length
-      : Array.isArray(data)
-        ? data.length
-        : 0;
+      : spec.dataProp === "log" && isTimedEventLog(data)
+        ? data.events.length
+        : spec.dataProp === "conformance" && isConformanceResult(data)
+          ? data.traces.length
+          : spec.dataProp === "value" && isHappyPath(data)
+            ? data.steps.length
+            : Array.isArray(data)
+              ? data.length
+              : 0;
   const payload: ProcessDoublePayload = { component: componentName, dataLength };
   if ("selection" in props) payload.selection = props.selection as ProcessSelection;
   return payload;

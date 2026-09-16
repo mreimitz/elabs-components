@@ -48,6 +48,8 @@ function intentChipLabel(t: ReturnType<typeof useLocale>["t"], intent: FilterInt
       return t("process.filterBar.endsWith", { activity: intent.activity });
     case "variant":
       return t("process.filterBar.variant", { count: intent.ids.length });
+    case "cases":
+      return t("process.filterBar.cases", { count: intent.ids.length });
     default:
       return t("process.filterBar.filter");
   }

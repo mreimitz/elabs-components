@@ -18,14 +18,14 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ui` | packages/ui | 379 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
-| `@elabs-ai/components-flow` | packages/flow | 32 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
+| `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 196 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
 | `@elabs-ai/components-terminal` | packages/terminal | 31 | 1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
-| `@elabs-ai/components-process` | packages/process | 28 | 4 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
+| `@elabs-ai/components-process` | packages/process | 64 | 7 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
 
 ## @elabs-ai/components-tokens
 
@@ -991,6 +991,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Background | component |  | `@elabs-ai/components-flow` |  |
 | CanvasShell | component |  | `@elabs-ai/components-flow` | Branded React Flow canvas wrapper with token-driven background + sane defaults. |
 | Controls | component |  | `@elabs-ai/components-flow` | Zoom / fit / lock controls for the agent workspace Canvas. |
+| DEFAULT_EDGE_TOKEN_RADIUS | component |  | `@elabs-ai/components-flow` |  |
 | DEFAULT_EDGE_WIDTH_RANGE | component |  | `@elabs-ai/components-flow` |  |
 | DEFAULT_LOOP_RADIUS | component |  | `@elabs-ai/components-flow` |  |
 | EdgeLabelPill | component |  | `@elabs-ai/components-flow` |  |
@@ -1002,6 +1003,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FlowButtonEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowEdgePath | component |  | `@elabs-ai/components-flow` |  |
+| FlowEdgeTokens | component |  | `@elabs-ai/components-flow` |  |
 | FlowFloatingEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowGroupNode | component |  | `@elabs-ai/components-flow` |  |
 | FlowMiniMap | component |  | `@elabs-ai/components-flow` |  |
@@ -1448,42 +1450,87 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CASE_TABLE_COLUMN_LABEL_KEYS | component |  | `@elabs-ai/components-process` |  |
 | CaseTable | component |  | `@elabs-ai/components-process` |  |
 | CaseTimeline | component |  | `@elabs-ai/components-process` |  |
+| CompareKpiStrip | component |  | `@elabs-ai/components-process` |  |
+| CompareSide | component |  | `@elabs-ai/components-process` |  |
+| CONFORMANCE_OVERLAY_DEFAULT_METRIC | component |  | `@elabs-ai/components-process` |  |
+| CONFORMANCE_STATE_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| CONFORMANCE_STATE_ENCODING | component |  | `@elabs-ai/components-process` |  |
+| CONFORMANCE_STATES | component |  | `@elabs-ai/components-process` |  |
+| ConformanceLegend | component |  | `@elabs-ai/components-process` |  |
+| ConformanceOverlay | component |  | `@elabs-ai/components-process` |  |
+| ConformanceStateMark | component |  | `@elabs-ai/components-process` |  |
+| CongestionHeat | component |  | `@elabs-ai/components-process` |  |
 | DEFAULT_LAYOUT_DEBOUNCE_MS | component |  | `@elabs-ai/components-process` |  |
+| DIFF_STATE_TOKEN | component |  | `@elabs-ai/components-process` |  |
+| DOTTED_CHART_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| DOTTED_CHART_DOT_RADIUS | component |  | `@elabs-ai/components-process` |  |
+| DottedChart | component |  | `@elabs-ai/components-process` |  |
+| EMPTY_PROCESS_GRAPH | component |  | `@elabs-ai/components-process` |  |
 | EMPTY_PROCESS_MAP_HOVER | component |  | `@elabs-ai/components-process` |  |
 | GHOST_OPACITY | component |  | `@elabs-ai/components-process` |  |
+| HAPPY_PATH_EDITOR_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| HappyPathEditor | component |  | `@elabs-ai/components-process` |  |
+| HappyPathEditorContext | component |  | `@elabs-ai/components-process` |  |
+| HappyPathStepNode | component |  | `@elabs-ai/components-process` |  |
 | MetricLayerSwitch | component |  | `@elabs-ai/components-process` |  |
+| OBJECT_CENTRIC_MAP_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| OBJECT_TYPE_ABSTRACTION_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| PERFORMANCE_SPECTRUM_DEFAULT_BIN_SIZE | component |  | `@elabs-ai/components-process` |  |
+| PERFORMANCE_SPECTRUM_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| PERFORMANCE_SPECTRUM_ROW_HEIGHT | component |  | `@elabs-ai/components-process` |  |
+| PERFORMANCE_SPECTRUM_SEGMENT_LIMIT | component |  | `@elabs-ai/components-process` |  |
+| PerformanceSpectrum | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_FILTER_INTENT_KINDS | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_FILTER_INTENT_LABELS | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_FILTER_INTENT_MESSAGE_KEYS | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_MAP_EDGE_SCALE_GROUP | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_MAP_LEGIBLE_ZOOM | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_MAP_NODE_MOTION_CLASS | component |  | `@elabs-ai/components-process` |  |
+| PROCESS_REPLAY_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| PROCESS_REPLAY_DEFAULT_METRIC | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_SELECTION_STATE_MESSAGE_KEYS | component |  | `@elabs-ai/components-process` |  |
 | ProcessActivityNode | component |  | `@elabs-ai/components-process` | One activity on the process map: a FlowNode carrying the metric value, a meter bar, start/end role and a rework tally. |
+| ProcessCompare | component |  | `@elabs-ai/components-process` |  |
 | ProcessFilterBar | component |  | `@elabs-ai/components-process` |  |
 | ProcessKpiStrip | component |  | `@elabs-ai/components-process` |  |
 | ProcessMap | component |  | `@elabs-ai/components-process` | Directly-follows process map: activities as nodes, transitions as edges, both painted from one metric choice, with an accessible table twin. |
 | ProcessMapEdgeKeyContext | component |  | `@elabs-ai/components-process` |  |
 | ProcessMapHoverContext | component |  | `@elabs-ai/components-process` |  |
+| ProcessReplay | component |  | `@elabs-ai/components-process` |  |
+| ProcessReplayTokensContext | component |  | `@elabs-ai/components-process` |  |
 | ProcessTransitionEdge | component |  | `@elabs-ai/components-process` | One directly-follows relation on the process map: a weighted edge whose width, printed pill and SHAPE (dashed back-edge, closed self-loop) carry the metric. |
+| REPLAY_PLAYBACK_MS | component |  | `@elabs-ai/components-process` |  |
+| REPLAY_SPEEDS | component |  | `@elabs-ai/components-process` |  |
+| ReplayControls | component |  | `@elabs-ai/components-process` |  |
+| useHappyPathEditor | hook |  | `@elabs-ai/components-process` |  |
 | useProcessExplorer | hook |  | `@elabs-ai/components-process` |  |
 | useProcessLayout | hook |  | `@elabs-ai/components-process` |  |
 | useProcessMapEdgeKeys | hook |  | `@elabs-ai/components-process` |  |
 | useProcessMapHover | hook |  | `@elabs-ai/components-process` |  |
+| useProcessReplayEdgeTokens | hook |  | `@elabs-ai/components-process` |  |
+| useReplayTimeFormatter | hook |  | `@elabs-ai/components-process` |  |
 | VARIANT_EXPLORER_COLUMNS | component |  | `@elabs-ai/components-process` |  |
 | VARIANT_EXPLORER_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
 | VARIANT_EXPLORER_ROW_HEIGHT | component |  | `@elabs-ai/components-process` |  |
 | VariantExplorer | component |  | `@elabs-ai/components-process` |  |
+| VIOLATION_LIST_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| ViolationList | component |  | `@elabs-ai/components-process` |  |
 | ACTIVITY_COLOR_SLOTS | component |  | `@elabs-ai/components-process/core` |  |
 | ACTIVITY_OTHER_TOKEN | component |  | `@elabs-ai/components-process/core` |  |
 | BPI_2012_ACTIVITIES | component |  | `@elabs-ai/components-process/core` |  |
 | BPI_2012_SUBSET_EPOCH | component |  | `@elabs-ai/components-process/core` |  |
 | DEFAULT_LIFECYCLE_VALUES | component |  | `@elabs-ai/components-process/core` |  |
+| DEVIATION_TYPES | component |  | `@elabs-ai/components-process/core` |  |
 | DURATION_SAMPLE_CAP | component |  | `@elabs-ai/components-process/core` |  |
 | DURATION_UNIT_MS | component |  | `@elabs-ai/components-process/core` |  |
 | DurationSampler | component |  | `@elabs-ai/components-process/core` |  |
 | EDGE_KEY_SEPARATOR | component |  | `@elabs-ai/components-process/core` |  |
 | EMPTY_DURATION_STATS | component |  | `@elabs-ai/components-process/core` |  |
+| OCEL_EVENT_ID_ATTRIBUTE | component |  | `@elabs-ai/components-process/core` |  |
+| OCEL_OBJECT_REFS_ATTRIBUTE | component |  | `@elabs-ai/components-process/core` |  |
+| REPLAY_MAX_FRAMES | component |  | `@elabs-ai/components-process/core` |  |
+| REPLAY_TARGET_FRAMES | component |  | `@elabs-ai/components-process/core` |  |
+| REPLAY_TOKEN_RADIUS_RANGE | component |  | `@elabs-ai/components-process/core` |  |
 | SYNTHETIC_ACTIVITIES | component |  | `@elabs-ai/components-process/core` |  |
 | SYNTHETIC_LOG_EPOCH | component |  | `@elabs-ai/components-process/core` |  |
 | TRIM_FRACTION | component |  | `@elabs-ai/components-process/core` |  |

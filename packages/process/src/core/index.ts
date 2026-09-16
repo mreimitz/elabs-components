@@ -132,3 +132,100 @@ export type {
 // casesFromLog — RM-055
 export { casesFromLog } from "./cases-from-log";
 export type { CaseRow } from "./cases-from-log";
+
+// tokenReplay / conformance — RM-061
+export { liftHappyPath } from "./reference-model";
+export type {
+  HappyPath,
+  HappyPathStep,
+  ReplayModel,
+  ReplayTransition,
+  ReplayTransitionKind,
+} from "./reference-model";
+export {
+  DEVIATION_TYPES,
+  emptyDeviationCounts,
+  replayActivities,
+  replayTrace,
+  tokenReplay,
+} from "./token-replay";
+export type { Deviation, DeviationType, TraceReplayResult } from "./token-replay";
+export { conformanceRateSeries } from "./conformance";
+export type { ConformanceBucket, ConformanceRatePoint, ConformanceResult } from "./conformance";
+
+// fromXes — RM-063
+export { fromXes } from "./adapters/xes";
+export type { XesParseError, XesParseOptions, XesParseResult } from "./adapters/xes";
+
+// segments — RM-060
+export {
+  durationQuartile,
+  durationQuartileThresholds,
+  quartileOf,
+  segmentKey,
+  segmentOrderByFrequency,
+  segmentOrderForVariant,
+  segmentsFor,
+} from "./segments";
+export type {
+  DurationQuartile,
+  QuartileThresholds,
+  SegmentDefinition,
+  SegmentOccurrence,
+} from "./segments";
+
+// diffGraphs — RM-064
+export { diffGraphs } from "./diff-graphs";
+export type { DiffEntry, DiffState, ProcessGraphDiff } from "./diff-graphs";
+
+// replayTimeline — RM-065
+export {
+  defaultReplayBucketMs,
+  rankReplayCongestion,
+  REPLAY_MAX_FRAMES,
+  REPLAY_TARGET_FRAMES,
+  REPLAY_TOKEN_RADIUS_RANGE,
+  replayFrameAt,
+  replayTimeline,
+  replayTokenRadius,
+} from "./replay-timeline";
+export type {
+  ReplayCongestionEntry,
+  ReplayFrame,
+  ReplayFrameToken,
+  ReplaySegment,
+  ReplayTimeline,
+  ReplayTimelineOptions,
+} from "./replay-timeline";
+
+// Object-centric — RM-066
+export {
+  fromOcel,
+  OCEL_EVENT_ID_ATTRIBUTE,
+  OCEL_OBJECT_REFS_ATTRIBUTE,
+  readObjectRefs,
+} from "./adapters/ocel";
+export type {
+  OcelAttribute,
+  OcelEvent,
+  OcelJson,
+  OcelObject,
+  OcelParseError,
+  OcelParseOptions,
+  OcelParseResult,
+  OcelRelationship,
+  OcelTypeDeclaration,
+} from "./adapters/ocel";
+export {
+  abstractObjectCentricGraph,
+  discoverObjectCentricGraph,
+  mergeObjectCentricGraphs,
+  objectCentricProcessGraph,
+  objectTypeColorScale,
+} from "./discover-object-centric-graph";
+export type {
+  AbstractedObjectCentricGraph,
+  ObjectCentricActivityStats,
+  ObjectCentricGraph,
+  ObjectTypeActivityCounts,
+} from "./discover-object-centric-graph";

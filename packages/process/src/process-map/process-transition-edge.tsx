@@ -58,16 +58,56 @@
  * canvas and the `TableView` twin cannot drift) onto the pill's `aria-label`, merged with
  * the excluded-state fields above rather than replacing them.
  */
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import type { EdgeProps } from "@xyflow/react";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   FlowSelfLoopEdge,
   FlowWeightedEdge,
+  Position,
   type FlowSelfLoopEdgeData,
   type FlowWeightedEdgeData,
 } from "@elabs-ai/components-flow";
 import { useProcessMapEdgeKeys, useProcessMapHover } from "./process-map-context";
 import { GHOST_OPACITY, type ProcessMapEdge } from "./map-model";
+import {
+  CONFORMANCE_STATE_ENCODING,
+  type ConformanceState,
+} from "../conformance-overlay/conformance-state";
+import { useProcessReplayEdgeTokens } from "../process-replay/replay-tokens-context";
+
+/**
+ * The label pill under a conformance state (RM-062): the state's glyph as a leading
+ * `::before` mark (circle / triangle / square — the same shapes as the node marker and the
+ * legend) and the tone's fill rung on the pill border. The pill's own `aria-label` already
+ * carries the state's word (`ProcessMap` folds it into `data.ariaLabel`), so the glyph is
+ * a visible, non-colour channel only. The line style lives on the STROKE, not the pill, so
+ * it never fights the excluded state's dashed pill border.
+ */
+const CONFORMANCE_LABEL_CLASS: Record<ConformanceState, string> = {
+  both: "border-success before:text-success before:content-['●']",
+  logOnly: "border-warning before:text-warning before:content-['△']",
+  modelOnly: "border-destructive before:text-destructive before:content-['⬚']",
+};
+
+/**
+ * The stroke under a conformance state: the tone as paint plus the state's dash pattern.
+ * Omitted while the edge is selected, so React Flow's selection stroke still wins; a
+ * `"both"` edge keeps its own dash (a back edge stays dashed).
+ */
+function conformanceStrokeStyle(
+  state: ConformanceState | undefined,
+  selected: boolean | undefined,
+): CSSProperties | undefined {
+  if (!state || selected) return undefined;
+  const encoding = CONFORMANCE_STATE_ENCODING[state];
+  return {
+    stroke: encoding.colorVar,
+    ...(encoding.strokeDasharray
+      ? { strokeDasharray: encoding.strokeDasharray, strokeLinecap: "round" }
+      : {}),
+  };
+}
 
 /**
  * The `scaleGroup` every process-map edge shares, so `computeEdgeWeightScale` min-maxes
@@ -86,6 +126,21 @@ const UNRELATED_OPACITY = 0.25;
 const EXCLUDED_LABEL_PROPS = { className: "border-dashed", "data-selection": "excluded" } as const;
 
 /**
+ * Object-centric — RM-066. Per-type edges joining the same two activities are drawn side
+ * by side: each one's endpoints shift across the flow axis by its slot, so the strokes and
+ * their label pills separate instead of stacking. The spread is capped so every endpoint
+ * stays on the card's own face.
+ */
+const PARALLEL_EDGE_GAP = 40;
+const PARALLEL_EDGE_MAX_SPREAD = 120;
+
+function parallelShift(index: number | undefined, count: number | undefined): number {
+  if (index === undefined || count === undefined || count < 2) return 0;
+  const gap = Math.min(PARALLEL_EDGE_GAP, PARALLEL_EDGE_MAX_SPREAD / (count - 1));
+  return (index - (count - 1) / 2) * gap;
+}
+
+/**
  * Branded process-map transition edge. Register it in
  * `edgeTypes={{ "process-transition": ProcessTransitionEdge }}`; build edges with
  * `buildProcessMapModel`.
@@ -100,26 +155,60 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
   // nodes; `data.ariaLabel` (`transitionAriaLabel`, computed once in `map-model.ts`) is the
   // channel that gets the same accessible name onto the one a screen-reader user actually
   // lands on (#354). Merged with, never replacing, the excluded-state fields.
+  const conformance = data?.conformance;
+  const selected = props.selected;
   const labelProps = useMemo(() => {
-    if (!isExcluded && !data?.ariaLabel) return undefined;
+    if (!isExcluded && !data?.ariaLabel && !conformance) return undefined;
     return {
       ...(isExcluded ? EXCLUDED_LABEL_PROPS : undefined),
       ...(data?.ariaLabel ? { "aria-label": data.ariaLabel } : undefined),
+      // Additive to the excluded fields (RM-062): the dashed excluded border stays, the
+      // conformance glyph and tone join it. The tone border yields to the selection ring.
+      ...(conformance
+        ? {
+            "data-conformance": conformance,
+            className: cn(
+              isExcluded && EXCLUDED_LABEL_PROPS.className,
+              CONFORMANCE_LABEL_CLASS[conformance],
+              selected && "border-ring",
+            ),
+          }
+        : undefined),
     };
-  }, [isExcluded, data?.ariaLabel]);
+  }, [isExcluded, data?.ariaLabel, conformance, selected]);
+  const strokeStyle = conformanceStrokeStyle(conformance, selected);
+  const edgeStyle = strokeStyle ? { ...props.style, ...strokeStyle } : props.style;
+  // RM-065: tokens from an enclosing `ProcessReplay`. `undefined` outside one, and then the
+  // key is not added at all, so a map with no replay builds exactly the data it did before.
+  const replayTokens = useProcessReplayEdgeTokens(props.id);
+  // Object-centric — RM-066: a per-type edge takes its type's chart stroke (on the edge
+  // object's `style`), never the value ramp, and sits in its own parallel slot.
+  const isObjectTyped = data?.objectType !== undefined;
+  const shift = parallelShift(data?.parallelIndex, data?.parallelCount);
+  const acrossX = props.targetPosition === Position.Top || props.targetPosition === Position.Bottom;
+  const placed = shift
+    ? {
+        sourceX: props.sourceX + (acrossX ? shift : 0),
+        targetX: props.targetX + (acrossX ? shift : 0),
+        sourceY: props.sourceY + (acrossX ? 0 : shift),
+        targetY: props.targetY + (acrossX ? 0 : shift),
+      }
+    : undefined;
 
   const weightedData = useMemo<FlowWeightedEdgeData>(
     () => ({
       weight: data?.weight,
       scaleGroup: PROCESS_MAP_EDGE_SCALE_GROUP,
-      value: data?.value,
-      valueDomain: data?.valueDomain,
+      value: isObjectTyped ? undefined : data?.value,
+      valueDomain: isObjectTyped ? undefined : data?.valueDomain,
       label: data?.label,
       secondaryLabel: data?.secondaryLabel,
       variant: data?.isBackEdge ? "back" : "forward",
       labelProps,
+      ...(replayTokens ? { tokens: replayTokens } : undefined),
     }),
     [
+      isObjectTyped,
       data?.weight,
       data?.value,
       data?.valueDomain,
@@ -127,6 +216,7 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       data?.secondaryLabel,
       data?.isBackEdge,
       labelProps,
+      replayTokens,
     ],
   );
 
@@ -137,8 +227,9 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       label: data?.label,
       secondaryLabel: data?.secondaryLabel,
       labelProps,
+      ...(replayTokens ? { tokens: replayTokens } : undefined),
     }),
-    [data?.weight, data?.label, data?.secondaryLabel, labelProps],
+    [data?.weight, data?.label, data?.secondaryLabel, labelProps, replayTokens],
   );
 
   const opacity = isExcluded
@@ -153,6 +244,9 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       data-shape={data?.isSelfLoop ? "self-loop" : data?.isBackEdge ? "back" : "forward"}
       data-selection={data?.selectionState}
       data-incident={hover.incidentEdgeIds.has(props.id) ? "true" : undefined}
+      data-conformance={conformance}
+      data-dash={conformance ? CONFORMANCE_STATE_ENCODING[conformance].dash : undefined}
+      data-object-type={data?.objectType?.type}
       className="transition-opacity duration-fast ease-standard motion-reduce:transition-none"
       style={{ opacity }}
       // The label pill is portalled out of this `<g>` by `EdgeLabelRenderer`, so it has no
@@ -163,9 +257,21 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       onKeyDown={(event) => onEdgeKey(props.id, event)}
     >
       {data?.isSelfLoop ? (
-        <FlowSelfLoopEdge {...props} type="self-loop" data={selfLoopData} />
+        <FlowSelfLoopEdge
+          {...props}
+          {...placed}
+          style={edgeStyle}
+          type="self-loop"
+          data={selfLoopData}
+        />
       ) : (
-        <FlowWeightedEdge {...props} type="weighted" data={weightedData} />
+        <FlowWeightedEdge
+          {...props}
+          {...placed}
+          style={edgeStyle}
+          type="weighted"
+          data={weightedData}
+        />
       )}
     </g>
   );

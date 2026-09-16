@@ -1150,6 +1150,10 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
     one: "{count} variant selected",
     other: "{count} variants selected",
   },
+  "process.filterBar.cases": {
+    one: "{count} case selected",
+    other: "{count} cases selected",
+  },
   "process.filterBar.filter": "Filter",
   "process.filterBar.excludedLabel": "excluded",
   "process.filterBar.clearAll": "Clear all",
@@ -1188,4 +1192,17 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "process.caseTimeline.parallelLabel": "Parallel",
   "process.caseTimeline.parallelSuffix": "parallel with another activity",
   "process.caseTimeline.gapLabel": "Waiting, {duration}",
+  // ProcessCompare (RM-064, issue #211). `{label}` is the HOST-supplied side name
+  // ("Before"/"After", a log's own file name, …), not a fixed "A"/"B" — see
+  // `process-compare.tsx`'s module docblock for why the diff-state words name the
+  // owning side instead of a generic letter.
+  "process.compare.label": "Process comparison",
+  "process.compare.tableView": "Table view",
+  "process.compare.mapLabel": "Process map — {label}",
+  "process.compare.superimposedMapLabel": "Process map — {aLabel} vs {bLabel}",
+  "process.compare.legendTitle": "Comparison",
+  "process.compare.diffSuffixCommon": "common",
+  "process.compare.diffSuffixOnly": "{label} only",
+  "process.compare.cases": "{label} — cases",
+  "process.compare.medianThroughput": "{label} — median throughput",
 };

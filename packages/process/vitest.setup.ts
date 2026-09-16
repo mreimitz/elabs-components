@@ -27,6 +27,15 @@ if (typeof Element.prototype.setPointerCapture !== "function") {
 if (typeof Element.prototype.releasePointerCapture !== "function") {
   Element.prototype.releasePointerCapture = () => {};
 }
+// jsdom has no `DOMMatrixReadOnly`, which React Flow's transform math needs to mount a
+// canvas. The generated contract probe for `ConformanceOverlay` (RM-062) renders a
+// `ProcessMap` canvas from a story, with no per-file polyfill to lean on.
+if (typeof globalThis.DOMMatrixReadOnly === "undefined") {
+  globalThis.DOMMatrixReadOnly = class {
+    m22 = 1;
+    constructor(_init?: unknown) {}
+  } as unknown as typeof DOMMatrixReadOnly;
+}
 if (typeof Element.prototype.scrollIntoView !== "function") {
   Element.prototype.scrollIntoView = () => {};
 }

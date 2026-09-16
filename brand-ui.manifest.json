@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T13:24:12.471Z",
+  "generatedAt": "2026-09-16T14:11:47.720Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23822,6 +23822,7 @@
         "@elabs-ai/components-tokens": "workspace:*",
         "@elabs-ai/components-ui": "workspace:*",
         "@xyflow/react": "^12.11.1",
+        "elkjs": "^0.12.0",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -23840,6 +23841,11 @@
           "name": "Controls",
           "kind": "value",
           "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "DEFAULT_EDGE_TOKEN_RADIUS",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
         },
         {
           "name": "DEFAULT_EDGE_WIDTH_RANGE",
@@ -23895,6 +23901,11 @@
           "name": "FlowEdgePath",
           "kind": "value",
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
+        },
+        {
+          "name": "FlowEdgeTokens",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
         },
         {
           "name": "FlowFloatingEdge",
@@ -24086,6 +24097,14 @@
           "module": "packages/flow/src/flow-floating-edge/floating-edge-geometry.ts"
         },
         {
+          "name": "EdgePathPoint",
+          "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
+        },
+        {
+          "name": "EdgePathSampler",
+          "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
+        },
+        {
           "name": "EdgeProps",
           "module": "packages/flow/src/index.ts"
         },
@@ -24110,6 +24129,26 @@
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
         },
         {
+          "name": "FlowEdgeToken",
+          "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
+        },
+        {
+          "name": "FlowEdgeTokensProps",
+          "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
+        },
+        {
+          "name": "FlowElkBackbone",
+          "module": "packages/flow/src/flow-layout/backbone.ts"
+        },
+        {
+          "name": "FlowElkEngine",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
+          "name": "FlowElkGraph",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
           "name": "FlowGroupNodeData",
           "module": "packages/flow/src/flow-group-node/flow-group-node.tsx"
         },
@@ -24132,6 +24171,14 @@
         {
           "name": "FlowLayoutDirection",
           "module": "packages/flow/src/flow-layout/flow-layout.ts"
+        },
+        {
+          "name": "FlowLayoutElkOptions",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
+          "name": "FlowLayoutElkResult",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
         },
         {
           "name": "FlowLayoutOptions",
@@ -24296,8 +24343,16 @@
           "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
         },
         {
+          "name": "createEdgePathSampler",
+          "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
+        },
+        {
           "name": "expandGroup",
           "module": "packages/flow/src/use-flow-groups/group-operations.ts"
+        },
+        {
+          "name": "flattenEdgePath",
+          "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
         },
         {
           "name": "getEdgeParams",
@@ -24324,6 +24379,10 @@
           "module": "packages/flow/src/flow-layout/flow-layout.ts"
         },
         {
+          "name": "layoutFlowElk",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
           "name": "layoutGraph",
           "module": "packages/flow/src/flow-layout/layout-graph.ts"
         },
@@ -24334,6 +24393,10 @@
         {
           "name": "pickClosestHandles",
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
+        },
+        {
+          "name": "pinBackbone",
+          "module": "packages/flow/src/flow-layout/backbone.ts"
         },
         {
           "name": "positionToSide",
@@ -24504,6 +24567,25 @@
               "optional": true,
               "type": "CSSProperties",
               "description": "Merged onto the edge path, last — so a consumer's `style.stroke` still wins."
+            }
+          ]
+        },
+        "FlowEdgeTokens": {
+          "extends": [
+            "Omit<SVGProps<SVGGElement>, \"ref\" | \"children\">"
+          ],
+          "props": [
+            {
+              "name": "path",
+              "optional": false,
+              "type": "string",
+              "description": "SVG path `d` the tokens travel along — the same string the edge draws."
+            },
+            {
+              "name": "tokens",
+              "optional": false,
+              "type": "readonly FlowEdgeToken[]",
+              "description": "Tokens to place. The parent owns `progress`; this part keeps no clock."
             }
           ]
         },
@@ -26327,9 +26409,84 @@
           "module": "packages/process/src/case-timeline/case-timeline.tsx"
         },
         {
+          "name": "CompareKpiStrip",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/compare-kpi-strip.tsx"
+        },
+        {
+          "name": "CompareSide",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/compare-side.tsx"
+        },
+        {
+          "name": "CONFORMANCE_OVERLAY_DEFAULT_METRIC",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-overlay.tsx"
+        },
+        {
+          "name": "CONFORMANCE_STATE_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "CONFORMANCE_STATE_ENCODING",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "CONFORMANCE_STATES",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceLegend",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
+        },
+        {
+          "name": "ConformanceOverlay",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-overlay.tsx"
+        },
+        {
+          "name": "ConformanceStateMark",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
+        },
+        {
+          "name": "CongestionHeat",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/congestion-heat.tsx"
+        },
+        {
           "name": "DEFAULT_LAYOUT_DEBOUNCE_MS",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "DIFF_STATE_TOKEN",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
+        },
+        {
+          "name": "DOTTED_CHART_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/dotted-chart/dotted-chart-labels.ts"
+        },
+        {
+          "name": "DOTTED_CHART_DOT_RADIUS",
+          "kind": "value",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChart",
+          "kind": "value",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "EMPTY_PROCESS_GRAPH",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
         },
         {
           "name": "EMPTY_PROCESS_MAP_HOVER",
@@ -26342,9 +26499,64 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "HAPPY_PATH_EDITOR_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
+        {
+          "name": "HappyPathEditor",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
+          "name": "HappyPathEditorContext",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
+        {
+          "name": "HappyPathStepNode",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-step-node.tsx"
+        },
+        {
           "name": "MetricLayerSwitch",
           "kind": "value",
           "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
+        },
+        {
+          "name": "OBJECT_CENTRIC_MAP_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "OBJECT_TYPE_ABSTRACTION_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
+          "name": "PERFORMANCE_SPECTRUM_DEFAULT_BIN_SIZE",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PERFORMANCE_SPECTRUM_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum-context.tsx"
+        },
+        {
+          "name": "PERFORMANCE_SPECTRUM_ROW_HEIGHT",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PERFORMANCE_SPECTRUM_SEGMENT_LIMIT",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PerformanceSpectrum",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
         },
         {
           "name": "PROCESS_FILTER_INTENT_KINDS",
@@ -26377,6 +26589,16 @@
           "module": "packages/process/src/process-map/use-process-layout.ts"
         },
         {
+          "name": "PROCESS_REPLAY_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-format.ts"
+        },
+        {
+          "name": "PROCESS_REPLAY_DEFAULT_METRIC",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
           "name": "PROCESS_SELECTION_STATE_MESSAGE_KEYS",
           "kind": "value",
           "module": "packages/process/src/process-map/map-model.ts"
@@ -26385,6 +26607,11 @@
           "name": "ProcessActivityNode",
           "kind": "value",
           "module": "packages/process/src/process-map/process-activity-node.tsx"
+        },
+        {
+          "name": "ProcessCompare",
+          "kind": "value",
+          "module": "packages/process/src/process-compare/process-compare.tsx"
         },
         {
           "name": "ProcessFilterBar",
@@ -26412,9 +26639,34 @@
           "module": "packages/process/src/process-map/process-map-context.ts"
         },
         {
+          "name": "ProcessReplay",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
+          "name": "ProcessReplayTokensContext",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-tokens-context.ts"
+        },
+        {
           "name": "ProcessTransitionEdge",
           "kind": "value",
           "module": "packages/process/src/process-map/process-transition-edge.tsx"
+        },
+        {
+          "name": "REPLAY_PLAYBACK_MS",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
+          "name": "REPLAY_SPEEDS",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-controls.tsx"
+        },
+        {
+          "name": "ReplayControls",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-controls.tsx"
         },
         {
           "name": "VARIANT_EXPLORER_COLUMNS",
@@ -26435,9 +26687,24 @@
           "name": "VariantExplorer",
           "kind": "value",
           "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
+        },
+        {
+          "name": "VIOLATION_LIST_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationList",
+          "kind": "value",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
         }
       ],
       "hooks": [
+        {
+          "name": "useHappyPathEditor",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
         {
           "name": "useProcessExplorer",
           "kind": "value",
@@ -26457,9 +26724,23 @@
           "name": "useProcessMapHover",
           "kind": "value",
           "module": "packages/process/src/process-map/process-map-context.ts"
+        },
+        {
+          "name": "useProcessReplayEdgeTokens",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-tokens-context.ts"
+        },
+        {
+          "name": "useReplayTimeFormatter",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-format.ts"
         }
       ],
       "types": [
+        {
+          "name": "AbstractedObjectCentricGraph",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
         {
           "name": "AbstractionControlsProps",
           "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
@@ -26487,6 +26768,10 @@
         {
           "name": "AutoAbstractionResult",
           "module": "packages/process/src/abstraction-controls/auto-abstraction.ts"
+        },
+        {
+          "name": "BuildObjectCentricMapModelOptions",
+          "module": "packages/process/src/process-map/map-model.ts"
         },
         {
           "name": "BuildProcessMapModelOptions",
@@ -26517,12 +26802,140 @@
           "module": "packages/process/src/case-timeline/case-timeline.tsx"
         },
         {
+          "name": "CompareKpiStripProps",
+          "module": "packages/process/src/process-compare/compare-kpi-strip.tsx"
+        },
+        {
+          "name": "CompareKpiStripSide",
+          "module": "packages/process/src/process-compare/compare-kpi-strip.tsx"
+        },
+        {
+          "name": "CompareSideInput",
+          "module": "packages/process/src/process-compare/compare-model.ts"
+        },
+        {
+          "name": "CompareSideKpis",
+          "module": "packages/process/src/process-compare/compare-model.ts"
+        },
+        {
+          "name": "CompareSideProps",
+          "module": "packages/process/src/process-compare/compare-side.tsx"
+        },
+        {
+          "name": "ComputeDotsOptions",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "ConformanceDash",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceLegendProps",
+          "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
+        },
+        {
+          "name": "ConformanceOverlayProps",
+          "module": "packages/process/src/conformance-overlay/conformance-overlay.tsx"
+        },
+        {
+          "name": "ConformanceState",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceStateEncoding",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceStateLabels",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceStateMarkProps",
+          "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
+        },
+        {
+          "name": "ConformanceStates",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceTone",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "CongestionHeatProps",
+          "module": "packages/process/src/process-replay/congestion-heat.tsx"
+        },
+        {
           "name": "CreateCaseTableColumnsOptions",
           "module": "packages/process/src/case-table/columns.ts"
         },
         {
+          "name": "DottedChartCategory",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartColor",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChartDatum",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChartDot",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartFilterIntent",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChartLabels",
+          "module": "packages/process/src/dotted-chart/dotted-chart-labels.ts"
+        },
+        {
+          "name": "DottedChartModel",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartProps",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChartRow",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartSort",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartX",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
           "name": "FilterIntent",
           "module": "packages/process/src/use-process-explorer/use-process-explorer.ts"
+        },
+        {
+          "name": "HappyPathEditorContextValue",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
+        {
+          "name": "HappyPathEditorLabels",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
+        {
+          "name": "HappyPathEditorProps",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
+          "name": "HappyPathStepFlowNode",
+          "module": "packages/process/src/happy-path-editor/happy-path-step-node.tsx"
+        },
+        {
+          "name": "HappyPathStepNodeData",
+          "module": "packages/process/src/happy-path-editor/happy-path-step-node.tsx"
         },
         {
           "name": "MetricLayer",
@@ -26537,12 +26950,64 @@
           "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
         },
         {
+          "name": "ObjectCentricActivityStats",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
+        {
+          "name": "ObjectCentricGraph",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
+        {
+          "name": "ObjectCentricMapLabels",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ObjectTypeAbstraction",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
+          "name": "ObjectTypeAbstractionLabels",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
+          "name": "ObjectTypeActivityCounts",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
+        {
+          "name": "PerformanceSpectrumFilterIntent",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PerformanceSpectrumLabels",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum-context.tsx"
+        },
+        {
+          "name": "PerformanceSpectrumOrder",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PerformanceSpectrumProps",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
           "name": "ProcessActivityNodeData",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
           "name": "ProcessActivityRow",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessCompareMode",
+          "module": "packages/process/src/process-compare/process-compare.tsx"
+        },
+        {
+          "name": "ProcessCompareProps",
+          "module": "packages/process/src/process-compare/process-compare.tsx"
+        },
+        {
+          "name": "ProcessCompareSide",
+          "module": "packages/process/src/process-compare/process-compare.tsx"
         },
         {
           "name": "ProcessEdgeDenominators",
@@ -26621,6 +27086,26 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "ProcessObjectTypeCount",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessObjectTypeMark",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessReplayLabels",
+          "module": "packages/process/src/process-replay/replay-format.ts"
+        },
+        {
+          "name": "ProcessReplayProps",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
+          "name": "ProcessReplayTokens",
+          "module": "packages/process/src/process-replay/replay-tokens-context.ts"
+        },
+        {
           "name": "ProcessSelection",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -26647,6 +27132,22 @@
         {
           "name": "ProcessTransitionRow",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ReplayControlsProps",
+          "module": "packages/process/src/process-replay/replay-controls.tsx"
+        },
+        {
+          "name": "SpectrumBin",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
+          "name": "SpectrumLine",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
+          "name": "SpectrumRow",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
         },
         {
           "name": "TransitionFrequencyMode",
@@ -26679,6 +27180,26 @@
         {
           "name": "VariantSelectMode",
           "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
+        },
+        {
+          "name": "ViolationFilterIntent",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationListLabels",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationListProps",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationRow",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationRowKind",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
         }
       ],
       "otherExports": [
@@ -26695,12 +27216,20 @@
           "module": "packages/process/src/core/activity-color-scale.ts"
         },
         {
+          "name": "activityConformance",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
           "name": "activityMetricValue",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
           "name": "activityRole",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "aggregateSegmentBins",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
         },
         {
           "name": "applyLayoutSnapshot",
@@ -26711,20 +27240,52 @@
           "module": "packages/process/src/case-timeline/case-timeline-model.ts"
         },
         {
+          "name": "buildObjectCentricMapModel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
           "name": "buildProcessMapModel",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "buildSpectrumRows",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
         },
         {
           "name": "casesFromLog",
           "module": "packages/process/src/core/cases-from-log.ts"
         },
         {
+          "name": "casesInBrush",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "casesInRange",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
           "name": "computeAutoAbstraction",
           "module": "packages/process/src/abstraction-controls/auto-abstraction.ts"
         },
         {
+          "name": "computeDots",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
           "name": "createCaseTableColumns",
           "module": "packages/process/src/case-table/columns.ts"
+        },
+        {
+          "name": "diffColorScale",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
+        },
+        {
+          "name": "diffStateByActivity",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
+        },
+        {
+          "name": "diffToProcessGraph",
+          "module": "packages/process/src/process-compare/diff-to-graph.ts"
         },
         {
           "name": "edgeMetricLabel",
@@ -26739,11 +27300,27 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "happyPathStepNodeId",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
+          "name": "insertHappyPathStep",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
           "name": "isPerformanceMetric",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "nextHappyPathActivity",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
           "name": "nodeMetricLabel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "objectCentricEdgeId",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
@@ -26759,8 +27336,24 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "rankCategoryColors",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "removeHappyPathStep",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
           "name": "resolveActivityFrequencyMode",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "resolveCompareKpis",
+          "module": "packages/process/src/process-compare/compare-model.ts"
+        },
+        {
+          "name": "resolveConformanceStates",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
         },
         {
           "name": "resolveSelectionState",
@@ -26783,8 +27376,20 @@
           "module": "packages/process/src/variant-explorer/variant-explorer-model.ts"
         },
         {
+          "name": "spectrumDomain",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
+          "name": "spectrumTicks",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
           "name": "transitionAriaLabel",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "transitionConformance",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
         },
         {
           "name": "transitionMetricValue",
@@ -26793,6 +27398,22 @@
         {
           "name": "transitionShape",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "updateHappyPathStep",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
+          "name": "violationRows",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "withActivityConformance",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "withTransitionConformance",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
         }
       ],
       "props": {
@@ -26830,6 +27451,18 @@
               "optional": true,
               "type": "string",
               "description": "Accessible name for the control group. Default from locale."
+            },
+            {
+              "name": "perType",
+              "optional": true,
+              "type": "Readonly<Record<string, ObjectTypeAbstraction>>",
+              "description": "Object-centric — RM-066. One slider pair per object type, keyed by type, rendered as collapsible rows under the global pair. A `linked` type (the default) follows the global sliders proportionally; toggle its link to abstract it on its own. Feed the result to `abstractObjectCentricGraph`."
+            },
+            {
+              "name": "perTypeLabels",
+              "optional": true,
+              "type": "ObjectTypeAbstractionLabels",
+              "description": "Object-centric — RM-066. Strings for the per-type rows."
             }
           ]
         },
@@ -26893,6 +27526,287 @@
             }
           ]
         },
+        "CompareKpiStrip": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "a",
+              "optional": false,
+              "type": "CompareKpiStripSide"
+            },
+            {
+              "name": "b",
+              "optional": false,
+              "type": "CompareKpiStripSide"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "CompareSide": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "The host-supplied name for this side (\"Before\", \"Q1\", the log's own file name, …)."
+            },
+            {
+              "name": "map",
+              "optional": false,
+              "type": "Omit<ProcessMapProps, \"className\">",
+              "description": "Forwarded to `ProcessMap` verbatim — everything this side's canvas needs."
+            }
+          ]
+        },
+        "ConformanceLegend": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ConformanceStateLabels>",
+              "description": "Override any state word or the title."
+            }
+          ]
+        },
+        "ConformanceOverlay": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">"
+          ],
+          "props": [
+            {
+              "name": "graph",
+              "optional": false,
+              "type": "ProcessGraph",
+              "description": "The discovered graph to overlay."
+            },
+            {
+              "name": "conformance",
+              "optional": false,
+              "type": "ConformanceResult",
+              "description": "The replay result (`tokenReplay`) against the reference model."
+            },
+            {
+              "name": "metric",
+              "optional": true,
+              "type": "ProcessMetricSpec",
+              "description": "Which readings the nodes and edges print. @default case frequency"
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "FlowLayoutDirection",
+              "description": "@default \"TB\""
+            },
+            {
+              "name": "selection",
+              "optional": true,
+              "type": "ProcessSelection | null",
+              "description": "Controlled selection, passed straight to `ProcessMap`."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "ProcessMapProps[\"onSelect\"]"
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "ProcessMapProps[\"onFilterIntent\"]"
+            },
+            {
+              "name": "tableView",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the accessible table twin instead of the canvas. @default false"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No graph or replay yet. Renders the map's loading panel and hides the legend."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ConformanceStateLabels>",
+              "description": "Override the legend's words."
+            }
+          ]
+        },
+        "ConformanceStateMark": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": [
+            {
+              "name": "state",
+              "optional": false,
+              "type": "ConformanceState"
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ConformanceStateLabels>",
+              "description": "Override the state's word."
+            }
+          ]
+        },
+        "CongestionHeat": {
+          "extends": [
+            "HTMLAttributes<HTMLElement>"
+          ],
+          "props": [
+            {
+              "name": "timeline",
+              "optional": false,
+              "type": "ReplayTimeline",
+              "description": "The replay timeline (`replayTimeline`)."
+            },
+            {
+              "name": "limit",
+              "optional": true,
+              "type": "number",
+              "description": "How many transitions to list. @default 5"
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ProcessReplayLabels>"
+            }
+          ]
+        },
+        "DottedChart": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"title\" | \"color\"\n>"
+          ],
+          "props": [
+            {
+              "name": "log",
+              "optional": false,
+              "type": "EventLog"
+            },
+            {
+              "name": "x",
+              "optional": true,
+              "type": "DottedChartX",
+              "description": "How the x axis places an event. @default \"absolute\""
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "DottedChartSort",
+              "description": "How case rows are ordered, top to bottom. @default \"start\""
+            },
+            {
+              "name": "color",
+              "optional": true,
+              "type": "DottedChartColor",
+              "description": "What colours a dot. `\"activity\"` reads `colorScale`; `\"resource\"` and a function rank their category keys onto the same `--chart-1 …` budget. @default \"activity\""
+            },
+            {
+              "name": "colorScale",
+              "optional": true,
+              "type": "ActivityColorScale",
+              "description": "The shared activity colour scale — hand `ProcessMap` the same instance. Built from `log` when omitted."
+            },
+            {
+              "name": "selectedCaseIds",
+              "optional": true,
+              "type": "readonly string[]",
+              "description": "Case ids to highlight; every other dot dims."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "(caseIds: string[]) => void",
+              "description": "Fires with the case ids a click, brush or keyboard range selects."
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "(intent: DottedChartFilterIntent) => void",
+              "description": "Fires once when a brush is released (or a keyboard range committed), with ids in row order."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Card title — write the conclusion, not \"Dotted chart\"."
+            },
+            {
+              "name": "description",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Prose under the title."
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "number",
+              "description": "Body height in CSS pixels (legend + plot + axis). @default 360"
+            },
+            {
+              "name": "tableView",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the accessible table twin instead of the plot. @default false"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No log yet. Renders the frame's skeleton."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<DottedChartLabels>",
+              "description": "Override any user-visible string."
+            }
+          ]
+        },
+        "HappyPathEditor": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onChange\">"
+          ],
+          "props": [
+            {
+              "name": "value",
+              "optional": false,
+              "type": "HappyPath"
+            },
+            {
+              "name": "onChange",
+              "optional": false,
+              "type": "(path: HappyPath) => void",
+              "description": "Fires with the complete path after every edit."
+            },
+            {
+              "name": "availableActivities",
+              "optional": true,
+              "type": "string[]",
+              "description": "Activities a step may pick from (e.g. the log's). Omit for free-text activities."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<HappyPathEditorLabels>",
+              "description": "Override any user-visible string."
+            }
+          ]
+        },
         "MetricLayerSwitch": {
           "extends": [
             "Omit<HTMLAttributes<HTMLDivElement>, \"onChange\">"
@@ -26924,6 +27838,136 @@
               "name": "label",
               "optional": true,
               "type": "string"
+            }
+          ]
+        },
+        "PerformanceSpectrum": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "log",
+              "optional": false,
+              "type": "EventLog"
+            },
+            {
+              "name": "order",
+              "optional": true,
+              "type": "PerformanceSpectrumOrder",
+              "description": "Row order: explicit segments, the busiest transitions, or one variant's path. @default \"frequency\""
+            },
+            {
+              "name": "segmentLimit",
+              "optional": true,
+              "type": "number",
+              "description": "At most this many rows, whichever `order` is used. @default 12"
+            },
+            {
+              "name": "mode",
+              "optional": true,
+              "type": "\"lines\" | \"aggregated\"",
+              "description": "One line per occurrence, or one bar per time bucket. @default \"lines\""
+            },
+            {
+              "name": "binSize",
+              "optional": true,
+              "type": "number",
+              "description": "Bucket width in ms, aggregated mode only. @default 86_400_000 (1 day)"
+            },
+            {
+              "name": "selection",
+              "optional": true,
+              "type": "ProcessSelection | null",
+              "description": "Rows whose segment is (or touches) the selected transition/activity are marked."
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "(intent: PerformanceSpectrumFilterIntent) => void",
+              "description": "When given, the time axis becomes a brush that emits `{ kind: \"cases\", ids }`."
+            },
+            {
+              "name": "onCaseSelect",
+              "optional": true,
+              "type": "(caseId: string, occurrence: SpectrumLine) => void",
+              "description": "Click or `Enter` on an occurrence (lines) or on a bar's first case (aggregated)."
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "number",
+              "description": "Total plot height in CSS px, split evenly across rows (min 24 px a row)."
+            },
+            {
+              "name": "tableView",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the accessible table twin instead of the chart. @default false"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "Data not ready yet — renders the loading panel."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<PerformanceSpectrumLabels>",
+              "description": "Override any user-visible string."
+            }
+          ]
+        },
+        "ProcessCompare": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">"
+          ],
+          "props": [
+            {
+              "name": "a",
+              "optional": false,
+              "type": "ProcessCompareSide"
+            },
+            {
+              "name": "b",
+              "optional": false,
+              "type": "ProcessCompareSide"
+            },
+            {
+              "name": "mode",
+              "optional": true,
+              "type": "ProcessCompareMode",
+              "description": "@default \"side-by-side\""
+            },
+            {
+              "name": "metric",
+              "optional": false,
+              "type": "ProcessMapProps[\"metric\"]"
+            },
+            {
+              "name": "abstraction",
+              "optional": false,
+              "type": "AbstractionOptions",
+              "description": "Shared abstraction, synced across both sides (or the one superimposed map)."
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "FlowLayoutDirection",
+              "description": "@default \"TB\""
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "Neither side has a graph yet. Renders every map's own loading panel. @default false"
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the region. Defaults to the localized `process.compare.label`."
             }
           ]
         },
@@ -26983,14 +28027,20 @@
             {
               "name": "conformance",
               "optional": true,
-              "type": "number | null",
-              "description": "`0..1`, or `null`/`undefined` when no conformance model has been fitted."
+              "type": "number | ConformanceResult | null",
+              "description": "`0..1`, a replay result (RM-061's `tokenReplay`, whose `overallFitness` the tile prints — RM-062), or `null`/`undefined` when no conformance model has been fitted."
             },
             {
               "name": "trends",
               "optional": true,
               "type": "Partial<Record<ProcessKpiStripTrendKey, number[]>>",
               "description": "Optional per-tile trend series (oldest -> newest), keyed by KPI."
+            },
+            {
+              "name": "conformanceSeries",
+              "optional": true,
+              "type": "ConformanceRatePoint[]",
+              "description": "Conformance rate over time (`conformanceRateSeries`), plotted as the conformance tile's sparkline — the rate-over-time reading (RM-062). Takes precedence over `trends.conformance`."
             },
             {
               "name": "loading",
@@ -27095,10 +28145,219 @@
               "description": "A shared activity colour scale (RM-054, `/core`'s `activityColorScale`). When given, each activity node shows its identity swatch — the same colour `VariantExplorer` paints that activity with. Build it once from the FULL graph and hand the same instance to both views. Omit for today's uncoloured nodes."
             },
             {
+              "name": "conformance",
+              "optional": true,
+              "type": "ConformanceResult",
+              "description": "A replay result (RM-061's `tokenReplay`) to overlay (RM-062). When given, every node and edge carries `data-conformance=\"both\" | \"logOnly\" | \"modelOnly\"` — additive to `data-selection` — painted as a status tone PLUS a glyph and a line style, with the state's word in the accessible name and a Conformance column in the table twin. Omit for today's map, unchanged. Usually reached through `ConformanceOverlay`."
+            },
+            {
+              "name": "objectCentric",
+              "optional": true,
+              "type": "ObjectCentricGraph",
+              "description": "Object-centric — RM-066. An object-centric graph (`discoverObjectCentricGraph`, e.g. over `fromOcel(…).logs`) to draw instead of `graph`/`log` — mutually exclusive with both, and it wins when given together (with a dev-mode console warning). Shared activities merge into one node carrying a chip per object type; edges are drawn once per object type in that type's chart colour, side by side. `abstraction` applies to every type alike; for per-type abstraction pass `abstractObjectCentricGraph(…)`'s result here instead."
+            },
+            {
+              "name": "objectCentricLabels",
+              "optional": true,
+              "type": "ObjectCentricMapLabels",
+              "description": "Object-centric — RM-066. Strings the object-centric mode composes."
+            },
+            {
               "name": "label",
               "optional": true,
               "type": "string",
               "description": "Accessible name for the canvas region. Defaults to the localized `process.map.label` message."
+            },
+            {
+              "name": "layoutEngine",
+              "optional": true,
+              "type": "\"dagre\" | \"elk\"",
+              "description": "The layout engine. `\"elk\"` lays the map out with `@elabs-ai/components-flow`'s `layoutFlowElk` — elkjs, an optional peer, loaded lazily on first use; when it is not installed the map falls back to dagre with a development-only warning. @default \"dagre\""
+            }
+          ]
+        },
+        "ProcessReplay": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "graph",
+              "optional": false,
+              "type": "ProcessGraph",
+              "description": "The discovered graph to replay over."
+            },
+            {
+              "name": "log",
+              "optional": false,
+              "type": "EventLog",
+              "description": "The log the graph came from — tokens need per-case timing, not just the aggregate."
+            },
+            {
+              "name": "synchronizedStart",
+              "optional": true,
+              "type": "boolean",
+              "description": "Align every case's start to `t = 0` instead of the wall clock. @default false"
+            },
+            {
+              "name": "bucketMs",
+              "optional": true,
+              "type": "number",
+              "description": "Bucket width in ms for congestion. @default the log span / 300"
+            },
+            {
+              "name": "metric",
+              "optional": true,
+              "type": "ProcessMetricSpec",
+              "description": "Which readings the nodes and edges print. @default case frequency"
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "FlowLayoutDirection",
+              "description": "@default \"TB\""
+            },
+            {
+              "name": "playing",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled playing state. Held while reduced motion is on until the reader presses play."
+            },
+            {
+              "name": "defaultPlaying",
+              "optional": true,
+              "type": "boolean",
+              "description": "Initial playing state when uncontrolled. Ignored under reduced motion. @default false"
+            },
+            {
+              "name": "onPlayingChange",
+              "optional": true,
+              "type": "(playing: boolean) => void"
+            },
+            {
+              "name": "time",
+              "optional": true,
+              "type": "number",
+              "description": "Controlled playhead, ms relative to the timeline origin."
+            },
+            {
+              "name": "defaultTime",
+              "optional": true,
+              "type": "number",
+              "description": "@default 0"
+            },
+            {
+              "name": "onTimeChange",
+              "optional": true,
+              "type": "(time: number) => void"
+            },
+            {
+              "name": "speed",
+              "optional": true,
+              "type": "number",
+              "description": "Controlled playback multiplier."
+            },
+            {
+              "name": "defaultSpeed",
+              "optional": true,
+              "type": "number",
+              "description": "@default 1"
+            },
+            {
+              "name": "onSpeedChange",
+              "optional": true,
+              "type": "(speed: number) => void"
+            },
+            {
+              "name": "congestionLimit",
+              "optional": true,
+              "type": "number",
+              "description": "How many transitions the congestion list ranks. @default 5"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No log yet. Renders the loading panel."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ProcessReplayLabels>",
+              "description": "Override any user-visible string."
+            }
+          ]
+        },
+        "ReplayControls": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "playing",
+              "optional": false,
+              "type": "boolean"
+            },
+            {
+              "name": "onPlayingChange",
+              "optional": false,
+              "type": "(playing: boolean) => void"
+            },
+            {
+              "name": "time",
+              "optional": false,
+              "type": "number",
+              "description": "Playhead, ms relative to the timeline origin."
+            },
+            {
+              "name": "onTimeChange",
+              "optional": false,
+              "type": "(time: number) => void"
+            },
+            {
+              "name": "duration",
+              "optional": false,
+              "type": "number",
+              "description": "Timeline length in ms — the slider's maximum."
+            },
+            {
+              "name": "step",
+              "optional": false,
+              "type": "number",
+              "description": "Slider step in ms (one bucket)."
+            },
+            {
+              "name": "speed",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "onSpeedChange",
+              "optional": false,
+              "type": "(speed: number) => void"
+            },
+            {
+              "name": "inFlight",
+              "optional": false,
+              "type": "number",
+              "description": "Cases in flight at {@link time}."
+            },
+            {
+              "name": "formatTime",
+              "optional": false,
+              "type": "(time: number) => string",
+              "description": "Formats a playhead for the readout and the slider's value text."
+            },
+            {
+              "name": "disabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disable every control (an empty timeline)."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ProcessReplayLabels>"
             }
           ]
         },
@@ -27171,6 +28430,37 @@
               "name": "labels",
               "optional": true,
               "type": "Partial<VariantExplorerLabels>",
+              "description": "Override any user-visible string."
+            }
+          ]
+        },
+        "ViolationList": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "conformance",
+              "optional": false,
+              "type": "ConformanceResult",
+              "description": "The replay result (`tokenReplay`)."
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "(intent: ViolationFilterIntent) => void",
+              "description": "When given, each row emits `{ kind: \"cases\", ids }` for its cases."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No replay yet. Renders the loading panel rather than an empty table."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ViolationListLabels>",
               "description": "Override any user-visible string."
             }
           ]
@@ -27272,6 +28562,11 @@
               "module": "packages/process/src/core/adapters/flat.ts"
             },
             {
+              "name": "DEVIATION_TYPES",
+              "kind": "value",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
               "name": "DURATION_SAMPLE_CAP",
               "kind": "value",
               "module": "packages/process/src/core/duration-stats.ts"
@@ -27295,6 +28590,31 @@
               "name": "EMPTY_DURATION_STATS",
               "kind": "value",
               "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "OCEL_EVENT_ID_ATTRIBUTE",
+              "kind": "value",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OCEL_OBJECT_REFS_ATTRIBUTE",
+              "kind": "value",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "REPLAY_MAX_FRAMES",
+              "kind": "value",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "REPLAY_TARGET_FRAMES",
+              "kind": "value",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "REPLAY_TOKEN_RADIUS_RANGE",
+              "kind": "value",
+              "module": "packages/process/src/core/replay-timeline.ts"
             },
             {
               "name": "SYNTHETIC_ACTIVITIES",
@@ -27322,6 +28642,10 @@
             {
               "name": "AbstractedGraph",
               "module": "packages/process/src/core/abstract-graph.ts"
+            },
+            {
+              "name": "AbstractedObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
             },
             {
               "name": "AbstractionOptions",
@@ -27364,6 +28688,18 @@
               "module": "packages/process/src/core/cases-from-log.ts"
             },
             {
+              "name": "ConformanceBucket",
+              "module": "packages/process/src/core/conformance.ts"
+            },
+            {
+              "name": "ConformanceRatePoint",
+              "module": "packages/process/src/core/conformance.ts"
+            },
+            {
+              "name": "ConformanceResult",
+              "module": "packages/process/src/core/conformance.ts"
+            },
+            {
               "name": "CreateProcessWorkerOptions",
               "module": "packages/process/src/core/worker/create-process-worker.ts"
             },
@@ -27376,8 +28712,28 @@
               "module": "packages/process/src/core/adapters/csv.ts"
             },
             {
+              "name": "Deviation",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
+              "name": "DeviationType",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
+              "name": "DiffEntry",
+              "module": "packages/process/src/core/diff-graphs.ts"
+            },
+            {
+              "name": "DiffState",
+              "module": "packages/process/src/core/diff-graphs.ts"
+            },
+            {
               "name": "DiscoverGraphOptions",
               "module": "packages/process/src/core/discover-graph.ts"
+            },
+            {
+              "name": "DurationQuartile",
+              "module": "packages/process/src/core/segments.ts"
             },
             {
               "name": "DurationStats",
@@ -27416,6 +28772,14 @@
               "module": "packages/process/src/core/types.ts"
             },
             {
+              "name": "HappyPath",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
+              "name": "HappyPathStep",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
               "name": "LifecycleValues",
               "module": "packages/process/src/core/adapters/flat.ts"
             },
@@ -27430,6 +28794,54 @@
             {
               "name": "NormalizedLog",
               "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "ObjectCentricActivityStats",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "ObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "ObjectTypeActivityCounts",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "OcelAttribute",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelEvent",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelJson",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelObject",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelParseError",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelParseOptions",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelParseResult",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelRelationship",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelTypeDeclaration",
+              "module": "packages/process/src/core/adapters/ocel.ts"
             },
             {
               "name": "PerformanceAgg",
@@ -27452,6 +28864,10 @@
               "module": "packages/process/src/core/types.ts"
             },
             {
+              "name": "ProcessGraphDiff",
+              "module": "packages/process/src/core/diff-graphs.ts"
+            },
+            {
               "name": "ProcessWorkerHandle",
               "module": "packages/process/src/core/worker/create-process-worker.ts"
             },
@@ -27468,12 +28884,60 @@
               "module": "packages/process/src/core/worker/process-worker.ts"
             },
             {
+              "name": "QuartileThresholds",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
               "name": "ReconciledGraph",
               "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
+              "name": "ReplayCongestionEntry",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayFrame",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayFrameToken",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayModel",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
+              "name": "ReplaySegment",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayTimeline",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayTimelineOptions",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayTransition",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
+              "name": "ReplayTransitionKind",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
               "name": "ReworkStats",
               "module": "packages/process/src/core/detect-rework.ts"
+            },
+            {
+              "name": "SegmentDefinition",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "SegmentOccurrence",
+              "module": "packages/process/src/core/segments.ts"
             },
             {
               "name": "SyntheticActivity",
@@ -27484,18 +28948,38 @@
               "module": "packages/process/src/core/fixtures/synthetic-log.ts"
             },
             {
+              "name": "TraceReplayResult",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
               "name": "TransitionStats",
               "module": "packages/process/src/core/types.ts"
             },
             {
               "name": "Variant",
               "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "XesParseError",
+              "module": "packages/process/src/core/adapters/xes.ts"
+            },
+            {
+              "name": "XesParseOptions",
+              "module": "packages/process/src/core/adapters/xes.ts"
+            },
+            {
+              "name": "XesParseResult",
+              "module": "packages/process/src/core/adapters/xes.ts"
             }
           ],
           "otherExports": [
             {
               "name": "abstractGraph",
               "module": "packages/process/src/core/abstract-graph.ts"
+            },
+            {
+              "name": "abstractObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
             },
             {
               "name": "activityColorScale",
@@ -27522,20 +29006,48 @@
               "module": "packages/process/src/core/scale.ts"
             },
             {
+              "name": "conformanceRateSeries",
+              "module": "packages/process/src/core/conformance.ts"
+            },
+            {
               "name": "createProcessWorker",
               "module": "packages/process/src/core/worker/create-process-worker.ts"
+            },
+            {
+              "name": "defaultReplayBucketMs",
+              "module": "packages/process/src/core/replay-timeline.ts"
             },
             {
               "name": "detectRework",
               "module": "packages/process/src/core/detect-rework.ts"
             },
             {
+              "name": "diffGraphs",
+              "module": "packages/process/src/core/diff-graphs.ts"
+            },
+            {
               "name": "discoverGraph",
               "module": "packages/process/src/core/discover-graph.ts"
             },
             {
+              "name": "discoverObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "durationQuartile",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "durationQuartileThresholds",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
               "name": "durationStats",
               "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "emptyDeviationCounts",
+              "module": "packages/process/src/core/token-replay.ts"
             },
             {
               "name": "emptyDurationStats",
@@ -27562,6 +29074,14 @@
               "module": "packages/process/src/core/adapters/flat.ts"
             },
             {
+              "name": "fromOcel",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "fromXes",
+              "module": "packages/process/src/core/adapters/xes.ts"
+            },
+            {
               "name": "generateBpi2012Subset",
               "module": "packages/process/src/core/fixtures/generate-bpi-2012-subset.ts"
             },
@@ -27578,6 +29098,14 @@
               "module": "packages/process/src/core/event-log.ts"
             },
             {
+              "name": "liftHappyPath",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
+              "name": "mergeObjectCentricGraphs",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
               "name": "minMax",
               "module": "packages/process/src/core/scale.ts"
             },
@@ -27588,6 +29116,14 @@
             {
               "name": "normalizeLog",
               "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "objectCentricProcessGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "objectTypeColorScale",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
             },
             {
               "name": "parseDelimited",
@@ -27606,12 +29142,64 @@
               "module": "packages/process/src/core/scale.ts"
             },
             {
+              "name": "quartileOf",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "rankReplayCongestion",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "readObjectRefs",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
               "name": "reconcileGraph",
               "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
+              "name": "replayActivities",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
+              "name": "replayFrameAt",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "replayTimeline",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "replayTokenRadius",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "replayTrace",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
+              "name": "segmentKey",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "segmentOrderByFrequency",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "segmentOrderForVariant",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "segmentsFor",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
               "name": "toEpochMs",
               "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "tokenReplay",
+              "module": "packages/process/src/core/token-replay.ts"
             },
             {
               "name": "variantId",

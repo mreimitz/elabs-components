@@ -2,7 +2,7 @@
 // Run `pnpm gen` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm gen:check` fails on a stale copy.
 //
-// 117 entries (data: 2, source: 18, font: 2, dependency: 95).
+// 120 entries (data: 2, source: 20, font: 2, dependency: 96).
 
 import type { Attribution } from "./attribution-types";
 
@@ -117,6 +117,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
   },
   {
     version: null,
+    note: "The eXtensible Event Stream interchange format fromXes reads: a <log> of <trace>s of <event>s, each carrying typed key/value attributes, plus <classifier> and lifecycle:transition. Only the format is implemented, by a hand-rolled tokenizer; no text, schema file or code is copied. The license of the specification document itself was not established.",
+    id: "xes-ieee-1849",
+    category: "source",
+    name: "IEEE 1849-2016 (XES)",
+    license: "Published specification (license of the document not established)",
+    copyright: "© IEEE",
+    url: "https://standards.ieee.org/ieee/1849/6811/",
+    usedBy: ["@elabs-ai/components-process"],
+    required: false,
+  },
+  {
+    version: null,
     note: "The editorial chart gallery behind the 2026-09-04 charts gap analysis: 71 files across the charts and tokens packages cite it as the source of a value, a mark shape or a composition (unit decomposition, hairline furniture, the sequential/diverging ramps, the reveal timing), and three copy-own registry blocks (chart-editorial-hourglass, -patchwork, -almanac) reproduce three of its gallery cards' DATA-SHAPE DESCRIPTIONS from that same analysis' one-line prose. No code was copied verbatim — each was re-expressed onto this repo's tokens and primitives. Its LICENSE is PolyForm Noncommercial 1.0.0, read verbatim from the upstream file; GitHub's own detection reports NOASSERTION, which is why nothing flagged it earlier. The licence's Required Notice slot is left at the template's example value, so upstream states no copyright holder and none is claimed here. Noncommercial-only is unresolved for a repo headed for public release — a licensing decision for the maintainer, not something attribution settles.",
     id: "lieflat-charts",
     category: "source",
@@ -165,7 +177,19 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
   },
   {
     version: null,
-    note: "Algorithm shape for the framework-free process-mining core: which aggregates a directly-follows graph carries (discoverGraph) and how traces are grouped into variants (extractVariants), with durationStats as their shared summary. Re-typed in TypeScript from the published algorithms, not copied.",
+    note: "The Object-Centric Event Log 2.0 JSON serialization fromOcel reads (objectTypes, objects, events, relationships). Only the format is implemented; no text, schema file or code is copied. The license of the specification document itself was not established.",
+    id: "ocel-2-0",
+    category: "source",
+    name: "OCEL 2.0 specification",
+    license: "Published specification (license of the document not established)",
+    copyright: "© the OCEL 2.0 specification authors",
+    url: "https://doi.org/10.48550/arXiv.2403.01975",
+    usedBy: ["@elabs-ai/components-process"],
+    required: false,
+  },
+  {
+    version: null,
+    note: "Algorithm shape for the framework-free process-mining core: which aggregates a directly-follows graph carries (discoverGraph) and how traces are grouped into variants (extractVariants), with durationStats as their shared summary; and the token-based replay procedure behind tokenReplay (produced/consumed/missing/remaining counting, silent-transition enabling before forcing missing tokens); and the object-centric directly-follows graph (discoverObjectCentricGraph): one directly-follows graph per object type, shared activities merged into one node with per-type counts, edges kept per type. Re-typed in TypeScript from the published algorithms, not copied.",
     id: "pm4js",
     category: "source",
     name: "pm4js",
@@ -1076,6 +1100,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     usedBy: ["@elabs-ai/components-charts"],
     required: false,
     note: null,
+  },
+  {
+    version: "0.12.0",
+    note: "elkjs adapter — RM-067. The Eclipse Layout Kernel, behind layoutFlowElk. An OPTIONAL peer dependency, so the derived dependency list (plain `dependencies` only) cannot see it; it is credited here instead. Never bundled into the package: loaded with import() from the host's own install, and used under EPL-2.0. The licence text (LICENSE.md) names no holder; the copyright line is read verbatim from the header of elkjs's own lib/elk-api.d.ts.",
+    id: "elkjs",
+    category: "dependency",
+    name: "elkjs",
+    license: "EPL-2.0 OR GPL-3.0-or-later",
+    copyright: "Copyright (c) 2019 TypeFox and others",
+    url: "https://github.com/kieler/elkjs",
+    usedBy: ["@elabs-ai/components-flow"],
+    required: false,
   },
   {
     id: "embla-carousel-react",

@@ -14,6 +14,7 @@ no token required. See `docs/CONSUMING.md`.
 
 ```bash
 pnpm add @elabs-ai/components-tokens @elabs-ai/components-flow
+pnpm add elkjs@"^0.12.0"  # optional peer
 ```
 
 ## Set up styling (do not skip)
@@ -44,7 +45,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-32 exported components — including `Background`, `CanvasShell`, `Controls`, `DEFAULT_EDGE_WIDTH_RANGE`, `DEFAULT_LOOP_RADIUS`.
+34 exported components — including `Background`, `CanvasShell`, `Controls`, `DEFAULT_EDGE_TOKEN_RADIUS`, `DEFAULT_EDGE_WIDTH_RANGE`.
 
 Don't guess the API — ask the CLI:
 

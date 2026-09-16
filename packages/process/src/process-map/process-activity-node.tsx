@@ -72,6 +72,11 @@ import { useProcessMapHover } from "./process-map-context";
 import type { ActivityColor } from "../core/activity-color-scale";
 import { activityAccentStyle } from "./activity-accent";
 import { activityRole, GHOST_OPACITY, type ProcessMapNode } from "./map-model";
+import type { ProcessObjectTypeCount } from "./map-model";
+import {
+  CONFORMANCE_STATE_ENCODING,
+  type ConformanceState,
+} from "../conformance-overlay/conformance-state";
 
 /**
  * Local override for the ghost frame: retargets `--border` (what `FlowNode`'s own
@@ -128,6 +133,97 @@ function accentFooter(accent: ActivityColor | undefined, isDimmed: boolean, mete
   );
 }
 
+/**
+ * Object-centric — RM-066. One chip per object type above the footer row: a chart-token
+ * square, the type's two-character code and its object count. Never colour alone — the
+ * code and count are printed, and each chip is a named image (`role="img"` plus the
+ * type's own "order: 2 objects, 3 occurrences" name, also shown as a `title` tooltip).
+ */
+function objectTypeFooter(
+  objectTypes: ProcessObjectTypeCount[] | undefined,
+  isDimmed: boolean,
+  footer: ReactNode,
+) {
+  if (!objectTypes || objectTypes.length === 0) return footer;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div data-slot="process-activity-node-object-types" className="flex flex-wrap gap-1">
+        {objectTypes.map((entry) => (
+          <span
+            key={entry.type}
+            role="img"
+            data-object-type={entry.type}
+            data-color-token={entry.color.token}
+            aria-label={entry.ariaLabel}
+            title={entry.ariaLabel}
+            className="inline-flex items-center gap-1 rounded-sm text-meta tabular-nums text-muted-foreground"
+          >
+            <span
+              aria-hidden="true"
+              className="size-2.5 shrink-0 rounded-sm"
+              style={{
+                ...activityAccentStyle(entry.color),
+                ...(isDimmed ? { opacity: GHOST_OPACITY } : {}),
+              }}
+            />
+            <span aria-hidden="true" className="font-medium text-foreground">
+              {entry.code}
+            </span>
+            <span aria-hidden="true">{entry.cases}</span>
+          </span>
+        ))}
+      </div>
+      {footer}
+    </div>
+  );
+}
+
+/**
+ * The card frame under a conformance state (RM-062): the border token is retargeted to the
+ * state's tone and the line style is set on `FlowNode`'s own card through a descendant
+ * variant — composition from outside, same as {@link GHOST_FRAME_STYLE}, never a fork.
+ * Merged AFTER the ghost style, so an excluded node keeps its quieter fill (selection) and
+ * still shows the conformance border and dash (conformance): the two layers compose.
+ */
+const CONFORMANCE_FRAME_CLASS: Record<ConformanceState, string> = {
+  both: "[&_[data-slot=flow-node]]:border-solid",
+  logOnly: "[&_[data-slot=flow-node]]:border-dotted",
+  modelOnly: "[&_[data-slot=flow-node]]:border-dashed",
+};
+
+function frameStyle(
+  isDimmed: boolean,
+  conformance: ConformanceState | undefined,
+): CSSProperties | undefined {
+  if (!conformance) return isDimmed ? GHOST_FRAME_STYLE : undefined;
+  return {
+    ...(isDimmed ? GHOST_FRAME_STYLE : {}),
+    "--border": CONFORMANCE_STATE_ENCODING[conformance].colorVar,
+  } as CSSProperties;
+}
+
+/**
+ * The conformance glyph pinned to the card's top-start corner. `aria-hidden`: the state's
+ * word is already folded into the node's accessible name by `ProcessMap`, so the glyph is
+ * the visible, non-colour channel, not a second announcement.
+ */
+function ConformanceMarker({ state }: { state: ConformanceState }) {
+  const encoding = CONFORMANCE_STATE_ENCODING[state];
+  const Glyph = encoding.icon;
+  return (
+    <span
+      aria-hidden="true"
+      data-slot="process-activity-node-conformance"
+      data-conformance={state}
+      data-glyph={encoding.glyph}
+      data-dash={encoding.dash}
+      className="absolute -start-2 -top-2 z-10 flex size-5 items-center justify-center rounded-full bg-flow-node shadow-xs"
+    >
+      <Glyph className={cn("size-3", encoding.markClass)} />
+    </span>
+  );
+}
+
 /** Start/end glyph pairing, in `FlowNode`'s own tone-glyph idiom. */
 function roleIcon(isStart: boolean, isEnd: boolean) {
   if (isStart && isEnd) return CircleDot;
@@ -167,21 +263,25 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
       // same number is already printed in the subtitle above and repeated in the node's
       // accessible name — a third announcement would be noise, not access. The fill (not
       // the text) is the one thing here that still dims at the shared ghost rung.
-      footer: accentFooter(
-        data.accent,
+      footer: objectTypeFooter(
+        data.objectTypes,
         isDimmed,
-        <div
-          aria-hidden="true"
-          data-slot="process-activity-node-meter"
-          data-percent={percent}
-          className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted transition-opacity duration-fast ease-standard motion-reduce:transition-none"
-          style={isDimmed ? { opacity: GHOST_OPACITY } : undefined}
-        >
+        accentFooter(
+          data.accent,
+          isDimmed,
           <div
-            className="h-full rounded-full transition-[width] duration-base ease-standard motion-reduce:transition-none"
-            style={{ width: `${percent}%`, background: meterFill(data.saturation) }}
-          />
-        </div>,
+            aria-hidden="true"
+            data-slot="process-activity-node-meter"
+            data-percent={percent}
+            className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted transition-opacity duration-fast ease-standard motion-reduce:transition-none"
+            style={isDimmed ? { opacity: GHOST_OPACITY } : undefined}
+          >
+            <div
+              className="h-full rounded-full transition-[width] duration-base ease-standard motion-reduce:transition-none"
+              style={{ width: `${percent}%`, background: meterFill(data.saturation) }}
+            />
+          </div>,
+        ),
       ),
     }),
     [
@@ -191,6 +291,7 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
       data.secondaryLabel,
       data.saturation,
       data.accent,
+      data.objectTypes,
       RoleIcon,
       percent,
       isDimmed,
@@ -203,6 +304,7 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
       data-selection={data.selectionState}
       data-role={activityRole(data).toLowerCase()}
       data-hover={isHovered ? "true" : undefined}
+      data-conformance={data.conformance}
       // `relative` positions the rework badge — and, because the meter now lives INSIDE
       // the card (`FlowNode`'s `footer` slot), this wrapper is exactly as tall as the
       // card. That equality is load-bearing, not cosmetic: React Flow lays every
@@ -222,8 +324,13 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
           <span className="sr-only">{data.reworkCount} repeated executions</span>
         </Badge>
       ) : null}
+      {data.conformance ? <ConformanceMarker state={data.conformance} /> : null}
 
-      <div data-slot="process-activity-node-frame" style={isDimmed ? GHOST_FRAME_STYLE : undefined}>
+      <div
+        data-slot="process-activity-node-frame"
+        className={data.conformance ? CONFORMANCE_FRAME_CLASS[data.conformance] : undefined}
+        style={frameStyle(isDimmed, data.conformance)}
+      >
         <FlowNode {...props} type="brand" data={flowData} />
       </div>
     </div>

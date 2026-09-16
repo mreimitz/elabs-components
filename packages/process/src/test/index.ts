@@ -22,12 +22,36 @@ export {
 export type { ProcessContractSpec, ProcessDoublePayload, ProcessSelection } from "./contract";
 
 // Doubles
-export { ProcessKpiStripDouble, ProcessMapDouble, VariantExplorerDouble } from "./doubles";
+export {
+  PerformanceSpectrumDouble,
+  ProcessCompareDouble,
+  ProcessKpiStripDouble,
+  ProcessMapDouble,
+  VariantExplorerDouble,
+} from "./doubles";
 export type {
+  PerformanceSpectrumDoubleProps,
+  ProcessCompareDoubleProps,
   ProcessKpiStripDoubleProps,
   ProcessMapDoubleProps,
   VariantExplorerDoubleProps,
 } from "./doubles";
+
+// DottedChart — RM-059
+export { DottedChartDouble } from "./doubles";
+export type { DottedChartDoubleProps } from "./doubles";
+
+// Doubles — RM-062
+export { ConformanceOverlayDouble, HappyPathEditorDouble, ViolationListDouble } from "./doubles";
+export type {
+  ConformanceOverlayDoubleProps,
+  HappyPathEditorDoubleProps,
+  ViolationListDoubleProps,
+} from "./doubles";
+
+// Doubles — RM-065
+export { ProcessReplayDouble } from "./doubles";
+export type { ProcessReplayDoubleProps } from "./doubles";
 
 // Fixture helper
 export { withProcessFixture } from "./primitives";

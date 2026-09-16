@@ -95,8 +95,15 @@ export interface ProcessExplorerMetricSpec {
  * variant selection — a case a click on the process map can never produce, but a click on a
  * variant row can. The widening is local to this hook's own type alias; it does not touch
  * `ProcessFilterIntent` or `ProcessMap`'s menu, which still only ever emits the original four.
+ *
+ * `{ kind: "cases" }` joins it for the same reason: `DottedChart` (RM-059) and
+ * `PerformanceSpectrum` (RM-060) brush a set of case ids, so their `onFilterIntent` can be
+ * wired straight to `applyIntent`.
  */
-export type FilterIntent = ProcessFilterIntent | Extract<FilterSpec, { kind: "variant" }>;
+export type FilterIntent =
+  | ProcessFilterIntent
+  | Extract<FilterSpec, { kind: "variant" }>
+  | Extract<FilterSpec, { kind: "cases" }>;
 
 /** Options for {@link useProcessExplorer}. */
 export interface ProcessExplorerOptions {

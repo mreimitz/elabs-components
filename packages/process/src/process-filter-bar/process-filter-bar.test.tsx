@@ -14,6 +14,7 @@ const chainIntents: FilterIntent[] = [
   { kind: "with", activity: "Reject Order" },
   { kind: "without", activity: "Amend Order" },
   { kind: "variant", ids: ["v-1", "v-2"] },
+  { kind: "cases", ids: ["c-1", "c-2", "c-3"] },
 ];
 
 describe("ProcessFilterBar", () => {
@@ -21,7 +22,7 @@ describe("ProcessFilterBar", () => {
     render(
       <ProcessFilterBar
         intents={chainIntents}
-        excludedByIntent={[12, 4, 30]}
+        excludedByIntent={[12, 4, 30, 7]}
         totalCases={100}
         filteredCases={60}
         onRemove={vi.fn()}
@@ -37,6 +38,9 @@ describe("ProcessFilterBar", () => {
     expect(
       screen.getByRole("button", { name: "Remove filter: 2 variants selected · excluded 30" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove filter: 3 cases selected · excluded 7" }),
+    ).toBeInTheDocument();
   });
 
   it("removing a chip calls onRemove with that intent's index and nothing else", async () => {
@@ -45,7 +49,7 @@ describe("ProcessFilterBar", () => {
     render(
       <ProcessFilterBar
         intents={chainIntents}
-        excludedByIntent={[12, 4, 30]}
+        excludedByIntent={[12, 4, 30, 7]}
         totalCases={100}
         filteredCases={60}
         onRemove={onRemove}
@@ -65,7 +69,7 @@ describe("ProcessFilterBar", () => {
     render(
       <ProcessFilterBar
         intents={chainIntents}
-        excludedByIntent={[12, 4, 30]}
+        excludedByIntent={[12, 4, 30, 7]}
         totalCases={100}
         filteredCases={60}
         onRemove={onRemove}
@@ -85,7 +89,7 @@ describe("ProcessFilterBar", () => {
     render(
       <ProcessFilterBar
         intents={chainIntents}
-        excludedByIntent={[12, 4, 30]}
+        excludedByIntent={[12, 4, 30, 7]}
         totalCases={100}
         filteredCases={60}
         onRemove={vi.fn()}
@@ -116,7 +120,7 @@ describe("ProcessFilterBar", () => {
     render(
       <ProcessFilterBar
         intents={chainIntents}
-        excludedByIntent={[12, 4, 30]}
+        excludedByIntent={[12, 4, 30, 7]}
         totalCases={13087}
         filteredCases={3210}
         onRemove={vi.fn()}
@@ -130,7 +134,7 @@ describe("ProcessFilterBar", () => {
     render(
       <ProcessFilterBar
         intents={chainIntents}
-        excludedByIntent={[12, 4, 30]}
+        excludedByIntent={[12, 4, 30, 7]}
         totalCases={13087}
         filteredCases={3210}
         hiddenCounts={{ activities: 12, paths: 40 }}
