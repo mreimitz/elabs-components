@@ -25,8 +25,10 @@ import type { ChartSpec } from "../auto-chart/chart-spec";
 // jsdom path and would (correctly) fail `pnpm charts:test-double:check` rung (b).
 // `infer-chart-type.ts` itself is pure: it imports nothing but its own types.
 import {
+  CHART_SPEC_PALETTES,
   CHART_TYPES,
   explainChartType,
+  isChartSpecPalette,
   isChartType,
   secondCategoricalField,
 } from "../auto-chart/infer-chart-type";
@@ -824,6 +826,30 @@ export function assertChartSpecContract(spec: unknown): void {
 
   // Family-specific rungs, resolved the way the component resolves them.
   const type = s.type ?? (rows.length > 0 ? explainChartType(s).type : undefined);
+
+  // The real component silently renders mono for an invented palette, and
+  // ignores any palette on a non-treemap — both hide a mistake in the spec.
+  if (s.palette !== undefined) {
+    if (!isChartSpecPalette(s.palette)) {
+      fail(
+        "AutoChart",
+        "spec.palette",
+        s.palette,
+        `"palette" must be one of ${CHART_SPEC_PALETTES.join(" | ")} (anything else renders mono)`,
+      );
+      return;
+    }
+    const paletteType = s.type ?? (hasHierarchy ? "treemap" : type);
+    if (paletteType !== undefined && paletteType !== "treemap") {
+      fail(
+        "AutoChart",
+        "spec.palette",
+        s.palette,
+        `"palette" is honoured by a "treemap" spec only — a "${paletteType}" ignores it`,
+      );
+      return;
+    }
+  }
 
   if (type === "treemap" && !hasHierarchy) {
     fail(

@@ -156,6 +156,62 @@ export const OtherThreshold: Story = {
 };
 
 /**
+ * `showValues` (#247) prints each tile's value under its name, so the quantity
+ * survives a screenshot, an export and a keyboard user — not only a hover. A
+ * tile too short or narrow for the whole number keeps its name and drops the
+ * value; values share one notation across the set. Off by default.
+ */
+export const ShowValues: Story = {
+  args: {
+    data: whereTheWorkWent,
+    showValues: true,
+    accessibleLabel: "Where the work went",
+  },
+  render: (args) => (
+    <div className="h-[420px] w-full max-w-[720px]">
+      <TreemapChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const values = await waitFor(() => {
+      const found = canvasElement.querySelectorAll('[data-slot="treemap-leaf-value"]');
+      if (found.length === 0) {
+        throw new Error("no tile values yet");
+      }
+      return Array.from(found, (el) => el.textContent ?? "");
+    });
+    // The largest tile (CI, 40) always has room for its value.
+    await expect(values).toContain("40");
+    // Never more values than names: a value only ever sits under a label.
+    const labels = canvasElement.querySelectorAll('[data-slot="treemap-leaf-label"]');
+    await expect(values.length).toBeLessThanOrEqual(labels.length);
+  },
+};
+
+/** The folded "Other" tile with its value printed — how much the long tail adds up to. */
+export const ShowValuesOtherThreshold: Story = {
+  args: {
+    data: longTail,
+    otherThreshold: 0.05,
+    showValues: true,
+  },
+  render: (args) => (
+    <div className="h-[420px] w-full max-w-[720px]">
+      <TreemapChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const values = Array.from(
+        canvasElement.querySelectorAll('[data-slot="treemap-leaf-value"]'),
+        (el) => el.textContent ?? "",
+      );
+      expect(values).toEqual(["82", "20"]);
+    });
+  },
+};
+
+/**
  * Click (or Tab to and press Enter on) a group's title band to zoom into it;
  * the "← Work" control zooms back out. This is a SEPARATE affordance from
  * `onDatapointClick` — the static stories above have no click handler beyond

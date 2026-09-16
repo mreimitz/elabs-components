@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T09:35:54.288Z",
+  "generatedAt": "2026-09-16T09:24:30.295Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -449,12 +449,6 @@
       "type": "registry:block",
       "title": "Chart Editorial — Bubble Almanac",
       "description": "A category × category matrix drawn as hand-irregular blob bubbles on ruled ledger paper, with a margin note calling out the busiest cell (PeakRing + Marginalia). One-off editorial composition adapted from lieflat-charts' 'L9 Bubble Almanac'."
-    },
-    {
-      "name": "process-explorer-page",
-      "type": "registry:block",
-      "title": "Process explorer page",
-      "description": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree."
     }
   ],
   "templates": [
@@ -526,18 +520,6 @@
       ],
       "sourceStory": "packages/ui/src/templates-object-detail-hub.stories.tsx",
       "file": "templates/object-detail-hub.tsx"
-    },
-    {
-      "name": "process-explorer",
-      "title": "Patterns/Templates/Process Explorer",
-      "description": "Process explorer template — the canonical full-screen `process-explorer` archetype (RM-057, issue #206): KPI strip on top, a filter bar above the map, the map centred with its accessible table twin, a variant rail on the right, and a case table that opens a single case's timeline in a bottom sheet. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/process-explorer.tsx`) and the copy-own registry block (`registry/blocks/process-explorer-page/`) from it. One `useProcessExplorer` instance drives every panel, so the map, the filter chips, the KPI numbers and the variant rail can never disagree about what is currently in scope (see `useProcessExplorer`'s own module docblock, Invariant F: filtering re-inks, it never removes). Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
-      "packages": [
-        "@elabs-ai/components-flow",
-        "@elabs-ai/components-process",
-        "@elabs-ai/components-ui"
-      ],
-      "sourceStory": "packages/process/src/templates-process-explorer.stories.tsx",
-      "file": "templates/process-explorer.tsx"
     },
     {
       "name": "screen-states",
@@ -674,27 +656,6 @@
       ],
       "file": "docs/playbooks/marketing.md",
       "template": "templates/marketing.tsx"
-    },
-    {
-      "archetype": "process-explorer",
-      "intent": "Explore a discovered process: map, variants, filters, event log, conformance and case drill-down in one screen",
-      "keywords": [
-        "process mining",
-        "process map",
-        "dfg",
-        "variant explorer",
-        "event log",
-        "conformance"
-      ],
-      "packages": [
-        "@elabs-ai/components-process",
-        "@elabs-ai/components-flow",
-        "@elabs-ai/components-charts",
-        "@elabs-ai/components-data",
-        "@elabs-ai/components-ui"
-      ],
-      "file": "docs/playbooks/process-explorer.md",
-      "template": "templates/process-explorer.tsx"
     },
     {
       "archetype": "settings",
@@ -12841,6 +12802,11 @@
           "module": "packages/charts/src/chart-hairline.ts"
         },
         {
+          "name": "CHART_SPEC_PALETTES",
+          "kind": "value",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
           "name": "CHART_STAGGER_BAR_MS",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -14140,6 +14106,10 @@
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
         {
+          "name": "ChartSpecPalette",
+          "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
           "name": "ChartStableContextValue",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
@@ -15404,6 +15374,10 @@
         {
           "name": "isChartInteractionPhase",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "isChartSpecPalette",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
           "name": "isChartType",
