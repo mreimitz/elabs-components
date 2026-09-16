@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T14:44:53.020Z",
+  "generatedAt": "2026-09-16T14:45:07.435Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -523,6 +523,18 @@
       "type": "registry:block",
       "title": "KPI Cards — What changed most?",
       "description": "\"What changed most?\" — the top 3 risers and top 3 fallers in a ranked depot field (on-time delivery, revenue), each row stating its rank, how many places it moved, and a diverging mini bar from a shared, stated zero axis. Distinct from stat-list-01's single-snapshot share bars: this is about movement between two points in time."
+    },
+    {
+      "name": "kpi-distribution-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Is it consistent?",
+      "description": "\"Is it consistent?\" — an average hides the tail: a median headline next to p90/p95 read against a named SLA threshold, a box plot of the record-level distribution with the threshold drawn as a reference line, and the share past it stated in text."
+    },
+    {
+      "name": "kpi-streak-01",
+      "type": "registry:block",
+      "title": "KPI Cards — How reliable is it?",
+      "description": "\"How reliable is it?\" — a ratio/streak headline over a 30-day strip of day cells, missed days marked by shape as well as colour, with the current and longest streaks and a comparison to the prior 30 days."
     }
   ],
   "templates": [
@@ -14367,6 +14379,10 @@
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
+          "name": "DistributionReferenceLine",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "DistributionRow",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -17837,6 +17853,12 @@
               "optional": true,
               "type": "string",
               "description": "ISO 4217 code when `valueFormat=\"currency\"`."
+            },
+            {
+              "name": "referenceLines",
+              "optional": true,
+              "type": "DistributionReferenceLine[]",
+              "description": "Fixed thresholds drawn across the shared value axis (an SLA, a spec limit, a target) — dashed `--chart-foreground`, haloed so it stays legible over a box/violin body. Each labelled line's fact is folded into the chart's own accessible description, so it is never colour-only or visual-only. Default none — omitting it renders byte-identical to before this prop existed."
             },
             {
               "name": "className",

@@ -80,6 +80,31 @@ describe("DistributionChart", () => {
     );
   });
 
+  it("renders nothing extra when `referenceLines` is omitted — default is byte-identical", () => {
+    const { container } = render(
+      <DistributionChart data={DATA} groupKey="team" kind="box" valueKey="minutes" />,
+    );
+    expect(container.querySelector('[data-slot="distribution-chart-reference-lines"]')).toBeNull();
+  });
+
+  it("draws a labelled threshold line and folds its fact into the accessible description", () => {
+    const { container } = render(
+      <DistributionChart
+        data={DATA}
+        groupKey="team"
+        kind="box"
+        referenceLines={[{ label: "SLA: 48h", value: 48 }]}
+        valueFormat="number"
+        valueKey="minutes"
+      />,
+    );
+    const lines = container.querySelectorAll('[data-slot="distribution-chart-reference-line"]');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]?.querySelector("line")).not.toBeNull();
+    expect(lines[0]?.textContent).toBe("SLA: 48h");
+    expect(container.querySelector(".sr-only")?.textContent).toContain("SLA: 48h at 48");
+  });
+
   it("switches the mark without moving the axis — the 'one picture' claim", () => {
     const ticksOf = (kind: "box" | "violin" | "strip") => {
       const { container, unmount } = render(

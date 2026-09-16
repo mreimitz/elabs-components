@@ -590,6 +590,7 @@ export {
   type DistributionGroup,
   type DistributionKind,
   type DistributionOrientation,
+  type DistributionReferenceLine,
   type DistributionRow,
   type FiveNumberSummary,
   type GroupedDistribution,
