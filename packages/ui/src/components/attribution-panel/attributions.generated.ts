@@ -2,7 +2,7 @@
 // Run `pnpm gen` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm gen:check` fails on a stale copy.
 //
-// 116 entries (data: 2, source: 18, font: 2, dependency: 94).
+// 117 entries (data: 2, source: 18, font: 2, dependency: 95).
 
 import type { Attribution } from "./attribution-types";
 
@@ -292,7 +292,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "MIT",
     copyright: "Claudéric Demers",
     url: "https://www.npmjs.com/package/@dnd-kit/core",
-    usedBy: ["@elabs-ai/components-data"],
+    usedBy: ["@elabs-ai/components-charts", "@elabs-ai/components-data"],
     required: false,
     note: null,
   },
@@ -1421,6 +1421,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright: "Colin McDonnell",
     url: "https://www.npmjs.com/package/zod",
     usedBy: ["@elabs-ai/components-ai"],
+    required: false,
+    note: null,
+  },
+  {
+    id: "zustand",
+    category: "dependency",
+    name: "zustand",
+    version: "5.0.15",
+    license: "MIT",
+    copyright: "Paul Henschel",
+    url: "https://www.npmjs.com/package/zustand",
+    usedBy: ["@elabs-ai/components-charts"],
     required: false,
     note: null,
   },
