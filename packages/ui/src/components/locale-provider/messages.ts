@@ -454,6 +454,14 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.dashboard.toolbar.shortcutDuplicate": "Duplicate focused tiles",
   "charts.dashboard.toolbar.shortcutClearFocus": "Clear focus",
   "charts.dashboard.toolbar.shortcutSave": "Save",
+  // tile operations — RM-081 follow-up 1: labels for the 5 shortcuts RM-081 added
+  // (dashboardShortcutDescriptors); the shortcuts sheet fell back to the raw action key
+  // without these.
+  "charts.dashboard.toolbar.shortcutCopy": "Copy focused tiles",
+  "charts.dashboard.toolbar.shortcutCut": "Cut focused tiles",
+  "charts.dashboard.toolbar.shortcutPaste": "Paste tiles",
+  "charts.dashboard.toolbar.shortcutSelectAll": "Select all tiles",
+  "charts.dashboard.toolbar.shortcutContextMenu": "Open the focused tile’s context menu",
   "charts.dashboard.grid.mode": "Layout mode",
   "charts.dashboard.grid.modeFit": "Fit to screen",
   "charts.dashboard.grid.modeFlow": "Flow",
@@ -485,6 +493,18 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.dashboard.tileOps.deletedOne": "Tile deleted",
   "charts.dashboard.tileOps.deletedMany": "{count} tiles deleted",
   "charts.dashboard.tileOps.undo": "Undo",
+  // tile operations — RM-081 follow-up 1: the header-kebab entry that opens the same context
+  // menu, and the floating align/distribute toolbar over a multi-selection.
+  "charts.dashboard.tileOps.openTileMenu": "Tile actions…",
+  "charts.dashboard.tileOps.selectionToolbarLabel": "Align selection",
+  "charts.dashboard.tileOps.alignLeft": "Align left edges",
+  "charts.dashboard.tileOps.alignCenterH": "Align horizontal centers",
+  "charts.dashboard.tileOps.alignRight": "Align right edges",
+  "charts.dashboard.tileOps.alignTop": "Align top edges",
+  "charts.dashboard.tileOps.alignCenterV": "Align vertical centers",
+  "charts.dashboard.tileOps.alignBottom": "Align bottom edges",
+  "charts.dashboard.tileOps.distributeHorizontal": "Distribute horizontally",
+  "charts.dashboard.tileOps.distributeVertical": "Distribute vertically",
 
   // ── @elabs-ai/components-maps ─────────────────────────────────────────────────────────────
   "maps.popup.close": "Close popup",

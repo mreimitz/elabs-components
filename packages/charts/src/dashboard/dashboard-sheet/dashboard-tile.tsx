@@ -17,6 +17,7 @@ import type { ChartDensity, ChartInteractions } from "../../charts/chart-config-
 import { EMPTY_SELECTION } from "../core/selection";
 import type { DashboardMode } from "../core/store";
 import { previewLayoutFor, useDashboardEdit } from "../edit/edit-context";
+import { DashboardTileContextMenu } from "../edit/tile-context-menu";
 import { TileDragHandle, useTileMove } from "../edit/tile-drag-handle";
 import { TileResizeHandles } from "../edit/tile-resize-handles";
 import { TileSizeBadge } from "../edit/tile-size-badge";
@@ -170,6 +171,20 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         titleHeader
       );
     const menuItems = sheet?.menuItems?.(tile);
+    // tile operations — RM-081 follow-up 1: the header-kebab entry that opens the SAME
+    // edit-mode context menu wrapping this tile — dispatching a real `contextmenu` event at
+    // the tile root is the same technique `useDashboardShortcuts` already uses for Shift+F10.
+    // `setTimeout` lets the kebab dropdown finish closing first, so only one Radix menu is
+    // ever open at a time.
+    const onOpenTileMenu = editable
+      ? () => {
+          const node = rootRef.current;
+          if (!node) return;
+          setTimeout(() => {
+            node.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+          }, 0);
+        }
+      : undefined;
     const menuSlot = chrome
       ? (api: ChartFrameMenuApi) => (
           <DashboardTileMenu
@@ -178,6 +193,7 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
             density={density}
             labels={labels}
             menuItems={menuItems}
+            onOpenTileMenu={onOpenTileMenu}
           />
         )
       : undefined;
@@ -248,7 +264,7 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     const session = edit?.session?.tileId === tileId ? edit.session : null;
     const showEditChrome = editable && (focused || session !== null);
 
-    return (
+    const tileElement = (
       <div
         ref={setRef}
         role="group"
@@ -314,6 +330,16 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
           </>
         ) : null}
       </div>
+    );
+
+    // tile operations — RM-081 follow-up 1: every editable top-level tile is its own
+    // right-click/header-kebab/Shift+F10 context-menu trigger — built in, no host
+    // composition. `asChild`'d on the tile root itself (`ContextMenuTrigger` inside
+    // `DashboardTileContextMenu`), so it adds no extra DOM node.
+    return editable ? (
+      <DashboardTileContextMenu tileId={tileId}>{tileElement}</DashboardTileContextMenu>
+    ) : (
+      tileElement
     );
   },
 );

@@ -178,6 +178,12 @@ export const DashboardToolbar = forwardRef<HTMLDivElement, DashboardToolbarProps
       toggleEdit: t("charts.dashboard.toolbar.shortcutToggleEdit"),
       delete: t("charts.dashboard.toolbar.shortcutDelete"),
       duplicate: t("charts.dashboard.toolbar.shortcutDuplicate"),
+      // tile operations — RM-081 follow-up 1
+      copy: t("charts.dashboard.toolbar.shortcutCopy"),
+      cut: t("charts.dashboard.toolbar.shortcutCut"),
+      paste: t("charts.dashboard.toolbar.shortcutPaste"),
+      selectAll: t("charts.dashboard.toolbar.shortcutSelectAll"),
+      contextMenu: t("charts.dashboard.toolbar.shortcutContextMenu"),
       clearFocus: t("charts.dashboard.toolbar.shortcutClearFocus"),
       save: t("charts.dashboard.toolbar.shortcutSave"),
     };
