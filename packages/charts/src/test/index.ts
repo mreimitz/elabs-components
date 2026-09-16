@@ -71,6 +71,7 @@ export {
   AreaChart,
   AutoChart,
   BarChart,
+  BulletChart,
   BumpChart,
   CandlestickChart,
   CHART_CONTRACT_SPECS,

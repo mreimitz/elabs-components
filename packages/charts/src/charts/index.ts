@@ -431,6 +431,20 @@ export {
   type UnitStackProps,
 } from "../marks";
 
+// Bullet — RM-061
+export {
+  BulletChart,
+  describeBulletChart,
+  findBulletBand,
+  resolveBulletDomain,
+  type BulletBand,
+  type BulletChartLabels,
+  type BulletChartOrientation,
+  type BulletChartProps,
+  type BulletChartSize,
+  type DescribeBulletChartInput,
+  type ResolveBulletDomainInput,
+} from "./bullet-chart";
 // Dumbbell — RM-023
 export {
   buildDumbbellRows,

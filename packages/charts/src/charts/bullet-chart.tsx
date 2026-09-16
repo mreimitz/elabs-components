@@ -1,0 +1,591 @@
+"use client";
+
+/**
+ * BulletChart (RM-061) — Stephen Few's bullet graph: the canonical "am I on
+ * target?" KPI micro-visual. One length-encoded bar against 2–3 neutral
+ * qualitative bands, an optional target tick and an optional comparative
+ * marker (e.g. last year), on a single zero-based scale.
+ *
+ * `size="sm"` is word-sized (no axis) for a table cell or a KPI card's
+ * corner; `size="md"` adds a hairline tick axis for a standalone reading.
+ * Both orientations share the same domain/geometry logic, transposed.
+ *
+ * The SVG is `aria-hidden` — a bullet chart is a single data point, so unlike
+ * the multi-series charts in this package (whose `accessibleLabel`/
+ * `accessibleDescription` are plain caller-supplied passthroughs), this
+ * component computes its own accessible name from the actual props: value,
+ * target, the gap between them, and which band the value falls in. An
+ * explicit `accessibleLabel` still overrides it entirely.
+ */
+
+import { scaleLinear } from "@visx/scale";
+import {
+  forwardRef,
+  useId,
+  useMemo,
+  type CSSProperties,
+  type HTMLAttributes,
+  type MutableRefObject,
+} from "react";
+import useMeasure from "react-use-measure";
+import { cn, useLocale } from "@elabs-ai/components-ui";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
+import { HaloText } from "../marks";
+import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y";
+import { useChartValueSetFormatter } from "./chart-formatters";
+import type { ChartValueFormat } from "./value-format";
+
+// ─── Public types ───────────────────────────────────────────────────────────
+
+/** One qualitative range's upper bound, e.g. `{ to: 60, label: "Poor" }`. Bands are ascending. */
+export interface BulletBand {
+  /** Upper bound of this band, on the same scale as `value`. */
+  to: number;
+  /** Qualitative name announced in the accessible description (e.g. "Poor", "Good"). */
+  label: string;
+}
+
+/** Caller-supplied names interpolated into the auto-generated accessible description. */
+export interface BulletChartLabels {
+  /** Name for the actual value, e.g. "Revenue". Omitted → the bare formatted number. */
+  value?: string;
+  /** Name for the target, e.g. "Q3 target". Omitted → "target". */
+  target?: string;
+  /** Name for the comparative reference, e.g. "Last year". Omitted → the bare formatted number. */
+  comparative?: string;
+}
+
+export type BulletChartOrientation = "horizontal" | "vertical";
+export type BulletChartSize = "sm" | "md";
+
+export interface BulletChartProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, "children">, ChartA11yProps {
+  /** The actual value — drawn as the bar. */
+  value: number;
+  /** The target — drawn as a tick, taller and darker than the bar. */
+  target?: number;
+  /** A second reference (e.g. last year) — a small marker, a distinct shape from the target tick. */
+  comparative?: number;
+  /** Qualitative ranges (ascending `to`), drawn as 2–3 neutral steps behind the bar. */
+  bands?: BulletBand[];
+  /** Scale floor. Default `0` — bars are zero-based; a caller-supplied negative floor is only honored when `value` itself is negative. */
+  min?: number;
+  /** Scale ceiling. Default: the largest of `value`/`target`/`comparative`/the last band's `to`, "nice"-rounded with 5% headroom. */
+  max?: number;
+  /** Bar direction. Default `"horizontal"`. */
+  orientation?: BulletChartOrientation;
+  /** `"sm"` (default) is word-sized with no axis; `"md"` adds a hairline tick axis. */
+  size?: BulletChartSize;
+  /** Show the hairline tick axis. Default `size === "md"`. */
+  showAxis?: boolean;
+  /** How the value/target/comparative numbers are formatted. Default `"compact"`, one notation shared across the whole scale. */
+  valueFormat?: ChartValueFormat;
+  /** Caller-supplied names interpolated into the auto-generated accessible description. */
+  labels?: BulletChartLabels;
+}
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+
+const SM_TRACK_THICKNESS = 12;
+const MD_TRACK_THICKNESS = 20;
+const BAR_THICKNESS_RATIO = 0.5;
+/** Hairline axis + tick-label band, `size="md"` only. */
+const MD_AXIS_EXTENT = 20;
+/** How far a target tick's line extends past the band track on each side. */
+const TARGET_OVERSHOOT = 3;
+const TARGET_STROKE_WIDTH = 2;
+/** Half-width of the comparative marker's triangle notch. */
+const COMPARATIVE_MARKER_HALF = 4;
+const COMPARATIVE_MARKER_GAP = 2;
+const DOMAIN_HEADROOM = 1.05;
+
+/** The neutral 2–3 step ramp for bands, nearest-to-farthest from the card surface in EVERY theme
+ *  (`--muted` → `--chart-ring-background` → `--chart-grid`, verified light + dark). A band past
+ *  the third reuses the last (highest-contrast) rung rather than repeating from the start, so a
+ *  4th step never reads as "back to the lowest category". */
+const BAND_TOKENS = ["var(--muted)", "var(--chart-ring-background)", "var(--chart-grid)"] as const;
+
+/** No bands at all → a single neutral track, same rung `Sparkline`'s empty state uses. */
+const SINGLE_TRACK_TOKEN = "var(--chart-ring-background)";
+
+/** `BAND_TOKENS[i]`, clamped to the last rung — the index is always in range, so this is just
+ *  `noUncheckedIndexedAccess`-safe access, never a real fallback. */
+function bandToken(index: number): string {
+  return BAND_TOKENS[Math.min(Math.max(index, 0), BAND_TOKENS.length - 1)] as string;
+}
+
+// ─── Pure geometry/domain helpers (exported for tests) ─────────────────────
+
+export interface ResolveBulletDomainInput {
+  value: number;
+  target?: number;
+  comparative?: number;
+  bands?: BulletBand[];
+  min?: number;
+  max?: number;
+}
+
+/**
+ * The `[min, max]` scale bounds — bars are zero-based (RM-039 honesty): the
+ * floor defaults to `0` and only moves negative when `value` itself is
+ * negative (an explicit positive-only `value` can never fake a non-zero
+ * baseline via a caller-supplied `min`). The ceiling defaults to the largest
+ * plotted number with 5% headroom, "nice"-rounded so a `size="md"` axis
+ * lands on round tick numbers; an explicit `min`/`max` is honored exactly,
+ * never re-niced.
+ */
+export function resolveBulletDomain({
+  value,
+  target,
+  comparative,
+  bands,
+  min,
+  max,
+}: ResolveBulletDomainInput): [number, number] {
+  const isNegative = Number.isFinite(value) && value < 0;
+  const floorCandidates = [0, value, target ?? 0, comparative ?? 0].filter(Number.isFinite);
+  const autoFloor = isNegative ? Math.min(...floorCandidates) : 0;
+  const resolvedMin = min !== undefined ? min : autoFloor;
+
+  const lastBandTo = bands && bands.length > 0 ? bands[bands.length - 1]!.to : undefined;
+  const ceilingCandidates = [value, target, comparative, lastBandTo].filter(
+    (n): n is number => n !== undefined && Number.isFinite(n),
+  );
+  const rawCeiling = Math.max(resolvedMin + 1, ...ceilingCandidates) * DOMAIN_HEADROOM;
+  const [, niceMax] = niceDomain([resolvedMin, rawCeiling]);
+  const resolvedMax = max !== undefined ? max : niceMax;
+
+  return [resolvedMin, resolvedMax];
+}
+
+/** `scaleLinear`'s own `nice()` — kept local (never `../y-domain-utils`) so this pure module has
+ *  zero React-facing chart-context imports; the maths is identical. */
+function niceDomain(domain: [number, number]): [number, number] {
+  const scale = scaleLinear({ domain, range: [0, 1], nice: true });
+  const [lo, hi] = scale.domain();
+  return [lo ?? domain[0], hi ?? domain[1]];
+}
+
+/** The band `value` falls in — the first band whose `to` is `>= value`, or the last (open-ended,
+ *  top) band once `value` exceeds every threshold. `undefined` when `bands` is empty. */
+export function findBulletBand(value: number, bands: BulletBand[]): BulletBand | undefined {
+  if (bands.length === 0) return undefined;
+  for (const band of bands) {
+    if (value <= band.to) return band;
+  }
+  return bands[bands.length - 1];
+}
+
+export interface DescribeBulletChartInput {
+  value: number;
+  target?: number;
+  comparative?: number;
+  bands?: BulletBand[];
+  labels?: BulletChartLabels;
+  formatValue: (value: number) => string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}
+
+/**
+ * The auto-generated accessible name: value, its relationship to the target
+ * (gap + direction), and the qualitative band it falls in — the ONLY thing
+ * AT reads, since the SVG is `aria-hidden`. Pure + exported so the sentence
+ * is unit-testable without a full render.
+ */
+export function describeBulletChart({
+  value,
+  target,
+  comparative,
+  bands,
+  labels,
+  formatValue,
+  t,
+}: DescribeBulletChartInput): string {
+  if (!Number.isFinite(value)) {
+    return t("charts.bulletChart.noData");
+  }
+
+  const valuePhrase = labels?.value ? `${labels.value} ${formatValue(value)}` : formatValue(value);
+  const parts: string[] = [];
+
+  if (target !== undefined && Number.isFinite(target)) {
+    const targetPhrase = labels?.target
+      ? `${labels.target} ${formatValue(target)}`
+      : formatValue(target);
+    parts.push(t("charts.bulletChart.valueOfTarget", { value: valuePhrase, target: targetPhrase }));
+    const gap = value - target;
+    if (gap === 0) {
+      parts.push(t("charts.bulletChart.onTarget"));
+    } else {
+      const key = gap > 0 ? "charts.bulletChart.gapAbove" : "charts.bulletChart.gapBelow";
+      parts.push(t(key, { amount: formatValue(Math.abs(gap)) }));
+    }
+  } else {
+    parts.push(valuePhrase);
+  }
+
+  if (comparative !== undefined && Number.isFinite(comparative)) {
+    const comparativePhrase = labels?.comparative
+      ? `${labels.comparative} ${formatValue(comparative)}`
+      : formatValue(comparative);
+    parts.push(t("charts.bulletChart.comparative", { value: comparativePhrase }));
+  }
+
+  if (bands && bands.length > 0) {
+    const band = findBulletBand(value, bands);
+    if (band) {
+      parts.push(t("charts.bulletChart.band", { band: band.label }));
+    }
+  }
+
+  return parts.join(", ");
+}
+
+// ─── Rendering ──────────────────────────────────────────────────────────────
+
+/** A rect in `{x, y, width, height}` form for a span `[a, b]` (px, either order) along the main
+ *  axis, at a fixed cross-axis offset/thickness — the one helper both orientations share. */
+function mainAxisRect(
+  a: number,
+  b: number,
+  crossOffset: number,
+  crossThickness: number,
+  isVertical: boolean,
+): { x: number; y: number; width: number; height: number } {
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
+  return isVertical
+    ? { x: crossOffset, y: lo, width: crossThickness, height: hi - lo }
+    : { x: lo, y: crossOffset, width: hi - lo, height: crossThickness };
+}
+
+interface PlotProps {
+  mainSize: number;
+  isVertical: boolean;
+  size: BulletChartSize;
+  showAxis: boolean;
+  value: number;
+  target?: number;
+  comparative?: number;
+  bands?: BulletBand[];
+  domain: [number, number];
+  formatValue: (value: number) => string;
+}
+
+function BulletPlot({
+  mainSize,
+  isVertical,
+  size,
+  showAxis,
+  value,
+  target,
+  comparative,
+  bands,
+  domain,
+  formatValue,
+}: PlotProps) {
+  const trackThickness = size === "sm" ? SM_TRACK_THICKNESS : MD_TRACK_THICKNESS;
+  const barThickness = trackThickness * BAR_THICKNESS_RATIO;
+  // The band track always starts at cross-offset 0; the (thinner) bar centers within it.
+  const trackCrossOffset = 0;
+  const barCrossOffset = trackCrossOffset + (trackThickness - barThickness) / 2;
+
+  const scale = useMemo(
+    () => scaleLinear({ domain, range: isVertical ? [mainSize, 0] : [0, mainSize] }),
+    [domain, isVertical, mainSize],
+  );
+
+  const isNoData = !Number.isFinite(value);
+  const [domainMin, domainMax] = domain;
+  const clampedValue = isNoData ? domainMin : Math.min(Math.max(value, domainMin), domainMax);
+
+  const bandSegments = useMemo(() => {
+    if (isNoData) return [];
+    if (!bands || bands.length === 0) {
+      return [{ from: domainMin, to: domainMax, fill: SINGLE_TRACK_TOKEN, key: "track" }];
+    }
+    const segments: { from: number; to: number; fill: string; key: string }[] = [];
+    let prev = domainMin;
+    bands.forEach((band, i) => {
+      const to = Math.min(Math.max(band.to, prev), domainMax);
+      segments.push({
+        from: prev,
+        to,
+        fill: bandToken(i),
+        key: band.label || `band-${i}`,
+      });
+      prev = to;
+    });
+    // The last band is open-ended (Few's convention) — it covers whatever
+    // headroom the domain has above its own `to`, so the top qualitative
+    // category never leaves a blank gap before `domainMax`.
+    if (prev < domainMax) {
+      segments.push({
+        from: prev,
+        to: domainMax,
+        fill: bandToken(bands.length - 1),
+        key: "band-overflow",
+      });
+    }
+    return segments;
+  }, [bands, domainMin, domainMax, isNoData]);
+
+  const targetPos = target !== undefined && Number.isFinite(target) ? scale(target) : undefined;
+  const comparativePos =
+    comparative !== undefined && Number.isFinite(comparative) ? scale(comparative) : undefined;
+
+  const axisTickValues = showAxis
+    ? [domainMin, domainMax, ...(target !== undefined ? [target] : [])]
+    : [];
+
+  return (
+    <svg
+      aria-hidden="true"
+      height={isVertical ? mainSize : trackThickness + (showAxis ? MD_AXIS_EXTENT : 0)}
+      width={isVertical ? trackThickness + (showAxis ? MD_AXIS_EXTENT : 0) : mainSize}
+    >
+      {!isNoData
+        ? bandSegments.map((segment) => {
+            const rect = mainAxisRect(
+              scale(segment.from),
+              scale(segment.to),
+              trackCrossOffset,
+              trackThickness,
+              isVertical,
+            );
+            return (
+              <rect
+                data-slot="bullet-chart-band"
+                fill={segment.fill}
+                height={rect.height}
+                key={segment.key}
+                width={rect.width}
+                x={rect.x}
+                y={rect.y}
+              />
+            );
+          })
+        : (() => {
+            const rect = mainAxisRect(
+              scale(domainMin),
+              scale(domainMax),
+              trackCrossOffset,
+              trackThickness,
+              isVertical,
+            );
+            return (
+              <rect
+                data-slot="bullet-chart-band"
+                fill={SINGLE_TRACK_TOKEN}
+                height={rect.height}
+                width={rect.width}
+                x={rect.x}
+                y={rect.y}
+              />
+            );
+          })()}
+      {!isNoData
+        ? (() => {
+            const rect = mainAxisRect(
+              scale(domainMin),
+              scale(clampedValue),
+              barCrossOffset,
+              barThickness,
+              isVertical,
+            );
+            return (
+              <rect
+                data-slot="bullet-chart-bar"
+                fill="var(--chart-1)"
+                height={rect.height}
+                width={rect.width}
+                x={rect.x}
+                y={rect.y}
+              />
+            );
+          })()
+        : null}
+      {targetPos !== undefined ? (
+        isVertical ? (
+          <line
+            data-slot="bullet-chart-target"
+            stroke="var(--chart-foreground)"
+            strokeWidth={TARGET_STROKE_WIDTH}
+            x1={trackCrossOffset - TARGET_OVERSHOOT}
+            x2={trackCrossOffset + trackThickness + TARGET_OVERSHOOT}
+            y1={targetPos}
+            y2={targetPos}
+          />
+        ) : (
+          <line
+            data-slot="bullet-chart-target"
+            stroke="var(--chart-foreground)"
+            strokeWidth={TARGET_STROKE_WIDTH}
+            x1={targetPos}
+            x2={targetPos}
+            y1={trackCrossOffset - TARGET_OVERSHOOT}
+            y2={trackCrossOffset + trackThickness + TARGET_OVERSHOOT}
+          />
+        )
+      ) : null}
+      {comparativePos !== undefined
+        ? (() => {
+            // A small triangle notch ABOVE (horizontal) / before (vertical) the
+            // track — a shape distinct from the target's straight tick, so the
+            // two references never read as the same mark in greyscale.
+            const tip = trackCrossOffset - COMPARATIVE_MARKER_GAP;
+            const base = tip - COMPARATIVE_MARKER_HALF;
+            const points = isVertical
+              ? `${tip},${comparativePos} ${base},${comparativePos - COMPARATIVE_MARKER_HALF} ${base},${comparativePos + COMPARATIVE_MARKER_HALF}`
+              : `${comparativePos},${tip} ${comparativePos - COMPARATIVE_MARKER_HALF},${base} ${comparativePos + COMPARATIVE_MARKER_HALF},${base}`;
+            return (
+              <polygon
+                data-slot="bullet-chart-comparative"
+                fill="var(--chart-foreground-muted)"
+                points={points}
+              />
+            );
+          })()
+        : null}
+      {showAxis ? (
+        <g data-slot="bullet-chart-axis">
+          <line
+            stroke="var(--chart-grid)"
+            strokeWidth={CHART_HAIRLINE_WIDTH}
+            x1={isVertical ? trackThickness + 6 : 0}
+            x2={isVertical ? trackThickness + 6 : mainSize}
+            y1={isVertical ? 0 : trackThickness + 6}
+            y2={isVertical ? mainSize : trackThickness + 6}
+          />
+          {axisTickValues.map((tickValue, i) => {
+            const pos = scale(tickValue);
+            // Order is always [domainMin, domainMax, target?] — the two domain
+            // ends anchor inward (so their labels stay inside the plot box)
+            // and the target label, wherever it lands, centers on its tick.
+            const horizontalAnchor = i === 0 ? "start" : i === 1 ? "end" : "middle";
+            return (
+              <HaloText
+                className="text-meta"
+                dominantBaseline={isVertical ? "middle" : undefined}
+                fill="var(--chart-label)"
+                key={`${tickValue}-${i}`}
+                textAnchor={isVertical ? "start" : horizontalAnchor}
+                x={isVertical ? trackThickness + 10 : pos}
+                y={isVertical ? pos : trackThickness + 18}
+              >
+                {formatValue(tickValue)}
+              </HaloText>
+            );
+          })}
+        </g>
+      ) : null}
+    </svg>
+  );
+}
+
+/**
+ * @dataShape a single value against a target and 2–3 qualitative bands
+ * @avoidWhen more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`
+ */
+export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function BulletChart(
+  {
+    value,
+    target,
+    comparative,
+    bands,
+    min,
+    max,
+    orientation = "horizontal",
+    size = "sm",
+    showAxis = size === "md",
+    valueFormat,
+    labels,
+    className,
+    style,
+    accessibleLabel,
+    accessibleDescription,
+    ...rest
+  },
+  forwardedRef,
+) {
+  const { t } = useLocale();
+  const isVertical = orientation === "vertical";
+  const [measureRef, bounds] = useMeasure({ debounce: 10 });
+
+  const domain = useMemo(
+    () => resolveBulletDomain({ value, target, comparative, bands, min, max }),
+    [value, target, comparative, bands, min, max],
+  );
+
+  const setsToFormat = useMemo(
+    () =>
+      [value, target, comparative, ...domain, ...(bands ?? []).map((b) => b.to)].filter(
+        Number.isFinite,
+      ) as number[],
+    [value, target, comparative, domain, bands],
+  );
+  const formatValue = useChartValueSetFormatter(setsToFormat, valueFormat);
+
+  const computedName = describeBulletChart({
+    value,
+    target,
+    comparative,
+    bands,
+    labels,
+    formatValue,
+    t,
+  });
+  const ariaLabel = accessibleLabel ?? computedName;
+  const descId = useId();
+
+  const trackThickness = size === "sm" ? SM_TRACK_THICKNESS : MD_TRACK_THICKNESS;
+  const crossExtent = trackThickness + (showAxis ? MD_AXIS_EXTENT : 0);
+
+  const setContainerRef = (node: HTMLDivElement | null) => {
+    measureRef(node);
+    if (typeof forwardedRef === "function") {
+      forwardedRef(node);
+    } else if (forwardedRef) {
+      (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
+    }
+  };
+
+  const dimensionStyle: CSSProperties = isVertical
+    ? { width: crossExtent, height: "100%" }
+    : { width: "100%", height: crossExtent };
+
+  const mainSize = isVertical ? bounds.height : bounds.width;
+
+  return (
+    <div
+      aria-describedby={accessibleDescription ? descId : undefined}
+      aria-label={ariaLabel}
+      className={cn("relative", className)}
+      data-slot="bullet-chart"
+      ref={setContainerRef}
+      role="img"
+      style={{ ...dimensionStyle, ...style }}
+      {...rest}
+    >
+      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      {mainSize > 0 ? (
+        <BulletPlot
+          bands={bands}
+          comparative={comparative}
+          domain={domain}
+          formatValue={formatValue}
+          isVertical={isVertical}
+          mainSize={mainSize}
+          showAxis={showAxis}
+          size={size}
+          target={target}
+          value={value}
+        />
+      ) : null}
+    </div>
+  );
+});
+
+BulletChart.displayName = "BulletChart";
+
+export default BulletChart;
