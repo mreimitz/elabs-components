@@ -3,7 +3,7 @@
 /**
  * Infographic — "Who improved, who slipped?" (RM wave 3, group B).
  *
- * A slope chart — `DumbbellChart variant="slope"` — of 7 depots, Q2 → Q3.
+ * A slope chart — `DumbbellChart variant="slope"` — of 6 depots, Q2 → Q3.
  * Direct labels at both ends (name + value) come from the chart itself,
  * collision-spaced by its own `spaceSlopeLabels` pass (`.claude/rules/
  * charts.md`, `dumbbell-chart.tsx`) — never a legend and never hand-nudged
@@ -86,12 +86,13 @@ export function InfographicBeforeAfter({
       >
         <CardContent className="space-y-4 p-5">
           <span className="sr-only">Loading the before/after comparison…</span>
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-5 w-72" />
-              <Skeleton className="h-3 w-48" />
-            </div>
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-3 w-48" />
             <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-72" />
+            <Skeleton className="h-3 w-40" />
           </div>
           <Skeleton className="h-80 w-full" />
           <Skeleton className="h-3 w-full" />
@@ -115,17 +116,20 @@ export function InfographicBeforeAfter({
   return (
     <Card className={cn("w-full", className)} data-slot="infographic-before-after">
       <CardContent className="space-y-3 p-5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1 space-y-1">
-            <p className="text-title text-foreground">{headline}</p>
-            <p className="text-caption text-muted-foreground">
-              {metricLabel}
-              {unitSuffix}, by depot, Q2 → Q3
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate text-body text-muted-foreground">
+            Who improved, who slipped?
+          </span>
           <Badge className="shrink-0" variant="secondary">
             {QUARTER_LABEL}
           </Badge>
+        </div>
+        <div className="space-y-1">
+          <p className="text-title text-foreground">{headline}</p>
+          <p className="text-caption text-muted-foreground">
+            {metricLabel}
+            {unitSuffix}, by depot, Q2 → Q3
+          </p>
         </div>
 
         {/* An explicit pixel height on this wrapper, plus `className="h-full"`
@@ -140,8 +144,9 @@ export function InfographicBeforeAfter({
         <div className="h-80 w-full">
           <ChartConfigProvider value={{ currency: "EUR" }}>
             <DumbbellChart
-              accessibleDescription={`Seven depots, ${metricLabel.toLowerCase()} from Q2 to Q3. Biggest riser: ${riser.point.label}, ${formatKpiDelta(riser.delta, unit, locale)}. Biggest faller: ${faller.point.label}, ${formatKpiDelta(faller.delta, unit, locale)}.`}
+              accessibleDescription={`${data.length} depots, ${metricLabel.toLowerCase()} from Q2 to Q3. Biggest riser: ${riser.point.label}, ${formatKpiDelta(riser.delta, unit, locale)}. Biggest faller: ${faller.point.label}, ${formatKpiDelta(faller.delta, unit, locale)}.`}
               accessibleLabel={`${metricLabel} by depot, Q2 to Q3`}
+              bothEndsLabeled
               category="label"
               className="h-full"
               data={data as unknown as Record<string, unknown>[]}

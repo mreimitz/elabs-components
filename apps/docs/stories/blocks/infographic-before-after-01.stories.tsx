@@ -15,7 +15,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Answers “who improved, who slipped?” — a slope chart of 7 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line\'s own slope, never colour alone. Built on `DumbbellChart variant="slope"`. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-before-after-01` (pulls `kpi-card-parts`).',
+          'Answers “who improved, who slipped?” — a slope chart of 6 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line\'s own slope, never colour alone. Built on `DumbbellChart variant="slope"`. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-before-after-01` (pulls `kpi-card-parts`).',
       },
     },
   },

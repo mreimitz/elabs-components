@@ -1,8 +1,12 @@
+import { onTimeByDepot } from "@/components/kpi-movers-01/data/depot-movers";
+
 /**
- * Depot-level actuals for the "how far from the benchmark?" gap chart. Own
- * data for this block (`.claude/rules/registry.md` — shared code lives in ONE
- * item); depot names are drawn from the same fictional Acme Logistics
- * national network the other wave-3 blocks use.
+ * Depot-level actuals for the "how far from the benchmark?" gap chart. The
+ * on-time series is imported from `kpi-movers-01`'s `onTimeByDepot` (never
+ * re-typed, `.claude/rules/registry.md`), so a depot's Q3 figure reads
+ * identically here, in the movers card, in the before/after slope and in the
+ * small-multiples grid. `costVsBenchmark` below is not cross-checked
+ * anywhere else, so it stays a block-owned fact.
  */
 
 export interface GapPoint {
@@ -12,18 +16,11 @@ export interface GapPoint {
 }
 
 /** On-time delivery rate (%), by depot. Higher is better. Compare against `ON_TIME_BENCHMARK`. */
-export const onTimeVsBenchmark: GapPoint[] = [
-  { id: "berlin", label: "Berlin", actual: 97.3 },
-  { id: "bremen", label: "Bremen", actual: 96.0 },
-  { id: "hannover", label: "Hannover", actual: 94.2 },
-  { id: "dresden", label: "Dresden", actual: 93.5 },
-  { id: "munich", label: "Munich", actual: 92.5 },
-  { id: "hamburg", label: "Hamburg", actual: 91.6 },
-  { id: "stuttgart", label: "Stuttgart", actual: 90.5 },
-  { id: "frankfurt", label: "Frankfurt", actual: 90.2 },
-  { id: "nuremberg", label: "Nuremberg", actual: 89.6 },
-  { id: "leipzig", label: "Leipzig", actual: 88.0 },
-];
+export const onTimeVsBenchmark: GapPoint[] = onTimeByDepot.map((d) => ({
+  id: d.id,
+  label: d.label,
+  actual: d.current,
+}));
 
 /** The industry on-time delivery figure every depot above is measured against. */
 export const ON_TIME_BENCHMARK = 95;

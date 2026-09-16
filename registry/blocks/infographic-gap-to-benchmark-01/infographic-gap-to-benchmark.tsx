@@ -38,7 +38,7 @@ import {
   DATA_SOURCE,
   QUARTER_LABEL,
 } from "@/components/kpi-card-parts/data/acme-quarter";
-import { formatKpiValue, type KpiUnit } from "@/components/kpi-card-parts/format";
+import { formatKpiDelta, formatKpiValue, type KpiUnit } from "@/components/kpi-card-parts/format";
 import { KpiAsOf } from "@/components/kpi-card-parts/kpi-as-of";
 import {
   ON_TIME_BENCHMARK,
@@ -107,12 +107,13 @@ export function InfographicGapToBenchmark({
       >
         <CardContent className="space-y-4 p-5">
           <span className="sr-only">Loading the benchmark comparison…</span>
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-5 w-72" />
-              <Skeleton className="h-3 w-56" />
-            </div>
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-3 w-48" />
             <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-72" />
+            <Skeleton className="h-3 w-56" />
           </div>
           <Skeleton className="h-96 w-full" />
           <Skeleton className="h-3 w-full" />
@@ -140,20 +141,37 @@ export function InfographicGapToBenchmark({
     benchmarkValue: benchmark,
   }));
 
+  // The chart's own `end - start` delta already reads "positive = ahead of
+  // benchmark" (see the module doc), so the label needs only a unit and a
+  // true minus sign — `formatKpiValue`'s percent formatter would re-run the
+  // number through `%`, conflating "2.3 points" with "2.3 percent" (#see
+  // `formatKpiDelta`'s own doc). `unit="percent"` values here are already
+  // percentage POINTS gaps, so they get "pp" with exactly one decimal.
+  const deltaLabelFormat = (delta: number) =>
+    unit === "percent"
+      ? `${delta > 0 ? "+" : delta < 0 ? "−" : ""}${new Intl.NumberFormat(locale, {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        }).format(Math.abs(delta))}pp`
+      : formatKpiDelta(delta, unit, locale);
+
   return (
     <Card className={cn("w-full", className)} data-slot="infographic-gap-to-benchmark">
       <CardContent className="space-y-3 p-5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1 space-y-1">
-            <p className="text-title text-foreground">{headline}</p>
-            <p className="text-caption text-muted-foreground">
-              {capitalize(metricLabel)} vs the {benchmarkLabel} benchmark (
-              {formatKpiValue(benchmark, unit, locale)}), by depot, sorted worst gap first
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate text-body text-muted-foreground">
+            How far from the benchmark?
+          </span>
           <Badge className="shrink-0" variant="secondary">
             {QUARTER_LABEL}
           </Badge>
+        </div>
+        <div className="space-y-1">
+          <p className="text-title text-foreground">{headline}</p>
+          <p className="text-caption text-muted-foreground">
+            {capitalize(metricLabel)} vs the {benchmarkLabel} benchmark (
+            {formatKpiValue(benchmark, unit, locale)}), by depot, sorted worst gap first
+          </p>
         </div>
 
         {/* An explicit pixel height on this wrapper, plus `className="h-full"`
@@ -171,12 +189,18 @@ export function InfographicGapToBenchmark({
             category="label"
             className="h-full"
             data={rows as unknown as Record<string, unknown>[]}
+            deltaLabelFormat={deltaLabelFormat}
             endKey={higherIsBetter ? "actual" : "benchmarkValue"}
             markers={higherIsBetter ? HOLLOW_BENCHMARK_FIRST : FILLED_ACTUAL_FIRST}
+            referenceLine={{
+              value: benchmark,
+              label: `${capitalize(benchmarkLabel)} ${formatKpiValue(benchmark, unit, locale)}`,
+            }}
             rowColor={(row: DumbbellRow) =>
               worstIds.has(String(row.datum.id)) ? "var(--destructive)" : undefined
             }
             showDelta
+            showValueAxis
             sortBy="none"
             startKey={higherIsBetter ? "benchmarkValue" : "actual"}
             valueFormat="number"

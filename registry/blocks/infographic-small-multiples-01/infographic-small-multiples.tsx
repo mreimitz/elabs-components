@@ -49,10 +49,10 @@ export interface InfographicSmallMultiplesProps {
 }
 
 const TILE_WIDTH = 148;
-const TILE_HEIGHT = 44;
+const TILE_HEIGHT = 52;
 const TILE_PAD_X = 4;
-const TILE_PAD_Y = 5;
-const DOMAIN_PAD_RATIO = 0.08;
+const TILE_PAD_Y = 4;
+const DOMAIN_PAD_RATIO = 0.05;
 
 interface Outlier {
   region: RegionSeries;
@@ -119,15 +119,16 @@ export function InfographicSmallMultiples({
       >
         <CardContent className="space-y-4 p-5">
           <span className="sr-only">Loading the regional breakdown…</span>
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-5 w-64" />
-              <Skeleton className="h-3 w-48" />
-            </div>
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-3 w-48" />
             <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
           </div>
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-64" />
+            <Skeleton className="h-3 w-40" />
+          </div>
           <div className="@container">
-            <div className="grid grid-cols-2 gap-3 @sm:grid-cols-3 @lg:grid-cols-4 @3xl:grid-cols-6">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2 @sm:grid-cols-3 @lg:grid-cols-4 @3xl:grid-cols-6">
               {regions.map((region) => (
                 <div className="space-y-1.5" key={region.id}>
                   <Skeleton className="h-3 w-full" />
@@ -149,25 +150,26 @@ export function InfographicSmallMultiples({
   const headline = isGood
     ? `${outlier.region.label} is pulling far ahead of its regional peers`
     : `${outlier.region.label} is falling behind its regional peers`;
-  const networkAverage =
-    regions.reduce((sum, r) => sum + (r.weekly[r.weekly.length - 1] ?? 0), 0) / regions.length;
 
   return (
     <Card className={cn("w-full", className)} data-slot="infographic-small-multiples">
       <CardContent className="space-y-4 p-5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1 space-y-1">
-            <p className="text-title text-foreground">{headline}</p>
-            <p className="text-caption text-muted-foreground">
-              {metricLabel}, 13 weeks, by depot — network average{" "}
-              <span className="tabular-nums">
-                {formatKpiValue(networkAverage, "percent", locale)}
-              </span>
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate text-body text-muted-foreground">
+            Which depot is the outlier?
+          </span>
           <Badge className="shrink-0" variant="secondary">
             {QUARTER_LABEL}
           </Badge>
+        </div>
+        <div className="space-y-1">
+          <p className="text-title text-foreground">{headline}</p>
+          <p className="text-caption text-muted-foreground">
+            {metricLabel}, 13 weeks, by depot — network median{" "}
+            <span className="tabular-nums">
+              {formatKpiValue(outlier.median, "percent", locale)}
+            </span>
+          </p>
         </div>
 
         {/* `@container` on this wrapper, `@sm:`/`@lg:`/`@3xl:` on the grid
@@ -176,7 +178,7 @@ export function InfographicSmallMultiples({
             `kpi-forecast-01`'s identical note. */}
         <div className="@container" data-slot="infographic-small-multiples-grid-wrap">
           <div
-            className="grid grid-cols-2 gap-x-3 gap-y-3 @sm:grid-cols-3 @lg:grid-cols-4 @3xl:grid-cols-6"
+            className="grid grid-cols-2 gap-x-3 gap-y-2 @sm:grid-cols-3 @lg:grid-cols-4 @3xl:grid-cols-6"
             data-slot="infographic-small-multiples-grid"
           >
             {regions.map((region) => (

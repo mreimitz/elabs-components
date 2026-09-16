@@ -327,7 +327,7 @@
       "type": "registry:block",
       "root": "registry/blocks/infographic-before-after-01",
       "title": "Infographic — Who Improved, Who Slipped?",
-      "description": "\"Who improved, who slipped?\" — a DumbbellChart slope chart of 7 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line's own slope, never colour alone.",
+      "description": "\"Who improved, who slipped?\" — a DumbbellChart slope chart of 6 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line's own slope, never colour alone.",
       "categories": ["infographic"]
     },
     {

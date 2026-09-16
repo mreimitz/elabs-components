@@ -1109,7 +1109,7 @@
       "type": "registry:block",
       "title": "Infographic — Which Region Is The Outlier?",
       "description": "\"Which region is the outlier?\" — twelve depots, one tiny 13-week line per tile, every tile on the same shared y-axis so height compares directly, with the one depot that stands out ringed and coloured (PeakRing) while every other depot stays on a muted neutral.",
-      "registryDependencies": ["kpi-card-parts"],
+      "registryDependencies": ["kpi-card-parts", "kpi-movers-01"],
       "dependencies": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-tokens",
@@ -1135,8 +1135,8 @@
       "name": "infographic-before-after-01",
       "type": "registry:block",
       "title": "Infographic — Who Improved, Who Slipped?",
-      "description": "\"Who improved, who slipped?\" — a DumbbellChart slope chart of 7 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line's own slope, never colour alone.",
-      "registryDependencies": ["kpi-card-parts"],
+      "description": "\"Who improved, who slipped?\" — a DumbbellChart slope chart of 6 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line's own slope, never colour alone.",
+      "registryDependencies": ["kpi-card-parts", "kpi-movers-01"],
       "dependencies": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-tokens",
@@ -1163,7 +1163,7 @@
       "type": "registry:block",
       "title": "Infographic — How Far From The Benchmark?",
       "description": "\"How far from the benchmark?\" — a sorted DumbbellChart, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised; the gap's sign correctly flips for a lower-is-better metric.",
-      "registryDependencies": ["kpi-card-parts"],
+      "registryDependencies": ["kpi-card-parts", "kpi-movers-01"],
       "dependencies": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-tokens",
