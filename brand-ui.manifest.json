@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T11:44:14.062Z",
+  "generatedAt": "2026-09-16T11:49:21.038Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23452,6 +23452,11 @@
           "module": "packages/flow/src/index.ts"
         },
         {
+          "name": "DEFAULT_EDGE_TOKEN_RADIUS",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
+        },
+        {
           "name": "DEFAULT_EDGE_WIDTH_RANGE",
           "kind": "value",
           "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
@@ -23505,6 +23510,11 @@
           "name": "FlowEdgePath",
           "kind": "value",
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
+        },
+        {
+          "name": "FlowEdgeTokens",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
         },
         {
           "name": "FlowFloatingEdge",
@@ -23696,6 +23706,14 @@
           "module": "packages/flow/src/flow-floating-edge/floating-edge-geometry.ts"
         },
         {
+          "name": "EdgePathPoint",
+          "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
+        },
+        {
+          "name": "EdgePathSampler",
+          "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
+        },
+        {
           "name": "EdgeProps",
           "module": "packages/flow/src/index.ts"
         },
@@ -23718,6 +23736,14 @@
         {
           "name": "FlowEdgePathProps",
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
+        },
+        {
+          "name": "FlowEdgeToken",
+          "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
+        },
+        {
+          "name": "FlowEdgeTokensProps",
+          "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
         },
         {
           "name": "FlowGroupNodeData",
@@ -23906,8 +23932,16 @@
           "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
         },
         {
+          "name": "createEdgePathSampler",
+          "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
+        },
+        {
           "name": "expandGroup",
           "module": "packages/flow/src/use-flow-groups/group-operations.ts"
+        },
+        {
+          "name": "flattenEdgePath",
+          "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
         },
         {
           "name": "getEdgeParams",
@@ -24114,6 +24148,25 @@
               "optional": true,
               "type": "CSSProperties",
               "description": "Merged onto the edge path, last — so a consumer's `style.stroke` still wins."
+            }
+          ]
+        },
+        "FlowEdgeTokens": {
+          "extends": [
+            "Omit<SVGProps<SVGGElement>, \"ref\" | \"children\">"
+          ],
+          "props": [
+            {
+              "name": "path",
+              "optional": false,
+              "type": "string",
+              "description": "SVG path `d` the tokens travel along — the same string the edge draws."
+            },
+            {
+              "name": "tokens",
+              "optional": false,
+              "type": "readonly FlowEdgeToken[]",
+              "description": "Tokens to place. The parent owns `progress`; this part keeps no clock."
             }
           ]
         },

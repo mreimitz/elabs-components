@@ -44,3 +44,6 @@ export * from "./flow-weighted-edge";
 
 // FlowSelfLoopEdge — RM-044
 export * from "./flow-self-loop-edge";
+
+// FlowEdgeTokens — RM-065 prerequisite
+export * from "./flow-edge-tokens";

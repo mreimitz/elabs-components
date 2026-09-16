@@ -18,7 +18,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ui` | packages/ui | 379 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
-| `@elabs-ai/components-flow` | packages/flow | 32 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
+| `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 192 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
@@ -991,6 +991,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Background | component |  | `@elabs-ai/components-flow` |  |
 | CanvasShell | component |  | `@elabs-ai/components-flow` | Branded React Flow canvas wrapper with token-driven background + sane defaults. |
 | Controls | component |  | `@elabs-ai/components-flow` | Zoom / fit / lock controls for the agent workspace Canvas. |
+| DEFAULT_EDGE_TOKEN_RADIUS | component |  | `@elabs-ai/components-flow` |  |
 | DEFAULT_EDGE_WIDTH_RANGE | component |  | `@elabs-ai/components-flow` |  |
 | DEFAULT_LOOP_RADIUS | component |  | `@elabs-ai/components-flow` |  |
 | EdgeLabelPill | component |  | `@elabs-ai/components-flow` |  |
@@ -1002,6 +1003,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FlowButtonEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowEdgePath | component |  | `@elabs-ai/components-flow` |  |
+| FlowEdgeTokens | component |  | `@elabs-ai/components-flow` |  |
 | FlowFloatingEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowGroupNode | component |  | `@elabs-ai/components-flow` |  |
 | FlowMiniMap | component |  | `@elabs-ai/components-flow` |  |
