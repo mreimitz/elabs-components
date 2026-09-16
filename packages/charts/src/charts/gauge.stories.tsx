@@ -79,3 +79,40 @@ export const MilestonesOnly: Story = {
     milestones: [25, 50, 75, 100],
   },
 };
+
+/**
+ * A caption roughly 2x the `WithMilestones` fixture's length (#248). It must
+ * wrap inside the donut hole rather than growing across the tick arc.
+ */
+export const LongCaption: Story = {
+  render: (args) => (
+    <div className="h-56 w-[360px]">
+      <Gauge {...args} />
+    </div>
+  ),
+  args: {
+    value: 32,
+    centerValue: 32,
+    suffix: "%",
+    defaultLabel: "Progress",
+    totalNotches: 40,
+    remainingLabel: () => "27 ticks to go this sprint",
+  },
+};
+
+/** `accessibleLabel`/`accessibleDescription` (#290) — a named, focusable figure. */
+export const AccessibleName: Story = {
+  render: (args) => (
+    <div className="h-56 w-[360px]">
+      <Gauge {...args} />
+    </div>
+  ),
+  args: {
+    value: 62,
+    centerValue: 62,
+    suffix: "%",
+    defaultLabel: "Score",
+    accessibleLabel: "Score, 62 percent of target",
+    accessibleDescription: "62 percent complete against a 100 percent target.",
+  },
+};
