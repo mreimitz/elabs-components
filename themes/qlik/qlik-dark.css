@@ -59,6 +59,8 @@
   --chart-8: oklch(0.664 0.012 226.1);
   --chart-9: oklch(0.831 0.145 74.2);
   --chart-accent: var(--chart-1);
+  --chart-ink-on-dark: oklch(1 0 0);
+  --chart-ink-on-light: oklch(0 0 0);
   --chart-background: var(--card);
   --chart-brush-border: var(--border);
   --chart-crosshair: var(--muted-foreground);

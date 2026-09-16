@@ -663,6 +663,16 @@
     "$value": "var(--chart-1)",
     "$description": "The single hero colour the \"wire\" palette draws over the mono ladder. Aliased to --chart-1 so a re-brand reaches it for free."
   },
+  "chart-ink-on-light": {
+    "$type": "color",
+    "$value": "oklch(0 0 0)",
+    "$description": "Ink for text or a cut printed ON a light chart mark (a ramp step, a series fill). An achromatic extreme, the same in every theme: it is picked by the mark's lightness, not the theme's. With --chart-ink-on-dark it clears ≥4.58:1 on any opaque plate (#238)."
+  },
+  "chart-ink-on-dark": {
+    "$type": "color",
+    "$value": "oklch(1 0 0)",
+    "$description": "Ink for text or a cut printed ON a dark chart mark (a ramp step, a series fill). An achromatic extreme, the same in every theme: it is picked by the mark's lightness, not the theme's. With --chart-ink-on-light it clears ≥4.58:1 on any opaque plate (#238)."
+  },
   "scrim": {
     "$type": "color",
     "$value": "oklch(0 0 0 / 0.2)"

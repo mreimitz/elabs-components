@@ -3,7 +3,39 @@ import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import type { ChartDatapoint } from "../chart-datapoint";
+import {
+  failingMeasurements,
+  type InkMeasurement,
+  measureInkOnPlate,
+} from "../on-mark-ink.story-measure";
 import { HeatmapChart } from "./heatmap-chart";
+
+/**
+ * #238 — every in-cell value label against the cell it is printed on, measured
+ * through a canvas in the real browser (jsdom and axe cannot). Runs under the
+ * active theme, so `STORYBOOK_THEME=dark` measures the dark ramp.
+ */
+async function expectLegibleValueLabels(figure: HTMLElement, expected: number) {
+  await waitFor(() => {
+    const measurements: InkMeasurement[] = [];
+    for (const cell of figure.querySelectorAll('[data-slot="heatmap-cell"][data-state="value"]')) {
+      const label = cell.querySelector('[data-slot="halo-text"]');
+      const plate = cell.querySelector('rect:not([fill="transparent"])');
+      if (!label || !plate) continue;
+      measurements.push(
+        measureInkOnPlate(
+          label,
+          "fill",
+          plate,
+          figure,
+          `${label.textContent} (${cell.getAttribute("data-heatmap-cell")})`,
+        ),
+      );
+    }
+    expect(measurements).toHaveLength(expected);
+    expect(failingMeasurements(measurements, 4.5)).toEqual([]);
+  });
+}
 
 const meta = {
   title: "Charts/HeatmapChart",
@@ -186,6 +218,7 @@ export const MatrixWithValues: Story = {
     await waitFor(() =>
       expect(figure.querySelectorAll('[data-slot="heatmap-cell"]')).toHaveLength(30),
     );
+    await expectLegibleValueLabels(figure, 30);
   },
 };
 
@@ -323,6 +356,11 @@ export const Diverging: Story = {
     const figure = await canvas.findByRole("figure", { name: /^Heatmap, 6 rows × 5 columns/ });
     // Sign survives greyscale: every cell prints its own signed number.
     await waitFor(() => expect(figure.querySelectorAll("text").length).toBeGreaterThan(30));
+    // …and that number is legible on its own cell (#238: was 1.52:1).
+    await expectLegibleValueLabels(
+      figure,
+      figure.querySelectorAll('[data-slot="heatmap-cell"][data-state="value"]').length,
+    );
   },
 };
 

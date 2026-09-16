@@ -10,9 +10,12 @@
  *   compare by area — which is exactly the misreading a box plot invites.
  * - **the whisker is a HAIRLINE**, drawn behind the capsule, with no end caps.
  *   Caps make the fences look like data; they are not, they are 1.5 × IQR.
- * - **the median tick is drawn in the PAPER colour** (`--chart-background`), so
- *   it reads as a cut through the capsule rather than a fifth mark on top of it.
- *   That is what keeps it legible on any fill without a second colour token.
+ * - **the median tick is a CUT through the capsule**, not a fifth mark on top
+ *   of it: an achromatic on-mark ink (`--chart-ink-on-light` /
+ *   `--chart-ink-on-dark`) that the container picks from the capsule's own
+ *   resolved fill (`medianInk`, see `on-mark-ink.ts`). A fixed paper-coloured
+ *   tick measured 1.42:1 on a pale fill (#243); the picked ink clears 4.5:1 on
+ *   every ramp step and series fill in both reference themes.
  * - **outliers are HOLLOW.** A filled dot at the tail competes with the box for
  *   attention; an outline says "one record, out here" and stays quiet.
  *
@@ -28,12 +31,17 @@ import type { DistributionKindProps } from "../distribution-kind";
 /** The capsule's thickness as a fraction of the band's inner extent. */
 const BOX_FRACTION = 0.44;
 
+/** The capsule's opacity — the median ink is measured on this blend (#243). */
+export const BOX_BODY_OPACITY = 0.9;
+
 /** Outlier marker radius, in px. */
 const OUTLIER_RADIUS = 2.75;
 
 export interface DistributionBoxProps extends DistributionKindProps {
   /** Draw the hollow marks beyond the fences. */
   showOutliers: boolean;
+  /** Stroke for the median tick — the on-mark ink for this capsule's fill. */
+  medianInk: string;
 }
 
 function DistributionBoxImpl({
@@ -42,6 +50,7 @@ function DistributionBoxImpl({
   formatValue,
   geometry,
   group,
+  medianInk,
   onActivate,
   onHover,
   showMedian,
@@ -105,7 +114,7 @@ function DistributionBoxImpl({
                 onActivate(group.rows[0] ?? {}, group.rowIndices[0] ?? 0, summary.median, event)
             : undefined
         }
-        opacity={0.9}
+        opacity={BOX_BODY_OPACITY}
         rx={half}
         ry={half}
         width={horizontal ? boxLength : thickness}
@@ -115,7 +124,7 @@ function DistributionBoxImpl({
       {showMedian ? (
         <line
           data-slot="distribution-chart-median"
-          stroke={chartCssVars.background}
+          stroke={medianInk}
           strokeLinecap="round"
           strokeWidth={2}
           x1={horizontal ? medianPos : centre - half * 0.8}

@@ -53,6 +53,10 @@ export interface HaloTextProps extends SVGProps<SVGTextElement> {
  * - DO NOT use it as a substitute for contrast. The halo separates text from
  *   BUSYNESS, not from a low-contrast ground — the fill still has to clear 4.5:1
  *   against the card, which is why it defaults to `--chart-foreground`.
+ * - DO NOT keep the defaults for text printed ON a filled mark (a heatmap cell,
+ *   a tile, a bar). Its ground is the mark, not the plot: pass the on-mark ink
+ *   pair (`--chart-ink-on-light` / `--chart-ink-on-dark`) the container resolves
+ *   with `useOnMarkInk`, as `fill` and the opposite anchor as `halo` (#238).
  *
  * ## Which rung an overriding `fill` must clear
  *

@@ -61,6 +61,8 @@ export const THEME_TOKEN_NAMES = [
   "--chart-grid",
   "--chart-indicator-color",
   "--chart-indicator-secondary-color",
+  "--chart-ink-on-dark",
+  "--chart-ink-on-light",
   "--chart-label",
   "--chart-line-primary",
   "--chart-line-secondary",
@@ -219,5 +221,5 @@ export const THEME_TOKEN_NAMES = [
   "--warning-text",
 ] as const;
 
-/** One of the 209 semantic tokens a complete theme defines. */
+/** One of the 211 semantic tokens a complete theme defines. */
 export type ThemeTokenName = (typeof THEME_TOKEN_NAMES)[number];

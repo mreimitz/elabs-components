@@ -73,6 +73,7 @@ import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pat
 import { ChartTooltipBox } from "../tooltip/tooltip-box";
 import { useHighDecorationOf } from "../use-high-decoration";
 import { ChartTooltipContent } from "../tooltip/tooltip-content";
+import { useOnMarkInk } from "../use-on-mark-ink";
 import type { ChartValueFormat } from "../value-format";
 import { binValues, extentOf, type DistributionBin } from "./bins";
 import {
@@ -89,10 +90,10 @@ import {
 import type { DistributionKind, DistributionTooltipPayload } from "./distribution-kind";
 import { DistributionValueAxis } from "./distribution-value-axis";
 import { KDE_TAPER, silvermanBandwidth } from "./kde";
-import { DistributionBox } from "./kinds/box";
+import { BOX_BODY_OPACITY, DistributionBox } from "./kinds/box";
 import { DistributionHistogram } from "./kinds/histogram";
 import { DistributionStrip } from "./kinds/strip";
-import { DistributionViolin } from "./kinds/violin";
+import { DistributionViolin, VIOLIN_BODY_OPACITY } from "./kinds/violin";
 
 /** Room for the group labels, which sit on the cross axis. */
 const HORIZONTAL_MARGIN: DistributionMargin = { top: 10, right: 20, bottom: 28, left: 96 };
@@ -431,6 +432,10 @@ function DistributionChartInner({
     [domain, groups.length, margin, orientation, plotHeight, plotWidth],
   );
 
+  // #243 — the box/violin median tick is cut in whichever on-mark ink reads on
+  // the group's own resolved fill, composited at the mark's body opacity.
+  const inkFor = useOnMarkInk(containerRef);
+
   if (plotWidth < MIN_PLOT_SIZE || plotHeight < MIN_PLOT_SIZE) return null;
 
   return (
@@ -474,6 +479,7 @@ function DistributionChartInner({
                   <DistributionBox
                     {...common}
                     key={group.key || group.label}
+                    medianInk={inkFor(color, BOX_BODY_OPACITY).ink}
                     showOutliers={showOutliers}
                   />
                 );
@@ -483,6 +489,7 @@ function DistributionChartInner({
                     {...common}
                     bandwidth={bandwidth}
                     key={group.key || group.label}
+                    medianInk={inkFor(color, VIOLIN_BODY_OPACITY).ink}
                   />
                 );
               default:

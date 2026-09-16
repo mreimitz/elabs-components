@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T09:33:43.129Z",
+  "generatedAt": "2026-09-16T09:36:25.027Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 253,
+  "tokenCount": 255,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -260,6 +260,8 @@
     "--chart-mono-6",
     "--chart-mono-7",
     "--chart-accent",
+    "--chart-ink-on-light",
+    "--chart-ink-on-dark",
     "--flow-edge-weak",
     "--flow-edge-strong"
   ],
@@ -16239,18 +16241,6 @@
               "optional": true,
               "type": "string",
               "description": "Signature of motion URL state — triggers enter replay when it changes."
-            },
-            {
-              "name": "revealOn",
-              "optional": true,
-              "type": "ChartRevealOn",
-              "description": "When the enter reveal is allowed to play (#175). `\"mount\"` (default) plays as soon as the chart renders — no change from today. `\"inView\"` holds the bars at their pre-enter state until this chart's own container scrolls to 30% visible."
-            },
-            {
-              "name": "replayOnClick",
-              "optional": true,
-              "type": "boolean",
-              "description": "Clicking the chart body replays the enter reveal (#175). Default `false`."
             },
             {
               "name": "aspectRatio",

@@ -213,6 +213,8 @@
   --chart-mono-6: oklch(0.852 0.008 235);
   --chart-mono-7: oklch(0.942 0.005 235);
   --chart-accent: var(--chart-1);
+  --chart-ink-on-dark: oklch(1 0 0);
+  --chart-ink-on-light: oklch(0 0 0);
   --flow-edge-weak: oklch(0.5 0.04 242);
   --flow-edge-strong: oklch(0.75 0.16 242);
 }

@@ -11,15 +11,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildHeatmapBuckets,
   bucketIndexOf,
-  CONTINUOUS_DEEP_PLATE_OPACITY,
   CONTINUOUS_MIN_OPACITY,
   continuousInk,
-  continuousStepInk,
   dotRadius,
   heatmapDomain,
   heatmapSummary,
-  inkHalo,
-  rampStepInk,
   sampleContinuousInk,
 } from "./heatmap-scale";
 
@@ -148,50 +144,5 @@ describe("heatmapSummary", () => {
     expect(heatmapSummary({ rows: 3, columns: 3, calendar: false, peak: null }, plain)).toBe(
       "Heatmap, 3 rows × 3 columns, no values.",
     );
-  });
-});
-
-describe("label ink on a ramp step (#238)", () => {
-  const FG = "var(--chart-foreground)";
-  const BG = "var(--chart-background)";
-
-  // The exact expected ink per step, not merely "the two ends differ": a label
-  // on the deep end of a ramp printed in the plot's text ink measured 1.01:1.
-  it.each([
-    ["var(--chart-seq-1)", FG],
-    ["var(--chart-seq-2)", FG],
-    ["var(--chart-seq-3)", BG],
-    ["var(--chart-seq-7)", BG],
-    ["var(--chart-mono-1)", FG],
-    ["var(--chart-mono-2)", FG],
-    ["var(--chart-mono-3)", BG],
-    ["var(--chart-mono-7)", BG],
-    ["var(--chart-div-neg-2)", BG],
-    ["var(--chart-div-neg-1)", BG],
-    ["var(--chart-div-mid)", FG],
-    ["var(--chart-div-pos-1)", BG],
-    ["var(--chart-div-pos-2)", BG],
-  ])("prints on %s with %s", (step, ink) => {
-    expect(rampStepInk(step)).toBe(ink);
-  });
-
-  it("keeps the plot's text ink on a colour it does not know", () => {
-    expect(rampStepInk("var(--brand-custom)")).toBe(FG);
-  });
-
-  it("pairs every ink with the opposite anchor as its halo", () => {
-    expect(inkHalo(FG)).toBe(BG);
-    expect(inkHalo(BG)).toBe(FG);
-  });
-
-  it("stamps the ink onto each bucket", () => {
-    const steps = ["var(--chart-seq-1)", "var(--chart-seq-4)", "var(--chart-seq-7)"];
-    expect(buildHeatmapBuckets(0, 3, steps).map((b) => b.ink)).toEqual([FG, BG, BG]);
-  });
-
-  it("flips a continuous cell's ink once its plate is deep enough", () => {
-    expect(continuousStepInk(CONTINUOUS_MIN_OPACITY)).toBe(FG);
-    expect(continuousStepInk(CONTINUOUS_DEEP_PLATE_OPACITY)).toBe(BG);
-    expect(continuousStepInk(1)).toBe(BG);
   });
 });

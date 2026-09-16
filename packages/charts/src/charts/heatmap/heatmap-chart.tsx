@@ -55,7 +55,7 @@ import {
 import { cn, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { type ChartRevealOn, getChartStaggerDotMs } from "../animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
-import { resolvePalette } from "../chart-context";
+import { chartCssVars, resolvePalette } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -68,6 +68,8 @@ import {
 } from "../chart-datapoint-layer";
 import { useChartValueFormatter } from "../chart-formatters";
 import { ChartLoadingLabel } from "../chart-loading-label";
+import type { OnMarkInk } from "../on-mark-ink";
+import { useOnMarkInk } from "../use-on-mark-ink";
 import type { ChartValueFormat } from "../value-format";
 import { buildCalendarLayout, type CalendarCellPosition } from "./calendar-layout";
 import { HeatmapCell } from "./heatmap-cell";
@@ -90,10 +92,7 @@ import {
   buildHeatmapBuckets,
   bucketIndexOf,
   continuousInk,
-  continuousStepInk,
   heatmapDomain,
-  HEATMAP_INK_ON_LIGHT_PLATE,
-  inkHalo,
   heatmapSummary,
   sampleContinuousInk,
 } from "./heatmap-scale";
@@ -124,6 +123,12 @@ const DEFAULT_CALENDAR_MARGIN: HeatmapMargin = { top: 22, right: 8, bottom: 6, l
 
 /** Stable empty array so a non-interactive heatmap never re-registers targets. */
 const EMPTY_TARGETS: ChartDatapointTarget[] = [];
+
+/** A label that is NOT on a plate (dot mode, empty cell): the plot's own text ink. */
+const PLOT_GROUND_LABEL: OnMarkInk = {
+  ink: chartCssVars.foreground,
+  halo: chartCssVars.background,
+};
 
 export interface HeatmapChartProps extends ChartInteractionProps {
   /** One row per cell. Rows the grid has no place for are ignored. */
@@ -483,6 +488,8 @@ function HeatmapBody({
   const inView = useInView(containerRef, { amount: 0.3, once: true });
   const revealed = revealOn === "mount" || inView;
   const staggerMs = useMemo(() => getChartStaggerDotMs(containerRef.current), []);
+  // #238 — a value label's ink is picked from the cell's RESOLVED fill.
+  const inkFor = useOnMarkInk(containerRef);
 
   const innerWidth = Math.max(0, width - margin.left - margin.right);
   const innerHeight = Math.max(0, height - margin.top - margin.bottom);
@@ -535,18 +542,15 @@ function HeatmapBody({
         }
         // A label sits on the cell's plate only in `mode="cell"`; a dot is
         // area-encoded and rarely covers its label, so there the label keeps
-        // the plot's own text ink against the plot ground.
-        const ink =
-          mode === "cell" && color !== null
-            ? scale.continuous
-              ? continuousStepInk(fillOpacity)
-              : (scale.buckets[bucketIndex]?.ink ?? HEATMAP_INK_ON_LIGHT_PLATE)
-            : HEATMAP_INK_ON_LIGHT_PLATE;
+        // the plot's own text ink against the plot ground. On a continuous
+        // ramp the plate is the fill composited at its opacity (#238).
+        const onMark =
+          mode === "cell" && color !== null ? inkFor(color, fillOpacity) : PLOT_GROUND_LABEL;
         return {
           ...cell,
           state: cell.value === null ? "missing" : cell.value === 0 ? "zero" : "value",
-          ink,
-          inkHalo: inkHalo(ink),
+          ink: onMark.ink,
+          inkHalo: onMark.halo,
           x0,
           y0,
           width: bandWidth,
@@ -557,7 +561,7 @@ function HeatmapBody({
           isPeak: scale.peakId === cell.id,
         };
       }),
-    [bandHeight, bandWidth, grid.cells, mode, scale, xScale, yScale],
+    [bandHeight, bandWidth, grid.cells, inkFor, mode, scale, xScale, yScale],
   );
 
   const targets = useMemo(() => {

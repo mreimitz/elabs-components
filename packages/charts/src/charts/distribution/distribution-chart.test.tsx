@@ -34,6 +34,8 @@ if (!globalThis.ResizeObserver) {
 }
 
 import { seededRnd } from "../../marks/seeded-rnd";
+import { compositeOver, contrastOf, type Rgba, resolveCssColor } from "../on-mark-ink";
+import { applyThemeVars, readerFor, type ReferenceTheme } from "../on-mark-ink.fixtures";
 import { DistributionChart } from "./distribution-chart";
 import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
 import { rungCount } from "./kinds/histogram";
@@ -488,4 +490,81 @@ describe("DistributionChart decoration pattern channel (ADR 0011, #257)", () => 
     );
     expect(seriesPatterns(strip.container)).toHaveLength(0);
   });
+});
+
+describe("the box/violin median tick reads on its own group's fill (#243)", () => {
+  const ON_LIGHT = "var(--chart-ink-on-light)";
+  const ON_DARK = "var(--chart-ink-on-dark)";
+  /** Three groups → `spread` hands them sequential steps 1, 4 and 7 by median rank. */
+  const THREE = [10, 50, 90].flatMap((base, g) =>
+    Array.from({ length: 20 }, (_v, i) => ({ team: `G${g}`, minutes: base + i * 0.1 })),
+  );
+
+  let cleanup: (() => void) | null = null;
+  afterEach(() => {
+    cleanup?.();
+    cleanup = null;
+  });
+
+  /** Each median tick's stroke, and its contrast on the composited body. */
+  function ticks(container: HTMLElement, theme: ReferenceTheme, kind: "box" | "violin") {
+    const read = readerFor(theme);
+    const ground = resolveCssColor("var(--chart-background)", read) as Rgba;
+    const groups = [...container.querySelectorAll(`[data-slot="distribution-chart-${kind}"]`)];
+    return groups.map((group) => {
+      const mark = group.querySelector(kind === "box" ? "rect" : "path") as Element;
+      const tick = group.querySelector('[data-slot="distribution-chart-median"]') as Element;
+      const plate = compositeOver(
+        resolveCssColor(mark.getAttribute("fill") as string, read) as Rgba,
+        ground,
+        Number(mark.getAttribute("opacity")),
+      );
+      const stroke = tick.getAttribute("stroke") as string;
+      return { stroke, ratio: contrastOf(resolveCssColor(stroke, read) as Rgba, plate) };
+    });
+  }
+
+  it.each([
+    ["light", "box", [ON_LIGHT, ON_LIGHT, ON_DARK]],
+    ["dark", "box", [ON_DARK, ON_LIGHT, ON_LIGHT]],
+    ["light", "violin", [ON_LIGHT, ON_LIGHT, ON_DARK]],
+    ["dark", "violin", [ON_DARK, ON_LIGHT, ON_LIGHT]],
+  ] as const)(
+    "%s %s, sequential: each tick takes the anchor its step needs",
+    (theme, kind, inks) => {
+      cleanup = applyThemeVars(theme);
+      const { container } = render(
+        <DistributionChart
+          data={THREE}
+          groupKey="team"
+          kind={kind}
+          palette="sequential"
+          valueKey="minutes"
+        />,
+      );
+      const measured = ticks(container, theme, kind);
+      expect(measured.map((t) => t.stroke)).toEqual(inks);
+      for (const { stroke, ratio } of measured) {
+        // WCAG 1.4.11 asks 3:1 of a mark; the anchors reach AA text.
+        expect(ratio, `${theme} ${kind} ${stroke} = ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(
+          4.5,
+        );
+      }
+    },
+  );
+
+  it.each(["light", "dark"] as const)(
+    "%s, default categorical palette: every tick clears 3:1 (was 1.42 / 2.49 / 2.61 on light)",
+    (theme) => {
+      cleanup = applyThemeVars(theme);
+      const { container } = render(
+        <DistributionChart data={THREE} groupKey="team" kind="box" valueKey="minutes" />,
+      );
+      const measured = ticks(container, theme, "box");
+      expect(measured).toHaveLength(3);
+      for (const { stroke, ratio } of measured) {
+        expect(ratio, `${theme} ${stroke} = ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(3);
+      }
+    },
+  );
 });

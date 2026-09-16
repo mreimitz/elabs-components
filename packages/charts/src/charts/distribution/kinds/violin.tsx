@@ -6,8 +6,9 @@
  * Provenance: `G19 Violin`. A mirrored kernel density estimate sampled on the
  * fixed 44-point grid (`../kde.ts`), smoothed with quadratic midpoints
  * (`../blob-path.ts`) so the silhouette never bulges past its own estimate, and
- * cut at the waist by a paper-coloured median tick — the same tick `box.tsx`
- * uses, for the same reason.
+ * cut at the waist by a median tick in the on-mark ink the container picks for
+ * this silhouette's fill — the same tick `box.tsx` uses, for the same reason
+ * (#243).
  *
  * ## The half-width is scaled per GROUP, and that is a real limitation
  *
@@ -19,7 +20,6 @@
  */
 import { localPoint } from "@visx/event";
 import { memo, useMemo } from "react";
-import { chartCssVars } from "../../chart-context";
 import { blobPath, type BlobPoint } from "../blob-path";
 import type { DistributionKindProps } from "../distribution-kind";
 import { kde, kdeDensityAt } from "../kde";
@@ -27,9 +27,14 @@ import { kde, kdeDensityAt } from "../kde";
 /** The widest half of the silhouette, as a fraction of the band's inner extent. */
 const VIOLIN_FRACTION = 0.46;
 
+/** The silhouette's opacity — the median ink is measured on this blend (#243). */
+export const VIOLIN_BODY_OPACITY = 0.72;
+
 export interface DistributionViolinProps extends DistributionKindProps {
   /** KDE bandwidth override. Unset uses Silverman's rule of thumb. */
   bandwidth?: number;
+  /** Stroke for the median tick — the on-mark ink for this silhouette's fill. */
+  medianInk: string;
 }
 
 function DistributionViolinImpl({
@@ -39,6 +44,7 @@ function DistributionViolinImpl({
   formatValue,
   geometry,
   group,
+  medianInk,
   onHover,
   showMedian,
 }: DistributionViolinProps) {
@@ -109,11 +115,11 @@ function DistributionViolinImpl({
       onPointerLeave={() => onHover(null)}
       onPointerMove={handleMove}
     >
-      <path d={path} fill={fill ?? color} opacity={0.72} stroke={color} strokeWidth={1} />
+      <path d={path} fill={fill ?? color} opacity={VIOLIN_BODY_OPACITY} stroke={color} strokeWidth={1} />
       {showMedian && summary ? (
         <line
           data-slot="distribution-chart-median"
-          stroke={chartCssVars.background}
+          stroke={medianInk}
           strokeLinecap="round"
           strokeWidth={2}
           x1={horizontal ? medianPos : centre - halfMax * 0.5}

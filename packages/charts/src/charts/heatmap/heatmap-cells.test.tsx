@@ -10,7 +10,8 @@
 
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { applyThemeVars } from "../on-mark-ink.fixtures";
 import { HeatmapChart } from "./heatmap-chart";
 
 vi.mock("@visx/responsive", () => ({
@@ -117,6 +118,14 @@ describe("zero is not missing (#251)", () => {
 
 describe("value labels take the ink of the plate they sit on (#238)", () => {
   const RAMP_ROW = [1, 2, 3, 4, 5, 6, 7].map((v) => ({ col: `c${v}`, row: "r", v }));
+  const ON_LIGHT = "var(--chart-ink-on-light)";
+  const ON_DARK = "var(--chart-ink-on-dark)";
+
+  let cleanup: (() => void) | null = null;
+  afterEach(() => {
+    cleanup?.();
+    cleanup = null;
+  });
 
   function labelOf(container: HTMLElement, id: string) {
     const text = cellOf(container, id).querySelector('[data-slot="halo-text"]');
@@ -124,25 +133,40 @@ describe("value labels take the ink of the plate they sit on (#238)", () => {
     return text;
   }
 
-  it("prints the quiet end in the plot's text ink and the deep end in the ground ink", () => {
+  it("falls back to the theme-inverting plot inks while the fills cannot be resolved", () => {
     const { container } = render(
       <HeatmapChart data={RAMP_ROW} showValues steps={7} valueKey="v" x="col" y="row" />,
     );
-    const first = labelOf(container, "0:0");
-    const last = labelOf(container, "6:0");
-    expect(first.getAttribute("fill")).toBe(FG);
-    expect(first.getAttribute("stroke")).toBe(BG);
-    expect(last.getAttribute("fill")).toBe(BG);
-    expect(last.getAttribute("stroke")).toBe(FG);
+    expect(labelOf(container, "0:0").getAttribute("fill")).toBe(FG);
+    expect(labelOf(container, "6:0").getAttribute("fill")).toBe(BG);
   });
 
-  it("gives both arms of a diverging ramp the ground ink, and its pivot the text ink", () => {
+  it.each([
+    // [theme, first step (seq-1), third step (seq-3), last step (seq-7)]
+    ["light", ON_LIGHT, ON_LIGHT, ON_DARK],
+    ["dark", ON_DARK, ON_LIGHT, ON_LIGHT],
+  ] as const)("picks the anchor from each resolved step in %s", (theme, first, third, last) => {
+    cleanup = applyThemeVars(theme);
+    const { container } = render(
+      <HeatmapChart data={RAMP_ROW} showValues steps={7} valueKey="v" x="col" y="row" />,
+    );
+    expect(labelOf(container, "0:0").getAttribute("fill")).toBe(first);
+    expect(labelOf(container, "2:0").getAttribute("fill")).toBe(third);
+    expect(labelOf(container, "6:0").getAttribute("fill")).toBe(last);
+    // The halo is always the opposite anchor.
+    expect(labelOf(container, "6:0").getAttribute("stroke")).toBe(
+      last === ON_DARK ? ON_LIGHT : ON_DARK,
+    );
+  });
+
+  it("gives both arms of a light diverging ramp the light ink, and its pivot the dark ink", () => {
+    cleanup = applyThemeVars("light");
     const data = [-9, 0.5, 9].map((v, i) => ({ col: `c${i}`, row: "r", v }));
     const { container } = render(
       <HeatmapChart data={data} palette="diverging" valueKey="v" x="col" y="row" />,
     );
-    expect(labelOf(container, "0:0").getAttribute("fill")).toBe(BG);
-    expect(labelOf(container, "1:0").getAttribute("fill")).toBe(FG);
-    expect(labelOf(container, "2:0").getAttribute("fill")).toBe(BG);
+    expect(labelOf(container, "0:0").getAttribute("fill")).toBe(ON_DARK);
+    expect(labelOf(container, "1:0").getAttribute("fill")).toBe(ON_LIGHT);
+    expect(labelOf(container, "2:0").getAttribute("fill")).toBe(ON_DARK);
   });
 });

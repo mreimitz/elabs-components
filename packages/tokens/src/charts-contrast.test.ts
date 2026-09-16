@@ -372,6 +372,64 @@ describe("themes.css — ordered chart ramps (RM-018)", () => {
 });
 
 /**
+ * ON-MARK INK (#238, #243) — the pairing neither gate above models: text (or a
+ * cut such as a median tick) printed ON a chart mark, measured against that
+ * mark rather than against the plot ground.
+ *
+ * `--chart-ink-on-light` / `--chart-ink-on-dark` are the two achromatic
+ * extremes. The charts package resolves a mark's real fill and picks whichever
+ * of the pair contrasts better (`packages/charts/src/charts/on-mark-ink.ts`).
+ * Measured 2026-09-16 against the current OKLab-even ramps, the better anchor's
+ * worst case per theme is 4.59:1 (`light` `--chart-div-neg-1`/`-pos-1`) and
+ * 4.77:1 (`dark` `--chart-div-mid`). The same measurement shows WHY the choice
+ * has to be made from the resolved colour and not from a step's rank: the
+ * better anchor for `--chart-seq-3` is the dark ink in BOTH reference themes,
+ * while `--chart-seq-2` flips with the theme — one static rank table cannot
+ * serve both.
+ *
+ * Fail-first reference: printing every step in `--chart-foreground` alone (the
+ * pre-#238 heatmap label) measures 1.01:1 on light `--chart-seq-7`.
+ */
+describe("on-mark ink clears AA on every ramp step (#238)", () => {
+  const PLATES = [...SEQ, ...MONO, ...DIV, ...SERIES];
+
+  it("gates every ordered step and every series fill", () => {
+    expect(PLATES).toHaveLength(7 + 7 + 5 + 12);
+  });
+
+  describe.each(THEMES)("%s", (theme) => {
+    // The ≥4.58:1 floor is a property of the two EXTREMES (the worst plate sits
+    // at luminance ≈0.179, where both measure √21). A softened anchor loses it.
+    it("the anchors are pure black and pure white", () => {
+      const light = parseOklch(resolve(theme, "--chart-ink-on-light"));
+      const dark = parseOklch(resolve(theme, "--chart-ink-on-dark"));
+      expect([light.l, light.c, dark.l, dark.c]).toEqual([0, 0, 1, 0]);
+    });
+
+    it.each(PLATES)("the better anchor on %s ≥ 4.5:1", (plate) => {
+      const fill = resolve(theme, plate);
+      const onLight = contrast(resolve(theme, "--chart-ink-on-light"), fill);
+      const onDark = contrast(resolve(theme, "--chart-ink-on-dark"), fill);
+      const best = Math.max(onLight, onDark);
+      expect(
+        best,
+        `${plate} in ${theme}: on-light ${onLight.toFixed(2)}, on-dark ${onDark.toFixed(2)}`,
+      ).toBeGreaterThanOrEqual(AA_TEXT);
+    });
+  });
+
+  // Anti-vacuity: the gate must be able to fail. The one fixed ink the heatmap
+  // used before #238 does, at the deep end of the light ramp.
+  it("rejects a single fixed ink (the pre-#238 label)", () => {
+    const ratio = contrast(
+      resolve("light", "--chart-foreground"),
+      resolve("light", "--chart-seq-7"),
+    );
+    expect(ratio).toBeLessThan(1.1);
+  });
+});
+
+/**
  * CanvasLayer reference-story full-density mark ink (#283).
  *
  * A canvas `draw` composites its own pixels — nothing downstream can read a
