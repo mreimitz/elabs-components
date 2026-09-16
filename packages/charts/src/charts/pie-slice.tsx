@@ -7,6 +7,7 @@ import { useActivateDatapoint } from "./chart-datapoint-layer";
 import { pieCssVars, pieDatapointTarget, usePieHover, usePieStable } from "./pie-context";
 import { useEnterComplete } from "./use-enter-complete";
 import { useMountProgress } from "./use-mount-progress";
+import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart-selection";
 
 // Helper to generate arc path using d3 arc generator
 function generateArcPath(
@@ -355,6 +356,7 @@ export const PieSlice = memo(function PieSlice({
   } = usePieStable();
   const { hoveredIndex, setHoveredIndex } = usePieHover();
   const activateDatapoint = useActivateDatapoint();
+  const selection = useChartSelection();
 
   // Use prop if provided, otherwise use context value
   const hoverOffset = hoverOffsetProp ?? contextHoverOffset;
@@ -421,11 +423,24 @@ export const PieSlice = memo(function PieSlice({
   // `seams` prop renders paths with no stroke attributes at all — unchanged.
   const seamStroke = seams > 0 ? pieCssVars.background : undefined;
   const seamStrokeWidth = seams > 0 ? seams : undefined;
+  // Selection input (RM-073): unresolved → the node is returned untouched.
+  const selectionPaint = resolveMarkPaint(selection, {
+    category: arcData.data.label,
+    datum: arcData.data as unknown as Record<string, unknown>,
+  });
+  const paintSelection = (node: React.ReactNode) =>
+    selectionPaint["data-selection"] === undefined ? (
+      node
+    ) : (
+      <ChartSelectionMark channel="hatch" paint={selectionPaint} shape={<path d={hitboxPath} />}>
+        {node}
+      </ChartSelectionMark>
+    );
 
   // Render animated slice based on effect type
   const renderAnimatedSlice = () => {
     if (hoverEffect === "grow") {
-      return (
+      return paintSelection(
         <AnimatedSliceGrow
           animationKey={animationKey}
           color={color}
@@ -442,12 +457,12 @@ export const PieSlice = memo(function PieSlice({
           seams={seams}
           showGlow={showGlow}
           startAngle={arcData.startAngle}
-        />
+        />,
       );
     }
 
     // Default: translate effect (also covers "none" with hoverOffset=0)
-    return (
+    return paintSelection(
       <AnimatedSliceTranslate
         animationKey={animationKey}
         color={color}
@@ -464,14 +479,14 @@ export const PieSlice = memo(function PieSlice({
         seams={seams}
         showGlow={showGlow}
         startAngle={arcData.startAngle}
-      />
+      />,
     );
   };
 
   // Render static (non-animated) slice
   const renderStaticSlice = () => {
     if (hoverEffect === "grow") {
-      return (
+      return paintSelection(
         <motion.path
           animate={{
             opacity: isFaded ? 0.4 : 1,
@@ -489,7 +504,7 @@ export const PieSlice = memo(function PieSlice({
             opacity: { duration: 0.15 },
             d: { type: "spring", stiffness: 400, damping: 25 },
           }}
-        />
+        />,
       );
     }
 
@@ -498,7 +513,7 @@ export const PieSlice = memo(function PieSlice({
     const translateX = shouldTranslate ? offset.x : 0;
     const translateY = shouldTranslate ? offset.y : 0;
 
-    return (
+    return paintSelection(
       <motion.path
         animate={{
           opacity: isFaded ? 0.4 : 1,
@@ -518,11 +533,11 @@ export const PieSlice = memo(function PieSlice({
           x: { type: "spring", stiffness: 400, damping: 25 },
           y: { type: "spring", stiffness: 400, damping: 25 },
         }}
-      />
+      />,
     );
   };
 
-  return (
+  return paintSelection(
     <g style={{ cursor: "pointer" }}>
       {/* Invisible hitbox - stays in place, handles hover events */}
       {/* SVG path used as hover hitbox for visualization; not keyboard-operable
@@ -537,7 +552,7 @@ export const PieSlice = memo(function PieSlice({
 
       {/* Visible slice - animates based on hover effect, no pointer events */}
       {animate ? renderAnimatedSlice() : renderStaticSlice()}
-    </g>
+    </g>,
   );
 });
 

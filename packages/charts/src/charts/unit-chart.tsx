@@ -67,6 +67,7 @@ import {
   type UnitMark,
   type UnitRect,
 } from "./unit-layouts";
+import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 
 export type { UnitChartDatum } from "./unit-layouts";
 
@@ -81,7 +82,10 @@ const ROW_LABEL_WIDTH = 96;
 const ROW_VALUE_WIDTH = 48;
 
 export interface UnitChartProps
-  extends ChartInteractionProps, Omit<HTMLAttributes<HTMLDivElement>, "color"> {
+  extends
+    ChartSelectionProps,
+    ChartInteractionProps,
+    Omit<HTMLAttributes<HTMLDivElement>, "color"> {
   /** The series — one labeled quantity per row. */
   data: UnitChartDatum[];
   /** Which lieflat layout to draw. */
@@ -189,6 +193,8 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     copyValueOnActivate: _copyValueOnActivate,
     datapointLabel: _datapointLabel,
     maxInteractiveDatapoints: _maxInteractiveDatapoints,
+    selectionStates: _selectionStates,
+    dimExcluded: _dimExcluded,
     ...rest
   }: UnitChartProps,
   forwardedRef,
@@ -538,7 +544,7 @@ UnitChartBody.displayName = "UnitChartBody";
  *   weekday, for example, as layout="rows"
  * @avoidWhen exact per-unit counts do not matter — a pie or bar chart reads faster
  */
-export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
+const UnitChartBase = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
   const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } = props;
   if (!onDatapointClick && !copyValueOnActivate) {
     return <UnitChartBody {...props} ref={ref} />;
@@ -552,6 +558,17 @@ export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(function Uni
     >
       <UnitChartBody {...props} ref={ref} />
     </ChartDatapointProvider>
+  );
+});
+UnitChartBase.displayName = "UnitChartBase";
+
+// Selection input (RM-073): mounted outermost so marks AND the datapoint
+// layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
+  return (
+    <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>
+      <UnitChartBase {...props} ref={ref} />
+    </ChartSelectionProvider>
   );
 });
 UnitChart.displayName = "UnitChart";

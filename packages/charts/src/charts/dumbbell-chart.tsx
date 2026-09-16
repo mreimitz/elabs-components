@@ -69,6 +69,7 @@ import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "./series-
 import { useHighDecorationOf } from "./use-high-decoration";
 import { useTextMeasurerOf } from "./use-text-measurer";
 import type { ChartValueFormat } from "./value-format";
+import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -90,7 +91,7 @@ export interface DumbbellBeadsConfig {
   label?: string;
 }
 
-export interface DumbbellChartProps extends ChartInteractionProps {
+export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractionProps {
   /** Data array — one row per category. */
   data: Record<string, unknown>[];
   /** Key in `data` for the category label. */
@@ -1063,7 +1064,7 @@ function defaultMargin(orientation: DumbbellOrientation, variant: DumbbellVarian
  * @dataShape two time points per category — a before and after, or a range with two ends
  * @avoidWhen more than 2 points per category — use small-multiple lines
  */
-export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(function DumbbellChart(
+const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(function DumbbellChart(
   {
     data,
     category,
@@ -1179,6 +1180,22 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
   );
 });
 
+DumbbellChartBase.displayName = "DumbbellChartBase";
+
+// Selection input (RM-073): mounted outermost so marks AND the datapoint
+// layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(
+  function DumbbellChart(props, ref) {
+    return (
+      <ChartSelectionProvider
+        dimExcluded={props.dimExcluded}
+        selectionStates={props.selectionStates}
+      >
+        <DumbbellChartBase {...props} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
 DumbbellChart.displayName = "DumbbellChart";
 
 export default DumbbellChart;

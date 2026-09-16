@@ -42,6 +42,7 @@ import {
   type TreemapPalette,
   validateTreemapData,
 } from "./treemap-layout";
+import { type ChartSelectionProps, ChartSelectionProvider } from "../chart-selection";
 
 export type { TreemapNode, TreemapPalette } from "./treemap-layout";
 
@@ -60,7 +61,7 @@ const VALUE_LINE_OFFSET = 8;
 /** So `showValues={false}` never re-resolves a set formatter per render. */
 const NO_VALUES: readonly number[] = [];
 
-export interface TreemapChartProps extends ChartInteractionProps {
+export interface TreemapChartProps extends ChartSelectionProps, ChartInteractionProps {
   /** The hierarchy. A leaf needs a `value`; a parent's explicit `value` (if any)
    * must equal the sum of its children (dev-validated — see `validateTreemapData`). */
   data: TreemapNode;
@@ -616,7 +617,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
  * @dataShape a nested hierarchy sized by one measure
  * @avoidWhen the hierarchy has fewer than 2 levels — a flat bar chart is clearer
  */
-export const TreemapChart = forwardRef<HTMLDivElement, TreemapChartProps>(
+const TreemapChartBase = forwardRef<HTMLDivElement, TreemapChartProps>(
   function TreemapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
@@ -636,6 +637,22 @@ export const TreemapChart = forwardRef<HTMLDivElement, TreemapChartProps>(
   },
 );
 
+TreemapChartBase.displayName = "TreemapChartBase";
+
+// Selection input (RM-073): mounted outermost so marks AND the datapoint
+// layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+export const TreemapChart = forwardRef<HTMLDivElement, TreemapChartProps>(
+  function TreemapChart(props, ref) {
+    return (
+      <ChartSelectionProvider
+        dimExcluded={props.dimExcluded}
+        selectionStates={props.selectionStates}
+      >
+        <TreemapChartBase {...props} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
 TreemapChart.displayName = "TreemapChart";
 
 export default TreemapChart;
