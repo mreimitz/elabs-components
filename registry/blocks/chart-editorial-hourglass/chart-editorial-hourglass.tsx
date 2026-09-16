@@ -140,9 +140,9 @@ export function ChartEditorialHourglass({
   const model = buildModel(data, resolvedUnit);
   const height = MARGIN_TOP + data.length * STAGE_GAP_Y;
   const firstLabel = data[0]?.label ?? "start";
-  const unitStatement = `1 tick = ${format(resolvedUnit)}`;
+  const unitLabel = `1 tick = ${format(resolvedUnit)}`;
   const summary = [
-    `${unitStatement}.`,
+    `${unitLabel}.`,
     ...model.map((stage, i) =>
       i === 0
         ? `${stage.label}: ${format(stage.value)}.`
@@ -272,7 +272,7 @@ export function ChartEditorialHourglass({
         className="mt-2 text-center text-caption text-muted-foreground"
         data-slot="chart-editorial-hourglass-caption"
       >
-        {unitStatement} · gap figures are % of the previous stage
+        {unitLabel} · gap figures are % of the previous stage
       </p>
     </div>
   );

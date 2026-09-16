@@ -235,7 +235,7 @@ Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pn
 ### Stories
 
 - Axe stays blocking: preview.tsx keeps `a11y: { test: "error" }` and applies `scripts/a11y-baseline.json`, whose generated per-story exemptions never exceed `ratchet.maxStories`; fix a new violation, never exempt it. (`a11y-baseline`)
-- Every unit-decomposed chart story (waffle/field UnitChart, dot heatmap, `unit`-ed Bar/WaterfallChart, beaded DumbbellChart) states its unit ("one X = N") in `unitLabel`, `description` or `accessibleDescription`. (`chart-unit-caption`)
+- Every unit-decomposed chart (waffle/field UnitChart, dot heatmap, `unit`-ed Bar/WaterfallChart, beaded DumbbellChart, raw `UnitStack`) in a chart story, a `registry/blocks/**` block or a block story states its unit ("one X = N") in `unitLabel`, `description` or `accessibleDescription`. (`chart-unit-caption`)
 - A component with a `loading`/`isStreaming` (or chart `status: ChartStatus`) prop ships a story that shows it: a `*Loading`/`*Streaming` export or a not-ready arg (`loading: true`, `status="loading"`). (`loading-states`)
 - Story decorators and render wrappers never pin a fixed width above 320px (`w-[800px]`, `style={{ width: 800 }}`) without a max — use `w-full max-w-*` or `parameters.layout`. (`no-fixed-story-wrapper`)
 - Every allowlisted stateful component (`STATEFUL_COMPONENTS` in the rule) exports a story named for a non-happy state (`Loading`, `Empty`, `Error`, `Disabled`, `Skeleton`, `FirstRun`, `Awaiting`). (`state-coverage`)

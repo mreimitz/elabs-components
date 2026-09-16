@@ -7,8 +7,25 @@
  * `packages/charts/src/{charts,marks}/**` must carry "one X = N" / "1 X = N" in the VALUE
  * of `unitLabel`, `description` or `accessibleDescription`. `layout="rows"` is exempt
  * (unitLabel is ignored there). Keys baseline: `<file>#<Story>`.
+ *
+ * Registry recipe blocks (#300). A copy-own block is where an uncaptioned unit chart
+ * ships and can never be patched afterwards, so the rule also reads:
+ *   - `registry/blocks/**` block SOURCE (`*.tsx`, not stories/tests), one finding per
+ *     file, key `<file>`. A block story is usually `render: () => <Block />` with no
+ *     props, so the story alone can never show the caption — the gate reads the
+ *     source that draws the marks.
+ *   - `apps/docs/stories/blocks/**` stories, per story block, key `<file>#<Story>`.
+ * Outside the package there is no file-name table to dispatch on, so both use a
+ * CONTENT predicate (`usesUnitDecomposition`) over comment-blanked code: the same five
+ * unit modes plus a raw `<UnitStack>` (the countable mark those modes are built from).
+ * In block source a `const unitLabel = \`1 tick = ${…}\`` binding counts as the caption.
  */
-import { ENCODING_GLOB } from "./charts-honesty.mjs";
+import { ENCODING_GLOB, stripCommentsPreservingLines } from "./charts-honesty.mjs";
+
+const REGISTRY_BLOCK_GLOB = "registry/blocks/**/*.tsx";
+const BLOCK_STORY_GLOB = "apps/docs/stories/blocks/**/*.stories.tsx";
+const DIRS_IGNORE = "**/{node_modules,dist}/**";
+const MISSING_UNIT = 'states no unit ("one X = N") in description/unitLabel/accessibleDescription';
 
 const UNIT_PHRASE_RE = /\b(?:one|1)\b[^=\n]{0,40}\s=\s[^=\n]{0,60}/i;
 const CAPTION_PROP_RE =
@@ -83,12 +100,31 @@ function isUnitModeStory(file, { name, text }) {
   return false;
 }
 
+/**
+ * Content predicate — does this code draw a unit-decomposed chart, wherever it lives?
+ * Pass comment-blanked code, so a JSDoc that merely NAMES a mode never counts.
+ */
+export function usesUnitDecomposition(code) {
+  const has = (re) => re.test(code);
+  return (
+    (has(/\bUnitChart\b/) && has(/\blayout\s*[=:]\s*\{?\s*["'`](?:waffle|field)["'`]/)) ||
+    (has(/\bHeatmapChart\b/) && has(/\bmode\s*[=:]\s*\{?\s*["'`]dot["'`]/)) ||
+    has(/<Bar\b[^>]*\bunit=\{/) ||
+    has(/<WaterfallChart\b[^>]*\bunit=\{/) ||
+    (has(/\bWaterfallChart\b/) && has(/\bunit\s*:\s*\d/)) ||
+    (has(/\bDumbbellChart\b/) && has(/\bbeads\s*[=:]\s*\{/)) ||
+    has(/<UnitStack\b/)
+  );
+}
+
 const story = (file, body) => ({ files: { [`packages/charts/src/charts/${file}`]: body } });
+const block = (file, body) => ({ files: { [`registry/blocks/${file}`]: body } });
+const blockStory = (file, body) => ({ files: { [`apps/docs/stories/blocks/${file}`]: body } });
 
 export default {
   id: "chart-unit-caption",
   scope: "stories",
-  doc: 'Every unit-decomposed chart story (waffle/field UnitChart, dot heatmap, `unit`-ed Bar/WaterfallChart, beaded DumbbellChart) states its unit ("one X = N") in `unitLabel`, `description` or `accessibleDescription`.',
+  doc: 'Every unit-decomposed chart (waffle/field UnitChart, dot heatmap, `unit`-ed Bar/WaterfallChart, beaded DumbbellChart, raw `UnitStack`) in a chart story, a `registry/blocks/**` block or a block story states its unit ("one X = N") in `unitLabel`, `description` or `accessibleDescription`.',
   baseline: "keys",
   run(ctx) {
     const out = [];
@@ -101,7 +137,32 @@ export default {
           file,
           line: src.slice(0, block.index).split("\n").length,
           key: `${file}#${block.name}`,
-          msg: `story "${block.name}" plots a unit-decomposed chart but states no unit ("one X = N") in description/unitLabel/accessibleDescription`,
+          msg: `story "${block.name}" plots a unit-decomposed chart but ${MISSING_UNIT}`,
+        });
+      }
+    }
+    // Registry recipe blocks: the block source draws the marks, so it carries the caption.
+    for (const file of ctx.glob(REGISTRY_BLOCK_GLOB, { ignore: DIRS_IGNORE })) {
+      if (/\.(?:stories|test)\.tsx$/.test(file)) continue;
+      const code = stripCommentsPreservingLines(ctx.readFile(file));
+      if (!usesUnitDecomposition(code) || hasUnitCaption(code)) continue;
+      out.push({
+        file,
+        line: 1,
+        key: file,
+        msg: `block draws a unit-decomposed chart but ${MISSING_UNIT}`,
+      });
+    }
+    // …and a block story that renders a unit-decomposed chart directly.
+    for (const file of ctx.glob(BLOCK_STORY_GLOB, { ignore: DIRS_IGNORE })) {
+      const code = stripCommentsPreservingLines(ctx.readFile(file));
+      for (const block of splitStoryBlocks(code)) {
+        if (!usesUnitDecomposition(block.text) || hasUnitCaption(block.text)) continue;
+        out.push({
+          file,
+          line: code.slice(0, block.index).split("\n").length,
+          key: `${file}#${block.name}`,
+          msg: `story "${block.name}" plots a unit-decomposed chart but ${MISSING_UNIT}`,
         });
       }
     }
@@ -129,8 +190,51 @@ export default {
             'export const Foo: Story = { args: { layout: "waffle" } };',
         },
       },
+      // #300 — a registry block that draws countable marks and binds its caption.
+      block(
+        "hourglass/hourglass.tsx",
+        'export function Hourglass({ unit }) {\n  const unitLabel = `1 tick = ${format(unit)}`;\n  return <svg><UnitStack n={4} kind="tick" /><text>{unitLabel}</text></svg>;\n}',
+      ),
+      block(
+        "kpi/kpi.tsx",
+        'export const Kpi = () => <UnitChart data={d} layout="waffle" unitLabel="one square = 10 orders" />;',
+      ),
+      // A comment that only NAMES a unit mode is not a unit chart.
+      block(
+        "almanac/almanac.tsx",
+        '/** The data shape `HeatmapChart mode="dot"` takes; drawn as bubbles. */\nexport const Almanac = () => <svg><QuietDot r={3} /></svg>;',
+      ),
+      // A `rows` UnitChart ignores unitLabel, and an un-`unit`-ed Bar is a plain bar.
+      block(
+        "frame/frame.tsx",
+        'export const Frame = () => (\n  <>\n    <UnitChart data={d} layout="rows" />\n    <Bar dataKey="revenue" lineCap="round" />\n  </>\n);',
+      ),
+      blockStory(
+        "kpi.stories.tsx",
+        'export const Default: Story = {\n  render: () => <DumbbellChart data={d} beads={{ unit: 4 }} description="1 bead = 4 points" />,\n};',
+      ),
+      blockStory(
+        "hourglass.stories.tsx",
+        "export const Default: Story = {\n  render: () => <Hourglass />,\n};",
+      ),
     ],
     fail: [
+      block(
+        "hourglass/hourglass.tsx",
+        'export function Hourglass({ unit }) {\n  return <svg><UnitStack n={4} kind="tick" /><text>{format(unit)}</text></svg>;\n}',
+      ),
+      block(
+        "kpi/kpi.tsx",
+        'export const Kpi = () => <HeatmapChart data={d} mode="dot" description="Orders by weekday" />;',
+      ),
+      block(
+        "waterfall/waterfall.tsx",
+        "export const Bridge = () => <WaterfallChart data={d} unit={25} />;",
+      ),
+      blockStory(
+        "kpi.stories.tsx",
+        'export const Default: Story = {\n  render: () => (\n    <BarChart data={d}>\n      <Bar dataKey="revenue" unit={2000} />\n    </BarChart>\n  ),\n};',
+      ),
       story(
         "unit-chart.stories.tsx",
         'export const Foo: Story = {\n  args: { data: [], layout: "waffle" },\n};',
