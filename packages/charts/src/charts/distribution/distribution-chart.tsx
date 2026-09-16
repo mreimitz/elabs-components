@@ -243,22 +243,32 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
     /**
      * The one domain. A histogram's is its bin edges (the axis must end where
      * the last bucket ends); a violin's is widened by the KDE taper so the
-     * silhouette's tails are not clipped by the plot edge.
+     * silhouette's tails are not clipped by the plot edge. A reference line
+     * past the data's own extreme (an SLA the data already clears) widens the
+     * domain to include it, with breathing room — otherwise the threshold
+     * lands flush against the plot edge, cramped against the last tick.
      */
     const domain = useMemo<[number, number]>(() => {
       if (allValues.length === 0) return [0, 1];
       if (sharedBins) {
         return [sharedBins.edges[0] as number, sharedBins.edges.at(-1) as number];
       }
-      const [lo, hi] = extentOf(allValues);
-      if (kind !== "violin") return [lo, hi];
-      let widest = 0;
-      for (const group of groups) {
-        const h = bandwidth && bandwidth > 0 ? bandwidth : silvermanBandwidth(group.values);
-        if (h > widest) widest = h;
+      const [dataLo, dataHi] = extentOf(allValues);
+      const referenceValues = referenceLines.map((line) => line.value);
+      const lo = referenceValues.length > 0 ? Math.min(dataLo, ...referenceValues) : dataLo;
+      const hi = referenceValues.length > 0 ? Math.max(dataHi, ...referenceValues) : dataHi;
+      if (kind === "violin") {
+        let widest = 0;
+        for (const group of groups) {
+          const h = bandwidth && bandwidth > 0 ? bandwidth : silvermanBandwidth(group.values);
+          if (h > widest) widest = h;
+        }
+        return [lo - KDE_TAPER * widest, hi + KDE_TAPER * widest];
       }
-      return [lo - KDE_TAPER * widest, hi + KDE_TAPER * widest];
-    }, [allValues, bandwidth, groups, kind, sharedBins]);
+      if (referenceValues.length === 0) return [lo, hi];
+      const pad = (hi - lo || 1) * 0.08;
+      return [lo - pad, hi + pad];
+    }, [allValues, bandwidth, groups, kind, referenceLines, sharedBins]);
 
     /**
      * One colour per group. With `"sequential"` a box/violin is shaded by MEDIAN

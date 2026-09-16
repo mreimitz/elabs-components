@@ -73,11 +73,16 @@ export const pickTimeMetric: DistributionMetricConfig = {
   recordNounPlural: "picks",
 };
 
-/** On-track when p90 already clears the SLA; off-track once it misses by more than 10%. */
+/**
+ * A BREACHED SLA is always off-track, however small the overrun — "13.8% of
+ * deliveries over 48 h" is a miss, not a caution. At-risk is reserved for the
+ * OTHER side of the line: still within the SLA, but p90 sits close enough to
+ * the limit (within 10%) that the next bad week tips it over.
+ */
 function statusFromP90(p90: number, sla: number): KpiStatusValue {
-  if (p90 <= sla) return "on-track";
-  if (p90 <= sla * 1.1) return "at-risk";
-  return "off-track";
+  if (p90 > sla) return "off-track";
+  if (p90 >= sla * 0.9) return "at-risk";
+  return "on-track";
 }
 
 function shareOverThreshold(samples: number[], threshold: number): number {
@@ -171,6 +176,12 @@ function KpiDistributionCard({
   const status = statusFromP90(p90, metric.slaThreshold);
   const overSharePct = shareOverThreshold(metric.samples, metric.slaThreshold);
   const fmt = (value: number) => formatDistributionValue(value, metric.unit, locale);
+  // The chart's category axis falls back to the value key when the group is
+  // omitted (`DistributionChart`'s documented single-group behaviour) — key
+  // the records by the metric's own UNIT rather than the generic field name
+  // "value" (meaningless) or the metric's full label (already shown as the
+  // card's title, and long enough to crowd the axis margin).
+  const sampleKey = metric.unit === "hours" ? "Hours" : "Minutes";
 
   return (
     <Card data-slot="kpi-distribution-card">
@@ -196,11 +207,11 @@ function KpiDistributionCard({
         <div className="h-24 w-full">
           <DistributionChart
             accessibleLabel={`${metric.label} distribution`}
-            data={metric.samples.map((value) => ({ value }))}
+            data={metric.samples.map((value) => ({ [sampleKey]: value }))}
             kind="box"
             referenceLines={[{ label: metric.slaLabel, value: metric.slaThreshold }]}
             valueFormat="number"
-            valueKey="value"
+            valueKey={sampleKey}
           />
         </div>
         <p className="text-body text-muted-foreground">

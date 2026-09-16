@@ -9,7 +9,11 @@
  *   A rounded IQR reads as a range rather than as a bar someone might try to
  *   compare by area — which is exactly the misreading a box plot invites.
  * - **the whisker is a HAIRLINE**, drawn behind the capsule, with no end caps.
- *   Caps make the fences look like data; they are not, they are 1.5 × IQR.
+ *   Caps make the fences look like data; they are not, they are 1.5 × IQR. It
+ *   draws in the same ink as body text (`--chart-foreground`, not the dimmer
+ *   `-muted` rung) — the reach to the fence is the whole point of reaching for
+ *   a box plot over a bare median, so it has to read at a glance, not just on
+ *   close inspection (#…).
  * - **the median tick is a CUT through the capsule**, not a fifth mark on top
  *   of it: an achromatic on-mark ink (`--chart-ink-on-light` /
  *   `--chart-ink-on-dark`) that the container picks from the capsule's own
@@ -35,7 +39,7 @@ const BOX_FRACTION = 0.44;
 export const BOX_BODY_OPACITY = 0.9;
 
 /** Outlier marker radius, in px. */
-const OUTLIER_RADIUS = 2.75;
+const OUTLIER_RADIUS = 3.25;
 
 export interface DistributionBoxProps extends DistributionKindProps {
   /** Draw the hollow marks beyond the fences. */
@@ -96,10 +100,13 @@ function DistributionBoxImpl({
       onPointerLeave={() => onHover(null)}
     >
       {/* Whisker: one hairline through the whole reach, drawn first so the
-          capsule covers its middle. */}
+          capsule covers its middle. Full-contrast ink, not the dimmer `-muted`
+          rung — against a filled capsule this thin a line needs to read at a
+          glance (#…). */}
       <line
-        stroke={chartCssVars.foregroundMuted}
-        strokeWidth={1}
+        data-slot="distribution-chart-whisker"
+        stroke={chartCssVars.foreground}
+        strokeWidth={1.5}
         x1={horizontal ? whiskerLo : centre}
         x2={horizontal ? whiskerHi : centre}
         y1={horizontal ? centre : whiskerLo}
@@ -145,7 +152,7 @@ function DistributionBoxImpl({
                 key={`${value}-${index}`}
                 r={OUTLIER_RADIUS}
                 stroke={color}
-                strokeWidth={1}
+                strokeWidth={1.5}
               />
             );
           })
