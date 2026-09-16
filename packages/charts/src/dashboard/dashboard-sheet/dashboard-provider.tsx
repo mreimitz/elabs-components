@@ -169,7 +169,6 @@ export function DashboardProvider({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialState is read once (ref)
   }, [store, driver]);
 
   // autosave — RM-083: an ordinary spec commit debounces `onChange` (trailing edge); a

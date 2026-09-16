@@ -1,11 +1,23 @@
+import { useRef, useState } from "react";
+
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Button } from "@elabs-ai/components-ui";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import { cellRect } from "../core/layout";
+import type { DashboardActions } from "../core/store";
 import type { DashboardSpec, TileSpec } from "../core/spec";
+import { decodeDashboardState } from "../core/url";
 import { opsFlowSpec } from "../fixtures/ops-flow";
 import { salesOverviewSpec } from "../fixtures/sales-overview";
-import { DashboardProvider, DashboardSheet, createPlaceholderTileKind } from "./index";
+import {
+  DashboardProvider,
+  DashboardSheet,
+  createPlaceholderTileKind,
+  useDashboard,
+  useDashboardActions,
+  useDashboardUrlState,
+} from "./index";
 
 const TILES = ["kpi", "chart", "text", "placeholder"].map((kind) =>
   createPlaceholderTileKind(kind),
@@ -184,5 +196,244 @@ export const NarrowContainer: Story = {
         "xs",
       ),
     );
+  },
+};
+
+// State persistence — RM-083
+
+function SelectEmeaButton() {
+  const actions = useDashboardActions();
+  return (
+    <Button size="sm" onClick={() => actions.select("Region", ["EMEA"], { replace: true })}>
+      Select EMEA
+    </Button>
+  );
+}
+
+export const UrlState: Story = {
+  name: "URL state",
+  render: () => {
+    function Demo() {
+      const [reloadedFrom, setReloadedFrom] = useState<string | null>(null);
+      const encodedRef = useRef("");
+      return (
+        <div className="flex flex-col gap-3">
+          <DashboardProvider spec={SALES} tiles={TILES}>
+            <div className="flex items-center gap-3">
+              <SelectEmeaButton />
+              <UrlStateBarCapture onEncoded={(v) => (encodedRef.current = v)} />
+            </div>
+            <DashboardSheet />
+          </DashboardProvider>
+          <Button size="sm" variant="outline" onClick={() => setReloadedFrom(encodedRef.current)}>
+            Simulate reload with this URL
+          </Button>
+          {reloadedFrom ? (
+            <div data-testid="reloaded-sheet" className="border-t border-border pt-3">
+              {/* A distinct title: two `role="region"` landmarks (this one + the live sheet
+               * above) need unique accessible names (axe `landmark-unique`). */}
+              <DashboardProvider
+                spec={{ ...SALES, title: `${SALES.title} (reloaded)` }}
+                tiles={TILES}
+                initialState={decodeDashboardState(reloadedFrom) ?? undefined}
+              >
+                <ReloadedSelectionProbe />
+                <DashboardSheet />
+              </DashboardProvider>
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+    function UrlStateBarCapture({ onEncoded }: { onEncoded: (value: string) => void }) {
+      const { encoded } = useDashboardUrlState();
+      onEncoded(encoded);
+      const params = new URLSearchParams({ d: encoded });
+      return (
+        <div className="flex flex-col gap-1">
+          {/* The app-facing shape — a real host wires `params.toString()` to its router. */}
+          <output data-slot="dashboard-url-state" className="text-caption font-mono">
+            {`?${params.toString()}`}
+          </output>
+          {/* The raw `encodeDashboardState` value, exposed for the play function below — a
+           * router's own percent-encoding (`URLSearchParams`, nuqs, …) is a second, separate
+           * layer this component never needs to know about. */}
+          <output data-testid="url-encoded" className="sr-only">
+            {encoded}
+          </output>
+        </div>
+      );
+    }
+    function ReloadedSelectionProbe() {
+      // Surfaces the restored selection as text — decoupled from any one chart's own
+      // dimmed-mark DOM — so the play function can assert `initialState` actually landed.
+      const selection = useDashboard((s) => s.selection);
+      const region = selection.fields.Region?.values.join(", ") ?? "";
+      return (
+        <output data-testid="reloaded-selection" className="text-caption font-mono">
+          {`Region: ${region}`}
+        </output>
+      );
+    }
+    return <Demo />;
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const encodedEl = await canvas.findByTestId("url-encoded");
+    // Nothing selected yet: no `s.Region=` segment.
+    await expect(encodedEl.textContent).not.toContain("Region");
+    await userEvent.click(canvas.getByRole("button", { name: "Select EMEA" }));
+    await waitFor(() => expect(encodedEl.textContent).toContain("s.Region=s:EMEA"));
+    await expect(decodeDashboardState(encodedEl.textContent ?? "")).toEqual(
+      expect.objectContaining({ selection: { Region: ["EMEA"] } }),
+    );
+
+    await userEvent.click(canvas.getByRole("button", { name: "Simulate reload with this URL" }));
+    const reloaded = await canvas.findByTestId("reloaded-sheet");
+    // `initialState` restores the selection before first paint — the probe's text and every
+    // chart tile's dimmed/selected marks (RM-071's tri-state `data-selection`) both read off
+    // the same store, so asserting the probe is enough to know the dimming followed too.
+    await waitFor(() =>
+      expect(within(reloaded).getByTestId("reloaded-selection")).toHaveTextContent("Region: EMEA"),
+    );
+  },
+};
+
+/** `autosaveMs` debounces `onChange`: rapid edits within the window collapse into one call. */
+export const Autosave: Story = {
+  name: "Autosave",
+  render: () => {
+    function Demo() {
+      const [calls, setCalls] = useState(0);
+      const actionsRef = useRef<DashboardActions | null>(null);
+      function ActionsProbe() {
+        actionsRef.current = useDashboardActions();
+        return null;
+      }
+      return (
+        <div className="flex flex-col gap-3">
+          <output data-testid="autosave-calls" className="text-caption font-mono">
+            {`${calls} onChange call(s)`}
+          </output>
+          <DashboardProvider
+            spec={SALES}
+            tiles={TILES}
+            autosaveMs={300}
+            onChange={() => setCalls((n) => n + 1)}
+          >
+            <ActionsProbe />
+            <DashboardSheet />
+          </DashboardProvider>
+          <Button
+            size="sm"
+            onClick={() => {
+              for (let i = 0; i < 5; i++)
+                actionsRef.current?.patchTile("kpi-revenue", { title: `Revenue ${i}` });
+            }}
+          >
+            Move a tile 5 times rapidly
+          </Button>
+        </div>
+      );
+    }
+    return <Demo />;
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Move a tile 5 times rapidly" }));
+    await expect(canvas.getByTestId("autosave-calls")).toHaveTextContent("0 onChange call(s)");
+    await waitFor(
+      () => expect(canvas.getByTestId("autosave-calls")).toHaveTextContent("1 onChange call(s)"),
+      { timeout: 2000 },
+    );
+  },
+};
+
+const PERSIST_RECIPE_STORAGE_KEY = "brand-ui-dashboard-sheet-persist-recipe";
+
+/** Every storage access wrapped in try/catch — the storage rules ask for this because
+ * `localStorage` can be disabled (private browsing) or full; a recipe, not a feature (D5,
+ * README "State persistence" — brand-ui never owns persistence itself). */
+function readPersistedSpec(fallback: DashboardSpec): DashboardSpec {
+  try {
+    const raw = window.localStorage.getItem(PERSIST_RECIPE_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as DashboardSpec) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writePersistedSpec(spec: DashboardSpec): void {
+  try {
+    window.localStorage.setItem(PERSIST_RECIPE_STORAGE_KEY, JSON.stringify(spec));
+  } catch {
+    // storage disabled or full — the sheet still works, it just will not persist.
+  }
+}
+
+function clearPersistedSpec(): void {
+  try {
+    window.localStorage.removeItem(PERSIST_RECIPE_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+function RenameFirstTileButton() {
+  const actions = useDashboardActions();
+  return (
+    <Button
+      size="sm"
+      onClick={() => actions.patchTile("kpi-revenue", { title: "Renamed via recipe" })}
+    >
+      Rename first tile
+    </Button>
+  );
+}
+
+export const PersistToLocalStorage: Story = {
+  name: "Persist to localStorage (recipe)",
+  render: () => {
+    clearPersistedSpec();
+    function Demo() {
+      const [spec, setSpec] = useState(() => readPersistedSpec(SALES));
+      return (
+        <div className="flex flex-col gap-3">
+          <DashboardProvider
+            spec={spec}
+            tiles={TILES}
+            onChange={(next) => {
+              setSpec(next);
+              writePersistedSpec(next);
+            }}
+          >
+            <RenameFirstTileButton />
+            <DashboardSheet />
+          </DashboardProvider>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              clearPersistedSpec();
+              setSpec(SALES);
+            }}
+          >
+            Reset
+          </Button>
+        </div>
+      );
+    }
+    return <Demo />;
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Rename first tile" }));
+    await waitFor(() => {
+      const raw = window.localStorage.getItem(PERSIST_RECIPE_STORAGE_KEY);
+      expect(raw).not.toBeNull();
+      const stored = JSON.parse(raw as string) as DashboardSpec;
+      expect(stored.tiles.find((t) => t.id === "kpi-revenue")?.title).toBe("Renamed via recipe");
+    });
+    clearPersistedSpec();
   },
 };
