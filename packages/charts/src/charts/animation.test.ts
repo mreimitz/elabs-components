@@ -1,6 +1,6 @@
 /**
- * RM-020 — the four chart motion tokens (`--chart-stagger-dot`,
- * `--chart-stagger-bar`, `--chart-enter`, `--chart-enter-slow`) read via
+ * RM-020 — the four chart motion tokens (`--t-chart-stagger-dot`,
+ * `--t-chart-stagger-bar`, `--t-chart-enter`, `--t-chart-enter-slow`) read via
  * `getComputedStyle`, SSR-safe literal fallback.
  */
 
