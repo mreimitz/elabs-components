@@ -1288,9 +1288,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Y_AXIS_MAX_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_MIN_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | YAxis | component |  | `@elabs-ai/components-charts` |  |
+| DASHBOARD_EDIT_SHIFT_STEP | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_TILE_WARNING_THRESHOLD | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardEditLayer | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardExpressionError | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardGridContext | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardMarquee | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardProvider | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardSelectionBar | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardSheet | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1306,12 +1309,19 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_SELECTION_BAR_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | EMPTY_SELECTION | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | GRID_DENSITY_PRESETS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| RESIZE_HANDLES | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| SILENT_ANNOUNCEMENTS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| TileDragHandle | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| TileResizeHandles | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| TileSizeBadge | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | useCellRect | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboard | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardActions | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboardEdit | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useHover | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useSelection | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useTile | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useTileMove | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useVariable | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 
 ## @elabs-ai/components-marketing
