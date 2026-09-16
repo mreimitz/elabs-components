@@ -1,9 +1,12 @@
 "use client";
 
 import { ChartConfigProvider, WaterfallChart } from "@elabs-ai/components-charts";
-import { Skeleton } from "@elabs-ai/components-ui";
-import { cn } from "@elabs-ai/components-ui/lib/cn";
-import { AS_OF_DATE, DATA_SOURCE } from "@/components/kpi-card-parts/data/acme-quarter";
+import { Badge, Card, CardContent, Skeleton } from "@elabs-ai/components-ui";
+import {
+  AS_OF_DATE,
+  DATA_SOURCE,
+  QUARTER_LABEL,
+} from "@/components/kpi-card-parts/data/acme-quarter";
 import { formatKpiDelta, formatKpiValue } from "@/components/kpi-card-parts/format";
 import { KpiAsOf } from "@/components/kpi-card-parts/kpi-as-of";
 import { priceLedBridge, type RevenueBridgeScenario } from "./data/revenue-bridge";
@@ -19,18 +22,24 @@ export interface InfographicVarianceBridgeProps {
 
 function InfographicVarianceBridgeSkeleton({ className }: { className?: string }) {
   return (
-    <div
+    <Card
       aria-live="polite"
-      className={cn("w-full space-y-3", className)}
+      className={className}
       data-slot="infographic-variance-bridge"
       role="status"
     >
-      <span className="sr-only">Loading the bridge…</span>
-      <Skeleton aria-hidden="true" className="h-6 w-3/4" />
-      <Skeleton aria-hidden="true" className="h-64 w-full" />
-      <Skeleton aria-hidden="true" className="h-3 w-2/3" />
-      <Skeleton aria-hidden="true" className="h-3 w-40" />
-    </div>
+      <CardContent className="space-y-3 p-5">
+        <span className="sr-only">Loading the bridge…</span>
+        <div aria-hidden="true" className="flex items-center justify-between gap-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <Skeleton aria-hidden="true" className="h-6 w-3/4" />
+        <Skeleton aria-hidden="true" className="h-4 w-1/2" />
+        <Skeleton aria-hidden="true" className="h-56 w-full" />
+        <Skeleton aria-hidden="true" className="h-3 w-2/3" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -39,9 +48,14 @@ function InfographicVarianceBridgeSkeleton({ className }: { className?: string }
  * this quarter's, split into named drivers, with a `Leader` callout on the
  * one that actually explains the move. Every step's sign is stated in words
  * on its own label (`WaterfallChart`'s `showValues`) — colour is never the
- * only channel (`.claude/rules/conventions.md` § Accessibility). The ending
- * total is a SUM of the steps, never typed twice: see
- * `registry/blocks/infographic-variance-bridge-01/data/revenue-bridge.ts`.
+ * only channel (`.claude/rules/conventions.md` § Accessibility).
+ *
+ * The chart draws the DELTAS only, zero-based (never the Q2/Q3 totals
+ * themselves — at their scale a driver's delta would be a sliver a couple
+ * of pixels tall, and truncating the total bars to fix that is dishonest,
+ * `.claude/rules/charts.md` § Honesty). The Q2 → Q3 endpoints are instead
+ * stated as text, above the chart, computed from the same steps the chart
+ * draws — see `data/revenue-bridge.ts`.
  *
  * Bar labels read in EUR via `ChartConfigProvider` — `WaterfallChart` itself
  * has no `currency` prop (only `valueFormat`), and this scenario's dataset is
@@ -59,32 +73,51 @@ export function InfographicVarianceBridge({
     return <InfographicVarianceBridgeSkeleton className={className} />;
   }
 
-  const { headline, startLabel, endLabel, startTotal, endTotal, data, callouts, methodNote } =
-    scenario;
-  const netChange = endTotal - startTotal;
-  const netLabel = formatKpiDelta(netChange, "currency", locale, "EUR");
+  const {
+    headline,
+    startLabel,
+    endLabel,
+    startTotal,
+    endTotal,
+    netChange,
+    data,
+    callouts,
+    methodNote,
+  } = scenario;
+  const startFmt = formatKpiValue(startTotal, "currency", locale, "EUR");
+  const endFmt = formatKpiValue(endTotal, "currency", locale, "EUR");
+  const netFmt = formatKpiDelta(netChange, "currency", locale, "EUR");
+  const endpointsCaption = `${startFmt} in ${startLabel} → ${endFmt} in ${endLabel}, ${netFmt} net change`;
   const calloutSummary = callouts.map((callout) => `${callout.label}: ${callout.note}`).join("; ");
-  const accessibleDescription = `${startLabel} ${formatKpiValue(startTotal, "currency", locale, "EUR")} to ${endLabel} ${formatKpiValue(endTotal, "currency", locale, "EUR")}, a net change of ${netLabel}. ${calloutSummary}.`;
+  const accessibleDescription = `${endpointsCaption}. ${calloutSummary}.`;
 
   return (
-    <div className={cn("w-full space-y-3", className)} data-slot="infographic-variance-bridge">
-      <h3 className="text-title text-foreground">{headline}</h3>
-      <ChartConfigProvider value={{ currency: "EUR" }}>
-        <WaterfallChart
-          accessibleDescription={accessibleDescription}
-          accessibleLabel={`${startLabel} to ${endLabel} bridge`}
-          callouts={callouts}
-          className="w-full"
-          data={data}
-          height={280}
-          margin={{ top: 64 }}
-          valueFormat="currency"
-        />
-      </ChartConfigProvider>
-      <p className="text-caption text-muted-foreground">
-        {methodNote} Net change {netLabel}.
-      </p>
-      <KpiAsOf date={AS_OF_DATE} locale={locale} source={DATA_SOURCE} />
-    </div>
+    <Card className={className} data-slot="infographic-variance-bridge">
+      <CardContent className="space-y-3 p-5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate text-body text-muted-foreground">Revenue bridge</span>
+          <Badge className="shrink-0" variant="secondary">
+            {QUARTER_LABEL}
+          </Badge>
+        </div>
+        <h3 className="text-title text-foreground">{headline}</h3>
+        <p className="tabular-nums text-body text-foreground">{endpointsCaption}</p>
+        <ChartConfigProvider value={{ currency: "EUR" }}>
+          <WaterfallChart
+            accessibleDescription={accessibleDescription}
+            accessibleLabel={`${startLabel} to ${endLabel} revenue bridge, by driver`}
+            callouts={callouts}
+            className="w-full"
+            data={data}
+            grid={false}
+            height={240}
+            margin={{ top: 48 }}
+            valueFormat="currency"
+          />
+        </ChartConfigProvider>
+        <p className="text-caption text-muted-foreground">{methodNote}</p>
+        <KpiAsOf date={AS_OF_DATE} locale={locale} source={DATA_SOURCE} />
+      </CardContent>
+    </Card>
   );
 }
