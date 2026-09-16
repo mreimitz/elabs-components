@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T08:56:00.499Z",
+  "generatedAt": "2026-09-16T09:01:58.870Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13612,6 +13612,11 @@
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
+          "name": "UNIT_STACK_EMPHASIS",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "UnitChart",
           "kind": "value",
           "module": "packages/charts/src/charts/unit-chart.tsx"
@@ -13707,6 +13712,11 @@
           "name": "useChartStable",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
+          "name": "useChartValueSetFormatter",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-formatters.ts"
         },
         {
           "name": "useChoropleth",
@@ -14011,6 +14021,10 @@
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
         {
+          "name": "ChartExportKind",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
           "name": "ChartFrameColumn",
           "module": "packages/charts/src/chart-frame/chart-frame-context.tsx"
         },
@@ -14056,6 +14070,10 @@
         },
         {
           "name": "ChartRevealClipProps",
+          "module": "packages/charts/src/charts/chart-reveal-clip.tsx"
+        },
+        {
+          "name": "ChartRevealOn",
           "module": "packages/charts/src/charts/chart-reveal-clip.tsx"
         },
         {
@@ -14931,6 +14949,10 @@
           "module": "packages/charts/src/charts/tree-chart.tsx"
         },
         {
+          "name": "TreeDatapointDatum",
+          "module": "packages/charts/src/charts/tree-chart.tsx"
+        },
+        {
           "name": "TreemapChartProps",
           "module": "packages/charts/src/charts/treemap/index.ts"
         },
@@ -15257,6 +15279,18 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "defaultTreeDatapointLabel",
+          "module": "packages/charts/src/charts/tree-chart.tsx"
+        },
+        {
+          "name": "deriveStripMaxEntities",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "deriveStripMaxPeriods",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
           "name": "describeDistribution",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -15401,6 +15435,10 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "limitBumpPeriods",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
           "name": "limitBumpSeries",
           "module": "packages/charts/src/charts/bump-chart.tsx"
         },
@@ -15505,6 +15543,10 @@
           "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
+          "name": "resolveParallelEntityColors",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
           "name": "resolveProfitLossTooltipLabel",
           "module": "packages/charts/src/charts/profit-loss-line.tsx"
         },
@@ -15593,6 +15635,10 @@
           "module": "packages/charts/src/charts/treemap/index.ts"
         },
         {
+          "name": "valueFormatOptionsForSet",
+          "module": "packages/charts/src/charts/value-format.ts"
+        },
+        {
           "name": "viewModeToScales",
           "module": "packages/charts/src/gantt/gantt.tsx"
         }
@@ -15679,7 +15725,7 @@
               "name": "gradientToOpacity",
               "optional": true,
               "type": "number",
-              "description": "Gradient opacity at bottom (0 = fully transparent). Default: 0"
+              "description": "Gradient opacity at bottom. Default: `0` (fully transparent) for an ordinary, unstacked area — the bottom edge is the y-axis baseline, not the encoding, so fading toward it costs no information. For a STACKED band (`AreaChart offset` set, #245) the default instead follows `fillOpacity` — a flat wash — because in a stacked/stream area BOTH edges are the encoding (band thickness is the value) and fading one away destroys it. Pass an explicit value (including `0`) to override either default."
             },
             {
               "name": "gradientSpan",
@@ -15801,6 +15847,18 @@
               "description": "Signature of motion URL state — triggers reveal replay when it changes."
             },
             {
+              "name": "revealOn",
+              "optional": true,
+              "type": "ChartRevealOn",
+              "description": "When the enter reveal is allowed to play (#175). `\"mount\"` (default) plays as soon as the chart renders — no change from today. `\"inView\"` holds the reveal at width 0 until this chart's own container scrolls to 30% visible."
+            },
+            {
+              "name": "replayOnClick",
+              "optional": true,
+              "type": "boolean",
+              "description": "Clicking the chart body replays the enter reveal (#175). Default `false`."
+            },
+            {
               "name": "aspectRatio",
               "optional": true,
               "type": "string",
@@ -15918,7 +15976,7 @@
               "name": "seams",
               "optional": true,
               "type": "number",
-              "description": "Paper gap between stacked bands, in px — a `--chart-background` stroke drawn along each band's own top edge. Only takes effect when `offset` is set. Default: 0 (no seam). 2 is the F16 lieflat value."
+              "description": "Paper gap between stacked bands, in px — a `--chart-background` stroke drawn along each band's own top edge. Only takes effect when `offset` is set. Default: 0 (no seam). 2 is the F16 lieflat value. When set (> 0), the seam owns the band's edge (#245): the band's own crest stroke is suppressed there so the paper gap is what separates the ribbons, rather than the two painting the same path on top of each other."
             },
             {
               "name": "labelBands",
@@ -16115,7 +16173,7 @@
               "name": "unit",
               "optional": true,
               "type": "number",
-              "description": "Draw each bar as a countable `UnitStack` of `round(value / unit)` rungs (vertical bars, `kind=\"rung\"`) or ticks (horizontal bars, `kind=\"tick\"`) instead of a solid fill — lieflat F1 Rung Bars. Width and opacity jitter via `seededRnd`, keyed per bar so neighbours never jitter in lockstep; every 5th unit draws heavier so the stack stays countable. Renders instantly (no `animate`/`animationType` grow-in). Default: off (solid fill)."
+              "description": "Draw each bar as a countable `UnitStack` of `floor(value / unit)` rungs (vertical bars, `kind=\"rung\"`) or ticks (horizontal bars, `kind=\"tick\"`) instead of a solid fill — lieflat F1 Rung Bars. The rung pitch is derived from the value scale, not the bar's own pixel span, so one rung is worth the same amount in every column and the ladder never counts past the bar's own value (#241) — a value that is not an exact multiple of `unit` draws an honest partial. Width and opacity jitter via `seededRnd`, keyed per bar so neighbours never jitter in lockstep; every 5th unit draws heavier so the stack stays countable. Renders instantly (no `animate`/`animationType` grow-in). Default: off (solid fill)."
             },
             {
               "name": "highlightKey",
@@ -16401,7 +16459,13 @@
               "name": "maxEntities",
               "optional": true,
               "type": "number",
-              "description": "Cap on plotted entities, kept by final rank. Default `10`; dev-warns once when the data has more."
+              "description": "Cap on plotted entities, kept by final rank. Default `10`; dev-warns once when the data has more. For `variant=\"strip\"` this is also intersected with the largest row count whose printed rank still fits legibly (#273) — a raised `maxEntities` that would no longer fit is quietly lowered and warned about by name, never silently dropped to colour-only."
+            },
+            {
+              "name": "maxPeriods",
+              "optional": true,
+              "type": "number",
+              "description": "`variant=\"strip\"` only: cap on plotted periods (columns), kept as the MOST RECENT N — a rank race reads right-to-left, so the oldest periods are the meaningful ones to drop. Defaults to the largest column count whose printed rank still reaches the legibility floor for the chart's current width; dev-warns once naming `maxPeriods` when data (or an explicit value) would cross it (#273). Ignored by `\"lines\"`."
             },
             {
               "name": "palette",
@@ -16813,7 +16877,7 @@
               "name": "source",
               "optional": true,
               "type": "ReactNode",
-              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract); hidden when absent."
+              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract); hidden when absent. A string that overflows the row stays fully recoverable — a native `title` and, once it measurably overflows, a keyboard-reachable tooltip (#184). A non-string node keeps only the CSS caps with no overflow recovery — keep it short, or accept it may be visually truncated with no fallback."
             }
           ]
         },
@@ -16952,7 +17016,7 @@
               "name": "source",
               "optional": true,
               "type": "ReactNode",
-              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent."
+              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal, under the chart in both — never appended to the summary statistics; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent. A string that overflows the row stays fully recoverable — a native `title` and, once it measurably overflows, a keyboard-reachable tooltip (#184). A non-string node keeps only the CSS caps with no overflow recovery — keep it short, or accept it may be visually truncated with no fallback."
             },
             {
               "name": "children",
@@ -17435,6 +17499,12 @@
               "description": "Histogram only: records per rung. Set it to draw each bin as COUNTABLE rungs (`F14`) instead of a bar — the number is the legend (\"one rung = 5 tickets\"), which is why it is a count and not a boolean."
             },
             {
+              "name": "unitLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Histogram with `unit` only: the legend that makes the rungs decodable — \"one rung = 5 tickets\". Rendered as a caption under the plot and folded into the accessible description. Ignored without `unit`."
+            },
+            {
               "name": "palette",
               "optional": true,
               "type": "ChartPalette",
@@ -17736,7 +17806,7 @@
               "name": "showConversion",
               "optional": true,
               "type": "\"between\" | \"margin\" | false",
-              "description": "Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered as a `HaloText` annotation (lieflat L13's \"62% GET THROUGH\" margin note — the number funnel readers actually want, distinct from the existing `showPercentage` badge which is always \"% of the first stage\"). - `\"between\"` places one annotation at the boundary between each pair of adjacent segments. - `\"margin\"` stacks all transitions in a column near the funnel's leading edge (left edge for horizontal, top edge for vertical). - `false` (default) renders nothing — an existing `FunnelChart` with no `showConversion` prop is unaffected. When set, the interactive stage overlay (hover/click target) also gets a native `title` tooltip reading \"N% of previous stage · M% of first stage\"."
+              "description": "Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered as a small opaque plate (lieflat L13's \"62% GET THROUGH\" margin note — the number funnel readers actually want, distinct from the existing `showPercentage` badge which is always \"% of the first stage\"). The plate carries its own ground/ink pair (like `SegmentLabel`'s percentage pill), so it stays legible on any band fill in any theme — see #239. - `\"between\"` places one annotation at the boundary between each pair of adjacent segments. - `\"margin\"` stacks all transitions in a column near the funnel's leading edge (left edge for horizontal, top edge for vertical). - `false` (default) renders nothing — an existing `FunnelChart` with no `showConversion` prop is unaffected. When set, the interactive stage overlay (hover/click target) also gets a native `title` tooltip reading \"N% of previous stage · M% of first stage\"."
             }
           ]
         },
@@ -17949,7 +18019,9 @@
           ]
         },
         "Gauge": {
-          "extends": [],
+          "extends": [
+            "ChartA11yProps"
+          ],
           "props": [
             {
               "name": "value",
@@ -18108,7 +18180,7 @@
               "name": "milestones",
               "optional": true,
               "type": "number[]",
-              "description": "Milestone values (0–100) marked with a small halo-text dot + number inside the notch band — e.g. `[25, 50, 75, 100]` (lieflat F11). Unset (default) renders no milestones, so an existing `Gauge` is unaffected."
+              "description": "Milestone values (0–100) marked with a small dot on the dial and a halo-text number just **outside** the notch band, joined by a short dotted leader — e.g. `[25, 50, 75, 100]` (lieflat F11). Setting `milestones` reserves a small radial margin so the leader + label never clip the gauge's own box; a `Gauge` with `milestones` unset renders its pre-existing, unaffected geometry. #248."
             },
             {
               "name": "remainingLabel",
@@ -18434,6 +18506,18 @@
               "name": "revealSignature",
               "optional": true,
               "type": "string"
+            },
+            {
+              "name": "revealOn",
+              "optional": true,
+              "type": "ChartRevealOn",
+              "description": "When the enter reveal is allowed to play (#175). `\"mount\"` (default) plays as soon as the chart renders — no change from today. `\"inView\"` holds the reveal at width 0 until this chart's own container scrolls to 30% visible."
+            },
+            {
+              "name": "replayOnClick",
+              "optional": true,
+              "type": "boolean",
+              "description": "Clicking the chart body replays the enter reveal (#175). Default `false`."
             },
             {
               "name": "aspectRatio",
@@ -19905,6 +19989,12 @@
               "description": "Key in data for the x-axis (date). Default: \"date\""
             },
             {
+              "name": "xScale",
+              "optional": true,
+              "type": "ScatterXScaleType",
+              "description": "How `xDataKey` values are interpreted (#302). Default: `\"time\"`, unless every value is already a `number`, which infers `\"linear\"` — a numeric x (weight, price, …) then renders numeric tick labels and a numeric tooltip title instead of an epoch date. A categorical x remains unsupported (still warns); only `\"time\"`/`\"linear\"` are offered."
+            },
+            {
               "name": "margin",
               "optional": true,
               "type": "Partial<Margin>",
@@ -20391,7 +20481,7 @@
               "name": "periodTicks",
               "optional": true,
               "type": "XAxisPeriodTicks | false",
-              "description": "Draw a `HairlineFloor` (RM-017) below the plot — one hairline tick per calendar period, whether or not a data row falls on it, with every `n`-th tick drawn longer (day → every 7th/weekly, week → every 4th/~monthly, month → every 12th/yearly). Lieflat provenance: the ruled foot of a ledger page gives a reader the passage of time with no labels and no axis. This is a SEPARATE visual layer from the labelled ticks above (`numTicks` / `tickMode`) — it never changes which labels render or where. `false` (default) draws nothing — today's behaviour."
+              "description": "Draw a `HairlineFloor` (RM-017) below the plot — one hairline tick per calendar period, whether or not a data row falls on it, with the long tick anchored to a real calendar boundary (day → the first day of the week, week → the first week of the month, month → January), not an index stride from wherever the series happens to start (#253). Lieflat provenance: the ruled foot of a ledger page gives a reader the passage of time with no labels and no axis. This is a SEPARATE visual layer from the labelled ticks above (`numTicks` / `tickMode`) — it never changes which labels render or where. `false` (default) draws nothing — today's behaviour."
             }
           ]
         },

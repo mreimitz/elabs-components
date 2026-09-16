@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 32 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 190 | 35 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 191 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1236,6 +1236,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TreemapChart | component |  | `@elabs-ai/components-charts` | Two-level squarified treemap — a hierarchy where area, not position, encodes value. |
 | UNIT_CHART_GROUP_STAGGER_MS | component |  | `@elabs-ai/components-charts` |  |
 | UNIT_CHART_POSITION_STAGGER_MS | component |  | `@elabs-ai/components-charts` |  |
+| UNIT_STACK_EMPHASIS | component |  | `@elabs-ai/components-charts` |  |
 | UnitChart | component |  | `@elabs-ai/components-charts` | One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie. |
 | UnitStack | component |  | `@elabs-ai/components-charts` | n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random. |
 | useActivateDatapoint | hook |  | `@elabs-ai/components-charts` |  |
@@ -1249,6 +1250,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useChartInteraction | hook |  | `@elabs-ai/components-charts` |  |
 | useChartLegendHover | hook |  | `@elabs-ai/components-charts` |  |
 | useChartStable | hook |  | `@elabs-ai/components-charts` |  |
+| useChartValueSetFormatter | hook |  | `@elabs-ai/components-charts` |  |
 | useChoropleth | hook |  | `@elabs-ai/components-charts` |  |
 | useChoroplethZoom | hook |  | `@elabs-ai/components-charts` |  |
 | useHeatmap | hook |  | `@elabs-ai/components-charts` |  |

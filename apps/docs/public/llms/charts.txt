@@ -326,6 +326,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Turning on drilldown as the only way to reach a leaf's value — the group-band zoom button is a SEPARATE affordance from onDatapointClick on purpose; a leaf stays selectable by its own click/Enter without first forcing a reader to drill in.
 - UNIT_CHART_GROUP_STAGGER_MS
 - UNIT_CHART_POSITION_STAGGER_MS
+- UNIT_STACK_EMPHASIS
 - UnitChart — One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.
   - avoid: Sizing a waffle or field past a few hundred marks in a small frame — UnitStack already warns that one stack stops being countable past ~60 units; here the same failure happens across the WHOLE canvas at once, so budget total/columns/frame size together, not one series at a time.
   - avoid: Turning showArithmetic off (or padding a count) because a rounded-away caption looks untidy — the caption exists BECAUSE the chart never invents a mark to hit total; hiding it trades the one honest-count promise this chart makes for a tidier footer.
@@ -360,6 +361,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useChartInteraction
 - useChartLegendHover
 - useChartStable
+- useChartValueSetFormatter
 - useChoropleth
 - useChoroplethZoom
 - useHeatmap
