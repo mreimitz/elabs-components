@@ -45,6 +45,44 @@ with `capabilities.frame` renders its own `ChartFrame` and spreads `props.frame`
 200×100 px, `sm` < 400×200, `md` < 800×400, else `lg`. Interactions: view mounts
 passive/active/select; edit mounts only edit. An unknown kind renders a `ui/StatePanel` naming it.
 
+## State persistence
+
+D5 (`docs/DECISIONS.md`, ADR 0007): brand-ui renders models — it never owns storage,
+transport or routing. Every persistence seam here is a prop the host drives; nothing in
+`dashboard/` reads `localStorage`, calls `fetch`, or touches `window.history` itself.
+
+- **Spec edits** (`DashboardProvider`'s `onChange(spec, meta)`): the host owns saving. `meta.conflict`
+  says a new `spec` prop arrived while the store was dirty (`meta.incoming` is what lost);
+  `meta.reason` says WHY when the store itself knows — currently only `"bookmark"`
+  (`saveBookmark` with `bookmarks.storage === "spec"`). `autosaveMs` (default `0`, immediate)
+  debounces `onChange` trailing-edge, so a host writing on every call does not thrash storage
+  during a drag; a pending call is flushed on unmount, never dropped.
+- **Selection + variables** (`DashboardProvider`'s `onSelectionChange(selection, variables)`):
+  fires on either changing. Selection/variable changes never touch history and never call
+  `onChange` on their own — wire this separately when a host wants to react to them (write a
+  URL, say) without listening for spec edits too.
+- **A share link** (`core/url.ts`, `encodeDashboardState`/`decodeDashboardState`): pure,
+  versioned (`v1`), URL-safe, never throws — bad or oversized (> 8 kB) input decodes to `null`.
+  `dashboard-sheet/use-dashboard-url-state.ts`'s `useDashboardUrlState()` reads the live
+  `{ encoded, apply }` off the store; it never touches `window`/a router itself — a host wires
+  `encoded` to `URLSearchParams`, nuqs or TanStack Router's search-param state (all three read
+  the same way: `apply(value)` on mount/navigation, write `encoded` on every render).
+  `DashboardProvider`'s `initialState` prop applies a decoded value once, after the selection
+  driver is ready (`SelectionDriver.ready`, optional — the bundled local driver resolves it
+  immediately; a host engine driver with async setup can defer it).
+- **Bookmarks** (`BookmarkSpec`: selection + variables + optional sheet — never layout, matching
+  Qlik's own bookmark model): `applyBookmark(id)` restores one from `spec.bookmarks`.
+  `saveBookmark(label)` (`core/store.ts`) always returns the new `BookmarkSpec`;
+  `DashboardProvider`'s `bookmarks?: { storage: "spec" | "host" }` decides whether it is ALSO
+  appended to `spec.bookmarks` (`"spec"`, one history entry, `onChange` reason `"bookmark"`) or
+  left for the host to persist itself (`"host"`, the default) — `DashboardSelectionBar`'s "Save
+  bookmark…" calls `onSaveBookmark(snapshot, variables)` either way; the host decides what that
+  callback does with it.
+- **The recipe, not a feature:** `dashboard-sheet.stories.tsx`'s "Persist to localStorage
+  (recipe)" story shows the shape — `onChange` writes, the initial `spec` prop reads, every
+  `localStorage` access wrapped in try/catch (it can be disabled or full) — copy it, brand-ui
+  ships no storage adapter.
+
 ## Rules
 
 Binding rules: `.claude/rules/dashboard.md`. Machine check: `pnpm check --rule dashboard-reuse`
