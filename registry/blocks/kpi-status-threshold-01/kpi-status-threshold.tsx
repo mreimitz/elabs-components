@@ -23,22 +23,39 @@ export interface KpiStatusThresholdProps {
   className?: string;
 }
 
-/** Same margin-of-target rule the scorecard uses (`statusForMetric` in
+/**
+ * Same margin-of-target RULE the scorecard uses (`statusForMetric` in
  * `infographic-scorecard-01`) — repeated here, not imported, because a
  * relative import may not cross an item boundary (`.claude/rules/registry.md`
  * § Shared code) and this card additionally reuses it PER WEEK below, which
- * the scorecard's version has no reason to do. */
-function marginFor(target: number): number {
-  return Math.abs(target) * 0.05;
+ * the scorecard's version has no reason to do.
+ *
+ * A percent-unit metric states its margin in ROUND percentage POINTS (5pp) —
+ * a number a real policy would actually be written as ("off track below
+ * 90%") — rather than the scorecard's generic 5%-of-target, which for a 95%
+ * target computes an arbitrary-looking 90.25%. `higherIsBetter`/`actual`
+ * both agree on 91.4% still landing in "at risk" either way (91.4 is within
+ * both the 90.25 and the 90 boundary), so this card and the scorecard reach
+ * the SAME verdict for the one on-time-delivery figure both draw from
+ * (`kpi-card-parts/data/acme-quarter.ts`) — only the boundary this card
+ * additionally prints as a literal number is now one nobody would dispute.
+ */
+function marginFor(target: number, unit: KpiMetric["unit"]): number {
+  return unit === "percent" ? 5 : Math.abs(target) * 0.05;
 }
 
 /** Which zone a single value falls in, against `target` — used both for
  * TODAY's status and, applied to every trailing weekly point, for how long
  * it has held. */
-function statusForValue(value: number, target: number, higherIsBetter: boolean): KpiStatusValue {
+function statusForValue(
+  value: number,
+  target: number,
+  higherIsBetter: boolean,
+  unit: KpiMetric["unit"],
+): KpiStatusValue {
   const gap = higherIsBetter ? target - value : value - target;
   if (gap <= 0) return "on-track";
-  return gap <= marginFor(target) ? "at-risk" : "off-track";
+  return gap <= marginFor(target, unit) ? "at-risk" : "off-track";
 }
 
 /**
@@ -49,12 +66,12 @@ function statusForValue(value: number, target: number, higherIsBetter: boolean):
  * does not have (`.claude/rules/charts.md` § Honesty).
  */
 function weeksInCurrentStatus(metric: KpiMetric): number {
-  const current = statusForValue(metric.actual, metric.target, metric.higherIsBetter);
+  const current = statusForValue(metric.actual, metric.target, metric.higherIsBetter, metric.unit);
   let weeks = 0;
   for (let i = metric.weekly.length - 1; i >= 0; i -= 1) {
     const value = metric.weekly[i];
     if (value === undefined) break;
-    if (statusForValue(value, metric.target, metric.higherIsBetter) !== current) break;
+    if (statusForValue(value, metric.target, metric.higherIsBetter, metric.unit) !== current) break;
     weeks += 1;
   }
   return weeks;
@@ -83,8 +100,8 @@ interface ThresholdZone {
  * zero-based rule to length/bar marks, not a bounded threshold track).
  */
 function scaleDomain(metric: KpiMetric): { min: number; max: number } {
-  const { target, actual, higherIsBetter } = metric;
-  const margin = marginFor(target);
+  const { target, actual, higherIsBetter, unit } = metric;
+  const margin = marginFor(target, unit);
   const rawMin = higherIsBetter ? target - margin * 3 : target - margin;
   const rawMax = higherIsBetter ? target + margin : target + margin * 3;
   const pad = margin * 0.5;
@@ -95,8 +112,8 @@ function scaleDomain(metric: KpiMetric): { min: number; max: number } {
 }
 
 function thresholdZones(metric: KpiMetric, domain: { min: number; max: number }): ThresholdZone[] {
-  const { target, higherIsBetter } = metric;
-  const margin = marginFor(target);
+  const { target, higherIsBetter, unit } = metric;
+  const margin = marginFor(target, unit);
   const zones = higherIsBetter
     ? [
         { from: domain.min, label: "Off track", to: target - margin, tone: "off-track" as const },
@@ -141,14 +158,14 @@ const MARKER_FILL: Record<KpiStatusValue, string> = {
 };
 
 function ThresholdScale({ metric, locale }: { metric: KpiMetric; locale: string }) {
-  const { actual, target, higherIsBetter } = metric;
-  const margin = marginFor(target);
+  const { actual, target, higherIsBetter, unit } = metric;
+  const margin = marginFor(target, unit);
   const domain = scaleDomain(metric);
   const span = domain.max - domain.min;
   const pct = (value: number) =>
     `${Math.min(100, Math.max(0, ((value - domain.min) / span) * 100))}%`;
   const zones = thresholdZones(metric, domain);
-  const currentStatus = statusForValue(actual, target, higherIsBetter);
+  const currentStatus = statusForValue(actual, target, higherIsBetter, unit);
   const marginBoundary = higherIsBetter ? target - margin : target + margin;
   const marginBoundaryFmt = formatKpiValue(marginBoundary, metric.unit, locale, metric.currency);
   const targetFmt = formatKpiValue(target, metric.unit, locale, metric.currency);
@@ -267,7 +284,7 @@ export function KpiStatusThreshold({
     return <KpiStatusThresholdSkeleton className={className} />;
   }
 
-  const status = statusForValue(metric.actual, metric.target, metric.higherIsBetter);
+  const status = statusForValue(metric.actual, metric.target, metric.higherIsBetter, metric.unit);
   const weeks = weeksInCurrentStatus(metric);
 
   return (
