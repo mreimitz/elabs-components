@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { Toaster } from "@elabs-ai/components-ui";
 
+import { useDashboardShortcuts } from "../chrome";
 import { compact } from "../core/layout";
 import type { DashboardSpec, TileLayout } from "../core/spec";
 import type { DashboardStore } from "../core/store";
@@ -20,7 +22,126 @@ declare global {
   }
 }
 
-const TILES = ["chart", "text"].map((kind) => createPlaceholderTileKind(kind));
+// "metric" is registered only for the paste-and-replace play below (`PASTE_REPLACE_SPEC`).
+const TILES = ["chart", "text", "metric"].map((kind) => createPlaceholderTileKind(kind));
+
+/**
+ * A diagonal-staggered 3-tile layout (same geometry as `core/store.test.ts`'s `tileOpsSpec`,
+ * minus its 4th tile) — one row per tile, distinct x, so aligning/grouping them never collides.
+ * Local to this file: `edit-specs.ts` is outside this RM's write-set.
+ */
+const ALIGN_SPEC: DashboardSpec = {
+  ...EDIT_FIT_SPEC,
+  id: "edit-align",
+  tiles: [
+    {
+      id: "chart-1",
+      kind: "chart",
+      title: "Revenue",
+      layout: { x: 0, y: 0, w: 6, h: 4 },
+      content: {},
+    },
+    {
+      id: "chart-2",
+      kind: "chart",
+      title: "Orders",
+      layout: { x: 10, y: 4, w: 6, h: 4 },
+      content: {},
+    },
+    {
+      id: "chart-3",
+      kind: "chart",
+      title: "Margin",
+      layout: { x: 14, y: 8, w: 6, h: 4 },
+      content: {},
+    },
+  ],
+};
+
+/**
+ * Two overlapping `fit`-mode tiles (RM-081 follow-up 2, F1): chart-1 covers cells (0,0)–(8,8),
+ * chart-2 (4,4)–(12,12) — an 4×4-cell overlap the Bring forward/Send backward play below reads
+ * paint order from.
+ */
+const Z_ORDER_SPEC: DashboardSpec = {
+  ...EDIT_FIT_SPEC,
+  id: "edit-z-order",
+  tiles: [
+    {
+      id: "chart-1",
+      kind: "chart",
+      title: "Revenue",
+      layout: { x: 0, y: 0, w: 8, h: 8 },
+      content: {},
+    },
+    {
+      id: "chart-2",
+      kind: "chart",
+      title: "Orders",
+      layout: { x: 4, y: 4, w: 8, h: 8 },
+      content: {},
+    },
+  ],
+};
+
+/**
+ * RM-081 follow-up 4: three fit-mode tiles where chart-2 (`z: 1`) covers chart-1's bottom-right
+ * corner — the Tab-order play checks chart-1's handles are still next in Tab order AND still
+ * hit-testable while covered. chart-3 sits apart, below, so reading order is chart-1, chart-2, chart-3.
+ */
+const TAB_COVERED_SPEC: DashboardSpec = {
+  ...EDIT_FIT_SPEC,
+  id: "edit-tab-covered",
+  tiles: [
+    {
+      id: "chart-1",
+      kind: "chart",
+      title: "Revenue",
+      layout: { x: 0, y: 0, w: 8, h: 8 },
+      content: {},
+    },
+    {
+      id: "chart-2",
+      kind: "chart",
+      title: "Orders",
+      layout: { x: 4, y: 4, w: 8, h: 8, z: 1 },
+      content: {},
+    },
+    {
+      id: "chart-3",
+      kind: "chart",
+      title: "Margin",
+      layout: { x: 16, y: 8, w: 8, h: 4 },
+      content: {},
+    },
+  ],
+};
+
+/**
+ * chart-1 (kind `chart`) + metric-1 (kind `metric`, RM-081 follow-up 2, F2) — drives the
+ * "Paste and replace" acceptance bullet through the real context menu, not just the jsdom
+ * unit test `tile-context-menu.test.tsx` already covers.
+ */
+const PASTE_REPLACE_SPEC: DashboardSpec = {
+  ...EDIT_FIT_SPEC,
+  id: "edit-paste-replace",
+  tiles: [
+    {
+      id: "chart-1",
+      kind: "chart",
+      title: "Revenue",
+      layout: { x: 0, y: 0, w: 6, h: 4 },
+      content: { note: "chart-1-content" },
+    },
+    {
+      id: "metric-1",
+      kind: "metric",
+      title: "Active users",
+      layout: { x: 10, y: 0, w: 4, h: 3 },
+      content: { note: "metric-1-content" },
+    },
+  ],
+};
 
 /** Installs `window.__dashboardStore` and prints `spec.tiles[].layout` for the plays. */
 function StoreProbe() {
@@ -44,6 +165,35 @@ function EditSheet({ spec }: { spec: DashboardSpec }) {
       </div>
       <StoreProbe />
     </DashboardProvider>
+  );
+}
+
+/**
+ * RM-081's tile operations, driven end to end through the BUILT-IN surface only: the tile
+ * context menu (right-click, header kebab, Shift+F10), the empty-area marquee, shift-click and
+ * Mod+A/Escape are wired into `DashboardSheet`/`DashboardEditLayer`/`DashboardTile` themselves
+ * (RM-081 follow-up 1) — this story composes nothing beyond `useDashboardShortcuts`, whose ref
+ * must wrap the toolbar + sheet subtree the keyboard listener scopes to (its own long-standing
+ * contract, unrelated to the marquee/menu wiring).
+ */
+function TileOpsSheet({ spec }: { spec: DashboardSpec }) {
+  return (
+    <DashboardProvider spec={spec} tiles={TILES} mode="edit">
+      <TileOpsBody />
+    </DashboardProvider>
+  );
+}
+
+function TileOpsBody() {
+  const containerRef = useDashboardShortcuts();
+  return (
+    <div ref={containerRef}>
+      <Toaster />
+      <div data-testid="host" className="relative h-[480px] max-h-[80vh] w-full">
+        <DashboardSheet renderAll />
+      </div>
+      <StoreProbe />
+    </div>
   );
 }
 
@@ -115,6 +265,13 @@ const reset = async (spec: DashboardSpec) => {
   await sleep(50);
 };
 
+/** Radix menus hide background content (`aria-hidden`) while open and only restore it once the
+ * close animation's unmount finishes — wait for that so a later step/the a11y scan never sees a
+ * stale `aria-hidden` on a live tile. */
+const waitForMenuClosed = async (body: ReturnType<typeof within>) => {
+  await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
+};
+
 export const Fit24x12: Story = {
   name: "Fit 24×12",
   play: async ({ canvasElement, step }) => {
@@ -181,7 +338,9 @@ export const Fit24x12: Story = {
         await userEvent.keyboard("{ArrowRight}");
         await sleep(30);
       }
-      const badge = tile.querySelector('[data-slot="tile-size-badge"]') as HTMLElement;
+      // RM-081 (follow-up 3): the size badge paints in the edit layer's chrome band, a sibling
+      // of the tile, positioned from its own `cellRect` — not a DOM descendant any more.
+      const badge = sheet.querySelector('[data-slot="tile-size-badge"]') as HTMLElement;
       await expect(badge).toHaveTextContent("(4,1) ⤢ 6 × 4");
       await expect(announcer(sheet)).toHaveTextContent("Moved to column 4, row 1");
       await userEvent.keyboard("{Enter}");
@@ -245,6 +404,20 @@ export const Flow: Story = {
         await expect(compact(tiles, EDIT_FLOW_SPEC.grid)).toEqual(tiles);
       },
     );
+
+    await step(
+      "In flow mode, the tile's context menu offers no Bring forward / Send backward (fit-mode only)",
+      async () => {
+        const tile = sheet.querySelector<HTMLElement>('[data-tile-id="a"]')!;
+        await userEvent.pointer({ keys: "[MouseRight]", target: tile });
+        const body = within(canvasElement.ownerDocument.body);
+        await body.findByRole("menuitem", { name: "Duplicate" });
+        expect(body.queryByRole("menuitem", { name: "Bring forward" })).toBeNull();
+        expect(body.queryByRole("menuitem", { name: "Send backward" })).toBeNull();
+        await userEvent.keyboard("{Escape}");
+        await waitForMenuClosed(body);
+      },
+    );
   },
 };
 
@@ -297,5 +470,411 @@ export const ReducedMotion: Story = {
       // `--motion-factor` collapses every transition to (effectively) zero: the ghost snaps.
       expect(Math.max(...durations)).toBeLessThanOrEqual(1);
     });
+  },
+};
+
+/** A real pointer drag between two absolute points in `sheet`'s own coordinate space — the
+ * marquee's own drag, as opposed to `pointerDrag`'s drag-a-tile-by-an-offset. */
+async function dragRect(
+  sheet: HTMLElement,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+) {
+  const box = sheet.getBoundingClientRect();
+  const init = { bubbles: true, cancelable: true, isPrimary: true, button: 0, pointerId: 2 };
+  sheet.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      ...init,
+      pointerType: "mouse",
+      clientX: box.left + from.x,
+      clientY: box.top + from.y,
+    }),
+  );
+  const steps = 6;
+  for (let i = 1; i <= steps; i++) {
+    await sleep(16);
+    document.dispatchEvent(
+      new PointerEvent("pointermove", {
+        ...init,
+        pointerType: "mouse",
+        clientX: box.left + from.x + ((to.x - from.x) * i) / steps,
+        clientY: box.top + from.y + ((to.y - from.y) * i) / steps,
+      }),
+    );
+  }
+  await sleep(16);
+  document.dispatchEvent(
+    new PointerEvent("pointerup", {
+      ...init,
+      pointerType: "mouse",
+      clientX: box.left + to.x,
+      clientY: box.top + to.y,
+    }),
+  );
+  await sleep(16);
+}
+
+export const TileOperations: Story = {
+  name: "Tile operations (RM-081)",
+  render: () => <TileOpsSheet spec={EDIT_FIT_SPEC} />,
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const sheet = await canvas.findByRole("region", { name: EDIT_FIT_SPEC.title });
+    await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(4));
+    const p = pitch(sheet, EDIT_FIT_SPEC);
+    // Scoped to chart-1's own tile root: Copy/Paste below adds a SECOND tile also titled
+    // "Revenue" (a copy), so a plain `getByRole(..., { name: "Move Revenue" })` off the whole
+    // canvas would stop resolving to one element.
+    const moveChart1 = () =>
+      within(sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!).getByRole("button", {
+        name: "Move Revenue",
+      });
+    // The shortcuts listener is scoped to its container ref (never `window`-global); keep
+    // focus somewhere inside it so the keydowns below actually bubble to the listener.
+    moveChart1().focus();
+
+    await step("Mod+A selects every top-level tile", async () => {
+      await userEvent.keyboard("{Meta>}a{/Meta}");
+      await waitFor(() => expect(store().getState().focus).toHaveLength(4));
+    });
+
+    await step(
+      "Escape clears focus; a marquee drag over the left column selects chart-1 + text-1",
+      async () => {
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(store().getState().focus).toEqual([]));
+        // The 6–16 column gap between chart-1/text-1 (x0–12) and chart-2/chart-3 (x16–24)
+        // is empty at every row — a safe place to start the drag (never on a tile).
+        await dragRect(
+          sheet,
+          { x: 10 * p.width, y: 11 * p.height },
+          { x: 0.5 * p.width, y: 0.5 * p.height },
+        );
+        await waitFor(() =>
+          expect(store().getState().focus).toEqual(expect.arrayContaining(["chart-1", "text-1"])),
+        );
+        expect(store().getState().focus).toHaveLength(2);
+      },
+    );
+
+    await step(
+      "Mod+C copies the 2 focused tiles; Mod+V pastes them as ONE new history entry",
+      async () => {
+        const before = store().getState().spec.tiles.length;
+        const past = store().getState().history.past;
+        await userEvent.keyboard("{Meta>}c{/Meta}");
+        await userEvent.keyboard("{Escape}");
+        await userEvent.keyboard("{Meta>}v{/Meta}");
+        await waitFor(() => expect(store().getState().spec.tiles).toHaveLength(before + 2));
+        expect(store().getState().history.past).toBe(past + 1);
+      },
+    );
+
+    await step("Delete offers Undo via a toast; Undo restores the tile", async () => {
+      store().getState().actions.setFocus(["chart-2"]);
+      moveChart1().focus();
+      await userEvent.keyboard("{Delete}");
+      await waitFor(() =>
+        expect(
+          store()
+            .getState()
+            .spec.tiles.find((t) => t.id === "chart-2"),
+        ).toBeUndefined(),
+      );
+      const undoButton = await canvas.findByRole("button", { name: "Undo" });
+      await userEvent.click(undoButton);
+      await waitFor(() =>
+        expect(
+          store()
+            .getState()
+            .spec.tiles.find((t) => t.id === "chart-2"),
+        ).toBeDefined(),
+      );
+    });
+
+    await step(
+      "Bring forward / Send backward (via the tile's own context menu, built into DashboardTile) " +
+        "reorders an overlapping fit-mode pair's PAINT order — never their DOM order — with the " +
+        "acted-on tile STAYING focused throughout, exactly like a real user (RM-081 follow-up 3: " +
+        "a focused-but-idle tile no longer raises its own z-index, so Send backward, the common " +
+        "case, stays visible even though Radix returns focus to the tile on menu close)",
+      async () => {
+        await reset(Z_ORDER_SPEC);
+        const p2 = pitch(sheet, Z_ORDER_SPEC);
+        const box = sheet.getBoundingClientRect();
+        // A point inside the overlap (cells 4–8 on both axes): the centre of cell (6, 6).
+        const overlapPoint = { x: box.left + 6.5 * p2.width, y: box.top + 6.5 * p2.height };
+        const bodyDoc = canvasElement.ownerDocument;
+        const tileA = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+        const tileB = sheet.querySelector<HTMLElement>('[data-tile-id="chart-2"]')!;
+        const domOrder = () =>
+          Array.from(sheet.querySelectorAll<HTMLElement>("[data-tile-id]")).map(
+            (el) => el.dataset.tileId,
+          );
+        const topTileAt = (point: { x: number; y: number }) =>
+          bodyDoc.elementFromPoint(point.x, point.y)?.closest("[data-tile-id]");
+
+        // A real right-click sequence (Radix's `ContextMenuTrigger` listens for the native
+        // `contextmenu` event a browser fires from it) — matches the recipe Shift+F10 itself
+        // uses in `useDashboardShortcuts`. `DashboardTile` wraps itself in
+        // `DashboardTileContextMenu` in edit mode (RM-081 follow-up 1) — no host composition.
+        const chooseMenuItem = async (trigger: HTMLElement, name: string) => {
+          // A real right-click lands DOM focus on its target first (the browser's native
+          // mousedown-focus behaviour) before Radix's `contextmenu` handler ever runs — put the
+          // trigger in that same state explicitly rather than relying on whatever a PRIOR step
+          // happened to leave focused.
+          trigger.focus();
+          await userEvent.pointer({ keys: "[MouseRight]", target: trigger });
+          // `ContextMenuContent` portals to `document.body`, outside `canvasElement`.
+          const body = within(bodyDoc.body);
+          await userEvent.click(await body.findByRole("menuitem", { name }));
+          await waitForMenuClosed(body);
+          // Radix returns focus to the trigger (the tile root) on close, which — via
+          // `DashboardTile`'s own `onFocus` handler — makes it the sole multi-select focus. A
+          // real user never deselects after a menu action, so this play deliberately does NOT
+          // clear it (RM-081 follow-up 3 — the earlier version of this play did, which is why it
+          // passed while the shipped product did not).
+        };
+
+        expect(domOrder()).toEqual(["chart-1", "chart-2"]);
+
+        const pastBeforeForward = store().getState().history.past;
+        await chooseMenuItem(tileA, "Bring forward");
+        await waitFor(() => expect(tileA).toHaveFocus());
+        await waitFor(() =>
+          expect(Number(getComputedStyle(tileB).zIndex))
+            // z-order — RM-081 follow-up 3: a REAL computed-style/paint-order check, taken WHILE
+            // chart-1 is still focused — not after an artificial focus-clear.
+            .toBeLessThan(Number(getComputedStyle(tileA).zIndex)),
+        );
+        expect(domOrder()).toEqual(["chart-1", "chart-2"]); // reading order never reorders
+        expect(topTileAt(overlapPoint)).toBe(tileA);
+        expect(store().getState().history.past).toBe(pastBeforeForward + 1);
+
+        const pastBeforeBackward = store().getState().history.past;
+        await chooseMenuItem(tileA, "Send backward");
+        await waitFor(() => expect(tileA).toHaveFocus());
+        await waitFor(() =>
+          expect(Number(getComputedStyle(tileA).zIndex)).toBeLessThan(
+            Number(getComputedStyle(tileB).zIndex),
+          ),
+        );
+        expect(domOrder()).toEqual(["chart-1", "chart-2"]);
+        // chart-1 is STILL focused here — the case the earlier play's focus-clear hid: without
+        // the follow-up 3 fix, a focused tile was raised regardless, and this assertion failed.
+        expect(topTileAt(overlapPoint)).toBe(tileB);
+        expect(store().getState().history.past).toBe(pastBeforeBackward + 1);
+
+        // RM-081 follow-up 3: chart-1 is focused AND now visually covered by chart-2 in the
+        // overlap — its resize handle must still be hit-testable (it paints in the edit layer's
+        // chrome band, above every tile, per `TILE_CHROME_Z`), never hidden behind chart-2.
+        const handle = within(sheet).getByRole("button", {
+          name: "Resize Revenue from bottom-right",
+        });
+        const hr = handle.getBoundingClientRect();
+        const handlePoint = { x: hr.left + hr.width / 2, y: hr.top + hr.height / 2 };
+        const hitAtHandle = bodyDoc.elementFromPoint(handlePoint.x, handlePoint.y);
+        expect(hitAtHandle === handle || handle.contains(hitAtHandle)).toBe(true);
+      },
+    );
+
+    await step(
+      "The header kebab's “Tile actions…” entry opens the SAME context menu (Shift+F10 recipe)",
+      async () => {
+        const tile = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+        const kebab = within(tile).getByRole("button", { name: "More actions" });
+        await userEvent.click(kebab);
+        const body = within(canvasElement.ownerDocument.body);
+        const openTileMenu = await body.findByRole("menuitem", { name: "Tile actions…" });
+        await userEvent.click(openTileMenu);
+        const duplicate = await body.findByRole("menuitem", { name: "Duplicate" });
+        expect(duplicate).toBeInTheDocument();
+        await userEvent.keyboard("{Escape}");
+        await waitForMenuClosed(body);
+      },
+    );
+
+    await step(
+      "A marquee-selected group drags together as ONE history entry (built-in, no host wiring)",
+      async () => {
+        await reset(ALIGN_SPEC);
+        const past = store().getState().history.past;
+        // Drag from an empty cell (col 20, row 0) down-left: intersects chart-1 (rows 0–4) and
+        // chart-2 (rows 4–8), not chart-3 (rows 8–12).
+        await dragRect(sheet, { x: 20 * p.width, y: 0 }, { x: 0, y: 8 * p.height });
+        await waitFor(() =>
+          expect(store().getState().focus).toEqual(expect.arrayContaining(["chart-1", "chart-2"])),
+        );
+        expect(store().getState().focus).toHaveLength(2);
+        const moveChart1Grouped = within(
+          sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!,
+        ).getByRole("button", { name: "Move Revenue" });
+        await pointerDrag(moveChart1Grouped, 4 * p.width, 0);
+        await waitFor(() => expect(layoutOf("chart-1")).toMatchObject({ x: 4, y: 0 }));
+        expect(layoutOf("chart-2")).toMatchObject({ x: 14, y: 4 });
+        expect(layoutOf("chart-3")).toMatchObject({ x: 14, y: 8 });
+        expect(store().getState().history.past).toBe(past + 1);
+      },
+    );
+
+    await step(
+      "Marquee-selecting 3 tiles shows a floating align toolbar; its real button aligns them",
+      async () => {
+        await reset(ALIGN_SPEC);
+        const past = store().getState().history.past;
+        await dragRect(sheet, { x: 20 * p.width, y: 0 }, { x: 0, y: 12 * p.height });
+        await waitFor(() => expect(store().getState().focus).toHaveLength(3));
+        const alignLeft = await canvas.findByRole("button", { name: "Align left edges" });
+        await userEvent.click(alignLeft);
+        await waitFor(() => expect(layoutOf("chart-1")).toMatchObject({ x: 0 }));
+        expect(layoutOf("chart-2")).toMatchObject({ x: 0 });
+        expect(layoutOf("chart-3")).toMatchObject({ x: 0 });
+        expect(store().getState().history.past).toBe(past + 1);
+      },
+    );
+
+    await step(
+      // RM-081 follow-up 2 (F2): the acceptance text's own "Paste and replace" sub-bullet,
+      // as a real driven-browser play — the prior jsdom-only coverage (tile-context-menu.test.tsx)
+      // stays, but this is the literal play the Acceptance text names.
+      "Copy chart-1, then “Paste and replace” on metric-1 swaps its kind/content and keeps its own layout",
+      async () => {
+        await reset(PASTE_REPLACE_SPEC);
+        const past = store().getState().history.past;
+        const body = within(canvasElement.ownerDocument.body);
+
+        const chart1 = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+        await userEvent.pointer({ keys: "[MouseRight]", target: chart1 });
+        await userEvent.click(await body.findByRole("menuitem", { name: "Copy" }));
+        await waitForMenuClosed(body);
+
+        const metric1LayoutBefore = { ...layoutOf("metric-1") };
+        const metric1 = sheet.querySelector<HTMLElement>('[data-tile-id="metric-1"]')!;
+        await userEvent.pointer({ keys: "[MouseRight]", target: metric1 });
+        await userEvent.click(await body.findByRole("menuitem", { name: "Paste and replace" }));
+        await waitForMenuClosed(body);
+
+        await waitFor(() =>
+          expect(
+            store()
+              .getState()
+              .spec.tiles.find((t) => t.id === "metric-1"),
+          ).toMatchObject({ id: "metric-1", kind: "chart", content: { note: "chart-1-content" } }),
+        );
+        expect(layoutOf("metric-1")).toMatchObject(metric1LayoutBefore);
+        expect(store().getState().history.past).toBe(past + 1);
+      },
+    );
+  },
+};
+
+/** Where a Tab stop landed: the owning tile (or `<id>:chrome`) plus the element's accessible name. */
+function tabStop(el: Element | null): string {
+  if (!el) return "(none)";
+  const html = el as HTMLElement;
+  const chrome = html.closest<HTMLElement>("[data-tile-chrome-for]");
+  const tile = html.closest<HTMLElement>("[data-tile-id]");
+  const owner = chrome
+    ? `${chrome.dataset.tileChromeFor}:chrome`
+    : (tile?.dataset.tileId ?? html.dataset.slot ?? html.tagName.toLowerCase());
+  const name =
+    html.getAttribute("aria-label") ??
+    (html.getAttribute("aria-labelledby")
+      ? html.ownerDocument.getElementById(html.getAttribute("aria-labelledby")!)?.textContent
+      : null) ??
+    html.textContent?.trim() ??
+    "";
+  return `${owner} | ${html.dataset.slot ?? html.tagName.toLowerCase()} | ${name}`;
+}
+
+/** Real `userEvent.tab()` from tile 1's root until focus lands inside another tile (max 30). */
+async function tabUntilNextTile(sheet: HTMLElement, fromId: string): Promise<string[]> {
+  const tile = sheet.querySelector<HTMLElement>(`[data-tile-id="${fromId}"]`)!;
+  tile.focus();
+  await waitFor(() =>
+    expect(sheet.querySelector(`[data-tile-chrome-for="${fromId}"]`)).not.toBeNull(),
+  );
+  const stops = [tabStop(sheet.ownerDocument.activeElement)];
+  for (let i = 0; i < 30; i += 1) {
+    await userEvent.tab();
+    const active = sheet.ownerDocument.activeElement;
+    stops.push(tabStop(active));
+    const owner = active?.closest<HTMLElement>("[data-tile-id]")?.dataset.tileId;
+    if (owner && owner !== fromId) break;
+  }
+  return stops;
+}
+
+export const TabOrder: Story = {
+  name: "Tab order (RM-081 follow-up 4)",
+  render: () => <TileOpsSheet spec={EDIT_FIT_SPEC} />,
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const sheet = await canvas.findByRole("region", { name: EDIT_FIT_SPEC.title });
+    await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(4));
+
+    // Tile 1's own tab stops: its root, then its header controls (drag handle, kebab), then its
+    // eight resize handles in RM-078's order — all BEFORE any other tile's controls.
+    const tile1Stops = [
+      "chart-1 | dashboard-tile | Revenue",
+      "chart-1 | tile-drag-handle | Move Revenue",
+      "chart-1 | dashboard-tile-menu-trigger | More actions",
+      ...[
+        "top-left",
+        "top",
+        "top-right",
+        "right",
+        "bottom-right",
+        "bottom",
+        "bottom-left",
+        "left",
+      ].map((edge) => `chart-1:chrome | tile-resize-handles-handle | Resize Revenue from ${edge}`),
+    ];
+    // The chrome overlay is the tile root's IMMEDIATE next DOM sibling (never appended after
+    // every tile, the follow-up 3 regression).
+    const chromeFollowsTile = (id: string) => {
+      const chrome = sheet.querySelector<HTMLElement>(`[data-tile-chrome-for="${id}"]`)!;
+      expect(chrome.previousElementSibling).toBe(sheet.querySelector(`[data-tile-id="${id}"]`));
+    };
+
+    await step("Tab from tile 1: its own controls, then its 8 handles, then tile 2", async () => {
+      const stops = await tabUntilNextTile(sheet, "chart-1");
+      chromeFollowsTile("chart-1");
+      expect(stops).toEqual([...tile1Stops, "chart-2 | tile-drag-handle | Move Orders"]);
+    });
+
+    await step(
+      "Same with tile 1 covered by a higher-z tile 2; its handle stays hit-testable",
+      async () => {
+        await reset(TAB_COVERED_SPEC);
+        await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(3));
+        const stops = await tabUntilNextTile(sheet, "chart-1");
+        chromeFollowsTile("chart-1");
+        expect(stops).toEqual([...tile1Stops, "chart-2 | tile-drag-handle | Move Orders"]);
+
+        const tile1 = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+        const tile2 = sheet.querySelector<HTMLElement>('[data-tile-id="chart-2"]')!;
+        // chart-2 really does cover chart-1 inside the overlap: higher computed z-index, and it
+        // wins hit-testing at the overlap's centre (cell 6,6).
+        expect(Number(getComputedStyle(tile2).zIndex)).toBeGreaterThan(
+          Number(getComputedStyle(tile1).zIndex),
+        );
+        const p = pitch(sheet, TAB_COVERED_SPEC);
+        const box = sheet.getBoundingClientRect();
+        const doc = sheet.ownerDocument;
+        expect(
+          doc
+            .elementFromPoint(box.left + 6.5 * p.width, box.top + 6.5 * p.height)
+            ?.closest("[data-tile-id]"),
+        ).toBe(tile2);
+        // …yet chart-1's bottom-right handle, which sits inside that covered corner, still wins.
+        const handle = within(sheet).getByRole("button", {
+          name: "Resize Revenue from bottom-right",
+        });
+        const hr = handle.getBoundingClientRect();
+        const hit = doc.elementFromPoint(hr.left + hr.width / 2, hr.top + hr.height / 2);
+        expect(hit === handle || handle.contains(hit)).toBe(true);
+      },
+    );
   },
 };

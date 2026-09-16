@@ -1289,6 +1289,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Y_AXIS_MIN_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | YAxis | component |  | `@elabs-ai/components-charts` |  |
 | CONTENT_FIELD_PREFIX | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DASHBOARD_CLIPBOARD_MARKER | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_EDIT_SHIFT_STEP | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_TILE_WARNING_THRESHOLD | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardAssetPanel | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1302,6 +1303,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DashboardSelectionBar | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardSheet | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTile | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardTileContextMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileHeader | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardToolbar | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1317,6 +1319,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | GRID_DENSITY_PRESETS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | RESIZE_HANDLES | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | SILENT_ANNOUNCEMENTS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| TILE_CHROME_Z | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| TILE_RAISED_Z | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| TILE_Z_BAND | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | TileDragHandle | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | TileResizeHandles | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | TileSizeBadge | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1324,6 +1329,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useDashboard | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardActions | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardEdit | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboardMarquee | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardShortcutDescriptors | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardShortcuts | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useHover | hook |  | `@elabs-ai/components-charts/dashboard` |  |

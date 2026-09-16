@@ -13,6 +13,7 @@ import {
   PopoverAnchor,
   PopoverContent,
   cn,
+  useLocale,
 } from "@elabs-ai/components-ui";
 
 import type { ChartFrameMenuApi } from "../../chart-frame/chart-frame";
@@ -35,6 +36,12 @@ export interface DashboardTileMenuProps extends HTMLAttributes<HTMLDivElement> {
   density: ChartDensity;
   labels: DashboardLabels;
   menuItems?: DashboardTileMenuItem[];
+  /**
+   * Edit mode only (RM-081 follow-up 1): opens the SAME tile-ops context menu
+   * (`DashboardTileContextMenu`) that wraps this tile — one extra kebab entry rather than a
+   * second copy of every action. Absent outside edit mode.
+   */
+  onOpenTileMenu?: () => void;
 }
 
 /**
@@ -43,8 +50,12 @@ export interface DashboardTileMenuProps extends HTMLAttributes<HTMLDivElement> {
  * stays inline. Visible on hover or keyboard focus on pointer devices; always visible on touch.
  */
 export const DashboardTileMenu = forwardRef<HTMLDivElement, DashboardTileMenuProps>(
-  function DashboardTileMenu({ tile, api, density, labels, menuItems, className, ...props }, ref) {
+  function DashboardTileMenu(
+    { tile, api, density, labels, menuItems, onOpenTileMenu, className, ...props },
+    ref,
+  ) {
     const [detailsOpen, setDetailsOpen] = useState(false);
+    const { t } = useLocale();
     const canExpand = api.features.includes("expand");
     const canTable = api.features.includes("table");
     const canDownload = api.features.includes("download");
@@ -123,6 +134,14 @@ export const DashboardTileMenu = forwardRef<HTMLDivElement, DashboardTileMenuPro
                       {item.label}
                     </DropdownMenuItem>
                   ))}
+                </>
+              ) : null}
+              {onOpenTileMenu ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={onOpenTileMenu}>
+                    {t("charts.dashboard.tileOps.openTileMenu")}
+                  </DropdownMenuItem>
                 </>
               ) : null}
             </DropdownMenuContent>

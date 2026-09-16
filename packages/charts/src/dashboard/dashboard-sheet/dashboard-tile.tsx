@@ -17,9 +17,8 @@ import type { ChartDensity, ChartInteractions } from "../../charts/chart-config-
 import { EMPTY_SELECTION } from "../core/selection";
 import type { DashboardMode } from "../core/store";
 import { previewLayoutFor, useDashboardEdit } from "../edit/edit-context";
+import { DashboardTileContextMenu } from "../edit/tile-context-menu";
 import { TileDragHandle, useTileMove } from "../edit/tile-drag-handle";
-import { TileResizeHandles } from "../edit/tile-resize-handles";
-import { TileSizeBadge } from "../edit/tile-size-badge";
 import { DashboardTileHeader } from "./dashboard-tile-header";
 import { DashboardTileMenu } from "./dashboard-tile-menu";
 import { useDashboardSheetContext } from "./sheet-context";
@@ -53,6 +52,27 @@ export function tileInteractions(mode: DashboardMode): Required<ChartInteraction
   return mode === "edit" ? EDIT_INTERACTIONS : VIEW_INTERACTIONS;
 }
 
+// z-order — RM-081 (follow-up 3): `fit`-mode tiles stack by `layout.z` (`flow` tiles can't
+// overlap, so they never set a z-index at all). Ordinary tiles are clamped to a fixed band so
+// unbounded growth from repeated Bring forward/Send backward clicks can never climb into the
+// edit-layer chrome's own stacking (dashboard-edit-layer.tsx's ghost/marquee/selection toolbar/
+// per-tile handle overlay all paint at `TILE_CHROME_Z` or above). Only a tile with an ACTIVE
+// drag/resize session (this tile is the one gesture in progress) is raised to `TILE_RAISED_Z` —
+// merely being focused no longer raises a tile: a real user's tile stays focused after Bring
+// forward/Send backward closes its context menu (Radix returns focus to the trigger), and if
+// focus alone raised it, Send backward — the common case — would never visibly change anything.
+// A focused-but-not-dragging tile's resize handles and focus outline are NOT its own DOM
+// descendants any more; they paint in the edit layer's chrome band, positioned from the tile's
+// own `cellRect`, so they stay usable even when the tile's own (unraised) body is covered by a
+// higher-`z` neighbour. The raise is an inline style only; `layout.z` itself is never touched by
+// focus or by a session.
+/** Band ordinary `fit`-mode tiles clamp their `layout.z` into. */
+export const TILE_Z_BAND = 100;
+/** Stacking of a tile with an active drag/resize session (ephemeral — never written to `layout.z`). */
+export const TILE_RAISED_Z = 500;
+/** Floor every edit-layer chrome element (ghost, marquee, selection toolbar, tile handle overlay) paints at. */
+export const TILE_CHROME_Z = 1000;
+
 export interface DashboardTileRootProps extends HTMLAttributes<HTMLDivElement> {
   /** The tile's id in the spec. */
   tileId: string;
@@ -73,6 +93,8 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     const actions = useDashboardActions();
     const tile = useDashboard((s) => s.spec.tiles.find((t) => t.id === tileId));
     const mode = useDashboard((s) => s.mode);
+    // z-order — RM-081: `layout.z` only ever stacks in `fit` mode (`flow` tiles can't overlap).
+    const gridMode = useDashboard((s) => s.spec.grid.mode);
     const kind = tile ? registry.get(tile.kind) : undefined;
     const capabilities = kind?.capabilities ?? {};
     const selection = useDashboard((s) =>
@@ -170,6 +192,20 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         titleHeader
       );
     const menuItems = sheet?.menuItems?.(tile);
+    // tile operations — RM-081 follow-up 1: the header-kebab entry that opens the SAME
+    // edit-mode context menu wrapping this tile — dispatching a real `contextmenu` event at
+    // the tile root is the same technique `useDashboardShortcuts` already uses for Shift+F10.
+    // `setTimeout` lets the kebab dropdown finish closing first, so only one Radix menu is
+    // ever open at a time.
+    const onOpenTileMenu = editable
+      ? () => {
+          const node = rootRef.current;
+          if (!node) return;
+          setTimeout(() => {
+            node.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+          }, 0);
+        }
+      : undefined;
     const menuSlot = chrome
       ? (api: ChartFrameMenuApi) => (
           <DashboardTileMenu
@@ -178,6 +214,7 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
             density={density}
             labels={labels}
             menuItems={menuItems}
+            onOpenTileMenu={onOpenTileMenu}
           />
         )
       : undefined;
@@ -246,9 +283,17 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
 
     const active = sheet ? sheet.activeTileId === tileId : true;
     const session = edit?.session?.tileId === tileId ? edit.session : null;
-    const showEditChrome = editable && (focused || session !== null);
+    // z-order — RM-081 (follow-up 3): see the comment at `TILE_Z_BAND`/`TILE_RAISED_Z`/
+    // `TILE_CHROME_Z` above — only THIS tile's own active drag/resize session raises it; being
+    // merely focused does not.
+    const zIndex =
+      gridMode === "fit"
+        ? session !== null
+          ? TILE_RAISED_Z
+          : Math.max(-TILE_Z_BAND, Math.min(TILE_Z_BAND, tile.layout.z ?? 0))
+        : undefined;
 
-    return (
+    const tileElement = (
       <div
         ref={setRef}
         role="group"
@@ -267,7 +312,6 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         className={cn(
           "group/tile absolute flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-3 shadow-xs focus-ring",
           "transition-[transform,width,height] duration-base ease-standard motion-reduce:transition-none",
-          "data-focused:border-ring",
           edit?.reducedMotion && "transition-none",
           className,
         )}
@@ -279,6 +323,7 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
           height,
           transform: rect ? `translate(${rect.x}px, ${rect.y}px)` : undefined,
           visibility: rect ? undefined : "hidden",
+          zIndex,
           ...style,
         }}
         onFocus={(event) => {
@@ -307,13 +352,17 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
             {dragHandle}
           </div>
         ) : null}
-        {showEditChrome ? (
-          <>
-            <TileResizeHandles tileId={tileId} title={accessibleTitle} />
-            <TileSizeBadge cell={session?.target ?? tile.layout} />
-          </>
-        ) : null}
       </div>
+    );
+
+    // tile operations — RM-081 follow-up 1: every editable top-level tile is its own
+    // right-click/header-kebab/Shift+F10 context-menu trigger — built in, no host
+    // composition. `asChild`'d on the tile root itself (`ContextMenuTrigger` inside
+    // `DashboardTileContextMenu`), so it adds no extra DOM node.
+    return editable ? (
+      <DashboardTileContextMenu tileId={tileId}>{tileElement}</DashboardTileContextMenu>
+    ) : (
+      tileElement
     );
   },
 );

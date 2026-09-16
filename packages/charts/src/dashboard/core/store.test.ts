@@ -225,3 +225,140 @@ describe("createDashboardStore — UI slice and setGrid", () => {
     expect(store.getState().history.past).toBe(1);
   });
 });
+
+// tile operations — RM-081
+const tileOpsSpec = (): DashboardSpec => ({
+  version: 1,
+  id: "tile-ops",
+  grid: { mode: "fit", columns: 24, rows: 12, gap: 8 },
+  tiles: [
+    {
+      id: "chart-1",
+      kind: "chart",
+      title: "Revenue",
+      layout: { x: 0, y: 0, w: 6, h: 4 },
+      content: { type: "bar", title: "Revenue", data: [{ x: "Q1", y: 1 }], x: "x", series: ["y"] },
+      consumes: { selection: ["Region"] },
+    },
+    {
+      id: "chart-2",
+      kind: "chart",
+      title: "Orders",
+      layout: { x: 10, y: 4, w: 6, h: 4 },
+      content: { type: "bar", data: [], x: "x", series: ["y"] },
+    },
+    {
+      id: "chart-3",
+      kind: "chart",
+      title: "Margin",
+      layout: { x: 14, y: 8, w: 6, h: 4 },
+      content: { type: "bar", data: [], x: "x", series: ["y"] },
+    },
+    {
+      id: "chart-4",
+      kind: "chart",
+      title: "Same row as chart-1",
+      layout: { x: 10, y: 0, w: 6, h: 4 },
+      content: { type: "bar", data: [], x: "x", series: ["y"] },
+    },
+  ],
+  interactions: [{ from: "chart-1", to: "*", effect: "filter" }],
+});
+
+describe("createDashboardStore — tile operations (RM-081)", () => {
+  it("replaceTile keeps layout/title/consumes and the id; interactions referencing it still resolve", () => {
+    const { store, actions } = setup({ spec: tileOpsSpec() });
+    actions.replaceTile("chart-1", "metric", { value: 42 });
+    const spec = store.getState().spec;
+    const tile = spec.tiles.find((t) => t.id === "chart-1")!;
+    expect(tile.kind).toBe("metric");
+    expect(tile.content).toEqual({ value: 42 });
+    expect(tile.layout).toMatchObject({ x: 0, y: 0, w: 6, h: 4 });
+    expect(tile.title).toBe("Revenue");
+    expect(tile.consumes).toEqual({ selection: ["Region"] });
+    expect(spec.interactions?.[0]).toMatchObject({ from: "chart-1" });
+  });
+
+  it("replaceTile chart → chart keeps data/x/series and applies only the content given (type)", () => {
+    const { store, actions } = setup({ spec: tileOpsSpec() });
+    const before = store.getState().spec.tiles.find((t) => t.id === "chart-1")!.content as Record<
+      string,
+      unknown
+    >;
+    actions.replaceTile("chart-1", "chart", { type: "line" });
+    const after = store.getState().spec.tiles.find((t) => t.id === "chart-1")!.content as Record<
+      string,
+      unknown
+    >;
+    expect(after.type).toBe("line");
+    expect(after.data).toEqual(before.data);
+    expect(after.x).toEqual(before.x);
+    expect(after.series).toEqual(before.series);
+  });
+
+  it("bringForward/sendBackward move a tile's z above/below its top-level siblings", () => {
+    const { store, actions } = setup({ spec: tileOpsSpec() });
+    actions.bringForward("chart-1");
+    const zOf = (id: string) => store.getState().spec.tiles.find((t) => t.id === id)!.layout.z ?? 0;
+    expect(zOf("chart-1")).toBeGreaterThan(zOf("chart-2"));
+    actions.sendBackward("chart-2");
+    expect(zOf("chart-2")).toBeLessThan(0);
+    expect(zOf("chart-2")).toBeLessThan(zOf("chart-3"));
+  });
+
+  it("alignTiles left sets equal x for three non-overlapping tiles as one history entry", () => {
+    const { store, actions } = setup({ spec: tileOpsSpec() });
+    const past = store.getState().history.past;
+    const applied = actions.alignTiles(["chart-1", "chart-2", "chart-3"], "left");
+    expect(applied).toBe(true);
+    const spec = store.getState().spec;
+    const xs = ["chart-1", "chart-2", "chart-3"].map(
+      (id) => spec.tiles.find((t) => t.id === id)!.layout.x,
+    );
+    expect(new Set(xs).size).toBe(1);
+    expect(store.getState().history.past).toBe(past + 1);
+  });
+
+  it("alignTiles rejects (no commit) when the result would overlap", () => {
+    const { store, actions } = setup({ spec: tileOpsSpec() });
+    const past = store.getState().history.past;
+    // chart-1 and chart-4 share a row; aligning left stacks them exactly on each other.
+    expect(actions.alignTiles(["chart-1", "chart-4"], "left")).toBe(false);
+    expect(store.getState().history.past).toBe(past);
+  });
+
+  it("distributeTiles spaces three tiles evenly along h, first and last fixed", () => {
+    const spec = tileOpsSpec();
+    spec.tiles.push(
+      { id: "d-a", kind: "chart", layout: { x: 0, y: 8, w: 4, h: 2 }, content: {} },
+      { id: "d-b", kind: "chart", layout: { x: 9, y: 8, w: 4, h: 2 }, content: {} },
+      { id: "d-c", kind: "chart", layout: { x: 20, y: 8, w: 4, h: 2 }, content: {} },
+    );
+    const { store, actions } = setup({ spec });
+    expect(actions.distributeTiles(["d-a", "d-b", "d-c"], "h")).toBe(true);
+    const s = store.getState().spec;
+    const xOf = (id: string) => s.tiles.find((t) => t.id === id)!.layout.x;
+    expect(xOf("d-a")).toBe(0); // first fixed
+    expect(xOf("d-c")).toBe(20); // last fixed
+    const gapAB = xOf("d-b") - (xOf("d-a") + 4);
+    const gapBC = xOf("d-c") - (xOf("d-b") + 4);
+    expect(gapAB).toBeCloseTo(gapBC, 0);
+  });
+
+  it("pasteTiles adds N tiles with regenerated ids at findEmptySlot, as one history entry", () => {
+    const { store, actions } = setup({ spec: tileOpsSpec() });
+    const past = store.getState().history.past;
+    const ids = actions.pasteTiles([
+      {
+        kind: "chart",
+        content: { type: "bar", data: [], x: "x", series: ["y"] },
+        layout: { w: 4, h: 2 },
+      },
+    ]);
+    expect(ids).toHaveLength(1);
+    expect(ids[0]).not.toBe("chart-1");
+    const spec = store.getState().spec;
+    expect(spec.tiles.find((t) => t.id === ids[0])).toBeDefined();
+    expect(store.getState().history.past).toBe(past + 1);
+  });
+});

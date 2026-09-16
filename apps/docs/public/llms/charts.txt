@@ -395,6 +395,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 ## Subpath exports
 
 - CONTENT_FIELD_PREFIX (`@elabs-ai/components-charts/dashboard` · component)
+- DASHBOARD_CLIPBOARD_MARKER (`@elabs-ai/components-charts/dashboard` · component)
 - DASHBOARD_EDIT_SHIFT_STEP (`@elabs-ai/components-charts/dashboard` · component)
 - DASHBOARD_TILE_WARNING_THRESHOLD (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardAssetPanel (`@elabs-ai/components-charts/dashboard` · component)
@@ -408,6 +409,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DashboardSelectionBar (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardSheet (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardTile (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardTileContextMenu (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardTileHeader (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardTileMenu (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardToolbar (`@elabs-ai/components-charts/dashboard` · component)
@@ -423,6 +425,9 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - GRID_DENSITY_PRESETS (`@elabs-ai/components-charts/dashboard` · component)
 - RESIZE_HANDLES (`@elabs-ai/components-charts/dashboard` · component)
 - SILENT_ANNOUNCEMENTS (`@elabs-ai/components-charts/dashboard` · component)
+- TILE_CHROME_Z (`@elabs-ai/components-charts/dashboard` · component)
+- TILE_RAISED_Z (`@elabs-ai/components-charts/dashboard` · component)
+- TILE_Z_BAND (`@elabs-ai/components-charts/dashboard` · component)
 - TileDragHandle (`@elabs-ai/components-charts/dashboard` · component)
 - TileResizeHandles (`@elabs-ai/components-charts/dashboard` · component)
 - TileSizeBadge (`@elabs-ai/components-charts/dashboard` · component)
@@ -430,6 +435,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useDashboard (`@elabs-ai/components-charts/dashboard` · hook)
 - useDashboardActions (`@elabs-ai/components-charts/dashboard` · hook)
 - useDashboardEdit (`@elabs-ai/components-charts/dashboard` · hook)
+- useDashboardMarquee (`@elabs-ai/components-charts/dashboard` · hook)
 - useDashboardShortcutDescriptors (`@elabs-ai/components-charts/dashboard` · hook)
 - useDashboardShortcuts (`@elabs-ai/components-charts/dashboard` · hook)
 - useHover (`@elabs-ai/components-charts/dashboard` · hook)

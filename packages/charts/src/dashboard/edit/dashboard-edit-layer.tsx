@@ -12,6 +12,9 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
+  Children,
+  Fragment,
+  isValidElement,
   useCallback,
   useEffect,
   useMemo,
@@ -20,15 +23,32 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { Ban } from "lucide-react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import {
+  AlignHorizontalDistributeCenter,
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  AlignHorizontalJustifyStart,
+  AlignVerticalDistributeCenter,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
+  Ban,
+  type LucideIcon,
+} from "lucide-react";
+import { Toolbar, ToolbarButton, ToolbarSeparator, cn, useLocale } from "@elabs-ai/components-ui";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
-import { cellRect, correctBounds } from "../core/layout";
+import { cellRect, collides, correctBounds } from "../core/layout";
 import type { GridSpec, TileLayout } from "../core/spec";
-import { useDashboardActions, useDashboardContext } from "../dashboard-sheet/use-dashboard";
+import { TILE_CHROME_Z } from "../dashboard-sheet/dashboard-tile";
+import {
+  useDashboard,
+  useDashboardActions,
+  useDashboardContext,
+} from "../dashboard-sheet/use-dashboard";
 import { SILENT_ANNOUNCEMENTS, editMessages, type ResizeHandle } from "./announcer";
+import type { AlignEdge } from "./align";
 import { dashboardAutoScroll } from "./auto-scroll";
 import { createCellCoordinateGetter, type CellPitch } from "./cell-coordinate-getter";
 import {
@@ -44,6 +64,9 @@ import {
   resizeFrom,
   topLevelLayout,
 } from "./geometry";
+import { DashboardMarquee, useDashboardMarquee } from "./marquee";
+import { TileResizeHandles } from "./tile-resize-handles";
+import { TileSizeBadge } from "./tile-size-badge";
 
 /** What a draggable carries in `data.current`. */
 export interface DashboardEditDragData {
@@ -89,6 +112,36 @@ export function getDashboardDropTarget(store: object): DashboardExternalDropTarg
 const sameCells = (a: TileLayout, b: TileLayout) =>
   a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
 
+// tile operations — RM-081 follow-up 1: dragging one tile of a multi-selection moves the
+// whole group. Every id in `groupIds` shifts by the SAME whole-cell delta, so members never
+// collide with each other (their relative positions never change, and they did not collide to
+// begin with) — the only rejection is a member landing out of the grid or on a tile OUTSIDE
+// the group. The preview this returns doubles as the commit payload (`applyLayout`), so what
+// previews is exactly what lands.
+function shiftGroup(
+  scope: readonly TileLayout[],
+  groupIds: readonly string[],
+  dx: number,
+  dy: number,
+  grid: GridSpec,
+): { layout: TileLayout[]; ok: boolean } {
+  const groupSet = new Set(groupIds);
+  const original = scope.map((item) => ({ ...item }));
+  const moved = scope.map((item) =>
+    groupSet.has(item.id) ? { ...item, x: item.x + dx, y: item.y + dy } : item,
+  );
+  const bounded = correctBounds(moved, grid);
+  const outOfBounds = bounded.some((item, index) => {
+    const wanted = moved[index];
+    return groupSet.has(item.id) && wanted && (item.x !== wanted.x || item.y !== wanted.y);
+  });
+  if (outOfBounds) return { layout: original, ok: false };
+  const inside = bounded.filter((item) => groupSet.has(item.id));
+  const outside = bounded.filter((item) => !groupSet.has(item.id));
+  const ok = inside.every((item) => !outside.some((other) => collides(item, other)));
+  return { layout: ok ? bounded : original, ok };
+}
+
 /**
  * The dashboard edit layer (RM-078): dnd-kit sensors (pointer with a 3 px activation distance,
  * touch with a 150 ms long-press, keyboard stepping whole cells) over the sheet. While a move or
@@ -111,6 +164,10 @@ export function DashboardEditLayer({
   const pitch = useMemo(() => pitchOf(grid, width, height), [grid, width, height]);
   const pitchRef = useRef(pitch);
   pitchRef.current = pitch;
+  // tile operations — RM-081 follow-up 1: built-in marquee (empty-area drag-select) and the
+  // floating align toolbar both need the live top-level layout and selection.
+  const spec = useDashboard((s) => s.spec);
+  const focus = useDashboard((s) => s.focus);
 
   // External drops — RM-080: expose the hit cell for drags from outside this DndContext.
   useEffect(() => {
@@ -139,6 +196,9 @@ export function DashboardEditLayer({
     sessionRef.current = next;
     setSessionState(next);
   }, []);
+  // tile operations — RM-081 follow-up 1: the focused ids a group drag moves together, or
+  // `null` for an ordinary single-tile drag. Set at `start`, read by `retarget`/`commit`.
+  const groupRef = useRef<string[] | null>(null);
 
   // A repeated message still re-announces: alternate a trailing no-break space.
   const [announcement, setAnnouncement] = useState("");
@@ -168,6 +228,13 @@ export function DashboardEditLayer({
       const tile = spec.tiles.find((item) => item.id === data.tileId);
       if (!tile || tile.container) return null;
       const origin = { ...tile.layout, id: tile.id };
+      // tile operations — RM-081 follow-up 1: dragging a tile that is already part of a
+      // multi-selection (`focus`) moves the whole group; dragging any other tile starts a
+      // fresh single-tile selection, same as before.
+      const focus = store.getState().focus;
+      const group =
+        data.type === "move" && focus.includes(tile.id) && focus.length > 1 ? [...focus] : null;
+      groupRef.current = group;
       const next: DashboardEditSession = {
         kind: data.type,
         tileId: tile.id,
@@ -179,7 +246,7 @@ export function DashboardEditLayer({
         ok: true,
       };
       setSession(next);
-      actions.setFocus([tile.id]);
+      if (!group) actions.setFocus([tile.id]);
       return next;
     },
     [store, actions, setSession],
@@ -190,6 +257,19 @@ export function DashboardEditLayer({
     (current: DashboardEditSession, dx: number, dy: number) => {
       if (current.delta.dx === dx && current.delta.dy === dy) return;
       const spec = store.getState().spec;
+      const group = groupRef.current;
+      if (current.kind === "move" && group) {
+        // tile operations — RM-081 follow-up 1: group drag preview — every selected id
+        // shifts together; `shiftGroup` is the one collision check for the whole set.
+        const { layout, ok } = shiftGroup(topLevelLayout(spec), group, dx, dy, spec.grid);
+        const target = layout.find((item) => item.id === current.tileId) ?? current.origin;
+        const moved = !sameCells(target, current.target);
+        setSession({ ...current, target, delta: { dx, dy }, layout, ok });
+        if (!moved) return;
+        const said = messages.moved(target);
+        announce(ok ? said : `${said}. ${messages.rejected}`);
+        return;
+      }
       const raw =
         current.kind === "move"
           ? { ...current.origin, x: current.origin.x + dx, y: current.origin.y + dy }
@@ -211,6 +291,8 @@ export function DashboardEditLayer({
     const current = sessionRef.current;
     if (!current) return;
     setSession(null);
+    const group = groupRef.current;
+    groupRef.current = null;
     const title = titleOf(current.tileId);
     if (!current.ok) {
       announce(messages.rejected);
@@ -218,16 +300,24 @@ export function DashboardEditLayer({
     }
     const { target, origin, tileId } = current;
     if (!sameCells(target, origin)) {
-      const strategy = editStrategy(store.getState().spec.grid);
-      // One undo step for the whole gesture: the store action, then the engine's would-be layout
-      // (flow compaction, a west/north resize) when the action alone does not produce it.
-      actions.batch(() => {
-        if (current.kind === "move")
-          actions.moveTile(tileId, { x: target.x, y: target.y }, { strategy });
-        else if (target.x === origin.x && target.y === origin.y)
-          actions.resizeTile(tileId, { w: target.w, h: target.h }, { strategy });
+      if (current.kind === "move" && group) {
+        // tile operations — RM-081 follow-up 1: `current.layout` is already the whole
+        // group's shifted, collision-checked top-level layout (`shiftGroup`, above) — write
+        // it straight back as ONE history entry, the same primitive a single move's
+        // `applyLayout` call uses below.
         actions.setSpec(applyLayout(store.getState().spec, current.layout));
-      });
+      } else {
+        const strategy = editStrategy(store.getState().spec.grid);
+        // One undo step for the whole gesture: the store action, then the engine's would-be layout
+        // (flow compaction, a west/north resize) when the action alone does not produce it.
+        actions.batch(() => {
+          if (current.kind === "move")
+            actions.moveTile(tileId, { x: target.x, y: target.y }, { strategy });
+          else if (target.x === origin.x && target.y === origin.y)
+            actions.resizeTile(tileId, { w: target.w, h: target.h }, { strategy });
+          actions.setSpec(applyLayout(store.getState().spec, current.layout));
+        });
+      }
     }
     const placed = store.getState().spec.tiles.find((tile) => tile.id === tileId)?.layout ?? target;
     announce(
@@ -238,6 +328,7 @@ export function DashboardEditLayer({
   const cancel = useCallback(() => {
     if (!sessionRef.current) return;
     setSession(null);
+    groupRef.current = null;
     announce(messages.cancelled);
   }, [setSession, announce, messages]);
 
@@ -282,12 +373,115 @@ export function DashboardEditLayer({
   };
   const onDragEnd = (_event: DragEndEvent) => commit();
 
+  // tile chrome — RM-081 (follow-up 4): every focused, non-container top-level tile gets its
+  // resize handles + focus outline + size badge at `TILE_CHROME_Z`, so they stay usable even when
+  // the tile's own body is covered by a higher-`z` neighbour. Follow-up 3 appended these after ALL
+  // tiles, which broke RM-078's Tab order (tile → its handles → next tile); see `interleaved`
+  // below. Still inside `DndContext` (the handles' `useDraggable` needs it). `start()` always adds
+  // the gesture's own tile to `focus`, so the actively dragging/resizing tile is covered too.
+  const renderTileChrome = useCallback(
+    (tileId: string): ReactNode => {
+      if (width <= 0 || !focus.includes(tileId)) return null;
+      const tile = spec.tiles.find((item) => item.id === tileId);
+      if (!tile || tile.container) return null;
+      // The dragging/resizing tile's own live target; every other focused tile's live preview
+      // from a group drag, else its committed cells.
+      const cells =
+        session && session.tileId === tile.id
+          ? session.target
+          : (session?.layout.find((item) => item.id === tile.id) ?? tile.layout);
+      const rect = cellRect(cells, grid, { width, height });
+      const title = tile.title || labels.untitledTile(tile.kind);
+      return (
+        <div
+          key={`chrome-${tile.id}`}
+          data-slot="dashboard-tile-chrome"
+          // Deliberately NOT `data-tile-id`: this is a chrome overlay, not the tile itself, and
+          // several plays/tests count/select `[data-tile-id]` expecting one match per real tile.
+          data-tile-chrome-for={tile.id}
+          className="pointer-events-none absolute rounded-lg"
+          style={{
+            left: 0,
+            top: 0,
+            width: rect.width,
+            height: rect.height,
+            transform: `translate(${rect.x}px, ${rect.y}px)`,
+            // z-order — RM-081: always above every tile, focused or not (`TILE_CHROME_Z`).
+            zIndex: TILE_CHROME_Z,
+          }}
+        >
+          <div
+            aria-hidden="true"
+            data-slot="dashboard-tile-chrome-outline"
+            className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-ring"
+          />
+          <TileResizeHandles tileId={tile.id} title={title} />
+          <TileSizeBadge cell={cells} />
+        </div>
+      );
+    },
+    [width, height, focus, spec, session, grid, labels],
+  );
+
   const context = useMemo<DashboardEditContextValue>(
     () => ({ session, messages, pitch, reducedMotion, resizeBy, commit, cancel }),
     [session, messages, pitch, reducedMotion, resizeBy, commit, cancel],
   );
 
+  // tile chrome — RM-081 (follow-up 4): interleave each tile's chrome as its IMMEDIATE next DOM
+  // sibling. `children` is `DashboardSheet`'s top-level list (`<DashboardTile tileId>` or a
+  // container); `DashboardTile`'s root is its own tile `<div>` (the context-menu wrapper adds no
+  // DOM), so `[tile, chrome]` puts the handles in Tab order right after the tile's own controls
+  // and before the next tile — while they still paint at `TILE_CHROME_Z` in the sheet's
+  // stacking context.
+  // Always wrap in the same keyed Fragment (chrome or not) so focusing a tile never changes the
+  // element type at its position — a type change would remount the tile and drop DOM focus.
+  const interleaved = Children.toArray(children).map((child, index) => {
+    if (!isValidElement<{ tileId?: unknown }>(child)) return child;
+    const tileId = typeof child.props.tileId === "string" ? child.props.tileId : null;
+    return (
+      <Fragment key={child.key ?? index}>
+        {child}
+        {tileId ? renderTileChrome(tileId) : null}
+      </Fragment>
+    );
+  });
+
   const ghost = session && width > 0 ? cellRect(session.target, grid, { width, height }) : null;
+
+  // tile operations — RM-081 follow-up 1: built-in marquee — empty-area pointer drag selects
+  // every top-level tile/container the rectangle intersects; Shift is additive; Escape cancels
+  // (`useDashboardMarquee`'s own listeners). No host composition required: `DashboardSheet` +
+  // edit mode is enough.
+  const topLevel = useMemo(() => topLevelLayout(spec), [spec]);
+
+  const marquee = useDashboardMarquee({
+    sheetRef,
+    grid,
+    size: { width, height },
+    layout: topLevel,
+    enabled: !session,
+    onSelect: (ids, additive) => {
+      const current = store.getState().focus;
+      actions.setFocus(additive ? [...new Set([...current, ...ids])] : ids);
+    },
+  });
+
+  // tile operations — RM-081 follow-up 1: the floating align/distribute toolbar over a
+  // multi-selection (≥ 2 top-level tiles), hidden while a drag/resize gesture runs.
+  const selectionRect =
+    !session && width > 0 && focus.length >= 2
+      ? (() => {
+          const cells = topLevel.filter((item) => focus.includes(item.id));
+          if (cells.length < 2) return null;
+          const rects = cells.map((cell) => cellRect(cell, grid, { width, height }));
+          return {
+            left: Math.min(...rects.map((r) => r.left)),
+            top: Math.min(...rects.map((r) => r.top)),
+            right: Math.max(...rects.map((r) => r.right)),
+          };
+        })()
+      : null;
 
   return (
     <DashboardEditContext.Provider value={context}>
@@ -303,15 +497,27 @@ export function DashboardEditLayer({
         onDragEnd={onDragEnd}
         onDragCancel={cancel}
       >
-        {children}
+        {interleaved}
       </DndContext>
+      {marquee.rect ? (
+        // z-order — RM-081: chrome always paints above every tile, however high a tile's own
+        // `layout.z` climbs (see `TILE_CHROME_Z` at dashboard-tile.tsx).
+        <DashboardMarquee rect={marquee.rect} style={{ zIndex: TILE_CHROME_Z }} />
+      ) : null}
+      {selectionRect ? (
+        <DashboardSelectionToolbar
+          ids={focus}
+          left={(selectionRect.left + selectionRect.right) / 2}
+          top={selectionRect.top}
+        />
+      ) : null}
       {ghost ? (
         <div
           aria-hidden="true"
           data-slot="dashboard-edit-layer-ghost"
           data-reject={session?.ok ? undefined : ""}
           className={cn(
-            "pointer-events-none absolute z-20 flex items-center justify-center rounded-lg border-dashed",
+            "pointer-events-none absolute flex items-center justify-center rounded-lg border-dashed",
             session?.ok ? "border-ring" : "border-destructive text-destructive",
           )}
           style={{
@@ -321,6 +527,8 @@ export function DashboardEditLayer({
             height: ghost.height,
             borderWidth: CHART_HAIRLINE_WIDTH,
             transform: `translate(${ghost.x}px, ${ghost.y}px)`,
+            // z-order — RM-081: see the marquee comment above.
+            zIndex: TILE_CHROME_Z,
           }}
         >
           {session?.ok ? null : <Ban className="size-5" />}
@@ -336,5 +544,79 @@ export function DashboardEditLayer({
         {announcement}
       </div>
     </DashboardEditContext.Provider>
+  );
+}
+
+// tile operations — RM-081 follow-up 1
+interface DashboardSelectionToolbarProps {
+  /** The multi-selection this toolbar acts on (`≥ 2` top-level ids). */
+  ids: string[];
+  /** Sheet-pixel position of the selection's bounding box, centre-x / top. */
+  left: number;
+  top: number;
+}
+
+const ALIGN_BUTTONS: { edge: AlignEdge; icon: LucideIcon; key: string }[] = [
+  { edge: "left", icon: AlignHorizontalJustifyStart, key: "alignLeft" },
+  { edge: "center-h", icon: AlignHorizontalJustifyCenter, key: "alignCenterH" },
+  { edge: "right", icon: AlignHorizontalJustifyEnd, key: "alignRight" },
+  { edge: "top", icon: AlignVerticalJustifyStart, key: "alignTop" },
+  { edge: "center-v", icon: AlignVerticalJustifyCenter, key: "alignCenterV" },
+  { edge: "bottom", icon: AlignVerticalJustifyEnd, key: "alignBottom" },
+];
+
+/**
+ * The align/distribute toolbar (RM-081 follow-up 1): floats above a multi-selection, real
+ * `ui/Toolbar` buttons that call the store's `alignTiles`/`distributeTiles` directly — never a
+ * hand-rolled control. Distribute needs a middle tile, so it only appears at `ids.length >= 3`
+ * (`distributeTiles` itself already no-ops below that; hiding the buttons avoids a dead click).
+ */
+function DashboardSelectionToolbar({ ids, left, top }: DashboardSelectionToolbarProps) {
+  const actions = useDashboardActions();
+  const { t } = useLocale();
+  return (
+    <Toolbar
+      aria-label={t("charts.dashboard.tileOps.selectionToolbarLabel")}
+      data-slot="dashboard-selection-toolbar"
+      className="absolute rounded-lg bg-popover p-1 text-popover-foreground shadow-ring-md"
+      style={{
+        left,
+        top: top - 8,
+        transform: "translate(-50%, -100%)",
+        // z-order — RM-081: see the marquee/ghost comment above (dashboard-tile.tsx's
+        // `TILE_CHROME_Z`) — always above every tile.
+        zIndex: TILE_CHROME_Z + 10,
+      }}
+    >
+      {ALIGN_BUTTONS.map(({ edge, icon: Icon, key }) => (
+        <ToolbarButton
+          key={edge}
+          size="icon-sm"
+          aria-label={t(`charts.dashboard.tileOps.${key}`)}
+          onClick={() => actions.alignTiles(ids, edge)}
+        >
+          <Icon aria-hidden="true" className="size-4" />
+        </ToolbarButton>
+      ))}
+      {ids.length >= 3 ? (
+        <>
+          <ToolbarSeparator />
+          <ToolbarButton
+            size="icon-sm"
+            aria-label={t("charts.dashboard.tileOps.distributeHorizontal")}
+            onClick={() => actions.distributeTiles(ids, "h")}
+          >
+            <AlignHorizontalDistributeCenter aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            size="icon-sm"
+            aria-label={t("charts.dashboard.tileOps.distributeVertical")}
+            onClick={() => actions.distributeTiles(ids, "v")}
+          >
+            <AlignVerticalDistributeCenter aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+        </>
+      ) : null}
+    </Toolbar>
   );
 }

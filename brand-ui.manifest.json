@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T18:04:41.289Z",
+  "generatedAt": "2026-09-16T19:47:10.055Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21888,6 +21888,11 @@
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
             },
             {
+              "name": "DASHBOARD_CLIPBOARD_MARKER",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/clipboard.ts"
+            },
+            {
               "name": "DASHBOARD_EDIT_SHIFT_STEP",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/cell-coordinate-getter.ts"
@@ -21951,6 +21956,11 @@
               "name": "DashboardTile",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "DashboardTileContextMenu",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/tile-context-menu.tsx"
             },
             {
               "name": "DashboardTileHeader",
@@ -22028,6 +22038,21 @@
               "module": "packages/charts/src/dashboard/edit/announcer.ts"
             },
             {
+              "name": "TILE_CHROME_Z",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "TILE_RAISED_Z",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "TILE_Z_BAND",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
               "name": "TileDragHandle",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/tile-drag-handle.tsx"
@@ -22063,6 +22088,11 @@
               "name": "useDashboardEdit",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/edit-context.ts"
+            },
+            {
+              "name": "useDashboardMarquee",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/marquee.tsx"
             },
             {
               "name": "useDashboardShortcutDescriptors",
@@ -22101,6 +22131,10 @@
             }
           ],
           "types": [
+            {
+              "name": "AlignEdge",
+              "module": "packages/charts/src/dashboard/edit/align.ts"
+            },
             {
               "name": "ButtonTileAction",
               "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
@@ -22174,6 +22208,14 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-provider.tsx"
             },
             {
+              "name": "DashboardClipboardPayload",
+              "module": "packages/charts/src/dashboard/edit/clipboard.ts"
+            },
+            {
+              "name": "DashboardClipboardTile",
+              "module": "packages/charts/src/dashboard/edit/clipboard.ts"
+            },
+            {
               "name": "DashboardContextValue",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
             },
@@ -22215,6 +22257,10 @@
             },
             {
               "name": "DashboardMarqueeProps",
+              "module": "packages/charts/src/dashboard/edit/marquee.tsx"
+            },
+            {
+              "name": "DashboardMarqueeRect",
               "module": "packages/charts/src/dashboard/edit/marquee.tsx"
             },
             {
@@ -22266,6 +22312,10 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
             },
             {
+              "name": "DashboardTileContextMenuProps",
+              "module": "packages/charts/src/dashboard/edit/tile-context-menu.tsx"
+            },
+            {
               "name": "DashboardTileFrameProps",
               "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
             },
@@ -22308,6 +22358,10 @@
             {
               "name": "DashboardUiState",
               "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DistributeAxis",
+              "module": "packages/charts/src/dashboard/edit/align.ts"
             },
             {
               "name": "DividerTileContent",
@@ -22450,6 +22504,10 @@
               "module": "packages/charts/src/dashboard/edit/tile-size-badge.tsx"
             },
             {
+              "name": "UseDashboardMarqueeOptions",
+              "module": "packages/charts/src/dashboard/edit/marquee.tsx"
+            },
+            {
               "name": "UseDashboardShortcutsOptions",
               "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
             },
@@ -22459,6 +22517,10 @@
             }
           ],
           "otherExports": [
+            {
+              "name": "alignTiles",
+              "module": "packages/charts/src/dashboard/edit/align.ts"
+            },
             {
               "name": "applyLayout",
               "module": "packages/charts/src/dashboard/edit/geometry.ts"
@@ -22592,6 +22654,10 @@
               "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
             },
             {
+              "name": "distributeTiles",
+              "module": "packages/charts/src/dashboard/edit/align.ts"
+            },
+            {
               "name": "dividerTileKind",
               "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
             },
@@ -22652,6 +22718,10 @@
               "module": "packages/charts/src/dashboard/core/validate.ts"
             },
             {
+              "name": "parseDashboardClipboardText",
+              "module": "packages/charts/src/dashboard/edit/clipboard.ts"
+            },
+            {
               "name": "parseInlineMarkup",
               "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
             },
@@ -22670,6 +22740,10 @@
             {
               "name": "renderInlineMarkup",
               "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
+            },
+            {
+              "name": "resetDashboardClipboardForTests",
+              "module": "packages/charts/src/dashboard/edit/clipboard.ts"
             },
             {
               "name": "resizeFrom",
@@ -22722,6 +22796,10 @@
             {
               "name": "tilePatchFromValues",
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
+            },
+            {
+              "name": "tilesToClipboardPayload",
+              "module": "packages/charts/src/dashboard/edit/clipboard.ts"
             },
             {
               "name": "topLevelLayout",

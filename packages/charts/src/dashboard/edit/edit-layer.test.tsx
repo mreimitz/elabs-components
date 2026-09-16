@@ -114,7 +114,13 @@ describe("DashboardEditLayer", () => {
       "Resize Revenue from bottom-left",
       "Resize Revenue from left",
     ]);
-    expect(tile.querySelector('[data-slot="tile-size-badge"]')).toHaveTextContent("(1,1) ⤢ 6 × 4");
+    // RM-081 (follow-up 3): the size badge paints in the edit layer's chrome band, positioned
+    // from the tile's own `cellRect` — a sibling of the tile, not its DOM descendant, so it
+    // stays usable even when the tile's own body is covered. `chart-1` is the only focused tile
+    // here, so a document-wide query is unambiguous.
+    expect(document.querySelector('[data-slot="tile-size-badge"]')).toHaveTextContent(
+      "(1,1) ⤢ 6 × 4",
+    );
   });
 
   it("keyboard-resizes from a handle: Shift+ArrowRight, Enter commits one undo step", async () => {
@@ -127,7 +133,10 @@ describe("DashboardEditLayer", () => {
     const past = store.getState().history.past;
     await user.keyboard("{Shift>}{ArrowRight}{/Shift}");
     expect(layoutOf("chart-1")).toMatchObject({ w: 6 }); // not committed yet
-    expect(tile.querySelector('[data-slot="tile-size-badge"]')).toHaveTextContent("(1,1) ⤢ 10 × 4");
+    // RM-081 (follow-up 3): see the note above — the badge is a chrome-band sibling now.
+    expect(document.querySelector('[data-slot="tile-size-badge"]')).toHaveTextContent(
+      "(1,1) ⤢ 10 × 4",
+    );
     await user.keyboard("{Enter}");
     expect(layoutOf("chart-1")).toMatchObject({ x: 0, y: 0, w: 10, h: 4 });
     expect(store.getState().history.past).toBe(past + 1);
