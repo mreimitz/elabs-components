@@ -97,6 +97,7 @@ import {
   sampleContinuousInk,
 } from "./heatmap-scale";
 import { HeatmapTooltip } from "./heatmap-tooltip";
+import { type ChartSelectionProps, ChartSelectionProvider } from "../chart-selection";
 
 /** Plot-area insets. */
 export interface HeatmapMargin {
@@ -130,7 +131,7 @@ const PLOT_GROUND_LABEL: OnMarkInk = {
   halo: chartCssVars.background,
 };
 
-export interface HeatmapChartProps extends ChartInteractionProps {
+export interface HeatmapChartProps extends ChartSelectionProps, ChartInteractionProps {
   /** One row per cell. Rows the grid has no place for are ignored. */
   data: Record<string, unknown>[];
   /** Row key holding the COLUMN value (discrete; an ISO date in the calendar variant). */
@@ -1195,23 +1196,8 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
   );
 });
 
-/**
- * Two discrete dimensions × one value: `weekday × hour × count`,
- * `product × region × revenue`, or a year of days.
- *
- * With `onDatapointClick` (or `copyValueOnActivate`) set, the body is wrapped in
- * a `ChartDatapointProvider` so the cells can register keyboard targets — the
- * provider has to sit ABOVE whatever registers. With neither set there is no
- * provider, no layer and no extra DOM.
- *
- * @dataShape two categorical axes (weekday by hour, for example) with one numeric value per
- *   cell — ticket volume, event counts; many small cells favour mode="dot" over the default
- *   cell fill
- * @dataShape one measure per calendar day over several months, as variant="calendar"
- * @avoidWhen more than about 10 columns of continuous data, or exact cell values matter
- *   more than the pattern
- */
-export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
+// Unwrapped implementation; the public docblock sits on `HeatmapChart` below.
+const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
@@ -1230,3 +1216,36 @@ export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
     );
   },
 );
+
+// Selection input (RM-073): mounted outermost so marks AND the datapoint
+// layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+/**
+ * Two discrete dimensions × one value: `weekday × hour × count`,
+ * `product × region × revenue`, or a year of days.
+ *
+ * With `onDatapointClick` (or `copyValueOnActivate`) set, the body is wrapped in
+ * a `ChartDatapointProvider` so the cells can register keyboard targets — the
+ * provider has to sit ABOVE whatever registers. With neither set there is no
+ * provider, no layer and no extra DOM.
+ *
+ * @dataShape two categorical axes (weekday by hour, for example) with one numeric value per
+ *   cell — ticket volume, event counts; many small cells favour mode="dot" over the default
+ *   cell fill
+ * @dataShape one measure per calendar day over several months, as variant="calendar"
+ * @avoidWhen more than about 10 columns of continuous data, or exact cell values matter
+ *   more than the pattern
+ */
+export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
+  function HeatmapChart(props, ref) {
+    return (
+      <ChartSelectionProvider
+        dimExcluded={props.dimExcluded}
+        selectionStates={props.selectionStates}
+      >
+        <HeatmapChartBase {...props} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
+
+HeatmapChart.displayName = "HeatmapChart";

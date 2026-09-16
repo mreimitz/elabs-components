@@ -3,6 +3,7 @@
 import { arc as arcGenerator } from "@visx/shape";
 import { type MotionValue, motion, useTransform } from "motion/react";
 import { memo, useCallback } from "react";
+import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart-selection";
 import { useActivateDatapoint } from "./chart-datapoint-layer";
 import {
   ringCssVars,
@@ -300,6 +301,7 @@ export const Ring = memo(function Ring({
   } = useRingStable();
   const { hoveredIndex, setHoveredIndex } = useRingHover();
   const activateDatapoint = useActivateDatapoint();
+  const selection = useChartSelection();
 
   const expandDelay = index * 0.08 * enterStaggerScale;
   const expandProgress = useMountProgress(
@@ -369,6 +371,19 @@ export const Ring = memo(function Ring({
 
   const cornerRadius = lineCap === "round" ? (outerRadius - innerRadius) / 2 : 0;
   const bgPath = generateArcPath(innerRadius, outerRadius, startAngle, endAngle, cornerRadius);
+  // Selection input (RM-073): unresolved → the node is returned untouched.
+  const selectionPaint = resolveMarkPaint(selection, {
+    category: ringData?.label,
+    datum: ringData as unknown as Record<string, unknown> | undefined,
+  });
+  const paintSelection = (node: React.ReactNode) =>
+    selectionPaint["data-selection"] === undefined ? (
+      node
+    ) : (
+      <ChartSelectionMark paint={selectionPaint} shape={<path d={bgPath} />}>
+        {node}
+      </ChartSelectionMark>
+    );
   const progressEndAngle = startAngle + arcRange * progress;
   const progressPath =
     progressEndAngle <= startAngle + 0.01
@@ -386,7 +401,7 @@ export const Ring = memo(function Ring({
   };
 
   if (enterDone) {
-    return (
+    return paintSelection(
       <motion.g
         animate={{ scale: hoverScale, opacity: layerOpacity }}
         onClick={onRingClick}
@@ -400,12 +415,12 @@ export const Ring = memo(function Ring({
       >
         <path d={bgPath} fill={ringCssVars.ringBackground} />
         {progressPath ? <path d={progressPath} fill={color} /> : null}
-      </motion.g>
+      </motion.g>,
     );
   }
 
   if (!expandComplete) {
-    return (
+    return paintSelection(
       <motion.g
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -416,11 +431,11 @@ export const Ring = memo(function Ring({
         }}
       >
         <path d={bgPath} fill={ringCssVars.ringBackground} />
-      </motion.g>
+      </motion.g>,
     );
   }
 
-  return (
+  return paintSelection(
     <motion.g
       animate={{ scale: hoverScale, opacity: layerOpacity }}
       onClick={onRingClick}
@@ -439,7 +454,7 @@ export const Ring = memo(function Ring({
         progressComplete={progressComplete}
         progressPath={progressPath}
       />
-    </motion.g>
+    </motion.g>,
   );
 });
 

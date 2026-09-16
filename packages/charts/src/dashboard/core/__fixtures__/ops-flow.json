@@ -1,0 +1,411 @@
+{
+  "version": 1,
+  "id": "ops-flow",
+  "title": "Checkout latency recovered after the 14:00 deploy",
+  "grid": {
+    "mode": "flow",
+    "columns": 24,
+    "rowHeight": 30,
+    "gap": 8
+  },
+  "tiles": [
+    {
+      "id": "panel-1",
+      "kind": "chart",
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 6
+      },
+      "title": "Panel 1",
+      "content": {
+        "type": "line",
+        "title": "Panel 1",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "panel-2",
+      "kind": "chart",
+      "layout": {
+        "x": 8,
+        "y": 0,
+        "w": 8,
+        "h": 6
+      },
+      "title": "Panel 2",
+      "content": {
+        "type": "line",
+        "title": "Panel 2",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "panel-3",
+      "kind": "text",
+      "layout": {
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 6
+      },
+      "title": "Panel 3",
+      "content": {
+        "markdown": "Runbook"
+      }
+    },
+    {
+      "id": "panel-4",
+      "kind": "chart",
+      "layout": {
+        "x": 0,
+        "y": 6,
+        "w": 12,
+        "h": 6
+      },
+      "title": "Panel 4",
+      "content": {
+        "type": "line",
+        "title": "Panel 4",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "panel-5",
+      "kind": "chart",
+      "layout": {
+        "x": 12,
+        "y": 6,
+        "w": 12,
+        "h": 6
+      },
+      "title": "Panel 5",
+      "content": {
+        "type": "line",
+        "title": "Panel 5",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "panel-6",
+      "kind": "text",
+      "layout": {
+        "x": 0,
+        "y": 12,
+        "w": 6,
+        "h": 6
+      },
+      "title": "Panel 6",
+      "content": {
+        "markdown": "Runbook"
+      }
+    },
+    {
+      "id": "panel-7",
+      "kind": "chart",
+      "layout": {
+        "x": 6,
+        "y": 12,
+        "w": 6,
+        "h": 6
+      },
+      "title": "Panel 7",
+      "content": {
+        "type": "line",
+        "title": "Panel 7",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "panel-8",
+      "kind": "chart",
+      "layout": {
+        "x": 12,
+        "y": 12,
+        "w": 6,
+        "h": 6
+      },
+      "title": "Panel 8",
+      "content": {
+        "type": "line",
+        "title": "Panel 8",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "panel-9",
+      "kind": "text",
+      "layout": {
+        "x": 18,
+        "y": 12,
+        "w": 6,
+        "h": 6
+      },
+      "title": "Panel 9",
+      "content": {
+        "markdown": "Runbook"
+      }
+    },
+    {
+      "id": "panel-10",
+      "kind": "chart",
+      "layout": {
+        "x": 0,
+        "y": 18,
+        "w": 24,
+        "h": 6
+      },
+      "title": "Panel 10",
+      "content": {
+        "type": "line",
+        "title": "Panel 10",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "panel-12",
+      "kind": "chart",
+      "layout": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "title": "Error rate stayed under SLO",
+      "content": {
+        "type": "area",
+        "title": "Errors",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "panel-13",
+      "kind": "text",
+      "layout": {
+        "x": 0,
+        "y": 32,
+        "w": 24,
+        "h": 4
+      },
+      "title": "Rollback was not needed",
+      "content": {
+        "markdown": "Deploy notes"
+      }
+    },
+    {
+      "id": "latency-p95",
+      "kind": "chart",
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "title": "p95 latency spiked at 14:00",
+      "container": {
+        "id": "drilldown",
+        "slot": "Latency"
+      },
+      "content": {
+        "type": "line",
+        "title": "Latency",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "throughput",
+      "kind": "chart",
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "title": "Throughput recovered by 15:00",
+      "container": {
+        "id": "drilldown",
+        "slot": "Throughput"
+      },
+      "content": {
+        "type": "line",
+        "title": "Throughput",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    }
+  ],
+  "containers": [
+    {
+      "id": "drilldown",
+      "kind": "tabs",
+      "layout": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "title": "Drill-down",
+      "children": ["latency-p95", "throughput"]
+    }
+  ]
+}

@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
+import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { DumbbellChart } from "./dumbbell-chart";
 
 // #240 geometry locks — jsdom returns zeros for SVG text metrics, so these MUST
@@ -467,4 +469,118 @@ export const BenchmarkReferenceLine: Story = {
       <DumbbellChart {...args} />
     </div>
   ),
+};
+
+// Selection states — RM-073
+type SelectionStateName = "selected" | "associated" | "excluded";
+const SELECTION_BY_REGION: Record<string, SelectionStateName> = {
+  EMEA: "selected",
+  APAC: "associated",
+  AMER: "excluded",
+};
+const selectionByRegion = (category: string | number | Date): SelectionStateName =>
+  SELECTION_BY_REGION[String(category)] ?? "associated";
+
+/**
+ * Asserts the three states read apart AS SEEN (#442, #445, #446), in whatever
+ * theme the story runs under: every chart copy has real width; a selected
+ * mark’s compound outline clears 3:1 against the chart surface, and its better
+ * band clears 3:1 against every series fill and the mark’s own painted fill; an
+ * excluded mark is dimmed while its dashed frame paints at full opacity and
+ * clears 3:1 against the surface.
+ */
+async function expectSelectionStates(root: HTMLElement) {
+  await waitFor(() =>
+    expect(root.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(0),
+  );
+  expect(root.querySelectorAll('[data-selection="associated"]').length).toBeGreaterThan(0);
+  const charts = new Set(
+    Array.from(root.querySelectorAll("[data-selection]"), (node) => node.closest("svg")),
+  );
+  for (const svg of charts) {
+    expect(svg?.getBoundingClientRect().width ?? 0).toBeGreaterThan(0);
+  }
+  const style = getComputedStyle(root.querySelector("[data-selection]") as Element);
+  const surface = style.getPropertyValue("--chart-background").trim();
+  const ground = paintedSrgb(surface, surface);
+  const painted = (paint: string) => paintedSrgb(paint, surface);
+  const stroke = (el: Element | null) => {
+    expect(el).not.toBeNull();
+    return painted(getComputedStyle(el as Element).stroke);
+  };
+  const palette = Array.from({ length: 12 }, (_, i) =>
+    style.getPropertyValue(`--chart-${i + 1}`).trim(),
+  ).filter(Boolean);
+  expect(palette.length).toBeGreaterThanOrEqual(8);
+  for (const node of root.querySelectorAll('[data-selection="selected"]')) {
+    const outer = stroke(node.querySelector('[data-slot$="-outline"]'));
+    const core = stroke(node.querySelector('[data-slot$="-outline-core"]'));
+    expect(contrastRgb(outer, ground)).toBeGreaterThanOrEqual(3);
+    const own = Array.from(
+      node.querySelectorAll(":not([data-slot*='-outline'])"),
+      (el) => getComputedStyle(el).fill,
+    ).filter((fill) => /^(rgb|oklch|#)/.test(fill) && !/rgba\(0, 0, 0, 0\)/.test(fill));
+    for (const fill of [...palette, ...own]) {
+      const mark = painted(fill);
+      expect(Math.max(contrastRgb(outer, mark), contrastRgb(core, mark))).toBeGreaterThanOrEqual(3);
+    }
+  }
+  for (const node of root.querySelectorAll('[data-selection="excluded"]')) {
+    expect(node.querySelector('[data-slot$="-dim"], [data-slot$="-veil"]')).not.toBeNull();
+    const frame = node.querySelector('[data-slot$="-frame"]');
+    for (let el = frame; el && el !== root; el = el.parentElement) {
+      expect(Number(getComputedStyle(el).opacity)).toBe(1);
+    }
+    expect(contrastRgb(stroke(frame), ground)).toBeGreaterThanOrEqual(3);
+  }
+}
+
+/** The chart twice, side by side: as authored, then in greyscale (#445). */
+function SelectionProof({ children, className }: { children: ReactNode; className: string }) {
+  return (
+    <div className="grid w-full gap-6 md:grid-cols-2">
+      <figure className="m-0 flex min-w-0 flex-col gap-2">
+        <figcaption className="text-caption text-muted-foreground">Colour</figcaption>
+        <div className={className}>{children}</div>
+      </figure>
+      <figure className="m-0 flex min-w-0 flex-col gap-2">
+        <figcaption className="text-caption text-muted-foreground">Greyscale</figcaption>
+        <div className={className} style={{ filter: "grayscale(1)" }}>
+          {children}
+        </div>
+      </figure>
+    </div>
+  );
+}
+
+const selectionRegionData = [
+  { region: "EMEA", step: 1, revenue: 42, target: 50 },
+  { region: "APAC", step: 2, revenue: 31, target: 36 },
+  { region: "AMER", step: 3, revenue: 55, target: 48 },
+];
+
+/**
+ * `selectionStates` paints the host’s tri-state on rows: selected marks carry a
+ * compound foreground/background outline, excluded marks dim AND carry a full-opacity dashed frame, so the three
+ * states stay distinguishable in greyscale.
+ */
+export const SelectionStates: Story = {
+  name: "Selection states",
+  parameters: { layout: "padded" },
+  args: {
+    accessibleLabel: "Revenue against target by region with a selection applied",
+    category: "region",
+    data: selectionRegionData,
+    endKey: "target",
+    selectionStates: selectionByRegion,
+    startKey: "revenue",
+  },
+  render: (args) => (
+    <SelectionProof className="w-full max-w-[560px]">
+      <DumbbellChart {...args} />
+    </SelectionProof>
+  ),
+  play: async ({ canvasElement }) => {
+    await expectSelectionStates(canvasElement);
+  },
 };

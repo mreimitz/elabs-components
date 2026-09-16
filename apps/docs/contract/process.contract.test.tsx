@@ -110,6 +110,65 @@ describe("CaseTable contract (browser)", () => {
   }
 });
 
+// ── CompareKpiStrip (packages/process/src/process-compare/compare-kpi-strip.tsx) ────────────────────────────────────────
+import * as stories_compare_kpi_strip from "../../../packages/process/src/process-compare/compare-kpi-strip.stories";
+describe("CompareKpiStrip contract (browser)", () => {
+  const meta = stories_compare_kpi_strip.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_compare_kpi_strip as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "process-processcompare-comparekpistrip--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "process-processcompare-comparekpistrip--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
 // ── ConformanceOverlay (packages/process/src/conformance-overlay/conformance-overlay.tsx) ────────────────────────────────────────
 import * as stories_conformance_overlay from "../../../packages/process/src/conformance-overlay/conformance-overlay.stories";
 describe("ConformanceOverlay contract (browser)", () => {

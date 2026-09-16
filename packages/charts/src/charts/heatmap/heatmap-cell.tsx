@@ -35,6 +35,7 @@ import { HaloText } from "../../marks/halo-text";
 import { useHeatmap } from "./heatmap-context";
 import type { HeatmapCellDatum } from "./heatmap-context";
 import { dotRadius } from "./heatmap-scale";
+import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "../chart-selection";
 
 /**
  * Enter animation for one cell. `fill-mode-both` holds the start state through
@@ -103,6 +104,7 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
     negativeHatchId,
     activateCell,
   } = useHeatmap();
+  const selection = useChartSelection();
 
   const cx = cell.x0 + cell.width / 2;
   const cy = cell.y0 + cell.height / 2;
@@ -117,8 +119,14 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
   // Inset so the outline reads as "this cell is empty", not as grid furniture
   // touching its neighbours.
   const missingSide = Math.max(0, Math.min(cell.width, cell.height) * emptyMarkScale);
+  // Selection input (RM-073): keyed by the cell's column category; the row is
+  // handed over as the series key.
+  const selectionPaint = resolveMarkPaint(selection, {
+    category: cell.x,
+    seriesKey: String(cell.y),
+  });
 
-  return (
+  const node = (
     <g
       className={revealed ? CELL_ENTER_CLASS : "opacity-0"}
       data-slot="heatmap-cell"
@@ -226,6 +234,15 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
         />
       ) : null}
     </g>
+  );
+  if (selectionPaint["data-selection"] === undefined) return node;
+  return (
+    <ChartSelectionMark
+      paint={selectionPaint}
+      shape={<rect height={cell.height} width={cell.width} x={cell.x0} y={cell.y0} />}
+    >
+      {node}
+    </ChartSelectionMark>
   );
 });
 

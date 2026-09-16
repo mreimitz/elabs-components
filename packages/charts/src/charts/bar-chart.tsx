@@ -47,6 +47,7 @@ import {
 import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
 import { shortDateFmt } from "./chart-formatters";
 import { ChartLoadingLabel } from "./chart-loading-label";
+import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import {
   type ChartPhase,
   type ChartStatus,
@@ -68,7 +69,7 @@ import {
 
 export type BarOrientation = "vertical" | "horizontal";
 
-export interface BarChartProps {
+export interface BarChartProps extends ChartSelectionProps {
   /** Data array - each item should have an x-axis key and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the categorical axis. Default: "name" */
@@ -1120,6 +1121,8 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
     accessibleLabel,
     accessibleDescription,
     palette,
+    selectionStates,
+    dimExcluded,
   },
   ref,
 ) {
@@ -1170,39 +1173,41 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={100}>
-        {({ width, height }) => (
-          <ChartInner
-            animationDuration={animationDuration}
-            animationEasing={animationEasing}
-            barGap={barGap}
-            barWidthProp={barWidth}
-            chartStatus={status}
-            containerRef={containerRef}
-            data={data}
-            datapointLabel={datapointLabel}
-            enterTransition={enterTransition}
-            height={height}
-            loadingLabel={loadingLabel}
-            margin={margin}
-            maxInteractiveDatapoints={maxInteractiveDatapoints}
-            copyValueOnActivate={copyValueOnActivate}
-            onDatapointClick={onDatapointClick}
-            onPhaseChange={handlePhaseChange}
-            orientation={orientation}
-            palette={palette}
-            replayOnClick={replayOnClick}
-            revealOn={revealOn}
-            revealSignature={revealSignature}
-            stacked={stacked}
-            stackGap={stackGap}
-            width={width}
-            xDataKey={xDataKey}
-          >
-            {children}
-          </ChartInner>
-        )}
-      </ParentSize>
+      <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
+        <ParentSize debounceTime={100}>
+          {({ width, height }) => (
+            <ChartInner
+              animationDuration={animationDuration}
+              animationEasing={animationEasing}
+              barGap={barGap}
+              barWidthProp={barWidth}
+              chartStatus={status}
+              containerRef={containerRef}
+              data={data}
+              datapointLabel={datapointLabel}
+              enterTransition={enterTransition}
+              height={height}
+              loadingLabel={loadingLabel}
+              margin={margin}
+              maxInteractiveDatapoints={maxInteractiveDatapoints}
+              copyValueOnActivate={copyValueOnActivate}
+              onDatapointClick={onDatapointClick}
+              onPhaseChange={handlePhaseChange}
+              orientation={orientation}
+              palette={palette}
+              replayOnClick={replayOnClick}
+              revealOn={revealOn}
+              revealSignature={revealSignature}
+              stacked={stacked}
+              stackGap={stackGap}
+              width={width}
+              xDataKey={xDataKey}
+            >
+              {children}
+            </ChartInner>
+          )}
+        </ParentSize>
+      </ChartSelectionProvider>
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}
     </div>
   );

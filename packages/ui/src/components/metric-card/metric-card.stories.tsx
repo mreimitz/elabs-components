@@ -224,3 +224,66 @@ export const Loading: Story = {
     loading: true,
   },
 };
+
+/**
+ * Stand-in trend line. `ui` never imports `charts`, so a real app passes
+ * `<Sparkline …/>` from `@elabs-ai/components-charts` into the same slot.
+ */
+function TrendStub() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-8 w-full text-primary"
+      viewBox="0 0 100 32"
+      preserveAspectRatio="none"
+    >
+      <polyline
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        points="0,26 20,22 40,24 60,14 80,12 100,4"
+      />
+    </svg>
+  );
+}
+
+/** `size="sm"` — label + value only, for the smallest sheet tiles (RM-072). */
+export const SizeSmall: Story = {
+  args: {
+    size: "sm",
+    label: "Active users",
+    value: "24,512",
+    delta: "12.4%",
+    deltaDirection: "up",
+    sparkline: <TrendStub />,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("24,512")).toBeInTheDocument();
+    await expect(canvas.queryByText("12.4%")).toBeNull();
+  },
+};
+
+/** The `sparkline` slot sits directly under the value (RM-072). */
+export const WithSparklineSlot: Story = {
+  args: {
+    label: "Active users",
+    value: "24,512",
+    delta: "12.4%",
+    deltaDirection: "up",
+    description: "Last 30 days",
+    sparkline: <TrendStub />,
+  },
+};
+
+/** `size="lg"` — the kpi value rung with room for the trend slot (RM-072). */
+export const SizeLarge: Story = {
+  args: {
+    size: "lg",
+    label: "Active users",
+    value: "24,512",
+    delta: "12.4%",
+    deltaDirection: "up",
+    sparkline: <TrendStub />,
+  },
+};

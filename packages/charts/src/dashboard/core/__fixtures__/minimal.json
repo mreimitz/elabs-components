@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "minimal",
+  "grid": {
+    "mode": "fit",
+    "columns": 24,
+    "rows": 12
+  },
+  "tiles": [
+    {
+      "id": "revenue",
+      "kind": "chart",
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 6
+      },
+      "title": "Revenue grew 12 % year on year",
+      "content": {
+        "type": "bar",
+        "title": "Revenue",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      }
+    }
+  ]
+}

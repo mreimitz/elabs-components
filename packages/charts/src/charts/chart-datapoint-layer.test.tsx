@@ -40,6 +40,12 @@ vi.mock("@visx/responsive", () => {
 
 import type { ChartDatapoint } from "./chart-datapoint";
 import { useChartHover } from "./chart-context";
+import {
+  ChartConfigProvider,
+  DEFAULT_CHART_CONFIG,
+  DEFAULT_CHART_INTERACTIONS,
+  type ChartInteractions,
+} from "./chart-config-context";
 import { LineChart } from "./line-chart";
 import { XAxis } from "./x-axis";
 
@@ -272,5 +278,137 @@ describe("ChartDatapointLayer — pointer must not be intercepted (#349)", () =>
   it("still renders the layer group with an accessible name", () => {
     renderLineChart(() => {});
     expect(screen.getByRole("group", { name: "Chart data points" })).toBeInTheDocument();
+  });
+});
+
+describe("ChartDatapointLayer — focus shows the hover feedback (#447)", () => {
+  /**
+   * jsdom does no layout, so the test stands in for the two measurements the
+   * bridge makes: the focused button's centre (`getBoundingClientRect`) and
+   * the chart shape under it (`elementsFromPoint`). Everything after that —
+   * the replayed pointer events reaching the family's own handler and the
+   * tooltip commit — is the real code path.
+   */
+  function withLayout(stack: () => Element[]) {
+    const rect = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockReturnValue({ left: 290, top: 110, width: 24, height: 24 } as DOMRect);
+    const original = document.elementsFromPoint;
+    document.elementsFromPoint = vi.fn(() => stack());
+    return () => {
+      rect.mockRestore();
+      document.elementsFromPoint = original;
+    };
+  }
+
+  /** The bridge samples two animation frames after focus. */
+  const frames = () =>
+    new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 0))),
+    );
+
+  function renderProbed(interactions?: ChartInteractions) {
+    const seen: { current: { index: number } | null } = { current: null };
+    const chart = (
+      <LineChart
+        animationDuration={0}
+        aspectRatio={undefined}
+        data={seriesData}
+        onDatapointClick={() => {}}
+        xDataKey="turn"
+        xScale="band"
+      >
+        <SeriesStub dataKey="users" />
+        <TooltipProbe
+          onTooltip={(tooltip) => {
+            seen.current = tooltip;
+          }}
+        />
+      </LineChart>
+    );
+    const view = render(
+      interactions ? (
+        <ChartConfigProvider
+          value={{
+            ...DEFAULT_CHART_CONFIG,
+            interactions: { ...DEFAULT_CHART_INTERACTIONS, ...interactions },
+          }}
+        >
+          {chart}
+        </ChartConfigProvider>
+      ) : (
+        chart
+      ),
+    );
+    return { ...view, seen };
+  }
+
+  it("ONE focus shows the same tooltip hover shows, even before the chart is interactive; blur hides it", async () => {
+    const { container, seen } = renderProbed();
+    const plot = () => [container.querySelector("svg > g") as Element];
+    const restore = withLayout(plot);
+    try {
+      const target = container.querySelector(TARGET) as HTMLButtonElement;
+      // Focus exactly once, straight after mount: the chart is still in its
+      // enter phase, so the bridge must replay when it becomes interactive.
+      fireEvent.focus(target);
+      await waitFor(() => expect(seen.current).not.toBeNull());
+      fireEvent.blur(target);
+      await waitFor(() => expect(seen.current).toBeNull());
+    } finally {
+      restore();
+    }
+  });
+
+  it("skips an HTML wrapper stacked over the SVG and hovers the shape beneath (Pie)", async () => {
+    const { container } = renderProbed();
+    const plot = container.querySelector("svg > g") as Element;
+    const wrapper = document.createElement("div");
+    const overs = vi.fn();
+    plot.addEventListener("mouseover", overs);
+    const restore = withLayout(() => [wrapper, plot]);
+    try {
+      fireEvent.focus(container.querySelector(TARGET) as HTMLButtonElement);
+      await waitFor(() => expect(overs).toHaveBeenCalled());
+    } finally {
+      restore();
+    }
+  });
+
+  it("replays nothing when interactions.passive is false", async () => {
+    const { container } = renderProbed({ passive: false });
+    const plot = container.querySelector("svg > g") as Element;
+    const moves = vi.fn();
+    plot.addEventListener("mousemove", moves);
+    const restore = withLayout(() => [plot]);
+    try {
+      fireEvent.focus(container.querySelector(TARGET) as HTMLButtonElement);
+      await frames();
+      expect(moves).not.toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
+
+  it("roving between targets moves the hover without an intermediate leave", async () => {
+    const { container } = renderProbed();
+    const plot = container.querySelector("svg > g") as Element;
+    const outs = vi.fn();
+    const moves = vi.fn();
+    plot.addEventListener("mouseout", outs);
+    plot.addEventListener("mousemove", moves);
+    const restore = withLayout(() => [plot]);
+    try {
+      const [first, second] = container.querySelectorAll<HTMLButtonElement>(TARGET);
+      fireEvent.focus(first as HTMLButtonElement);
+      await frames();
+      fireEvent.blur(first as HTMLButtonElement, { relatedTarget: second });
+      fireEvent.focus(second as HTMLButtonElement);
+      await frames();
+      expect(moves).toHaveBeenCalled();
+      expect(outs).not.toHaveBeenCalled();
+    } finally {
+      restore();
+    }
   });
 });

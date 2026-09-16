@@ -20,12 +20,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 194 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 198 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
 | `@elabs-ai/components-terminal` | packages/terminal | 31 | 1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
-| `@elabs-ai/components-process` | packages/process | 54 | 5 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
+| `@elabs-ai/components-process` | packages/process | 64 | 7 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
 
 ## @elabs-ai/components-tokens
 
@@ -1077,6 +1077,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CanvasLayer | component |  | `@elabs-ai/components-charts` | The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor. |
 | CATEGORICAL_SOFT_CAP | component |  | `@elabs-ai/components-charts` |  |
 | CHART_CLIP_PASSTHROUGH | component |  | `@elabs-ai/components-charts` |  |
+| CHART_DENSITY_SM_MAX_TICKS | component |  | `@elabs-ai/components-charts` |  |
 | CHART_HAIRLINE_WIDTH | component |  | `@elabs-ai/components-charts` |  |
 | CHART_SPEC_PALETTES | component |  | `@elabs-ai/components-charts` |  |
 | CHART_STAGGER_BAR_MS | component |  | `@elabs-ai/components-charts` |  |
@@ -1113,6 +1114,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CONTINUOUS_MIN_OPACITY | component |  | `@elabs-ai/components-charts` |  |
 | DateTicker | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_CONFIG | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_CHART_INTERACTIONS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_LIFECYCLE | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_STATUS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CIRCULAR_CURVENESS | component |  | `@elabs-ai/components-charts` |  |
@@ -1226,6 +1228,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SegmentBackground | component |  | `@elabs-ai/components-charts` |  |
 | SegmentLineFrom | component |  | `@elabs-ai/components-charts` |  |
 | SegmentLineTo | component |  | `@elabs-ai/components-charts` |  |
+| SELECTED_OUTLINE_WIDTH | component |  | `@elabs-ai/components-charts` |  |
+| SELECTION_EXCLUDED_OPACITY | component |  | `@elabs-ai/components-charts` |  |
 | SeriesBar | component |  | `@elabs-ai/components-charts` |  |
 | SeriesMarkers | component |  | `@elabs-ai/components-charts` |  |
 | SeriesPointMarker | component |  | `@elabs-ai/components-charts` |  |
@@ -1286,6 +1290,31 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Y_AXIS_MAX_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_MIN_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | YAxis | component |  | `@elabs-ai/components-charts` |  |
+| DASHBOARD_TILE_WARNING_THRESHOLD | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardExpressionError | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardGridContext | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardProvider | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardSelectionBar | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardSheet | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardTile | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardTileHeader | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardTileMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_DASHBOARD_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_FILTER_TILE_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_GRID_COLUMNS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_GRID_GAP | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_GRID_ROWS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_ROW_HEIGHT | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_SELECTION_BAR_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| EMPTY_SELECTION | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| GRID_DENSITY_PRESETS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| useCellRect | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboard | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboardActions | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useHover | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useSelection | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useTile | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useVariable | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 
 ## @elabs-ai/components-marketing
 
@@ -1450,6 +1479,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ConformanceLegend | component |  | `@elabs-ai/components-process` |  |
 | ConformanceOverlay | component |  | `@elabs-ai/components-process` |  |
 | ConformanceStateMark | component |  | `@elabs-ai/components-process` |  |
+| CongestionHeat | component |  | `@elabs-ai/components-process` |  |
 | DEFAULT_LAYOUT_DEBOUNCE_MS | component |  | `@elabs-ai/components-process` |  |
 | DIFF_STATE_TOKEN | component |  | `@elabs-ai/components-process` |  |
 | DOTTED_CHART_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
@@ -1463,6 +1493,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | HappyPathEditorContext | component |  | `@elabs-ai/components-process` |  |
 | HappyPathStepNode | component |  | `@elabs-ai/components-process` |  |
 | MetricLayerSwitch | component |  | `@elabs-ai/components-process` |  |
+| OBJECT_CENTRIC_MAP_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| OBJECT_TYPE_ABSTRACTION_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
 | PERFORMANCE_SPECTRUM_DEFAULT_BIN_SIZE | component |  | `@elabs-ai/components-process` |  |
 | PERFORMANCE_SPECTRUM_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
 | PERFORMANCE_SPECTRUM_ROW_HEIGHT | component |  | `@elabs-ai/components-process` |  |
@@ -1474,6 +1506,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PROCESS_MAP_EDGE_SCALE_GROUP | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_MAP_LEGIBLE_ZOOM | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_MAP_NODE_MOTION_CLASS | component |  | `@elabs-ai/components-process` |  |
+| PROCESS_REPLAY_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| PROCESS_REPLAY_DEFAULT_METRIC | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_SELECTION_STATE_MESSAGE_KEYS | component |  | `@elabs-ai/components-process` |  |
 | ProcessActivityNode | component |  | `@elabs-ai/components-process` | One activity on the process map: a FlowNode carrying the metric value, a meter bar, start/end role and a rework tally. |
 | ProcessCompare | component |  | `@elabs-ai/components-process` |  |
@@ -1482,12 +1516,19 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ProcessMap | component |  | `@elabs-ai/components-process` | Directly-follows process map: activities as nodes, transitions as edges, both painted from one metric choice, with an accessible table twin. |
 | ProcessMapEdgeKeyContext | component |  | `@elabs-ai/components-process` |  |
 | ProcessMapHoverContext | component |  | `@elabs-ai/components-process` |  |
+| ProcessReplay | component |  | `@elabs-ai/components-process` |  |
+| ProcessReplayTokensContext | component |  | `@elabs-ai/components-process` |  |
 | ProcessTransitionEdge | component |  | `@elabs-ai/components-process` | One directly-follows relation on the process map: a weighted edge whose width, printed pill and SHAPE (dashed back-edge, closed self-loop) carry the metric. |
+| REPLAY_PLAYBACK_MS | component |  | `@elabs-ai/components-process` |  |
+| REPLAY_SPEEDS | component |  | `@elabs-ai/components-process` |  |
+| ReplayControls | component |  | `@elabs-ai/components-process` |  |
 | useHappyPathEditor | hook |  | `@elabs-ai/components-process` |  |
 | useProcessExplorer | hook |  | `@elabs-ai/components-process` |  |
 | useProcessLayout | hook |  | `@elabs-ai/components-process` |  |
 | useProcessMapEdgeKeys | hook |  | `@elabs-ai/components-process` |  |
 | useProcessMapHover | hook |  | `@elabs-ai/components-process` |  |
+| useProcessReplayEdgeTokens | hook |  | `@elabs-ai/components-process` |  |
+| useReplayTimeFormatter | hook |  | `@elabs-ai/components-process` |  |
 | VARIANT_EXPLORER_COLUMNS | component |  | `@elabs-ai/components-process` |  |
 | VARIANT_EXPLORER_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
 | VARIANT_EXPLORER_ROW_HEIGHT | component |  | `@elabs-ai/components-process` |  |
@@ -1505,6 +1546,11 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DurationSampler | component |  | `@elabs-ai/components-process/core` |  |
 | EDGE_KEY_SEPARATOR | component |  | `@elabs-ai/components-process/core` |  |
 | EMPTY_DURATION_STATS | component |  | `@elabs-ai/components-process/core` |  |
+| OCEL_EVENT_ID_ATTRIBUTE | component |  | `@elabs-ai/components-process/core` |  |
+| OCEL_OBJECT_REFS_ATTRIBUTE | component |  | `@elabs-ai/components-process/core` |  |
+| REPLAY_MAX_FRAMES | component |  | `@elabs-ai/components-process/core` |  |
+| REPLAY_TARGET_FRAMES | component |  | `@elabs-ai/components-process/core` |  |
+| REPLAY_TOKEN_RADIUS_RANGE | component |  | `@elabs-ai/components-process/core` |  |
 | SYNTHETIC_ACTIVITIES | component |  | `@elabs-ai/components-process/core` |  |
 | SYNTHETIC_LOG_EPOCH | component |  | `@elabs-ai/components-process/core` |  |
 | TRIM_FRACTION | component |  | `@elabs-ai/components-process/core` |  |

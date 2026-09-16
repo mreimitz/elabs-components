@@ -43,6 +43,7 @@ import {
   type ReactNode,
   use,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -56,7 +57,10 @@ import type {
   ChartDatapointLabel,
 } from "./chart-datapoint";
 import { getDateFormat, getNumberFormat } from "./chart-formatters";
+import { resolveMarkState, useChartSelection } from "./chart-selection";
 import { exactValueString } from "./value-format";
+import { useChartConfig } from "./chart-config-context";
+import ChartStableContext from "./chart-context";
 
 /** WCAG 2.5.8 (Target Size, Minimum). Every hit box is padded up to this. */
 export const MIN_DATAPOINT_TARGET_SIZE = 24;
@@ -264,6 +268,7 @@ export function ChartDatapointProvider({
   onDatapointClick,
 }: ChartDatapointProviderProps) {
   const { locale, t } = useLocale();
+  const selection = useChartSelection();
   const { copied, copy } = useCopyToClipboard();
   const storeRef = useRef<TargetStore | null>(null);
   storeRef.current ??= createTargetStore();
@@ -276,12 +281,22 @@ export function ChartDatapointProvider({
   labelRef.current = datapointLabel;
   const copyOnActivateRef = useRef(copyValueOnActivate);
   copyOnActivateRef.current = copyValueOnActivate;
+  const { interactions } = useChartConfig();
+  const selectRef = useRef(interactions.select);
+  selectRef.current = interactions.select;
 
   const value = useMemo<ChartDatapointContextValue>(() => {
     const store = storeRef.current as TargetStore;
     return {
       store,
       activate: (target, event, source) => {
+        // RM-072: `interactions.select === false` keeps the keyboard targets —
+        // and, with `interactions.passive`, the tooltip a focused target shows
+        // (`ChartDatapointLayer`'s focus bridge, #447) — but commits nothing:
+        // no handler call, no copy.
+        if (!selectRef.current) {
+          return;
+        }
         const { id: _id, rect: _rect, seriesIndex: _seriesIndex, ...point } = target;
         const handler = handlerRef.current;
         // A consumer handler always wins — the copy is the fallback that makes
@@ -301,11 +316,17 @@ export function ChartDatapointProvider({
         // nameless button is the one outcome the shared default exists to rule
         // out, so a blank override falls through to it.
         const customName = custom ? custom(point).trim() : "";
-        return customName || defaultDatapointLabel(point, t, locale);
+        const name = customName || defaultDatapointLabel(point, t, locale);
+        // Selection input (RM-073): a resolved `selected`/`excluded` state joins
+        // the name, so it is announced, not only painted.
+        const state = resolveMarkState(selection, point);
+        if (state === "selected") return t("charts.datapoint.selected", { label: name });
+        if (state === "excluded") return t("charts.datapoint.excluded", { label: name });
+        return name;
       },
       maxInteractiveDatapoints,
     };
-  }, [copy, locale, maxInteractiveDatapoints, t]);
+  }, [copy, locale, maxInteractiveDatapoints, selection, t]);
 
   return (
     <ChartDatapointContext value={value}>
@@ -376,6 +397,67 @@ export function useActivateDatapoint():
 }
 
 // ---------------------------------------------------------------------------
+// Focus → hover bridge (#447)
+// ---------------------------------------------------------------------------
+
+/*
+ * Every family already owns its hover feedback (tooltip, crosshair, slice
+ * highlight) behind its own pointer handlers — `use-chart-interaction`'s
+ * mousemove for time series, `onMouseEnter` on a pie slice's hitbox, and so on.
+ * Rather than re-derive each family's tooltip from a target, a focused target
+ * replays the pointer events a mouse resting on its centre would fire, on the
+ * topmost chart SVG shape under that point. Keyboard focus therefore shows
+ * EXACTLY what hover shows, for every family that mounts the layer, with no
+ * per-family code.
+ *
+ * Two things make this deterministic rather than a race (#447 follow-up):
+ * - Sampling waits two animation frames after focus, so a focus-driven scroll
+ *   or a just-committed layout has settled before hit-testing.
+ * - The replay runs again whenever the chart's interaction readiness changes
+ *   (`isLoaded` / `chartPhase` on the chart context) or its targets re-register.
+ *   A chart ignores pointer input during its enter phase, so a target focused
+ *   that early gets its tooltip the moment the chart starts accepting hover.
+ *
+ * Hit-testing uses `elementsFromPoint` and takes the first SVG element outside
+ * the layer: several families mount the layer inside a full-size positioned
+ * HTML wrapper (Pie stacks it in the SVG's grid cell), which `elementFromPoint`
+ * would return instead of the slice beneath it.
+ */
+
+type HoverPoint = { shape: Element; clientX: number; clientY: number };
+
+function dispatchPointer(
+  target: Element,
+  type: "over" | "move" | "out" | "leave",
+  point: { clientX: number; clientY: number },
+  relatedTarget: Element | null,
+): void {
+  const bubbles = type !== "leave";
+  const init = { bubbles, cancelable: true, composed: true, relatedTarget, ...point };
+  const pointerCtor = typeof PointerEvent === "function" ? PointerEvent : MouseEvent;
+  target.dispatchEvent(new pointerCtor(`pointer${type}`, { ...init, pointerType: "mouse" }));
+  target.dispatchEvent(new MouseEvent(`mouse${type}`, init));
+}
+
+function shapeUnder(button: HTMLElement, layer: HTMLElement | null): HoverPoint | null {
+  if (!button.isConnected || typeof document.elementsFromPoint !== "function") {
+    return null;
+  }
+  const rect = button.getBoundingClientRect();
+  const clientX = rect.left + rect.width / 2;
+  const clientY = rect.top + rect.height / 2;
+  for (const element of document.elementsFromPoint(clientX, clientY)) {
+    if (layer?.contains(element)) {
+      continue;
+    }
+    if (element instanceof SVGElement) {
+      return { shape: element, clientX, clientY };
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // The layer
 // ---------------------------------------------------------------------------
 
@@ -411,7 +493,19 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
     const rootRef = useRef<HTMLDivElement | null>(null);
     const pendingFocusRef = useRef<string | null>(null);
     const warnedRef = useRef(false);
+    // Focus → hover bridge state: the focused target, the shape it last
+    // "hovered" (with the point used) and the pending two-frame sample.
+    const focusedRef = useRef<HTMLButtonElement | null>(null);
+    const hoveredRef = useRef<HoverPoint | null>(null);
+    const frameRef = useRef<number | null>(null);
 
+    const { interactions } = useChartConfig();
+    const passiveRef = useRef(interactions.passive);
+    passiveRef.current = interactions.passive;
+    // Families that gate hover on their enter phase publish it here; a family
+    // without the shared chart context (Pie, Treemap, …) never gates hover.
+    const stable = useContext(ChartStableContext);
+    const readiness = stable ? `${String(stable.isLoaded)}:${stable.chartPhase}` : "static";
     const store = context?.store;
     const subscribe = useCallback(
       (listener: () => void) => store?.subscribe(listener) ?? (() => {}),
@@ -421,6 +515,61 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
     const targets = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
     const rows = useMemo(() => toRows(targets), [targets]);
+
+    const cancelFrame = useCallback(() => {
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+    }, []);
+
+    const leaveHovered = useCallback((relatedTarget: Element | null) => {
+      const previous = hoveredRef.current;
+      hoveredRef.current = null;
+      if (previous) {
+        dispatchPointer(previous.shape, "out", previous, relatedTarget);
+        dispatchPointer(previous.shape, "leave", previous, relatedTarget);
+      }
+    }, []);
+
+    const syncHover = useCallback(() => {
+      const button = focusedRef.current;
+      if (!button || !passiveRef.current) {
+        return;
+      }
+      const next = shapeUnder(button, rootRef.current);
+      const previous = hoveredRef.current;
+      if (previous && previous.shape !== next?.shape) {
+        leaveHovered(next?.shape ?? null);
+      }
+      if (!next) {
+        return;
+      }
+      if (previous?.shape !== next.shape) {
+        dispatchPointer(next.shape, "over", next, previous?.shape ?? null);
+      }
+      hoveredRef.current = next;
+      dispatchPointer(next.shape, "move", next, null);
+    }, [leaveHovered]);
+
+    const scheduleHover = useCallback(() => {
+      cancelFrame();
+      frameRef.current = requestAnimationFrame(() => {
+        frameRef.current = requestAnimationFrame(() => {
+          frameRef.current = null;
+          syncHover();
+        });
+      });
+    }, [cancelFrame, syncHover]);
+
+    // Replay when the chart becomes interactive or its targets move.
+    useEffect(() => {
+      if (focusedRef.current) {
+        scheduleHover();
+      }
+    }, [readiness, targets, scheduleHover]);
+
+    useEffect(() => cancelFrame, [cancelFrame]);
 
     // Roving tabindex: the active target is whichever the user last landed on,
     // falling back to the first one whenever that target disappears (a data
@@ -450,9 +599,30 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
       }
     }, [max, targets.length]);
 
-    if (!(context && targets.length > 0)) {
+    // RM-072: `interactions.active === false` removes the target buttons.
+    if (!(context && targets.length > 0 && interactions.active)) {
       return null;
     }
+
+    const handleFocus = (event: React.FocusEvent<HTMLButtonElement>) => {
+      // `interactions.passive === false` turns hover feedback off; focus follows.
+      if (!interactions.passive) {
+        return;
+      }
+      focusedRef.current = event.currentTarget;
+      scheduleHover();
+    };
+
+    const handleBlur = (event: React.FocusEvent<HTMLButtonElement>) => {
+      // Roving to a sibling target: its focus handler moves the hover itself.
+      const to = event.relatedTarget;
+      if (to instanceof Element && rootRef.current?.contains(to)) {
+        return;
+      }
+      focusedRef.current = null;
+      cancelFrame();
+      leaveHovered(null);
+    };
 
     const moveTo = (target: ChartDatapointTarget | undefined) => {
       if (!target) {
@@ -532,6 +702,8 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
               setActiveId(target.id);
               context.activate(target, event, event.detail === 0 ? "keyboard" : "pointer");
             }}
+            onBlur={handleBlur}
+            onFocus={handleFocus}
             onKeyDown={handleKeyDown}
             style={{
               left: target.rect.x,

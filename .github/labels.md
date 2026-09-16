@@ -32,6 +32,7 @@ gh label create "area:editor"     -c "#1d76db" -d "@elabs-ai/components-editor" 
 gh label create "area:viewer"     -c "#1d76db" -d "@elabs-ai/components-viewer" 2>/dev/null || true
 gh label create "area:terminal"   -c "#1d76db" -d "@elabs-ai/components-terminal" 2>/dev/null || true
 gh label create "area:process"    -c "#1d76db" -d "@elabs-ai/components-process — process mining / event-log analysis (layer 3)" 2>/dev/null || true
+gh label create "area:dashboard"  -c "#1d76db" -d "@elabs-ai/components-charts/dashboard — dashboard sheet surface (ADR 0037)" 2>/dev/null || true
 gh label create "area:tokens"     -c "#1d76db" -d "@elabs-ai/components-tokens (themes, ThemeProvider)" 2>/dev/null || true
 gh label create "area:icons"      -c "#1d76db" -d "@elabs-ai/components-icons" 2>/dev/null || true
 gh label create "area:registry"   -c "#1d76db" -d "registry/ — shadcn-compatible copy-own blocks/templates" 2>/dev/null || true
@@ -50,6 +51,8 @@ gh label create "meta" -c "#c5def5" -d "About how the agent works, not product c
 - **`area:*` names either a `@elabs-ai/components-<pkg>` package** (matching the package
   list in `CLAUDE.md`) **or one of the four cross-cutting surfaces** — `docs`,
   `governance`, `registry`, `test` — that don't map to a single package.
+  `area:dashboard` is the one subpath-scoped area: the `@elabs-ai/components-charts/dashboard`
+  surface (ADR 0037), large enough to route on its own.
 - If the GitHub connector or `gh` rejects an unknown label at issue-creation time
   (e.g. this script has not been run yet), `/file-issue` retries without labels and
   keeps the `Labels` line inside the issue body instead — see

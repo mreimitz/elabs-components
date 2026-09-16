@@ -7,6 +7,7 @@ import { useActivateDatapoint } from "./chart-datapoint-layer";
 import { pieCssVars, pieDatapointTarget, usePieHover, usePieStable } from "./pie-context";
 import { useEnterComplete } from "./use-enter-complete";
 import { useMountProgress } from "./use-mount-progress";
+import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart-selection";
 
 // Helper to generate arc path using d3 arc generator
 function generateArcPath(
@@ -355,6 +356,7 @@ export const PieSlice = memo(function PieSlice({
   } = usePieStable();
   const { hoveredIndex, setHoveredIndex } = usePieHover();
   const activateDatapoint = useActivateDatapoint();
+  const selection = useChartSelection();
 
   // Use prop if provided, otherwise use context value
   const hoverOffset = hoverOffsetProp ?? contextHoverOffset;
@@ -421,6 +423,21 @@ export const PieSlice = memo(function PieSlice({
   // `seams` prop renders paths with no stroke attributes at all — unchanged.
   const seamStroke = seams > 0 ? pieCssVars.background : undefined;
   const seamStrokeWidth = seams > 0 ? seams : undefined;
+  // Selection input (RM-073): unresolved → the node is returned untouched.
+  // Painted ONCE, around the slice group below — the slice renderers must not
+  // wrap again, or an excluded slice dims twice and nests its frame in a dim.
+  const selectionPaint = resolveMarkPaint(selection, {
+    category: arcData.data.label,
+    datum: arcData.data as unknown as Record<string, unknown>,
+  });
+  const paintSelection = (node: React.ReactNode) =>
+    selectionPaint["data-selection"] === undefined ? (
+      node
+    ) : (
+      <ChartSelectionMark paint={selectionPaint} shape={<path d={hitboxPath} />}>
+        {node}
+      </ChartSelectionMark>
+    );
 
   // Render animated slice based on effect type
   const renderAnimatedSlice = () => {
@@ -522,7 +539,7 @@ export const PieSlice = memo(function PieSlice({
     );
   };
 
-  return (
+  return paintSelection(
     <g style={{ cursor: "pointer" }}>
       {/* Invisible hitbox - stays in place, handles hover events */}
       {/* SVG path used as hover hitbox for visualization; not keyboard-operable
@@ -537,7 +554,7 @@ export const PieSlice = memo(function PieSlice({
 
       {/* Visible slice - animates based on hover effect, no pointer events */}
       {animate ? renderAnimatedSlice() : renderStaticSlice()}
-    </g>
+    </g>,
   );
 });
 

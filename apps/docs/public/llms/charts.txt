@@ -45,6 +45,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Registering one ChartDatapointLayer target per point to 'get keyboard for free' — that is the DOM cost the canvas exists to avoid; the virtual cursor is the contract here.
 - CATEGORICAL_SOFT_CAP
 - CHART_CLIP_PASSTHROUGH
+- CHART_DENSITY_SM_MAX_TICKS
 - CHART_HAIRLINE_WIDTH
 - CHART_SPEC_PALETTES
 - CHART_STAGGER_BAR_MS
@@ -106,6 +107,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - CONTINUOUS_MIN_OPACITY
 - DateTicker
 - DEFAULT_CHART_CONFIG
+- DEFAULT_CHART_INTERACTIONS
 - DEFAULT_CHART_LIFECYCLE
 - DEFAULT_CHART_STATUS
 - DEFAULT_CIRCULAR_CURVENESS
@@ -303,6 +305,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - SegmentBackground
 - SegmentLineFrom
 - SegmentLineTo
+- SELECTED_OUTLINE_WIDTH
+- SELECTION_EXCLUDED_OPACITY
 - SeriesBar
 - SeriesMarkers
 - SeriesPointMarker
@@ -389,3 +393,31 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useSankey
 - useStaticChartPreview
 - useYScale
+
+## Subpath exports
+
+- DASHBOARD_TILE_WARNING_THRESHOLD (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardExpressionError (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardGridContext (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardProvider (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardSelectionBar (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardSheet (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardTile (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardTileHeader (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardTileMenu (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_DASHBOARD_LABELS (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_FILTER_TILE_LABELS (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_GRID_COLUMNS (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_GRID_GAP (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_GRID_ROWS (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_ROW_HEIGHT (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_SELECTION_BAR_LABELS (`@elabs-ai/components-charts/dashboard` · component)
+- EMPTY_SELECTION (`@elabs-ai/components-charts/dashboard` · component)
+- GRID_DENSITY_PRESETS (`@elabs-ai/components-charts/dashboard` · component)
+- useCellRect (`@elabs-ai/components-charts/dashboard` · hook)
+- useDashboard (`@elabs-ai/components-charts/dashboard` · hook)
+- useDashboardActions (`@elabs-ai/components-charts/dashboard` · hook)
+- useHover (`@elabs-ai/components-charts/dashboard` · hook)
+- useSelection (`@elabs-ai/components-charts/dashboard` · hook)
+- useTile (`@elabs-ai/components-charts/dashboard` · hook)
+- useVariable (`@elabs-ai/components-charts/dashboard` · hook)

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T18:33:55.548Z",
+  "generatedAt": "2026-09-16T18:54:48.233Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12974,6 +12974,11 @@
           "module": "packages/charts/src/charts/chart-child-passthrough.ts"
         },
         {
+          "name": "CHART_DENSITY_SM_MAX_TICKS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
           "name": "CHART_HAIRLINE_WIDTH",
           "kind": "value",
           "module": "packages/charts/src/chart-hairline.ts"
@@ -13150,6 +13155,11 @@
         },
         {
           "name": "DEFAULT_CHART_CONFIG",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
+          "name": "DEFAULT_CHART_INTERACTIONS",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
@@ -13719,6 +13729,16 @@
           "module": "packages/charts/src/charts/segment.tsx"
         },
         {
+          "name": "SELECTED_OUTLINE_WIDTH",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
+          "name": "SELECTION_EXCLUDED_OPACITY",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
           "name": "SeriesBar",
           "kind": "value",
           "module": "packages/charts/src/charts/series-bar.tsx"
@@ -14227,6 +14247,10 @@
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
         {
+          "name": "ChartDensity",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
           "name": "ChartExportKind",
           "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
@@ -14243,12 +14267,24 @@
           "module": "packages/charts/src/chart-frame/chart-frame.tsx"
         },
         {
+          "name": "ChartHoverCategory",
+          "module": "packages/charts/src/charts/chart-hover-link.ts"
+        },
+        {
           "name": "ChartHoverContextValue",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "ChartHoverLinkProps",
+          "module": "packages/charts/src/charts/chart-hover-link.ts"
+        },
+        {
           "name": "ChartInteractionProps",
           "module": "packages/charts/src/charts/chart-datapoint.ts"
+        },
+        {
+          "name": "ChartInteractions",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
         {
           "name": "ChartLegendProps",
@@ -14289,6 +14325,22 @@
         {
           "name": "ChartSelection",
           "module": "packages/charts/src/charts/use-chart-interaction.ts"
+        },
+        {
+          "name": "ChartSelectionCategory",
+          "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
+          "name": "ChartSelectionPoint",
+          "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
+          "name": "ChartSelectionProps",
+          "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
+          "name": "ChartSelectionStatesResolver",
+          "module": "packages/charts/src/charts/chart-selection.ts"
         },
         {
           "name": "ChartSeriesSpec",
@@ -14815,6 +14867,10 @@
           "module": "packages/charts/src/charts/markers/index.ts"
         },
         {
+          "name": "MarkSelectionPaint",
+          "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
           "name": "MetricCardProps",
           "module": "packages/charts/src/metric-card/index.ts"
         },
@@ -15109,6 +15165,10 @@
         {
           "name": "SegmentLineVariant",
           "module": "packages/charts/src/charts/segment.tsx"
+        },
+        {
+          "name": "SelectionState",
+          "module": "packages/charts/src/charts/chart-selection.ts"
         },
         {
           "name": "SeriesBarProps",
@@ -15545,6 +15605,10 @@
           "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
+          "name": "findChartCategoryIndex",
+          "module": "packages/charts/src/charts/chart-hover-link.ts"
+        },
+        {
           "name": "firstMondayOfMonth",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
@@ -15693,6 +15757,10 @@
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
+          "name": "markSelectionPaint",
+          "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
           "name": "mergeYDomainRecords",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
@@ -15777,6 +15845,10 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "resolveMarkState",
+          "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
           "name": "resolveNodeWeight",
           "module": "packages/charts/src/charts/network/index.ts"
         },
@@ -15807,6 +15879,10 @@
         {
           "name": "ringCssVars",
           "module": "packages/charts/src/charts/ring-context.tsx"
+        },
+        {
+          "name": "sameChartCategory",
+          "module": "packages/charts/src/charts/chart-hover-link.ts"
         },
         {
           "name": "sampleContinuousInk",
@@ -15871,6 +15947,10 @@
         {
           "name": "startOfIsoWeek",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "thinToDensity",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
         {
           "name": "unitMarkDelayMs",
@@ -16088,7 +16168,10 @@
           ]
         },
         "AreaChart": {
-          "extends": [],
+          "extends": [
+            "ChartSelectionProps",
+            "ChartHoverLinkProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -16383,6 +16466,36 @@
               "optional": true,
               "type": "boolean",
               "description": "Copy a datapoint's EXACT value to the clipboard when it is activated by pointer or keyboard. Default **`true`** here, unlike the raw chart containers, which default it to `false`. The asymmetry is deliberate. `AutoChart` renders compact axis labels (`1.5M`) from a spec its caller never sees the axis config for, so without this there is no way to recover the exact figure. A raw container's caller owns the axis and can format it themselves, and turning this on mounts the datapoint interaction layer — which would break the documented guarantee that a chart with no interaction props renders byte-identical DOM. Set `false` to keep `AutoChart`'s pre-existing DOM (no interaction layer, no keyboard targets)."
+            },
+            {
+              "name": "selectionStates",
+              "optional": true,
+              "type": "ChartSelectionStatesResolver",
+              "description": "Selection input (RM-073), forwarded to the chosen container. The resolver's `category` is read from `spec.fields.category` (default `spec.x`), so a host maps selection without knowing the chart type."
+            },
+            {
+              "name": "dimExcluded",
+              "optional": true,
+              "type": "boolean",
+              "description": "Dim `excluded` marks. Default `true`. Forwarded with `selectionStates`."
+            },
+            {
+              "name": "hoverCategory",
+              "optional": true,
+              "type": "ChartHoverCategory",
+              "description": "Shared-crosshair category from a sibling chart (RM-073)."
+            },
+            {
+              "name": "onHoverCategory",
+              "optional": true,
+              "type": "(category: ChartHoverCategory) => void",
+              "description": "Fires with the hovered category on pointer move, `null` on leave (RM-073)."
+            },
+            {
+              "name": "onDatapointClick",
+              "optional": true,
+              "type": "ChartDatapointClickHandler",
+              "description": "Forwarded to the chosen container's own `onDatapointClick` (RM-075), when that family accepts one (bar, line, area/stream, pie, waterfall, heatmap/calendar, dumbbell, unit, treemap, histogram/box/strip, bump, funnel, diverging-bar). Absent on scatter/radar/candlestick — those containers don't accept it yet. Unset by default, so the default render stays byte-identical (#349's own rule: \"with it unset the chart renders exactly as before\")."
             }
           ]
         },
@@ -16488,7 +16601,9 @@
           ]
         },
         "BarChart": {
-          "extends": [],
+          "extends": [
+            "ChartSelectionProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -17271,7 +17386,8 @@
             {
               "name": "value",
               "optional": true,
-              "type": "Partial<ChartConfigValue>"
+              "type": "Partial<Omit<ChartConfigValue, \"interactions\">> & { interactions?: ChartInteractions }",
+              "description": "Partial overrides. `interactions` may itself be partial — missing keys keep their defaults (`edit: false`, the rest `true`)."
             },
             {
               "name": "children",
@@ -17370,7 +17486,7 @@
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "Inline body height in px. Defaults to 260."
+              "description": "Inline body height in px. Defaults to 260 for `chrome=\"card\"`/`\"bare\"`. With `chrome=\"tile\"` and no `height`, the frame fills its host instead (`h-full` flex column, chart body takes the space left after header and source row) — the host tile sets the height (#444)."
             },
             {
               "name": "loading",
@@ -17401,6 +17517,42 @@
               "optional": true,
               "type": "ReactNode",
               "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal, under the chart in both — never appended to the summary statistics; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent. A string that overflows the row stays fully recoverable — a native `title` and, once it measurably overflows, a keyboard-reachable tooltip (#184). A non-string node keeps only the CSS caps with no overflow recovery — keep it short, or accept it may be visually truncated with no fallback."
+            },
+            {
+              "name": "chrome",
+              "optional": true,
+              "type": "ChartFrameChrome",
+              "description": "Surface drawn around the chart (RM-072). Default `\"card\"` — byte-identical to a frame without the prop. See `ChartFrameChrome`."
+            },
+            {
+              "name": "headerSlot",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "`chrome=\"tile\"` only: replaces the default title/description header."
+            },
+            {
+              "name": "menuSlot",
+              "optional": true,
+              "type": "ReactNode | ((api: ChartFrameMenuApi) => ReactNode)",
+              "description": "`chrome=\"tile\"` only: replaces the inline toolbar. A function receives the frame's actions, so a host kebab menu can open the expand modal, flip to the table or export without reaching into context."
+            },
+            {
+              "name": "onExpandChange",
+              "optional": true,
+              "type": "(open: boolean) => void",
+              "description": "Fires when the expand modal opens or closes, however it was triggered."
+            },
+            {
+              "name": "interactions",
+              "optional": true,
+              "type": "ChartInteractions",
+              "description": "Which interaction layers the chart mounts (`passive` tooltips, `active` brush/datapoint targets, `select` datapoint activation, `edit`). Defaults: all `true` except `edit: false`. Forwarded to every chart family through `useChartConfig()`."
+            },
+            {
+              "name": "density",
+              "optional": true,
+              "type": "ChartDensity",
+              "description": "Furniture tier (`\"xs\" | \"sm\" | \"md\" | \"lg\"`, default `\"md\"`). Forwarded to every chart family through `useChartConfig()`; the frame itself drops `description` and the source row at `xs` and clamps the title to one line at `xs`/`sm`."
             },
             {
               "name": "children",
@@ -17670,7 +17822,10 @@
           ]
         },
         "ComposedChart": {
-          "extends": [],
+          "extends": [
+            "ChartSelectionProps",
+            "ChartHoverLinkProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -17926,6 +18081,7 @@
         },
         "DumbbellChart": {
           "extends": [
+            "ChartSelectionProps",
             "ChartInteractionProps"
           ],
           "props": [
@@ -18951,7 +19107,10 @@
           ]
         },
         "LineChart": {
-          "extends": [],
+          "extends": [
+            "ChartSelectionProps",
+            "ChartHoverLinkProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -19705,7 +19864,9 @@
           ]
         },
         "PieChart": {
-          "extends": [],
+          "extends": [
+            "ChartSelectionProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -20268,7 +20429,9 @@
           ]
         },
         "RingChart": {
-          "extends": [],
+          "extends": [
+            "ChartSelectionProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -20466,7 +20629,9 @@
           ]
         },
         "ScatterChart": {
-          "extends": [],
+          "extends": [
+            "ChartSelectionProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -20821,6 +20986,7 @@
         },
         "UnitChart": {
           "extends": [
+            "ChartSelectionProps",
             "ChartInteractionProps",
             "Omit<HTMLAttributes<HTMLDivElement>, \"color\">"
           ],
@@ -22209,6 +22375,603 @@
             "one proportion against its maximum, read as a single ring"
           ],
           "avoidWhen": "several categories matter — use a pie or unit chart"
+        }
+      },
+      "subpaths": {
+        "@elabs-ai/components-charts/dashboard": {
+          "components": [
+            {
+              "name": "DASHBOARD_TILE_WARNING_THRESHOLD",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
+            },
+            {
+              "name": "DashboardExpressionError",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/expression.ts"
+            },
+            {
+              "name": "DashboardGridContext",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
+            },
+            {
+              "name": "DashboardProvider",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-provider.tsx"
+            },
+            {
+              "name": "DashboardSelectionBar",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
+              "name": "DashboardSheet",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
+            },
+            {
+              "name": "DashboardTile",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "DashboardTileHeader",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-header.tsx"
+            },
+            {
+              "name": "DashboardTileMenu",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-menu.tsx"
+            },
+            {
+              "name": "DEFAULT_DASHBOARD_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/labels.ts"
+            },
+            {
+              "name": "DEFAULT_FILTER_TILE_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "DEFAULT_GRID_COLUMNS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "DEFAULT_GRID_GAP",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "DEFAULT_GRID_ROWS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "DEFAULT_ROW_HEIGHT",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "DEFAULT_SELECTION_BAR_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
+              "name": "EMPTY_SELECTION",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "GRID_DENSITY_PRESETS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/validate.ts"
+            }
+          ],
+          "hooks": [
+            {
+              "name": "useCellRect",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
+            },
+            {
+              "name": "useDashboard",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
+            },
+            {
+              "name": "useDashboardActions",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
+            },
+            {
+              "name": "useHover",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-hover.ts"
+            },
+            {
+              "name": "useSelection",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-selection.ts"
+            },
+            {
+              "name": "useTile",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-tile.ts"
+            },
+            {
+              "name": "useVariable",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-variable.ts"
+            }
+          ],
+          "types": [
+            {
+              "name": "ButtonTileAction",
+              "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "ButtonTileContent",
+              "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "CellRect",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "ChartTileContent",
+              "module": "packages/charts/src/dashboard/tiles/chart-tile.tsx"
+            },
+            {
+              "name": "CollisionResult",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "CollisionStrategy",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "Condition",
+              "module": "packages/charts/src/dashboard/core/expression.ts"
+            },
+            {
+              "name": "ConditionContext",
+              "module": "packages/charts/src/dashboard/core/expression.ts"
+            },
+            {
+              "name": "ContainerTabSpec",
+              "module": "packages/charts/src/dashboard/tiles/container-tile.tsx"
+            },
+            {
+              "name": "ContainerTileContent",
+              "module": "packages/charts/src/dashboard/tiles/container-tile.tsx"
+            },
+            {
+              "name": "CreateDashboardStoreOptions",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardActions",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardCellSize",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardChangeMeta",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-provider.tsx"
+            },
+            {
+              "name": "DashboardContextValue",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
+            },
+            {
+              "name": "DashboardGridContextValue",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
+            },
+            {
+              "name": "DashboardHover",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardLabels",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/labels.ts"
+            },
+            {
+              "name": "DashboardMode",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardProviderProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-provider.tsx"
+            },
+            {
+              "name": "DashboardSelectionBarProps",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
+              "name": "DashboardSheetProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
+            },
+            {
+              "name": "DashboardSpecNormalization",
+              "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
+              "name": "DashboardSpecValidation",
+              "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
+              "name": "DashboardState",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardStore",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardTileCapabilities",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileFrameProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileHeaderProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-header.tsx"
+            },
+            {
+              "name": "DashboardTileKind",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileKinds",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileMenuItem",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-menu.tsx"
+            },
+            {
+              "name": "DashboardTileMenuProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-menu.tsx"
+            },
+            {
+              "name": "DashboardTileProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "DashboardTileRootProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "DividerTileContent",
+              "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
+            },
+            {
+              "name": "FieldSelection",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-selection.ts"
+            },
+            {
+              "name": "FilterTileContent",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTileLabels",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTileMode",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTileSort",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTileValue",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "HeadingTileContent",
+              "module": "packages/charts/src/dashboard/tiles/heading-tile.tsx"
+            },
+            {
+              "name": "History",
+              "module": "packages/charts/src/dashboard/core/history.ts"
+            },
+            {
+              "name": "ImageTileContent",
+              "module": "packages/charts/src/dashboard/tiles/image-tile.tsx"
+            },
+            {
+              "name": "LocalSelectionDriver",
+              "module": "packages/charts/src/dashboard/core/local-selection-driver.ts"
+            },
+            {
+              "name": "LocalSelectionDriverOptions",
+              "module": "packages/charts/src/dashboard/core/local-selection-driver.ts"
+            },
+            {
+              "name": "MarkupBlock",
+              "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
+            },
+            {
+              "name": "MetricTileContent",
+              "module": "packages/charts/src/dashboard/tiles/metric-tile.tsx"
+            },
+            {
+              "name": "NewTileSpec",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "NormalizeDashboardSpecOptions",
+              "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
+              "name": "PlaceholderTileContent",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
+            },
+            {
+              "name": "SelectionBarDriver",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
+              "name": "SelectionBarLabels",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
+              "name": "SelectionDriver",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "SelectionFieldState",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "SelectionIntent",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "SelectionOptions",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "SelectionSnapshot",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "SelectionState",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "SelectionValue",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "TextTileContent",
+              "module": "packages/charts/src/dashboard/tiles/text-tile.tsx"
+            },
+            {
+              "name": "TileLayoutOptions",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "TilePatch",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "TileRegistry",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "VariableTileContent",
+              "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
+            }
+          ],
+          "otherExports": [
+            {
+              "name": "applySelectionValues",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "builtInTiles",
+              "module": "packages/charts/src/dashboard/tiles/built-in-tiles.ts"
+            },
+            {
+              "name": "buttonTileKind",
+              "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "cellRect",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "chartTileKind",
+              "module": "packages/charts/src/dashboard/tiles/chart-tile.tsx"
+            },
+            {
+              "name": "collides",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "compact",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "compileCondition",
+              "module": "packages/charts/src/dashboard/core/expression.ts"
+            },
+            {
+              "name": "containerTileKind",
+              "module": "packages/charts/src/dashboard/tiles/container-tile.tsx"
+            },
+            {
+              "name": "correctBounds",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "createButtonTileKind",
+              "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "createChartTileKind",
+              "module": "packages/charts/src/dashboard/tiles/chart-tile.tsx"
+            },
+            {
+              "name": "createContainerTileKind",
+              "module": "packages/charts/src/dashboard/tiles/container-tile.tsx"
+            },
+            {
+              "name": "createDashboardStore",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "createDividerTileKind",
+              "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
+            },
+            {
+              "name": "createFilterTileKind",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "createHeadingTileKind",
+              "module": "packages/charts/src/dashboard/tiles/heading-tile.tsx"
+            },
+            {
+              "name": "createHistory",
+              "module": "packages/charts/src/dashboard/core/history.ts"
+            },
+            {
+              "name": "createImageTileKind",
+              "module": "packages/charts/src/dashboard/tiles/image-tile.tsx"
+            },
+            {
+              "name": "createLocalSelectionDriver",
+              "module": "packages/charts/src/dashboard/core/local-selection-driver.ts"
+            },
+            {
+              "name": "createMetricTileKind",
+              "module": "packages/charts/src/dashboard/tiles/metric-tile.tsx"
+            },
+            {
+              "name": "createPlaceholderTileKind",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
+            },
+            {
+              "name": "createSelectionSnapshot",
+              "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "createTextTileKind",
+              "module": "packages/charts/src/dashboard/tiles/text-tile.tsx"
+            },
+            {
+              "name": "createTileRegistry",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "createVariableTileKind",
+              "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
+            },
+            {
+              "name": "dividerTileKind",
+              "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
+            },
+            {
+              "name": "extendRows",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "filterTileKind",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "findEmptySlot",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "freezeDeep",
+              "module": "packages/charts/src/dashboard/core/history.ts"
+            },
+            {
+              "name": "headingTileKind",
+              "module": "packages/charts/src/dashboard/tiles/heading-tile.tsx"
+            },
+            {
+              "name": "hitTestCell",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "imageTileKind",
+              "module": "packages/charts/src/dashboard/tiles/image-tile.tsx"
+            },
+            {
+              "name": "metricTileKind",
+              "module": "packages/charts/src/dashboard/tiles/metric-tile.tsx"
+            },
+            {
+              "name": "normalizeDashboardSpec",
+              "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
+              "name": "parseInlineMarkup",
+              "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
+            },
+            {
+              "name": "parseMarkupBlocks",
+              "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
+            },
+            {
+              "name": "placeholderTileKind",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
+            },
+            {
+              "name": "renderInlineMarkup",
+              "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
+            },
+            {
+              "name": "resolveCollisions",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "snapSize",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "stackForNarrow",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "textTileKind",
+              "module": "packages/charts/src/dashboard/tiles/text-tile.tsx"
+            },
+            {
+              "name": "tileDensity",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "tileInteractions",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "validateDashboardSpec",
+              "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
+              "name": "variableTileKind",
+              "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
+            },
+            {
+              "name": "withBuiltInTiles",
+              "module": "packages/charts/src/dashboard/tiles/built-in-tiles.ts"
+            }
+          ]
         }
       }
     },
@@ -23930,6 +24693,7 @@
         "@elabs-ai/components-tokens": "workspace:*",
         "@elabs-ai/components-ui": "workspace:*",
         "@xyflow/react": "^12.11.1",
+        "elkjs": "^0.12.0",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -24244,6 +25008,18 @@
           "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
         },
         {
+          "name": "FlowElkBackbone",
+          "module": "packages/flow/src/flow-layout/backbone.ts"
+        },
+        {
+          "name": "FlowElkEngine",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
+          "name": "FlowElkGraph",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
           "name": "FlowGroupNodeData",
           "module": "packages/flow/src/flow-group-node/flow-group-node.tsx"
         },
@@ -24266,6 +25042,14 @@
         {
           "name": "FlowLayoutDirection",
           "module": "packages/flow/src/flow-layout/flow-layout.ts"
+        },
+        {
+          "name": "FlowLayoutElkOptions",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
+          "name": "FlowLayoutElkResult",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
         },
         {
           "name": "FlowLayoutOptions",
@@ -24466,6 +25250,10 @@
           "module": "packages/flow/src/flow-layout/flow-layout.ts"
         },
         {
+          "name": "layoutFlowElk",
+          "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
           "name": "layoutGraph",
           "module": "packages/flow/src/flow-layout/layout-graph.ts"
         },
@@ -24476,6 +25264,10 @@
         {
           "name": "pickClosestHandles",
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
+        },
+        {
+          "name": "pinBackbone",
+          "module": "packages/flow/src/flow-layout/backbone.ts"
         },
         {
           "name": "positionToSide",
@@ -26533,6 +27325,11 @@
           "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
         },
         {
+          "name": "CongestionHeat",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/congestion-heat.tsx"
+        },
+        {
           "name": "DEFAULT_LAYOUT_DEBOUNCE_MS",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
@@ -26598,6 +27395,16 @@
           "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
         },
         {
+          "name": "OBJECT_CENTRIC_MAP_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "OBJECT_TYPE_ABSTRACTION_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
           "name": "PERFORMANCE_SPECTRUM_DEFAULT_BIN_SIZE",
           "kind": "value",
           "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
@@ -26653,6 +27460,16 @@
           "module": "packages/process/src/process-map/use-process-layout.ts"
         },
         {
+          "name": "PROCESS_REPLAY_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-format.ts"
+        },
+        {
+          "name": "PROCESS_REPLAY_DEFAULT_METRIC",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
           "name": "PROCESS_SELECTION_STATE_MESSAGE_KEYS",
           "kind": "value",
           "module": "packages/process/src/process-map/map-model.ts"
@@ -26693,9 +27510,34 @@
           "module": "packages/process/src/process-map/process-map-context.ts"
         },
         {
+          "name": "ProcessReplay",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
+          "name": "ProcessReplayTokensContext",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-tokens-context.ts"
+        },
+        {
           "name": "ProcessTransitionEdge",
           "kind": "value",
           "module": "packages/process/src/process-map/process-transition-edge.tsx"
+        },
+        {
+          "name": "REPLAY_PLAYBACK_MS",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
+          "name": "REPLAY_SPEEDS",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-controls.tsx"
+        },
+        {
+          "name": "ReplayControls",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-controls.tsx"
         },
         {
           "name": "VARIANT_EXPLORER_COLUMNS",
@@ -26753,9 +27595,23 @@
           "name": "useProcessMapHover",
           "kind": "value",
           "module": "packages/process/src/process-map/process-map-context.ts"
+        },
+        {
+          "name": "useProcessReplayEdgeTokens",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-tokens-context.ts"
+        },
+        {
+          "name": "useReplayTimeFormatter",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-format.ts"
         }
       ],
       "types": [
+        {
+          "name": "AbstractedObjectCentricGraph",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
         {
           "name": "AbstractionControlsProps",
           "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
@@ -26783,6 +27639,10 @@
         {
           "name": "AutoAbstractionResult",
           "module": "packages/process/src/abstraction-controls/auto-abstraction.ts"
+        },
+        {
+          "name": "BuildObjectCentricMapModelOptions",
+          "module": "packages/process/src/process-map/map-model.ts"
         },
         {
           "name": "BuildProcessMapModelOptions",
@@ -26873,6 +27733,10 @@
           "module": "packages/process/src/conformance-overlay/conformance-state.ts"
         },
         {
+          "name": "CongestionHeatProps",
+          "module": "packages/process/src/process-replay/congestion-heat.tsx"
+        },
+        {
           "name": "CreateCaseTableColumnsOptions",
           "module": "packages/process/src/case-table/columns.ts"
         },
@@ -26955,6 +27819,30 @@
         {
           "name": "MetricLayerSwitchProps",
           "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
+        },
+        {
+          "name": "ObjectCentricActivityStats",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
+        {
+          "name": "ObjectCentricGraph",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
+        {
+          "name": "ObjectCentricMapLabels",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ObjectTypeAbstraction",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
+          "name": "ObjectTypeAbstractionLabels",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
+          "name": "ObjectTypeActivityCounts",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
         },
         {
           "name": "PerformanceSpectrumFilterIntent",
@@ -27069,6 +27957,26 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "ProcessObjectTypeCount",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessObjectTypeMark",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessReplayLabels",
+          "module": "packages/process/src/process-replay/replay-format.ts"
+        },
+        {
+          "name": "ProcessReplayProps",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
+          "name": "ProcessReplayTokens",
+          "module": "packages/process/src/process-replay/replay-tokens-context.ts"
+        },
+        {
           "name": "ProcessSelection",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -27095,6 +28003,10 @@
         {
           "name": "ProcessTransitionRow",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ReplayControlsProps",
+          "module": "packages/process/src/process-replay/replay-controls.tsx"
         },
         {
           "name": "SpectrumBin",
@@ -27199,6 +28111,10 @@
           "module": "packages/process/src/case-timeline/case-timeline-model.ts"
         },
         {
+          "name": "buildObjectCentricMapModel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
           "name": "buildProcessMapModel",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -27272,6 +28188,10 @@
         },
         {
           "name": "nodeMetricLabel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "objectCentricEdgeId",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
@@ -27402,6 +28322,18 @@
               "optional": true,
               "type": "string",
               "description": "Accessible name for the control group. Default from locale."
+            },
+            {
+              "name": "perType",
+              "optional": true,
+              "type": "Readonly<Record<string, ObjectTypeAbstraction>>",
+              "description": "Object-centric — RM-066. One slider pair per object type, keyed by type, rendered as collapsible rows under the global pair. A `linked` type (the default) follows the global sliders proportionally; toggle its link to abstract it on its own. Feed the result to `abstractObjectCentricGraph`."
+            },
+            {
+              "name": "perTypeLabels",
+              "optional": true,
+              "type": "ObjectTypeAbstractionLabels",
+              "description": "Object-centric — RM-066. Strings for the per-type rows."
             }
           ]
         },
@@ -27599,6 +28531,30 @@
               "optional": true,
               "type": "Partial<ConformanceStateLabels>",
               "description": "Override the state's word."
+            }
+          ]
+        },
+        "CongestionHeat": {
+          "extends": [
+            "HTMLAttributes<HTMLElement>"
+          ],
+          "props": [
+            {
+              "name": "timeline",
+              "optional": false,
+              "type": "ReplayTimeline",
+              "description": "The replay timeline (`replayTimeline`)."
+            },
+            {
+              "name": "limit",
+              "optional": true,
+              "type": "number",
+              "description": "How many transitions to list. @default 5"
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ProcessReplayLabels>"
             }
           ]
         },
@@ -28066,10 +29022,213 @@
               "description": "A replay result (RM-061's `tokenReplay`) to overlay (RM-062). When given, every node and edge carries `data-conformance=\"both\" | \"logOnly\" | \"modelOnly\"` — additive to `data-selection` — painted as a status tone PLUS a glyph and a line style, with the state's word in the accessible name and a Conformance column in the table twin. Omit for today's map, unchanged. Usually reached through `ConformanceOverlay`."
             },
             {
+              "name": "objectCentric",
+              "optional": true,
+              "type": "ObjectCentricGraph",
+              "description": "Object-centric — RM-066. An object-centric graph (`discoverObjectCentricGraph`, e.g. over `fromOcel(…).logs`) to draw instead of `graph`/`log` — mutually exclusive with both, and it wins when given together (with a dev-mode console warning). Shared activities merge into one node carrying a chip per object type; edges are drawn once per object type in that type's chart colour, side by side. `abstraction` applies to every type alike; for per-type abstraction pass `abstractObjectCentricGraph(…)`'s result here instead."
+            },
+            {
+              "name": "objectCentricLabels",
+              "optional": true,
+              "type": "ObjectCentricMapLabels",
+              "description": "Object-centric — RM-066. Strings the object-centric mode composes."
+            },
+            {
               "name": "label",
               "optional": true,
               "type": "string",
               "description": "Accessible name for the canvas region. Defaults to the localized `process.map.label` message."
+            },
+            {
+              "name": "layoutEngine",
+              "optional": true,
+              "type": "\"dagre\" | \"elk\"",
+              "description": "The layout engine. `\"elk\"` lays the map out with `@elabs-ai/components-flow`'s `layoutFlowElk` — elkjs, an optional peer, loaded lazily on first use; when it is not installed the map falls back to dagre with a development-only warning. @default \"dagre\""
+            }
+          ]
+        },
+        "ProcessReplay": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "graph",
+              "optional": false,
+              "type": "ProcessGraph",
+              "description": "The discovered graph to replay over."
+            },
+            {
+              "name": "log",
+              "optional": false,
+              "type": "EventLog",
+              "description": "The log the graph came from — tokens need per-case timing, not just the aggregate."
+            },
+            {
+              "name": "synchronizedStart",
+              "optional": true,
+              "type": "boolean",
+              "description": "Align every case's start to `t = 0` instead of the wall clock. @default false"
+            },
+            {
+              "name": "bucketMs",
+              "optional": true,
+              "type": "number",
+              "description": "Bucket width in ms for congestion. @default the log span / 300"
+            },
+            {
+              "name": "metric",
+              "optional": true,
+              "type": "ProcessMetricSpec",
+              "description": "Which readings the nodes and edges print. @default case frequency"
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "FlowLayoutDirection",
+              "description": "@default \"TB\""
+            },
+            {
+              "name": "playing",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled playing state. Held while reduced motion is on until the reader presses play."
+            },
+            {
+              "name": "defaultPlaying",
+              "optional": true,
+              "type": "boolean",
+              "description": "Initial playing state when uncontrolled. Ignored under reduced motion. @default false"
+            },
+            {
+              "name": "onPlayingChange",
+              "optional": true,
+              "type": "(playing: boolean) => void"
+            },
+            {
+              "name": "time",
+              "optional": true,
+              "type": "number",
+              "description": "Controlled playhead, ms relative to the timeline origin."
+            },
+            {
+              "name": "defaultTime",
+              "optional": true,
+              "type": "number",
+              "description": "@default 0"
+            },
+            {
+              "name": "onTimeChange",
+              "optional": true,
+              "type": "(time: number) => void"
+            },
+            {
+              "name": "speed",
+              "optional": true,
+              "type": "number",
+              "description": "Controlled playback multiplier."
+            },
+            {
+              "name": "defaultSpeed",
+              "optional": true,
+              "type": "number",
+              "description": "@default 1"
+            },
+            {
+              "name": "onSpeedChange",
+              "optional": true,
+              "type": "(speed: number) => void"
+            },
+            {
+              "name": "congestionLimit",
+              "optional": true,
+              "type": "number",
+              "description": "How many transitions the congestion list ranks. @default 5"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No log yet. Renders the loading panel."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ProcessReplayLabels>",
+              "description": "Override any user-visible string."
+            }
+          ]
+        },
+        "ReplayControls": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "playing",
+              "optional": false,
+              "type": "boolean"
+            },
+            {
+              "name": "onPlayingChange",
+              "optional": false,
+              "type": "(playing: boolean) => void"
+            },
+            {
+              "name": "time",
+              "optional": false,
+              "type": "number",
+              "description": "Playhead, ms relative to the timeline origin."
+            },
+            {
+              "name": "onTimeChange",
+              "optional": false,
+              "type": "(time: number) => void"
+            },
+            {
+              "name": "duration",
+              "optional": false,
+              "type": "number",
+              "description": "Timeline length in ms — the slider's maximum."
+            },
+            {
+              "name": "step",
+              "optional": false,
+              "type": "number",
+              "description": "Slider step in ms (one bucket)."
+            },
+            {
+              "name": "speed",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "onSpeedChange",
+              "optional": false,
+              "type": "(speed: number) => void"
+            },
+            {
+              "name": "inFlight",
+              "optional": false,
+              "type": "number",
+              "description": "Cases in flight at {@link time}."
+            },
+            {
+              "name": "formatTime",
+              "optional": false,
+              "type": "(time: number) => string",
+              "description": "Formats a playhead for the readout and the slider's value text."
+            },
+            {
+              "name": "disabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disable every control (an empty timeline)."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ProcessReplayLabels>"
             }
           ]
         },
@@ -28304,6 +29463,31 @@
               "module": "packages/process/src/core/duration-stats.ts"
             },
             {
+              "name": "OCEL_EVENT_ID_ATTRIBUTE",
+              "kind": "value",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OCEL_OBJECT_REFS_ATTRIBUTE",
+              "kind": "value",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "REPLAY_MAX_FRAMES",
+              "kind": "value",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "REPLAY_TARGET_FRAMES",
+              "kind": "value",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "REPLAY_TOKEN_RADIUS_RANGE",
+              "kind": "value",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
               "name": "SYNTHETIC_ACTIVITIES",
               "kind": "value",
               "module": "packages/process/src/core/fixtures/synthetic-log.ts"
@@ -28329,6 +29513,10 @@
             {
               "name": "AbstractedGraph",
               "module": "packages/process/src/core/abstract-graph.ts"
+            },
+            {
+              "name": "AbstractedObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
             },
             {
               "name": "AbstractionOptions",
@@ -28479,6 +29667,54 @@
               "module": "packages/process/src/core/event-log.ts"
             },
             {
+              "name": "ObjectCentricActivityStats",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "ObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "ObjectTypeActivityCounts",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "OcelAttribute",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelEvent",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelJson",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelObject",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelParseError",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelParseOptions",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelParseResult",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelRelationship",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelTypeDeclaration",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
               "name": "PerformanceAgg",
               "module": "packages/process/src/core/types.ts"
             },
@@ -28527,8 +29763,32 @@
               "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
+              "name": "ReplayCongestionEntry",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayFrame",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayFrameToken",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
               "name": "ReplayModel",
               "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
+              "name": "ReplaySegment",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayTimeline",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayTimelineOptions",
+              "module": "packages/process/src/core/replay-timeline.ts"
             },
             {
               "name": "ReplayTransition",
@@ -28589,6 +29849,10 @@
               "module": "packages/process/src/core/abstract-graph.ts"
             },
             {
+              "name": "abstractObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
               "name": "activityColorScale",
               "module": "packages/process/src/core/activity-color-scale.ts"
             },
@@ -28621,6 +29885,10 @@
               "module": "packages/process/src/core/worker/create-process-worker.ts"
             },
             {
+              "name": "defaultReplayBucketMs",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
               "name": "detectRework",
               "module": "packages/process/src/core/detect-rework.ts"
             },
@@ -28631,6 +29899,10 @@
             {
               "name": "discoverGraph",
               "module": "packages/process/src/core/discover-graph.ts"
+            },
+            {
+              "name": "discoverObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
             },
             {
               "name": "durationQuartile",
@@ -28673,6 +29945,10 @@
               "module": "packages/process/src/core/adapters/flat.ts"
             },
             {
+              "name": "fromOcel",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
               "name": "fromXes",
               "module": "packages/process/src/core/adapters/xes.ts"
             },
@@ -28697,6 +29973,10 @@
               "module": "packages/process/src/core/reference-model.ts"
             },
             {
+              "name": "mergeObjectCentricGraphs",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
               "name": "minMax",
               "module": "packages/process/src/core/scale.ts"
             },
@@ -28707,6 +29987,14 @@
             {
               "name": "normalizeLog",
               "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "objectCentricProcessGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "objectTypeColorScale",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
             },
             {
               "name": "parseDelimited",
@@ -28729,12 +30017,32 @@
               "module": "packages/process/src/core/segments.ts"
             },
             {
+              "name": "rankReplayCongestion",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "readObjectRefs",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
               "name": "reconcileGraph",
               "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
               "name": "replayActivities",
               "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
+              "name": "replayFrameAt",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "replayTimeline",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "replayTokenRadius",
+              "module": "packages/process/src/core/replay-timeline.ts"
             },
             {
               "name": "replayTrace",
@@ -33317,6 +34625,10 @@
           "module": "packages/ui/src/components/metric-card/metric-card.tsx"
         },
         {
+          "name": "MetricCardSize",
+          "module": "packages/ui/src/components/metric-card/metric-card.tsx"
+        },
+        {
           "name": "ModelPickerBody",
           "module": "packages/ui/src/components/model-picker/model-picker-state.ts"
         },
@@ -36425,7 +37737,13 @@
               "name": "visual",
               "optional": true,
               "type": "ReactNode",
-              "description": "Optional inline visual (e.g. a sparkline) shown under the value/description."
+              "description": "Optional inline visual shown under the value/description."
+            },
+            {
+              "name": "sparkline",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Trend slot rendered directly under the value (RM-072) — pass a `<Sparkline …/>` from `@elabs-ai/components-charts`. Hidden at `size=\"sm\"`."
             },
             {
               "name": "evidence",

@@ -25,6 +25,7 @@ import {
   forwardRef,
   useCallback,
   useEffect,
+  useMemo,
   type HTMLAttributes,
   type MutableRefObject,
   type ReactNode,
@@ -69,6 +70,12 @@ import { findChartSvg, type ChartExportKind } from "./export-svg";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 import { exactValueString } from "../charts/value-format";
 import { ChartSourceRow } from "../chart-card/chart-card";
+import {
+  ChartConfigProvider,
+  useChartConfig,
+  type ChartDensity,
+  type ChartInteractions,
+} from "../charts/chart-config-context";
 
 // ── Minimal local CSV serializer (RFC 4180 + injection guard) ─────────────────
 // The canonical reusable version lives in @elabs-ai/components-data (`toCsv`). This local
@@ -199,10 +206,31 @@ function DefaultTable({
 
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 
-function ChartFrameToolbar() {
+/**
+ * True when the frame's density tier has no room for the full inline toolbar
+ * (#444): at `xs`/`sm` the toolbar collapses to its single Expand control and
+ * the remaining actions move into the expanded view, so the title keeps its
+ * width instead of truncating to a letter. Without an Expand feature there is
+ * nowhere to collapse into, so the full toolbar stays (every action keeps a
+ * keyboard path).
+ */
+function useToolbarCollapsed(): boolean {
+  const { meta } = useChartFrame();
+  const compact = meta.density === "xs" || meta.density === "sm";
+  return compact && meta.features.includes("expand");
+}
+
+function ChartFrameToolbar({ placement = "inline" }: { placement?: "inline" | "expanded" }) {
   const { state, actions, meta } = useChartFrame();
-  const { features } = meta;
+  const collapsed = useToolbarCollapsed();
   const { t } = useLocale();
+  // Inline + collapsed → Expand only. Inside the expand view → everything but
+  // Expand (the view is already open).
+  const features = !collapsed
+    ? meta.features
+    : placement === "inline"
+      ? meta.features.filter((f) => f === "expand")
+      : meta.features.filter((f) => f !== "expand");
   // export-svg/export-png degrade the same way table/download degrade without
   // data (chart-components.md § Feature degradation) — `hasSvg` is registered
   // by ChartFrameInner after render, since (unlike `data`) a rendered `<svg>`
@@ -383,6 +411,10 @@ function ChartFrameModal({
   const { state, actions, meta } = useChartFrame();
   const { title, description, rows, columns } = meta;
   const { t } = useLocale();
+  // The inline toolbar collapsed to Expand at a small density tier (#444): the
+  // actions it dropped (table flip, CSV, exports) live here instead.
+  const toolbarCollapsed = useToolbarCollapsed();
+  const hasMovedActions = meta.features.some((f) => f !== "expand");
 
   /*
    * The two-pane expand layout is NOT local any more — it is
@@ -407,6 +439,14 @@ function ChartFrameModal({
         detailLabel={t("charts.chartFrame.summaryDetailLabel")}
       >
         <div className="flex h-full flex-col">
+          {toolbarCollapsed && hasMovedActions ? (
+            <div
+              data-slot="chart-frame-expanded-toolbar"
+              className="flex shrink-0 justify-end pb-2"
+            >
+              <ChartFrameToolbar placement="expanded" />
+            </div>
+          ) : null}
           <div
             key={state.view}
             className="min-h-0 flex-1 animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"
@@ -414,7 +454,11 @@ function ChartFrameModal({
             {state.view === "table" ? (
               renderTable(rows, columns)
             ) : (
-              <div className="h-full">{children}</div>
+              // The expanded view has room for every piece of furniture, so it
+              // resets `density` to `"md"`; `interactions` still apply (RM-072).
+              <ChartConfigBridge density="md">
+                <div className="h-full">{children}</div>
+              </ChartConfigBridge>
             )}
           </div>
           {source ? (
@@ -428,7 +472,48 @@ function ChartFrameModal({
   );
 }
 
+// ── Chart config bridge (RM-072) ──────────────────────────────────────────────
+
+/**
+ * Forwards the frame's `density`/`interactions` into `ChartConfigProvider`,
+ * layered over any outer provider (springs, currency) rather than resetting it.
+ * Renders no DOM, so a frame with neither prop keeps its exact markup.
+ */
+function ChartConfigBridge({ density, children }: { density?: ChartDensity; children: ReactNode }) {
+  const outer = useChartConfig();
+  const { meta } = useChartFrame();
+  const value = useMemo(
+    () => ({ ...outer, interactions: meta.interactions, density: density ?? meta.density }),
+    [outer, meta.interactions, meta.density, density],
+  );
+  return <ChartConfigProvider value={value}>{children}</ChartConfigProvider>;
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
+
+/**
+ * What the frame draws around the chart (RM-072).
+ *
+ * - `card` — today's bordered card with header, toolbar and source row.
+ * - `tile` — no card surface (the host sheet tile owns border, radius and
+ *   padding); header from `headerSlot`, menu from `menuSlot`, source row kept.
+ * - `bare` — the chart body only.
+ */
+export type ChartFrameChrome = "card" | "tile" | "bare";
+
+/** What `menuSlot` receives when it is a function (RM-072). */
+export interface ChartFrameMenuApi {
+  /** Toolbar features still available after data/loading degradation. */
+  features: ChartFrameFeature[];
+  view: "chart" | "table";
+  /** Whether the body renders an exportable `<svg>`. */
+  canExport: boolean;
+  expand: () => void;
+  toggleView: () => void;
+  download: () => void;
+  exportSvg: () => void;
+  exportPng: () => void;
+}
 
 export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
@@ -458,7 +543,12 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * no `<svg>` (a non-chart placeholder, or the flipped-to-table view).
    */
   features?: ChartFrameFeature[];
-  /** Inline body height in px. Defaults to 260. */
+  /**
+   * Inline body height in px. Defaults to 260 for `chrome="card"`/`"bare"`.
+   * With `chrome="tile"` and no `height`, the frame fills its host instead
+   * (`h-full` flex column, chart body takes the space left after header and
+   * source row) — the host tile sets the height (#444).
+   */
   height?: number;
   /**
    * Loading vs ready — renders a layout-shaped skeleton at the normal body
@@ -499,6 +589,35 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * it may be visually truncated with no fallback.
    */
   source?: ReactNode;
+  /**
+   * Surface drawn around the chart (RM-072). Default `"card"` — byte-identical
+   * to a frame without the prop. See `ChartFrameChrome`.
+   */
+  chrome?: ChartFrameChrome;
+  /** `chrome="tile"` only: replaces the default title/description header. */
+  headerSlot?: ReactNode;
+  /**
+   * `chrome="tile"` only: replaces the inline toolbar. A function receives the
+   * frame's actions, so a host kebab menu can open the expand modal, flip to
+   * the table or export without reaching into context.
+   */
+  menuSlot?: ReactNode | ((api: ChartFrameMenuApi) => ReactNode);
+  /** Fires when the expand modal opens or closes, however it was triggered. */
+  onExpandChange?: (open: boolean) => void;
+  /**
+   * Which interaction layers the chart mounts (`passive` tooltips, `active`
+   * brush/datapoint targets, `select` datapoint activation, `edit`).
+   * Defaults: all `true` except `edit: false`. Forwarded to every chart
+   * family through `useChartConfig()`.
+   */
+  interactions?: ChartInteractions;
+  /**
+   * Furniture tier (`"xs" | "sm" | "md" | "lg"`, default `"md"`). Forwarded to
+   * every chart family through `useChartConfig()`; the frame itself drops
+   * `description` and the source row at `xs` and clamps the title to one line
+   * at `xs`/`sm`.
+   */
+  density?: ChartDensity;
   /** The chart content. Rendered in both inline and expanded modal positions. */
   children: ReactNode;
 }
@@ -511,12 +630,18 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     columns: columnsProp,
     detail,
     features: featuresProp,
-    height = 260,
+    height,
     renderTable,
     onDownload,
     onExport,
     loading = false,
     source,
+    chrome = "card",
+    headerSlot,
+    menuSlot,
+    onExpandChange,
+    interactions,
+    density = "md",
     className,
     children,
     ...props
@@ -569,9 +694,15 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
       onDownload={resolvedDownload}
       onExport={onExport}
       loading={loading}
+      density={density}
+      interactions={interactions}
+      onExpandChange={onExpandChange}
     >
       <ChartFrameInner
         ref={ref}
+        chrome={chrome}
+        headerSlot={headerSlot}
+        menuSlot={menuSlot}
         className={className}
         height={height}
         detail={detail}
@@ -590,21 +721,43 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
 // Inner component that consumes the context (avoids provider/consumer in the
 // same render function).
 interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
-  height: number;
+  height?: number;
   detail?: ReactNode;
   renderTable: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
   title?: ReactNode;
   description?: ReactNode;
   source?: ReactNode;
+  chrome: ChartFrameChrome;
+  headerSlot?: ReactNode;
+  menuSlot?: ChartFrameProps["menuSlot"];
   children: ReactNode;
 }
 
 const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(function ChartFrameInner(
-  { height, detail, renderTable, title, description, source, className, children, ...props },
+  {
+    height,
+    detail,
+    renderTable,
+    title,
+    description,
+    source: sourceProp,
+    chrome,
+    headerSlot,
+    menuSlot,
+    className,
+    children,
+    ...props
+  },
   ref,
 ) {
   const { state, actions, meta, refs } = useChartFrame();
-  const { rows, columns, loading } = meta;
+  const { rows, columns, loading, density } = meta;
+  // RM-072 density: `xs` has no room for prose or attribution; `xs`/`sm`
+  // clamp the title to one line and collapse the toolbar to Expand
+  // (`useToolbarCollapsed`, #444). `md`/`lg` leave the header untouched.
+  const compact = density === "xs" || density === "sm";
+  const visibleDescription = density === "xs" ? undefined : description;
+  const source = density === "xs" ? undefined : sourceProp;
   const { t } = useLocale();
 
   // Merge the caller's forwarded ref with the internal `card` ref (RM-042):
@@ -642,42 +795,130 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
     return () => observer.disconnect();
   }, [actions, refs.chartBody, state.view, loading, children]);
 
+  // A tile without an explicit `height` fills its host (#444); every other
+  // chrome keeps the fixed 260px default.
+  const fillHost = chrome === "tile" && height === undefined;
+  const body = (
+    <div
+      style={fillHost ? undefined : { height: height ?? 260 }}
+      className={cn("w-full overflow-auto", fillHost && "h-full")}
+      {...(loading ? { role: "status", "aria-live": "polite" as const } : {})}
+    >
+      {loading ? (
+        <>
+          <span className="sr-only">{t("charts.chart.loading")}</span>
+          <Skeleton className="size-full" />
+        </>
+      ) : (
+        // Key on the active view so each flip remounts the subtree and the
+        // incoming chart/table fades+settles in. tw-animate-css is globally
+        // motion-gated (retimed via --t-*, floored under reduced motion);
+        // motion-reduce:animate-none removes the movement entirely.
+        <div
+          key={state.view}
+          ref={refs.chartBody}
+          className="size-full animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"
+        >
+          {state.view === "table" ? (
+            renderTable(rows, columns)
+          ) : (
+            <ChartConfigBridge>{children}</ChartConfigBridge>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  const modal = (
+    <ChartFrameModal detail={detail} renderTable={renderTable} source={sourceProp}>
+      {children}
+    </ChartFrameModal>
+  );
+
+  if (chrome === "bare") {
+    return (
+      <>
+        <div
+          ref={mergedCardRef}
+          data-slot="chart-frame"
+          data-chrome="bare"
+          className={cn("flex min-h-0 flex-col", className)}
+          {...props}
+        >
+          {body}
+        </div>
+        {modal}
+      </>
+    );
+  }
+
+  if (chrome === "tile") {
+    const menu =
+      typeof menuSlot === "function"
+        ? menuSlot({
+            features: meta.features,
+            view: state.view,
+            canExport: state.hasSvg,
+            expand: () => actions.setExpanded(true),
+            toggleView: actions.toggleView,
+            download: actions.download,
+            exportSvg: actions.exportSvg,
+            exportPng: actions.exportPng,
+          })
+        : menuSlot;
+    const hasDefaultHeader = Boolean(title || visibleDescription);
+    return (
+      <>
+        <div
+          ref={mergedCardRef}
+          data-slot="chart-frame"
+          data-chrome="tile"
+          className={cn("flex min-h-0 min-w-0 flex-col gap-2", fillHost && "h-full", className)}
+          {...props}
+        >
+          {headerSlot !== undefined || hasDefaultHeader || menuSlot !== undefined ? (
+            <div
+              data-slot="chart-frame-header"
+              className="flex min-w-0 shrink-0 flex-row items-start justify-between gap-2"
+            >
+              {headerSlot !== undefined ? (
+                <div className="min-w-0 flex-1">{headerSlot}</div>
+              ) : (
+                <div className="min-w-0 flex-1 space-y-1">
+                  {title && <CardTitle className={cn(compact && "truncate")}>{title}</CardTitle>}
+                  {visibleDescription && <CardDescription>{visibleDescription}</CardDescription>}
+                </div>
+              )}
+              {menuSlot !== undefined ? menu : <ChartFrameToolbar />}
+            </div>
+          ) : (
+            <div data-slot="chart-frame-header" className="flex shrink-0 justify-end">
+              <ChartFrameToolbar />
+            </div>
+          )}
+          <div data-slot="chart-frame-body" className="min-h-0 flex-1">
+            {body}
+          </div>
+          {source ? <ChartSourceRow source={source} className="w-full shrink-0" /> : null}
+        </div>
+        {modal}
+      </>
+    );
+  }
+
   return (
     <>
       <Card ref={mergedCardRef} className={cn("flex flex-col", className)} {...props}>
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
-          <div className="space-y-1">
-            {title && <CardTitle className="text-base">{title}</CardTitle>}
-            {description && <CardDescription>{description}</CardDescription>}
+          <div className={compact ? "min-w-0 space-y-1" : "space-y-1"}>
+            {title && (
+              <CardTitle className={cn("text-base", compact && "truncate")}>{title}</CardTitle>
+            )}
+            {visibleDescription && <CardDescription>{visibleDescription}</CardDescription>}
           </div>
           <ChartFrameToolbar />
         </CardHeader>
-        <CardContent className="flex-1 pt-0">
-          <div
-            style={{ height }}
-            className="w-full overflow-auto"
-            {...(loading ? { role: "status", "aria-live": "polite" as const } : {})}
-          >
-            {loading ? (
-              <>
-                <span className="sr-only">{t("charts.chart.loading")}</span>
-                <Skeleton className="size-full" />
-              </>
-            ) : (
-              // Key on the active view so each flip remounts the subtree and the
-              // incoming chart/table fades+settles in. tw-animate-css is globally
-              // motion-gated (retimed via --t-*, floored under reduced motion);
-              // motion-reduce:animate-none removes the movement entirely.
-              <div
-                key={state.view}
-                ref={refs.chartBody}
-                className="size-full animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"
-              >
-                {state.view === "table" ? renderTable(rows, columns) : children}
-              </div>
-            )}
-          </div>
-        </CardContent>
+        <CardContent className="flex-1 pt-0">{body}</CardContent>
         {source ? (
           // `pb-3` (tighter than the card's default `pb-6`) reads as a
           // footnote sitting close to the card's edge, not a fourth content
@@ -688,9 +929,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         ) : null}
       </Card>
 
-      <ChartFrameModal detail={detail} renderTable={renderTable} source={source}>
-        {children}
-      </ChartFrameModal>
+      {modal}
     </>
   );
 });

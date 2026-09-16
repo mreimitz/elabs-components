@@ -743,3 +743,31 @@ export {
 // compaction decisions can't mix "1K" beside "400" within one scale.
 export { useChartValueSetFormatter } from "./chart-formatters";
 export { valueFormatOptionsForSet } from "./value-format";
+
+// Interactions/Density types — RM-072
+export {
+  CHART_DENSITY_SM_MAX_TICKS,
+  type ChartDensity,
+  type ChartInteractions,
+  DEFAULT_CHART_INTERACTIONS,
+  thinToDensity,
+} from "./chart-config-context";
+// Selection/Hover inputs — RM-073
+export {
+  type ChartSelectionCategory,
+  type ChartSelectionPoint,
+  type ChartSelectionProps,
+  type ChartSelectionStatesResolver,
+  SELECTION_EXCLUDED_OPACITY,
+  type MarkSelectionPaint,
+  markSelectionPaint,
+  resolveMarkState,
+  SELECTED_OUTLINE_WIDTH,
+  type SelectionState,
+} from "./chart-selection";
+export {
+  type ChartHoverCategory,
+  type ChartHoverLinkProps,
+  findChartCategoryIndex,
+  sameChartCategory,
+} from "./chart-hover-link";

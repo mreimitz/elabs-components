@@ -4,6 +4,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@elabs-ai/components-ui";
 import { HairlineFloor } from "../marks/hairline-floor";
+import { CHART_DENSITY_SM_MAX_TICKS, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
 import { shortDateFmt } from "./chart-formatters";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
@@ -620,6 +621,7 @@ function buildDomainTicks({
 
 export function XAxis(props: XAxisProps) {
   const { containerRef } = useChartStable();
+  const { density } = useChartConfig();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -627,8 +629,21 @@ export function XAxis(props: XAxisProps) {
   }, []);
 
   const container = containerRef.current;
-  if (!(mounted && container)) {
+  // RM-072: `xs` draws no tick labels; `sm` keeps this (category) axis at no
+  // more than CHART_DENSITY_SM_MAX_TICKS ticks.
+  if (!(mounted && container) || density === "xs") {
     return null;
+  }
+
+  if (density === "sm") {
+    return (
+      <XAxisInner
+        {...props}
+        container={container}
+        numTicks={Math.min(props.numTicks ?? 5, CHART_DENSITY_SM_MAX_TICKS)}
+        tickValues={props.tickValues?.slice(0, CHART_DENSITY_SM_MAX_TICKS)}
+      />
+    );
   }
 
   return <XAxisInner {...props} container={container} />;

@@ -218,4 +218,11 @@ export interface ChartSpec {
    * locale — the reader's language does not tell you what the money is.
    */
   currency?: string;
+
+  /**
+   * Which spec fields a host's selection resolves against (RM-073). Defaults:
+   * `category` → `x`, `series` → the series keys. Lets a dashboard map its
+   * selection field to any chart without knowing the chart type.
+   */
+  fields?: { category?: string; series?: string };
 }

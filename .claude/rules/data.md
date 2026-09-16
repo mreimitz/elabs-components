@@ -43,5 +43,24 @@ paths:
   `/core`. Escape hatch: `// process-reuse-exempt: <reason>`.
 - `pnpm check --rule process-test-double` guards `/test`: double completeness, engine isolation,
   `exports`/`publishConfig.exports`/`tsup.config.ts` wiring, manifest exclusion.
+- **Primitive home, by kind** (a `process-reuse` failure points here, not at a local copy):
+  edges/self-loops/layout → `flow` (`FlowWeightedEdge`/`FlowSelfLoopEdge`/`layoutGraph`);
+  marks/scales/canvas mark layer → `charts` (`resolvePalette`/`Legend`); tables/filters →
+  `data` (`Table`, `FilterBar`); controls (toggles, selects, locks) → `ui`; colour ramps →
+  `tokens` (`--chart-1`…`--chart-12`).
+- **§5.4 encoding, as shipped** (`ProcessMap`): edge weight = stroke width `[1.5, 8]px` per
+  `scaleGroup` + a printed label pill, never colour alone (a second `value`/`valueDomain`
+  channel tints the stroke between `--flow-edge-weak`/`-strong` only as a third, redundant
+  cue); node metric = the meter's saturation against the surface→primary ramp, plus its
+  printed value; a self-loop is `FlowSelfLoopEdge` (arc above the node); a back-edge is
+  `FlowWeightedEdge variant="back"` (dashed); start/end are `Play`/`Flag`/`CircleDot` glyphs
+  in `FlowNode`'s own tone-glyph idiom, plus a word in the accessible name, never colour
+  alone; `tableView` (a boolean prop, not a separate component) renders the identical model
+  as `Table` rows — the accessible twin every canvas keeps; `ActivityColorScale` ranks
+  activities by case count and assigns `--chart-1`…`--chart-11` by rank, the rest share a
+  hatched "other" swatch; `MetricLayerSwitch`'s Performance layer defaults to `median`,
+  `mean`/`p90`/other aggregates are opt-in. `PerformanceSpectrum` is the one surface with a
+  true sequential ramp: its duration quartiles use `resolvePalette("sequential")` (charts),
+  lightness-monotonic so they separate in greyscale too.
 
 History: `docs/rules-history/data-components.md`, `process-components.md`.

@@ -56,7 +56,8 @@ bundled), which needs `script-src 'wasm-unsafe-eval'` — or don't render `Perso
 ### Navigation targets — NOT blocked by a CSP, but they do leak
 
 `chatgpt.com`, `claude.ai`, `cursor.com`, `scira.ai`, `t3.chat`, `v0.app`
-(`OpenIn*`), and `doi.org` (citation links).
+(`OpenIn*`), `doi.org` (citation links), and `standards.ieee.org`
+(`AttributionPanel`'s provenance link for the IEEE 1849/XES specification).
 
 These are `<a href>` targets the user clicks, so `connect-src`/`img-src` don't
 apply and `form-action` doesn't either. **The concern is data egress, not CSP:**

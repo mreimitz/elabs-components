@@ -594,6 +594,31 @@ export const LeftToRight: Story = {
   },
 };
 
+// elkjs adapter — RM-067
+/**
+ * The same graph laid out by ELK (`layoutEngine="elk"`) instead of dagre. elkjs is loaded
+ * lazily on first layout; the map, its framing and its keyboard order behave exactly as
+ * the dagre default does.
+ */
+export const ElkLayout: Story = {
+  args: {
+    graph,
+    metric: { node: "absolute_case", edge: "absolute" },
+    direction: "LR",
+    layoutEngine: "elk",
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(
+      () =>
+        expect(
+          canvasElement.querySelectorAll('[data-slot="process-activity-node"]').length,
+        ).toBeGreaterThan(0),
+      { timeout: 10_000 },
+    );
+    await expectWellFramedCanvas(canvasElement);
+  },
+};
+
 /**
  * The accessible twin required for a graph that cannot be read as a picture. It renders
  * from the same model as the canvas, so the numbers are identical by construction.

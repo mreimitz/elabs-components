@@ -13,6 +13,7 @@ import {
   ChartBrushTrackOverlay,
   type ChartBrushTrackOverlayStyle,
 } from "./chart-brush-track-overlay";
+import { useChartConfig } from "./chart-config-context";
 import { chartCssVars, useChartStable } from "./chart-context";
 
 interface BrushProps {
@@ -248,6 +249,7 @@ export function ChartBrush({
   selectionPattern,
 }: ChartBrushProps) {
   const { xScale, yScale, innerWidth, innerHeight, margin, isLoaded } = useChartStable();
+  const { interactions } = useChartConfig();
 
   const boundsToSelection = useCallback((bounds: Bounds | null): ChartBrushSelection | null => {
     if (!bounds || typeof bounds.x0 === "undefined" || typeof bounds.x1 === "undefined") {
@@ -288,7 +290,8 @@ export function ChartBrush({
     [notifySelectionChange],
   );
 
-  if (!isLoaded || innerWidth <= 0 || innerHeight <= 0) {
+  // RM-072: `interactions.active === false` unmounts direct manipulation.
+  if (!isLoaded || innerWidth <= 0 || innerHeight <= 0 || !interactions.active) {
     return null;
   }
 

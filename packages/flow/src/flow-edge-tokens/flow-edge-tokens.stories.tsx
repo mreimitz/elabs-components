@@ -247,7 +247,6 @@ export const ReducedMotion: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await waitFor(() => expect(tokenEls(canvasElement)).toHaveLength(1));
-    const path = canvasElement.querySelector<SVGPathElement>('[data-slot="flow-weighted-edge"]')!;
 
     await userEvent.click(canvas.getByRole("button", { name: "Advance case" }));
     await canvas.findByText("Case 7 at 50%.");
@@ -258,11 +257,15 @@ export const ReducedMotion: Story = {
       .transitionDuration.split(",")
       .map((d) => parseFloat(d) * (d.trim().endsWith("ms") ? 1 : 1000));
     await expect(Math.max(...durations)).toBeLessThan(1);
-    // The painted position is already the target one on the next frame.
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    const point = path.getPointAtLength(0.5 * path.getTotalLength());
-    const matrix = new DOMMatrixReadOnly(getComputedStyle(token).transform);
-    await expect(Math.hypot(matrix.e - point.x, matrix.f - point.y)).toBeLessThan(1.5);
+    // The painted position is the target one once the canvas settles. The path is re-queried
+    // on every attempt: React Flow may re-render the edge (a late fitView on a slow CI runner),
+    // and a path element read before that would still report the old geometry.
+    await waitFor(() => {
+      const path = canvasElement.querySelector<SVGPathElement>('[data-slot="flow-weighted-edge"]')!;
+      const point = path.getPointAtLength(0.5 * path.getTotalLength());
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(tokenEls(canvasElement)[0]!).transform);
+      expect(Math.hypot(matrix.e - point.x, matrix.f - point.y)).toBeLessThan(1.5);
+    });
   },
 };
 

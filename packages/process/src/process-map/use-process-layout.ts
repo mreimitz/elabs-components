@@ -39,7 +39,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { XYPosition } from "@xyflow/react";
-import { layoutFlow, type FlowLayoutDirection } from "@elabs-ai/components-flow";
+import { layoutFlow, layoutFlowElk, type FlowLayoutDirection } from "@elabs-ai/components-flow";
 import type { ProcessMapEdge, ProcessMapNode } from "./map-model";
 
 /**
@@ -145,6 +145,12 @@ export interface UseProcessLayoutOptions {
   direction: FlowLayoutDirection;
   /** @default {@link DEFAULT_LAYOUT_DEBOUNCE_MS} */
   debounceMs?: number;
+  // elkjs adapter — RM-067
+  /**
+   * Which layout engine runs. `"elk"` calls `layoutFlowElk` (async, lazily loaded, falls
+   * back to dagre when elkjs is not installed) instead of `layoutFlow`. @default "dagre"
+   */
+  layoutEngine?: "dagre" | "elk";
 }
 
 /** What {@link useProcessLayout} answers. */
@@ -217,8 +223,10 @@ export function useProcessLayout({
   structureKey,
   direction,
   debounceMs = DEFAULT_LAYOUT_DEBOUNCE_MS,
+  layoutEngine = "dagre",
 }: UseProcessLayoutOptions): UseProcessLayoutResult {
-  const cacheKey = `${structureKey}::${direction}`;
+  // The engine joins the key only when it is not the default, so dagre keys are unchanged.
+  const cacheKey = `${structureKey}::${direction}${layoutEngine === "elk" ? "::elk" : ""}`;
   const cache = useRef(new Map<string, ProcessLayoutSnapshot>());
   const runs = useRef(0);
   // The layout the render below reads. Held in state (not a ref) because producing a new
@@ -231,17 +239,30 @@ export function useProcessLayout({
   const compute = useCallback(
     (key: string, currentNodes: ProcessMapNode[], currentEdges: ProcessMapEdge[]) => {
       const started = performance.now();
-      const result = layoutFlow<ProcessMapNode, ProcessMapEdge>(currentNodes, currentEdges, {
+      const layoutOptions = {
         direction,
         nodeSpacing: NODE_SPACING,
         rankSpacing: RANK_SPACING[direction],
-      });
-      const snapshot = toSnapshot(result, performance.now() - started);
-      runs.current += 1;
-      cache.current.set(key, snapshot);
-      setApplied({ key, snapshot });
+      };
+      const settle = (result: ReturnType<typeof layoutFlow<ProcessMapNode, ProcessMapEdge>>) => {
+        const snapshot = toSnapshot(result, performance.now() - started);
+        runs.current += 1;
+        cache.current.set(key, snapshot);
+        setApplied({ key, snapshot });
+      };
+      // elkjs adapter — RM-067: async, lazily loaded; `layoutFlowElk` never rejects (it
+      // falls back to dagre itself), and a result for a key no longer current still caches.
+      if (layoutEngine === "elk") {
+        void layoutFlowElk<ProcessMapNode, ProcessMapEdge>(
+          currentNodes,
+          currentEdges,
+          layoutOptions,
+        ).then(settle);
+        return;
+      }
+      settle(layoutFlow<ProcessMapNode, ProcessMapEdge>(currentNodes, currentEdges, layoutOptions));
     },
-    [direction],
+    [direction, layoutEngine],
   );
 
   // The nodes/edges the (possibly debounced) layout should run against. Held in a ref so

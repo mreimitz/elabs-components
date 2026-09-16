@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, type ReactNode } from "react";
+import { useChartConfig } from "./chart-config-context";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { useChartFormatters } from "./chart-formatters";
 import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "./series-pattern";
@@ -265,6 +266,12 @@ export function ChartLegend({
   // Detect high decoration on the legend container
   const containerRef = useRef<HTMLDivElement>(null);
   const high = useHighDecorationOf(containerRef);
+  const { density } = useChartConfig();
+
+  // RM-072: `xs`/`sm` tiles have no room for a legend.
+  if (density === "xs" || density === "sm") {
+    return null;
+  }
 
   return (
     <div className={cn("legend-container flex flex-col gap-2", className)} ref={containerRef}>
