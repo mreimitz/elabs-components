@@ -87,6 +87,13 @@
     "escapeHatch": "Don't render the OpenInScira component.",
     "usedBy": ["packages/ai/src/open-in-chat.tsx"]
   },
+  "standards.ieee.org": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "AttributionPanel's provenance link for the IEEE 1849-2016 (XES) specification fromXes implements the format of. An href, never fetched.",
+    "escapeHatch": "Don't render AttributionPanel's `source` category.",
+    "usedBy": ["packages/ui/src/components/attribution-panel/attributions.generated.ts"]
+  },
   "t3.chat": {
     "directive": "none",
     "kind": "navigation",

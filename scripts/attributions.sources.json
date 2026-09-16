@@ -265,6 +265,17 @@
       "usedBy": ["@elabs-ai/components-process"],
       "required": false,
       "note": "The Object-Centric Event Log 2.0 JSON serialization fromOcel reads (objectTypes, objects, events, relationships). Only the format is implemented; no text, schema file or code is copied. The license of the specification document itself was not established."
+    },
+    {
+      "id": "xes-ieee-1849",
+      "category": "source",
+      "name": "IEEE 1849-2016 (XES)",
+      "license": "Published specification (license of the document not established)",
+      "copyright": "© IEEE",
+      "url": "https://standards.ieee.org/ieee/1849/6811/",
+      "usedBy": ["@elabs-ai/components-process"],
+      "required": false,
+      "note": "The eXtensible Event Stream interchange format fromXes reads: a <log> of <trace>s of <event>s, each carrying typed key/value attributes, plus <classifier> and lifecycle:transition. Only the format is implemented, by a hand-rolled tokenizer; no text, schema file or code is copied. The license of the specification document itself was not established."
     }
   ]
 }
