@@ -1,5 +1,6 @@
 "use client";
 
+import { DecorationProvider } from "@elabs-ai/components-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
@@ -198,6 +199,39 @@ export const BigSlice: Story = {
       expect(canvas.getByText("Standups")).toBeInTheDocument();
       expect(canvas.getByText("8 / day")).toBeInTheDocument();
       expect(canvas.getByText("10 min/day")).toBeInTheDocument();
+    });
+  },
+};
+
+/**
+ * The pie at decoration 10 (#255). Every palette slice gains a series-pattern
+ * fill, so `PieChart` renders its `<pattern>` defs from a `.map()` — the path a
+ * missing list identity used to warn on. Pinned with `DecorationProvider`
+ * rather than a toolbar global so a headless run reaches the branch too.
+ */
+export const Decorated: Story = {
+  render: () => (
+    <DecorationProvider className="h-72 w-full max-w-[560px]" level={10}>
+      <PieChart data={trafficData} size={280}>
+        {trafficData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>
+    </DecorationProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const ids = Array.from(canvasElement.querySelectorAll('pattern[id^="bp-series-"]')).map(
+        (p) => p.id,
+      );
+      // The multi-pattern array path really executed (one def per slice)…
+      expect(ids.length).toBe(trafficData.length);
+      expect(new Set(ids).size).toBe(ids.length);
+      // …and every slice paints with one of those defs.
+      const refs = Array.from(canvasElement.querySelectorAll('path[fill^="url(#bp-series-"]')).map(
+        (p) => (p.getAttribute("fill") ?? "").slice("url(#".length, -1),
+      );
+      expect(new Set(refs)).toEqual(new Set(ids));
     });
   },
 };

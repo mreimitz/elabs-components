@@ -1,3 +1,4 @@
+import { DecorationProvider } from "@elabs-ai/components-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, userEvent, waitFor } from "storybook/test";
 import { ChartFrame } from "../../chart-frame/chart-frame";
@@ -72,6 +73,42 @@ export const Default: Story = {
       for (const dash of dashes) {
         expect(dash).toMatch(/^\d+(\.\d+)? \d+(\.\d+)?$/);
       }
+    });
+  },
+};
+
+/**
+ * The funnel flow at decoration 10 (#255). Each palette node gains a
+ * series-pattern fill, so `SankeyNode` renders its `<pattern>` defs from a
+ * `.map()` — the second call site a missing list identity used to warn on.
+ * Pinned with `DecorationProvider` so a headless run reaches the branch.
+ */
+export const Decorated: Story = {
+  args: {
+    data: funnelData,
+    aspectRatio: "16 / 9",
+  },
+  render: (args) => (
+    <DecorationProvider className="h-72 w-full max-w-[560px]" level={10}>
+      <SankeyChart {...args}>
+        <SankeyLink />
+        <SankeyNode />
+        <SankeyTooltip />
+      </SankeyChart>
+    </DecorationProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const ids = Array.from(canvasElement.querySelectorAll('pattern[id^="bp-series-"]')).map(
+        (p) => p.id,
+      );
+      expect(ids.length).toBeGreaterThan(1);
+      expect(new Set(ids).size).toBe(ids.length);
+      const refs = Array.from(canvasElement.querySelectorAll('[fill^="url(#bp-series-"]')).map(
+        (el) => (el.getAttribute("fill") ?? "").slice("url(#".length, -1),
+      );
+      expect(refs.length).toBeGreaterThan(1);
+      for (const ref of refs) expect(ids).toContain(ref);
     });
   },
 };

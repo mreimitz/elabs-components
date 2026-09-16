@@ -133,6 +133,13 @@ export function isPaletteFill(fill: string | null | undefined): boolean {
  * Build the raw `<pattern>` element for a series index. Place the returned node
  * inside a `<defs>` and reference it as `fill="url(#id)"`.
  *
+ * Safe to render INSIDE AN ARRAY (`indices.map((i) => makeSeriesPattern(…))`):
+ * the returned element carries `id` as its React list identity (#255). `id` is
+ * already unique per chart instance (`seriesPatternId`), and unlike an index it
+ * survives a series being reordered or removed. Call sites must not add their
+ * own identity or wrap the result in a fragment — a fragment is harmless in the
+ * DOM but re-derives, from the index, what the helper already knows.
+ *
  * @param index series index (→ descriptor via the ramp)
  * @param id    the pattern id (see `seriesPatternId`)
  * @param color the ink color — the series' own resolved color (near-white under
@@ -205,7 +212,7 @@ export function makeSeriesPattern(index: number, id: string, color: string): Rea
   }
 
   return (
-    <pattern id={id} width={s} height={s} patternUnits="userSpaceOnUse">
+    <pattern key={id} id={id} width={s} height={s} patternUnits="userSpaceOnUse">
       {ground}
       {ink}
     </pattern>
