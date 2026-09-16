@@ -101,7 +101,15 @@ export function InfographicVarianceBridge({
           </Badge>
         </div>
         <h3 className="text-title text-foreground">{headline}</h3>
-        <p className="tabular-nums text-body text-foreground">{endpointsCaption}</p>
+        {/* `netFmt` (a signed amount, e.g. "+€205K") stays in its own
+            `whitespace-nowrap` span — some browsers treat the sign/currency
+            boundary as a break opportunity even with no literal space
+            between them, which at a narrow (Compact) width wrapped "+" onto
+            one line and "€205K" onto the next. */}
+        <p className="tabular-nums text-body text-foreground">
+          {startFmt} in {startLabel} → {endFmt} in {endLabel},{" "}
+          <span className="whitespace-nowrap">{netFmt}</span> net change
+        </p>
         <ChartConfigProvider value={{ currency: "EUR" }}>
           <WaterfallChart
             accessibleDescription={accessibleDescription}
