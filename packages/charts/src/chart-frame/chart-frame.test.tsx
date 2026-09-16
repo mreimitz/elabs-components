@@ -1,6 +1,27 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ChartFrame } from "./chart-frame";
+import { Bar } from "../charts/bar";
+import { BarChart } from "../charts/bar-chart";
+import { BarXAxis } from "../charts/bar-x-axis";
+
+// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
+vi.mock("@visx/responsive", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
+  const React = require("react");
+  return {
+    ParentSize: ({
+      children,
+    }: {
+      children: (size: { width: number; height: number }) => React.ReactNode;
+    }) =>
+      React.createElement(
+        "div",
+        { "data-testid": "parent-size" },
+        children({ width: 560, height: 288 }),
+      ),
+  };
+});
 
 const sampleData = [
   { month: "Jan", revenue: 400 },
@@ -461,5 +482,45 @@ describe("ChartFrame export controls (RM-042)", () => {
     expect(clickSpy).not.toHaveBeenCalled();
 
     clickSpy.mockRestore();
+  });
+});
+
+// RM-072: byte-identical default DOM. Both snapshots were recorded BEFORE
+// `chrome` / `interactions` / `density` existed — a diff here means the
+// no-new-props path changed, which the RM forbids (the #349 guarantee).
+const snapshotBarData = [
+  { region: "North", revenue: 400 },
+  { region: "South", revenue: 600 },
+  { region: "East", revenue: 500 },
+];
+
+/** `useId` output depends on how many tests rendered before — not on the DOM shape. */
+const normalizeIds = (html: string) => html.replaceAll(/_r_[a-z0-9]+_/g, "_r_ID_");
+
+const PRE_CHANGE_FRAME_DOM =
+  '<div data-slot="card" class="rounded-lg border bg-card text-card-foreground shadow-sm flex flex-col"><div data-slot="card-header" class="p-6 flex flex-row items-start justify-between gap-2 space-y-0 pb-2"><div class="space-y-1"><div data-slot="card-title" class="text-base">Snapshot</div><p data-slot="card-description" class="text-body text-balance text-muted-foreground">Desc</p></div><div class="flex items-center gap-1"><button type="button" aria-pressed="false" data-state="closed" data-slot="toggle" class="inline-flex items-center justify-center gap-2 rounded-control text-body font-control transition-colors duration-fast ease-standard hover:bg-muted hover:text-muted-foreground focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground data-[state=on]:font-semibold aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:font-semibold aria-checked:bg-accent aria-checked:text-accent-foreground aria-checked:font-semibold [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border border-transparent bg-transparent data-[state=on]:border-primary aria-pressed:border-primary aria-checked:border-primary h-control-sm px-2 min-w-control-sm" aria-label="Flip to table view"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-table" aria-hidden="true"><path d="M12 3v18"></path><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M3 15h18"></path></svg></button><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap touch-manipulation rounded-control text-body font-control transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard active:scale-[0.98] motion-reduce:active:scale-100 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground size-control-sm" type="button" aria-label="Download CSV" data-state="closed"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download" aria-hidden="true"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg></button><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap touch-manipulation rounded-control text-body font-control transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard active:scale-[0.98] motion-reduce:active:scale-100 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground size-control-sm" type="button" aria-label="Expand chart" data-state="closed"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-maximize2 lucide-maximize-2" aria-hidden="true"><path d="M15 3h6v6"></path><path d="m21 3-7 7"></path><path d="m3 21 7-7"></path><path d="M9 21H3v-6"></path></svg></button></div></div><div data-slot="card-content" class="p-6 flex-1 pt-0"><div style="height: 260px;" class="w-full overflow-auto"><div class="size-full animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"><div>chart</div></div></div></div><div data-slot="card-footer" class="flex items-center p-6 pt-0 pb-3"><p title="Source: test" class="truncate text-chart-foreground-muted uppercase w-full" data-state="closed">Source: test</p></div></div>';
+
+const PRE_CHANGE_BAR_DOM =
+  '<div class="relative w-full" style="aspect-ratio: 2 / 1;"><div data-testid="parent-size"><svg aria-hidden="true" height="288" width="560"><rect fill="transparent" height="288" width="560" x="0" y="0"></rect><g style="cursor: default;" transform="translate(40,40)"><rect fill="transparent" height="208" width="480" x="0" y="0"></rect><g class="bar-series-_r_ID_"><g opacity="1" style="transition: opacity var(--t-fast) var(--ease-standard);"><rect fill="var(--chart-1)" rx="4" ry="4" width="120px" height="0px" style="transform: translateX(30px) translateY(208px); transform-origin: 50% 50%; transform-box: fill-box;"></rect></g><g opacity="1" style="transition: opacity var(--t-fast) var(--ease-standard);"><rect fill="var(--chart-1)" rx="4" ry="4" width="120px" height="0px" style="transform: translateX(180px) translateY(208px); transform-origin: 50% 50%; transform-box: fill-box;"></rect></g><g opacity="1" style="transition: opacity var(--t-fast) var(--ease-standard);"><rect fill="var(--chart-1)" rx="4" ry="4" width="120px" height="0px" style="transform: translateX(330px) translateY(208px); transform-origin: 50% 50%; transform-box: fill-box;"></rect></g></g></g></svg></div><div class="pointer-events-none absolute inset-0"><div class="absolute flex justify-center" style="left: 130px; width: 0px; bottom: 12px;"><span class="whitespace-nowrap text-chart-label text-meta" style="opacity: 1;">North</span></div><div class="absolute flex justify-center" style="left: 280px; width: 0px; bottom: 12px;"><span class="whitespace-nowrap text-chart-label text-meta" style="opacity: 1;">South</span></div><div class="absolute flex justify-center" style="left: 430px; width: 0px; bottom: 12px;"><span class="whitespace-nowrap text-chart-label text-meta" style="opacity: 1;">East</span></div></div></div>';
+
+describe("ChartFrame default DOM (RM-072 pre-change snapshot)", () => {
+  it("ChartFrame with no new props is byte-identical", async () => {
+    const { container } = render(
+      <ChartFrame title="Snapshot" description="Desc" data={sampleData} source="Source: test">
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(normalizeIds(container.innerHTML)).toBe(PRE_CHANGE_FRAME_DOM);
+  });
+
+  it("BarChart with no interactions is byte-identical", async () => {
+    const { container } = render(
+      <BarChart data={snapshotBarData} xDataKey="region" animationDuration={0}>
+        <Bar dataKey="revenue" fill="var(--chart-1)" />
+        <BarXAxis />
+      </BarChart>,
+    );
+    await act(async () => {});
+    expect(normalizeIds(container.innerHTML)).toBe(PRE_CHANGE_BAR_DOM);
   });
 });
