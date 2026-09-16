@@ -19,6 +19,8 @@ export * from "./dashboard-sheet";
 // Built-in tiles — RM-075
 
 // SelectionBar — RM-076
+export * from "./chrome";
+export * from "./tiles/filter-tile";
 
 // Edit layer — RM-078
 
