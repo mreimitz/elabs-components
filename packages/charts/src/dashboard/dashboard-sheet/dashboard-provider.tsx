@@ -99,15 +99,6 @@ export interface DashboardProviderProps {
   children: ReactNode;
 }
 
-// host pass-through — RM-085: `DashboardContextValue` (`use-dashboard.ts`) does not yet
-// declare `host` — outside this item's write set (README §Protocol 4: only
-// `dashboard-provider.tsx` is in RM-085's `touches`). Extended locally here, the same
-// documented-gap shape as `SelectionBarDriver`'s `canBack`/`canForward` mirror in
-// `chrome/dashboard-selection-bar.tsx`. A reader needs `host` reads it via this type.
-export interface DashboardContextValueWithHost extends DashboardContextValue {
-  host?: Record<string, unknown>;
-}
-
 const isRegistry = (tiles: DashboardTileKinds | TileRegistry): tiles is TileRegistry =>
   !Array.isArray(tiles) && typeof (tiles as TileRegistry).get === "function";
 
@@ -255,7 +246,7 @@ export function DashboardProvider({
   const registry = useMemo(() => (isRegistry(tiles) ? tiles : createTileRegistry(tiles)), [tiles]);
   const mergedLabels = useMemo(() => ({ ...DEFAULT_DASHBOARD_LABELS, ...labels }), [labels]);
 
-  const value = useMemo<DashboardContextValueWithHost>(
+  const value = useMemo<DashboardContextValue>(
     () => ({
       store,
       registry,

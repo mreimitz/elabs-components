@@ -21,7 +21,6 @@ import { useEffect, useRef } from "react";
 import { StatePanel } from "@elabs-ai/components-ui";
 
 import type { DashboardTileKind, DashboardTileProps } from "../../dashboard-sheet/tile-registry";
-import type { DashboardContextValueWithHost } from "../../dashboard-sheet/dashboard-provider";
 import { useDashboardContext } from "../../dashboard-sheet/use-dashboard";
 
 /** Content of a `qlik-object` tile: the id of the object a nebula.js `embed` would render. */
@@ -66,11 +65,10 @@ function createQlikObjectTileComponent(labels: QlikObjectTileLabels) {
     interactions,
   }: DashboardTileProps<QlikObjectTileContent>) {
     const elementRef = useRef<HTMLDivElement>(null);
-    // `DashboardContextValue` (`use-dashboard.ts`) does not yet declare `host` — the widened
-    // cast documents the gap; see `dashboard-provider.tsx`'s `DashboardContextValueWithHost`.
-    const host = (useDashboardContext() as DashboardContextValueWithHost).host as
-      | QlikObjectHost
-      | undefined;
+    // `DashboardContextValue.host` (`use-dashboard.ts`, `// host pass-through — RM-085`) is
+    // opaque (`Record<string, unknown>`) — this tile kind is the one place that interprets it
+    // as `QlikObjectHost`.
+    const host = useDashboardContext().host as QlikObjectHost | undefined;
     const objectId = tile.content?.objectId ?? "";
 
     useEffect(() => {
