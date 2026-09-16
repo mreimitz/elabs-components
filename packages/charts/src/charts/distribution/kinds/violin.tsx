@@ -115,7 +115,13 @@ function DistributionViolinImpl({
       onPointerLeave={() => onHover(null)}
       onPointerMove={handleMove}
     >
-      <path d={path} fill={fill ?? color} opacity={VIOLIN_BODY_OPACITY} stroke={color} strokeWidth={1} />
+      <path
+        d={path}
+        fill={fill ?? color}
+        opacity={VIOLIN_BODY_OPACITY}
+        stroke={color}
+        strokeWidth={1}
+      />
       {showMedian && summary ? (
         <line
           data-slot="distribution-chart-median"
