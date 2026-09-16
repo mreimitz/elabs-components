@@ -363,6 +363,15 @@ export interface ChartContextValue extends ChartHoverContextValue {
   xAccessor: (d: Record<string, unknown>) => Date;
 
   /**
+   * Projects a raw `xDataKey`-domain VALUE (not a row) onto the same
+   * synthetic positional axis as `xAccessor` — for a reference mark keyed by
+   * a domain value rather than a data row (`Grid`'s `highlightColumnValues`).
+   * Optional: absent for shells (e.g. `ScatterChart`) that do not publish it;
+   * a consumer falls back to treating the value as already Date-like.
+   */
+  xValueToPosition?: (raw: unknown) => Date;
+
+  /**
    * How the shell interpreted `xDataKey` (#352). `"time"` (or absent) is the
    * historical behaviour; `"band"`/`"linear"` mean `xAccessor` returns a
    * SYNTHETIC positional instant and the human-readable x value lives in
@@ -471,6 +480,7 @@ export function ChartProvider({
       revealHeld: value.revealHeld,
       notifyLoadingPulseComplete: value.notifyLoadingPulseComplete,
       xAccessor: value.xAccessor,
+      xValueToPosition: value.xValueToPosition,
       xScaleType: value.xScaleType,
       dateLabels: value.dateLabels,
       xDomain: value.xDomain,
@@ -520,6 +530,7 @@ export function ChartProvider({
       value.revealHeld,
       value.notifyLoadingPulseComplete,
       value.xAccessor,
+      value.xValueToPosition,
       value.xScaleType,
       value.dateLabels,
       value.xDomain,

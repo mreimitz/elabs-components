@@ -330,7 +330,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   // no data yet), never the decimated or brushed slice — otherwise a category's
   // slot would move as the visible window changes.
   const encoderSource = data.length > 0 ? data : skeletonData;
-  const { xAccessor, labelOf } = useMemo(
+  const { xAccessor, labelOf, xValueToPosition } = useMemo(
     () =>
       buildXValueEncoder({
         data: encoderSource,
@@ -664,6 +664,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       replayOnClick,
       notifyLoadingPulseComplete,
       xAccessor,
+      xValueToPosition,
       xScaleType: xScaleResolution.type,
       dateLabels,
       xDomain,
@@ -709,6 +710,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       replayOnClick,
       notifyLoadingPulseComplete,
       xAccessor,
+      xValueToPosition,
       xScaleResolution.type,
       dateLabels,
       xDomain,

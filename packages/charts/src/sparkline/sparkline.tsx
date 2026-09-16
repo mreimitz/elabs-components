@@ -82,10 +82,28 @@ export interface SparklineProps extends Omit<
   baseline?: number[];
   /** A "normal range" `[lo, hi]` drawn as a quiet filled zone behind everything. */
   band?: readonly [number, number];
+  /**
+   * For `variant="line"` with no `target`/`baseline`/`band`: use the series'
+   * own min–max (padded) domain instead of the shared zero-based bar scale.
+   * A tight-range series (a weekly count moving ±5% around its own mean)
+   * reads as a flat line on a zero-based scale — decoration with no
+   * information (WCAG 1.4.1's "a channel that carries nothing" failure mode,
+   * not a colour one). Default false — byte-identical to today's shared
+   * scale when unset.
+   */
+  fitDomain?: boolean;
   /** Render the formatted latest value as text to the right of the plot. Default false. */
   showLastValue?: boolean;
   /** Formats every value this component surfaces as text (the last-value label and the accessible name's numbers). Default: locale number formatting. */
   formatValue?: (value: number) => string;
+  /**
+   * Appended (with a leading space) to the `showLastValue` text and to the
+   * accessible name's "latest …" phrase — e.g. `"this wk"` when the plotted
+   * series is weekly but a nearby headline figure is a different period
+   * (a quarter total), so the last-value label cannot be misread as the same
+   * fact at a different scale. Default: none (today's behaviour).
+   */
+  lastValueSuffix?: string;
   /** Words for the reference facts in the default accessible name. */
   labels?: SparklineLabels;
 }
@@ -202,8 +220,10 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     target,
     baseline,
     band,
+    fitDomain = false,
     showLastValue = false,
     formatValue,
+    lastValueSuffix,
     labels,
     className,
     ...props
@@ -237,13 +257,13 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
   const max = useMemo(() => Math.max(...values, ...referenceValues, 0), [values, referenceValues]);
 
   // The line variant's own domain — [min, max] of every visible value, padded
-  // — is only computed when a reference actually widens it. Without one, the
-  // line keeps sharing the bar family's zero-based `max` scale exactly as
-  // before (byte-identical geometry for the no-reference case). Computed
-  // unconditionally (never after the empty-values early return below) so
-  // every render calls the same hooks in the same order.
+  // — is computed when a reference widens it OR the caller opts in via
+  // `fitDomain`. Without either, the line keeps sharing the bar family's
+  // zero-based `max` scale exactly as before (byte-identical geometry for
+  // that case). Computed unconditionally (never after the empty-values early
+  // return below) so every render calls the same hooks in the same order.
   const lineDomain = useMemo(() => {
-    if (values.length === 0 || !(variant === "line" && hasReferences)) return null;
+    if (values.length === 0 || !(variant === "line" && (hasReferences || fitDomain))) return null;
     const all = [...values, ...referenceValues];
     const lo = Math.min(...all);
     const hi = Math.max(...all);
@@ -251,7 +271,7 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     const pad =
       span > 0 ? span * LINE_DOMAIN_PAD_RATIO : Math.max(Math.abs(hi), 1) * LINE_DOMAIN_PAD_RATIO;
     return [lo - pad, hi + pad] as const;
-  }, [variant, hasReferences, values, referenceValues]);
+  }, [variant, hasReferences, fitDomain, values, referenceValues]);
 
   const fmtA11y = formatValue ?? ((v: number) => String(v));
 
@@ -264,10 +284,11 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     referenceFacts.push(`${resolvedLabels.band} ${fmtA11y(band[0])}–${fmtA11y(band[1])}`);
   }
 
+  const lastValueSuffixText = lastValueSuffix ? ` ${lastValueSuffix}` : "";
   const ariaLabel =
     label ??
     (values.length
-      ? `Trend of ${values.length} values, latest ${fmtA11y(values[values.length - 1]!)}${
+      ? `Trend of ${values.length} values, latest ${fmtA11y(values[values.length - 1]!)}${lastValueSuffixText}${
           referenceFacts.length ? `, ${referenceFacts.join(", ")}` : ""
         }`
       : "No data");
@@ -303,7 +324,9 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
   }
 
   const fmtDisplay = formatValue ?? DEFAULT_LAST_VALUE_FMT;
-  const lastValueText = showLastValue ? fmtDisplay(values[values.length - 1]!) : "";
+  const lastValueText = showLastValue
+    ? `${fmtDisplay(values[values.length - 1]!)}${lastValueSuffixText}`
+    : "";
   // Reserved INSIDE the given `width` — the plot shrinks, the SVG doesn't —
   // so an unset `showLastValue` leaves every existing coordinate untouched.
   const lastValueWidth = showLastValue

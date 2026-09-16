@@ -17,6 +17,8 @@ export interface DashTailStrokeProps {
   stroke: string;
   strokeWidth: number;
   dashArray: string;
+  /** Stroke for the dashed tail path. Default: `stroke` (head + tail share one ink). */
+  dashStroke?: string;
 }
 
 export function DashTailStroke({
@@ -29,6 +31,7 @@ export function DashTailStroke({
   stroke,
   strokeWidth,
   dashArray,
+  dashStroke,
 }: DashTailStrokeProps) {
   const clipPathId = useId().replace(/:/g, "");
 
@@ -65,7 +68,7 @@ export function DashTailStroke({
         clipPath={`url(#${clipPathId})`}
         d={pathD}
         fill="none"
-        stroke={stroke}
+        stroke={dashStroke ?? stroke}
         strokeDasharray={dashArray}
         strokeLinecap="round"
         strokeWidth={strokeWidth}
