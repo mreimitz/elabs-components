@@ -584,6 +584,25 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   exported type — the shape is identical, and the change is what keeps the
   optional peer out of the package's generated type declarations.
 
+- **`@elabs-ai/components-process`** — the process-mining set (process map,
+  variants, cases). `@xyflow/react` is a **required** peer (`ProcessMap` builds
+  on `@elabs-ai/components-flow`'s `CanvasShell`); install it and
+  `import "@xyflow/react/dist/style.css"` once, same as `-flow`.
+  `@elabs-ai/components-process/core` is React-free — a lighter, engine-free
+  entry point safe to import from a worker or a plain Node script.
+
+  Two input paths, same components: hand `ProcessMap`/`useProcessExplorer` a
+  raw `EventLog` and the package discovers the graph itself, **or** skip
+  `discoverGraph` entirely and pass an already-computed `ProcessGraph`/
+  `Variant[]` — a backend's or a host platform's own aggregation engine
+  feeding the map directly. `useProcessExplorer`'s worker threshold (default
+  `50_000` events) only applies to the local-discovery path; it does not
+  exist on the pre-aggregated one. Selection follows the same split: a
+  controlled, tri-state `selectionStates` prop and an `onFilterIntent`
+  callback let an external selection engine drive the map instead of the
+  package's own hook — worked example:
+  `docs/examples/process-explorer-external-selection`.
+
 ## 7. Make your coding agent brand-ui-aware
 
 Installing the packages does not tell an AI coding agent what exists. Without
