@@ -739,10 +739,7 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
   );
 }
 
-/**
- * @dataShape parts of a whole across a few categories, read as proportions of the total
- * @avoidWhen more than about 6 slices — use a bar or unit chart
- */
+// Unwrapped implementation; the public docblock sits on `PieChart` below.
 const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(
   {
     data,
@@ -900,6 +897,10 @@ PieChartBase.displayName = "PieChartBase";
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+/**
+ * @dataShape parts of a whole across a few categories, read as proportions of the total
+ * @avoidWhen more than about 6 slices — use a bar or unit chart
+ */
 export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(props, ref) {
   return (
     <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>

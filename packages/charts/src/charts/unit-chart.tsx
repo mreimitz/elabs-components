@@ -594,18 +594,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
 });
 UnitChartBody.displayName = "UnitChartBody";
 
-/**
- * `UnitChart` — draws `layout="waffle" | "field" | "rows"`. When
- * `onDatapointClick`/`copyValueOnActivate` is set the body is wrapped in a
- * `ChartDatapointProvider` so its series can register keyboard targets — the
- * provider has to sit ABOVE the component that registers (#349).
- *
- * @dataShape parts of a whole as discrete unit counts rather than a percentage, as
- *   layout="waffle"
- * @dataShape one tally row per category, ticks summing to a total — ticket volume by
- *   weekday, for example, as layout="rows"
- * @avoidWhen exact per-unit counts do not matter — a pie or bar chart reads faster
- */
+// Unwrapped implementation; the public docblock sits on `UnitChart` below.
 const UnitChartBase = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
   const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } = props;
   if (!onDatapointClick && !copyValueOnActivate) {
@@ -626,6 +615,18 @@ UnitChartBase.displayName = "UnitChartBase";
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+/**
+ * `UnitChart` — draws `layout="waffle" | "field" | "rows"`. When
+ * `onDatapointClick`/`copyValueOnActivate` is set the body is wrapped in a
+ * `ChartDatapointProvider` so its series can register keyboard targets — the
+ * provider has to sit ABOVE the component that registers (#349).
+ *
+ * @dataShape parts of a whole as discrete unit counts rather than a percentage, as
+ *   layout="waffle"
+ * @dataShape one tally row per category, ticks summing to a total — ticket volume by
+ *   weekday, for example, as layout="rows"
+ * @avoidWhen exact per-unit counts do not matter — a pie or bar chart reads faster
+ */
 export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
   return (
     <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>
