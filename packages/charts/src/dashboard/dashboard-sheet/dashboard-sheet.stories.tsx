@@ -186,3 +186,91 @@ export const NarrowContainer: Story = {
     );
   },
 };
+
+// Responsive (RM-084, R8-R9): the sheet's own width — a container query — resolves
+// `spec.layouts.md`/`.sm`, falling back to `stackForNarrow` for `sm`. A local spec (not
+// `sales-overview`) so the `md` override is easy to read at a glance.
+const RESPONSIVE_SPEC: DashboardSpec = {
+  version: 1,
+  id: "responsive-demo",
+  title: "Responsive demo",
+  grid: { mode: "fit", columns: 24, rows: 12, gap: 8 },
+  tiles: [
+    { id: "left", kind: "chart", title: "Left", layout: { x: 0, y: 0, w: 12, h: 6 }, content: {} },
+    {
+      id: "right",
+      kind: "chart",
+      title: "Right",
+      layout: { x: 12, y: 0, w: 12, h: 6 },
+      content: {},
+    },
+  ],
+  layouts: {
+    // 900 px: still two columns, but stacked taller (a hand-tuned "md" override, R9).
+    md: [
+      { id: "left", x: 0, y: 0, w: 24, h: 4 },
+      { id: "right", x: 0, y: 4, w: 24, h: 4 },
+    ],
+  },
+};
+
+function responsiveStory(widthPx: number): Story {
+  return {
+    render: (args) => (
+      <div className="h-[400px] w-full" style={{ maxWidth: widthPx }}>
+        <DashboardProvider spec={RESPONSIVE_SPEC} tiles={TILES} mode="edit">
+          <DashboardSheet {...args} />
+        </DashboardProvider>
+      </div>
+    ),
+    play: async ({ canvasElement }) => {
+      const sheet = await within(canvasElement).findByRole("region", {
+        name: RESPONSIVE_SPEC.title,
+      });
+      await waitFor(() => expect(sheet).toHaveAttribute("data-breakpoint"));
+      // The sheet gates its first tile paint on its own ResizeObserver/IntersectionObserver
+      // measurement round-trip — wait for both tiles to actually mount before reading order.
+      await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(2));
+    },
+  };
+}
+
+export const ResponsiveWide: Story = {
+  ...responsiveStory(1200),
+  name: "Responsive — 1200 px (lg, base layout)",
+  play: async (context) => {
+    await responsiveStory(1200).play?.(context);
+    const sheet = context.canvasElement.querySelector('[data-slot="dashboard-sheet"]');
+    await expect(sheet).toHaveAttribute("data-breakpoint", "lg");
+    // Base layout: "left" then "right", side by side (same y, ascending x).
+    const ids = Array.from(sheet?.querySelectorAll("[data-tile-id]") ?? []).map((el) =>
+      el.getAttribute("data-tile-id"),
+    );
+    await expect(ids).toEqual(["left", "right"]);
+  },
+};
+
+export const ResponsiveMedium: Story = {
+  ...responsiveStory(900),
+  name: "Responsive — 900 px (md, spec.layouts.md renders)",
+  play: async (context) => {
+    await responsiveStory(900).play?.(context);
+    const sheet = context.canvasElement.querySelector('[data-slot="dashboard-sheet"]');
+    await waitFor(() => expect(sheet).toHaveAttribute("data-breakpoint", "md"));
+  },
+};
+
+export const ResponsiveNarrow: Story = {
+  ...responsiveStory(500),
+  name: "Responsive — 500 px (sm, stacked; Edit disabled)",
+  play: async (context) => {
+    await responsiveStory(500).play?.(context);
+    const sheet = context.canvasElement.querySelector('[data-slot="dashboard-sheet"]');
+    await waitFor(() => expect(sheet).toHaveAttribute("data-breakpoint", "sm"));
+    // Edit mode (`mode="edit"` on the provider) is force-dropped to view rendering at "sm" —
+    // the edit layer's always-on announcer never mounts, and no drag/resize chrome appears.
+    await expect(
+      context.canvasElement.querySelector('[data-slot="dashboard-edit-layer-announcer"]'),
+    ).not.toBeInTheDocument();
+  },
+};
