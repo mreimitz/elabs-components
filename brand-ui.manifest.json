@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T14:45:07.435Z",
+  "generatedAt": "2026-09-16T15:16:42.548Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18819,6 +18819,12 @@
               "description": "Dash pattern for the tail segment when `dashFromIndex` is set. Default: \"6,4\""
             },
             {
+              "name": "dashStroke",
+              "optional": true,
+              "type": "string",
+              "description": "Stroke color for the dashed tail (from `dashFromIndex` on) when it should read as a distinct series from the solid head — e.g. a projection tail in a quieter ink than the actual-data head. Default: `stroke` (today's behaviour — head and tail share one ink, differentiated by dash alone)."
+            },
+            {
               "name": "loading",
               "optional": true,
               "type": "boolean",
@@ -20640,6 +20646,12 @@
               "description": "A \"normal range\" `[lo, hi]` drawn as a quiet filled zone behind everything."
             },
             {
+              "name": "fitDomain",
+              "optional": true,
+              "type": "boolean",
+              "description": "For `variant=\"line\"` with no `target`/`baseline`/`band`: use the series' own min–max (padded) domain instead of the shared zero-based bar scale. A tight-range series (a weekly count moving ±5% around its own mean) reads as a flat line on a zero-based scale — decoration with no information (WCAG 1.4.1's \"a channel that carries nothing\" failure mode, not a colour one). Default false — byte-identical to today's shared scale when unset."
+            },
+            {
               "name": "showLastValue",
               "optional": true,
               "type": "boolean",
@@ -20650,6 +20662,12 @@
               "optional": true,
               "type": "(value: number) => string",
               "description": "Formats every value this component surfaces as text (the last-value label and the accessible name's numbers). Default: locale number formatting."
+            },
+            {
+              "name": "lastValueSuffix",
+              "optional": true,
+              "type": "string",
+              "description": "Appended (with a leading space) to the `showLastValue` text and to the accessible name's \"latest …\" phrase — e.g. `\"this wk\"` when the plotted series is weekly but a nearby headline figure is a different period (a quarter total), so the last-value label cannot be misread as the same fact at a different scale. Default: none (today's behaviour)."
             },
             {
               "name": "labels",

@@ -7,6 +7,8 @@ import { resolveDashStartX, resolveDashTailBounds } from "./path-stroke-utils";
 interface SeriesDashTailOverlayProps {
   dashFromIndex?: number;
   dashArray: string;
+  /** Stroke for the dashed tail segment. Default: `stroke` (head + tail share one ink). */
+  dashStroke?: string;
   data: Record<string, unknown>[];
   pathD: string | null;
   pathLength: number;
@@ -21,6 +23,7 @@ interface SeriesDashTailOverlayProps {
 function SeriesDashTailOverlayImpl({
   dashFromIndex,
   dashArray,
+  dashStroke,
   data,
   pathD,
   pathLength,
@@ -66,6 +69,7 @@ function SeriesDashTailOverlayImpl({
       dashArray={dashArray}
       dashStartLength={dashStartLength}
       dashStartX={dashStartX}
+      dashStroke={dashStroke}
       innerHeight={innerHeight}
       innerWidth={innerWidth}
       pathD={pathD}

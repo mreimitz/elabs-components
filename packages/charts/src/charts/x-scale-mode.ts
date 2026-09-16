@@ -162,6 +162,17 @@ export interface XValueEncoder {
   xAccessor: (d: Record<string, unknown>) => Date;
   /** The human-readable x label for a row — the caller's own value in non-time modes. */
   labelOf: (d: Record<string, unknown>) => string;
+  /**
+   * Projects a raw `xDataKey`-domain VALUE (not a row) onto the same
+   * synthetic positional axis as `xAccessor` — for a reference mark keyed by
+   * a domain value rather than a data row (e.g. `Grid`'s
+   * `highlightColumnValues`, a "today" marker at week 9 of a `xScale="linear"`
+   * "week" axis). In `"time"` mode this is `xAccessor` minus the row indirection;
+   * in `"band"`/`"linear"` mode it repeats the SAME ordinal/normalisation this
+   * encoder built `xAccessor` from, so a raw value and a row's `xDataKey`
+   * value land on the identical pixel.
+   */
+  xValueToPosition: (raw: unknown) => Date;
 }
 
 /**
@@ -190,6 +201,7 @@ export function buildXValueEncoder({
     return {
       xAccessor: (d) => new Date(ordinals.get(categoryKey(d[xDataKey])) ?? 0),
       labelOf: (d) => fallbackXLabel(d[xDataKey]),
+      xValueToPosition: (raw) => new Date(ordinals.get(categoryKey(raw)) ?? 0),
     };
   }
 
@@ -208,15 +220,16 @@ export function buildXValueEncoder({
     // as an epoch) keeps the projection inside the representable Date range for
     // ANY magnitude of x — a run id of 1e18 would otherwise be an Invalid Date.
     const span = Number.isFinite(min) && max > min ? max - min : 0;
+    const positionOf = (value: number) => {
+      if (!(Number.isFinite(value) && span > 0)) {
+        return new Date(0);
+      }
+      return new Date(((value - min) / span) * SYNTHETIC_SPAN_MS);
+    };
     return {
-      xAccessor: (d) => {
-        const value = toNumber(d[xDataKey]);
-        if (!(Number.isFinite(value) && span > 0)) {
-          return new Date(0);
-        }
-        return new Date(((value - min) / span) * SYNTHETIC_SPAN_MS);
-      },
+      xAccessor: (d) => positionOf(toNumber(d[xDataKey])),
       labelOf: (d) => fallbackXLabel(d[xDataKey]),
+      xValueToPosition: (raw) => positionOf(toNumber(raw)),
     };
   }
 
@@ -230,5 +243,6 @@ export function buildXValueEncoder({
       const date = value instanceof Date ? value : new Date(value as string | number);
       return isInvalidDate(date) ? fallbackXLabel(value) : shortDateFmt.format(date);
     },
+    xValueToPosition: (raw) => (raw instanceof Date ? raw : new Date(raw as string | number)),
   };
 }

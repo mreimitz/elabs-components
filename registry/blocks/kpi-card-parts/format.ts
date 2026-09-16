@@ -34,9 +34,11 @@ export function formatKpiValue(
       return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
     case "count":
     default:
+      // A count is a whole number of things (orders, units) — never a
+      // fractional one, even when it is a DELTA between two counts.
       return new Intl.NumberFormat(locale, {
         notation: Math.abs(value) >= 1000 ? "compact" : "standard",
-        maximumFractionDigits: 1,
+        maximumFractionDigits: Math.abs(value) >= 1000 ? 1 : 0,
       }).format(value);
   }
 }

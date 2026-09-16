@@ -161,6 +161,13 @@ export interface LineProps {
   /** Dash pattern for the tail segment when `dashFromIndex` is set. Default: "6,4" */
   dashArray?: string;
   /**
+   * Stroke color for the dashed tail (from `dashFromIndex` on) when it should
+   * read as a distinct series from the solid head — e.g. a projection tail in
+   * a quieter ink than the actual-data head. Default: `stroke` (today's
+   * behaviour — head and tail share one ink, differentiated by dash alone).
+   */
+  dashStroke?: string;
+  /**
    * Show the loading pulse overlay. Default: follows chart loading phase.
    * Set `false` to disable even during loading.
    */
@@ -196,6 +203,7 @@ export function Line({
   labelPeaks,
   dashFromIndex,
   dashArray = "6,4",
+  dashStroke,
   loading,
   loadingStroke = chartCssVars.foreground,
   loadingStrokeOpacity = 0.5,
@@ -363,6 +371,7 @@ export function Line({
         <SeriesDashTailOverlay
           dashArray={dashArray}
           dashFromIndex={dashFromIndex}
+          dashStroke={dashStroke ?? lineStroke}
           data={data}
           innerHeight={innerHeight}
           innerWidth={innerWidth}

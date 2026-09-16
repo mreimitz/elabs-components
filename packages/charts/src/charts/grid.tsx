@@ -123,7 +123,8 @@ export function Grid({
   shimmerSpeed = DEFAULT_SHIMMER_SPEED,
   shimmerSync = false,
 }: GridProps) {
-  const { xScale, innerWidth, innerHeight, orientation, barScale, chartPhase } = useChartStable();
+  const { xScale, innerWidth, innerHeight, orientation, barScale, chartPhase, xValueToPosition } =
+    useChartStable();
   const yScale = useYScale(yAxisId);
   const shimmerActive = shimmer && isLoadingChromePhase(chartPhase);
   const gridStroke =
@@ -293,7 +294,18 @@ export function Grid({
       {highlightColumnValues && highlightColumnValues.length > 0 ? (
         <g className="chart-grid-highlight-columns">
           {highlightColumnValues.map((value) => {
-            const x = xScale(value);
+            // `value` is a raw `xDataKey`-domain value (e.g. a "week" number),
+            // not the row `xAccessor` normally reads — under `xScale="linear"`/
+            // `"band"` it must go through the SAME synthetic projection as the
+            // data, or it lands at the domain's raw-number epoch (≈ the left
+            // edge) instead of its real position. `xValueToPosition` is that
+            // projection; absent (e.g. `ScatterChart`), fall back to treating
+            // `value` as already Date-like — the historical, `"time"`-only
+            // behaviour this prop shipped with.
+            const position = xValueToPosition
+              ? xValueToPosition(value)
+              : (value as unknown as Date);
+            const x = xScale(position);
             if (x == null || !Number.isFinite(x)) {
               return null;
             }

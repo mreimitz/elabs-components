@@ -24,10 +24,15 @@ import type { KpiStatusValue } from "@/components/kpi-card-parts/kpi-status";
  * card's headline can never silently drift from the rest of the registry.
  *
  * The last 4 of those (rescaled) weeks set both the run-rate the remaining
- * weeks are projected at AND the ±1σ band around it, which widens with the
- * square root of the number of weeks projected — a random-walk assumption,
+ * weeks are projected at AND the uncertainty band around it — its relative
+ * width is the run-rate's own coefficient of variation (σ/mean), floored at
+ * {@link MIN_RELATIVE_BAND} so a real-but-tiny sample σ never renders as a
+ * sub-pixel sliver — applied to the projected total and widened with the
+ * square root of the number of weeks projected: a random-walk assumption,
  * the simplest honest way to say "less certain further out" without
- * inventing a real forecasting model.
+ * inventing a real forecasting model. The resulting ± width is always stated
+ * in words in {@link ForecastResult.methodNote}, never left for the band's
+ * shape alone to carry.
  */
 
 export const TOTAL_WEEKS = 13;
@@ -36,6 +41,19 @@ export const ELAPSED_WEEKS = Math.round((QUARTER_DAY_TODAY / QUARTER_TOTAL_DAYS)
 const REMAINING_WEEKS = TOTAL_WEEKS - ELAPSED_WEEKS;
 /** How many trailing weeks set the run-rate and the confidence band's σ. */
 const RUN_RATE_WINDOW = 4;
+/**
+ * Floor on the confidence band's relative width (σ/run-rate). A stable
+ * weekly series (this fictional company's revenue/orders both run ~1–2%
+ * week-to-week noise) yields a real sample σ from only
+ * {@link RUN_RATE_WINDOW} points that is both statistically unreliable and,
+ * plotted in cumulative dollars against a multi-million-dollar y-domain, a
+ * band only 1–2 px wide — narrower than the line's own stroke, so it reads
+ * as "no band at all" even though it is technically painted. Flooring the
+ * relative width (never trust an n=4 σ as the whole story, and a real band
+ * has to visibly clear the series stroke to read as a band) is disclosed in
+ * {@link ForecastResult.methodNote}, never hidden.
+ */
+const MIN_RELATIVE_BAND = 0.08;
 /** Status margin: within this fraction of target counts "at risk", not "off track". */
 const AT_RISK_MARGIN = 0.05;
 
@@ -115,11 +133,16 @@ export function buildForecast(metric: KpiMetric, qtd: QtdProgress): ForecastResu
   const runRateWeeks = weeklyActual.slice(-RUN_RATE_WINDOW);
   const runRate = mean(runRateWeeks);
   const sigma = stdDev(runRateWeeks);
+  const relativeBand = Math.max(runRate === 0 ? 0 : Math.abs(sigma / runRate), MIN_RELATIVE_BAND);
 
   let projectedTotal = cumulativeActual[cumulativeActual.length - 1] as number;
   for (let j = 1; j <= REMAINING_WEEKS; j++) {
     projectedTotal += runRate;
-    const band = sigma * Math.sqrt(j);
+    // Widens from 0 (today) to `relativeBand` of the projected total at the
+    // full remaining horizon — a random-walk-shaped ramp (sqrt(j)) applied to
+    // a relative, floored width rather than the raw per-week σ (see
+    // `MIN_RELATIVE_BAND`).
+    const band = relativeBand * projectedTotal * Math.sqrt(j / REMAINING_WEEKS);
     points.push({
       week: ELAPSED_WEEKS + j,
       value: projectedTotal,
@@ -143,7 +166,7 @@ export function buildForecast(metric: KpiMetric, qtd: QtdProgress): ForecastResu
     projectedTotal,
     pctOfTarget,
     status,
-    methodNote: `Linear run-rate from the last ${RUN_RATE_WINDOW} weeks, ±1σ band`,
+    methodNote: `Linear run-rate from the last ${RUN_RATE_WINDOW} weeks, ±${Math.round(relativeBand * 100)}% band`,
   };
 }
 
