@@ -126,12 +126,15 @@ function HeroColumn({ metric, locale }: { metric: KpiMetric; locale: string }) {
           formatValue={(value) => formatKpiValue(value, metric.unit, locale, metric.currency)}
           height={44}
           labels={{ baseline: "last year" }}
+          lastValueSuffix="this wk"
           showLastValue
           values={metric.weekly}
           variant="line"
           width={280}
         />
-        <p className="text-caption text-muted-foreground">13-week trend vs last year</p>
+        <p className="text-caption text-muted-foreground">
+          Weekly {metric.label.toLowerCase()}, 13 weeks — faint line: last year
+        </p>
       </div>
       <KpiAsOf date={AS_OF_DATE} locale={locale} source={DATA_SOURCE} />
     </div>
@@ -155,14 +158,18 @@ function SatelliteRow({ metric, locale }: { metric: KpiMetric; locale: string })
         higherIsBetter={metric.higherIsBetter}
         locale={locale}
         marker={
-          <Sparkline
-            aria-hidden="true"
-            className="text-muted-foreground"
-            height={16}
-            values={metric.weekly}
-            variant="line"
-            width={40}
-          />
+          <div className="w-24 shrink-0">
+            <Sparkline
+              aria-hidden="true"
+              className="w-full text-muted-foreground"
+              fit="fill"
+              fitDomain
+              height={16}
+              values={metric.weekly}
+              variant="line"
+              width={96}
+            />
+          </div>
         }
         unit={metric.unit}
       />

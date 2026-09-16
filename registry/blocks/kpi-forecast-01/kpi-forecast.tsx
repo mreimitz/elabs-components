@@ -1,7 +1,7 @@
 "use client";
 
 import { curveMonotoneX } from "@visx/curve";
-import { AreaBand, Grid, Line, LineChart, XAxis } from "@elabs-ai/components-charts";
+import { AreaBand, Grid, Line, LineChart, XAxis, YAxis } from "@elabs-ai/components-charts";
 import { Badge, Card, CardContent, Skeleton } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
@@ -31,10 +31,11 @@ export interface KpiForecastProps {
 
 /**
  * "Where will I land?" — a linear run-rate projection to the end of the
- * quarter: solid actual, dashed projection, a ±1σ confidence range that
- * widens toward period end, a labelled target line and a "today" marker
- * separating the two. The projection method is stated in words, never left
- * for the reader to infer from the shape of the line alone.
+ * quarter: solid actual, dashed projection, an uncertainty range that widens
+ * toward period end, a labelled target line and a "today" marker separating
+ * the two. The projection method (and the band's actual ± width) is stated
+ * in words, never left for the reader to infer from the shape of the line
+ * alone — see `ForecastResult.methodNote`.
  */
 export function KpiForecast({
   forecasts = [revenueForecast, ordersForecast],
@@ -86,6 +87,13 @@ function KpiForecastCardSkeleton() {
   );
 }
 
+/** `YAxis`'s tick format, one-unit-per-scale, per this forecast's own unit. */
+function yAxisValueFormat(unit: ForecastResult["unit"]): "currency" | "percent" | "compact" {
+  if (unit === "currency") return "currency";
+  if (unit === "percent") return "percent";
+  return "compact";
+}
+
 function KpiForecastCard({ forecast, locale }: { forecast: ForecastResult; locale: string }) {
   const {
     label,
@@ -105,6 +113,12 @@ function KpiForecastCard({ forecast, locale }: { forecast: ForecastResult; local
   const pctLabel = `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
     Math.max(0, pctOfTarget),
   )}% of target`;
+  // `dashFromIndex` is a data-array INDEX, but `todayWeek` is the domain
+  // "week" VALUE — `points[i].week === i + 1`, so the last actual point (week
+  // `todayWeek`) sits at index `todayWeek - 1`. Dashing FROM that index makes
+  // the first projected segment (today → next week) the first dashed one, so
+  // the actual line visibly ends, and the projection visibly begins, at today.
+  const todayIndex = todayWeek - 1;
 
   return (
     <Card data-slot="kpi-forecast-card">
@@ -146,14 +160,17 @@ function KpiForecastCard({ forecast, locale }: { forecast: ForecastResult; local
               <AreaBand highKey="hi" lowKey="lo" />
               <Line
                 curve={curveMonotoneX}
-                dashFromIndex={todayWeek}
+                dashFromIndex={todayIndex}
+                dashStroke="var(--chart-foreground-muted)"
                 dataKey="value"
                 stroke="var(--chart-1)"
                 strokeWidth={2.5}
               />
+              <YAxis currency={currency} numTicks={4} valueFormat={yAxisValueFormat(unit)} />
               <XAxis />
             </LineChart>
           </div>
+          <p className="text-caption text-muted-foreground">Week (1–{TOTAL_WEEKS})</p>
           <ForecastLegend />
           <p className="text-caption text-muted-foreground">{methodNote}.</p>
         </div>
@@ -200,7 +217,7 @@ function ForecastLegend() {
           aria-hidden="true"
           className="inline-block h-2.5 w-4 rounded-sm bg-chart-ring-background"
         />
-        Shaded: ±1σ range
+        Shaded: uncertainty range
       </span>
     </div>
   );
