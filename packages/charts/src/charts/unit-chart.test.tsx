@@ -108,6 +108,32 @@ describe("UnitChart", () => {
     expect(container.textContent).toContain("41 + 35 + 12 + 12 = 100");
   });
 
+  // #237: the aspect ratio (and, for `rows`, the fixed height) belongs to the
+  // PLOT box, never the root — that is what keeps the absolutely-positioned
+  // mark `<svg>` from ever sharing a box with the caption/arithmetic/legend.
+  // jsdom can't measure layout, but it can assert the inline styles that
+  // decide it, so this fails immediately if the aspect ratio moves back onto
+  // the root.
+  it("puts aspect-ratio on the plot box, never on the root", () => {
+    stubMeasurement(280, 280);
+    const { container } = render(<UnitChart data={sources} layout="waffle" />);
+    const root = container.querySelector('[data-slot="unit-chart"]') as HTMLElement;
+    const plot = container.querySelector('[data-slot="unit-chart-plot"]') as HTMLElement;
+    expect(root.style.aspectRatio).toBe("");
+    expect(root.style.height).toBe("");
+    expect(plot.style.aspectRatio).not.toBe("");
+  });
+
+  it("gives `rows` a fixed-height plot box and no aspect-ratio, on the plot not the root", () => {
+    stubMeasurement(420, 168);
+    const { container } = render(<UnitChart data={fears} layout="rows" />);
+    const root = container.querySelector('[data-slot="unit-chart"]') as HTMLElement;
+    const plot = container.querySelector('[data-slot="unit-chart-plot"]') as HTMLElement;
+    expect(root.style.height).toBe("");
+    expect(plot.style.aspectRatio).toBe("");
+    expect(plot.style.height).toBe("168px");
+  });
+
   it("accepts a forwarded ref", () => {
     const ref = { current: null as HTMLDivElement | null };
     render(<UnitChart data={sources} layout="waffle" ref={ref} />);

@@ -23,6 +23,7 @@
  */
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { curveMonotoneX, curveNatural } from "@visx/curve";
 import { feature } from "topojson-client";
 import type { Topology } from "topojson-specification";
@@ -159,16 +160,40 @@ const trafficSources = [
   { label: "Social", value: 12 },
 ];
 
-export const HundredPercentComposition: Story = story(
-  "100% composition, counted",
-  '**UnitChart** (`layout="waffle"`) is the recommended container — each dot is a stated ' +
-    "unit, so the share reads as an arithmetic sentence, not a slice you have to measure. " +
-    "Alternatives: `PieChart` / `RingChart` for a familiar silhouette when unit-counting " +
-    "isn't the point.",
-  <div className="h-72 w-[280px]">
-    <UnitChart data={trafficSources} layout="waffle" unit={1} />
-  </div>,
-);
+export const HundredPercentComposition: Story = {
+  ...story(
+    "100% composition, counted",
+    '**UnitChart** (`layout="waffle"`) is the recommended container — each dot is a stated ' +
+      "unit, so the share reads as an arithmetic sentence, not a slice you have to measure. " +
+      "Alternatives: `PieChart` / `RingChart` for a familiar silhouette when unit-counting " +
+      "isn't the point.",
+    // #237: this index's own box used to under-size UnitChart (a fixed
+    // `h-72` under a self-sizing mark plot + footer + legend), which is how
+    // its own arithmetic sentence ended up struck through by the waffle's
+    // dots. Let the component size itself.
+    <div className="w-[280px]">
+      <UnitChart data={trafficSources} layout="waffle" unit={1} />
+    </div>,
+  ),
+  // #237 geometry lock, extended to this index story (a real-browser
+  // assertion — jsdom returns zeros from `getBoundingClientRect`): no text
+  // run in the caption/arithmetic footer or the legend may sit above the
+  // bottom of the mark plot box.
+  play: async ({ canvasElement }) => {
+    const plot = canvasElement.querySelector('[data-slot="unit-chart-plot"]');
+    if (!(plot instanceof HTMLElement)) {
+      throw new Error('[data-slot="unit-chart-plot"] not found');
+    }
+    const plotBottom = plot.getBoundingClientRect().bottom;
+    let sawFooterText = false;
+    for (const el of canvasElement.querySelectorAll<HTMLElement>("p, span")) {
+      if (plot.contains(el) || !(el.textContent ?? "").trim()) continue;
+      sawFooterText = true;
+      await expect(el.getBoundingClientRect().top).toBeGreaterThanOrEqual(plotBottom - 1);
+    }
+    await expect(sawFooterText).toBe(true);
+  },
+};
 
 // ── Two time points per category ────────────────────────────────────────────
 const onboardingSteps = [

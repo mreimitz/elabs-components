@@ -1,7 +1,29 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+import { expect } from "storybook/test";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { UnitChart } from "./unit-chart";
+
+// #237 geometry lock — a real-browser assertion that no text run in the
+// component's footer/legend is ever painted under the plot box's mark `<svg>`.
+// jsdom returns zeros from `getBoundingClientRect`, so this can only be proven
+// here, by `@storybook/addon-vitest` in a real Chromium
+// (`pnpm --filter @elabs-ai/components-docs test-storybook`). Assert against
+// the PLOT box (`[data-slot="unit-chart-plot"]`), not the `<svg>` inside it, so
+// the lock survives a future change to how the SVG is sized within the plot.
+async function assertNoFooterOverlap(canvasElement: HTMLElement) {
+  const plot = canvasElement.querySelector('[data-slot="unit-chart-plot"]');
+  if (!(plot instanceof HTMLElement)) throw new Error('[data-slot="unit-chart-plot"] not found');
+  const plotBottom = plot.getBoundingClientRect().bottom;
+  const textNodes = canvasElement.querySelectorAll<HTMLElement>("p, span");
+  let sawFooterText = false;
+  for (const el of textNodes) {
+    if (plot.contains(el) || !(el.textContent ?? "").trim()) continue;
+    sawFooterText = true;
+    await expect(el.getBoundingClientRect().top).toBeGreaterThanOrEqual(plotBottom - 1);
+  }
+  await expect(sawFooterText).toBe(true);
+}
 
 const meta = {
   title: "Charts/UnitChart",
@@ -74,11 +96,17 @@ export const Default: Story = {
     layout: "waffle",
     unitLabel: "one dot = one visit in a hundred",
   },
+  // #237: the component sizes itself (mark plot + caption + arithmetic +
+  // legend) — a fixed-height wrapper only ever under-sized it, which is how
+  // the footer ended up sharing the mark SVG's box in the first place.
   render: (args) => (
-    <div className="h-[360px] w-[420px]">
+    <div className="w-[420px]">
       <UnitChart {...args} />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    await assertNoFooterOverlap(canvasElement);
+  },
 };
 
 /** Field — golden-angle phyllotaxis cluster per series (lieflat's "L14 Hundred Field"). */
@@ -89,10 +117,13 @@ export const Field: Story = {
     unitLabel: "one dot = one respondent in a hundred",
   },
   render: (args) => (
-    <div className="h-[420px] w-[420px]">
+    <div className="w-[420px]">
       <UnitChart {...args} />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    await assertNoFooterOverlap(canvasElement);
+  },
 };
 
 /** Rows — one tick row per series, ticked every 10 (lieflat's "L15 Ballot Tally"). Rows may sum past `total`. */
@@ -112,10 +143,10 @@ export const Rows: Story = {
 export const AllLayouts: Story = {
   render: () => (
     <div className="flex flex-wrap items-start gap-8">
-      <div className="h-[300px] w-[340px]">
+      <div className="w-[340px]">
         <UnitChart data={trafficSources} layout="waffle" unitLabel="Traffic sources" />
       </div>
-      <div className="h-[340px] w-[340px]">
+      <div className="w-[340px]">
         <UnitChart data={topOfMind} layout="field" unitLabel="Top of mind" />
       </div>
       <div className="w-[340px]">
@@ -137,20 +168,23 @@ export const RoundingRemainder: Story = {
     unitLabel: "one dot = one visitor in a hundred",
   },
   render: (args) => (
-    <div className="h-[360px] w-[420px]">
+    <div className="w-[420px]">
       <UnitChart {...args} />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    await assertNoFooterOverlap(canvasElement);
+  },
 };
 
 /** `mark="square"` and `mark="tick"` — the two alternates to the default dot. */
 export const MarkShapes: Story = {
   render: () => (
     <div className="flex flex-wrap items-start gap-8">
-      <div className="h-[300px] w-[340px]">
+      <div className="w-[340px]">
         <UnitChart data={trafficSources} layout="waffle" mark="square" />
       </div>
-      <div className="h-[300px] w-[340px]">
+      <div className="w-[340px]">
         <UnitChart data={trafficSources} layout="waffle" mark="tick" />
       </div>
     </div>
