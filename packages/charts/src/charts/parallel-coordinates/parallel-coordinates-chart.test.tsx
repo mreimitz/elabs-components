@@ -22,6 +22,7 @@ import {
   resolveEntityLineStyle,
   resolveHeroEntity,
   resolveParallelDimensions,
+  resolveParallelEntityColors,
   type ParallelCoordinatesDimension,
   type ParallelCoordinatesRow,
 } from "./parallel-coordinates-chart";
@@ -259,6 +260,40 @@ describe("resolveEntityLineStyle", () => {
   });
 });
 
+describe("resolveParallelEntityColors (hero ink, #280)", () => {
+  const rows = buildParallelRows(products, "product", dims);
+
+  it("gives the hero a dedicated ink, independent of the hero's row index", () => {
+    // Same 12 rows, hero at index 3 vs hero at index 9 — the hero's colour
+    // must not change, and it must not be a colour any context row could
+    // also hold (the pre-fix bug: `rowColors[originalPosition]`).
+    const heroAt3 = resolveParallelEntityColors(rows, "Product 4", undefined);
+    const heroAt9 = resolveParallelEntityColors(rows, "Product 10", undefined);
+    expect(heroAt3.get("Product 4")).toBe("var(--chart-foreground)");
+    expect(heroAt9.get("Product 10")).toBe("var(--chart-foreground)");
+  });
+
+  it("never hands the hero's ink to a context row", () => {
+    const colors = resolveParallelEntityColors(rows, "Product 3", undefined);
+    const heroColor = colors.get("Product 3");
+    const contextColors = [...colors.entries()]
+      .filter(([entity]) => entity !== "Product 3")
+      .map(([, color]) => color);
+    expect(contextColors).not.toContain(heroColor);
+  });
+
+  it("with no hero, resolves one colour per row by position (today's behaviour)", () => {
+    const colors = resolveParallelEntityColors(rows, undefined, undefined);
+    expect(colors.get("Product 1")).toBe("var(--chart-mono-1)");
+  });
+
+  it("ignores an explicit palette while a hero is set — hero promotion is always the wire look", () => {
+    const colors = resolveParallelEntityColors(rows, "Product 3", "categorical");
+    expect(colors.get("Product 3")).toBe("var(--chart-foreground)");
+    expect(colors.get("Product 1")).not.toBe("var(--chart-1)");
+  });
+});
+
 describe("<ParallelCoordinatesChart /> render", () => {
   it("renders the a11y label and one path per entity", () => {
     const { container } = render(
@@ -286,11 +321,92 @@ describe("<ParallelCoordinatesChart /> render", () => {
         />
       </div>,
     );
-    const heroPath = container.querySelector('[data-entity="Product 3"]');
+    const heroPath = container.querySelector(
+      '[data-entity="Product 3"][data-slot="parallel-coordinates-path"]',
+    );
     expect(heroPath).toHaveAttribute("stroke-width", "2");
+    expect(heroPath).toHaveAttribute("stroke", "var(--chart-foreground)");
     expect(
       container.querySelector('[data-slot="parallel-coordinates-hero-label"]'),
     ).toHaveTextContent("Product 3");
+  });
+
+  // #280 — the hero's ink used to be `rowColors[originalRowIndex]`, so it
+  // changed depending on where the hero happened to sit in `data`. Render
+  // the SAME 12 rows twice, hero at a different index each time, and assert
+  // the hero's stroke is identical both times (and is the dedicated hero
+  // ink, never a context-ladder colour). Fails on the pre-fix `main`, where
+  // the two renders produce different `oklch`-backed mono rungs.
+  it("the hero's ink does not change when it moves to a different index in `data` (#280)", () => {
+    const heroAt3 = render(
+      <div style={{ width: 640, height: 320 }}>
+        <ParallelCoordinatesChart
+          data={products}
+          dimensions={dims}
+          entity="product"
+          highlightKey="Product 4"
+        />
+      </div>,
+    );
+    const strokeAt3 = heroAt3.container
+      .querySelector('[data-entity="Product 4"][data-slot="parallel-coordinates-path"]')
+      ?.getAttribute("stroke");
+    heroAt3.unmount();
+
+    const heroAt9 = render(
+      <div style={{ width: 640, height: 320 }}>
+        <ParallelCoordinatesChart
+          data={products}
+          dimensions={dims}
+          entity="product"
+          highlightKey="Product 10"
+        />
+      </div>,
+    );
+    const strokeAt9 = heroAt9.container
+      .querySelector('[data-entity="Product 10"][data-slot="parallel-coordinates-path"]')
+      ?.getAttribute("stroke");
+    heroAt9.unmount();
+
+    expect(strokeAt3).toBe("var(--chart-foreground)");
+    expect(strokeAt9).toBe("var(--chart-foreground)");
+    expect(strokeAt3).toBe(strokeAt9);
+  });
+
+  // #269 — a keyboard target's accessible name used to be only the entity
+  // name plus a dangling ":" (`value` is structurally undefined for a
+  // parallel-coordinates target — it is a vector across N axes, not one
+  // scalar). Fails on the pre-fix `main`, where `targets[0]`'s name is
+  // "Product 1:".
+  it("puts every axis value in the accessible NAME, not only the tooltip (#269)", () => {
+    const { container } = render(
+      <div style={{ width: 640, height: 320 }}>
+        <ParallelCoordinatesChart
+          data={products}
+          dimensions={dims}
+          entity="product"
+          onDatapointClick={() => undefined}
+        />
+      </div>,
+    );
+    const targets = [...container.querySelectorAll<HTMLButtonElement>(TARGET)];
+    expect(targets[0]).toHaveAccessibleName("Product 1, Price 10, Latency 200, NPS 30, Uptime 99");
+  });
+
+  it("a consumer-supplied datapointLabel still wins over the default (#269)", () => {
+    const { container } = render(
+      <div style={{ width: 640, height: 320 }}>
+        <ParallelCoordinatesChart
+          data={products}
+          datapointLabel={(point) => `custom ${String(point.category)}`}
+          dimensions={dims}
+          entity="product"
+          onDatapointClick={() => undefined}
+        />
+      </div>,
+    );
+    const targets = [...container.querySelectorAll<HTMLButtonElement>(TARGET)];
+    expect(targets[0]).toHaveAccessibleName("custom Product 1");
   });
 
   it("keyboard cycles through entities — one tab stop, ArrowRight moves it, Enter activates", () => {

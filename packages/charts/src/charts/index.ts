@@ -612,6 +612,7 @@ export {
   resolveEntityLineStyle,
   resolveHeroEntity,
   resolveParallelDimensions,
+  resolveParallelEntityColors,
   type ParallelCoordinatesAxis,
   type ParallelCoordinatesChartProps,
   type ParallelCoordinatesCurve,
