@@ -113,24 +113,29 @@ function markElement(
   m: UnitMark,
   color: string,
   mounted: boolean,
+  variant: "solid" | "outline" = "solid",
 ): React.ReactNode {
   const style: CSSProperties = {
     opacity: mounted ? 1 : 0,
     transitionDelay: `${m.delayMs}ms`,
   };
   const cls = "transition-opacity duration-fast ease-standard motion-reduce:transition-none";
+  // `outline`: stroke only, no fill — `UnitChartDatum.variant`'s second channel,
+  // for a `square`/`circle` mark only (a `tick` is already stroke-only).
+  const fillProps =
+    variant === "outline" ? { fill: "none", stroke: color, strokeWidth: 1.5 } : { fill: color };
   if (mark === "square") {
     return (
       <rect
         className={cls}
         data-slot="unit-chart-mark"
-        fill={color}
         height={m.size * 2}
         key={`${m.seriesIndex}:${m.positionInGroup}`}
         style={style}
         width={m.size * 2}
         x={m.x - m.size}
         y={m.y - m.size}
+        {...fillProps}
       />
     );
   }
@@ -156,8 +161,8 @@ function markElement(
       cx={m.x}
       cy={m.y}
       data-slot="unit-chart-mark"
-      fill={color}
       key={`${m.seriesIndex}:${m.positionInGroup}`}
+      {...fillProps}
       r={m.size}
       style={style}
     />
@@ -440,7 +445,13 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
                   {waffleGeom.marks
                     .filter((m) => m.seriesIndex === seriesIndex)
                     .map((m) =>
-                      markElement(mark, m, colors[seriesIndex] ?? "var(--chart-1)", mounted),
+                      markElement(
+                        mark,
+                        m,
+                        colors[seriesIndex] ?? "var(--chart-1)",
+                        mounted,
+                        displayData[seriesIndex]?.variant,
+                      ),
                     )}
                 </g>
               ))}
@@ -474,6 +485,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
                           m,
                           colors[cluster.seriesIndex] ?? "var(--chart-1)",
                           mounted,
+                          displayData[cluster.seriesIndex]?.variant,
                         ),
                       )}
                     <text

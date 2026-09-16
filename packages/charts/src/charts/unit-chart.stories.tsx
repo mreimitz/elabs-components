@@ -192,6 +192,32 @@ export const MarkShapes: Story = {
 };
 
 /**
+ * A per-datum `variant: "outline"` draws that series hollow (stroke only, no
+ * fill) — a second channel beside colour for "this is the one series that
+ * matters" (WCAG 1.4.1), and it keeps a quiet majority from visually
+ * dominating a highlighted minority the way a solid dark fill would. Default
+ * (`variant` unset) stays a solid fill, unchanged.
+ */
+export const OutlineVariant: Story = {
+  render: () => (
+    <div className="w-full max-w-[340px]">
+      <UnitChart
+        columns={10}
+        data={[
+          { label: "Late", value: 1 },
+          { label: "On time", value: 11, variant: "outline" },
+        ]}
+        layout="waffle"
+        mark="square"
+        palette="accent"
+        total={12}
+        unitLabel="one square = 1 order in 12"
+      />
+    </div>
+  ),
+};
+
+/**
  * 1,000 marks across 5 series. The per-mark reveal is a plain CSS
  * `transition-delay` computed once in JS (`unitMarkDelayMs`) — never a
  * per-mark `motion`/framer-motion component — so this stays a single paint

@@ -188,6 +188,33 @@ describe("UnitChart", () => {
     expect(container.querySelectorAll(MARK)).toHaveLength(100);
   });
 
+  it("defaults every mark to a solid fill, unchanged from before `variant` existed", () => {
+    stubMeasurement();
+    const { container } = render(<UnitChart data={sources} layout="waffle" mark="square" />);
+    const marks = container.querySelectorAll(MARK);
+    expect(marks.length).toBeGreaterThan(0);
+    for (const mark of marks) {
+      expect(mark.getAttribute("fill")).not.toBe("none");
+    }
+  });
+
+  it('draws `variant: "outline"` marks hollow (stroke only, no fill) — a second channel beside colour', () => {
+    stubMeasurement();
+    const data = [
+      { label: "Highlighted", value: 50 },
+      { label: "Rest", value: 50, variant: "outline" as const },
+    ];
+    const { container } = render(<UnitChart data={data} layout="waffle" mark="square" />);
+    const marks = container.querySelectorAll(MARK);
+    const solid = [...marks].filter((m) => m.getAttribute("fill") !== "none");
+    const outline = [...marks].filter((m) => m.getAttribute("fill") === "none");
+    expect(solid.length).toBeGreaterThan(0);
+    expect(outline.length).toBeGreaterThan(0);
+    for (const mark of outline) {
+      expect(mark.getAttribute("stroke")).toBeTruthy();
+    }
+  });
+
   it("registers ONE keyboard target per SERIES, never per mark", () => {
     stubMeasurement();
     const onDatapointClick = vi.fn();

@@ -23,6 +23,16 @@ import { seededRnd } from "../marks/seeded-rnd";
 export interface UnitChartDatum {
   label: string;
   value: number;
+  /**
+   * `waffle`/`field` mark fill. Default `"solid"` (unchanged — every existing
+   * chart renders identically). `"outline"` draws a hollow mark (stroke only,
+   * no fill) — a second, non-colour channel for "this is the one series that
+   * matters" beside a quiet, filled majority (WCAG 1.4.1): colour alone can't
+   * carry that distinction for anyone who can't tell the hues apart, and a
+   * solid dark majority visually dominates a highlighted minority regardless.
+   * Ignored by `rows` (`UnitStack` ticks have no fill to hollow out).
+   */
+  variant?: "solid" | "outline";
 }
 
 /** An axis-aligned box, in the same coordinate space as the marks it bounds. */
