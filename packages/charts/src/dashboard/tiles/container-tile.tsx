@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elabs-ai/components-ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger, useLocale } from "@elabs-ai/components-ui";
 
 import { EMPTY_SELECTION } from "../core/selection";
 import type { DashboardTileKind, DashboardTileProps } from "../dashboard-sheet/tile-registry";
@@ -99,9 +99,10 @@ function ContainerTile({
   size,
 }: DashboardTileProps<ContainerTileContent>) {
   const actions = useDashboardActions();
+  const { t } = useLocale();
   const activeTab = useDashboard((s) => s.tileState[tile.id]?.activeTab as string | undefined);
   const tabs = tile.content.tabs;
-  const active = tabs.find((t) => t.id === activeTab) ?? tabs[0];
+  const active = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
 
   return (
     <Tabs
@@ -109,16 +110,16 @@ function ContainerTile({
       onValueChange={(next) => actions.setTileState(tile.id, { activeTab: next })}
       className="flex size-full min-h-0 flex-col"
     >
-      <TabsList aria-label={tile.title ?? "Container tabs"}>
-        {tabs.map((t) => (
-          <TabsTrigger key={t.id} value={t.id}>
-            {t.label}
+      <TabsList aria-label={tile.title ?? t("charts.dashboard.containerTabs")}>
+        {tabs.map((tab) => (
+          <TabsTrigger key={tab.id} value={tab.id}>
+            {tab.label}
           </TabsTrigger>
         ))}
       </TabsList>
-      {tabs.map((t) => (
-        <TabsContent key={t.id} value={t.id} className="flex min-h-0 flex-1 flex-col gap-2">
-          {t.children.map((childId) => (
+      {tabs.map((tab) => (
+        <TabsContent key={tab.id} value={tab.id} className="flex min-h-0 flex-1 flex-col gap-2">
+          {tab.children.map((childId) => (
             <ContainerChild
               key={childId}
               tileId={childId}
@@ -127,7 +128,7 @@ function ContainerTile({
               variables={variables}
               emit={emit}
               width={size.width}
-              height={Math.max(80, Math.floor(size.height / Math.max(t.children.length, 1)))}
+              height={Math.max(80, Math.floor(size.height / Math.max(tab.children.length, 1)))}
             />
           ))}
         </TabsContent>
