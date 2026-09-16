@@ -313,6 +313,22 @@
       "title": "KPI Cards — How reliable is it?",
       "description": "\"How reliable is it?\" — a ratio/streak headline over a 30-day strip of day cells, missed days marked by shape as well as colour, with the current and longest streaks and a comparison to the prior 30 days.",
       "categories": ["kpi-card"]
+    },
+    {
+      "name": "infographic-cohort-retention-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-cohort-retention-01",
+      "title": "Infographic — Do customers stay?",
+      "description": "\"Do customers stay?\" — a triangular cohort retention heatmap: one row per monthly signup cohort, one column per month since signup, shaded by the share still active. A cohort younger than N months draws an empty cell, never a fabricated zero. One cohort is called out with a peak ring and a stated, computed gap against its named peers.",
+      "categories": ["infographic"]
+    },
+    {
+      "name": "infographic-part-to-whole-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-part-to-whole-01",
+      "title": "Infographic — Where does the money go?",
+      "description": "\"Where does the money go?\" — a two-level treemap of Q3 cost, category → sub-category, drawn in one neutral mono shade except for the single highlighted tile, outlined and named with a Leader + HaloText callout stating its share and the change from last quarter. Tile area is exactly proportional to cost.",
+      "categories": ["infographic"]
     }
   ]
 }
