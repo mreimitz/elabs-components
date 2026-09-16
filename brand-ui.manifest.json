@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T11:07:56.173Z",
+  "generatedAt": "2026-09-16T11:13:46.360Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -27149,6 +27149,18 @@
             {
               "name": "Variant",
               "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "XesParseError",
+              "module": "packages/process/src/core/adapters/xes.ts"
+            },
+            {
+              "name": "XesParseOptions",
+              "module": "packages/process/src/core/adapters/xes.ts"
+            },
+            {
+              "name": "XesParseResult",
+              "module": "packages/process/src/core/adapters/xes.ts"
             }
           ],
           "otherExports": [
@@ -27227,6 +27239,10 @@
             {
               "name": "fromFlatRows",
               "module": "packages/process/src/core/adapters/flat.ts"
+            },
+            {
+              "name": "fromXes",
+              "module": "packages/process/src/core/adapters/xes.ts"
             },
             {
               "name": "generateBpi2012Subset",

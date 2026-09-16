@@ -152,3 +152,7 @@ export {
 export type { Deviation, DeviationType, TraceReplayResult } from "./token-replay";
 export { conformanceRateSeries } from "./conformance";
 export type { ConformanceBucket, ConformanceRatePoint, ConformanceResult } from "./conformance";
+
+// fromXes — RM-063
+export { fromXes } from "./adapters/xes";
+export type { XesParseError, XesParseOptions, XesParseResult } from "./adapters/xes";
