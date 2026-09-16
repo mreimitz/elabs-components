@@ -10,6 +10,14 @@ packages: ["@elabs-ai/components-ui", "@elabs-ai/components-charts", "@elabs-ai/
 Metrics-first overview screen: KPI tiles on top, charts in the middle,
 a records table below. Template source: `templates/dashboard.tsx` (generated from this Storybook story by `pnpm gen`).
 
+> **Looking for the interactive dashboard SHEET surface instead** — a drag-and-drop grid of
+> tiles with selection, edit mode and bookmarks (`@elabs-ai/components-charts/dashboard`, ADR
+> 0037)? This playbook covers the simpler, static KPI-overview layout below; the sheet surface
+> is a different, larger building block. See `docs/CONSUMING.md`'s "Dashboard surface" section
+> for how to install and wire it, and `packages/charts/src/dashboard/README.md` for the full
+> API. A dedicated playbook for it is planned (RM-088) — this pointer will be replaced by that
+> rewrite, not duplicated.
+
 ## Building blocks
 
 | Layer  | Components                                                                                | From                          |

@@ -603,6 +603,46 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   package's own hook — worked example:
   `docs/examples/process-explorer-external-selection`.
 
+- **`@elabs-ai/components-charts/dashboard`** (ADR 0037) — the dashboard SHEET surface: a
+  spec-driven grid of tiles (KPIs, charts, filters, text, host-registered kinds) with selection,
+  edit mode and a bookmark/interaction graph, published as its own subpath so `charts`'s main
+  barrel stays free of it. Four things to know before you reach for it:
+
+  1. **Import from the subpath, not the package root.**
+     ```tsx
+     import {
+       DashboardProvider,
+       DashboardSheet,
+       createLocalSelectionDriver,
+       createTileRegistry,
+     } from "@elabs-ai/components-charts/dashboard";
+     ```
+  2. **`DashboardProvider` owns one store per sheet.** Give it a normalised `spec`, a `tiles`
+     registry (a list, a `kind → definition` map, or `createTileRegistry(...)`), and render
+     `<DashboardSheet />` inside it — every hook (`useDashboard`, `useSelection`, `useTile`, …)
+     reads that provider's context.
+  3. **The driver seam is how selection scales past this package.** The default
+     `createLocalSelectionDriver()` intersects rows in memory (prototype scale, roughly 100k
+     rows). Swap the `driver` prop for your own `SelectionDriver` (`core/selection.ts`) to hand
+     selection to a host's associative engine instead — worked example, including the
+     asynchronous, self-historied case:
+     `packages/charts/src/dashboard/examples/engine-driver/` (`README.md` in
+     `packages/charts/src/dashboard/README.md`'s "Drivers" section). The matching seam for
+     mounting a HOST's own visualisation (e.g. a nebula.js object) inside a tile is
+     `packages/charts/src/dashboard/examples/qlik-object-tile/`.
+  4. **Test it with the engine-free double**, the same pattern as the main `charts` barrel:
+     ```ts
+     vi.mock("@elabs-ai/components-charts/dashboard", async () =>
+       import("@elabs-ai/components-charts/dashboard/test"),
+     );
+     ```
+     `./dashboard/test` never imports `@dnd-kit/*`/visx/d3/motion or the real dashboard barrel, so
+     a consumer's test suite renders sheets without pulling in the rendering/drag engines.
+
+  A `table`/`chat`/`process-map` tile kind is host-registered on `DashboardProvider`'s `tiles`
+  prop (or shipped as a copy-own registry block, D4) — never imported from inside `dashboard/`
+  itself, which composes only `charts`/`ui`/`tokens`/`icons`.
+
 ## 7. Make your coding agent brand-ui-aware
 
 Installing the packages does not tell an AI coding agent what exists. Without

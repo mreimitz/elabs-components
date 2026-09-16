@@ -15,6 +15,10 @@ export interface DashboardContextValue {
   onRefresh?: (tileId: string) => void;
   /** A `button` tile's `{ type: "host" }` action (or any kind's own host action). */
   onAction?: (id: string) => void;
+  // host pass-through — RM-085: opaque host-supplied values a tile kind may read through
+  // context (a nebula.js `renderObject`, say) — never read or interpreted by the dashboard
+  // surface itself.
+  host?: Record<string, unknown>;
 }
 
 export const DashboardContext = createContext<DashboardContextValue | null>(null);

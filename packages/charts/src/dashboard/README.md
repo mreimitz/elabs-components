@@ -116,3 +116,51 @@ selection and highlight; `drill` calls the host's `onNavigate(sheetId, { carry }
 with `data-highlighted` (a test/host hook; nothing is styled off it). Edit pairs with
 `DashboardInteractionsEditor` (a matrix up to 12 tiles, a list above) or
 `DashboardInteractionsDialog`.
+
+## Drivers (RM-085)
+
+`DashboardProvider`'s `driver` prop (default `createLocalSelectionDriver()`) is the ONLY thing
+that computes selection state — the sheet reads `SelectionDriver.getSnapshot()` and never
+intersects rows itself. The bundled local driver is synchronous, owns no history beyond a plain
+selection ring, and needs `register(tileId, rows, fields)` to know which tiles share which field.
+A host with its own associative engine (a Qlik-shaped `SelectionObject`, or any BI platform's
+selection API) replaces the driver wholesale instead: implement `SelectionDriver`
+(`core/selection.ts`) over your engine's own client, same as
+`examples/engine-driver/create-engine-driver.ts` does over a mock one.
+
+That example exists specifically to prove the seam against the HARD case: a driver that is
+**asynchronous** (an engine answers `select` later, through its own event) and **owns its own
+history** (an associative engine's `back`/`forward` are not the local driver's selection ring, and
+neither is the store's OWN `history` — that field is the layout/edit undo stack, and a selection
+made through any driver never pushes a step onto it). Read
+`examples/engine-driver/mock-engine.ts` and `create-engine-driver.ts` for the worked adapter, and
+`examples/engine-driver/engine-driver.stories.tsx` ("Dashboard/Recipes/External engine driver")
+for it driving `DashboardSheet` and `DashboardSelectionBar` end to end, with a side panel proving
+the sheet renders the engine's own `getStates()` output unmodified.
+
+`DashboardSelectionBar`'s Step back/forward buttons need the SAME driver instance passed as their
+own `driver` prop to reflect `canBack()`/`canForward()` correctly (`SelectionBarDriver`,
+`chrome/dashboard-selection-bar.tsx`) — the store itself does not mirror those two flags.
+
+## Embedding in a BI host (RM-085)
+
+Two seams let a sheet sit inside a larger BI platform's mashup rather than only a standalone
+prototype:
+
+- **Selection** — swap the `driver` prop, as above. Every built-in tile kind (`filter`, `chart`,
+  the selection bar) already reads/writes through `SelectionSnapshot`/`SelectionDriver`, never a
+  concrete engine, so nothing else in the sheet changes.
+- **Rendering a host's own object** — `DashboardProvider`'s optional `host?: Record<string,
+unknown>` prop (`dashboard-sheet/dashboard-provider.tsx`) passes opaque, host-defined values down
+  to a tile kind through context; the sheet itself never reads or interprets `host` (D5). This is
+  how `examples/qlik-object-tile/` mounts a nebula.js visualisation: its `qlik-object` tile kind
+  reads `host.renderObject` and calls it with the mounted element, the tile's `objectId`, and
+  `{ interactions }` — `DashboardTileProps.interactions` (`Required<ChartInteractions>`,
+  `{ passive, active, select, edit }`) is IDENTICAL in shape to nebula.js's own `Interactions`
+  type, so the mapping is the identity function, not a translation layer. See
+  `examples/qlik-object-tile/README.md` for the worked `host` object and the view/edit interaction
+  split.
+
+Neither seam adds a runtime dependency to this package: no `@nebula.js/*` import anywhere, and
+the associative-engine example's `MockEngine` is a fixture, not an SDK (`.claude/rules/
+dashboard.md`'s import boundary — `dashboard/` imports only `charts`/`ui`/`tokens`/`icons`).

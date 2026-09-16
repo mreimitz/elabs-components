@@ -90,6 +90,12 @@ export interface DashboardProviderProps {
   bookmarks?: { storage: "spec" | "host" };
   /** Strings for the sheet chrome; missing keys fall back to English. */
   labels?: Partial<DashboardLabels>;
+  // host pass-through — RM-085: opaque host-supplied values a tile kind may read through
+  // context (`examples/qlik-object-tile` is the one place that does, today) — never
+  // interpreted by the sheet itself (D5: `dashboard/` renders, it does not own a runtime).
+  // A `renderObject` function for a `qlik-object`-shaped tile kind is the motivating case; a
+  // host may put anything here.
+  host?: Record<string, unknown>;
   children: ReactNode;
 }
 
@@ -118,6 +124,7 @@ export function DashboardProvider({
   initialState,
   bookmarks,
   labels,
+  host,
   children,
 }: DashboardProviderProps) {
   const callbacks = useRef({ onChange, onSelectionChange, onNavigate, onAction });
@@ -251,8 +258,10 @@ export function DashboardProvider({
           : callbacks.current.onNavigate?.(sheetId),
       onRefresh,
       onAction: (id) => callbacks.current.onAction?.(id),
+      // host pass-through — RM-085
+      host,
     }),
-    [store, registry, mergedLabels, onRefresh],
+    [store, registry, mergedLabels, onRefresh, host],
   );
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;
