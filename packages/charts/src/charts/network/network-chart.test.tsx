@@ -295,3 +295,64 @@ describe("NetworkChart — the force layout is settled, not animated", () => {
     ).toEqual(firstTransforms);
   });
 });
+
+describe("NetworkChart — drag to peek (force only)", () => {
+  const svgBody = (container: HTMLElement) =>
+    container.querySelector('[data-slot="network-chart-body"]') as SVGSVGElement;
+  const translateOf = (container: HTMLElement, id: string) =>
+    nodeMark(container, id).getAttribute("transform");
+
+  it("pulls the node with the pointer and springs it home on release, firing nothing", () => {
+    const onDatapointClick = vi.fn();
+    const { container } = render(
+      <NetworkChart
+        draggable
+        layout="force"
+        links={LINKS}
+        nodes={NODES}
+        onDatapointClick={onDatapointClick}
+      />,
+    );
+    const settled = translateOf(container, "b");
+    const circle = nodeMark(container, "b").querySelector("circle") as Element;
+
+    fireEvent.pointerDown(circle, { clientX: 100, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(svgBody(container), { clientX: 140, clientY: 70, pointerId: 1 });
+    expect(translateOf(container, "b")).not.toBe(settled);
+
+    fireEvent.pointerUp(svgBody(container), { pointerId: 1 });
+    // The settled layout is the answer: release restores it exactly.
+    expect(translateOf(container, "b")).toBe(settled);
+    expect(onDatapointClick).not.toHaveBeenCalled();
+  });
+
+  it("ignores the drag on a layout with no free positions", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { container } = render(
+      <NetworkChart draggable layout="circular" links={LINKS} nodes={NODES} />,
+    );
+    const settled = translateOf(container, "b");
+    const circle = nodeMark(container, "b").querySelector("circle") as Element;
+    fireEvent.pointerDown(circle, { clientX: 100, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(svgBody(container), { clientX: 140, clientY: 70, pointerId: 1 });
+    expect(translateOf(container, "b")).toBe(settled);
+    warn.mockRestore();
+  });
+
+  it("leaves the keyboard path complete beside the drag (#274)", () => {
+    const { container } = render(
+      <NetworkChart
+        draggable
+        layout="force"
+        links={LINKS}
+        nodes={NODES}
+        onDatapointClick={() => {}}
+      />,
+    );
+    const layer = container.querySelector('[data-slot="chart-datapoint-layer"]') as HTMLElement;
+    const buttons = within(layer).getAllByRole("button");
+    expect(buttons).toHaveLength(NODES.length);
+    expect(buttons.filter((b) => b.getAttribute("tabindex") === "0")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Alpha, one, value 9, 2 links" })).toBeTruthy();
+  });
+});
