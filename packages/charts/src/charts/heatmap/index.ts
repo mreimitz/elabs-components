@@ -18,6 +18,7 @@ export {
 export { HeatmapCell, type HeatmapCellProps } from "./heatmap-cell";
 export {
   type HeatmapCellDatum,
+  type HeatmapCellState,
   type HeatmapContextValue,
   type HeatmapEmptyValue,
   type HeatmapHighlight,

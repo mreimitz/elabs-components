@@ -28,8 +28,19 @@ export type HeatmapVariant = "matrix" | "calendar";
  */
 export type HeatmapPalette = "sequential" | "diverging" | "mono";
 
-/** What an empty cell (`null`, or `0`) draws. */
+/**
+ * What a cell with nothing to shade draws. `"quiet"` gives each of the two
+ * non-value states its own mark (a measured `0` is a `QuietDot` pinprick; a
+ * `null` is a hairline outline of the empty cell); `"blank"` draws neither.
+ */
 export type HeatmapEmptyValue = "quiet" | "blank";
+
+/**
+ * Which of three facts a cell holds (#251). Zero is not missing: a `0` was
+ * measured and came back flat, a `null` was never measured — on a diverging
+ * ramp the first is the pivot of the scale and the second is off it.
+ */
+export type HeatmapCellState = "value" | "zero" | "missing";
 
 /**
  * Which cell gets the dashed `PeakRing`. A predicate receives the caller's own
@@ -47,6 +58,8 @@ export interface HeatmapCellDatum {
   y: string;
   /** The numeric value, or `null` for a missing/non-numeric one. */
   value: number | null;
+  /** `"missing"` for `null`, `"zero"` for `0`, `"value"` otherwise. */
+  state: HeatmapCellState;
   /** The caller's own data row. */
   datum: Record<string, unknown>;
   /** Index into the caller's `data` array. */
@@ -73,6 +86,13 @@ export interface HeatmapCellDatum {
   fillOpacity: number;
   /** Index into {@link HeatmapContextValue.buckets}; `-1` when empty. */
   bucketIndex: number;
+  /**
+   * Fill for a value label printed ON this cell — chosen by the plate it sits
+   * on, not by the theme, so the number never vanishes into a deep step (#238).
+   */
+  ink: string;
+  /** Halo for that label: the opposite ink anchor. */
+  inkHalo: string;
   /** True when this is the cell the peak ring is drawn around. */
   isPeak: boolean;
   /** UTC midnight of the day, in `variant="calendar"`. `null` otherwise. */

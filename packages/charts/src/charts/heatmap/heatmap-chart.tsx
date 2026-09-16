@@ -45,13 +45,14 @@ import {
   type CSSProperties,
   forwardRef,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   useCallback,
   useId,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { type ChartRevealOn, getChartStaggerDotMs } from "../animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { resolvePalette } from "../chart-context";
@@ -65,7 +66,6 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "../chart-datapoint-layer";
-import { ChartFallback } from "../chart-fallback";
 import { useChartValueFormatter } from "../chart-formatters";
 import { ChartLoadingLabel } from "../chart-loading-label";
 import type { ChartValueFormat } from "../value-format";
@@ -90,7 +90,10 @@ import {
   buildHeatmapBuckets,
   bucketIndexOf,
   continuousInk,
+  continuousStepInk,
   heatmapDomain,
+  HEATMAP_INK_ON_LIGHT_PLATE,
+  inkHalo,
   heatmapSummary,
   sampleContinuousInk,
 } from "./heatmap-scale";
@@ -167,9 +170,11 @@ export interface HeatmapChartProps extends ChartInteractionProps {
    */
   highlight?: HeatmapHighlight;
   /**
-   * What a `null` or `0` cell draws. `"quiet"` (default) is the 0.9px pinprick
-   * — it says the cell was measured and the answer was nothing, which a blank
-   * cannot. `"blank"` leaves it empty.
+   * What a cell with nothing to shade draws. `"quiet"` (default) keeps the two
+   * facts apart: a measured `0` is the 0.9px pinprick (measured, and the answer
+   * was nothing), a `null` is a hairline outline of the empty cell (never
+   * measured). Each gets its own legend key, shown only when the grid holds
+   * one. `"blank"` draws neither.
    */
   emptyValue?: HeatmapEmptyValue;
   /** Column order. Defaults to first-seen order in `data`. */
@@ -194,8 +199,15 @@ export interface HeatmapChartProps extends ChartInteractionProps {
   revealOn?: ChartRevealOn;
   /** Layout-shaped skeleton instead of the data. */
   loading?: boolean;
-  /** Message shown when there is nothing to plot. */
+  /** Supporting sentence of the empty state, shown when there is nothing to plot. */
   emptyMessage?: string;
+  /** Title of the empty state. Default `"No data"`. */
+  emptyTitle?: string;
+  /**
+   * An action for the empty state — typically the control that undoes the
+   * filter which emptied the grid. Rendered below the message.
+   */
+  emptyAction?: ReactNode;
   /**
    * Accessible name for the chart region. Defaults to a generated summary
    * ("Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.") — passing one both
@@ -349,6 +361,10 @@ interface HeatmapScale {
   peakId: string | null;
   /** The peak cell's facts, for the accessible sentence. */
   peak: { x: string; y: string; value: number } | null;
+  /** How many cells hold a measured `0`. */
+  zeroCount: number;
+  /** How many cells hold no value at all (`null`). */
+  missingCount: number;
 }
 
 function buildHeatmapScale(
@@ -361,6 +377,8 @@ function buildHeatmapScale(
   const values = grid.cells
     .map((cell) => cell.value)
     .filter((value): value is number => value !== null);
+  const missingCount = grid.cells.length - values.length;
+  const zeroCount = values.filter((value) => value === 0).length;
   const min = values.length ? Math.min(...values) : 0;
   const max = values.length ? Math.max(...values) : 0;
   const maxAbs = values.length ? Math.max(Math.abs(min), Math.abs(max)) : 0;
@@ -415,6 +433,8 @@ function buildHeatmapScale(
       peakCell && peakCell.value !== null
         ? { x: peakCell.x, y: peakCell.y, value: peakCell.value }
         : null,
+    zeroCount,
+    missingCount,
   };
 }
 
@@ -513,8 +533,20 @@ function HeatmapBody({
             color = scale.buckets[bucketIndex]?.color ?? null;
           }
         }
+        // A label sits on the cell's plate only in `mode="cell"`; a dot is
+        // area-encoded and rarely covers its label, so there the label keeps
+        // the plot's own text ink against the plot ground.
+        const ink =
+          mode === "cell" && color !== null
+            ? scale.continuous
+              ? continuousStepInk(fillOpacity)
+              : (scale.buckets[bucketIndex]?.ink ?? HEATMAP_INK_ON_LIGHT_PLATE)
+            : HEATMAP_INK_ON_LIGHT_PLATE;
         return {
           ...cell,
+          state: cell.value === null ? "missing" : cell.value === 0 ? "zero" : "value",
+          ink,
+          inkHalo: inkHalo(ink),
           x0,
           y0,
           width: bandWidth,
@@ -525,7 +557,7 @@ function HeatmapBody({
           isPeak: scale.peakId === cell.id,
         };
       }),
-    [bandHeight, bandWidth, grid.cells, scale, xScale, yScale],
+    [bandHeight, bandWidth, grid.cells, mode, scale, xScale, yScale],
   );
 
   const targets = useMemo(() => {
@@ -868,7 +900,9 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     cellRadius = 4,
     className,
     data,
+    emptyAction,
     emptyMessage = "No data to plot.",
+    emptyTitle = "No data",
     emptyValue = "quiet",
     highlight = "max",
     loading = false,
@@ -938,10 +972,11 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
           columns: grid.columns,
           calendar: variant === "calendar",
           peak: scale.peak,
+          missing: scale.missingCount,
         },
         formatValue,
       ),
-    [formatValue, grid.columns, grid.rows, scale.peak, variant],
+    [formatValue, grid.columns, grid.rows, scale.missingCount, scale.peak, variant],
   );
 
   const {
@@ -952,13 +987,11 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     descId,
   } = useChartA11yContainerProps(accessibleLabel ?? summary, accessibleDescription);
 
-  if (grid.cells.length === 0 && !loading) {
-    return (
-      <div className={cn("w-full", className)} ref={ref} style={style}>
-        <ChartFallback className="h-full min-h-24 w-full" message={emptyMessage} />
-      </div>
-    );
-  }
+  // Empty is a STATE of the chart region, not an exit from it (#256): it renders
+  // inside the same aspect-ratio box as the cells and the loading skeleton, so
+  // the region keeps its footprint, its figure name and its slot when a filter
+  // empties the grid or data arrives.
+  const isEmpty = grid.cells.length === 0 && !loading;
 
   // A calendar never squeezes its week columns below the point where a month
   // tick stops being legible — it scrolls instead. The scroll box is OUTSIDE
@@ -983,39 +1016,60 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
         className="relative w-full overflow-x-auto"
         style={{ aspectRatio: aspectRatio ?? (variant === "calendar" ? "6 / 1" : "16 / 9") }}
       >
-        <div className="h-full" style={minPlotWidth ? { minWidth: minPlotWidth } : undefined}>
-          <ParentSize debounceTime={10}>
-            {({ width, height }) =>
-              width > 0 && height > 0 ? (
-                <HeatmapBody
-                  cellRadius={cellRadius}
-                  emptyValue={emptyValue}
-                  formatColumnLabel={formatColumnLabel}
-                  formatValue={formatValue}
-                  grid={grid}
-                  height={height}
-                  loading={loading}
-                  margin={margin}
-                  mode={resolvedMode}
-                  revealOn={revealOn}
-                  scale={scale}
-                  showValues={resolvedShowValues}
-                  variant={variant}
-                  width={width}
-                />
-              ) : null
-            }
-          </ParentSize>
-        </div>
+        {isEmpty ? (
+          // The one live region of the empty state. `StatePanel kind="empty"`
+          // carries no role of its own, so the wrapper announces it.
+          <div
+            aria-live="polite"
+            className="size-full"
+            data-slot="heatmap-chart-empty"
+            role="status"
+          >
+            <StatePanel
+              actions={emptyAction}
+              className="size-full gap-1 overflow-hidden py-2"
+              description={emptyMessage}
+              kind="empty"
+              title={emptyTitle}
+            />
+          </div>
+        ) : (
+          <div className="h-full" style={minPlotWidth ? { minWidth: minPlotWidth } : undefined}>
+            <ParentSize debounceTime={10}>
+              {({ width, height }) =>
+                width > 0 && height > 0 ? (
+                  <HeatmapBody
+                    cellRadius={cellRadius}
+                    emptyValue={emptyValue}
+                    formatColumnLabel={formatColumnLabel}
+                    formatValue={formatValue}
+                    grid={grid}
+                    height={height}
+                    loading={loading}
+                    margin={margin}
+                    mode={resolvedMode}
+                    revealOn={revealOn}
+                    scale={scale}
+                    showValues={resolvedShowValues}
+                    variant={variant}
+                    width={width}
+                  />
+                ) : null
+              }
+            </ParentSize>
+          </div>
+        )}
       </div>
-      {showLegend ? (
+      {showLegend && !isEmpty ? (
         <HeatmapLegend
           continuous={scale.continuous}
           emptyValue={emptyValue}
           formatValue={formatValue}
           hi={scale.hi}
           lo={scale.lo}
+          missingCount={scale.missingCount}
           swatches={scale.swatches}
+          zeroCount={scale.zeroCount}
         />
       ) : null}
     </div>
