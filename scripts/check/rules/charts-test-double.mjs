@@ -11,7 +11,7 @@
  *       `@tanstack/react-virtual`, or a package/family barrel.
  *   (c) WIRING — `./test` in `exports`, `publishConfig.exports`, and a tsup entry.
  *   (d) MANIFEST EXCLUSION — no `…/test` subpath is crawled into brand-ui.manifest.json.
- * Shared helpers are exported for `process-test-double`.
+ * Shared helpers are exported for `process-test-double` and `dashboard-test-double`.
  */
 import { posix } from "node:path";
 
@@ -93,22 +93,35 @@ export function engineIsolationFindings(ctx, testDir, { forbidden, isForbiddenBa
   return out;
 }
 
-/** Rung (c) → problem strings. */
-export function checkWiring(pkgJson, tsupSrc) {
+/** Rung (c) → problem strings. `subpath` is the package.json exports key (default `"./test"`). */
+export function checkWiring(pkgJson, tsupSrc, subpath = "./test") {
   const problems = [];
-  if (!pkgJson?.exports?.["./test"])
-    problems.push('package.json "exports" is missing the "./test" key');
-  if (!pkgJson?.publishConfig?.exports?.["./test"])
-    problems.push('package.json "publishConfig.exports" is missing the "./test" key');
-  if (!/["']test\/index["']\s*:/.test(tsupSrc) && !/test\/index\.ts/.test(tsupSrc))
-    problems.push('tsup.config.ts has no entry for "test/index" (src/test/index.ts)');
+  if (!pkgJson?.exports?.[subpath])
+    problems.push(`package.json "exports" is missing the "${subpath}" key`);
+  if (!pkgJson?.publishConfig?.exports?.[subpath])
+    problems.push(`package.json "publishConfig.exports" is missing the "${subpath}" key`);
+  const entryKey = `${subpath.replace(/^\.\//, "")}/index`;
+  const entrySrcSuffix = `${entryKey}.ts`;
+  const entryKeyPattern = entryKey.replace(/[/\\.]/g, (c) => `\\${c}`);
+  if (
+    !new RegExp(`["']${entryKeyPattern}["']\\s*:`).test(tsupSrc) &&
+    !tsupSrc.includes(entrySrcSuffix)
+  )
+    problems.push(`tsup.config.ts has no entry for "${entryKey}" (src/${entrySrcSuffix})`);
   return problems;
 }
 
-/** Rungs (b)(c)(d) as findings for one package dir (`packages/<name>`). */
-export function sharedRungFindings(ctx, pkgDir, isolation, barrelReason) {
+/**
+ * Rungs (b)(c)(d) as findings for one package dir (`packages/<name>`).
+ * `opts.testDir` overrides the double's source dir (default `${pkgDir}/src/test`);
+ * `opts.subpath` overrides the package.json exports key (default `"./test"`) — both let a
+ * sibling rule (e.g. `dashboard-test-double`) point at a nested double while wiring still
+ * lives in the package root's `package.json`/`tsup.config.ts`.
+ */
+export function sharedRungFindings(ctx, pkgDir, isolation, barrelReason, opts = {}) {
   const out = [];
-  const testDir = `${pkgDir}/src/test`;
+  const testDir = opts.testDir ?? `${pkgDir}/src/test`;
+  const subpath = opts.subpath ?? "./test";
   for (const v of engineIsolationFindings(ctx, testDir, isolation))
     out.push({
       file: v.file,
@@ -121,7 +134,7 @@ export function sharedRungFindings(ctx, pkgDir, isolation, barrelReason) {
   const pkgPath = `${pkgDir}/package.json`;
   const tsupPath = `${pkgDir}/tsup.config.ts`;
   if (ctx.exists(pkgPath) && ctx.exists(tsupPath)) {
-    for (const p of checkWiring(ctx.json(pkgPath), ctx.readFile(tsupPath)))
+    for (const p of checkWiring(ctx.json(pkgPath), ctx.readFile(tsupPath), subpath))
       out.push({ file: pkgPath, line: 1, msg: `(c) wiring: ${p}` });
   } else
     out.push({

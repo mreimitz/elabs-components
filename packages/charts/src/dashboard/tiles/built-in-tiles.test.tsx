@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SchemaForm } from "@elabs-ai/components-ui";
 
@@ -32,7 +32,7 @@ Element.prototype.releasePointerCapture ??= () => {};
 Element.prototype.scrollIntoView ??= () => {};
 
 describe("withBuiltInTiles", () => {
-  it("registers exactly the nine built-in kinds", () => {
+  it("registers exactly the ten built-in kinds", () => {
     const kinds = withBuiltInTiles({});
     expect(kinds.map((k) => k.kind).sort()).toEqual(
       [
@@ -40,6 +40,7 @@ describe("withBuiltInTiles", () => {
         "chart",
         "container",
         "divider",
+        "filter",
         "heading",
         "image",
         "metric",
@@ -47,6 +48,12 @@ describe("withBuiltInTiles", () => {
         "variable",
       ].sort(),
     );
+  });
+
+  it("includes the filter tile kind (RM-076)", () => {
+    expect(builtInTiles.filter).toBeDefined();
+    const kinds = withBuiltInTiles({});
+    expect(kinds.some((k) => k.kind === "filter")).toBe(true);
   });
 
   it("lets a host kind win over a built-in of the same name", () => {
@@ -308,5 +315,203 @@ describe("built-in tile kinds render", () => {
     await screen.findByRole("region", { name: "Test sheet" });
     expect(screen.getAllByText("First tab child").length).toBeGreaterThan(0);
     expect(screen.queryByText("Second tab child")).toBeNull();
+  });
+});
+
+describe("RM-075 acceptance coverage (result-file follow-up)", () => {
+  it("button tile's applyBookmark restores the fixture bookmark's selection and variables", async () => {
+    const user = userEvent.setup();
+    renderSheet(
+      sheetWith(
+        [
+          {
+            id: "region",
+            kind: "variable",
+            title: "Region",
+            layout: { x: 0, y: 0, w: 6, h: 1 },
+            content: { name: "region", control: "select", options: ["EMEA", "APAC"] },
+          },
+          {
+            id: "apply",
+            kind: "button",
+            layout: { x: 6, y: 0, w: 3, h: 1 },
+            content: { label: "Apply bookmark", action: { type: "applyBookmark", id: "bm1" } },
+          },
+        ],
+        {
+          variables: [{ name: "region", type: "string", default: "EMEA", label: "Region" }],
+          bookmarks: [
+            { id: "bm1", label: "APAC view", selection: {}, variables: { region: "APAC" } },
+          ],
+        },
+      ),
+    );
+    const trigger = await screen.findByRole("combobox", { name: "Region" });
+    expect(trigger).toHaveTextContent("EMEA");
+    const button = await screen.findByRole("button", { name: "Apply bookmark" });
+    await user.click(button);
+    await waitFor(() => expect(trigger).toHaveTextContent("APAC"));
+  });
+
+  it("button tile's navigate calls DashboardProvider's onNavigate with the target sheet id", async () => {
+    const user = userEvent.setup();
+    const onNavigate = vi.fn();
+    render(
+      <div style={{ width: 960, height: 540 }}>
+        <DashboardProvider
+          spec={sheetWith([
+            {
+              id: "go",
+              kind: "button",
+              layout: { x: 0, y: 0, w: 3, h: 1 },
+              content: { label: "Go", action: { type: "navigate", sheetId: "sheet-2" } },
+            },
+          ])}
+          tiles={withBuiltInTiles({})}
+          onNavigate={onNavigate}
+        >
+          <DashboardSheet />
+        </DashboardProvider>
+      </div>,
+    );
+    const button = await screen.findByRole("button", { name: "Go" });
+    await user.click(button);
+    expect(onNavigate).toHaveBeenCalledWith("sheet-2");
+  });
+
+  it("variable tile: changing the variable shows/hides a visibleWhen tile", async () => {
+    const user = userEvent.setup();
+    renderSheet(
+      sheetWith(
+        [
+          {
+            id: "region",
+            kind: "variable",
+            title: "Region",
+            layout: { x: 0, y: 0, w: 6, h: 1 },
+            content: { name: "region", control: "select", options: ["EMEA", "APAC"] },
+          },
+          {
+            id: "apac-note",
+            kind: "text",
+            visibleWhen: "variables.region == 'APAC'",
+            layout: { x: 6, y: 0, w: 6, h: 1 },
+            content: { body: "APAC detail" },
+          },
+        ],
+        { variables: [{ name: "region", type: "string", default: "EMEA", label: "Region" }] },
+      ),
+    );
+    expect(screen.queryByText("APAC detail")).toBeNull();
+    const trigger = await screen.findByRole("combobox", { name: "Region" });
+    await user.click(trigger);
+    const apac = await screen.findByRole("option", { name: "APAC" });
+    await user.click(apac);
+    expect(await screen.findByText("APAC detail")).toBeInTheDocument();
+    await user.click(trigger);
+    const emea = await screen.findByRole("option", { name: "EMEA" });
+    await user.click(emea);
+    await waitFor(() => expect(screen.queryByText("APAC detail")).toBeNull());
+  });
+
+  it("chart tile density: a 4×2 cell renders a different density tier than a 12×6 cell", async () => {
+    const { container } = renderSheet(
+      sheetWith([
+        {
+          id: "small",
+          kind: "chart",
+          layout: { x: 0, y: 0, w: 4, h: 2 },
+          content: { type: "bar", data: [{ cat: "a", v: 1 }], x: "cat", series: [{ key: "v" }] },
+        },
+        {
+          id: "big",
+          kind: "chart",
+          layout: { x: 4, y: 0, w: 12, h: 6 },
+          content: { type: "bar", data: [{ cat: "a", v: 1 }], x: "cat", series: [{ key: "v" }] },
+        },
+      ]),
+    );
+    await waitFor(() => {
+      expect(container.querySelector('[data-tile-id="small"]')).not.toBeNull();
+      expect(container.querySelector('[data-tile-id="big"]')).not.toBeNull();
+    });
+    const small = container.querySelector('[data-tile-id="small"]');
+    const big = container.querySelector('[data-tile-id="big"]');
+    // The tier ChartFrame receives as `density` (dashboard-tile.tsx feeds the SAME value
+    // into both `[data-tile-id]`'s `data-density` and the frame-owned tile's `frame.density`
+    // prop — ChartFrame itself renders no DOM attribute of its own to assert against).
+    expect(small?.getAttribute("data-density")).not.toBe(big?.getAttribute("data-density"));
+  });
+
+  it("metric tile: the sparkline is hidden at density xs and shown from sm up (RM-075 acceptance)", async () => {
+    const { container } = renderSheet(
+      sheetWith([
+        {
+          id: "xs",
+          kind: "metric",
+          layout: { x: 0, y: 0, w: 2, h: 1 },
+          content: { label: "Tiny", value: 1, series: [1, 2, 3] },
+        },
+        {
+          id: "big",
+          kind: "metric",
+          layout: { x: 6, y: 0, w: 12, h: 4 },
+          content: { label: "Big", value: 2, series: [1, 2, 3] },
+        },
+      ]),
+    );
+    await waitFor(() => {
+      expect(container.querySelector('[data-tile-id="xs"]')).toHaveAttribute("data-density", "xs");
+    });
+    const xsTile = container.querySelector('[data-tile-id="xs"]') as HTMLElement;
+    const bigTile = container.querySelector('[data-tile-id="big"]') as HTMLElement;
+    // The `Sparkline` mark is `role="img"` (`sparkline.tsx`) — a more specific target than
+    // "svg" alone, since a tile's own kebab menu icon is also an svg.
+    expect(xsTile.querySelector('[role="img"]')).toBeNull();
+    expect(bigTile.getAttribute("data-density")).not.toBe("xs");
+    expect(bigTile.querySelector('[role="img"]')).not.toBeNull();
+  });
+
+  it("container tile: arrow keys switch tabs and move focus to the active tab", async () => {
+    const user = userEvent.setup();
+    renderSheet(
+      sheetWith([
+        {
+          id: "c1",
+          kind: "container",
+          title: "Detail",
+          layout: { x: 0, y: 0, w: 12, h: 6 },
+          content: {
+            kind: "tabs",
+            tabs: [
+              { id: "a", label: "A", children: ["h1"] },
+              { id: "b", label: "B", children: ["h2"] },
+            ],
+          },
+        },
+        {
+          id: "h1",
+          kind: "heading",
+          container: { id: "c1" },
+          layout: { x: 12, y: 0, w: 6, h: 1 },
+          content: { text: "First tab child", level: 3 },
+        },
+        {
+          id: "h2",
+          kind: "heading",
+          container: { id: "c1" },
+          layout: { x: 18, y: 0, w: 6, h: 1 },
+          content: { text: "Second tab child", level: 3 },
+        },
+      ]),
+    );
+    const tabA = await screen.findByRole("tab", { name: "A" });
+    const tabB = await screen.findByRole("tab", { name: "B" });
+    tabA.focus();
+    expect(tabA).toHaveFocus();
+    await user.keyboard("{ArrowRight}");
+    await waitFor(() => expect(tabB).toHaveFocus());
+    expect(tabB).toHaveAttribute("aria-selected", "true");
+    expect(screen.getAllByText("Second tab child").length).toBeGreaterThan(0);
   });
 });

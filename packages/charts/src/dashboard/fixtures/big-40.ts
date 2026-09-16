@@ -1,8 +1,10 @@
 /**
- * `big40` — 40 tiles in a 4-column `flow` grid: the lazy-render / virtualization fixture
- * (RM-070's `big-40`, RM-077's typed export). Cycles `chart` (bar/line/area, real seeded rows),
- * `kpi` and `text` tiles so the lazy-render story and RM-078's driven-browser checks exercise
- * real chart marks, not just placeholder boxes.
+ * `bigFortySpec` — 40 tiles in a 4-column `flow` grid: the lazy-render / virtualization
+ * fixture (RM-077's typed export). There is no RM-070 `big-40` golden JSON — this mirrors the
+ * 40-placeholder-tile `LAZY` spec RM-074's `dashboard-sheet.stories.tsx` defines inline, but
+ * with real content: `chart` (bar/line/area, real seeded rows), `kpi` and `text` tiles, so the
+ * lazy-render story and RM-078's driven-browser checks exercise real chart marks, not just
+ * placeholder boxes.
  */
 import { makeRows } from "./rows/generate";
 import type { DashboardSpec, TileSpec } from "../core/spec";
