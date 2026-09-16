@@ -21,7 +21,7 @@ vi.mock("@visx/responsive", () => {
 import { Bar } from "./bar";
 import { BarChart } from "./bar-chart";
 import {
-  EXCLUDED_MARK_OPACITY,
+  SELECTION_EXCLUDED_OPACITY,
   markSelectionPaint,
   resolveMarkState,
   type SelectionState,
@@ -114,7 +114,7 @@ describe("BarChart selectionStates", () => {
     expect(selected?.querySelector('[data-slot="bar-selection-outline"]')).not.toBeNull();
     expect(selected?.getAttribute("opacity")).toBeNull();
     expect(associated?.querySelector('[data-slot^="bar-selection-"]')).toBeNull();
-    expect(excluded?.getAttribute("opacity")).toBe(String(EXCLUDED_MARK_OPACITY));
+    expect(excluded?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
     expect(excluded?.querySelector('[data-slot="bar-selection-hatch"]')).not.toBeNull();
   });
 

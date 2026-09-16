@@ -733,7 +733,7 @@ export {
   type ChartSelectionPoint,
   type ChartSelectionProps,
   type ChartSelectionStatesResolver,
-  EXCLUDED_MARK_OPACITY,
+  SELECTION_EXCLUDED_OPACITY,
   type MarkSelectionPaint,
   markSelectionPaint,
   resolveMarkState,

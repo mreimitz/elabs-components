@@ -9,6 +9,7 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -19,7 +20,17 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import type { LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
+import {
+  type ChartHoverLinkProps,
+  ChartHoverLinkIndicator,
+  ChartHoverLinkProvider,
+} from "./chart-hover-link";
 import { ChartLoadingLabel } from "./chart-loading-label";
+import {
+  type ChartSelectionProps,
+  ChartSelectionProvider,
+  ChartSelectionSeriesLayer,
+} from "./chart-selection";
 import {
   type ChartPhase,
   type ChartStatus,
@@ -32,7 +43,7 @@ import { TimeSeriesChartInner } from "./time-series-chart-shell";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 
-export interface ComposedChartProps {
+export interface ComposedChartProps extends ChartSelectionProps, ChartHoverLinkProps {
   /** Data array — each row typically has a date and multiple numeric series */
   data: Record<string, unknown>[];
   /** Key for the x-axis (time). Default: "date" */
@@ -395,10 +406,16 @@ export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(func
     maxInteractiveDatapoints,
     accessibleLabel,
     accessibleDescription,
+    hoverCategory,
+    onHoverCategory,
+    selectionStates,
+    dimExcluded,
     ...props
   },
   forwardedRef,
 ) {
+  const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
+  const selectionHatchId = `selection-hatch-${useId().replace(/:/g, "")}`;
   const internalRef = useRef<HTMLDivElement>(null);
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
 
@@ -451,37 +468,45 @@ export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(func
       {...props}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={10}>
-        {({ width, height }) => (
-          <ChartInner
-            animationDuration={animationDuration}
-            animationEasing={animationEasing}
-            barGap={barGap}
-            barSize={barSize}
-            chartStatus={status}
-            containerRef={internalRef}
-            data={data}
-            datapointLabel={datapointLabel}
-            enterTransition={enterTransition}
-            height={height}
-            loadingLabel={loadingLabel}
-            margin={margin}
-            maxInteractiveDatapoints={maxInteractiveDatapoints}
-            copyValueOnActivate={copyValueOnActivate}
-            onDatapointClick={onDatapointClick}
-            maxBarSize={maxBarSize}
-            onPhaseChange={handlePhaseChange}
-            revealSignature={revealSignature}
-            stacked={stacked}
-            stackGap={stackGap}
-            width={width}
-            xDataKey={xDataKey}
-            xScaleType={xScaleType}
-          >
-            {children}
-          </ChartInner>
-        )}
-      </ParentSize>
+      <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
+        <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
+          <ParentSize debounceTime={10}>
+            {({ width, height }) => (
+              <ChartInner
+                animationDuration={animationDuration}
+                animationEasing={animationEasing}
+                barGap={barGap}
+                barSize={barSize}
+                chartStatus={status}
+                containerRef={internalRef}
+                data={data}
+                datapointLabel={datapointLabel}
+                enterTransition={enterTransition}
+                height={height}
+                loadingLabel={loadingLabel}
+                margin={margin}
+                maxInteractiveDatapoints={maxInteractiveDatapoints}
+                copyValueOnActivate={copyValueOnActivate}
+                onDatapointClick={onDatapointClick}
+                maxBarSize={maxBarSize}
+                onPhaseChange={handlePhaseChange}
+                revealSignature={revealSignature}
+                stacked={stacked}
+                stackGap={stackGap}
+                width={width}
+                xDataKey={xDataKey}
+                xScaleType={xScaleType}
+              >
+                {children}
+                {selectionStates ? (
+                  <ChartSelectionSeriesLayer channel="dash" hatchId={selectionHatchId} />
+                ) : null}
+                {hoverLinked ? <ChartHoverLinkIndicator /> : null}
+              </ChartInner>
+            )}
+          </ParentSize>
+        </ChartHoverLinkProvider>
+      </ChartSelectionProvider>
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}

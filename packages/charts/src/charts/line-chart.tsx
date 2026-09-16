@@ -10,6 +10,7 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -26,6 +27,11 @@ import {
 } from "./chart-hover-link";
 import { ChartLoadingLabel } from "./chart-loading-label";
 import {
+  type ChartSelectionProps,
+  ChartSelectionProvider,
+  ChartSelectionSeriesLayer,
+} from "./chart-selection";
+import {
   type ChartPhase,
   type ChartStatus,
   DEFAULT_CHART_STATUS,
@@ -38,7 +44,7 @@ import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import { TimeSeriesChartInner } from "./time-series-chart-shell";
 
-export interface LineChartProps extends ChartHoverLinkProps {
+export interface LineChartProps extends ChartSelectionProps, ChartHoverLinkProps {
   /** Data array - each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -338,12 +344,15 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
     maxInteractiveDatapoints,
     accessibleLabel,
     accessibleDescription,
+    selectionStates,
+    dimExcluded,
     hoverCategory,
     onHoverCategory,
   },
   ref,
 ) {
   const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
+  const selectionHatchId = `selection-hatch-${useId().replace(/:/g, "")}`;
   // Internal ref anchors tooltips; forwarded ref is merged via callback ref.
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -399,48 +408,47 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
-        <ParentSize debounceTime={10}>
-          {({ width, height }) => (
-            <ChartInner
-              animationDuration={animationDuration}
-              animationEasing={animationEasing}
-              chartStatus={status}
-              containerRef={containerRef}
-              data={data}
-              datapointLabel={datapointLabel}
-              enterTransition={enterTransition}
-              height={height}
-              loadingLabel={loadingLabel}
-              maxInteractiveDatapoints={maxInteractiveDatapoints}
-              margin={margin}
-              copyValueOnActivate={copyValueOnActivate}
-              onDatapointClick={onDatapointClick}
-              onPhaseChange={handlePhaseChange}
-              replayOnClick={replayOnClick}
-              revealOn={revealOn}
-              revealSignature={revealSignature}
-              tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
-              width={width}
-              xDataKey={xDataKey}
-              xDomain={xDomain}
-              xDomainSlotCount={xDomainSlotCount}
-              xScaleType={xScaleType}
-              yDomainTween={yDomainTween}
-              yDomainTweenDuration={yDomainTweenDuration}
-            >
-              {hoverLinked ? (
-                <>
-                  {children}
-                  <ChartHoverLinkIndicator />
-                </>
-              ) : (
-                children
-              )}
-            </ChartInner>
-          )}
-        </ParentSize>
-      </ChartHoverLinkProvider>
+      <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
+        <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
+          <ParentSize debounceTime={10}>
+            {({ width, height }) => (
+              <ChartInner
+                animationDuration={animationDuration}
+                animationEasing={animationEasing}
+                chartStatus={status}
+                containerRef={containerRef}
+                data={data}
+                datapointLabel={datapointLabel}
+                enterTransition={enterTransition}
+                height={height}
+                loadingLabel={loadingLabel}
+                maxInteractiveDatapoints={maxInteractiveDatapoints}
+                margin={margin}
+                copyValueOnActivate={copyValueOnActivate}
+                onDatapointClick={onDatapointClick}
+                onPhaseChange={handlePhaseChange}
+                replayOnClick={replayOnClick}
+                revealOn={revealOn}
+                revealSignature={revealSignature}
+                tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
+                width={width}
+                xDataKey={xDataKey}
+                xDomain={xDomain}
+                xDomainSlotCount={xDomainSlotCount}
+                xScaleType={xScaleType}
+                yDomainTween={yDomainTween}
+                yDomainTweenDuration={yDomainTweenDuration}
+              >
+                {children}
+                {selectionStates ? (
+                  <ChartSelectionSeriesLayer channel="dash" hatchId={selectionHatchId} />
+                ) : null}
+                {hoverLinked ? <ChartHoverLinkIndicator /> : null}
+              </ChartInner>
+            )}
+          </ParentSize>
+        </ChartHoverLinkProvider>
+      </ChartSelectionProvider>
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}

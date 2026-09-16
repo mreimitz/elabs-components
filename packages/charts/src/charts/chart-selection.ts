@@ -11,17 +11,37 @@
  *
  * Paint rules (shared by every mark family):
  * - every mark whose state resolves sets `data-selection="<state>"` on its root;
- * - `excluded` (with `dimExcluded`, default on) draws at `EXCLUDED_MARK_OPACITY`
+ * - `excluded` (with `dimExcluded`, default on) draws at `SELECTION_EXCLUDED_OPACITY`
  *   PLUS a non-hue channel — hatch for area marks, dashed stroke for line marks,
  *   hollow ring for point marks — so the state survives greyscale (WCAG 1.4.1);
  * - `selected` draws a `SELECTED_OUTLINE_WIDTH` outline in `--ring`, full opacity;
  * - `associated` is the resting paint.
  *
+ * Selection is keyed by CATEGORY (the associative model selects field values),
+ * so it applies per point/category on every family — a line or area series is
+ * never "selected" as a whole. Continuous series (line/area/composed) paint the
+ * category's column through `ChartSelectionSeriesLayer`; discrete marks (bars,
+ * slices, cells, points) wrap themselves in `ChartSelectionMark`.
+ *
  * With `selectionStates` unset nothing resolves: no attribute, no overlay, no
  * context — the DOM stays byte-identical to a chart that never heard of it.
  */
 
-import { createContext, createElement, type ReactNode, use } from "react";
+import {
+  cloneElement,
+  createContext,
+  createElement,
+  Fragment,
+  type ReactElement,
+  type ReactNode,
+  type SVGProps,
+  use,
+} from "react";
+
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
+import { chartCssVars, useChart } from "./chart-context";
+import { chartRowCategory } from "./chart-hover-link";
+import { PatternLines } from "./visx-pattern";
 
 /** Tri-state of one mark under the host's current selection. */
 export type SelectionState = "selected" | "associated" | "excluded";
@@ -52,11 +72,14 @@ export interface ChartSelectionProps<TDatum = Record<string, unknown>> {
 }
 
 /**
- * Opacity of an excluded mark. Mirrors the house legend-hover fade
- * (`fadedOpacity` default in `bar.tsx`/`area.tsx`) until a shared selection
- * token exists — one seam to swap, never re-declared per family.
+ * Opacity of an excluded mark. Charts own this value but reuse the process
+ * package's encoding (`GHOST_OPACITY` in
+ * `@elabs-ai/components-process` `process-map/map-model.ts`) so a dashboard's
+ * charts and its process map dim excluded values alike. No theme token is
+ * minted for it (RM-069 decision 5); this is the one seam, never re-declared
+ * per family.
  */
-export const EXCLUDED_MARK_OPACITY = 0.3;
+export const SELECTION_EXCLUDED_OPACITY = 0.35;
 
 /** Outline width of a `selected` mark, painted in `--ring`. */
 export const SELECTED_OUTLINE_WIDTH = 2;
@@ -159,4 +182,231 @@ export function resolveMarkPaint<TDatum = Record<string, unknown>>(
 ): MarkSelectionPaint {
   if (!selection) return NO_PAINT;
   return markSelectionPaint(resolveMarkState(selection, point), selection.dimExcluded ?? true);
+}
+
+// ── Shared mark paint ────────────────────────────────────────────────────────
+
+/**
+ * The non-hue channel an excluded mark adds: `hatch` for area marks (bars,
+ * slices, cells), `dash` for line marks, `hollow` for point marks.
+ */
+export type ChartSelectionChannel = "hatch" | "dash" | "hollow";
+
+/** Pattern definition every `hatch` overlay in one chart points at. */
+export function ChartSelectionHatchDefs({ id }: { id: string }) {
+  return createElement(
+    "defs",
+    { "data-slot": "chart-selection-hatch-defs" },
+    createElement(PatternLines, {
+      height: 6,
+      id,
+      orientation: ["diagonal"],
+      stroke: chartCssVars.foreground,
+      strokeWidth: CHART_HAIRLINE_WIDTH * 2,
+      width: 6,
+    }),
+  );
+}
+
+export interface ChartSelectionMarkProps {
+  /** Resolved paint (`resolveMarkPaint`). Unresolved → children returned untouched. */
+  paint: MarkSelectionPaint;
+  /** The excluded mark's non-hue channel. */
+  channel: ChartSelectionChannel;
+  /**
+   * The mark's outline geometry (`<rect>`, `<path>`, `<circle>`), cloned for the
+   * excluded channel and the selected outline. Omit to paint only the dim.
+   */
+  shape?: ReactElement<SVGProps<SVGElement>>;
+  /** `ChartSelectionHatchDefs` id, required by the `hatch` channel. */
+  hatchId?: string;
+  children: ReactNode;
+}
+
+/**
+ * Wraps one discrete mark in the shared selection paint: `data-selection` on a
+ * `<g>`, the excluded dim + non-hue channel, the `--ring` selected outline.
+ * With nothing resolved it returns `children` as-is, so the opt-out DOM is
+ * byte-identical.
+ */
+export function ChartSelectionMark({
+  channel,
+  children,
+  hatchId,
+  paint,
+  shape,
+}: ChartSelectionMarkProps) {
+  const state = paint["data-selection"];
+  if (state === undefined) return createElement(Fragment, null, children);
+  let channelNode: ReactNode = null;
+  if (paint.dimmed && shape) {
+    if (channel === "hatch" && hatchId) {
+      channelNode = cloneElement(shape, {
+        "data-slot": "chart-selection-mark-hatch",
+        fill: `url(#${hatchId})`,
+        key: "channel",
+        pointerEvents: "none",
+        stroke: "none",
+      } as SVGProps<SVGElement>);
+    } else if (channel !== "hatch") {
+      channelNode = cloneElement(shape, {
+        "data-slot": `chart-selection-mark-${channel}`,
+        fill: channel === "hollow" ? chartCssVars.background : "none",
+        key: "channel",
+        pointerEvents: "none",
+        stroke: chartCssVars.foreground,
+        strokeDasharray: EXCLUDED_DASH_ARRAY,
+        strokeWidth: CHART_HAIRLINE_WIDTH,
+      } as SVGProps<SVGElement>);
+    }
+  }
+  const outline =
+    paint.outlined && shape
+      ? cloneElement(shape, {
+          "data-slot": "chart-selection-mark-outline",
+          fill: "none",
+          key: "outline",
+          pointerEvents: "none",
+          stroke: SELECTED_OUTLINE_COLOR,
+          strokeWidth: SELECTED_OUTLINE_WIDTH,
+        } as SVGProps<SVGElement>)
+      : null;
+  return createElement(
+    "g",
+    {
+      "data-selection": state,
+      "data-slot": "chart-selection-mark",
+      opacity: paint.dimmed ? SELECTION_EXCLUDED_OPACITY : undefined,
+    },
+    children,
+    channelNode,
+    outline,
+  );
+}
+
+// ── Continuous series (time-series shell) ────────────────────────────────────
+
+const SERIES_POINT_RADIUS = 4;
+
+export interface ChartSelectionSeriesLayerProps {
+  /** `dash` for line families, `hatch` for area families. */
+  channel: Exclude<ChartSelectionChannel, "hollow">;
+  /** Unique id for the hatch pattern (from `useId`). */
+  hatchId: string;
+}
+
+/**
+ * SVG child a time-series family (`LineChart`, `AreaChart`, `ComposedChart`)
+ * appends when `selectionStates` is set. A continuous path cannot dim one
+ * category, so each resolved category paints its COLUMN: excluded → a veil in
+ * `--chart-background` that leaves the marks at `SELECTION_EXCLUDED_OPACITY`,
+ * plus the channel (hatch over the column for areas, a dashed hollow point per
+ * series for lines); selected → a `--ring` outline around every series' point.
+ * The category resolves once (`seriesKey` unset) — see the module doc.
+ */
+export function ChartSelectionSeriesLayer({ channel, hatchId }: ChartSelectionSeriesLayerProps) {
+  const selection = useChartSelection();
+  const chart = useChart();
+  if (!selection) return null;
+  const columnWidth = Math.max(chart.columnWidth, SERIES_POINT_RADIUS * 2);
+  const columns: ReactNode[] = [];
+  chart.data.forEach((row, index) => {
+    const category = chartRowCategory(chart, index);
+    const paint = resolveMarkPaint(selection, { category, datum: row });
+    if (paint["data-selection"] === undefined) return;
+    const x = chart.xScale(chart.xAccessor(row)) ?? 0;
+    const left = Math.max(0, x - columnWidth / 2);
+    const width = Math.min(chart.innerWidth, x + columnWidth / 2) - left;
+    const points = chart.lines.flatMap((line) => {
+      const raw = row[line.dataKey];
+      if (typeof raw !== "number" || !Number.isFinite(raw)) return [];
+      const scale =
+        (line.yAxisId !== undefined ? chart.yScales[String(line.yAxisId)] : undefined) ??
+        chart.yScale;
+      return [{ key: line.dataKey, y: scale(raw) ?? 0 }];
+    });
+    const children: ReactNode[] = [];
+    if (paint.dimmed) {
+      children.push(
+        createElement("rect", {
+          "data-slot": "chart-selection-series-layer-veil",
+          fill: chartCssVars.background,
+          height: chart.innerHeight,
+          key: "veil",
+          opacity: 1 - SELECTION_EXCLUDED_OPACITY,
+          width,
+          x: left,
+          y: 0,
+        }),
+      );
+      if (channel === "hatch") {
+        children.push(
+          createElement("rect", {
+            "data-slot": "chart-selection-series-layer-hatch",
+            fill: `url(#${hatchId})`,
+            height: chart.innerHeight,
+            key: "hatch",
+            opacity: SELECTION_EXCLUDED_OPACITY,
+            width,
+            x: left,
+            y: 0,
+          }),
+        );
+      } else {
+        for (const point of points) {
+          children.push(
+            createElement("circle", {
+              cx: x,
+              cy: point.y,
+              "data-slot": "chart-selection-series-layer-dash",
+              fill: chartCssVars.background,
+              key: `dash-${point.key}`,
+              r: SERIES_POINT_RADIUS,
+              stroke: chartCssVars.foreground,
+              strokeDasharray: EXCLUDED_DASH_ARRAY,
+              strokeWidth: CHART_HAIRLINE_WIDTH,
+            }),
+          );
+        }
+      }
+    }
+    if (paint.outlined) {
+      for (const point of points) {
+        children.push(
+          createElement("circle", {
+            cx: x,
+            cy: point.y,
+            "data-slot": "chart-selection-series-layer-outline",
+            fill: "none",
+            key: `outline-${point.key}`,
+            r: SERIES_POINT_RADIUS,
+            stroke: SELECTED_OUTLINE_COLOR,
+            strokeWidth: SELECTED_OUTLINE_WIDTH,
+          }),
+        );
+      }
+    }
+    columns.push(
+      createElement(
+        "g",
+        {
+          "data-category-index": index,
+          "data-selection": paint["data-selection"],
+          "data-slot": "chart-selection-series-layer-column",
+          key: index,
+        },
+        ...children,
+      ),
+    );
+  });
+  return createElement(
+    "g",
+    {
+      "aria-hidden": true,
+      "data-slot": "chart-selection-series-layer",
+      pointerEvents: "none",
+    },
+    channel === "hatch" ? createElement(ChartSelectionHatchDefs, { id: hatchId }) : null,
+    ...columns,
+  );
 }

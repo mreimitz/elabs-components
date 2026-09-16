@@ -30,7 +30,7 @@ import {
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { useChartLegendHover } from "./chart-legend-hover";
 import {
-  EXCLUDED_MARK_OPACITY,
+  SELECTION_EXCLUDED_OPACITY,
   resolveMarkPaint,
   SELECTED_OUTLINE_COLOR,
   SELECTED_OUTLINE_WIDTH,
@@ -888,7 +888,7 @@ const BarInner = memo(function BarInner({
         data-selection={paint["data-selection"]}
         data-slot="bar-selection"
         key={`bar-${dataKey}-${bar.categoryValue}`}
-        opacity={paint.dimmed ? EXCLUDED_MARK_OPACITY : undefined}
+        opacity={paint.dimmed ? SELECTION_EXCLUDED_OPACITY : undefined}
       >
         {node}
         {paint.dimmed ? (

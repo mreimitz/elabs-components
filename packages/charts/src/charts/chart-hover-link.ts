@@ -93,7 +93,7 @@ export function useChartHoverLink(): ChartHoverLinkProps | null {
  * band/linear axis (#352 — the positional instant is synthetic), the `Date` on a
  * time axis.
  */
-function rowCategory(
+export function chartRowCategory(
   chart: ReturnType<typeof useChart>,
   index: number,
 ): ChartSelectionCategory | undefined {
@@ -121,7 +121,7 @@ export function ChartHoverLinkIndicator() {
 
   useEffect(() => {
     if (!onHoverCategory) return;
-    const next = hoveredIndex === null ? null : (rowCategory(chart, hoveredIndex) ?? null);
+    const next = hoveredIndex === null ? null : (chartRowCategory(chart, hoveredIndex) ?? null);
     // Never report the initial "nothing hovered" — only transitions.
     if (lastReported.current === undefined && next === null) return;
     if (lastReported.current !== undefined && sameChartCategory(lastReported.current, next)) {
@@ -136,7 +136,7 @@ export function ChartHoverLinkIndicator() {
   if (!link || hoveredIndex !== null) return null;
   const index = findChartCategoryIndex(
     chart.data.map((_, i) => i),
-    (i) => rowCategory(chart, i),
+    (i) => chartRowCategory(chart, i),
     link.hoverCategory,
   );
   if (index < 0) return null;
