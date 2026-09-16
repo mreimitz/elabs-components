@@ -10,7 +10,6 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -352,7 +351,6 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
   ref,
 ) {
   const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
-  const selectionHatchId = `selection-hatch-${useId().replace(/:/g, "")}`;
   // Internal ref anchors tooltips; forwarded ref is merged via callback ref.
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -440,9 +438,7 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
                 yDomainTweenDuration={yDomainTweenDuration}
               >
                 {children}
-                {selectionStates ? (
-                  <ChartSelectionSeriesLayer channel="dash" hatchId={selectionHatchId} />
-                ) : null}
+                {selectionStates ? <ChartSelectionSeriesLayer /> : null}
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}

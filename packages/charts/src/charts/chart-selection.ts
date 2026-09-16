@@ -11,11 +11,32 @@
  *
  * Paint rules (shared by every mark family):
  * - every mark whose state resolves sets `data-selection="<state>"` on its root;
- * - `excluded` (with `dimExcluded`, default on) draws at `SELECTION_EXCLUDED_OPACITY`
- *   PLUS a non-hue channel — hatch for area marks, dashed stroke for line marks,
- *   hollow ring for point marks — so the state survives greyscale (WCAG 1.4.1);
- * - `selected` draws a `SELECTED_OUTLINE_WIDTH` outline in `--ring`, full opacity;
+ * - `excluded` (with `dimExcluded`, default on) dims the MARK to
+ *   `SELECTION_EXCLUDED_OPACITY` and adds a non-hue channel — a dashed frame
+ *   (`EXCLUDED_DASH_ARRAY`) along the mark's own boundary in `--chart-foreground`,
+ *   painted OUTSIDE the dim at full opacity (#446: a channel ghosted with the
+ *   mark it rescues fell below the WCAG 1.4.11 3:1 floor in every theme);
+ * - `selected` draws a compound outline at full opacity: a `--chart-foreground`
+ *   band, split by a `--chart-background` core (#442);
  * - `associated` is the resting paint.
+ *
+ * Why these two inks (#442). No single token clears 3:1 against every series
+ * fill AND the surface — `--ring` equals `--chart-1` in `light`, and
+ * `--foreground` equals a series fill in `dark`. `--chart-foreground` and
+ * `--chart-background` are ≥10:1 apart in every theme, so against ANY fill at
+ * least one of the two bands clears 3:1 (their ratio's square root is > 3), and
+ * the outer foreground band always clears 3:1 against the surface. It is the
+ * focus indicator's compound trick, in existing tokens only (no `--selection-*`,
+ * ADR 0037 §6).
+ *
+ * Why a dashed FRAME for excluded (#443). High decoration already dresses marks
+ * with every hatch orientation, dots, grids, cross-hatch (`series-pattern.tsx`),
+ * dashed line strokes, and the heatmap draws its own negative-value hatch — so
+ * an excluded HATCH collapsed into the decoration at `--decoration` 10. No
+ * decoration ever strokes a mark's closed boundary with a dash, so the frame is
+ * orthogonal to decoration at every level, reads in greyscale, and is the rule's
+ * "dashed frame" (`.claude/rules/dashboard.md`, Encoding). Line and area series
+ * frame each excluded datum with a dashed ring (`ChartSelectionSeriesLayer`).
  *
  * Selection is keyed by CATEGORY (the associative model selects field values),
  * so it applies per point/category on every family — a line or area series is
@@ -36,13 +57,11 @@ import {
   type ReactNode,
   type SVGProps,
   use,
-  useId,
 } from "react";
 
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { chartCssVars, useChart } from "./chart-context";
 import { chartRowCategory } from "./chart-hover-link";
-import { PatternLines } from "./visx-pattern";
 
 /** Tri-state of one mark under the host's current selection. */
 export type SelectionState = "selected" | "associated" | "excluded";
@@ -65,7 +84,7 @@ export interface ChartSelectionProps<TDatum = Record<string, unknown>> {
    */
   selectionStates?: ChartSelectionStatesResolver<TDatum>;
   /**
-   * Dim `excluded` marks and add their non-hue channel. Default `true`; `false`
+   * Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false`
    * keeps the `data-selection` attribute (so a host can style it) but paints
    * nothing.
    */
@@ -82,14 +101,33 @@ export interface ChartSelectionProps<TDatum = Record<string, unknown>> {
  */
 export const SELECTION_EXCLUDED_OPACITY = 0.35;
 
-/** Outline width of a `selected` mark, painted in `--ring`. */
-export const SELECTED_OUTLINE_WIDTH = 2;
+/**
+ * Total width of a `selected` mark's compound outline: the `--chart-foreground`
+ * band, of which the middle third is overpainted by the `--chart-background`
+ * core (`SELECTED_OUTLINE_CORE_WIDTH`) — foreground | background | foreground.
+ */
+export const SELECTED_OUTLINE_WIDTH = 4;
 
-/** The ink of a `selected` outline. */
-export const SELECTED_OUTLINE_COLOR = "var(--ring)";
+/** Width of the `--chart-background` core splitting the selected outline. */
+export const SELECTED_OUTLINE_CORE_WIDTH = SELECTED_OUTLINE_WIDTH / 3;
 
-/** Dash of an excluded LINE mark and a hollow point mark's stroke. */
+/** The outer ink of a `selected` outline. */
+export const SELECTED_OUTLINE_COLOR = chartCssVars.foreground;
+
+/** The core ink of a `selected` outline. */
+export const SELECTED_OUTLINE_CORE_COLOR = chartCssVars.background;
+
+/** Dash of an excluded mark's frame. */
 export const EXCLUDED_DASH_ARRAY = "4 3";
+
+/**
+ * Stroke width of an excluded mark's dashed frame — the weight the RM-073 hatch
+ * used, so the channel stays a hairline-family line, not a second outline.
+ */
+export const EXCLUDED_FRAME_WIDTH = CHART_HAIRLINE_WIDTH * 2;
+
+/** The ink of an excluded mark's dashed frame, at full opacity. */
+export const EXCLUDED_FRAME_COLOR = chartCssVars.foreground;
 
 /** A point handed to `resolveMarkState`. */
 export interface ChartSelectionPoint<TDatum = Record<string, unknown>> {
@@ -117,9 +155,9 @@ export function resolveMarkState<TDatum = Record<string, unknown>>(
 export interface MarkSelectionPaint {
   /** Spread onto the mark root; `undefined` when unresolved (no attribute). */
   "data-selection": SelectionState | undefined;
-  /** Draw the non-hue excluded channel and the dim. */
+  /** Draw the excluded dim and its dashed frame. */
   dimmed: boolean;
-  /** Draw the `--ring` outline. */
+  /** Draw the selected compound outline. */
   outlined: boolean;
 }
 
@@ -187,108 +225,84 @@ export function resolveMarkPaint<TDatum = Record<string, unknown>>(
 
 // ── Shared mark paint ────────────────────────────────────────────────────────
 
-/**
- * The non-hue channel an excluded mark adds: `hatch` for area marks (bars,
- * slices, cells), `dash` for line marks, `hollow` for point marks.
- */
-export type ChartSelectionChannel = "hatch" | "dash" | "hollow";
+/** Props that stroke a cloned mark shape as a paint-only overlay. */
+function overlay(slot: string, stroke: string, strokeWidth: number, dash?: string) {
+  return {
+    "data-slot": slot,
+    fill: "none",
+    key: slot,
+    pointerEvents: "none",
+    stroke,
+    strokeDasharray: dash,
+    strokeWidth,
+  } as SVGProps<SVGElement>;
+}
 
-/** Pattern definition every `hatch` overlay in one chart points at. */
-export function ChartSelectionHatchDefs({ id }: { id: string }) {
-  return createElement(
-    "defs",
-    { "data-slot": "chart-selection-hatch-defs" },
-    createElement(PatternLines, {
-      height: 6,
-      id,
-      orientation: ["diagonal"],
-      stroke: chartCssVars.foreground,
-      strokeWidth: CHART_HAIRLINE_WIDTH * 2,
-      width: 6,
-    }),
-  );
+/**
+ * The full-opacity paint a resolved mark adds over its geometry: the excluded
+ * dashed frame, or the selected compound outline (outer band, then core).
+ */
+function selectionOverlays(
+  prefix: string,
+  paint: MarkSelectionPaint,
+  shape: ReactElement<SVGProps<SVGElement>>,
+): ReactNode[] {
+  if (paint.dimmed) {
+    return [
+      cloneElement(
+        shape,
+        overlay(`${prefix}-frame`, EXCLUDED_FRAME_COLOR, EXCLUDED_FRAME_WIDTH, EXCLUDED_DASH_ARRAY),
+      ),
+    ];
+  }
+  if (paint.outlined) {
+    return [
+      cloneElement(
+        shape,
+        overlay(`${prefix}-outline`, SELECTED_OUTLINE_COLOR, SELECTED_OUTLINE_WIDTH),
+      ),
+      cloneElement(
+        shape,
+        overlay(`${prefix}-outline-core`, SELECTED_OUTLINE_CORE_COLOR, SELECTED_OUTLINE_CORE_WIDTH),
+      ),
+    ];
+  }
+  return [];
 }
 
 export interface ChartSelectionMarkProps {
   /** Resolved paint (`resolveMarkPaint`). Unresolved → children returned untouched. */
   paint: MarkSelectionPaint;
-  /** The excluded mark's non-hue channel. */
-  channel: ChartSelectionChannel;
   /**
-   * The mark's outline geometry (`<rect>`, `<path>`, `<circle>`), cloned for the
-   * excluded channel and the selected outline. Omit to paint only the dim.
+   * The mark's outline geometry (`<rect>`, `<path>`, `<circle>`, or a `<g>` of
+   * them), cloned for the excluded frame and the selected outline. Omit to
+   * paint only the dim.
    */
   shape?: ReactElement<SVGProps<SVGElement>>;
-  /**
-   * A chart-level `ChartSelectionHatchDefs` id to share. Omitted → the mark
-   * emits its own pattern definition.
-   */
-  hatchId?: string;
   children: ReactNode;
 }
 
 /**
  * Wraps one discrete mark in the shared selection paint: `data-selection` on a
- * `<g>`, the excluded dim + non-hue channel, the `--ring` selected outline.
- * With nothing resolved it returns `children` as-is, so the opt-out DOM is
- * byte-identical.
+ * `<g>`; for excluded, the mark inside a dimmed `<g>` and the dashed frame
+ * beside it at full opacity; for selected, the compound outline. With nothing
+ * resolved it returns `children` as-is, so the opt-out DOM is byte-identical.
  */
-export function ChartSelectionMark({
-  channel,
-  children,
-  hatchId,
-  paint,
-  shape,
-}: ChartSelectionMarkProps) {
-  const ownHatchId = `selection-hatch-${useId().replace(/:/g, "")}`;
+export function ChartSelectionMark({ children, paint, shape }: ChartSelectionMarkProps) {
   const state = paint["data-selection"];
   if (state === undefined) return createElement(Fragment, null, children);
-  let channelNode: ReactNode = null;
-  let defsNode: ReactNode = null;
-  if (paint.dimmed && shape) {
-    if (channel === "hatch") {
-      if (!hatchId) defsNode = createElement(ChartSelectionHatchDefs, { id: ownHatchId });
-      channelNode = cloneElement(shape, {
-        "data-slot": "chart-selection-mark-hatch",
-        fill: `url(#${hatchId ?? ownHatchId})`,
-        key: "channel",
-        pointerEvents: "none",
-        stroke: "none",
-      } as SVGProps<SVGElement>);
-    } else {
-      channelNode = cloneElement(shape, {
-        "data-slot": `chart-selection-mark-${channel}`,
-        fill: channel === "hollow" ? chartCssVars.background : "none",
-        key: "channel",
-        pointerEvents: "none",
-        stroke: chartCssVars.foreground,
-        strokeDasharray: EXCLUDED_DASH_ARRAY,
-        strokeWidth: CHART_HAIRLINE_WIDTH,
-      } as SVGProps<SVGElement>);
-    }
-  }
-  const outline =
-    paint.outlined && shape
-      ? cloneElement(shape, {
-          "data-slot": "chart-selection-mark-outline",
-          fill: "none",
-          key: "outline",
-          pointerEvents: "none",
-          stroke: SELECTED_OUTLINE_COLOR,
-          strokeWidth: SELECTED_OUTLINE_WIDTH,
-        } as SVGProps<SVGElement>)
-      : null;
+  const mark = paint.dimmed
+    ? createElement(
+        "g",
+        { "data-slot": "chart-selection-mark-dim", opacity: SELECTION_EXCLUDED_OPACITY },
+        children,
+      )
+    : children;
   return createElement(
     "g",
-    {
-      "data-selection": state,
-      "data-slot": "chart-selection-mark",
-      opacity: paint.dimmed ? SELECTION_EXCLUDED_OPACITY : undefined,
-    },
-    defsNode,
-    children,
-    channelNode,
-    outline,
+    { "data-selection": state, "data-slot": "chart-selection-mark" },
+    mark,
+    ...(shape ? selectionOverlays("chart-selection-mark", paint, shape) : []),
   );
 }
 
@@ -296,23 +310,16 @@ export function ChartSelectionMark({
 
 const SERIES_POINT_RADIUS = 4;
 
-export interface ChartSelectionSeriesLayerProps {
-  /** `dash` for line families, `hatch` for area families. */
-  channel: Exclude<ChartSelectionChannel, "hollow">;
-  /** Unique id for the hatch pattern (from `useId`). */
-  hatchId: string;
-}
-
 /**
  * SVG child a time-series family (`LineChart`, `AreaChart`, `ComposedChart`)
  * appends when `selectionStates` is set. A continuous path cannot dim one
  * category, so each resolved category paints its COLUMN: excluded → a veil in
  * `--chart-background` that leaves the marks at `SELECTION_EXCLUDED_OPACITY`,
- * plus the channel (hatch over the column for areas, a dashed hollow point per
- * series for lines); selected → a `--ring` outline around every series' point.
- * The category resolves once (`seriesKey` unset) — see the module doc.
+ * then a dashed ring framing every series' datum at full opacity; selected →
+ * the compound outline ring around every series' datum. The category resolves
+ * once (`seriesKey` unset) — see the module doc.
  */
-export function ChartSelectionSeriesLayer({ channel, hatchId }: ChartSelectionSeriesLayerProps) {
+export function ChartSelectionSeriesLayer() {
   const selection = useChartSelection();
   const chart = useChart();
   if (!selection) return null;
@@ -325,14 +332,6 @@ export function ChartSelectionSeriesLayer({ channel, hatchId }: ChartSelectionSe
     const x = chart.xScale(chart.xAccessor(row)) ?? 0;
     const left = Math.max(0, x - columnWidth / 2);
     const width = Math.min(chart.innerWidth, x + columnWidth / 2) - left;
-    const points = chart.lines.flatMap((line) => {
-      const raw = row[line.dataKey];
-      if (typeof raw !== "number" || !Number.isFinite(raw)) return [];
-      const scale =
-        (line.yAxisId !== undefined ? chart.yScales[String(line.yAxisId)] : undefined) ??
-        chart.yScale;
-      return [{ key: line.dataKey, y: scale(raw) ?? 0 }];
-    });
     const children: ReactNode[] = [];
     if (paint.dimmed) {
       children.push(
@@ -347,52 +346,26 @@ export function ChartSelectionSeriesLayer({ channel, hatchId }: ChartSelectionSe
           y: 0,
         }),
       );
-      if (channel === "hatch") {
-        children.push(
-          createElement("rect", {
-            "data-slot": "chart-selection-series-layer-hatch",
-            fill: `url(#${hatchId})`,
-            height: chart.innerHeight,
-            key: "hatch",
-            opacity: SELECTION_EXCLUDED_OPACITY,
-            width,
-            x: left,
-            y: 0,
-          }),
-        );
-      } else {
-        for (const point of points) {
-          children.push(
-            createElement("circle", {
-              cx: x,
-              cy: point.y,
-              "data-slot": "chart-selection-series-layer-dash",
-              fill: chartCssVars.background,
-              key: `dash-${point.key}`,
-              r: SERIES_POINT_RADIUS,
-              stroke: chartCssVars.foreground,
-              strokeDasharray: EXCLUDED_DASH_ARRAY,
-              strokeWidth: CHART_HAIRLINE_WIDTH,
-            }),
-          );
-        }
-      }
     }
-    if (paint.outlined) {
-      for (const point of points) {
-        children.push(
-          createElement("circle", {
-            cx: x,
-            cy: point.y,
-            "data-slot": "chart-selection-series-layer-outline",
-            fill: "none",
-            key: `outline-${point.key}`,
-            r: SERIES_POINT_RADIUS,
-            stroke: SELECTED_OUTLINE_COLOR,
-            strokeWidth: SELECTED_OUTLINE_WIDTH,
-          }),
-        );
-      }
+    for (const line of chart.lines) {
+      const raw = row[line.dataKey];
+      if (typeof raw !== "number" || !Number.isFinite(raw)) continue;
+      const scale =
+        (line.yAxisId !== undefined ? chart.yScales[String(line.yAxisId)] : undefined) ??
+        chart.yScale;
+      const ring = createElement("circle", {
+        cx: x,
+        cy: scale(raw) ?? 0,
+        key: line.dataKey,
+        r: SERIES_POINT_RADIUS,
+      });
+      children.push(
+        createElement(
+          Fragment,
+          { key: line.dataKey },
+          ...selectionOverlays("chart-selection-series-layer", paint, ring),
+        ),
+      );
     }
     columns.push(
       createElement(
@@ -414,7 +387,6 @@ export function ChartSelectionSeriesLayer({ channel, hatchId }: ChartSelectionSe
       "data-slot": "chart-selection-series-layer",
       pointerEvents: "none",
     },
-    channel === "hatch" ? createElement(ChartSelectionHatchDefs, { id: hatchId }) : null,
     ...columns,
   );
 }

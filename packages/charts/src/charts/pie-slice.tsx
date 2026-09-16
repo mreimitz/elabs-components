@@ -424,6 +424,8 @@ export const PieSlice = memo(function PieSlice({
   const seamStroke = seams > 0 ? pieCssVars.background : undefined;
   const seamStrokeWidth = seams > 0 ? seams : undefined;
   // Selection input (RM-073): unresolved → the node is returned untouched.
+  // Painted ONCE, around the slice group below — the slice renderers must not
+  // wrap again, or an excluded slice dims twice and nests its frame in a dim.
   const selectionPaint = resolveMarkPaint(selection, {
     category: arcData.data.label,
     datum: arcData.data as unknown as Record<string, unknown>,
@@ -432,7 +434,7 @@ export const PieSlice = memo(function PieSlice({
     selectionPaint["data-selection"] === undefined ? (
       node
     ) : (
-      <ChartSelectionMark channel="hatch" paint={selectionPaint} shape={<path d={hitboxPath} />}>
+      <ChartSelectionMark paint={selectionPaint} shape={<path d={hitboxPath} />}>
         {node}
       </ChartSelectionMark>
     );
@@ -440,7 +442,7 @@ export const PieSlice = memo(function PieSlice({
   // Render animated slice based on effect type
   const renderAnimatedSlice = () => {
     if (hoverEffect === "grow") {
-      return paintSelection(
+      return (
         <AnimatedSliceGrow
           animationKey={animationKey}
           color={color}
@@ -457,12 +459,12 @@ export const PieSlice = memo(function PieSlice({
           seams={seams}
           showGlow={showGlow}
           startAngle={arcData.startAngle}
-        />,
+        />
       );
     }
 
     // Default: translate effect (also covers "none" with hoverOffset=0)
-    return paintSelection(
+    return (
       <AnimatedSliceTranslate
         animationKey={animationKey}
         color={color}
@@ -479,14 +481,14 @@ export const PieSlice = memo(function PieSlice({
         seams={seams}
         showGlow={showGlow}
         startAngle={arcData.startAngle}
-      />,
+      />
     );
   };
 
   // Render static (non-animated) slice
   const renderStaticSlice = () => {
     if (hoverEffect === "grow") {
-      return paintSelection(
+      return (
         <motion.path
           animate={{
             opacity: isFaded ? 0.4 : 1,
@@ -504,7 +506,7 @@ export const PieSlice = memo(function PieSlice({
             opacity: { duration: 0.15 },
             d: { type: "spring", stiffness: 400, damping: 25 },
           }}
-        />,
+        />
       );
     }
 
@@ -513,7 +515,7 @@ export const PieSlice = memo(function PieSlice({
     const translateX = shouldTranslate ? offset.x : 0;
     const translateY = shouldTranslate ? offset.y : 0;
 
-    return paintSelection(
+    return (
       <motion.path
         animate={{
           opacity: isFaded ? 0.4 : 1,
@@ -533,7 +535,7 @@ export const PieSlice = memo(function PieSlice({
           x: { type: "spring", stiffness: 400, damping: 25 },
           y: { type: "spring", stiffness: 400, damping: 25 },
         }}
-      />,
+      />
     );
   };
 

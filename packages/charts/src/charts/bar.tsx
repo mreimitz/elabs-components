@@ -29,15 +29,7 @@ import {
 } from "./chart-datapoint-layer";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { useChartLegendHover } from "./chart-legend-hover";
-import {
-  SELECTION_EXCLUDED_OPACITY,
-  resolveMarkPaint,
-  SELECTED_OUTLINE_COLOR,
-  SELECTED_OUTLINE_WIDTH,
-  useChartSelection,
-} from "./chart-selection";
-import { PatternLines } from "./visx-pattern";
-import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
+import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart-selection";
 import { transitionWithDelay } from "./motion-utils";
 import { useHighDecoration } from "./use-high-decoration";
 import { useResolvedRadius } from "./use-resolved-radius";
@@ -415,7 +407,6 @@ const BarInner = memo(function BarInner({
     staggerDelay ?? (data.length > 1 ? staggerSpread / 1000 / data.length : 0);
   const uniqueId = useId();
   const selection = useChartSelection();
-  const selectionHatchId = `bar-selection-hatch-${uniqueId.replace(/:/g, "")}`;
 
   const isHorizontal = orientation === "horizontal";
 
@@ -871,8 +862,8 @@ const BarInner = memo(function BarInner({
   };
 
   // Selection input (RM-073): resolved only under a `selectionStates` provider,
-  // so an unselected chart keeps its exact DOM. Excluded bars dim AND carry a
-  // hatch (a non-hue channel); selected bars get the `--ring` outline.
+  // so an unselected chart keeps its exact DOM. The shared seam paints the dim,
+  // the full-opacity dashed frame (excluded) and the compound outline (selected).
   const paintBar = (bar: BarGeometry) => {
     const node = renderBar(bar);
     const paint = resolveMarkPaint(selection, {
@@ -884,56 +875,19 @@ const BarInner = memo(function BarInner({
       return node;
     }
     return (
-      <g
-        data-selection={paint["data-selection"]}
-        data-slot="bar-selection"
+      <ChartSelectionMark
         key={`bar-${dataKey}-${bar.categoryValue}`}
-        opacity={paint.dimmed ? SELECTION_EXCLUDED_OPACITY : undefined}
+        paint={paint}
+        shape={<rect height={bar.height} width={bar.width} x={bar.x} y={bar.y} />}
       >
         {node}
-        {paint.dimmed ? (
-          <rect
-            data-slot="bar-selection-hatch"
-            fill={`url(#${selectionHatchId})`}
-            height={bar.height}
-            pointerEvents="none"
-            width={bar.width}
-            x={bar.x}
-            y={bar.y}
-          />
-        ) : null}
-        {paint.outlined ? (
-          <rect
-            data-slot="bar-selection-outline"
-            fill="none"
-            height={bar.height}
-            pointerEvents="none"
-            stroke={SELECTED_OUTLINE_COLOR}
-            strokeWidth={SELECTED_OUTLINE_WIDTH}
-            width={bar.width}
-            x={bar.x}
-            y={bar.y}
-          />
-        ) : null}
-      </g>
+      </ChartSelectionMark>
     );
   };
 
   return (
     <g className={`bar-series-${uniqueId}`}>
       {usePattern && <defs>{makeSeriesPattern(seriesIndex, patternId, fill)}</defs>}
-      {selection ? (
-        <defs>
-          <PatternLines
-            height={6}
-            id={selectionHatchId}
-            orientation={["diagonal"]}
-            stroke="var(--chart-foreground)"
-            strokeWidth={CHART_HAIRLINE_WIDTH * 2}
-            width={6}
-          />
-        </defs>
-      ) : null}
       {barLayout.map(paintBar)}
     </g>
   );

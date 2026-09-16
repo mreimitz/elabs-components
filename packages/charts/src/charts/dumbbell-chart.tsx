@@ -553,7 +553,6 @@ function DumbbellPlot({
     if (paint["data-selection"] === undefined) return node;
     return (
       <ChartSelectionMark
-        channel="dash"
         key={row.index}
         paint={paint}
         shape={

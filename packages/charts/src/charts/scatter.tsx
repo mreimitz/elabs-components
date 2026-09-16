@@ -425,7 +425,6 @@ function ScatterCustomMarkers({
           marker
         ) : (
           <ChartSelectionMark
-            channel="hollow"
             key={p.index}
             paint={selectionPaint}
             shape={<circle cx={p.cx} cy={p.cy} r={radius} />}

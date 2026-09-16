@@ -9,7 +9,6 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -415,7 +414,6 @@ export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(func
   forwardedRef,
 ) {
   const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
-  const selectionHatchId = `selection-hatch-${useId().replace(/:/g, "")}`;
   const internalRef = useRef<HTMLDivElement>(null);
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
 
@@ -498,9 +496,7 @@ export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(func
                 xScaleType={xScaleType}
               >
                 {children}
-                {selectionStates ? (
-                  <ChartSelectionSeriesLayer channel="dash" hatchId={selectionHatchId} />
-                ) : null}
+                {selectionStates ? <ChartSelectionSeriesLayer /> : null}
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}
