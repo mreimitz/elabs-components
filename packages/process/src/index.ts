@@ -27,3 +27,7 @@ export * from "./abstraction-controls";
 export * from "./metric-layer-switch";
 export * from "./process-kpi-strip";
 export * from "./use-process-explorer";
+
+// CaseTable / CaseTimeline — RM-055
+export * from "./case-table";
+export * from "./case-timeline";
