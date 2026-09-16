@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T09:01:58.870Z",
+  "generatedAt": "2026-09-16T09:36:25.027Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 253,
+  "tokenCount": 255,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -260,6 +260,8 @@
     "--chart-mono-6",
     "--chart-mono-7",
     "--chart-accent",
+    "--chart-ink-on-light",
+    "--chart-ink-on-dark",
     "--flow-edge-weak",
     "--flow-edge-strong"
   ],

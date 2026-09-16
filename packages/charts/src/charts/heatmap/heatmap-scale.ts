@@ -15,73 +15,6 @@ export interface HeatmapBucket {
   to: number;
   /** The `var(--chart-…)` reference this step paints with. */
   color: string;
-  /** The ink a value label printed ON this step uses — see {@link rampStepInk}. */
-  ink: string;
-}
-
-// ── Ink on a mark (#238) ─────────────────────────────────────────────────────
-
-/** Label ink for a light plate in the active theme. */
-export const HEATMAP_INK_ON_LIGHT_PLATE = "var(--chart-foreground)";
-/** Label ink for a dark plate in the active theme. */
-export const HEATMAP_INK_ON_DARK_PLATE = "var(--chart-background)";
-
-/**
- * Ramp steps that are the QUIET end of their ramp: the plot-ground side, so a
- * label on them takes the plot's own text ink. Every other step is the deep
- * end, and a label on it takes the plot ground as ink.
- *
- * Why this is keyed by token and not by theme: every ordered ramp inverts with
- * the theme ("more intense" is darker on a white card, lighter on a dark one)
- * and so do `--chart-foreground`/`--chart-background`. The pairing between a
- * step and the better of the two inks is therefore the same in every shipped
- * theme, and no DOM read or darkness probe is needed. The diverging ramp is
- * V-shaped in lightness, so only its pivot is on the quiet side.
- *
- * Measured with the tokens package's `color-contrast.ts` against the shipped
- * `light` / `dark` stylesheets (2026-09-16, #238); re-measure when a ramp step
- * or either ink is retuned. The better ink of the pair clears ≥ 4.07:1 on every step (worst: `--chart-div-mid`
- * 4.07, `--chart-seq-3` 4.20, `--chart-seq-2` 4.39), up from 1.01:1 with one
- * fixed ink. Closing the last gap to 4.5:1 needs dedicated on-mark ink tokens,
- * which is a token-contract decision, not a component one.
- */
-const QUIET_END_STEPS = new Set([
-  "var(--chart-seq-1)",
-  "var(--chart-seq-2)",
-  "var(--chart-mono-1)",
-  "var(--chart-mono-2)",
-  "var(--chart-div-mid)",
-]);
-
-/**
- * The ink for a value label printed on a ramp step. Unknown colours (a custom
- * ramp) keep the plot's text ink, which is what every label used before.
- */
-export function rampStepInk(color: string): string {
-  if (QUIET_END_STEPS.has(color)) return HEATMAP_INK_ON_LIGHT_PLATE;
-  return /^var\(--chart-(seq|mono|div)-/.test(color)
-    ? HEATMAP_INK_ON_DARK_PLATE
-    : HEATMAP_INK_ON_LIGHT_PLATE;
-}
-
-/** The halo that belongs with an ink: always the opposite anchor. */
-export function inkHalo(ink: string): string {
-  return ink === HEATMAP_INK_ON_DARK_PLATE ? HEATMAP_INK_ON_LIGHT_PLATE : HEATMAP_INK_ON_DARK_PLATE;
-}
-
-/**
- * Opacity above which a continuous (`steps: 0`) cell is treated as a deep
- * plate. The true crossover depends on the theme (≈0.44 dark, ≈0.58–0.67
- * light), so this is a compromise: worst label contrast ≈2.8:1 instead of
- * 1.01:1. A continuous heatmap that prints values should prefer `steps > 0`.
- */
-export const CONTINUOUS_DEEP_PLATE_OPACITY = 0.55;
-
-/** Label ink for a continuous cell drawn at `opacity`. */
-export function continuousStepInk(opacity: number): string {
-  return opacity >= CONTINUOUS_DEEP_PLATE_OPACITY
-    ? HEATMAP_INK_ON_DARK_PLATE
-    : HEATMAP_INK_ON_LIGHT_PLATE;
 }
 
 /**
@@ -129,7 +62,6 @@ export function buildHeatmapBuckets(
     from: lo + width * i,
     to: i === steps - 1 ? hi : lo + width * (i + 1),
     color,
-    ink: rampStepInk(color),
   }));
 }
 

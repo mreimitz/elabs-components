@@ -460,6 +460,13 @@
 
   --chart-accent: var(--chart-1);
 
+  /* On-mark ink (#238, #243) — for a label or a cut printed ON a chart mark,
+     never on the plot ground. Achromatic extremes, identical in every theme:
+     the charts package picks whichever contrasts better with the mark's own
+     resolved fill, so the pair clears ≥4.58:1 on ANY opaque plate. */
+  --chart-ink-on-light: oklch(0 0 0);
+  --chart-ink-on-dark: oklch(1 0 0);
+
   /* Flow edge ramp — RM-043. #282 round one raised --flow-edge-weak from its
      authored L 0.4, which measured 2.05:1 against --canvas (WCAG 1.4.11 fails;
      24.5% of the interpolated ramp rendered under 3:1). L 0.5 clears 3.14:1 —

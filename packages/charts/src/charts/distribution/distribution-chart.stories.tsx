@@ -2,7 +2,34 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { seededRnd } from "../../marks/seeded-rnd";
+import {
+  failingMeasurements,
+  type InkMeasurement,
+  measureInkOnPlate,
+} from "../on-mark-ink.story-measure";
 import { DistributionChart } from "./distribution-chart";
+
+/**
+ * #243 — every median tick against its own group's body, measured through a
+ * canvas in the real browser under the active theme. The tick is a mark, so the
+ * bar is WCAG 1.4.11's 3:1 (it was 1.42 / 2.49 / 2.61 on light, 1.62 on the
+ * paper-ward sequential step in both themes).
+ */
+async function expectVisibleMedianTicks(root: HTMLElement, kind: "box" | "violin") {
+  await waitFor(() => {
+    const measurements: InkMeasurement[] = [];
+    for (const group of root.querySelectorAll(`[data-slot="distribution-chart-${kind}"]`)) {
+      const tick = group.querySelector('[data-slot="distribution-chart-median"]');
+      const body = group.querySelector(kind === "box" ? "rect" : "path");
+      if (!tick || !body) continue;
+      measurements.push(
+        measureInkOnPlate(tick, "stroke", body, root, body.getAttribute("fill") ?? kind),
+      );
+    }
+    expect(measurements).toHaveLength(3);
+    expect(failingMeasurements(measurements, 3)).toEqual([]);
+  });
+}
 
 const meta = {
   title: "Charts/DistributionChart",
@@ -150,6 +177,7 @@ export const TickBox: Story = {
       name: "First-reply time by queue",
     });
     expect(figure).toHaveAccessibleDescription(/median/i);
+    await expectVisibleMedianTicks(canvasElement, "box");
   },
 };
 
@@ -184,6 +212,7 @@ export const Violin: Story = {
     // A silhouette, not a bar: the outline is a smoothed path, not a rect.
     const outline = canvasElement.querySelector('[data-slot="distribution-chart-violin"] path');
     expect(outline?.getAttribute("d")).toContain("Q");
+    await expectVisibleMedianTicks(canvasElement, "violin");
   },
 };
 
@@ -280,6 +309,9 @@ export const VerticalSequential: Story = {
       />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    await expectVisibleMedianTicks(canvasElement, "box");
+  },
 };
 
 /**

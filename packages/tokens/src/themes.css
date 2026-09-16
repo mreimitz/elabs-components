@@ -1074,6 +1074,13 @@
 
   --chart-accent: var(--chart-1);
 
+  /* On-mark ink (#238, #243) — for a label or a cut printed ON a chart mark,
+     never on the plot ground. Achromatic extremes, identical in every theme:
+     the charts package picks whichever contrasts better with the mark's own
+     resolved fill, so the pair clears ≥4.58:1 on ANY opaque plate. */
+  --chart-ink-on-light: oklch(0 0 0);
+  --chart-ink-on-dark: oklch(1 0 0);
+
   /* Flow edge ramp — RM-043, retuned TWICE under #282; this note supersedes
      round one's, which recorded a tradeoff that has since been reversed. :root
      is the un-themed fallback a consumer gets with no theme stylesheet imported,
@@ -1452,6 +1459,8 @@
   --color-chart-mono-6: var(--chart-mono-6);
   --color-chart-mono-7: var(--chart-mono-7);
   --color-chart-accent: var(--chart-accent);
+  --color-chart-ink-on-light: var(--chart-ink-on-light);
+  --color-chart-ink-on-dark: var(--chart-ink-on-dark);
 }
 
 /* Constant easing curves → `ease-standard` / `ease-entrance` / `ease-exit`

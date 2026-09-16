@@ -87,8 +87,10 @@ export interface HeatmapCellDatum {
   /** Index into {@link HeatmapContextValue.buckets}; `-1` when empty. */
   bucketIndex: number;
   /**
-   * Fill for a value label printed ON this cell — chosen by the plate it sits
-   * on, not by the theme, so the number never vanishes into a deep step (#238).
+   * Fill for a value label printed ON this cell — `--chart-ink-on-light` or
+   * `--chart-ink-on-dark`, whichever contrasts better with the cell's resolved
+   * fill, so the number never vanishes into a deep step (#238). See
+   * `on-mark-ink.ts`.
    */
   ink: string;
   /** Halo for that label: the opposite ink anchor. */
