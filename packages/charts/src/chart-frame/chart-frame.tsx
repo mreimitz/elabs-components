@@ -206,10 +206,31 @@ function DefaultTable({
 
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 
-function ChartFrameToolbar() {
+/**
+ * True when the frame's density tier has no room for the full inline toolbar
+ * (#444): at `xs`/`sm` the toolbar collapses to its single Expand control and
+ * the remaining actions move into the expanded view, so the title keeps its
+ * width instead of truncating to a letter. Without an Expand feature there is
+ * nowhere to collapse into, so the full toolbar stays (every action keeps a
+ * keyboard path).
+ */
+function useToolbarCollapsed(): boolean {
+  const { meta } = useChartFrame();
+  const compact = meta.density === "xs" || meta.density === "sm";
+  return compact && meta.features.includes("expand");
+}
+
+function ChartFrameToolbar({ placement = "inline" }: { placement?: "inline" | "expanded" }) {
   const { state, actions, meta } = useChartFrame();
-  const { features } = meta;
+  const collapsed = useToolbarCollapsed();
   const { t } = useLocale();
+  // Inline + collapsed → Expand only. Inside the expand view → everything but
+  // Expand (the view is already open).
+  const features = !collapsed
+    ? meta.features
+    : placement === "inline"
+      ? meta.features.filter((f) => f === "expand")
+      : meta.features.filter((f) => f !== "expand");
   // export-svg/export-png degrade the same way table/download degrade without
   // data (chart-components.md § Feature degradation) — `hasSvg` is registered
   // by ChartFrameInner after render, since (unlike `data`) a rendered `<svg>`
@@ -390,6 +411,10 @@ function ChartFrameModal({
   const { state, actions, meta } = useChartFrame();
   const { title, description, rows, columns } = meta;
   const { t } = useLocale();
+  // The inline toolbar collapsed to Expand at a small density tier (#444): the
+  // actions it dropped (table flip, CSV, exports) live here instead.
+  const toolbarCollapsed = useToolbarCollapsed();
+  const hasMovedActions = meta.features.some((f) => f !== "expand");
 
   /*
    * The two-pane expand layout is NOT local any more — it is
@@ -414,6 +439,14 @@ function ChartFrameModal({
         detailLabel={t("charts.chartFrame.summaryDetailLabel")}
       >
         <div className="flex h-full flex-col">
+          {toolbarCollapsed && hasMovedActions ? (
+            <div
+              data-slot="chart-frame-expanded-toolbar"
+              className="flex shrink-0 justify-end pb-2"
+            >
+              <ChartFrameToolbar placement="expanded" />
+            </div>
+          ) : null}
           <div
             key={state.view}
             className="min-h-0 flex-1 animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"
@@ -510,7 +543,12 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * no `<svg>` (a non-chart placeholder, or the flipped-to-table view).
    */
   features?: ChartFrameFeature[];
-  /** Inline body height in px. Defaults to 260. */
+  /**
+   * Inline body height in px. Defaults to 260 for `chrome="card"`/`"bare"`.
+   * With `chrome="tile"` and no `height`, the frame fills its host instead
+   * (`h-full` flex column, chart body takes the space left after header and
+   * source row) — the host tile sets the height (#444).
+   */
   height?: number;
   /**
    * Loading vs ready — renders a layout-shaped skeleton at the normal body
@@ -592,7 +630,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     columns: columnsProp,
     detail,
     features: featuresProp,
-    height = 260,
+    height,
     renderTable,
     onDownload,
     onExport,
@@ -683,7 +721,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
 // Inner component that consumes the context (avoids provider/consumer in the
 // same render function).
 interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
-  height: number;
+  height?: number;
   detail?: ReactNode;
   renderTable: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
   title?: ReactNode;
@@ -715,7 +753,8 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   const { state, actions, meta, refs } = useChartFrame();
   const { rows, columns, loading, density } = meta;
   // RM-072 density: `xs` has no room for prose or attribution; `xs`/`sm`
-  // clamp the title to one line. `md`/`lg` leave the header untouched.
+  // clamp the title to one line and collapse the toolbar to Expand
+  // (`useToolbarCollapsed`, #444). `md`/`lg` leave the header untouched.
   const compact = density === "xs" || density === "sm";
   const visibleDescription = density === "xs" ? undefined : description;
   const source = density === "xs" ? undefined : sourceProp;
@@ -756,10 +795,13 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
     return () => observer.disconnect();
   }, [actions, refs.chartBody, state.view, loading, children]);
 
+  // A tile without an explicit `height` fills its host (#444); every other
+  // chrome keeps the fixed 260px default.
+  const fillHost = chrome === "tile" && height === undefined;
   const body = (
     <div
-      style={{ height }}
-      className="w-full overflow-auto"
+      style={fillHost ? undefined : { height: height ?? 260 }}
+      className={cn("w-full overflow-auto", fillHost && "h-full")}
       {...(loading ? { role: "status", "aria-live": "polite" as const } : {})}
     >
       {loading ? (
@@ -831,13 +873,13 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           ref={mergedCardRef}
           data-slot="chart-frame"
           data-chrome="tile"
-          className={cn("flex min-h-0 min-w-0 flex-col gap-2", className)}
+          className={cn("flex min-h-0 min-w-0 flex-col gap-2", fillHost && "h-full", className)}
           {...props}
         >
           {headerSlot !== undefined || hasDefaultHeader || menuSlot !== undefined ? (
             <div
               data-slot="chart-frame-header"
-              className="flex min-w-0 flex-row items-start justify-between gap-2"
+              className="flex min-w-0 shrink-0 flex-row items-start justify-between gap-2"
             >
               {headerSlot !== undefined ? (
                 <div className="min-w-0 flex-1">{headerSlot}</div>
@@ -850,14 +892,14 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
               {menuSlot !== undefined ? menu : <ChartFrameToolbar />}
             </div>
           ) : (
-            <div data-slot="chart-frame-header" className="flex justify-end">
+            <div data-slot="chart-frame-header" className="flex shrink-0 justify-end">
               <ChartFrameToolbar />
             </div>
           )}
           <div data-slot="chart-frame-body" className="min-h-0 flex-1">
             {body}
           </div>
-          {source ? <ChartSourceRow source={source} className="w-full" /> : null}
+          {source ? <ChartSourceRow source={source} className="w-full shrink-0" /> : null}
         </div>
         {modal}
       </>

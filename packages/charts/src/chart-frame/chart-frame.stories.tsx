@@ -326,11 +326,43 @@ function FillChart() {
 }
 
 const densityTiers = [
-  { id: "xs", label: "xs — 196 × 92", box: "w-[196px] h-[92px]", body: 64 },
-  { id: "sm", label: "sm — 392 × 184", box: "w-full max-w-[392px] h-[184px]", body: 148 },
-  { id: "md", label: "md — 784 × 368", box: "w-full max-w-[784px] h-[368px]", body: 300 },
-  { id: "lg", label: "lg — full width", box: "w-full h-[420px]", body: 350 },
+  { id: "xs", label: "xs — 196 × 92", box: "w-[196px] h-[92px]" },
+  { id: "sm", label: "sm — 392 × 184", box: "w-full max-w-[392px] h-[184px]" },
+  { id: "md", label: "md — 784 × 368", box: "w-full max-w-[784px] h-[368px]" },
+  { id: "lg", label: "lg — full width", box: "w-full h-[420px]" },
 ] as const;
+
+/** Characters of `el`'s single-line text actually painted before it clips (ellipsis excluded). */
+function visibleCharCount(el: HTMLElement): number {
+  const text = el.textContent ?? "";
+  const node = document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode();
+  if (!node) return 0;
+  const box = el.getBoundingClientRect();
+  // Reserve one character's width for the ellipsis that `truncate` paints.
+  const ellipsis = Number.parseFloat(getComputedStyle(el).fontSize) * 0.6;
+  const range = document.createRange();
+  let count = 0;
+  for (let i = 1; i <= text.length; i++) {
+    range.setStart(node, i - 1);
+    range.setEnd(node, i);
+    const limit = i === text.length ? box.right : box.right - ellipsis;
+    if (range.getBoundingClientRect().right > limit + 0.5) break;
+    count = i;
+  }
+  return count;
+}
+
+/** True when `inner` lies wholly inside `outer` (half-pixel tolerance for subpixel layout). */
+function isInside(inner: Element, outer: Element): boolean {
+  const a = inner.getBoundingClientRect();
+  const b = outer.getBoundingClientRect();
+  return (
+    a.left >= b.left - 0.5 &&
+    a.right <= b.right + 0.5 &&
+    a.top >= b.top - 0.5 &&
+    a.bottom <= b.bottom + 0.5
+  );
+}
 
 /**
  * The same chart at the sheet-tile sizes a 24 × 12 fit grid produces at 1200 px.
@@ -349,7 +381,6 @@ export const DensityTiers: Story = {
             <ChartFrame
               chrome="tile"
               density={tier.id}
-              height={tier.body}
               title="Revenue is up 77% since January"
               description="Monthly revenue, Jan – Jun 2025"
               source="Source: Internal ledger"
@@ -373,6 +404,85 @@ export const DensityTiers: Story = {
     await expect(xs.querySelectorAll(".text-chart-label.text-meta")).toHaveLength(0);
     await expect(within(xs).queryByText("Source: Internal ledger")).toBeNull();
     await expect(within(md).getByText("Source: Internal ledger")).toBeInTheDocument();
+
+    // #444: every tier FITS its tile — nothing is hidden by the host's overflow.
+    for (const tier of densityTiers) {
+      const section = canvas.getByRole("region", { name: tier.label });
+      const frame = section.querySelector<HTMLElement>('[data-slot="chart-frame"]')!;
+      const host = frame.parentElement!;
+      await waitFor(() => expect(frame.querySelector("svg")).not.toBeNull());
+      for (const box of [host, frame]) {
+        await expect(box.scrollHeight, `${tier.id} height`).toBeLessThanOrEqual(box.clientHeight);
+        await expect(box.scrollWidth, `${tier.id} width`).toBeLessThanOrEqual(box.clientWidth);
+      }
+      // The title keeps readable text: more than one painted character.
+      const title = frame.querySelector<HTMLElement>('[data-slot="card-title"]')!;
+      await expect(visibleCharCount(title), `${tier.id} title`).toBeGreaterThan(1);
+      // Axis labels and the source row are either absent or wholly inside the frame.
+      const furniture = frame.querySelectorAll(".text-chart-label, svg text");
+      for (const node of furniture) {
+        await expect(isInside(node, frame), `${tier.id} axis`).toBe(true);
+      }
+      const source = within(frame).queryByText("Source: Internal ledger");
+      if (source) await expect(isInside(source, frame), `${tier.id} source`).toBe(true);
+    }
+    // The smallest tiers collapse the toolbar to one control (Expand).
+    const xsFrame = xs.querySelector('[data-slot="chart-frame-header"]')!;
+    await expect(xsFrame.querySelectorAll("button")).toHaveLength(1);
+    await expect(within(xs).getByRole("button", { name: "Expand chart" })).toBeVisible();
+  },
+};
+
+const datapointClickSpy = fn();
+
+/**
+ * Keyboard users see what hover shows (#447): tabbing onto a datapoint target
+ * shows the chart’s own tooltip, and tabbing away hides it again.
+ */
+export const KeyboardTooltip: Story = {
+  render: () => (
+    <div className="h-[320px] w-full max-w-[560px] rounded-lg border bg-card p-3">
+      <ChartFrame chrome="tile" title="Monthly revenue" data={monthlyData} features={[]}>
+        <BarChart
+          data={monthlyData}
+          xDataKey="month"
+          aspectRatio="auto"
+          className="h-full"
+          onDatapointClick={datapointClickSpy}
+        >
+          <Grid horizontal />
+          <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />
+          <BarXAxis />
+          <ChartTooltip />
+        </BarChart>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const target = await waitFor(() => {
+      const el = canvasElement.querySelector<HTMLButtonElement>(
+        '[data-slot="chart-datapoint-layer-target"][tabindex="0"]',
+      );
+      expect(el).not.toBeNull();
+      return el as HTMLButtonElement;
+    });
+    const tooltip = () =>
+      canvasElement.ownerDocument.querySelector<HTMLElement>('[data-slot="chart-tooltip-box"]');
+    await expect(tooltip()).toBeNull();
+    // Tab onto the datapoint (away and back while the chart's enter phase settles).
+    await waitFor(
+      async () => {
+        (canvasElement.ownerDocument.activeElement as HTMLElement | null)?.blur();
+        for (let i = 0; i < 5 && canvasElement.ownerDocument.activeElement !== target; i++) {
+          await userEvent.tab();
+        }
+        await expect(target).toHaveFocus();
+        await expect(tooltip()).toBeVisible();
+      },
+      { timeout: 4000 },
+    );
+    await userEvent.tab();
+    await waitFor(() => expect(tooltip()).toBeNull());
   },
 };
 

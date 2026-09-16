@@ -152,6 +152,7 @@ function ChartTooltipBoxInner({
     <motion.div
       animate={{ opacity: 1 }}
       className={cn("pointer-events-none absolute z-50", className)}
+      data-slot="chart-tooltip-box"
       exit={{ opacity: 0 }}
       initial={{ opacity: 0 }}
       ref={tooltipRef}
