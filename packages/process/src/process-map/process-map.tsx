@@ -240,6 +240,13 @@ export interface ProcessMapProps extends Omit<HTMLAttributes<HTMLDivElement>, "o
    * `process.map.label` message.
    */
   label?: string;
+  // elkjs adapter — RM-067
+  /**
+   * The layout engine. `"elk"` lays the map out with `@elabs-ai/components-flow`'s
+   * `layoutFlowElk` — elkjs, an optional peer, loaded lazily on first use; when it is not
+   * installed the map falls back to dagre with a development-only warning. @default "dagre"
+   */
+  layoutEngine?: "dagre" | "elk";
 }
 
 /** Resolve the graph the map paints, running `/core` only when its own inputs change. */
@@ -288,6 +295,7 @@ export function ProcessMap({
   colorScale,
   conformance,
   label,
+  layoutEngine = "dagre",
   className,
   ...props
 }: ProcessMapProps) {
@@ -416,6 +424,7 @@ export function ProcessMap({
     edges: firstPass?.edges ?? EMPTY_EDGES,
     structureKey: layoutKey,
     direction,
+    layoutEngine,
   });
 
   // PASS 2 — the same model, now told which edges run against the layout direction, so

@@ -14,6 +14,7 @@ no token required. See `docs/CONSUMING.md`.
 
 ```bash
 pnpm add @elabs-ai/components-tokens @elabs-ai/components-flow
+pnpm add elkjs@"^0.12.0"  # optional peer
 ```
 
 ## Set up styling (do not skip)

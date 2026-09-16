@@ -242,6 +242,18 @@
       "usedBy": ["@elabs-ai/components-process"],
       "required": false,
       "note": "Algorithm shape for the framework-free process-mining core: which aggregates a directly-follows graph carries (discoverGraph) and how traces are grouped into variants (extractVariants), with durationStats as their shared summary; and the token-based replay procedure behind tokenReplay (produced/consumed/missing/remaining counting, silent-transition enabling before forcing missing tokens). Re-typed in TypeScript from the published algorithms, not copied."
+    },
+    {
+      "id": "elkjs",
+      "category": "dependency",
+      "name": "elkjs",
+      "version": "0.12.0",
+      "license": "EPL-2.0 OR GPL-3.0-or-later",
+      "copyright": "Copyright (c) 2019 TypeFox and others",
+      "url": "https://github.com/kieler/elkjs",
+      "usedBy": ["@elabs-ai/components-flow"],
+      "required": false,
+      "note": "elkjs adapter — RM-067. The Eclipse Layout Kernel, behind layoutFlowElk. An OPTIONAL peer dependency, so the derived dependency list (plain `dependencies` only) cannot see it; it is credited here instead. Never bundled into the package: loaded with import() from the host's own install, and used under EPL-2.0. The licence text (LICENSE.md) names no holder; the copyright line is read verbatim from the header of elkjs's own lib/elk-api.d.ts."
     }
   ]
 }
