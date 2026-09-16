@@ -59,6 +59,9 @@ export interface DashboardPanelLabels {
   actionCount: (count: number) => string;
   /** Title of the properties panel while several tiles are focused. */
   focusedCount: (count: number) => string;
+  // Interactions editor — RM-082
+  /** The Interactions section's button opening `DashboardInteractionsDialog`. */
+  editInteractions: string;
 }
 
 /** The panels' labels when the host passes none. */
@@ -112,6 +115,8 @@ export const DEFAULT_DASHBOARD_PANEL_LABELS: DashboardPanelLabels = {
   contentSection: (kindLabel) => kindLabel,
   actionCount: (count) => (count === 1 ? "1 action" : `${count} actions`),
   focusedCount: (count) => `${count} tiles`,
+  // Interactions editor — RM-082
+  editInteractions: "Edit interactions…",
 };
 
 /** Merge partial host labels over the defaults (one level of nesting). */

@@ -1,0 +1,182 @@
+/**
+ * The interaction graph (RM-082; analysis §5.1 `InteractionSpec`, §5.3). Pure and framework-free.
+ *
+ * `resolveInteractions(spec)` turns `spec.interactions[]` plus the tiles' own `consumes`/`emits`
+ * into the EFFECTIVE emitter → consumer map the store routes a tile's selection through.
+ *
+ * ## Precedence (final — RM-085's external-driver example depends on it)
+ *
+ * 1. **Tile-level `consumes`/`emits` gate; `interactions[]` refines.** A tile is a consumer in the
+ *    graph only when it declares `consumes.selection` (or the caller's `consumesSelection`
+ *    predicate says so). An interaction can never make a tile listen to something it does not
+ *    declare: a pair whose `to` is not a consumer is dropped. A tile that is NOT a consumer is
+ *    outside the graph and keeps seeing every driver selection exactly as before RM-082.
+ * 2. **Explicit pair > wildcard > default.** For each (emitter, consumer): an entry naming both ids
+ *    wins; otherwise an entry `from → "*"`; otherwise the default effect `filter` (so a spec with no
+ *    `interactions` behaves exactly as before). Among entries of the same specificity, the LAST one
+ *    in the array wins.
+ * 3. **Self-interaction.** A tile never interacts with itself: `"*"` never expands to `from`, and an
+ *    explicit `from === to` entry is ignored. The emitter always sees its own click — its own
+ *    selection (when the click filters anything) and its own highlight (when it highlights).
+ * 4. **Global writes are always `filter`.** A selection written without a source tile
+ *    (`fromTileId` undefined — the filter tile, the selection bar, an external driver, a bookmark)
+ *    filters every consumer: filters are global by definition. A tile publishes through the graph
+ *    only when it declares `emits.selection`.
+ * 5. **Drill.** `{ drill: { sheetId, carry } }` navigates instead of painting: the store calls the
+ *    host's `onNavigate(sheetId, { carry })` (D5 — the library never routes) with the clicked field's
+ *    values plus the driver's current values for every other `carry` field. The drill target
+ *    itself is neither filtered nor highlighted. When `sheets` is supplied, a drill to an unknown
+ *    sheet is dropped (treated as `none`).
+ *
+ * ## Effects
+ *
+ * - `filter` — the selection goes through the driver (a real selection, a chip).
+ * - `highlight` — the target paints the clicked values as `selected`/`excluded` through the SAME
+ *   `selectionStates` tri-state and ghost opacity (no new token, no fourth state, ADR 0037 §6)
+ *   WITHOUT a driver selection; the store keeps it in its ephemeral `highlight` slice.
+ * - `none` — the target is shielded: it sees neither the driver selection this emitter wrote nor
+ *   its highlight.
+ */
+import type { SelectionSnapshot, SelectionState, SelectionValue } from "./selection";
+import type { DashboardSpec, InteractionSpec, TileSpec } from "./spec";
+
+/** A resolved effect. */
+export type InteractionEffect = InteractionSpec["effect"];
+
+/** One effective pair from an emitter. */
+export interface ResolvedInteraction {
+  /** Consumer tile id. */
+  to: string;
+  effect: InteractionEffect;
+}
+
+/** Emitter tile id → every consumer it reaches, in `spec.tiles` order. */
+export type InteractionMap = ReadonlyMap<string, readonly ResolvedInteraction[]>;
+
+/** Options for `resolveInteractions`. */
+export interface ResolveInteractionsOptions {
+  /** Whether a tile consumes selections. Default: it declares `consumes.selection`. */
+  consumesSelection?: (tile: TileSpec) => boolean;
+  /** Sheet ids a drill may target. Omitted: every drill is kept. */
+  sheets?: readonly string[];
+}
+
+/** The default consumer predicate: the tile declares `consumes.selection`. */
+export function tileConsumesSelection(tile: TileSpec): boolean {
+  return Boolean(tile.consumes?.selection);
+}
+
+/** Whether `effect` is a drill. */
+export function isDrillEffect(
+  effect: InteractionEffect,
+): effect is { drill: { sheetId: string; carry?: string[] } } {
+  return typeof effect === "object" && effect !== null && "drill" in effect;
+}
+
+/** Resolve the effective emitter → consumer map (see the module doc for precedence). Pure. */
+export function resolveInteractions(
+  spec: DashboardSpec,
+  options: ResolveInteractionsOptions = {},
+): InteractionMap {
+  const consumes = options.consumesSelection ?? tileConsumesSelection;
+  const sheets = options.sheets ? new Set(options.sheets) : undefined;
+  const consumers = spec.tiles.filter(consumes).map((tile) => tile.id);
+  const explicit = new Map<string, InteractionEffect>();
+  const wildcard = new Map<string, InteractionEffect>();
+  for (const entry of spec.interactions ?? []) {
+    if (entry.from === entry.to) continue;
+    if (isDrillEffect(entry.effect) && sheets && !sheets.has(entry.effect.drill.sheetId)) {
+      if (entry.to === "*") wildcard.set(entry.from, "none");
+      else explicit.set(`${entry.from}\u0000${entry.to}`, "none");
+      continue;
+    }
+    if (entry.to === "*") wildcard.set(entry.from, entry.effect);
+    else explicit.set(`${entry.from}\u0000${entry.to}`, entry.effect);
+  }
+  const map = new Map<string, ResolvedInteraction[]>();
+  for (const from of spec.tiles) {
+    const pairs: ResolvedInteraction[] = [];
+    for (const to of consumers) {
+      if (to === from.id) continue;
+      const effect = explicit.get(`${from.id}\u0000${to}`) ?? wildcard.get(from.id) ?? "filter";
+      pairs.push({ to, effect });
+    }
+    map.set(from.id, pairs);
+  }
+  return map;
+}
+
+/** The effect `from` has on `to`: `filter` for a global write, `self` for the emitter itself. */
+export function interactionEffect(
+  map: InteractionMap,
+  from: string | undefined,
+  to: string,
+): InteractionEffect | "self" | undefined {
+  if (from === undefined) return "filter";
+  if (from === to) return "self";
+  return map.get(from)?.find((pair) => pair.to === to)?.effect;
+}
+
+/** The ephemeral highlight a `highlight` interaction paints (never history, never persisted). */
+export interface DashboardHighlight {
+  field: string;
+  values: readonly SelectionValue[];
+  /** The tile whose click produced it. */
+  fromTileId: string;
+  /** Tiles that paint it (the `highlight` targets, plus the emitter when it consumes). */
+  targets: ReadonlySet<string>;
+}
+
+/** Inputs to `tileSelectionView`. */
+export interface TileSelectionViewInput {
+  tileId: string;
+  /** The driver's snapshot. */
+  snapshot: SelectionSnapshot;
+  map: InteractionMap;
+  /** Field → tile whose routed click last wrote it (absent = a global write). */
+  origins: Readonly<Record<string, string>>;
+  highlight: DashboardHighlight | null;
+}
+
+/**
+ * The selection one tile sees: the driver snapshot minus every field whose origin tile's effect
+ * on this tile is not `filter`, with the highlight painted over its field when this tile is a
+ * highlight target. Highlighted values resolve `selected`/`excluded` through `states()` but never
+ * appear in `fields`/`count()` — a highlight is not a selection. Associations the driver computed
+ * FROM a shielded field are not undone (the driver owns association). Returns `snapshot` itself
+ * when nothing applies, so identity-stable consumers do not re-render.
+ */
+export function tileSelectionView({
+  tileId,
+  snapshot,
+  map,
+  origins,
+  highlight,
+}: TileSelectionViewInput): SelectionSnapshot {
+  const hidden = new Set<string>();
+  for (const [field, from] of Object.entries(origins)) {
+    if (!(field in snapshot.fields)) continue;
+    const effect = interactionEffect(map, from, tileId);
+    if (effect === undefined || effect === "self" || effect === "filter") continue;
+    hidden.add(field);
+  }
+  const paint = highlight && highlight.targets.has(tileId) ? highlight : null;
+  if (hidden.size === 0 && !paint) return snapshot;
+  const fields = Object.fromEntries(
+    Object.entries(snapshot.fields).filter(([field]) => !hidden.has(field)),
+  );
+  const highlighted = paint ? new Set<unknown>(paint.values) : null;
+  return Object.freeze({
+    fields: Object.freeze(fields),
+    states(field: string, value: unknown): SelectionState {
+      if (paint && highlighted && field === paint.field)
+        return highlighted.has(value) ? "selected" : "excluded";
+      if (hidden.has(field)) return "associated";
+      return snapshot.states(field, value);
+    },
+    count(field?: string): number {
+      if (field === undefined) return Object.values(fields).filter((f) => f.values.length).length;
+      return hidden.has(field) ? 0 : snapshot.count(field);
+    },
+  });
+}

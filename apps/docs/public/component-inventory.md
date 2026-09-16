@@ -1294,11 +1294,14 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DASHBOARD_CLIPBOARD_MARKER | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_EDIT_SHIFT_STEP | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_TILE_WARNING_THRESHOLD | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DASHBOARD_URL_STATE_MAX_LENGTH | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardAssetPanel | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardEditLayer | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardExpressionError | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardGridContext | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardGridSettings | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardInteractionsDialog | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardInteractionsEditor | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardMarquee | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardPropertiesPanel | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardProvider | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1309,6 +1312,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DashboardTileHeader | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardToolbar | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_DASHBOARD_INTERACTIONS_EDITOR_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_DASHBOARD_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_DASHBOARD_PANEL_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_FILTER_TILE_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1322,6 +1326,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | EXPORT_SHEET_SCALE | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | EXPORT_SHEET_WIDTH | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | GRID_DENSITY_PRESETS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| INTERACTIONS_MATRIX_MAX_TILES | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | RESIZE_HANDLES | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | SILENT_ANNOUNCEMENTS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | TILE_CHROME_Z | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1338,6 +1343,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useDashboardMarquee | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardShortcutDescriptors | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardShortcuts | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboardUrlState | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useExportSheet | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useHover | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useSelection | hook |  | `@elabs-ai/components-charts/dashboard` |  |

@@ -10,3 +10,6 @@ export * from "./common-tile-form";
 export * from "./dashboard-asset-panel";
 export * from "./dashboard-properties-panel";
 export * from "./sheet-form";
+
+// Interactions editor — RM-082
+export * from "./dashboard-interactions-editor";

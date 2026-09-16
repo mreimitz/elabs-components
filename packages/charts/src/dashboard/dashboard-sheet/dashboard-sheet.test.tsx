@@ -7,13 +7,16 @@ import salesOverview from "../core/__fixtures__/sales-overview.json";
 import { cellRect } from "../core/layout";
 import type { DashboardSpec } from "../core/spec";
 import type { DashboardActions } from "../core/store";
+import { decodeDashboardState, encodeDashboardState } from "../core/url";
 import {
   DashboardProvider,
+  type DashboardProviderProps,
   DashboardSheet,
   createPlaceholderTileKind,
   tileDensity,
   useDashboard,
   useDashboardActions,
+  useDashboardUrlState,
   type DashboardChangeMeta,
 } from "./index";
 
@@ -242,5 +245,180 @@ describe("tileDensity", () => {
     expect(tileDensity(300, 150)).toBe("sm");
     expect(tileDensity(799, 500)).toBe("md");
     expect(tileDensity(800, 400)).toBe("lg");
+  });
+});
+
+// State persistence — RM-083
+describe("DashboardProvider state persistence (RM-083)", () => {
+  function renderWithProvider(providerProps: Partial<DashboardProviderProps> = {}) {
+    return render(
+      <DashboardProvider spec={SALES} tiles={TILES} {...providerProps}>
+        <Probe />
+        <DashboardSheet />
+      </DashboardProvider>,
+    );
+  }
+
+  describe("autosaveMs", () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it("debounces onChange (trailing edge): five rapid moves produce one call", () => {
+      const onChange = vi.fn();
+      renderWithProvider({ autosaveMs: 300, onChange });
+      act(() => {
+        for (let i = 0; i < 5; i++) actions.patchTile("kpi-revenue", { title: `Revenue ${i}` });
+      });
+      expect(onChange).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(299));
+      expect(onChange).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(1));
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          tiles: expect.arrayContaining([expect.objectContaining({ title: "Revenue 4" })]),
+        }),
+        { conflict: false },
+      );
+    });
+
+    it("fires immediately when autosaveMs is 0 (the default)", () => {
+      const onChange = vi.fn();
+      renderWithProvider({ onChange });
+      act(() => actions.patchTile("kpi-revenue", { title: "Now" }));
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it("flushes a pending debounced change on unmount instead of dropping it", () => {
+      const onChange = vi.fn();
+      const { unmount } = renderWithProvider({ autosaveMs: 300, onChange });
+      act(() => actions.patchTile("kpi-revenue", { title: "Pending" }));
+      expect(onChange).not.toHaveBeenCalled();
+      unmount();
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("onSelectionChange", () => {
+    it("fires with both the selection snapshot and the variables on either changing", () => {
+      const onSelectionChange = vi.fn();
+      renderWithProvider({ onSelectionChange });
+      act(() => actions.select("Region", ["EMEA"]));
+      expect(onSelectionChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          fields: expect.objectContaining({ Region: { values: ["EMEA"] } }),
+        }),
+        expect.any(Object),
+      );
+      act(() => actions.setVariable("showDetail", false));
+      expect(onSelectionChange).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({ showDetail: false }),
+      );
+    });
+  });
+
+  describe("initialState", () => {
+    it("applies selection + variables once the (local, synchronous) driver is ready", async () => {
+      let fields: unknown;
+      let variables: unknown;
+      function Reader() {
+        fields = useDashboard((s) => s.selection.fields);
+        variables = useDashboard((s) => s.variables);
+        return null;
+      }
+      render(
+        <DashboardProvider
+          spec={SALES}
+          tiles={TILES}
+          initialState={{ selection: { Region: ["EMEA"] }, variables: { showDetail: true } }}
+        >
+          <Reader />
+        </DashboardProvider>,
+      );
+      await waitFor(() =>
+        expect(fields).toEqual(expect.objectContaining({ Region: { values: ["EMEA"] } })),
+      );
+      expect(variables).toEqual(expect.objectContaining({ showDetail: true }));
+    });
+  });
+
+  describe("useDashboardUrlState + encode/decode round trip", () => {
+    it("encodes the current selection, and applying the decoded string restores it in a fresh sheet", async () => {
+      let hook: { encoded: string } = { encoded: "" };
+      function UrlProbe() {
+        hook = useDashboardUrlState();
+        return null;
+      }
+      render(
+        <DashboardProvider spec={SALES} tiles={TILES}>
+          <Probe />
+          <UrlProbe />
+          <DashboardSheet />
+        </DashboardProvider>,
+      );
+      act(() => actions.select("Region", ["EMEA"]));
+      expect(hook.encoded).toContain("s.Region=s:EMEA");
+      const decoded = decodeDashboardState(hook.encoded);
+      expect(decoded).toEqual(expect.objectContaining({ selection: { Region: ["EMEA"] } }));
+
+      // A fresh mount ("reload") with that decoded state as `initialState` restores it.
+      let restoredSelection: unknown;
+      function RestoredReader() {
+        restoredSelection = useDashboard((s) => s.selection.fields.Region?.values);
+        return null;
+      }
+      render(
+        <DashboardProvider spec={SALES} tiles={TILES} initialState={decoded ?? undefined}>
+          <RestoredReader />
+        </DashboardProvider>,
+      );
+      await waitFor(() => expect(restoredSelection).toEqual(["EMEA"]));
+    });
+  });
+
+  describe("bookmarks", () => {
+    it('storage "spec" appends to spec.bookmarks and reports onChange with reason "bookmark"', () => {
+      const onChange = vi.fn<(spec: DashboardSpec, meta: DashboardChangeMeta) => void>();
+      renderWithProvider({ bookmarks: { storage: "spec" }, onChange });
+      act(() => actions.select("Region", ["EMEA"]));
+      onChange.mockClear();
+      let bookmark: ReturnType<DashboardActions["saveBookmark"]>;
+      act(() => {
+        bookmark = actions.saveBookmark("Q3 EMEA");
+      });
+      expect(bookmark!.label).toBe("Q3 EMEA");
+      expect(bookmark!.selection).toEqual({ Region: ["EMEA"] });
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          bookmarks: expect.arrayContaining([expect.objectContaining({ label: "Q3 EMEA" })]),
+        }),
+        { conflict: false, reason: "bookmark" },
+      );
+    });
+
+    it('storage "host" (default) returns the bookmark without touching spec.bookmarks', () => {
+      const onChange = vi.fn();
+      renderWithProvider({ onChange });
+      act(() => actions.select("Region", ["EMEA"]));
+      onChange.mockClear();
+      let bookmark: ReturnType<DashboardActions["saveBookmark"]>;
+      act(() => {
+        bookmark = actions.saveBookmark("Q3 EMEA");
+      });
+      expect(bookmark!.label).toBe("Q3 EMEA");
+      expect(onChange).not.toHaveBeenCalled();
+      expect(actions.saveBookmark).toBeDefined();
+    });
+  });
+});
+
+describe("encodeDashboardState size budget (README cross-reference)", () => {
+  it("a realistic multi-field selection stays well under the URL codec's 8 kB guard", () => {
+    const encoded = encodeDashboardState({
+      selection: { Region: ["EMEA", "APAC"], Segment: ["Enterprise"] },
+    });
+    expect(encoded.length).toBeLessThan(200);
   });
 });

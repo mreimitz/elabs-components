@@ -9,6 +9,7 @@ export * from "./tile-registry";
 export * from "./use-breakpoint";
 export * from "./use-cell-rect";
 export { useDashboard, useDashboardActions, type DashboardContextValue } from "./use-dashboard";
+export * from "./use-dashboard-url-state";
 export * from "./use-hover";
 export * from "./use-selection";
 export * from "./use-tile";

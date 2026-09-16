@@ -18,6 +18,12 @@ export * from "./history";
 export * from "./local-selection-driver";
 export * from "./store";
 
+// interaction graph — RM-082
+export * from "./interactions";
+
+// URL/bookmark state codec — RM-083
+export * from "./url";
+
 // autoLayout/schema — RM-086
 
 // Presentation/Theme/Workbook — RM-087

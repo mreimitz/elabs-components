@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T22:24:27.788Z",
+  "generatedAt": "2026-09-16T22:47:59.661Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22425,6 +22425,11 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
             },
             {
+              "name": "DASHBOARD_URL_STATE_MAX_LENGTH",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/url.ts"
+            },
+            {
               "name": "DashboardAssetPanel",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/dashboard-asset-panel.tsx"
@@ -22448,6 +22453,16 @@
               "name": "DashboardGridSettings",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/dashboard-grid-settings.tsx"
+            },
+            {
+              "name": "DashboardInteractionsDialog",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-interactions-editor.tsx"
+            },
+            {
+              "name": "DashboardInteractionsEditor",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-interactions-editor.tsx"
             },
             {
               "name": "DashboardMarquee",
@@ -22498,6 +22513,11 @@
               "name": "DashboardToolbar",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/dashboard-toolbar.tsx"
+            },
+            {
+              "name": "DEFAULT_DASHBOARD_INTERACTIONS_EDITOR_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-interactions-editor.tsx"
             },
             {
               "name": "DEFAULT_DASHBOARD_LABELS",
@@ -22563,6 +22583,11 @@
               "name": "GRID_DENSITY_PRESETS",
               "kind": "value",
               "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
+              "name": "INTERACTIONS_MATRIX_MAX_TILES",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-interactions-editor.tsx"
             },
             {
               "name": "RESIZE_HANDLES",
@@ -22645,6 +22670,11 @@
               "name": "useDashboardShortcuts",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
+            },
+            {
+              "name": "useDashboardUrlState",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard-url-state.ts"
             },
             {
               "name": "useExportSheet",
@@ -22807,8 +22837,24 @@
               "module": "packages/charts/src/dashboard/chrome/dashboard-grid-settings.tsx"
             },
             {
+              "name": "DashboardHighlight",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
+            },
+            {
               "name": "DashboardHover",
               "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardInteractionsDialogProps",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-interactions-editor.tsx"
+            },
+            {
+              "name": "DashboardInteractionsEditorLabels",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-interactions-editor.tsx"
+            },
+            {
+              "name": "DashboardInteractionsEditorProps",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-interactions-editor.tsx"
             },
             {
               "name": "DashboardLabels",
@@ -22827,6 +22873,10 @@
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
             {
+              "name": "DashboardNavigateContext",
+              "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
               "name": "DashboardPanelLabels",
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
             },
@@ -22841,6 +22891,10 @@
             {
               "name": "DashboardSelectionBarProps",
               "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
+              "name": "DashboardSelectRoute",
+              "module": "packages/charts/src/dashboard/core/store.ts"
             },
             {
               "name": "DashboardSheetProps",
@@ -22919,6 +22973,10 @@
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
             {
+              "name": "DecodedState",
+              "module": "packages/charts/src/dashboard/core/url.ts"
+            },
+            {
               "name": "DistributeAxis",
               "module": "packages/charts/src/dashboard/edit/align.ts"
             },
@@ -22929,6 +22987,10 @@
             {
               "name": "EditMessages",
               "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
+              "name": "EncodeDashboardStateInput",
+              "module": "packages/charts/src/dashboard/core/url.ts"
             },
             {
               "name": "ExportSheetFormat",
@@ -22979,6 +23041,14 @@
               "module": "packages/charts/src/dashboard/tiles/image-tile.tsx"
             },
             {
+              "name": "InteractionEffect",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
+            },
+            {
+              "name": "InteractionMap",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
+            },
+            {
               "name": "LocalSelectionDriver",
               "module": "packages/charts/src/dashboard/core/local-selection-driver.ts"
             },
@@ -23009,6 +23079,14 @@
             {
               "name": "ResizeHandle",
               "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
+              "name": "ResolvedInteraction",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
+            },
+            {
+              "name": "ResolveInteractionsOptions",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
             },
             {
               "name": "SelectionBarDriver",
@@ -23071,6 +23149,10 @@
               "module": "packages/charts/src/dashboard/edit/tile-resize-handles.tsx"
             },
             {
+              "name": "TileSelectionViewInput",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
+            },
+            {
               "name": "TileSizeBadgeProps",
               "module": "packages/charts/src/dashboard/edit/tile-size-badge.tsx"
             },
@@ -23081,6 +23163,14 @@
             {
               "name": "UseDashboardShortcutsOptions",
               "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
+            },
+            {
+              "name": "UseDashboardUrlStateOptions",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard-url-state.ts"
+            },
+            {
+              "name": "UseDashboardUrlStateResult",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard-url-state.ts"
             },
             {
               "name": "UseExportSheetOptions",
@@ -23233,6 +23323,10 @@
               "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
             },
             {
+              "name": "decodeDashboardState",
+              "module": "packages/charts/src/dashboard/core/url.ts"
+            },
+            {
               "name": "distributeTiles",
               "module": "packages/charts/src/dashboard/edit/align.ts"
             },
@@ -23247,6 +23341,10 @@
             {
               "name": "editStrategy",
               "module": "packages/charts/src/dashboard/edit/geometry.ts"
+            },
+            {
+              "name": "encodeDashboardState",
+              "module": "packages/charts/src/dashboard/core/url.ts"
             },
             {
               "name": "extendRows",
@@ -23279,6 +23377,14 @@
             {
               "name": "imageTileKind",
               "module": "packages/charts/src/dashboard/tiles/image-tile.tsx"
+            },
+            {
+              "name": "interactionEffect",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
+            },
+            {
+              "name": "isDrillEffect",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
             },
             {
               "name": "isTextField",
@@ -23337,8 +23443,16 @@
               "module": "packages/charts/src/dashboard/core/layout.ts"
             },
             {
+              "name": "resolveInteractions",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
+            },
+            {
               "name": "resolvePanelLabels",
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
+            },
+            {
+              "name": "setInteractionPair",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-interactions-editor.tsx"
             },
             {
               "name": "sheetForm",
@@ -23369,6 +23483,10 @@
               "module": "packages/charts/src/dashboard/tiles/text-tile.tsx"
             },
             {
+              "name": "tileConsumesSelection",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
+            },
+            {
               "name": "tileDensity",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
             },
@@ -23383,6 +23501,10 @@
             {
               "name": "tilePatchFromValues",
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
+            },
+            {
+              "name": "tileSelectionView",
+              "module": "packages/charts/src/dashboard/core/interactions.ts"
             },
             {
               "name": "tilesToClipboardPayload",

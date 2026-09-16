@@ -27,6 +27,8 @@ import {
   withConfigForm,
   type DashboardPanelLabels,
 } from "./common-tile-form";
+// interaction graph — RM-082
+import { DashboardInteractionsDialog } from "./dashboard-interactions-editor";
 import { sheetForm, sheetFormValues, sheetSpecFromValues } from "./sheet-form";
 
 export interface DashboardPropertiesPanelProps extends Omit<
@@ -209,6 +211,16 @@ export const DashboardPropertiesPanel = forwardRef<HTMLElement, DashboardPropert
           }
           onCommit={first ? commitTiles : commitSheet}
         />
+        {/* interaction graph — RM-082: exactly one focused tile edits its own interaction row. */}
+        {tiles.length === 1 && first ? (
+          <div data-slot="dashboard-properties-panel-interactions" className="px-1 pt-2">
+            <DashboardInteractionsDialog
+              key={first.id}
+              triggerLabel={labels.editInteractions}
+              tileId={first.id}
+            />
+          </div>
+        ) : null}
       </SideDock>
     );
   },
