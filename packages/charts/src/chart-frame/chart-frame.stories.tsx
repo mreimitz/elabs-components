@@ -5,6 +5,9 @@ import { Bar } from "../charts/bar";
 import { BarChart } from "../charts/bar-chart";
 import { BarXAxis } from "../charts/bar-x-axis";
 import { Grid } from "../charts/grid";
+import { PieCenter } from "../charts/pie-center";
+import { PieChart } from "../charts/pie-chart";
+import { PieSlice } from "../charts/pie-slice";
 import { ChartTooltip } from "../charts/tooltip";
 import { ChartFrame } from "./chart-frame";
 
@@ -434,6 +437,7 @@ export const DensityTiers: Story = {
 };
 
 const datapointClickSpy = fn();
+const DATAPOINT_TARGET = '[data-slot="chart-datapoint-layer-target"][tabindex="0"]';
 
 /**
  * Keyboard users see what hover shows (#447): tabbing onto a datapoint target
@@ -459,30 +463,75 @@ export const KeyboardTooltip: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    const target = await waitFor(() => {
-      const el = canvasElement.querySelector<HTMLButtonElement>(
-        '[data-slot="chart-datapoint-layer-target"][tabindex="0"]',
-      );
-      expect(el).not.toBeNull();
-      return el as HTMLButtonElement;
-    });
-    const tooltip = () =>
-      canvasElement.ownerDocument.querySelector<HTMLElement>('[data-slot="chart-tooltip-box"]');
+    const doc = canvasElement.ownerDocument;
+    const tooltip = () => doc.querySelector<HTMLElement>('[data-slot="chart-tooltip-box"]');
+    await waitFor(() => expect(canvasElement.querySelector(DATAPOINT_TARGET)).not.toBeNull());
     await expect(tooltip()).toBeNull();
-    // Tab onto the datapoint (away and back while the chart's enter phase settles).
-    await waitFor(
-      async () => {
-        (canvasElement.ownerDocument.activeElement as HTMLElement | null)?.blur();
-        for (let i = 0; i < 5 && canvasElement.ownerDocument.activeElement !== target; i++) {
-          await userEvent.tab();
-        }
-        await expect(target).toHaveFocus();
-        await expect(tooltip()).toBeVisible();
-      },
-      { timeout: 4000 },
-    );
+
+    // One tab, one wait: the bridge replays once the chart accepts hover.
+    await userEvent.tab();
+    await expect(canvasElement.querySelector(DATAPOINT_TARGET)).toHaveFocus();
+    await waitFor(() => expect(tooltip()).toBeVisible(), { timeout: 3000 });
+
     await userEvent.tab();
     await waitFor(() => expect(tooltip()).toBeNull());
+  },
+};
+
+const pieData = [
+  { label: "Direct", value: 320 },
+  { label: "Organic", value: 280 },
+  { label: "Referral", value: 190 },
+];
+
+/**
+ * The same bridge on a family with its own hover vocabulary (#447): a Pie has
+ * no tooltip box — hovering a slice lifts it with a glow and names it in the
+ * donut centre — so focusing a slice’s keyboard target shows exactly that.
+ */
+export const KeyboardTooltipPie: Story = {
+  name: "Keyboard tooltip (Pie)",
+  render: () => (
+    <div className="w-full max-w-[360px] rounded-lg border bg-card p-3">
+      <ChartFrame chrome="tile" title="Traffic by source" data={pieData} features={[]}>
+        <PieChart
+          accessibleLabel="Traffic by source"
+          data={pieData}
+          innerRadius={70}
+          size={240}
+          onDatapointClick={datapointClickSpy}
+        >
+          {pieData.map((item, i) => (
+            <PieSlice index={i} key={item.label} />
+          ))}
+          <PieCenter defaultLabel="Traffic" />
+        </PieChart>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvasElement.querySelector(DATAPOINT_TARGET)).not.toBeNull());
+    await expect(canvas.getByText("Traffic")).toBeVisible();
+
+    // The pie's figure is its own tab stop (the chart summary); the slice
+    // targets come next.
+    await userEvent.tab();
+    await expect(canvas.getByRole("figure", { name: "Traffic by source" })).toHaveFocus();
+    await userEvent.tab();
+    const target = canvasElement.querySelector<HTMLElement>(DATAPOINT_TARGET)!;
+    await expect(target).toHaveFocus();
+    // The focused slice's hover feedback: its name in the centre and the glow.
+    await waitFor(
+      () => {
+        expect(canvas.getByText("Direct")).toBeVisible();
+        expect(canvasElement.querySelector('[style*="drop-shadow"]')).not.toBeNull();
+      },
+      { timeout: 3000 },
+    );
+
+    await userEvent.tab();
+    await waitFor(() => expect(canvas.getByText("Traffic")).toBeVisible());
   },
 };
 
