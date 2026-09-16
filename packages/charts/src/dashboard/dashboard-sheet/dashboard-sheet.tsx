@@ -66,13 +66,15 @@ function baseTopLevelLayout(spec: DashboardSpec): TileLayout[] {
  * for `"sm"` — one column, `y`-then-`x` order, every tile `w === columns`. `"lg"` always reads
  * the base layout, ignoring `spec.layouts.md`/`spec.layouts.sm`.
  *
- * NOTE: `DashboardTile` positions itself from `spec.tiles[].layout` directly (RM-074), so
- * until it also consults this map, a tile's own on-screen `cellRect` still follows the base
- * layout at every breakpoint — this resolver is the source of truth for the sheet's own
- * height/reading-order/edit-gating decisions (below) and for a future `DashboardTile` change
- * that plumbs it through `DashboardGridContext`. See the RM-084 result file for the exact
- * follow-up this needs (a small, isolated change to `dashboard-tile.tsx`, which RM-084 does
- * not touch because RM-082 edits the same file in a parallel worktree).
+ * responsive layout — RM-084 follow-up 1: this map is also threaded through
+ * `DashboardGridContext` (`resolvedLayout`), so `DashboardTile`'s own on-screen `cellRect`
+ * follows the breakpoint too, via `useResolvedCell` — not just the sheet's height/reading
+ * order/edit-gating. `dashboard-edit-layer.tsx`'s drag-session ghost/handles still compute
+ * from the base `tile.layout` (out of this follow-up's grant) — a live pointer-drag at `md`
+ * with a `layouts.md` override that differs from the base layout can show a one-frame jump
+ * between the (resolved) tile body and the (base) ghost outline; a real gesture at that
+ * breakpoint is a further follow-up. Store-level `moveTile`/`resizeTile` (`core/store.ts`,
+ * `ui.layoutTarget`) always write to the RIGHT place regardless.
  */
 export function resolveBreakpointLayout(spec: DashboardSpec, bp: Breakpoint): Map<string, Cell> {
   const base = baseTopLevelLayout(spec);
@@ -317,9 +319,11 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
       }),
       [hasObserver, observe, renderAll, chrome, resolvedActive, menuItems],
     );
+    // responsive layout — RM-084: DashboardTile reads its own cell from this map (falling back
+    // to its base `layout` when absent) so on-screen position/size follow the breakpoint too.
     const gridContext = useMemo(
-      () => ({ grid: spec.grid, width, height }),
-      [spec.grid, width, height],
+      () => ({ grid: spec.grid, width, height, resolvedLayout }),
+      [spec.grid, width, height, resolvedLayout],
     );
 
     const tiles =
