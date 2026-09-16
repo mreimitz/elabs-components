@@ -15,19 +15,45 @@ const X_AXIS_POSITION_TWEEN_MS = DEFAULT_Y_DOMAIN_TWEEN_MS;
 export type XAxisPeriodTicks = "day" | "week" | "month";
 
 /**
- * Which `HairlineFloor` tick, out of every `n`, is drawn long for a given
- * period kind (RM-028) — day → weekly (every 7th), week → ~monthly (every
- * 4th), month → yearly (every 12th). `HairlineFloor`'s `every` is a plain
- * index stride, so this is an even-interval APPROXIMATION of a calendar
- * boundary, not a calendar-exact "first of month" check — exact for `"day"`
- * (a week really is 7 days), approximate for `"week"`/`"month"` (months and
- * years don't divide evenly into weeks/months).
+ * The number of periods a long `HairlineFloor` tick nominally represents for
+ * a given period kind (RM-028) — day → weekly, week → ~monthly, month →
+ * yearly. Kept for its documentary/numeric meaning (and for non-`Date`
+ * `HairlineFloor` callers that still want a plain index stride); `XAxis`
+ * itself no longer uses it to pick which tick is long — see
+ * {@link isLongPeriodTick} (#253).
  */
 export const PERIOD_TICKS_EVERY: Record<XAxisPeriodTicks, number> = {
   day: 7,
   week: 4,
   month: 12,
 };
+
+/**
+ * Whether `date` is a "long" `HairlineFloor` tick for `kind` — a calendar
+ * boundary a reader already holds, not an index stride from wherever the
+ * series happens to start (#253: `i % 7 === 0` from the first sample marks a
+ * different weekday for every series, which is not a boundary anyone reads
+ * off a calendar).
+ *
+ * - `"day"` — the first day of the ISO week (Monday, `getDay() === 1`),
+ *   matching this package's other Monday-aligned week stepping
+ *   (`gantt-timescale.tsx`'s `startOf("week")`).
+ * - `"week"` — the period lands in a month's first 7 days, i.e. the first
+ *   weekly period on/after each month boundary.
+ * - `"month"` — January, i.e. a year boundary.
+ */
+export function isLongPeriodTick(kind: XAxisPeriodTicks, date: Date): boolean {
+  switch (kind) {
+    case "day":
+      return date.getDay() === 1;
+    case "week":
+      return date.getDate() <= 7;
+    case "month":
+      return date.getMonth() === 0;
+    default:
+      return false;
+  }
+}
 
 /** Normalize to local-midnight so day/week/month stepping never drifts on DST. */
 function atLocalMidnight(date: Date): Date {
@@ -118,13 +144,15 @@ export interface XAxisProps {
   tickValues?: Date[];
   /**
    * Draw a `HairlineFloor` (RM-017) below the plot — one hairline tick per
-   * calendar period, whether or not a data row falls on it, with every
-   * `n`-th tick drawn longer (day → every 7th/weekly, week → every 4th/~monthly,
-   * month → every 12th/yearly). Lieflat provenance: the ruled foot of a ledger
-   * page gives a reader the passage of time with no labels and no axis. This
-   * is a SEPARATE visual layer from the labelled ticks above (`numTicks` /
-   * `tickMode`) — it never changes which labels render or where. `false`
-   * (default) draws nothing — today's behaviour.
+   * calendar period, whether or not a data row falls on it, with the long
+   * tick anchored to a real calendar boundary (day → the first day of the
+   * week, week → the first week of the month, month → January), not an index
+   * stride from wherever the series happens to start (#253). Lieflat
+   * provenance: the ruled foot of a ledger page gives a reader the passage of
+   * time with no labels and no axis. This is a SEPARATE visual layer from the
+   * labelled ticks above (`numTicks` / `tickMode`) — it never changes which
+   * labels render or where. `false` (default) draws nothing — today's
+   * behaviour.
    */
   periodTicks?: XAxisPeriodTicks | false;
 }
@@ -790,8 +818,13 @@ const XAxisInner = memo(function XAxisInner({
           width={width}
         >
           <HairlineFloor
-            every={PERIOD_TICKS_EVERY[effectivePeriodTicks as XAxisPeriodTicks]}
+            every={(date: Date) => isLongPeriodTick(effectivePeriodTicks as XAxisPeriodTicks, date)}
             longHeight={7}
+            // The long tick is the mark's ONLY navigational cue (#253) — give
+            // it a rung a reader can actually resolve. Short ticks stay at
+            // the default `--chart-grid` weight; this is grid FURNITURE, so
+            // a token, never a literal.
+            longStroke="var(--chart-foreground-muted)"
             periods={periodTickDates}
             scale={(date: Date) => {
               const x = xScale(date);

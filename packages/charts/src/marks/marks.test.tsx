@@ -186,6 +186,42 @@ describe("HairlineFloor", () => {
     );
     expect(container.querySelectorAll('[data-slot="hairline-floor"] line')).toHaveLength(2);
   });
+
+  // #253's no-op guard: the predicate/`longStroke` additions must not silently
+  // repaint a caller that only ever passed a numeric `every` — e.g.
+  // `marks.stories.tsx`'s vocabulary sheet.
+  it("with a numeric `every` and no `longStroke`, renders byte-identically to before", () => {
+    const months = Array.from({ length: 24 }, (_m, i) => i);
+    const { container } = renderSvg(
+      <HairlineFloor every={12} periods={months} scale={(m: number) => m * 5} y={100} />,
+    );
+    const ticks = container.querySelectorAll('[data-slot="hairline-floor"] line');
+    // No per-tick `stroke` — every tick still inherits the group's.
+    ticks.forEach((tick) => expect(tick.hasAttribute("stroke")).toBe(false));
+    const group = container.querySelector('[data-slot="hairline-floor"]');
+    expect(group?.getAttribute("stroke")).toBe("var(--chart-grid)");
+  });
+
+  it("accepts a predicate for `every` and paints only its long ticks with `longStroke`", () => {
+    const days = Array.from({ length: 14 }, (_d, i) => i);
+    const { container } = renderSvg(
+      <HairlineFloor
+        every={(_day, i) => i % 7 === 0}
+        longStroke="var(--chart-foreground-muted)"
+        periods={days}
+        scale={(d: number) => d * 5}
+        y={50}
+      />,
+    );
+    const ticks = [...container.querySelectorAll('[data-slot="hairline-floor"] line')];
+    expect(ticks).toHaveLength(14);
+    const longTicks = ticks.filter(
+      (t) => t.getAttribute("stroke") === "var(--chart-foreground-muted)",
+    );
+    expect(longTicks).toHaveLength(2); // indices 0 and 7
+    const shortTicks = ticks.filter((t) => !t.hasAttribute("stroke"));
+    expect(shortTicks).toHaveLength(12);
+  });
 });
 
 describe("QuietDot", () => {
