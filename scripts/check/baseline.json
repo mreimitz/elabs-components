@@ -8,8 +8,7 @@
     "packages/charts/src/charts/heatmap/heatmap-chart.stories.tsx#DotHeatDark",
     "packages/charts/src/charts/unit-chart.stories.tsx#AllLayouts",
     "packages/charts/src/charts/unit-chart.stories.tsx#MarkShapes",
-    "packages/charts/src/charts/unit-chart.stories.tsx#PerformanceStress",
-    "packages/charts/src/charts/waterfall-chart.stories.tsx#UnitRungs"
+    "packages/charts/src/charts/unit-chart.stories.tsx#PerformanceStress"
   ],
   "component-registration": ["collapsible-panel", "nav-main", "nav-user", "team-switcher"],
   "contract-known-failures": [
