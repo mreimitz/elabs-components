@@ -313,6 +313,30 @@
       "title": "KPI Cards — How reliable is it?",
       "description": "\"How reliable is it?\" — a ratio/streak headline over a 30-day strip of day cells, missed days marked by shape as well as colour, with the current and longest streaks and a comparison to the prior 30 days.",
       "categories": ["kpi-card"]
+    },
+    {
+      "name": "infographic-variance-bridge-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-variance-bridge-01",
+      "title": "Infographic — What drove the change?",
+      "description": "\"What drove the change?\" — a revenue bridge from last quarter's total to this quarter's, split into price, volume, mix, FX and other, built with WaterfallChart and a Leader callout on the one or two steps that actually explain the move. Steps sum exactly to the ending total; every step states its own sign in words, never colour alone.",
+      "categories": ["infographic"]
+    },
+    {
+      "name": "infographic-annotated-trend-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-annotated-trend-01",
+      "title": "Infographic — What happened, and when?",
+      "description": "\"What happened, and when?\" — a 20-week LineChart with up to three labelled events anchored to the exact data point they explain, connected by a Leader, never a legend. Compact keeps only the most consequential event.",
+      "categories": ["infographic"]
+    },
+    {
+      "name": "kpi-status-threshold-01",
+      "type": "registry:block",
+      "root": "registry/blocks/kpi-status-threshold-01",
+      "title": "KPI Cards — Should I act?",
+      "description": "\"Should I act?\" — a status (icon + text, never colour alone) read against a visible on-track/at-risk/off-track threshold scale with today's value marked, plus how long the current status has held.",
+      "categories": ["kpi-card"]
     }
   ]
 }

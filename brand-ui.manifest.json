@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T15:23:04.637Z",
+  "generatedAt": "2026-09-16T17:14:09.904Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -535,6 +535,24 @@
       "type": "registry:block",
       "title": "KPI Cards — How reliable is it?",
       "description": "\"How reliable is it?\" — a ratio/streak headline over a 30-day strip of day cells, missed days marked by shape as well as colour, with the current and longest streaks and a comparison to the prior 30 days."
+    },
+    {
+      "name": "infographic-variance-bridge-01",
+      "type": "registry:block",
+      "title": "Infographic — What drove the change?",
+      "description": "\"What drove the change?\" — a revenue bridge from last quarter's total to this quarter's, split into price, volume, mix, FX and other, built with WaterfallChart and a Leader callout on the one or two steps that actually explain the move. Steps sum exactly to the ending total; every step states its own sign in words, never colour alone."
+    },
+    {
+      "name": "infographic-annotated-trend-01",
+      "type": "registry:block",
+      "title": "Infographic — What happened, and when?",
+      "description": "\"What happened, and when?\" — a 20-week LineChart with up to three labelled events anchored to the exact data point they explain, connected by a Leader, never a legend. Compact keeps only the most consequential event."
+    },
+    {
+      "name": "kpi-status-threshold-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Should I act?",
+      "description": "\"Should I act?\" — a status (icon + text, never colour alone) read against a visible on-track/at-risk/off-track threshold scale with today's value marked, plus how long the current status has held."
     }
   ],
   "templates": [
@@ -15235,6 +15253,10 @@
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
+          "name": "WaterfallCallout",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
           "name": "WaterfallChartProps",
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
@@ -20869,6 +20891,12 @@
               "optional": true,
               "type": "ChartValueFormat",
               "description": "Value/label format. Default: locale number."
+            },
+            {
+              "name": "callouts",
+              "optional": true,
+              "type": "WaterfallCallout[]",
+              "description": "The one or two steps that actually explain the bridge, named directly on the chart (see {@link WaterfallCallout}). Default: none."
             },
             {
               "name": "height",
