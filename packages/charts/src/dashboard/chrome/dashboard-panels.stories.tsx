@@ -75,7 +75,13 @@ function Panels({ spec }: { spec: DashboardSpec }) {
       <div className="flex h-[640px] w-full min-w-0">
         <DashboardAssetPanel defaultOpen minWidth={280} defaultWidth={280} minContentWidth={400} />
         <main className="min-w-0 flex-1 p-2">
-          <div data-testid="host" className="h-[480px] w-full">
+          {/* responsive layout — RM-084 follow-up 2 (F1): two 280px docks otherwise squeeze this
+           * host below the new `sm` (640px) container-query threshold in the real-browser test
+           * runner (measured 624px), force-dropping the story's explicit `mode="edit"` to view —
+           * the edit layer never mounts, so the drag-drop play adds nothing. `min-w-*` (not a
+           * fixed `w-[…]`) keeps the sheet genuinely ≥ `sm` without pinning an upper bound
+           * (`no-fixed-story-wrapper`). */}
+          <div data-testid="host" className="h-[480px] w-full min-w-[680px]">
             <DashboardSheet renderAll />
           </div>
           <StoreProbe />

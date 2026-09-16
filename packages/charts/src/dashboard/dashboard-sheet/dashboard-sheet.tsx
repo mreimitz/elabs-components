@@ -21,8 +21,9 @@ import {
   DEFAULT_GRID_ROWS,
   DEFAULT_ROW_HEIGHT,
   cellRect,
+  stackForNarrow,
 } from "../core/layout";
-import type { ContainerSpec, GridSpec, TileLayout, TileSpec } from "../core/spec";
+import type { ContainerSpec, DashboardSpec, GridSpec, TileLayout, TileSpec } from "../core/spec";
 import type { DashboardState } from "../core/store";
 import { DashboardEditLayer } from "../edit/dashboard-edit-layer";
 import { DashboardTile } from "./dashboard-tile";
@@ -30,6 +31,7 @@ import type { DashboardTileMenuItem } from "./dashboard-tile-menu";
 import { DashboardSheetContext, type DashboardSheetContextValue } from "./sheet-context";
 import { DashboardGridContext, useCellRect } from "./use-cell-rect";
 import { useDashboard, useDashboardActions, useDashboardContext } from "./use-dashboard";
+import { useBreakpoint, type Breakpoint, type BreakpointThresholds } from "./use-breakpoint";
 
 /** More tiles than this on one sheet logs a dev-only warning (charts' max-6-per-page, widened). */
 export const DASHBOARD_TILE_WARNING_THRESHOLD = 12;
@@ -41,9 +43,47 @@ export interface DashboardSheetProps extends HTMLAttributes<HTMLDivElement> {
   chrome?: boolean;
   /** Extra kebab-menu entries per tile. */
   menuItems?: (tile: TileSpec) => DashboardTileMenuItem[];
+  /**
+   * Width thresholds for the sheet's own container-query breakpoint (RM-084, R8-R9). Default
+   * `md` 1024 / `sm` 640 — see `useBreakpoint`.
+   */
+  breakpoints?: BreakpointThresholds;
 }
 
-type Cell = Pick<TileLayout, "x" | "y" | "w" | "h">;
+export type Cell = Pick<TileLayout, "x" | "y" | "w" | "h">;
+
+/** Every top-level (non-container-child) tile/container's OWN layout, id included, spec order. */
+function baseTopLevelLayout(spec: DashboardSpec): TileLayout[] {
+  return [
+    ...spec.tiles.filter((t) => !t.container).map((t) => ({ id: t.id, ...t.layout })),
+    ...(spec.containers ?? []).map((c) => ({ id: c.id, ...c.layout })),
+  ];
+}
+
+/**
+ * Resolves the top-level layout for a breakpoint (RM-084, R9): `spec.layouts[bp]` when the
+ * author hand-tuned one, else the base layout for `"lg"`/`"md"`, else `stackForNarrow(base)`
+ * for `"sm"` — one column, `y`-then-`x` order, every tile `w === columns`. `"lg"` always reads
+ * the base layout, ignoring `spec.layouts.md`/`spec.layouts.sm`.
+ *
+ * responsive layout — RM-084 follow-up 1: this map is also threaded through
+ * `DashboardGridContext` (`resolvedLayout`), so `DashboardTile`'s own on-screen `cellRect`
+ * follows the breakpoint too, via `useResolvedCell` — not just the sheet's height/reading
+ * order/edit-gating. `dashboard-edit-layer.tsx`'s drag-session ghost/handles still compute
+ * from the base `tile.layout` (out of this follow-up's grant) — a live pointer-drag at `md`
+ * with a `layouts.md` override that differs from the base layout can show a one-frame jump
+ * between the (resolved) tile body and the (base) ghost outline; a real gesture at that
+ * breakpoint is a further follow-up. Store-level `moveTile`/`resizeTile` (`core/store.ts`,
+ * `ui.layoutTarget`) always write to the RIGHT place regardless.
+ */
+export function resolveBreakpointLayout(spec: DashboardSpec, bp: Breakpoint): Map<string, Cell> {
+  const base = baseTopLevelLayout(spec);
+  const resolved =
+    bp === "lg"
+      ? base
+      : (spec.layouts?.[bp] ?? (bp === "sm" ? stackForNarrow(base, spec.grid) : base));
+  return new Map(resolved.map((item) => [item.id, item as Cell]));
+}
 
 const conditionCache = new Map<string, Condition | null>();
 function conditionFor(src: string): Condition | null {
@@ -115,7 +155,16 @@ type SheetItem =
  */
 export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
   function DashboardSheet(
-    { renderAll = false, chrome = true, menuItems, className, style, onKeyDown, ...props },
+    {
+      renderAll = false,
+      chrome = true,
+      menuItems,
+      breakpoints,
+      className,
+      style,
+      onKeyDown,
+      ...props
+    },
     forwardedRef,
   ) {
     const { labels } = useDashboardContext();
@@ -134,29 +183,36 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
       [forwardedRef, measureRef],
     );
 
+    // Responsive (RM-084): the sheet's OWN width, never the viewport — a container query.
+    // Below `sm` the sheet stacks one column and edit mode is force-dropped to view (R8):
+    // small screens read a `flow`/stacked list, never edited in place.
+    const bp = useBreakpoint(rootRef, breakpoints);
+    const resolvedLayout = useMemo(() => resolveBreakpointLayout(spec, bp), [spec, bp]);
+    const editActive = mode === "edit" && bp !== "sm";
+
     const visible = useMemo(() => new Set<string>(JSON.parse(visibleKey)), [visibleKey]);
     const items = useMemo<SheetItem[]>(() => {
       const list: SheetItem[] = [
         ...spec.tiles
           .filter((t) => !t.container && visible.has(t.id))
-          .map((t) => ({ type: "tile" as const, id: t.id, layout: t.layout })),
+          .map((t) => ({
+            type: "tile" as const,
+            id: t.id,
+            layout: resolvedLayout.get(t.id) ?? t.layout,
+          })),
         ...(spec.containers ?? []).map((c) => ({
           type: "container" as const,
           id: c.id,
-          layout: c.layout,
+          layout: resolvedLayout.get(c.id) ?? c.layout,
           container: c,
         })),
       ];
       return list.sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x);
-    }, [spec, visible]);
+    }, [spec, visible, resolvedLayout]);
 
     const width = bounds.width;
     const fit = spec.grid.mode === "fit";
-    const intrinsicHeight = gridHeight(
-      spec.grid,
-      width,
-      [...spec.tiles.filter((t) => !t.container), ...(spec.containers ?? [])].map((t) => t.layout),
-    );
+    const intrinsicHeight = gridHeight(spec.grid, width, [...resolvedLayout.values()]);
 
     // `fit` fills a definite host height; without one it falls back to square cells, drawn by an
     // in-flow spacer. The host is "auto" when the `h-full` root collapses to 0 without the
@@ -263,9 +319,11 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
       }),
       [hasObserver, observe, renderAll, chrome, resolvedActive, menuItems],
     );
+    // responsive layout — RM-084: DashboardTile reads its own cell from this map (falling back
+    // to its base `layout` when absent) so on-screen position/size follow the breakpoint too.
     const gridContext = useMemo(
-      () => ({ grid: spec.grid, width, height }),
-      [spec.grid, width, height],
+      () => ({ grid: spec.grid, width, height, resolvedLayout }),
+      [spec.grid, width, height, resolvedLayout],
     );
 
     const tiles =
@@ -287,6 +345,7 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
         data-slot="dashboard-sheet"
         data-grid-mode={spec.grid.mode}
         data-fill={fit ? (fillsHost ? "host" : "square") : undefined}
+        data-breakpoint={bp}
         className={cn("relative w-full", fit && "h-full", className)}
         style={fit ? style : { height, ...style }}
         onKeyDown={onSheetKeyDown}
@@ -302,7 +361,7 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
                 style={{ height: intrinsicHeight }}
               />
             ) : null}
-            {mode === "edit" ? (
+            {editActive ? (
               <DashboardEditLayer sheetRef={rootRef} grid={spec.grid} width={width} height={height}>
                 {tiles}
               </DashboardEditLayer>

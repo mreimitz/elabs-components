@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T22:43:33.734Z",
+  "generatedAt": "2026-09-16T23:12:53.771Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -14451,6 +14451,14 @@
           "module": "packages/charts/src/charts/composed-chart.tsx"
         },
         {
+          "name": "ComposeSvgOptions",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
+          "name": "ComposeSvgPart",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
           "name": "DateTickerProps",
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
@@ -15409,6 +15417,10 @@
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
+          "name": "buildExportSvg",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
           "name": "buildHeatmapBuckets",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
@@ -15475,6 +15487,10 @@
         {
           "name": "circularRing",
           "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "composeSvg",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
         {
           "name": "computeAdjacency",
@@ -15607,6 +15623,10 @@
         {
           "name": "findChartCategoryIndex",
           "module": "packages/charts/src/charts/chart-hover-link.ts"
+        },
+        {
+          "name": "findChartSvg",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
         {
           "name": "firstMondayOfMonth",
@@ -15899,6 +15919,10 @@
         {
           "name": "seededRnd",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "serializeSvg",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
         {
           "name": "seriesDashArray",
@@ -22541,6 +22565,21 @@
               "module": "packages/charts/src/dashboard/core/selection.ts"
             },
             {
+              "name": "EXPORT_SHEET_HEIGHT",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/export/export-sheet.ts"
+            },
+            {
+              "name": "EXPORT_SHEET_SCALE",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/export/export-sheet.ts"
+            },
+            {
+              "name": "EXPORT_SHEET_WIDTH",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/export/export-sheet.ts"
+            },
+            {
               "name": "GRID_DENSITY_PRESETS",
               "kind": "value",
               "module": "packages/charts/src/dashboard/core/validate.ts"
@@ -22593,6 +22632,11 @@
           ],
           "hooks": [
             {
+              "name": "useBreakpoint",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-breakpoint.ts"
+            },
+            {
               "name": "useCellRect",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
@@ -22633,9 +22677,19 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard-url-state.ts"
             },
             {
+              "name": "useExportSheet",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/export/use-export-sheet.ts"
+            },
+            {
               "name": "useHover",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-hover.ts"
+            },
+            {
+              "name": "useResolvedCell",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
             },
             {
               "name": "useSelection",
@@ -22664,12 +22718,24 @@
               "module": "packages/charts/src/dashboard/edit/align.ts"
             },
             {
+              "name": "Breakpoint",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-breakpoint.ts"
+            },
+            {
+              "name": "BreakpointThresholds",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-breakpoint.ts"
+            },
+            {
               "name": "ButtonTileAction",
               "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
             },
             {
               "name": "ButtonTileContent",
               "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "Cell",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
             },
             {
               "name": "CellPitch",
@@ -22932,6 +22998,18 @@
               "module": "packages/charts/src/dashboard/core/url.ts"
             },
             {
+              "name": "ExportSheetFormat",
+              "module": "packages/charts/src/dashboard/export/export-sheet.ts"
+            },
+            {
+              "name": "ExportSheetOptions",
+              "module": "packages/charts/src/dashboard/export/export-sheet.ts"
+            },
+            {
+              "name": "ExportSheetResult",
+              "module": "packages/charts/src/dashboard/export/export-sheet.ts"
+            },
+            {
               "name": "FieldSelection",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-selection.ts"
             },
@@ -23006,6 +23084,10 @@
             {
               "name": "ResizeHandle",
               "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
+              "name": "ResolvedCell",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
             },
             {
               "name": "ResolvedInteraction",
@@ -23098,6 +23180,14 @@
             {
               "name": "UseDashboardUrlStateResult",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard-url-state.ts"
+            },
+            {
+              "name": "UseExportSheetOptions",
+              "module": "packages/charts/src/dashboard/export/use-export-sheet.ts"
+            },
+            {
+              "name": "UseExportSheetResult",
+              "module": "packages/charts/src/dashboard/export/use-export-sheet.ts"
             },
             {
               "name": "VariableTileContent",
@@ -23352,6 +23442,10 @@
             {
               "name": "resizeFrom",
               "module": "packages/charts/src/dashboard/edit/geometry.ts"
+            },
+            {
+              "name": "resolveBreakpointLayout",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
             },
             {
               "name": "resolveCollisions",

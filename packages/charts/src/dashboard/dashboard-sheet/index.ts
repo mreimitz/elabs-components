@@ -6,6 +6,7 @@ export * from "./dashboard-tile-menu";
 export * from "./labels";
 export * from "./placeholder-tile";
 export * from "./tile-registry";
+export * from "./use-breakpoint";
 export * from "./use-cell-rect";
 export { useDashboard, useDashboardActions, type DashboardContextValue } from "./use-dashboard";
 export * from "./use-dashboard-url-state";

@@ -118,24 +118,31 @@ describe("DashboardToolbar", () => {
 });
 
 describe("DashboardToolbar — narrow viewport (R8)", () => {
-  const realMatchMedia = window.matchMedia;
+  const realResizeObserver = globalThis.ResizeObserver;
 
   beforeEach(() => {
-    // Simulate the mobile preset: everything at/below the toolbar's 640 px breakpoint matches.
-    window.matchMedia = ((query: string) => ({
-      matches: query === "(max-width: 640px)",
-      media: query,
-      onchange: null,
-      addListener: () => undefined,
-      removeListener: () => undefined,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-      dispatchEvent: () => false,
-    })) as unknown as typeof window.matchMedia;
+    // `useBreakpoint` (RM-084) reads the toolbar's OWN width through a `ResizeObserver`, never
+    // `window`/`matchMedia` — simulate a narrow container by firing the observer callback with
+    // a `contentRect.width` below the `"sm"` threshold (640) the instant it starts observing.
+    class NarrowResizeObserver {
+      #callback: ResizeObserverCallback;
+      constructor(callback: ResizeObserverCallback) {
+        this.#callback = callback;
+      }
+      observe() {
+        this.#callback(
+          [{ contentRect: { width: 400 } } as ResizeObserverEntry],
+          this as unknown as ResizeObserver,
+        );
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+    globalThis.ResizeObserver = NarrowResizeObserver as unknown as typeof ResizeObserver;
   });
 
   afterEach(() => {
-    window.matchMedia = realMatchMedia;
+    globalThis.ResizeObserver = realResizeObserver;
   });
 
   it("disables the Edit toggle with a tooltip explaining why", async () => {

@@ -25,7 +25,7 @@ import { DashboardTileHeader } from "./dashboard-tile-header";
 import { DashboardTileMenu } from "./dashboard-tile-menu";
 import { useDashboardSheetContext } from "./sheet-context";
 import type { DashboardTileFrameProps, DashboardTileProps } from "./tile-registry";
-import { useCellRect } from "./use-cell-rect";
+import { useCellRect, useResolvedCell } from "./use-cell-rect";
 import { useDashboard, useDashboardActions, useDashboardContext } from "./use-dashboard";
 
 /** Density tier from a tile's pixel size: `xs` < 200×100, `sm` < 400×200, `md` < 800×400, else `lg`. */
@@ -132,8 +132,14 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     const editable = Boolean(edit && tile && !tile.container);
     const move = useTileMove(tileId, editable);
     const focused = useDashboard((s) => s.focus.includes(tileId));
-    const cells = (editable ? previewLayoutFor(edit, tileId) : undefined) ??
-      tile?.layout ?? { x: 0, y: 0, w: 1, h: 1 };
+    // responsive layout — RM-084 follow-up 1: an active edit-layer preview (a running drag/
+    // resize gesture) always wins; otherwise the sheet's resolved per-breakpoint cell for this
+    // tile id wins over its base `layout` — `undefined` (no sheet, no override, a container
+    // child) falls back to the base layout unchanged, so a sheet with no `layouts` renders
+    // byte-identically to before at every breakpoint.
+    const baseCell = tile?.layout ?? { x: 0, y: 0, w: 1, h: 1 };
+    const resolvedCell = useResolvedCell(tileId, baseCell);
+    const cells = (editable ? previewLayoutFor(edit, tileId) : undefined) ?? resolvedCell;
     const rect = useCellRect(cells);
 
     const rootRef = useRef<HTMLDivElement | null>(null);

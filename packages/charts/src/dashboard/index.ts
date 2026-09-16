@@ -38,5 +38,6 @@ export * from "./edit";
 // `resolveInteractions` and `tileSelectionView` through `./core`.
 
 // Export — RM-084
+export * from "./export";
 
 // Presentation/Theme/Workbook — RM-087

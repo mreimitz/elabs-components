@@ -315,3 +315,106 @@ export async function exportChartPng({
     URL.revokeObjectURL(url);
   }
 }
+
+// composeSvg — RM-084
+/**
+ * One positioned part of a composed multi-chart export (RM-084): an already self-contained
+ * SVG element (typically `buildExportSvg`'s output, so its colours/fonts are already inlined)
+ * placed at `x, y` and scaled to `width × height`.
+ */
+export interface ComposeSvgPart {
+  svg: SVGSVGElement;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Accessible title for this part's group (a tile's title), read by screen readers/Figma. */
+  title?: string;
+}
+
+/** Height (px) reserved for the title row a composed export prepends when `title` is set. */
+const COMPOSE_TITLE_ROW_HEIGHT = 40;
+
+export interface ComposeSvgOptions {
+  /** Canvas size the parts' `x`/`y`/`width`/`height` are positioned within. */
+  width: number;
+  height: number;
+  /** Resolved (computed, not `var(…)`) background colour painted behind every part. */
+  backgroundColor?: string;
+  /** Sheet/composition title, rendered as a row above every part. */
+  title?: string;
+  /** Attribution/source text (RM-019's row, reused), rendered at the bottom. */
+  source?: string;
+}
+
+/**
+ * Composes several already-built export parts (one per tile) into one self-contained `<svg>`:
+ * one `<g transform="translate(x, y)">` per part at its `cellRect`, each wrapping a nested
+ * `<svg>` sized to that part's `width × height` so the part's own viewBox/marks scale
+ * correctly, plus an optional title row above and a source row below (both reuse this
+ * module's existing row conventions). Deterministic — no timestamps, no random ids — so two
+ * calls with the same parts produce byte-identical output.
+ */
+export function composeSvg(
+  parts: readonly ComposeSvgPart[],
+  options: ComposeSvgOptions,
+): SVGSVGElement {
+  const titleRowHeight = options.title ? COMPOSE_TITLE_ROW_HEIGHT : 0;
+  const sourceRowHeight = options.source ? SOURCE_ROW_HEIGHT + SOURCE_ROW_PADDING : 0;
+  const totalHeight = options.height + titleRowHeight + sourceRowHeight;
+
+  const root = document.createElementNS(SVG_NS, "svg");
+  root.setAttribute("xmlns", SVG_NS);
+  root.setAttribute("width", String(options.width));
+  root.setAttribute("height", String(totalHeight));
+  root.setAttribute("viewBox", `0 0 ${options.width} ${totalHeight}`);
+
+  const background = document.createElementNS(SVG_NS, "rect");
+  background.setAttribute("x", "0");
+  background.setAttribute("y", "0");
+  background.setAttribute("width", String(options.width));
+  background.setAttribute("height", String(totalHeight));
+  background.setAttribute("fill", options.backgroundColor ?? "transparent");
+  root.append(background);
+
+  if (options.title) {
+    const heading = document.createElementNS(SVG_NS, "text");
+    heading.setAttribute("x", String(options.width / 2));
+    heading.setAttribute("y", String(titleRowHeight / 2 + 6));
+    heading.setAttribute("text-anchor", "middle");
+    heading.style.setProperty("font-size", "16px");
+    heading.style.setProperty("font-weight", "600");
+    heading.style.setProperty("fill", "currentColor");
+    heading.textContent = options.title;
+    root.append(heading);
+  }
+
+  for (const part of parts) {
+    const group = document.createElementNS(SVG_NS, "g");
+    group.setAttribute("transform", `translate(${part.x}, ${part.y + titleRowHeight})`);
+    if (part.title) {
+      const groupTitle = document.createElementNS(SVG_NS, "title");
+      groupTitle.textContent = part.title;
+      group.append(groupTitle);
+    }
+    const nested = part.svg.cloneNode(true) as SVGSVGElement;
+    if (!nested.getAttribute("viewBox")) {
+      const w = nested.getAttribute("width") ?? String(part.width);
+      const h = nested.getAttribute("height") ?? String(part.height);
+      nested.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    }
+    nested.setAttribute("x", "0");
+    nested.setAttribute("y", "0");
+    nested.setAttribute("width", String(part.width));
+    nested.setAttribute("height", String(part.height));
+    nested.removeAttribute("aria-hidden");
+    group.append(nested);
+    root.append(group);
+  }
+
+  if (options.source) {
+    appendSourceRow(root, options.width, totalHeight - sourceRowHeight, options.source);
+  }
+
+  return root;
+}

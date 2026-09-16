@@ -174,14 +174,25 @@ describe("createDashboardStore — ephemeral slices and selection", () => {
 describe("createDashboardStore — UI slice and setGrid", () => {
   it("setPanel opens/closes a chrome panel without touching history", () => {
     const { store, actions } = setup();
-    expect(store.getState().ui).toEqual({ assets: false, properties: false });
+    expect(store.getState().ui).toEqual({ assets: false, properties: false, layoutTarget: "base" });
     actions.setPanel("assets", true);
-    expect(store.getState().ui).toEqual({ assets: true, properties: false });
+    expect(store.getState().ui).toEqual({ assets: true, properties: false, layoutTarget: "base" });
     expect(store.getState().history.past).toBe(0);
     actions.setPanel("properties", true);
-    expect(store.getState().ui).toEqual({ assets: true, properties: true });
+    expect(store.getState().ui).toEqual({ assets: true, properties: true, layoutTarget: "base" });
     actions.setPanel("assets", false);
-    expect(store.getState().ui).toEqual({ assets: false, properties: true });
+    expect(store.getState().ui).toEqual({ assets: false, properties: true, layoutTarget: "base" });
+  });
+
+  // responsive layout — RM-084 follow-up 1
+  it("setLayoutTarget switches ui.layoutTarget without touching history", () => {
+    const { store, actions } = setup();
+    expect(store.getState().ui.layoutTarget).toBe("base");
+    actions.setLayoutTarget("md");
+    expect(store.getState().ui.layoutTarget).toBe("md");
+    expect(store.getState().history.past).toBe(0);
+    actions.setLayoutTarget("base");
+    expect(store.getState().ui.layoutTarget).toBe("base");
   });
 
   it("setGrid without a density change merges the patch as one history entry", () => {
