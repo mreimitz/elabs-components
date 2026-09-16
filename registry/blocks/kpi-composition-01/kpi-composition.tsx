@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
-import { type ChartPalette, resolvePalette } from "@elabs-ai/components-charts";
+import { type ChartPalette, chartMonoRamp, resolvePalette } from "@elabs-ai/components-charts";
 import { Badge, Card, CardContent, Skeleton } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
@@ -29,6 +29,41 @@ interface ResolvedSegment {
 }
 
 const OTHER_ID = "__other__";
+
+/**
+ * The categorical ramp (`--chart-1`..`--chart-12`) is only 3 truly distinct
+ * HUES repeated at varying lightness (RM-018) — past the 3rd series, e.g.
+ * `--chart-4` is the same yellow as `--chart-1`, just a little darker, and
+ * reads as the same colour in a 100%-stacked bar. Since `resolveSegments`
+ * already sorts largest-first, the first 3 (the segments worth telling apart
+ * at a glance) get the 3 real hues; the rest — including the merged "Other"
+ * bucket, always small by construction — fall back to the neutral ladder
+ * instead of a repeated, confusable hue (the usual convention for "the
+ * remainder" in a categorical chart).
+ */
+const DISTINCT_HUE_COUNT = 3;
+
+/** Neutral steps for the segments past `DISTINCT_HUE_COUNT` — quietest first, never the ramp's darkest. */
+function neutralSteps(n: number): string[] {
+  if (n <= 0) return [];
+  const last = chartMonoRamp.length - 1;
+  if (n === 1) return [chartMonoRamp[0] as string];
+  return Array.from(
+    { length: n },
+    (_, i) => chartMonoRamp[Math.round((i * last) / (n - 1))] as string,
+  );
+}
+
+/** Resolves one colour per segment, capping distinct hues at `DISTINCT_HUE_COUNT` (see above). */
+function resolveSegmentColors(segments: ResolvedSegment[], palette: ChartPalette): string[] {
+  if (palette !== "categorical" || segments.length <= DISTINCT_HUE_COUNT) {
+    return resolvePalette(palette, segments.length);
+  }
+  return [
+    ...resolvePalette("categorical", DISTINCT_HUE_COUNT),
+    ...neutralSteps(segments.length - DISTINCT_HUE_COUNT),
+  ];
+}
 
 /**
  * Shares under `mergeBelowPct` (default 3) collapse into a single "Other"
@@ -107,7 +142,11 @@ export function KpiComposition({
   return (
     <div
       aria-live={loading ? "polite" : undefined}
-      className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2", className)}
+      // `@container` + `@2xl:` (never a viewport `sm:`): a viewport breakpoint
+      // fires from the BROWSER width, so a narrower `cards` override (a single
+      // card, e.g. a Compact story) still got a two-column track and only
+      // half its box. A container query asks how wide THIS box actually is.
+      className={cn("@container grid grid-cols-1 gap-4 @2xl:grid-cols-2", className)}
       data-slot="kpi-composition"
       role={loading ? "status" : undefined}
     >
@@ -166,7 +205,7 @@ function KpiCompositionCard({
 }) {
   const segments = resolveSegments(categories, mergeBelowPct);
   const total = segments.reduce((sum, s) => sum + s.value, 0);
-  const colors = resolvePalette(palette, segments.length);
+  const colors = resolveSegmentColors(segments, palette);
   const summary = segments
     .map((s) => `${s.label} ${formatKpiValue(s.sharePct, "percent", locale)}`)
     .join(", ");

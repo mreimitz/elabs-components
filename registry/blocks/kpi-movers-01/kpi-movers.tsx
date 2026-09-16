@@ -51,7 +51,12 @@ export function KpiMovers({
   return (
     <div
       aria-live={loading ? "polite" : undefined}
-      className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2", className)}
+      // `@container` + `@2xl:` (never a viewport `sm:`): a viewport breakpoint
+      // fires from the BROWSER width, so `sm:grid-cols-2` still built a
+      // two-column track even when only ONE card renders (`only="onTime"`),
+      // handing that lone card half the track. A container query asks how
+      // wide THIS box actually is.
+      className={cn("@container grid grid-cols-1 gap-4 @2xl:grid-cols-2", className)}
       data-slot="kpi-movers"
       role={loading ? "status" : undefined}
     >
