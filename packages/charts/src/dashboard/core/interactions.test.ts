@@ -14,6 +14,7 @@ const tile = (id: string, consumes = true): TileSpec => ({
   id,
   kind: "chart",
   layout: { x: 0, y: 0, w: 4, h: 2 },
+  content: {},
   ...(consumes ? { consumes: { selection: true } } : {}),
   emits: { selection: ["Region"] },
 });

@@ -53,3 +53,28 @@ Binding rules: `.claude/rules/dashboard.md`. Machine check: `pnpm check --rule d
 
 A `table`, `chat` or `process-map` tile is registered by the host or shipped as a copy-own registry
 block — never imported here.
+
+## Interactions (RM-082)
+
+`resolveInteractions(spec)` (`core/interactions.ts`, whose JSDoc is the binding text) resolves
+`spec.interactions[]` into the effective emitter → consumer map. Precedence:
+
+1. Tile-level `consumes`/`emits` gate, `interactions[]` refines. Only a tile declaring
+   `consumes.selection` is a consumer; a pair to any other tile is dropped, and such a tile keeps
+   seeing every driver selection. Only a tile declaring `emits.selection` publishes through the
+   graph.
+2. Explicit pair > `from → "*"` wildcard > default `filter`; the last entry of equal specificity
+   wins. No `interactions` = today's behaviour.
+3. No self-interaction: `"*"` skips `from`, `from === to` is ignored; the emitter always sees its
+   own click.
+4. A write without a source tile (`select(field, values, opts)` — filter tile, selection bar,
+   external driver, bookmark) is global and always `filter`.
+
+Effects: `filter` goes through the driver (a chip); `highlight` paints `selected`/`excluded`
+through the same `selectionStates` tri-state from the store's ephemeral `highlight` slice, with no
+driver selection (no history, not persisted); `none` shields the target from that emitter's
+selection and highlight; `drill` calls the host's `onNavigate(sheetId, { carry })` (D5).
+`DashboardTile` computes each tile's view with `tileSelectionView` and marks a highlight target
+with `data-highlighted` (a test/host hook; nothing is styled off it). Edit pairs with
+`DashboardInteractionsEditor` (a matrix up to 12 tiles, a list above) or
+`DashboardInteractionsDialog`.
