@@ -7,20 +7,28 @@
  * everything through RM-071's store (`useDashboard`/`useDashboardActions`) — it owns no
  * state of its own beyond the two dialogs' open flags.
  *
- * Edit is disabled below the narrow-viewport breakpoint (R8: small screens read `flow`/
- * stacked, never edited in place) — the toggle stays visible with a tooltip explaining why,
- * never hidden (a control that vanishes reads as a bug, not a limit).
+ * Edit is disabled below the sheet's own `"sm"` container breakpoint (RM-084's `useBreakpoint`,
+ * R8: small screens read `flow`/stacked, never edited in place) — the toggle stays visible
+ * with a tooltip explaining why, never hidden (a control that vanishes reads as a bug, not a
+ * limit). Measured on the TOOLBAR's own width, not the window: in the common layout (toolbar
+ * full width above the sheet, same parent) that resolves to the same breakpoint `DashboardSheet`
+ * itself uses, without a store round-trip — see the RM-084 result file for why this is a
+ * same-hook reconciliation rather than one shared measured element.
  *
  * Leaving edit mode while dirty reuses the SAME "Discard changes?" confirmation as the
  * Discard button — but only when `onSave` is set. Without it there is nothing to persist,
  * so the edits are simply kept and the sheet drops back to view.
+ *
+ * "Export sheet…" (RM-084) opens a menu of SVG/PNG, disabled while editing (an export exports
+ * the SAVED picture, not a mid-drag one) and while a previous export is still running.
  */
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
-  useSyncExternalStore,
   type HTMLAttributes,
 } from "react";
 import {
@@ -32,11 +40,16 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   IconButton,
   KeyboardShortcuts,
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Spinner,
   ToolbarButton,
   ToolbarSeparator,
   ToolbarSlot,
@@ -51,11 +64,22 @@ import {
   useLocale,
   type ShortcutGroup,
 } from "@elabs-ai/components-ui";
-import { Eye, HelpCircle, LayoutGrid, PenLine, Plus, Redo2, Save, Undo2 } from "lucide-react";
+import {
+  Download,
+  Eye,
+  HelpCircle,
+  LayoutGrid,
+  PenLine,
+  Plus,
+  Redo2,
+  Save,
+  Undo2,
+} from "lucide-react";
 
 import type { GridSpec } from "../core/spec";
-import { useDashboard, useDashboardActions } from "../dashboard-sheet";
+import { useBreakpoint, useDashboard, useDashboardActions } from "../dashboard-sheet";
 import type { DashboardSpec } from "../core/spec";
+import { useExportSheet, type ExportSheetFormat } from "../export";
 import { DashboardGridSettings } from "./dashboard-grid-settings";
 import { dashboardShortcutDescriptors } from "./use-dashboard-shortcuts";
 
@@ -83,25 +107,6 @@ export interface DashboardToolbarProps extends Omit<HTMLAttributes<HTMLDivElemen
   warnOnUnload?: boolean;
 }
 
-const NARROW_QUERY = "(max-width: 640px)";
-
-function subscribeNarrow(callback: () => void): () => void {
-  if (typeof window === "undefined" || !window.matchMedia) return () => undefined;
-  const mql = window.matchMedia(NARROW_QUERY);
-  mql.addEventListener("change", callback);
-  return () => mql.removeEventListener("change", callback);
-}
-
-function getNarrowSnapshot(): boolean {
-  if (typeof window === "undefined" || !window.matchMedia) return false;
-  return window.matchMedia(NARROW_QUERY).matches;
-}
-
-/** `true` at or below the toolbar's edit-disabled breakpoint (640 px — R8). */
-function useNarrowViewport(): boolean {
-  return useSyncExternalStore(subscribeNarrow, getNarrowSnapshot, () => false);
-}
-
 /**
  * The dashboard sheet's edit toolbar: mode switch, undo/redo, Add, Grid settings, dirty
  * indicator, Save/Discard, keyboard shortcuts.
@@ -109,7 +114,7 @@ function useNarrowViewport(): boolean {
 export const DashboardToolbar = forwardRef<HTMLDivElement, DashboardToolbarProps>(
   function DashboardToolbar(
     { features, onSave, onAdd, warnOnUnload = false, className, ...props },
-    ref,
+    forwardedRef,
   ) {
     const { add = true, grid = true, shortcuts = true } = features ?? {};
     const { t } = useLocale();
@@ -118,7 +123,24 @@ export const DashboardToolbar = forwardRef<HTMLDivElement, DashboardToolbarProps
     const history = useDashboard((s) => s.history);
     const dirty = useDashboard((s) => s.dirty);
     const spec = useDashboard((s) => s.spec);
-    const isNarrow = useNarrowViewport();
+
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const setRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        rootRef.current = node;
+        if (typeof forwardedRef === "function") forwardedRef(node);
+        else if (forwardedRef) forwardedRef.current = node;
+      },
+      [forwardedRef],
+    );
+    const breakpoint = useBreakpoint(rootRef);
+    const isNarrow = breakpoint === "sm";
+
+    const { busy: exportBusy, exportSvg, exportPng } = useExportSheet();
+    async function handleExport(format: ExportSheetFormat) {
+      if (format === "svg") await exportSvg();
+      else await exportPng();
+    }
 
     const [discardOpen, setDiscardOpen] = useState(false);
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -206,7 +228,7 @@ export const DashboardToolbar = forwardRef<HTMLDivElement, DashboardToolbarProps
     return (
       <>
         <Toolbar
-          ref={ref}
+          ref={setRef}
           aria-label={t("charts.dashboard.toolbar.ariaLabel")}
           data-slot="dashboard-toolbar"
           className={cn(
@@ -290,6 +312,25 @@ export const DashboardToolbar = forwardRef<HTMLDivElement, DashboardToolbarProps
               </PopoverContent>
             </Popover>
           ) : null}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <ToolbarSlot asChild>
+                <Button variant="ghost" size="sm" disabled={mode === "edit" || exportBusy}>
+                  {exportBusy ? <Spinner className="size-4" /> : <Download aria-hidden="true" />}
+                  {t("charts.dashboard.toolbar.export")}
+                </Button>
+              </ToolbarSlot>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem disabled={exportBusy} onSelect={() => void handleExport("svg")}>
+                {t("charts.dashboard.toolbar.exportSvg")}
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={exportBusy} onSelect={() => void handleExport("png")}>
+                {t("charts.dashboard.toolbar.exportPng")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <ToolbarSeparator />
 

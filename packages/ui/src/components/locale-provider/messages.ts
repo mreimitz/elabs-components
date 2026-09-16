@@ -482,6 +482,10 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.dashboard.toolbar.shortcutPaste": "Paste tiles",
   "charts.dashboard.toolbar.shortcutSelectAll": "Select all tiles",
   "charts.dashboard.toolbar.shortcutContextMenu": "Open the focused tile’s context menu",
+  // dashboard toolbar export — RM-084: the "Export sheet…" menu (SVG, PNG).
+  "charts.dashboard.toolbar.export": "Export sheet…",
+  "charts.dashboard.toolbar.exportSvg": "Export as SVG",
+  "charts.dashboard.toolbar.exportPng": "Export as PNG",
   "charts.dashboard.grid.mode": "Layout mode",
   "charts.dashboard.grid.modeFit": "Fit to screen",
   "charts.dashboard.grid.modeFlow": "Flow",
