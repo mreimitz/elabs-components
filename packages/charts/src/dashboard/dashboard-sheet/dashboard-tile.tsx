@@ -16,6 +16,10 @@ import { ChartFrame, type ChartFrameMenuApi } from "../../chart-frame/chart-fram
 import type { ChartDensity, ChartInteractions } from "../../charts/chart-config-context";
 import { EMPTY_SELECTION } from "../core/selection";
 import type { DashboardMode } from "../core/store";
+import { previewLayoutFor, useDashboardEdit } from "../edit/edit-context";
+import { TileDragHandle, useTileMove } from "../edit/tile-drag-handle";
+import { TileResizeHandles } from "../edit/tile-resize-handles";
+import { TileSizeBadge } from "../edit/tile-size-badge";
 import { DashboardTileHeader } from "./dashboard-tile-header";
 import { DashboardTileMenu } from "./dashboard-tile-menu";
 import { useDashboardSheetContext } from "./sheet-context";
@@ -60,8 +64,11 @@ export interface DashboardTileRootProps extends HTMLAttributes<HTMLDivElement> {
  * nears the viewport (a `Skeleton` holds its size until then).
  */
 export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
-  function DashboardTile({ tileId, className, style, onFocus, ...props }, forwardedRef) {
-    const { registry, labels, onNavigate, onRefresh, onAction } = useDashboardContext();
+  function DashboardTile(
+    { tileId, className, style, onFocus, onKeyDown, onClick, ...props },
+    forwardedRef,
+  ) {
+    const { store, registry, labels, onNavigate, onRefresh, onAction } = useDashboardContext();
     const sheet = useDashboardSheetContext();
     const actions = useDashboardActions();
     const tile = useDashboard((s) => s.spec.tiles.find((t) => t.id === tileId));
@@ -73,16 +80,26 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     );
     const hover = useDashboard((s) => (capabilities.consumesHover ? s.hover : null));
     const variables = useDashboard((s) => s.variables);
-    const rect = useCellRect(tile?.layout ?? { x: 0, y: 0, w: 1, h: 1 });
+    // Edit mode (RM-078): top-level tiles move/resize through the edit layer, which paints the
+    // running gesture's would-be layout; tiles inside a container are not draggable yet.
+    const edit = useDashboardEdit();
+    const editable = Boolean(edit && tile && !tile.container);
+    const move = useTileMove(tileId, editable);
+    const focused = useDashboard((s) => s.focus.includes(tileId));
+    const cells = (editable ? previewLayoutFor(edit, tileId) : undefined) ??
+      tile?.layout ?? { x: 0, y: 0, w: 1, h: 1 };
+    const rect = useCellRect(cells);
 
     const rootRef = useRef<HTMLDivElement | null>(null);
+    const setDragNode = move.setNodeRef;
     const setRef = useCallback(
       (node: HTMLDivElement | null) => {
         rootRef.current = node;
+        setDragNode(node);
         if (typeof forwardedRef === "function") forwardedRef(node);
         else if (forwardedRef) forwardedRef.current = node;
       },
-      [forwardedRef],
+      [forwardedRef, setDragNode],
     );
 
     const observe = sheet?.observe ?? null;
@@ -125,7 +142,7 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
 
     const chrome = sheet?.chrome ?? true;
     const title = tile.title ?? "";
-    const header =
+    const titleHeader =
       chrome && tile.title ? (
         <DashboardTileHeader
           titleId={titleId}
@@ -134,6 +151,24 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
           density={density}
         />
       ) : undefined;
+    const accessibleTitle = title || labels.untitledTile(tile.kind);
+    const dragHandle = editable ? (
+      <TileDragHandle title={accessibleTitle} {...move.buttonProps} />
+    ) : null;
+    // In edit mode the whole header is the pointer/long-press drag surface, the move button at its start.
+    const header =
+      editable && chrome ? (
+        <div
+          data-slot="dashboard-tile-drag-surface"
+          className="flex min-w-0 touch-manipulation items-start gap-1"
+          {...move.headerProps}
+        >
+          {dragHandle}
+          {titleHeader}
+        </div>
+      ) : (
+        titleHeader
+      );
     const menuItems = sheet?.menuItems?.(tile);
     const menuSlot = chrome
       ? (api: ChartFrameMenuApi) => (
@@ -210,22 +245,30 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
       );
 
     const active = sheet ? sheet.activeTileId === tileId : true;
+    const session = edit?.session?.tileId === tileId ? edit.session : null;
+    const showEditChrome = editable && (focused || session !== null);
 
     return (
       <div
         ref={setRef}
         role="group"
         tabIndex={sheet ? (active ? 0 : -1) : undefined}
-        aria-labelledby={header ? titleId : undefined}
-        aria-label={header ? undefined : title || labels.untitledTile(tile.kind)}
+        aria-labelledby={titleHeader ? titleId : undefined}
+        aria-label={titleHeader ? undefined : accessibleTitle}
+        aria-describedby={move.describedBy}
         data-slot="dashboard-tile"
         data-tile-id={tile.id}
         data-tile-kind={tile.kind}
         data-density={density}
         data-tile-body-mounted={mounted ? "" : undefined}
+        data-editing={editable ? "" : undefined}
+        data-focused={editable && focused ? "" : undefined}
+        data-dragging={session ? session.kind : undefined}
         className={cn(
           "group/tile absolute flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-3 shadow-xs focus-ring",
           "transition-[transform,width,height] duration-base ease-standard motion-reduce:transition-none",
+          "data-focused:border-ring",
+          edit?.reducedMotion && "transition-none",
           className,
         )}
         style={{
@@ -240,13 +283,36 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         }}
         onFocus={(event) => {
           if (event.target === event.currentTarget) sheet?.setActiveTileId(tileId);
+          if (editable && event.target === event.currentTarget && !focused)
+            actions.setFocus([tileId]);
           onFocus?.(event);
+        }}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (!event.defaultPrevented) move.onRootKeyDown(event);
+        }}
+        onClick={(event) => {
+          onClick?.(event);
+          // Shift-click adds to the edit focus (multi-select proper is RM-081).
+          if (editable && event.shiftKey && !focused)
+            actions.setFocus([...store.getState().focus, tileId]);
         }}
         {...props}
       >
         <div data-slot="dashboard-tile-body" className="flex min-h-0 flex-1 flex-col">
           {body}
         </div>
+        {editable && !chrome ? (
+          <div className="absolute start-1 top-1 z-10" {...move.headerProps}>
+            {dragHandle}
+          </div>
+        ) : null}
+        {showEditChrome ? (
+          <>
+            <TileResizeHandles tileId={tileId} title={accessibleTitle} />
+            <TileSizeBadge cell={session?.target ?? tile.layout} />
+          </>
+        ) : null}
       </div>
     );
   },

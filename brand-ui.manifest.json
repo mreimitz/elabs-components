@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T15:52:52.303Z",
+  "generatedAt": "2026-09-16T16:49:16.720Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21883,9 +21883,19 @@
         "@elabs-ai/components-charts/dashboard": {
           "components": [
             {
+              "name": "DASHBOARD_EDIT_SHIFT_STEP",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/cell-coordinate-getter.ts"
+            },
+            {
               "name": "DASHBOARD_TILE_WARNING_THRESHOLD",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
+            },
+            {
+              "name": "DashboardEditLayer",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/dashboard-edit-layer.tsx"
             },
             {
               "name": "DashboardExpressionError",
@@ -21896,6 +21906,11 @@
               "name": "DashboardGridContext",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
+            },
+            {
+              "name": "DashboardMarquee",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/marquee.tsx"
             },
             {
               "name": "DashboardProvider",
@@ -21971,6 +21986,31 @@
               "name": "GRID_DENSITY_PRESETS",
               "kind": "value",
               "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
+              "name": "RESIZE_HANDLES",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
+              "name": "SILENT_ANNOUNCEMENTS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
+              "name": "TileDragHandle",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/tile-drag-handle.tsx"
+            },
+            {
+              "name": "TileResizeHandles",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/tile-resize-handles.tsx"
+            },
+            {
+              "name": "TileSizeBadge",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/tile-size-badge.tsx"
             }
           ],
           "hooks": [
@@ -21990,6 +22030,11 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
             },
             {
+              "name": "useDashboardEdit",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/edit-context.ts"
+            },
+            {
               "name": "useHover",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-hover.ts"
@@ -22005,6 +22050,11 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-tile.ts"
             },
             {
+              "name": "useTileMove",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/edit/tile-drag-handle.tsx"
+            },
+            {
               "name": "useVariable",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-variable.ts"
@@ -22018,6 +22068,10 @@
             {
               "name": "ButtonTileContent",
               "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "CellPitch",
+              "module": "packages/charts/src/dashboard/edit/cell-coordinate-getter.ts"
             },
             {
               "name": "CellRect",
@@ -22072,6 +22126,22 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
             },
             {
+              "name": "DashboardEditContextValue",
+              "module": "packages/charts/src/dashboard/edit/edit-context.ts"
+            },
+            {
+              "name": "DashboardEditDragData",
+              "module": "packages/charts/src/dashboard/edit/dashboard-edit-layer.tsx"
+            },
+            {
+              "name": "DashboardEditLayerProps",
+              "module": "packages/charts/src/dashboard/edit/dashboard-edit-layer.tsx"
+            },
+            {
+              "name": "DashboardEditSession",
+              "module": "packages/charts/src/dashboard/edit/edit-context.ts"
+            },
+            {
               "name": "DashboardGridContextValue",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
             },
@@ -22082,6 +22152,10 @@
             {
               "name": "DashboardLabels",
               "module": "packages/charts/src/dashboard/dashboard-sheet/labels.ts"
+            },
+            {
+              "name": "DashboardMarqueeProps",
+              "module": "packages/charts/src/dashboard/edit/marquee.tsx"
             },
             {
               "name": "DashboardMode",
@@ -22156,6 +22230,10 @@
               "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
             },
             {
+              "name": "EditMessages",
+              "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
               "name": "FieldSelection",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-selection.ts"
             },
@@ -22220,6 +22298,10 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
             },
             {
+              "name": "ResizeHandle",
+              "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
               "name": "SelectionBarDriver",
               "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
             },
@@ -22260,6 +22342,10 @@
               "module": "packages/charts/src/dashboard/tiles/text-tile.tsx"
             },
             {
+              "name": "TileDragHandleProps",
+              "module": "packages/charts/src/dashboard/edit/tile-drag-handle.tsx"
+            },
+            {
               "name": "TileLayoutOptions",
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
@@ -22272,14 +22358,30 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
             },
             {
+              "name": "TileResizeHandlesProps",
+              "module": "packages/charts/src/dashboard/edit/tile-resize-handles.tsx"
+            },
+            {
+              "name": "TileSizeBadgeProps",
+              "module": "packages/charts/src/dashboard/edit/tile-size-badge.tsx"
+            },
+            {
               "name": "VariableTileContent",
               "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
             }
           ],
           "otherExports": [
             {
+              "name": "applyLayout",
+              "module": "packages/charts/src/dashboard/edit/geometry.ts"
+            },
+            {
               "name": "applySelectionValues",
               "module": "packages/charts/src/dashboard/core/selection.ts"
+            },
+            {
+              "name": "arrowCellStep",
+              "module": "packages/charts/src/dashboard/edit/cell-coordinate-getter.ts"
             },
             {
               "name": "builtInTiles",
@@ -22288,6 +22390,10 @@
             {
               "name": "buttonTileKind",
               "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "cellDelta",
+              "module": "packages/charts/src/dashboard/edit/geometry.ts"
             },
             {
               "name": "cellRect",
@@ -22320,6 +22426,10 @@
             {
               "name": "createButtonTileKind",
               "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "createCellCoordinateGetter",
+              "module": "packages/charts/src/dashboard/edit/cell-coordinate-getter.ts"
             },
             {
               "name": "createChartTileKind",
@@ -22382,8 +22492,20 @@
               "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
             },
             {
+              "name": "dashboardAutoScroll",
+              "module": "packages/charts/src/dashboard/edit/auto-scroll.ts"
+            },
+            {
               "name": "dividerTileKind",
               "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
+            },
+            {
+              "name": "editMessages",
+              "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
+              "name": "editStrategy",
+              "module": "packages/charts/src/dashboard/edit/geometry.ts"
             },
             {
               "name": "extendRows",
@@ -22418,6 +22540,10 @@
               "module": "packages/charts/src/dashboard/tiles/metric-tile.tsx"
             },
             {
+              "name": "moveDraggableId",
+              "module": "packages/charts/src/dashboard/edit/tile-drag-handle.tsx"
+            },
+            {
               "name": "normalizeDashboardSpec",
               "module": "packages/charts/src/dashboard/core/validate.ts"
             },
@@ -22434,8 +22560,16 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
             },
             {
+              "name": "previewPlacement",
+              "module": "packages/charts/src/dashboard/edit/geometry.ts"
+            },
+            {
               "name": "renderInlineMarkup",
               "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
+            },
+            {
+              "name": "resizeFrom",
+              "module": "packages/charts/src/dashboard/edit/geometry.ts"
             },
             {
               "name": "resolveCollisions",
@@ -22460,6 +22594,10 @@
             {
               "name": "tileInteractions",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "topLevelLayout",
+              "module": "packages/charts/src/dashboard/edit/geometry.ts"
             },
             {
               "name": "validateDashboardSpec",

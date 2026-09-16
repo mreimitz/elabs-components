@@ -24,6 +24,7 @@ import {
 } from "../core/layout";
 import type { ContainerSpec, GridSpec, TileLayout, TileSpec } from "../core/spec";
 import type { DashboardState } from "../core/store";
+import { DashboardEditLayer } from "../edit/dashboard-edit-layer";
 import { DashboardTile } from "./dashboard-tile";
 import type { DashboardTileMenuItem } from "./dashboard-tile-menu";
 import { DashboardSheetContext, type DashboardSheetContextValue } from "./sheet-context";
@@ -119,6 +120,7 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
   ) {
     const { labels } = useDashboardContext();
     const spec = useDashboard((s) => s.spec);
+    const mode = useDashboard((s) => s.mode);
     const visibleKey = useDashboard(visibleTileIds);
     const [measureRef, bounds] = useMeasure();
     const rootRef = useRef<HTMLDivElement | null>(null);
@@ -231,6 +233,8 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
       onKeyDown?.(event);
       const target = event.target as HTMLElement;
       if (event.defaultPrevented || target.dataset.slot !== "dashboard-tile") return;
+      // A keyboard move owns the arrows while it runs (RM-078).
+      if (rootRef.current?.hasAttribute("data-edit-active")) return;
       const tiles = Array.from(
         rootRef.current?.querySelectorAll<HTMLElement>("[data-slot=dashboard-tile]") ?? [],
       );
@@ -264,6 +268,17 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
       [spec.grid, width, height],
     );
 
+    const tiles =
+      measured && observerReady
+        ? items.map((item) =>
+            item.type === "tile" ? (
+              <DashboardTile key={item.id} tileId={item.id} />
+            ) : (
+              <DashboardSheetContainer key={item.id} container={item.container} visible={visible} />
+            ),
+          )
+        : null;
+
     return (
       <div
         ref={setRef}
@@ -287,19 +302,13 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
                 style={{ height: intrinsicHeight }}
               />
             ) : null}
-            {measured && observerReady
-              ? items.map((item) =>
-                  item.type === "tile" ? (
-                    <DashboardTile key={item.id} tileId={item.id} />
-                  ) : (
-                    <DashboardSheetContainer
-                      key={item.id}
-                      container={item.container}
-                      visible={visible}
-                    />
-                  ),
-                )
-              : null}
+            {mode === "edit" ? (
+              <DashboardEditLayer sheetRef={rootRef} grid={spec.grid} width={width} height={height}>
+                {tiles}
+              </DashboardEditLayer>
+            ) : (
+              tiles
+            )}
           </DashboardGridContext.Provider>
         </DashboardSheetContext.Provider>
       </div>
