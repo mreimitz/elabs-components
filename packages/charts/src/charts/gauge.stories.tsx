@@ -100,6 +100,66 @@ export const LongCaption: Story = {
   },
 };
 
+/** A radial tick crossing the notch band at `target` — a quarterly goal. */
+export const WithTarget: Story = {
+  render: (args) => (
+    <div className="h-56 w-[360px]">
+      <Gauge {...args} />
+    </div>
+  ),
+  args: {
+    value: 72,
+    centerValue: 72,
+    suffix: "%",
+    defaultLabel: "Attainment",
+    target: 80,
+  },
+};
+
+/** Short outer-rim ticks naming bands — colour is not status here, only the accessible text names the band. */
+export const WithThresholds: Story = {
+  render: (args) => (
+    <div className="h-56 w-[360px]">
+      <Gauge {...args} />
+    </div>
+  ),
+  args: {
+    value: 72,
+    centerValue: 72,
+    suffix: "%",
+    defaultLabel: "Health score",
+    thresholds: [
+      { value: 50, label: "Needs Attention" },
+      { value: 75, label: "Good" },
+      { value: 100, label: "Excellent" },
+    ],
+  },
+};
+
+/**
+ * Both together — the accessible description composes to
+ * "72 of 100, target 80, band Good".
+ */
+export const TargetAndThresholds: Story = {
+  render: (args) => (
+    <div className="h-56 w-[360px]">
+      <Gauge {...args} />
+    </div>
+  ),
+  args: {
+    value: 72,
+    centerValue: 72,
+    suffix: "%",
+    defaultLabel: "Attainment",
+    target: 80,
+    thresholds: [
+      { value: 50, label: "Needs Attention" },
+      { value: 75, label: "Good" },
+      { value: 100, label: "Excellent" },
+    ],
+  },
+};
+
 /** `accessibleLabel`/`accessibleDescription` (#290) — a named, focusable figure. */
 export const AccessibleName: Story = {
   render: (args) => (
