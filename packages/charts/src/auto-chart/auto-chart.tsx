@@ -629,9 +629,13 @@ function renderChart(
         return null;
       }
       return (
+        // A treemap is shape-sensitive — its whole quality depends on tile
+        // aspect ratios — so `height` is a FLOOR here, matching the heatmap/
+        // dumbbell convention above, rather than a fixed box that can force a
+        // wide container into a degenerate row of slivers (#306).
         <TreemapChart
           data={hierarchy}
-          style={{ height }}
+          style={{ minHeight: height }}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}

@@ -732,3 +732,31 @@ describe("AutoChart", () => {
     });
   });
 });
+
+// A treemap is shape-sensitive — its whole quality depends on tile aspect
+// ratios — so `height` must be a FLOOR, not a fixed box, matching the
+// heatmap/dumbbell convention (#306: a wide+short fixed box degenerated the
+// layout into a row of slivers).
+describe("AutoChart treemap sizing (#306)", () => {
+  const treemapSpec: ChartSpec = {
+    type: "treemap",
+    data: [],
+    x: "name",
+    series: [],
+    hierarchy: {
+      name: "Spend",
+      children: [
+        { name: "Cloud", value: 40 },
+        { name: "Salaries", value: 60 },
+      ],
+    },
+  };
+
+  it("passes height as a minHeight floor, never a fixed height", () => {
+    const { container } = render(<AutoChart height={280} spec={treemapSpec} />);
+    const chartRoot = container.querySelector('[data-slot="treemap-chart"]') as HTMLElement;
+    expect(chartRoot).toBeInTheDocument();
+    expect(chartRoot.style.minHeight).toBe("280px");
+    expect(chartRoot.style.height).toBe("");
+  });
+});
