@@ -23,7 +23,6 @@
  */
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
 import { curveMonotoneX, curveNatural } from "@visx/curve";
 import { expect, waitFor } from "storybook/test";
 import { feature } from "topojson-client";

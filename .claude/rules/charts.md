@@ -30,6 +30,8 @@ local RFC-4180 serializer, never `toCsv`.
 One contract per container: `onDatapointClick?: (point: ChartDatapoint, event) => void`.
 **Keyboard targets live OUTSIDE the `<svg>`** — never `tabIndex`/`role="button"` on an SVG
 shape; use `ChartDatapointLayer`, a positioned sibling of real `<button>`s.
+Pointer-only VIEW gestures that reveal no data (NetworkChart drag-to-peek) need no keyboard
+equivalent — their facts already reach the datapoint layer's accessible names (#274, 2026-09-16).
 
 ## Mark colour & furniture
 
