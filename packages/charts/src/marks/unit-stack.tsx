@@ -19,12 +19,26 @@ export interface UnitStackProps extends Omit<
   kind: UnitStackKind;
   /** Which way the stack grows from `(x, y)`. */
   direction: UnitStackDirection;
-  /** Cross-axis extent of one unit in px — the rung's width, or the dot's diameter. */
+  /**
+   * Cross-axis extent of one ORDINARY unit in px — the rung's width, or the
+   * dot's diameter. An every-`markEvery`-th mark renders
+   * `length * UNIT_STACK_EMPHASIS` (centred for `"rung"`), so a caller with a
+   * hard cross-axis bound (e.g. a bar's own width) must pass
+   * `bound / UNIT_STACK_EMPHASIS`, not `bound` — otherwise the emphatic mark
+   * overruns the bound on both sides (#241).
+   */
   length: number;
   /** Distance between consecutive unit centres in px (default 3). */
   step?: number;
   /** Every n-th unit is drawn longer and heavier so the stack stays countable (default 5). */
   markEvery?: number;
+  /**
+   * Shifts every mark's growth-axis position by `originOffset * step` from
+   * `(x, y)` — e.g. `originOffset={1}` places mark 0 one full `step` from the
+   * origin instead of AT it, so a caller can terminate the ladder flush with
+   * a value's own end rather than one unit short of it (default 0, #241).
+   */
+  originOffset?: number;
   /** Vary each unit's stroke width and opacity through {@link seededRnd} (default false). */
   jitter?: boolean;
   /** The stack's seed — the `k` of {@link seededRnd}. Required whenever `jitter` is on. */
@@ -43,8 +57,12 @@ const VECTORS: Record<UnitStackDirection, { ax: number; ay: number; cx: number; 
   up: { ax: 0, ay: -1, cx: 1, cy: 0 },
 };
 
-/** How much longer and heavier an every-n-th unit is drawn. */
-const EMPHASIS = 1.5;
+/**
+ * How much longer and heavier an every-n-th unit is drawn. Exported so a
+ * caller with a hard cross-axis bound can reserve the headroom (`length =
+ * bound / UNIT_STACK_EMPHASIS`) instead of overrunning it (#241).
+ */
+export const UNIT_STACK_EMPHASIS = 1.5;
 
 /**
  * UnitStack — `n` countable marks in a row: the ladder of rungs inside a bar, the
@@ -85,6 +103,7 @@ export const UnitStack = forwardRef<SVGGElement, UnitStackProps>(function UnitSt
     length,
     step = 3,
     markEvery = 5,
+    originOffset = 0,
     jitter = false,
     seed,
     x = 0,
@@ -104,12 +123,12 @@ export const UnitStack = forwardRef<SVGGElement, UnitStackProps>(function UnitSt
   return (
     <g aria-hidden="true" data-slot="unit-stack" ref={ref} {...props}>
       {Array.from({ length: count }, (_unit, i) => {
-        const px = x + ax * i * step;
-        const py = y + ay * i * step;
+        const px = x + ax * (i + originOffset) * step;
+        const py = y + ay * (i + originOffset) * step;
         const emphatic = markEvery > 0 && (i + 1) % markEvery === 0;
-        const len = emphatic ? length * EMPHASIS : length;
+        const len = emphatic ? length * UNIT_STACK_EMPHASIS : length;
         const width =
-          (emphatic ? baseWidth * EMPHASIS : baseWidth) *
+          (emphatic ? baseWidth * UNIT_STACK_EMPHASIS : baseWidth) *
           (jitter ? 0.7 + 0.6 * seededRnd(i, seed) : 1);
         const opacity = jitter ? 0.65 + 0.35 * seededRnd(i, seed + 1) : 1;
 
