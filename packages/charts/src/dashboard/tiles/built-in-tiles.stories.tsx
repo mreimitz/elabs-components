@@ -76,13 +76,16 @@ const ALL_BUILT_INS: DashboardSpec = {
       id: "revenue-trend",
       kind: "chart",
       layout: { x: 12, y: 3, w: 12, h: 5 },
-      title: "Revenue by quarter",
+      title: "Revenue by region, detail view",
       content: {
         type: "line",
+        // Same `region` categories as `revenue-by-region` (not quarters) — RM-075's
+        // acceptance bullet needs a SECOND chart whose marks share the selected field's
+        // values, so clicking EMEA there flips this chart's matching mark too.
         data: [
-          { region: "Q1", revenue: 10 },
-          { region: "Q2", revenue: 14 },
-          { region: "Q3", revenue: 18 },
+          { region: "EMEA", revenue: 18 },
+          { region: "APAC", revenue: 14 },
+          { region: "AMER", revenue: 10 },
         ],
         x: "region",
         series: [{ key: "revenue", label: "Revenue" }],
@@ -164,6 +167,17 @@ export const AllBuiltInsOnOneSheet: Story = {
     ]) {
       expect(sheet.querySelector(`[data-tile-kind="${kind}"]`)).not.toBeNull();
     }
+    // RM-075 acceptance: clicking a bar in `revenue-by-region` also flips the SECOND
+    // chart's (`revenue-trend`) matching marks — both `consumes`/`emits` selection on the
+    // shared "region" field, and (as of this fix) share the same region categories.
+    const emeaBar = await canvas.findByRole("button", { name: "revenue, EMEA: 41" });
+    emeaBar.focus();
+    await userEvent.keyboard("{Enter}");
+    const trendTile = sheet.querySelector('[data-tile-id="revenue-trend"]') as HTMLElement;
+    await waitFor(() => {
+      expect(trendTile.querySelectorAll('[data-selection="selected"]').length).toBeGreaterThan(0);
+    });
+    expect(trendTile.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(0);
   },
 };
 
