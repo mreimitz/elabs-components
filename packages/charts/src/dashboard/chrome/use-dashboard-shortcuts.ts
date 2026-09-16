@@ -67,14 +67,22 @@ export function useDashboardShortcuts(
         actions.redo();
       } else if (mod && key === "d") {
         event.preventDefault();
-        for (const id of currentFocus) actions.duplicateTile(id);
+        // Batched so N focused tiles duplicate as ONE history entry (one Undo
+        // reverts all of them) — see the store's own `batch` doc + F1.
+        actions.batch(() => {
+          for (const id of currentFocus) actions.duplicateTile(id);
+        });
       } else if (mod && key === "s") {
         event.preventDefault();
         save?.();
       } else if (!mod && (event.key === "Delete" || event.key === "Backspace")) {
         if (currentFocus.length === 0) return;
         event.preventDefault();
-        for (const id of currentFocus) actions.removeTile(id);
+        // Batched so N focused tiles delete as ONE history entry (one Undo
+        // restores all of them) — see the store's own `batch` doc + F1.
+        actions.batch(() => {
+          for (const id of currentFocus) actions.removeTile(id);
+        });
       } else if (!mod && key === "e") {
         event.preventDefault();
         actions.setMode(currentMode === "edit" ? "view" : "edit");
