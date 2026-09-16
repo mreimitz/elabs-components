@@ -75,11 +75,24 @@ describe("WaterfallChart", () => {
     // Default `valueFormat` is "compact" (DEFAULT_CHART_VALUE_FORMAT), so the
     // 1000-magnitude total compacts to "1K" while the smaller step deltas do
     // not. A "total" row is an absolute value, not a delta, so it renders
-    // unsigned; "step" rows render signed.
+    // unsigned; "step" rows render signed with a real minus (`−`, U+2212),
+    // never `Intl`'s own ASCII hyphen.
     render(<WaterfallChart data={grossToNet} />);
     expect(screen.getByText("1K")).toBeInTheDocument();
-    expect(screen.getByText("-100")).toBeInTheDocument();
-    expect(screen.getByText("-300")).toBeInTheDocument();
+    expect(screen.getByText("−100")).toBeInTheDocument();
+    expect(screen.getByText("−300")).toBeInTheDocument();
+  });
+
+  it("renders a negative total with a real minus, never Intl's ASCII hyphen", () => {
+    const negativeTotal: WaterfallDatum[] = [
+      { kind: "total", label: "Start", value: 0 },
+      { label: "Drop 1", value: -400 },
+      { label: "Drop 2", value: -200 },
+      { kind: "total", label: "End", value: -600 },
+    ];
+    render(<WaterfallChart data={negativeTotal} valueFormat="number" />);
+    expect(screen.getByText("−600")).toBeInTheDocument();
+    expect(screen.queryByText("-600")).toBeNull();
   });
 
   it("respects an explicit valueFormat", () => {

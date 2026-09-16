@@ -235,6 +235,18 @@ function fillForRow(
 }
 
 /**
+ * A real minus (`−`, U+2212), never `Intl`'s own ASCII hyphen — the same
+ * convention the KPI card format helpers (`formatKpiDelta`) already use:
+ * draw the sign yourself and format the ABSOLUTE value. `signStep` adds a
+ * leading `+` for a positive STEP (a total is an absolute value, never
+ * signed positive).
+ */
+function formatSigned(value: number, format: (v: number) => string, signStep: boolean): string {
+  const sign = value < 0 ? "−" : signStep && value > 0 ? "+" : "";
+  return `${sign}${format(Math.abs(value))}`;
+}
+
+/**
  * The decoration pattern index a row's step draws with (ADR 0011, #257):
  * increase = series 0, decrease = series 1, total = series 2 — fixed by the
  * row's MEANING, so "up", "down" and "total" keep one texture each.
@@ -389,14 +401,17 @@ function WaterfallBars({
     if (isHorizontal || !callouts?.length || geometry.length === 0) {
       return null;
     }
-    const topMostY = Math.min(...geometry.map((g) => g.y));
-    const noteY = topMostY - 22;
     return callouts.flatMap((callout) => {
       const g = geometry.find((entry) => entry.row.label === callout.label);
       if (!g) {
         return [];
       }
+      // Anchored to THIS bar's own top, never the tallest bar on the chart —
+      // a shared note height reads as floating furniture the moment another
+      // step is taller (`.claude/rules/charts.md` § Marks: a leader must
+      // visibly touch the thing it names).
       const anchorX = g.x + g.width / 2;
+      const noteY = g.y - 22;
       const anchor: LeaderPoint = [anchorX, g.y];
       return [
         <g data-slot="waterfall-chart-callout" key={`waterfall-callout-${callout.label}`}>
@@ -492,9 +507,7 @@ function WaterfallBars({
           );
 
         const labelText = showValues
-          ? g.row.kind === "total"
-            ? format(g.row.value)
-            : `${g.row.value > 0 ? "+" : ""}${format(g.row.value)}`
+          ? formatSigned(g.row.value, format, g.row.kind !== "total")
           : null;
 
         const labelX = isHorizontal
@@ -540,6 +553,10 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
   /** Dashed hand-off hairline between each step's end and the next step's
    * start. Default `true`. */
   connectors?: boolean;
+  /** The value-axis gridlines. Turn off when every bar already carries its
+   * own value label (`showValues`) and an unlabelled gridline would only add
+   * furniture with no tick to read it against. Default `true`. */
+  grid?: boolean;
   /** Fill for an increasing step. Default `var(--chart-seq-6)`. */
   positiveFill?: string;
   /** Fill for a decreasing step. Default `var(--chart-seq-3)`. */
@@ -583,6 +600,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
       copyValueOnActivate,
       data,
       datapointLabel,
+      grid = true,
       height,
       margin,
       maxInteractiveDatapoints,
@@ -622,7 +640,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
           orientation={orientation}
           xDataKey="label"
         >
-          <Grid horizontal={!isHorizontal} vertical={isHorizontal} />
+          {grid ? <Grid horizontal={!isHorizontal} vertical={isHorizontal} /> : null}
           <WaterfallBars
             callouts={callouts}
             connectors={connectors}
@@ -639,22 +657,21 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
           <ChartTooltip
             rows={(point) => {
               const row = point as unknown as WaterfallRow;
-              const sign = row.kind === "total" ? "" : row.value > 0 ? "+" : "";
               return [
                 {
                   color: fillForRow(row, positiveFill, negativeFill, totalFill),
                   label: "Value",
-                  value: `${sign}${format(row.value)}`,
+                  value: formatSigned(row.value, format, row.kind !== "total"),
                 },
                 {
                   color: "var(--chart-foreground-muted)",
                   label: "Before",
-                  value: format(row.before),
+                  value: formatSigned(row.before, format, false),
                 },
                 {
                   color: "var(--chart-foreground-muted)",
                   label: "After",
-                  value: format(row.after),
+                  value: formatSigned(row.after, format, false),
                 },
               ];
             }}
