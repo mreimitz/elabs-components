@@ -401,6 +401,9 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.gantt.unitMinute": "Minute",
   "charts.gantt.unitSecond": "Second",
   "charts.gantt.unitMillisecond": "Millisecond",
+  // RM-075 follow-up: `container` dashboard tile's default tablist name when the tile
+  // has no `title`.
+  "charts.dashboard.containerTabs": "Container tabs",
 
   // ── @elabs-ai/components-maps ─────────────────────────────────────────────────────────────
   "maps.popup.close": "Close popup",

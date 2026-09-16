@@ -13,6 +13,8 @@ export interface DashboardContextValue {
   labels: DashboardLabels;
   onNavigate?: (sheetId: string) => void;
   onRefresh?: (tileId: string) => void;
+  /** A `button` tile's `{ type: "host" }` action (or any kind's own host action). */
+  onAction?: (id: string) => void;
 }
 
 export const DashboardContext = createContext<DashboardContextValue | null>(null);

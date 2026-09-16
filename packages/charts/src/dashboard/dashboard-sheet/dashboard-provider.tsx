@@ -36,6 +36,11 @@ export interface DashboardProviderProps {
   onNavigate?: (sheetId: string) => void;
   /** A tile asks for fresh data; the host fetches (D5). */
   onRefresh?: (tileId: string) => void;
+  /**
+   * A `button` tile's `{ type: "host", id }` action (or any kind's own host action) —
+   * the host decides what `id` means (D5). Threaded to `DashboardTileProps.emit.action`.
+   */
+  onAction?: (id: string) => void;
   /** Strings for the sheet chrome; missing keys fall back to English. */
   labels?: Partial<DashboardLabels>;
   children: ReactNode;
@@ -61,11 +66,12 @@ export function DashboardProvider({
   onSelectionChange,
   onNavigate,
   onRefresh,
+  onAction,
   labels,
   children,
 }: DashboardProviderProps) {
-  const callbacks = useRef({ onChange, onSelectionChange, onNavigate });
-  callbacks.current = { onChange, onSelectionChange, onNavigate };
+  const callbacks = useRef({ onChange, onSelectionChange, onNavigate, onAction });
+  callbacks.current = { onChange, onSelectionChange, onNavigate, onAction };
 
   const [store] = useState(() =>
     createDashboardStore({
@@ -136,6 +142,7 @@ export function DashboardProvider({
       labels: mergedLabels,
       onNavigate: (sheetId) => callbacks.current.onNavigate?.(sheetId),
       onRefresh,
+      onAction: (id) => callbacks.current.onAction?.(id),
     }),
     [store, registry, mergedLabels, onRefresh],
   );

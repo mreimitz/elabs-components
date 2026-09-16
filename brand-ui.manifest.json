@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T14:42:32.284Z",
+  "generatedAt": "2026-09-16T15:33:34.829Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16252,6 +16252,12 @@
               "optional": true,
               "type": "(category: ChartHoverCategory) => void",
               "description": "Fires with the hovered category on pointer move, `null` on leave (RM-073)."
+            },
+            {
+              "name": "onDatapointClick",
+              "optional": true,
+              "type": "ChartDatapointClickHandler",
+              "description": "Forwarded to the chosen container's own `onDatapointClick` (RM-075), when that family accepts one (bar, line, area/stream, pie, waterfall, heatmap/calendar, dumbbell, unit, treemap, histogram/box/strip, bump, funnel, diverging-bar). Absent on scatter/radar/candlestick — those containers don't accept it yet. Unset by default, so the default render stays byte-identical (#349's own rule: \"with it unset the chart renders exactly as before\")."
             }
           ]
         },
@@ -21991,8 +21997,20 @@
           ],
           "types": [
             {
+              "name": "ButtonTileAction",
+              "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "ButtonTileContent",
+              "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
               "name": "CellRect",
               "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "ChartTileContent",
+              "module": "packages/charts/src/dashboard/tiles/chart-tile.tsx"
             },
             {
               "name": "CollisionResult",
@@ -22009,6 +22027,14 @@
             {
               "name": "ConditionContext",
               "module": "packages/charts/src/dashboard/core/expression.ts"
+            },
+            {
+              "name": "ContainerTabSpec",
+              "module": "packages/charts/src/dashboard/tiles/container-tile.tsx"
+            },
+            {
+              "name": "ContainerTileContent",
+              "module": "packages/charts/src/dashboard/tiles/container-tile.tsx"
             },
             {
               "name": "CreateDashboardStoreOptions",
@@ -22107,12 +22133,24 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
             },
             {
+              "name": "DividerTileContent",
+              "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
+            },
+            {
               "name": "FieldSelection",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-selection.ts"
             },
             {
+              "name": "HeadingTileContent",
+              "module": "packages/charts/src/dashboard/tiles/heading-tile.tsx"
+            },
+            {
               "name": "History",
               "module": "packages/charts/src/dashboard/core/history.ts"
+            },
+            {
+              "name": "ImageTileContent",
+              "module": "packages/charts/src/dashboard/tiles/image-tile.tsx"
             },
             {
               "name": "LocalSelectionDriver",
@@ -22121,6 +22159,14 @@
             {
               "name": "LocalSelectionDriverOptions",
               "module": "packages/charts/src/dashboard/core/local-selection-driver.ts"
+            },
+            {
+              "name": "MarkupBlock",
+              "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
+            },
+            {
+              "name": "MetricTileContent",
+              "module": "packages/charts/src/dashboard/tiles/metric-tile.tsx"
             },
             {
               "name": "NewTileSpec",
@@ -22163,6 +22209,10 @@
               "module": "packages/charts/src/dashboard/core/selection.ts"
             },
             {
+              "name": "TextTileContent",
+              "module": "packages/charts/src/dashboard/tiles/text-tile.tsx"
+            },
+            {
               "name": "TileLayoutOptions",
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
@@ -22173,6 +22223,10 @@
             {
               "name": "TileRegistry",
               "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "VariableTileContent",
+              "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
             }
           ],
           "otherExports": [
@@ -22181,8 +22235,20 @@
               "module": "packages/charts/src/dashboard/core/selection.ts"
             },
             {
+              "name": "builtInTiles",
+              "module": "packages/charts/src/dashboard/tiles/built-in-tiles.ts"
+            },
+            {
+              "name": "buttonTileKind",
+              "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
               "name": "cellRect",
               "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "chartTileKind",
+              "module": "packages/charts/src/dashboard/tiles/chart-tile.tsx"
             },
             {
               "name": "collides",
@@ -22197,20 +22263,52 @@
               "module": "packages/charts/src/dashboard/core/expression.ts"
             },
             {
+              "name": "containerTileKind",
+              "module": "packages/charts/src/dashboard/tiles/container-tile.tsx"
+            },
+            {
               "name": "correctBounds",
               "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "createButtonTileKind",
+              "module": "packages/charts/src/dashboard/tiles/button-tile.tsx"
+            },
+            {
+              "name": "createChartTileKind",
+              "module": "packages/charts/src/dashboard/tiles/chart-tile.tsx"
+            },
+            {
+              "name": "createContainerTileKind",
+              "module": "packages/charts/src/dashboard/tiles/container-tile.tsx"
             },
             {
               "name": "createDashboardStore",
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
             {
+              "name": "createDividerTileKind",
+              "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
+            },
+            {
+              "name": "createHeadingTileKind",
+              "module": "packages/charts/src/dashboard/tiles/heading-tile.tsx"
+            },
+            {
               "name": "createHistory",
               "module": "packages/charts/src/dashboard/core/history.ts"
             },
             {
+              "name": "createImageTileKind",
+              "module": "packages/charts/src/dashboard/tiles/image-tile.tsx"
+            },
+            {
               "name": "createLocalSelectionDriver",
               "module": "packages/charts/src/dashboard/core/local-selection-driver.ts"
+            },
+            {
+              "name": "createMetricTileKind",
+              "module": "packages/charts/src/dashboard/tiles/metric-tile.tsx"
             },
             {
               "name": "createPlaceholderTileKind",
@@ -22221,8 +22319,20 @@
               "module": "packages/charts/src/dashboard/core/selection.ts"
             },
             {
+              "name": "createTextTileKind",
+              "module": "packages/charts/src/dashboard/tiles/text-tile.tsx"
+            },
+            {
               "name": "createTileRegistry",
               "module": "packages/charts/src/dashboard/dashboard-sheet/tile-registry.ts"
+            },
+            {
+              "name": "createVariableTileKind",
+              "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
+            },
+            {
+              "name": "dividerTileKind",
+              "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
             },
             {
               "name": "extendRows",
@@ -22237,16 +22347,40 @@
               "module": "packages/charts/src/dashboard/core/history.ts"
             },
             {
+              "name": "headingTileKind",
+              "module": "packages/charts/src/dashboard/tiles/heading-tile.tsx"
+            },
+            {
               "name": "hitTestCell",
               "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "imageTileKind",
+              "module": "packages/charts/src/dashboard/tiles/image-tile.tsx"
+            },
+            {
+              "name": "metricTileKind",
+              "module": "packages/charts/src/dashboard/tiles/metric-tile.tsx"
             },
             {
               "name": "normalizeDashboardSpec",
               "module": "packages/charts/src/dashboard/core/validate.ts"
             },
             {
+              "name": "parseInlineMarkup",
+              "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
+            },
+            {
+              "name": "parseMarkupBlocks",
+              "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
+            },
+            {
               "name": "placeholderTileKind",
               "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
+            },
+            {
+              "name": "renderInlineMarkup",
+              "module": "packages/charts/src/dashboard/tiles/inline-markup.ts"
             },
             {
               "name": "resolveCollisions",
@@ -22261,6 +22395,10 @@
               "module": "packages/charts/src/dashboard/core/layout.ts"
             },
             {
+              "name": "textTileKind",
+              "module": "packages/charts/src/dashboard/tiles/text-tile.tsx"
+            },
+            {
               "name": "tileDensity",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
             },
@@ -22271,6 +22409,14 @@
             {
               "name": "validateDashboardSpec",
               "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
+              "name": "variableTileKind",
+              "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
+            },
+            {
+              "name": "withBuiltInTiles",
+              "module": "packages/charts/src/dashboard/tiles/built-in-tiles.ts"
             }
           ]
         }
