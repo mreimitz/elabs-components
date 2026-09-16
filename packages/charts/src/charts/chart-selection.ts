@@ -36,6 +36,7 @@ import {
   type ReactNode,
   type SVGProps,
   use,
+  useId,
 } from "react";
 
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
@@ -218,7 +219,10 @@ export interface ChartSelectionMarkProps {
    * excluded channel and the selected outline. Omit to paint only the dim.
    */
   shape?: ReactElement<SVGProps<SVGElement>>;
-  /** `ChartSelectionHatchDefs` id, required by the `hatch` channel. */
+  /**
+   * A chart-level `ChartSelectionHatchDefs` id to share. Omitted → the mark
+   * emits its own pattern definition.
+   */
   hatchId?: string;
   children: ReactNode;
 }
@@ -236,19 +240,22 @@ export function ChartSelectionMark({
   paint,
   shape,
 }: ChartSelectionMarkProps) {
+  const ownHatchId = `selection-hatch-${useId().replace(/:/g, "")}`;
   const state = paint["data-selection"];
   if (state === undefined) return createElement(Fragment, null, children);
   let channelNode: ReactNode = null;
+  let defsNode: ReactNode = null;
   if (paint.dimmed && shape) {
-    if (channel === "hatch" && hatchId) {
+    if (channel === "hatch") {
+      if (!hatchId) defsNode = createElement(ChartSelectionHatchDefs, { id: ownHatchId });
       channelNode = cloneElement(shape, {
         "data-slot": "chart-selection-mark-hatch",
-        fill: `url(#${hatchId})`,
+        fill: `url(#${hatchId ?? ownHatchId})`,
         key: "channel",
         pointerEvents: "none",
         stroke: "none",
       } as SVGProps<SVGElement>);
-    } else if (channel !== "hatch") {
+    } else {
       channelNode = cloneElement(shape, {
         "data-slot": `chart-selection-mark-${channel}`,
         fill: channel === "hollow" ? chartCssVars.background : "none",
@@ -278,6 +285,7 @@ export function ChartSelectionMark({
       "data-slot": "chart-selection-mark",
       opacity: paint.dimmed ? SELECTION_EXCLUDED_OPACITY : undefined,
     },
+    defsNode,
     children,
     channelNode,
     outline,

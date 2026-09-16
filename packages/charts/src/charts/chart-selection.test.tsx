@@ -18,6 +18,8 @@ vi.mock("@visx/responsive", () => {
   };
 });
 
+import { Area } from "./area";
+import { AreaChart } from "./area-chart";
 import { Bar } from "./bar";
 import { BarChart } from "./bar-chart";
 import {
@@ -26,6 +28,12 @@ import {
   resolveMarkState,
   type SelectionState,
 } from "./chart-selection";
+import { Line } from "./line";
+import { LineChart } from "./line-chart";
+import { PieChart } from "./pie-chart";
+import PieSlice from "./pie-slice";
+import Ring from "./ring";
+import { RingChart } from "./ring-chart";
 
 beforeAll(() => {
   if (typeof globalThis.ResizeObserver === "undefined") {
@@ -35,6 +43,19 @@ beforeAll(() => {
       disconnect() {}
     } as unknown as typeof ResizeObserver;
   }
+  globalThis.IntersectionObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  } as unknown as typeof IntersectionObserver;
+  // jsdom has no SVG geometry; `<Line>`/`<Area>` measure their path length.
+  Object.defineProperty(SVGElement.prototype, "getTotalLength", {
+    configurable: true,
+    value: () => 100,
+  });
 });
 
 afterEach(cleanup);
@@ -124,5 +145,87 @@ describe("BarChart selectionStates", () => {
     expect(excluded).not.toBeNull();
     expect(excluded?.getAttribute("opacity")).toBeNull();
     expect(excluded?.querySelector('[data-slot="bar-selection-hatch"]')).toBeNull();
+  });
+});
+
+// ── Other families (RM-073) ──────────────────────────────────────────────────
+
+const byLabel = (category: string | number | Date) => STATES[String(category)] ?? "associated";
+const regionRows = data.map((d) => ({ label: d.region, value: d.sales, maxValue: 30 }));
+
+const FAMILIES: {
+  name: string;
+  channel: string;
+  render: (props: Record<string, unknown>) => React.ReactElement;
+}[] = [
+  {
+    name: "LineChart",
+    channel: "chart-selection-series-layer-dash",
+    render: (props) => (
+      <LineChart animationDuration={0} data={data} xDataKey="region" xScale="band" {...props}>
+        <Line animate={false} dataKey="sales" />
+      </LineChart>
+    ),
+  },
+  {
+    name: "AreaChart",
+    channel: "chart-selection-series-layer-hatch",
+    render: (props) => (
+      <AreaChart animationDuration={0} data={data} xDataKey="region" xScale="band" {...props}>
+        <Area animate={false} dataKey="sales" />
+      </AreaChart>
+    ),
+  },
+  {
+    name: "PieChart",
+    channel: "chart-selection-mark-hatch",
+    render: (props) => (
+      <PieChart data={regionRows} size={240} {...props}>
+        {regionRows.map((row, index) => (
+          <PieSlice animate={false} index={index} key={row.label} />
+        ))}
+      </PieChart>
+    ),
+  },
+  {
+    name: "RingChart",
+    channel: "chart-selection-mark-hatch",
+    render: (props) => (
+      <RingChart data={regionRows} size={240} {...props}>
+        {regionRows.map((row, index) => (
+          <Ring animate={false} index={index} key={row.label} />
+        ))}
+      </RingChart>
+    ),
+  },
+];
+
+describe.each(FAMILIES)("$name selectionStates", ({ channel, render: element }) => {
+  const normalise = (html: string) => html.replace(/_r_[a-z0-9]+_/g, "_r_");
+
+  it("renders byte-identical DOM when selectionStates is absent", () => {
+    const plain = normalise(render(element({})).container.innerHTML);
+    cleanup();
+    const withDim = normalise(render(element({ dimExcluded: true })).container.innerHTML);
+    expect(withDim).toBe(plain);
+    expect(plain).not.toContain("data-selection");
+  });
+
+  it("paints the three states apart without hue", () => {
+    const { container } = render(element({ selectionStates: byLabel }));
+    const excluded = container.querySelector('[data-selection="excluded"]');
+    const selected = container.querySelector('[data-selection="selected"]');
+    expect(container.querySelector('[data-selection="associated"]')).not.toBeNull();
+    expect(excluded?.querySelector(`[data-slot="${channel}"]`)).not.toBeNull();
+    expect(selected?.querySelector('[data-slot$="-outline"]')).not.toBeNull();
+  });
+
+  it("announces selected and excluded datapoints by name", () => {
+    const { container } = render(element({ onDatapointClick: () => {}, selectionStates: byLabel }));
+    const names = Array.from(container.querySelectorAll("button[aria-label]")).map((b) =>
+      b.getAttribute("aria-label"),
+    );
+    expect(names.some((name) => name?.endsWith(", selected"))).toBe(true);
+    expect(names.some((name) => name?.endsWith(", excluded"))).toBe(true);
   });
 });
