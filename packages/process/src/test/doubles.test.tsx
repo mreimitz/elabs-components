@@ -6,6 +6,7 @@ import { extractVariants } from "../core/extract-variants";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
 import {
   DottedChartDouble,
+  PerformanceSpectrumDouble,
   ProcessKpiStripDouble,
   ProcessMapDouble,
   VariantExplorerDouble,
@@ -63,6 +64,22 @@ describe("process test doubles", () => {
         <DottedChartDouble log={{ events: [{ caseId: "c", activity: "A", timestamp: "nope" }] }} />,
       ),
     ).toThrow(/parsable timestamps/);
+  });
+
+  // PerformanceSpectrum — RM-060
+  it("PerformanceSpectrumDouble records the event count and accepts the default order", () => {
+    const { container } = render(<PerformanceSpectrumDouble log={log} />);
+    const el = container.querySelector('[data-process-double="PerformanceSpectrumDouble"]');
+    expect(readProcessDoubleProps(el as Element)?.dataLength).toBe(log.events.length);
+  });
+
+  it("PerformanceSpectrumDouble accepts a variant path and rejects an order absent from the log", () => {
+    expect(() =>
+      render(<PerformanceSpectrumDouble log={log} order={{ variantId: variants[0]!.id }} />),
+    ).not.toThrow();
+    expect(() =>
+      render(<PerformanceSpectrumDouble log={log} order={[{ from: "Nope", to: "Never" }]} />),
+    ).toThrow(/resolves to no segment/);
   });
 
   it("throws a contract error when required data is missing (a broken test fails loudly)", () => {

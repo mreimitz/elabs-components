@@ -84,6 +84,53 @@ describe("assertProcessContract", () => {
   });
 });
 
+// PerformanceSpectrum — RM-060
+describe("assertProcessContract — log + segment order", () => {
+  const LOG_SPEC: ProcessContractSpec = { dataProp: "log", segmentOrder: true };
+  const log = {
+    events: [
+      { caseId: "c1", activity: "A", timestamp: 0 },
+      { caseId: "c1", activity: "B", timestamp: 10 },
+    ],
+  };
+
+  it("throws when the log prop is not an EventLog", () => {
+    expect(() => assertProcessContract("PerformanceSpectrumDouble", {}, LOG_SPEC)).toThrow(
+      /"log" prop must be an EventLog/,
+    );
+  });
+
+  it("passes when the order resolves to a segment present in the log", () => {
+    expect(() =>
+      assertProcessContract("PerformanceSpectrumDouble", { log }, LOG_SPEC),
+    ).not.toThrow();
+    expect(() =>
+      assertProcessContract(
+        "PerformanceSpectrumDouble",
+        { log, order: [{ from: "A", to: "B" }] },
+        LOG_SPEC,
+      ),
+    ).not.toThrow();
+  });
+
+  it("throws when the order resolves to nothing in the log", () => {
+    expect(() =>
+      assertProcessContract(
+        "PerformanceSpectrumDouble",
+        { log, order: [{ from: "B", to: "A" }] },
+        LOG_SPEC,
+      ),
+    ).toThrow(/resolves to no segment/);
+    expect(() =>
+      assertProcessContract(
+        "PerformanceSpectrumDouble",
+        { log, order: { variantId: "x" } },
+        LOG_SPEC,
+      ),
+    ).toThrow(ProcessContractError);
+  });
+});
+
 describe("buildProcessDoublePayload / readProcessDoubleProps round-trip", () => {
   it("carries the graph's activity count and the current selection", () => {
     const graph: ProcessGraph = { ...emptyGraph, activities: [...emptyGraph.activities] };

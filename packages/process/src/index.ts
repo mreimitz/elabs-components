@@ -50,3 +50,6 @@ export * from "./case-timeline";
 
 // DottedChart — RM-059
 export * from "./dotted-chart";
+
+// PerformanceSpectrum — RM-060
+export * from "./performance-spectrum";

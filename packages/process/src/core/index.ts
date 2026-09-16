@@ -156,3 +156,20 @@ export type { ConformanceBucket, ConformanceRatePoint, ConformanceResult } from 
 // fromXes — RM-063
 export { fromXes } from "./adapters/xes";
 export type { XesParseError, XesParseOptions, XesParseResult } from "./adapters/xes";
+
+// segments — RM-060
+export {
+  durationQuartile,
+  durationQuartileThresholds,
+  quartileOf,
+  segmentKey,
+  segmentOrderByFrequency,
+  segmentOrderForVariant,
+  segmentsFor,
+} from "./segments";
+export type {
+  DurationQuartile,
+  QuartileThresholds,
+  SegmentDefinition,
+  SegmentOccurrence,
+} from "./segments";
