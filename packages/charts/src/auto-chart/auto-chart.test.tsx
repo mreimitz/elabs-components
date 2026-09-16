@@ -919,3 +919,98 @@ describe("AutoChart treemap palette (#306)", () => {
     expect(isChartSpecPalette(undefined)).toBe(false);
   });
 });
+
+// Selection/Hover inputs — RM-073
+describe("AutoChart selection pass-through (RM-073)", () => {
+  const spec: ChartSpec = {
+    type: "bar",
+    data: [
+      { region: "EMEA", code: "E", sales: 12 },
+      { region: "APAC", code: "A", sales: 24 },
+      { region: "AMER", code: "M", sales: 8 },
+    ],
+    x: "region",
+    series: ["sales"],
+  };
+  const states = { EMEA: "selected", APAC: "associated", AMER: "excluded" } as const;
+
+  it("renders the same data-selection attributes as the underlying BarChart", () => {
+    const { container } = render(
+      <AutoChart
+        copyValueOnActivate={false}
+        selectionStates={(c) => states[String(c) as keyof typeof states]}
+        spec={spec}
+      />,
+    );
+    const painted = [...container.querySelectorAll("[data-selection]")].map((el) =>
+      el.getAttribute("data-selection"),
+    );
+    expect(painted).toEqual(["selected", "associated", "excluded"]);
+  });
+
+  it("re-keys the resolver onto spec.fields.category", () => {
+    const byCode = { E: "excluded", A: "excluded", M: "selected" } as const;
+    const { container } = render(
+      <AutoChart
+        copyValueOnActivate={false}
+        selectionStates={(c) => byCode[String(c) as keyof typeof byCode] ?? "associated"}
+        spec={{ ...spec, fields: { category: "code" } }}
+      />,
+    );
+    expect(container.querySelectorAll('[data-selection="excluded"]')).toHaveLength(2);
+  });
+
+  it.each([
+    { type: "line" },
+    { type: "area" },
+    { type: "pie" },
+    { type: "dumbbell", series: ["sales", "target"] },
+    { type: "unit" },
+    { type: "treemap" },
+  ] as const)("forwards selectionStates to the $type family", ({ type, ...rest }) => {
+    const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 300,
+      height: 300,
+      left: 0,
+      right: 600,
+      toJSON: () => ({}),
+      top: 0,
+      width: 600,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    const typed: ChartSpec = {
+      ...spec,
+      data: spec.data?.map((row) => ({ ...row, target: Number(row.sales) + 5 })),
+      hierarchy: {
+        name: "Sales",
+        children: [
+          {
+            name: "All",
+            children: (spec.data ?? []).map((row) => ({
+              name: String(row.region),
+              value: Number(row.sales),
+            })),
+          },
+        ],
+      },
+      type,
+      xType: "category",
+      series: "series" in rest && rest.series ? [...rest.series] : spec.series,
+    };
+    const { container } = render(
+      <AutoChart
+        copyValueOnActivate={false}
+        selectionStates={(c) => states[String(c) as keyof typeof states] ?? "associated"}
+        spec={typed}
+      />,
+    );
+    rect.mockRestore();
+    const painted = new Set(
+      [...container.querySelectorAll("[data-selection]")].map((el) =>
+        el.getAttribute("data-selection"),
+      ),
+    );
+    expect(painted).toEqual(new Set(["selected", "associated", "excluded"]));
+  });
+});

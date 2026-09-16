@@ -362,3 +362,65 @@ export const HighDecoration: Story = {
     );
   },
 };
+
+// Selection states — RM-073
+type SelectionStateName = "selected" | "associated" | "excluded";
+const SELECTION_BY_REGION: Record<string, SelectionStateName> = {
+  EMEA: "selected",
+  APAC: "associated",
+  AMER: "excluded",
+};
+const selectionByRegion = (category: string | number | Date): SelectionStateName =>
+  SELECTION_BY_REGION[String(category)] ?? "associated";
+
+/** Asserts the three states read apart without hue: outline, plain, dim + pattern. */
+async function expectSelectionStates(root: HTMLElement) {
+  await waitFor(() =>
+    expect(root.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(0),
+  );
+  expect(root.querySelectorAll('[data-selection="associated"]').length).toBeGreaterThan(0);
+  for (const node of root.querySelectorAll('[data-selection="selected"]')) {
+    expect(node.querySelector('[data-slot$="-outline"]')).not.toBeNull();
+  }
+  for (const node of root.querySelectorAll<SVGElement>('[data-selection="excluded"]')) {
+    const dimmed =
+      Number(getComputedStyle(node).opacity) < 1 ||
+      node.querySelector('[data-slot$="-veil"]') !== null;
+    expect(dimmed).toBe(true);
+    expect(
+      node.querySelector('[data-slot$="-hatch"], [data-slot$="-dash"], [data-slot$="-hollow"]'),
+    ).not.toBeNull();
+  }
+}
+
+const selectionRegionData = [
+  { region: "EMEA", step: 1, revenue: 42, target: 50 },
+  { region: "APAC", step: 2, revenue: 31, target: 36 },
+  { region: "AMER", step: 3, revenue: 55, target: 48 },
+];
+
+/**
+ * `selectionStates` paints the host’s tri-state on rows: selected marks carry a
+ * `--ring` outline, excluded marks dim AND carry a non-hue channel, so the three
+ * states stay distinguishable in greyscale.
+ */
+export const SelectionStates: Story = {
+  name: "Selection states",
+  parameters: { layout: "padded" },
+  args: {
+    accessibleLabel: "Revenue against target by region with a selection applied",
+    category: "region",
+    data: selectionRegionData,
+    endKey: "target",
+    selectionStates: selectionByRegion,
+    startKey: "revenue",
+  },
+  render: (args) => (
+    <div className="w-full max-w-[560px]" style={{ filter: "grayscale(1)" }}>
+      <DumbbellChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expectSelectionStates(canvasElement);
+  },
+};

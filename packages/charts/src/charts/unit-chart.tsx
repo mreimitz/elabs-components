@@ -67,6 +67,14 @@ import {
   type UnitMark,
   type UnitRect,
 } from "./unit-layouts";
+import {
+  type ChartSelectionChannel,
+  type ChartSelectionProps,
+  ChartSelectionMark,
+  ChartSelectionProvider,
+  resolveMarkPaint,
+  useChartSelection,
+} from "./chart-selection";
 
 export type { UnitChartDatum } from "./unit-layouts";
 
@@ -81,7 +89,10 @@ const ROW_LABEL_WIDTH = 96;
 const ROW_VALUE_WIDTH = 48;
 
 export interface UnitChartProps
-  extends ChartInteractionProps, Omit<HTMLAttributes<HTMLDivElement>, "color"> {
+  extends
+    ChartSelectionProps,
+    ChartInteractionProps,
+    Omit<HTMLAttributes<HTMLDivElement>, "color"> {
   /** The series — one labeled quantity per row. */
   data: UnitChartDatum[];
   /** Which lieflat layout to draw. */
@@ -164,6 +175,20 @@ function markElement(
   );
 }
 
+/** Bare geometry of one mark — the selection channel / outline clones it (RM-073). */
+function markShape(mark: UnitChartMark, m: UnitMark): React.ReactElement {
+  const key = `${m.seriesIndex}:${m.positionInGroup}`;
+  if (mark === "square") {
+    return (
+      <rect height={m.size * 2} key={key} width={m.size * 2} x={m.x - m.size} y={m.y - m.size} />
+    );
+  }
+  if (mark === "tick") {
+    return <line key={key} x1={m.x} x2={m.x} y1={m.y - m.size} y2={m.y + m.size} />;
+  }
+  return <circle cx={m.x} cy={m.y} key={key} r={m.size} />;
+}
+
 const EMPTY_UNIT_TARGETS: ChartDatapointTarget[] = [];
 
 const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChartBody(
@@ -189,6 +214,8 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     copyValueOnActivate: _copyValueOnActivate,
     datapointLabel: _datapointLabel,
     maxInteractiveDatapoints: _maxInteractiveDatapoints,
+    selectionStates: _selectionStates,
+    dimExcluded: _dimExcluded,
     ...rest
   }: UnitChartProps,
   forwardedRef,
@@ -252,6 +279,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
   useEffect(() => setMounted(true), []);
 
   const [hoveredSeries, setHoveredSeries] = useState<number | null>(null);
+  const selection = useChartSelection();
 
   const rowsGeom = useMemo(
     () =>
@@ -323,6 +351,28 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         ]
       : [];
 
+  // Selection input (RM-073): one series is one category (`d.label`). The
+  // channel is painted over the series' own mark geometry; unresolved → the
+  // group is returned untouched, so the opt-out DOM is unchanged.
+  const paintSeries = (
+    seriesIndex: number,
+    node: React.ReactNode,
+    shape: () => React.ReactElement<React.SVGProps<SVGElement>>,
+    channel: ChartSelectionChannel,
+  ): React.ReactNode => {
+    const d = displayData[seriesIndex];
+    const paint = resolveMarkPaint(selection, {
+      category: d?.label,
+      datum: d as unknown as Record<string, unknown>,
+    });
+    if (paint["data-selection"] === undefined) return node;
+    return (
+      <ChartSelectionMark channel={channel} key={seriesIndex} paint={paint} shape={shape()}>
+        {node}
+      </ChartSelectionMark>
+    );
+  };
+  const markChannel: ChartSelectionChannel = mark === "tick" ? "dash" : "hollow";
   const seriesGroupProps = (i: number) => ({
     className: "cursor-pointer",
     "data-slot": "unit-chart-series",
@@ -386,7 +436,8 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
               if (!d) return null;
               const tickWidth = Math.max(sz.w - ROW_LABEL_WIDTH - ROW_VALUE_WIDTH, 1);
               const step = row.count > 0 ? Math.min(6, Math.max(1.5, tickWidth / row.count)) : 3;
-              return (
+              return paintSeries(
+                row.seriesIndex,
                 <g key={row.seriesIndex}>
                   <text
                     dominantBaseline="middle"
@@ -421,7 +472,16 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
                   >
                     {intFmt(d.value)}
                   </text>
-                </g>
+                </g>,
+                () => (
+                  <rect
+                    height={ROW_HEIGHT * 0.55}
+                    width={Math.min(tickWidth, row.count * step)}
+                    x={ROW_LABEL_WIDTH}
+                    y={row.y - (ROW_HEIGHT * 0.55) / 2}
+                  />
+                ),
+                "hatch",
               );
             })}
           </svg>
@@ -435,15 +495,19 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
             viewBox={`0 0 ${sz.w} ${sz.h}`}
           >
             {waffleGeom &&
-              displayData.map((_, seriesIndex) => (
-                <g key={seriesIndex} {...seriesGroupProps(seriesIndex)}>
-                  {waffleGeom.marks
-                    .filter((m) => m.seriesIndex === seriesIndex)
-                    .map((m) =>
+              displayData.map((_, seriesIndex) => {
+                const marks = waffleGeom.marks.filter((m) => m.seriesIndex === seriesIndex);
+                return paintSeries(
+                  seriesIndex,
+                  <g key={seriesIndex} {...seriesGroupProps(seriesIndex)}>
+                    {marks.map((m) =>
                       markElement(mark, m, colors[seriesIndex] ?? "var(--chart-1)", mounted),
                     )}
-                </g>
-              ))}
+                  </g>,
+                  () => <g>{marks.map((m) => markShape(mark, m))}</g>,
+                  markChannel,
+                );
+              })}
             {fieldGeom &&
               fieldGeom.clusters.map((cluster) => {
                 const d = displayData[cluster.seriesIndex];
@@ -456,7 +520,11 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
                 const anchorX = sz.w / 2 + anchorR * Math.cos(labelAngle);
                 const anchorY = sz.h / 2 + anchorR * Math.sin(labelAngle);
                 const rightSide = Math.cos(labelAngle) >= 0;
-                return (
+                const clusterMarks = fieldGeom.marks.filter(
+                  (m) => m.seriesIndex === cluster.seriesIndex,
+                );
+                return paintSeries(
+                  cluster.seriesIndex,
                   <g key={cluster.seriesIndex} {...seriesGroupProps(cluster.seriesIndex)}>
                     {fieldGeom.clusters.length > 1 && (
                       <Leader
@@ -466,16 +534,14 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
                         to={[anchorX, anchorY]}
                       />
                     )}
-                    {fieldGeom.marks
-                      .filter((m) => m.seriesIndex === cluster.seriesIndex)
-                      .map((m) =>
-                        markElement(
-                          mark,
-                          m,
-                          colors[cluster.seriesIndex] ?? "var(--chart-1)",
-                          mounted,
-                        ),
-                      )}
+                    {clusterMarks.map((m) =>
+                      markElement(
+                        mark,
+                        m,
+                        colors[cluster.seriesIndex] ?? "var(--chart-1)",
+                        mounted,
+                      ),
+                    )}
                     <text
                       dominantBaseline="middle"
                       fill="var(--chart-foreground)"
@@ -487,7 +553,9 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
                     >
                       {d.label}
                     </text>
-                  </g>
+                  </g>,
+                  () => <g>{clusterMarks.map((m) => markShape(mark, m))}</g>,
+                  markChannel,
                 );
               })}
           </svg>
@@ -538,7 +606,7 @@ UnitChartBody.displayName = "UnitChartBody";
  *   weekday, for example, as layout="rows"
  * @avoidWhen exact per-unit counts do not matter — a pie or bar chart reads faster
  */
-export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
+const UnitChartBase = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
   const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } = props;
   if (!onDatapointClick && !copyValueOnActivate) {
     return <UnitChartBody {...props} ref={ref} />;
@@ -552,6 +620,17 @@ export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(function Uni
     >
       <UnitChartBody {...props} ref={ref} />
     </ChartDatapointProvider>
+  );
+});
+UnitChartBase.displayName = "UnitChartBase";
+
+// Selection input (RM-073): mounted outermost so marks AND the datapoint
+// layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
+  return (
+    <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>
+      <UnitChartBase {...props} ref={ref} />
+    </ChartSelectionProvider>
   );
 });
 UnitChart.displayName = "UnitChart";

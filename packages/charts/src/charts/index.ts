@@ -735,3 +735,22 @@ export {
   DEFAULT_CHART_INTERACTIONS,
   thinToDensity,
 } from "./chart-config-context";
+// Selection/Hover inputs — RM-073
+export {
+  type ChartSelectionCategory,
+  type ChartSelectionPoint,
+  type ChartSelectionProps,
+  type ChartSelectionStatesResolver,
+  SELECTION_EXCLUDED_OPACITY,
+  type MarkSelectionPaint,
+  markSelectionPaint,
+  resolveMarkState,
+  SELECTED_OUTLINE_WIDTH,
+  type SelectionState,
+} from "./chart-selection";
+export {
+  type ChartHoverCategory,
+  type ChartHoverLinkProps,
+  findChartCategoryIndex,
+  sameChartCategory,
+} from "./chart-hover-link";

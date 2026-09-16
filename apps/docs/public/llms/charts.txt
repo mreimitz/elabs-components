@@ -303,6 +303,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - SegmentBackground
 - SegmentLineFrom
 - SegmentLineTo
+- SELECTED_OUTLINE_WIDTH
+- SELECTION_EXCLUDED_OPACITY
 - SeriesBar
 - SeriesMarkers
 - SeriesPointMarker
@@ -389,3 +391,12 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useSankey
 - useStaticChartPreview
 - useYScale
+
+## Subpath exports
+
+- DashboardExpressionError (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_GRID_COLUMNS (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_GRID_GAP (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_GRID_ROWS (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_ROW_HEIGHT (`@elabs-ai/components-charts/dashboard` · component)
+- GRID_DENSITY_PRESETS (`@elabs-ai/components-charts/dashboard` · component)

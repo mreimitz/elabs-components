@@ -29,6 +29,15 @@ import {
 } from "./chart-datapoint-layer";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { useChartLegendHover } from "./chart-legend-hover";
+import {
+  SELECTION_EXCLUDED_OPACITY,
+  resolveMarkPaint,
+  SELECTED_OUTLINE_COLOR,
+  SELECTED_OUTLINE_WIDTH,
+  useChartSelection,
+} from "./chart-selection";
+import { PatternLines } from "./visx-pattern";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { transitionWithDelay } from "./motion-utils";
 import { useHighDecoration } from "./use-high-decoration";
 import { useResolvedRadius } from "./use-resolved-radius";
@@ -405,6 +414,8 @@ const BarInner = memo(function BarInner({
   const calculatedStaggerDelay =
     staggerDelay ?? (data.length > 1 ? staggerSpread / 1000 / data.length : 0);
   const uniqueId = useId();
+  const selection = useChartSelection();
+  const selectionHatchId = `bar-selection-hatch-${uniqueId.replace(/:/g, "")}`;
 
   const isHorizontal = orientation === "horizontal";
 
@@ -629,238 +640,301 @@ const BarInner = memo(function BarInner({
   // built from, so each non-hero bar claims the next colour in turn.
   let nonHeroRenderIndex = 0;
 
-  return (
-    <g className={`bar-series-${uniqueId}`}>
-      {usePattern && <defs>{makeSeriesPattern(seriesIndex, patternId, fill)}</defs>}
-      {barLayout.map((bar) => {
-        const { index: i, categoryValue, x, y, width: barW, height: barHeight, valuePos } = bar;
-        const onBarClick = activateDatapoint
-          ? (event: React.MouseEvent) =>
-              activateDatapoint(barTarget(bar, dataKey, seriesIndex, margin), event)
-          : undefined;
+  const renderBar = (bar: BarGeometry) => {
+    const { index: i, categoryValue, x, y, width: barW, height: barHeight, valuePos } = bar;
+    const onBarClick = activateDatapoint
+      ? (event: React.MouseEvent) =>
+          activateDatapoint(barTarget(bar, dataKey, seriesIndex, margin), event)
+      : undefined;
 
-        const isFaded = (hoveredBarIndex !== null && hoveredBarIndex !== i) || isLegendDimmed;
+    const isFaded = (hoveredBarIndex !== null && hoveredBarIndex !== i) || isLegendDimmed;
 
-        // Use categoryValue as key since it's the unique identifier from data
-        const barKey = `bar-${dataKey}-${categoryValue}`;
-        const isNegative = bar.value < 0;
+    // Use categoryValue as key since it's the unique identifier from data
+    const barKey = `bar-${dataKey}-${categoryValue}`;
+    const isNegative = bar.value < 0;
 
-        // Highlight (RM-027): the hero bar draws in --chart-foreground ink;
-        // every other bar draws from `restColors` instead of the series fill.
-        let barFill = resolvedFill;
-        if (highlightKey !== undefined && !isLoadingPhase) {
-          if (isHeroBar(bar)) {
-            barFill = "var(--chart-foreground)";
-          } else if (restColors) {
-            barFill = restColors[nonHeroRenderIndex] ?? resolvedFill;
-            nonHeroRenderIndex += 1;
-          }
+    // Highlight (RM-027): the hero bar draws in --chart-foreground ink;
+    // every other bar draws from `restColors` instead of the series fill.
+    let barFill = resolvedFill;
+    if (highlightKey !== undefined && !isLoadingPhase) {
+      if (isHeroBar(bar)) {
+        barFill = "var(--chart-foreground)";
+      } else if (restColors) {
+        barFill = restColors[nonHeroRenderIndex] ?? resolvedFill;
+        nonHeroRenderIndex += 1;
+      }
+    }
+
+    // Apply rounded corners:
+    // - For non-stacked: always apply
+    // - For stacked with gap: apply to all bars
+    // - For stacked without gap: only apply to the last series
+    const applyRounding = !stacked || stackGap > 0 || isLastSeries;
+    const effectiveRx = applyRounding ? cornerRadius : 0;
+    const effectiveRy = applyRounding ? cornerRadius : 0;
+
+    // showValues (RM-027): unit mode always prints its value on top; a
+    // solid bar only when `showValues` asks for it. A bar thinner than
+    // MIN_LABEL_BAR_WIDTH hides its label rather than shrinking the
+    // `text-chart-value` role below `text-meta`.
+    const useUnitMode = Boolean(unit && unit > 0) && !isLoadingPhase;
+    const labelMode: BarShowValues | undefined = useUnitMode ? "outside" : showValues;
+    const thickness = isHorizontal ? barHeight : barW;
+    const settled = useUnitMode || !animate || isLoaded;
+    const showLabel = Boolean(labelMode) && thickness >= MIN_LABEL_BAR_WIDTH && settled;
+
+    let labelX = 0;
+    let labelY = 0;
+    let labelAnchor: "start" | "middle" | "end" = "middle";
+    if (showLabel) {
+      const outside = labelMode !== "inside";
+      if (isHorizontal) {
+        const crossCenter = y + barHeight / 2;
+        labelY = crossCenter;
+        if (outside) {
+          labelX = isNegative ? valuePos - VALUE_LABEL_GAP : valuePos + VALUE_LABEL_GAP;
+          labelAnchor = isNegative ? "end" : "start";
+        } else {
+          labelX = isNegative ? valuePos + VALUE_LABEL_INSET : valuePos - VALUE_LABEL_INSET;
+          labelAnchor = isNegative ? "start" : "end";
         }
+      } else {
+        labelX = x + barW / 2;
+        labelAnchor = "middle";
+        labelY = outside
+          ? isNegative
+            ? valuePos + VALUE_LABEL_GAP
+            : valuePos - VALUE_LABEL_GAP
+          : isNegative
+            ? valuePos - VALUE_LABEL_INSET
+            : valuePos + VALUE_LABEL_INSET;
+      }
+    }
+    const labelText = isNegative
+      ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
+      : formatValue(bar.value);
+    const valueLabel = showLabel && (
+      <HaloText
+        className="text-chart-value tabular-nums"
+        dominantBaseline="middle"
+        textAnchor={labelAnchor}
+        x={labelX}
+        y={labelY}
+      >
+        {labelText}
+      </HaloText>
+    );
 
-        // Apply rounded corners:
-        // - For non-stacked: always apply
-        // - For stacked with gap: apply to all bars
-        // - For stacked without gap: only apply to the last series
-        const applyRounding = !stacked || stackGap > 0 || isLastSeries;
-        const effectiveRx = applyRounding ? cornerRadius : 0;
-        const effectiveRy = applyRounding ? cornerRadius : 0;
+    // unit mode (RM-027, F1 Rung Bars): a countable UnitStack instead of
+    // a solid fill. Renders instantly — no animate/animationType grow-in,
+    // there being no single rect to tween.
+    if (useUnitMode) {
+      const unitLength = unit as number;
+      const absValue = Math.abs(bar.value);
+      // A rung's pitch is derived from the VALUE SCALE (px per unit), not
+      // from the bar's own pixel span — deriving it from the span makes a
+      // rung worth a different amount in every column and, combined with
+      // the `i = 0…n-1` fencepost, always understates the value by one
+      // unit (#241). `barHeight`/`barW` are already scaled from a
+      // zero-based domain (`charts-honesty`), so they map linearly to
+      // `absValue` and a stable px-per-unit falls out directly.
+      const pixelSpan = isHorizontal ? barW : barHeight;
+      const pxPerUnit = absValue > 0 ? (pixelSpan / absValue) * unitLength : 0;
+      // Floor, not round: a rung ladder must never count past the value
+      // it encodes. A value that is not an exact multiple of `unit` draws
+      // an honest partial (a visible remainder above the top rung).
+      const unitCount = Math.floor(absValue / unitLength);
+      const kind: UnitStackKind = isHorizontal ? "tick" : "rung";
+      const direction: UnitStackDirection = isHorizontal
+        ? isNegative
+          ? "left"
+          : "right"
+        : isNegative
+          ? "down"
+          : "up";
+      const originX = isHorizontal ? baseline : x + barW / 2;
+      const originY = isHorizontal ? y + barHeight / 2 : baseline;
+      // The emphatic (every-5th) mark draws UNIT_STACK_EMPHASIS× the
+      // ordinary cross-axis length — reserve that headroom so it never
+      // overruns into the neighbouring band's bar.
+      const crossLength = (isHorizontal ? barHeight : barW) / UNIT_STACK_EMPHASIS;
 
-        // showValues (RM-027): unit mode always prints its value on top; a
-        // solid bar only when `showValues` asks for it. A bar thinner than
-        // MIN_LABEL_BAR_WIDTH hides its label rather than shrinking the
-        // `text-chart-value` role below `text-meta`.
-        const useUnitMode = Boolean(unit && unit > 0) && !isLoadingPhase;
-        const labelMode: BarShowValues | undefined = useUnitMode ? "outside" : showValues;
-        const thickness = isHorizontal ? barHeight : barW;
-        const settled = useUnitMode || !animate || isLoaded;
-        const showLabel = Boolean(labelMode) && thickness >= MIN_LABEL_BAR_WIDTH && settled;
+      return (
+        <g key={barKey}>
+          <UnitStack
+            direction={direction}
+            jitter
+            kind={kind}
+            length={crossLength}
+            markEvery={5}
+            n={unitCount}
+            // Mark 0 sits one full pitch from the origin, so the top rung
+            // lands at the bar's own end (for an exact multiple of
+            // `unit`) instead of one unit short of it.
+            originOffset={1}
+            seed={i}
+            step={pxPerUnit}
+            stroke={barFill}
+            x={originX}
+            y={originY}
+          />
+          {valueLabel}
+        </g>
+      );
+    }
 
-        let labelX = 0;
-        let labelY = 0;
-        let labelAnchor: "start" | "middle" | "end" = "middle";
-        if (showLabel) {
-          const outside = labelMode !== "inside";
-          if (isHorizontal) {
-            const crossCenter = y + barHeight / 2;
-            labelY = crossCenter;
-            if (outside) {
-              labelX = isNegative ? valuePos - VALUE_LABEL_GAP : valuePos + VALUE_LABEL_GAP;
-              labelAnchor = isNegative ? "end" : "start";
-            } else {
-              labelX = isNegative ? valuePos + VALUE_LABEL_INSET : valuePos - VALUE_LABEL_INSET;
-              labelAnchor = isNegative ? "start" : "end";
-            }
-          } else {
-            labelX = x + barW / 2;
-            labelAnchor = "middle";
-            labelY = outside
-              ? isNegative
-                ? valuePos + VALUE_LABEL_GAP
-                : valuePos - VALUE_LABEL_GAP
-              : isNegative
-                ? valuePos - VALUE_LABEL_INSET
-                : valuePos + VALUE_LABEL_INSET;
-          }
-        }
-        const labelText = isNegative
-          ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
-          : formatValue(bar.value);
-        const valueLabel = showLabel && (
-          <HaloText
-            className="text-chart-value tabular-nums"
-            dominantBaseline="middle"
-            textAnchor={labelAnchor}
-            x={labelX}
-            y={labelY}
-          >
-            {labelText}
-          </HaloText>
-        );
+    if (animate && !isLoaded) {
+      return (
+        <AnimatedBar
+          animationType={animationType}
+          baseline={baseline}
+          className={loadingPulseClassName}
+          enterTransition={enterTransition}
+          fadedOpacity={fadedOpacity}
+          fill={barFill}
+          height={barHeight}
+          held={revealHeld}
+          index={i}
+          isFaded={isFaded}
+          isHorizontal={isHorizontal}
+          key={barKey}
+          onClick={onBarClick}
+          revealEpoch={revealEpoch}
+          rx={effectiveRx}
+          ry={effectiveRy}
+          staggerDelay={calculatedStaggerDelay}
+          width={barW}
+          x={x}
+          y={y}
+        />
+      );
+    }
 
-        // unit mode (RM-027, F1 Rung Bars): a countable UnitStack instead of
-        // a solid fill. Renders instantly — no animate/animationType grow-in,
-        // there being no single rect to tween.
-        if (useUnitMode) {
-          const unitLength = unit as number;
-          const absValue = Math.abs(bar.value);
-          // A rung's pitch is derived from the VALUE SCALE (px per unit), not
-          // from the bar's own pixel span — deriving it from the span makes a
-          // rung worth a different amount in every column and, combined with
-          // the `i = 0…n-1` fencepost, always understates the value by one
-          // unit (#241). `barHeight`/`barW` are already scaled from a
-          // zero-based domain (`charts-honesty`), so they map linearly to
-          // `absValue` and a stable px-per-unit falls out directly.
-          const pixelSpan = isHorizontal ? barW : barHeight;
-          const pxPerUnit = absValue > 0 ? (pixelSpan / absValue) * unitLength : 0;
-          // Floor, not round: a rung ladder must never count past the value
-          // it encodes. A value that is not an exact multiple of `unit` draws
-          // an honest partial (a visible remainder above the top rung).
-          const unitCount = Math.floor(absValue / unitLength);
-          const kind: UnitStackKind = isHorizontal ? "tick" : "rung";
-          const direction: UnitStackDirection = isHorizontal
-            ? isNegative
-              ? "left"
-              : "right"
-            : isNegative
-              ? "down"
-              : "up";
-          const originX = isHorizontal ? baseline : x + barW / 2;
-          const originY = isHorizontal ? y + barHeight / 2 : baseline;
-          // The emphatic (every-5th) mark draws UNIT_STACK_EMPHASIS× the
-          // ordinary cross-axis length — reserve that headroom so it never
-          // overruns into the neighbouring band's bar.
-          const crossLength = (isHorizontal ? barHeight : barW) / UNIT_STACK_EMPHASIS;
-
-          return (
-            <g key={barKey}>
-              <UnitStack
-                direction={direction}
-                jitter
-                kind={kind}
-                length={crossLength}
-                markEvery={5}
-                n={unitCount}
-                // Mark 0 sits one full pitch from the origin, so the top rung
-                // lands at the bar's own end (for an exact multiple of
-                // `unit`) instead of one unit short of it.
-                originOffset={1}
-                seed={i}
-                step={pxPerUnit}
-                stroke={barFill}
-                x={originX}
-                y={originY}
-              />
-              {valueLabel}
-            </g>
-          );
-        }
-
-        if (animate && !isLoaded) {
-          return (
-            <AnimatedBar
-              animationType={animationType}
-              baseline={baseline}
-              className={loadingPulseClassName}
-              enterTransition={enterTransition}
-              fadedOpacity={fadedOpacity}
-              fill={barFill}
-              height={barHeight}
-              held={revealHeld}
-              index={i}
-              isFaded={isFaded}
-              isHorizontal={isHorizontal}
-              key={barKey}
-              onClick={onBarClick}
-              revealEpoch={revealEpoch}
-              rx={effectiveRx}
-              ry={effectiveRy}
-              staggerDelay={calculatedStaggerDelay}
-              width={barW}
-              x={x}
-              y={y}
-            />
-          );
-        }
-
-        // Negative, non-stacked bars round the OUTER end only (lieflat G10
-        // Diverging Bar) — a plain rx/ry rect rounds every corner alike, which
-        // reads wrong once the bar no longer sits flush against a fixed edge.
-        if (isNegative && !stacked) {
-          return (
-            <g key={barKey}>
-              <path
-                className={loadingPulseClassName}
-                d={negativeBarPath(x, y, barW, barHeight, cornerRadius, isHorizontal)}
-                data-slot="bar-negative"
-                fill={barFill}
-                onClick={onBarClick}
-                opacity={isFaded ? fadedOpacity : 1}
-                style={{
-                  cursor: onBarClick ? "pointer" : "default",
-                  transition: "opacity var(--t-fast) var(--ease-standard)",
-                }}
-              />
-              {valueLabel}
-            </g>
-          );
-        }
-
-        // Static bar after animation completes. No label (the common,
-        // pre-RM-027 case) renders the bare `<rect>` exactly as before —
-        // `showValues`/`highlightKey`/`unit` all left unset is a byte-identical
-        // no-op, not just a visual one.
-        const rect = (
-          <rect
+    // Negative, non-stacked bars round the OUTER end only (lieflat G10
+    // Diverging Bar) — a plain rx/ry rect rounds every corner alike, which
+    // reads wrong once the bar no longer sits flush against a fixed edge.
+    if (isNegative && !stacked) {
+      return (
+        <g key={barKey}>
+          <path
             className={loadingPulseClassName}
+            d={negativeBarPath(x, y, barW, barHeight, cornerRadius, isHorizontal)}
+            data-slot="bar-negative"
             fill={barFill}
-            height={barHeight}
-            key={valueLabel ? undefined : barKey}
             onClick={onBarClick}
             opacity={isFaded ? fadedOpacity : 1}
-            rx={effectiveRx}
-            ry={effectiveRy}
             style={{
-              // The bar itself is aria-hidden and NOT focusable — the keyboard
-              // path is the sibling ChartDatapointLayer (#349). The pointer
-              // cursor is the only affordance this element carries.
               cursor: onBarClick ? "pointer" : "default",
               transition: "opacity var(--t-fast) var(--ease-standard)",
             }}
-            width={barW}
-            x={x}
-            y={y}
           />
-        );
-        if (!valueLabel) {
-          return rect;
-        }
-        return (
-          <g key={barKey}>
-            {rect}
-            {valueLabel}
-          </g>
-        );
-      })}
+          {valueLabel}
+        </g>
+      );
+    }
+
+    // Static bar after animation completes. No label (the common,
+    // pre-RM-027 case) renders the bare `<rect>` exactly as before —
+    // `showValues`/`highlightKey`/`unit` all left unset is a byte-identical
+    // no-op, not just a visual one.
+    const rect = (
+      <rect
+        className={loadingPulseClassName}
+        fill={barFill}
+        height={barHeight}
+        key={valueLabel ? undefined : barKey}
+        onClick={onBarClick}
+        opacity={isFaded ? fadedOpacity : 1}
+        rx={effectiveRx}
+        ry={effectiveRy}
+        style={{
+          // The bar itself is aria-hidden and NOT focusable — the keyboard
+          // path is the sibling ChartDatapointLayer (#349). The pointer
+          // cursor is the only affordance this element carries.
+          cursor: onBarClick ? "pointer" : "default",
+          transition: "opacity var(--t-fast) var(--ease-standard)",
+        }}
+        width={barW}
+        x={x}
+        y={y}
+      />
+    );
+    if (!valueLabel) {
+      return rect;
+    }
+    return (
+      <g key={barKey}>
+        {rect}
+        {valueLabel}
+      </g>
+    );
+  };
+
+  // Selection input (RM-073): resolved only under a `selectionStates` provider,
+  // so an unselected chart keeps its exact DOM. Excluded bars dim AND carry a
+  // hatch (a non-hue channel); selected bars get the `--ring` outline.
+  const paintBar = (bar: BarGeometry) => {
+    const node = renderBar(bar);
+    const paint = resolveMarkPaint(selection, {
+      category: bar.categoryValue,
+      datum: bar.datum,
+      seriesKey: dataKey,
+    });
+    if (paint["data-selection"] === undefined) {
+      return node;
+    }
+    return (
+      <g
+        data-selection={paint["data-selection"]}
+        data-slot="bar-selection"
+        key={`bar-${dataKey}-${bar.categoryValue}`}
+        opacity={paint.dimmed ? SELECTION_EXCLUDED_OPACITY : undefined}
+      >
+        {node}
+        {paint.dimmed ? (
+          <rect
+            data-slot="bar-selection-hatch"
+            fill={`url(#${selectionHatchId})`}
+            height={bar.height}
+            pointerEvents="none"
+            width={bar.width}
+            x={bar.x}
+            y={bar.y}
+          />
+        ) : null}
+        {paint.outlined ? (
+          <rect
+            data-slot="bar-selection-outline"
+            fill="none"
+            height={bar.height}
+            pointerEvents="none"
+            stroke={SELECTED_OUTLINE_COLOR}
+            strokeWidth={SELECTED_OUTLINE_WIDTH}
+            width={bar.width}
+            x={bar.x}
+            y={bar.y}
+          />
+        ) : null}
+      </g>
+    );
+  };
+
+  return (
+    <g className={`bar-series-${uniqueId}`}>
+      {usePattern && <defs>{makeSeriesPattern(seriesIndex, patternId, fill)}</defs>}
+      {selection ? (
+        <defs>
+          <PatternLines
+            height={6}
+            id={selectionHatchId}
+            orientation={["diagonal"]}
+            stroke="var(--chart-foreground)"
+            strokeWidth={CHART_HAIRLINE_WIDTH * 2}
+            width={6}
+          />
+        </defs>
+      ) : null}
+      {barLayout.map(paintBar)}
     </g>
   );
 });

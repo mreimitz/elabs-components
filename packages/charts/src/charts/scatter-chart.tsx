@@ -11,8 +11,9 @@ import type { ChartPhase } from "./chart-phase";
 import { Scatter, type ScatterProps } from "./scatter";
 import { ScatterChartInner, type ScatterXScaleType } from "./scatter-chart-shell";
 import { useStableValue } from "./use-stable-value";
+import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 
-export interface ScatterChartProps {
+export interface ScatterChartProps extends ChartSelectionProps {
   /** Data array — each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -147,7 +148,7 @@ function ChartInner({
  * @dataShape two continuous measures per row — correlation, or the shape of a distribution
  * @avoidWhen one axis is categorical — use a bar or dumbbell chart
  */
-export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(function ScatterChart(
+const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function ScatterChart(
   {
     data,
     xDataKey = "date",
@@ -226,6 +227,22 @@ export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(functi
   );
 });
 
+ScatterChartBase.displayName = "ScatterChartBase";
+
+// Selection input (RM-073): mounted outermost so marks AND the datapoint
+// layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
+  function ScatterChart(props, ref) {
+    return (
+      <ChartSelectionProvider
+        dimExcluded={props.dimExcluded}
+        selectionStates={props.selectionStates}
+      >
+        <ScatterChartBase {...props} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
 ScatterChart.displayName = "ScatterChart";
 
 export { Scatter, type ScatterProps } from "./scatter";

@@ -282,3 +282,68 @@ export const NumericX: Story = {
     }
   },
 };
+
+// Selection states — RM-073
+type SelectionStateName = "selected" | "associated" | "excluded";
+const SELECTION_BY_REGION: Record<string, SelectionStateName> = {
+  EMEA: "selected",
+  APAC: "associated",
+  AMER: "excluded",
+};
+const selectionByRegion = (category: string | number | Date): SelectionStateName =>
+  SELECTION_BY_REGION[String(category)] ?? "associated";
+
+/** Asserts the three states read apart without hue: outline, plain, dim + pattern. */
+async function expectSelectionStates(root: HTMLElement) {
+  await waitFor(() =>
+    expect(root.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(0),
+  );
+  expect(root.querySelectorAll('[data-selection="associated"]').length).toBeGreaterThan(0);
+  for (const node of root.querySelectorAll('[data-selection="selected"]')) {
+    expect(node.querySelector('[data-slot$="-outline"]')).not.toBeNull();
+  }
+  for (const node of root.querySelectorAll<SVGElement>('[data-selection="excluded"]')) {
+    const dimmed =
+      Number(getComputedStyle(node).opacity) < 1 ||
+      node.querySelector('[data-slot$="-veil"]') !== null;
+    expect(dimmed).toBe(true);
+    expect(
+      node.querySelector('[data-slot$="-hatch"], [data-slot$="-dash"], [data-slot$="-hollow"]'),
+    ).not.toBeNull();
+  }
+}
+
+const selectionRegionData = [
+  { region: "EMEA", step: 1, revenue: 42, target: 50 },
+  { region: "APAC", step: 2, revenue: 31, target: 36 },
+  { region: "AMER", step: 3, revenue: 55, target: 48 },
+];
+
+/**
+ * `selectionStates` paints the host’s tri-state on points (keyed on the datum’s region): selected marks carry a
+ * `--ring` outline, excluded marks dim AND carry a non-hue channel, so the three
+ * states stay distinguishable in greyscale.
+ */
+export const SelectionStates: Story = {
+  name: "Selection states",
+  args: { data: selectionRegionData, children: null },
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]" style={{ filter: "grayscale(1)" }}>
+      <ScatterChart
+        accessibleLabel="Revenue by region with a selection applied"
+        data={selectionRegionData}
+        selectionStates={(_step, _series, datum) => selectionByRegion(String(datum?.region))}
+        xDataKey="step"
+        xScale="linear"
+      >
+        <Grid horizontal />
+        <Scatter animate={false} dataKey="revenue" />
+        <XAxis />
+        <YAxis />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expectSelectionStates(canvasElement);
+  },
+};

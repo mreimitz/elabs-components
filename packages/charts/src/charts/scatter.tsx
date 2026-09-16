@@ -4,6 +4,13 @@ import { scaleBand } from "@visx/scale";
 import { useId, useMemo } from "react";
 import { HaloText, PeakRing, seededRnd } from "../marks";
 import { defaultScatterColors, useChartStable, useYScale } from "./chart-context";
+import { chartRowCategory } from "./chart-hover-link";
+import {
+  type ChartSelectionProps,
+  ChartSelectionMark,
+  resolveMarkPaint,
+  useChartSelection,
+} from "./chart-selection";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { SeriesMarkers, type SeriesMarkersProps } from "./series-markers";
 import { StaticSeriesPointMarker } from "./series-point-marker";
@@ -347,6 +354,10 @@ interface ScatterCustomMarkersProps {
   /** Pixel y of each `<Grid horizontal />` reference line — for `labelExtremes` collision avoidance (#252). */
   gridLineYs: readonly number[];
   innerHeight: number;
+  /** Selection input (RM-073); `null` → no selection paint, unchanged DOM. */
+  selection?: ChartSelectionProps | null;
+  /** Category of a row index (selection key). */
+  categoryAt?: (index: number) => string | number | Date | undefined;
 }
 
 /**
@@ -372,6 +383,8 @@ function ScatterCustomMarkers({
   dateLabels,
   gridLineYs,
   innerHeight,
+  selection = null,
+  categoryAt,
 }: ScatterCustomMarkersProps) {
   const { bestSet, worstSet } = useMemo(
     () =>
@@ -386,7 +399,12 @@ function ScatterCustomMarkers({
       {points.map((p) => {
         const isExtreme = bestSet.has(p.index) || worstSet.has(p.index);
         const opacity = labelExtremes ? (isExtreme ? 1 : fadedOpacity) : 1;
-        return (
+        const category = selection ? categoryAt?.(p.index) : undefined;
+        const selectionPaint =
+          category === undefined
+            ? resolveMarkPaint(null, { category: "" })
+            : resolveMarkPaint(selection, { category, datum: p.d });
+        const marker = (
           <g data-index={p.index} data-slot="scatter-point" key={p.index} opacity={opacity}>
             <StaticSeriesPointMarker
               cx={p.cx}
@@ -401,6 +419,19 @@ function ScatterCustomMarkers({
               strokeWidth={strokeWidth}
             />
           </g>
+        );
+        // Selection input (RM-073): unresolved → the marker is returned untouched.
+        return selectionPaint["data-selection"] === undefined ? (
+          marker
+        ) : (
+          <ChartSelectionMark
+            channel="hollow"
+            key={p.index}
+            paint={selectionPaint}
+            shape={<circle cx={p.cx} cy={p.cy} r={radius} />}
+          >
+            {marker}
+          </ChartSelectionMark>
         );
       })}
       {labelExtremes
@@ -445,7 +476,9 @@ export function Scatter({
   yType = "number",
   highlightKey,
 }: ScatterProps) {
-  const { data, xScale, xAccessor, innerHeight, lines, dateLabels } = useChartStable();
+  const stable = useChartStable();
+  const { data, xScale, xAccessor, innerHeight, lines, dateLabels } = stable;
+  const selection = useChartSelection();
 
   const yGradientConfig = (() => {
     if (!yGradient) {
@@ -519,7 +552,10 @@ export function Scatter({
   // `dropLines` and `highlightKey` — keeps rendering through `SeriesMarkers`
   // unchanged, so a story that sets NEITHER of these two renders exactly as
   // it did before this feature existed.
-  const useCustomMarkers = yType === "category" || Boolean(labelExtremes);
+  // A selection input (RM-073) needs per-point paint, so it also routes through
+  // the static grid — only when `selectionStates` is set, so the opt-out DOM is unchanged.
+  const hasSelection = Boolean(selection?.selectionStates);
+  const useCustomMarkers = yType === "category" || Boolean(labelExtremes) || hasSelection;
 
   return (
     <>
@@ -556,6 +592,8 @@ export function Scatter({
           points={points}
           radius={radius}
           ringGap={ringGap}
+          categoryAt={hasSelection ? (index) => chartRowCategory(stable, index) : undefined}
+          selection={hasSelection ? selection : null}
           shape={bpShape}
           stroke={finalStroke}
           strokeWidth={strokeWidth}

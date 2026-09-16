@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 32 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 194 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 196 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1224,6 +1224,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SegmentBackground | component |  | `@elabs-ai/components-charts` |  |
 | SegmentLineFrom | component |  | `@elabs-ai/components-charts` |  |
 | SegmentLineTo | component |  | `@elabs-ai/components-charts` |  |
+| SELECTED_OUTLINE_WIDTH | component |  | `@elabs-ai/components-charts` |  |
+| SELECTION_EXCLUDED_OPACITY | component |  | `@elabs-ai/components-charts` |  |
 | SeriesBar | component |  | `@elabs-ai/components-charts` |  |
 | SeriesMarkers | component |  | `@elabs-ai/components-charts` |  |
 | SeriesPointMarker | component |  | `@elabs-ai/components-charts` |  |
@@ -1284,6 +1286,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Y_AXIS_MAX_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_MIN_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | YAxis | component |  | `@elabs-ai/components-charts` |  |
+| DashboardExpressionError | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_GRID_COLUMNS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_GRID_GAP | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_GRID_ROWS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_ROW_HEIGHT | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| GRID_DENSITY_PRESETS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 
 ## @elabs-ai/components-marketing
 

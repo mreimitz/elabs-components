@@ -56,6 +56,7 @@ import type {
   ChartDatapointLabel,
 } from "./chart-datapoint";
 import { getDateFormat, getNumberFormat } from "./chart-formatters";
+import { resolveMarkState, useChartSelection } from "./chart-selection";
 import { exactValueString } from "./value-format";
 import { useChartConfig } from "./chart-config-context";
 
@@ -265,6 +266,7 @@ export function ChartDatapointProvider({
   onDatapointClick,
 }: ChartDatapointProviderProps) {
   const { locale, t } = useLocale();
+  const selection = useChartSelection();
   const { copied, copy } = useCopyToClipboard();
   const storeRef = useRef<TargetStore | null>(null);
   storeRef.current ??= createTargetStore();
@@ -310,11 +312,17 @@ export function ChartDatapointProvider({
         // nameless button is the one outcome the shared default exists to rule
         // out, so a blank override falls through to it.
         const customName = custom ? custom(point).trim() : "";
-        return customName || defaultDatapointLabel(point, t, locale);
+        const name = customName || defaultDatapointLabel(point, t, locale);
+        // Selection input (RM-073): a resolved `selected`/`excluded` state joins
+        // the name, so it is announced, not only painted.
+        const state = resolveMarkState(selection, point);
+        if (state === "selected") return t("charts.datapoint.selected", { label: name });
+        if (state === "excluded") return t("charts.datapoint.excluded", { label: name });
+        return name;
       },
       maxInteractiveDatapoints,
     };
-  }, [copy, locale, maxInteractiveDatapoints, t]);
+  }, [copy, locale, maxInteractiveDatapoints, selection, t]);
 
   return (
     <ChartDatapointContext value={value}>

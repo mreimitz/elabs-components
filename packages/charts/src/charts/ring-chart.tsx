@@ -36,6 +36,7 @@ import {
   ringCssVars,
 } from "./ring-context";
 import { useHighDecorationOf } from "./use-high-decoration";
+import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 
 function generateRingArcPath(
   innerRadius: number,
@@ -55,7 +56,7 @@ function generateRingArcPath(
 /** Stable empty array so a non-interactive RingChart never re-registers targets. */
 const EMPTY_RING_TARGETS: ChartDatapointTarget[] = [];
 
-export interface RingChartProps {
+export interface RingChartProps extends ChartSelectionProps {
   /** Data array - each item represents a ring */
   data: RingData[];
   /** Chart size in pixels. If not provided, uses parent container size */
@@ -484,7 +485,7 @@ function ringChartCorePropsEqual(prev: RingChartInnerProps, next: RingChartInner
  * @dataShape one proportion against its maximum, read as a single ring
  * @avoidWhen several categories matter — use a pie or unit chart
  */
-export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
+const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
   {
     data,
     size: fixedSize,
@@ -628,6 +629,17 @@ export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function Rin
   );
 });
 
+RingChartBase.displayName = "RingChartBase";
+
+// Selection input (RM-073): mounted outermost so marks AND the datapoint
+// layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(props, ref) {
+  return (
+    <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>
+      <RingChartBase {...props} ref={ref} />
+    </ChartSelectionProvider>
+  );
+});
 RingChart.displayName = "RingChart";
 
 export default RingChart;

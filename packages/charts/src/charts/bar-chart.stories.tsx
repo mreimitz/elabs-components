@@ -809,3 +809,50 @@ export const ReplayOnClick: Story = {
     await waitFor(() => expect(chart.dataset.phase).toBe("ready"), { timeout: 5000 });
   },
 };
+
+// Selection states — RM-073
+const SELECTION_BY_MONTH: Record<string, "selected" | "associated" | "excluded"> = {
+  Jan: "selected",
+  Feb: "selected",
+  Mar: "associated",
+  Apr: "associated",
+  May: "excluded",
+  Jun: "excluded",
+};
+
+/**
+ * `selectionStates` paints the host's tri-state: selected bars carry a `--ring`
+ * outline, excluded bars dim AND carry a hatch, so the three states stay
+ * distinguishable in greyscale.
+ */
+export const SelectionStates: Story = {
+  name: "Selection states",
+  args: { data: monthlyData, children: null },
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]" style={{ filter: "grayscale(1)" }}>
+      <BarChart
+        accessibleLabel="Monthly revenue with a selection applied"
+        animationDuration={0}
+        data={monthlyData}
+        selectionStates={(month) => SELECTION_BY_MONTH[String(month)] ?? "associated"}
+        xDataKey="month"
+      >
+        <Grid horizontal />
+        <Bar animate={false} dataKey="revenue" fill="var(--chart-1)" />
+        <BarXAxis />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-selection="selected"]')).toHaveLength(2),
+    );
+    expect(canvasElement.querySelectorAll('[data-selection="associated"]')).toHaveLength(2);
+    const excluded = canvasElement.querySelectorAll('[data-selection="excluded"]');
+    expect(excluded).toHaveLength(2);
+    for (const node of excluded) {
+      expect(Number(getComputedStyle(node).opacity)).toBeLessThan(1);
+      expect(node.querySelector('[data-slot="bar-selection-hatch"]')).not.toBeNull();
+    }
+  },
+};

@@ -97,6 +97,7 @@ import {
   sampleContinuousInk,
 } from "./heatmap-scale";
 import { HeatmapTooltip } from "./heatmap-tooltip";
+import { type ChartSelectionProps, ChartSelectionProvider } from "../chart-selection";
 
 /** Plot-area insets. */
 export interface HeatmapMargin {
@@ -130,7 +131,7 @@ const PLOT_GROUND_LABEL: OnMarkInk = {
   halo: chartCssVars.background,
 };
 
-export interface HeatmapChartProps extends ChartInteractionProps {
+export interface HeatmapChartProps extends ChartSelectionProps, ChartInteractionProps {
   /** One row per cell. Rows the grid has no place for are ignored. */
   data: Record<string, unknown>[];
   /** Row key holding the COLUMN value (discrete; an ISO date in the calendar variant). */
@@ -1096,7 +1097,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
  * @avoidWhen more than about 10 columns of continuous data, or exact cell values matter
  *   more than the pattern
  */
-export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
+const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
@@ -1115,3 +1116,20 @@ export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
     );
   },
 );
+
+// Selection input (RM-073): mounted outermost so marks AND the datapoint
+// layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
+  function HeatmapChart(props, ref) {
+    return (
+      <ChartSelectionProvider
+        dimExcluded={props.dimExcluded}
+        selectionStates={props.selectionStates}
+      >
+        <HeatmapChartBase {...props} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
+
+HeatmapChart.displayName = "HeatmapChart";

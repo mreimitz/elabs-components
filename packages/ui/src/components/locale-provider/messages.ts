@@ -362,6 +362,12 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // Announced when `copyValueOnActivate` puts a datapoint's exact value on the
   // clipboard — the recovery path for a compact axis label.
   "charts.datapoint.copied": "Exact value copied",
+  // chart selection — RM-073
+  // Appended to a datapoint's name when a host's `selectionStates` resolves it,
+  // so the selection tri-state never rides on colour/opacity alone (WCAG 1.4.1).
+  // `associated` is the resting state and adds nothing.
+  "charts.datapoint.selected": "{label}, selected",
+  "charts.datapoint.excluded": "{label}, excluded",
   // ChartFrame's SVG/PNG export actions (RM-025). Each string is used twice —
   // as the icon button's `aria-label` (its ONLY accessible name) and as the
   // tooltip a sighted user reads — so one key serves both and they cannot

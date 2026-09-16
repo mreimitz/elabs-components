@@ -23,6 +23,8 @@
 
 import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
+import type { ChartHoverCategory } from "../charts/chart-hover-link";
+import type { ChartSelectionStatesResolver } from "../charts/chart-selection";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 
 import {
@@ -277,6 +279,7 @@ function renderChart(
   yFormat: (value: number) => string,
   /** Put the exact value on the clipboard when a datapoint is activated. */
   copyValueOnActivate: boolean,
+  links: AutoChartLinkProps = {},
 ): ReactNode {
   const { x, stacked, orientation, donut } = spec;
 
@@ -294,6 +297,10 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
+          hoverCategory={links.hoverCategory}
+          onHoverCategory={links.onHoverCategory}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
         >
           <Grid horizontal />
           {series.map((s) => (
@@ -324,6 +331,10 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
+          hoverCategory={links.hoverCategory}
+          onHoverCategory={links.onHoverCategory}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
         >
           <Grid horizontal />
           {series.map((s) => (
@@ -343,6 +354,8 @@ function renderChart(
       return (
         <div style={{ height }}>
           <BarChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={resolvedData}
             xDataKey={x}
             stacked={stacked ?? false}
@@ -391,6 +404,8 @@ function renderChart(
       return (
         <div style={{ height }}>
           <PieChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={pieData}
             innerRadius={innerRadius}
             className="h-full"
@@ -418,6 +433,8 @@ function renderChart(
       return (
         <div style={{ height }}>
           <ScatterChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={scatterData}
             xDataKey={x}
             xScale={spec.xType === "number" ? "linear" : "time"}
@@ -565,6 +582,8 @@ function renderChart(
         // taller box.
         <div style={{ minHeight: height }}>
           <HeatmapChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={resolvedData}
             x={x}
             y={yKey}
@@ -610,6 +629,8 @@ function renderChart(
       return (
         <div style={{ minHeight: height }}>
           <DumbbellChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={resolvedData}
             category={x}
             startKey={startKey}
@@ -633,6 +654,8 @@ function renderChart(
       }));
       return (
         <UnitChart
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
           data={unitData}
           layout="waffle"
           style={{ height }}
@@ -657,6 +680,8 @@ function renderChart(
         // dumbbell convention above, rather than a fixed box that can force a
         // wide container into a degenerate row of slivers (#306).
         <TreemapChart
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
           data={hierarchy}
           // A spec is model output: an invented palette falls back to the
           // documented mono default rather than reaching the layout (#306).
@@ -727,6 +752,8 @@ function renderChart(
       return (
         <div style={{ height }}>
           <BarChart
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
             data={resolvedData}
             xDataKey={x}
             orientation={orientation ?? "vertical"}
@@ -836,6 +863,46 @@ export interface AutoChartProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    * no keyboard targets).
    */
   copyValueOnActivate?: boolean;
+  /**
+   * Selection input (RM-073), forwarded to the chosen container. The resolver's
+   * `category` is read from `spec.fields.category` (default `spec.x`), so a host
+   * maps selection without knowing the chart type.
+   */
+  selectionStates?: ChartSelectionStatesResolver;
+  /** Dim `excluded` marks. Default `true`. Forwarded with `selectionStates`. */
+  dimExcluded?: boolean;
+  /** Shared-crosshair category from a sibling chart (RM-073). */
+  hoverCategory?: ChartHoverCategory;
+  /** Fires with the hovered category on pointer move, `null` on leave (RM-073). */
+  onHoverCategory?: (category: ChartHoverCategory) => void;
+}
+
+/** The link inputs `AutoChart` forwards to its container. */
+type AutoChartLinkProps = Pick<
+  AutoChartProps,
+  "dimExcluded" | "hoverCategory" | "onHoverCategory" | "selectionStates"
+>;
+
+/**
+ * Re-keys a selection resolver onto `spec.fields` (RM-073). With no `fields`
+ * (or `fields.category === x`) the host's resolver passes through untouched.
+ */
+function resolveSpecSelection(
+  spec: ChartSpec,
+  resolver: ChartSelectionStatesResolver | undefined,
+): ChartSelectionStatesResolver | undefined {
+  const categoryField = spec.fields?.category;
+  if (!resolver || !categoryField || categoryField === spec.x) return resolver;
+  return (category, seriesKey, datum) => {
+    const mapped = datum?.[categoryField];
+    return resolver(
+      mapped instanceof Date || typeof mapped === "string" || typeof mapped === "number"
+        ? mapped
+        : category,
+      seriesKey,
+      datum,
+    );
+  };
 }
 
 /**
@@ -848,7 +915,18 @@ export interface AutoChartProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
  * Consumers add expand / flip / download by wrapping with `<ChartFrame>`.
  */
 export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function AutoChart(
-  { spec, height = 280, loading = false, copyValueOnActivate = true, className, ...props },
+  {
+    spec,
+    height = 280,
+    loading = false,
+    copyValueOnActivate = true,
+    className,
+    dimExcluded,
+    hoverCategory,
+    onHoverCategory,
+    selectionStates,
+    ...props
+  },
   ref,
 ) {
   const { t } = useLocale();
@@ -959,6 +1037,12 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
 
   // ── Chart title ───────────────────────────────────────────────────────────
   const title = spec.title;
+  const links: AutoChartLinkProps = {
+    dimExcluded,
+    hoverCategory,
+    onHoverCategory,
+    selectionStates: resolveSpecSelection(spec, selectionStates),
+  };
 
   // ── Render ────────────────────────────────────────────────────────────────
   let chartNode: ReactNode = null;
@@ -972,6 +1056,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       height,
       yFormat,
       copyValueOnActivate,
+      links,
     );
   } catch {
     return (
