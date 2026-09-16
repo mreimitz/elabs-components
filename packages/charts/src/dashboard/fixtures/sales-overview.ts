@@ -8,7 +8,16 @@ import salesOverviewJson from "../core/__fixtures__/sales-overview.json";
 import { withRealRows } from "./apply-rows";
 import type { DashboardSpec } from "../core/spec";
 
-export const salesOverviewSpec: DashboardSpec = withRealRows(
-  salesOverviewJson as unknown as DashboardSpec,
-  1,
-);
+const golden = withRealRows(salesOverviewJson as unknown as DashboardSpec, 1);
+
+export const salesOverviewSpec: DashboardSpec = {
+  ...golden,
+  // interaction graph — RM-082: a click in `region-share` HIGHLIGHTS every consumer (the later
+  // wildcard wins over the golden's `→ *: filter`) except `top-products`, which it FILTERS
+  // (an explicit pair beats a wildcard). See `core/interactions.ts`.
+  interactions: [
+    ...(golden.interactions ?? []),
+    { from: "region-share", to: "*", effect: "highlight" },
+    { from: "region-share", to: "top-products", effect: "filter" },
+  ],
+};

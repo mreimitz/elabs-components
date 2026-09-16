@@ -34,6 +34,8 @@ export * from "./edit";
 // DashboardAssetPanel, DashboardPropertiesPanel and their forms ship through `./chrome` above.
 
 // Interactions editor — RM-082
+// DashboardInteractionsEditor/DashboardInteractionsDialog ship through `./chrome` above;
+// `resolveInteractions` and `tileSelectionView` through `./core`.
 
 // Export — RM-084
 

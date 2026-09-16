@@ -32,12 +32,20 @@ import {
   resolveCollisions,
   type CollisionStrategy,
 } from "./layout";
+// interaction graph — RM-082
+import {
+  isDrillEffect,
+  resolveInteractions,
+  type DashboardHighlight,
+  type InteractionMap,
+} from "./interactions";
 import { createLocalSelectionDriver } from "./local-selection-driver";
-import type {
-  SelectionDriver,
-  SelectionOptions,
-  SelectionSnapshot,
-  SelectionValue,
+import {
+  applySelectionValues,
+  type SelectionDriver,
+  type SelectionOptions,
+  type SelectionSnapshot,
+  type SelectionValue,
 } from "./selection";
 import type { DashboardSpec, GridSpec, TileLayout, TileSpec, VariableValue } from "./spec";
 import { GRID_DENSITY_PRESETS, normalizeDashboardSpec } from "./validate";
@@ -144,7 +152,18 @@ export interface DashboardActions {
   endBatch(): void;
   discard(): void;
   markSaved(): void;
-  select(field: string, values: SelectionValue[], opts?: SelectionOptions): void;
+  /**
+   * Select values in a field. interaction graph — RM-082: with `route.fromTileId` the write is
+   * routed through `resolveInteractions` (`filter` targets → the driver, `highlight` targets →
+   * the ephemeral `highlight` slice, `none` → nothing, `drill` → `onNavigate(sheetId, { carry })`);
+   * without it the write is global and always filters. See `core/interactions.ts`.
+   */
+  select(
+    field: string,
+    values: SelectionValue[],
+    opts?: SelectionOptions,
+    route?: DashboardSelectRoute,
+  ): void;
   clearSelection(field?: string): void;
   back(): void;
   forward(): void;
@@ -155,6 +174,18 @@ export interface DashboardActions {
   applyBookmark(id: string): void;
   /** Stop mirroring the driver. Call when the sheet unmounts. */
   dispose(): void;
+}
+
+// interaction graph — RM-082
+/** Where a `select` came from. `fromTileId` undefined = a global write (always `filter`). */
+export interface DashboardSelectRoute {
+  fromTileId?: string;
+}
+
+/** What a drill hands the host's `onNavigate`. */
+export interface DashboardNavigateContext {
+  /** Field → values to select on the target sheet (see `applyCarriedSelection`). */
+  carry: Record<string, SelectionValue[]>;
 }
 
 /** The store's state. */
@@ -173,6 +204,11 @@ export interface DashboardState {
   history: { past: number; future: number; canUndo: boolean; canRedo: boolean };
   /** UI slice — RM-079. */
   ui: DashboardUiState;
+  // interaction graph — RM-082
+  /** The live `highlight` interaction, or `null`. Ephemeral: never history, never persisted. */
+  highlight: DashboardHighlight | null;
+  /** Field → the tile whose routed click wrote the driver's selection in it (absent = global). */
+  selectionOrigins: Record<string, string>;
   actions: DashboardActions;
 }
 
@@ -185,8 +221,15 @@ export interface CreateDashboardStoreOptions {
   mode?: DashboardMode;
   /** Undo steps kept. Default 50. */
   historyLimit?: number;
-  /** Called when a bookmark names another sheet (the host routes; D5). */
-  onNavigate?: (sheetId: string) => void;
+  /**
+   * Called when a bookmark names another sheet, or a `drill` interaction fires (then with
+   * `{ carry }`). The host routes (D5). A host that wants the carried selection applied selects
+   * `carry` on the target sheet's store when it mounts (`applyCarriedSelection`, RM-087).
+   */
+  onNavigate?: (sheetId: string, context?: DashboardNavigateContext) => void;
+  // interaction graph — RM-082
+  /** Sheet ids a drill may target; a drill to any other id is dropped. Omitted: unchecked. */
+  sheets?: readonly string[];
 }
 
 /** The store instance type: a zustand `StoreApi` whose `subscribe` also takes a selector. */
@@ -306,6 +349,78 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
           });
         commit(next);
         return true;
+      };
+
+      // interaction graph — RM-082: the resolved map, cached per spec identity.
+      let interactionCache: { spec: DashboardSpec; map: InteractionMap } | null = null;
+      const interactionMap = (): InteractionMap => {
+        const spec = history.present;
+        if (interactionCache?.spec !== spec)
+          interactionCache = { spec, map: resolveInteractions(spec, { sheets: options.sheets }) };
+        return interactionCache.map;
+      };
+      const dropOrigins = (field?: string) => {
+        const origins = get().selectionOrigins;
+        if (field === undefined) {
+          if (Object.keys(origins).length > 0) set({ selectionOrigins: {} });
+          return;
+        }
+        if (!(field in origins)) return;
+        const { [field]: _dropped, ...rest } = origins;
+        set({ selectionOrigins: rest });
+      };
+      const routedSelect = (
+        field: string,
+        values: SelectionValue[],
+        opts: SelectionOptions | undefined,
+        fromTileId: string,
+      ) => {
+        const pairs = interactionMap().get(fromTileId);
+        if (!pairs) {
+          dropOrigins(field);
+          driver.select(field, values, opts);
+          return;
+        }
+        const filterTargets = pairs.filter((pair) => pair.effect === "filter");
+        const highlightTargets = pairs.filter((pair) => pair.effect === "highlight");
+        const drills = pairs.flatMap((pair) => (isDrillEffect(pair.effect) ? [pair.effect] : []));
+        const emitter = tileById(fromTileId);
+        const emitterConsumes = Boolean(emitter?.consumes?.selection);
+        // A tile that reaches no consumer at all (or one that is not in the graph) keeps today's
+        // behaviour: its click is a plain selection.
+        const anyRouting = pairs.some((pair) => pair.effect !== "filter");
+        if (filterTargets.length > 0 || !anyRouting) {
+          driver.select(field, values, opts);
+          if (anyRouting)
+            set({ selectionOrigins: { ...get().selectionOrigins, [field]: fromTileId } });
+          else dropOrigins(field);
+        }
+        if (highlightTargets.length > 0) {
+          const prev = get().highlight;
+          const current =
+            prev && prev.field === field && prev.fromTileId === fromTileId ? prev.values : [];
+          const next = applySelectionValues(current, values, opts);
+          if (next.length === 0) set({ highlight: null });
+          else {
+            const targets = new Set(highlightTargets.map((pair) => pair.to));
+            if (emitterConsumes && filterTargets.length === 0) targets.add(fromTileId);
+            set({ highlight: { field, values: next, fromTileId, targets } });
+          }
+        } else if (get().highlight?.fromTileId === fromTileId && get().highlight?.field === field) {
+          set({ highlight: null });
+        }
+        const navigated = new Set<string>();
+        for (const { drill } of drills) {
+          if (navigated.has(drill.sheetId)) continue;
+          navigated.add(drill.sheetId);
+          const carry: Record<string, SelectionValue[]> = { [field]: [...values] };
+          for (const name of drill.carry ?? []) {
+            if (name === field) continue;
+            const carried = driver.getSnapshot().fields[name]?.values;
+            if (carried && carried.length > 0) carry[name] = [...carried];
+          }
+          options.onNavigate?.(drill.sheetId, { carry });
+        }
       };
 
       // Mirror the driver (whoever changes it).
@@ -558,10 +673,30 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
           history.mark();
           sync();
         },
-        select: (field, values, opts) => driver.select(field, values, opts),
-        clearSelection: (field) => driver.clear(field),
-        back: () => driver.back(),
-        forward: () => driver.forward(),
+        // interaction graph — RM-082: routed select; clearing drops the highlight and origins.
+        select(field, values, opts, route) {
+          if (route?.fromTileId === undefined) {
+            dropOrigins(field);
+            driver.select(field, values, opts);
+            return;
+          }
+          routedSelect(field, values, opts, route.fromTileId);
+        },
+        clearSelection(field) {
+          driver.clear(field);
+          dropOrigins(field);
+          const highlight = get().highlight;
+          if (highlight && (field === undefined || highlight.field === field))
+            set({ highlight: null });
+        },
+        back() {
+          driver.back();
+          dropOrigins();
+        },
+        forward() {
+          driver.forward();
+          dropOrigins();
+        },
         lock: (field, locked) => driver.lock(field, locked),
         setHover(hover) {
           const prev = get().hover;
@@ -613,6 +748,9 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
         dirty: false,
         history: historyState(),
         ui: { assets: false, properties: false },
+        // interaction graph — RM-082
+        highlight: null,
+        selectionOrigins: {},
         actions,
       };
     }),

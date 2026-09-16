@@ -1299,6 +1299,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DashboardExpressionError | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardGridContext | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardGridSettings | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardInteractionsDialog | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardInteractionsEditor | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardMarquee | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardPropertiesPanel | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardProvider | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1309,6 +1311,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DashboardTileHeader | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardToolbar | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_DASHBOARD_INTERACTIONS_EDITOR_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_DASHBOARD_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_DASHBOARD_PANEL_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_FILTER_TILE_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1319,6 +1322,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_SELECTION_BAR_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | EMPTY_SELECTION | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | GRID_DENSITY_PRESETS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| INTERACTIONS_MATRIX_MAX_TILES | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | RESIZE_HANDLES | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | SILENT_ANNOUNCEMENTS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | TILE_CHROME_Z | component |  | `@elabs-ai/components-charts/dashboard` |  |
