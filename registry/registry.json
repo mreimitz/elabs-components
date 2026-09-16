@@ -1102,6 +1102,58 @@
         }
       ],
       "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-cohort-retention-01",
+      "type": "registry:block",
+      "title": "Infographic — Do customers stay?",
+      "description": "\"Do customers stay?\" — a triangular cohort retention heatmap: one row per monthly signup cohort, one column per month since signup, shaded by the share still active. A cohort younger than N months draws an empty cell, never a fabricated zero. One cohort is called out with a peak ring and a stated, computed gap against its named peers.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-cohort-retention-01/data/cohort-retention.ts",
+          "type": "registry:component",
+          "target": "components/infographic-cohort-retention-01/data/cohort-retention.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-cohort-retention-01/infographic-cohort-retention.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-cohort-retention-01/infographic-cohort-retention.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-part-to-whole-01",
+      "type": "registry:block",
+      "title": "Infographic — Where does the money go?",
+      "description": "\"Where does the money go?\" — a two-level treemap of Q3 cost, category → sub-category, drawn in one neutral mono shade except for the single highlighted tile, outlined and named with a Leader + HaloText callout stating its share and the change from last quarter. Tile area is exactly proportional to cost.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-part-to-whole-01/data/cost-breakdown.ts",
+          "type": "registry:component",
+          "target": "components/infographic-part-to-whole-01/data/cost-breakdown.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-part-to-whole-01/infographic-part-to-whole.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-part-to-whole-01/infographic-part-to-whole.tsx"
+        }
+      ],
+      "categories": ["infographic"]
     }
   ]
 }
