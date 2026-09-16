@@ -91,6 +91,11 @@ const baseField = {
       equals: z.union([z.string(), z.number(), z.boolean()]),
     })
     .optional(),
+  /**
+   * Show the value as read-only text (a `Descriptions` item) instead of an
+   * editable control. The value still belongs to the form's `values`.
+   */
+  readOnly: z.boolean().optional(),
 };
 
 /** A single-line or multi-line text field. */
@@ -306,7 +311,25 @@ export const formSpecSchema = z.object({
   fields: z.array(fieldSpecSchema),
   /** Submit button label. @default "Submit" */
   submitLabel: z.string().optional(),
+  /**
+   * Collapsible groups of top-level fields, in display order. Fields not named
+   * in any section render first, ungrouped. Omit for the flat layout.
+   */
+  sections: z.array(z.lazy(() => formSectionSchema)).optional(),
 });
+
+/** One collapsible group of top-level fields in a `FormSpec`. */
+export const formSectionSchema = z.object({
+  /** Stable key for the section. */
+  id: z.string(),
+  /** Heading on the section's disclosure trigger. */
+  label: z.string(),
+  /** Names of the top-level fields the section holds, in display order. */
+  fields: z.array(z.string()),
+  /** Start collapsed. @default false */
+  collapsed: z.boolean().optional(),
+});
+export type FormSectionSpec = z.infer<typeof formSectionSchema>;
 export type FormSpec = Omit<z.infer<typeof formSpecSchema>, "fields"> & { fields: FieldSpec[] };
 
 // ---------------------------------------------------------------------------
@@ -345,6 +368,8 @@ export interface NormalizedFormSpec {
   description?: string;
   submitLabel?: string;
   fields: FieldSpec[];
+  /** Collapsible field groups; absent when the spec declares none. */
+  sections?: FormSectionSpec[];
 }
 
 /**
@@ -415,8 +440,19 @@ export function normalizeFormSpec(
       description: typeof raw.description === "string" ? raw.description : undefined,
       submitLabel: typeof raw.submitLabel === "string" ? raw.submitLabel : undefined,
       fields,
+      ...normalizeSections(raw.sections),
     },
   };
+}
+
+/** Keep only well-formed sections; `{}` when there are none, so the normalized shape is unchanged. */
+function normalizeSections(raw: unknown): { sections?: FormSectionSpec[] } {
+  if (!Array.isArray(raw)) return {};
+  const sections = raw.flatMap((candidate) => {
+    const parsed = formSectionSchema.safeParse(candidate);
+    return parsed.success ? [parsed.data] : [];
+  });
+  return sections.length > 0 ? { sections } : {};
 }
 
 // ---------------------------------------------------------------------------
