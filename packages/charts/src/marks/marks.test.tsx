@@ -100,6 +100,8 @@ describe("HaloText", () => {
     expect(text.getAttribute("stroke-linejoin")).toBe("round");
     expect(text.getAttribute("stroke-width")).toBe("3");
     expect(text.getAttribute("fill")).toBe("var(--chart-foreground)");
+    // #182 — hidden on its own root, independent of any ancestor.
+    expect(text.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("takes an explicit halo token for text that is not on the plot ground", () => {
@@ -159,6 +161,76 @@ describe("Marginalia", () => {
     const note = getByText("first frost");
     expect(note.tagName.toLowerCase()).toBe("text");
     expect(note.getAttribute("font-style")).toBe("italic");
+  });
+
+  // #182 — hidden on its OWN root, not only because an ancestor svg is.
+  it("is aria-hidden on its own root", () => {
+    const { container } = renderSvg(
+      <Marginalia anchor={[0, 0]} x={10} y={10}>
+        note
+      </Marginalia>,
+    );
+    expect(container.querySelector('[data-slot="marginalia"]')?.getAttribute("aria-hidden")).toBe(
+      "true",
+    );
+  });
+
+  // #181 — a long note must wrap, not run off the canvas as one clipped line.
+  it("wraps a note longer than maxWidth onto several tspans, each within the width", () => {
+    const note = "the week the queue cleared and stayed clear";
+    const { container } = renderSvg(
+      <Marginalia anchor={[0, 0]} fontSize={10} maxWidth={80} x={100} y={40}>
+        {note}
+      </Marginalia>,
+    );
+    const lines = [...container.querySelectorAll('[data-slot="marginalia-line"]')];
+    expect(lines.length).toBeGreaterThan(1);
+    // Nothing lost or reordered in the wrap.
+    expect(lines.map((l) => l.textContent).join(" ")).toBe(note);
+    // Every line restarts at the note's x and fits the estimated width
+    // (0.6em per glyph at 10px = 6px, so 80px holds 13 characters).
+    for (const line of lines) {
+      expect(line.getAttribute("x")).toBe("100");
+      expect((line.textContent ?? "").length).toBeLessThanOrEqual(13);
+    }
+    expect(lines[1]?.getAttribute("dy")).toBe("12.5");
+  });
+
+  it("keeps a note that fits on one line, and renders a non-string note as given", () => {
+    const { container } = renderSvg(
+      <>
+        <Marginalia anchor={[0, 0]} maxWidth={200} x={10} y={10}>
+          first frost
+        </Marginalia>
+        <Marginalia anchor={[0, 0]} maxWidth={10} x={10} y={30}>
+          <tspan data-testid="own">caller lines</tspan>
+        </Marginalia>
+      </>,
+    );
+    expect(container.querySelectorAll('[data-slot="marginalia-line"]')).toHaveLength(1);
+    expect(container.querySelector('[data-testid="own"]')).not.toBeNull();
+  });
+
+  it("forwards a halo override to its note", () => {
+    const { container } = renderSvg(
+      <Marginalia anchor={[0, 0]} halo="var(--chart-label)" x={10} y={10}>
+        on a zone
+      </Marginalia>,
+    );
+    expect(container.querySelector('[data-slot="marginalia-note"]')?.getAttribute("stroke")).toBe(
+      "var(--chart-label)",
+    );
+  });
+
+  it("stops the leader just short of the note's first glyph", () => {
+    const { container } = renderSvg(
+      <Marginalia anchor={[0, 0]} leaderKind="elbow" x={40} y={10}>
+        note
+      </Marginalia>,
+    );
+    expect(container.querySelector('[data-slot="leader"]')?.getAttribute("d")).toBe(
+      "M 0 0 H 18.5 V 10 H 37",
+    );
   });
 });
 
@@ -315,5 +387,51 @@ describe("the marks layer as a whole", () => {
         `${file} has a literal colour: false`,
       );
     }
+  });
+});
+
+describe("AT-invisible marks", () => {
+  // #182 — `QuietDot` (a zero) and `Marginalia` (a remark) carry facts no other
+  // mark draws, and both are aria-hidden. The duty to restate those facts falls
+  // on the container, so this is the gate that makes the duty real: every
+  // source module that renders one must sit in a container that uses the shared
+  // text-alternative seam (`useChartA11yContainerProps` / `ChartA11yLabel`).
+  // Scope: a chart folder (`charts/heatmap/`) counts as one container; a flat
+  // module (`charts/bump-chart.tsx`) must use the seam itself.
+  it("only appear inside a container that ships a text alternative", async () => {
+    const { existsSync, readdirSync, readFileSync, statSync } = await import("node:fs");
+    const { dirname, join, relative } = await import("node:path");
+    const fromPackage = join(process.cwd(), "src");
+    const src = existsSync(join(fromPackage, "marks"))
+      ? fromPackage
+      : join(process.cwd(), "packages", "charts", "src");
+
+    const isSource = (f: string) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f);
+    const walk = (dir: string): string[] =>
+      readdirSync(dir).flatMap((entry) => {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) {
+          return entry === "marks" || entry === "test" ? [] : walk(full);
+        }
+        return isSource(entry) ? [full] : [];
+      });
+
+    const SEAM = /\b(useChartA11yContainerProps|ChartA11yLabel)\b/;
+    const INVISIBLE = /<(QuietDot|Marginalia)\b/;
+    const consumers = walk(src).filter((file) => INVISIBLE.test(readFileSync(file, "utf8")));
+    // The gate is vacuous if nothing consumes the marks — fail loudly instead.
+    expect(consumers.length).toBeGreaterThan(0);
+
+    const missing = consumers.filter((file) => {
+      const dir = dirname(file);
+      const scope =
+        dir === join(src, "charts") || dir === src
+          ? [file]
+          : readdirSync(dir)
+              .filter(isSource)
+              .map((f) => join(dir, f));
+      return !scope.some((f) => SEAM.test(readFileSync(f, "utf8")));
+    });
+    expect(missing.map((f) => relative(src, f))).toEqual([]);
   });
 });

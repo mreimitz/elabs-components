@@ -16,6 +16,13 @@ export interface HaloTextProps extends SVGProps<SVGTextElement> {
    * on a dark card it is dark, with no `dark:` override and no literal anywhere.
    * Override it only when the text sits on something other than the plot ground
    * (a tooltip plate, a filled zone) — and then with another semantic token.
+   *
+   * The halo tracks the PLOT ground, not the card. The shipped themes declare
+   * that mirror in the token layer (`--chart-background: var(--card)` in
+   * `themes.css`), so the two agree by contract, not by coincidence. A theme
+   * that paints the plot on something other than `--card` must set
+   * `--chart-background` to that ground, or every halo punches a card-coloured
+   * hole in it.
    */
   halo?: string;
   /** Halo width in px (default 3). The visible halo is half of it — a stroke is centred. */
@@ -58,6 +65,14 @@ export interface HaloTextProps extends SVGProps<SVGTextElement> {
  * (`packages/tokens/src/charts-contrast.test.ts`); `--chart-1..12` and other
  * series/mark tokens are not — see the "Which status rung a graphical MARK
  * reaches for" note in `.claude/rules/styling-and-tokens.md` (#183).
+ *
+ * ## Accessibility
+ *
+ * `aria-hidden` on its own root by default, like every mark in this layer, so it
+ * never depends on an ancestor happening to be hidden. A label drawn with it is
+ * ink, not the only copy of a fact: the chart that renders it must carry the
+ * value in its accessible summary or table (`.claude/rules/charts.md` § Marks).
+ * Pass `aria-hidden={false}` only for text that genuinely is the accessible copy.
  */
 export const HaloText = forwardRef<SVGTextElement, HaloTextProps>(function HaloText(
   { halo = "var(--chart-background)", haloWidth = DEFAULT_HALO_WIDTH, fill, ...props },
@@ -65,6 +80,7 @@ export const HaloText = forwardRef<SVGTextElement, HaloTextProps>(function HaloT
 ) {
   return (
     <text
+      aria-hidden="true"
       data-slot="halo-text"
       fill={fill ?? "var(--chart-foreground)"}
       paintOrder="stroke"
