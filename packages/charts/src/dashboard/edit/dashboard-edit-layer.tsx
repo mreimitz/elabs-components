@@ -62,6 +62,7 @@ import {
   editStrategy,
   previewPlacement,
   resizeFrom,
+  stepEdge,
   topLevelLayout,
 } from "./geometry";
 import { DashboardMarquee, useDashboardMarquee } from "./marquee";
@@ -258,6 +259,11 @@ export function DashboardEditLayer({
       if (current.delta.dx === dx && current.delta.dy === dy) return;
       const spec = store.getState().spec;
       const group = groupRef.current;
+      // silent-clamp fix (RM-078 follow-up 5): the step that just landed here, independent of
+      // the axis it moves — used ONLY when the target below turns out unchanged, to word which
+      // edge/limit absorbed it (`stepEdge` never sees the accumulated deltas, only the sign of
+      // this one increment, so it stays right even after several clamped presses in a row).
+      const edgeOfThisStep = stepEdge(dx - current.delta.dx, dy - current.delta.dy);
       if (current.kind === "move" && group) {
         // tile operations — RM-081 follow-up 1: group drag preview — every selected id
         // shifts together; `shiftGroup` is the one collision check for the whole set.
@@ -265,7 +271,10 @@ export function DashboardEditLayer({
         const target = layout.find((item) => item.id === current.tileId) ?? current.origin;
         const moved = !sameCells(target, current.target);
         setSession({ ...current, target, delta: { dx, dy }, layout, ok });
-        if (!moved) return;
+        if (!moved) {
+          if (edgeOfThisStep) announce(messages.clampedEdge(edgeOfThisStep, target));
+          return;
+        }
         const said = messages.moved(target);
         announce(ok ? said : `${said}. ${messages.rejected}`);
         return;
@@ -278,7 +287,13 @@ export function DashboardEditLayer({
       const moved = !sameCells(target, current.target);
       const { layout, ok } = previewPlacement(spec, target);
       setSession({ ...current, target, delta: { dx, dy }, layout, ok });
-      if (!moved) return;
+      if (!moved) {
+        // A step that changed the accumulated delta but not the (already clamped) target: the
+        // grid edge or the tile's own min/max size absorbed it — announce once per press so a
+        // keyboard/screen-reader user holding the same arrow never just goes silent.
+        if (edgeOfThisStep) announce(messages.clampedEdge(edgeOfThisStep, target));
+        return;
+      }
       const title = titleOf(current.tileId);
       const said =
         current.kind === "move" ? messages.moved(target) : messages.resizing(title, target);
@@ -326,10 +341,18 @@ export function DashboardEditLayer({
   }, [actions, store, setSession, titleOf, messages, announce]);
 
   const cancel = useCallback(() => {
-    if (!sessionRef.current) return;
+    const current = sessionRef.current;
+    if (!current) return;
     setSession(null);
     groupRef.current = null;
-    announce(messages.cancelled);
+    // Escape mid-gesture and tabbing off a resize handle mid-gesture (`tile-resize-handles.tsx`'s
+    // `onBlur`) both land here — say which gesture was cancelled and where it landed back, not a
+    // bare "Cancelled" (RM-078 follow-up 5).
+    announce(
+      current.kind === "move"
+        ? messages.moveCancelled(current.origin)
+        : messages.resizeCancelled(current.origin),
+    );
   }, [setSession, announce, messages]);
 
   const resizeBy = useCallback(

@@ -57,7 +57,17 @@ export function editMessages(t: Translate) {
       t("charts.dashboard.edit.resizing", { title, ...cellVars(cell) }),
     resized: (title: string, cell: Cell) =>
       t("charts.dashboard.edit.resized", { title, ...cellVars(cell) }),
-    cancelled: t("charts.dashboard.edit.cancelled"),
+    // silent-clamp fix (RM-078 follow-up 5): announced once per key press when a step's
+    // accumulated delta changed but its clamped target cells did not — see `stepEdge`
+    // (geometry.ts) for how `handle` (a compass direction, not necessarily a resize handle
+    // the user is dragging) is derived.
+    clampedEdge: (handle: ResizeHandle, cell: Cell) =>
+      t("charts.dashboard.edit.clampedEdge", { edge: edge[handle], ...cellVars(cell) }),
+    // Escape (any gesture) or tabbing off a resize handle mid-gesture (`tile-resize-handles.tsx`'s
+    // `onBlur`) both cancel through the same path — say which kind of gesture was cancelled and
+    // where it was restored to, rather than a bare "Cancelled".
+    moveCancelled: (cell: Cell) => t("charts.dashboard.edit.moveCancelled", cellVars(cell)),
+    resizeCancelled: (cell: Cell) => t("charts.dashboard.edit.resizeCancelled", cellVars(cell)),
   };
 }
 

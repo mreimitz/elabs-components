@@ -35,6 +35,32 @@ export function topLevelLayout(spec: DashboardSpec): TileLayout[] {
   ];
 }
 
+// silent-clamp fix (RM-078 follow-up 5): a keyboard move/resize step whose accumulated delta
+// changed but whose CLAMPED target cells did not (grid edge, or a min/max size limit) used to
+// return without announcing anything (`retarget`'s own `if (!moved) return`) — a keyboard user
+// holding the same arrow at a boundary got total silence. `stepEdge` turns the sign of the
+// step that just landed there into the compass word the announcement quotes ("At the right
+// edge…"); it needs no geometry beyond the sign the caller already has (the accumulated delta
+// before vs after this call), and arrow steps are always single-axis
+// (`cell-coordinate-getter.ts`'s `arrowCellStep`), so this never has to arbitrate a diagonal.
+/** The compass edge a step's sign points toward, or `null` for no step (both deltas zero) —
+ * used only to word an "at the edge" announcement when a step's target did not move. */
+export function stepEdge(stepDx: number, stepDy: number): ResizeHandle | null {
+  const west = stepDx < 0;
+  const east = stepDx > 0;
+  const north = stepDy < 0;
+  const south = stepDy > 0;
+  if (north && west) return "nw";
+  if (north && east) return "ne";
+  if (south && west) return "sw";
+  if (south && east) return "se";
+  if (north) return "n";
+  if (south) return "s";
+  if (west) return "w";
+  if (east) return "e";
+  return null;
+}
+
 /** `origin` resized from `handle` by whole cells, honouring the tile's min/max/aspect. */
 export function resizeFrom(
   origin: TileLayout,

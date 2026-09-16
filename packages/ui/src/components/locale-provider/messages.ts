@@ -438,7 +438,14 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.dashboard.edit.rejected": "Cannot place here — not enough room",
   "charts.dashboard.edit.resizing": "Resizing {title}: {w} by {h}",
   "charts.dashboard.edit.resized": "Resized {title} to {w} by {h}",
-  "charts.dashboard.edit.cancelled": "Cancelled",
+  // dashboard edit — RM-078 (follow-up 5): a clamped keyboard step (grid edge or a tile's own
+  // min/max size) now announces once per key press instead of staying silent once the layout
+  // stops changing; cancel (Escape, or tabbing off a resize handle mid-gesture) says which
+  // gesture was cancelled and where it was restored to.
+  "charts.dashboard.edit.clampedEdge": "At the {edge} edge. ({x},{y}) {w} × {h}",
+  "charts.dashboard.edit.moveCancelled": "Move cancelled. Restored to column {x}, row {y}",
+  "charts.dashboard.edit.resizeCancelled":
+    "Resize cancelled. Restored to column {x}, row {y}, size {w} by {h}",
   // dashboard toolbar — RM-079: mode switch, undo/redo, grid settings, save/discard, shortcuts.
   "charts.dashboard.toolbar.ariaLabel": "Dashboard toolbar",
   "charts.dashboard.toolbar.viewMode": "View",

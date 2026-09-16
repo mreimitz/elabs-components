@@ -91,6 +91,14 @@ function ResizeHandleButton({
         listeners?.onTouchStart?.(event);
       }}
       onKeyDown={onKeyDown}
+      // Cancel-on-blur (RM-078 follow-up 5, a11y P2): deliberately kept, not a side effect —
+      // Tabbing off the ACTIVE handle mid-resize (to the next handle in the clockwise order, or
+      // anywhere else) has the same "abandon the gesture" semantics as Escape, so it goes
+      // through the same `edit.cancel()`, which now announces which gesture was cancelled and
+      // where it was restored to ("Resize cancelled. Restored to…", `announcer.ts`) rather than
+      // a bare "Cancelled" — reviewing the next handle by Tab no longer looks like silent data
+      // loss. Only `active` (the handle whose OWN session this is) cancels; blurring an inactive
+      // handle (nothing running yet) is a no-op.
       onBlur={() => {
         if (active) edit.cancel();
       }}

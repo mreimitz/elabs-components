@@ -157,6 +157,25 @@ describe("DashboardEditLayer", () => {
     expect(store.getState().history.past).toBe(0);
     expect(
       document.querySelector('[data-slot="dashboard-edit-layer-announcer"]'),
-    ).toHaveTextContent("Cancelled");
+    ).toHaveTextContent("Resize cancelled. Restored to column 1, row 1, size 6 by 4");
+  });
+
+  // a11y P2 (RM-078 follow-up 5): tabbing off the ACTIVE resize handle mid-gesture cancels the
+  // resize the same way Escape does (`tile-resize-handles.tsx`'s `onBlur`) — kept deliberately,
+  // now proven to restore the layout, announce a "Resize cancelled" text and add NO history
+  // entry, rather than being an untested side effect.
+  it("Tabbing off the active resize handle cancels the resize, announces it, and adds no history entry", async () => {
+    const user = userEvent.setup();
+    renderEdit();
+    act(() => document.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!.focus());
+    act(() => screen.getByRole("button", { name: "Resize Revenue from right" }).focus());
+    await user.keyboard("{ArrowRight}{ArrowRight}");
+    expect(layoutOf("chart-1")).toMatchObject({ w: 6 }); // not committed yet — preview only
+    await user.tab(); // moves focus to the next handle in the clockwise order
+    expect(layoutOf("chart-1")).toMatchObject({ x: 0, y: 0, w: 6, h: 4 });
+    expect(store.getState().history.past).toBe(0);
+    expect(
+      document.querySelector('[data-slot="dashboard-edit-layer-announcer"]'),
+    ).toHaveTextContent("Resize cancelled. Restored to column 1, row 1, size 6 by 4");
   });
 });
