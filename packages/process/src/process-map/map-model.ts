@@ -39,6 +39,7 @@
 // the table entirely. Same package, so this is an ordinary relative import.
 import type { Edge, Node } from "@xyflow/react";
 import type { ActivityColor, ActivityColorScale } from "../core/activity-color-scale";
+import type { ConformanceState } from "../conformance-overlay/conformance-state";
 import { performanceValue } from "../core/aggregate-performance";
 import { EDGE_KEY_SEPARATOR } from "../core/discover-graph";
 import { minMax } from "../core/scale";
@@ -199,6 +200,11 @@ export interface ProcessActivityNodeData extends Record<string, unknown> {
    * Absent when the map was given no `colorScale`.
    */
   accent?: ActivityColor;
+  /**
+   * Where this activity sits against a reference model (RM-062). Set only when the map
+   * was given `conformance`; drives `data-conformance` plus its glyph and dash.
+   */
+  conformance?: ConformanceState;
 }
 
 /** `data` carried by every {@link ProcessMapEdge}. */
@@ -229,6 +235,11 @@ export interface ProcessTransitionEdgeData extends Record<string, unknown> {
    * rest of this object (it is itself derived from this object).
    */
   ariaLabel?: string;
+  /**
+   * Where this transition sits against a reference model (RM-062). Set only when the map
+   * was given `conformance`; drives `data-conformance` plus its glyph and dash.
+   */
+  conformance?: ConformanceState;
 }
 
 /** A process-map activity node. Register as `nodeTypes={{ "process-activity": … }}`. */

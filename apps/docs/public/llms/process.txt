@@ -12,12 +12,23 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - CASE_TABLE_COLUMN_LABEL_KEYS
 - CaseTable
 - CaseTimeline
+- CONFORMANCE_OVERLAY_DEFAULT_METRIC
+- CONFORMANCE_STATE_DEFAULT_LABELS
+- CONFORMANCE_STATE_ENCODING
+- CONFORMANCE_STATES
+- ConformanceLegend
+- ConformanceOverlay
+- ConformanceStateMark
 - DEFAULT_LAYOUT_DEBOUNCE_MS
 - DOTTED_CHART_DEFAULT_LABELS
 - DOTTED_CHART_DOT_RADIUS
 - DottedChart
 - EMPTY_PROCESS_MAP_HOVER
 - GHOST_OPACITY
+- HAPPY_PATH_EDITOR_DEFAULT_LABELS
+- HappyPathEditor
+- HappyPathEditorContext
+- HappyPathStepNode
 - MetricLayerSwitch
 - PERFORMANCE_SPECTRUM_DEFAULT_BIN_SIZE
 - PERFORMANCE_SPECTRUM_DEFAULT_LABELS
@@ -52,9 +63,12 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - VARIANT_EXPLORER_DEFAULT_LABELS
 - VARIANT_EXPLORER_ROW_HEIGHT
 - VariantExplorer
+- VIOLATION_LIST_DEFAULT_LABELS
+- ViolationList
 
 ## Hooks
 
+- useHappyPathEditor
 - useProcessExplorer
 - useProcessLayout
 - useProcessMapEdgeKeys

@@ -12,6 +12,8 @@
 import { forwardRef } from "react";
 import type { HTMLAttributes } from "react";
 
+import type { ConformanceResult } from "../core/conformance";
+import type { HappyPath } from "../core/reference-model";
 import type { EventLog, ProcessGraph, Variant } from "../core/types";
 import {
   assertProcessContract,
@@ -41,10 +43,10 @@ const PROCESS_MAP_SPEC: ProcessContractSpec = { dataProp: "graph" };
 const VARIANT_EXPLORER_SPEC: ProcessContractSpec = { dataProp: "variants" };
 const PROCESS_KPI_STRIP_SPEC: ProcessContractSpec = { dataProp: "graph" };
 
-function createProcessDouble<P extends Pick<HTMLAttributes<HTMLDivElement>, "className" | "style">>(
-  name: string,
-  spec: ProcessContractSpec,
-) {
+/** The only props the factory itself reads — a double's own contract is its `P`. */
+type DoubleRenderProps = Pick<HTMLAttributes<HTMLDivElement>, "className" | "style">;
+
+function createProcessDouble<P extends DoubleRenderProps>(name: string, spec: ProcessContractSpec) {
   const Double = forwardRef<HTMLDivElement, P>(function ProcessTestDouble(props, ref) {
     const record = props as unknown as Record<string, unknown>;
     assertProcessContract(name, record, spec);
@@ -116,10 +118,47 @@ export const PerformanceSpectrumDouble = createProcessDouble<PerformanceSpectrum
   PERFORMANCE_SPECTRUM_SPEC,
 );
 
+// ── RM-062 ───────────────────────────────────────────────────────────────────
+
+interface ConformanceOverlayDoubleProps extends DoubleOwnProps {
+  graph: ProcessGraph;
+  conformance: ConformanceResult;
+}
+
+interface ViolationListDoubleProps extends HTMLAttributes<HTMLDivElement> {
+  conformance: ConformanceResult;
+}
+
+interface HappyPathEditorDoubleProps extends Omit<HTMLAttributes<HTMLDivElement>, "onChange"> {
+  value: HappyPath;
+  onChange: (path: HappyPath) => void;
+}
+
+/** Stand-in for `ConformanceOverlay` (RM-062): requires a graph AND a replay result. */
+export const ConformanceOverlayDouble = createProcessDouble<ConformanceOverlayDoubleProps>(
+  "ConformanceOverlayDouble",
+  { dataProp: "conformance", requiredProps: ["graph"] },
+);
+
+/** Stand-in for `ViolationList` (RM-062). */
+export const ViolationListDouble = createProcessDouble<ViolationListDoubleProps>(
+  "ViolationListDouble",
+  { dataProp: "conformance" },
+);
+
+/** Stand-in for `HappyPathEditor` (RM-062): a controlled editor, so `onChange` is required. */
+export const HappyPathEditorDouble = createProcessDouble<HappyPathEditorDoubleProps>(
+  "HappyPathEditorDouble",
+  { dataProp: "value", requiredProps: ["onChange"] },
+);
+
 export type {
   DottedChartDoubleProps,
   PerformanceSpectrumDoubleProps,
   ProcessMapDoubleProps,
   VariantExplorerDoubleProps,
   ProcessKpiStripDoubleProps,
+  ConformanceOverlayDoubleProps,
+  ViolationListDoubleProps,
+  HappyPathEditorDoubleProps,
 };

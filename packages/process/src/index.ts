@@ -53,3 +53,8 @@ export * from "./dotted-chart";
 
 // PerformanceSpectrum — RM-060
 export * from "./performance-spectrum";
+
+// ConformanceOverlay / ViolationList / HappyPathEditor — RM-062
+export * from "./conformance-overlay";
+export * from "./violation-list";
+export * from "./happy-path-editor";
