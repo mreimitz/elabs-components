@@ -13,6 +13,10 @@ export * from "./validate";
 export * from "./expression";
 
 // store/history/selection — RM-071
+export * from "./selection";
+export * from "./history";
+export * from "./local-selection-driver";
+export * from "./store";
 
 // autoLayout/schema — RM-086
 
