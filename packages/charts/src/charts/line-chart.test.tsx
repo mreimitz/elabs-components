@@ -16,8 +16,17 @@
  * test-storybook`.
  */
 
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// One mutable reduced-motion switch (the `chart-reveal-clip.test.tsx` pattern).
+// Defaults to `false`, so every other test here runs on the animating path.
+const motionState = vi.hoisted(() => ({ reduced: false as boolean | null }));
+
+vi.mock("motion/react", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () => motionState.reduced,
+}));
 
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders.
@@ -38,6 +47,7 @@ vi.mock("@visx/responsive", () => {
   };
 });
 
+import type { ChartPhase } from "./chart-phase";
 import { LineChart } from "./line-chart";
 import { spacedTopK } from "./line";
 import { resolveMarkerVariantFill } from "./series-point-marker";
@@ -157,6 +167,68 @@ describe("LineChart revealOn (#175)", () => {
 
     const releasedRect = container.querySelector("clipPath rect");
     expect(releasedRect?.getAttribute("width")).not.toBe("0");
+  });
+
+  describe("with the reveal timer running", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      motionState.reduced = false;
+    });
+
+    /** Longer than the default 1100ms reveal, so an un-held reveal has settled. */
+    const PAST_REVEAL_MS = 1500;
+
+    function renderTracked(props: Partial<Parameters<typeof LineChart>[0]>) {
+      const phases: ChartPhase[] = [];
+      const utils = render(
+        <LineChart data={chartData} onPhaseChange={(phase) => phases.push(phase)} {...props}>
+          {null}
+        </LineChart>,
+      );
+      const advance = (ms: number) =>
+        act(() => {
+          vi.advanceTimersByTime(ms);
+        });
+      const clipWidth = () => utils.container.querySelector("clipPath rect")?.getAttribute("width");
+      return { ...utils, advance, clipWidth, lastPhase: () => phases.at(-1) };
+    }
+
+    it('the in-view hold does not lapse into "ready" off-screen once the reveal duration passes', () => {
+      const { advance, clipWidth, lastPhase } = renderTracked({ revealOn: "inView" });
+      advance(PAST_REVEAL_MS);
+      expect(lastPhase()).toBe("revealing");
+      expect(clipWidth()).toBe("0");
+
+      act(() => {
+        FakeIntersectionObserver.instances[0]?.fireIntersecting();
+      });
+      advance(PAST_REVEAL_MS);
+      expect(lastPhase()).toBe("ready");
+      expect(clipWidth()).not.toBe("0");
+    });
+
+    it("replayOnClick replays the enter reveal after it has settled", () => {
+      const { advance, container, lastPhase } = renderTracked({ replayOnClick: true });
+      advance(PAST_REVEAL_MS);
+      expect(lastPhase()).toBe("ready");
+
+      fireEvent.click(container.firstChild as HTMLElement);
+      expect(lastPhase()).toBe("revealing");
+      advance(PAST_REVEAL_MS);
+      expect(lastPhase()).toBe("ready");
+    });
+
+    it('reduced motion never holds — a below-the-fold chart settles without scrolling (revealOn="inView")', () => {
+      motionState.reduced = true;
+      const { advance, clipWidth, lastPhase } = renderTracked({ revealOn: "inView" });
+      expect(clipWidth()).not.toBe("0");
+      advance(PAST_REVEAL_MS);
+      expect(lastPhase()).toBe("ready");
+    });
   });
 });
 

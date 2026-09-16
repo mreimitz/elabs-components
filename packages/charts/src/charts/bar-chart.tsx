@@ -54,6 +54,7 @@ import {
   DEFAULT_CHART_STATUS,
   resolveRestingChartPhase,
 } from "./chart-phase";
+import { type ChartRevealOn, useChartRevealGate } from "./chart-reveal-clip";
 import { generateCategoricalSkeletonData } from "./generate-chart-skeleton-data";
 import { useScheduledTooltip } from "./use-scheduled-tooltip";
 import { useStableValue } from "./use-stable-value";
@@ -82,6 +83,15 @@ export interface BarChartProps {
   enterTransition?: Transition;
   /** Signature of motion URL state — triggers enter replay when it changes. */
   revealSignature?: string;
+  /**
+   * When the enter reveal is allowed to play (#175). `"mount"` (default) plays
+   * as soon as the chart renders — no change from today. `"inView"` holds the
+   * bars at their pre-enter state until this chart's own container scrolls to
+   * 30% visible.
+   */
+  revealOn?: ChartRevealOn;
+  /** Clicking the chart body replays the enter reveal (#175). Default `false`. */
+  replayOnClick?: boolean;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
   /** Additional class name for the container */
@@ -395,6 +405,8 @@ interface ChartInnerProps {
   animationEasing: string;
   enterTransition?: Transition;
   revealSignature?: string;
+  revealOn?: ChartRevealOn;
+  replayOnClick?: boolean;
   barGap: number;
   barWidthProp?: number;
   orientation: BarOrientation;
@@ -458,6 +470,8 @@ const ChartCore = memo(function ChartCore({
   animationEasing,
   enterTransition,
   revealSignature = "",
+  revealOn = "mount",
+  replayOnClick = false,
   barGap,
   barWidthProp,
   orientation,
@@ -780,16 +794,37 @@ const ChartCore = memo(function ChartCore({
     return scale;
   }, [categoryScale, innerWidth, data.length]);
 
+  // The SAME reveal gate `LineChart`/`AreaChart` use (#175) — bars grow on
+  // their own `revealEpoch` rather than through a clip, so the chart reads the
+  // gate's decision directly instead of mounting `ChartRevealClip`. Only hand
+  // it a real element when a caller opted in: `useInView` observes any
+  // non-null ref, so an unconditional ref would mount an
+  // `IntersectionObserver` for every default `"mount"` chart.
+  const revealGate = useChartRevealGate({
+    replayOnClick,
+    revealOn,
+    viewportRef: revealOn === "inView" || replayOnClick ? containerRef : undefined,
+  });
+  const revealHeld = revealGate.held;
+  // Under reduced motion a replay has nothing to replay: the gate never holds
+  // there, and restarting the grow would put motion back on screen for someone
+  // who asked for less of it.
+  const replayEpoch = revealGate.prefersReducedMotion ? 0 : revealGate.replayEpoch;
+
   // Animation timing — replay when motion settings change
-  // revealSignature replays enter.
+  // revealSignature (or a gate replay) replays enter; an in-view hold keeps
+  // the bars at their pre-enter state with no settle timer running.
   useEffect(() => {
-    setRevealEpoch((n) => n + 1);
     setIsLoaded(false);
+    if (revealHeld) {
+      return;
+    }
+    setRevealEpoch((n) => n + 1);
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, animationDuration);
     return () => clearTimeout(timer);
-  }, [animationDuration, revealSignature]);
+  }, [animationDuration, revealSignature, revealHeld, replayEpoch]);
 
   useEffect(() => {
     if (isLoadingStatus) {
@@ -973,6 +1008,9 @@ const ChartCore = memo(function ChartCore({
     animationEasing,
     enterTransition,
     revealEpoch,
+    revealOn,
+    replayOnClick,
+    revealHeld,
     xAccessor: xAccessorDate,
     dateLabels,
     // Bar-specific properties
@@ -1062,6 +1100,8 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
     animationEasing = DEFAULT_ANIMATION_EASING,
     enterTransition,
     revealSignature,
+    revealOn,
+    replayOnClick,
     aspectRatio = "2 / 1",
     className = "",
     status = DEFAULT_CHART_STATUS,
@@ -1151,6 +1191,8 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
             onPhaseChange={handlePhaseChange}
             orientation={orientation}
             palette={palette}
+            replayOnClick={replayOnClick}
+            revealOn={revealOn}
             revealSignature={revealSignature}
             stacked={stacked}
             stackGap={stackGap}

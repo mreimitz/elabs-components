@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T09:24:30.295Z",
+  "generatedAt": "2026-09-16T09:33:43.129Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12802,11 +12802,6 @@
           "module": "packages/charts/src/chart-hairline.ts"
         },
         {
-          "name": "CHART_SPEC_PALETTES",
-          "kind": "value",
-          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
-        },
-        {
           "name": "CHART_STAGGER_BAR_MS",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -14106,10 +14101,6 @@
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
         {
-          "name": "ChartSpecPalette",
-          "module": "packages/charts/src/auto-chart/chart-spec.ts"
-        },
-        {
           "name": "ChartStableContextValue",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
@@ -15376,10 +15367,6 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
-          "name": "isChartSpecPalette",
-          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
-        },
-        {
           "name": "isChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
@@ -16252,6 +16239,18 @@
               "optional": true,
               "type": "string",
               "description": "Signature of motion URL state — triggers enter replay when it changes."
+            },
+            {
+              "name": "revealOn",
+              "optional": true,
+              "type": "ChartRevealOn",
+              "description": "When the enter reveal is allowed to play (#175). `\"mount\"` (default) plays as soon as the chart renders — no change from today. `\"inView\"` holds the bars at their pre-enter state until this chart's own container scrolls to 30% visible."
+            },
+            {
+              "name": "replayOnClick",
+              "optional": true,
+              "type": "boolean",
+              "description": "Clicking the chart body replays the enter reveal (#175). Default `false`."
             },
             {
               "name": "aspectRatio",

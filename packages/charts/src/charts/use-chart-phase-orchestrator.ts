@@ -13,6 +13,19 @@ export interface UseChartPhaseOrchestratorOptions {
   revealSignature?: string;
   /** Skip mount/signature enter reveal (static docs previews). */
   skipEnterReveal?: boolean;
+  /**
+   * The enter reveal is held by the RM-020 gate (`useChartRevealGate`,
+   * `revealOn="inView"` before the chart has scrolled into view). While true
+   * the phase stays `"revealing"` and its settle timer does not start, so the
+   * hold cannot silently lapse into `"ready"` off-screen (#175). Default `false`.
+   */
+  holdReveal?: boolean;
+  /**
+   * Replay counter from the same gate (`replayOnClick` + keyboard replays).
+   * Each bump re-enters `"revealing"` from `"ready"`, or restarts a reveal
+   * already in flight (#175). Default `0`.
+   */
+  replayEpoch?: number;
 }
 
 export function useChartPhaseOrchestrator({
@@ -23,6 +36,8 @@ export function useChartPhaseOrchestrator({
   yDomainTweenDuration,
   revealSignature = "",
   skipEnterReveal = false,
+  holdReveal = false,
+  replayEpoch = 0,
 }: UseChartPhaseOrchestratorOptions) {
   const [chartPhase, setChartPhase] = useState<ChartPhase>(() =>
     resolveRestingChartPhase(chartStatus),
@@ -76,7 +91,7 @@ export function useChartPhaseOrchestrator({
     }
   }, [animationDuration, chartStatus, skeletonData, targetData, yDomainTweenDuration]);
 
-  // revealSignature replays enter.
+  // revealSignature (and a gate replay, #175) replays enter.
   useEffect(() => {
     if (skipEnterReveal) {
       return;
@@ -90,7 +105,7 @@ export function useChartPhaseOrchestrator({
 
     setChartPhase("revealing");
     setIsLoaded(false);
-  }, [animationDuration, chartStatus, revealSignature, skipEnterReveal]);
+  }, [animationDuration, chartStatus, revealSignature, skipEnterReveal, replayEpoch]);
 
   useEffect(() => {
     switch (chartPhase) {
@@ -146,19 +161,27 @@ export function useChartPhaseOrchestrator({
       return;
     }
 
-    setRevealEpoch((epoch) => epoch + 1);
     if (animationDuration <= 0) {
+      setRevealEpoch((epoch) => epoch + 1);
       setChartPhase("ready");
       setIsLoaded(true);
       return;
     }
+
+    // Held for the in-view gate: stay in "revealing" with no settle timer. The
+    // release (or a replay) re-runs this effect and starts the real reveal.
+    if (holdReveal) {
+      return;
+    }
+
+    setRevealEpoch((epoch) => epoch + 1);
 
     const timer = window.setTimeout(() => {
       setChartPhase("ready");
       setIsLoaded(true);
     }, animationDuration);
     return () => window.clearTimeout(timer);
-  }, [animationDuration, chartPhase]);
+  }, [animationDuration, chartPhase, holdReveal, replayEpoch]);
 
   return {
     chartPhase,
