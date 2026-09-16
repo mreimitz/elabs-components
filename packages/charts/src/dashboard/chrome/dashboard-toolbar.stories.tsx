@@ -283,5 +283,16 @@ export const Shortcuts: Story = {
     await userEvent.click(within(toolbar).getByRole("button", { name: "Keyboard shortcuts" }));
     const dialog = await body.findByRole("dialog", { name: "Keyboard shortcuts" });
     await waitFor(() => expect(within(dialog).getAllByRole("listitem")).toHaveLength(12));
+    // Follow-up 1: every new row shows a translated label, never the raw action key
+    // (`shortcutLabels` used to fall back to `"copy"`/`"cut"`/…).
+    await expect(within(dialog).getByText("Copy focused tiles")).toBeInTheDocument();
+    await expect(within(dialog).getByText("Cut focused tiles")).toBeInTheDocument();
+    await expect(within(dialog).getByText("Paste tiles")).toBeInTheDocument();
+    await expect(within(dialog).getByText("Select all tiles")).toBeInTheDocument();
+    await expect(
+      within(dialog).getByText("Open the focused tile’s context menu"),
+    ).toBeInTheDocument();
+    for (const raw of ["copy", "cut", "paste", "selectAll", "contextMenu"])
+      await expect(within(dialog).queryByText(raw)).not.toBeInTheDocument();
   },
 };

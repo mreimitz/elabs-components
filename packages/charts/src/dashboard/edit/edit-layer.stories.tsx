@@ -1,4 +1,3 @@
-import { useRef, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Toaster } from "@elabs-ai/components-ui";
@@ -14,9 +13,6 @@ import {
   useDashboard,
 } from "../dashboard-sheet";
 import { useDashboardContext } from "../dashboard-sheet/use-dashboard";
-import { DashboardTileContextMenu } from "./tile-context-menu";
-import { topLevelLayout } from "./geometry";
-import { DashboardMarquee, useDashboardMarquee } from "./marquee";
 import { EDIT_FIT_SPEC, EDIT_FLOW_SPEC } from "./edit-specs";
 
 declare global {
@@ -27,6 +23,39 @@ declare global {
 }
 
 const TILES = ["chart", "text"].map((kind) => createPlaceholderTileKind(kind));
+
+/**
+ * A diagonal-staggered 3-tile layout (same geometry as `core/store.test.ts`'s `tileOpsSpec`,
+ * minus its 4th tile) — one row per tile, distinct x, so aligning/grouping them never collides.
+ * Local to this file: `edit-specs.ts` is outside this RM's write-set.
+ */
+const ALIGN_SPEC: DashboardSpec = {
+  ...EDIT_FIT_SPEC,
+  id: "edit-align",
+  tiles: [
+    {
+      id: "chart-1",
+      kind: "chart",
+      title: "Revenue",
+      layout: { x: 0, y: 0, w: 6, h: 4 },
+      content: {},
+    },
+    {
+      id: "chart-2",
+      kind: "chart",
+      title: "Orders",
+      layout: { x: 10, y: 4, w: 6, h: 4 },
+      content: {},
+    },
+    {
+      id: "chart-3",
+      kind: "chart",
+      title: "Margin",
+      layout: { x: 14, y: 8, w: 6, h: 4 },
+      content: {},
+    },
+  ],
+};
 
 /** Installs `window.__dashboardStore` and prints `spec.tiles[].layout` for the plays. */
 function StoreProbe() {
@@ -54,12 +83,12 @@ function EditSheet({ spec }: { spec: DashboardSpec }) {
 }
 
 /**
- * RM-081's tile operations, driven end to end: `useDashboardShortcuts` (Mod+A/C/X/V, Delete
- * with an Undo toast, Shift+F10) wraps the sheet; `useDashboardMarquee` overlays a drag-select
- * rectangle on the same sheet element; `DashboardTileContextMenu` wraps one tile's move handle
- * area to exercise Replace with…/Paste and replace/Bring forward through the real menu. None of
- * this is wired into `DashboardEditLayer`/`DashboardTile` themselves (RM-078/079 files, out of
- * this RM's touches) — a host composes these the same way this story does.
+ * RM-081's tile operations, driven end to end through the BUILT-IN surface only: the tile
+ * context menu (right-click, header kebab, Shift+F10), the empty-area marquee, shift-click and
+ * Mod+A/Escape are wired into `DashboardSheet`/`DashboardEditLayer`/`DashboardTile` themselves
+ * (RM-081 follow-up 1) — this story composes nothing beyond `useDashboardShortcuts`, whose ref
+ * must wrap the toolbar + sheet subtree the keyboard listener scopes to (its own long-standing
+ * contract, unrelated to the marquee/menu wiring).
  */
 function TileOpsSheet({ spec }: { spec: DashboardSpec }) {
   return (
@@ -71,44 +100,12 @@ function TileOpsSheet({ spec }: { spec: DashboardSpec }) {
 
 function TileOpsBody() {
   const containerRef = useDashboardShortcuts();
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  const liveSpec = useDashboard((s) => s.spec);
-  const { rect } = useDashboardMarquee({
-    sheetRef,
-    grid: liveSpec.grid,
-    size,
-    layout: topLevelLayout(liveSpec),
-    onSelect: (ids, additive) => {
-      const actions = window.__dashboardStore!.getState().actions;
-      const current = window.__dashboardStore!.getState().focus;
-      actions.setFocus(additive ? [...new Set([...current, ...ids])] : ids);
-    },
-  });
-
   return (
     <div ref={containerRef}>
       <Toaster />
       <div data-testid="host" className="relative h-[480px] max-h-[80vh] w-full">
-        <DashboardSheet
-          renderAll
-          ref={(node) => {
-            sheetRef.current = node;
-            if (node) {
-              const box = node.getBoundingClientRect();
-              if (box.width !== size.width || box.height !== size.height) {
-                setSize({ width: box.width, height: box.height });
-              }
-            }
-          }}
-        />
-        {rect ? <DashboardMarquee rect={rect} data-testid="marquee" /> : null}
+        <DashboardSheet renderAll />
       </div>
-      <DashboardTileContextMenu tileId="chart-1">
-        <button type="button" data-testid="chart-1-menu-trigger" className="mt-2">
-          Tile actions: Revenue
-        </button>
-      </DashboardTileContextMenu>
       <StoreProbe />
     </div>
   );
@@ -180,6 +177,13 @@ async function pointerDrag(el: HTMLElement, dx: number, dy: number) {
 const reset = async (spec: DashboardSpec) => {
   store().getState().actions.setSpec(spec);
   await sleep(50);
+};
+
+/** Radix menus hide background content (`aria-hidden`) while open and only restore it once the
+ * close animation's unmount finishes — wait for that so a later step/the a11y scan never sees a
+ * stale `aria-hidden` on a live tile. */
+const waitForMenuClosed = async (body: ReturnType<typeof within>) => {
+  await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
 };
 
 export const Fit24x12: Story = {
@@ -310,6 +314,20 @@ export const Flow: Story = {
           .getState()
           .spec.tiles.map((t) => ({ id: t.id, ...t.layout }));
         await expect(compact(tiles, EDIT_FLOW_SPEC.grid)).toEqual(tiles);
+      },
+    );
+
+    await step(
+      "In flow mode, the tile's context menu offers no Bring forward / Send backward (fit-mode only)",
+      async () => {
+        const tile = sheet.querySelector<HTMLElement>('[data-tile-id="a"]')!;
+        await userEvent.pointer({ keys: "[MouseRight]", target: tile });
+        const body = within(canvasElement.ownerDocument.body);
+        await body.findByRole("menuitem", { name: "Duplicate" });
+        expect(body.queryByRole("menuitem", { name: "Bring forward" })).toBeNull();
+        expect(body.queryByRole("menuitem", { name: "Send backward" })).toBeNull();
+        await userEvent.keyboard("{Escape}");
+        await waitForMenuClosed(body);
       },
     );
   },
@@ -487,21 +505,78 @@ export const TileOperations: Story = {
     });
 
     await step(
-      "Bring forward (via the tile's context menu) raises chart-1 above chart-2",
+      "Bring forward (via the tile's own context menu, built into DashboardTile) raises chart-1 above chart-2",
       async () => {
         const before = layoutOf("chart-1").z ?? 0;
-        const trigger = canvas.getByTestId("chart-1-menu-trigger");
+        const trigger = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
         // A real right-click sequence (Radix's `ContextMenuTrigger` listens for the native
         // `contextmenu` event a browser fires from it) — matches the recipe Shift+F10 itself
-        // uses in `useDashboardShortcuts`.
+        // uses in `useDashboardShortcuts`. `DashboardTile` wraps itself in
+        // `DashboardTileContextMenu` in edit mode (RM-081 follow-up 1) — no host composition.
         await userEvent.pointer({ keys: "[MouseRight]", target: trigger });
         // `ContextMenuContent` portals to `document.body`, outside `canvasElement`.
         const body = within(canvasElement.ownerDocument.body);
         const bringForward = await body.findByRole("menuitem", { name: "Bring forward" });
         await userEvent.click(bringForward);
+        await waitForMenuClosed(body);
         await waitFor(() => expect(layoutOf("chart-1").z ?? 0).toBeGreaterThan(before));
         const otherZ = layoutOf("chart-2").z ?? layoutOf("chart-3").z ?? 0;
         expect((layoutOf("chart-1").z ?? 0) > otherZ).toBe(true);
+      },
+    );
+
+    await step(
+      "The header kebab's “Tile actions…” entry opens the SAME context menu (Shift+F10 recipe)",
+      async () => {
+        const tile = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+        const kebab = within(tile).getByRole("button", { name: "More actions" });
+        await userEvent.click(kebab);
+        const body = within(canvasElement.ownerDocument.body);
+        const openTileMenu = await body.findByRole("menuitem", { name: "Tile actions…" });
+        await userEvent.click(openTileMenu);
+        const duplicate = await body.findByRole("menuitem", { name: "Duplicate" });
+        expect(duplicate).toBeInTheDocument();
+        await userEvent.keyboard("{Escape}");
+        await waitForMenuClosed(body);
+      },
+    );
+
+    await step(
+      "A marquee-selected group drags together as ONE history entry (built-in, no host wiring)",
+      async () => {
+        await reset(ALIGN_SPEC);
+        const past = store().getState().history.past;
+        // Drag from an empty cell (col 20, row 0) down-left: intersects chart-1 (rows 0–4) and
+        // chart-2 (rows 4–8), not chart-3 (rows 8–12).
+        await dragRect(sheet, { x: 20 * p.width, y: 0 }, { x: 0, y: 8 * p.height });
+        await waitFor(() =>
+          expect(store().getState().focus).toEqual(expect.arrayContaining(["chart-1", "chart-2"])),
+        );
+        expect(store().getState().focus).toHaveLength(2);
+        const moveChart1Grouped = within(
+          sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!,
+        ).getByRole("button", { name: "Move Revenue" });
+        await pointerDrag(moveChart1Grouped, 4 * p.width, 0);
+        await waitFor(() => expect(layoutOf("chart-1")).toMatchObject({ x: 4, y: 0 }));
+        expect(layoutOf("chart-2")).toMatchObject({ x: 14, y: 4 });
+        expect(layoutOf("chart-3")).toMatchObject({ x: 14, y: 8 });
+        expect(store().getState().history.past).toBe(past + 1);
+      },
+    );
+
+    await step(
+      "Marquee-selecting 3 tiles shows a floating align toolbar; its real button aligns them",
+      async () => {
+        await reset(ALIGN_SPEC);
+        const past = store().getState().history.past;
+        await dragRect(sheet, { x: 20 * p.width, y: 0 }, { x: 0, y: 12 * p.height });
+        await waitFor(() => expect(store().getState().focus).toHaveLength(3));
+        const alignLeft = await canvas.findByRole("button", { name: "Align left edges" });
+        await userEvent.click(alignLeft);
+        await waitFor(() => expect(layoutOf("chart-1")).toMatchObject({ x: 0 }));
+        expect(layoutOf("chart-2")).toMatchObject({ x: 0 });
+        expect(layoutOf("chart-3")).toMatchObject({ x: 0 });
+        expect(store().getState().history.past).toBe(past + 1);
       },
     );
   },
