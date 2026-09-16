@@ -21,16 +21,16 @@ export interface DepotMetricPoint {
  * shared Acme Logistics Q3 dataset's own company-wide figure.
  */
 export const onTimeByDepot: DepotMetricPoint[] = [
-  { id: "berlin", label: "Berlin", current: 97.3, prior: 89.0 },
-  { id: "munich", label: "Munich", current: 95.8, prior: 88.5 },
-  { id: "hamburg", label: "Hamburg", current: 94.3, prior: 88.0 },
-  { id: "cologne", label: "Cologne", current: 93.3, prior: 91.3 },
-  { id: "frankfurt", label: "Frankfurt", current: 92.6, prior: 91.2 },
-  { id: "stuttgart", label: "Stuttgart", current: 91.8, prior: 90.7 },
-  { id: "dusseldorf", label: "Düsseldorf", current: 90.3, prior: 90.6 },
-  { id: "leipzig", label: "Leipzig", current: 88.3, prior: 93.6 },
-  { id: "dresden", label: "Dresden", current: 86.5, prior: 92.9 },
-  { id: "nuremberg", label: "Nuremberg", current: 83.8, prior: 91.6 },
+  { id: "berlin", label: "Berlin", current: 97.3, prior: 92.4 },
+  { id: "munich", label: "Munich", current: 95.8, prior: 90.1 },
+  { id: "hamburg", label: "Hamburg", current: 94.3, prior: 90.9 },
+  { id: "cologne", label: "Cologne", current: 93.3, prior: 94.1 },
+  { id: "frankfurt", label: "Frankfurt", current: 92.6, prior: 91.4 },
+  { id: "stuttgart", label: "Stuttgart", current: 91.8, prior: 89.3 },
+  { id: "dusseldorf", label: "Düsseldorf", current: 90.3, prior: 93.6 },
+  { id: "leipzig", label: "Leipzig", current: 88.3, prior: 95.6 },
+  { id: "dresden", label: "Dresden", current: 86.5, prior: 89.9 },
+  { id: "nuremberg", label: "Nuremberg", current: 83.8, prior: 92.0 },
 ];
 
 /**

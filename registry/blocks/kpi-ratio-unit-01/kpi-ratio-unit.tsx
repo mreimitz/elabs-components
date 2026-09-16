@@ -57,7 +57,11 @@ export function KpiRatioUnit({
   return (
     <div
       aria-live={loading ? "polite" : undefined}
-      className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2", className)}
+      // `@container` + `@2xl:` (never a viewport `sm:`): a viewport breakpoint
+      // fires from the BROWSER width, so `only="late"` (a single rendered
+      // card) still got a two-column track and only half its box. A
+      // container query asks how wide THIS box actually is.
+      className={cn("@container grid grid-cols-1 gap-4 @2xl:grid-cols-2", className)}
       data-slot="kpi-ratio-unit"
       role={loading ? "status" : undefined}
     >
@@ -117,9 +121,12 @@ function LateDeliveryCard({
 }) {
   const { numerator, denominator, exactPct } = nearestUnitFraction(latePct);
   const priorYear = nearestUnitFraction(latePctPriorYear);
+  // The minority fact is the point: `Late` stays a solid accent fill, `On time`
+  // (the majority) renders hollow — a second channel beside colour (WCAG 1.4.1)
+  // that also keeps the majority from visually dominating the highlighted one.
   const data = [
     { label: "Late", value: numerator },
-    { label: "On time", value: denominator - numerator },
+    { label: "On time", value: denominator - numerator, variant: "outline" as const },
   ];
 
   return (
@@ -174,10 +181,21 @@ function PromoterCard({
 }) {
   const { denominator, exactPct } = nearestUnitFraction(promoters.promotersPct);
   const priorYear = nearestUnitFraction(promotersPriorYear.promotersPct);
+  // The headline is about promoters specifically: they stay a solid accent
+  // fill, passives/detractors (the rest) render hollow — a second channel
+  // beside colour (WCAG 1.4.1), not just a different hue.
   const data = [
     { label: "Promoters", value: Math.round(promoters.promotersPct / 10) },
-    { label: "Passives", value: Math.round(promoters.passivesPct / 10) },
-    { label: "Detractors", value: Math.round(promoters.detractorsPct / 10) },
+    {
+      label: "Passives",
+      value: Math.round(promoters.passivesPct / 10),
+      variant: "outline" as const,
+    },
+    {
+      label: "Detractors",
+      value: Math.round(promoters.detractorsPct / 10),
+      variant: "outline" as const,
+    },
   ];
 
   return (
@@ -211,7 +229,7 @@ function PromoterCard({
           data={data}
           layout="waffle"
           mark="square"
-          palette="categorical"
+          palette="accent"
           total={10}
           unit={1}
           unitLabel="one figure = 10% of respondents"
