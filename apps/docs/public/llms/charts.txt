@@ -7,6 +7,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 ## Components
 
 - Area
+- AreaBand
 - AreaChart — Cumulative or part-of-whole trend over time — a filled line.
   - avoid: Stacking areas that are not parts of one whole — a stack asserts summation; use lines.
   - avoid: Overlapping opaque areas — either stack them or switch to a LineChart.
@@ -23,6 +24,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Rendering an empty frame before data arrives — use the shipped chart skeleton utilities.
 - BarXAxis
 - BarYAxis
+- BulletChart
 - BumpChart — Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).
   - avoid: Passing neither valueKey nor rankKey — there is no honest rank to derive, and every row is silently dropped rather than plotting a guessed order.
   - avoid: Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.

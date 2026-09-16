@@ -1,0 +1,63 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Patterns/Blocks/KPI Cards/Which card?" />
+
+# Which KPI card?
+
+Every card in this family answers ONE question — pick the block by the
+question a reader is actually asking, not by which chart looks nicest.
+
+| Question                               | Block                      |
+| -------------------------------------- | -------------------------- |
+| Am I on target?                        | `kpi-target-bullet-01`     |
+| Compared to what?                      | `kpi-multi-baseline-01`    |
+| Will I make it by period end?          | `kpi-pace-01`              |
+| Where will I land?                     | `kpi-forecast-01`          |
+| Better or worse than normal?           | `kpi-trend-reference-01`   |
+| What is it made of?                    | `kpi-composition-01`       |
+| Is it consistent?                      | `kpi-distribution-01`      |
+| How reliable is it?                    | `kpi-streak-01`            |
+| What changed most?                     | `kpi-movers-01`            |
+| How big is it in human terms?          | `kpi-ratio-unit-01`        |
+| What is the headline?                  | `kpi-hero-satellites-01`   |
+| Should I act?                          | `kpi-status-threshold-01`  |
+| Give me the whole picture in one table | `infographic-scorecard-01` |
+
+## Which infographic?
+
+An infographic is an argument, not a chart: a headline that states the
+finding, one chart built to prove it, a few direct labels on the marks, and
+a one-line note on how to read it.
+
+| Question                    | Block                             | What it shows                                                      |
+| --------------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| What drove the change?      | `infographic-variance-bridge-01`  | Revenue bridge split by driver, the dominant driver called out     |
+| What happened, and when?    | `infographic-annotated-trend-01`  | 20-week trend with up to three events labelled on their data point |
+| Which depot is the outlier? | `infographic-small-multiples-01`  | Same-scale sparkline grid, the outlier ringed                      |
+| Who improved, who slipped?  | `infographic-before-after-01`     | Q2 → Q3 slope chart, biggest riser and faller emphasised           |
+| How far from the benchmark? | `infographic-gap-to-benchmark-01` | Sorted dumbbell against a benchmark, the widest gaps emphasised    |
+| Do customers stay?          | `infographic-cohort-retention-01` | Triangular cohort retention heatmap, one cohort called out         |
+| Where does the money go?    | `infographic-part-to-whole-01`    | Two-level cost treemap, one highlighted tile                       |
+
+Every KPI card reads from one shared, shipped part — `kpi-card-parts` — so
+`npx shadcn add <block>` pulls it automatically.
+
+## Design rules every block follows
+
+- **Every number names its baseline.** A KPI card never shows a bare value —
+  it is always "actual vs target", "actual vs last year", or "actual vs
+  budget", stated in words next to the number, not left for the reader to
+  infer from a colour.
+- **3–4 headline KPIs per view.** A dashboard that leads with a dozen
+  numbers leads with none of them — pick the few that matter to the reader
+  in front of you.
+- **Colour is never the only channel.** Every good/bad signal pairs colour
+  with an arrow, an icon, or a sign (`KpiComparisonRow`, `KpiStatus`) — a
+  greyscale reader gets the same fact a colour-sighted one does.
+- **Percentage points vs percent.** A delta on a percent-unit KPI (on-time
+  delivery, say) is reported in percentage points ("+3.4pp"), never re-run
+  through a second percent transform — "up 3.4%" would misstate a 3.4-point
+  move on a 91%-to-95% KPI.
+- **Bars are zero-based.** Every bar/length mark (`BulletChart`, `Progress`)
+  starts its scale at zero — a truncated axis exaggerates a small change into
+  a dramatic one.

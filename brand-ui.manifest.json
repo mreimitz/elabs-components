@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T19:47:10.055Z",
+  "generatedAt": "2026-09-16T20:42:43.046Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -457,6 +457,132 @@
       "type": "registry:block",
       "title": "Process explorer page",
       "description": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree."
+    },
+    {
+      "name": "kpi-card-parts",
+      "type": "registry:block",
+      "title": "KPI Card — shared parts",
+      "description": "The pieces every KPI card block shares: a named-baseline comparison row (delta + arrow + sign, pp vs % handled explicitly), an on-track/at-risk/off-track status (icon + text, never colour alone), an as-of freshness footnote, Intl.* value/delta formatters, and the shared fictional 'Acme Logistics' Q3 dataset every block reads from. Installed once and reused by the KPI card blocks rather than copied into each."
+    },
+    {
+      "name": "kpi-target-bullet-01",
+      "type": "registry:block",
+      "title": "KPI Cards — On target?",
+      "description": "\"Am I on target?\" — a grid of KPI cards, each a BulletChart (value against target, last year, and 2–3 qualitative bands) plus a named comparison row and an as-of footnote. A lower-is-better KPI states that its bands read best-to-worst in reverse."
+    },
+    {
+      "name": "kpi-multi-baseline-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Compared to what?",
+      "description": "\"Compared to what?\" — one wide card per KPI stacking three named baselines (target, last year, budget), each with a shared-scale dot strip so the same number's distance to every reference reads at a glance."
+    },
+    {
+      "name": "kpi-pace-01",
+      "type": "registry:block",
+      "title": "KPI Cards — On pace?",
+      "description": "\"Will I make it by period end?\" — quarter-to-date Progress bars with a marker for the expected pace and a computed days-ahead/behind status, plus a Gauge card reading a rate KPI against its target and thresholds."
+    },
+    {
+      "name": "kpi-trend-reference-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Better or worse than normal?",
+      "description": "\"Better or worse than normal?\" — a 13-week Sparkline trend read against a target pace, last year, and a normal operating band, with a text legend spelling out the line styles so the encoding never rides on colour alone."
+    },
+    {
+      "name": "infographic-scorecard-01",
+      "type": "registry:block",
+      "title": "Infographic Scorecard",
+      "description": "The Power BI-style scorecard, done with an honest baseline on every number: one row per KPI — actual, target, a signed delta, a BulletChart progress-to-target, a 13-week trend, and a named status — in a horizontally scrollable Table."
+    },
+    {
+      "name": "kpi-forecast-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Where will I land?",
+      "description": "\"Where will I land?\" — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a today marker separating the two, with the projection method stated in words."
+    },
+    {
+      "name": "kpi-hero-satellites-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What is the headline?",
+      "description": "\"What is the headline?\" — one hero KPI (a big value, a named comparison vs target, a 13-week trend against last year) with three compact satellite KPIs beside it, each a value + signed delta vs target + a tiny trend, composed as one card with a single separation gesture."
+    },
+    {
+      "name": "kpi-composition-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What is it made of?",
+      "description": "\"What is it made of?\" — a 100%-stacked segmented bar per card (revenue by channel, shipments by region) plus a legend list that is the accessible source of truth: label, share, absolute value, and the share's own change vs last year in pp. Bar and legend share one order and a rank number so colour is never the only link between a segment and its row; shares under 3% merge into \"Other\"."
+    },
+    {
+      "name": "kpi-ratio-unit-01",
+      "type": "registry:block",
+      "title": "KPI Cards — How big is it?",
+      "description": "\"How big is it in human terms?\" — a rate restated as a small, countable fraction (\"1 in 12 orders arrived late\") via UnitChart, with the exact rate spelled out beneath the rounded headline and a comparison vs last year. Highlighted units use an accent fill against a neutral rest rather than hue alone."
+    },
+    {
+      "name": "kpi-movers-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What changed most?",
+      "description": "\"What changed most?\" — the top 3 risers and top 3 fallers in a ranked depot field (on-time delivery, revenue), each row stating its rank, how many places it moved, and a diverging mini bar from a shared, stated zero axis. Distinct from stat-list-01's single-snapshot share bars: this is about movement between two points in time."
+    },
+    {
+      "name": "kpi-distribution-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Is it consistent?",
+      "description": "\"Is it consistent?\" — an average hides the tail: a median headline next to p90/p95 read against a named SLA threshold, a box plot of the record-level distribution with the threshold drawn as a reference line, and the share past it stated in text."
+    },
+    {
+      "name": "kpi-streak-01",
+      "type": "registry:block",
+      "title": "KPI Cards — How reliable is it?",
+      "description": "\"How reliable is it?\" — a ratio/streak headline over a 30-day strip of day cells, missed days marked by shape as well as colour, with the current and longest streaks and a comparison to the prior 30 days."
+    },
+    {
+      "name": "infographic-variance-bridge-01",
+      "type": "registry:block",
+      "title": "Infographic — What drove the change?",
+      "description": "\"What drove the change?\" — a revenue bridge from last quarter's total to this quarter's, split into price, volume, mix, FX and other, built with WaterfallChart and a Leader callout on the one or two steps that actually explain the move. Steps sum exactly to the ending total; every step states its own sign in words, never colour alone."
+    },
+    {
+      "name": "infographic-annotated-trend-01",
+      "type": "registry:block",
+      "title": "Infographic — What happened, and when?",
+      "description": "\"What happened, and when?\" — a 20-week LineChart with up to three labelled events anchored to the exact data point they explain, connected by a Leader, never a legend. Compact keeps only the most consequential event."
+    },
+    {
+      "name": "kpi-status-threshold-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Should I act?",
+      "description": "\"Should I act?\" — a status (icon + text, never colour alone) read against a visible on-track/at-risk/off-track threshold scale with today's value marked, plus how long the current status has held."
+    },
+    {
+      "name": "infographic-cohort-retention-01",
+      "type": "registry:block",
+      "title": "Infographic — Do customers stay?",
+      "description": "\"Do customers stay?\" — a triangular cohort retention heatmap: one row per monthly signup cohort, one column per month since signup, shaded by the share still active. A cohort younger than N months draws an empty cell, never a fabricated zero. One cohort is called out with a peak ring and a stated, computed gap against its named peers."
+    },
+    {
+      "name": "infographic-part-to-whole-01",
+      "type": "registry:block",
+      "title": "Infographic — Where does the money go?",
+      "description": "\"Where does the money go?\" — a two-level treemap of Q3 cost, category → sub-category, drawn in one neutral mono shade except for the single highlighted tile, outlined and named with a Leader + HaloText callout stating its share and the change from last quarter. Tile area is exactly proportional to cost."
+    },
+    {
+      "name": "infographic-small-multiples-01",
+      "type": "registry:block",
+      "title": "Infographic — Which depot is the outlier?",
+      "description": "\"Which depot is the outlier?\" — twelve depots, one tiny 13-week line per tile, every tile on the same shared y-axis so height compares directly, with the one depot that stands out ringed and coloured (PeakRing) while every other depot stays on a muted neutral."
+    },
+    {
+      "name": "infographic-before-after-01",
+      "type": "registry:block",
+      "title": "Infographic — Who improved, who slipped?",
+      "description": "\"Who improved, who slipped?\" — a DumbbellChart slope chart of 6 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line's own slope, never colour alone."
+    },
+    {
+      "name": "infographic-gap-to-benchmark-01",
+      "type": "registry:block",
+      "title": "Infographic — How far from the benchmark?",
+      "description": "\"How far from the benchmark?\" — a sorted DumbbellChart, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised; the gap's sign correctly flips for a lower-is-better metric."
     }
   ],
   "templates": [
@@ -12748,6 +12874,11 @@
           "module": "packages/charts/src/charts/area.tsx"
         },
         {
+          "name": "AreaBand",
+          "kind": "value",
+          "module": "packages/charts/src/charts/area-band.tsx"
+        },
+        {
           "name": "AreaChart",
           "kind": "value",
           "module": "packages/charts/src/charts/area-chart.tsx"
@@ -12781,6 +12912,11 @@
           "name": "BarYAxis",
           "kind": "value",
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
+        },
+        {
+          "name": "BulletChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
           "name": "BumpChart",
@@ -13911,6 +14047,10 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "AreaBandProps",
+          "module": "packages/charts/src/charts/area-band.tsx"
+        },
+        {
           "name": "AreaChartLoadingProps",
           "module": "packages/charts/src/charts/area-chart-loading.tsx"
         },
@@ -13961,6 +14101,26 @@
         {
           "name": "BlobPoint",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "BulletBand",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
+        },
+        {
+          "name": "BulletChartLabels",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
+        },
+        {
+          "name": "BulletChartOrientation",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
+        },
+        {
+          "name": "BulletChartProps",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
+        },
+        {
+          "name": "BulletChartSize",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
           "name": "BumpChartProps",
@@ -14295,6 +14455,10 @@
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
+          "name": "DescribeBulletChartInput",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
+        },
+        {
           "name": "DistributionBin",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -14312,6 +14476,10 @@
         },
         {
           "name": "DistributionOrientation",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionReferenceLine",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
@@ -14887,6 +15055,10 @@
           "module": "packages/charts/src/charts/radar-context.tsx"
         },
         {
+          "name": "ResolveBulletDomainInput",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
+        },
+        {
           "name": "ResolvedTask",
           "module": "packages/charts/src/gantt/gantt-context.tsx"
         },
@@ -15027,6 +15199,10 @@
           "module": "packages/charts/src/charts/series-point-marker.tsx"
         },
         {
+          "name": "SparklineLabels",
+          "module": "packages/charts/src/sparkline/sparkline.tsx"
+        },
+        {
           "name": "SparklineProps",
           "module": "packages/charts/src/sparkline/sparkline.tsx"
         },
@@ -15165,6 +15341,10 @@
         {
           "name": "WaffleLayoutOptions",
           "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "WaterfallCallout",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
         {
           "name": "WaterfallChartProps",
@@ -15401,6 +15581,10 @@
           "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
+          "name": "describeBulletChart",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
+        },
+        {
           "name": "describeDistribution",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -15415,6 +15599,10 @@
         {
           "name": "explainChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "findBulletBand",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
           "name": "findChartCategoryIndex",
@@ -15631,6 +15819,10 @@
         {
           "name": "readsAsBeforeAfterPair",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "resolveBulletDomain",
+          "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
           "name": "resolveEntityLineStyle",
@@ -15926,6 +16118,52 @@
               "optional": true,
               "type": "boolean",
               "description": "Ring the peak sample with a filled dot + value label (RM-029). Only takes effect when this `Area` renders as a `HairlineArea` — a single-series chart under high decoration (`data-decoration` ≥ 8). Default: false."
+            }
+          ]
+        },
+        "AreaBand": {
+          "extends": [],
+          "props": [
+            {
+              "name": "lowKey",
+              "optional": false,
+              "type": "string",
+              "description": "Key in data for the band's lower edge."
+            },
+            {
+              "name": "highKey",
+              "optional": false,
+              "type": "string",
+              "description": "Key in data for the band's upper edge."
+            },
+            {
+              "name": "fill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill colour. Default `var(--chart-ring-background)` — the same quiet \"normal range\" wash `Sparkline`'s `band` prop already draws with."
+            },
+            {
+              "name": "fillOpacity",
+              "optional": true,
+              "type": "number",
+              "description": "Fill opacity. Default 1 — the token itself already carries the wash."
+            },
+            {
+              "name": "curve",
+              "optional": true,
+              "type": "CurveFactory",
+              "description": "Curve function, matching the series it brackets. Default `curveMonotoneX`."
+            },
+            {
+              "name": "yAxisId",
+              "optional": true,
+              "type": "string | number",
+              "description": "Y-scale group id (Recharts `yAxisId`). Default: `\"left\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
             }
           ]
         },
@@ -16580,6 +16818,86 @@
               "optional": true,
               "type": "CategoryAxisFit",
               "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved gutter. The regression escape hatch. Default: `\"auto\"`."
+            }
+          ]
+        },
+        "BulletChart": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">",
+            "ChartA11yProps"
+          ],
+          "props": [
+            {
+              "name": "value",
+              "optional": false,
+              "type": "number",
+              "description": "The actual value — drawn as the bar."
+            },
+            {
+              "name": "target",
+              "optional": true,
+              "type": "number",
+              "description": "The target — drawn as a tick, taller and darker than the bar."
+            },
+            {
+              "name": "comparative",
+              "optional": true,
+              "type": "number",
+              "description": "A second reference (e.g. last year) — a small marker, a distinct shape from the target tick."
+            },
+            {
+              "name": "bands",
+              "optional": true,
+              "type": "BulletBand[]",
+              "description": "Qualitative ranges (ascending `to`), drawn as 2–3 neutral steps behind the bar."
+            },
+            {
+              "name": "min",
+              "optional": true,
+              "type": "number",
+              "description": "Scale floor. Default `0` — bars are zero-based; a caller-supplied negative floor is only honored when `value` itself is negative."
+            },
+            {
+              "name": "max",
+              "optional": true,
+              "type": "number",
+              "description": "Scale ceiling. Default: the largest of `value`/`target`/`comparative`/the last band's `to`, \"nice\"-rounded with 5% headroom."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "BulletChartOrientation",
+              "description": "Bar direction. Default `\"horizontal\"`."
+            },
+            {
+              "name": "size",
+              "optional": true,
+              "type": "BulletChartSize",
+              "description": "`\"sm\"` (default) is word-sized with no axis; `\"md\"` adds a hairline tick axis."
+            },
+            {
+              "name": "showAxis",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show the hairline tick axis. Default `size === \"md\"`."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How the value/target/comparative numbers are formatted. Default `\"compact\"`, one notation shared across the whole scale."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "BulletChartLabels",
+              "description": "Caller-supplied names interpolated into the auto-generated accessible description."
+            },
+            {
+              "name": "higherIsBetter",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether ASCENDING band values read better (default `true`). Bands are always drawn low→high by position (`to` is ascending), but which END is \"worst\" depends on the measure: a lower-is-better KPI (e.g. cost) has its worst band at the HIGH end. Flips which side of the shade ramp gets the darkest (worst) rung so the visual always reads poor→good in the metric's own good direction, never just left→right."
             }
           ]
         },
@@ -17744,6 +18062,12 @@
               "description": "ISO 4217 code when `valueFormat=\"currency\"`."
             },
             {
+              "name": "referenceLines",
+              "optional": true,
+              "type": "DistributionReferenceLine[]",
+              "description": "Fixed thresholds drawn across the shared value axis (an SLA, a spec limit, a target) — dashed `--chart-foreground`, haloed so it stays legible over a box/violin body. Each labelled line's fact is folded into the chart's own accessible description, so it is never colour-only or visual-only. Default none — omitting it renders byte-identical to before this prop existed."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string"
@@ -17822,6 +18146,36 @@
               "description": "Show a signed delta label (`HaloText`) at the end marker. Default `false`."
             },
             {
+              "name": "deltaLabelFormat",
+              "optional": true,
+              "type": "(delta: number, row: DumbbellRow) => string",
+              "description": "Custom formatter for the `showDelta` label — receives the signed delta and its row, returns the full string (including sign/unit). Unset (default) keeps today's rendering: a bare `\"+\"` prefix on non-negative deltas ahead of `formatValue(delta)`. Use this when a delta needs a unit suffix (e.g. `\"pp\"`) or a true minus sign the active `valueFormat`/locale doesn't give."
+            },
+            {
+              "name": "bothEndsLabeled",
+              "optional": true,
+              "type": "boolean",
+              "description": "`variant=\"slope\"` only: label the END of each line with its category name too (`\"{category} {value}\"`, matching the START label), not just the bare value. Default `false` (byte-identical: end label stays value-only)."
+            },
+            {
+              "name": "valueLabelFormat",
+              "optional": true,
+              "type": "(value: number, row: DumbbellRow) => string",
+              "description": "`variant=\"slope\"` only: custom formatter for the plain VALUE half of each end's label — receives the raw value and its row, returns just the value text (the chart still prepends `\"{category} \"` itself). Unset (default) keeps `formatValue` (the active `valueFormat`). `Intl` never pads a whole number, so an exact-integer reading (`92`) needs this to force a fixed decimal count (`\"92.0\"`) matching its neighbours' precision."
+            },
+            {
+              "name": "referenceLine",
+              "optional": true,
+              "type": "{ value: number; label: string }",
+              "description": "`orientation=\"horizontal\"` (dumbbell variant) only: one labelled vertical reference line at `value` on the shared value scale (e.g. an industry benchmark). Unset (default) draws nothing."
+            },
+            {
+              "name": "showValueAxis",
+              "optional": true,
+              "type": "boolean",
+              "description": "`orientation=\"horizontal\"` (dumbbell variant) only: draws light tick marks + value labels along the bottom of the plot, from the same value scale. Default `false` (byte-identical: no axis)."
+            },
+            {
               "name": "sortBy",
               "optional": true,
               "type": "DumbbellSortBy",
@@ -17832,6 +18186,12 @@
               "optional": true,
               "type": "ChartPalette",
               "description": "Which colour family rows draw from. Default `\"categorical\"`."
+            },
+            {
+              "name": "rowColor",
+              "optional": true,
+              "type": "(row: DumbbellRow, index: number) => string | undefined",
+              "description": "Per-row colour override — return a `var(--…)` token to recolour that row's connector/markers/labels, or `undefined` to keep the row on the resolved `palette`. The one seam an \"argument, not a chart\" infographic needs to emphasise a row or two (a status tone) while the rest stay on the shared palette — never a second palette, since most rows should read as unremarkable, not as a competing category. Unset (default) is byte-identical to today's per-row palette colouring."
             },
             {
               "name": "valueFormat",
@@ -18409,6 +18769,24 @@
               "optional": true,
               "type": "(remaining: number) => string",
               "description": "Caption rendered under the center value/label. Receives the number of notches remaining (`totalNotches - activeNotches`) and returns the caption text — e.g. `(remaining) => \\`${remaining} ticks to go\\`` renders as \"27 TICKS TO GO\" (lieflat F11; the caption is rendered upper-cased via CSS, so pass ordinary sentence case). Unset (default) renders no caption."
+            },
+            {
+              "name": "target",
+              "optional": true,
+              "type": "number",
+              "description": "A radial tick crossing the notch band at this value (0–100) — e.g. a quarterly target. Reuses the same value→angle mapping as notches/ milestones. Unset (default) renders no tick and the dial's geometry is unaffected."
+            },
+            {
+              "name": "thresholds",
+              "optional": true,
+              "type": "GaugeThreshold[]",
+              "description": "Short outer-rim ticks (furniture — `--chart-grid`, `CHART_HAIRLINE_WIDTH`) marking named bands (e.g. `{ value: 75, label: \"Good\" }`). No colour zones — colour is not status here, only the accessible text names the band a value falls in. Unset (default) renders no ticks."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<GaugeLabels>",
+              "description": "Overrides the shipped English words the composed accessible text uses (`target`)."
             }
           ]
         },
@@ -18504,6 +18882,48 @@
               "optional": true,
               "type": "string",
               "description": "Dash array for highlighted rows. Default: solid line"
+            },
+            {
+              "name": "highlightRowLabel",
+              "optional": true,
+              "type": "(value: number) => string | undefined",
+              "description": "Text label drawn at the right edge of each `highlightRowValues` entry (`HaloText`, so it survives sitting on the grid) — a KPI target/goal line the reader can name, not just see. Return `undefined`/`\"\"` to skip the label for a given value. Unset (default): no label, byte-identical to before this prop existed."
+            },
+            {
+              "name": "highlightColumnValues",
+              "optional": true,
+              "type": "Array<number | Date>",
+              "description": "Vertical reference lines at these `xDataKey`-domain values (e.g. \"today\" on a forecast chart) — the column counterpart of `highlightRowValues`. Default: none."
+            },
+            {
+              "name": "highlightColumnStroke",
+              "optional": true,
+              "type": "string",
+              "description": "Stroke for highlighted columns. Default: var(--chart-foreground-muted)"
+            },
+            {
+              "name": "highlightColumnStrokeOpacity",
+              "optional": true,
+              "type": "number",
+              "description": "Stroke opacity for highlighted columns. Default: 1"
+            },
+            {
+              "name": "highlightColumnStrokeWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Stroke width for highlighted columns. Default: 1"
+            },
+            {
+              "name": "highlightColumnStrokeDasharray",
+              "optional": true,
+              "type": "string",
+              "description": "Dash array for highlighted columns. Default: solid line"
+            },
+            {
+              "name": "highlightColumnLabel",
+              "optional": true,
+              "type": "(value: number | Date) => string | undefined",
+              "description": "Text label drawn at the bottom-inside, left of each `highlightColumnValues` entry (`HaloText`), e.g. \"Today\". Return `undefined`/`\"\"` to skip the label for a given value. Unset (default): no label."
             },
             {
               "name": "fadeHorizontal",
@@ -18641,6 +19061,12 @@
               "optional": true,
               "type": "string",
               "description": "Dash pattern for the tail segment when `dashFromIndex` is set. Default: \"6,4\""
+            },
+            {
+              "name": "dashStroke",
+              "optional": true,
+              "type": "string",
+              "description": "Stroke color for the dashed tail (from `dashFromIndex` on) when it should read as a distinct series from the solid head — e.g. a projection tail in a quieter ink than the actual-data head. Default: `stroke` (today's behaviour — head and tail share one ink, differentiated by dash alone)."
             },
             {
               "name": "loading",
@@ -20410,7 +20836,7 @@
         },
         "Sparkline": {
           "extends": [
-            "Omit<SVGAttributes<SVGSVGElement>, \"children\" | \"values\">"
+            "Omit<\n  SVGAttributes<SVGSVGElement>,\n  \"children\" | \"values\" | \"target\"\n>"
           ],
           "props": [
             {
@@ -20435,18 +20861,72 @@
               "name": "label",
               "optional": true,
               "type": "string",
-              "description": "Accessible name. Default describes the series."
+              "description": "Accessible name. Default describes the series (and any references below)."
             },
             {
               "name": "width",
               "optional": true,
               "type": "number",
-              "description": "Rendered size; the SVG also scales to its CSS box."
+              "description": "Rendered size when `fit=\"fixed\"` (default) — the SVG's actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit=\"fill\"` before the first real measurement lands."
             },
             {
               "name": "height",
               "optional": true,
               "type": "number"
+            },
+            {
+              "name": "fit",
+              "optional": true,
+              "type": "\"fixed\" | \"fill\"",
+              "description": "Sizing strategy. `\"fixed\"` (default) draws at exactly `width`×`height` — unchanged no matter what CSS box (`className=\"w-full\"`, a table cell, …) the caller puts it in, exactly as before this prop existed. `\"fill\"` measures the real rendered width of that CSS box (a tiny, cleaned-up `ResizeObserver`, falling back to `width` before the first measurement or where `ResizeObserver` isn't available, e.g. jsdom) and draws the plot at that real pixel width instead — no CSS stretching, so line strokes, the emphasized dot and the last-value label never distort. Opt in per usage (a trend card, a scorecard cell) rather than globally, since most Sparkline call sites size it explicitly and shouldn't pay for a measurement round-trip."
+            },
+            {
+              "name": "target",
+              "optional": true,
+              "type": "number",
+              "description": "A horizontal reference line (\"goal\", \"quota\") drawn across the plot in `--chart-foreground`, dashed — never recolours the series even when the latest value falls short; status is the card's job, not the sparkline's."
+            },
+            {
+              "name": "baseline",
+              "optional": true,
+              "type": "number[]",
+              "description": "A comparison series (e.g. last year), same index alignment as `values`. Drawn as a thin `--chart-foreground-muted` line behind the main series, in both variants."
+            },
+            {
+              "name": "band",
+              "optional": true,
+              "type": "readonly [number, number]",
+              "description": "A \"normal range\" `[lo, hi]` drawn as a quiet filled zone behind everything."
+            },
+            {
+              "name": "fitDomain",
+              "optional": true,
+              "type": "boolean",
+              "description": "For `variant=\"line\"` with no `target`/`baseline`/`band`: use the series' own min–max (padded) domain instead of the shared zero-based bar scale. A tight-range series (a weekly count moving ±5% around its own mean) reads as a flat line on a zero-based scale — decoration with no information (WCAG 1.4.1's \"a channel that carries nothing\" failure mode, not a colour one). Default false — byte-identical to today's shared scale when unset."
+            },
+            {
+              "name": "showLastValue",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the formatted latest value as text to the right of the plot. Default false."
+            },
+            {
+              "name": "formatValue",
+              "optional": true,
+              "type": "(value: number) => string",
+              "description": "Formats every value this component surfaces as text (the last-value label and the accessible name's numbers). Default: locale number formatting."
+            },
+            {
+              "name": "lastValueSuffix",
+              "optional": true,
+              "type": "string",
+              "description": "Appended (with a leading space) to the `showLastValue` text and to the accessible name's \"latest …\" phrase — e.g. `\"this wk\"` when the plotted series is weekly but a nearby headline figure is a different period (a quarter total), so the last-value label cannot be misread as the same fact at a different scale. Default: none (today's behaviour)."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "SparklineLabels",
+              "description": "Words for the reference facts in the default accessible name."
             }
           ]
         },
@@ -20615,6 +21095,12 @@
               "description": "Dashed hand-off hairline between each step's end and the next step's start. Default `true`."
             },
             {
+              "name": "grid",
+              "optional": true,
+              "type": "boolean",
+              "description": "The value-axis gridlines. Turn off when every bar already carries its own value label (`showValues`) and an unlabelled gridline would only add furniture with no tick to read it against. Default `true`."
+            },
+            {
               "name": "positiveFill",
               "optional": true,
               "type": "string",
@@ -20643,6 +21129,12 @@
               "optional": true,
               "type": "ChartValueFormat",
               "description": "Value/label format. Default: locale number."
+            },
+            {
+              "name": "callouts",
+              "optional": true,
+              "type": "WaterfallCallout[]",
+              "description": "The one or two steps that actually explain the bridge, named directly on the chart (see {@link WaterfallCallout}). Default: none."
             },
             {
               "name": "height",
@@ -21859,6 +22351,12 @@
             "a running total with signed steps into and out of it"
           ],
           "avoidWhen": "there is no meaningful running total — use diverging bars instead"
+        },
+        "BulletChart": {
+          "dataShapes": [
+            "a single value against a target and 2–3 qualitative bands"
+          ],
+          "avoidWhen": "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`"
         },
         "CandlestickChart": {
           "dataShapes": [
@@ -37902,7 +38400,20 @@
             "ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>",
             "VariantProps<typeof progressIndicatorVariants>"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "marker",
+              "optional": true,
+              "type": "number",
+              "description": "Reference point (0–100, same scale as `value`) — e.g. an \"expected by today\" pace or a target — rendered as a thin vertical tick on the track. Unset (default) renders no tick and leaves the DOM/layout byte-identical to a marker-less `Progress`."
+            },
+            {
+              "name": "markerLabel",
+              "optional": true,
+              "type": "string",
+              "description": "What `marker` represents (already localized by the caller — e.g. `\"expected 70% by today\"`). When set, it is appended to the progress bar's accessible value text so assistive tech hears the reference point alongside the value; a caller-supplied `aria-valuetext` always wins over this composition. When `marker` is set but `markerLabel` is not, the tick is purely decorative and `aria-valuetext` is left untouched — this component never invents its own English copy (i18n-strings)."
+            }
+          ]
         },
         "ProseHeading": {
           "extends": [

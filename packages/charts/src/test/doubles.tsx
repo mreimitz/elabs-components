@@ -61,7 +61,7 @@ export type { ChartCardProps } from "../chart-card/chart-card";
 export { ChartFrame } from "../chart-frame/chart-frame";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";
 export { Sparkline } from "../sparkline/sparkline";
-export type { SparklineProps } from "../sparkline/sparkline";
+export type { SparklineLabels, SparklineProps } from "../sparkline/sparkline";
 
 // ── The per-family contract specs (the flat, auditable list) ────────────────
 
@@ -88,6 +88,7 @@ export type ChartFamilyName =
   | "SankeyChart"
   | "Gantt"
   | "DumbbellChart"
+  | "BulletChart"
   // Heatmap — RM-021
   | "HeatmapChart"
   | "UnitChart"
@@ -225,6 +226,14 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
       { prop: "startKey", numeric: true },
       { prop: "endKey", numeric: true },
     ],
+  },
+  // Bullet — RM-061. A single scalar KPI value, not a data array — `dataKind:
+  // "none"` skips every array/row check, so the one thing a mocked test can
+  // still fail on is a missing `value` and a non-finite `target`/`comparative`.
+  BulletChart: {
+    dataKind: "none",
+    requiredProps: ["value"],
+    numericProps: ["target", "comparative", "min", "max"],
   },
   UnitChart: {
     dataKind: "array",
@@ -461,6 +470,15 @@ import type { DumbbellChartProps } from "../charts/dumbbell-chart";
 export const DumbbellChart = createChartContainerDouble<DumbbellChartProps>(
   "DumbbellChart",
   CHART_CONTRACT_SPECS.DumbbellChart,
+);
+
+// ── BulletChart — RM-061 ─────────────────────────────────────────────────────
+
+import type { BulletChartProps } from "../charts/bullet-chart";
+
+export const BulletChart = createChartContainerDouble<BulletChartProps>(
+  "BulletChart",
+  CHART_CONTRACT_SPECS.BulletChart,
 );
 
 export const UnitChart = createChartContainerDouble<UnitChartProps>(

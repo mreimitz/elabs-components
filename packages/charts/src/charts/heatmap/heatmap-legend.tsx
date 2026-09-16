@@ -145,7 +145,9 @@ export function HeatmapLegend({
       {emptyValue === "quiet" && missingCount > 0 ? (
         <span className="flex items-center gap-1.5" data-slot="heatmap-legend-missing">
           <svg aria-hidden="true" className="shrink-0" height={10} role="presentation" width={10}>
-            <HeatmapMissingMark height={9} width={9} x={0.5} y={0.5} />
+            {/* Same full-circle mark the grid draws (#280) — a key that drew a
+                square would be a second, different symbol for the state it names. */}
+            <HeatmapMissingMark height={9} rx={4.5} width={9} x={0.5} y={0.5} />
           </svg>
           {HEATMAP_LEGEND_LABELS.missing}
         </span>

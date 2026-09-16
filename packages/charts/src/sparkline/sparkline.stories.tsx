@@ -34,3 +34,52 @@ export const InText: Story = {
 export const Empty: Story = {
   args: { values: [] },
 };
+
+export const WithTarget: Story = {
+  args: { values: ACTIVITY, target: 15, label: "Edits per week, against a target of 15" },
+};
+
+export const WithBaseline: Story = {
+  args: {
+    values: ACTIVITY,
+    baseline: [4, 3, 6, 5, 9, 8, 5, 11],
+    labels: { baseline: "last year" },
+  },
+};
+
+export const WithBand: Story = {
+  args: { values: ACTIVITY, band: [4, 10], variant: "line" },
+};
+
+export const AllReferences: Story = {
+  args: {
+    values: ACTIVITY,
+    variant: "line",
+    target: 15,
+    baseline: [4, 3, 6, 5, 9, 8, 5, 11],
+    band: [4, 10],
+    showLastValue: true,
+    labels: { baseline: "last year" },
+    width: 120,
+  },
+};
+
+export const BarWithTarget: Story = {
+  args: { values: ACTIVITY, target: 15, showLastValue: true, width: 120 },
+};
+
+/**
+ * `fit="fill"` measures its own CSS box (here a 288px-wide container) and
+ * draws the plot at that real pixel width instead of stretching a mismatched
+ * viewBox to fit — no distorted strokes, dot or last-value label. Compare to
+ * `Default`, which stays at its fixed `width`/`height` no matter the box.
+ */
+export const FillContainer: Story = {
+  name: 'Fill container (fit="fill")',
+  args: { values: ACTIVITY, variant: "line", showLastValue: true, fit: "fill" },
+  render: (args) => (
+    <div className="w-72">
+      <Sparkline {...args} className="w-full" />
+    </div>
+  ),
+};

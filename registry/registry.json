@@ -787,6 +787,522 @@
           "target": "components/process-explorer-page/process-explorer-page.tsx"
         }
       ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-card-parts",
+      "type": "registry:block",
+      "title": "KPI Card — shared parts",
+      "description": "The pieces every KPI card block shares: a named-baseline comparison row (delta + arrow + sign, pp vs % handled explicitly), an on-track/at-risk/off-track status (icon + text, never colour alone), an as-of freshness footnote, Intl.* value/delta formatters, and the shared fictional 'Acme Logistics' Q3 dataset every block reads from. Installed once and reused by the KPI card blocks rather than copied into each.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-card-parts/data/acme-quarter.ts",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/data/acme-quarter.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-card-parts/format.ts",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/format.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-card-parts/kpi-as-of.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/kpi-as-of.tsx"
+        },
+        {
+          "path": "registry/blocks/kpi-card-parts/kpi-comparison-row.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/kpi-comparison-row.tsx"
+        },
+        {
+          "path": "registry/blocks/kpi-card-parts/kpi-status.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/kpi-status.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-target-bullet-01",
+      "type": "registry:block",
+      "title": "KPI Cards — On target?",
+      "description": "\"Am I on target?\" — a grid of KPI cards, each a BulletChart (value against target, last year, and 2–3 qualitative bands) plus a named comparison row and an as-of footnote. A lower-is-better KPI states that its bands read best-to-worst in reverse.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-target-bullet-01/kpi-target-bullet.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-target-bullet-01/kpi-target-bullet.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-multi-baseline-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Compared to what?",
+      "description": "\"Compared to what?\" — one wide card per KPI stacking three named baselines (target, last year, budget), each with a shared-scale dot strip so the same number's distance to every reference reads at a glance.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-multi-baseline-01/kpi-multi-baseline.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-multi-baseline-01/kpi-multi-baseline.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-pace-01",
+      "type": "registry:block",
+      "title": "KPI Cards — On pace?",
+      "description": "\"Will I make it by period end?\" — quarter-to-date Progress bars with a marker for the expected pace and a computed days-ahead/behind status, plus a Gauge card reading a rate KPI against its target and thresholds.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-pace-01/kpi-pace.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-pace-01/kpi-pace.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-trend-reference-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Better or worse than normal?",
+      "description": "\"Better or worse than normal?\" — a 13-week Sparkline trend read against a target pace, last year, and a normal operating band, with a text legend spelling out the line styles so the encoding never rides on colour alone.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-trend-reference-01/kpi-trend-reference.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-trend-reference-01/kpi-trend-reference.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-scorecard-01",
+      "type": "registry:block",
+      "title": "Infographic Scorecard",
+      "description": "The Power BI-style scorecard, done with an honest baseline on every number: one row per KPI — actual, target, a signed delta, a BulletChart progress-to-target, a 13-week trend, and a named status — in a horizontally scrollable Table.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-scorecard-01/infographic-scorecard.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-scorecard-01/infographic-scorecard.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-forecast-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Where will I land?",
+      "description": "\"Where will I land?\" — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a today marker separating the two, with the projection method stated in words.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@visx/curve"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-forecast-01/data/forecast.ts",
+          "type": "registry:component",
+          "target": "components/kpi-forecast-01/data/forecast.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-forecast-01/kpi-forecast.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-forecast-01/kpi-forecast.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-hero-satellites-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What is the headline?",
+      "description": "\"What is the headline?\" — one hero KPI (a big value, a named comparison vs target, a 13-week trend against last year) with three compact satellite KPIs beside it, each a value + signed delta vs target + a tiny trend, composed as one card with a single separation gesture.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-hero-satellites-01/kpi-hero-satellites.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-hero-satellites-01/kpi-hero-satellites.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-composition-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What is it made of?",
+      "description": "\"What is it made of?\" — a 100%-stacked segmented bar per card (revenue by channel, shipments by region) plus a legend list that is the accessible source of truth: label, share, absolute value, and the share's own change vs last year in pp. Bar and legend share one order and a rank number so colour is never the only link between a segment and its row; shares under 3% merge into \"Other\".",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-composition-01/data/composition.ts",
+          "type": "registry:component",
+          "target": "components/kpi-composition-01/data/composition.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-composition-01/kpi-composition.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-composition-01/kpi-composition.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-ratio-unit-01",
+      "type": "registry:block",
+      "title": "KPI Cards — How big is it?",
+      "description": "\"How big is it in human terms?\" — a rate restated as a small, countable fraction (\"1 in 12 orders arrived late\") via UnitChart, with the exact rate spelled out beneath the rounded headline and a comparison vs last year. Highlighted units use an accent fill against a neutral rest rather than hue alone.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-ratio-unit-01/data/ratio-unit.ts",
+          "type": "registry:component",
+          "target": "components/kpi-ratio-unit-01/data/ratio-unit.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-ratio-unit-01/kpi-ratio-unit.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-ratio-unit-01/kpi-ratio-unit.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-movers-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What changed most?",
+      "description": "\"What changed most?\" — the top 3 risers and top 3 fallers in a ranked depot field (on-time delivery, revenue), each row stating its rank, how many places it moved, and a diverging mini bar from a shared, stated zero axis. Distinct from stat-list-01's single-snapshot share bars: this is about movement between two points in time.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-movers-01/data/depot-movers.ts",
+          "type": "registry:component",
+          "target": "components/kpi-movers-01/data/depot-movers.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-movers-01/kpi-movers.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-movers-01/kpi-movers.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-distribution-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Is it consistent?",
+      "description": "\"Is it consistent?\" — an average hides the tail: a median headline next to p90/p95 read against a named SLA threshold, a box plot of the record-level distribution with the threshold drawn as a reference line, and the share past it stated in text.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-distribution-01/data/distribution-samples.ts",
+          "type": "registry:component",
+          "target": "components/kpi-distribution-01/data/distribution-samples.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-distribution-01/kpi-distribution.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-distribution-01/kpi-distribution.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-streak-01",
+      "type": "registry:block",
+      "title": "KPI Cards — How reliable is it?",
+      "description": "\"How reliable is it?\" — a ratio/streak headline over a 30-day strip of day cells, missed days marked by shape as well as colour, with the current and longest streaks and a comparison to the prior 30 days.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-streak-01/data/streak-days.ts",
+          "type": "registry:component",
+          "target": "components/kpi-streak-01/data/streak-days.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-streak-01/kpi-streak.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-streak-01/kpi-streak.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-variance-bridge-01",
+      "type": "registry:block",
+      "title": "Infographic — What drove the change?",
+      "description": "\"What drove the change?\" — a revenue bridge from last quarter's total to this quarter's, split into price, volume, mix, FX and other, built with WaterfallChart and a Leader callout on the one or two steps that actually explain the move. Steps sum exactly to the ending total; every step states its own sign in words, never colour alone.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-variance-bridge-01/data/revenue-bridge.ts",
+          "type": "registry:component",
+          "target": "components/infographic-variance-bridge-01/data/revenue-bridge.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-variance-bridge-01/infographic-variance-bridge.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-variance-bridge-01/infographic-variance-bridge.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-annotated-trend-01",
+      "type": "registry:block",
+      "title": "Infographic — What happened, and when?",
+      "description": "\"What happened, and when?\" — a 20-week LineChart with up to three labelled events anchored to the exact data point they explain, connected by a Leader, never a legend. Compact keeps only the most consequential event.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-annotated-trend-01/data/annotated-trend.ts",
+          "type": "registry:component",
+          "target": "components/infographic-annotated-trend-01/data/annotated-trend.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-annotated-trend-01/infographic-annotated-trend.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-annotated-trend-01/infographic-annotated-trend.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-status-threshold-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Should I act?",
+      "description": "\"Should I act?\" — a status (icon + text, never colour alone) read against a visible on-track/at-risk/off-track threshold scale with today's value marked, plus how long the current status has held.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-status-threshold-01/kpi-status-threshold.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-status-threshold-01/kpi-status-threshold.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-cohort-retention-01",
+      "type": "registry:block",
+      "title": "Infographic — Do customers stay?",
+      "description": "\"Do customers stay?\" — a triangular cohort retention heatmap: one row per monthly signup cohort, one column per month since signup, shaded by the share still active. A cohort younger than N months draws an empty cell, never a fabricated zero. One cohort is called out with a peak ring and a stated, computed gap against its named peers.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-cohort-retention-01/data/cohort-retention.ts",
+          "type": "registry:component",
+          "target": "components/infographic-cohort-retention-01/data/cohort-retention.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-cohort-retention-01/infographic-cohort-retention.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-cohort-retention-01/infographic-cohort-retention.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-part-to-whole-01",
+      "type": "registry:block",
+      "title": "Infographic — Where does the money go?",
+      "description": "\"Where does the money go?\" — a two-level treemap of Q3 cost, category → sub-category, drawn in one neutral mono shade except for the single highlighted tile, outlined and named with a Leader + HaloText callout stating its share and the change from last quarter. Tile area is exactly proportional to cost.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-part-to-whole-01/data/cost-breakdown.ts",
+          "type": "registry:component",
+          "target": "components/infographic-part-to-whole-01/data/cost-breakdown.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-part-to-whole-01/infographic-part-to-whole.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-part-to-whole-01/infographic-part-to-whole.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-small-multiples-01",
+      "type": "registry:block",
+      "title": "Infographic — Which depot is the outlier?",
+      "description": "\"Which depot is the outlier?\" — twelve depots, one tiny 13-week line per tile, every tile on the same shared y-axis so height compares directly, with the one depot that stands out ringed and coloured (PeakRing) while every other depot stays on a muted neutral.",
+      "registryDependencies": ["kpi-card-parts", "kpi-movers-01"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-small-multiples-01/data/region-on-time.ts",
+          "type": "registry:component",
+          "target": "components/infographic-small-multiples-01/data/region-on-time.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-small-multiples-01/infographic-small-multiples.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-small-multiples-01/infographic-small-multiples.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-before-after-01",
+      "type": "registry:block",
+      "title": "Infographic — Who improved, who slipped?",
+      "description": "\"Who improved, who slipped?\" — a DumbbellChart slope chart of 6 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line's own slope, never colour alone.",
+      "registryDependencies": ["kpi-card-parts", "kpi-movers-01"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-before-after-01/data/depot-before-after.ts",
+          "type": "registry:component",
+          "target": "components/infographic-before-after-01/data/depot-before-after.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-before-after-01/infographic-before-after.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-before-after-01/infographic-before-after.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-gap-to-benchmark-01",
+      "type": "registry:block",
+      "title": "Infographic — How far from the benchmark?",
+      "description": "\"How far from the benchmark?\" — a sorted DumbbellChart, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised; the gap's sign correctly flips for a lower-is-better metric.",
+      "registryDependencies": ["infographic-small-multiples-01", "kpi-card-parts", "kpi-movers-01"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-gap-to-benchmark-01/data/depot-vs-benchmark.ts",
+          "type": "registry:component",
+          "target": "components/infographic-gap-to-benchmark-01/data/depot-vs-benchmark.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-gap-to-benchmark-01/infographic-gap-to-benchmark.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-gap-to-benchmark-01/infographic-gap-to-benchmark.tsx"
+        }
+      ],
+      "categories": ["infographic"]
     }
   ]
 }

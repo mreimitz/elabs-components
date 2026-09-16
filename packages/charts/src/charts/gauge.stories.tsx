@@ -29,7 +29,7 @@ type Story = StoryObj<typeof meta>;
 /** Notched arc gauge, no milestones — the pre-existing (unaffected) default. */
 export const Default: Story = {
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),
@@ -49,7 +49,7 @@ export const Default: Story = {
 export const WithMilestones: Story = {
   name: "With milestones (F11)",
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),
@@ -67,7 +67,7 @@ export const WithMilestones: Story = {
 /** Milestones alone, no caption — the two additive props are independent. */
 export const MilestonesOnly: Story = {
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),
@@ -97,6 +97,66 @@ export const LongCaption: Story = {
     defaultLabel: "Progress",
     totalNotches: 40,
     remainingLabel: () => "27 ticks to go this sprint",
+  },
+};
+
+/** A radial tick crossing the notch band at `target` — a quarterly goal. */
+export const WithTarget: Story = {
+  render: (args) => (
+    <div className="h-56 w-full max-w-[360px]">
+      <Gauge {...args} />
+    </div>
+  ),
+  args: {
+    value: 72,
+    centerValue: 72,
+    suffix: "%",
+    defaultLabel: "Attainment",
+    target: 80,
+  },
+};
+
+/** Short outer-rim ticks naming bands — colour is not status here, only the accessible text names the band. */
+export const WithThresholds: Story = {
+  render: (args) => (
+    <div className="h-56 w-full max-w-[360px]">
+      <Gauge {...args} />
+    </div>
+  ),
+  args: {
+    value: 72,
+    centerValue: 72,
+    suffix: "%",
+    defaultLabel: "Health score",
+    thresholds: [
+      { value: 50, label: "Needs Attention" },
+      { value: 75, label: "Good" },
+      { value: 100, label: "Excellent" },
+    ],
+  },
+};
+
+/**
+ * Both together — the accessible description composes to
+ * "72 of 100, target 80, band Good".
+ */
+export const TargetAndThresholds: Story = {
+  render: (args) => (
+    <div className="h-56 w-full max-w-[360px]">
+      <Gauge {...args} />
+    </div>
+  ),
+  args: {
+    value: 72,
+    centerValue: 72,
+    suffix: "%",
+    defaultLabel: "Attainment",
+    target: 80,
+    thresholds: [
+      { value: 50, label: "Needs Attention" },
+      { value: 75, label: "Good" },
+      { value: 100, label: "Excellent" },
+    ],
   },
 };
 

@@ -181,4 +181,133 @@ describe("Gauge", () => {
       "62 percent of a 100 percent target.",
     );
   });
+
+  // target / thresholds — reference markers for a KPI's pace/goal.
+  describe("target and thresholds", () => {
+    // Defaults: startAngle=135, endAngle=405, spacing=25, so
+    // availableAngle = (405-135) * (1 - 25/100) = 202.5. size=min(300,200)=200;
+    // no milestones so milestoneReserve=0 → outerRadius=200*0.42=84,
+    // innerRadius=84-28=56, centerX=150, centerY=100 — same fixture geometry
+    // the milestone tests above already rely on.
+    const angleFor = (value: number) => 135 + (value / 100) * 202.5;
+    const pointAt = (value: number, radius: number) => {
+      const radians = (angleFor(value) * Math.PI) / 180;
+      return { x: 150 + Math.cos(radians) * radius, y: 100 + Math.sin(radians) * radius };
+    };
+
+    it("renders no target/threshold marks and no extra accessible text when unset", () => {
+      const { container } = render(<Gauge centerValue={72} height={200} value={72} width={300} />);
+      expect(container.querySelector('[data-slot="gauge-target"]')).toBeNull();
+      expect(container.querySelector('[data-slot="gauge-threshold-tick"]')).toBeNull();
+      expect(container.querySelector("[aria-describedby]")).toBeNull();
+    });
+
+    it.each([
+      ["start", 0],
+      ["mid", 50],
+      ["end", 100],
+    ] as const)("crosses the notch band at the %s value→angle mapping", (_name, value) => {
+      const { container } = render(
+        <Gauge centerValue={value} height={200} target={value} value={value} width={300} />,
+      );
+      // The target tick's own (non-halo) line — `x2/y2` extend
+      // TARGET_TICK_OVERSHOOT (8px) past the outer edge (84), never flush
+      // with it, so it unmistakably pokes out past the notch ring (#…).
+      const line = container.querySelector('[data-slot="gauge-target"]');
+      expect(line).not.toBeNull();
+      const inner = pointAt(value, 56);
+      const outer = pointAt(value, 92);
+      expect(Number(line?.getAttribute("x1"))).toBeCloseTo(inner.x, 5);
+      expect(Number(line?.getAttribute("y1"))).toBeCloseTo(inner.y, 5);
+      expect(Number(line?.getAttribute("x2"))).toBeCloseTo(outer.x, 5);
+      expect(Number(line?.getAttribute("y2"))).toBeCloseTo(outer.y, 5);
+    });
+
+    it("renders one short outer-rim tick per threshold, past the notch band", () => {
+      const { container } = render(
+        <Gauge
+          centerValue={72}
+          height={200}
+          thresholds={[
+            { value: 50, label: "Needs Attention" },
+            { value: 75, label: "Good" },
+            { value: 100, label: "Excellent" },
+          ]}
+          value={72}
+          width={300}
+        />,
+      );
+      const ticks = container.querySelectorAll('[data-slot="gauge-threshold-tick"]');
+      expect(ticks).toHaveLength(3);
+      const tick = ticks[1];
+      // THRESHOLD_TICK_LENGTH is 10px (lengthened from 6px, #…) so the tick
+      // reads unmistakably outside the notch ring instead of blending in.
+      const inner = pointAt(75, 84);
+      const outer = pointAt(75, 94);
+      expect(Number(tick?.getAttribute("x1"))).toBeCloseTo(inner.x, 5);
+      expect(Number(tick?.getAttribute("y1"))).toBeCloseTo(inner.y, 5);
+      expect(Number(tick?.getAttribute("x2"))).toBeCloseTo(outer.x, 5);
+      expect(Number(tick?.getAttribute("y2"))).toBeCloseTo(outer.y, 5);
+    });
+
+    it("composes target + threshold band into the accessible description (#…)", () => {
+      const { container } = render(
+        <Gauge
+          centerValue={72}
+          height={200}
+          target={80}
+          thresholds={[
+            { value: 50, label: "Needs Attention" },
+            { value: 75, label: "Good" },
+            { value: 100, label: "Excellent" },
+          ]}
+          value={72}
+          width={300}
+        />,
+      );
+      const descId = container
+        .querySelector("[aria-describedby]")
+        ?.getAttribute("aria-describedby");
+      expect(descId).toBeTruthy();
+      expect(container.querySelector(`#${descId}`)?.textContent).toBe(
+        "72 of 100, target 80, band Good",
+      );
+    });
+
+    it("appends to (rather than replacing) a caller-supplied accessibleDescription", () => {
+      const { container } = render(
+        <Gauge
+          accessibleDescription="Quarterly revenue attainment."
+          centerValue={72}
+          height={200}
+          target={80}
+          value={72}
+          width={300}
+        />,
+      );
+      const descId = container
+        .querySelector("[aria-describedby]")
+        ?.getAttribute("aria-describedby");
+      expect(container.querySelector(`#${descId}`)?.textContent).toBe(
+        "Quarterly revenue attainment. 72 of 100, target 80",
+      );
+    });
+
+    it("localizes the `target` word via `labels`", () => {
+      const { container } = render(
+        <Gauge
+          centerValue={72}
+          height={200}
+          labels={{ target: "Ziel" }}
+          target={80}
+          value={72}
+          width={300}
+        />,
+      );
+      const descId = container
+        .querySelector("[aria-describedby]")
+        ?.getAttribute("aria-describedby");
+      expect(container.querySelector(`#${descId}`)?.textContent).toBe("72 of 100, Ziel 80");
+    });
+  });
 });

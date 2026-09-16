@@ -72,7 +72,7 @@ import type { OnMarkInk } from "../on-mark-ink";
 import { useOnMarkInk } from "../use-on-mark-ink";
 import type { ChartValueFormat } from "../value-format";
 import { buildCalendarLayout, type CalendarCellPosition } from "./calendar-layout";
-import { HeatmapCell } from "./heatmap-cell";
+import { DEFAULT_EMPTY_MARK_SCALE, HeatmapCell } from "./heatmap-cell";
 import {
   type HeatmapCellDatum,
   type HeatmapContextValue,
@@ -176,6 +176,28 @@ export interface HeatmapChartProps extends ChartSelectionProps, ChartInteraction
    */
   highlight?: HeatmapHighlight;
   /**
+   * Every row this predicate matches (by its \`y\` label) gets a dashed rail
+   * around the whole row plus a bold row label -- emphasis for "the finding
+   * is about this ROW", not just one cell in it (#280). Shape + weight, never
+   * hue alone (WCAG 1.4.1). Default \`undefined\` -- no row emphasis.
+   */
+  rowHighlight?: (rowLabel: string) => boolean;
+  /**
+   * Halo behind a \`mode="cell"\` value label. Default \`true\`. A flat filled
+   * plate already carries its own on-mark ink pair (#238); set \`false\` when
+   * that alone reads clean and a halo would ring-fringe a mid-tone fill
+   * (#280) -- never needed for \`mode="dot"\`, where the label sits on the
+   * busier plot ground.
+   */
+  showValueHalo?: boolean;
+  /**
+   * Side of the no-data outline, as a fraction of the cell's shorter side.
+   * Default {@link DEFAULT_EMPTY_MARK_SCALE}. Shrink it for a denser grid or
+   * a deliberately quieter empty state (#280); the legend's swatch is a KEY
+   * at its own fixed size and does not scale with this.
+   */
+  emptyMarkScale?: number;
+  /**
    * What a cell with nothing to shade draws. `"quiet"` (default) keeps the two
    * facts apart: a measured `0` is the 0.9px pinprick (measured, and the answer
    * was nothing), a `null` is a hairline outline of the empty cell (never
@@ -193,6 +215,14 @@ export interface HeatmapChartProps extends ChartSelectionProps, ChartInteraction
   valueFormat?: ChartValueFormat;
   /** Show the ramp key below the plot. Default `true`. */
   showLegend?: boolean;
+  /**
+   * A visible title for the column axis (#280), e.g. "Months since signup" —
+   * printed directly under the plot, ABOVE the legend, so it reads as the
+   * axis's own caption rather than a floating sentence after the key. Default
+   * `undefined` (no title printed). Not a substitute for `accessibleLabel`/
+   * `accessibleDescription`, which already state the axis in prose for AT.
+   */
+  xAxisLabel?: string;
   /** Plot-area insets. Merged over the variant's own defaults. */
   margin?: Partial<HeatmapMargin>;
   /** Aspect ratio of the plot body. Default `"16 / 9"` (`"6 / 1"` for calendar). */
@@ -455,16 +485,20 @@ interface HeatmapBodyProps {
   mode: HeatmapMode;
   variant: HeatmapVariant;
   showValues: boolean;
+  showValueHalo: boolean;
   emptyValue: HeatmapEmptyValue;
+  emptyMarkScale: number;
   cellRadius: number;
   formatValue: (value: number) => string;
   formatColumnLabel: (cell: HeatmapCellDatum) => string;
   revealOn: ChartRevealOn;
+  rowHighlight?: (rowLabel: string) => boolean;
   loading: boolean;
 }
 
 function HeatmapBody({
   cellRadius,
+  emptyMarkScale,
   emptyValue,
   formatColumnLabel,
   formatValue,
@@ -474,7 +508,9 @@ function HeatmapBody({
   margin,
   mode,
   revealOn,
+  rowHighlight,
   scale,
+  showValueHalo,
   showValues,
   variant,
   width,
@@ -620,8 +656,10 @@ function HeatmapBody({
       mode,
       variant,
       emptyValue,
+      emptyMarkScale,
       cellRadius,
       showValues,
+      showValueHalo,
       maxAbs: scale.maxAbs,
       dotMaxRadius: Math.min(bandWidth, bandHeight) / 2,
       formatValue,
@@ -642,6 +680,7 @@ function HeatmapBody({
       bandWidth,
       cellRadius,
       cells,
+      emptyMarkScale,
       emptyValue,
       formatColumnLabel,
       formatValue,
@@ -654,6 +693,7 @@ function HeatmapBody({
       scale.diverging,
       scale.maxAbs,
       setHovered,
+      showValueHalo,
       showValues,
       staggerMs,
       variant,
@@ -710,6 +750,16 @@ function HeatmapBody({
                   <HeatmapCell cell={cell} key={cell.id} />
                 ))}
                 <HeatmapHoverOutline />
+                {rowHighlight ? (
+                  <HeatmapRowHighlight
+                    bandHeight={bandHeight}
+                    cellRadius={cellRadius}
+                    grid={grid}
+                    innerWidth={innerWidth}
+                    rowHighlight={rowHighlight}
+                    yScale={yScale}
+                  />
+                ) : null}
               </>
             )}
             <HeatmapAxes
@@ -717,6 +767,7 @@ function HeatmapBody({
               bandWidth={bandWidth}
               grid={grid}
               innerHeight={innerHeight}
+              rowHighlight={rowHighlight}
               variant={variant}
               xScale={xScale}
               yScale={yScale}
@@ -749,6 +800,52 @@ function HeatmapHoverOutline() {
       x={hovered.x0}
       y={hovered.y0}
     />
+  );
+}
+
+/**
+ * A dashed rail around every row `rowHighlight` matches (#280) — "the finding
+ * is about this ROW", read from a single `PeakRing`'d cell alone. Neutral ink,
+ * same as {@link HeatmapHoverOutline}: emphasis here is carried by the OUTLINE
+ * plus the row label's weight (see `HeatmapAxes`), never by hue alone.
+ */
+function HeatmapRowHighlight({
+  bandHeight,
+  cellRadius,
+  grid,
+  innerWidth,
+  rowHighlight,
+  yScale,
+}: {
+  bandHeight: number;
+  cellRadius: number;
+  grid: Grid;
+  innerWidth: number;
+  rowHighlight: (rowLabel: string) => boolean;
+  yScale: ReturnType<typeof scaleBand<number>>;
+}) {
+  const inset = 2;
+  return (
+    <g data-slot="heatmap-row-highlight">
+      {grid.rowLabels.map((label, row) =>
+        rowHighlight(label) ? (
+          <rect
+            data-row-highlight={label}
+            fill="none"
+            height={bandHeight + inset * 2}
+            key={`row-highlight-${label}`}
+            pointerEvents="none"
+            rx={Math.min(cellRadius + inset, bandHeight / 2)}
+            stroke="var(--chart-foreground)"
+            strokeDasharray="2 3"
+            strokeWidth={1.5}
+            width={innerWidth + inset * 2}
+            x={-inset}
+            y={(yScale(row) ?? 0) - inset}
+          />
+        ) : null,
+      )}
+    </g>
   );
 }
 
@@ -805,6 +902,7 @@ function HeatmapAxes({
   bandWidth,
   grid,
   innerHeight,
+  rowHighlight,
   variant,
   xScale,
   yScale,
@@ -813,6 +911,7 @@ function HeatmapAxes({
   bandWidth: number;
   grid: Grid;
   innerHeight: number;
+  rowHighlight?: (rowLabel: string) => boolean;
   variant: HeatmapVariant;
   xScale: ReturnType<typeof scaleBand<number>>;
   yScale: ReturnType<typeof scaleBand<number>>;
@@ -869,6 +968,7 @@ function HeatmapAxes({
           dominantBaseline="central"
           fill="var(--chart-label)"
           fontSize={11}
+          fontWeight={rowHighlight?.(label) ? 700 : undefined}
           key={label}
           textAnchor="end"
           x={-8}
@@ -908,6 +1008,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     emptyAction,
     emptyMessage = "No data to plot.",
     emptyTitle = "No data",
+    emptyMarkScale = DEFAULT_EMPTY_MARK_SCALE,
     emptyValue = "quiet",
     highlight = "max",
     loading = false,
@@ -915,7 +1016,9 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     mode,
     palette = "sequential",
     revealOn = "mount",
+    rowHighlight,
     showLegend = true,
+    showValueHalo = true,
     showValues,
     steps = DEFAULT_HEATMAP_STEPS,
     style,
@@ -923,6 +1026,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     variant = "matrix",
     valueKey,
     x,
+    xAxisLabel,
     xOrder,
     y,
     yOrder,
@@ -1045,6 +1149,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
                 width > 0 && height > 0 ? (
                   <HeatmapBody
                     cellRadius={cellRadius}
+                    emptyMarkScale={emptyMarkScale}
                     emptyValue={emptyValue}
                     formatColumnLabel={formatColumnLabel}
                     formatValue={formatValue}
@@ -1054,7 +1159,9 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
                     margin={margin}
                     mode={resolvedMode}
                     revealOn={revealOn}
+                    rowHighlight={rowHighlight}
                     scale={scale}
+                    showValueHalo={showValueHalo}
                     showValues={resolvedShowValues}
                     variant={variant}
                     width={width}
@@ -1065,6 +1172,14 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
           </div>
         )}
       </div>
+      {xAxisLabel && !isEmpty ? (
+        <p
+          className="text-center text-caption text-muted-foreground"
+          data-slot="heatmap-x-axis-label"
+        >
+          {xAxisLabel}
+        </p>
+      ) : null}
       {showLegend && !isEmpty ? (
         <HeatmapLegend
           continuous={scale.continuous}

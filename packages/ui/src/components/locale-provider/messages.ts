@@ -401,6 +401,19 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.gantt.unitMinute": "Minute",
   "charts.gantt.unitSecond": "Second",
   "charts.gantt.unitMillisecond": "Millisecond",
+  // BulletChart (Few's bullet graph, RM-061). The SVG is aria-hidden, so this
+  // sentence — built from these fragments — is the ONLY thing AT reads: it
+  // states the value, its relationship to the target, and which qualitative
+  // band it falls in. {value}/{target} already carry a caller-supplied name
+  // via `labels` when one was given (composed before interpolation), so the
+  // template itself stays name-agnostic.
+  "charts.bulletChart.noData": "No data",
+  "charts.bulletChart.valueOfTarget": "{value} of {target} target",
+  "charts.bulletChart.gapAbove": "{amount} above target",
+  "charts.bulletChart.gapBelow": "{amount} below target",
+  "charts.bulletChart.onTarget": "on target",
+  "charts.bulletChart.band": "in band {band}",
+  "charts.bulletChart.comparative": "compared to {value}",
   // RM-075 follow-up: `container` dashboard tile's default tablist name when the tile
   // has no `title`.
   "charts.dashboard.containerTabs": "Container tabs",

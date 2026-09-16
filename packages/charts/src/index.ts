@@ -9,7 +9,7 @@
  *   ChoroplethChart, SankeyChart, Gantt
  *
  * Composition primitives (pass as children or configure via props):
- *   Area, Bar, Line, Scatter, Ring, PieSlice, Candlestick, RadarArea,
+ *   Area, AreaBand, Bar, Line, Scatter, Ring, PieSlice, Candlestick, RadarArea,
  *   LiveLine, SeriesBar, PatternArea, Gauge, Segment*,
  *   XAxis, YAxis, BarXAxis, BarYAxis, LiveXAxis, LiveYAxis, RadarAxis,
  *   RadarGrid, RadarLabels, Grid, ChartBrush, ChartBrushLayout,

@@ -16,6 +16,7 @@ export {
 } from "@visx/gradient";
 // Area chart components
 export { Area, type AreaProps } from "./area";
+export { AreaBand, type AreaBandProps } from "./area-band";
 export { AreaChart, type AreaChartProps } from "./area-chart";
 export { AreaChartLoading, type AreaChartLoadingProps } from "./area-chart-loading";
 // Bar chart components
@@ -431,6 +432,20 @@ export {
   type UnitStackProps,
 } from "../marks";
 
+// Bullet — RM-061
+export {
+  BulletChart,
+  describeBulletChart,
+  findBulletBand,
+  resolveBulletDomain,
+  type BulletBand,
+  type BulletChartLabels,
+  type BulletChartOrientation,
+  type BulletChartProps,
+  type BulletChartSize,
+  type DescribeBulletChartInput,
+  type ResolveBulletDomainInput,
+} from "./bullet-chart";
 // Dumbbell — RM-023
 export {
   buildDumbbellRows,
@@ -575,6 +590,7 @@ export {
   type DistributionGroup,
   type DistributionKind,
   type DistributionOrientation,
+  type DistributionReferenceLine,
   type DistributionRow,
   type FiveNumberSummary,
   type GroupedDistribution,
@@ -585,6 +601,7 @@ export {
 // Waterfall — RM-022
 export {
   WaterfallChart,
+  type WaterfallCallout,
   type WaterfallChartProps,
   type WaterfallDatum,
   type WaterfallStep,

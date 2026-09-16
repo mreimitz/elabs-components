@@ -86,6 +86,33 @@ export interface TreemapChartProps extends ChartSelectionProps, ChartInteraction
   /** Hide a tile's label below this area (px²). Never shrinks type — a label
    * either renders at `text-chart-value`/`text-chart-source` size, or not at all. */
   labelMinArea?: number;
+  /**
+   * How a name too long for its tile is handled (#280).
+   *
+   * - `"ellipsis"` (default) — clip it to the tile with `…`.
+   * - `"hide"` — draw it only when the WHOLE name fits (and, with
+   *   `showValues`, its value line too); otherwise draw nothing. Applies to
+   *   leaf labels and group title bands alike — a truncated header is the
+   *   same noise as a truncated tile name.
+   */
+  labelOverflow?: "ellipsis" | "hide";
+  /**
+   * Skip the native name/value label for every leaf this predicate matches
+   * (#280) — for a tile a caller annotates itself (a `Leader` + `HaloText`
+   * callout) so the two labels never double up. Default `undefined` — every
+   * eligible leaf keeps its built-in label.
+   */
+  hideLeafLabel?: (leaf: TreemapLeafDatum) => boolean;
+  /**
+   * Override for `palette="mono"`'s one leaf shade (#280). The mono ramp is
+   * the same absolute lightness in every theme by design (`on-mark-ink.ts`),
+   * so it can look pale on a dark card; resolve a theme-appropriate step
+   * (`resolveThemeIsDark` + `var(--chart-mono-N)`) and pass it here when the
+   * default reads too light against your card. Default: the shared constant.
+   */
+  monoLeafColor?: string;
+  /** Override for the `depth: 2` group title band's fill — same reasoning as {@link monoLeafColor}. */
+  monoBandColor?: string;
   /** Merge leaves under this share (0..1) of their parent's total into "Other".
    * `0` (default) = off — the unconditional 30-leaf cap still applies. */
   otherThreshold?: number;
@@ -150,6 +177,10 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     palette = "mono",
     gap = 2,
     labelMinArea = DEFAULT_LABEL_MIN_AREA,
+    labelOverflow = "ellipsis",
+    hideLeafLabel,
+    monoLeafColor,
+    monoBandColor,
     otherThreshold = 0,
     drilldown = false,
     showValues = false,
@@ -230,8 +261,10 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
         gap,
         palette,
         otherThreshold,
+        monoLeafColor,
+        monoBandColor,
       }),
-    [data, sz.w, sz.h, depth, gap, palette, otherThreshold],
+    [data, sz.w, sz.h, depth, gap, palette, otherThreshold, monoLeafColor, monoBandColor],
   );
 
   // Selection input (RM-073): keyed by the leaf name (the category).
@@ -251,6 +284,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
       gap,
       palette,
       otherThreshold,
+      monoLeafColor,
+      monoBandColor,
     });
     // Re-anchor share to the GRAND total (the sub-layout's own "total" is only
     // the focused group's total) and restore the full path + group identity.
@@ -275,6 +310,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     gap,
     palette,
     otherThreshold,
+    monoLeafColor,
+    monoBandColor,
     baseLayout.total,
     activeGroupIndex,
   ]);
@@ -376,7 +413,13 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     boxWidth: number,
     measureText: (text: string) => number,
   ): string | null => {
-    const { display } = ellipsize(text, boxWidth - LABEL_PADDING_X * 2, measureText);
+    const available = boxWidth - LABEL_PADDING_X * 2;
+    // "hide" (#280): whole or nothing, never `"F…"` — the same rule
+    // `showValues` already applies to the VALUE line, extended to the name.
+    if (labelOverflow === "hide") {
+      return measureText(text) <= available ? text : null;
+    }
+    const { display } = ellipsize(text, available, measureText);
     return display === CATEGORY_AXIS_ELLIPSIS ? null : display;
   };
 
@@ -456,7 +499,11 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
             {activeLayout.leaves.map((leaf) => {
               const box = rectStyle(leaf);
               const area = box.width * box.height;
-              const leafLabel =
+              // A leaf a caller annotates itself (#280) skips the native label so
+              // the tile carries one annotation, never two.
+              const labelsHidden = hideLeafLabel?.(leaf) ?? false;
+              let leafLabel =
+                !labelsHidden &&
                 area >= labelMinArea &&
                 box.width >= MIN_LABEL_WIDTH &&
                 box.height >= MIN_LABEL_HEIGHT
@@ -469,6 +516,12 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                 if (measureValueLabel(text) <= box.width - LABEL_PADDING_X * 2) {
                   valueLabel = text;
                 }
+              }
+              // "hide" (#280): the name is only a label paired with its value —
+              // if the value did not fit, the name alone is the same noise a
+              // truncated name would have been, so drop it too.
+              if (labelOverflow === "hide" && showValues && valueLabel === null) {
+                leafLabel = null;
               }
               const labelCenterY = box.y + box.height / 2;
               const isActive = datapointsEnabled;

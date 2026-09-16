@@ -75,11 +75,24 @@ describe("WaterfallChart", () => {
     // Default `valueFormat` is "compact" (DEFAULT_CHART_VALUE_FORMAT), so the
     // 1000-magnitude total compacts to "1K" while the smaller step deltas do
     // not. A "total" row is an absolute value, not a delta, so it renders
-    // unsigned; "step" rows render signed.
+    // unsigned; "step" rows render signed with a real minus (`−`, U+2212),
+    // never `Intl`'s own ASCII hyphen.
     render(<WaterfallChart data={grossToNet} />);
     expect(screen.getByText("1K")).toBeInTheDocument();
-    expect(screen.getByText("-100")).toBeInTheDocument();
-    expect(screen.getByText("-300")).toBeInTheDocument();
+    expect(screen.getByText("−100")).toBeInTheDocument();
+    expect(screen.getByText("−300")).toBeInTheDocument();
+  });
+
+  it("renders a negative total with a real minus, never Intl's ASCII hyphen", () => {
+    const negativeTotal: WaterfallDatum[] = [
+      { kind: "total", label: "Start", value: 0 },
+      { label: "Drop 1", value: -400 },
+      { label: "Drop 2", value: -200 },
+      { kind: "total", label: "End", value: -600 },
+    ];
+    render(<WaterfallChart data={negativeTotal} valueFormat="number" />);
+    expect(screen.getByText("−600")).toBeInTheDocument();
+    expect(screen.queryByText("-600")).toBeNull();
   });
 
   it("respects an explicit valueFormat", () => {
@@ -177,6 +190,38 @@ describe("WaterfallChart", () => {
   it("wires accessibleLabel through to the chart region", () => {
     render(<WaterfallChart accessibleLabel="Gross to net revenue bridge" data={grossToNet} />);
     expect(screen.getByLabelText("Gross to net revenue bridge")).toBeInTheDocument();
+  });
+
+  it("renders no callout furniture without a `callouts` prop — byte-identical default", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} />);
+    expect(container.querySelectorAll('[data-slot="waterfall-chart-callout"]')).toHaveLength(0);
+  });
+
+  it("draws a leader + note above the named step for each callout", () => {
+    render(
+      <WaterfallChart callouts={[{ label: "COGS", note: "The main driver" }]} data={grossToNet} />,
+    );
+    expect(screen.getByText("The main driver")).toBeInTheDocument();
+    const callout = document.querySelector('[data-slot="waterfall-chart-callout"]');
+    expect(callout?.querySelector('[data-slot="leader"]')).not.toBeNull();
+  });
+
+  it("ignores callouts under horizontal orientation (no headroom above a horizontal bar)", () => {
+    render(
+      <WaterfallChart
+        callouts={[{ label: "COGS", note: "The main driver" }]}
+        data={grossToNet}
+        orientation="horizontal"
+      />,
+    );
+    expect(screen.queryByText("The main driver")).toBeNull();
+  });
+
+  it("skips a callout whose label matches no step, without throwing", () => {
+    render(
+      <WaterfallChart callouts={[{ label: "Nonexistent", note: "orphan" }]} data={grossToNet} />,
+    );
+    expect(screen.queryByText("orphan")).toBeNull();
   });
 });
 

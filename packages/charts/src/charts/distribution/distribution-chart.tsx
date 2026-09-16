@@ -88,6 +88,10 @@ import {
   type DistributionRow,
 } from "./distribution-groups";
 import type { DistributionKind, DistributionTooltipPayload } from "./distribution-kind";
+import {
+  DistributionReferenceLines,
+  type DistributionReferenceLine,
+} from "./distribution-reference-line";
 import { DistributionValueAxis } from "./distribution-value-axis";
 import { KDE_TAPER, silvermanBandwidth } from "./kde";
 import { BOX_BODY_OPACITY, DistributionBox } from "./kinds/box";
@@ -155,6 +159,15 @@ export interface DistributionChartProps extends ChartInteractionProps, ChartA11y
   valueFormat?: ChartValueFormat;
   /** ISO 4217 code when `valueFormat="currency"`. */
   currency?: string;
+  /**
+   * Fixed thresholds drawn across the shared value axis (an SLA, a spec
+   * limit, a target) — dashed `--chart-foreground`, haloed so it stays
+   * legible over a box/violin body. Each labelled line's fact is folded into
+   * the chart's own accessible description, so it is never colour-only or
+   * visual-only. Default none — omitting it renders byte-identical to before
+   * this prop existed.
+   */
+  referenceLines?: DistributionReferenceLine[];
   className?: string;
   style?: CSSProperties;
 }
@@ -185,6 +198,7 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       onDatapointClick,
       orientation = "horizontal",
       palette,
+      referenceLines = [],
       showMedian = true,
       showOutliers = true,
       style,
@@ -229,22 +243,32 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
     /**
      * The one domain. A histogram's is its bin edges (the axis must end where
      * the last bucket ends); a violin's is widened by the KDE taper so the
-     * silhouette's tails are not clipped by the plot edge.
+     * silhouette's tails are not clipped by the plot edge. A reference line
+     * past the data's own extreme (an SLA the data already clears) widens the
+     * domain to include it, with breathing room — otherwise the threshold
+     * lands flush against the plot edge, cramped against the last tick.
      */
     const domain = useMemo<[number, number]>(() => {
       if (allValues.length === 0) return [0, 1];
       if (sharedBins) {
         return [sharedBins.edges[0] as number, sharedBins.edges.at(-1) as number];
       }
-      const [lo, hi] = extentOf(allValues);
-      if (kind !== "violin") return [lo, hi];
-      let widest = 0;
-      for (const group of groups) {
-        const h = bandwidth && bandwidth > 0 ? bandwidth : silvermanBandwidth(group.values);
-        if (h > widest) widest = h;
+      const [dataLo, dataHi] = extentOf(allValues);
+      const referenceValues = referenceLines.map((line) => line.value);
+      const lo = referenceValues.length > 0 ? Math.min(dataLo, ...referenceValues) : dataLo;
+      const hi = referenceValues.length > 0 ? Math.max(dataHi, ...referenceValues) : dataHi;
+      if (kind === "violin") {
+        let widest = 0;
+        for (const group of groups) {
+          const h = bandwidth && bandwidth > 0 ? bandwidth : silvermanBandwidth(group.values);
+          if (h > widest) widest = h;
+        }
+        return [lo - KDE_TAPER * widest, hi + KDE_TAPER * widest];
       }
-      return [lo - KDE_TAPER * widest, hi + KDE_TAPER * widest];
-    }, [allValues, bandwidth, groups, kind, sharedBins]);
+      if (referenceValues.length === 0) return [lo, hi];
+      const pad = (hi - lo || 1) * 0.08;
+      return [lo - pad, hi + pad];
+    }, [allValues, bandwidth, groups, kind, referenceLines, sharedBins]);
 
     /**
      * One colour per group. With `"sequential"` a box/violin is shaded by MEDIAN
@@ -269,8 +293,18 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
 
     const summary = useMemo(() => describeDistribution(groups, formatValue), [formatValue, groups]);
     const caption = kind === "histogram" && unit !== undefined && unit > 0 ? unitLabel : undefined;
+    // A labelled reference line is a fact ("SLA: 48h at …"), not only ink — it
+    // is folded into the composed description alongside the five-number
+    // summary so it reaches assistive tech even though the line itself is
+    // `aria-hidden` (`.claude/rules/charts.md` § Marks).
+    const referenceLineText = useMemo(() => {
+      const labelled = referenceLines.filter((line) => line.label);
+      if (labelled.length === 0) return undefined;
+      return labelled.map((line) => `${line.label} at ${formatValue(line.value)}`).join("; ");
+    }, [formatValue, referenceLines]);
     const description =
-      accessibleDescription ?? ((caption ? `${caption}. ${summary}` : summary) || undefined);
+      accessibleDescription ??
+      ([caption, summary, referenceLineText].filter(Boolean).join(". ") || undefined);
 
     const a11y = useChartA11yContainerProps(accessibleLabel, description);
 
@@ -310,6 +344,7 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
               height={height}
               kind={kind}
               orientation={orientation}
+              referenceLines={referenceLines}
               sharedBins={sharedBins}
               showMedian={showMedian}
               showOutliers={showOutliers}
@@ -360,6 +395,7 @@ interface DistributionChartInnerProps {
   height: number;
   kind: DistributionKind;
   orientation: DistributionOrientation;
+  referenceLines: DistributionReferenceLine[];
   sharedBins?: { edges: number[]; perGroup: Map<string, DistributionBin[]>; countMax: number };
   showMedian: boolean;
   showOutliers: boolean;
@@ -378,6 +414,7 @@ function DistributionChartInner({
   height,
   kind,
   orientation,
+  referenceLines,
   sharedBins,
   showMedian,
   showOutliers,
@@ -504,6 +541,7 @@ function DistributionChartInner({
                 );
             }
           })}
+          <DistributionReferenceLines geometry={geometry} lines={referenceLines} />
         </g>
       </svg>
       <ChartTooltipBox

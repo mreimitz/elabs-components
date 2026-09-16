@@ -201,4 +201,33 @@ describe("HeatmapChart", () => {
       expect(cell).toContain("negativeHatchId && isNegative");
     });
   });
+
+  describe("acceptance: row emphasis, a removable value halo, a tunable empty mark (#280)", () => {
+    const chart = source("heatmap-chart.tsx");
+    const cell = source("heatmap-cell.tsx");
+
+    it("draws a dashed rail (never a hue) around every row rowHighlight matches", () => {
+      expect(chart).toContain("function HeatmapRowHighlight");
+      expect(chart).toContain('stroke="var(--chart-foreground)"');
+      expect(chart).toContain('strokeDasharray="2 3"');
+      // Composed into the plot, gated on the prop being set at all.
+      expect(chart).toContain("rowHighlight ? (");
+    });
+
+    it("bolds the matched row's own axis label, not just the rail", () => {
+      expect(chart).toContain("rowHighlight?.(label) ? 700 : undefined");
+    });
+
+    it("defaults showValueHalo to true (byte-identical for every other consumer)", () => {
+      expect(chart).toContain("showValueHalo = true");
+      expect(cell).toContain("haloWidth={showValueHalo ? undefined : 0}");
+    });
+
+    it("scales the no-data outline off emptyMarkScale, not a hardcoded fraction", () => {
+      expect(cell).toContain(
+        "const missingSide = Math.max(0, Math.min(cell.width, cell.height) * emptyMarkScale);",
+      );
+      expect(cell).toContain("export const DEFAULT_EMPTY_MARK_SCALE = 0.6;");
+    });
+  });
 });

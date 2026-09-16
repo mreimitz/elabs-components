@@ -15,7 +15,7 @@ export {
   type HeatmapChartProps,
   type HeatmapMargin,
 } from "./heatmap-chart";
-export { HeatmapCell, type HeatmapCellProps } from "./heatmap-cell";
+export { DEFAULT_EMPTY_MARK_SCALE, HeatmapCell, type HeatmapCellProps } from "./heatmap-cell";
 export {
   type HeatmapCellDatum,
   type HeatmapCellState,

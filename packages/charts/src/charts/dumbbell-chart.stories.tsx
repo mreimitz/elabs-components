@@ -327,6 +327,39 @@ export const WithAccessibleLabel: Story = {
   ),
 };
 
+/**
+ * `rowColor` — an "argument, not a chart" infographic emphasises the one or
+ * two rows that are the story (a status tone) while the rest stay on the
+ * shared palette. Returning `undefined` for a row keeps it on the resolved
+ * `palette`, so this is additive: unset, the chart is byte-identical to
+ * `Default`.
+ */
+export const RowColorOverride: Story = {
+  args: {
+    data: onboardingSteps,
+    category: "step",
+    startKey: "before",
+    endKey: "after",
+    showDelta: true,
+    rowColor: (row) => (row.category === "Ship first project" ? "var(--destructive)" : undefined),
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const markers = canvasElement.querySelectorAll('[data-slot="dumbbell-chart-marker-end"]');
+      expect(markers.length).toBe(onboardingSteps.length);
+      const fills = Array.from(markers).map((m) => m.getAttribute("fill"));
+      // Exactly one row (the emphasised one) draws in the destructive token;
+      // the rest keep their palette colour, none of which is that token.
+      expect(fills.filter((f) => f === "var(--destructive)")).toHaveLength(1);
+    });
+  },
+  render: (args) => (
+    <div className="h-80 w-full max-w-[640px]">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+};
+
 /** The series-pattern channel (ADR 0011) rendered: `bp-series-*` defs + marks filled from them. */
 function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: number) {
   expect(root.querySelectorAll('pattern[id^="bp-series-"]').length).toBeGreaterThanOrEqual(
@@ -363,6 +396,79 @@ export const HighDecoration: Story = {
       expectSeriesPatterns(canvasElement, '[data-slot="dumbbell-chart-marker-end"]', 2),
     );
   },
+};
+
+/**
+ * `bothEndsLabeled` — the end of each slope line also carries its category
+ * name, not just the bare value, so a reader can tell which line is which
+ * without tracing it back to the start label. Default (unset) keeps the end
+ * label value-only.
+ */
+export const SlopeBothEndsLabeled: Story = {
+  args: {
+    data: yearOverYear,
+    category: "channel",
+    startKey: "lastYear",
+    endKey: "thisYear",
+    variant: "slope",
+    valueFormat: "compact",
+    bothEndsLabeled: true,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const endLabels = canvasElement.querySelectorAll(
+        '[data-slot="dumbbell-chart-slope-label-end"]',
+      );
+      expect(endLabels.length).toBeGreaterThan(0);
+      endLabels.forEach((label) => expect(label.textContent).toMatch(/[A-Za-z]/));
+    });
+  },
+  render: (args) => (
+    <div className="h-80 w-full max-w-[640px]">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+};
+
+// ── Gap-to-benchmark: one labelled reference line + light value ticks ──────
+const depotVsBenchmark = [
+  { depot: "Berlin", actual: 97.3, benchmark: 95 },
+  { depot: "Munich", actual: 95.8, benchmark: 95 },
+  { depot: "Hamburg", actual: 94.3, benchmark: 95 },
+  { depot: "Nuremberg", actual: 83.8, benchmark: 95 },
+];
+
+/**
+ * `referenceLine` + `showValueAxis` — one labelled vertical benchmark line
+ * plus light value ticks along the shared scale, in place of repeating the
+ * benchmark as a marker on every row. `deltaLabelFormat` shows the gap with a
+ * true minus sign and a unit the default `formatValue` sign convention can't.
+ */
+export const BenchmarkReferenceLine: Story = {
+  args: {
+    data: depotVsBenchmark,
+    category: "depot",
+    startKey: "benchmark",
+    endKey: "actual",
+    showDelta: true,
+    valueFormat: "number",
+    referenceLine: { value: 95, label: "Industry benchmark 95%" },
+    showValueAxis: true,
+    deltaLabelFormat: (delta) => `${delta > 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)}pp`,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(
+        canvasElement.querySelector('[data-slot="dumbbell-chart-reference-line"]'),
+      ).not.toBeNull();
+      expect(canvasElement.querySelector('[data-slot="dumbbell-chart-value-axis"]')).not.toBeNull();
+    });
+  },
+  render: (args) => (
+    <div className="h-80 w-full max-w-[640px]">
+      <DumbbellChart {...args} />
+    </div>
+  ),
 };
 
 // Selection states — RM-073

@@ -3,6 +3,7 @@
 import { GridColumns, GridRows } from "@visx/grid";
 import { motion } from "motion/react";
 import { useId } from "react";
+import { HaloText } from "../marks/halo-text";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import { useGridShimmer } from "./use-grid-shimmer";
 import { isLoadingChromePhase, isLoadingGridChromePhase } from "./y-domain-utils";
@@ -43,6 +44,34 @@ export interface GridProps {
   highlightRowStrokeWidth?: number;
   /** Dash array for highlighted rows. Default: solid line */
   highlightRowStrokeDasharray?: string;
+  /**
+   * Text label drawn at the right edge of each `highlightRowValues` entry
+   * (`HaloText`, so it survives sitting on the grid) — a KPI target/goal
+   * line the reader can name, not just see. Return `undefined`/`""` to skip
+   * the label for a given value. Unset (default): no label, byte-identical
+   * to before this prop existed.
+   */
+  highlightRowLabel?: (value: number) => string | undefined;
+  /**
+   * Vertical reference lines at these `xDataKey`-domain values (e.g. "today"
+   * on a forecast chart) — the column counterpart of `highlightRowValues`.
+   * Default: none.
+   */
+  highlightColumnValues?: Array<number | Date>;
+  /** Stroke for highlighted columns. Default: var(--chart-foreground-muted) */
+  highlightColumnStroke?: string;
+  /** Stroke opacity for highlighted columns. Default: 1 */
+  highlightColumnStrokeOpacity?: number;
+  /** Stroke width for highlighted columns. Default: 1 */
+  highlightColumnStrokeWidth?: number;
+  /** Dash array for highlighted columns. Default: solid line */
+  highlightColumnStrokeDasharray?: string;
+  /**
+   * Text label drawn at the bottom-inside, left of each `highlightColumnValues` entry
+   * (`HaloText`), e.g. "Today". Return `undefined`/`""` to skip the label
+   * for a given value. Unset (default): no label.
+   */
+  highlightColumnLabel?: (value: number | Date) => string | undefined;
   /** Enable horizontal fade effect on grid rows (fades at left/right). Default: true */
   fadeHorizontal?: boolean;
   /** Enable vertical fade effect on grid columns (fades at top/bottom). Default: false */
@@ -78,6 +107,13 @@ export function Grid({
   highlightRowStrokeOpacity = 1,
   highlightRowStrokeWidth = 1,
   highlightRowStrokeDasharray = "0",
+  highlightRowLabel,
+  highlightColumnValues,
+  highlightColumnStroke = chartCssVars.foregroundMuted,
+  highlightColumnStrokeOpacity = 1,
+  highlightColumnStrokeWidth = 1,
+  highlightColumnStrokeDasharray = "0",
+  highlightColumnLabel,
   fadeHorizontal = true,
   fadeVertical = false,
   yAxisId,
@@ -87,7 +123,8 @@ export function Grid({
   shimmerSpeed = DEFAULT_SHIMMER_SPEED,
   shimmerSync = false,
 }: GridProps) {
-  const { xScale, innerWidth, innerHeight, orientation, barScale, chartPhase } = useChartStable();
+  const { xScale, innerWidth, innerHeight, orientation, barScale, chartPhase, xValueToPosition } =
+    useChartStable();
   const yScale = useYScale(yAxisId);
   const shimmerActive = shimmer && isLoadingChromePhase(chartPhase);
   const gridStroke =
@@ -217,19 +254,26 @@ export function Grid({
             if (y == null || !Number.isFinite(y)) {
               return null;
             }
+            const label = highlightRowLabel?.(value);
 
             return (
-              <line
-                key={value}
-                stroke={highlightRowStroke}
-                strokeDasharray={highlightRowStrokeDasharray}
-                strokeOpacity={highlightRowStrokeOpacity}
-                strokeWidth={highlightRowStrokeWidth}
-                x1={0}
-                x2={innerWidth}
-                y1={y}
-                y2={y}
-              />
+              <g key={value}>
+                <line
+                  stroke={highlightRowStroke}
+                  strokeDasharray={highlightRowStrokeDasharray}
+                  strokeOpacity={highlightRowStrokeOpacity}
+                  strokeWidth={highlightRowStrokeWidth}
+                  x1={0}
+                  x2={innerWidth}
+                  y1={y}
+                  y2={y}
+                />
+                {label ? (
+                  <HaloText dy={-4} fontSize={11} textAnchor="end" x={innerWidth} y={y}>
+                    {label}
+                  </HaloText>
+                ) : null}
+              </g>
             );
           })}
         </g>
@@ -247,6 +291,52 @@ export function Grid({
           />
         </g>
       )}
+      {highlightColumnValues && highlightColumnValues.length > 0 ? (
+        <g className="chart-grid-highlight-columns">
+          {highlightColumnValues.map((value) => {
+            // `value` is a raw `xDataKey`-domain value (e.g. a "week" number),
+            // not the row `xAccessor` normally reads — under `xScale="linear"`/
+            // `"band"` it must go through the SAME synthetic projection as the
+            // data, or it lands at the domain's raw-number epoch (≈ the left
+            // edge) instead of its real position. `xValueToPosition` is that
+            // projection; absent (e.g. `ScatterChart`), fall back to treating
+            // `value` as already Date-like — the historical, `"time"`-only
+            // behaviour this prop shipped with.
+            const position = xValueToPosition
+              ? xValueToPosition(value)
+              : (value as unknown as Date);
+            const x = xScale(position);
+            if (x == null || !Number.isFinite(x)) {
+              return null;
+            }
+            const label = highlightColumnLabel?.(value);
+            const key = value instanceof Date ? value.getTime() : value;
+
+            return (
+              <g key={key}>
+                <line
+                  stroke={highlightColumnStroke}
+                  strokeDasharray={highlightColumnStrokeDasharray}
+                  strokeOpacity={highlightColumnStrokeOpacity}
+                  strokeWidth={highlightColumnStrokeWidth}
+                  x1={x}
+                  x2={x}
+                  y1={0}
+                  y2={innerHeight}
+                />
+                {label ? (
+                  // Bottom-inside, left of the line: the top strip belongs to
+                  // `highlightRowLabel` (end-anchored), so a column label up
+                  // there collides with a target label on a narrow chart.
+                  <HaloText dy={-4} fontSize={11} textAnchor="end" x={x - 4} y={innerHeight}>
+                    {label}
+                  </HaloText>
+                ) : null}
+              </g>
+            );
+          })}
+        </g>
+      ) : null}
     </g>
   );
 }

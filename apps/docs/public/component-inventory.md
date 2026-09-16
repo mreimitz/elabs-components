@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 196 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 198 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1057,6 +1057,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
 | Area | component |  | `@elabs-ai/components-charts` |  |
+| AreaBand | component |  | `@elabs-ai/components-charts` |  |
 | AreaChart | component |  | `@elabs-ai/components-charts` | Cumulative or part-of-whole trend over time — a filled line. |
 | AreaChartLoading | component |  | `@elabs-ai/components-charts` |  |
 | AutoChart | component |  | `@elabs-ai/components-charts` | Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart. |
@@ -1064,6 +1065,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | BarChart | component |  | `@elabs-ai/components-charts` | Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider. |
 | BarXAxis | component |  | `@elabs-ai/components-charts` |  |
 | BarYAxis | component |  | `@elabs-ai/components-charts` |  |
+| BulletChart | component |  | `@elabs-ai/components-charts` |  |
 | BumpChart | component |  | `@elabs-ai/components-charts` | Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank). |
 | CALENDAR_MIN_ROWS | component |  | `@elabs-ai/components-charts` |  |
 | CALENDAR_ROWS | component |  | `@elabs-ai/components-charts` |  |
