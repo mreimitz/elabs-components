@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Infographic — "Which region is the outlier?" (RM wave 3, group B).
+ * Infographic — "Which depot is the outlier?".
  *
  * Twelve depots, one tiny 13-week line per tile, ALL thirteen weeks drawn on
  * the SAME y-axis (the shared min–max across every depot and every week) —

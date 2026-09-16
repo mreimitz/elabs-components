@@ -422,7 +422,7 @@ export const SlopeBothEndsLabeled: Story = {
     });
   },
   render: (args) => (
-    <div className="h-80 w-[640px]">
+    <div className="h-80 w-full max-w-[640px]">
       <DumbbellChart {...args} />
     </div>
   ),
@@ -463,7 +463,7 @@ export const BenchmarkReferenceLine: Story = {
     });
   },
   render: (args) => (
-    <div className="h-80 w-[640px]">
+    <div className="h-80 w-full max-w-[640px]">
       <DumbbellChart {...args} />
     </div>
   ),
