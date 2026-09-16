@@ -11,6 +11,11 @@ export { blobPath } from "./blob-path";
 export type { BlobPoint } from "./blob-path";
 export { DistributionChart } from "./distribution-chart";
 export type { DistributionChartProps } from "./distribution-chart";
+export { DistributionReferenceLines } from "./distribution-reference-line";
+export type {
+  DistributionReferenceLine,
+  DistributionReferenceLinesProps,
+} from "./distribution-reference-line";
 export { BAND_PADDING, makeDistributionGeometry } from "./distribution-geometry";
 export type {
   DistributionGeometry,

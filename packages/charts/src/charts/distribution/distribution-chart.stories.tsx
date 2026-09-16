@@ -362,6 +362,37 @@ export const DenseStrip: Story = {
   },
 };
 
+/**
+ * A fixed threshold (an SLA, a spec limit) drawn across the shared value axis
+ * via `referenceLines` — dashed and haloed so it stays legible over a box
+ * body, and its fact ("SLA: 60 min at 60") is folded into the chart's own
+ * accessible description rather than riding on the dashed line alone.
+ */
+export const ReferenceLine: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[640px]">
+      <DistributionChart
+        accessibleLabel="First-reply time by queue, against the SLA"
+        data={REPLIES}
+        groupKey="team"
+        kind="box"
+        referenceLines={[{ label: "SLA: 60 min", value: 60 }]}
+        valueFormat="number"
+        valueKey="minutes"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(
+        canvasElement.querySelectorAll('[data-slot="distribution-chart-reference-line"]'),
+      ).toHaveLength(1);
+    });
+    const figure = within(canvasElement).getByRole("figure");
+    expect(figure).toHaveAccessibleDescription(/SLA: 60 min at 60/);
+  },
+};
+
 /** The series-pattern channel (ADR 0011) rendered: `bp-series-*` defs + marks filled from them. */
 function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: number) {
   expect(root.querySelectorAll('pattern[id^="bp-series-"]').length).toBeGreaterThanOrEqual(
