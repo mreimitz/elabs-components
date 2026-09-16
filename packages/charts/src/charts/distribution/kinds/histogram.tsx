@@ -28,9 +28,40 @@ const COUNT_FRACTION = 0.86;
 /** Gap between neighbouring bins, in px, so the bins stay countable as bins. */
 const BIN_GAP = 1;
 
-/** Rung spacing is clamped to this range so a stack is neither a blur nor a comb. */
+/**
+ * Legibility floor for the rung pitch: below this a stack is a blur. It is a
+ * FLOOR only — the pitch is otherwise the count scale's own px-per-`unit`, so
+ * the rungs fill the plot exactly like the bars do (#242).
+ */
 const MIN_RUNG_STEP = 1.6;
-const MAX_RUNG_STEP = 6;
+
+/**
+ * Countability band for the TALLEST stack, in rungs. Fewer and `unit` is too
+ * coarse (a comb that hides the shape); more and it is too fine (a texture, the
+ * ceiling `UnitStack` documents). Both are the caller's `unit`, so both warn
+ * rather than silently re-scaling the mark.
+ */
+const MIN_TALLEST_RUNGS = 3;
+const MAX_TALLEST_RUNGS = 60;
+
+/** Messages already warned about, so a re-rendering chart does not re-log every frame. */
+const warnedRungMessages = new Set<string>();
+
+function warnRungOnce(message: string): void {
+  if (process.env.NODE_ENV === "production") return;
+  if (warnedRungMessages.has(message)) return;
+  warnedRungMessages.add(message);
+  console.warn(message);
+}
+
+/**
+ * How many rungs a bin draws. Nearest whole unit, but a bin holding ANY records
+ * draws at least one rung — an occupied bin must never read as an empty one.
+ */
+export function rungCount(count: number, unit: number): number {
+  if (!(count > 0) || !(unit > 0)) return 0;
+  return Math.max(1, Math.round(count / unit));
+}
 
 export interface DistributionHistogramProps extends DistributionKindProps {
   /** The SHARED bins — identical edges for every group, computed by the container. */
@@ -56,11 +87,22 @@ function DistributionHistogramImpl({
   const base = geometry.baseline(group.index);
   const room = geometry.bandInner * COUNT_FRACTION;
   const scaleCount = (count: number) => (countMax > 0 ? (count / countMax) * room : 0);
-  const rungTotal = unit && unit > 0 ? Math.max(1, Math.ceil(countMax / unit)) : 0;
-  const rungStep =
-    rungTotal > 0
-      ? Math.min(MAX_RUNG_STEP, Math.max(MIN_RUNG_STEP, room / rungTotal))
-      : MIN_RUNG_STEP;
+  const rungs = unit !== undefined && unit > 0;
+  // The rung pitch IS the count scale: one rung is `unit` records on the same
+  // px-per-record scale the bars use, so a stack grows with the plot (#242).
+  const rungStep = rungs ? Math.max(MIN_RUNG_STEP, scaleCount(unit)) : MIN_RUNG_STEP;
+  if (rungs) {
+    const tallest = rungCount(countMax, unit);
+    if (tallest > 0 && tallest < MIN_TALLEST_RUNGS) {
+      warnRungOnce(
+        `[DistributionChart] unit=${unit} draws the tallest bin as ${tallest} rung(s) — too coarse to count. Use a smaller unit.`,
+      );
+    } else if (tallest > MAX_TALLEST_RUNGS) {
+      warnRungOnce(
+        `[DistributionChart] unit=${unit} draws the tallest bin as ${tallest} rungs — too many to count. Use a larger unit, or omit unit for bars.`,
+      );
+    }
+  }
 
   return (
     <g data-slot="distribution-chart-histogram">
@@ -92,19 +134,22 @@ function DistributionHistogramImpl({
               x={horizontal ? lo : base}
               y={horizontal ? base - geometry.bandInner : lo}
             />
-            {unit && unit > 0 ? (
+            {rungs ? (
+              // Offset by one pitch: rung `i` sits at `(i + 1) × step`, so the
+              // top rung lands where the bar would end and a one-rung bin is
+              // drawn ABOVE the baseline, not on it.
               <UnitStack
                 direction={horizontal ? "up" : "right"}
                 jitter
                 kind="rung"
                 length={thickness}
-                n={Math.round(bin.count / unit)}
+                n={rungCount(bin.count, unit)}
                 seed={group.index * 31 + binIndex}
                 step={rungStep}
                 stroke={color}
                 strokeWidth={1.25}
-                x={horizontal ? centre : base}
-                y={horizontal ? base : centre}
+                x={horizontal ? centre : base + rungStep}
+                y={horizontal ? base - rungStep : centre}
               />
             ) : (
               <rect

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T22:35:08.377Z",
+  "generatedAt": "2026-09-16T08:01:58.005Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17433,6 +17433,12 @@
               "optional": true,
               "type": "number",
               "description": "Histogram only: records per rung. Set it to draw each bin as COUNTABLE rungs (`F14`) instead of a bar — the number is the legend (\"one rung = 5 tickets\"), which is why it is a count and not a boolean."
+            },
+            {
+              "name": "unitLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Histogram with `unit` only: the legend that makes the rungs decodable — \"one rung = 5 tickets\". Rendered as a caption under the plot and folded into the accessible description. Ignored without `unit`."
             },
             {
               "name": "palette",

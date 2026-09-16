@@ -136,6 +136,12 @@ export interface DistributionChartProps extends ChartInteractionProps, ChartA11y
    */
   unit?: number;
   /**
+   * Histogram with `unit` only: the legend that makes the rungs decodable —
+   * "one rung = 5 tickets". Rendered as a caption under the plot and folded
+   * into the accessible description. Ignored without `unit`.
+   */
+  unitLabel?: string;
+  /**
    * Colour family. With `"sequential"`, a box/violin's shade is its MEDIAN RANK
    * — the darkest group has the highest median — so the ordering is carried by
    * the fill as well as by position.
@@ -179,6 +185,7 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       showOutliers = true,
       style,
       unit,
+      unitLabel,
       valueFormat,
       valueKey,
     },
@@ -257,7 +264,9 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
     }, [groups, kind, palette]);
 
     const summary = useMemo(() => describeDistribution(groups, formatValue), [formatValue, groups]);
-    const description = accessibleDescription ?? (summary || undefined);
+    const caption = kind === "histogram" && unit !== undefined && unit > 0 ? unitLabel : undefined;
+    const description =
+      accessibleDescription ?? ((caption ? `${caption}. ${summary}` : summary) || undefined);
 
     const a11y = useChartA11yContainerProps(accessibleLabel, description);
 
@@ -277,7 +286,7 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       <div
         aria-describedby={a11y["aria-describedby"]}
         aria-label={a11y["aria-label"]}
-        className={cn("relative h-full w-full", className)}
+        className={cn("relative flex h-full w-full flex-col", className)}
         data-slot="distribution-chart"
         ref={mergedRef}
         role={a11y.role}
@@ -285,7 +294,7 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
         tabIndex={a11y.tabIndex}
       >
         <ChartA11yLabel descId={a11y.descId} description={description} />
-        <ParentSize debounceTime={10}>
+        <ParentSize className="min-h-0 flex-1" debounceTime={10}>
           {({ width, height }) => (
             <DistributionChartInner
               bandwidth={bandwidth}
@@ -306,6 +315,14 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
             />
           )}
         </ParentSize>
+        {caption ? (
+          <p
+            className="text-chart-label text-caption mt-1 shrink-0 text-center"
+            data-slot="distribution-chart-unit-label"
+          >
+            {caption}
+          </p>
+        ) : null}
         {/* The keyboard targets: real buttons, OUTSIDE the aria-hidden svg. */}
         <ChartDatapointLayer />
       </div>
