@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T21:15:01.750Z",
+  "generatedAt": "2026-09-16T22:20:41.448Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22401,6 +22401,11 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
             },
             {
+              "name": "DASHBOARD_URL_STATE_MAX_LENGTH",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/url.ts"
+            },
+            {
               "name": "DashboardAssetPanel",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/dashboard-asset-panel.tsx"
@@ -22601,6 +22606,11 @@
               "name": "useDashboardShortcuts",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
+            },
+            {
+              "name": "useDashboardUrlState",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard-url-state.ts"
             },
             {
               "name": "useHover",
@@ -22858,6 +22868,10 @@
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
             {
+              "name": "DecodedState",
+              "module": "packages/charts/src/dashboard/core/url.ts"
+            },
+            {
               "name": "DistributeAxis",
               "module": "packages/charts/src/dashboard/edit/align.ts"
             },
@@ -22868,6 +22882,10 @@
             {
               "name": "EditMessages",
               "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
+              "name": "EncodeDashboardStateInput",
+              "module": "packages/charts/src/dashboard/core/url.ts"
             },
             {
               "name": "FieldSelection",
@@ -23008,6 +23026,14 @@
             {
               "name": "UseDashboardShortcutsOptions",
               "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
+            },
+            {
+              "name": "UseDashboardUrlStateOptions",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard-url-state.ts"
+            },
+            {
+              "name": "UseDashboardUrlStateResult",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard-url-state.ts"
             },
             {
               "name": "VariableTileContent",
@@ -23152,6 +23178,10 @@
               "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
             },
             {
+              "name": "decodeDashboardState",
+              "module": "packages/charts/src/dashboard/core/url.ts"
+            },
+            {
               "name": "distributeTiles",
               "module": "packages/charts/src/dashboard/edit/align.ts"
             },
@@ -23166,6 +23196,10 @@
             {
               "name": "editStrategy",
               "module": "packages/charts/src/dashboard/edit/geometry.ts"
+            },
+            {
+              "name": "encodeDashboardState",
+              "module": "packages/charts/src/dashboard/core/url.ts"
             },
             {
               "name": "extendRows",
