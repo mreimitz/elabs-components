@@ -219,4 +219,94 @@ describe("TreemapChart", () => {
     expect(container.textContent ?? "").toContain("3 categories");
     spy.mockRestore();
   });
+
+  describe("showValues (#247)", () => {
+    const mockBox = (width: number, height: number) =>
+      vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+        bottom: height,
+        height,
+        left: 0,
+        right: width,
+        toJSON: () => ({}),
+        top: 0,
+        width,
+        x: 0,
+        y: 0,
+      } as DOMRect);
+
+    const twoTiles: TreemapNode = {
+      name: "Spend",
+      children: [
+        { name: "Cloud", value: 1500 },
+        { name: "Tools", value: 400 },
+      ],
+    };
+
+    const valueTexts = (container: HTMLElement) =>
+      Array.from(
+        container.querySelectorAll('[data-slot="treemap-leaf-value"]'),
+        (el) => el.textContent ?? "",
+      );
+
+    it("prints no value by default", () => {
+      const spy = mockBox(640, 400);
+      const { container } = render(<TreemapChart data={twoTiles} depth={1} labelMinArea={0} />);
+      spy.mockRestore();
+      expect(container.querySelectorAll('[data-slot="treemap-leaf-label"]').length).toBe(2);
+      expect(valueTexts(container)).toEqual([]);
+    });
+
+    it("prints each labelled tile's value under its name, in one notation for the set", () => {
+      const spy = mockBox(640, 400);
+      const { container } = render(
+        <TreemapChart data={twoTiles} depth={1} labelMinArea={0} showValues />,
+      );
+      spy.mockRestore();
+      // 400 would not compact on its own, so neither does 1500 — never "1.5K" beside "400".
+      expect(valueTexts(container)).toEqual(["1,500", "400"]);
+      const name = container.querySelector('[data-slot="treemap-leaf-label"]') as SVGTextElement;
+      const value = container.querySelector('[data-slot="treemap-leaf-value"]') as SVGTextElement;
+      expect(Number(value.getAttribute("y"))).toBeGreaterThan(Number(name.getAttribute("y")));
+    });
+
+    it("compacts the whole set when every value would compact", () => {
+      const spy = mockBox(640, 400);
+      const { container } = render(
+        <TreemapChart
+          data={{
+            name: "Spend",
+            children: [
+              { name: "Cloud", value: 15000 },
+              { name: "Tools", value: 4000 },
+            ],
+          }}
+          depth={1}
+          labelMinArea={0}
+          showValues
+        />,
+      );
+      spy.mockRestore();
+      expect(valueTexts(container)).toEqual(["15K", "4K"]);
+    });
+
+    it("a tile too short for two lines keeps its name and drops the value", () => {
+      const spy = mockBox(640, 30);
+      const { container } = render(
+        <TreemapChart data={twoTiles} depth={1} labelMinArea={0} showValues />,
+      );
+      spy.mockRestore();
+      expect(container.querySelectorAll('[data-slot="treemap-leaf-label"]').length).toBe(2);
+      expect(valueTexts(container)).toEqual([]);
+    });
+
+    it("never prints a value on a tile whose name is hidden", () => {
+      const spy = mockBox(640, 400);
+      const { container } = render(
+        <TreemapChart data={twoTiles} depth={1} labelMinArea={10_000_000} showValues />,
+      );
+      spy.mockRestore();
+      expect(container.querySelector('[data-slot="treemap-leaf-label"]')).toBeNull();
+      expect(valueTexts(container)).toEqual([]);
+    });
+  });
 });

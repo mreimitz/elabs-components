@@ -24,7 +24,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "../chart-datapoint-layer";
-import { useChartValueFormatter } from "../chart-formatters";
+import { useChartValueFormatter, useChartValueSetFormatter } from "../chart-formatters";
 import type { ChartValueFormat } from "../value-format";
 import { CATEGORY_AXIS_ELLIPSIS, ellipsize } from "../category-axis-plan";
 import { useTextMeasurerOf } from "../use-text-measurer";
@@ -49,6 +49,13 @@ const MIN_LABEL_WIDTH = 32;
 const MIN_LABEL_HEIGHT = 16;
 const DEFAULT_LABEL_MIN_AREA = 1200;
 const LABEL_PADDING_X = 6;
+/** A tile printing its value (`showValues`) stacks two lines, so it needs
+ * roughly twice the name's height before the second line is drawn. */
+const MIN_VALUE_LABEL_HEIGHT = 36;
+/** Half the vertical distance between the name line and the value line. */
+const VALUE_LINE_OFFSET = 8;
+/** So `showValues={false}` never re-resolves a set formatter per render. */
+const NO_VALUES: readonly number[] = [];
 
 export interface TreemapChartProps extends ChartInteractionProps {
   /** The hierarchy. A leaf needs a `value`; a parent's explicit `value` (if any)
@@ -79,7 +86,16 @@ export interface TreemapChartProps extends ChartInteractionProps {
    * handler beyond `onDatapointClick`.
    */
   drilldown?: boolean;
-  /** How leaf values render in the tooltip. Default `"compact"`. */
+  /**
+   * Print each labelled tile's formatted value on a second line under its
+   * name (#247). A tile shows the value only when its name is drawn AND it is
+   * tall enough for two lines and wide enough for the whole number — a value
+   * is never ellipsised or shrunk, it is either legible or absent. All visible
+   * values share ONE notation (the set is formatted together). Default
+   * `false` — area stays the only printed quantity unless you opt in.
+   */
+  showValues?: boolean;
+  /** How leaf values render in the tooltip and (with `showValues`) on tiles. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
   className?: string;
   style?: CSSProperties;
@@ -123,6 +139,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     labelMinArea = DEFAULT_LABEL_MIN_AREA,
     otherThreshold = 0,
     drilldown = false,
+    showValues = false,
     valueFormat = "compact",
     className,
     style,
@@ -261,6 +278,13 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const formatValue = useChartValueFormatter(valueFormat);
   const formatShare = useChartValueFormatter("percent");
+  // One scale, one notation (#250): tile values are a SET, so compaction is
+  // decided across every leaf on screen, never per tile ("1K" beside "400").
+  const leafValues = useMemo(
+    () => (showValues ? activeLayout.leaves.map((leaf) => leaf.value) : NO_VALUES),
+    [showValues, activeLayout.leaves],
+  );
+  const formatTileValue = useChartValueSetFormatter(leafValues, valueFormat);
 
   const handleLeafEnter = useCallback((leaf: TreemapLeafDatum, event: React.MouseEvent) => {
     const point = localPoint(event);
@@ -306,6 +330,9 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   // character fits.
   const { measure: measureLeafLabel } = useTextMeasurerOf(internalRef, {
     className: "text-chart-value",
+  });
+  const { measure: measureValueLabel } = useTextMeasurerOf(internalRef, {
+    className: "text-chart-source tabular-nums",
   });
   const { measure: measureGroupLabel } = useTextMeasurerOf(internalRef, {
     className: "text-chart-source uppercase",
@@ -390,6 +417,15 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                 box.height >= MIN_LABEL_HEIGHT
                   ? fitLabel(leaf.name, box.width, measureLeafLabel)
                   : null;
+              let valueLabel: string | null = null;
+              if (showValues && leafLabel !== null && box.height >= MIN_VALUE_LABEL_HEIGHT) {
+                const text = formatTileValue(leaf.value);
+                // A number is never ellipsised — it fits whole or is omitted.
+                if (measureValueLabel(text) <= box.width - LABEL_PADDING_X * 2) {
+                  valueLabel = text;
+                }
+              }
+              const labelCenterY = box.y + box.height / 2;
               const isActive = datapointsEnabled;
               return (
                 <g data-slot="treemap-leaf" key={leaf.id}>
@@ -421,9 +457,21 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                       dominantBaseline="middle"
                       textAnchor="start"
                       x={box.x + LABEL_PADDING_X}
-                      y={box.y + box.height / 2}
+                      y={valueLabel !== null ? labelCenterY - VALUE_LINE_OFFSET : labelCenterY}
                     >
                       {leafLabel}
+                    </HaloText>
+                  )}
+                  {valueLabel !== null && (
+                    <HaloText
+                      className="text-chart-source tabular-nums"
+                      data-slot="treemap-leaf-value"
+                      dominantBaseline="middle"
+                      textAnchor="start"
+                      x={box.x + LABEL_PADDING_X}
+                      y={labelCenterY + VALUE_LINE_OFFSET}
+                    >
+                      {valueLabel}
                     </HaloText>
                   )}
                 </g>
