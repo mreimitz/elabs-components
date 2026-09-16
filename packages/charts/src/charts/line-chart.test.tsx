@@ -16,8 +16,8 @@
  * test-storybook`.
  */
 
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders.
@@ -87,6 +87,76 @@ describe("LineChart", () => {
     );
     expect(ref.current).not.toBeNull();
     expect(ref.current?.tagName).toBe("DIV");
+  });
+});
+
+/**
+ * #175 — `revealOn`/`replayOnClick` forward from `LineChart`'s public props
+ * through `time-series-chart-shell.tsx` into `ChartRevealClip`. Uses the same
+ * fake `IntersectionObserver` pattern as `chart-reveal-clip.test.tsx` (jsdom
+ * has no real one) rather than real scroll geometry.
+ */
+describe("LineChart revealOn (#175)", () => {
+  class FakeIntersectionObserver implements IntersectionObserver {
+    static instances: FakeIntersectionObserver[] = [];
+    readonly root: Element | Document | null = null;
+    readonly rootMargin: string = "";
+    readonly thresholds: ReadonlyArray<number> = [];
+    observedTargets: Element[] = [];
+    constructor(public callback: IntersectionObserverCallback) {
+      FakeIntersectionObserver.instances.push(this);
+    }
+    observe(target: Element) {
+      this.observedTargets.push(target);
+    }
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+    fireIntersecting() {
+      const target = this.observedTargets[0];
+      this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this);
+    }
+  }
+
+  let originalIO: typeof IntersectionObserver | undefined;
+
+  beforeEach(() => {
+    FakeIntersectionObserver.instances = [];
+    originalIO = globalThis.IntersectionObserver;
+    globalThis.IntersectionObserver = FakeIntersectionObserver;
+  });
+
+  afterEach(() => {
+    globalThis.IntersectionObserver = originalIO as typeof IntersectionObserver;
+  });
+
+  it('default ("mount") never constructs an IntersectionObserver — byte-identical to before #175', () => {
+    render(<LineChart data={chartData}>{null}</LineChart>);
+    expect(FakeIntersectionObserver.instances).toHaveLength(0);
+  });
+
+  it('<LineChart revealOn="inView" /> holds its reveal (clip width 0) until scrolled into view', () => {
+    const { container } = render(
+      <LineChart data={chartData} revealOn="inView">
+        {null}
+      </LineChart>,
+    );
+
+    // Held: the clip-path rect starts at width 0, not the target width.
+    const clipRect = container.querySelector("clipPath rect");
+    expect(clipRect).not.toBeNull();
+    expect(clipRect?.getAttribute("width")).toBe("0");
+
+    // Scrolling the chart's own container into view releases the hold.
+    expect(FakeIntersectionObserver.instances).toHaveLength(1);
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.fireIntersecting();
+    });
+
+    const releasedRect = container.querySelector("clipPath rect");
+    expect(releasedRect?.getAttribute("width")).not.toBe("0");
   });
 });
 

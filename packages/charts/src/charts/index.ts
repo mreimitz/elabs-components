@@ -117,7 +117,11 @@ export {
   isChartInteractionPhase,
   resolveRestingChartPhase,
 } from "./chart-phase";
-export { ChartRevealClip, type ChartRevealClipProps } from "./chart-reveal-clip";
+export {
+  ChartRevealClip,
+  type ChartRevealClipProps,
+  type ChartRevealOn,
+} from "./chart-reveal-clip";
 export {
   ChartStatFlow,
   type ChartStatFlowFormat,

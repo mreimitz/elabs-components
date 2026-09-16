@@ -138,6 +138,16 @@ never swallow a datapoint's own click handling (`shouldReplayOnClick`). See
 `Charts/Reveal/InView` in Storybook and
 `packages/charts/src/charts/chart-reveal-clip.tsx`.
 
+**Reaches `LineChart` and `AreaChart`'s public props (#175); `BarChart` not
+yet.** `<LineChart revealOn="inView" replayOnClick />` and the `AreaChart`
+equivalent hold the chart's own reveal (gated on the chart's own container)
+and typecheck — `time-series-chart-shell.tsx` forwards both straight into
+`ChartRevealClip`. `BarChart` does not use `ChartRevealClip` at all (its bars
+tween in on their own `revealEpoch`, not a shared clip-path reveal), so it has
+no in-view hold today; giving it one is a separate, uniform-API decision
+(route it through `brand-ui-design-system-architect` rather than adding the
+props ad hoc to one more container) — see #175.
+
 **`ChartRevealClip` neutralizes ITSELF under reduced motion — the consumer is
 not on the hook for it (#177).** It calls `useReducedMotion()` like every other
 motion primitive in `@elabs-ai/components-charts` (`DrawPath`, `Gauge`,

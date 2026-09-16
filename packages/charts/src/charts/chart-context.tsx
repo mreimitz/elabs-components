@@ -333,13 +333,14 @@ export interface ChartContextValue extends ChartHoverContextValue {
   /** Increments when enter animation should replay. */
   revealEpoch?: number;
   /**
-   * When the enter reveal is allowed to play (RM-020). `"mount"` (default,
-   * unset behaves the same) plays as soon as the chart renders — no change
-   * from today. `"inView"` defers the first reveal until the chart scrolls
-   * into the viewport; see `ChartRevealClip`'s `revealOn`/`viewportRef`
-   * props, which are the part of this that is wired up today. Published here
-   * so a future per-series consumer (`Bar`, `Line`, …) can read the same
-   * decision from context instead of threading another prop.
+   * When the enter reveal is allowed to play (RM-020, forwarded on `LineChart`/
+   * `AreaChart`'s public props since #175). `"mount"` (default, unset behaves
+   * the same) plays as soon as the chart renders — no change from today.
+   * `"inView"` defers the first reveal until the chart scrolls into the
+   * viewport; see `ChartRevealClip`'s `revealOn`/`viewportRef` props, which
+   * `time-series-chart-shell.tsx` wires this through to. Published here so a
+   * future per-series consumer (`Bar`, `Line`, …) can read the same decision
+   * from context instead of threading another prop.
    */
   revealOn?: ChartRevealOn;
   /**

@@ -27,6 +27,7 @@ import {
   DEFAULT_Y_DOMAIN_TWEEN_MS,
   resolveRestingChartPhase,
 } from "./chart-phase";
+import type { ChartRevealOn } from "./chart-reveal-clip";
 import { PatternArea } from "./pattern-area";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
@@ -61,6 +62,14 @@ export interface AreaChartProps {
   enterTransition?: Transition;
   /** Signature of motion URL state — triggers reveal replay when it changes. */
   revealSignature?: string;
+  /**
+   * When the enter reveal is allowed to play (#175). `"mount"` (default) plays
+   * as soon as the chart renders — no change from today. `"inView"` holds the
+   * reveal at width 0 until this chart's own container scrolls to 30% visible.
+   */
+  revealOn?: ChartRevealOn;
+  /** Clicking the chart body replays the enter reveal (#175). Default `false`. */
+  replayOnClick?: boolean;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
   /** Additional class name for the container */
@@ -177,6 +186,8 @@ interface ChartInnerProps {
   animationEasing?: string;
   enterTransition?: Transition;
   revealSignature?: string;
+  revealOn?: ChartRevealOn;
+  replayOnClick?: boolean;
   chartStatus: ChartStatus;
   loadingLabel?: string;
   yDomainTweenDuration: number;
@@ -216,6 +227,8 @@ function ChartInner({
   animationEasing,
   enterTransition,
   revealSignature,
+  revealOn,
+  replayOnClick,
   chartStatus,
   loadingLabel,
   yDomainTweenDuration,
@@ -259,6 +272,8 @@ function ChartInner({
         loadingLabel={loadingLabel}
         margin={margin}
         onPhaseChange={onPhaseChange}
+        replayOnClick={replayOnClick}
+        revealOn={revealOn}
         revealSignature={revealSignature}
         tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
         width={width}
@@ -308,6 +323,8 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
     animationEasing,
     enterTransition,
     revealSignature,
+    revealOn,
+    replayOnClick,
     aspectRatio = "2 / 1",
     className = "",
     status = DEFAULT_CHART_STATUS,
@@ -404,6 +421,8 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
             offset={offset}
             onDatapointClick={onDatapointClick}
             onPhaseChange={handlePhaseChange}
+            replayOnClick={replayOnClick}
+            revealOn={revealOn}
             revealSignature={revealSignature}
             seams={seams}
             tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}

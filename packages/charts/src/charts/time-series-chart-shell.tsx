@@ -36,7 +36,7 @@ import {
   DEFAULT_Y_DOMAIN_TWEEN_MS,
   isChartInteractionPhase,
 } from "./chart-phase";
-import { ChartRevealClip } from "./chart-reveal-clip";
+import { type ChartRevealOn, ChartRevealClip } from "./chart-reveal-clip";
 import { isInvalidDate } from "./chart-x-value-utils";
 import { decimateTimeSeries, maxRenderPointsForWidth } from "./decimate-time-series";
 import { filterDataByXDomain } from "./filter-data-by-x-domain";
@@ -199,6 +199,16 @@ export interface TimeSeriesChartInnerProps {
   /** Tween y-domain when the visible x-range changes during the ready phase. */
   tweenYDomainOnXDomainChange?: boolean;
   onPhaseChange?: (phase: ChartPhase) => void;
+  /**
+   * When the enter reveal is allowed to play (#175, RM-020's public-API
+   * follow-up). `"mount"` (default) is byte-identical to pre-#175 behaviour.
+   * `"inView"` holds the clip-reveal at width 0 until this chart's own
+   * container scrolls to `amount: 0.3` in the viewport — see
+   * `ChartRevealClip`'s `revealOn`.
+   */
+  revealOn?: ChartRevealOn;
+  /** Clicking the chart body replays the enter reveal (#175). Default `false`. */
+  replayOnClick?: boolean;
 }
 
 export function TimeSeriesChartInner(props: TimeSeriesChartInnerProps) {
@@ -240,6 +250,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   xDomainSlotCount,
   tweenYDomainOnXDomainChange = false,
   onPhaseChange,
+  revealOn = "mount",
+  replayOnClick = false,
 }: TimeSeriesChartInnerProps) {
   const staticPreview = useStaticChartPreview();
   const innerWidth = width - margin.left - margin.right;
@@ -629,6 +641,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       animationEasing,
       enterTransition,
       revealEpoch,
+      revealOn,
+      replayOnClick,
       notifyLoadingPulseComplete,
       xAccessor,
       xScaleType: xScaleResolution.type,
@@ -672,6 +686,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       animationEasing,
       enterTransition,
       revealEpoch,
+      revealOn,
+      replayOnClick,
       notifyLoadingPulseComplete,
       xAccessor,
       xScaleResolution.type,
@@ -765,8 +781,20 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
             mode={isRevealConcealing ? "conceal" : "reveal"}
             onComplete={isRevealConcealing ? notifyRevealConcealComplete : undefined}
             padding={revealClipPadding}
+            replayOnClick={replayOnClick}
             revealEpoch={isRevealConcealing ? concealEpoch : revealEpoch}
+            revealOn={revealOn}
             targetWidth={innerWidth}
+            // Only hand `ChartRevealClip` a real element to observe when a
+            // caller actually opted into `revealOn="inView"` or
+            // `replayOnClick` (#175) — `useInView` starts observing as soon
+            // as `viewportRef.current` is non-null, regardless of `revealOn`,
+            // so passing it unconditionally would mount an
+            // `IntersectionObserver` for every default `"mount"` chart (a
+            // real behaviour change, and undefined in environments — like
+            // this package's own jsdom unit tests — with no
+            // `IntersectionObserver` polyfill).
+            viewportRef={revealOn === "inView" || replayOnClick ? containerRef : undefined}
           />
         ) : null}
       </defs>
