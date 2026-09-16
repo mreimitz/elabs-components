@@ -24,8 +24,8 @@
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveMonotoneX, curveNatural } from "@visx/curve";
+import { expect, waitFor } from "storybook/test";
 import { feature } from "topojson-client";
-import type { Topology } from "topojson-specification";
 import type { FeatureCollection, Geometry } from "geojson";
 // Vite/Storybook resolve JSON imports natively.
 import worldAtlas from "world-atlas/countries-110m.json";
@@ -111,7 +111,45 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-function story(name: string, alternatives: string, node: React.ReactNode): Story {
+interface StoryOptions {
+  /**
+   * Whether the chart must expose a named region (`role="figure"|"img"|"group"`
+   * with an `aria-label`). Default true. Only `Gauge` opts out, and only until it
+   * gains the `accessibleLabel` prop every other container already has (#290).
+   */
+  expectNamedRegion?: boolean;
+  /** Per-story assertions, run after the shared ones. */
+  assert?: (canvasElement: HTMLElement) => Promise<void>;
+}
+
+/** The first sentence of a guidance string — the recommendation, before the alternatives. */
+function recommendationOf(alternatives: string): string {
+  const [first] = alternatives.split(/(?<=\.)\s+(?=Alternative|There is)/);
+  return (first ?? alternatives)
+    .replaceAll("**", "")
+    .replaceAll("`", "")
+    .replace(/(\w)'(\w)/g, "$1’$2");
+}
+
+/**
+ * One index entry. The guidance lives in two places on purpose (#305): the full
+ * form (recommendation + alternatives) in the docs description, and the short
+ * form (the recommendation sentence, container name first) as a caption on the
+ * story canvas — the canvas is what a story ID, `preview-stories` and a test
+ * address, so it must answer "which container?" on its own. The caption sits
+ * BELOW the sized chart box, never inside it, so no chart loses height.
+ */
+function story(
+  name: string,
+  alternatives: string,
+  node: React.ReactNode,
+  { expectNamedRegion = true, assert }: StoryOptions = {},
+): Story {
+  const container = /^\*\*(\w+)\*\*/.exec(alternatives)?.[1];
+  if (!container) {
+    throw new Error(`by-data-shape: "${name}" guidance must start with **Container**.`);
+  }
+  const recommendation = recommendationOf(alternatives);
   return {
     name,
     parameters: {
@@ -121,7 +159,31 @@ function story(name: string, alternatives: string, node: React.ReactNode): Story
         },
       },
     },
-    render: () => node,
+    render: () => (
+      <figure className="flex flex-col gap-2">
+        {node}
+        <figcaption className="text-caption text-muted-foreground">
+          <strong className="text-foreground">{container}</strong>
+          {recommendation.slice(container.length)}
+        </figcaption>
+      </figure>
+    ),
+    play: async ({ canvasElement }) => {
+      // #305 — the canvas names its recommended container as rendered text.
+      await expect(canvasElement.querySelector("figcaption")).toHaveTextContent(container);
+      // #290 — every entry exposes a named chart region to assistive tech.
+      if (expectNamedRegion) {
+        await waitFor(() => {
+          const named = Array.from(
+            canvasElement.querySelectorAll<HTMLElement>(
+              '[role="figure"],[role="img"],[role="group"]',
+            ),
+          ).filter((el) => (el.getAttribute("aria-label") ?? "").trim().length > 0);
+          expect(named.length).toBeGreaterThan(0);
+        });
+      }
+      await assert?.(canvasElement);
+    },
   };
 }
 
@@ -141,7 +203,11 @@ export const FewCategoriesCompare: Story = story(
     'layout="row" when the unit itself carries meaning ("one rung = $1k"); `RadarChart` ' +
     "when comparing 3+ dimensions per category rather than one value.",
   <div className="h-72 w-[560px]">
-    <BarChart data={monthlyRevenue} xDataKey="month">
+    <BarChart
+      accessibleLabel="Monthly revenue and profit, January to June"
+      data={monthlyRevenue}
+      xDataKey="month"
+    >
       <Grid horizontal />
       <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />
       <Bar dataKey="profit" fill="var(--chart-2)" lineCap="round" />
@@ -187,6 +253,7 @@ export const TwoTimePointsPerCategory: Story = story(
     "when there are 3+ time points, not 2.",
   <div className="h-80 w-[640px]">
     <DumbbellChart
+      accessibleLabel="Onboarding step completion, before and after"
       beads={{ unit: 4 }}
       category="step"
       data={onboardingSteps}
@@ -213,7 +280,11 @@ export const DailySeriesOverTime: Story = story(
     "cumulative volume under the line matters as much as its shape; `LiveLineChart` once " +
     "the series is arriving in real time rather than settled.",
   <div className="h-72 w-[560px]">
-    <LineChart aspectRatio={undefined} data={dailyUsers}>
+    <LineChart
+      accessibleLabel="Users per month, January to June"
+      aspectRatio={undefined}
+      data={dailyUsers}
+    >
       <Grid horizontal />
       <Line curve={curveNatural} dataKey="users" stroke="var(--chart-1)" />
       <XAxis />
@@ -238,7 +309,12 @@ export const CompositionOverContinuousTime: Story = story(
     'variant="calendar" when the composition is per-day counts across a whole year rather ' +
     "than a handful of stacked series.",
   <div className="h-72 w-[560px]">
-    <AreaChart animationDuration={0} aspectRatio={undefined} data={deviceSplit}>
+    <AreaChart
+      accessibleLabel="Desktop and mobile visits, January to June"
+      animationDuration={0}
+      aspectRatio={undefined}
+      data={deviceSplit}
+    >
       <Grid horizontal />
       <Area curve={curveNatural} dataKey="desktop" fill="var(--chart-1)" fillOpacity={0.35} />
       <Area curve={curveNatural} dataKey="mobile" fill="var(--chart-2)" fillOpacity={0.35} />
@@ -262,7 +338,12 @@ export const RealTimeSeries: Story = story(
     "as new points arrive. Alternative: plain `LineChart` once the stream has settled into " +
     "static, already-collected data.",
   <div className="h-72 w-[560px]">
-    <LiveLineChart data={liveSample} value={liveLatest} window={30}>
+    <LiveLineChart
+      accessibleLabel="Live metric, last 30 seconds"
+      data={liveSample}
+      value={liveLatest}
+      window={30}
+    >
       <LiveLine curve={curveMonotoneX} dataKey="value" />
       <LiveXAxis />
       <LiveYAxis />
@@ -287,7 +368,10 @@ export const TwoLinkedSeries: Story = story(
     "time scale. Alternative: two stacked `LineChart`s when the series live on genuinely " +
     "different scales and should not share one y-axis.",
   <div className="h-72 w-[560px]">
-    <ComposedChart data={revenueRunRate}>
+    <ComposedChart
+      accessibleLabel="Monthly revenue bars against the run-rate line"
+      data={revenueRunRate}
+    >
       <Grid horizontal />
       <SeriesBar dataKey="revenue" fill="var(--chart-1)" />
       <Area curve={curveNatural} dataKey="runRate" fill="var(--chart-4)" fillOpacity={0.35} />
@@ -324,7 +408,13 @@ export const RankOverTime: Story = story(
     "crossovers read as literal crossing lines. There is no supported alternative for this " +
     "shape; a bar-race animation was explicitly declined (see the gap-analysis §3).",
   <div className="h-72 w-[560px]">
-    <BumpChart data={quarterlyShare} entity="product" period="quarter" valueKey="share" />
+    <BumpChart
+      accessibleLabel="Product rank by market share, Q1 to Q4"
+      data={quarterlyShare}
+      entity="product"
+      period="quarter"
+      valueKey="share"
+    />
   </div>,
 );
 
@@ -377,6 +467,9 @@ export const SingleValueProgress: Story = story(
   <div className="h-56 w-[360px]">
     <Gauge centerValue={62} defaultLabel="Score" suffix="%" value={62} />
   </div>,
+  // Gauge has no `accessibleLabel` prop yet (#290) — flip this to the default and
+  // pass accessibleLabel="Score, 62 percent of target" once it does.
+  { expectNamedRegion: false },
 );
 
 // ── 2-D scatter, few points ──────────────────────────────────────────────────
@@ -394,7 +487,10 @@ export const TwoDScatterFewPoints: Story = story(
   "**ScatterChart** is the recommended container. Alternative: `DistributionChart " +
     'kind="strip"` when the y-axis is categorical rather than a second numeric measure.',
   <div className="h-72 w-[560px]">
-    <ScatterChart data={sessionConversions}>
+    <ScatterChart
+      accessibleLabel="Monthly sessions and conversions, January to June"
+      data={sessionConversions}
+    >
       <Grid horizontal />
       <Scatter dataKey="sessions" />
       <Scatter dataKey="conversions" />
@@ -543,7 +639,10 @@ export const OHLC: Story = story(
   "**CandlestickChart** is the recommended container. There is no supported " +
     "alternative for this exact shape in this package.",
   <div className="h-72 w-[560px] rounded-lg border border-border bg-card p-4">
-    <CandlestickChart data={ohlcData}>
+    <CandlestickChart
+      accessibleLabel="Daily open, high, low and close, 2–9 January"
+      data={ohlcData}
+    >
       <Grid horizontal vertical />
       <Candlestick />
       <XAxis />
@@ -625,7 +724,9 @@ export const NetworkOfRelationships: Story = story(
 );
 
 // ── Region shading ───────────────────────────────────────────────────────────
-const topology = worldAtlas as unknown as Topology;
+// Typed from topojson-client's own signature — `topojson-specification` is not a
+// dependency of this package, so importing its types directly did not resolve (#288).
+const topology = worldAtlas as unknown as Parameters<typeof feature>[0];
 const VALUE_MAP: Record<string, number> = {
   "840": 334, // USA
   "124": 185, // Canada
@@ -659,11 +760,24 @@ export const RegionShading: Story = story(
     "navigable, tokened. There is no supported alternative for map-shaped data in this " +
     "package.",
   <div className="h-72 w-[560px]">
-    <ChoroplethChart aspectRatio="16 / 9" data={worldData}>
+    <ChoroplethChart
+      accessibleLabel="Value by country, six countries shaded"
+      aspectRatio="16 / 9"
+      data={worldData}
+    >
       <ChoroplethFeatureComponent />
       <ChoroplethTooltip />
     </ChoroplethChart>
   </div>,
+  {
+    // #288 lock: the map actually drew. A story with no play resolved before
+    // ParentSize delivered a size, so it passed while the chart threw.
+    assert: async (canvasElement) => {
+      await waitFor(() => {
+        expect(canvasElement.querySelectorAll("svg path").length).toBeGreaterThan(50);
+      });
+    },
+  },
 );
 
 // ── Whole-to-part share, few categories ─────────────────────────────────────
@@ -680,12 +794,20 @@ export const WholeToPartShare: Story = story(
     'variant; `UnitChart layout="waffle"` when the reader should be able to COUNT the share ' +
     "rather than compare angles.",
   <div className="h-72 w-[560px]">
-    <PieChart data={trafficData} size={280}>
+    <PieChart accessibleLabel="Share of visits by traffic source" data={trafficData} size={280}>
       {trafficData.map((item, i) => (
         <PieSlice index={i} key={item.label} />
       ))}
     </PieChart>
   </div>,
+  {
+    // #288 lock: a PieChart with no children renders an empty <svg> and no error.
+    assert: async (canvasElement) => {
+      await waitFor(() => {
+        expect(canvasElement.querySelectorAll("svg path").length).toBeGreaterThan(0);
+      });
+    },
+  },
 );
 
 // ── Progress against a target ───────────────────────────────────────────────
@@ -701,7 +823,11 @@ export const ProgressAgainstTarget: Story = story(
   "**RingChart** is the recommended container for several progress rings at once. " +
     "Alternative: `Gauge` for a single dashboard-style value with milestone markers.",
   <div className="h-72 w-[280px]">
-    <RingChart data={ringData} strokeWidth={14}>
+    <RingChart
+      accessibleLabel="Progress against target by channel"
+      data={ringData}
+      strokeWidth={14}
+    >
       {ringData.map((item, i) => (
         <Ring index={i} key={item.label} />
       ))}
@@ -731,7 +857,13 @@ export const SameEntityFewDimensionsRadial: Story = story(
     "Alternative: `ParallelCoordinatesChart` once dimension count or entity count grows past " +
     "what a closed polygon can read.",
   <div className="h-72 w-[560px]">
-    <RadarChart animate={false} data={radarData} metrics={radarMetrics} size={288}>
+    <RadarChart
+      accessibleLabel="Product A across five dimensions"
+      animate={false}
+      data={radarData}
+      metrics={radarMetrics}
+      size={288}
+    >
       <RadarGrid />
       <RadarAxis />
       <RadarLabels fontSize={11} offset={20} />
@@ -755,7 +887,13 @@ export const FunnelDropoff: Story = story(
   "**FunnelChart** is the recommended container. Alternative: `WaterfallChart` when the " +
     "steps ADD AND SUBTRACT (a bridge) rather than strictly narrow.",
   <div className="h-72 w-[560px]">
-    <FunnelChart data={conversionFunnel} orientation="horizontal" showLabels showValues />
+    <FunnelChart
+      accessibleLabel="Conversion funnel, four stages"
+      data={conversionFunnel}
+      orientation="horizontal"
+      showLabels
+      showValues
+    />
   </div>,
 );
 
