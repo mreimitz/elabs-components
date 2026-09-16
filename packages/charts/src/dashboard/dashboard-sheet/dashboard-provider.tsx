@@ -49,7 +49,22 @@ export interface DashboardProviderProps {
   onAction?: (id: string) => void;
   /** Strings for the sheet chrome; missing keys fall back to English. */
   labels?: Partial<DashboardLabels>;
+  // host pass-through — RM-085: opaque host-supplied values a tile kind may read through
+  // context (`examples/qlik-object-tile` is the one place that does, today) — never
+  // interpreted by the sheet itself (D5: `dashboard/` renders, it does not own a runtime).
+  // A `renderObject` function for a `qlik-object`-shaped tile kind is the motivating case; a
+  // host may put anything here.
+  host?: Record<string, unknown>;
   children: ReactNode;
+}
+
+// host pass-through — RM-085: `DashboardContextValue` (`use-dashboard.ts`) does not yet
+// declare `host` — outside this item's write set (README §Protocol 4: only
+// `dashboard-provider.tsx` is in RM-085's `touches`). Extended locally here, the same
+// documented-gap shape as `SelectionBarDriver`'s `canBack`/`canForward` mirror in
+// `chrome/dashboard-selection-bar.tsx`. A reader needs `host` reads it via this type.
+export interface DashboardContextValueWithHost extends DashboardContextValue {
+  host?: Record<string, unknown>;
 }
 
 const isRegistry = (tiles: DashboardTileKinds | TileRegistry): tiles is TileRegistry =>
@@ -74,6 +89,7 @@ export function DashboardProvider({
   onRefresh,
   onAction,
   labels,
+  host,
   children,
 }: DashboardProviderProps) {
   const callbacks = useRef({ onChange, onSelectionChange, onNavigate, onAction });
@@ -146,7 +162,7 @@ export function DashboardProvider({
   const registry = useMemo(() => (isRegistry(tiles) ? tiles : createTileRegistry(tiles)), [tiles]);
   const mergedLabels = useMemo(() => ({ ...DEFAULT_DASHBOARD_LABELS, ...labels }), [labels]);
 
-  const value = useMemo<DashboardContextValue>(
+  const value = useMemo<DashboardContextValueWithHost>(
     () => ({
       store,
       registry,
@@ -158,8 +174,10 @@ export function DashboardProvider({
           : callbacks.current.onNavigate?.(sheetId),
       onRefresh,
       onAction: (id) => callbacks.current.onAction?.(id),
+      // host pass-through — RM-085
+      host,
     }),
-    [store, registry, mergedLabels, onRefresh],
+    [store, registry, mergedLabels, onRefresh, host],
   );
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;
