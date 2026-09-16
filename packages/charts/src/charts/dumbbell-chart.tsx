@@ -116,6 +116,41 @@ export interface DumbbellChartProps extends ChartInteractionProps {
   /** Show a signed delta label (`HaloText`) at the end marker. Default `false`. */
   showDelta?: boolean;
   /**
+   * Custom formatter for the `showDelta` label — receives the signed delta and
+   * its row, returns the full string (including sign/unit). Unset (default)
+   * keeps today's rendering: a bare `"+"` prefix on non-negative deltas ahead
+   * of `formatValue(delta)`. Use this when a delta needs a unit suffix (e.g.
+   * `"pp"`) or a true minus sign the active `valueFormat`/locale doesn't give.
+   */
+  deltaLabelFormat?: (delta: number, row: DumbbellRow) => string;
+  /**
+   * `variant="slope"` only: label the END of each line with its category name
+   * too (`"{category} {value}"`, matching the START label), not just the bare
+   * value. Default `false` (byte-identical: end label stays value-only).
+   */
+  bothEndsLabeled?: boolean;
+  /**
+   * `variant="slope"` only: custom formatter for the plain VALUE half of each
+   * end's label — receives the raw value and its row, returns just the value
+   * text (the chart still prepends `"{category} "` itself). Unset (default)
+   * keeps `formatValue` (the active `valueFormat`). `Intl` never pads a whole
+   * number, so an exact-integer reading (`92`) needs this to force a fixed
+   * decimal count (`"92.0"`) matching its neighbours' precision.
+   */
+  valueLabelFormat?: (value: number, row: DumbbellRow) => string;
+  /**
+   * `orientation="horizontal"` (dumbbell variant) only: one labelled vertical
+   * reference line at `value` on the shared value scale (e.g. an industry
+   * benchmark). Unset (default) draws nothing.
+   */
+  referenceLine?: { value: number; label: string };
+  /**
+   * `orientation="horizontal"` (dumbbell variant) only: draws light tick
+   * marks + value labels along the bottom of the plot, from the same value
+   * scale. Default `false` (byte-identical: no axis).
+   */
+  showValueAxis?: boolean;
+  /**
    * Sort rows before rendering. `"delta"` sorts **descending by `|delta|`**
    * (magnitude, sign ignored — the biggest mover first, whether it's an
    * increase or a decrease); `"start"`/`"end"` sort **ascending** on the
@@ -124,6 +159,16 @@ export interface DumbbellChartProps extends ChartInteractionProps {
   sortBy?: DumbbellSortBy;
   /** Which colour family rows draw from. Default `"categorical"`. */
   palette?: ChartPalette;
+  /**
+   * Per-row colour override — return a `var(--…)` token to recolour that row's
+   * connector/markers/labels, or `undefined` to keep the row on the resolved
+   * `palette`. The one seam an "argument, not a chart" infographic needs to
+   * emphasise a row or two (a status tone) while the rest stay on the shared
+   * palette — never a second palette, since most rows should read as
+   * unremarkable, not as a competing category. Unset (default) is
+   * byte-identical to today's per-row palette colouring.
+   */
+  rowColor?: (row: DumbbellRow, index: number) => string | undefined;
   /** How displayed numbers (the delta label) are formatted. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
   /** Chart margins. */
@@ -140,9 +185,17 @@ export interface DumbbellChartProps extends ChartInteractionProps {
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const DEFAULT_MARKERS: DumbbellMarkerStyle = { start: "hollow", end: "filled" };
-const HORIZONTAL_MARGIN: Margin = { top: 24, right: 56, bottom: 24, left: 140 };
+// Pre-measurement floors, never below what `deriveDumbbellMargin` grows past
+// for content that actually needs more (#see its own docblock) — sized for a
+// short label ("AB 99"), NOT for the longest label this chart family has ever
+// drawn. A floor bigger than realistic short-label content silently wins over
+// the CAP at narrow container widths (`clampMargin`'s `Math.max(cap, floor)`
+// never shrinks below the floor), squeezing the plot to a sliver in a
+// sidebar-width card even though the true measured content would have fit in
+// far less space (#see the Compact-width fixes these floors are sized for).
+const HORIZONTAL_MARGIN: Margin = { top: 24, right: 56, bottom: 24, left: 72 };
 const VERTICAL_MARGIN: Margin = { top: 24, right: 32, bottom: 40, left: 40 };
-const SLOPE_MARGIN: Margin = { top: 24, right: 120, bottom: 24, left: 120 };
+const SLOPE_MARGIN: Margin = { top: 24, right: 72, bottom: 24, left: 72 };
 
 const MARKER_RADIUS = 5;
 const HOLLOW_MARKER_STROKE = 2;
@@ -296,6 +349,10 @@ export interface DeriveDumbbellMarginInput {
   width: number;
   measure: (text: string) => number;
   formatValue: (value: number) => string;
+  /** Grows the slope right margin to hold `"{category} {value}"` instead of the bare value. */
+  bothEndsLabeled?: boolean;
+  /** Mirrors `DumbbellChartProps.valueLabelFormat` — used instead of `formatValue` for slope labels when set. */
+  valueLabelFormat?: (value: number, row: DumbbellRow) => string;
 }
 
 /**
@@ -319,11 +376,18 @@ export function deriveDumbbellMargin({
   width,
   measure,
   formatValue,
+  bothEndsLabeled = false,
+  valueLabelFormat,
 }: DeriveDumbbellMarginInput): Margin {
   const cap = width > 0 ? width * MAX_MARGIN_FRACTION : Number.POSITIVE_INFINITY;
   if (variant === "slope") {
-    const startLabels = rows.map((row) => `${row.category} ${formatValue(row.start)}`);
-    const endLabels = rows.map((row) => formatValue(row.end));
+    const formatEndpoint = (value: number, row: DumbbellRow) =>
+      valueLabelFormat ? valueLabelFormat(value, row) : formatValue(value);
+    const startLabels = rows.map((row) => `${row.category} ${formatEndpoint(row.start, row)}`);
+    const endLabels = rows.map((row) => {
+      const endText = formatEndpoint(row.end, row);
+      return bothEndsLabeled ? `${row.category} ${endText}` : endText;
+    });
     return {
       ...floor,
       left: clampMargin(widestLabelWidth(startLabels, measure) + LABEL_GUTTER, floor.left, cap),
@@ -463,7 +527,13 @@ interface PlotProps {
   markers: DumbbellMarkerStyle;
   extraKeys?: string[];
   showDelta: boolean;
+  deltaLabelFormat?: (delta: number, row: DumbbellRow) => string;
+  bothEndsLabeled?: boolean;
+  valueLabelFormat?: (value: number, row: DumbbellRow) => string;
+  referenceLine?: { value: number; label: string };
+  showValueAxis?: boolean;
   palette?: ChartPalette;
+  rowColor?: (row: DumbbellRow, index: number) => string | undefined;
   valueFormat?: ChartValueFormat;
   containerRef: MutableRefObject<HTMLDivElement | null>;
   /** Rendered px width of `text` in the label font — see `use-text-measurer.ts`. */
@@ -524,7 +594,13 @@ function DumbbellPlot({
   markers,
   extraKeys,
   showDelta,
+  deltaLabelFormat,
+  bothEndsLabeled = false,
+  valueLabelFormat,
+  referenceLine,
+  showValueAxis = false,
   palette,
+  rowColor,
   valueFormat,
   containerRef,
   measure,
@@ -696,9 +772,75 @@ function DumbbellPlot({
         )}
         <rect fill="transparent" height={height} width={width} x={0} y={0} />
         <g transform={`translate(${margin.left},${margin.top})`}>
+          {!isSlope && orientation === "horizontal" && referenceLine ? (
+            <g data-slot="dumbbell-chart-reference-line">
+              <line
+                stroke="var(--chart-grid)"
+                strokeDasharray="4 3"
+                strokeWidth={TRACK_STROKE_WIDTH}
+                x1={valueScale(referenceLine.value)}
+                x2={valueScale(referenceLine.value)}
+                y1={0}
+                y2={innerHeight}
+              />
+              {(() => {
+                // A label centred on a reference value near either edge of the
+                // domain would otherwise draw past the SVG's own bounds (#see
+                // the Compact-width bug this fixes) — flip the anchor, never
+                // clip, once the measured label would overflow either side.
+                const refX = valueScale(referenceLine.value);
+                const halfLabelWidth = measure(referenceLine.label) / 2;
+                const textAnchor =
+                  refX - halfLabelWidth < 0
+                    ? "start"
+                    : refX + halfLabelWidth > innerWidth
+                      ? "end"
+                      : "middle";
+                return (
+                  <HaloText
+                    className="text-meta"
+                    fill="var(--chart-label)"
+                    textAnchor={textAnchor}
+                    x={refX}
+                    y={-8}
+                  >
+                    {referenceLine.label}
+                  </HaloText>
+                );
+              })()}
+            </g>
+          ) : null}
+          {!isSlope && orientation === "horizontal" && showValueAxis ? (
+            <g data-slot="dumbbell-chart-value-axis">
+              {valueScale.ticks(4).map((tick) => {
+                const x = valueScale(tick);
+                return (
+                  <g key={tick}>
+                    <line
+                      stroke="var(--chart-grid)"
+                      strokeWidth={TRACK_STROKE_WIDTH}
+                      x1={x}
+                      x2={x}
+                      y1={innerHeight}
+                      y2={innerHeight + 4}
+                    />
+                    <HaloText
+                      className="text-meta"
+                      fill="var(--chart-label)"
+                      textAnchor="middle"
+                      x={x}
+                      y={innerHeight + 16}
+                    >
+                      {formatValue(tick)}
+                    </HaloText>
+                  </g>
+                );
+              })}
+            </g>
+          ) : null}
           {isSlope
             ? rows.map((row, i) => {
-                const color = rowColors[i % rowColors.length] as string;
+                const color = rowColor?.(row, i) ?? (rowColors[i % rowColors.length] as string);
                 const y1 = rawStartYs[i] as number;
                 const y2 = rawEndYs[i] as number;
                 const labelY1 = startLabelYs[i] as number;
@@ -708,13 +850,21 @@ function DumbbellPlot({
                 // widest label up to `MAX_MARGIN_FRACTION` of the container, so a
                 // label only gets cut when even that cap can't hold it. The full
                 // category name stays reachable via the tooltip title (#240).
-                const startLabelText = `${row.category} ${formatValue(row.start)}`;
+                const startValueText = valueLabelFormat
+                  ? valueLabelFormat(row.start, row)
+                  : formatValue(row.start);
+                const startLabelText = `${row.category} ${startValueText}`;
                 const startDisplay = ellipsize(
                   startLabelText,
                   Math.max(margin.left - LABEL_GUTTER, 0),
                   measure,
                 ).display;
-                const endLabelText = formatValue(row.end);
+                const endValueText = valueLabelFormat
+                  ? valueLabelFormat(row.end, row)
+                  : formatValue(row.end);
+                const endLabelText = bothEndsLabeled
+                  ? `${row.category} ${endValueText}`
+                  : endValueText;
                 const endDisplay = ellipsize(
                   endLabelText,
                   Math.max(margin.right - LABEL_GUTTER, 0),
@@ -771,7 +921,7 @@ function DumbbellPlot({
                 );
               })
             : rows.map((row, i) => {
-                const color = rowColors[i % rowColors.length] as string;
+                const color = rowColor?.(row, i) ?? (rowColors[i % rowColors.length] as string);
                 const rect = rowRect(orientation, i, rows.length, innerWidth, innerHeight);
                 const isFaded = hoveredIndex != null && hoveredIndex !== row.index;
                 const startPos = valueScale(row.start);
@@ -940,8 +1090,9 @@ function DumbbellPlot({
                         x={isVertical ? crossCenter : endPos + (growsPositive ? 10 : -10)}
                         y={isVertical ? endPos + (growsPositive ? -10 : 18) : crossCenter - 10}
                       >
-                        {row.delta >= 0 ? "+" : ""}
-                        {formatValue(row.delta)}
+                        {deltaLabelFormat
+                          ? deltaLabelFormat(row.delta, row)
+                          : `${row.delta >= 0 ? "+" : ""}${formatValue(row.delta)}`}
                       </HaloText>
                     ) : null}
                     {/* Hover / interaction hit box */}
@@ -1013,6 +1164,7 @@ function DumbbellBody({
   ...plotProps
 }: BodyProps) {
   const { t } = useLocale();
+  const { valueLabelFormat } = plotProps;
   const formatValue = useChartValueFormatter(plotProps.valueFormat);
   const rowByIndex = useMemo(
     () => new Map(plotProps.rows.map((row) => [row.index, row])),
@@ -1030,11 +1182,11 @@ function DumbbellBody({
       }
       return t("charts.datapoint.labelRange", {
         category: row.category,
-        start: formatValue(row.start),
-        end: formatValue(row.end),
+        start: valueLabelFormat ? valueLabelFormat(row.start, row) : formatValue(row.start),
+        end: valueLabelFormat ? valueLabelFormat(row.end, row) : formatValue(row.end),
       });
     },
-    [formatValue, rowByIndex, t],
+    [formatValue, rowByIndex, t, valueLabelFormat],
   );
   const core = <DumbbellPlot {...plotProps} />;
   if (!onDatapointClick && !copyValueOnActivate) {
@@ -1075,8 +1227,14 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
     markers = DEFAULT_MARKERS,
     extraKeys,
     showDelta = false,
+    deltaLabelFormat,
+    bothEndsLabeled = false,
+    valueLabelFormat,
+    referenceLine,
+    showValueAxis = false,
     sortBy = "none",
     palette,
+    rowColor,
     valueFormat,
     margin: marginProp,
     aspectRatio = "2 / 1",
@@ -1131,6 +1289,8 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
       width,
       measure,
       formatValue: formatValueForMargin,
+      bothEndsLabeled,
+      valueLabelFormat,
     }),
     ...marginProp,
   };
@@ -1168,8 +1328,14 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
           onDatapointClick={onDatapointClick}
           orientation={orientation}
           palette={palette}
+          rowColor={rowColor}
           rows={rows}
           showDelta={showDelta}
+          deltaLabelFormat={deltaLabelFormat}
+          bothEndsLabeled={bothEndsLabeled}
+          valueLabelFormat={valueLabelFormat}
+          referenceLine={referenceLine}
+          showValueAxis={showValueAxis}
           valueFormat={valueFormat}
           variant={variant}
           width={width}

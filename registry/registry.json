@@ -1223,6 +1223,86 @@
         }
       ],
       "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-small-multiples-01",
+      "type": "registry:block",
+      "title": "Infographic — Which depot is the outlier?",
+      "description": "\"Which depot is the outlier?\" — twelve depots, one tiny 13-week line per tile, every tile on the same shared y-axis so height compares directly, with the one depot that stands out ringed and coloured (PeakRing) while every other depot stays on a muted neutral.",
+      "registryDependencies": ["kpi-card-parts", "kpi-movers-01"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-small-multiples-01/data/region-on-time.ts",
+          "type": "registry:component",
+          "target": "components/infographic-small-multiples-01/data/region-on-time.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-small-multiples-01/infographic-small-multiples.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-small-multiples-01/infographic-small-multiples.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-before-after-01",
+      "type": "registry:block",
+      "title": "Infographic — Who improved, who slipped?",
+      "description": "\"Who improved, who slipped?\" — a DumbbellChart slope chart of 6 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line's own slope, never colour alone.",
+      "registryDependencies": ["kpi-card-parts", "kpi-movers-01"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-before-after-01/data/depot-before-after.ts",
+          "type": "registry:component",
+          "target": "components/infographic-before-after-01/data/depot-before-after.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-before-after-01/infographic-before-after.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-before-after-01/infographic-before-after.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-gap-to-benchmark-01",
+      "type": "registry:block",
+      "title": "Infographic — How far from the benchmark?",
+      "description": "\"How far from the benchmark?\" — a sorted DumbbellChart, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised; the gap's sign correctly flips for a lower-is-better metric.",
+      "registryDependencies": ["infographic-small-multiples-01", "kpi-card-parts", "kpi-movers-01"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-gap-to-benchmark-01/data/depot-vs-benchmark.ts",
+          "type": "registry:component",
+          "target": "components/infographic-gap-to-benchmark-01/data/depot-vs-benchmark.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-gap-to-benchmark-01/infographic-gap-to-benchmark.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-gap-to-benchmark-01/infographic-gap-to-benchmark.tsx"
+        }
+      ],
+      "categories": ["infographic"]
     }
   ]
 }
