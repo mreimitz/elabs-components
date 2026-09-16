@@ -1117,4 +1117,29 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "process.kpiStrip.trendRising": "rising",
   "process.kpiStrip.trendFalling": "falling",
   "process.kpiStrip.trendSteady": "steady",
+  // ProcessFilterBar (RM-056, #205). Filter-chain breadcrumb chip labels — label-in-value
+  // text, one key per `FilterIntent["kind"]` — the "Clear all" action, the chip's own
+  // "excluded" count label, and the summary line's two independently-omittable clauses
+  // (see `process-filter-bar.tsx`'s module docblock for why they are composed, not merged).
+  "process.filterBar.label": "Active filters",
+  "process.filterBar.with": "Contains {activity}",
+  "process.filterBar.without": "Excludes {activity}",
+  "process.filterBar.startsWith": "Starts with {activity}",
+  "process.filterBar.endsWith": "Ends with {activity}",
+  "process.filterBar.variant": {
+    one: "{count} variant selected",
+    other: "{count} variants selected",
+  },
+  "process.filterBar.filter": "Filter",
+  "process.filterBar.excludedLabel": "excluded",
+  "process.filterBar.clearAll": "Clear all",
+  "process.filterBar.showingAll": {
+    one: "Showing all {total} case",
+    other: "Showing all {total} cases",
+  },
+  "process.filterBar.showing": "Showing {filtered} of {total} cases",
+  "process.filterBar.hiddenByAbstraction": {
+    one: "{count} activity hidden by abstraction",
+    other: "{count} activities hidden by abstraction",
+  },
 };

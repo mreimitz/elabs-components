@@ -27,3 +27,6 @@ export * from "./abstraction-controls";
 export * from "./metric-layer-switch";
 export * from "./process-kpi-strip";
 export * from "./use-process-explorer";
+
+// ProcessFilterBar — RM-056
+export * from "./process-filter-bar";

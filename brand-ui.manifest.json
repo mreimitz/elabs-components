@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T22:35:08.377Z",
+  "generatedAt": "2026-09-16T08:28:43.796Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25816,6 +25816,11 @@
           "module": "packages/process/src/process-map/process-activity-node.tsx"
         },
         {
+          "name": "ProcessFilterBar",
+          "kind": "value",
+          "module": "packages/process/src/process-filter-bar/process-filter-bar.tsx"
+        },
+        {
           "name": "ProcessKpiStrip",
           "kind": "value",
           "module": "packages/process/src/process-kpi-strip/process-kpi-strip.tsx"
@@ -25923,6 +25928,10 @@
         {
           "name": "ProcessExplorerOptions",
           "module": "packages/process/src/use-process-explorer/use-process-explorer.ts"
+        },
+        {
+          "name": "ProcessFilterBarProps",
+          "module": "packages/process/src/process-filter-bar/process-filter-bar.tsx"
         },
         {
           "name": "ProcessFilterIntent",
@@ -26184,6 +26193,49 @@
               "name": "label",
               "optional": true,
               "type": "string"
+            }
+          ]
+        },
+        "ProcessFilterBar": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "intents",
+              "optional": false,
+              "type": "FilterIntent[]",
+              "description": "The active filter chain — `useProcessExplorer`'s own `intents`, in order."
+            },
+            {
+              "name": "excludedByIntent",
+              "optional": false,
+              "type": "number[]",
+              "description": "How many cases EACH intent alone excludes, parallel to {@link intents} (same index) — `useProcessExplorer`'s own additive `excludedByIntent` field."
+            },
+            {
+              "name": "totalCases",
+              "optional": false,
+              "type": "number",
+              "description": "The unfiltered case count — the right half of the summary line's \"X of Y\"."
+            },
+            {
+              "name": "filteredCases",
+              "optional": false,
+              "type": "number",
+              "description": "`useProcessExplorer`'s `kpis.cases` — the left half of the summary line's \"X of Y\"."
+            },
+            {
+              "name": "hiddenCounts",
+              "optional": true,
+              "type": "{ activities: number; paths: number }",
+              "description": "What abstraction currently hides — `useProcessExplorer`'s own `hiddenCounts`."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the chip row. Default from locale."
             }
           ]
         },
