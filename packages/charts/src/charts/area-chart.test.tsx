@@ -41,7 +41,14 @@ vi.mock("./area", async (importOriginal) => {
 });
 
 import { AreaChart } from "./area-chart";
-import { Area, areaStackExtent, computeAreaStackBands } from "./area";
+import {
+  Area,
+  areaStackExtent,
+  computeAreaStackBands,
+  resolveGradientToOpacity,
+  resolveSeamOwnsEdge,
+} from "./area";
+import { AreaGradientDefs } from "./area-gradient-defs";
 
 afterEach(cleanup);
 
@@ -202,5 +209,93 @@ describe("areaStackExtent", () => {
 
   it("falls back to a non-degenerate range for an empty stack", () => {
     expect(areaStackExtent(new Map())).toEqual([0, 1]);
+  });
+});
+
+// #245 — a stacked band's fill gradient must not fade to transparent at its
+// own lower edge (band thickness is the value), and a `seams`-owned edge must
+// not be repainted by the band's own crest stroke. See the story play
+// function in `area-chart.stories.tsx` (`StreamWithSeams`) for the real,
+// rendered paint-order assertion — `Area` itself is mocked out above, so
+// these test the pure decision logic and the (real, unmocked) gradient defs.
+describe("AreaChart offset — band fill and seams (#245)", () => {
+  describe("resolveGradientToOpacity", () => {
+    it("an unstacked area still fades to transparent (regression lock)", () => {
+      expect(resolveGradientToOpacity(undefined, false, 0.85)).toBe(0);
+    });
+
+    it("a stacked band's fill does not fade — defaults to fillOpacity", () => {
+      expect(resolveGradientToOpacity(undefined, true, 0.85)).toBe(0.85);
+    });
+
+    it("an explicit gradientToOpacity wins over the stacked default", () => {
+      expect(resolveGradientToOpacity(0, true, 0.85)).toBe(0);
+    });
+
+    it("an explicit gradientToOpacity wins over the unstacked default", () => {
+      expect(resolveGradientToOpacity(0.3, false, 0.85)).toBe(0.3);
+    });
+  });
+
+  describe("resolveSeamOwnsEdge", () => {
+    it("is false when the band is not stacked, even with seams set", () => {
+      expect(resolveSeamOwnsEdge(false, 2)).toBe(false);
+    });
+
+    it("is false for a stacked band with no seam", () => {
+      expect(resolveSeamOwnsEdge(true, undefined)).toBe(false);
+      expect(resolveSeamOwnsEdge(true, 0)).toBe(false);
+    });
+
+    it("is true for a stacked band with a positive seam", () => {
+      expect(resolveSeamOwnsEdge(true, 2)).toBe(true);
+    });
+  });
+
+  describe("AreaGradientDefs — rendered stops", () => {
+    const baseProps = {
+      edgeGradientId: "edge-gradient",
+      edgeMaskId: "edge-mask",
+      fadeEdges: false as const,
+      fill: "var(--chart-1)",
+      gradientId: "area-gradient",
+      innerHeight: 200,
+      innerWidth: 400,
+      isPatternFill: false,
+      resolvedStroke: "var(--chart-1)",
+      strokeGradientId: "stroke-gradient",
+    };
+
+    it("a stacked band's fill gradient does not fade — both stops carry the authored opacity", () => {
+      const { container } = render(
+        <svg>
+          <AreaGradientDefs
+            {...baseProps}
+            fillOpacity={0.85}
+            gradientToOpacity={resolveGradientToOpacity(undefined, true, 0.85)}
+          />
+        </svg>,
+      );
+      const stops = container.querySelectorAll(`#${baseProps.gradientId} stop`);
+      expect(stops.length).toBe(2);
+      stops.forEach((stop) => {
+        expect((stop as SVGStopElement).style.stopOpacity).toBe("0.85");
+      });
+    });
+
+    it("an unstacked area's fill gradient still fades to transparent (byte-identical to before)", () => {
+      const { container } = render(
+        <svg>
+          <AreaGradientDefs
+            {...baseProps}
+            fillOpacity={0.85}
+            gradientToOpacity={resolveGradientToOpacity(undefined, false, 0.85)}
+          />
+        </svg>,
+      );
+      const stops = Array.from(container.querySelectorAll(`#${baseProps.gradientId} stop`));
+      expect(stops[0] && (stops[0] as SVGStopElement).style.stopOpacity).toBe("0.85");
+      expect(stops[1] && (stops[1] as SVGStopElement).style.stopOpacity).toBe("0");
+    });
   });
 });
