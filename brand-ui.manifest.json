@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T15:16:42.548Z",
+  "generatedAt": "2026-09-16T15:23:04.637Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18679,7 +18679,7 @@
               "name": "highlightColumnLabel",
               "optional": true,
               "type": "(value: number | Date) => string | undefined",
-              "description": "Text label drawn near the top of each `highlightColumnValues` entry (`HaloText`), e.g. \"Today\". Return `undefined`/`\"\"` to skip the label for a given value. Unset (default): no label."
+              "description": "Text label drawn at the bottom-inside, left of each `highlightColumnValues` entry (`HaloText`), e.g. \"Today\". Return `undefined`/`\"\"` to skip the label for a given value. Unset (default): no label."
             },
             {
               "name": "fadeHorizontal",

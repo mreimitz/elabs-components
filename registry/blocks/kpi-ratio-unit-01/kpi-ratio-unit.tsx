@@ -140,7 +140,6 @@ function LateDeliveryCard({
         </div>
         <p className="text-title text-foreground">1 in {denominator} orders arrived late</p>
         <p className="text-caption text-muted-foreground">
-          Exactly{" "}
           <span className="tabular-nums">{formatKpiValue(exactPct, "percent", locale)}</span> of
           orders were late —{" "}
           <span className="tabular-nums">{formatKpiValue(100 - exactPct, "percent", locale)}</span>{" "}
@@ -211,7 +210,6 @@ function PromoterCard({
         </div>
         <p className="text-title text-foreground">1 in {denominator} customers are promoters</p>
         <p className="text-caption text-muted-foreground">
-          Exactly{" "}
           <span className="tabular-nums">{formatKpiValue(exactPct, "percent", locale)}</span> of
           respondents are promoters —{" "}
           <span className="tabular-nums">

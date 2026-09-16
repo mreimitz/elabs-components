@@ -67,7 +67,7 @@ export interface GridProps {
   /** Dash array for highlighted columns. Default: solid line */
   highlightColumnStrokeDasharray?: string;
   /**
-   * Text label drawn near the top of each `highlightColumnValues` entry
+   * Text label drawn at the bottom-inside, left of each `highlightColumnValues` entry
    * (`HaloText`), e.g. "Today". Return `undefined`/`""` to skip the label
    * for a given value. Unset (default): no label.
    */
@@ -325,7 +325,10 @@ export function Grid({
                   y2={innerHeight}
                 />
                 {label ? (
-                  <HaloText dy={9} fontSize={11} textAnchor="middle" x={x} y={0}>
+                  // Bottom-inside, left of the line: the top strip belongs to
+                  // `highlightRowLabel` (end-anchored), so a column label up
+                  // there collides with a target label on a narrow chart.
+                  <HaloText dy={-4} fontSize={11} textAnchor="end" x={x - 4} y={innerHeight}>
                     {label}
                   </HaloText>
                 ) : null}

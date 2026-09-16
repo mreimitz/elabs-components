@@ -162,10 +162,10 @@ function KpiMoversCard({
   return (
     <Card data-slot="kpi-movers-card">
       <CardContent className="space-y-4 p-5">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-body text-foreground">{title}</p>
-            <p className="truncate text-caption text-muted-foreground">{subtitle}</p>
+            <p className="break-words text-body text-foreground">{title}</p>
+            <p className="break-words text-caption text-muted-foreground">{subtitle}</p>
           </div>
           <Badge className="shrink-0" variant="secondary">
             {QUARTER_LABEL}
@@ -231,7 +231,7 @@ function MoverRow({
     // to its own line the moment a card is too narrow to fit both groups on
     // one line, mirroring `KpiComparisonRow`'s house pattern for this.
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 py-0.5" data-slot="kpi-movers-row">
-      <span className="flex min-w-0 flex-1 items-center gap-2">
+      <span className="flex min-w-40 flex-1 items-center gap-2">
         <span className="w-4 shrink-0 text-meta tabular-nums text-muted-foreground">
           {mover.rankNow}
         </span>

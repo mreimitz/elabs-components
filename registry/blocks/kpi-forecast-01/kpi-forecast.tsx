@@ -166,7 +166,11 @@ function KpiForecastCard({ forecast, locale }: { forecast: ForecastResult; local
                 stroke="var(--chart-1)"
                 strokeWidth={2.5}
               />
-              <YAxis currency={currency} numTicks={4} valueFormat={yAxisValueFormat(unit)} />
+              <YAxis
+                currency={currency ?? "EUR"}
+                numTicks={4}
+                valueFormat={yAxisValueFormat(unit)}
+              />
               <XAxis />
             </LineChart>
           </div>
