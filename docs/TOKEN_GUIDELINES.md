@@ -151,12 +151,20 @@ steps a reader has to memorise rather than see.
 - **`--chart-accent` is `var(--chart-1)`.** An intentional mirror, declared as a
   `var()` and never as a copied literal (#385), so a re-brand reaches the hero
   colour for free.
-- **Retune a ramp with the gates, never by eye.** Three invariants are
+- **Space a ramp by equal OKLab lightness, never by equal contrast ratio.**
+  Contrast is a luminance ratio and luminance is not perceptual: a ladder of equal
+  ratio steps makes step 1 → 2 look about 2.5× every other step, and seven heatmap
+  buckets read as about four (#180). The quiet step therefore sits one ordinary
+  step above step 2 (≈2.2–2.4:1), not wherever an equal-ratio ladder puts it, and
+  chroma is held flat (or tapered only where the sRGB gamut forces it) so the
+  intense end keeps its colour cue.
+- **Retune a ramp with the gates, never by eye.** Four invariants are
   machine-checked and moving one step can break a pair it is not adjacent to:
-  contrast against `--chart-background` and strict monotonicity (in OKLab L _and_
-  in contrast) live in `packages/tokens/src/charts-contrast.test.ts`; the 0.05
-  OKLab ΔE floor on adjacent steps, on all ten diverging pairs, and on
-  accent-vs-ladder is enforced by `pnpm check` (the role-distinctness rule).
+  contrast against `--chart-background`, strict monotonicity (in OKLab L _and_
+  in contrast) and uniformity (largest adjacent OKLab ΔE ≤ 1.6× the smallest)
+  live in `packages/tokens/src/charts-contrast.test.ts`; the 0.05 OKLab ΔE floor
+  on adjacent steps, on all ten diverging pairs, and on accent-vs-ladder is
+  enforced by `pnpm check` (the role-distinctness rule).
 - **Adding a theme means authoring all four families.** They are per-theme
   semantic tokens, so `pnpm check --rule theme-parity` requires every block to declare
   every one of them; a missing ramp step falls back to `:root` and renders a

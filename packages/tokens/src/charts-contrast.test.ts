@@ -138,8 +138,8 @@ function resolve(theme: string, name: string, seen: string[] = []): string {
  * SURFACE, not the token: the accent palette's premise is "one hero colour,
  * loudest mark on the plot", and on `light` it measures 1.42:1 against
  * `--chart-background`/`--card` — quieter than its usual "wire" companions
- * `--chart-mono-2`/`-4`/`-6` (3.10 / 5.70 / 10.21:1) and quieter than the
- * sequential ramp's own declared quiet step `--chart-seq-1` (1.62:1). Declined
+ * `--chart-mono-2`/`-4`/`-6` (3.17 / 5.67 / 10.34:1) and quieter than the
+ * sequential ramp’s own declared quiet step `--chart-seq-1` (2.41:1, #180). Declined
  * repairs (darken `--chart-background`; derive a per-theme accent) and the full
  * cost are recorded in `.claude/rules/theming.md` beside this bullet's sibling.
  * No assertion is added for it: a gate requiring the accent not be the
@@ -249,6 +249,22 @@ function lightnessOf(theme: string, token: string): number {
 function chromaOf(theme: string, token: string): number {
   return parseOklch(resolve(theme, token)).c;
 }
+/**
+ * Max ratio between the largest and smallest adjacent-step ΔE in an ordered
+ * ramp (#180). 1.6 is the issue's acceptance bound; the shipped ramps sit near
+ * 1.1, so the headroom is for per-theme gamut tapers, not for a retune.
+ */
+const RAMP_UNIFORMITY = 1.6;
+/** Euclidean OKLab distance between two resolved `oklch(...)` tokens. */
+function deltaE(theme: string, a: string, b: string): number {
+  const lab = (token: string): [number, number, number] => {
+    const { l, c, h } = parseOklch(resolve(theme, token));
+    const rad = (h * Math.PI) / 180;
+    return [l, c * Math.cos(rad), c * Math.sin(rad)];
+  };
+  const [p, q] = [lab(a), lab(b)];
+  return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+}
 
 describe("themes.css — ordered chart ramps (RM-018)", () => {
   // Anti-vacuity: every assertion below is a `.each` over these lists, so an
@@ -296,6 +312,24 @@ describe("themes.css — ordered chart ramps (RM-018)", () => {
         rs.every((r, i) => i === 0 || r > (rs[i - 1] as number)),
         `${theme}: ${rs.map((r) => r.toFixed(2)).join(" → ")}`,
       ).toBe(true);
+    });
+
+    // UNIFORM (#180). Monotonic + a ΔE floor both passed a ramp whose first step
+    // was ~2.5× every other one (it was spaced by equal WCAG contrast RATIO, and
+    // luminance is not perceptual), so seven heatmap buckets read as about four.
+    // The invariant actually wanted is "equal data steps read as equal visual
+    // steps": the largest adjacent OKLab ΔE may be at most RAMP_UNIFORMITY × the
+    // smallest.
+    it.each([
+      ["sequential", SEQ],
+      ["mono", MONO],
+    ] as const)("the %s ramp's adjacent steps are perceptually uniform", (_name, ramp) => {
+      const ds = ramp.slice(1).map((t, i) => deltaE(theme, ramp[i] as string, t));
+      const ratio = Math.max(...ds) / Math.min(...ds);
+      expect(
+        ratio,
+        `${theme} adjacent ΔE: ${ds.map((d) => d.toFixed(3)).join(" | ")} (max/min ${ratio.toFixed(2)})`,
+      ).toBeLessThanOrEqual(RAMP_UNIFORMITY);
     });
 
     // The diverging ramp is a V, not a run: intensity has to grow from the
