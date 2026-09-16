@@ -12,7 +12,7 @@ import {
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Infographics/How Far From The Benchmark?",
+  title: "Patterns/Blocks/Infographics/Gap To Benchmark",
   parameters: {
     layout: "padded",
     docs: {

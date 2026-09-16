@@ -9,7 +9,7 @@ import { InfographicCohortRetention } from "@/components/infographic-cohort-rete
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Infographics/Do Customers Stay (Cohort Retention)",
+  title: "Patterns/Blocks/Infographics/Cohort Retention",
   parameters: {
     layout: "padded",
     docs: {

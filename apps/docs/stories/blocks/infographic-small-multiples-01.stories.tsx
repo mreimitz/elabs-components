@@ -9,7 +9,7 @@ import { onTimeByRegionPositiveOutlier } from "@/components/infographic-small-mu
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Infographics/Which Region Is The Outlier?",
+  title: "Patterns/Blocks/Infographics/Small Multiples",
   parameters: {
     layout: "padded",
     docs: {

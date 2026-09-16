@@ -9,7 +9,7 @@ import { revenueQ2ToQ3 } from "@/components/infographic-before-after-01/data/dep
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Infographics/Who Improved, Who Slipped?",
+  title: "Patterns/Blocks/Infographics/Before After",
   parameters: {
     layout: "padded",
     docs: {

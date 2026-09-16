@@ -9,7 +9,7 @@ import { InfographicPartToWhole } from "@/components/infographic-part-to-whole-0
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Infographics/Where Does The Money Go (Part To Whole)",
+  title: "Patterns/Blocks/Infographics/Part To Whole",
   parameters: {
     layout: "padded",
     docs: {
