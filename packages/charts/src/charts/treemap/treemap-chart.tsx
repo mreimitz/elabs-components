@@ -291,6 +291,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
         share: leaf.share,
         path: leaf.path,
         isOther: leaf.isOther,
+        mergedCount: leaf.mergedCount,
       },
       value: leaf.value,
       category: leaf.name,
@@ -486,6 +487,22 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                       label: "Share",
                       value: formatShare(tooltip.leaf.share),
                     },
+                    // The synthetic "Other" bucket has a second quantity a
+                    // reader needs beyond value/share: how many leaves were
+                    // folded into it (#247) — otherwise its cardinality is
+                    // unrecoverable on any surface, including this tooltip.
+                    ...(tooltip.leaf.isOther && tooltip.leaf.mergedCount
+                      ? [
+                          {
+                            color: tooltip.leaf.color,
+                            label: "Folded",
+                            value:
+                              tooltip.leaf.mergedCount === 1
+                                ? "1 category"
+                                : `${tooltip.leaf.mergedCount} categories`,
+                          },
+                        ]
+                      : []),
                   ] satisfies TooltipRow[]
                 }
                 title={pathLabel(tooltip.leaf.path)}

@@ -76,6 +76,10 @@ export interface TreemapLeafDatum extends TreemapRect {
   groupName: string | null;
   /** `true` when this is the synthetic long-tail bucket. */
   isOther: boolean;
+  /** Set only when {@link isOther} is `true`: how many leaves (across BOTH the
+   * `otherThreshold` pass and the unconditional {@link TREEMAP_MAX_LEAVES} cap)
+   * were folded into this bucket. */
+  mergedCount?: number;
   color: string;
 }
 
@@ -194,6 +198,8 @@ interface FlatNode {
   value: number;
   children?: FlatNode[];
   isOther?: boolean;
+  /** Set only on a synthetic `isOther` node — see {@link TreemapLeafDatum.mergedCount}. */
+  mergedCount?: number;
 }
 
 /**
@@ -267,7 +273,7 @@ function mergeLongTail(
   if (mergedCount === 0) {
     return kept;
   }
-  return [...kept, { name: otherLabel, value: mergedValue, isOther: true }];
+  return [...kept, { name: otherLabel, value: mergedValue, isOther: true, mergedCount }];
 }
 
 // ── Colour assignment ────────────────────────────────────────────────────────
@@ -385,6 +391,7 @@ export function computeTreemapLayout(
       groupIndex,
       groupName,
       isOther: node.data.isOther === true,
+      mergedCount: node.data.mergedCount,
       x0: node.x0,
       y0: node.y0,
       x1: node.x1,

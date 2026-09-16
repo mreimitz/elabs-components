@@ -18,7 +18,7 @@
  */
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import type * as MotionReact from "motion/react";
 import { TreemapChart, type TreemapNode } from "./treemap-chart";
 
@@ -178,5 +178,45 @@ describe("TreemapChart", () => {
       </div>,
     );
     expect(container.querySelector('[data-slot="treemap-zoom-layer"]')).toBeNull();
+  });
+
+  it("the Other tile's tooltip reports how many categories it folded (#247)", () => {
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    const { container } = render(
+      <TreemapChart
+        data={{
+          name: "root",
+          children: [
+            {
+              name: "Group",
+              children: [
+                { name: "Big", value: 90 },
+                { name: "Tiny A", value: 1 },
+                { name: "Tiny B", value: 1 },
+                { name: "Tiny C", value: 1 },
+              ],
+            },
+          ],
+        }}
+        otherThreshold={0.05}
+      />,
+    );
+    const otherLeaf = Array.from(container.querySelectorAll("[data-treemap-leaf-id]")).find((el) =>
+      el.getAttribute("data-treemap-leaf-id")?.startsWith("leaf:0:1"),
+    ) as SVGRectElement | undefined;
+    expect(otherLeaf).toBeDefined();
+    fireEvent.mouseEnter(otherLeaf as SVGRectElement);
+    expect(container.textContent ?? "").toContain("3 categories");
+    spy.mockRestore();
   });
 });
