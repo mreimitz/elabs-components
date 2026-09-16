@@ -51,8 +51,11 @@ export const Loading: Story = { render: () => <KpiTrendReference loading /> };
 
 export const Compact: Story = {
   render: () => (
+    // Force a single column — see the matching note in
+    // kpi-target-bullet-01.stories.tsx (the grid's `sm:`/`lg:` columns are a
+    // viewport breakpoint, not a container one, #…).
     <div className="w-[280px]">
-      <KpiTrendReference metrics={[ordersShipped]} />
+      <KpiTrendReference gridClassName="sm:grid-cols-1 lg:grid-cols-1" metrics={[ordersShipped]} />
     </div>
   ),
 };

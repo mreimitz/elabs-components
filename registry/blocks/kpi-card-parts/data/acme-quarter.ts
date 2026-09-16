@@ -115,7 +115,11 @@ export const ordersShipped: KpiMetric = {
   budget: 6_065,
   weekly: [655, 668, 672, 690, 701, 685, 710, 695, 718, 702, 725, 708, 712],
   weeklyPriorYear: [598, 610, 605, 622, 630, 615, 640, 625, 648, 632, 655, 638, 660],
-  normalBand: [640, 760],
+  // A genuinely NARROWER-than-the-series band (not the old [640,760], which
+  // nearly spanned the whole plotted range and read as a full-height wash
+  // carrying no information, #…) — the typical weekly corridor, not the
+  // series' own min/max.
+  normalBand: [665, 705],
   bullet: qualitativeBandsForTarget(6_200, true),
 };
 
@@ -145,7 +149,9 @@ export const nps: KpiMetric = {
   budget: 45,
   weekly: [37, 39, 36, 41, 38, 43, 39, 44, 40, 45, 41, 46, 42],
   weeklyPriorYear: [33, 35, 32, 37, 34, 39, 35, 40, 36, 41, 37, 42, 38],
-  normalBand: [35, 55],
+  // Narrower than the old [35,55] (55 sat at the domain ceiling, so the band
+  // read as filling nearly the whole plot, #…) — the typical weekly corridor.
+  normalBand: [38, 44],
   bullet: qualitativeBandsForTarget(50, true),
 };
 
@@ -160,7 +166,11 @@ export const avgDeliveryHours: KpiMetric = {
   budget: 33.0,
   weekly: [35.0, 35.6, 34.4, 36.2, 35.1, 37.0, 35.4, 37.4, 35.8, 37.8, 36.0, 38.0, 36.2],
   weeklyPriorYear: [33.2, 33.8, 32.6, 34.4, 33.3, 35.2, 33.6, 35.6, 34.0, 36.0, 34.2, 36.4, 34.5],
-  normalBand: [30, 38],
+  // Narrower than the old [30,38] (38 sat exactly at the domain ceiling, so
+  // the band read as filling ~85% of the plot height, #…) — the typical
+  // weekly corridor; this year's weekly readings running mostly ABOVE it is
+  // the honest "worse than normal" story a lower-is-better KPI should tell.
+  normalBand: [33, 35],
   bullet: qualitativeBandsForTarget(32.0, false),
 };
 

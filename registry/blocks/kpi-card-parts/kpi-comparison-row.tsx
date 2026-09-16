@@ -54,18 +54,26 @@ export function KpiComparisonRow({
   const polarityLabel = isFlat ? "" : good ? ", favorable" : ", unfavorable";
 
   return (
+    // `flex-wrap` (never a viewport `sm:`/`lg:` breakpoint — a card's real
+    // width often has nothing to do with the page's) drops the value/delta
+    // group to its own line under the baseline label the moment the row is
+    // too narrow to fit both, instead of squeezing either onto one cramped
+    // line (#…).
     <div
-      className={cn("flex items-center justify-between gap-3 py-1", className)}
+      className={cn("flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1", className)}
       data-slot="kpi-comparison-row"
     >
       <span className="text-body text-muted-foreground">{baselineLabel}</span>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-body tabular-nums text-muted-foreground">
           {formatKpiValue(baseline, unit, locale, currency)}
         </span>
         <span
           aria-label={`${directionLabel} ${deltaText}${pctChange ? ` (${pctChange})` : ""}${polarityLabel}`}
-          className={cn("flex items-center gap-1 text-meta tabular-nums", toneClass)}
+          className={cn(
+            "flex items-center gap-1 whitespace-nowrap text-meta tabular-nums",
+            toneClass,
+          )}
           data-slot="kpi-comparison-row-delta"
         >
           <Arrow aria-hidden="true" className="size-3" />

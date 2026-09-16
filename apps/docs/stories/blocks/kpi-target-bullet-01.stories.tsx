@@ -19,7 +19,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Answers “am I on target?” — a BulletChart per KPI: the actual value against its target (tick), last year (notch), inside 2–3 qualitative bands. A lower-is-better KPI states that the same ascending bands read best-to-worst in reverse. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-target-bullet-01` (pulls `kpi-card-parts`).",
+          "Answers “am I on target?” — a BulletChart per KPI: the actual value against its target (tick), last year (notch), inside qualitative bands shaded darkest (worst) to lightest (best) in the KPI's own good direction. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-target-bullet-01` (pulls `kpi-card-parts`).",
       },
     },
   },
@@ -47,8 +47,12 @@ export const Loading: Story = { render: () => <KpiTargetBullet loading /> };
 
 export const Compact: Story = {
   render: () => (
+    // The block's own grid is `sm:grid-cols-2 lg:grid-cols-3` — a VIEWPORT
+    // breakpoint, so it still fires inside this narrow wrapper on a wide
+    // screen. Force a single column so one metric renders as one real
+    // 280px-wide card, not a third of it (#…).
     <div className="w-[280px]">
-      <KpiTargetBullet metrics={[revenue]} />
+      <KpiTargetBullet className="sm:grid-cols-1 lg:grid-cols-1" metrics={[revenue]} />
     </div>
   ),
 };

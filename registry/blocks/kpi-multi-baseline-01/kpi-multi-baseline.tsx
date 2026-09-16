@@ -161,7 +161,7 @@ function ScaleStrip({
   return (
     <span
       aria-hidden="true"
-      className="relative inline-block h-2 w-16 shrink-0 rounded-full bg-muted"
+      className="relative inline-block h-2 w-[120px] shrink-0 rounded-full bg-muted"
       data-slot="kpi-scale-strip"
     >
       <span

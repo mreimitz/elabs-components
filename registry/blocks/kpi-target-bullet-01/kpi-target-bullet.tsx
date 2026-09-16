@@ -93,6 +93,7 @@ function KpiTargetBulletCard({ metric, locale }: { metric: KpiMetric; locale: st
         <BulletChart
           bands={metric.bullet}
           comparative={metric.priorYear}
+          higherIsBetter={metric.higherIsBetter}
           labels={{ value: metric.label, target: "target", comparative: "last year" }}
           size="sm"
           target={metric.target}
@@ -100,9 +101,7 @@ function KpiTargetBulletCard({ metric, locale }: { metric: KpiMetric; locale: st
           valueFormat={bulletValueFormat(metric.unit)}
         />
         {!metric.higherIsBetter ? (
-          <p className="text-caption text-muted-foreground">
-            Lower is better here — the same ascending bands read best-to-worst, left to right.
-          </p>
+          <p className="text-meta text-muted-foreground">Lower is better.</p>
         ) : null}
         <KpiComparisonRow
           actual={metric.actual}

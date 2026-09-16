@@ -81,7 +81,7 @@ export function KpiPace({
     return (
       <div
         aria-live="polite"
-        className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-3", className)}
+        className={cn("grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3", className)}
         data-slot="kpi-pace"
         role="status"
       >
@@ -93,7 +93,10 @@ export function KpiPace({
     );
   }
   return (
-    <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-3", className)} data-slot="kpi-pace">
+    <div
+      className={cn("grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3", className)}
+      data-slot="kpi-pace"
+    >
       <KpiPaceProgressCard locale={locale} progress={revenueProgress} />
       <KpiPaceProgressCard locale={locale} progress={ordersProgress} />
       <KpiPaceGaugeCard locale={locale} metric={gaugeMetric} />

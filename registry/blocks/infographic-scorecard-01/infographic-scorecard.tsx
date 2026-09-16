@@ -6,7 +6,6 @@ import {
   Skeleton,
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -59,10 +58,12 @@ export function InfographicScorecard({
       role={loading ? "status" : undefined}
     >
       {loading ? <span className="sr-only">Loading the scorecard…</span> : null}
-      <Table>
-        <TableCaption>
-          <KpiAsOf date={AS_OF_DATE} locale={locale} source={DATA_SOURCE} />
-        </TableCaption>
+      {/* `<caption>` lives INSIDE `<table>`, which `Table` wraps in its own
+          horizontally-scrolling region — a caption there scrolls away with
+          the columns instead of staying put (#…). Kept as an ordinary
+          paragraph OUTSIDE the scroller, wired to the table by
+          `aria-describedby` instead of the native caption association. */}
+      <Table aria-describedby="infographic-scorecard-caption">
         <TableHeader>
           <TableRow>
             <TableHead>KPI</TableHead>
@@ -82,6 +83,11 @@ export function InfographicScorecard({
               ))}
         </TableBody>
       </Table>
+      {/* `KpiAsOf` renders its own `<p>` — a wrapping `<p>` here would nest
+          block elements invalidly, so this is a plain `<div>` (#…). */}
+      <div className="mt-4" id="infographic-scorecard-caption">
+        <KpiAsOf date={AS_OF_DATE} locale={locale} source={DATA_SOURCE} />
+      </div>
     </div>
   );
 }
@@ -139,7 +145,7 @@ function ScorecardRow({ metric, locale }: { metric: KpiMetric; locale: string })
       <TableCell className="text-end tabular-nums">
         <span
           aria-label={`${directionLabel} ${formatKpiDelta(delta, metric.unit, locale, metric.currency)}`}
-          className={cn("inline-flex items-center gap-1", toneClass)}
+          className={cn("inline-flex items-center gap-1 whitespace-nowrap", toneClass)}
         >
           <Arrow aria-hidden="true" className="size-3" />
           {formatKpiDelta(delta, metric.unit, locale, metric.currency)}
@@ -149,6 +155,7 @@ function ScorecardRow({ metric, locale }: { metric: KpiMetric; locale: string })
         <div className="mx-auto w-24">
           <BulletChart
             bands={metric.bullet}
+            higherIsBetter={metric.higherIsBetter}
             labels={{ value: metric.label, target: "target" }}
             size="sm"
             target={metric.target}
