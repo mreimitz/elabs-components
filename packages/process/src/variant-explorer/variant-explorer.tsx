@@ -270,7 +270,14 @@ export const VariantExplorer = forwardRef<HTMLDivElement, VariantExplorerProps>(
       overscan: 6,
     });
     const [activeIndex, setActiveIndex] = useState(0);
-    const tabIndex = Math.min(activeIndex, Math.max(0, variants.length - 1));
+    const virtualRows = virtualizer.getVirtualItems();
+    // The roving tab stop is the last focused row — but only while that row is mounted. Once
+    // the reader scrolls it out of the window (wheel, scrollbar), the stop moves to the first
+    // row in view, so Tab can always reach the list and never lands on an unmounted row.
+    const clampedActive = Math.min(activeIndex, Math.max(0, variants.length - 1));
+    const tabIndex = virtualRows.some((item) => item.index === clampedActive)
+      ? clampedActive
+      : (virtualizer.range?.startIndex ?? virtualRows[0]?.index ?? clampedActive);
     const pendingFocus = useRef<number | null>(null);
 
     // A row scrolled into view by the keyboard mounts on a LATER render than the key press,
@@ -477,8 +484,6 @@ export const VariantExplorer = forwardRef<HTMLDivElement, VariantExplorerProps>(
         </div>
       );
     }
-
-    const virtualRows = virtualizer.getVirtualItems();
 
     return (
       <div

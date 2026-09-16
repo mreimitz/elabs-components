@@ -234,6 +234,8 @@ describe("VariantExplorer — virtualization (2 000 variants)", () => {
     await waitFor(() => expect(document.querySelector('[data-index="1500"]')).toBeInTheDocument());
     expect(rowCount()).toBeLessThanOrEqual(bound);
     expect(document.querySelector('[data-index="0"]')).not.toBeInTheDocument();
+    // The roving tab stop follows the window, so Tab can still reach the list.
+    expect(document.querySelectorAll('[data-slot="checkbox"][tabindex="0"]')).toHaveLength(1);
   });
 });
 
