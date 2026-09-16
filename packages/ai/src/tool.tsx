@@ -149,7 +149,7 @@ export const ToolDetails = ({
       defaultOpen={defaultOpen}
       {...props}
     >
-      <CollapsibleTrigger className="flex items-center gap-1 rounded-sm text-meta text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <CollapsibleTrigger className="flex items-center gap-1 rounded-sm text-meta text-muted-foreground transition-colors hover:text-foreground focus-ring">
         <ChevronDownIcon className="size-3.5 transition-transform group-data-[state=open]/tool-details:rotate-180" />
         {label ?? t("ai.tool.showTechnicalDetails")}
       </CollapsibleTrigger>

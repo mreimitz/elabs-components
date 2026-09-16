@@ -439,7 +439,7 @@ export const MessageCompareColumn = forwardRef<HTMLDivElement, MessageCompareCol
           )}
         </div>
         <div
-          className="min-h-0 flex-1 overflow-y-auto p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+          className="min-h-0 flex-1 overflow-y-auto p-4 focus-ring-inset"
           data-slot="message-compare-column-body"
           onScroll={handleScroll}
           ref={setScrollRef}

@@ -180,3 +180,45 @@ export const PartialSet: Story = {
     await expect(canvas.queryByText(/more/i)).not.toBeInTheDocument();
   },
 };
+
+/**
+ * Focus indicator on image thumbnails (#313): Tab to an image button and
+ * assert the compound indicator's OUTLINE layer — `outlineStyle: "solid"`
+ * sourced from `--ring-contour`. The pre-#67 `focus-visible:outline-none
+ * focus-visible:ring-2 focus-visible:ring-ring` pattern also paints a
+ * non-"none" `boxShadow` (Tailwind's `ring-2` box-shadow trick), so asserting
+ * boxShadow alone passes on the legacy class string too; the outline layer is
+ * the one thing only `focus-ring`/`focus-ring-inset` add.
+ */
+export const FocusIndicator: Story = {
+  name: "Focus indicator (#313)",
+  args: { images: IMAGES.slice(0, 4) },
+  play: async ({ canvas, userEvent }) => {
+    const buttons = canvas.getAllByRole("button", { name: /fjord|desert/i });
+    await userEvent.tab();
+    await expect(buttons[0]).toHaveFocus();
+    const focused = getComputedStyle(buttons[0]);
+    await expect(focused.boxShadow).not.toBe("none");
+    await expect(focused.outlineStyle).toBe("solid");
+    await expect(parseFloat(focused.outlineWidth)).toBeGreaterThan(0);
+  },
+};
+
+/**
+ * Focus indicator on the overflow ("+N more") tile (#313): a separate DOM
+ * node from the plain thumbnails, styled the same way — never covered by any
+ * prior test (`gallery.tsx:409`, `GalleryOverflowTile`).
+ */
+export const OverflowFocusIndicator: Story = {
+  name: "Overflow tile focus indicator (#313)",
+  args: { images: IMAGES },
+  play: async ({ canvas, userEvent }) => {
+    const overflow = canvas.getByRole("button", { name: /show all 12 images/i });
+    overflow.focus();
+    await expect(overflow).toHaveFocus();
+    const focused = getComputedStyle(overflow);
+    await expect(focused.boxShadow).not.toBe("none");
+    await expect(focused.outlineStyle).toBe("solid");
+    await expect(parseFloat(focused.outlineWidth)).toBeGreaterThan(0);
+  },
+};

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent } from "storybook/test";
 import {
   Tool,
   ToolContent,
@@ -66,5 +67,43 @@ export const Streaming: Story = {
         </ToolContent>
       </Tool>
     );
+  },
+};
+
+/**
+ * Focus indicator on ToolDetails trigger (#313): Tab to the disclosure
+ * trigger and assert the compound indicator's OUTLINE layer. The prior
+ * version read `buttons[0]` — but `ToolHeader` (rendered before `ToolDetails`
+ * in the DOM) is ALSO a `CollapsibleTrigger` (`tool.tsx:98`, the outer
+ * `Tool` row's own disclosure) with no focus styling of its own, so it is
+ * `buttons[0]` and receives the first Tab, not the `ToolDetails` trigger
+ * this issue is about (`tool.tsx:152`). Query the actual trigger by its
+ * accessible name (`t("ai.tool.showTechnicalDetails")`) instead of by index.
+ */
+export const FocusIndicator: Story = {
+  render: () => (
+    // defaultOpen on the OUTER Tool — its ToolContent (and so ToolDetails'
+    // trigger) is hidden/unmounted when the outer Collapsible starts closed,
+    // as it does without this prop (see Default story). Without it the
+    // ToolDetails trigger this test targets isn't in the accessibility tree
+    // at all, and `getByRole` throws before ever reaching the focus check.
+    <Tool defaultOpen className="max-w-prose">
+      <ToolHeader type="tool-fetch" state="output-available" summary="Fetched data" />
+      <ToolContent>
+        <ToolDetails>
+          <ToolInput input={{ url: "https://example.com" }} />
+          <ToolOutput output={{ status: "ok" }} />
+        </ToolDetails>
+      </ToolContent>
+    </Tool>
+  ),
+  play: async ({ canvas }) => {
+    const trigger = canvas.getByRole("button", { name: /show technical details/i });
+    trigger.focus();
+    await expect(trigger).toHaveFocus();
+    const focused = getComputedStyle(trigger);
+    await expect(focused.boxShadow).not.toBe("none");
+    await expect(focused.outlineStyle).toBe("solid");
+    await expect(parseFloat(focused.outlineWidth)).toBeGreaterThan(0);
   },
 };
