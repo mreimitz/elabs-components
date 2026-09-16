@@ -85,6 +85,21 @@ export const ExportPng: Story = {
     await expect(blob.type).toBe("image/png");
     await expect(blob.size).toBeGreaterThan(0);
     await expect(filename).toMatch(/\.png$/);
+    // responsive layout — RM-084 follow-up 2 (F2): decode the actual raster, not just the blob
+    // envelope — `scale: 2` at `width: 1680` must produce a 3360-wide PNG. Height is the
+    // composed SVG's OWN `height` (the requested 1120 plus the default title row) × scale, read
+    // from the same-options SVG rather than hardcoded, since the title row's exact px is an
+    // internal `composeSvg` detail this play should not need to know.
+    const svg = await buildSheetExportSvg(store, registry, {
+      width: 1680,
+      height: 1120,
+      scale: 2,
+    });
+    const expectedHeight = Number.parseFloat(svg.getAttribute("height") ?? "0") * 2;
+    const bitmap = await createImageBitmap(blob);
+    await expect(bitmap.width).toBe(3360);
+    await expect(bitmap.height).toBe(expectedHeight);
+    bitmap.close();
   },
 };
 
@@ -100,5 +115,48 @@ export const ExportDeterministic: Story = {
     await expect(a).toBe(b);
     // The filename carries the date, never the file's own content.
     await expect(first.filename).toBe(second.filename);
+  },
+};
+
+/** The first REAL (opaque, non-`currentColor`) resolved `fill`/`stroke` in an export SVG. */
+function firstResolvedColor(svg: SVGSVGElement): string {
+  const isRealColor = (value: string | null) =>
+    value !== null && !/^(none|transparent|currentcolor)$/i.test(value);
+  for (const el of svg.querySelectorAll("[fill], [stroke]")) {
+    const fill = el.getAttribute("fill");
+    if (isRealColor(fill)) return fill as string;
+    const stroke = el.getAttribute("stroke");
+    if (isRealColor(stroke)) return stroke as string;
+  }
+  return "";
+}
+
+// responsive layout — RM-084 follow-up 2 (F3): `buildExportSvg`/`composeSvg` bake in resolved
+// (computed) styles at build time (module doc above) — off-screen tiles inherit whatever
+// `data-theme` is on `document.documentElement` (`ThemeProvider`'s own mechanism, RM-034's
+// `resolveThemeIsDark` pattern), so flipping it between calls should bake in different colours.
+export const ExportThemeDiffers: Story = {
+  name: "exportSheet — light vs dark bake in different resolved colours",
+  render: ExportSvg.render,
+  play: async () => {
+    await waitFor(() => expect(probeHandle).toBeDefined());
+    const { store, registry } = probeHandle!;
+    const originalTheme = document.documentElement.getAttribute("data-theme");
+    try {
+      document.documentElement.setAttribute("data-theme", "light");
+      const lightSvg = await buildSheetExportSvg(store, registry, { width: 1680, height: 1120 });
+      const light = firstResolvedColor(lightSvg);
+
+      document.documentElement.setAttribute("data-theme", "dark");
+      const darkSvg = await buildSheetExportSvg(store, registry, { width: 1680, height: 1120 });
+      const dark = firstResolvedColor(darkSvg);
+
+      await expect(light).not.toBe("");
+      await expect(dark).not.toBe("");
+      await expect(light).not.toBe(dark);
+    } finally {
+      if (originalTheme === null) document.documentElement.removeAttribute("data-theme");
+      else document.documentElement.setAttribute("data-theme", originalTheme);
+    }
   },
 };
