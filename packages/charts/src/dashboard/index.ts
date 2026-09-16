@@ -20,6 +20,8 @@ export * from "./dashboard-sheet";
 export * from "./tiles";
 
 // SelectionBar — RM-076
+export * from "./chrome";
+export * from "./tiles/filter-tile";
 
 // Edit layer — RM-078
 

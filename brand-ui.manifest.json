@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T15:33:34.829Z",
+  "generatedAt": "2026-09-16T15:52:52.303Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21903,6 +21903,11 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-provider.tsx"
             },
             {
+              "name": "DashboardSelectionBar",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
               "name": "DashboardSheet",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
@@ -21928,6 +21933,11 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/labels.ts"
             },
             {
+              "name": "DEFAULT_FILTER_TILE_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
               "name": "DEFAULT_GRID_COLUMNS",
               "kind": "value",
               "module": "packages/charts/src/dashboard/core/layout.ts"
@@ -21946,6 +21956,11 @@
               "name": "DEFAULT_ROW_HEIGHT",
               "kind": "value",
               "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "DEFAULT_SELECTION_BAR_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
             },
             {
               "name": "EMPTY_SELECTION",
@@ -22077,6 +22092,10 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-provider.tsx"
             },
             {
+              "name": "DashboardSelectionBarProps",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
               "name": "DashboardSheetProps",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
             },
@@ -22141,6 +22160,26 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-selection.ts"
             },
             {
+              "name": "FilterTileContent",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTileLabels",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTileMode",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTileSort",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTileValue",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
               "name": "HeadingTileContent",
               "module": "packages/charts/src/dashboard/tiles/heading-tile.tsx"
             },
@@ -22179,6 +22218,14 @@
             {
               "name": "PlaceholderTileContent",
               "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
+            },
+            {
+              "name": "SelectionBarDriver",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
+              "name": "SelectionBarLabels",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
             },
             {
               "name": "SelectionDriver",
@@ -22291,6 +22338,10 @@
               "module": "packages/charts/src/dashboard/tiles/divider-tile.tsx"
             },
             {
+              "name": "createFilterTileKind",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
               "name": "createHeadingTileKind",
               "module": "packages/charts/src/dashboard/tiles/heading-tile.tsx"
             },
@@ -22337,6 +22388,10 @@
             {
               "name": "extendRows",
               "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "filterTileKind",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
             },
             {
               "name": "findEmptySlot",
