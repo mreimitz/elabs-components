@@ -5,6 +5,11 @@ import {
   SchemaFormFields,
   SchemaFormProvider,
   SchemaFormRoot,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   SideDock,
   findFieldByName,
   type FormSpec,
@@ -120,6 +125,39 @@ function PanelForm({ form, base, validate, onCommit }: PanelFormProps) {
   );
 }
 
+// responsive layout — RM-084 follow-up 1
+/**
+ * "Edit layout for: Base / Medium (md) / Small (sm)" — which layout `moveTile`/`resizeTile`
+ * write to (`ui.layoutTarget`, `core/store.ts`). Sheet-wide, not tied to the focused tile, so
+ * it sits above the per-tile/per-sheet `PanelForm` rather than inside one of its sections.
+ */
+function LayoutTargetSelect({ labels }: { labels: DashboardPanelLabels }) {
+  const actions = useDashboardActions();
+  const target = useDashboard((s) => s.ui.layoutTarget);
+  const options = labels.layoutTargetOptions;
+  return (
+    <div
+      data-slot="dashboard-properties-panel-layout-target"
+      className="flex items-center justify-between gap-2 px-1 pb-2"
+    >
+      <span className="text-caption">{labels.editLayoutFor}</span>
+      <Select
+        value={target}
+        onValueChange={(next) => actions.setLayoutTarget(next as "base" | "md" | "sm")}
+      >
+        <SelectTrigger size="sm" className="min-w-28" aria-label={labels.editLayoutFor}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="base">{options.base}</SelectItem>
+          <SelectItem value="md">{options.md}</SelectItem>
+          <SelectItem value="sm">{options.sm}</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 function validateCondition(changed: FormValues, key: string): string | null {
   const source = changed[key];
   if (typeof source !== "string" || source.trim() === "") return null;
@@ -202,6 +240,7 @@ export const DashboardPropertiesPanel = forwardRef<HTMLElement, DashboardPropert
         data-dashboard-panel="properties"
         {...props}
       >
+        <LayoutTargetSelect labels={labels} />
         <PanelForm
           key={first ? `tiles:${focus.join(",")}` : "sheet"}
           form={form}

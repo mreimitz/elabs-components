@@ -62,6 +62,11 @@ export interface DashboardPanelLabels {
   // Interactions editor — RM-082
   /** The Interactions section's button opening `DashboardInteractionsDialog`. */
   editInteractions: string;
+  // responsive layout — RM-084 follow-up 1
+  /** Label of the "Edit layout for" control (`ui.layoutTarget`). */
+  editLayoutFor: string;
+  /** Option labels for `editLayoutFor`'s `"base" | "md" | "sm"` values. */
+  layoutTargetOptions: { base: string; md: string; sm: string };
 }
 
 /** The panels' labels when the host passes none. */
@@ -117,6 +122,9 @@ export const DEFAULT_DASHBOARD_PANEL_LABELS: DashboardPanelLabels = {
   focusedCount: (count) => `${count} tiles`,
   // Interactions editor — RM-082
   editInteractions: "Edit interactions…",
+  // responsive layout — RM-084 follow-up 1
+  editLayoutFor: "Edit layout for",
+  layoutTargetOptions: { base: "Base", md: "Medium (md)", sm: "Small (sm)" },
 };
 
 /** Merge partial host labels over the defaults (one level of nesting). */
