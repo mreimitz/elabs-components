@@ -250,6 +250,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
 
 export function ChartTooltip(props: ChartTooltipProps) {
   const { containerRef } = useChartStable();
+  const { interactions } = useChartConfig();
   const [mounted, setMounted] = useState(false);
 
   // Only render portals on client side after mount
@@ -258,7 +259,8 @@ export function ChartTooltip(props: ChartTooltipProps) {
   }, []);
 
   const container = containerRef.current;
-  if (!(mounted && container)) {
+  // RM-072: `interactions.passive === false` removes hover feedback entirely.
+  if (!(mounted && container && interactions.passive)) {
     return null;
   }
 

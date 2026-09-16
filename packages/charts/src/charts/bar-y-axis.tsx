@@ -11,6 +11,7 @@ import {
   planCategoryAxis,
   unpaintedCategoryLabels,
 } from "./category-axis-plan";
+import { thinToDensity, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
 import { useTextMeasurer } from "./use-text-measurer";
 
@@ -125,6 +126,7 @@ const BarYAxisInner = memo(function BarYAxisInner({
     width,
   } = useChart();
   const { measure, lineHeightPx } = useTextMeasurer();
+  const { density } = useChartConfig();
 
   const categoryEntries = useMemo(() => {
     if (!barXAccessor) {
@@ -169,16 +171,22 @@ const BarYAxisInner = memo(function BarYAxisInner({
   const plan: CategoryAxisPlan | undefined = categoryAxisPlan ?? localPlan;
 
   const labelsToShow = useMemo(() => {
-    if (!(plan && barScale && bandWidth && barXAccessor) || plan.mode === "hidden") {
+    // RM-072: `xs` paints no tick labels (every name still reaches AT through
+    // the unpainted run below); `sm` thins to at most CHART_DENSITY_SM_MAX_TICKS.
+    if (
+      !(plan && barScale && bandWidth && barXAccessor) ||
+      plan.mode === "hidden" ||
+      density === "xs"
+    ) {
       return [];
     }
-    return plan.labels.map((planned) => {
+    return thinToDensity(plan.labels, density).map((planned) => {
       const bandY = barScale(planned.label) ?? 0;
       // Center the label vertically within the band
       const y = bandY + margin.top;
       return { ...planned, y, bandHeight: bandWidth };
     });
-  }, [plan, barScale, bandWidth, barXAccessor, margin.top]);
+  }, [plan, barScale, bandWidth, barXAccessor, density, margin.top]);
 
   // See `BarXAxis`: a dropped or hidden row label must still reach AT, since
   // the chart body it names is `aria-hidden`.

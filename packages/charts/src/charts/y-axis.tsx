@@ -4,6 +4,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useChartValueFormatter } from "./chart-formatters";
 import type { ChartValueFormat } from "./value-format";
+import { useChartConfig } from "./chart-config-context";
 import { useChartStable, useYScale } from "./chart-context";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
@@ -43,6 +44,7 @@ export interface YAxisProps {
 
 export function YAxis(props: YAxisProps) {
   const { containerRef } = useChartStable();
+  const { density } = useChartConfig();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -50,7 +52,9 @@ export function YAxis(props: YAxisProps) {
   }, []);
 
   const container = containerRef.current;
-  if (!(mounted && container)) {
+  // RM-072: the value axis is the first furniture a small tile drops — `sm`
+  // keeps only the category axis, `xs` keeps none.
+  if (!(mounted && container) || density === "xs" || density === "sm") {
     return null;
   }
 

@@ -11,6 +11,7 @@ import {
   planCategoryAxis,
   unpaintedCategoryLabels,
 } from "./category-axis-plan";
+import { thinToDensity, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
 import { useTextMeasurer } from "./use-text-measurer";
 
@@ -154,6 +155,7 @@ const BarXAxisInner = memo(function BarXAxisInner({
     width,
   } = useChart();
   const { measure, lineHeightPx } = useTextMeasurer();
+  const { density } = useChartConfig();
 
   const categoryEntries = useMemo(() => {
     if (!barXAccessor) {
@@ -199,16 +201,22 @@ const BarXAxisInner = memo(function BarXAxisInner({
   const plan: CategoryAxisPlan | undefined = categoryAxisPlan ?? localPlan;
 
   const labelsToShow = useMemo(() => {
-    if (!(plan && barScale && bandWidth && barXAccessor) || plan.mode === "hidden") {
+    // RM-072: `xs` paints no tick labels (every name still reaches AT through
+    // the unpainted run below); `sm` thins to at most CHART_DENSITY_SM_MAX_TICKS.
+    if (
+      !(plan && barScale && bandWidth && barXAccessor) ||
+      plan.mode === "hidden" ||
+      density === "xs"
+    ) {
       return [];
     }
-    return plan.labels.map((planned) => {
+    return thinToDensity(plan.labels, density).map((planned) => {
       const bandX = barScale(planned.label) ?? 0;
       // Center the label under the bar group
       const x = bandX + bandWidth / 2 + margin.left;
       return { ...planned, x };
     });
-  }, [plan, barScale, bandWidth, barXAccessor, margin.left]);
+  }, [plan, barScale, bandWidth, barXAccessor, density, margin.left]);
 
   // Whatever the cascade dropped still has to reach a screen reader — see
   // `unpaintedCategoryLabels`. One run, not one node per name: AT reads a list

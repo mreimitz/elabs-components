@@ -26,7 +26,7 @@ export function ChartTooltipDot({
   strokeWidth = 2,
   springConfig,
 }: ChartTooltipDotProps) {
-  const { tooltipSpring } = useChartConfig();
+  const { tooltipSpring, interactions } = useChartConfig();
   const effectiveSpring = springConfig ?? tooltipSpring;
   const animatedX = useSpring(x, effectiveSpring);
   const animatedY = useSpring(y, effectiveSpring);
@@ -34,7 +34,8 @@ export function ChartTooltipDot({
   animatedX.set(x);
   animatedY.set(y);
 
-  if (!visible) {
+  // RM-072: `interactions.passive === false` removes hover feedback entirely.
+  if (!(visible && interactions.passive)) {
     return null;
   }
 
