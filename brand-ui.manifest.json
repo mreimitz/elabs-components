@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T15:07:57.010Z",
+  "generatedAt": "2026-09-16T15:33:34.829Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16252,6 +16252,12 @@
               "optional": true,
               "type": "(category: ChartHoverCategory) => void",
               "description": "Fires with the hovered category on pointer move, `null` on leave (RM-073)."
+            },
+            {
+              "name": "onDatapointClick",
+              "optional": true,
+              "type": "ChartDatapointClickHandler",
+              "description": "Forwarded to the chosen container's own `onDatapointClick` (RM-075), when that family accepts one (bar, line, area/stream, pie, waterfall, heatmap/calendar, dumbbell, unit, treemap, histogram/box/strip, bump, funnel, diverging-bar). Absent on scatter/radar/candlestick — those containers don't accept it yet. Unset by default, so the default render stays byte-identical (#349's own rule: \"with it unset the chart renders exactly as before\")."
             }
           ]
         },
