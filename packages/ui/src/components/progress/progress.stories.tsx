@@ -28,6 +28,18 @@ const meta = {
       control: "text",
       table: { category: "Appearance" },
     },
+    marker: {
+      description:
+        "Reference point (0–100) rendered as a thin vertical tick — e.g. an “expected by today” pace or a target. Unset renders no tick.",
+      control: { type: "number", min: 0, max: 100 },
+      table: { category: "Reference" },
+    },
+    markerLabel: {
+      description:
+        "What `marker` represents, already localized (e.g. “expected 70% by today”). Appended to the accessible value text unless a caller-supplied `aria-valuetext` is set.",
+      control: "text",
+      table: { category: "Reference" },
+    },
   },
 } satisfies Meta<typeof Progress>;
 export default meta;
@@ -77,4 +89,77 @@ export const Tones: Story = {
     const destructive = canvas.getByRole("progressbar", { name: "Destructive tone" });
     await expect(destructive).toHaveAttribute("aria-valuetext", "Exceeded — 120 of 100");
   },
+};
+
+/**
+ * A KPI running behind its pace marker (62% done, expected 70% by today) —
+ * `markerLabel` composes into `aria-valuetext` alongside the raw value.
+ */
+export const WithMarker: Story = {
+  render: () => (
+    <Progress
+      aria-label="Quarterly goal"
+      className="w-64"
+      marker={70}
+      markerLabel="expected 70% by today"
+      value={62}
+    />
+  ),
+  play: async ({ canvas }) => {
+    const bar = canvas.getByRole("progressbar", { name: "Quarterly goal" });
+    await expect(bar).toHaveAttribute("aria-valuetext", "62%, expected 70% by today");
+  },
+};
+
+/** Ahead of pace — the same reference tick, further behind the filled value. */
+export const WithMarkerAhead: Story = {
+  render: () => (
+    <Progress
+      aria-label="Quarterly goal"
+      className="w-64"
+      marker={50}
+      markerLabel="expected 50% by today"
+      value={78}
+    />
+  ),
+  play: async ({ canvas }) => {
+    const bar = canvas.getByRole("progressbar", { name: "Quarterly goal" });
+    await expect(bar).toHaveAttribute("aria-valuetext", "78%, expected 50% by today");
+  },
+};
+
+/** The pace tick renders on every tone variant, not only `default`. */
+export const MarkerAllVariants: Story = {
+  render: () => (
+    <div className="flex w-64 flex-col gap-3">
+      <Progress
+        aria-label="Default tone with marker"
+        marker={70}
+        markerLabel="expected 70% by today"
+        value={62}
+        variant="default"
+      />
+      <Progress
+        aria-label="Success tone with marker"
+        marker={70}
+        markerLabel="expected 70% by today"
+        value={62}
+        variant="success"
+      />
+      <Progress
+        aria-label="Warning tone with marker"
+        marker={70}
+        markerLabel="expected 70% by today"
+        value={62}
+        variant="warning"
+      />
+      <Progress
+        aria-label="Destructive tone with marker"
+        marker={70}
+        markerLabel="expected 70% by today"
+        value={62}
+        variant="destructive"
+      />
+    </div>
+  ),
 };

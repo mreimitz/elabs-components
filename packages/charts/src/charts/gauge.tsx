@@ -14,6 +14,7 @@ import {
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-stat-flow";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks/halo-text";
 import { PieCenterShell } from "./pie-center-shell";
 
@@ -77,6 +78,72 @@ function interpolateHex(color1: string, color2: string, factor: number): string 
 const DEFAULT_ACTIVE_FILL_OPACITY = 1;
 // Track notches paint the ring-track rung (--chart-ring-background) at full opacity.
 const DEFAULT_INACTIVE_FILL_OPACITY = 1;
+
+// A `thresholds` tick is furniture (a scale marking, not data) — a short
+// outer-rim mark past the notch band, same idiom as an axis tick.
+const THRESHOLD_TICK_LENGTH = 6;
+
+/**
+ * The one angle computation notches/milestones/target/thresholds all share —
+ * a value 0–100 maps linearly onto the arc's own `[startAngle, startAngle +
+ * availableAngle]` span. Never fork a second mapping.
+ */
+function valueToAngle(value: number, startAngle: number, availableAngle: number): number {
+  const clamped = Math.min(100, Math.max(0, value));
+  return startAngle + (clamped / 100) * availableAngle;
+}
+
+export interface GaugeThreshold {
+  /** 0–100, same scale as `value`. */
+  value: number;
+  /** The band's name (e.g. "Good") — shown nowhere on the dial itself, only in the accessible text. */
+  label: string;
+}
+
+export interface GaugeLabels {
+  /** Word introducing the `target` value in the composed accessible description (e.g. "target 80"). */
+  target: string;
+}
+
+/** The shipped English word `labels` overrides to localize (#… target/thresholds). */
+const DEFAULT_GAUGE_LABELS: Readonly<GaugeLabels> = Object.freeze({
+  target: "target",
+});
+
+/** The threshold band a value currently falls in — the first threshold at or above it, else the top band. */
+function resolveThresholdBand(
+  value: number,
+  thresholds: readonly GaugeThreshold[],
+): string | undefined {
+  if (thresholds.length === 0) return undefined;
+  const sorted = [...thresholds].sort((a, b) => a.value - b.value);
+  const hit = sorted.find((t) => value <= t.value);
+  return (hit ?? sorted[sorted.length - 1])?.label;
+}
+
+/**
+ * "72 of 100, target 80, band Good" — composed only when `target` and/or
+ * `thresholds` are set; `undefined` (no glue text at all) otherwise, so a
+ * plain `Gauge` never gains accessible text it did not have (#…).
+ */
+function composeTargetThresholdDescription(args: {
+  value: number;
+  target: number | undefined;
+  thresholds: readonly GaugeThreshold[] | undefined;
+  labels: GaugeLabels;
+}): string | undefined {
+  const { value, target, thresholds, labels } = args;
+  const hasThresholds = Boolean(thresholds && thresholds.length > 0);
+  if (target === undefined && !hasThresholds) return undefined;
+
+  const parts = [`${Math.round(value)} of 100`];
+  if (target !== undefined) parts.push(`${labels.target} ${Math.round(target)}`);
+  if (hasThresholds) {
+    const band = resolveThresholdBand(value, thresholds as GaugeThreshold[]);
+    if (band) parts.push(`band ${band}`);
+  }
+  return parts.join(", ");
+}
 
 const DEFAULT_NOTCH_ENTER_TRANSITION: Transition = {
   type: "spring",
@@ -179,6 +246,22 @@ export interface GaugeProps extends ChartA11yProps {
    * CSS, so pass ordinary sentence case). Unset (default) renders no caption.
    */
   remainingLabel?: (remaining: number) => string;
+  /**
+   * A radial tick crossing the notch band at this value (0–100) — e.g. a
+   * quarterly target. Reuses the same value→angle mapping as notches/
+   * milestones. Unset (default) renders no tick and the dial's geometry is
+   * unaffected.
+   */
+  target?: number;
+  /**
+   * Short outer-rim ticks (furniture — `--chart-grid`, `CHART_HAIRLINE_WIDTH`)
+   * marking named bands (e.g. `{ value: 75, label: "Good" }`). No colour
+   * zones — colour is not status here, only the accessible text names the
+   * band a value falls in. Unset (default) renders no ticks.
+   */
+  thresholds?: GaugeThreshold[];
+  /** Overrides the shipped English words the composed accessible text uses (`target`). */
+  labels?: Partial<GaugeLabels>;
 }
 
 interface GaugeInnerProps extends Omit<
@@ -217,6 +300,8 @@ function GaugeInner({
   enterStaggerScale = 1,
   milestones,
   remainingLabel,
+  target,
+  thresholds,
 }: GaugeInnerProps) {
   const prefersReducedMotion = useReducedMotion();
   const themeActiveGradientId = `gauge-theme-active-${useId().replace(/:/g, "")}`;
@@ -348,8 +433,7 @@ function GaugeInner({
     const leaderRadius = outerRadius + MILESTONE_LEADER_RESERVE;
     const labelRadius = leaderRadius + 2;
     return milestones.map((m) => {
-      const clamped = Math.min(100, Math.max(0, m));
-      const angle = startAngle + (clamped / 100) * availableAngle;
+      const angle = valueToAngle(m, startAngle, availableAngle);
       const radians = (angle * Math.PI) / 180;
       const cos = Math.cos(radians);
       const sin = Math.sin(radians);
@@ -365,6 +449,48 @@ function GaugeInner({
       };
     });
   }, [milestones, outerRadius, innerRadius, startAngle, availableAngle, centerX, centerY]);
+
+  // A radial tick crossing the notch band at `target`'s angle (same mapping
+  // as notches/milestones, #… target/thresholds) — a single value the dial
+  // is measured against, e.g. a quarterly goal.
+  const targetMark = useMemo(() => {
+    if (target === undefined) {
+      return null;
+    }
+    const angle = valueToAngle(target, startAngle, availableAngle);
+    const radians = (angle * Math.PI) / 180;
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+    return {
+      x1: centerX + cos * innerRadius,
+      y1: centerY + sin * innerRadius,
+      x2: centerX + cos * outerRadius,
+      y2: centerY + sin * outerRadius,
+    };
+  }, [target, startAngle, availableAngle, centerX, centerY, innerRadius, outerRadius]);
+
+  // Short outer-rim ticks (furniture) marking named bands — never a colour
+  // zone, colour is not status here (the band name only reaches AT via the
+  // composed accessible description).
+  const thresholdMarks = useMemo(() => {
+    if (!thresholds || thresholds.length === 0) {
+      return [];
+    }
+    return thresholds.map((t) => {
+      const angle = valueToAngle(t.value, startAngle, availableAngle);
+      const radians = (angle * Math.PI) / 180;
+      const cos = Math.cos(radians);
+      const sin = Math.sin(radians);
+      return {
+        value: t.value,
+        label: t.label,
+        x1: centerX + cos * outerRadius,
+        y1: centerY + sin * outerRadius,
+        x2: centerX + cos * (outerRadius + THRESHOLD_TICK_LENGTH),
+        y2: centerY + sin * (outerRadius + THRESHOLD_TICK_LENGTH),
+      };
+    });
+  }, [thresholds, startAngle, availableAngle, centerX, centerY, outerRadius]);
 
   const createNotchPath = (
     points: {
@@ -549,6 +675,36 @@ function GaugeInner({
             ))}
           </g>
         ) : null}
+
+        {targetMark ? (
+          <line
+            data-slot="gauge-target"
+            stroke="var(--chart-foreground)"
+            strokeLinecap="round"
+            strokeWidth={2}
+            x1={targetMark.x1}
+            x2={targetMark.x2}
+            y1={targetMark.y1}
+            y2={targetMark.y2}
+          />
+        ) : null}
+
+        {thresholdMarks.length > 0 ? (
+          <g aria-hidden="true">
+            {thresholdMarks.map((mark) => (
+              <line
+                data-slot="gauge-threshold-tick"
+                key={`threshold-${mark.value}`}
+                stroke="var(--chart-grid)"
+                strokeWidth={CHART_HAIRLINE_WIDTH}
+                x1={mark.x1}
+                x2={mark.x2}
+                y1={mark.y1}
+                y2={mark.y2}
+              />
+            ))}
+          </g>
+        ) : null}
       </svg>
 
       <div
@@ -593,15 +749,38 @@ export function Gauge({
   minWidth = 300,
   accessibleLabel,
   accessibleDescription,
+  value,
+  target,
+  thresholds,
+  labels,
   ...props
 }: GaugeProps) {
+  const resolvedLabels = useMemo<GaugeLabels>(
+    () => ({ ...DEFAULT_GAUGE_LABELS, ...labels }),
+    [labels],
+  );
+  // Appends to (or, absent a caller description, becomes) the accessible
+  // text ONLY when `target`/`thresholds` are set — a plain `Gauge` keeps
+  // whatever `accessibleDescription` it was given, unchanged (#…).
+  const targetThresholdText = composeTargetThresholdDescription({
+    value,
+    target,
+    thresholds,
+    labels: resolvedLabels,
+  });
+  const resolvedDescription = targetThresholdText
+    ? accessibleDescription
+      ? `${accessibleDescription} ${targetThresholdText}`
+      : targetThresholdText
+    : accessibleDescription;
+
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+  } = useChartA11yContainerProps(accessibleLabel, resolvedDescription);
 
   if (widthProp != null && heightProp != null) {
     return (
@@ -612,8 +791,15 @@ export function Gauge({
         role={role}
         tabIndex={tabIndex}
       >
-        <ChartA11yLabel descId={descId} description={accessibleDescription} />
-        <GaugeInner height={heightProp} width={widthProp} {...props} />
+        <ChartA11yLabel descId={descId} description={resolvedDescription} />
+        <GaugeInner
+          height={heightProp}
+          target={target}
+          thresholds={thresholds}
+          value={value}
+          width={widthProp}
+          {...props}
+        />
       </div>
     );
   }
@@ -627,11 +813,20 @@ export function Gauge({
       style={{ minWidth }}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      <ChartA11yLabel descId={descId} description={resolvedDescription} />
       <div className="mx-auto aspect-[21/16] w-full max-w-[560px]">
         <ParentSize debounceTime={10}>
           {({ width, height }) =>
-            width > 0 && height > 0 ? <GaugeInner height={height} width={width} {...props} /> : null
+            width > 0 && height > 0 ? (
+              <GaugeInner
+                height={height}
+                target={target}
+                thresholds={thresholds}
+                value={value}
+                width={width}
+                {...props}
+              />
+            ) : null
           }
         </ParentSize>
       </div>
