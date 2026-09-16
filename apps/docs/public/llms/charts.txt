@@ -44,6 +44,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - CATEGORICAL_SOFT_CAP
 - CHART_CLIP_PASSTHROUGH
 - CHART_HAIRLINE_WIDTH
+- CHART_SPEC_PALETTES
 - CHART_STAGGER_BAR_MS
 - CHART_STAGGER_DOT_MS
 - CHART_TYPES

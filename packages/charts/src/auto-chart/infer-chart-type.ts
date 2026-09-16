@@ -54,7 +54,7 @@
  * `ChartType` docblock in `./chart-spec` for why those stay explicit-only.
  */
 
-import type { ChartSpec, ChartType } from "./chart-spec";
+import type { ChartSpec, ChartSpecPalette, ChartType } from "./chart-spec";
 
 // ---------------------------------------------------------------------------
 // The runtime companion of the `ChartType` union
@@ -94,6 +94,21 @@ export const CHART_TYPES = [
 /** True when `value` is a member of {@link CHART_TYPES}. */
 export function isChartType(value: unknown): value is ChartType {
   return typeof value === "string" && (CHART_TYPES as readonly string[]).includes(value);
+}
+
+/**
+ * Every member of {@link ChartSpecPalette}, as a value (#306) — lets a
+ * spec-driven caller (and the test double) reject a palette a model invented.
+ */
+export const CHART_SPEC_PALETTES = [
+  "mono",
+  "sequential",
+  "categorical",
+] as const satisfies readonly ChartSpecPalette[];
+
+/** True when `value` is a member of {@link CHART_SPEC_PALETTES}. */
+export function isChartSpecPalette(value: unknown): value is ChartSpecPalette {
+  return typeof value === "string" && (CHART_SPEC_PALETTES as readonly string[]).includes(value);
 }
 
 // ---------------------------------------------------------------------------

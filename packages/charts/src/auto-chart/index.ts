@@ -12,6 +12,7 @@ export type {
   ChartSeriesSpec,
   ChartSpecEmphasis,
   ChartSpecKind,
+  ChartSpecPalette,
   ChartType,
   ValueFormat,
 } from "./chart-spec";
@@ -19,11 +20,13 @@ export type {
 // Inference utilities (useful for pre-validation, debug panels or testing)
 export {
   CALENDAR_MIN_ROWS,
+  CHART_SPEC_PALETTES,
   CHART_TYPES,
   type ChartTypeExplanation,
   explainChartType,
   inferChartType,
   isCategoricalField,
+  isChartSpecPalette,
   isChartType,
   isNumericField,
   isTemporalField,

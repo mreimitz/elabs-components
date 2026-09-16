@@ -72,6 +72,7 @@ import { ChartFallback } from "../charts/chart-fallback";
 import type { ChartSpec, ChartSeriesSpec, ChartType } from "./chart-spec";
 import {
   inferChartType,
+  isChartSpecPalette,
   isChartType,
   readsAsBeforeAfterPair,
   readsAsTotalRow,
@@ -657,6 +658,9 @@ function renderChart(
         // wide container into a degenerate row of slivers (#306).
         <TreemapChart
           data={hierarchy}
+          // A spec is model output: an invented palette falls back to the
+          // documented mono default rather than reaching the layout (#306).
+          palette={isChartSpecPalette(spec.palette) ? spec.palette : "mono"}
           style={{ minHeight: height }}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}

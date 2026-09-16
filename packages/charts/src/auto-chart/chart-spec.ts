@@ -74,6 +74,20 @@ export type ChartSpecKind = "steps" | "records" | "ranking";
 export type ChartSpecEmphasis = "analytical" | "editorial";
 
 /**
+ * How a treemap spec colours its leaves (#306) — a DATA encoding, which is why
+ * it lives on the spec surface when other presentation props do not.
+ *
+ * - `"mono"` (default) — colour encodes NOTHING: one neutral shade per leaf;
+ *   groups read apart by their title band + gap alone.
+ * - `"sequential"` — colour encodes each leaf's VALUE (a ramp that restates
+ *   area).
+ * - `"categorical"` — colour encodes the top-level GROUP (one hue per group,
+ *   ≤ 4 groups, else mono). Hue is then a channel, so keep the group bands
+ *   or labels as the non-colour one.
+ */
+export type ChartSpecPalette = "mono" | "sequential" | "categorical";
+
+/**
  * How to format numeric values in labels and tooltips.
  *
  * The union now lives in `charts/value-format.ts` alongside the rule that reads
@@ -155,6 +169,13 @@ export interface ChartSpec {
 
   /** The hierarchy to render as a treemap. Present, it wins over `data`. */
   hierarchy?: TreemapNode;
+
+  /**
+   * Leaf colouring for a `"treemap"` spec. See {@link ChartSpecPalette}.
+   * Honoured by the treemap only; omitted (or not one of the three values)
+   * renders `"mono"`.
+   */
+  palette?: ChartSpecPalette;
 
   /** What the rows MEAN, where structure alone is ambiguous. See {@link ChartSpecKind}. */
   kind?: ChartSpecKind;

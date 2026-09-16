@@ -371,6 +371,59 @@ describe("AutoChart's spec contract", () => {
     ).toThrow(/needs a SECOND categorical column/);
   });
 
+  it("throws for a palette outside the ChartSpecPalette union (#306)", () => {
+    expect(() =>
+      render(
+        <AutoChart
+          spec={{
+            type: "treemap",
+            data: [],
+            x: "name",
+            series: [],
+            hierarchy: { name: "Spend", children: [{ name: "Cloud", value: 40 }] },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the whole point
+            palette: "rainbow" as any,
+          }}
+        />,
+      ),
+    ).toThrow(/"palette" must be one of mono \| sequential \| categorical/);
+  });
+
+  it("throws for a palette on a non-treemap spec, which would ignore it (#306)", () => {
+    expect(() =>
+      render(
+        <AutoChart
+          spec={{
+            type: "bar",
+            data: [{ a: "x", b: 1 }],
+            x: "a",
+            series: ["b"],
+            palette: "categorical",
+          }}
+        />,
+      ),
+    ).toThrow(/honoured by a "treemap" spec only/);
+  });
+
+  it("accepts a treemap spec with a valid palette, explicit or inferred type (#306)", () => {
+    for (const type of ["treemap", undefined] as const) {
+      const { container, unmount } = render(
+        <AutoChart
+          spec={{
+            type,
+            data: [],
+            x: "name",
+            series: [],
+            hierarchy: { name: "Spend", children: [{ name: "Cloud", value: 40 }] },
+            palette: "sequential",
+          }}
+        />,
+      );
+      expect(container.querySelector('[data-chart="AutoChart"]')).toBeInTheDocument();
+      unmount();
+    }
+  });
+
   it("accepts a treemap whose rows live in `hierarchy`", () => {
     const { container } = render(
       <AutoChart

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 import { AutoChart } from "./auto-chart";
 import type { ChartSpec, ChartType } from "./chart-spec";
 import { explainChartType } from "./infer-chart-type";
@@ -485,6 +485,55 @@ export const TreemapInferred: Story = inferenceStory(
   "treemap",
   "hierarchy",
 );
+
+/**
+ * `palette` on a treemap spec (#306): colour is a DATA encoding here —
+ * `"categorical"` encodes the top-level group, `"sequential"` the leaf value,
+ * `"mono"` (the default) nothing. Everything else about the spec is unchanged.
+ */
+export const TreemapPalette: Story = {
+  args: {
+    height: 280,
+    spec: {
+      type: "treemap",
+      data: [],
+      x: "name",
+      series: [],
+      palette: "categorical",
+      hierarchy: {
+        name: "Cloud spend",
+        children: [
+          {
+            name: "Compute",
+            children: [
+              { name: "EC2", value: 420 },
+              { name: "Lambda", value: 90 },
+            ],
+          },
+          {
+            name: "Storage",
+            children: [
+              { name: "S3", value: 260 },
+              { name: "Glacier", value: 40 },
+            ],
+          },
+        ],
+      },
+      title: "Cloud spend by service",
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const leaves = await waitFor(() => {
+      const found = canvasElement.querySelectorAll("[data-treemap-leaf-id]");
+      if (found.length !== 4) {
+        throw new Error("treemap leaves not laid out yet");
+      }
+      return Array.from(found);
+    });
+    // Categorical: one fill per top-level group, never the mono single shade.
+    await expect(new Set(leaves.map((leaf) => leaf.getAttribute("fill"))).size).toBe(2);
+  },
+};
 
 /**
  * Long `(period, entity, rank)` rows DECLARED as a ranking. Without the

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T09:01:58.870Z",
+  "generatedAt": "2026-09-16T09:24:30.295Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12802,6 +12802,11 @@
           "module": "packages/charts/src/chart-hairline.ts"
         },
         {
+          "name": "CHART_SPEC_PALETTES",
+          "kind": "value",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
           "name": "CHART_STAGGER_BAR_MS",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -14101,6 +14106,10 @@
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
         {
+          "name": "ChartSpecPalette",
+          "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
           "name": "ChartStableContextValue",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
@@ -15365,6 +15374,10 @@
         {
           "name": "isChartInteractionPhase",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "isChartSpecPalette",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
           "name": "isChartType",

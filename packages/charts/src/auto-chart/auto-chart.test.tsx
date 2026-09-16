@@ -73,7 +73,14 @@ beforeAll(() => {
 
 import { LocaleProvider } from "@elabs-ai/components-ui";
 import { AutoChart } from "./auto-chart";
-import { CHART_TYPES, inferChartType, isNumericField, isTemporalField } from "./infer-chart-type";
+import {
+  CHART_SPEC_PALETTES,
+  CHART_TYPES,
+  inferChartType,
+  isChartSpecPalette,
+  isNumericField,
+  isTemporalField,
+} from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
 
 afterEach(cleanup);
@@ -831,5 +838,84 @@ describe("AutoChart treemap sizing (#306)", () => {
     expect(chartRoot).toBeInTheDocument();
     expect(chartRoot.style.minHeight).toBe("280px");
     expect(chartRoot.style.height).toBe("");
+  });
+});
+
+// `palette` is a DATA encoding (value / group / nothing), so the spec surface
+// exposes it for the treemap (#306); the mono default is untouched.
+describe("AutoChart treemap palette (#306)", () => {
+  const hierarchy = {
+    name: "Work",
+    children: [
+      {
+        name: "Platform",
+        children: [
+          { name: "CI", value: 40 },
+          { name: "Infra", value: 30 },
+        ],
+      },
+      {
+        name: "Product",
+        children: [
+          { name: "Onboarding", value: 25 },
+          { name: "Search", value: 5 },
+        ],
+      },
+    ],
+  };
+
+  const distinctLeafFills = (palette?: unknown): number => {
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    const spec = {
+      type: "treemap",
+      data: [],
+      x: "name",
+      series: [],
+      hierarchy,
+      ...(palette === undefined ? {} : { palette }),
+    } as ChartSpec;
+    const { container } = render(<AutoChart spec={spec} />);
+    spy.mockRestore();
+    const leaves = Array.from(container.querySelectorAll("[data-treemap-leaf-id]"));
+    expect(leaves.length).toBe(4);
+    return new Set(leaves.map((leaf) => leaf.getAttribute("fill"))).size;
+  };
+
+  it("omitting palette keeps the mono default: one leaf fill", () => {
+    expect(distinctLeafFills()).toBe(1);
+  });
+
+  it('passes "mono" through: one leaf fill', () => {
+    expect(distinctLeafFills("mono")).toBe(1);
+  });
+
+  it('passes "categorical" through: one fill per top-level group', () => {
+    expect(distinctLeafFills("categorical")).toBe(2);
+  });
+
+  it('passes "sequential" through: a value ramp', () => {
+    expect(distinctLeafFills("sequential")).toBeGreaterThan(1);
+  });
+
+  it("an invented palette falls back to mono instead of reaching the layout", () => {
+    expect(distinctLeafFills("rainbow")).toBe(1);
+    expect(distinctLeafFills(42)).toBe(1);
+  });
+
+  it("CHART_SPEC_PALETTES lists exactly the ChartSpecPalette union", () => {
+    expect([...CHART_SPEC_PALETTES].sort()).toEqual(["categorical", "mono", "sequential"]);
+    expect(isChartSpecPalette("categorical")).toBe(true);
+    expect(isChartSpecPalette("rainbow")).toBe(false);
+    expect(isChartSpecPalette(undefined)).toBe(false);
   });
 });
