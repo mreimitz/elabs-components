@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T17:14:09.904Z",
+  "generatedAt": "2026-09-16T17:39:41.025Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -20861,6 +20861,12 @@
               "optional": true,
               "type": "boolean",
               "description": "Dashed hand-off hairline between each step's end and the next step's start. Default `true`."
+            },
+            {
+              "name": "grid",
+              "optional": true,
+              "type": "boolean",
+              "description": "The value-axis gridlines. Turn off when every bar already carries its own value label (`showValues`) and an unlabelled gridline would only add furniture with no tick to read it against. Default `true`."
             },
             {
               "name": "positiveFill",
