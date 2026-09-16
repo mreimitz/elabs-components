@@ -174,6 +174,25 @@ function coerceDatesToDate(
 
 export { ChartFallback };
 
+/** Unsupported type names already warned about, so a re-render does not re-log. */
+const warnedUnsupportedTypes = new Set<string>();
+
+/**
+ * The developer channel for an unsupported `spec.type` (#304). The rendered
+ * fallback only says the chart can’t be displayed — the type name is a fact
+ * about the spec, for whoever wrote it, so it goes to the console instead.
+ */
+function warnUnsupportedChartType(type: unknown): void {
+  if (process.env.NODE_ENV === "production") return;
+  const name = String(type);
+  if (warnedUnsupportedTypes.has(name)) return;
+  warnedUnsupportedTypes.add(name);
+  console.warn(
+    `[AutoChart] Chart type "${name}" is not a ChartType, so AutoChart rendered its fallback. ` +
+      "Use one of CHART_TYPES, or render that chart's own container directly.",
+  );
+}
+
 // ---------------------------------------------------------------------------
 // AutoLegend
 // ---------------------------------------------------------------------------
@@ -860,7 +879,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     return (
       <ChartFallback
         ref={ref}
-        message="No data to display"
+        kind="empty"
         className={cn("w-full", className)}
         style={{ height }}
         {...props}
@@ -872,7 +891,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     return (
       <ChartFallback
         ref={ref}
-        message="No data to display"
+        kind="empty"
         className={cn("w-full", className)}
         style={{ height }}
         {...props}
@@ -899,10 +918,11 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   }
 
   if (isUnsupported) {
+    warnUnsupportedChartType(spec.type);
     return (
       <ChartFallback
         ref={ref}
-        message={`Chart type "${spec.type}" is not supported yet.`}
+        kind="unsupported"
         className={cn("w-full", className)}
         style={{ height }}
         {...props}
@@ -946,7 +966,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     return (
       <ChartFallback
         ref={ref}
-        message="No data to display"
+        kind="empty"
         className={cn("w-full", className)}
         style={{ height }}
         {...props}
@@ -956,10 +976,11 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
 
   if (chartNode === null) {
     // renderChart returned null → unsupported type branch hit at runtime
+    warnUnsupportedChartType(type);
     return (
       <ChartFallback
         ref={ref}
-        message={`Chart type "${type}" is not supported yet.`}
+        kind="unsupported"
         className={cn("w-full", className)}
         style={{ height }}
         {...props}
