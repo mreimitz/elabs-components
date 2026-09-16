@@ -16,6 +16,7 @@ import {
   exactValueString,
   shouldCompact,
   valueFormatOptions,
+  valueFormatOptionsForSet,
   type ChartValueFormat,
 } from "./value-format";
 import { makeValueFmt } from "./chart-formatters";
@@ -143,6 +144,39 @@ describe("makeValueFmt — the rendered strings", () => {
 
   it("renders nothing for NaN rather than the literal NaN", () => {
     expect(fmt(Number.NaN)).toBe("");
+  });
+});
+
+describe("valueFormatOptionsForSet — one notation across a whole label set (#250)", () => {
+  it("does NOT compact a set with any non-compacting member, even if others would compact alone", () => {
+    // The WaterfallChart gross-to-net fixture that surfaced the bug.
+    const opts = valueFormatOptionsForSet("compact", [1000, -100, -300, -200, 400]);
+    expect(opts.notation).not.toBe("compact");
+    const strings = [1000, -100, -300, -200, 400].map((v) =>
+      new Intl.NumberFormat("en-US", opts).format(v),
+    );
+    expect(strings).toEqual(["1,000", "-100", "-300", "-200", "400"]);
+  });
+
+  it("compacts a set only when EVERY member would compact on its own", () => {
+    const opts = valueFormatOptionsForSet("compact", [1_500_000, 1_200_000, 900_000]);
+    expect(opts).toMatchObject({ notation: "compact" });
+  });
+
+  it("does not let a zero member block compaction", () => {
+    const opts = valueFormatOptionsForSet("compact", [1_500_000, 0, 1_200_000]);
+    expect(opts).toMatchObject({ notation: "compact" });
+  });
+
+  it("never compacts percent, matching the single-value invariant", () => {
+    const opts = valueFormatOptionsForSet("percent", [5000, 6000]);
+    expect(opts).toEqual({ style: "percent", maximumFractionDigits: 1 });
+  });
+
+  it("does not throw on an empty or all-non-finite set", () => {
+    expect(() => valueFormatOptionsForSet("compact", [])).not.toThrow();
+    expect(() => valueFormatOptionsForSet("compact", [Number.NaN, Number.NaN])).not.toThrow();
+    expect(valueFormatOptionsForSet("compact", []).notation).not.toBe("compact");
   });
 });
 

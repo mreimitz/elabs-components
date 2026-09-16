@@ -47,6 +47,16 @@ shape; use `ChartDatapointLayer`, a positioned sibling of real `<button>`s.
 sqrt (`areaRadius()`); no `Math.random()` (use `seededRnd`); a unit-decomposed chart states
 its unit visibly.
 
+## One unit per scale (#250)
+
+`shouldCompact`/`makeValueFmt`/`useChartValueFormatter` decide compaction from ONE value's
+own magnitude — right for a single number (a KPI tile, one tooltip value), wrong for several
+numbers that form one scale: independent per-value decisions can mix notations within a set
+(`"1K"` beside `"400"`). Any axis' ticks, a bar set's value labels, or a legend's `lo`/`hi`
+pair go through `valueFormatOptionsForSet`/`useChartValueSetFormatter` instead, which compact
+the WHOLE set only when every finite, non-zero member would compact on its own. Escape hatch:
+`valueFormat="number"` (never compacted, per-value or per-set).
+
 ## Gantt
 
 `pixelsPerDay` = pixels per 86,400,000 ms at EVERY granularity, never "per current unit";

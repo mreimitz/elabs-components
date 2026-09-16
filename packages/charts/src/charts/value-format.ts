@@ -105,6 +105,42 @@ export function valueFormatOptions(
 }
 
 /**
+ * `Intl.NumberFormatOptions` for a whole LABEL SET — an axis' ticks, a bar
+ * set's value labels, a legend's values — instead of one value.
+ *
+ * `valueFormatOptions` decides compaction from a single value's own
+ * magnitude, which is right for a lone number (a KPI tile, one tooltip
+ * value) but wrong for several numbers that form ONE scale: two independent
+ * per-value decisions can mix notations within a set ("1K" beside "400"),
+ * which makes a reader convert units mid-read (#250). The unit is a property
+ * of the SCALE, not of each number in it.
+ *
+ * Policy: compact the set only when EVERY finite, non-zero member would
+ * compact on its own (`shouldCompact`) — zero is exempt since `0` reads the
+ * same in every notation. Compacting on the set's max would invent
+ * fractional units for members that were already short (`1K` beside
+ * `-0.1K`), which is worse than the defect this fixes.
+ */
+export function valueFormatOptionsForSet(
+  format: ChartValueFormat,
+  values: readonly number[],
+  currency: string = DEFAULT_CHART_CURRENCY,
+  maxFractionDigits?: number,
+): Intl.NumberFormatOptions {
+  const finite = values.filter((v) => Number.isFinite(v));
+  const representative =
+    finite.length > 0 && finite.every((v) => v === 0 || shouldCompact(v))
+      ? // Every member compacts on its own — any one of them resolves the
+        // same compact options as the whole set would.
+        (finite.find((v) => v !== 0) ?? 0)
+      : // At least one member stays plain — format the WHOLE set as if it
+        // were the largest-magnitude member's neighbour: 0 never compacts,
+        // so passing 0 forces the plain branch for every format.
+        0;
+  return valueFormatOptions(format, representative, currency, maxFractionDigits);
+}
+
+/**
  * The exact string to put on the clipboard for `value`.
  *
  * Deliberately NOT locale-formatted: a copied number is usually on its way into

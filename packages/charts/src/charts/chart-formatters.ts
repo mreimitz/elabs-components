@@ -28,6 +28,7 @@ import {
   type ChartValueFormat,
   DEFAULT_CHART_VALUE_FORMAT,
   valueFormatOptions,
+  valueFormatOptionsForSet,
 } from "./value-format";
 
 // ── Cached Intl factories (keyed by locale + serialized options) ──────────────
@@ -132,6 +133,32 @@ export function makeValueFmt(
   };
 }
 
+/**
+ * SET formatter — one notation across a whole label set (an axis' ticks, a
+ * bar set's value labels, a legend's values), per `valueFormatOptionsForSet`
+ * (#250). Non-hook, explicit-locale path, siblings `makeValueFmt`.
+ *
+ * Positional primitives for the same `exhaustive-deps` reason as
+ * `makeValueFmt`; `values` is read once to resolve the shared options, not
+ * captured, so the returned closure stays a plain `(value) => string`.
+ */
+export function makeValueSetFmt(
+  locale: string | undefined,
+  values: readonly number[],
+  format: ChartValueFormat = DEFAULT_CHART_VALUE_FORMAT,
+  currency?: string,
+  maxFractionDigits?: number,
+): (value: number) => string {
+  const options = valueFormatOptionsForSet(format, values, currency, maxFractionDigits);
+  const fmt = getNumberFormat(locale, options);
+  return (value: number): string => {
+    if (Number.isNaN(value)) {
+      return "";
+    }
+    return fmt.format(value);
+  };
+}
+
 // ── Backward-compatible host-default bindings (no more hardcoded en-US) ───────
 // These honor the runtime host locale instead of forcing "en-US". They do NOT
 // track a `LocaleProvider`-set locale — component call sites that need that use
@@ -191,5 +218,38 @@ export function useChartValueFormatter(
   return useMemo(
     () => makeValueFmt(locale, format, resolvedCurrency, maxFractionDigits),
     [locale, format, resolvedCurrency, maxFractionDigits],
+  );
+}
+
+/**
+ * The SET value formatter for chart COMPONENTS (#250): one notation across
+ * `values` — an axis' ticks, a bar set's value labels, a legend's `lo`/`hi`
+ * pair. Same locale/currency resolution as `useChartValueFormatter`; use
+ * this instead of it whenever several numbers share one scale.
+ *
+ * Memoised on a STABLE key derived from `values` (its length + rounded
+ * members), never the array's identity — an inline array literal argument
+ * takes a fresh identity every render, which would poison `YAxisInner`'s
+ * dependency arrays exactly as `makeValueFmt`'s docblock warns about for
+ * options objects (`react-hooks/exhaustive-deps` is an error in this
+ * package).
+ */
+export function useChartValueSetFormatter(
+  values: readonly number[],
+  format?: ChartValueFormat,
+  currency?: string,
+  maxFractionDigits?: number,
+): (value: number) => string {
+  const { locale } = useLocale();
+  const { currency: configCurrency } = useChartConfig();
+  const resolvedCurrency = currency ?? configCurrency;
+  // Coarse but stable: two magnitude-equivalent sets (same finite/compact
+  // shape) share a key, so a benign re-render (new array, same values) does
+  // not re-resolve the `Intl` options.
+  const valuesKey = values.map((v) => (Number.isFinite(v) ? v : "NaN")).join(",");
+  return useMemo(
+    () => makeValueSetFmt(locale, values, format, resolvedCurrency, maxFractionDigits),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `valuesKey` IS the stable identity for `values` (see docblock); listing `values` itself would defeat the memo every render.
+    [locale, valuesKey, format, resolvedCurrency, maxFractionDigits],
   );
 }

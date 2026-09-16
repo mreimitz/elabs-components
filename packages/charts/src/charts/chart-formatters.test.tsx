@@ -6,7 +6,9 @@ import {
   intFmt,
   makeIntFmt,
   makeShortDateFmt,
+  makeValueSetFmt,
   useChartFormatters,
+  useChartValueSetFormatter,
 } from "./chart-formatters";
 
 // ── Factory functions honor the passed locale (ADR-0014 §(b) non-hook path) ──
@@ -64,5 +66,56 @@ describe("useChartFormatters — honors LocaleProvider (#181)", () => {
       </LocaleProvider>,
     );
     expect(screen.getByTestId("n").textContent).toBe("1,234,567");
+  });
+});
+
+// ── makeValueSetFmt / useChartValueSetFormatter — one notation per set (#250) ──
+
+describe("makeValueSetFmt — one notation across a whole set", () => {
+  it("formats every member with the SAME resolved options, not per-value", () => {
+    const fmt = makeValueSetFmt(undefined, [1000, -100, -300, -200, 400]);
+    expect([1000, -100, -300, -200, 400].map(fmt)).toEqual([
+      "1,000",
+      "-100",
+      "-300",
+      "-200",
+      "400",
+    ]);
+  });
+
+  it("compacts every member once the whole set qualifies", () => {
+    const fmt = makeValueSetFmt(undefined, [1_500_000, 1_200_000, 900_000]);
+    expect(fmt(1_500_000)).toBe("1.5M");
+    expect(fmt(900_000)).toBe("900K");
+  });
+
+  it("renders nothing for NaN, matching makeValueFmt", () => {
+    const fmt = makeValueSetFmt(undefined, [100, 200]);
+    expect(fmt(Number.NaN)).toBe("");
+  });
+});
+
+function SetReader({ values }: { values: number[] }) {
+  const fmt = useChartValueSetFormatter(values);
+  return <span data-testid="labels">{values.map(fmt).join(" / ")}</span>;
+}
+
+describe("useChartValueSetFormatter — bound to LocaleProvider", () => {
+  it("keeps one notation across the set, honoring the provider locale", () => {
+    render(
+      <LocaleProvider locale="de-DE">
+        <SetReader values={[1000, -100, -300, -200, 400]} />
+      </LocaleProvider>,
+    );
+    // de-DE groups with "." — the point is that every member shares ONE
+    // notation (none is compact), not the exact separator.
+    expect(screen.getByTestId("labels").textContent).toBe("1.000 / -100 / -300 / -200 / 400");
+  });
+
+  it("re-resolves when the values change to a different magnitude shape", () => {
+    const { rerender } = render(<SetReader values={[100, 200]} />);
+    expect(screen.getByTestId("labels").textContent).toBe("100 / 200");
+    rerender(<SetReader values={[1_500_000, 1_200_000]} />);
+    expect(screen.getByTestId("labels").textContent).toBe("1.5M / 1.2M");
   });
 });
