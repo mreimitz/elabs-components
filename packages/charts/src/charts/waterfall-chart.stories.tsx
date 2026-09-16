@@ -62,7 +62,7 @@ export const Horizontal: Story = {
 export const UnitRungs: Story = {
   render: () => (
     <div className="h-72 w-[560px]">
-      <WaterfallChart data={grossToNet} unit={25} />
+      <WaterfallChart accessibleDescription="one rung = 25" data={grossToNet} unit={25} />
     </div>
   ),
 };
