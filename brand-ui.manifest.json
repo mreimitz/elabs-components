@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T20:42:43.046Z",
+  "generatedAt": "2026-09-16T21:15:01.750Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23274,6 +23274,10 @@
             {
               "name": "stackForNarrow",
               "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
+              "name": "stepEdge",
+              "module": "packages/charts/src/dashboard/edit/geometry.ts"
             },
             {
               "name": "textTileKind",
