@@ -325,6 +325,39 @@ export const WithAccessibleLabel: Story = {
   ),
 };
 
+/**
+ * `rowColor` — an "argument, not a chart" infographic emphasises the one or
+ * two rows that are the story (a status tone) while the rest stay on the
+ * shared palette. Returning `undefined` for a row keeps it on the resolved
+ * `palette`, so this is additive: unset, the chart is byte-identical to
+ * `Default`.
+ */
+export const RowColorOverride: Story = {
+  args: {
+    data: onboardingSteps,
+    category: "step",
+    startKey: "before",
+    endKey: "after",
+    showDelta: true,
+    rowColor: (row) => (row.category === "Ship first project" ? "var(--destructive)" : undefined),
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const markers = canvasElement.querySelectorAll('[data-slot="dumbbell-chart-marker-end"]');
+      expect(markers.length).toBe(onboardingSteps.length);
+      const fills = Array.from(markers).map((m) => m.getAttribute("fill"));
+      // Exactly one row (the emphasised one) draws in the destructive token;
+      // the rest keep their palette colour, none of which is that token.
+      expect(fills.filter((f) => f === "var(--destructive)")).toHaveLength(1);
+    });
+  },
+  render: (args) => (
+    <div className="h-80 w-full max-w-[640px]">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+};
+
 /** The series-pattern channel (ADR 0011) rendered: `bp-series-*` defs + marks filled from them. */
 function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: number) {
   expect(root.querySelectorAll('pattern[id^="bp-series-"]').length).toBeGreaterThanOrEqual(

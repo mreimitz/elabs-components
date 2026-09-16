@@ -124,6 +124,16 @@ export interface DumbbellChartProps extends ChartInteractionProps {
   sortBy?: DumbbellSortBy;
   /** Which colour family rows draw from. Default `"categorical"`. */
   palette?: ChartPalette;
+  /**
+   * Per-row colour override — return a `var(--…)` token to recolour that row's
+   * connector/markers/labels, or `undefined` to keep the row on the resolved
+   * `palette`. The one seam an "argument, not a chart" infographic needs to
+   * emphasise a row or two (a status tone) while the rest stay on the shared
+   * palette — never a second palette, since most rows should read as
+   * unremarkable, not as a competing category. Unset (default) is
+   * byte-identical to today's per-row palette colouring.
+   */
+  rowColor?: (row: DumbbellRow, index: number) => string | undefined;
   /** How displayed numbers (the delta label) are formatted. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
   /** Chart margins. */
@@ -464,6 +474,7 @@ interface PlotProps {
   extraKeys?: string[];
   showDelta: boolean;
   palette?: ChartPalette;
+  rowColor?: (row: DumbbellRow, index: number) => string | undefined;
   valueFormat?: ChartValueFormat;
   containerRef: MutableRefObject<HTMLDivElement | null>;
   /** Rendered px width of `text` in the label font — see `use-text-measurer.ts`. */
@@ -525,6 +536,7 @@ function DumbbellPlot({
   extraKeys,
   showDelta,
   palette,
+  rowColor,
   valueFormat,
   containerRef,
   measure,
@@ -698,7 +710,7 @@ function DumbbellPlot({
         <g transform={`translate(${margin.left},${margin.top})`}>
           {isSlope
             ? rows.map((row, i) => {
-                const color = rowColors[i % rowColors.length] as string;
+                const color = rowColor?.(row, i) ?? (rowColors[i % rowColors.length] as string);
                 const y1 = rawStartYs[i] as number;
                 const y2 = rawEndYs[i] as number;
                 const labelY1 = startLabelYs[i] as number;
@@ -771,7 +783,7 @@ function DumbbellPlot({
                 );
               })
             : rows.map((row, i) => {
-                const color = rowColors[i % rowColors.length] as string;
+                const color = rowColor?.(row, i) ?? (rowColors[i % rowColors.length] as string);
                 const rect = rowRect(orientation, i, rows.length, innerWidth, innerHeight);
                 const isFaded = hoveredIndex != null && hoveredIndex !== row.index;
                 const startPos = valueScale(row.start);
@@ -1077,6 +1089,7 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
     showDelta = false,
     sortBy = "none",
     palette,
+    rowColor,
     valueFormat,
     margin: marginProp,
     aspectRatio = "2 / 1",
@@ -1168,6 +1181,7 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
           onDatapointClick={onDatapointClick}
           orientation={orientation}
           palette={palette}
+          rowColor={rowColor}
           rows={rows}
           showDelta={showDelta}
           valueFormat={valueFormat}

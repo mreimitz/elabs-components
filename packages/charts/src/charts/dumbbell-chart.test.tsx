@@ -467,6 +467,47 @@ describe("DumbbellChart", () => {
     expect(end?.getAttribute("fill")).toBe("var(--chart-background)");
   });
 
+  it("rowColor overrides a row's colour; unset rows keep the resolved palette", () => {
+    const data = [
+      { step: "A", before: 10, after: 20 },
+      { step: "B", before: 30, after: 40 },
+    ];
+    const { container } = render(
+      <DumbbellChart
+        category="step"
+        data={data}
+        endKey="after"
+        palette="mono"
+        rowColor={(row) => (row.category === "B" ? "var(--destructive)" : undefined)}
+        startKey="before"
+      />,
+    );
+    const endMarkers = container.querySelectorAll('[data-slot="dumbbell-chart-marker-end"]');
+    expect(endMarkers).toHaveLength(2);
+    expect(endMarkers[0]?.getAttribute("fill")).not.toBe("var(--destructive)");
+    expect(endMarkers[1]?.getAttribute("fill")).toBe("var(--destructive)");
+  });
+
+  it("default rendering is unaffected when rowColor is not passed", () => {
+    const { container: withCallback } = render(
+      <DumbbellChart
+        category="step"
+        data={onboardingData}
+        endKey="after"
+        rowColor={() => undefined}
+        startKey="before"
+      />,
+    );
+    const { container: withoutCallback } = render(
+      <DumbbellChart category="step" data={onboardingData} endKey="after" startKey="before" />,
+    );
+    const fillsOf = (root: HTMLElement) =>
+      Array.from(root.querySelectorAll('[data-slot="dumbbell-chart-marker-end"]')).map((m) =>
+        m.getAttribute("fill"),
+      );
+    expect(fillsOf(withCallback)).toEqual(fillsOf(withoutCallback));
+  });
+
   it("F6: renders a signed delta label when showDelta is set", () => {
     const { getByText } = render(
       <DumbbellChart
