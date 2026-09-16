@@ -240,6 +240,7 @@ export const StreamWithSeams: Story = {
         data={streamData}
         offset="wiggle"
         seams={2}
+        labelBands
         animationDuration={0}
         aspectRatio={undefined}
         style={{ height: "100%" }}
@@ -247,6 +248,7 @@ export const StreamWithSeams: Story = {
         <Area curve={curveNatural} dataKey="desktop" fill="var(--chart-1)" fillOpacity={0.85} />
         <Area curve={curveNatural} dataKey="tablet" fill="var(--chart-2)" fillOpacity={0.85} />
         <Area curve={curveNatural} dataKey="mobile" fill="var(--chart-3)" fillOpacity={0.85} />
+        <XAxis />
       </AreaChart>
     </div>
   ),
@@ -262,6 +264,25 @@ export const StreamWithSeams: Story = {
       seamPaths.forEach((p) => {
         expect(p.getAttribute("stroke-width")).toBe("2");
       });
+      // #245 — the seam must be the TOPMOST painter of the band's own edge:
+      // no later sibling path may carry the same `d` with an equal or
+      // greater stroke width (that would repaint over the seam and hide it).
+      const allPaths = Array.from(svgEl!.querySelectorAll("path"));
+      seamPaths.forEach((seamPath) => {
+        const seamIndex = allPaths.indexOf(seamPath as SVGPathElement);
+        const seamD = seamPath.getAttribute("d");
+        const seamWidth = Number.parseFloat(seamPath.getAttribute("stroke-width") ?? "0");
+        const laterCollisions = allPaths.slice(seamIndex + 1).filter((p) => {
+          if (p.getAttribute("d") !== seamD) return false;
+          const width = Number.parseFloat(p.getAttribute("stroke-width") ?? "0");
+          return width >= seamWidth;
+        });
+        expect(laterCollisions.length).toBe(0);
+      });
+      // labelBands renders one halo-text label per series, so every band is
+      // identifiable even though the seam removes the crest's own color.
+      const labels = svgEl!.querySelectorAll('[data-slot="halo-text"]');
+      expect(labels.length).toBe(3);
     });
   },
 };

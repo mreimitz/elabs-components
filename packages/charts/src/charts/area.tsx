@@ -149,6 +149,33 @@ export function computeAreaStackBands(
   return bands;
 }
 
+/**
+ * The `gradientToOpacity` an `Area`'s fill gradient actually uses (#245).
+ * An explicit value always wins. Otherwise: an unstacked area fades to fully
+ * transparent (its bottom edge is the axis, not the encoding — today's
+ * behaviour, unchanged); a stacked band (`AreaChart offset` set) instead
+ * holds at `fillOpacity` — a flat wash — because in a stacked/stream area
+ * BOTH edges of the band are the encoding (thickness == value), so fading
+ * one away destroys it.
+ */
+export function resolveGradientToOpacity(
+  gradientToOpacityProp: number | undefined,
+  isStacked: boolean,
+  fillOpacity: number,
+): number {
+  return gradientToOpacityProp ?? (isStacked ? fillOpacity : 0);
+}
+
+/**
+ * Whether a paper seam (`AreaChart seams`) owns this band's top edge (#245).
+ * The seam and the band's own crest stroke are the same geometric path;
+ * only one of them can be the visible boundary. True only for a stacked band
+ * with a positive `seams` value.
+ */
+export function resolveSeamOwnsEdge(isStacked: boolean, seams: number | undefined): boolean {
+  return isStacked && (seams ?? 0) > 0;
+}
+
 /** The `[min, max]` (data units) spanned by every band — what the stack needs on-screen. */
 export function areaStackExtent(bands: Map<string, AreaStackBand>): [number, number] {
   let min = Number.POSITIVE_INFINITY;
@@ -188,7 +215,16 @@ export interface AreaProps {
   showLine?: boolean;
   /** Whether to show highlight segment on hover. Default: true */
   showHighlight?: boolean;
-  /** Gradient opacity at bottom (0 = fully transparent). Default: 0 */
+  /**
+   * Gradient opacity at bottom. Default: `0` (fully transparent) for an
+   * ordinary, unstacked area — the bottom edge is the y-axis baseline, not
+   * the encoding, so fading toward it costs no information. For a STACKED
+   * band (`AreaChart offset` set, #245) the default instead follows
+   * `fillOpacity` — a flat wash — because in a stacked/stream area BOTH
+   * edges are the encoding (band thickness is the value) and fading one away
+   * destroys it. Pass an explicit value (including `0`) to override either
+   * default.
+   */
   gradientToOpacity?: number;
   /**
    * Vertical extent of the fill gradient (0–1). `1` fades across the full
@@ -278,7 +314,7 @@ export function Area({
   animate = true,
   showLine = true,
   showHighlight = true,
-  gradientToOpacity = 0,
+  gradientToOpacity: gradientToOpacityProp,
   gradientSpan = 1,
   fadeEdges = false,
   showMarkers = false,
@@ -337,6 +373,8 @@ export function Area({
     return scaleLinear<number>({ domain: [min, max], range: [innerHeight, 0] });
   }, [stackBands, innerHeight]);
   const isStacked = Boolean(stackConfig && ownBand && stackScale);
+  const gradientToOpacity = resolveGradientToOpacity(gradientToOpacityProp, isStacked, fillOpacity);
+  const seamOwnsEdge = resolveSeamOwnsEdge(isStacked, stackConfig?.seams);
 
   const stackY0 = useCallback(
     (_d: Record<string, unknown>, index: number) => {
@@ -452,7 +490,7 @@ export function Area({
   const highlightEnabled = showHighlight && showLine && !showLoadingPulse && showSeriesContent;
   const showSeriesStroke = showSeriesContent && showLine;
   let visibleStroke = "transparent";
-  if (showSeriesStroke && !hasDashTail) {
+  if (showSeriesStroke && !hasDashTail && !seamOwnsEdge) {
     visibleStroke = strokePaint;
   }
   const shouldMeasurePath = showLine && (showSeriesContent || showLoadingPulse);
@@ -491,21 +529,6 @@ export function Area({
         />
       ) : null}
 
-      {isStacked && showSeriesContent && stackConfig && stackConfig.seams > 0 ? (
-        // "Paper seams between bands" (F16 Stream Ribbon): a `--chart-background`
-        // stroke along this band's own top edge — since d3-stack bands are
-        // contiguous (this band's y1 == the next band's y0), one stroke per
-        // band is enough to cut a gap at every seam.
-        <LinePath
-          curve={curve}
-          data={renderData}
-          stroke={chartCssVars.background}
-          strokeWidth={stackConfig.seams}
-          x={(d) => xScale(xAccessor(d)) ?? 0}
-          y={stackY1}
-        />
-      ) : null}
-
       {isStacked && showSeriesContent && bandLabelPoint ? (
         <HaloText fontSize={11} textAnchor="middle" x={bandLabelPoint.x} y={bandLabelPoint.y}>
           {dataKey}
@@ -525,7 +548,7 @@ export function Area({
             x={(d) => xScale(xAccessor(d)) ?? 0}
             y={crestY}
           />
-          {showSeriesStroke ? (
+          {showSeriesStroke && !seamOwnsEdge ? (
             <SeriesDashTailOverlay
               dashArray={dashArray}
               dashFromIndex={dashFromIndex}
@@ -541,6 +564,24 @@ export function Area({
             />
           ) : null}
         </>
+      ) : null}
+
+      {isStacked && showSeriesContent && stackConfig && stackConfig.seams > 0 ? (
+        // "Paper seams between bands" (F16 Stream Ribbon): a `--chart-background`
+        // stroke along this band's own top edge — since d3-stack bands are
+        // contiguous (this band's y1 == the next band's y0), one stroke per
+        // band is enough to cut a gap at every seam. #245 — rendered AFTER the
+        // crest block (not before) so the seam is always the topmost painter
+        // of this edge; `seamOwnsEdge` above also makes the crest's own
+        // stroke transparent, so this order can't silently regress again.
+        <LinePath
+          curve={curve}
+          data={renderData}
+          stroke={chartCssVars.background}
+          strokeWidth={stackConfig.seams}
+          x={(d) => xScale(xAccessor(d)) ?? 0}
+          y={stackY1}
+        />
       ) : null}
     </>
   );

@@ -118,7 +118,10 @@ export interface AreaChartProps {
   /**
    * Paper gap between stacked bands, in px — a `--chart-background` stroke
    * drawn along each band's own top edge. Only takes effect when `offset` is
-   * set. Default: 0 (no seam). 2 is the F16 lieflat value.
+   * set. Default: 0 (no seam). 2 is the F16 lieflat value. When set (> 0),
+   * the seam owns the band's edge (#245): the band's own crest stroke is
+   * suppressed there so the paper gap is what separates the ribbons, rather
+   * than the two painting the same path on top of each other.
    */
   seams?: number;
   /**
