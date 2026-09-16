@@ -29,7 +29,7 @@ vi.mock("@visx/responsive", () => {
 });
 
 import { LineChart } from "./line-chart";
-import { XAxis } from "./x-axis";
+import { generatePeriodTicks, isLongPeriodTick, XAxis } from "./x-axis";
 import { YAxis } from "./y-axis";
 
 afterEach(cleanup);
@@ -218,5 +218,58 @@ describe("XAxis — duplicate tick key regression (#352)", () => {
       errorSpy.mockRestore();
       warnSpy.mockRestore();
     }
+  });
+});
+
+/**
+ * `periodTicks`'s long-tick anchor is a calendar fact, not an index stride
+ * from wherever the series happens to start (#253). Two different start
+ * weekdays are asserted so an implementation that still counts `i % 7` from
+ * index 0 — which would pick a different (arbitrary) weekday per start date —
+ * fails on at least one of them.
+ */
+describe("XAxis — periodTicks long-tick calendar anchor (#253)", () => {
+  it("'day': the long tick is always Monday, regardless of the series' start weekday", () => {
+    // 2024-01-01 is a Monday.
+    const mondayStart = new Date(2024, 0, 1);
+    const mondayEnd = new Date(2024, 0, 1 + 89);
+    const fromMonday = generatePeriodTicks("day", mondayStart, mondayEnd);
+    expect(fromMonday.every((d) => d.getDay() !== 1 || isLongPeriodTick("day", d))).toBe(true);
+    expect(fromMonday.some((d) => isLongPeriodTick("day", d))).toBe(true);
+    fromMonday.forEach((d) => {
+      expect(isLongPeriodTick("day", d)).toBe(d.getDay() === 1);
+    });
+
+    // 2024-01-03 is a Wednesday — an `i % 7 === 0` implementation would mark
+    // every Wednesday long instead of every Monday.
+    const wednesdayStart = new Date(2024, 0, 3);
+    const wednesdayEnd = new Date(2024, 0, 3 + 89);
+    const fromWednesday = generatePeriodTicks("day", wednesdayStart, wednesdayEnd);
+    const longIndices = fromWednesday
+      .map((d, i) => (isLongPeriodTick("day", d) ? i : -1))
+      .filter((i) => i >= 0);
+    // The old index-stride bug would report index 0 (the series' first
+    // sample) as long; the calendar anchor never does, because Jan 3 is a
+    // Wednesday.
+    expect(longIndices).not.toContain(0);
+    longIndices.forEach((i) => {
+      expect(fromWednesday[i]?.getDay()).toBe(1);
+    });
+  });
+
+  it("'week': the long tick lands in a month's first 7 days", () => {
+    const ticks = generatePeriodTicks("week", new Date(2024, 0, 1), new Date(2024, 2, 31));
+    ticks.forEach((d) => {
+      expect(isLongPeriodTick("week", d)).toBe(d.getDate() <= 7);
+    });
+    expect(ticks.some((d) => isLongPeriodTick("week", d))).toBe(true);
+  });
+
+  it("'month': the long tick is January", () => {
+    const ticks = generatePeriodTicks("month", new Date(2023, 5, 1), new Date(2025, 5, 1));
+    ticks.forEach((d) => {
+      expect(isLongPeriodTick("month", d)).toBe(d.getMonth() === 0);
+    });
+    expect(ticks.filter((d) => isLongPeriodTick("month", d))).toHaveLength(2); // Jan 2024, Jan 2025
   });
 });

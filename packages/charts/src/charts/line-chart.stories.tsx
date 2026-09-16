@@ -504,11 +504,14 @@ export const AdjacentPeaksForcedApart: Story = {
 
 /**
  * `periodTicks="day"` (RM-028): a `HairlineFloor` tick for every calendar day
- * — 90 of them — whether or not a label renders there, with every 7th tick
- * drawn longer (a weekly boundary). Acceptance: 90 ticks, every 7th longer,
- * and — since this is a SEPARATE layer from the labelled ticks above — no
- * label collisions at 400px width (labels still land at their usual
- * evenly-spaced/month-boundary positions).
+ * — 90 of them — whether or not a label renders there, with the long tick
+ * anchored to the first day of the week (Monday), not an index stride from
+ * the series' start date (#253). The labelled ticks above are a SEPARATE
+ * layer — `ninetyDaySeries` starts 2024-01-01, so they land at an even
+ * 22-day stride (`Jan 1, Jan 23, Feb 14, Mar 7, Mar 30`), not month
+ * boundaries; `periodTicks` never changes that. Acceptance: 90 ticks, every
+ * 7th long (a weekly boundary), the long tick painted in its own higher-
+ * contrast ink, and no collision between the labelled ticks at 400px width.
  */
 export const BarcodeFloor: Story = {
   render: () => (
@@ -526,15 +529,35 @@ export const BarcodeFloor: Story = {
       floor = canvasElement.querySelector('[data-slot="hairline-floor"]');
       expect(floor).not.toBeNull();
     });
-    const ticks = floor?.querySelectorAll("line") ?? [];
+    const ticks = [...(floor?.querySelectorAll("line") ?? [])];
     expect(ticks).toHaveLength(90);
-    const longTicks = [...ticks].filter((tick) => {
+    const longTicks = ticks.filter((tick) => {
       const y1 = Number(tick.getAttribute("y1"));
       const y2 = Number(tick.getAttribute("y2"));
       return Math.abs(y2 - y1) > 3.5; // longHeight (7) vs default height (3)
     });
-    expect(longTicks).toHaveLength(13); // ceil(90 / 7)
-    // The labelled ticks above are unaffected by periodTicks — still render.
-    expect(canvasElement.querySelectorAll(".text-chart-label").length).toBeGreaterThan(0);
+    expect(longTicks).toHaveLength(13); // ceil(90 / 7), anchored to Monday
+
+    // The long tick is the mark's ONLY navigational cue — it must carry its
+    // own, higher-contrast ink, distinct from the short ticks' `--chart-grid`
+    // weight (#253). A previous version of this assertion only checked
+    // `.text-chart-label`'s DOM count, which is satisfiable by construction —
+    // see #253 for why that told a reviewer nothing. Do not re-add it.
+    const shortTicks = ticks.filter((tick) => !longTicks.includes(tick));
+    longTicks.forEach((tick) => {
+      expect(tick.getAttribute("stroke")).toBe("var(--chart-foreground-muted)");
+    });
+    shortTicks.forEach((tick) => {
+      expect(tick.getAttribute("stroke")).not.toBe("var(--chart-foreground-muted)");
+    });
+
+    // Real collision check on the labelled ticks above (a separate layer from
+    // periodTicks): no two rendered labels' glyph boxes overlap at 400px.
+    const labels = [...canvasElement.querySelectorAll(".text-chart-label")];
+    expect(labels.length).toBeGreaterThan(0);
+    const rects = labels.map((el) => el.getBoundingClientRect()).sort((a, b) => a.left - b.left);
+    for (let i = 1; i < rects.length; i++) {
+      expect(rects[i]!.left).toBeGreaterThanOrEqual(rects[i - 1]!.right);
+    }
   },
 };
