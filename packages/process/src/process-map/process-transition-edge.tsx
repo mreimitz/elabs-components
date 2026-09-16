@@ -64,6 +64,7 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   FlowSelfLoopEdge,
   FlowWeightedEdge,
+  Position,
   type FlowSelfLoopEdgeData,
   type FlowWeightedEdgeData,
 } from "@elabs-ai/components-flow";
@@ -125,6 +126,21 @@ const UNRELATED_OPACITY = 0.25;
 const EXCLUDED_LABEL_PROPS = { className: "border-dashed", "data-selection": "excluded" } as const;
 
 /**
+ * Object-centric — RM-066. Per-type edges joining the same two activities are drawn side
+ * by side: each one's endpoints shift across the flow axis by its slot, so the strokes and
+ * their label pills separate instead of stacking. The spread is capped so every endpoint
+ * stays on the card's own face.
+ */
+const PARALLEL_EDGE_GAP = 40;
+const PARALLEL_EDGE_MAX_SPREAD = 120;
+
+function parallelShift(index: number | undefined, count: number | undefined): number {
+  if (index === undefined || count === undefined || count < 2) return 0;
+  const gap = Math.min(PARALLEL_EDGE_GAP, PARALLEL_EDGE_MAX_SPREAD / (count - 1));
+  return (index - (count - 1) / 2) * gap;
+}
+
+/**
  * Branded process-map transition edge. Register it in
  * `edgeTypes={{ "process-transition": ProcessTransitionEdge }}`; build edges with
  * `buildProcessMapModel`.
@@ -165,13 +181,26 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
   // RM-065: tokens from an enclosing `ProcessReplay`. `undefined` outside one, and then the
   // key is not added at all, so a map with no replay builds exactly the data it did before.
   const replayTokens = useProcessReplayEdgeTokens(props.id);
+  // Object-centric — RM-066: a per-type edge takes its type's chart stroke (on the edge
+  // object's `style`), never the value ramp, and sits in its own parallel slot.
+  const isObjectTyped = data?.objectType !== undefined;
+  const shift = parallelShift(data?.parallelIndex, data?.parallelCount);
+  const acrossX = props.targetPosition === Position.Top || props.targetPosition === Position.Bottom;
+  const placed = shift
+    ? {
+        sourceX: props.sourceX + (acrossX ? shift : 0),
+        targetX: props.targetX + (acrossX ? shift : 0),
+        sourceY: props.sourceY + (acrossX ? 0 : shift),
+        targetY: props.targetY + (acrossX ? 0 : shift),
+      }
+    : undefined;
 
   const weightedData = useMemo<FlowWeightedEdgeData>(
     () => ({
       weight: data?.weight,
       scaleGroup: PROCESS_MAP_EDGE_SCALE_GROUP,
-      value: data?.value,
-      valueDomain: data?.valueDomain,
+      value: isObjectTyped ? undefined : data?.value,
+      valueDomain: isObjectTyped ? undefined : data?.valueDomain,
       label: data?.label,
       secondaryLabel: data?.secondaryLabel,
       variant: data?.isBackEdge ? "back" : "forward",
@@ -179,6 +208,7 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       ...(replayTokens ? { tokens: replayTokens } : undefined),
     }),
     [
+      isObjectTyped,
       data?.weight,
       data?.value,
       data?.valueDomain,
@@ -216,6 +246,7 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       data-incident={hover.incidentEdgeIds.has(props.id) ? "true" : undefined}
       data-conformance={conformance}
       data-dash={conformance ? CONFORMANCE_STATE_ENCODING[conformance].dash : undefined}
+      data-object-type={data?.objectType?.type}
       className="transition-opacity duration-fast ease-standard motion-reduce:transition-none"
       style={{ opacity }}
       // The label pill is portalled out of this `<g>` by `EdgeLabelRenderer`, so it has no
@@ -226,9 +257,21 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       onKeyDown={(event) => onEdgeKey(props.id, event)}
     >
       {data?.isSelfLoop ? (
-        <FlowSelfLoopEdge {...props} style={edgeStyle} type="self-loop" data={selfLoopData} />
+        <FlowSelfLoopEdge
+          {...props}
+          {...placed}
+          style={edgeStyle}
+          type="self-loop"
+          data={selfLoopData}
+        />
       ) : (
-        <FlowWeightedEdge {...props} style={edgeStyle} type="weighted" data={weightedData} />
+        <FlowWeightedEdge
+          {...props}
+          {...placed}
+          style={edgeStyle}
+          type="weighted"
+          data={weightedData}
+        />
       )}
     </g>
   );

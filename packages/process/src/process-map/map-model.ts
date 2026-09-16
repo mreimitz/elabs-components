@@ -45,6 +45,7 @@ import { EDGE_KEY_SEPARATOR } from "../core/discover-graph";
 import { minMax } from "../core/scale";
 import type { ReworkStats } from "../core/detect-rework";
 import type { FilterSpec } from "../core/filter-log";
+import type { ObjectCentricGraph } from "../core/discover-object-centric-graph";
 import type {
   ActivityStats,
   FrequencyMode,
@@ -205,6 +206,11 @@ export interface ProcessActivityNodeData extends Record<string, unknown> {
    * was given `conformance`; drives `data-conformance` plus its glyph and dash.
    */
   conformance?: ConformanceState;
+  /**
+   * Object-centric — RM-066. One entry per object type this activity occurs in, in the
+   * graph's type order. Set only in object-centric mode; drives the per-type chips.
+   */
+  objectTypes?: ProcessObjectTypeCount[];
 }
 
 /** `data` carried by every {@link ProcessMapEdge}. */
@@ -240,6 +246,15 @@ export interface ProcessTransitionEdgeData extends Record<string, unknown> {
    * was given `conformance`; drives `data-conformance` plus its glyph and dash.
    */
   conformance?: ConformanceState;
+  /**
+   * Object-centric — RM-066. The object type this edge belongs to; per-type edges between
+   * the same two activities are drawn side by side (see `parallelIndex`/`parallelCount`).
+   */
+  objectType?: ProcessObjectTypeMark;
+  /** Object-centric — RM-066. This edge's slot among the per-type edges of its pair. */
+  parallelIndex?: number;
+  /** Object-centric — RM-066. How many per-type edges join this edge's pair. */
+  parallelCount?: number;
 }
 
 /** A process-map activity node. Register as `nodeTypes={{ "process-activity": … }}`. */
@@ -256,6 +271,8 @@ export interface ProcessActivityRow {
   reworkCount?: number;
   role: string;
   selectionState: ProcessSelectionState;
+  /** Object-centric — RM-066. Per-type counts, as printed in the table twin. */
+  objectTypes?: string;
 }
 
 /** One row of the accessible `TableView` twin — transitions half. */
@@ -267,6 +284,8 @@ export interface ProcessTransitionRow {
   secondaryLabel?: string;
   shape: string;
   selectionState: ProcessSelectionState;
+  /** Object-centric — RM-066. The object type's display name. */
+  objectType?: string;
 }
 
 /** Everything the canvas and the table are both rendered from. */
@@ -912,4 +931,265 @@ export function transitionAriaLabel(data: ProcessTransitionEdgeData, metricLabel
   if (data.secondaryLabel) parts.push(data.secondaryLabel);
   if (data.selectionState !== "associated") parts.push(data.selectionState);
   return parts.join(", ");
+}
+// ── Object-centric — RM-066 ──────────────────────────────────────────────────
+
+/** How one object type is marked on the map: a name, a text code and a chart colour. */
+export interface ProcessObjectTypeMark {
+  /** The object type's id, as keyed in the `ObjectCentricGraph`. */
+  type: string;
+  /** Display name. */
+  label: string;
+  /** Two-character code printed beside every swatch — the non-colour channel. */
+  code: string;
+  /** A categorical chart token from `objectTypeColorScale` (RM-054's scale, reused). */
+  color: ActivityColor;
+}
+
+/** One object type's share of an activity node. */
+export interface ProcessObjectTypeCount extends ProcessObjectTypeMark {
+  instances: number;
+  /** Distinct objects of this type the activity touches. */
+  cases: number;
+  /** The chip's accessible name, e.g. "order: 2 objects, 3 occurrences". */
+  ariaLabel: string;
+}
+
+/** Every string the object-centric mode composes. Override for a non-English locale. */
+export interface ObjectCentricMapLabels {
+  /** A node chip's accessible name and table text. */
+  typeCount: (type: string, objects: number, occurrences: number) => string;
+  /** Prefixes a per-type edge's accessible name. */
+  edgePrefix: (type: string) => string;
+  /** Activity-table column header. */
+  columnObjectTypes: string;
+  /** Transition-table column header. */
+  columnObjectType: string;
+  /** The canvas legend's title. */
+  legendTitle: string;
+}
+
+/** English defaults for {@link ObjectCentricMapLabels}. */
+export const OBJECT_CENTRIC_MAP_DEFAULT_LABELS: Readonly<ObjectCentricMapLabels> = Object.freeze({
+  typeCount: (type: string, objects: number, occurrences: number) =>
+    `${type}: ${objects} ${objects === 1 ? "object" : "objects"}, ${occurrences} ${
+      occurrences === 1 ? "occurrence" : "occurrences"
+    }`,
+  edgePrefix: (type: string) => `${type} flow`,
+  columnObjectTypes: "Object types",
+  columnObjectType: "Object type",
+  legendTitle: "Object types",
+});
+
+/** The id of one object type's edge: the merged edge id, the separator, the type. */
+export function objectCentricEdgeId(source: string, target: string, type: string): string {
+  return `${processEdgeId(source, target)}${EDGE_KEY_SEPARATOR}${type}`;
+}
+
+/** Inputs to {@link buildObjectCentricMapModel}. */
+export interface BuildObjectCentricMapModelOptions extends BuildProcessMapModelOptions {
+  /**
+   * The object-centric graph `graph` was flattened from (`objectCentricProcessGraph`).
+   * Omit — or omit `objectTypeScale` — and this is exactly {@link buildProcessMapModel}.
+   */
+  objectCentric?: ObjectCentricGraph;
+  /** `objectTypeColorScale(objectCentric)`, built once from the FULL graph. */
+  objectTypeScale?: ActivityColorScale;
+  objectCentricLabels?: ObjectCentricMapLabels;
+}
+
+/**
+ * The object-centric process-map model: {@link buildProcessMapModel} over the flattened
+ * graph, then
+ *
+ * - every node gains `data.objectTypes` (one chip per type, each with a text code and a
+ *   real accessible name folded into the node's own), and
+ * - every merged edge is replaced by one edge PER OBJECT TYPE — its weight and printed
+ *   label read that type's own counts, its label is prefixed with the type's code, and its
+ *   stroke is the type's chart token. The edge-value colour ramp is never used here.
+ *
+ * A transition selection may name either a per-type edge or the merged pair; both select
+ * the pair's neighbourhood, and only the named per-type edge reads `"selected"`.
+ */
+export function buildObjectCentricMapModel({
+  objectCentric,
+  objectTypeScale,
+  objectCentricLabels = OBJECT_CENTRIC_MAP_DEFAULT_LABELS,
+  ...options
+}: BuildObjectCentricMapModelOptions): ProcessMapModel {
+  if (!objectCentric || !objectTypeScale) return buildProcessMapModel(options);
+  const labels = objectCentricLabels;
+  const { metric } = options;
+
+  const typeEdges = new Map<string, Map<string, TransitionStats>>();
+  const mergedIdOf = new Map<string, string>();
+  for (const type of objectCentric.objectTypes) {
+    for (const transition of objectCentric.transitionsByType[type] ?? []) {
+      const mergedId = processEdgeId(transition.source, transition.target);
+      mergedIdOf.set(objectCentricEdgeId(transition.source, transition.target, type), mergedId);
+      let byType = typeEdges.get(mergedId);
+      if (byType === undefined) {
+        byType = new Map();
+        typeEdges.set(mergedId, byType);
+      }
+      byType.set(type, transition);
+    }
+  }
+
+  const requested = options.selection;
+  const typeSelectionId =
+    requested?.kind === "transition" && mergedIdOf.has(requested.id) ? requested.id : undefined;
+  const model = buildProcessMapModel({
+    ...options,
+    selection: typeSelectionId
+      ? { kind: "transition", id: mergedIdOf.get(typeSelectionId) as string }
+      : requested,
+  });
+
+  const marks = new Map<string, ProcessObjectTypeMark>(
+    objectCentric.objectTypes.map((type) => [
+      type,
+      {
+        type,
+        label: objectTypeScale.labelFor(type),
+        code: objectTypeScale.codeFor(type),
+        color: objectTypeScale.colorFor(type),
+      },
+    ]),
+  );
+
+  const activityById = new Map(objectCentric.activities.map((a) => [a.id, a]));
+  const nodes: ProcessMapNode[] = model.nodes.map((node) => {
+    const activity = activityById.get(node.id);
+    if (!activity) return node;
+    const objectTypes: ProcessObjectTypeCount[] = [];
+    for (const type of objectCentric.objectTypes) {
+      const counts = activity.perType[type];
+      const mark = marks.get(type);
+      if (!counts || !mark) continue;
+      objectTypes.push({
+        ...mark,
+        instances: counts.instances,
+        cases: counts.cases,
+        ariaLabel: labels.typeCount(mark.label, counts.cases, counts.instances),
+      });
+    }
+    return {
+      ...node,
+      data: { ...node.data, objectTypes },
+      ariaLabel: [node.ariaLabel, ...objectTypes.map((entry) => entry.ariaLabel)].join(", "),
+    };
+  });
+
+  const denominators = new Map(
+    objectCentric.objectTypes.map((type) => [
+      type,
+      processEdgeDenominators(objectCentric.transitionsByType[type] ?? []),
+    ]),
+  );
+
+  const edges: ProcessMapEdge[] = [];
+  const values: number[] = [];
+  for (const merged of model.edges) {
+    const byType = typeEdges.get(merged.id);
+    const mergedData = merged.data as ProcessTransitionEdgeData;
+    if (!byType) continue;
+    let parallelIndex = 0;
+    for (const type of objectCentric.objectTypes) {
+      const transition = byType.get(type);
+      const mark = marks.get(type);
+      const typeGraph = objectCentric.graphsByType[type];
+      if (!transition || !mark || !typeGraph) continue;
+      const typeDenominators = denominators.get(type) as ProcessEdgeDenominators;
+      const id = objectCentricEdgeId(transition.source, transition.target, type);
+      const value = transitionMetricValue(
+        transition,
+        metric.edge,
+        typeGraph.totals,
+        typeDenominators,
+      );
+      values.push(value);
+      const selectionState: ProcessSelectionState =
+        typeSelectionId !== undefined &&
+        mergedData.selectionState === "selected" &&
+        typeSelectionId !== id
+          ? "associated"
+          : mergedData.selectionState;
+      const data: ProcessTransitionEdgeData = {
+        ...mergedData,
+        weight: value,
+        value,
+        label: `${mark.code} ${formatMetricValue(value, metric.edge)}`,
+        secondaryLabel:
+          metric.secondary === undefined
+            ? undefined
+            : formatMetricValue(
+                transitionMetricValue(
+                  transition,
+                  metric.secondary,
+                  typeGraph.totals,
+                  typeDenominators,
+                ),
+                metric.secondary,
+              ),
+        selectionState,
+        objectType: mark,
+        parallelIndex,
+        parallelCount: byType.size,
+      };
+      data.ariaLabel = `${labels.edgePrefix(mark.label)}: ${transitionAriaLabel(
+        data,
+        model.edgeMetricLabel,
+      )}`;
+      edges.push({
+        ...merged,
+        id,
+        data,
+        ariaLabel: data.ariaLabel,
+        style: { stroke: `var(${mark.color.token})` },
+      });
+      parallelIndex += 1;
+    }
+  }
+
+  const edgeDomain = values.length > 0 ? minMax(values) : model.edgeDomain;
+  for (const edge of edges) (edge.data as ProcessTransitionEdgeData).valueDomain = edgeDomain;
+
+  const activityRows: ProcessActivityRow[] = model.activityRows.map((row, index) => {
+    const objectTypes = nodes[index]?.data.objectTypes;
+    return objectTypes
+      ? {
+          ...row,
+          objectTypes: objectTypes.map((entry) => entry.ariaLabel).join("; "),
+        }
+      : row;
+  });
+
+  const transitionRows: ProcessTransitionRow[] = edges.map((edge) => {
+    const data = edge.data as ProcessTransitionEdgeData;
+    return {
+      id: edge.id,
+      source: data.source,
+      target: data.target,
+      primaryLabel: data.label,
+      secondaryLabel: data.secondaryLabel,
+      shape: transitionShape(data),
+      selectionState: data.selectionState,
+      objectType: data.objectType?.label,
+    };
+  });
+
+  return {
+    ...model,
+    nodes,
+    edges,
+    edgeDomain,
+    activityRows,
+    transitionRows,
+    excludedCounts: {
+      ...model.excludedCounts,
+      transitions: transitionRows.filter((row) => row.selectionState === "excluded").length,
+      totalTransitions: transitionRows.length,
+    },
+  };
 }

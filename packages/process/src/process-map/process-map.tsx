@@ -102,6 +102,17 @@ import {
 } from "../conformance-overlay/conformance-state";
 import { ConformanceStateMark } from "../conformance-overlay/conformance-legend";
 import {
+  abstractObjectCentricGraph,
+  objectCentricProcessGraph,
+  objectTypeColorScale,
+  type ObjectCentricGraph,
+} from "../core/discover-object-centric-graph";
+import {
+  buildObjectCentricMapModel,
+  OBJECT_CENTRIC_MAP_DEFAULT_LABELS,
+  type ObjectCentricMapLabels,
+} from "./map-model";
+import {
   buildProcessMapModel,
   processGraphStructureKey,
   PROCESS_FILTER_INTENT_KINDS,
@@ -236,6 +247,18 @@ export interface ProcessMapProps extends Omit<HTMLAttributes<HTMLDivElement>, "o
    */
   conformance?: ConformanceResult;
   /**
+   * Object-centric — RM-066. An object-centric graph (`discoverObjectCentricGraph`, e.g.
+   * over `fromOcel(…).logs`) to draw instead of `graph`/`log` — mutually exclusive with
+   * both, and it wins when given together (with a dev-mode console warning). Shared
+   * activities merge into one node carrying a chip per object type; edges are drawn once
+   * per object type in that type's chart colour, side by side. `abstraction` applies to
+   * every type alike; for per-type abstraction pass `abstractObjectCentricGraph(…)`'s
+   * result here instead.
+   */
+  objectCentric?: ObjectCentricGraph;
+  /** Object-centric — RM-066. Strings the object-centric mode composes. */
+  objectCentricLabels?: ObjectCentricMapLabels;
+  /**
    * Accessible name for the canvas region. Defaults to the localized
    * `process.map.label` message.
    */
@@ -269,6 +292,31 @@ function useResolvedGraph(
   }, [base, activities, paths]);
 }
 
+/** Object-centric — RM-066. The abstracted graph, its flattened twin and the type scale. */
+function useObjectCentricView(
+  objectCentric: ObjectCentricGraph | undefined,
+  abstraction: Pick<AbstractionOptions, "activities" | "paths"> | undefined,
+) {
+  const scale = useMemo(
+    () => (objectCentric ? objectTypeColorScale(objectCentric) : undefined),
+    [objectCentric],
+  );
+  const activities = abstraction?.activities;
+  const paths = abstraction?.paths;
+  return useMemo(() => {
+    if (!objectCentric || !scale) return undefined;
+    const graph =
+      activities === undefined && paths === undefined
+        ? objectCentric
+        : abstractObjectCentricGraph(
+            objectCentric,
+            {},
+            { activities: activities ?? 1, paths: paths ?? 1 },
+          );
+    return { graph, flat: objectCentricProcessGraph(graph), scale };
+  }, [objectCentric, scale, activities, paths]);
+}
+
 /**
  * The process map.
  *
@@ -294,6 +342,8 @@ export function ProcessMap({
   loading = false,
   colorScale,
   conformance,
+  objectCentric,
+  objectCentricLabels = OBJECT_CENTRIC_MAP_DEFAULT_LABELS,
   label,
   layoutEngine = "dagre",
   className,
@@ -316,7 +366,22 @@ export function ProcessMap({
     },
     [t],
   );
-  const resolved = useResolvedGraph(graph, log, abstraction);
+  // Object-centric — RM-066: abstract per type, flatten for layout, colour from the FULL
+  // graph so a type keeps its swatch while the reader abstracts.
+  const objectCentricView = useObjectCentricView(objectCentric, abstraction);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (objectCentric && (graph || log)) {
+      console.warn(
+        "ProcessMap: `objectCentric` is mutually exclusive with `graph`/`log`; drawing `objectCentric`.",
+      );
+    }
+  }, [objectCentric, graph, log]);
+  const resolved = useResolvedGraph(
+    objectCentricView ? objectCentricView.flat : graph,
+    objectCentricView ? undefined : log,
+    objectCentricView ? undefined : abstraction,
+  );
   const derivedRework = useMemo(
     () => (rework ? undefined : log ? detectRework(log) : undefined),
     [rework, log],
@@ -433,7 +498,7 @@ export function ProcessMap({
   const model: ProcessMapModel | null = useMemo(
     () =>
       resolved
-        ? buildProcessMapModel({
+        ? buildObjectCentricMapModel({
             graph: resolved,
             metric,
             rework: activeRework,
@@ -441,9 +506,14 @@ export function ProcessMap({
             selectionStates,
             backEdgeIds: layout.backEdgeIds,
             colorScale,
+            objectCentric: objectCentricView?.graph,
+            objectTypeScale: objectCentricView?.scale,
+            objectCentricLabels,
           })
         : null,
     [
+      objectCentricView,
+      objectCentricLabels,
       resolved,
       metric,
       activeRework,
@@ -795,6 +865,9 @@ export function ProcessMap({
               {conformanceStates ? (
                 <TableHead scope="col">{CONFORMANCE_STATE_DEFAULT_LABELS.column}</TableHead>
               ) : null}
+              {objectCentricView ? (
+                <TableHead scope="col">{objectCentricLabels.columnObjectTypes}</TableHead>
+              ) : null}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -824,6 +897,7 @@ export function ProcessMap({
                     <ConformanceStateMark state={activityConformance(conformanceStates, row.id)} />
                   </TableCell>
                 ) : null}
+                {objectCentricView ? <TableCell>{row.objectTypes}</TableCell> : null}
               </TableRow>
             ))}
           </TableBody>
@@ -836,6 +910,9 @@ export function ProcessMap({
           </TableCaption>
           <TableHeader>
             <TableRow>
+              {objectCentricView ? (
+                <TableHead scope="col">{objectCentricLabels.columnObjectType}</TableHead>
+              ) : null}
               <TableHead scope="col">{t("process.map.columnFrom")}</TableHead>
               <TableHead scope="col">{t("process.map.columnTo")}</TableHead>
               <TableHead scope="col">{t("process.map.columnShape")}</TableHead>
@@ -858,6 +935,7 @@ export function ProcessMap({
                 }
                 data-state={row.selectionState === "selected" ? "selected" : undefined}
               >
+                {objectCentricView ? <TableCell>{row.objectType}</TableCell> : null}
                 <TableCell>{row.source}</TableCell>
                 <TableCell>{row.target}</TableCell>
                 <TableCell>{row.shape}</TableCell>
@@ -968,14 +1046,29 @@ export function ProcessMap({
         className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-3"
       >
         {showLegend ? (
-          <Legend
-            variant="scale"
-            kind="width"
-            domain={model.edgeDomain}
-            format={model.formatEdgeValue}
-            title={model.edgeMetricLabel}
-            className="pointer-events-auto"
-          />
+          <div className="flex items-start gap-3">
+            <Legend
+              variant="scale"
+              kind="width"
+              domain={model.edgeDomain}
+              format={model.formatEdgeValue}
+              title={model.edgeMetricLabel}
+              className="pointer-events-auto"
+            />
+            {/* Object-centric — RM-066: each type's colour beside its printed code and name. */}
+            {objectCentricView ? (
+              <Legend
+                title={objectCentricLabels.legendTitle}
+                items={objectCentricView.scale.legend
+                  .filter((entry) => objectCentricView.graph.objectTypes.includes(entry.activityId))
+                  .map((entry) => ({
+                    label: `${entry.code} · ${entry.label}`,
+                    color: `var(${entry.token})`,
+                  }))}
+                className="pointer-events-auto"
+              />
+            ) : null}
+          </div>
         ) : (
           <span />
         )}

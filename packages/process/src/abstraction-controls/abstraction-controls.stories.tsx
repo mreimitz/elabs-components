@@ -5,7 +5,7 @@ import { abstractGraph, type AbstractionOptions } from "../core/abstract-graph";
 import { discoverGraph } from "../core/discover-graph";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
 import type { ProcessGraph } from "../core/types";
-import { AbstractionControls } from "./abstraction-controls";
+import { AbstractionControls, type ObjectTypeAbstraction } from "./abstraction-controls";
 import { backboneGraph } from "./abstraction-controls-fixtures";
 
 const log = generateSyntheticLog({ cases: 240, seed: 42 });
@@ -184,5 +184,47 @@ export const Interaction: Story = {
     await waitFor(() => expect(status).toHaveTextContent(/[1-9]\d* activit(?:y|ies) hidden/));
     const afterAuto = Number(activitiesSlider.getAttribute("aria-valuenow"));
     expect(Math.round(60 * (afterAuto / 100))).toBeLessThanOrEqual(25);
+  },
+};
+
+// Object-centric — RM-066
+function PerObjectTypeControls() {
+  const [abstraction, setAbstraction] = useState<AbstractionOptions>({ activities: 1, paths: 1 });
+  const [perType, setPerType] = useState<Record<string, ObjectTypeAbstraction>>({
+    order: { activities: 1, paths: 1 },
+    item: { activities: 0.8, paths: 0.6, linked: false },
+    package: { activities: 1, paths: 1 },
+  });
+  return (
+    <div className="max-w-sm">
+      <AbstractionControls
+        abstraction={abstraction}
+        onAbstractionChange={(next) => setAbstraction((prev) => ({ ...prev, ...next }))}
+        graph={fullGraph}
+        hiddenCounts={{ activities: 0, paths: 0 }}
+        perType={perType}
+        onPerTypeChange={setPerType}
+      />
+    </div>
+  );
+}
+
+/**
+ * Object-centric (RM-066): one collapsible slider pair per object type under the global
+ * pair. Linked types follow the global sliders proportionally; `item` is unlinked here, so
+ * moving the global activities slider to 50% halves `order` and `package` only.
+ */
+export const PerObjectType: Story = {
+  render: () => <PerObjectTypeControls />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("button", { name: "Link item to the global sliders" }),
+    ).toHaveAttribute("aria-pressed", "false");
+    await userEvent.click(canvas.getAllByRole("button", { name: "50%" })[0]!);
+    const row = (type: string) =>
+      canvasElement.querySelector<HTMLElement>(`[data-object-type="${type}"]`)!;
+    await waitFor(() => expect(row("order")).toHaveTextContent("50% · 100%"));
+    await expect(row("item")).toHaveTextContent("80% · 60%");
   },
 };

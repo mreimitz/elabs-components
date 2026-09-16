@@ -2,7 +2,7 @@
 // Run `pnpm gen` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm gen:check` fails on a stale copy.
 //
-// 117 entries (data: 2, source: 18, font: 2, dependency: 95).
+// 118 entries (data: 2, source: 19, font: 2, dependency: 95).
 
 import type { Attribution } from "./attribution-types";
 
@@ -165,7 +165,19 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
   },
   {
     version: null,
-    note: "Algorithm shape for the framework-free process-mining core: which aggregates a directly-follows graph carries (discoverGraph) and how traces are grouped into variants (extractVariants), with durationStats as their shared summary; and the token-based replay procedure behind tokenReplay (produced/consumed/missing/remaining counting, silent-transition enabling before forcing missing tokens). Re-typed in TypeScript from the published algorithms, not copied.",
+    note: "The Object-Centric Event Log 2.0 JSON serialization fromOcel reads (objectTypes, objects, events, relationships). Only the format is implemented; no text, schema file or code is copied. The license of the specification document itself was not established.",
+    id: "ocel-2-0",
+    category: "source",
+    name: "OCEL 2.0 specification",
+    license: "Published specification (license of the document not established)",
+    copyright: "© the OCEL 2.0 specification authors",
+    url: "https://doi.org/10.48550/arXiv.2403.01975",
+    usedBy: ["@elabs-ai/components-process"],
+    required: false,
+  },
+  {
+    version: null,
+    note: "Algorithm shape for the framework-free process-mining core: which aggregates a directly-follows graph carries (discoverGraph) and how traces are grouped into variants (extractVariants), with durationStats as their shared summary; and the token-based replay procedure behind tokenReplay (produced/consumed/missing/remaining counting, silent-transition enabling before forcing missing tokens); and the object-centric directly-follows graph (discoverObjectCentricGraph): one directly-follows graph per object type, shared activities merged into one node with per-type counts, edges kept per type. Re-typed in TypeScript from the published algorithms, not copied.",
     id: "pm4js",
     category: "source",
     name: "pm4js",

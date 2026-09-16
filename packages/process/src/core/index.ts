@@ -197,3 +197,35 @@ export type {
   ReplayTimeline,
   ReplayTimelineOptions,
 } from "./replay-timeline";
+
+// Object-centric — RM-066
+export {
+  fromOcel,
+  OCEL_EVENT_ID_ATTRIBUTE,
+  OCEL_OBJECT_REFS_ATTRIBUTE,
+  readObjectRefs,
+} from "./adapters/ocel";
+export type {
+  OcelAttribute,
+  OcelEvent,
+  OcelJson,
+  OcelObject,
+  OcelParseError,
+  OcelParseOptions,
+  OcelParseResult,
+  OcelRelationship,
+  OcelTypeDeclaration,
+} from "./adapters/ocel";
+export {
+  abstractObjectCentricGraph,
+  discoverObjectCentricGraph,
+  mergeObjectCentricGraphs,
+  objectCentricProcessGraph,
+  objectTypeColorScale,
+} from "./discover-object-centric-graph";
+export type {
+  AbstractedObjectCentricGraph,
+  ObjectCentricActivityStats,
+  ObjectCentricGraph,
+  ObjectTypeActivityCounts,
+} from "./discover-object-centric-graph";
