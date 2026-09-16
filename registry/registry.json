@@ -930,6 +930,81 @@
         }
       ],
       "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-composition-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What is it made of?",
+      "description": "\"What is it made of?\" — a 100%-stacked segmented bar per card (revenue by channel, shipments by region) plus a legend list that is the accessible source of truth: label, share, absolute value, and the share's own change vs last year in pp. Bar and legend share one order and a rank number so colour is never the only link between a segment and its row; shares under 3% merge into \"Other\".",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-composition-01/data/composition.ts",
+          "type": "registry:component",
+          "target": "components/kpi-composition-01/data/composition.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-composition-01/kpi-composition.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-composition-01/kpi-composition.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-ratio-unit-01",
+      "type": "registry:block",
+      "title": "KPI Cards — How big is it?",
+      "description": "\"How big is it in human terms?\" — a rate restated as a small, countable fraction (\"1 in 12 orders arrived late\") via UnitChart, with the exact rate spelled out beneath the rounded headline and a comparison vs last year. Highlighted units use an accent fill against a neutral rest rather than hue alone.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-ratio-unit-01/data/ratio-unit.ts",
+          "type": "registry:component",
+          "target": "components/kpi-ratio-unit-01/data/ratio-unit.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-ratio-unit-01/kpi-ratio-unit.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-ratio-unit-01/kpi-ratio-unit.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-movers-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What changed most?",
+      "description": "\"What changed most?\" — the top 3 risers and top 3 fallers in a ranked depot field (on-time delivery, revenue), each row stating its rank, how many places it moved, and a diverging mini bar from a shared, stated zero axis. Distinct from stat-list-01's single-snapshot share bars: this is about movement between two points in time.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-movers-01/data/depot-movers.ts",
+          "type": "registry:component",
+          "target": "components/kpi-movers-01/data/depot-movers.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-movers-01/kpi-movers.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-movers-01/kpi-movers.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
     }
   ]
 }
