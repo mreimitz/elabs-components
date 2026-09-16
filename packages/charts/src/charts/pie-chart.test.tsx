@@ -202,6 +202,81 @@ describe("PieChart radiusKey (angle × radius double encoding)", () => {
     expect(container.textContent).toContain("45");
   });
 
+  // #246 — the labels used to sit at a single bearing (`x=0, y=-r-2`), so
+  // their only separation was the difference between consecutive rings'
+  // OWN (sqrt-compressed) radii: for `[15, 30, 45]` against a max of 90 that
+  // gap shrank to under the label's own line box and two labels overlapped.
+  it("reference-ring labels do not collide — consecutive labels are spaced by a fixed minimum, not the rings' own radii", () => {
+    const { container } = render(
+      <PieChart data={twoMeasureData} radiusKey="minutes" referenceRings={[15, 30, 45]} size={200}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+      </PieChart>,
+    );
+    const labels = Array.from(container.querySelectorAll("[data-reference-ring-leader] text"));
+    expect(labels.length).toBe(3);
+    // Sorted by radial distance (ring order least->most extreme), since the
+    // leader column stacks outward from `outerRadius`.
+    const ys = labels
+      .map((el) => Number(el.getAttribute("y")))
+      .sort((a, b) => Math.abs(a) - Math.abs(b));
+    for (let i = 1; i < ys.length; i++) {
+      const gap = Math.abs(Math.abs(ys[i]!) - Math.abs(ys[i - 1]!));
+      // The glyph line box measured in the source issue is ~11px; the fixed
+      // spacing must clear it with room for the required ≥4px clearance.
+      expect(gap).toBeGreaterThanOrEqual(12);
+    }
+  });
+
+  // #246 — a label placed inside the plot (at the ring's own radius) could be
+  // covered by any slice whose OWN radius reaches past that ring, because
+  // slices scale on the same sqrt(v / max) axis. Every label must sit past
+  // every slice's own emitted outer radius, which makes that occlusion
+  // impossible for any fixture — read the real per-slice radius off the
+  // rendered path rather than recomputing the component's internal padding,
+  // so this test does not silently drift if the gutter math changes.
+  it("reference-ring labels are placed outside every slice's own outer radius", () => {
+    const { container } = render(
+      <PieChart data={twoMeasureData} radiusKey="minutes" referenceRings={[15, 30, 45]} size={200}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+      </PieChart>,
+    );
+
+    const emittedOuterRadius = (d: string | null): number => {
+      const match = d?.match(/A(-?[\d.]+),/);
+      if (!match?.[1]) {
+        throw new Error(`no elliptical-arc command found in path: ${d}`);
+      }
+      return Number(match[1]);
+    };
+    const hitboxes = Array.from(container.querySelectorAll('path[fill="transparent"]'));
+    expect(hitboxes.length).toBe(2);
+    const maxSliceRadius = Math.max(
+      ...hitboxes.map((h) => emittedOuterRadius(h.getAttribute("d"))),
+    );
+
+    const labels = Array.from(container.querySelectorAll("[data-reference-ring-leader] text"));
+    expect(labels.length).toBe(3);
+    for (const label of labels) {
+      const radius = Math.abs(Number(label.getAttribute("y")));
+      expect(radius).toBeGreaterThan(maxSliceRadius);
+    }
+  });
+
+  it("gives each reference-ring label exactly one leader line", () => {
+    const { container } = render(
+      <PieChart data={twoMeasureData} radiusKey="minutes" referenceRings={[15, 30, 45]} size={200}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+      </PieChart>,
+    );
+    const leaders = container.querySelectorAll("[data-reference-ring-leader]");
+    const labels = container.querySelectorAll("[data-reference-ring-leader] text");
+    expect(leaders.length).toBe(3);
+    expect(leaders.length).toBe(labels.length);
+  });
+
   it("does NOT draw reference rings when radiusKey is unset (no-op)", () => {
     const { container } = render(
       <PieChart data={twoMeasureData} referenceRings={[15, 30, 45]} size={200}>

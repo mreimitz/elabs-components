@@ -46,6 +46,83 @@ import { useHighDecorationOf } from "./use-high-decoration";
 /** Default hover offset in pixels */
 export const DEFAULT_HOVER_OFFSET = 10;
 
+// ── radiusKey reference-ring labels (#RM-030, #246) ─────────────────────────
+//
+// The rings themselves ride the area-honest sqrt(v / max) scale, which
+// compresses as the value grows — so the labels must NOT be spaced by the
+// rings' own (compressible) radii. Instead every label sits on a single
+// vertical leader column outside `outerRadius`, spaced by a fixed minimum
+// that no combination of reference values can collapse; a dotted leader
+// re-associates each label with its own ring. This reuses the idiom
+// `ring.tsx`'s `RingTickRing` already established for `RingChart`'s
+// "labels=outside" case.
+const REFERENCE_RING_LEADER_RESERVE = 18;
+const REFERENCE_RING_LABEL_GAP = 4;
+const REFERENCE_RING_LABEL_SPACING = 16;
+
+/** One `referenceRings` value laid out on the leader column. */
+interface PieReferenceRingLabel {
+  value: number;
+  /** The ring's own radius (sqrt(v / max) scale) — where its dashed circle and leader start. */
+  ringRadius: number;
+  /** Where the leader ends and the label begins, in the fixed-spacing gutter. */
+  leaderEndRadius: number;
+  /** Radial distance of the label's baseline — always `> outerRadius`. */
+  labelRadius: number;
+}
+
+/**
+ * Lay out `referenceRings`' labels on a fixed-spacing leader column outside
+ * `outerRadius`, ordered by each ring's own (sqrt-scaled) radius so leaders
+ * never cross. Returns `[]` when there is nothing to draw — the caller's
+ * render guard (`radiusKey && referenceRings?.length && radiusKeyMax > 0`)
+ * stays the single source of truth for "no-op".
+ */
+function layoutPieReferenceRingLabels(
+  values: number[],
+  radiusKeyMax: number,
+  innerRadius: number,
+  outerRadius: number,
+): PieReferenceRingLabel[] {
+  if (radiusKeyMax <= 0) {
+    return [];
+  }
+  const rings = values
+    .map((value) => {
+      const ratio = Math.sqrt(Math.max(value, 0) / radiusKeyMax);
+      return { value, ringRadius: innerRadius + (outerRadius - innerRadius) * ratio };
+    })
+    .sort((a, b) => a.ringRadius - b.ringRadius);
+
+  return rings.map((ring, i) => {
+    const leaderEndRadius =
+      outerRadius + REFERENCE_RING_LEADER_RESERVE + i * REFERENCE_RING_LABEL_SPACING;
+    return {
+      ...ring,
+      leaderEndRadius,
+      labelRadius: leaderEndRadius + REFERENCE_RING_LABEL_GAP,
+    };
+  });
+}
+
+/**
+ * The gutter `referenceRings` reserves beyond the ordinary hover-offset
+ * padding, so its leader column and labels never clip against the SVG's own
+ * bounds. `0` — and therefore byte-identical sizing — whenever
+ * `referenceRings` is unset (today's behavior, #246).
+ */
+function pieReferenceRingGutter(radiusKey: string | undefined, referenceRingCount: number): number {
+  if (!radiusKey || referenceRingCount === 0) {
+    return 0;
+  }
+  return (
+    REFERENCE_RING_LEADER_RESERVE +
+    REFERENCE_RING_LABEL_GAP +
+    Math.max(0, referenceRingCount - 1) * REFERENCE_RING_LABEL_SPACING +
+    10
+  );
+}
+
 /** Stable empty array so a non-interactive PieChart never re-registers targets. */
 const EMPTY_PIE_TARGETS: ChartDatapointTarget[] = [];
 
@@ -263,8 +340,12 @@ const PieChartCore = memo(function PieChartCore({
   const size = Math.min(width, height);
   const center = size / 2;
 
-  // Calculate radii with padding based on hover offset to prevent clipping
-  const padding = hoverOffset;
+  // Calculate radii with padding based on hover offset to prevent clipping.
+  // `referenceRings` (#RM-030) additionally reserves a leader-column gutter
+  // (#246) so its labels never clip the SVG bounds — a chart with
+  // `referenceRings` unset keeps `padding === hoverOffset`, unchanged.
+  const referenceRingGutter = pieReferenceRingGutter(radiusKey, referenceRings?.length ?? 0);
+  const padding = hoverOffset + referenceRingGutter;
   const outerRadius = center - padding;
   const innerRadius = innerRadiusProp;
 
@@ -300,6 +381,14 @@ const PieChartCore = memo(function PieChartCore({
       return innerRadius + (outerRadius - innerRadius) * ratio;
     });
   }, [data, radiusKey, radiusKeyMax, innerRadius, outerRadius]);
+
+  // referenceRings label layout (#246) — see `layoutPieReferenceRingLabels`.
+  const referenceRingLabels = useMemo(() => {
+    if (!radiusKey || !referenceRings || referenceRings.length === 0) {
+      return [];
+    }
+    return layoutPieReferenceRingLabels(referenceRings, radiusKeyMax, innerRadius, outerRadius);
+  }, [radiusKey, referenceRings, radiusKeyMax, innerRadius, outerRadius]);
 
   // Get color for a slice index
   const getColor = useCallback(
@@ -545,35 +634,46 @@ const PieChartCore = memo(function PieChartCore({
 
           <Group left={center} top={center}>
             {/* radiusKey reference rings (#RM-030) — dashed value gridlines
-                behind the slices, on the same sqrt(v / max) radius scale. */}
+                behind the slices, on the same sqrt(v / max) radius scale.
+                Labels sit OUTSIDE outerRadius on a fixed-spacing leader
+                column (#246) — never on the rings' own compressible radii,
+                and never inside the plot where a slice could cover them. */}
             {radiusKey && referenceRings && referenceRings.length > 0 && radiusKeyMax > 0 ? (
               <g aria-hidden="true">
-                {referenceRings.map((ringValue) => {
-                  const ratio = Math.sqrt(Math.max(ringValue, 0) / radiusKeyMax);
-                  const r = innerRadius + (outerRadius - innerRadius) * ratio;
-                  return (
-                    <g key={`pie-reference-ring-${ringValue}`}>
-                      <circle
-                        cx={0}
-                        cy={0}
-                        fill="none"
-                        r={r}
-                        stroke={pieCssVars.foregroundMuted}
-                        strokeDasharray="4 3"
-                        strokeWidth={1}
-                      />
-                      <text
-                        fill={pieCssVars.foregroundMuted}
-                        fontSize={9}
-                        textAnchor="middle"
-                        x={0}
-                        y={-r - 2}
-                      >
-                        {ringValue}
-                      </text>
-                    </g>
-                  );
-                })}
+                {referenceRingLabels.map((ring) => (
+                  <circle
+                    cx={0}
+                    cy={0}
+                    fill="none"
+                    key={`pie-reference-ring-circle-${ring.value}`}
+                    r={ring.ringRadius}
+                    stroke={pieCssVars.foregroundMuted}
+                    strokeDasharray="4 3"
+                    strokeWidth={1}
+                  />
+                ))}
+                {referenceRingLabels.map((ring) => (
+                  <g data-reference-ring-leader="" key={`pie-reference-ring-label-${ring.value}`}>
+                    <line
+                      stroke={pieCssVars.foregroundMuted}
+                      strokeDasharray="1.5 2.5"
+                      strokeWidth={1}
+                      x1={0}
+                      x2={0}
+                      y1={-ring.ringRadius}
+                      y2={-ring.leaderEndRadius}
+                    />
+                    <text
+                      fill={pieCssVars.foregroundMuted}
+                      fontSize={9}
+                      textAnchor="middle"
+                      x={0}
+                      y={-ring.labelRadius}
+                    >
+                      {ring.value}
+                    </text>
+                  </g>
+                ))}
               </g>
             ) : null}
             {scrubSlicePaths && scrubSliceFills

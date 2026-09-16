@@ -199,5 +199,29 @@ export const BigSlice: Story = {
       expect(canvas.getByText("8 / day")).toBeInTheDocument();
       expect(canvas.getByText("10 min/day")).toBeInTheDocument();
     });
+
+    // Resting state (#246): the story used to end mid-hover, so every
+    // screenshot and visual review judged the DIMMED render — one slice
+    // glowing, the other four stuck at opacity 0.4, with the reference rings
+    // bleeding through them. A synthetic `hover` never fires the matching
+    // `mouseleave`, so releasing it explicitly is required for the chart to
+    // ever reach the state a real visitor sees once the pointer moves on.
+    if (firstHitbox) {
+      await userEvent.unhover(firstHitbox);
+    }
+
+    await waitFor(() => {
+      expect(canvas.getByText("Meeting types")).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      const visiblePaths = Array.from(
+        canvasElement.querySelectorAll("g > path:not([fill='transparent'])"),
+      );
+      expect(visiblePaths.length).toBe(meetingsData.length);
+      for (const path of visiblePaths) {
+        expect(getComputedStyle(path).opacity).toBe("1");
+      }
+    });
   },
 };
