@@ -275,6 +275,10 @@ export const CopyExactValueDisabled: Story = {
  * one of the four shapes AutoChart deliberately never infers or renders — a
  * flat spec cannot express a node/link graph unambiguously, so it stays
  * explicit-container-only.
+ *
+ * The panel speaks to the reader (“This chart can’t be displayed.”) and is a
+ * settled result, not a live region; the type name goes to a dev console
+ * warning instead (#304).
  */
 export const UnsupportedFallback: Story = {
   args: {
@@ -286,6 +290,13 @@ export const UnsupportedFallback: Story = {
       series: [{ key: "north", label: "North" }],
     } satisfies ChartSpec,
     height: 280,
+  },
+  play: async ({ canvasElement }) => {
+    const fallback = canvasElement.querySelector('[data-slot="chart-fallback"]');
+    await expect(fallback).toHaveAttribute("data-kind", "unsupported");
+    await expect(fallback).toHaveTextContent("This chart can’t be displayed.");
+    await expect(fallback).not.toHaveAttribute("aria-live");
+    await expect(fallback?.textContent ?? "").not.toMatch(/sankey|supported/i);
   },
 };
 
@@ -388,7 +399,7 @@ const inferenceCaptionId = "auto-chart-inference";
 /**
  * One inference story: render the spec with no `type`, print the reason, and
  * assert in `play` that the shape really chose `expected` — and that the
- * rendered result is a chart rather than the "not supported yet" fallback.
+ * rendered result is a chart rather than the fallback panel.
  */
 function inferenceStory(spec: ChartSpec, expected: ChartType, rule: string): Story {
   return {
@@ -415,7 +426,7 @@ function inferenceStory(spec: ChartSpec, expected: ChartType, rule: string): Sto
       await expect(caption).toHaveTextContent(explained.reason);
       await expect(caption).toHaveTextContent(expected);
       // A type with no render branch would show the fallback message instead.
-      await expect(canvasElement.textContent ?? "").not.toContain("not supported yet");
+      await expect(canvasElement.querySelector('[data-slot="chart-fallback"]')).toBeNull();
     },
   };
 }

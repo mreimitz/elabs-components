@@ -71,6 +71,7 @@ beforeAll(() => {
   }
 });
 
+import { LocaleProvider } from "@elabs-ai/components-ui";
 import { AutoChart } from "./auto-chart";
 import { CHART_TYPES, inferChartType, isNumericField, isTemporalField } from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
@@ -383,38 +384,81 @@ describe("AutoChart", () => {
     expect(fallback.textContent).toContain("No data to display");
   });
 
-  it("renders ChartFallback with 'not supported yet' for an unsupported type", () => {
-    const { getByRole } = render(
-      <AutoChart
-        spec={{
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional unsupported type for test
-          type: "sankey" as any,
-          data: categoricalData,
-          x: "name",
-          series: ["value"],
-        }}
-      />,
-    );
-    const fallback = getByRole("status");
-    expect(fallback).toBeInTheDocument();
-    expect(fallback.textContent).toContain("not supported yet");
+  // #304 — the unsupported fallback speaks to the reader (not about the
+  // library's roadmap), resolves through t(), is a settled result rather than a
+  // live region, and names the bad type only on the developer channel.
+  describe("unsupported type fallback (#304)", () => {
+    const unsupportedSpec = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional unsupported type for test
+      type: "sankey" as any,
+      data: categoricalData,
+      x: "name",
+      series: ["value"],
+    };
+
+    it("renders user-facing copy, never a statement about the library", () => {
+      const { container } = render(<AutoChart spec={unsupportedSpec} />);
+      const fallback = container.querySelector('[data-slot="chart-fallback"]');
+      expect(fallback).toHaveAttribute("data-kind", "unsupported");
+      expect(fallback).toHaveTextContent("This chart can’t be displayed.");
+      expect(fallback?.textContent ?? "").not.toMatch(/not supported|unsupported|yet|sankey/i);
+    });
+
+    it("resolves every fallback string through the locale seam", () => {
+      const { container } = render(
+        <LocaleProvider
+          messages={{
+            "charts.chart.unsupported": "Dieses Diagramm kann nicht angezeigt werden.",
+            "charts.chart.empty": "Keine Daten",
+          }}
+        >
+          <AutoChart spec={unsupportedSpec} />
+          <AutoChart spec={{ data: [], x: "date", series: ["revenue"] }} />
+        </LocaleProvider>,
+      );
+      const fallbacks = container.querySelectorAll('[data-slot="chart-fallback"]');
+      expect(fallbacks[0]).toHaveTextContent("Dieses Diagramm kann nicht angezeigt werden.");
+      expect(fallbacks[1]).toHaveTextContent("Keine Daten");
+    });
+
+    it("is not a live region, while the loading state still is", () => {
+      const { container } = render(
+        <>
+          <AutoChart spec={unsupportedSpec} />
+          <AutoChart spec={unsupportedSpec} loading />
+        </>,
+      );
+      const fallback = container.querySelector('[data-slot="chart-fallback"]');
+      expect(fallback).not.toHaveAttribute("aria-live");
+      expect(fallback).not.toHaveAttribute("role");
+      const loading = container.querySelector('[role="status"]');
+      expect(loading).toHaveAttribute("aria-live", "polite");
+      expect(loading).toHaveTextContent("Loading chart…");
+    });
+
+    it("names the unsupported type in a dev console warning", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      try {
+        render(<AutoChart spec={{ ...unsupportedSpec, type: "invented-by-a-model" as never }} />);
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('"invented-by-a-model"'));
+      } finally {
+        warn.mockRestore();
+      }
+    });
   });
 
   it("explicit type overrides inference — bar renders for temporal data", () => {
-    const { container, queryByText } = render(
+    const { container } = render(
       <AutoChart
         spec={{ type: "bar", data: temporalData, x: "date", series: ["revenue"] }}
         height={280}
       />,
     );
-    /*
-     * No fallback should appear. Asserted on the fallback's TEXT, not on the
-     * absence of `role="status"`: a rendering AutoChart now carries its own
-     * empty polite live region (the `copyValueOnActivate` announcement, which
-     * has to be mounted from first paint to be announced — ARIA22), so
-     * `role="status"` no longer discriminates chart from fallback.
-     */
-    expect(queryByText(/not supported yet|No data to display/)).toBeNull();
+    // No fallback should appear. Asserted on the fallback's own slot: a
+    // rendering AutoChart carries its own polite live region (the
+    // `copyValueOnActivate` announcement, ARIA22), so `role="status"` does not
+    // discriminate chart from fallback.
+    expect(container.querySelector('[data-slot="chart-fallback"]')).toBeNull();
     expect(container.firstChild).toBeInTheDocument();
   });
 
@@ -530,7 +574,7 @@ describe("AutoChart", () => {
   // The `type` is EXPLICIT in each case: this asserts the render switch, not
   // the inference (which `infer-chart-type.test.ts` owns end to end). A type
   // with no branch returns `null` from `renderChart` and AutoChart renders the
-  // "not supported yet" fallback — so "is the fallback absent" is the real
+  // unsupported fallback — so "is the fallback absent" is the real
   // assertion here, not "did something render".
   describe("the RM-038 families", () => {
     const specs: Array<[string, ChartSpec]> = [
@@ -703,7 +747,7 @@ describe("AutoChart", () => {
       it(`renders a real container for '${name}' — not the unsupported fallback`, () => {
         const { container } = render(<AutoChart spec={spec} height={280} />);
         expect(container.firstChild).toBeInTheDocument();
-        expect(container.textContent ?? "").not.toContain("not supported yet");
+        expect(container.querySelector('[data-kind="unsupported"]')).toBeNull();
       });
     }
 
@@ -731,7 +775,10 @@ describe("AutoChart", () => {
           spec={{ type: "sankey" as any, data: categoricalData, x: "name", series: ["value"] }}
         />,
       );
-      expect(container.textContent ?? "").toContain("not supported yet");
+      expect(container.querySelector('[data-slot="chart-fallback"]')).toHaveAttribute(
+        "data-kind",
+        "unsupported",
+      );
     });
   });
 

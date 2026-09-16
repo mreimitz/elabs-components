@@ -338,6 +338,11 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // (ChartFrame, ChartCard, AutoChart all show the same "a chart is loading"
   // concept — one key, reused, rather than three near-duplicate strings).
   "charts.chart.loading": "Loading chart…",
+  // ChartFallback's default copy per `kind` (#304). Written for the reader of
+  // the page, not the developer: the unsupported chart type name goes to a
+  // dev-only console warning, never into this string.
+  "charts.chart.empty": "No data to display",
+  "charts.chart.unsupported": "This chart can’t be displayed.",
   "charts.metricGrid.loading": "Loading metrics…",
   // Chart drill-down (#349). The chart SVG is aria-hidden, so these names are
   // the ONLY thing AT reads for an interactive datapoint — there is no

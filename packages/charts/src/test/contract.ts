@@ -767,7 +767,7 @@ export function assertChartSpecContract(spec: unknown): void {
   }
   const s = spec as ChartSpec;
 
-  // A type the union does not have renders "not supported yet" — never a chart.
+  // A type the union does not have renders the unsupported fallback — never a chart.
   if (s.type !== undefined && !isChartType(s.type)) {
     fail(
       "AutoChart",
