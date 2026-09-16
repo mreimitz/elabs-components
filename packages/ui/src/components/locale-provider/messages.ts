@@ -404,6 +404,28 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // RM-075 follow-up: `container` dashboard tile's default tablist name when the tile
   // has no `title`.
   "charts.dashboard.containerTabs": "Container tabs",
+  // dashboard edit — RM-078: edit-layer handles, size badge and screen-reader announcements.
+  // Columns and rows are announced 1-based; the badge shows the same numbers.
+  "charts.dashboard.edit.instructions":
+    "To pick up a tile, press Enter. Use the arrow keys to move it one cell, or four cells with Shift. Press Enter to drop it, or Escape to cancel. On a resize handle, the arrow keys resize directly.",
+  "charts.dashboard.edit.moveTile": "Move {title}",
+  "charts.dashboard.edit.resizeTile": "Resize {title} from {edge}",
+  "charts.dashboard.edit.edgeTop": "top",
+  "charts.dashboard.edit.edgeTopRight": "top-right",
+  "charts.dashboard.edit.edgeRight": "right",
+  "charts.dashboard.edit.edgeBottomRight": "bottom-right",
+  "charts.dashboard.edit.edgeBottom": "bottom",
+  "charts.dashboard.edit.edgeBottomLeft": "bottom-left",
+  "charts.dashboard.edit.edgeLeft": "left",
+  "charts.dashboard.edit.edgeTopLeft": "top-left",
+  "charts.dashboard.edit.sizeBadge": "({x},{y}) ⤢ {w} × {h}",
+  "charts.dashboard.edit.pickedUp": "Picked up {title} at column {x}, row {y}",
+  "charts.dashboard.edit.moved": "Moved to column {x}, row {y}",
+  "charts.dashboard.edit.dropped": "Dropped {title} at column {x}, row {y}, size {w} by {h}",
+  "charts.dashboard.edit.rejected": "Cannot place here — not enough room",
+  "charts.dashboard.edit.resizing": "Resizing {title}: {w} by {h}",
+  "charts.dashboard.edit.resized": "Resized {title} to {w} by {h}",
+  "charts.dashboard.edit.cancelled": "Cancelled",
 
   // ── @elabs-ai/components-maps ─────────────────────────────────────────────────────────────
   "maps.popup.close": "Close popup",

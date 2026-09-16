@@ -24,6 +24,7 @@ export * from "./chrome";
 export * from "./tiles/filter-tile";
 
 // Edit layer — RM-078
+export * from "./edit";
 
 // Toolbar — RM-079
 
