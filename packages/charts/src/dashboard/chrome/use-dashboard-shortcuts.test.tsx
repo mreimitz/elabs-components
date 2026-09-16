@@ -1,13 +1,22 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as ComponentsUi from "@elabs-ai/components-ui";
 
+import { readDashboardClipboard, resetDashboardClipboardForTests } from "../edit/clipboard";
 import type { DashboardSpec } from "../core/spec";
 import { DashboardProvider, createPlaceholderTileKind } from "../dashboard-sheet";
 import { useDashboardContext } from "../dashboard-sheet/use-dashboard";
 import {
+  dashboardShortcutDescriptors,
   useDashboardShortcuts,
   type UseDashboardShortcutsOptions,
 } from "./use-dashboard-shortcuts";
+
+const toastMock = vi.fn();
+vi.mock("@elabs-ai/components-ui", async (importOriginal) => {
+  const actual = await importOriginal<typeof ComponentsUi>();
+  return { ...actual, toast: (...args: unknown[]) => toastMock(...args) };
+});
 
 const TILES = [createPlaceholderTileKind("chart")];
 
@@ -204,5 +213,110 @@ describe("useDashboardShortcuts", () => {
 
     expect(store.getState().spec).toEqual(before);
     expect(store.getState().history.past).toBe(0);
+  });
+
+  // tile operations — RM-081
+  describe("tile operations", () => {
+    beforeEach(() => resetDashboardClipboardForTests());
+
+    it("Mod+A selects every top-level tile", () => {
+      const { store } = renderHarness();
+      fireEvent.keyDown(container(), { key: "a", metaKey: true });
+      expect(store.getState().focus).toEqual(["chart-1", "chart-2"]);
+    });
+
+    it("Mod+C copies the focused tiles to the clipboard (marker'd JSON)", async () => {
+      const { store } = renderHarness();
+      act(() => store.getState().actions.setFocus(["chart-1"]));
+      await act(async () => {
+        fireEvent.keyDown(container(), { key: "c", metaKey: true });
+        await Promise.resolve();
+      });
+      const tiles = await readDashboardClipboard();
+      expect(tiles).toEqual([{ kind: "chart", content: {}, layout: { w: 4, h: 4 } }]);
+    });
+
+    it("Mod+X copies then removes the focused tiles as one history entry", async () => {
+      const { store } = renderHarness();
+      act(() => store.getState().actions.setFocus(["chart-1"]));
+      await act(async () => {
+        fireEvent.keyDown(container(), { key: "x", metaKey: true });
+        await Promise.resolve();
+      });
+      expect(store.getState().spec.tiles.map((t) => t.id)).toEqual(["chart-2"]);
+      expect(store.getState().history.past).toBe(1);
+      const tiles = await readDashboardClipboard();
+      expect(tiles).toEqual([{ kind: "chart", content: {}, layout: { w: 4, h: 4 } }]);
+    });
+
+    it("Mod+V pastes the clipboard's tiles with a new id, at the first empty slot", async () => {
+      const { store } = renderHarness();
+      act(() => store.getState().actions.setFocus(["chart-1"]));
+      await act(async () => {
+        fireEvent.keyDown(container(), { key: "c", metaKey: true });
+        await Promise.resolve();
+      });
+      act(() => store.getState().actions.setFocus([]));
+      await act(async () => {
+        fireEvent.keyDown(container(), { key: "v", metaKey: true });
+        await Promise.resolve();
+      });
+      expect(store.getState().spec.tiles).toHaveLength(3);
+      const pasted = store
+        .getState()
+        .spec.tiles.find((t) => !["chart-1", "chart-2"].includes(t.id));
+      expect(pasted).toBeDefined();
+      expect(pasted?.kind).toBe("chart");
+    });
+
+    it("Delete offers Undo via a toast", () => {
+      const { store } = renderHarness();
+      act(() => store.getState().actions.setFocus(["chart-1"]));
+      toastMock.mockClear();
+
+      fireEvent.keyDown(container(), { key: "Delete" });
+
+      expect(store.getState().spec.tiles.map((t) => t.id)).toEqual(["chart-2"]);
+      expect(toastMock).toHaveBeenCalledTimes(1);
+      const [message, opts] = toastMock.mock.calls[0] as [
+        string,
+        { action: { onClick: () => void } },
+      ];
+      expect(message).toBe("Tile deleted");
+      act(() => opts.action.onClick());
+      expect(store.getState().spec.tiles.map((t) => t.id)).toEqual(["chart-1", "chart-2"]);
+    });
+
+    it("Shift+F10 with exactly one focused tile dispatches a native contextmenu event at the target", () => {
+      const { store } = renderHarness();
+      act(() => store.getState().actions.setFocus(["chart-1"]));
+      // Must dispatch INSIDE the shortcuts container ref (the listener is scoped to that
+      // subtree — see "a keydown outside the container ref does nothing" above) and on a
+      // non-text-entry element (isTextEntry guards return early for input/textarea/editable).
+      const target = container();
+      const onContextMenu = vi.fn();
+      target.addEventListener("contextmenu", onContextMenu);
+      fireEvent.keyDown(target, { key: "F10", shiftKey: true });
+      expect(onContextMenu).toHaveBeenCalledTimes(1);
+    });
+
+    it("Shift+F10 with no or multiple focused tiles does nothing", () => {
+      const { store } = renderHarness();
+      const target = container();
+      const onContextMenu = vi.fn();
+      target.addEventListener("contextmenu", onContextMenu);
+      fireEvent.keyDown(target, { key: "F10", shiftKey: true });
+      expect(onContextMenu).not.toHaveBeenCalled();
+      act(() => store.getState().actions.setFocus(["chart-1", "chart-2"]));
+      fireEvent.keyDown(target, { key: "F10", shiftKey: true });
+      expect(onContextMenu).not.toHaveBeenCalled();
+    });
+
+    it("dashboardShortcutDescriptors lists the new bindings", () => {
+      const actions = dashboardShortcutDescriptors().map((d) => d.action);
+      expect(actions).toEqual(
+        expect.arrayContaining(["copy", "cut", "paste", "selectAll", "contextMenu"]),
+      );
+    });
   });
 });

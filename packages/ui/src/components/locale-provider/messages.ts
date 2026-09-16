@@ -469,6 +469,22 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.dashboard.grid.extendable": "Extend sheet",
   "charts.dashboard.grid.extendableDescription":
     "Adds 50 % more rows so it never runs out of room.",
+  // dashboard tile ops — RM-081: the tile context menu (right-click, header kebab, Shift+F10)
+  // and its "Replace with…" submenu, plus the toast on a destructive multi-tile delete.
+  "charts.dashboard.tileOps.menuLabel": "Tile actions",
+  "charts.dashboard.tileOps.duplicate": "Duplicate",
+  "charts.dashboard.tileOps.replaceWith": "Replace with…",
+  "charts.dashboard.tileOps.addToLibrary": "Add to library",
+  "charts.dashboard.tileOps.copy": "Copy",
+  "charts.dashboard.tileOps.cut": "Cut",
+  "charts.dashboard.tileOps.paste": "Paste",
+  "charts.dashboard.tileOps.pasteAndReplace": "Paste and replace",
+  "charts.dashboard.tileOps.bringForward": "Bring forward",
+  "charts.dashboard.tileOps.sendBackward": "Send backward",
+  "charts.dashboard.tileOps.delete": "Delete",
+  "charts.dashboard.tileOps.deletedOne": "Tile deleted",
+  "charts.dashboard.tileOps.deletedMany": "{count} tiles deleted",
+  "charts.dashboard.tileOps.undo": "Undo",
 
   // ── @elabs-ai/components-maps ─────────────────────────────────────────────────────────────
   "maps.popup.close": "Close popup",
