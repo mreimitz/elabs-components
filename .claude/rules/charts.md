@@ -77,3 +77,10 @@ the WHOLE set only when every finite, non-zero member would compact on its own. 
 sub-day arms stay ms, `month`/`quarter` are stride/bound maths only.
 
 History: `docs/rules-history/chart-components.md`.
+
+## Dashboard subpath
+
+`packages/charts/src/dashboard/` is the dashboard sheet surface, published as
+`@elabs-ai/components-charts/dashboard` (+ `/dashboard/test`) per ADR 0037. It keeps
+"charts → ui ONLY": a `data`/`ai`/`process` tile is registered by the host, never imported.
+Binding detail: `.claude/rules/dashboard.md`; gate: `pnpm check --rule dashboard-reuse`.
