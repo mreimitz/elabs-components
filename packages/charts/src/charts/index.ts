@@ -16,6 +16,7 @@ export {
 } from "@visx/gradient";
 // Area chart components
 export { Area, type AreaProps } from "./area";
+export { AreaBand, type AreaBandProps } from "./area-band";
 export { AreaChart, type AreaChartProps } from "./area-chart";
 export { AreaChartLoading, type AreaChartLoadingProps } from "./area-chart-loading";
 // Bar chart components

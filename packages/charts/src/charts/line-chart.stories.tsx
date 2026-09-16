@@ -3,6 +3,7 @@ import { curveNatural } from "@visx/curve";
 import { useState } from "react";
 import { expect, waitFor } from "storybook/test";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { AreaBand } from "./area-band";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
@@ -560,4 +561,42 @@ export const BarcodeFloor: Story = {
       expect(rects[i]!.left).toBeGreaterThanOrEqual(rects[i - 1]!.right);
     }
   },
+};
+
+// A forecast read: solid actual → dashed projection (`Line`'s own
+// `dashFromIndex`), a widening confidence range (`AreaBand`), a "today"
+// column marker and a labelled target row — `Grid`'s `highlightColumnValues`/
+// `highlightRowLabel` (new, #…) plus the new `AreaBand` primitive, both
+// additive and unused by every OTHER story on this page, which stays
+// byte-identical.
+const forecastData = [
+  { week: 1, value: 300, lo: 300, hi: 300 },
+  { week: 2, value: 340, lo: 340, hi: 340 },
+  { week: 3, value: 365, lo: 365, hi: 365 },
+  { week: 4, value: 410, lo: 410, hi: 410 },
+  { week: 5, value: 452, lo: 445, hi: 459 },
+  { week: 6, value: 498, lo: 480, hi: 516 },
+  { week: 7, value: 540, lo: 505, hi: 575 },
+  { week: 8, value: 585, lo: 525, hi: 645 },
+];
+
+export const WithReferenceBand: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={forecastData} xDataKey="week" xScale="linear">
+        <Grid
+          highlightColumnLabel={(v) => (v === 4 ? "Today" : undefined)}
+          highlightColumnStrokeDasharray="2 2"
+          highlightColumnValues={[4]}
+          highlightRowLabel={(v) => (v === 560 ? "Target 560" : undefined)}
+          highlightRowStrokeDasharray="2 3"
+          highlightRowValues={[560]}
+          horizontal
+        />
+        <AreaBand highKey="hi" lowKey="lo" />
+        <Line curve={curveNatural} dashFromIndex={4} dataKey="value" stroke="var(--chart-1)" />
+        <XAxis />
+      </LineChart>
+    </div>
+  ),
 };

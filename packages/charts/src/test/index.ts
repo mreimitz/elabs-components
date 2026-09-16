@@ -110,6 +110,7 @@ export {
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
 export {
   Area,
+  AreaBand,
   AreaChartLoading,
   Bar,
   BarXAxis,

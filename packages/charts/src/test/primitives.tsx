@@ -100,6 +100,7 @@ export const StaticChartPreviewProvider = createPassThroughPart("StaticChartPrev
 // ── Series / axis / legend / tooltip / pattern parts — inert (never mounted by a
 //    container double; see the header). ────────────────────────────────────────
 export const Area = createInertPart("Area");
+export const AreaBand = createInertPart("AreaBand");
 export const AreaChartLoading = createInertPart("AreaChartLoading");
 export const Bar = createInertPart("Bar");
 export const BarXAxis = createInertPart("BarXAxis");

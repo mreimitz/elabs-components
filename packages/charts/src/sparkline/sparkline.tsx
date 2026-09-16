@@ -147,7 +147,8 @@ function estimateLastValueWidth(text: string, fontSizePx: number): number {
 }
 
 /** Combine the caller's `forwardRef` with a locally-owned one so both end up on the same node — a local copy of `ui/lib/merge-refs.ts`'s tiny helper, not an import: that path has no public subpath export, and adding one for four lines isn't warranted (component-api.md). */
-function mergeRefs<T>(...refs: Array<ForwardedRef<T> | undefined>) {
+// prettier-ignore
+function mergeRefs<T>(...refs: Array<ForwardedRef<T> | undefined>) { // microtypography-exempt: generic/rest-parameter syntax, not prose
   return (node: T | null) => {
     for (const ref of refs) {
       if (!ref) continue;
