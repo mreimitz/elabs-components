@@ -177,6 +177,26 @@ describe("spaceSlopeLabels", () => {
       expect(v).toBeLessThanOrEqual(100);
     }
   });
+
+  // #281 — 8 labels x 14px demand 98px of span in a 64px extent, infeasible by
+  // 34px. Before the feasibility guard the unclamped final pass produced a
+  // strict `lo + i * minGap` progression that overran `hi` by exactly that
+  // amount; every element must stay inside the extent regardless.
+  it("stays inside extent when minGap cannot be honoured for every label", () => {
+    const out = spaceSlopeLabels([21, 24, 27, 30, 33, 36, 39, 42], 14, [0, 64]);
+    for (const v of out) {
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThanOrEqual(64);
+    }
+  });
+
+  it("preserves input order and sorted rank in the infeasible branch", () => {
+    // Input already descending; output must still read ascending by rank
+    // (the LOWEST value gets the LOWEST position) while matching input order.
+    const out = spaceSlopeLabels([42, 39, 36, 33, 30, 27, 24, 21], 14, [0, 64]);
+    const sorted = [...out].sort((a, b) => a - b);
+    expect(out).toEqual([...sorted].reverse());
+  });
 });
 
 // #240 — DumbbellChart budgeted space for text it never measured: every
