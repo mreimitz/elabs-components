@@ -27,6 +27,8 @@ export * from "./tiles/filter-tile";
 export * from "./edit";
 
 // Toolbar — RM-079
+// DashboardToolbar/DashboardGridSettings/useDashboardShortcuts live in `./chrome` and are
+// already re-exported by the `export * from "./chrome"` above (RM-076) — nothing new here.
 
 // Panels — RM-080
 

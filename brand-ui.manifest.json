@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T16:49:16.720Z",
+  "generatedAt": "2026-09-16T17:34:10.552Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21908,6 +21908,11 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
             },
             {
+              "name": "DashboardGridSettings",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-grid-settings.tsx"
+            },
+            {
               "name": "DashboardMarquee",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/marquee.tsx"
@@ -21941,6 +21946,11 @@
               "name": "DashboardTileMenu",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile-menu.tsx"
+            },
+            {
+              "name": "DashboardToolbar",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-toolbar.tsx"
             },
             {
               "name": "DEFAULT_DASHBOARD_LABELS",
@@ -22033,6 +22043,16 @@
               "name": "useDashboardEdit",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/edit-context.ts"
+            },
+            {
+              "name": "useDashboardShortcutDescriptors",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
+            },
+            {
+              "name": "useDashboardShortcuts",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
             },
             {
               "name": "useHover",
@@ -22146,6 +22166,10 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
             },
             {
+              "name": "DashboardGridSettingsProps",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-grid-settings.tsx"
+            },
+            {
               "name": "DashboardHover",
               "module": "packages/charts/src/dashboard/core/store.ts"
             },
@@ -22172,6 +22196,10 @@
             {
               "name": "DashboardSheetProps",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
+            },
+            {
+              "name": "DashboardShortcutDescriptor",
+              "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
             },
             {
               "name": "DashboardSpecNormalization",
@@ -22224,6 +22252,18 @@
             {
               "name": "DashboardTileRootProps",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "DashboardToolbarFeatures",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-toolbar.tsx"
+            },
+            {
+              "name": "DashboardToolbarProps",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-toolbar.tsx"
+            },
+            {
+              "name": "DashboardUiState",
+              "module": "packages/charts/src/dashboard/core/store.ts"
             },
             {
               "name": "DividerTileContent",
@@ -22366,6 +22406,10 @@
               "module": "packages/charts/src/dashboard/edit/tile-size-badge.tsx"
             },
             {
+              "name": "UseDashboardShortcutsOptions",
+              "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
+            },
+            {
               "name": "VariableTileContent",
               "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
             }
@@ -22494,6 +22538,10 @@
             {
               "name": "dashboardAutoScroll",
               "module": "packages/charts/src/dashboard/edit/auto-scroll.ts"
+            },
+            {
+              "name": "dashboardShortcutDescriptors",
+              "module": "packages/charts/src/dashboard/chrome/use-dashboard-shortcuts.ts"
             },
             {
               "name": "dividerTileKind",

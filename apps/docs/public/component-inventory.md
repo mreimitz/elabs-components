@@ -1293,6 +1293,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DashboardEditLayer | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardExpressionError | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardGridContext | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardGridSettings | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardMarquee | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardProvider | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardSelectionBar | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1300,6 +1301,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DashboardTile | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileHeader | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardToolbar | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_DASHBOARD_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_FILTER_TILE_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_COLUMNS | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1318,6 +1320,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useDashboard | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardActions | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardEdit | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboardShortcutDescriptors | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboardShortcuts | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useHover | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useSelection | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useTile | hook |  | `@elabs-ai/components-charts/dashboard` |  |
