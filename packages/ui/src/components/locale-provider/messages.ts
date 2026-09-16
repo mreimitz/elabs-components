@@ -1144,6 +1144,10 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
     one: "{count} variant selected",
     other: "{count} variants selected",
   },
+  "process.filterBar.cases": {
+    one: "{count} case selected",
+    other: "{count} cases selected",
+  },
   "process.filterBar.filter": "Filter",
   "process.filterBar.excludedLabel": "excluded",
   "process.filterBar.clearAll": "Clear all",
