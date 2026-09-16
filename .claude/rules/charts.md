@@ -40,6 +40,14 @@ shape; use `ChartDatapointLayer`, a positioned sibling of real `<button>`s.
 - Furniture (grid, axis rules, links) paints ONE ink (`--chart-grid`) at FULL opacity, one
   weight (`CHART_HAIRLINE_WIDTH`) — never `strokeOpacity < 1`. `pnpm check --rule chart-hairline`.
 
+## Marks (RM-017)
+
+`src/marks/` is ink: every mark is `aria-hidden` on its own root. A container that renders
+`QuietDot` or `Marginalia` (a zero, a remark — facts no other mark carries) must ship a
+text alternative through the shared seam (`useChartA11yContainerProps` + `ChartA11yLabel`),
+restating the remark or the zeros. `HaloText` labels inside a `ChartFrame` are covered by its
+table flip. Enforced by the "AT-invisible marks" test in `marks/marks.test.tsx`.
+
 ## Honesty (RM-039)
 
 `pnpm check --rule charts-honesty`: bar/length marks are zero-based

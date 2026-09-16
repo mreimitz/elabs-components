@@ -43,6 +43,9 @@ export interface QuietDotProps extends Omit<SVGProps<SVGCircleElement>, "r"> {
  *   construction; painting it at series weight turns absence into a series.
  * - Decorative and `aria-hidden`, like every mark in this layer — the value
  *   reaches AT through the chart's data table / summary, not through the dot.
+ *   A container rendering it must use the shared text-alternative seam
+ *   (`useChartA11yContainerProps`); `marks.test.tsx` fails when one does not
+ *   (`.claude/rules/charts.md` § Marks).
  */
 export const QuietDot = forwardRef<SVGCircleElement, QuietDotProps>(function QuietDot(
   { cx, cy, size = QUIET_DOT_SIZE, fill, ...props },
