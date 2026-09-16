@@ -64,6 +64,18 @@
     "file": "templates/object-detail-hub.tsx"
   },
   {
+    "name": "process-explorer",
+    "title": "Patterns/Templates/Process Explorer",
+    "description": "Process explorer template — the canonical full-screen `process-explorer` archetype (RM-057, issue #206): KPI strip on top, a filter bar above the map, the map centred with its accessible table twin, a variant rail on the right, and a case table that opens a single case's timeline in a bottom sheet. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/process-explorer.tsx`) and the copy-own registry block (`registry/blocks/process-explorer-page/`) from it. One `useProcessExplorer` instance drives every panel, so the map, the filter chips, the KPI numbers and the variant rail can never disagree about what is currently in scope (see `useProcessExplorer`'s own module docblock, Invariant F: filtering re-inks, it never removes). Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
+    "packages": [
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-process",
+      "@elabs-ai/components-ui"
+    ],
+    "sourceStory": "packages/process/src/templates-process-explorer.stories.tsx",
+    "file": "templates/process-explorer.tsx"
+  },
+  {
     "name": "screen-states",
     "title": "Patterns/Templates/Screen States",
     "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in every theme. Verify with globals=theme:<slug>.",

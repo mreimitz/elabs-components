@@ -4,7 +4,7 @@
 Generated from `brand-ui.manifest.json` by `brand-ui context`. Do not hand-edit inside the markers. The live, queryable API is `brand-ui docs <Component>`.
 
 Themes (2): dark, light (default)
-Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 253 · Registry items: 26
+Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 253 · Registry items: 27
 
 Rules: semantic tokens only (no raw hex); forwardRef + cn() + spread props; Radix for
 overlays; compound composition; visible focus ring; works in every theme. Dependency
@@ -60,6 +60,7 @@ Building a WHOLE screen? Match the intent below, read the playbook, then start f
 - **data-app** — Tool-first table surface for browsing and operating on records · keywords: data app, admin console, table, grid, records, crud, search, filter, facets, bulk actions, back-office · docs/playbooks/data-app.md · template templates/data-app.tsx
 - **flow-workspace** — Node-and-edge canvas for editing a pipeline or workflow, with a selection inspector · keywords: flow, canvas, workflow, pipeline, graph, nodes, edges, diagram, workspace, react flow, inspector · docs/playbooks/flow-workspace.md · template templates/flow-workspace.tsx
 - **marketing** — Standalone pitch page — nav → hero → proof → capability → relevance → trust → ask · keywords: marketing, landing page, pitch, presales, hero, features, call to action, logos, testimonial, website · docs/playbooks/marketing.md · template templates/marketing.tsx
+- **process-explorer** — Explore a discovered process: map, variants, filters, event log, conformance and case drill-down in one screen · keywords: process mining, process map, dfg, variant explorer, event log, conformance · docs/playbooks/process-explorer.md · template templates/process-explorer.tsx
 - **settings** — Multi-section settings portal — sectioned nav, a form per section, guarded destructive actions · keywords: settings, preferences, configuration, admin portal, account, profile, forms, danger zone, team management · docs/playbooks/settings.md · template templates/settings.tsx
 
 Use `brand-ui docs <Component>` for real props, expanded cva variants, and

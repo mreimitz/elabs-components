@@ -762,6 +762,31 @@
         }
       ],
       "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "process-explorer-page",
+      "type": "registry:block",
+      "title": "Process explorer page",
+      "description": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-process",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@xyflow/react",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/process-explorer-page/process-explorer-page.tsx",
+          "type": "registry:component",
+          "target": "components/process-explorer-page/process-explorer-page.tsx"
+        }
+      ]
     }
   ]
 }
