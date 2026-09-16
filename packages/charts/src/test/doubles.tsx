@@ -61,7 +61,7 @@ export type { ChartCardProps } from "../chart-card/chart-card";
 export { ChartFrame } from "../chart-frame/chart-frame";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";
 export { Sparkline } from "../sparkline/sparkline";
-export type { SparklineProps } from "../sparkline/sparkline";
+export type { SparklineLabels, SparklineProps } from "../sparkline/sparkline";
 
 // ── The per-family contract specs (the flat, auditable list) ────────────────
 
