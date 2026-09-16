@@ -10,6 +10,13 @@ import { cn } from "../../lib/cn";
 import { type NumberFormatKind, numberFormatOptions } from "../../lib/compact-number";
 
 /*
+ * ADR 0012: this is the ONE KPI tile — `@elabs-ai/components-charts` re-exports it.
+ * RM-072 adds `size` (sm | md | lg) for dashboard-sheet tiles and a `sparkline`
+ * slot under the value. `ui` never imports `charts`: the host passes the
+ * `<Sparkline …/>` element in.
+ */
+
+/*
  * `emphasis` — size/weight/space ONLY, no new hue (research 11 §B.5 KPI-1/5):
  * `headline` is the answer-leading rung (`text-kpi`, ~32px); `default` stays
  * calm on the intermediate 1.5rem reading rung (the pre-#188 step between
@@ -22,8 +29,14 @@ const metricValueVariants = cva("tabular-nums text-foreground", {
       default: "text-2xl font-semibold tracking-tight",
       headline: "text-kpi",
     },
+    /* `md` adds nothing (today's rungs); `sm`/`lg` override the size via `cn()`. */
+    size: {
+      sm: "text-title font-semibold",
+      md: "",
+      lg: "text-kpi",
+    },
   },
-  defaultVariants: { emphasis: "default" },
+  defaultVariants: { emphasis: "default", size: "md" },
 });
 
 const metricContentVariants = cva("space-y-2", {
@@ -32,11 +45,35 @@ const metricContentVariants = cva("space-y-2", {
       default: "p-5",
       headline: "p-6",
     },
+    size: {
+      sm: "space-y-1 p-3",
+      md: "",
+      lg: "p-6",
+    },
   },
-  defaultVariants: { emphasis: "default" },
+  defaultVariants: { emphasis: "default", size: "md" },
+});
+
+const metricSparklineVariants = cva("", {
+  variants: {
+    size: {
+      /* never rendered — `sm` drops the slot; kept so the axis is total */
+      sm: "",
+      md: "pt-1",
+      lg: "min-h-12 pt-2",
+    },
+  },
+  defaultVariants: { size: "md" },
 });
 
 export type MetricCardEmphasis = NonNullable<VariantProps<typeof metricValueVariants>["emphasis"]>;
+
+/**
+ * Tile tier (RM-072). `sm`: label + value only (no icon, delta, description,
+ * sparkline, visual or evidence); `md`: the default tile; `lg`: the kpi value
+ * rung with more room for the `sparkline` slot.
+ */
+export type MetricCardSize = NonNullable<VariantProps<typeof metricValueVariants>["size"]>;
 
 /**
  * How a NUMERIC `value` is rendered. A function takes over completely.
@@ -74,8 +111,13 @@ export interface MetricCardProps
   /** Whether "up" is good (green) — flip for metrics where down is good. */
   positiveIsGood?: boolean;
   icon?: ReactNode;
-  /** Optional inline visual (e.g. a sparkline) shown under the value/description. */
+  /** Optional inline visual shown under the value/description. */
   visual?: ReactNode;
+  /**
+   * Trend slot rendered directly under the value (RM-072) — pass a
+   * `<Sparkline …/>` from `@elabs-ai/components-charts`. Hidden at `size="sm"`.
+   */
+  sparkline?: ReactNode;
   /**
    * Optional grounding footer (research 11 §B.5 KPI-3) — connects a cited
    * figure to its source (e.g. an `EvidenceChip` from `@elabs-ai/components-ai`). Rendered
@@ -111,8 +153,10 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
     positiveIsGood = true,
     icon,
     visual,
+    sparkline,
     evidence,
     emphasis,
+    size,
     loading = false,
     announceLoading = true,
     className,
@@ -152,11 +196,14 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
   // polarity is otherwise invisible to AT. See accessibility.md, #162.
   const directionLabel = deltaDirection === "up" ? "up" : deltaDirection === "down" ? "down" : "";
   const polarityLabel = good === null ? "" : good ? ", favorable" : ", unfavorable";
+  // `sm` is label + value only: every secondary row is dropped (RM-072).
+  const compact = size === "sm";
+  const valueClassName = cn(metricValueVariants({ emphasis, size }));
 
   return (
     <Card ref={ref} className={cn("overflow-hidden", className)} {...props}>
       <CardContent
-        className={metricContentVariants({ emphasis })}
+        className={cn(metricContentVariants({ emphasis, size }))}
         {...(loading && announceLoading ? { role: "status", "aria-live": "polite" as const } : {})}
       >
         {loading && announceLoading ? (
@@ -185,7 +232,7 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
           )}
           {/* `shrink-0`: the icon is a fixed 16px mark, so the LABEL is what
               gives way when the row runs out of width. */}
-          {icon ? (
+          {icon && !compact ? (
             <span className="shrink-0 text-muted-foreground [&_svg]:size-4">{icon}</span>
           ) : null}
         </div>
@@ -194,7 +241,7 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
             <Skeleton className={emphasis === "headline" ? "h-9 w-28" : "h-8 w-24"} />
           ) : canCopyExact ? (
             <CopyableValue
-              className={metricValueVariants({ emphasis })}
+              className={valueClassName}
               // Two tiles in one grid can compact to the same display ("$1.2M"),
               // and the visible label is a sibling node the button's name does
               // not include — so without this a screen-reader user tabbing the
@@ -208,9 +255,9 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
               {formattedValue}
             </CopyableValue>
           ) : (
-            <span className={metricValueVariants({ emphasis })}>{formattedValue}</span>
+            <span className={valueClassName}>{formattedValue}</span>
           )}
-          {delta ? (
+          {delta && !compact ? (
             loading ? (
               <Skeleton className="h-4 w-14" />
             ) : (
@@ -227,17 +274,22 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
             )
           ) : null}
         </div>
-        {description ? (
+        {sparkline && !compact ? (
+          <div className={metricSparklineVariants({ size })}>
+            {loading ? <Skeleton className="h-8 w-full" /> : sparkline}
+          </div>
+        ) : null}
+        {description && !compact ? (
           loading ? (
             <Skeleton className="h-3 w-32" />
           ) : (
             <p className="text-meta font-normal text-muted-foreground">{description}</p>
           )
         ) : null}
-        {visual ? (
+        {visual && !compact ? (
           <div className="pt-1">{loading ? <Skeleton className="h-8 w-full" /> : visual}</div>
         ) : null}
-        {evidence ? (
+        {evidence && !compact ? (
           <div className="pt-1 text-meta font-normal text-muted-foreground">
             {loading ? <Skeleton className="h-3 w-24" /> : evidence}
           </div>

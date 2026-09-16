@@ -195,4 +195,61 @@ describe("MetricCard", () => {
       expect(screen.getByText("50M")).toBeInTheDocument();
     });
   });
+
+  describe("size tiers (RM-072)", () => {
+    it("size=sm renders label + value only — no delta row, description or slots", () => {
+      render(
+        <MetricCard
+          size="sm"
+          label="Revenue"
+          value="$42,000"
+          delta="+12.4%"
+          deltaDirection="up"
+          description="vs last month"
+          icon={<svg data-testid="icon" />}
+          sparkline={<svg data-testid="spark" />}
+          visual={<div data-testid="visual" />}
+          evidence={<span>Grounded</span>}
+        />,
+      );
+      expect(screen.getByText("Revenue")).toBeInTheDocument();
+      expect(screen.getByText("$42,000")).toBeInTheDocument();
+      expect(screen.queryByText("+12.4%")).not.toBeInTheDocument();
+      expect(screen.queryByText("vs last month")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("icon")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("spark")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("visual")).not.toBeInTheDocument();
+      expect(screen.queryByText("Grounded")).not.toBeInTheDocument();
+      expect(screen.getByText("$42,000")).toHaveClass("text-title");
+    });
+
+    it("renders the sparkline slot directly under the value, before the description", () => {
+      render(
+        <MetricCard
+          label="Revenue"
+          value="$42,000"
+          description="vs last month"
+          sparkline={<svg data-testid="spark" />}
+        />,
+      );
+      const valueRow = screen.getByText("$42,000").parentElement as HTMLElement;
+      const sparkWrap = screen.getByTestId("spark").parentElement as HTMLElement;
+      expect(valueRow.nextElementSibling).toBe(sparkWrap);
+      expect(sparkWrap.nextElementSibling).toBe(screen.getByText("vs last month"));
+    });
+
+    it("size=lg uses the kpi value rung", () => {
+      render(<MetricCard size="lg" label="Revenue" value="$42,000" />);
+      const value = screen.getByText("$42,000");
+      expect(value).toHaveClass("text-kpi");
+      expect(value).not.toHaveClass("text-2xl");
+    });
+
+    it("default size keeps today's value classes", () => {
+      render(<MetricCard label="Revenue" value="$42,000" />);
+      expect(screen.getByText("$42,000").className).toBe(
+        "tabular-nums text-foreground text-2xl font-semibold tracking-tight",
+      );
+    });
+  });
 });
