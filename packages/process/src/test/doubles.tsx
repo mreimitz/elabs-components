@@ -152,7 +152,34 @@ export const HappyPathEditorDouble = createProcessDouble<HappyPathEditorDoublePr
   { dataProp: "value", requiredProps: ["onChange"] },
 );
 
+// ── RM-065 ───────────────────────────────────────────────────────────────────
+
+interface ProcessReplayDoubleProps extends HTMLAttributes<HTMLDivElement> {
+  graph: ProcessGraph;
+  log: EventLog;
+  synchronizedStart?: boolean;
+  bucketMs?: number;
+  playing?: boolean;
+  defaultPlaying?: boolean;
+  onPlayingChange?: (playing: boolean) => void;
+  time?: number;
+  defaultTime?: number;
+  onTimeChange?: (time: number) => void;
+  speed?: number;
+  defaultSpeed?: number;
+  onSpeedChange?: (speed: number) => void;
+  congestionLimit?: number;
+  loading?: boolean;
+}
+
+/** Stand-in for `ProcessReplay` (RM-065): requires the log (per-case timing) AND the graph. */
+export const ProcessReplayDouble = createProcessDouble<ProcessReplayDoubleProps>(
+  "ProcessReplayDouble",
+  { dataProp: "log", requiredProps: ["graph"] },
+);
+
 export type {
+  ProcessReplayDoubleProps,
   DottedChartDoubleProps,
   PerformanceSpectrumDoubleProps,
   ProcessMapDoubleProps,

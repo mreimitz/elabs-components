@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T11:49:21.038Z",
+  "generatedAt": "2026-09-16T12:11:02.146Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -26025,6 +26025,11 @@
           "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
         },
         {
+          "name": "CongestionHeat",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/congestion-heat.tsx"
+        },
+        {
           "name": "DEFAULT_LAYOUT_DEBOUNCE_MS",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
@@ -26135,6 +26140,16 @@
           "module": "packages/process/src/process-map/use-process-layout.ts"
         },
         {
+          "name": "PROCESS_REPLAY_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-format.ts"
+        },
+        {
+          "name": "PROCESS_REPLAY_DEFAULT_METRIC",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
           "name": "PROCESS_SELECTION_STATE_MESSAGE_KEYS",
           "kind": "value",
           "module": "packages/process/src/process-map/map-model.ts"
@@ -26170,9 +26185,34 @@
           "module": "packages/process/src/process-map/process-map-context.ts"
         },
         {
+          "name": "ProcessReplay",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
+          "name": "ProcessReplayTokensContext",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-tokens-context.ts"
+        },
+        {
           "name": "ProcessTransitionEdge",
           "kind": "value",
           "module": "packages/process/src/process-map/process-transition-edge.tsx"
+        },
+        {
+          "name": "REPLAY_PLAYBACK_MS",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
+          "name": "REPLAY_SPEEDS",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-controls.tsx"
+        },
+        {
+          "name": "ReplayControls",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-controls.tsx"
         },
         {
           "name": "VARIANT_EXPLORER_COLUMNS",
@@ -26230,6 +26270,16 @@
           "name": "useProcessMapHover",
           "kind": "value",
           "module": "packages/process/src/process-map/process-map-context.ts"
+        },
+        {
+          "name": "useProcessReplayEdgeTokens",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-tokens-context.ts"
+        },
+        {
+          "name": "useReplayTimeFormatter",
+          "kind": "value",
+          "module": "packages/process/src/process-replay/replay-format.ts"
         }
       ],
       "types": [
@@ -26328,6 +26378,10 @@
         {
           "name": "ConformanceTone",
           "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "CongestionHeatProps",
+          "module": "packages/process/src/process-replay/congestion-heat.tsx"
         },
         {
           "name": "CreateCaseTableColumnsOptions",
@@ -26514,6 +26568,18 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "ProcessReplayLabels",
+          "module": "packages/process/src/process-replay/replay-format.ts"
+        },
+        {
+          "name": "ProcessReplayProps",
+          "module": "packages/process/src/process-replay/process-replay.tsx"
+        },
+        {
+          "name": "ProcessReplayTokens",
+          "module": "packages/process/src/process-replay/replay-tokens-context.ts"
+        },
+        {
           "name": "ProcessSelection",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -26540,6 +26606,10 @@
         {
           "name": "ProcessTransitionRow",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ReplayControlsProps",
+          "module": "packages/process/src/process-replay/replay-controls.tsx"
         },
         {
           "name": "SpectrumBin",
@@ -26990,6 +27060,30 @@
             }
           ]
         },
+        "CongestionHeat": {
+          "extends": [
+            "HTMLAttributes<HTMLElement>"
+          ],
+          "props": [
+            {
+              "name": "timeline",
+              "optional": false,
+              "type": "ReplayTimeline",
+              "description": "The replay timeline (`replayTimeline`)."
+            },
+            {
+              "name": "limit",
+              "optional": true,
+              "type": "number",
+              "description": "How many transitions to list. @default 5"
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ProcessReplayLabels>"
+            }
+          ]
+        },
         "DottedChart": {
           "extends": [
             "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"title\" | \"color\"\n>"
@@ -27409,6 +27503,191 @@
             }
           ]
         },
+        "ProcessReplay": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "graph",
+              "optional": false,
+              "type": "ProcessGraph",
+              "description": "The discovered graph to replay over."
+            },
+            {
+              "name": "log",
+              "optional": false,
+              "type": "EventLog",
+              "description": "The log the graph came from — tokens need per-case timing, not just the aggregate."
+            },
+            {
+              "name": "synchronizedStart",
+              "optional": true,
+              "type": "boolean",
+              "description": "Align every case's start to `t = 0` instead of the wall clock. @default false"
+            },
+            {
+              "name": "bucketMs",
+              "optional": true,
+              "type": "number",
+              "description": "Bucket width in ms for congestion. @default the log span / 300"
+            },
+            {
+              "name": "metric",
+              "optional": true,
+              "type": "ProcessMetricSpec",
+              "description": "Which readings the nodes and edges print. @default case frequency"
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "FlowLayoutDirection",
+              "description": "@default \"TB\""
+            },
+            {
+              "name": "playing",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled playing state. Held while reduced motion is on until the reader presses play."
+            },
+            {
+              "name": "defaultPlaying",
+              "optional": true,
+              "type": "boolean",
+              "description": "Initial playing state when uncontrolled. Ignored under reduced motion. @default false"
+            },
+            {
+              "name": "onPlayingChange",
+              "optional": true,
+              "type": "(playing: boolean) => void"
+            },
+            {
+              "name": "time",
+              "optional": true,
+              "type": "number",
+              "description": "Controlled playhead, ms relative to the timeline origin."
+            },
+            {
+              "name": "defaultTime",
+              "optional": true,
+              "type": "number",
+              "description": "@default 0"
+            },
+            {
+              "name": "onTimeChange",
+              "optional": true,
+              "type": "(time: number) => void"
+            },
+            {
+              "name": "speed",
+              "optional": true,
+              "type": "number",
+              "description": "Controlled playback multiplier."
+            },
+            {
+              "name": "defaultSpeed",
+              "optional": true,
+              "type": "number",
+              "description": "@default 1"
+            },
+            {
+              "name": "onSpeedChange",
+              "optional": true,
+              "type": "(speed: number) => void"
+            },
+            {
+              "name": "congestionLimit",
+              "optional": true,
+              "type": "number",
+              "description": "How many transitions the congestion list ranks. @default 5"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No log yet. Renders the loading panel."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ProcessReplayLabels>",
+              "description": "Override any user-visible string."
+            }
+          ]
+        },
+        "ReplayControls": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "playing",
+              "optional": false,
+              "type": "boolean"
+            },
+            {
+              "name": "onPlayingChange",
+              "optional": false,
+              "type": "(playing: boolean) => void"
+            },
+            {
+              "name": "time",
+              "optional": false,
+              "type": "number",
+              "description": "Playhead, ms relative to the timeline origin."
+            },
+            {
+              "name": "onTimeChange",
+              "optional": false,
+              "type": "(time: number) => void"
+            },
+            {
+              "name": "duration",
+              "optional": false,
+              "type": "number",
+              "description": "Timeline length in ms — the slider's maximum."
+            },
+            {
+              "name": "step",
+              "optional": false,
+              "type": "number",
+              "description": "Slider step in ms (one bucket)."
+            },
+            {
+              "name": "speed",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "onSpeedChange",
+              "optional": false,
+              "type": "(speed: number) => void"
+            },
+            {
+              "name": "inFlight",
+              "optional": false,
+              "type": "number",
+              "description": "Cases in flight at {@link time}."
+            },
+            {
+              "name": "formatTime",
+              "optional": false,
+              "type": "(time: number) => string",
+              "description": "Formats a playhead for the readout and the slider's value text."
+            },
+            {
+              "name": "disabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disable every control (an empty timeline)."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ProcessReplayLabels>"
+            }
+          ]
+        },
         "VariantExplorer": {
           "extends": [
             "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">"
@@ -27640,6 +27919,21 @@
               "module": "packages/process/src/core/duration-stats.ts"
             },
             {
+              "name": "REPLAY_MAX_FRAMES",
+              "kind": "value",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "REPLAY_TARGET_FRAMES",
+              "kind": "value",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "REPLAY_TOKEN_RADIUS_RANGE",
+              "kind": "value",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
               "name": "SYNTHETIC_ACTIVITIES",
               "kind": "value",
               "module": "packages/process/src/core/fixtures/synthetic-log.ts"
@@ -27851,8 +28145,32 @@
               "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
+              "name": "ReplayCongestionEntry",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayFrame",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayFrameToken",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
               "name": "ReplayModel",
               "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
+              "name": "ReplaySegment",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayTimeline",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "ReplayTimelineOptions",
+              "module": "packages/process/src/core/replay-timeline.ts"
             },
             {
               "name": "ReplayTransition",
@@ -27943,6 +28261,10 @@
             {
               "name": "createProcessWorker",
               "module": "packages/process/src/core/worker/create-process-worker.ts"
+            },
+            {
+              "name": "defaultReplayBucketMs",
+              "module": "packages/process/src/core/replay-timeline.ts"
             },
             {
               "name": "detectRework",
@@ -28049,12 +28371,28 @@
               "module": "packages/process/src/core/segments.ts"
             },
             {
+              "name": "rankReplayCongestion",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
               "name": "reconcileGraph",
               "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
               "name": "replayActivities",
               "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
+              "name": "replayFrameAt",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "replayTimeline",
+              "module": "packages/process/src/core/replay-timeline.ts"
+            },
+            {
+              "name": "replayTokenRadius",
+              "module": "packages/process/src/core/replay-timeline.ts"
             },
             {
               "name": "replayTrace",

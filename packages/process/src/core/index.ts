@@ -173,3 +173,23 @@ export type {
   SegmentDefinition,
   SegmentOccurrence,
 } from "./segments";
+
+// replayTimeline — RM-065
+export {
+  defaultReplayBucketMs,
+  rankReplayCongestion,
+  REPLAY_MAX_FRAMES,
+  REPLAY_TARGET_FRAMES,
+  REPLAY_TOKEN_RADIUS_RANGE,
+  replayFrameAt,
+  replayTimeline,
+  replayTokenRadius,
+} from "./replay-timeline";
+export type {
+  ReplayCongestionEntry,
+  ReplayFrame,
+  ReplayFrameToken,
+  ReplaySegment,
+  ReplayTimeline,
+  ReplayTimelineOptions,
+} from "./replay-timeline";

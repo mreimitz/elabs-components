@@ -19,6 +19,7 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - ConformanceLegend
 - ConformanceOverlay
 - ConformanceStateMark
+- CongestionHeat
 - DEFAULT_LAYOUT_DEBOUNCE_MS
 - DOTTED_CHART_DEFAULT_LABELS
 - DOTTED_CHART_DOT_RADIUS
@@ -41,6 +42,8 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - PROCESS_MAP_EDGE_SCALE_GROUP
 - PROCESS_MAP_LEGIBLE_ZOOM
 - PROCESS_MAP_NODE_MOTION_CLASS
+- PROCESS_REPLAY_DEFAULT_LABELS
+- PROCESS_REPLAY_DEFAULT_METRIC
 - PROCESS_SELECTION_STATE_MESSAGE_KEYS
 - ProcessActivityNode — One activity on the process map: a FlowNode carrying the metric value, a meter bar, start/end role and a rework tally.
   - avoid: Registering it directly as a React Flow node type outside `ProcessMap` — it reads the map's hover/selection context and expects `buildProcessMapModel`'s node data.
@@ -55,10 +58,15 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
   - avoid: Passing a raw event log on every render — pass `graph` from `discoverGraph` (or memoize the log) so a metric switch never re-runs discovery or the dagre layout.
 - ProcessMapEdgeKeyContext
 - ProcessMapHoverContext
+- ProcessReplay
+- ProcessReplayTokensContext
 - ProcessTransitionEdge — One directly-follows relation on the process map: a weighted edge whose width, printed pill and SHAPE (dashed back-edge, closed self-loop) carry the metric.
   - avoid: Writing a pixel width into `data.weight` — it is the RAW metric value, and `@elabs-ai/components-flow`'s `computeEdgeWeightScale` owns the min-max into `DEFAULT_EDGE_WIDTH_RANGE`.
   - avoid: Suppressing the label pill on a dense map — width alone is a colour-adjacent single channel, and the pill is what makes the reading recoverable.
   - avoid: Distinguishing a back-edge or a self-loop by hue — the shape (dash pattern, closed arc) is the cue that survives greyscale.
+- REPLAY_PLAYBACK_MS
+- REPLAY_SPEEDS
+- ReplayControls
 - VARIANT_EXPLORER_COLUMNS
 - VARIANT_EXPLORER_DEFAULT_LABELS
 - VARIANT_EXPLORER_ROW_HEIGHT
@@ -73,6 +81,8 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - useProcessLayout
 - useProcessMapEdgeKeys
 - useProcessMapHover
+- useProcessReplayEdgeTokens
+- useReplayTimeFormatter
 
 ## Subpath exports
 
@@ -87,6 +97,9 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - DurationSampler (`@elabs-ai/components-process/core` · component)
 - EDGE_KEY_SEPARATOR (`@elabs-ai/components-process/core` · component)
 - EMPTY_DURATION_STATS (`@elabs-ai/components-process/core` · component)
+- REPLAY_MAX_FRAMES (`@elabs-ai/components-process/core` · component)
+- REPLAY_TARGET_FRAMES (`@elabs-ai/components-process/core` · component)
+- REPLAY_TOKEN_RADIUS_RANGE (`@elabs-ai/components-process/core` · component)
 - SYNTHETIC_ACTIVITIES (`@elabs-ai/components-process/core` · component)
 - SYNTHETIC_LOG_EPOCH (`@elabs-ai/components-process/core` · component)
 - TRIM_FRACTION (`@elabs-ai/components-process/core` · component)

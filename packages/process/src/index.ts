@@ -58,3 +58,6 @@ export * from "./performance-spectrum";
 export * from "./conformance-overlay";
 export * from "./violation-list";
 export * from "./happy-path-editor";
+
+// ProcessReplay — RM-065
+export * from "./process-replay";

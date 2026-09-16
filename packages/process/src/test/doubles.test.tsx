@@ -13,6 +13,7 @@ import {
   PerformanceSpectrumDouble,
   ProcessKpiStripDouble,
   ProcessMapDouble,
+  ProcessReplayDouble,
   VariantExplorerDouble,
   ViolationListDouble,
 } from "./doubles";
@@ -120,5 +121,17 @@ describe("RM-062 doubles", () => {
     expect(readProcessDoubleProps(el as Element)?.dataLength).toBe(2);
     // @ts-expect-error -- deliberately omitting the required `onChange` prop
     expect(() => render(<HappyPathEditorDouble value={path} />)).toThrow(/onChange/);
+  });
+});
+
+describe("RM-065 doubles", () => {
+  it("ProcessReplayDouble records the event count and needs a graph", () => {
+    const { container } = render(<ProcessReplayDouble graph={graph} log={log} />);
+    const el = container.querySelector('[data-process-double="ProcessReplayDouble"]');
+    expect(readProcessDoubleProps(el as Element)?.dataLength).toBe(log.events.length);
+    // @ts-expect-error -- deliberately omitting the required `graph` prop
+    expect(() => render(<ProcessReplayDouble log={log} />)).toThrow(
+      /missing required prop "graph"/,
+    );
   });
 });
