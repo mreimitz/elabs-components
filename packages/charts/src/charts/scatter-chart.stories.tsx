@@ -256,7 +256,7 @@ const numericXData = [
 
 export const NumericX: Story = {
   render: () => (
-    <div className="h-72 w-[560px]">
+    <div className="h-72 w-full max-w-[560px]">
       <ScatterChart data={numericXData} xDataKey="weight" xScale="linear">
         <Grid horizontal />
         <Scatter dataKey="mpg" />

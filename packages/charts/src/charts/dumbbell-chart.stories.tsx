@@ -159,7 +159,7 @@ export const VerticalOrientationSpacious: Story = {
     await assertNoCategoryLabelOverlap(canvasElement);
   },
   render: (args) => (
-    <div className="h-[420px] w-[640px]" data-density="spacious">
+    <div className="h-[420px] w-full max-w-[640px]" data-density="spacious">
       <DumbbellChart {...args} />
     </div>
   ),

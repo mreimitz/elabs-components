@@ -135,7 +135,7 @@ export const RankStrip: Story = {
     accessibleLabel: "Quarterly team rank",
   },
   render: (args) => (
-    <div className="h-64 w-[480px]">
+    <div className="h-64 w-full max-w-[480px]">
       <BumpChart {...args} />
     </div>
   ),
@@ -259,7 +259,7 @@ export const RankStripDenseGrid: Story = {
     accessibleLabel: "Monthly team rank, fourteen months",
   },
   render: (args) => (
-    <div className="h-64 w-[480px]">
+    <div className="h-64 w-full max-w-[480px]">
       <BumpChart {...args} />
     </div>
   ),
@@ -285,7 +285,7 @@ export const RankStripDenseGrid: Story = {
 function KeyboardDrilldownDemo() {
   const [selected, setSelected] = useState<ChartDatapoint | null>(null);
   return (
-    <div className="flex w-[560px] flex-col gap-3">
+    <div className="flex w-full max-w-[560px] flex-col gap-3">
       <div className="h-72">
         <BumpChart
           accessibleLabel="Quarterly market share rank"

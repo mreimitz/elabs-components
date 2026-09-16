@@ -86,7 +86,7 @@ export const MilestonesOnly: Story = {
  */
 export const LongCaption: Story = {
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),
@@ -103,7 +103,7 @@ export const LongCaption: Story = {
 /** `accessibleLabel`/`accessibleDescription` (#290) — a named, focusable figure. */
 export const AccessibleName: Story = {
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),

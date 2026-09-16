@@ -667,7 +667,7 @@
     "packages/charts/src/chart-frame/chart-frame.stories.tsx": 9,
     "packages/charts/src/charts/area-chart.stories.tsx": 9,
     "packages/charts/src/charts/bar-chart.stories.tsx": 15,
-    "packages/charts/src/charts/bump-chart.stories.tsx": 4,
+    "packages/charts/src/charts/bump-chart.stories.tsx": 3,
     "packages/charts/src/charts/candlestick-chart.stories.tsx": 1,
     "packages/charts/src/charts/canvas-layer/canvas-layer.stories.tsx": 1,
     "packages/charts/src/charts/choropleth/choropleth-chart.stories.tsx": 6,
