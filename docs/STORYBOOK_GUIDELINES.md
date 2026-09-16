@@ -55,22 +55,31 @@ Maps while this list stopped at 20 entries — so update both in the same change
     points at (Hourglass Stream, Radial Patchwork, Bubble Almanac) are NOT
     package components — they are copy-own blocks under `Patterns/Blocks/Chart
 Editorial — …`, built entirely from the package's public `marks` layer.
-15. **AI** — `@elabs-ai/components-ai` chat / agent surfaces. `Composer` is a
+15. **Dashboard** — `@elabs-ai/components-charts/dashboard`, the dashboard sheet surface
+    (ADR 0037). Sits directly after Charts rather than with the other domain
+    packages because it is a `charts` subpath, not a sibling package. Sorts
+    alphabetically among itself (no nested reading-order array); the sub-groups
+    that carry it are `Dashboard/Sheet` (`DashboardProvider`/`DashboardSheet`/
+    `DashboardTile`, RM-074), `Dashboard/Tiles` (built-in tile kinds, RM-075),
+    `Dashboard/Chrome` (toolbar, selection bar, panels, RM-076 onward),
+    `Dashboard/Edit` (the `@dnd-kit/core` edit layer, empty until wave 2's
+    RM-078) and `Dashboard/Recipes` (composed sheet demos).
+16. **AI** — `@elabs-ai/components-ai` chat / agent surfaces. `Composer` is a
     sub-family node: the `PromptInput` primitive and the mode / effort / slash
     controls it is assembled from are nested under it (see "Naming" below).
-16. **Terminal** — `@elabs-ai/components-terminal`: the console skin of the AI family, which
+17. **Terminal** — `@elabs-ai/components-terminal`: the console skin of the AI family, which
     is why it sits directly after AI rather than with the other domain packages.
-17. **Editor** — `@elabs-ai/components-editor`.
-18. **Viewer** — `@elabs-ai/components-viewer`.
-19. **Flow** — `@elabs-ai/components-flow` canvas.
-20. **Maps** — `@elabs-ai/components-maps`.
-21. **Marketing** — `@elabs-ai/components-marketing`.
-22. **Process** — `@elabs-ai/components-process`, the one layer-3 package (ADR 0034):
+18. **Editor** — `@elabs-ai/components-editor`.
+19. **Viewer** — `@elabs-ai/components-viewer`.
+20. **Flow** — `@elabs-ai/components-flow` canvas.
+21. **Maps** — `@elabs-ai/components-maps`.
+22. **Marketing** — `@elabs-ai/components-marketing`.
+23. **Process** — `@elabs-ai/components-process`, the one layer-3 package (ADR 0034):
     process-mining views composed from `flow`/`charts`/`data`/`ui` primitives. Sorts
     after every layer-2 domain package and before `Patterns` because it composes them.
     Opened in wave 1 by RM-053's placeholder story and first filled by RM-051's
     `ProcessMap`; RM-057's remaining views land in wave 2.
-23. **Patterns** — full composed demos, in that order: `Patterns/Templates` (whole
+24. **Patterns** — full composed demos, in that order: `Patterns/Templates` (whole
     screens) → `Patterns/Scenarios` (multi-screen journeys) → `Patterns/Blocks`
     (copy-own building blocks). Alphabetical would interleave the three.
 
