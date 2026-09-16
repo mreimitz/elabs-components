@@ -3,20 +3,16 @@ import { useMemo, useState } from "react";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
 import type { DashboardSpec, TileSpec } from "../core/spec";
-import { createDashboardStore, type DashboardStore } from "../core/store";
-import {
-  DEFAULT_DASHBOARD_LABELS,
-  DashboardProvider,
-  DashboardSheet,
-  createTileRegistry,
-} from "../dashboard-sheet";
-import { DashboardContext, useDashboardContext } from "../dashboard-sheet/use-dashboard";
+import type { DashboardStore } from "../core/store";
+import { DashboardProvider, DashboardSheet } from "../dashboard-sheet";
+import { useDashboardContext } from "../dashboard-sheet/use-dashboard";
 import { bigFortySpec } from "../fixtures/big-40";
 import { builtInTiles } from "../tiles";
 import {
   DashboardInteractionsDialog,
   DashboardInteractionsEditor,
 } from "./dashboard-interactions-editor";
+import { DashboardPropertiesPanel } from "./dashboard-properties-panel";
 import { DashboardSelectionBar } from "./dashboard-selection-bar";
 
 declare global {
@@ -164,41 +160,44 @@ export const HighlightVsFilter: Story = {
 
 const onNavigate = fn();
 
-/** A `drill` pair calls the host's `onNavigate(sheetId, { carry })` (D5: the host routes). */
+/**
+ * A `drill` pair calls the host's `onNavigate(sheetId, { carry })` through a real
+ * `DashboardProvider` (D5: the host routes). The observed args are mirrored into `navigate-args`.
+ */
 export const Drill: Story = {
   render: () => {
     function DrillSheet() {
-      const [store] = useState(() =>
-        createDashboardStore({
-          spec: {
-            ...interactionsSpec(),
-            interactions: [
-              {
-                from: "chart-1",
-                to: "*",
-                effect: { drill: { sheetId: "sheet-2", carry: ["Region"] } },
-              },
-            ],
-          },
-          onNavigate,
-        }),
-      );
-      const value = useMemo(
+      const [args, setArgs] = useState("");
+      const spec = useMemo<DashboardSpec>(
         () => ({
-          store,
-          registry: createTileRegistry(builtInTiles),
-          labels: DEFAULT_DASHBOARD_LABELS,
-          onNavigate: (sheetId: string) => onNavigate(sheetId),
+          ...interactionsSpec(),
+          interactions: [
+            {
+              from: "chart-1",
+              to: "*",
+              effect: { drill: { sheetId: "sheet-2", carry: ["Region"] } },
+            },
+          ],
         }),
-        [store],
+        [],
       );
-      window.__dashboardStore = store;
       return (
-        <DashboardContext.Provider value={value}>
+        <DashboardProvider
+          spec={spec}
+          tiles={builtInTiles}
+          onNavigate={(sheetId, context) => {
+            onNavigate(sheetId, context);
+            setArgs(JSON.stringify([sheetId, context]));
+          }}
+        >
+          <StoreProbe />
           <div data-testid="host" className="h-[360px] w-full">
             <DashboardSheet renderAll />
           </div>
-        </DashboardContext.Provider>
+          <output data-testid="navigate-args" className="text-code">
+            {args}
+          </output>
+        </DashboardProvider>
       );
     }
     return <DrillSheet />;
@@ -209,7 +208,84 @@ export const Drill: Story = {
     await waitFor(() =>
       expect(onNavigate).toHaveBeenCalledWith("sheet-2", { carry: { Region: ["EMEA"] } }),
     );
+    await expect(within(canvasElement).getByTestId("navigate-args")).toHaveTextContent(
+      '["sheet-2",{"carry":{"Region":["EMEA"]}}]',
+    );
     await expect(window.__dashboardStore!.getState().selection.count()).toBe(0);
+  },
+};
+
+/** The demo sheet on two rows so each chart keeps room for its axes beside the open panel. */
+function panelSpec(): DashboardSpec {
+  const spec = interactionsSpec();
+  const slots = [
+    { x: 0, y: 0 },
+    { x: 12, y: 0 },
+    { x: 0, y: 6 },
+    { x: 12, y: 6 },
+  ];
+  return {
+    ...spec,
+    tiles: spec.tiles
+      .filter((tile) => tile.kind === "chart")
+      .map((tile, i) => ({ ...tile, layout: { ...slots[i]!, w: 12, h: 6 } })),
+  };
+}
+
+/**
+ * The properties panel: with one tile focused, "Edit interactions…" opens the editor scoped to it;
+ * one pair change is one history entry and closing returns focus to the trigger.
+ */
+export const PropertiesPanel: Story = {
+  name: "Properties panel",
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <DashboardProvider spec={panelSpec()} tiles={builtInTiles} mode="edit">
+      <StoreProbe />
+      <div className="flex h-[900px] w-full min-w-0">
+        <main className="min-w-0 flex-1 p-2">
+          <div data-testid="host" className="h-[860px] w-full">
+            <DashboardSheet renderAll />
+          </div>
+        </main>
+        <DashboardPropertiesPanel
+          defaultOpen
+          minWidth={280}
+          defaultWidth={280}
+          minContentWidth={400}
+        />
+      </div>
+    </DashboardProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const store = window.__dashboardStore!;
+    store.getState().actions.setFocus(["chart-1"]);
+    const dock = within(
+      canvasElement.querySelector<HTMLElement>('[data-dashboard-panel="properties"]')!,
+    );
+    const trigger = await dock.findByRole("button", { name: "Edit interactions…" });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    const dialog = await within(document.body).findByRole("dialog", { name: "Edit interactions" });
+    const before = store.getState().history.past;
+    await userEvent.click(
+      within(dialog).getByRole("combobox", {
+        name: "Revenue by region → Margin by region: Highlight",
+      }),
+    );
+    await userEvent.click(await within(document.body).findByRole("option", { name: "None" }));
+    await waitFor(() => expect(store.getState().history.past).toBe(before + 1));
+    await expect(store.getState().spec.interactions).toContainEqual({
+      from: "chart-1",
+      to: "chart-2",
+      effect: "none",
+    });
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(within(document.body).queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+    await expect(store.getState().history.past).toBe(before + 1);
+    trigger.dataset.historyBefore = String(before);
+    trigger.dataset.historyAfter = String(store.getState().history.past);
   },
 };
 

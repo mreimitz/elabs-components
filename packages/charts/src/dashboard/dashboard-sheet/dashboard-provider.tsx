@@ -4,7 +4,12 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { SelectionDriver, SelectionSnapshot } from "../core/selection";
 import type { DashboardSpec } from "../core/spec";
-import { createDashboardStore, type DashboardMode } from "../core/store";
+import {
+  createDashboardStore,
+  type DashboardMode,
+  // interaction graph — RM-082
+  type DashboardNavigateContext,
+} from "../core/store";
 import { normalizeDashboardSpec } from "../core/validate";
 import { DEFAULT_DASHBOARD_LABELS, type DashboardLabels } from "./labels";
 import { createTileRegistry, type DashboardTileKinds, type TileRegistry } from "./tile-registry";
@@ -33,7 +38,8 @@ export interface DashboardProviderProps {
   onChange?: (spec: DashboardSpec, meta: DashboardChangeMeta) => void;
   onSelectionChange?: (selection: SelectionSnapshot) => void;
   /** A bookmark or drill names another sheet; the host routes (D5). */
-  onNavigate?: (sheetId: string) => void;
+  // interaction graph — RM-082: a drill passes `{ carry }` (field → values to select there).
+  onNavigate?: (sheetId: string, context?: DashboardNavigateContext) => void;
   /** A tile asks for fresh data; the host fetches (D5). */
   onRefresh?: (tileId: string) => void;
   /**
@@ -78,7 +84,8 @@ export function DashboardProvider({
       spec,
       driver,
       mode,
-      onNavigate: (sheetId) => callbacks.current.onNavigate?.(sheetId),
+      // interaction graph — RM-082
+      onNavigate: (sheetId, context) => callbacks.current.onNavigate?.(sheetId, context),
     }),
   );
 
@@ -140,7 +147,9 @@ export function DashboardProvider({
       store,
       registry,
       labels: mergedLabels,
-      onNavigate: (sheetId) => callbacks.current.onNavigate?.(sheetId),
+      // interaction graph — RM-082
+      onNavigate: (sheetId: string, context?: DashboardNavigateContext) =>
+        callbacks.current.onNavigate?.(sheetId, context),
       onRefresh,
       onAction: (id) => callbacks.current.onAction?.(id),
     }),
