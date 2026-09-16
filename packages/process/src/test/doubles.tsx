@@ -16,6 +16,7 @@ import type { ProcessGraph, Variant } from "../core/types";
 import {
   assertProcessContract,
   buildProcessDoublePayload,
+  ProcessContractError,
   type ProcessContractSpec,
   type ProcessSelection,
 } from "./contract";
@@ -80,3 +81,64 @@ export const ProcessKpiStripDouble = createProcessDouble<ProcessKpiStripDoublePr
 );
 
 export type { ProcessMapDoubleProps, VariantExplorerDoubleProps, ProcessKpiStripDoubleProps };
+
+// ── ProcessCompareDouble — RM-064 ────────────────────────────────────────────
+//
+// `ProcessCompare` composes `ProcessMap` twice (or once, superimposed) — a REAL component
+// this package already ships, unlike the pre-launch stand-ins above. Its own contract does
+// not fit `ProcessContractSpec` (`dataProp: "graph" | "variants"` — a single top-level
+// payload), because `ProcessCompare`'s payload is a PAIR (`a`/`b`), so this double validates
+// and serializes its own shape directly rather than stretching the shared engine.
+
+interface ProcessCompareSideDoubleProps {
+  label: string;
+  graph?: ProcessGraph;
+}
+
+interface ProcessCompareDoubleProps extends HTMLAttributes<HTMLDivElement> {
+  a: ProcessCompareSideDoubleProps;
+  b: ProcessCompareSideDoubleProps;
+  mode?: "side-by-side" | "superimposed";
+}
+
+/** What `ProcessCompareDouble` records to `data-process-props`. */
+interface ProcessCompareDoublePayload {
+  component: "ProcessCompareDouble";
+  mode: "side-by-side" | "superimposed";
+  aLabel: string;
+  bLabel: string;
+  aActivityCount: number;
+  bActivityCount: number;
+}
+
+/** Stand-in for `ProcessCompare` (RM-064) — cheap enough to mount without a real canvas. */
+export const ProcessCompareDouble = forwardRef<HTMLDivElement, ProcessCompareDoubleProps>(
+  function ProcessCompareDouble({ a, b, mode = "side-by-side", className, style }, ref) {
+    if (!a || typeof a.label !== "string") {
+      throw new ProcessContractError("ProcessCompareDouble", 'missing required prop "a.label"');
+    }
+    if (!b || typeof b.label !== "string") {
+      throw new ProcessContractError("ProcessCompareDouble", 'missing required prop "b.label"');
+    }
+    const payload: ProcessCompareDoublePayload = {
+      component: "ProcessCompareDouble",
+      mode,
+      aLabel: a.label,
+      bLabel: b.label,
+      aActivityCount: a.graph?.activities.length ?? 0,
+      bActivityCount: b.graph?.activities.length ?? 0,
+    };
+    return (
+      <div
+        ref={ref}
+        data-slot="process-test-double"
+        data-process-double="ProcessCompareDouble"
+        data-process-props={JSON.stringify(payload)}
+        className={className}
+        style={style}
+      />
+    );
+  },
+);
+
+export type { ProcessCompareDoubleProps, ProcessCompareDoublePayload };

@@ -25,7 +25,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
 | `@elabs-ai/components-terminal` | packages/terminal | 31 | 1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
-| `@elabs-ai/components-process` | packages/process | 28 | 4 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
+| `@elabs-ai/components-process` | packages/process | 33 | 4 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
 
 ## @elabs-ai/components-tokens
 
@@ -1437,7 +1437,11 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CASE_TABLE_COLUMN_LABEL_KEYS | component |  | `@elabs-ai/components-process` |  |
 | CaseTable | component |  | `@elabs-ai/components-process` |  |
 | CaseTimeline | component |  | `@elabs-ai/components-process` |  |
+| CompareKpiStrip | component |  | `@elabs-ai/components-process` |  |
+| CompareSide | component |  | `@elabs-ai/components-process` |  |
 | DEFAULT_LAYOUT_DEBOUNCE_MS | component |  | `@elabs-ai/components-process` |  |
+| DIFF_STATE_TOKEN | component |  | `@elabs-ai/components-process` |  |
+| EMPTY_PROCESS_GRAPH | component |  | `@elabs-ai/components-process` |  |
 | EMPTY_PROCESS_MAP_HOVER | component |  | `@elabs-ai/components-process` |  |
 | GHOST_OPACITY | component |  | `@elabs-ai/components-process` |  |
 | MetricLayerSwitch | component |  | `@elabs-ai/components-process` |  |
@@ -1449,6 +1453,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PROCESS_MAP_NODE_MOTION_CLASS | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_SELECTION_STATE_MESSAGE_KEYS | component |  | `@elabs-ai/components-process` |  |
 | ProcessActivityNode | component |  | `@elabs-ai/components-process` | One activity on the process map: a FlowNode carrying the metric value, a meter bar, start/end role and a rework tally. |
+| ProcessCompare | component |  | `@elabs-ai/components-process` |  |
 | ProcessFilterBar | component |  | `@elabs-ai/components-process` |  |
 | ProcessKpiStrip | component |  | `@elabs-ai/components-process` |  |
 | ProcessMap | component |  | `@elabs-ai/components-process` | Directly-follows process map: activities as nodes, transitions as edges, both painted from one metric choice, with an accessible table twin. |

@@ -22,8 +22,14 @@ export {
 export type { ProcessContractSpec, ProcessDoublePayload, ProcessSelection } from "./contract";
 
 // Doubles
-export { ProcessKpiStripDouble, ProcessMapDouble, VariantExplorerDouble } from "./doubles";
+export {
+  ProcessCompareDouble,
+  ProcessKpiStripDouble,
+  ProcessMapDouble,
+  VariantExplorerDouble,
+} from "./doubles";
 export type {
+  ProcessCompareDoubleProps,
   ProcessKpiStripDoubleProps,
   ProcessMapDoubleProps,
   VariantExplorerDoubleProps,

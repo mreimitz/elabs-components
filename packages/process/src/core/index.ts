@@ -156,3 +156,7 @@ export type { ConformanceBucket, ConformanceRatePoint, ConformanceResult } from 
 // fromXes — RM-063
 export { fromXes } from "./adapters/xes";
 export type { XesParseError, XesParseOptions, XesParseResult } from "./adapters/xes";
+
+// diffGraphs — RM-064
+export { diffGraphs } from "./diff-graphs";
+export type { DiffEntry, DiffState, ProcessGraphDiff } from "./diff-graphs";
