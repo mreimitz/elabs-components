@@ -253,6 +253,40 @@ describe("deriveDumbbellMargin", () => {
     expect(margin.left).toBe(20 * 7 + 10);
   });
 
+  it("bothEndsLabeled grows margin.right to hold the end label's category name too", () => {
+    const longRows: DumbbellRow[] = [
+      {
+        index: 0,
+        datum: {},
+        category: "Organic search",
+        start: 42000,
+        end: 51500,
+        delta: 9500,
+        extra: [],
+      },
+    ];
+    const withoutFlag = deriveDumbbellMargin({
+      rows: longRows,
+      variant: "slope",
+      orientation: "horizontal",
+      floor,
+      width: 900,
+      measure: measure7,
+      formatValue: identity,
+    });
+    const withFlag = deriveDumbbellMargin({
+      rows: longRows,
+      variant: "slope",
+      orientation: "horizontal",
+      floor,
+      width: 900,
+      measure: measure7,
+      formatValue: identity,
+      bothEndsLabeled: true,
+    });
+    expect(withFlag.right).toBeGreaterThan(withoutFlag.right);
+  });
+
   it("caps the derived margin at MAX_MARGIN_FRACTION of the container width, never below the floor", () => {
     const pathologicalRows: DumbbellRow[] = [
       {
@@ -520,6 +554,95 @@ describe("DumbbellChart", () => {
     );
     expect(getByText(/-18/)).toBeInTheDocument();
   });
+
+  it("deltaLabelFormat overrides the default sign+formatValue delta text", () => {
+    const { getByText, queryByText } = render(
+      <DumbbellChart
+        data={[{ step: "Revenue", before: 100, after: 82 }]}
+        category="step"
+        startKey="before"
+        endKey="after"
+        showDelta
+        deltaLabelFormat={(delta) => `${delta > 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)}pp`}
+      />,
+    );
+    expect(getByText("−18.0pp")).toBeInTheDocument();
+    expect(queryByText(/^-18/)).not.toBeInTheDocument();
+  });
+
+  it("referenceLine draws one labelled vertical line at the given value", () => {
+    const { container, getByText } = render(
+      <DumbbellChart
+        data={onboardingData}
+        category="step"
+        startKey="before"
+        endKey="after"
+        referenceLine={{ value: 50, label: "Target 50" }}
+      />,
+    );
+    expect(container.querySelectorAll('[data-slot="dumbbell-chart-reference-line"]')).toHaveLength(
+      1,
+    );
+    expect(getByText("Target 50")).toBeInTheDocument();
+  });
+
+  it("referenceLine flips its label anchor near the domain's edges instead of overflowing", () => {
+    // jsdom's canvas-less text measurer falls back to a fixed per-char
+    // estimate (see `use-text-measurer.ts`), so a long label at a value near
+    // the domain's max is guaranteed to trip the "would overflow the right
+    // edge" branch.
+    const { container } = render(
+      <DumbbellChart
+        data={[{ step: "A", before: 0, after: 100 }]}
+        category="step"
+        startKey="before"
+        endKey="after"
+        referenceLine={{ value: 100, label: "A very long benchmark label indeed" }}
+      />,
+    );
+    const label = container.querySelector('[data-slot="dumbbell-chart-reference-line"] text');
+    expect(label).not.toBeNull();
+    expect(label?.getAttribute("text-anchor")).toBe("end");
+  });
+
+  it('referenceLine/showValueAxis are no-ops for variant="slope" and orientation="vertical"', () => {
+    const { container } = render(
+      <DumbbellChart
+        data={onboardingData}
+        category="step"
+        startKey="before"
+        endKey="after"
+        orientation="vertical"
+        referenceLine={{ value: 50, label: "Target 50" }}
+        showValueAxis
+      />,
+    );
+    expect(container.querySelector('[data-slot="dumbbell-chart-reference-line"]')).toBeNull();
+    expect(container.querySelector('[data-slot="dumbbell-chart-value-axis"]')).toBeNull();
+  });
+
+  it("showValueAxis renders tick marks along the value scale", () => {
+    const { container } = render(
+      <DumbbellChart
+        data={onboardingData}
+        category="step"
+        startKey="before"
+        endKey="after"
+        showValueAxis
+      />,
+    );
+    const axis = container.querySelector('[data-slot="dumbbell-chart-value-axis"]');
+    expect(axis).not.toBeNull();
+    expect(axis?.querySelectorAll("line").length).toBeGreaterThan(0);
+  });
+
+  it("default rendering is unaffected when referenceLine/showValueAxis are unset", () => {
+    const { container } = render(
+      <DumbbellChart data={onboardingData} category="step" startKey="before" endKey="after" />,
+    );
+    expect(container.querySelector('[data-slot="dumbbell-chart-reference-line"]')).toBeNull();
+    expect(container.querySelector('[data-slot="dumbbell-chart-value-axis"]')).toBeNull();
+  });
 });
 
 describe('DumbbellChart — variant="slope"', () => {
@@ -607,6 +730,22 @@ describe('DumbbellChart — variant="slope"', () => {
     expect(
       container.querySelector('[data-slot="dumbbell-chart-slope-label-end"]'),
     ).toBeInTheDocument();
+  });
+
+  it("bothEndsLabeled prefixes the end label with the category name; default omits it", () => {
+    const props = {
+      data: [{ channel: "Organic search", lastYear: 42000, thisYear: 51500 }],
+      category: "channel",
+      startKey: "lastYear",
+      endKey: "thisYear",
+      variant: "slope" as const,
+    };
+    const { container: without } = render(<DumbbellChart {...props} />);
+    const { container: withFlag } = render(<DumbbellChart {...props} bothEndsLabeled />);
+    const endText = (root: HTMLElement) =>
+      root.querySelector('[data-slot="dumbbell-chart-slope-label-end"]')?.textContent ?? "";
+    expect(endText(without)).not.toMatch(/Organic search/);
+    expect(endText(withFlag)).toMatch(/Organic search/);
   });
 
   // #240 — a vertical category label wider than its column used to render as a

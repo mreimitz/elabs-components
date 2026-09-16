@@ -395,3 +395,76 @@ export const HighDecoration: Story = {
     );
   },
 };
+
+/**
+ * `bothEndsLabeled` — the end of each slope line also carries its category
+ * name, not just the bare value, so a reader can tell which line is which
+ * without tracing it back to the start label. Default (unset) keeps the end
+ * label value-only.
+ */
+export const SlopeBothEndsLabeled: Story = {
+  args: {
+    data: yearOverYear,
+    category: "channel",
+    startKey: "lastYear",
+    endKey: "thisYear",
+    variant: "slope",
+    valueFormat: "compact",
+    bothEndsLabeled: true,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const endLabels = canvasElement.querySelectorAll(
+        '[data-slot="dumbbell-chart-slope-label-end"]',
+      );
+      expect(endLabels.length).toBeGreaterThan(0);
+      endLabels.forEach((label) => expect(label.textContent).toMatch(/[A-Za-z]/));
+    });
+  },
+  render: (args) => (
+    <div className="h-80 w-[640px]">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+};
+
+// ── Gap-to-benchmark: one labelled reference line + light value ticks ──────
+const depotVsBenchmark = [
+  { depot: "Berlin", actual: 97.3, benchmark: 95 },
+  { depot: "Munich", actual: 95.8, benchmark: 95 },
+  { depot: "Hamburg", actual: 94.3, benchmark: 95 },
+  { depot: "Nuremberg", actual: 83.8, benchmark: 95 },
+];
+
+/**
+ * `referenceLine` + `showValueAxis` — one labelled vertical benchmark line
+ * plus light value ticks along the shared scale, in place of repeating the
+ * benchmark as a marker on every row. `deltaLabelFormat` shows the gap with a
+ * true minus sign and a unit the default `formatValue` sign convention can't.
+ */
+export const BenchmarkReferenceLine: Story = {
+  args: {
+    data: depotVsBenchmark,
+    category: "depot",
+    startKey: "benchmark",
+    endKey: "actual",
+    showDelta: true,
+    valueFormat: "number",
+    referenceLine: { value: 95, label: "Industry benchmark 95%" },
+    showValueAxis: true,
+    deltaLabelFormat: (delta) => `${delta > 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)}pp`,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(
+        canvasElement.querySelector('[data-slot="dumbbell-chart-reference-line"]'),
+      ).not.toBeNull();
+      expect(canvasElement.querySelector('[data-slot="dumbbell-chart-value-axis"]')).not.toBeNull();
+    });
+  },
+  render: (args) => (
+    <div className="h-80 w-[640px]">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+};
