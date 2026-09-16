@@ -14,8 +14,18 @@
 import { subscribeWithSelector } from "zustand/middleware";
 import { createStore, type Mutate, type StoreApi } from "zustand/vanilla";
 
+// tile operations — RM-081: `alignTiles`/`distributeTiles` (edit/align.ts) are pure `TileLayout[]`
+// maths kept next to the marquee/toolbar that call them directly too; the store imports the
+// same functions rather than re-deriving them, so there is one algorithm, not two.
+import {
+  alignTiles as pureAlignTiles,
+  distributeTiles as pureDistributeTiles,
+} from "../edit/align";
+import type { AlignEdge, DistributeAxis } from "../edit/align";
 import { createHistory, type History } from "./history";
 import {
+  collides,
+  correctBounds,
   DEFAULT_GRID_COLUMNS,
   DEFAULT_GRID_ROWS,
   findEmptySlot,
@@ -80,7 +90,41 @@ export interface DashboardActions {
   removeTile(id: string): void;
   /** Returns the copy's id, or `null` when there is no room. */
   duplicateTile(id: string): string | null;
+  /**
+   * Change a tile's kind in place: `layout`, `title`, `subtitle`, `footnote`, `source`,
+   * `visibleWhen`, `consumes`, `emits` and `container` all survive (so an `interaction`
+   * referencing this tile's id still resolves) — only `kind` and `content` change. When
+   * `content` is omitted it becomes `{}` (the caller, which has the tile-kind registry
+   * `replaceTile` itself never sees, is expected to pass the new kind's `defaultContent`
+   * instead). Built-in `chart` → `chart` (a chart-type swap) is the one special case: the
+   * previous `content` (the `ChartSpec` — `data`/`x`/`series`/…) is kept and `content`'s own
+   * keys (typically just `type`) are merged on top, never replaced wholesale.
+   */
+  // tile operations — RM-081
   replaceTile(id: string, kind: string, content?: unknown): void;
+  /** Bring a tile above every other top-level tile (`fit` z-order only). One history entry. */
+  bringForward(id: string): void;
+  /** Send a tile below every other top-level tile (`fit` z-order only). One history entry. */
+  sendBackward(id: string): void;
+  /**
+   * Align every tile in `ids` (≥ 2, top level only) to a shared edge/centre line. Returns
+   * whether it was applied — rejected (no commit) when the result would overlap. One history
+   * entry for the whole multi-selection, never one per tile.
+   */
+  alignTiles(ids: string[], edge: AlignEdge): boolean;
+  /**
+   * Space every tile in `ids` (≥ 3, top level only) evenly along `axis`, first and last fixed.
+   * Returns whether it was applied — rejected (no commit) when the result would overlap.
+   */
+  distributeTiles(ids: string[], axis: DistributeAxis): boolean;
+  /**
+   * Paste clipboard tiles (ids always regenerated, `ref` kept). `at` places the pointer's
+   * cell, offsetting each further tile by one cell in `fit` mode so N pasted tiles don't
+   * stack exactly; omitted, each tile falls to `findEmptySlot`. One history entry for the
+   * whole paste. Returns the new ids, in `tiles` order (short of `tiles.length` when some
+   * found no room).
+   */
+  pasteTiles(tiles: NewTileSpec[], at?: { x: number; y: number }): string[];
   /**
    * Merge `patch` into the grid. When `patch.density` names a preset (`wide`/`medium`/
    * `narrow`) and differs from the current density, every tile's and container's `x, y,
@@ -164,6 +208,34 @@ function scopeLayout(spec: DashboardSpec, containerId: string | undefined): Tile
     .map((tile) => ({ ...tile.layout, id: tile.id }));
   if (containerId !== undefined) return tiles;
   return [...tiles, ...(spec.containers ?? []).map((c) => ({ ...c.layout, id: c.id }))];
+}
+
+// tile operations — RM-081
+/** Any two items in `layout` share a cell — the same primitive `resolveCollisions`'s own
+ * `"reject"` strategy uses (`collides`), applied pairwise for a whole moved SET at once
+ * (`resolveCollisions` itself only ever moves one item against the rest). */
+function hasCollisions(layout: readonly TileLayout[]): boolean {
+  for (let i = 0; i < layout.length; i++)
+    for (let j = i + 1; j < layout.length; j++)
+      if (collides(layout[i] as TileLayout, layout[j] as TileLayout)) return true;
+  return false;
+}
+
+/** Write a top-level (`scopeLayout(spec, undefined)`) layout back onto tiles/containers. */
+function applyScopedLayout(spec: DashboardSpec, layout: readonly TileLayout[]): DashboardSpec {
+  const byId = new Map(layout.map((item) => [item.id, item]));
+  const strip = ({ id: _id, ...rest }: TileLayout) => rest;
+  return {
+    ...spec,
+    tiles: spec.tiles.map((t) => {
+      const l = byId.get(t.id);
+      return l && t.container === undefined ? { ...t, layout: strip(l) } : t;
+    }),
+    containers: spec.containers?.map((c) => {
+      const l = byId.get(c.id);
+      return l ? { ...c, layout: strip(l) } : c;
+    }),
+  };
 }
 
 function uniqueId(spec: DashboardSpec, base: string): string {
@@ -323,10 +395,83 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
             layout: { ...layout, x: undefined, y: undefined },
           });
         },
+        // tile operations — RM-081
         replaceTile(id, kind, content) {
           const tile = tileById(id);
           if (!tile) return;
-          actions.patchTile(id, { kind, content: content === undefined ? {} : content });
+          let nextContent: unknown = content === undefined ? {} : content;
+          if (tile.kind === "chart" && kind === "chart" && content && typeof content === "object")
+            nextContent = {
+              ...(tile.content as Record<string, unknown>),
+              ...(content as Record<string, unknown>),
+            };
+          actions.patchTile(id, { kind, content: nextContent });
+        },
+        bringForward(id) {
+          const spec = history.present;
+          const tile = tileById(id);
+          if (!tile || tile.container) return;
+          const maxZ = Math.max(0, ...spec.tiles.map((t) => t.layout.z ?? 0));
+          if ((tile.layout.z ?? 0) > maxZ) return;
+          commit({
+            ...spec,
+            tiles: spec.tiles.map((t) =>
+              t.id === id ? { ...t, layout: { ...t.layout, z: maxZ + 1 } } : t,
+            ),
+          });
+        },
+        sendBackward(id) {
+          const spec = history.present;
+          const tile = tileById(id);
+          if (!tile || tile.container) return;
+          const minZ = Math.min(0, ...spec.tiles.map((t) => t.layout.z ?? 0));
+          commit({
+            ...spec,
+            tiles: spec.tiles.map((t) =>
+              t.id === id ? { ...t, layout: { ...t.layout, z: minZ - 1 } } : t,
+            ),
+          });
+        },
+        alignTiles(ids, edge) {
+          const spec = history.present;
+          const scope = scopeLayout(spec, undefined);
+          if (scope.filter((item) => ids.includes(item.id)).length < 2) return false;
+          const aligned = correctBounds(pureAlignTiles(scope, ids, edge), spec.grid);
+          if (hasCollisions(aligned)) return false;
+          commit(applyScopedLayout(spec, aligned));
+          return true;
+        },
+        distributeTiles(ids, axis) {
+          const spec = history.present;
+          const scope = scopeLayout(spec, undefined);
+          if (scope.filter((item) => ids.includes(item.id)).length < 3) return false;
+          const distributed = correctBounds(pureDistributeTiles(scope, ids, axis), spec.grid);
+          if (hasCollisions(distributed)) return false;
+          commit(applyScopedLayout(spec, distributed));
+          return true;
+        },
+        pasteTiles(tiles, at) {
+          return actions.batch(() => {
+            const spec = history.present;
+            const ids: string[] = [];
+            tiles.forEach((tile, index) => {
+              const { layout, id: _id, ...rest } = tile;
+              // fit: nudge each further pasted tile by one cell so N tiles pasted onto the
+              // same pointer cell don't stack exactly on top of each other.
+              const target = at
+                ? {
+                    x: at.x + (spec.grid.mode === "fit" ? index : 0),
+                    y: at.y + (spec.grid.mode === "fit" ? index : 0),
+                  }
+                : undefined;
+              const newId = actions.addTile(
+                { ...rest, layout: target ? { w: layout?.w, h: layout?.h } : layout },
+                target,
+              );
+              if (newId) ids.push(newId);
+            });
+            return ids;
+          });
         },
         setGrid(patch) {
           // UI slice — RM-079: the grid-settings popover is the one caller; density
