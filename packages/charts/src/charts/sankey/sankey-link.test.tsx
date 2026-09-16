@@ -22,7 +22,8 @@ vi.mock("@visx/responsive", () => {
 });
 
 import { SankeyChart, type SankeyData } from "./sankey-chart";
-import { SankeyLink } from "./sankey-link";
+import { getDefaultNodeColor, SankeyLink } from "./sankey-link";
+import { SankeyNode } from "./sankey-node";
 
 /**
  * Regression lock for #185.
@@ -137,5 +138,57 @@ describe("SankeyLink — dash-reveal measurement is scoped to geometry (#185)", 
     );
     expect(after).not.toEqual(before);
     expect(measure.mock.calls.length).toBe(afterMount + paths);
+  });
+});
+
+/**
+ * #258 — every sankey test used to mock `SankeyLink` out entirely (a no-op
+ * stub asserts nothing), so no test in the repo covered a REAL link's
+ * markup: shifting `getDefaultNodeColor`'s palette index by one left the
+ * whole suite green. This mounts the real component and reads its resolved
+ * markup off the live DOM.
+ */
+describe("SankeyLink — real markup (#258)", () => {
+  it("draws a non-empty path and colors each link's gradient from getDefaultNodeColor", () => {
+    const { container } = render(
+      <SankeyChart data={data}>
+        <SankeyNode />
+        <SankeyLink />
+      </SankeyChart>,
+    );
+
+    const paths = Array.from(container.querySelectorAll("g.sankey-links path"));
+    expect(paths).toHaveLength(data.links.length);
+
+    // Node order follows `data.nodes`: A(0), B(1), C(2) — both links target C.
+    const nodeIndexByName = new Map(data.nodes.map((n, i) => [n.name, i] as const));
+    const stops = Array.from(container.querySelectorAll("linearGradient"));
+    expect(stops).toHaveLength(data.links.length);
+
+    data.links.forEach((link, index) => {
+      const path = paths[index] as SVGPathElement;
+      // Non-empty `d`: a real, resolved geometry, not a stub's absent attribute.
+      expect(path.getAttribute("d")?.length).toBeGreaterThan(0);
+      // The path's own stroke resolves to that link's own gradient.
+      expect(path.getAttribute("stroke")).toBe(`url(#link-gradient-${index})`);
+
+      const gradient = stops[index] as SVGLinearGradientElement;
+      const [startStop, endStop] = gradient.querySelectorAll("stop");
+      const sourceIndex = nodeIndexByName.get(
+        data.nodes[typeof link.source === "number" ? link.source : 0]?.name ?? "",
+      );
+      const targetIndex = nodeIndexByName.get(
+        data.nodes[typeof link.target === "number" ? link.target : 0]?.name ?? "",
+      );
+      // getDefaultNodeColor(node) is `defaultColors[node.index % defaultColors.length]`
+      // — a mutation that shifts that palette index changes THESE colors, and this
+      // is the one assertion in the repo that would go red.
+      expect(startStop?.getAttribute("stop-color")).toBe(
+        getDefaultNodeColor({ index: sourceIndex } as never),
+      );
+      expect(endStop?.getAttribute("stop-color")).toBe(
+        getDefaultNodeColor({ index: targetIndex } as never),
+      );
+    });
   });
 });
