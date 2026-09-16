@@ -301,6 +301,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - SegmentBackground
 - SegmentLineFrom
 - SegmentLineTo
+- SELECTED_OUTLINE_WIDTH
+- SELECTION_EXCLUDED_OPACITY
 - SeriesBar
 - SeriesMarkers
 - SeriesPointMarker
