@@ -301,7 +301,7 @@ export const MessageTable = forwardRef<HTMLDivElement, MessageTableProps>(functi
                         onClick={() => toggleSort(column)}
                         className={cn(
                           "inline-flex items-center gap-1 rounded-sm font-medium",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                          "focus-ring",
                           "hover:text-foreground transition-colors duration-fast ease-standard motion-reduce:transition-none",
                           numeric && "flex-row-reverse",
                         )}

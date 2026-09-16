@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent } from "storybook/test";
 import { GroupedParts } from "./grouped-parts";
 import { groupPartByType, type GroupablePart } from "./part-groups";
 
@@ -101,4 +102,26 @@ export const DarkTheme: Story = {
       </div>
     ),
   ],
+};
+
+/**
+ * Focus indicator on group triggers (#313): Tab to a collapsible trigger and
+ * assert the compound indicator's OUTLINE layer (`outlineStyle: "solid"`,
+ * `--ring-contour`) that `focus-ring-inset` adds. `boxShadow !== "none"`
+ * alone also passes on the legacy `focus-visible:outline-none
+ * focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset`
+ * pattern (Tailwind's `ring-2` still paints a box-shadow), so it does not
+ * lock the fix.
+ */
+export const FocusIndicator: Story = {
+  args: { parts },
+  play: async ({ canvas, userEvent }) => {
+    const triggers = canvas.getAllByRole("button");
+    await userEvent.tab();
+    await expect(triggers[0]).toHaveFocus();
+    const focused = getComputedStyle(triggers[0]);
+    await expect(focused.boxShadow).not.toBe("none");
+    await expect(focused.outlineStyle).toBe("solid");
+    await expect(parseFloat(focused.outlineWidth)).toBeGreaterThan(0);
+  },
 };

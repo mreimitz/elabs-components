@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent, within } from "storybook/test";
 import { MessageCompare, MessageCompareColumn } from "./message-compare";
 import { MessageFeedback } from "./message-feedback";
 import { MessageResponse } from "./message";
@@ -172,4 +173,43 @@ export const Mobile: Story = {
       </MessageCompare>
     </div>
   ),
+};
+
+/**
+ * Focus indicator on scrollable compare column (#313): Tab to the column
+ * body and assert the compound indicator's OUTLINE layer. The prior version
+ * read `role="region"` — that's `MessageCompareColumn`'s OUTER wrapper
+ * (`message-compare.tsx:416`, header + body), which never receives focus or
+ * `focus-ring-inset`. The actual scrollable, tabbable, styled element is the
+ * nested `[data-slot="message-compare-column-body"]` div
+ * (`message-compare.tsx:441-446`) — querying the region always read
+ * `boxShadow: "none"` off the wrong node, regardless of the fix.
+ */
+export const FocusIndicator: Story = {
+  render: () => (
+    <div className="h-96">
+      <MessageCompare columns={2}>
+        <MessageCompareColumn model={{ name: "GPT-5" }} status="ready">
+          <MessageResponse>{GPT_ANSWER}</MessageResponse>
+        </MessageCompareColumn>
+        <MessageCompareColumn model={{ name: "Claude" }} status="ready">
+          <MessageResponse>{CLAUDE_ANSWER}</MessageResponse>
+        </MessageCompareColumn>
+      </MessageCompare>
+    </div>
+  ),
+  play: async ({ canvasElement, userEvent }) => {
+    const body = canvasElement.querySelector<HTMLElement>(
+      '[data-slot="message-compare-column-body"]',
+    );
+    if (body == null) {
+      throw new Error("expected a message-compare-column-body scroll container");
+    }
+    await userEvent.tab();
+    await expect(body).toHaveFocus();
+    const focused = getComputedStyle(body);
+    await expect(focused.boxShadow).not.toBe("none");
+    await expect(focused.outlineStyle).toBe("solid");
+    await expect(parseFloat(focused.outlineWidth)).toBeGreaterThan(0);
+  },
 };

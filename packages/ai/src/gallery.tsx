@@ -372,7 +372,7 @@ function GalleryTile({ image, index }: { image: GalleryImage; index: number }) {
         type="button"
         onClick={() => actions.open(index)}
         aria-label={label}
-        className="block w-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="block w-full rounded-lg focus-ring"
       >
         <AspectRatio ratio={aspectRatio} className="overflow-hidden rounded-lg">
           {/* Decorative: the button carries the accessible name. */}
@@ -406,7 +406,7 @@ function GalleryOverflowTile() {
         type="button"
         onClick={() => actions.open(maxVisible)}
         aria-label={`Show all ${total} images`}
-        className="block w-full rounded-lg border border-border bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="block w-full rounded-lg border border-border bg-muted focus-ring"
       >
         <AspectRatio ratio={aspectRatio} className="overflow-hidden rounded-lg">
           <span className="flex size-full items-center justify-center text-subtitle text-muted-foreground transition-colors duration-fast ease-standard group-hover:text-foreground motion-reduce:transition-none">
