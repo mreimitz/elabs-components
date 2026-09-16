@@ -627,6 +627,42 @@ export function assertChartContract(
   if (spec.edgeProp) {
     assertEdges(component, props, spec.edgeProp, dataProp);
   }
+
+  // Selection/Hover inputs — RM-073
+  assertLinkInputs(component, props);
+}
+
+// Selection/Hover inputs — RM-073
+/**
+ * The selection + shared-hover inputs every family accepts. Checked for every
+ * double regardless of spec: a non-function resolver would throw inside the
+ * real chart's render loop on the first mark.
+ */
+function assertLinkInputs(component: string, props: Record<string, unknown>): void {
+  for (const p of ["selectionStates", "onHoverCategory"] as const) {
+    const v = props[p];
+    if (v !== undefined && typeof v !== "function") {
+      fail(component, p, v, `"${p}" must be a function`);
+    }
+  }
+  if (props.dimExcluded !== undefined && typeof props.dimExcluded !== "boolean") {
+    fail(component, "dimExcluded", props.dimExcluded, `"dimExcluded" must be a boolean`);
+  }
+  const hover = props.hoverCategory;
+  if (
+    hover !== undefined &&
+    hover !== null &&
+    typeof hover !== "string" &&
+    typeof hover !== "number" &&
+    !(hover instanceof Date)
+  ) {
+    fail(
+      component,
+      "hoverCategory",
+      hover,
+      `"hoverCategory" must be a string, number, Date or null`,
+    );
+  }
 }
 
 // Network — RM-036

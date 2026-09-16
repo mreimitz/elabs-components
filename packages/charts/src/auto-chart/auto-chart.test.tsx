@@ -919,3 +919,44 @@ describe("AutoChart treemap palette (#306)", () => {
     expect(isChartSpecPalette(undefined)).toBe(false);
   });
 });
+
+// Selection/Hover inputs — RM-073
+describe("AutoChart selection pass-through (RM-073)", () => {
+  const spec: ChartSpec = {
+    type: "bar",
+    data: [
+      { region: "EMEA", code: "E", sales: 12 },
+      { region: "APAC", code: "A", sales: 24 },
+      { region: "AMER", code: "M", sales: 8 },
+    ],
+    x: "region",
+    series: ["sales"],
+  };
+  const states = { EMEA: "selected", APAC: "associated", AMER: "excluded" } as const;
+
+  it("renders the same data-selection attributes as the underlying BarChart", () => {
+    const { container } = render(
+      <AutoChart
+        copyValueOnActivate={false}
+        selectionStates={(c) => states[String(c) as keyof typeof states]}
+        spec={spec}
+      />,
+    );
+    const painted = [...container.querySelectorAll("[data-selection]")].map((el) =>
+      el.getAttribute("data-selection"),
+    );
+    expect(painted).toEqual(["selected", "associated", "excluded"]);
+  });
+
+  it("re-keys the resolver onto spec.fields.category", () => {
+    const byCode = { E: "excluded", A: "excluded", M: "selected" } as const;
+    const { container } = render(
+      <AutoChart
+        copyValueOnActivate={false}
+        selectionStates={(c) => byCode[String(c) as keyof typeof byCode] ?? "associated"}
+        spec={{ ...spec, fields: { category: "code" } }}
+      />,
+    );
+    expect(container.querySelectorAll('[data-selection="excluded"]')).toHaveLength(2);
+  });
+});

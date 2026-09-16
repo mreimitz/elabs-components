@@ -19,6 +19,11 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import type { LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
+import {
+  type ChartHoverLinkProps,
+  ChartHoverLinkIndicator,
+  ChartHoverLinkProvider,
+} from "./chart-hover-link";
 import { ChartLoadingLabel } from "./chart-loading-label";
 import {
   type ChartPhase,
@@ -33,7 +38,7 @@ import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import { TimeSeriesChartInner } from "./time-series-chart-shell";
 
-export interface LineChartProps {
+export interface LineChartProps extends ChartHoverLinkProps {
   /** Data array - each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -333,9 +338,12 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
     maxInteractiveDatapoints,
     accessibleLabel,
     accessibleDescription,
+    hoverCategory,
+    onHoverCategory,
   },
   ref,
 ) {
+  const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
   // Internal ref anchors tooltips; forwarded ref is merged via callback ref.
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -391,39 +399,48 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={10}>
-        {({ width, height }) => (
-          <ChartInner
-            animationDuration={animationDuration}
-            animationEasing={animationEasing}
-            chartStatus={status}
-            containerRef={containerRef}
-            data={data}
-            datapointLabel={datapointLabel}
-            enterTransition={enterTransition}
-            height={height}
-            loadingLabel={loadingLabel}
-            maxInteractiveDatapoints={maxInteractiveDatapoints}
-            margin={margin}
-            copyValueOnActivate={copyValueOnActivate}
-            onDatapointClick={onDatapointClick}
-            onPhaseChange={handlePhaseChange}
-            replayOnClick={replayOnClick}
-            revealOn={revealOn}
-            revealSignature={revealSignature}
-            tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
-            width={width}
-            xDataKey={xDataKey}
-            xDomain={xDomain}
-            xDomainSlotCount={xDomainSlotCount}
-            xScaleType={xScaleType}
-            yDomainTween={yDomainTween}
-            yDomainTweenDuration={yDomainTweenDuration}
-          >
-            {children}
-          </ChartInner>
-        )}
-      </ParentSize>
+      <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
+        <ParentSize debounceTime={10}>
+          {({ width, height }) => (
+            <ChartInner
+              animationDuration={animationDuration}
+              animationEasing={animationEasing}
+              chartStatus={status}
+              containerRef={containerRef}
+              data={data}
+              datapointLabel={datapointLabel}
+              enterTransition={enterTransition}
+              height={height}
+              loadingLabel={loadingLabel}
+              maxInteractiveDatapoints={maxInteractiveDatapoints}
+              margin={margin}
+              copyValueOnActivate={copyValueOnActivate}
+              onDatapointClick={onDatapointClick}
+              onPhaseChange={handlePhaseChange}
+              replayOnClick={replayOnClick}
+              revealOn={revealOn}
+              revealSignature={revealSignature}
+              tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
+              width={width}
+              xDataKey={xDataKey}
+              xDomain={xDomain}
+              xDomainSlotCount={xDomainSlotCount}
+              xScaleType={xScaleType}
+              yDomainTween={yDomainTween}
+              yDomainTweenDuration={yDomainTweenDuration}
+            >
+              {hoverLinked ? (
+                <>
+                  {children}
+                  <ChartHoverLinkIndicator />
+                </>
+              ) : (
+                children
+              )}
+            </ChartInner>
+          )}
+        </ParentSize>
+      </ChartHoverLinkProvider>
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}

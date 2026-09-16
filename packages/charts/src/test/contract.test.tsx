@@ -42,6 +42,7 @@ import {
   Sparkline,
 } from "./doubles";
 import {
+  assertChartContract,
   ChartContractError,
   configureChartTestDouble,
   readChartDoubleProps,
@@ -510,5 +511,40 @@ describe("compile-time assignability", () => {
     expectAssignable<ComponentType<ChartFrameProps>>(ChartFrame);
     expectAssignable<ComponentType<SparklineProps>>(Sparkline);
     expect(true).toBe(true);
+  });
+});
+
+// Selection/Hover inputs — RM-073
+describe("selection + hover-link inputs (RM-073)", () => {
+  const rows = [{ name: "EMEA", sales: 1 }];
+
+  it("throws ChartContractError on a non-function selectionStates", () => {
+    expect(() =>
+      assertChartContract("BarChart", { data: rows, selectionStates: "yes" }, { dataKind: "none" }),
+    ).toThrow(ChartContractError);
+  });
+
+  it("rejects a non-function onHoverCategory and an object hoverCategory", () => {
+    expect(() =>
+      assertChartContract("LineChart", { onHoverCategory: 1 }, { dataKind: "none" }),
+    ).toThrow(/onHoverCategory/);
+    expect(() =>
+      assertChartContract("LineChart", { hoverCategory: {} }, { dataKind: "none" }),
+    ).toThrow(/hoverCategory/);
+  });
+
+  it("accepts well-formed inputs", () => {
+    expect(() =>
+      assertChartContract(
+        "LineChart",
+        {
+          dimExcluded: false,
+          hoverCategory: null,
+          onHoverCategory: () => {},
+          selectionStates: () => "selected",
+        },
+        { dataKind: "none" },
+      ),
+    ).not.toThrow();
   });
 });
