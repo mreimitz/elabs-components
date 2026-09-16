@@ -146,9 +146,14 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
           cell.state === "zero" ? (
             <QuietDot cx={cx} cy={cy} />
           ) : (
+            // A full circle at every size (#280) — clamping rx to `cellRadius`
+            // made a LARGE cell's mark read as a squared-off outline while a
+            // small one rounded down to a circle, so the same chart looked
+            // like two different marks depending on cell size. One shape,
+            // always: the ring, never the corners, carries "no data".
             <HeatmapMissingMark
               height={missingSide}
-              rx={Math.min(cellRadius, missingSide / 2)}
+              rx={missingSide / 2}
               width={missingSide}
               x={cx - missingSide / 2}
               y={cy - missingSide / 2}

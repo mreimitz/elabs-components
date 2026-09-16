@@ -254,23 +254,33 @@ function HighlightedTreemap({
 }
 
 /** A callout needs room for its own two lines UNDER the tile's built-in
- * name/value label — below this box, only the highlight outline draws. */
+ * name/value label — below this box, it falls back to the short form. */
 const MIN_CALLOUT_WIDTH = 110;
 const MIN_CALLOUT_HEIGHT = 96;
+/**
+ * The floor for even the short form ("Fuel · 31%", #280) — the highlighted
+ * tile's own label is never dropped entirely, so this is far below
+ * {@link MIN_CALLOUT_WIDTH}/{@link MIN_CALLOUT_HEIGHT}, not a second tier of
+ * the same gate. Below THIS, the tile is too small to letter at all.
+ */
+const MIN_SHORT_CALLOUT_WIDTH = 56;
+const MIN_SHORT_CALLOUT_HEIGHT = 24;
 const CALLOUT_PADDING = 8;
 const CALLOUT_LINE_GAP = 14;
 
 /**
  * The tile's SOLE annotation (#280) — `TreemapChart` never draws its own
  * name/value label on this leaf (`hideLeafLabel`), so the two used to say
- * "Fuel" twice. One block: name + € value on the bold line, share + the
- * period-over-period change on the second. Ink is `--chart-ink-on-light`
- * (not a text-role token) because it sits directly on the opaque `--chart-1`
- * fill, not on the card — see the on-mark-ink convention in `chart-hairline`
- * siblings. Sits in the highlighted tile's OWN bottom-right corner — never a
- * canvas-relative position, which could as easily land on a neighbour's tile —
- * and a short `Leader` ties it back to the tile's edge; both stay strictly
- * inside `leaf`'s box.
+ * "Fuel" twice. Two tiers, both ending on the same fact line so they never
+ * visually jump: full — name + € value, then share + the period-over-period
+ * change — when there is room for both lines; short — name + share alone —
+ * whenever there is not. The highlighted tile keeps a label at every size a
+ * real card renders at; only a tile too small to letter at all draws none.
+ * Ink is `--chart-ink-on-light` (not a text-role token) because it sits
+ * directly on the opaque `--chart-1` fill, not on the card — see the
+ * on-mark-ink convention in `chart-hairline` siblings. Sits in the
+ * highlighted tile's OWN bottom-right corner — never a canvas-relative
+ * position, which could as easily land on a neighbour's tile.
  */
 function CalloutLabel({
   formattedValue,
@@ -285,10 +295,29 @@ function CalloutLabel({
 }) {
   const width = leaf.x1 - leaf.x0;
   const height = leaf.y1 - leaf.y0;
-  if (width < MIN_CALLOUT_WIDTH || height < MIN_CALLOUT_HEIGHT) return null;
+  if (width < MIN_SHORT_CALLOUT_WIDTH || height < MIN_SHORT_CALLOUT_HEIGHT) return null;
 
   const labelX = leaf.x1 - CALLOUT_PADDING;
   const factLineY = leaf.y1 - CALLOUT_PADDING;
+
+  if (width < MIN_CALLOUT_WIDTH || height < MIN_CALLOUT_HEIGHT) {
+    return (
+      <g data-slot="infographic-part-to-whole-callout">
+        <HaloText
+          fill="var(--chart-ink-on-light)"
+          fontSize={11}
+          fontWeight={600}
+          halo="var(--chart-1)"
+          textAnchor="end"
+          x={labelX}
+          y={factLineY}
+        >
+          {leaf.name} · {sharePct}%
+        </HaloText>
+      </g>
+    );
+  }
+
   const nameLineY = factLineY - CALLOUT_LINE_GAP;
   const leaderFromY = leaf.y0 + height * 0.6;
   const leaderToY = nameLineY - CALLOUT_LINE_GAP;

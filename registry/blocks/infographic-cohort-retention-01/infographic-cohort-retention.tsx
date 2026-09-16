@@ -89,7 +89,7 @@ export function InfographicCohortRetention({
               accessibleDescription={accessibleDescription}
               cellRadius={4}
               data={rows}
-              emptyMarkScale={0.28}
+              emptyMarkScale={0.2}
               highlight={(datum) =>
                 datum.cohort === scenario.highlightCohort &&
                 datum.monthsSince === scenario.highlightMonthsSince
@@ -101,11 +101,11 @@ export function InfographicCohortRetention({
               valueFormat="percent"
               valueKey="retentionFraction"
               x="monthsSince"
+              xAxisLabel="Months since signup"
               xOrder={MONTHS_SINCE_ORDER}
               y="cohort"
               yOrder={scenario.cohortOrder}
             />
-            <p className="text-center text-caption text-muted-foreground">Months since signup</p>
             <p className="text-caption text-muted-foreground">
               Each cell is the share of a cohort still active N months after signup; blank cells are
               months a cohort has not reached yet, not zero retention.

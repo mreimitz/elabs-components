@@ -214,6 +214,14 @@ export interface HeatmapChartProps extends ChartInteractionProps {
   valueFormat?: ChartValueFormat;
   /** Show the ramp key below the plot. Default `true`. */
   showLegend?: boolean;
+  /**
+   * A visible title for the column axis (#280), e.g. "Months since signup" —
+   * printed directly under the plot, ABOVE the legend, so it reads as the
+   * axis's own caption rather than a floating sentence after the key. Default
+   * `undefined` (no title printed). Not a substitute for `accessibleLabel`/
+   * `accessibleDescription`, which already state the axis in prose for AT.
+   */
+  xAxisLabel?: string;
   /** Plot-area insets. Merged over the variant's own defaults. */
   margin?: Partial<HeatmapMargin>;
   /** Aspect ratio of the plot body. Default `"16 / 9"` (`"6 / 1"` for calendar). */
@@ -1017,6 +1025,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     variant = "matrix",
     valueKey,
     x,
+    xAxisLabel,
     xOrder,
     y,
     yOrder,
@@ -1162,6 +1171,14 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
           </div>
         )}
       </div>
+      {xAxisLabel && !isEmpty ? (
+        <p
+          className="text-center text-caption text-muted-foreground"
+          data-slot="heatmap-x-axis-label"
+        >
+          {xAxisLabel}
+        </p>
+      ) : null}
       {showLegend && !isEmpty ? (
         <HeatmapLegend
           continuous={scale.continuous}
