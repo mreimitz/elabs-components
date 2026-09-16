@@ -80,8 +80,22 @@ const DEFAULT_ACTIVE_FILL_OPACITY = 1;
 const DEFAULT_INACTIVE_FILL_OPACITY = 1;
 
 // A `thresholds` tick is furniture (a scale marking, not data) — a short
-// outer-rim mark past the notch band, same idiom as an axis tick.
-const THRESHOLD_TICK_LENGTH = 6;
+// outer-rim mark past the notch band, same idiom as an axis tick. Lengthened
+// from an earlier 6px (#…) — at that length the tick read as lost among the
+// notch ring in a screenshot review; 10px reads unmistakably as its own mark.
+const THRESHOLD_TICK_LENGTH = 10;
+
+// The target tick and threshold ticks each get a `--chart-background` halo
+// UNDER the actual ink — a same-radius, wider stroke that punches a clear gap
+// through whatever notch colors the tick crosses, so the mark reads as ITS
+// OWN thing rather than blending into a dense, colorful ring (#…).
+// chart-hairline-exempt: a halo underlay is masking, not a second grid ink —
+// it never carries information on its own, only separates the real tick from
+// the notches behind it.
+const TARGET_TICK_OVERSHOOT = 8;
+const TARGET_HALO_STROKE_WIDTH = 6;
+const TARGET_STROKE_WIDTH = 2;
+const THRESHOLD_HALO_STROKE_WIDTH = CHART_HAIRLINE_WIDTH + 3;
 
 /**
  * The one angle computation notches/milestones/target/thresholds all share —
@@ -452,7 +466,9 @@ function GaugeInner({
 
   // A radial tick crossing the notch band at `target`'s angle (same mapping
   // as notches/milestones, #… target/thresholds) — a single value the dial
-  // is measured against, e.g. a quarterly goal.
+  // is measured against, e.g. a quarterly goal. Extends `TARGET_TICK_OVERSHOOT`
+  // past the outer edge (never just flush with it) so the mark unmistakably
+  // pokes out past the notch ring instead of reading as one more notch.
   const targetMark = useMemo(() => {
     if (target === undefined) {
       return null;
@@ -464,8 +480,8 @@ function GaugeInner({
     return {
       x1: centerX + cos * innerRadius,
       y1: centerY + sin * innerRadius,
-      x2: centerX + cos * outerRadius,
-      y2: centerY + sin * outerRadius,
+      x2: centerX + cos * (outerRadius + TARGET_TICK_OVERSHOOT),
+      y2: centerY + sin * (outerRadius + TARGET_TICK_OVERSHOOT),
     };
   }, [target, startAngle, availableAngle, centerX, centerY, innerRadius, outerRadius]);
 
@@ -677,31 +693,56 @@ function GaugeInner({
         ) : null}
 
         {targetMark ? (
-          <line
-            data-slot="gauge-target"
-            stroke="var(--chart-foreground)"
-            strokeLinecap="round"
-            strokeWidth={2}
-            x1={targetMark.x1}
-            x2={targetMark.x2}
-            y1={targetMark.y1}
-            y2={targetMark.y2}
-          />
+          <g>
+            {/* Halo first: a wider `--chart-background` underlay so the tick
+                separates from whatever notch colors it crosses instead of
+                blending in (chart-hairline-exempt: masking, not a 2nd ink). */}
+            <line
+              stroke="var(--chart-background)"
+              strokeLinecap="round"
+              strokeWidth={TARGET_HALO_STROKE_WIDTH}
+              x1={targetMark.x1}
+              x2={targetMark.x2}
+              y1={targetMark.y1}
+              y2={targetMark.y2}
+            />
+            <line
+              data-slot="gauge-target"
+              stroke="var(--chart-foreground)"
+              strokeLinecap="round"
+              strokeWidth={TARGET_STROKE_WIDTH}
+              x1={targetMark.x1}
+              x2={targetMark.x2}
+              y1={targetMark.y1}
+              y2={targetMark.y2}
+            />
+          </g>
         ) : null}
 
         {thresholdMarks.length > 0 ? (
           <g aria-hidden="true">
             {thresholdMarks.map((mark) => (
-              <line
-                data-slot="gauge-threshold-tick"
-                key={`threshold-${mark.value}`}
-                stroke="var(--chart-grid)"
-                strokeWidth={CHART_HAIRLINE_WIDTH}
-                x1={mark.x1}
-                x2={mark.x2}
-                y1={mark.y1}
-                y2={mark.y2}
-              />
+              <g key={`threshold-${mark.value}`}>
+                {/* Same halo idiom as the target tick above (chart-hairline-exempt). */}
+                <line
+                  stroke="var(--chart-background)"
+                  strokeLinecap="round"
+                  strokeWidth={THRESHOLD_HALO_STROKE_WIDTH}
+                  x1={mark.x1}
+                  x2={mark.x2}
+                  y1={mark.y1}
+                  y2={mark.y2}
+                />
+                <line
+                  data-slot="gauge-threshold-tick"
+                  stroke="var(--chart-grid)"
+                  strokeWidth={CHART_HAIRLINE_WIDTH}
+                  x1={mark.x1}
+                  x2={mark.x2}
+                  y1={mark.y1}
+                  y2={mark.y2}
+                />
+              </g>
             ))}
           </g>
         ) : null}

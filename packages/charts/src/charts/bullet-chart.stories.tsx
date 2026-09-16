@@ -82,6 +82,26 @@ export const NoBands: Story = {
   },
 };
 
+/**
+ * `higherIsBetter={false}` — a lower-is-better measure (e.g. cost). The worst
+ * band sits at the HIGH end here, so the shade ramp mirrors: the darkest rung
+ * shades the high (worst) end instead of the low end.
+ */
+export const LowerIsBetter: Story = {
+  args: {
+    value: 8.4,
+    target: 7.9,
+    bands: [
+      { to: 8, label: "On track" },
+      { to: 9, label: "Watch" },
+      { to: 12, label: "Behind" },
+    ],
+    higherIsBetter: false,
+    size: "md",
+    labels: { value: "Cost per shipment" },
+  },
+};
+
 /** `orientation="vertical"` — the bar grows upward; the parent box supplies the height. */
 export const Vertical: Story = {
   args: {

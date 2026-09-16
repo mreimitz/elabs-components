@@ -307,4 +307,44 @@ describe("<BulletChart />", () => {
     const root = container.firstChild as HTMLElement;
     expect(root.getAttribute("aria-label")).toBe("No data");
   });
+
+  it("shades the worst (first) band darkest by default (higherIsBetter)", () => {
+    const { container } = render(
+      <BulletChart
+        bands={[
+          { to: 60, label: "Poor" },
+          { to: 80, label: "Satisfactory" },
+          { to: 100, label: "Good" },
+        ]}
+        target={100}
+        value={82}
+      />,
+    );
+    const bands = container.querySelectorAll('[data-slot="bullet-chart-band"]');
+    // Worst (index 0) gets the strongest-contrast rung; best (last) gets the lighter one —
+    // never the near-invisible `--muted` rung a card-white theme would swallow (#…).
+    expect(bands[0]?.getAttribute("fill")).toBe("var(--chart-grid)");
+    expect(bands[bands.length - 1]?.getAttribute("fill")).toBe("var(--chart-ring-background)");
+  });
+
+  it("mirrors the ramp for a lower-is-better measure so the high (worst) end stays darkest", () => {
+    const { container } = render(
+      <BulletChart
+        bands={[
+          { to: 8, label: "On track" },
+          { to: 9, label: "Watch" },
+          { to: 12, label: "Behind" },
+        ]}
+        higherIsBetter={false}
+        target={7.9}
+        value={8.4}
+      />,
+    );
+    const bands = container.querySelectorAll('[data-slot="bullet-chart-band"]');
+    // Lowest values are BEST here, so index 0 gets the lighter rung and the
+    // high (worst) end — the last band plus its open-ended overflow — gets
+    // the darkest rung, the mirror image of the higherIsBetter case above.
+    expect(bands[0]?.getAttribute("fill")).toBe("var(--chart-ring-background)");
+    expect(bands[bands.length - 1]?.getAttribute("fill")).toBe("var(--chart-grid)");
+  });
 });

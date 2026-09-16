@@ -82,6 +82,15 @@ export interface BulletChartProps
   valueFormat?: ChartValueFormat;
   /** Caller-supplied names interpolated into the auto-generated accessible description. */
   labels?: BulletChartLabels;
+  /**
+   * Whether ASCENDING band values read better (default `true`). Bands are
+   * always drawn low→high by position (`to` is ascending), but which END is
+   * "worst" depends on the measure: a lower-is-better KPI (e.g. cost) has its
+   * worst band at the HIGH end. Flips which side of the shade ramp gets the
+   * darkest (worst) rung so the visual always reads poor→good in the metric's
+   * own good direction, never just left→right.
+   */
+  higherIsBetter?: boolean;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -99,19 +108,35 @@ const COMPARATIVE_MARKER_HALF = 4;
 const COMPARATIVE_MARKER_GAP = 2;
 const DOMAIN_HEADROOM = 1.05;
 
-/** The neutral 2–3 step ramp for bands, nearest-to-farthest from the card surface in EVERY theme
- *  (`--muted` → `--chart-ring-background` → `--chart-grid`, verified light + dark). A band past
- *  the third reuses the last (highest-contrast) rung rather than repeating from the start, so a
- *  4th step never reads as "back to the lowest category". */
-const BAND_TOKENS = ["var(--muted)", "var(--chart-ring-background)", "var(--chart-grid)"] as const;
+/**
+ * The neutral shade ramp for bands, darkest (worst) first — Few's convention.
+ * `--muted` was tried and dropped: at 0.033/0.02 ΔL from `--card` (light/dark)
+ * it is indistinguishable from the card surface, which read as an entirely
+ * blank band (#…). Only TWO existing tokens clear the ≥0.05 ΔE(OKLab)
+ * distinctness bar against both the card AND each other in BOTH themes —
+ * `--chart-grid` (ΔL .26/.27 vs card) and `--chart-ring-background` (ΔL
+ * .12/.11 vs card, .14/.16 vs `--chart-grid`) — so this ships as a genuine
+ * 2-step ramp rather than a 3rd, barely-there rung. A 3-band qualitative set
+ * (Poor/Satisfactory/Good) therefore merges its middle band into whichever
+ * rung its neighbor keeps — still correctly the worst OR the best rung,
+ * never a false "back to the lowest category" read.
+ */
+const BAND_TOKENS = ["var(--chart-grid)", "var(--chart-ring-background)"] as const;
 
 /** No bands at all → a single neutral track, same rung `Sparkline`'s empty state uses. */
 const SINGLE_TRACK_TOKEN = "var(--chart-ring-background)";
 
-/** `BAND_TOKENS[i]`, clamped to the last rung — the index is always in range, so this is just
- *  `noUncheckedIndexedAccess`-safe access, never a real fallback. */
-function bandToken(index: number): string {
-  return BAND_TOKENS[Math.min(Math.max(index, 0), BAND_TOKENS.length - 1)] as string;
+/**
+ * `BAND_TOKENS[i]`, clamped to the ramp and mirrored when `higherIsBetter` is
+ * `false` — bands are always drawn low→high by position, but the WORST band
+ * sits at the high end for a lower-is-better measure, so the shade ramp must
+ * run the other way for the visual to still read poor→good in the metric's
+ * own good direction.
+ */
+function bandToken(index: number, higherIsBetter: boolean): string {
+  const clamped = Math.min(Math.max(index, 0), BAND_TOKENS.length - 1);
+  const resolved = higherIsBetter ? clamped : BAND_TOKENS.length - 1 - clamped;
+  return BAND_TOKENS[resolved] as string;
 }
 
 // ─── Pure geometry/domain helpers (exported for tests) ─────────────────────
@@ -270,6 +295,7 @@ interface PlotProps {
   bands?: BulletBand[];
   domain: [number, number];
   formatValue: (value: number) => string;
+  higherIsBetter: boolean;
 }
 
 function BulletPlot({
@@ -283,6 +309,7 @@ function BulletPlot({
   bands,
   domain,
   formatValue,
+  higherIsBetter,
 }: PlotProps) {
   const trackThickness = size === "sm" ? SM_TRACK_THICKNESS : MD_TRACK_THICKNESS;
   const barThickness = trackThickness * BAR_THICKNESS_RATIO;
@@ -311,7 +338,7 @@ function BulletPlot({
       segments.push({
         from: prev,
         to,
-        fill: bandToken(i),
+        fill: bandToken(i, higherIsBetter),
         key: band.label || `band-${i}`,
       });
       prev = to;
@@ -323,12 +350,12 @@ function BulletPlot({
       segments.push({
         from: prev,
         to: domainMax,
-        fill: bandToken(bands.length - 1),
+        fill: bandToken(bands.length - 1, higherIsBetter),
         key: "band-overflow",
       });
     }
     return segments;
-  }, [bands, domainMin, domainMax, isNoData]);
+  }, [bands, domainMin, domainMax, isNoData, higherIsBetter]);
 
   const targetPos = target !== undefined && Number.isFinite(target) ? scale(target) : undefined;
   const comparativePos =
@@ -500,6 +527,7 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
     showAxis = size === "md",
     valueFormat,
     labels,
+    higherIsBetter = true,
     className,
     style,
     accessibleLabel,
@@ -574,6 +602,7 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
           comparative={comparative}
           domain={domain}
           formatValue={formatValue}
+          higherIsBetter={higherIsBetter}
           isVertical={isVertical}
           mainSize={mainSize}
           showAxis={showAxis}

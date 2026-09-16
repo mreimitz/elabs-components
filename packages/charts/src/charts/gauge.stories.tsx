@@ -29,7 +29,7 @@ type Story = StoryObj<typeof meta>;
 /** Notched arc gauge, no milestones — the pre-existing (unaffected) default. */
 export const Default: Story = {
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),
@@ -49,7 +49,7 @@ export const Default: Story = {
 export const WithMilestones: Story = {
   name: "With milestones (F11)",
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),
@@ -67,7 +67,7 @@ export const WithMilestones: Story = {
 /** Milestones alone, no caption — the two additive props are independent. */
 export const MilestonesOnly: Story = {
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),
@@ -103,7 +103,7 @@ export const LongCaption: Story = {
 /** A radial tick crossing the notch band at `target` — a quarterly goal. */
 export const WithTarget: Story = {
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),
@@ -119,7 +119,7 @@ export const WithTarget: Story = {
 /** Short outer-rim ticks naming bands — colour is not status here, only the accessible text names the band. */
 export const WithThresholds: Story = {
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),
@@ -142,7 +142,7 @@ export const WithThresholds: Story = {
  */
 export const TargetAndThresholds: Story = {
   render: (args) => (
-    <div className="h-56 w-[360px]">
+    <div className="h-56 w-full max-w-[360px]">
       <Gauge {...args} />
     </div>
   ),

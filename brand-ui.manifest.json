@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T12:31:47.673Z",
+  "generatedAt": "2026-09-16T13:07:00.858Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16624,6 +16624,12 @@
               "optional": true,
               "type": "BulletChartLabels",
               "description": "Caller-supplied names interpolated into the auto-generated accessible description."
+            },
+            {
+              "name": "higherIsBetter",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether ASCENDING band values read better (default `true`). Bands are always drawn low→high by position (`to` is ascending), but which END is \"worst\" depends on the measure: a lower-is-better KPI (e.g. cost) has its worst band at the HIGH end. Flips which side of the shade ramp gets the darkest (worst) rung so the visual always reads poor→good in the metric's own good direction, never just left→right."
             }
           ]
         },

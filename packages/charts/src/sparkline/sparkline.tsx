@@ -108,12 +108,24 @@ const DEFAULT_LAST_VALUE_FMT = makeValueFmt();
 const NARROW_CHARS = new Set([...`ijltfrI.,:;'"!|()[]{}\` `]);
 const WIDE_CHARS = new Set([..."MWmw@%&"]);
 
+/**
+ * Safety margin added on top of the raw character estimate. With
+ * `preserveAspectRatio="none"` (see the plot's own comment) the SVG's x axis
+ * stretches independently of y, so any underestimate here — real font
+ * metrics vs. this heuristic — now clips visibly at the box's own right
+ * edge instead of bleeding harmlessly into the old letterboxed dead space
+ * (#…). Kept as a flat multiplier so it scales with the text, not a fixed
+ * pixel amount that would be too generous for one digit and too tight for
+ * five.
+ */
+const LAST_VALUE_WIDTH_SAFETY_FACTOR = 1.2;
+
 function estimateLastValueWidth(text: string, fontSizePx: number): number {
   let ratio = 0;
   for (const char of text) {
     ratio += NARROW_CHARS.has(char) ? 0.33 : WIDE_CHARS.has(char) ? 0.9 : 0.55;
   }
-  return ratio * fontSizePx;
+  return ratio * fontSizePx * LAST_VALUE_WIDTH_SAFETY_FACTOR;
 }
 
 export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Sparkline(
@@ -202,6 +214,13 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
+        // The plot scales to whatever CSS box the caller gives it (a `w-full`
+        // className, say) even when that box's aspect ratio doesn't match
+        // `width`/`height` — the default "meet" letterboxes instead, leaving
+        // dead space on one axis (#…). `values.length === 0` here has no
+        // aspect-sensitive geometry (a single hairline), but stays consistent
+        // with the populated branch below.
+        preserveAspectRatio="none"
         data-slot="sparkline"
         className={cn("text-muted-foreground", className)}
         {...props}
@@ -259,6 +278,10 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
+      // See the empty-state branch above — lets a caller's CSS box (e.g.
+      // `className="w-full"`) actually fill, instead of the default "meet"
+      // letterboxing the plot centered with dead space either side (#…).
+      preserveAspectRatio="none"
       data-slot="sparkline"
       className={cn("shrink-0 text-muted-foreground", className)}
       {...props}

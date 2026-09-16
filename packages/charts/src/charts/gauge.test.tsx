@@ -210,10 +210,13 @@ describe("Gauge", () => {
       const { container } = render(
         <Gauge centerValue={value} height={200} target={value} value={value} width={300} />,
       );
+      // The target tick's own (non-halo) line — `x2/y2` extend
+      // TARGET_TICK_OVERSHOOT (8px) past the outer edge (84), never flush
+      // with it, so it unmistakably pokes out past the notch ring (#…).
       const line = container.querySelector('[data-slot="gauge-target"]');
       expect(line).not.toBeNull();
       const inner = pointAt(value, 56);
-      const outer = pointAt(value, 84);
+      const outer = pointAt(value, 92);
       expect(Number(line?.getAttribute("x1"))).toBeCloseTo(inner.x, 5);
       expect(Number(line?.getAttribute("y1"))).toBeCloseTo(inner.y, 5);
       expect(Number(line?.getAttribute("x2"))).toBeCloseTo(outer.x, 5);
@@ -237,8 +240,10 @@ describe("Gauge", () => {
       const ticks = container.querySelectorAll('[data-slot="gauge-threshold-tick"]');
       expect(ticks).toHaveLength(3);
       const tick = ticks[1];
+      // THRESHOLD_TICK_LENGTH is 10px (lengthened from 6px, #…) so the tick
+      // reads unmistakably outside the notch ring instead of blending in.
       const inner = pointAt(75, 84);
-      const outer = pointAt(75, 90);
+      const outer = pointAt(75, 94);
       expect(Number(tick?.getAttribute("x1"))).toBeCloseTo(inner.x, 5);
       expect(Number(tick?.getAttribute("y1"))).toBeCloseTo(inner.y, 5);
       expect(Number(tick?.getAttribute("x2"))).toBeCloseTo(outer.x, 5);
