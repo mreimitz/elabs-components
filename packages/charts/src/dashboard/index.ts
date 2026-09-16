@@ -17,6 +17,7 @@ export * from "./core";
 export * from "./dashboard-sheet";
 
 // Built-in tiles — RM-075
+export * from "./tiles";
 
 // SelectionBar — RM-076
 
