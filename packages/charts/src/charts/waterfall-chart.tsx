@@ -92,6 +92,22 @@ export interface WaterfallRow extends WaterfallStep {
   __cumulative: number;
 }
 
+/**
+ * A finding drawn above one step and tied to it by a `Leader` — for calling
+ * out the one or two steps that actually explain the bridge (e.g. "Price,
+ * not volume, carried Q3"). Vertical orientation only: ignored under
+ * `orientation="horizontal"`, where the outer margin runs along the value
+ * axis rather than above the bars. A callout needs headroom of its own —
+ * widen `margin.top` (e.g. 64) when using it, the same way a consumer
+ * already does for any other in-chart label.
+ */
+export interface WaterfallCallout {
+  /** Matches a `WaterfallDatum.label` — the step this callout names. */
+  label: string;
+  /** The finding, drawn above the step, e.g. "The main driver". */
+  note: string;
+}
+
 /** One connector's VALUE-space (not pixel) endpoints — the running-total
  * hand-off a `Leader` draws between adjacent rows. */
 export interface WaterfallConnectorAnchor {
@@ -244,6 +260,7 @@ interface WaterfallBarsProps {
   connectors: boolean;
   unit?: number;
   valueFormat?: ChartValueFormat;
+  callouts?: WaterfallCallout[];
 }
 
 function WaterfallBars({
@@ -255,6 +272,7 @@ function WaterfallBars({
   connectors,
   unit,
   valueFormat,
+  callouts,
 }: WaterfallBarsProps) {
   const { barScale, bandWidth, yScale, margin, orientation } = useChart();
   const isHorizontal = orientation === "horizontal";
@@ -359,6 +377,45 @@ function WaterfallBars({
     }
     return els;
   }, [rows, connectors, barScale, bandWidth, yScale, isHorizontal]);
+
+  // Leader + HaloText — the same two marks `Marginalia` composes, spelled out
+  // rather than composed: a `Marginalia` note is one of the two marks this
+  // package treats as carrying a fact no other element restates (see
+  // `.claude/rules/charts.md` § Marks), which is the wrong shape for a note
+  // that only editorializes ("the main driver") about a value already drawn,
+  // signed, beside the bar. `HaloText`'s own docs name exactly this use: "a
+  // peak callout".
+  const calloutEls = useMemo(() => {
+    if (isHorizontal || !callouts?.length || geometry.length === 0) {
+      return null;
+    }
+    const topMostY = Math.min(...geometry.map((g) => g.y));
+    const noteY = topMostY - 22;
+    return callouts.flatMap((callout) => {
+      const g = geometry.find((entry) => entry.row.label === callout.label);
+      if (!g) {
+        return [];
+      }
+      const anchorX = g.x + g.width / 2;
+      const anchor: LeaderPoint = [anchorX, g.y];
+      return [
+        <g data-slot="waterfall-chart-callout" key={`waterfall-callout-${callout.label}`}>
+          <Leader dash="1 3" from={anchor} kind="curve" to={[anchorX, noteY + 4]} />
+          <HaloText
+            data-slot="waterfall-chart-callout-note"
+            fill="var(--chart-foreground-muted)"
+            fontSize={10}
+            fontStyle="italic"
+            textAnchor="middle"
+            x={anchorX}
+            y={noteY}
+          >
+            {callout.note}
+          </HaloText>
+        </g>,
+      ];
+    });
+  }, [callouts, geometry, isHorizontal]);
 
   return (
     <g data-slot="waterfall-chart-bars">
@@ -466,6 +523,7 @@ function WaterfallBars({
         );
       })}
       {connectorEls}
+      {calloutEls}
     </g>
   );
 }
@@ -494,6 +552,9 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
   unit?: number;
   /** Value/label format. Default: locale number. */
   valueFormat?: ChartValueFormat;
+  /** The one or two steps that actually explain the bridge, named directly on
+   * the chart (see {@link WaterfallCallout}). Default: none. */
+  callouts?: WaterfallCallout[];
   /** Fixed pixel height. Omit to size by `aspectRatio` (2 / 1), like the rest
    * of the bar family. */
   height?: number;
@@ -516,6 +577,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
     {
       accessibleDescription,
       accessibleLabel,
+      callouts,
       className,
       connectors = true,
       copyValueOnActivate,
@@ -562,6 +624,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
         >
           <Grid horizontal={!isHorizontal} vertical={isHorizontal} />
           <WaterfallBars
+            callouts={callouts}
             connectors={connectors}
             dataKey="__cumulative"
             negativeFill={negativeFill}

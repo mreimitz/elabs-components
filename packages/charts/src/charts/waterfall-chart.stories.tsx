@@ -69,6 +69,26 @@ export const UnitRungs: Story = {
   ),
 };
 
+/**
+ * `callouts` names the one or two steps that actually explain the bridge —
+ * drawn above the step with a `Leader`, so a reader does not have to infer
+ * "which of these five bars is the story" from height alone. Needs extra
+ * `margin.top` for the note's own headroom.
+ */
+export const WithCallouts: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <WaterfallChart
+        accessibleDescription="COGS is the main driver of the drop from gross to net."
+        accessibleLabel="Gross to net revenue bridge"
+        callouts={[{ label: "COGS", note: "The main driver" }]}
+        data={grossToNet}
+        margin={{ top: 64 }}
+      />
+    </div>
+  ),
+};
+
 /** Connectors and value labels can both be turned off for a quieter read. */
 export const NoConnectorsNoLabels: Story = {
   render: () => (

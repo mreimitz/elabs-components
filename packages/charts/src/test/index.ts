@@ -245,7 +245,7 @@ export type { SparklineProps } from "../sparkline/sparkline";
 export type { UnitChartDatum, UnitChartProps } from "../charts/unit-chart";
 // Treemap — RM-025
 export type { TreemapChartProps, TreemapNode } from "../charts/treemap/treemap-chart";
-export type { WaterfallChartProps } from "../charts/waterfall-chart";
+export type { WaterfallCallout, WaterfallChartProps } from "../charts/waterfall-chart";
 // ParallelCoordinates — RM-034
 export type {
   ParallelCoordinatesChartProps,

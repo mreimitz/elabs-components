@@ -178,6 +178,38 @@ describe("WaterfallChart", () => {
     render(<WaterfallChart accessibleLabel="Gross to net revenue bridge" data={grossToNet} />);
     expect(screen.getByLabelText("Gross to net revenue bridge")).toBeInTheDocument();
   });
+
+  it("renders no callout furniture without a `callouts` prop — byte-identical default", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} />);
+    expect(container.querySelectorAll('[data-slot="waterfall-chart-callout"]')).toHaveLength(0);
+  });
+
+  it("draws a leader + note above the named step for each callout", () => {
+    render(
+      <WaterfallChart callouts={[{ label: "COGS", note: "The main driver" }]} data={grossToNet} />,
+    );
+    expect(screen.getByText("The main driver")).toBeInTheDocument();
+    const callout = document.querySelector('[data-slot="waterfall-chart-callout"]');
+    expect(callout?.querySelector('[data-slot="leader"]')).not.toBeNull();
+  });
+
+  it("ignores callouts under horizontal orientation (no headroom above a horizontal bar)", () => {
+    render(
+      <WaterfallChart
+        callouts={[{ label: "COGS", note: "The main driver" }]}
+        data={grossToNet}
+        orientation="horizontal"
+      />,
+    );
+    expect(screen.queryByText("The main driver")).toBeNull();
+  });
+
+  it("skips a callout whose label matches no step, without throwing", () => {
+    render(
+      <WaterfallChart callouts={[{ label: "Nonexistent", note: "orphan" }]} data={grossToNet} />,
+    );
+    expect(screen.queryByText("orphan")).toBeNull();
+  });
 });
 
 // `computeWaterfallRows` is where the waterfall's actual geometry lives — a

@@ -601,6 +601,7 @@ export {
 // Waterfall — RM-022
 export {
   WaterfallChart,
+  type WaterfallCallout,
   type WaterfallChartProps,
   type WaterfallDatum,
   type WaterfallStep,
