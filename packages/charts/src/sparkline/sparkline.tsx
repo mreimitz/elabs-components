@@ -17,7 +17,15 @@
  * the value domain so the plotted trend never clips against them (RM-039).
  */
 import { cn } from "@elabs-ai/components-ui/lib/cn";
-import { forwardRef, useMemo, type SVGAttributes } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ForwardedRef,
+  type SVGAttributes,
+} from "react";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { makeValueFmt } from "../charts/chart-formatters";
 
@@ -43,9 +51,23 @@ export interface SparklineProps extends Omit<
   emphasizeLast?: boolean;
   /** Accessible name. Default describes the series (and any references below). */
   label?: string;
-  /** Rendered size; the SVG also scales to its CSS box. */
+  /** Rendered size when `fit="fixed"` (default) — the SVG's actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit="fill"` before the first real measurement lands. */
   width?: number;
   height?: number;
+  /**
+   * Sizing strategy. `"fixed"` (default) draws at exactly `width`×`height` —
+   * unchanged no matter what CSS box (`className="w-full"`, a table cell,
+   * …) the caller puts it in, exactly as before this prop existed. `"fill"`
+   * measures the real rendered width of that CSS box (a tiny, cleaned-up
+   * `ResizeObserver`, falling back to `width` before the first measurement
+   * or where `ResizeObserver` isn't available, e.g. jsdom) and draws the
+   * plot at that real pixel width instead — no CSS stretching, so line
+   * strokes, the emphasized dot and the last-value label never distort.
+   * Opt in per usage (a trend card, a scorecard cell) rather than globally,
+   * since most Sparkline call sites size it explicitly and shouldn't pay
+   * for a measurement round-trip.
+   */
+  fit?: "fixed" | "fill";
   /**
    * A horizontal reference line ("goal", "quota") drawn across the plot in
    * `--chart-foreground`, dashed — never recolours the series even when the
@@ -109,14 +131,10 @@ const NARROW_CHARS = new Set([...`ijltfrI.,:;'"!|()[]{}\` `]);
 const WIDE_CHARS = new Set([..."MWmw@%&"]);
 
 /**
- * Safety margin added on top of the raw character estimate. With
- * `preserveAspectRatio="none"` (see the plot's own comment) the SVG's x axis
- * stretches independently of y, so any underestimate here — real font
- * metrics vs. this heuristic — now clips visibly at the box's own right
- * edge instead of bleeding harmlessly into the old letterboxed dead space
- * (#…). Kept as a flat multiplier so it scales with the text, not a fixed
- * pixel amount that would be too generous for one digit and too tight for
- * five.
+ * Safety margin added on top of the raw character estimate — real font
+ * metrics vs. this crude heuristic. Kept as a flat multiplier so it scales
+ * with the text, not a fixed pixel amount that would be too generous for
+ * one digit and too tight for five.
  */
 const LAST_VALUE_WIDTH_SAFETY_FACTOR = 1.2;
 
@@ -128,14 +146,58 @@ function estimateLastValueWidth(text: string, fontSizePx: number): number {
   return ratio * fontSizePx * LAST_VALUE_WIDTH_SAFETY_FACTOR;
 }
 
+/** Combine the caller's `forwardRef` with a locally-owned one so both end up on the same node — a local copy of `ui/lib/merge-refs.ts`'s tiny helper, not an import: that path has no public subpath export, and adding one for four lines isn't warranted (component-api.md). */
+function mergeRefs<T>(...refs: Array<ForwardedRef<T> | undefined>) {
+  return (node: T | null) => {
+    for (const ref of refs) {
+      if (!ref) continue;
+      if (typeof ref === "function") ref(node);
+      else ref.current = node;
+    }
+  };
+}
+
+/**
+ * `fit="fill"` support: measures the real rendered width of the SVG's own
+ * CSS box (set by the caller's `className`, e.g. `w-full`) so the plot can
+ * be drawn at that exact pixel width — no viewBox/CSS-box mismatch, so no
+ * stretching. A no-op until `active`; falls back to `fallbackWidth` before
+ * the first measurement and where `ResizeObserver` isn't available (jsdom
+ * has none — `packages/charts/vitest.setup.ts` polyfills a no-op stub for
+ * component mounting, which leaves this hook safely on its fallback there
+ * too, exactly like every other `react-use-measure` consumer in this
+ * package before an observation actually fires).
+ */
+function useFillWidth(
+  active: boolean,
+  fallbackWidth: number,
+  elRef: { current: SVGSVGElement | null },
+) {
+  const [measured, setMeasured] = useState<number | null>(null);
+  useEffect(() => {
+    if (!active) return;
+    const el = elRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setMeasured(width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `elRef` is a stable ref object, not reactive state
+  }, [active]);
+  return active ? (measured ?? fallbackWidth) : fallbackWidth;
+}
+
 export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Sparkline(
   {
     values,
     variant = "bar",
     emphasizeLast = variant === "bar",
     label,
-    width = 80,
+    width: widthProp = 80,
     height = 20,
+    fit = "fixed",
     target,
     baseline,
     band,
@@ -147,6 +209,10 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
   },
   ref,
 ) {
+  const elRef = useRef<SVGSVGElement>(null);
+  const width = useFillWidth(fit === "fill", widthProp, elRef);
+  const svgRef = useMemo(() => mergeRefs(ref, elRef), [ref]);
+
   const resolvedLabels = {
     target: labels?.target ?? "target",
     baseline: labels?.baseline ?? "baseline",
@@ -208,19 +274,17 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
   if (values.length === 0) {
     return (
       <svg
-        ref={ref}
+        ref={svgRef}
         role="img"
         aria-label={ariaLabel}
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        // The plot scales to whatever CSS box the caller gives it (a `w-full`
-        // className, say) even when that box's aspect ratio doesn't match
-        // `width`/`height` — the default "meet" letterboxes instead, leaving
-        // dead space on one axis (#…). `values.length === 0` here has no
-        // aspect-sensitive geometry (a single hairline), but stays consistent
-        // with the populated branch below.
-        preserveAspectRatio="none"
+        // Default aspect behaviour ("xMidYMid meet") — `fit="fill"` above
+        // already keeps `width` in lockstep with the SVG's real rendered
+        // pixel width, so viewBox and CSS box always match 1:1 and nothing
+        // stretches; `fit="fixed"` (default) never measures at all, so this
+        // is byte-identical to a plain `width`/`height` SVG.
         data-slot="sparkline"
         className={cn("text-muted-foreground", className)}
         {...props}
@@ -272,16 +336,15 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
 
   return (
     <svg
-      ref={ref}
+      ref={svgRef}
       role="img"
       aria-label={ariaLabel}
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      // See the empty-state branch above — lets a caller's CSS box (e.g.
-      // `className="w-full"`) actually fill, instead of the default "meet"
-      // letterboxing the plot centered with dead space either side (#…).
-      preserveAspectRatio="none"
+      // See the empty-state branch above: default aspect behaviour always;
+      // `fit="fill"` keeps `width` equal to the real measured pixel width
+      // instead of stretching a mismatched viewBox to fit.
       data-slot="sparkline"
       className={cn("shrink-0 text-muted-foreground", className)}
       {...props}

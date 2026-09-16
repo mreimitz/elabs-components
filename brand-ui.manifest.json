@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T13:07:00.858Z",
+  "generatedAt": "2026-09-16T13:36:05.995Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -20459,12 +20459,18 @@
               "name": "width",
               "optional": true,
               "type": "number",
-              "description": "Rendered size; the SVG also scales to its CSS box."
+              "description": "Rendered size when `fit=\"fixed\"` (default) — the SVG's actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit=\"fill\"` before the first real measurement lands."
             },
             {
               "name": "height",
               "optional": true,
               "type": "number"
+            },
+            {
+              "name": "fit",
+              "optional": true,
+              "type": "\"fixed\" | \"fill\"",
+              "description": "Sizing strategy. `\"fixed\"` (default) draws at exactly `width`×`height` — unchanged no matter what CSS box (`className=\"w-full\"`, a table cell, …) the caller puts it in, exactly as before this prop existed. `\"fill\"` measures the real rendered width of that CSS box (a tiny, cleaned-up `ResizeObserver`, falling back to `width` before the first measurement or where `ResizeObserver` isn't available, e.g. jsdom) and draws the plot at that real pixel width instead — no CSS stretching, so line strokes, the emphasized dot and the last-value label never distort. Opt in per usage (a trend card, a scorecard cell) rather than globally, since most Sparkline call sites size it explicitly and shouldn't pay for a measurement round-trip."
             },
             {
               "name": "target",

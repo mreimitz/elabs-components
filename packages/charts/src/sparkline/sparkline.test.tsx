@@ -57,6 +57,67 @@ describe("Sparkline", () => {
     expect(container.querySelector("svg")).toHaveAttribute("data-slot", "sparkline");
   });
 
+  describe("fit", () => {
+    it('draws at exactly width×height with no preserveAspectRatio override when unset (default "fixed")', () => {
+      const { container } = render(<Sparkline values={[1, 2, 3]} width={80} height={20} />);
+      const svg = container.querySelector("svg")!;
+      expect(svg).not.toHaveAttribute("preserveAspectRatio");
+      expect(svg).toHaveAttribute("width", "80");
+      expect(svg).toHaveAttribute("viewBox", "0 0 80 20");
+    });
+
+    it('stays on the `width` fallback when ResizeObserver is unavailable (fit="fill")', () => {
+      const original = globalThis.ResizeObserver;
+      // @ts-expect-error -- deliberately simulating jsdom's default (no ResizeObserver)
+      delete globalThis.ResizeObserver;
+      try {
+        const { container } = render(
+          <Sparkline values={[1, 2, 3]} fit="fill" width={80} height={20} />,
+        );
+        const svg = container.querySelector("svg")!;
+        expect(svg).toHaveAttribute("width", "80");
+        expect(svg).toHaveAttribute("viewBox", "0 0 80 20");
+      } finally {
+        globalThis.ResizeObserver = original;
+      }
+    });
+
+    it('measures the real rendered width and redraws at that exact size (fit="fill")', () => {
+      const original = globalThis.ResizeObserver;
+      class MockResizeObserver {
+        #callback: ResizeObserverCallback;
+        constructor(callback: ResizeObserverCallback) {
+          this.#callback = callback;
+        }
+        observe() {
+          // Real ResizeObservers report asynchronously; this fires
+          // synchronously with a fixed width, standing in for "the
+          // container measured 300px wide".
+          this.#callback(
+            [{ contentRect: { width: 300 } } as ResizeObserverEntry],
+            this as unknown as ResizeObserver,
+          );
+        }
+        unobserve() {}
+        disconnect() {}
+      }
+      globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+      try {
+        const { container } = render(
+          <Sparkline values={[1, 2, 3]} fit="fill" width={80} height={20} />,
+        );
+        const svg = container.querySelector("svg")!;
+        // Real measured width, not the `width` fallback — and no
+        // `preserveAspectRatio` needed since viewBox now matches it exactly.
+        expect(svg).toHaveAttribute("width", "300");
+        expect(svg).toHaveAttribute("viewBox", "0 0 300 20");
+        expect(svg).not.toHaveAttribute("preserveAspectRatio");
+      } finally {
+        globalThis.ResizeObserver = original;
+      }
+    });
+  });
+
   describe("target", () => {
     it("draws a target line and widens the bar domain so nothing clips", () => {
       const { container } = render(<Sparkline values={[10, 20, 82]} target={90} />);

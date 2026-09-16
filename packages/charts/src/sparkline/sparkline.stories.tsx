@@ -67,3 +67,19 @@ export const AllReferences: Story = {
 export const BarWithTarget: Story = {
   args: { values: ACTIVITY, target: 15, showLastValue: true, width: 120 },
 };
+
+/**
+ * `fit="fill"` measures its own CSS box (here a 288px-wide container) and
+ * draws the plot at that real pixel width instead of stretching a mismatched
+ * viewBox to fit — no distorted strokes, dot or last-value label. Compare to
+ * `Default`, which stays at its fixed `width`/`height` no matter the box.
+ */
+export const FillContainer: Story = {
+  name: 'Fill container (fit="fill")',
+  args: { values: ACTIVITY, variant: "line", showLastValue: true, fit: "fill" },
+  render: (args) => (
+    <div className="w-72">
+      <Sparkline {...args} className="w-full" />
+    </div>
+  ),
+};
