@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T18:13:21.667Z",
+  "generatedAt": "2026-09-16T18:25:06.700Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17966,6 +17966,12 @@
               "optional": true,
               "type": "boolean",
               "description": "`variant=\"slope\"` only: label the END of each line with its category name too (`\"{category} {value}\"`, matching the START label), not just the bare value. Default `false` (byte-identical: end label stays value-only)."
+            },
+            {
+              "name": "valueLabelFormat",
+              "optional": true,
+              "type": "(value: number, row: DumbbellRow) => string",
+              "description": "`variant=\"slope\"` only: custom formatter for the plain VALUE half of each end's label — receives the raw value and its row, returns just the value text (the chart still prepends `\"{category} \"` itself). Unset (default) keeps `formatValue` (the active `valueFormat`). `Intl` never pads a whole number, so an exact-integer reading (`92`) needs this to force a fixed decimal count (`\"92.0\"`) matching its neighbours' precision."
             },
             {
               "name": "referenceLine",

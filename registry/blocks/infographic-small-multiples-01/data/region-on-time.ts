@@ -18,6 +18,13 @@ import { onTimeByDepot } from "@/components/kpi-movers-01/data/depot-movers";
  * being thirteen robotically-straight lines — the offset is always `0` on
  * week 13, so a depot's stated "current" figure is always its series' own
  * last point, exactly matching `onTimeByDepot`'s `current`.
+ *
+ * `EXTRA_DEPOTS`' `prior`/`current` are the canonical facts for Bremen and
+ * Hannover — this module OWNS them (there is no `kpi-movers-01` entry for
+ * either), so `infographic-gap-to-benchmark-01` imports them from here rather
+ * than re-typing them, exactly as this module imports the other ten from
+ * `kpi-movers-01`. A depot's figure reads identically in every wave-3 group B
+ * block for this reason.
  */
 
 export interface RegionSeries {
@@ -26,6 +33,12 @@ export interface RegionSeries {
   /** Trailing 13-week on-time delivery rate (%), oldest → newest. */
   weekly: number[];
 }
+
+/** Bremen/Hannover — the two depots in this 12-depot network `kpi-movers-01` does not rank. */
+export const EXTRA_DEPOTS: { id: string; label: string; prior: number; current: number }[] = [
+  { id: "bremen", label: "Bremen", prior: 91.5, current: 90.8 },
+  { id: "hannover", label: "Hannover", prior: 91.0, current: 92.4 },
+];
 
 /**
  * Four small, hand-authored noise patterns, each 13 points long and ending in
@@ -64,8 +77,11 @@ export const onTimeByRegion: RegionSeries[] = [
     label: depot.label,
     weekly: buildTrajectory(depot.prior, depot.current, i),
   })),
-  { id: "bremen", label: "Bremen", weekly: buildTrajectory(91.5, 90.8, 2) },
-  { id: "hannover", label: "Hannover", weekly: buildTrajectory(91.0, 92.4, 3) },
+  ...EXTRA_DEPOTS.map((depot, i) => ({
+    id: depot.id,
+    label: depot.label,
+    weekly: buildTrajectory(depot.prior, depot.current, i + 2),
+  })),
 ];
 
 /**

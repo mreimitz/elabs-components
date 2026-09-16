@@ -1,12 +1,15 @@
 import { onTimeByDepot } from "@/components/kpi-movers-01/data/depot-movers";
+import { EXTRA_DEPOTS } from "@/components/infographic-small-multiples-01/data/region-on-time";
 
 /**
  * Depot-level actuals for the "how far from the benchmark?" gap chart. The
- * on-time series is imported from `kpi-movers-01`'s `onTimeByDepot` (never
- * re-typed, `.claude/rules/registry.md`), so a depot's Q3 figure reads
- * identically here, in the movers card, in the before/after slope and in the
- * small-multiples grid. `costVsBenchmark` below is not cross-checked
- * anywhere else, so it stays a block-owned fact.
+ * on-time series covers the SAME 12-depot network small-multiples and
+ * before/after chart — ten depots from `kpi-movers-01`'s `onTimeByDepot`, plus
+ * Bremen/Hannover from `infographic-small-multiples-01`'s `EXTRA_DEPOTS` (the
+ * two depots outside that shared roster) — never re-typed
+ * (`.claude/rules/registry.md`), so a depot's Q3 figure reads identically in
+ * every wave-3 group B block and the movers card. `costVsBenchmark` below is
+ * not cross-checked anywhere else, so it stays a block-owned fact.
  */
 
 export interface GapPoint {
@@ -15,12 +18,11 @@ export interface GapPoint {
   actual: number;
 }
 
-/** On-time delivery rate (%), by depot. Higher is better. Compare against `ON_TIME_BENCHMARK`. */
-export const onTimeVsBenchmark: GapPoint[] = onTimeByDepot.map((d) => ({
-  id: d.id,
-  label: d.label,
-  actual: d.current,
-}));
+/** On-time delivery rate (%), by depot (all 12). Higher is better. Compare against `ON_TIME_BENCHMARK`. */
+export const onTimeVsBenchmark: GapPoint[] = [
+  ...onTimeByDepot.map((d) => ({ id: d.id, label: d.label, actual: d.current })),
+  ...EXTRA_DEPOTS.map((d) => ({ id: d.id, label: d.label, actual: d.current })),
+];
 
 /** The industry on-time delivery figure every depot above is measured against. */
 export const ON_TIME_BENCHMARK = 95;

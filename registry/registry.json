@@ -1163,7 +1163,7 @@
       "type": "registry:block",
       "title": "Infographic — How Far From The Benchmark?",
       "description": "\"How far from the benchmark?\" — a sorted DumbbellChart, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised; the gap's sign correctly flips for a lower-is-better metric.",
-      "registryDependencies": ["kpi-card-parts", "kpi-movers-01"],
+      "registryDependencies": ["infographic-small-multiples-01", "kpi-card-parts", "kpi-movers-01"],
       "dependencies": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-tokens",

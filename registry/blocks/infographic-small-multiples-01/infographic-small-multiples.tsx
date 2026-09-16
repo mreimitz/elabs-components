@@ -146,6 +146,16 @@ export function InfographicSmallMultiples({
 
   const domain = sharedDomain(regions);
   const outlier = findOutlier(regions);
+  // `formatKpiValue` never pads a whole number ("98"), so it can sit beside a
+  // decimal reading ("83.1%") at a different precision in the SAME range —
+  // one number, two implied precisions. The domain bound is a single fixed-
+  // precision scale, not a KPI reading, so it gets its own one-decimal
+  // formatter here rather than a change to the shared KPI formatter.
+  const formatDomainBound = (value: number) =>
+    `${new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(value)}%`;
   const isGood = outlier.direction === "above";
   const headline = isGood
     ? `${outlier.region.label} is pulling far ahead of its regional peers`
@@ -197,8 +207,7 @@ export function InfographicSmallMultiples({
         <p className="text-caption text-muted-foreground">
           How to read: every tile plots the same 13 weeks on the same{" "}
           <span className="tabular-nums">
-            {formatKpiValue(domain[0], "percent", locale)}–
-            {formatKpiValue(domain[1], "percent", locale)}
+            {formatDomainBound(domain[0])}–{formatDomainBound(domain[1])}
           </span>{" "}
           axis, so tile height compares directly. The ringed point is {outlier.region.label}’s
           latest reading, <span className="tabular-nums">{outlier.deviationPp}pp</span>{" "}

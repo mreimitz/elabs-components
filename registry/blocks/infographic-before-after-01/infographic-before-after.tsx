@@ -113,6 +113,19 @@ export function InfographicBeforeAfter({
   const unitSuffix = unit === "percent" ? " (%)" : "";
   const headline = `${riser.point.label} pulled furthest ahead this quarter — ${faller.point.label} slipped the most`;
 
+  // `Intl` never pads a whole number, so an exact-integer reading ("92")
+  // would sit beside a decimal one ("95.8") at a different precision. Force
+  // one decimal for a percent-unit metric; leave currency on the chart's own
+  // (compact, symboled) formatting, which this would otherwise clobber.
+  const valueLabelFormat =
+    unit === "percent"
+      ? (value: number) =>
+          new Intl.NumberFormat(locale, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          }).format(value)
+      : undefined;
+
   return (
     <Card className={cn("w-full", className)} data-slot="infographic-before-after">
       <CardContent className="space-y-3 p-5">
@@ -156,10 +169,11 @@ export function InfographicBeforeAfter({
                   ? "var(--success)"
                   : row.category === faller.point.label
                     ? "var(--destructive)"
-                    : undefined
+                    : "var(--chart-foreground-muted)"
               }
               startKey="start"
               valueFormat={valueFormat}
+              valueLabelFormat={valueLabelFormat}
               variant="slope"
             />
           </ChartConfigProvider>
