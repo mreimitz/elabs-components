@@ -18,6 +18,8 @@
  * `vi.mock("@elabs-ai/components-process", () => import("@elabs-ai/components-process/test"))`
  * the way `@elabs-ai/components-charts` consumers do — that rename is out of this item's scope.
  */
+import type { ConformanceResult } from "../core/conformance";
+import type { HappyPath } from "../core/reference-model";
 import type { ProcessGraph, Variant } from "../core/types";
 
 /** Selection carried by a process view's coordinated-selection contract (RM-068 completes it). */
@@ -25,8 +27,11 @@ export type ProcessSelection = null | { kind: "node"; id: string } | { kind: "ed
 
 /** What {@link assertProcessContract} checks for one double. */
 export interface ProcessContractSpec {
-  /** Name of the prop carrying the double's primary data payload. */
-  dataProp: "graph" | "variants";
+  /**
+   * Name of the prop carrying the double's primary data payload. `conformance` is a
+   * `ConformanceResult` and `value` a `HappyPath` (RM-062).
+   */
+  dataProp: "graph" | "variants" | "conformance" | "value";
   /** Other props the real component requires; the double must not silently accept `undefined`. */
   requiredProps?: string[];
 }
@@ -55,6 +60,19 @@ function isVariantArray(value: unknown): value is Variant[] {
   );
 }
 
+function isConformanceResult(value: unknown): value is ConformanceResult {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    Array.isArray((value as ConformanceResult).traces) &&
+    typeof (value as ConformanceResult).deviationCounts === "object"
+  );
+}
+
+function isHappyPath(value: unknown): value is HappyPath {
+  return !!value && typeof value === "object" && Array.isArray((value as HappyPath).steps);
+}
+
 /**
  * Validate a double's props against its contract spec. Throws {@link ProcessContractError} on
  * a missing/invalid required prop — mirroring what the real component would fail on at
@@ -77,6 +95,18 @@ export function assertProcessContract(
     throw new ProcessContractError(
       componentName,
       `"variants" prop must be a Variant[], got ${typeof data}`,
+    );
+  }
+  if (spec.dataProp === "conformance" && !isConformanceResult(data)) {
+    throw new ProcessContractError(
+      componentName,
+      `"conformance" prop must be a ConformanceResult, got ${typeof data}`,
+    );
+  }
+  if (spec.dataProp === "value" && !isHappyPath(data)) {
+    throw new ProcessContractError(
+      componentName,
+      `"value" prop must be a HappyPath, got ${typeof data}`,
     );
   }
   for (const key of spec.requiredProps ?? []) {
@@ -103,9 +133,13 @@ export function buildProcessDoublePayload(
   const dataLength =
     spec.dataProp === "graph" && isProcessGraph(data)
       ? data.activities.length
-      : Array.isArray(data)
-        ? data.length
-        : 0;
+      : spec.dataProp === "conformance" && isConformanceResult(data)
+        ? data.traces.length
+        : spec.dataProp === "value" && isHappyPath(data)
+          ? data.steps.length
+          : Array.isArray(data)
+            ? data.length
+            : 0;
   const payload: ProcessDoublePayload = { component: componentName, dataLength };
   if ("selection" in props) payload.selection = props.selection as ProcessSelection;
   return payload;

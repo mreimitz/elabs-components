@@ -25,7 +25,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
 | `@elabs-ai/components-terminal` | packages/terminal | 31 | 1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
-| `@elabs-ai/components-process` | packages/process | 28 | 4 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
+| `@elabs-ai/components-process` | packages/process | 41 | 5 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
 
 ## @elabs-ai/components-tokens
 
@@ -1437,9 +1437,20 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CASE_TABLE_COLUMN_LABEL_KEYS | component |  | `@elabs-ai/components-process` |  |
 | CaseTable | component |  | `@elabs-ai/components-process` |  |
 | CaseTimeline | component |  | `@elabs-ai/components-process` |  |
+| CONFORMANCE_OVERLAY_DEFAULT_METRIC | component |  | `@elabs-ai/components-process` |  |
+| CONFORMANCE_STATE_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| CONFORMANCE_STATE_ENCODING | component |  | `@elabs-ai/components-process` |  |
+| CONFORMANCE_STATES | component |  | `@elabs-ai/components-process` |  |
+| ConformanceLegend | component |  | `@elabs-ai/components-process` |  |
+| ConformanceOverlay | component |  | `@elabs-ai/components-process` |  |
+| ConformanceStateMark | component |  | `@elabs-ai/components-process` |  |
 | DEFAULT_LAYOUT_DEBOUNCE_MS | component |  | `@elabs-ai/components-process` |  |
 | EMPTY_PROCESS_MAP_HOVER | component |  | `@elabs-ai/components-process` |  |
 | GHOST_OPACITY | component |  | `@elabs-ai/components-process` |  |
+| HAPPY_PATH_EDITOR_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| HappyPathEditor | component |  | `@elabs-ai/components-process` |  |
+| HappyPathEditorContext | component |  | `@elabs-ai/components-process` |  |
+| HappyPathStepNode | component |  | `@elabs-ai/components-process` |  |
 | MetricLayerSwitch | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_FILTER_INTENT_KINDS | component |  | `@elabs-ai/components-process` |  |
 | PROCESS_FILTER_INTENT_LABELS | component |  | `@elabs-ai/components-process` |  |
@@ -1455,6 +1466,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ProcessMapEdgeKeyContext | component |  | `@elabs-ai/components-process` |  |
 | ProcessMapHoverContext | component |  | `@elabs-ai/components-process` |  |
 | ProcessTransitionEdge | component |  | `@elabs-ai/components-process` | One directly-follows relation on the process map: a weighted edge whose width, printed pill and SHAPE (dashed back-edge, closed self-loop) carry the metric. |
+| useHappyPathEditor | hook |  | `@elabs-ai/components-process` |  |
 | useProcessExplorer | hook |  | `@elabs-ai/components-process` |  |
 | useProcessLayout | hook |  | `@elabs-ai/components-process` |  |
 | useProcessMapEdgeKeys | hook |  | `@elabs-ai/components-process` |  |
@@ -1463,6 +1475,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | VARIANT_EXPLORER_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
 | VARIANT_EXPLORER_ROW_HEIGHT | component |  | `@elabs-ai/components-process` |  |
 | VariantExplorer | component |  | `@elabs-ai/components-process` |  |
+| VIOLATION_LIST_DEFAULT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| ViolationList | component |  | `@elabs-ai/components-process` |  |
 | ACTIVITY_COLOR_SLOTS | component |  | `@elabs-ai/components-process/core` |  |
 | ACTIVITY_OTHER_TOKEN | component |  | `@elabs-ai/components-process/core` |  |
 | BPI_2012_ACTIVITIES | component |  | `@elabs-ai/components-process/core` |  |

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T11:07:56.173Z",
+  "generatedAt": "2026-09-16T11:36:53.974Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25937,6 +25937,41 @@
           "module": "packages/process/src/case-timeline/case-timeline.tsx"
         },
         {
+          "name": "CONFORMANCE_OVERLAY_DEFAULT_METRIC",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-overlay.tsx"
+        },
+        {
+          "name": "CONFORMANCE_STATE_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "CONFORMANCE_STATE_ENCODING",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "CONFORMANCE_STATES",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceLegend",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
+        },
+        {
+          "name": "ConformanceOverlay",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-overlay.tsx"
+        },
+        {
+          "name": "ConformanceStateMark",
+          "kind": "value",
+          "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
+        },
+        {
           "name": "DEFAULT_LAYOUT_DEBOUNCE_MS",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
@@ -25950,6 +25985,26 @@
           "name": "GHOST_OPACITY",
           "kind": "value",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "HAPPY_PATH_EDITOR_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
+        {
+          "name": "HappyPathEditor",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
+          "name": "HappyPathEditorContext",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
+        {
+          "name": "HappyPathStepNode",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-step-node.tsx"
         },
         {
           "name": "MetricLayerSwitch",
@@ -26045,9 +26100,24 @@
           "name": "VariantExplorer",
           "kind": "value",
           "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
+        },
+        {
+          "name": "VIOLATION_LIST_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationList",
+          "kind": "value",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
         }
       ],
       "hooks": [
+        {
+          "name": "useHappyPathEditor",
+          "kind": "value",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
         {
           "name": "useProcessExplorer",
           "kind": "value",
@@ -26127,12 +26197,68 @@
           "module": "packages/process/src/case-timeline/case-timeline.tsx"
         },
         {
+          "name": "ConformanceDash",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceLegendProps",
+          "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
+        },
+        {
+          "name": "ConformanceOverlayProps",
+          "module": "packages/process/src/conformance-overlay/conformance-overlay.tsx"
+        },
+        {
+          "name": "ConformanceState",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceStateEncoding",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceStateLabels",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceStateMarkProps",
+          "module": "packages/process/src/conformance-overlay/conformance-legend.tsx"
+        },
+        {
+          "name": "ConformanceStates",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "ConformanceTone",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
           "name": "CreateCaseTableColumnsOptions",
           "module": "packages/process/src/case-table/columns.ts"
         },
         {
           "name": "FilterIntent",
           "module": "packages/process/src/use-process-explorer/use-process-explorer.ts"
+        },
+        {
+          "name": "HappyPathEditorContextValue",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
+        {
+          "name": "HappyPathEditorLabels",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor-context.ts"
+        },
+        {
+          "name": "HappyPathEditorProps",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
+          "name": "HappyPathStepFlowNode",
+          "module": "packages/process/src/happy-path-editor/happy-path-step-node.tsx"
+        },
+        {
+          "name": "HappyPathStepNodeData",
+          "module": "packages/process/src/happy-path-editor/happy-path-step-node.tsx"
         },
         {
           "name": "MetricLayer",
@@ -26289,6 +26415,26 @@
         {
           "name": "VariantSelectMode",
           "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
+        },
+        {
+          "name": "ViolationFilterIntent",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationListLabels",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationListProps",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationRow",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "ViolationRowKind",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
         }
       ],
       "otherExports": [
@@ -26303,6 +26449,10 @@
         {
           "name": "activityColorScale",
           "module": "packages/process/src/core/activity-color-scale.ts"
+        },
+        {
+          "name": "activityConformance",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
         },
         {
           "name": "activityMetricValue",
@@ -26349,8 +26499,20 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "happyPathStepNodeId",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
+          "name": "insertHappyPathStep",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
           "name": "isPerformanceMetric",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "nextHappyPathActivity",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
         },
         {
           "name": "nodeMetricLabel",
@@ -26369,8 +26531,16 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "removeHappyPathStep",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
           "name": "resolveActivityFrequencyMode",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "resolveConformanceStates",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
         },
         {
           "name": "resolveSelectionState",
@@ -26397,12 +26567,32 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "transitionConformance",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
           "name": "transitionMetricValue",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
           "name": "transitionShape",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "updateHappyPathStep",
+          "module": "packages/process/src/happy-path-editor/happy-path-editor.tsx"
+        },
+        {
+          "name": "violationRows",
+          "module": "packages/process/src/violation-list/violation-list.tsx"
+        },
+        {
+          "name": "withActivityConformance",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
+        },
+        {
+          "name": "withTransitionConformance",
+          "module": "packages/process/src/conformance-overlay/conformance-state.ts"
         }
       ],
       "props": {
@@ -26503,6 +26693,132 @@
             }
           ]
         },
+        "ConformanceLegend": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ConformanceStateLabels>",
+              "description": "Override any state word or the title."
+            }
+          ]
+        },
+        "ConformanceOverlay": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">"
+          ],
+          "props": [
+            {
+              "name": "graph",
+              "optional": false,
+              "type": "ProcessGraph",
+              "description": "The discovered graph to overlay."
+            },
+            {
+              "name": "conformance",
+              "optional": false,
+              "type": "ConformanceResult",
+              "description": "The replay result (`tokenReplay`) against the reference model."
+            },
+            {
+              "name": "metric",
+              "optional": true,
+              "type": "ProcessMetricSpec",
+              "description": "Which readings the nodes and edges print. @default case frequency"
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "FlowLayoutDirection",
+              "description": "@default \"TB\""
+            },
+            {
+              "name": "selection",
+              "optional": true,
+              "type": "ProcessSelection | null",
+              "description": "Controlled selection, passed straight to `ProcessMap`."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "ProcessMapProps[\"onSelect\"]"
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "ProcessMapProps[\"onFilterIntent\"]"
+            },
+            {
+              "name": "tableView",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the accessible table twin instead of the canvas. @default false"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No graph or replay yet. Renders the map's loading panel and hides the legend."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ConformanceStateLabels>",
+              "description": "Override the legend's words."
+            }
+          ]
+        },
+        "ConformanceStateMark": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": [
+            {
+              "name": "state",
+              "optional": false,
+              "type": "ConformanceState"
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ConformanceStateLabels>",
+              "description": "Override the state's word."
+            }
+          ]
+        },
+        "HappyPathEditor": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onChange\">"
+          ],
+          "props": [
+            {
+              "name": "value",
+              "optional": false,
+              "type": "HappyPath"
+            },
+            {
+              "name": "onChange",
+              "optional": false,
+              "type": "(path: HappyPath) => void",
+              "description": "Fires with the complete path after every edit."
+            },
+            {
+              "name": "availableActivities",
+              "optional": true,
+              "type": "string[]",
+              "description": "Activities a step may pick from (e.g. the log's). Omit for free-text activities."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<HappyPathEditorLabels>",
+              "description": "Override any user-visible string."
+            }
+          ]
+        },
         "MetricLayerSwitch": {
           "extends": [
             "Omit<HTMLAttributes<HTMLDivElement>, \"onChange\">"
@@ -26593,14 +26909,20 @@
             {
               "name": "conformance",
               "optional": true,
-              "type": "number | null",
-              "description": "`0..1`, or `null`/`undefined` when no conformance model has been fitted."
+              "type": "number | ConformanceResult | null",
+              "description": "`0..1`, a replay result (RM-061's `tokenReplay`, whose `overallFitness` the tile prints — RM-062), or `null`/`undefined` when no conformance model has been fitted."
             },
             {
               "name": "trends",
               "optional": true,
               "type": "Partial<Record<ProcessKpiStripTrendKey, number[]>>",
               "description": "Optional per-tile trend series (oldest -> newest), keyed by KPI."
+            },
+            {
+              "name": "conformanceSeries",
+              "optional": true,
+              "type": "ConformanceRatePoint[]",
+              "description": "Conformance rate over time (`conformanceRateSeries`), plotted as the conformance tile's sparkline — the rate-over-time reading (RM-062). Takes precedence over `trends.conformance`."
             },
             {
               "name": "loading",
@@ -26705,6 +27027,12 @@
               "description": "A shared activity colour scale (RM-054, `/core`'s `activityColorScale`). When given, each activity node shows its identity swatch — the same colour `VariantExplorer` paints that activity with. Build it once from the FULL graph and hand the same instance to both views. Omit for today's uncoloured nodes."
             },
             {
+              "name": "conformance",
+              "optional": true,
+              "type": "ConformanceResult",
+              "description": "A replay result (RM-061's `tokenReplay`) to overlay (RM-062). When given, every node and edge carries `data-conformance=\"both\" | \"logOnly\" | \"modelOnly\"` — additive to `data-selection` — painted as a status tone PLUS a glyph and a line style, with the state's word in the accessible name and a Conformance column in the table twin. Omit for today's map, unchanged. Usually reached through `ConformanceOverlay`."
+            },
+            {
               "name": "label",
               "optional": true,
               "type": "string",
@@ -26781,6 +27109,37 @@
               "name": "labels",
               "optional": true,
               "type": "Partial<VariantExplorerLabels>",
+              "description": "Override any user-visible string."
+            }
+          ]
+        },
+        "ViolationList": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "conformance",
+              "optional": false,
+              "type": "ConformanceResult",
+              "description": "The replay result (`tokenReplay`)."
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "(intent: ViolationFilterIntent) => void",
+              "description": "When given, each row emits `{ kind: \"cases\", ids }` for its cases."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No replay yet. Renders the loading panel rather than an empty table."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<ViolationListLabels>",
               "description": "Override any user-visible string."
             }
           ]

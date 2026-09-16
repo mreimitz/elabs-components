@@ -40,6 +40,7 @@ import { useLocale } from "@elabs-ai/components-ui";
 import { MetricGrid } from "@elabs-ai/components-charts";
 import { Sparkline } from "@elabs-ai/components-charts";
 import { formatDurationMs } from "../process-map/map-model";
+import type { ConformanceRatePoint, ConformanceResult } from "../core/conformance";
 
 export interface ProcessKpiStripKpis {
   cases: number;
@@ -53,11 +54,26 @@ export type ProcessKpiStripTrendKey = keyof ProcessKpiStripKpis | "conformance";
 
 export interface ProcessKpiStripProps extends HTMLAttributes<HTMLDivElement> {
   kpis: ProcessKpiStripKpis;
-  /** `0..1`, or `null`/`undefined` when no conformance model has been fitted. */
-  conformance?: number | null;
+  /**
+   * `0..1`, a replay result (RM-061's `tokenReplay`, whose `overallFitness` the tile
+   * prints — RM-062), or `null`/`undefined` when no conformance model has been fitted.
+   */
+  conformance?: number | ConformanceResult | null;
   /** Optional per-tile trend series (oldest -> newest), keyed by KPI. */
   trends?: Partial<Record<ProcessKpiStripTrendKey, number[]>>;
+  /**
+   * Conformance rate over time (`conformanceRateSeries`), plotted as the conformance
+   * tile's sparkline — the rate-over-time reading (RM-062). Takes precedence over
+   * `trends.conformance`.
+   */
+  conformanceSeries?: ConformanceRatePoint[];
   loading?: boolean;
+}
+
+/** The tile's fraction: a number as given, a replay result's `overallFitness`. */
+function conformanceFraction(conformance: number | ConformanceResult | null | undefined) {
+  if (conformance === null || conformance === undefined) return undefined;
+  return typeof conformance === "number" ? conformance : conformance.overallFitness;
 }
 
 /** How a trend's two endpoints are formatted — mirrors each tile's own headline format. */
@@ -124,13 +140,18 @@ export function ProcessKpiStrip({
   kpis,
   conformance,
   trends,
+  conformanceSeries,
   loading = false,
   className,
   ...props
 }: ProcessKpiStripProps) {
   const { t, formatNumber } = useLocale();
 
-  const hasConformance = conformance !== null && conformance !== undefined;
+  const fraction = conformanceFraction(conformance);
+  const hasConformance = fraction !== undefined;
+  const conformanceTrend = conformanceSeries
+    ? conformanceSeries.map((point) => point.fitness)
+    : trends?.conformance;
   const conformanceHint = t("process.kpiStrip.conformanceUnavailableHint");
 
   return (
@@ -195,7 +216,7 @@ export function ProcessKpiStrip({
           label={t("process.kpiStrip.conformance")}
           value={
             hasConformance ? (
-              (conformance as number)
+              fraction
             ) : (
               <span
                 data-slot="process-kpi-strip-conformance-unavailable"
@@ -222,7 +243,7 @@ export function ProcessKpiStrip({
           visual={
             hasConformance
               ? trendVisual(
-                  trends?.conformance,
+                  conformanceTrend,
                   t("process.kpiStrip.conformance"),
                   "percent",
                   t,

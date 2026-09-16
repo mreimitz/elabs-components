@@ -29,6 +29,14 @@ export type {
   VariantExplorerDoubleProps,
 } from "./doubles";
 
+// Doubles — RM-062
+export { ConformanceOverlayDouble, HappyPathEditorDouble, ViolationListDouble } from "./doubles";
+export type {
+  ConformanceOverlayDoubleProps,
+  HappyPathEditorDoubleProps,
+  ViolationListDoubleProps,
+} from "./doubles";
+
 // Fixture helper
 export { withProcessFixture } from "./primitives";
 export type { ProcessFixture } from "./primitives";

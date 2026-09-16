@@ -47,3 +47,8 @@ export * from "./process-filter-bar";
 // CaseTable / CaseTimeline — RM-055
 export * from "./case-table";
 export * from "./case-timeline";
+
+// ConformanceOverlay / ViolationList / HappyPathEditor — RM-062
+export * from "./conformance-overlay";
+export * from "./violation-list";
+export * from "./happy-path-editor";

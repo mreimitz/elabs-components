@@ -1,6 +1,13 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ProcessKpiStrip, type ProcessKpiStripKpis } from "./process-kpi-strip";
+import { conformanceRateSeries } from "../core/conformance";
+import { liftHappyPath } from "../core/reference-model";
+import { tokenReplay } from "../core/token-replay";
+import {
+  CONFORMANCE_FIXTURE_LOG,
+  CONFORMANCE_FIXTURE_PATH,
+} from "../conformance-overlay/conformance-fixture";
 
 afterEach(cleanup);
 
@@ -101,6 +108,37 @@ describe("ProcessKpiStrip — trend sparkline accessible names (#359)", () => {
     );
     expect(screen.getByRole("img", { name: /^Conformance,/ })).toHaveAccessibleName(
       "Conformance, 7-period trend, rising from 82% to 91%",
+    );
+  });
+});
+
+// RM-062 — the conformance tile reads a replay result and its rate-over-time series.
+describe("ProcessKpiStrip — conformance from a replay result (RM-062)", () => {
+  const model = liftHappyPath(CONFORMANCE_FIXTURE_PATH);
+  const conformance = tokenReplay(CONFORMANCE_FIXTURE_LOG, model);
+
+  it("prints the fixture's hand-computed mean fitness", () => {
+    // Six conforming cases fit 1; the two skips and the incomplete case fit ¾; the
+    // undesired case fits ½(1 − 0/5) + ½(1 − 1/6) = 11/12.
+    const expected = (6 + 3 * 0.75 + 11 / 12) / 10;
+    expect(conformance.overallFitness).toBeCloseTo(expected, 12);
+    render(<ProcessKpiStrip kpis={kpis} conformance={conformance} />);
+    expect(screen.getByText("91.7%")).toBeInTheDocument();
+    expect(screen.queryByText("Not available")).not.toBeInTheDocument();
+  });
+
+  it("plots conformanceRateSeries as the tile's sparkline, ahead of trends.conformance", () => {
+    const series = conformanceRateSeries(CONFORMANCE_FIXTURE_LOG, model, "month");
+    render(
+      <ProcessKpiStrip
+        kpis={kpis}
+        conformance={conformance}
+        conformanceSeries={series}
+        trends={{ conformance: [0.1, 0.2] }}
+      />,
+    );
+    expect(screen.getByRole("img", { name: /^Conformance,/ })).toHaveAccessibleName(
+      `Conformance, ${series.length}-period trend, falling from 100% to 75%`,
     );
   });
 });
