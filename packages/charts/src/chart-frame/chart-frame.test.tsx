@@ -4,6 +4,8 @@ import { ChartFrame } from "./chart-frame";
 import { Bar } from "../charts/bar";
 import { BarChart } from "../charts/bar-chart";
 import { BarXAxis } from "../charts/bar-x-axis";
+import { ChartLegend } from "../charts/chart-legend";
+import { ChartTooltip } from "../charts/tooltip";
 
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
 vi.mock("@visx/responsive", () => {
@@ -522,5 +524,188 @@ describe("ChartFrame default DOM (RM-072 pre-change snapshot)", () => {
     );
     await act(async () => {});
     expect(normalizeIds(container.innerHTML)).toBe(PRE_CHANGE_BAR_DOM);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// RM-072 behaviour: interactions, density tiers, tile / bare chrome.
+// ---------------------------------------------------------------------------
+
+const TARGET = '[data-slot="chart-datapoint-layer-target"]';
+const PAINTED_TICK = ".text-chart-label.text-meta";
+
+const twelveMonths = Array.from({ length: 12 }, (_, i) => ({
+  month: `M${i + 1}`,
+  revenue: 100 + i * 10,
+}));
+
+describe("ChartFrame interactions (RM-072)", () => {
+  it("passive:false renders the same chart DOM as a chart with no tooltip at all", async () => {
+    const plain = render(
+      <BarChart data={snapshotBarData} xDataKey="region" animationDuration={0}>
+        <Bar dataKey="revenue" fill="var(--chart-1)" />
+      </BarChart>,
+    );
+    await act(async () => {});
+    const withoutTooltip = normalizeIds(plain.container.innerHTML);
+    plain.unmount();
+
+    const withTooltip = render(
+      <BarChart data={snapshotBarData} xDataKey="region" animationDuration={0}>
+        <Bar dataKey="revenue" fill="var(--chart-1)" />
+        <ChartTooltip />
+      </BarChart>,
+    );
+    await act(async () => {});
+    const tooltipDom = normalizeIds(withTooltip.container.innerHTML);
+    withTooltip.unmount();
+    // Sanity: with passive on (the default) the tooltip adds DOM.
+    expect(tooltipDom).not.toBe(withoutTooltip);
+
+    const passiveOff = render(
+      <ChartFrame title="t" chrome="bare" interactions={{ passive: false }}>
+        <BarChart data={snapshotBarData} xDataKey="region" animationDuration={0}>
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+          <ChartTooltip />
+        </BarChart>
+      </ChartFrame>,
+    );
+    await act(async () => {});
+    const chartRoot = passiveOff.container.querySelector(
+      '[data-testid="parent-size"]',
+    )?.parentElement;
+    expect(normalizeIds(chartRoot?.outerHTML ?? "")).toBe(withoutTooltip);
+  });
+
+  it("active:false removes the datapoint layer buttons", () => {
+    const { container } = render(
+      <ChartFrame title="t" interactions={{ active: false }}>
+        <BarChart data={snapshotBarData} xDataKey="region" onDatapointClick={() => {}}>
+          <Bar dataKey="revenue" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    expect(container.querySelectorAll(TARGET)).toHaveLength(0);
+    expect(container.querySelector('[data-slot="chart-datapoint-layer"]')).toBeNull();
+  });
+
+  it("select:false keeps the layer but never calls onDatapointClick (click or Enter)", () => {
+    const onDatapointClick = vi.fn();
+    const { container } = render(
+      <ChartFrame title="t" interactions={{ select: false }}>
+        <BarChart data={snapshotBarData} xDataKey="region" onDatapointClick={onDatapointClick}>
+          <Bar dataKey="revenue" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    const targets = container.querySelectorAll<HTMLButtonElement>(TARGET);
+    expect(targets.length).toBeGreaterThan(0);
+    const first = targets[0] as HTMLButtonElement;
+    fireEvent.click(first);
+    // `detail: 0` is what the platform reports for Enter/Space on a button.
+    fireEvent.keyDown(first, { key: "Enter" });
+    fireEvent.click(first, { detail: 0 });
+    const bars = container.querySelectorAll("svg rect:not([fill='transparent'])");
+    fireEvent.click(bars[0] as Element);
+    expect(onDatapointClick).not.toHaveBeenCalled();
+  });
+
+  it("select defaults to true inside a frame", () => {
+    const onDatapointClick = vi.fn();
+    const { container } = render(
+      <ChartFrame title="t">
+        <BarChart data={snapshotBarData} xDataKey="region" onDatapointClick={onDatapointClick}>
+          <Bar dataKey="revenue" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    fireEvent.click(container.querySelector(TARGET) as HTMLButtonElement, { detail: 0 });
+    expect(onDatapointClick).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ChartFrame density (RM-072)", () => {
+  const legendItems = [{ label: "Revenue", value: 1, color: "var(--chart-1)" }];
+
+  function renderAt(density: "xs" | "sm" | "md") {
+    return render(
+      <ChartFrame title="Revenue" description="Monthly" source="Source: ledger" density={density}>
+        <BarChart data={twelveMonths} xDataKey="month" animationDuration={0}>
+          <Bar dataKey="revenue" />
+          <BarXAxis />
+        </BarChart>
+        <ChartLegend items={legendItems} />
+      </ChartFrame>,
+    );
+  }
+
+  it("xs: no axis text, no legend, no description, no source row", () => {
+    const { container } = renderAt("xs");
+    expect(container.querySelectorAll(PAINTED_TICK)).toHaveLength(0);
+    expect(container.querySelectorAll("svg text")).toHaveLength(0);
+    expect(container.querySelector(".legend-container")).toBeNull();
+    expect(screen.queryByText("Monthly")).not.toBeInTheDocument();
+    expect(screen.queryByText("Source: ledger")).not.toBeInTheDocument();
+  });
+
+  it("sm: at most 4 category ticks and no legend", () => {
+    const { container } = renderAt("sm");
+    const ticks = container.querySelectorAll(PAINTED_TICK);
+    expect(ticks.length).toBeGreaterThan(0);
+    expect(ticks.length).toBeLessThanOrEqual(4);
+    expect(container.querySelector(".legend-container")).toBeNull();
+  });
+
+  it("md: every tick, the legend, description and source row", () => {
+    const { container } = renderAt("md");
+    expect(container.querySelectorAll(PAINTED_TICK)).toHaveLength(12);
+    expect(container.querySelector(".legend-container")).not.toBeNull();
+    expect(screen.getByText("Monthly")).toBeInTheDocument();
+    expect(screen.getByText("Source: ledger")).toBeInTheDocument();
+  });
+});
+
+describe("ChartFrame chrome (RM-072)", () => {
+  it("tile: slots replace the default header and toolbar; the expand modal still opens", () => {
+    const onExpandChange = vi.fn();
+    render(
+      <ChartFrame
+        title="Default title"
+        data={sampleData}
+        chrome="tile"
+        source="Source: tile"
+        headerSlot={<span>Tile header</span>}
+        menuSlot={(api) => (
+          <button type="button" onClick={api.expand}>
+            Open big
+          </button>
+        )}
+        onExpandChange={onExpandChange}
+      >
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(screen.getByText("Tile header")).toBeInTheDocument();
+    expect(screen.queryByText("Default title")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Expand chart")).not.toBeInTheDocument();
+    expect(screen.getByText("Source: tile")).toBeInTheDocument();
+    expect(document.querySelector('[data-slot="card"]')).toBeNull();
+
+    fireEvent.click(screen.getByText("Open big"));
+    expect(onExpandChange).toHaveBeenCalledWith(true);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("bare: body only — no header, toolbar or source row", () => {
+    const { container } = render(
+      <ChartFrame title="Hidden" data={sampleData} source="Source: bare" chrome="bare">
+        <div>chart body</div>
+      </ChartFrame>,
+    );
+    expect(screen.getByText("chart body")).toBeInTheDocument();
+    expect(screen.queryByText("Hidden")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Expand chart")).not.toBeInTheDocument();
+    expect(screen.queryByText("Source: bare")).not.toBeInTheDocument();
+    expect(container.querySelector('[data-chrome="bare"]')).not.toBeNull();
   });
 });
