@@ -172,9 +172,10 @@ manyPeriods.forEach((period, periodIndex) => {
   });
 });
 
-/** 8 entities × 6 periods — every end label stays legible: no two are closer
- * than `END_LABEL_MIN_GAP` px apart (the `spaceSlopeLabels` collision pass
- * `DumbbellChart`'s `variant="slope"` already relies on). */
+/** 8 entities × 6 periods in a short plot — eight end labels cannot sit
+ * `END_LABEL_MIN_GAP` px apart, so the chart keeps only the top and bottom rank
+ * (plus the hero, when set) and leaves the rest to the tooltip and datapoint
+ * layer (#281). Every label it does draw stays legible and inside the plot. */
 export const LinesManyEntities: Story = {
   args: {
     data: manyEntitiesData,
@@ -198,15 +199,16 @@ export const LinesManyEntities: Story = {
   play: async ({ canvasElement }) => {
     // Same render-readiness wait as the RankStrip story above.
     await waitFor(() => {
-      expect(canvasElement.querySelectorAll('[data-slot="bump-chart-label-end"]').length).toBe(
-        manyEntityNames.length,
-      );
+      expect(
+        canvasElement.querySelectorAll('[data-slot="bump-chart-label-end"]').length,
+      ).toBeGreaterThanOrEqual(2);
     });
 
+    // #281 — too many labels for the height: only the top and bottom rank keep one.
     const endLabels = Array.from(
       canvasElement.querySelectorAll('[data-slot="bump-chart-label-end"]'),
     );
-    await expect(endLabels).toHaveLength(manyEntityNames.length);
+    await expect(endLabels).toHaveLength(2);
     const ys = endLabels.map((el) => Number(el.getAttribute("y"))).sort((a, b) => a - b);
     for (let i = 1; i < ys.length; i++) {
       await expect((ys[i] as number) - (ys[i - 1] as number)).toBeGreaterThanOrEqual(

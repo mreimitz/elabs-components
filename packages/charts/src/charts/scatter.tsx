@@ -85,12 +85,14 @@ const DROP_LINE_WIDTH = CHART_HAIRLINE_WIDTH;
 const EXTREME_LABEL_GAP = 8;
 
 /**
- * Half the approximate glyph-box height of an 11px `HaloText` label — big
- * enough that a gridline stroke (rendered with `<Grid horizontal />`, whose
- * default is 5 rows) crossing anywhere in that band reads as debris crossing
- * the label rather than a tolerable overlap (#252).
+ * Glyph box of an 11px `HaloText` label relative to its baseline `y`, measured
+ * in the browser as `[y - 11, y + 3]`. A gridline stroke crossing anywhere in
+ * that band reads as debris crossing the label rather than a tolerable overlap
+ * (#252). `EXTREME_LABEL_CLEARANCE` is the extra air kept between box and line.
  */
-const EXTREME_LABEL_HALF_HEIGHT = 7;
+const EXTREME_LABEL_ASCENT = 11;
+const EXTREME_LABEL_DESCENT = 3;
+const EXTREME_LABEL_CLEARANCE = 1;
 
 /**
  * Seed for `jitter`'s `seededRnd(index, JITTER_SEED)` draw. A fixed constant
@@ -218,11 +220,12 @@ function resolveExtremes(
  * #252: with no collision check, whether that lands on one of `<Grid
  * horizontal />`'s reference rules was decided entirely by the data — the
  * label then crosses a line that carries no value, reading as two
- * decorations colliding. Flip below the point when the default placement
- * would cross a gridline or run off the plot's top edge; keep the default
- * when the flip would ALSO collide (rare) rather than hide the label.
+ * decorations colliding. Candidates, first clear one wins: above the point,
+ * below it, then each of those nudged away from the point just past the rule
+ * it crosses. Falls back to the default when none clears (rare) rather than
+ * hide the label. `y` is the text baseline.
  */
-function resolveExtremeLabelY({
+export function resolveExtremeLabelY({
   cy,
   radius,
   gridLineYs,
@@ -233,22 +236,28 @@ function resolveExtremeLabelY({
   gridLineYs: readonly number[];
   innerHeight: number;
 }): number {
-  const collidesWithGrid = (y: number) =>
-    gridLineYs.some((gridY) => Math.abs(gridY - y) < EXTREME_LABEL_HALF_HEIGHT);
+  const crossing = (y: number) =>
+    gridLineYs.find(
+      (gridY) =>
+        gridY >= y - EXTREME_LABEL_ASCENT - EXTREME_LABEL_CLEARANCE &&
+        gridY <= y + EXTREME_LABEL_DESCENT + EXTREME_LABEL_CLEARANCE,
+    );
+  const inPlot = (y: number) =>
+    y - EXTREME_LABEL_ASCENT >= 0 && y + EXTREME_LABEL_DESCENT <= innerHeight;
+  const clear = (y: number) => inPlot(y) && crossing(y) === undefined;
 
   const above = cy - radius - EXTREME_LABEL_GAP;
-  const aboveClearsTop = above - EXTREME_LABEL_HALF_HEIGHT >= 0;
-  if (aboveClearsTop && !collidesWithGrid(above)) {
-    return above;
+  const below = cy + radius + EXTREME_LABEL_GAP + EXTREME_LABEL_ASCENT;
+  const candidates = [above, below];
+  const aboveLine = crossing(above);
+  if (aboveLine !== undefined) {
+    candidates.push(aboveLine - EXTREME_LABEL_DESCENT - EXTREME_LABEL_CLEARANCE - 1);
   }
-
-  const below = cy + radius + EXTREME_LABEL_GAP + EXTREME_LABEL_HALF_HEIGHT;
-  const belowClearsBottom = below + EXTREME_LABEL_HALF_HEIGHT <= innerHeight;
-  if (belowClearsBottom && !collidesWithGrid(below)) {
-    return below;
+  const belowLine = crossing(below);
+  if (belowLine !== undefined) {
+    candidates.push(belowLine + EXTREME_LABEL_ASCENT + EXTREME_LABEL_CLEARANCE + 1);
   }
-
-  return above;
+  return candidates.find(clear) ?? above;
 }
 
 function extremeLabelText(

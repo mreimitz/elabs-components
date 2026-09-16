@@ -9,6 +9,7 @@ vi.mock("react-use-measure", () => ({
   default: () => [() => undefined, { width: 560, height: 288 }],
 }));
 
+import { resolveExtremeLabelY } from "./scatter";
 import { ScatterChart, Scatter } from "./scatter-chart";
 import { XAxis } from "./x-axis";
 
@@ -486,5 +487,20 @@ describe("ScatterChart — non-temporal (linear) x-scale (#302)", () => {
       </ScatterChart>,
     );
     expect(container.textContent).toContain("Jan");
+  });
+});
+
+describe("resolveExtremeLabelY (#252)", () => {
+  const gridLineYs = [200, 163.6, 127.3, 90.9, 54.5, 18.2];
+  const boxClears = (y: number) => gridLineYs.every((gridY) => gridY < y - 11 || gridY > y + 3);
+
+  it("nudges a low point's label past the rule it would cross when below has no room", () => {
+    const y = resolveExtremeLabelY({ cy: 180, radius: 6, gridLineYs, innerHeight: 200 });
+    expect(boxClears(y)).toBe(true);
+    expect(y).toBeLessThan(180);
+  });
+
+  it("keeps the default above placement when it is already clear", () => {
+    expect(resolveExtremeLabelY({ cy: 120, radius: 6, gridLineYs, innerHeight: 200 })).toBe(106);
   });
 });

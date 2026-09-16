@@ -10,6 +10,7 @@ vi.mock("react-use-measure", () => ({
 }));
 
 import {
+  fitEndLabels,
   BumpChart,
   buildBumpMatrix,
   computeBumpDelta,
@@ -411,5 +412,26 @@ describe("deriveStripMaxPeriods / deriveStripMaxEntities (#273)", () => {
     expect(deriveStripMaxPeriods(-10)).toBe(1);
     expect(deriveStripMaxEntities(0)).toBe(1);
     expect(deriveStripMaxEntities(-10)).toBe(1);
+  });
+});
+
+describe("fitEndLabels (#281)", () => {
+  it("labels every series when the column fits", () => {
+    expect(fitEndLabels([0, 40, 80], -1, 14, [0, 80])).toEqual([0, 40, 80]);
+  });
+
+  it("keeps only the extremes and the hero when the column cannot fit", () => {
+    const raw = [0, 8, 16, 24, 32, 40, 48, 56];
+    const out = fitEndLabels(raw, 3, 14, [0, 56]);
+    const labelled = out.flatMap((y, i) => (y === null ? [] : [i]));
+    expect(labelled).toEqual([0, 3, 7]);
+    const ys = out.filter((y): y is number => y !== null).sort((a, b) => a - b);
+    for (let i = 1; i < ys.length; i++) {
+      expect(ys[i]! - ys[i - 1]!).toBeGreaterThanOrEqual(14);
+    }
+    for (const y of ys) {
+      expect(y).toBeGreaterThanOrEqual(0);
+      expect(y).toBeLessThanOrEqual(56);
+    }
   });
 });

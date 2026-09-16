@@ -145,6 +145,39 @@ const REST_DOT_RADIUS = 3;
 export const END_LABEL_MIN_GAP = 14;
 const END_LABEL_OFFSET = 8;
 
+/**
+ * End-label y per series, or `null` for a series left unlabelled at that end (#281).
+ * When every label fits `minGap` apart inside `extent`, all are labelled via
+ * `spaceSlopeLabels`. When they cannot, the column would squash below `minGap`, so
+ * only the hero plus the top and bottom rank keep a label — the rest stay reachable
+ * through the tooltip and the datapoint layer's accessible names.
+ */
+export function fitEndLabels(
+  rawYs: number[],
+  heroIndex: number,
+  minGap: number,
+  extent: [number, number],
+): (number | null)[] {
+  const n = rawYs.length;
+  if (n <= 1 || (n - 1) * minGap <= extent[1] - extent[0]) {
+    return spaceSlopeLabels(rawYs, minGap, extent);
+  }
+  const sorted = rawYs.map((y, index) => ({ y, index })).sort((a, b) => a.y - b.y);
+  const keep = new Set<number>([sorted[0]!.index, sorted[n - 1]!.index]);
+  if (heroIndex >= 0 && heroIndex < n) keep.add(heroIndex);
+  const kept = [...keep].sort((a, b) => rawYs[a]! - rawYs[b]!);
+  const ys = spaceSlopeLabels(
+    kept.map((index) => rawYs[index]!),
+    minGap,
+    extent,
+  );
+  const out: (number | null)[] = new Array(n).fill(null);
+  kept.forEach((index, i) => {
+    out[index] = ys[i]!;
+  });
+  return out;
+}
+
 const STRIP_CELL_RADIUS = 8;
 const STRIP_CELL_GAP = 2;
 const STRIP_CELL_STROKE_WIDTH = 0.5;
@@ -493,13 +526,14 @@ function LinesPlot({
 
   const rawStartYs = matrix.series.map((s) => yScale(s.points[0]?.rank ?? 1));
   const rawEndYs = matrix.series.map((s) => yScale(s.points[s.points.length - 1]?.rank ?? 1));
+  const heroIndex = matrix.series.findIndex((s) => s.entity === highlightKey);
   const startLabelYs = useMemo(
-    () => spaceSlopeLabels(rawStartYs, END_LABEL_MIN_GAP, [0, innerHeight]),
-    [rawStartYs, innerHeight],
+    () => fitEndLabels(rawStartYs, heroIndex, END_LABEL_MIN_GAP, [0, innerHeight]),
+    [rawStartYs, heroIndex, innerHeight],
   );
   const endLabelYs = useMemo(
-    () => spaceSlopeLabels(rawEndYs, END_LABEL_MIN_GAP, [0, innerHeight]),
-    [rawEndYs, innerHeight],
+    () => fitEndLabels(rawEndYs, heroIndex, END_LABEL_MIN_GAP, [0, innerHeight]),
+    [rawEndYs, heroIndex, innerHeight],
   );
 
   const targets = useMemo<ChartDatapointTarget[]>(() => {
@@ -573,27 +607,31 @@ function LinesPlot({
                     r={isHero ? HERO_DOT_RADIUS : REST_DOT_RADIUS}
                   />
                 ))}
-                <HaloText
-                  className={cn("text-meta", isHero && "font-bold")}
-                  data-slot="bump-chart-label-start"
-                  fill={isHero ? "var(--chart-foreground)" : "var(--chart-label)"}
-                  textAnchor="end"
-                  x={(xScale(series.points[0]?.period ?? "") ?? 0) - END_LABEL_OFFSET}
-                  y={startLabelYs[seriesIndex]}
-                >
-                  {series.entity}
-                </HaloText>
-                <HaloText
-                  className={cn("text-meta", isHero && "font-bold")}
-                  data-slot="bump-chart-label-end"
-                  fill={isHero ? "var(--chart-foreground)" : "var(--chart-label)"}
-                  textAnchor="start"
-                  x={(xScale(lastPoint?.period ?? "") ?? 0) + END_LABEL_OFFSET}
-                  y={endLabelYs[seriesIndex]}
-                >
-                  {series.entity}
-                  {showDelta && delta !== null ? ` ${deltaLabel(delta)}` : ""}
-                </HaloText>
+                {startLabelYs[seriesIndex] != null && (
+                  <HaloText
+                    className={cn("text-meta", isHero && "font-bold")}
+                    data-slot="bump-chart-label-start"
+                    fill={isHero ? "var(--chart-foreground)" : "var(--chart-label)"}
+                    textAnchor="end"
+                    x={(xScale(series.points[0]?.period ?? "") ?? 0) - END_LABEL_OFFSET}
+                    y={startLabelYs[seriesIndex] ?? 0}
+                  >
+                    {series.entity}
+                  </HaloText>
+                )}
+                {endLabelYs[seriesIndex] != null && (
+                  <HaloText
+                    className={cn("text-meta", isHero && "font-bold")}
+                    data-slot="bump-chart-label-end"
+                    fill={isHero ? "var(--chart-foreground)" : "var(--chart-label)"}
+                    textAnchor="start"
+                    x={(xScale(lastPoint?.period ?? "") ?? 0) + END_LABEL_OFFSET}
+                    y={endLabelYs[seriesIndex] ?? 0}
+                  >
+                    {series.entity}
+                    {showDelta && delta !== null ? ` ${deltaLabel(delta)}` : ""}
+                  </HaloText>
+                )}
                 {series.points.map((point) => (
                   <rect
                     data-slot="bump-chart-hit-area"
