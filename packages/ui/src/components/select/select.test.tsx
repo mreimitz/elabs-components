@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import { Select, SelectTrigger, SelectValue } from "./select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 
 const LONG_LABEL = "prod-eu-west-1 · 2026-08-01 · 12 tools";
 
@@ -94,5 +94,32 @@ describe("SelectTrigger", () => {
     const trigger = screen.getByRole("combobox");
     await waitFor(() => expect(trigger).toHaveAttribute("data-size", "default"));
     expect(trigger).not.toHaveAttribute("title");
+  });
+});
+
+describe("SelectItem", () => {
+  // WCAG 1.4.11 (#308): a `focus:bg-accent` fill alone measures ~1.17–1.40:1
+  // against `--popover` in both themes — not a visible indicator. A real RTL
+  // unit test rather than a Storybook interaction story: opening this Select
+  // in the Storybook/vitest-browser + axe harness hits a PRE-EXISTING,
+  // unrelated `button-name`/`aria-hidden-focus` axe defect on any story id not
+  // already grandfathered into `scripts/a11y-baseline.json` (see the comment
+  // in `select.stories.tsx`), so the utility-class assertion — the same
+  // pattern `icon-button.test.tsx` already uses for its own `focus-ring` —
+  // lives here instead, with no axe gate to trip.
+  it("carries focus-ring-inset, not just the fill, on the fill-only focus state (#308)", () => {
+    render(
+      <Select defaultValue="prod" open>
+        <SelectTrigger aria-label="Environment">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="prod">Production</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    const item = screen.getByRole("option", { name: "Production" });
+    expect(item.className).toContain("focus:bg-accent");
+    expect(item.className).toContain("focus-ring-inset");
   });
 });

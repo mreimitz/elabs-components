@@ -483,7 +483,6 @@
     "packages/ui/src/components/file-upload/file-upload.tsx": 1,
     "packages/ui/src/components/input-group/input-group.tsx": 2,
     "packages/ui/src/components/link-preview/link-preview.tsx": 1,
-    "packages/ui/src/components/navigation-menu/navigation-menu.tsx": 1,
     "packages/ui/src/components/schema-form/schema-form.tsx": 1,
     "packages/ui/src/components/view-toolbar/view-toolbar.tsx": 1
   },

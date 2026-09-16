@@ -41,7 +41,7 @@ export const MenubarTrigger = forwardRef<
       ref={ref}
       data-slot="menubar-trigger"
       className={cn(
-        "flex cursor-default select-none items-center rounded-sm px-3 py-1 text-body font-medium outline-none transition-colors duration-fast focus:bg-accent data-[state=open]:bg-accent",
+        "flex cursor-default select-none items-center rounded-sm px-3 py-1 text-body font-medium outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset data-[state=open]:bg-accent",
         className,
       )}
       {...props}
@@ -85,7 +85,7 @@ export const MenubarItem = forwardRef<
       ref={ref}
       data-slot="menubar-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         inset && "ps-8",
         className,
       )}
@@ -103,7 +103,7 @@ export const MenubarSubTrigger = forwardRef<
       ref={ref}
       data-slot="menubar-sub-trigger"
       className={cn(
-        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast focus:bg-accent data-[state=open]:bg-accent",
+        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset data-[state=open]:bg-accent",
         inset && "ps-8",
         className,
       )}
@@ -144,7 +144,7 @@ export const MenubarCheckboxItem = forwardRef<
       data-slot="menubar-checkbox-item"
       checked={checked}
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent",
+        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset",
         className,
       )}
       {...props}
@@ -168,7 +168,7 @@ export const MenubarRadioItem = forwardRef<
       ref={ref}
       data-slot="menubar-radio-item"
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent",
+        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset",
         className,
       )}
       {...props}
