@@ -130,6 +130,15 @@ export interface DumbbellChartProps extends ChartInteractionProps {
    */
   bothEndsLabeled?: boolean;
   /**
+   * `variant="slope"` only: custom formatter for the plain VALUE half of each
+   * end's label — receives the raw value and its row, returns just the value
+   * text (the chart still prepends `"{category} "` itself). Unset (default)
+   * keeps `formatValue` (the active `valueFormat`). `Intl` never pads a whole
+   * number, so an exact-integer reading (`92`) needs this to force a fixed
+   * decimal count (`"92.0"`) matching its neighbours' precision.
+   */
+  valueLabelFormat?: (value: number, row: DumbbellRow) => string;
+  /**
    * `orientation="horizontal"` (dumbbell variant) only: one labelled vertical
    * reference line at `value` on the shared value scale (e.g. an industry
    * benchmark). Unset (default) draws nothing.
@@ -342,6 +351,8 @@ export interface DeriveDumbbellMarginInput {
   formatValue: (value: number) => string;
   /** Grows the slope right margin to hold `"{category} {value}"` instead of the bare value. */
   bothEndsLabeled?: boolean;
+  /** Mirrors `DumbbellChartProps.valueLabelFormat` — used instead of `formatValue` for slope labels when set. */
+  valueLabelFormat?: (value: number, row: DumbbellRow) => string;
 }
 
 /**
@@ -366,13 +377,17 @@ export function deriveDumbbellMargin({
   measure,
   formatValue,
   bothEndsLabeled = false,
+  valueLabelFormat,
 }: DeriveDumbbellMarginInput): Margin {
   const cap = width > 0 ? width * MAX_MARGIN_FRACTION : Number.POSITIVE_INFINITY;
   if (variant === "slope") {
-    const startLabels = rows.map((row) => `${row.category} ${formatValue(row.start)}`);
-    const endLabels = rows.map((row) =>
-      bothEndsLabeled ? `${row.category} ${formatValue(row.end)}` : formatValue(row.end),
-    );
+    const formatEndpoint = (value: number, row: DumbbellRow) =>
+      valueLabelFormat ? valueLabelFormat(value, row) : formatValue(value);
+    const startLabels = rows.map((row) => `${row.category} ${formatEndpoint(row.start, row)}`);
+    const endLabels = rows.map((row) => {
+      const endText = formatEndpoint(row.end, row);
+      return bothEndsLabeled ? `${row.category} ${endText}` : endText;
+    });
     return {
       ...floor,
       left: clampMargin(widestLabelWidth(startLabels, measure) + LABEL_GUTTER, floor.left, cap),
@@ -514,6 +529,7 @@ interface PlotProps {
   showDelta: boolean;
   deltaLabelFormat?: (delta: number, row: DumbbellRow) => string;
   bothEndsLabeled?: boolean;
+  valueLabelFormat?: (value: number, row: DumbbellRow) => string;
   referenceLine?: { value: number; label: string };
   showValueAxis?: boolean;
   palette?: ChartPalette;
@@ -580,6 +596,7 @@ function DumbbellPlot({
   showDelta,
   deltaLabelFormat,
   bothEndsLabeled = false,
+  valueLabelFormat,
   referenceLine,
   showValueAxis = false,
   palette,
@@ -833,15 +850,21 @@ function DumbbellPlot({
                 // widest label up to `MAX_MARGIN_FRACTION` of the container, so a
                 // label only gets cut when even that cap can't hold it. The full
                 // category name stays reachable via the tooltip title (#240).
-                const startLabelText = `${row.category} ${formatValue(row.start)}`;
+                const startValueText = valueLabelFormat
+                  ? valueLabelFormat(row.start, row)
+                  : formatValue(row.start);
+                const startLabelText = `${row.category} ${startValueText}`;
                 const startDisplay = ellipsize(
                   startLabelText,
                   Math.max(margin.left - LABEL_GUTTER, 0),
                   measure,
                 ).display;
-                const endLabelText = bothEndsLabeled
-                  ? `${row.category} ${formatValue(row.end)}`
+                const endValueText = valueLabelFormat
+                  ? valueLabelFormat(row.end, row)
                   : formatValue(row.end);
+                const endLabelText = bothEndsLabeled
+                  ? `${row.category} ${endValueText}`
+                  : endValueText;
                 const endDisplay = ellipsize(
                   endLabelText,
                   Math.max(margin.right - LABEL_GUTTER, 0),
@@ -1141,6 +1164,7 @@ function DumbbellBody({
   ...plotProps
 }: BodyProps) {
   const { t } = useLocale();
+  const { valueLabelFormat } = plotProps;
   const formatValue = useChartValueFormatter(plotProps.valueFormat);
   const rowByIndex = useMemo(
     () => new Map(plotProps.rows.map((row) => [row.index, row])),
@@ -1158,11 +1182,11 @@ function DumbbellBody({
       }
       return t("charts.datapoint.labelRange", {
         category: row.category,
-        start: formatValue(row.start),
-        end: formatValue(row.end),
+        start: valueLabelFormat ? valueLabelFormat(row.start, row) : formatValue(row.start),
+        end: valueLabelFormat ? valueLabelFormat(row.end, row) : formatValue(row.end),
       });
     },
-    [formatValue, rowByIndex, t],
+    [formatValue, rowByIndex, t, valueLabelFormat],
   );
   const core = <DumbbellPlot {...plotProps} />;
   if (!onDatapointClick && !copyValueOnActivate) {
@@ -1205,6 +1229,7 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
     showDelta = false,
     deltaLabelFormat,
     bothEndsLabeled = false,
+    valueLabelFormat,
     referenceLine,
     showValueAxis = false,
     sortBy = "none",
@@ -1265,6 +1290,7 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
       measure,
       formatValue: formatValueForMargin,
       bothEndsLabeled,
+      valueLabelFormat,
     }),
     ...marginProp,
   };
@@ -1307,6 +1333,7 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
           showDelta={showDelta}
           deltaLabelFormat={deltaLabelFormat}
           bothEndsLabeled={bothEndsLabeled}
+          valueLabelFormat={valueLabelFormat}
           referenceLine={referenceLine}
           showValueAxis={showValueAxis}
           valueFormat={valueFormat}

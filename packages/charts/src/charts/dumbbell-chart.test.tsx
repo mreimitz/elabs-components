@@ -287,6 +287,44 @@ describe("deriveDumbbellMargin", () => {
     expect(withFlag.right).toBeGreaterThan(withoutFlag.right);
   });
 
+  it("valueLabelFormat sizes the margin from its own output, not formatValue's", () => {
+    const row: DumbbellRow = {
+      index: 0,
+      datum: {},
+      category: "AB",
+      start: 92,
+      end: 95,
+      delta: 3,
+      extra: [],
+    };
+    const withoutFormat = deriveDumbbellMargin({
+      rows: [row],
+      variant: "slope",
+      orientation: "horizontal",
+      floor,
+      width: 900,
+      measure: measure7,
+      formatValue: identity,
+    });
+    const longSuffix = "0".repeat(30);
+    const withFormat = deriveDumbbellMargin({
+      rows: [row],
+      variant: "slope",
+      orientation: "horizontal",
+      floor,
+      width: 900,
+      measure: measure7,
+      formatValue: identity,
+      valueLabelFormat: (value) => `${value}.${longSuffix}`,
+    });
+    // Both labels are short enough to floor at the constant with the default
+    // formatter; the custom one is long enough to grow past it — proving the
+    // margin measured `valueLabelFormat`'s OWN output, not `formatValue`'s.
+    expect(withoutFormat.left).toBe(floor.left);
+    expect(withFormat.left).toBeGreaterThan(floor.left);
+    expect(withFormat.left).toBe(`AB 92.${longSuffix}`.length * 7 + 10);
+  });
+
   it("caps the derived margin at MAX_MARGIN_FRACTION of the container width, never below the floor", () => {
     const pathologicalRows: DumbbellRow[] = [
       {
@@ -746,6 +784,28 @@ describe('DumbbellChart — variant="slope"', () => {
       root.querySelector('[data-slot="dumbbell-chart-slope-label-end"]')?.textContent ?? "";
     expect(endText(without)).not.toMatch(/Organic search/);
     expect(endText(withFlag)).toMatch(/Organic search/);
+  });
+
+  it("valueLabelFormat overrides both slope endpoint labels' value text", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="channel"
+        data={[{ channel: "Organic search", lastYear: 92, thisYear: 95 }]}
+        endKey="thisYear"
+        startKey="lastYear"
+        valueFormat="number"
+        valueLabelFormat={(value) => `${value.toFixed(1)}!`}
+        variant="slope"
+      />,
+    );
+    const startText = container.querySelector(
+      '[data-slot="dumbbell-chart-slope-label-start"]',
+    )?.textContent;
+    const endText = container.querySelector(
+      '[data-slot="dumbbell-chart-slope-label-end"]',
+    )?.textContent;
+    expect(startText).toBe("Organic search 92.0!");
+    expect(endText).toBe("95.0!");
   });
 
   // #240 — a vertical category label wider than its column used to render as a
