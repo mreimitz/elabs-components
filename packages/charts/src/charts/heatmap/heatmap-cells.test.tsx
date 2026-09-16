@@ -116,6 +116,67 @@ describe("zero is not missing (#251)", () => {
   });
 });
 
+describe("the no-data mark is one shape at every size (#280)", () => {
+  it("draws a full circle regardless of cellRadius, not a rounded square", () => {
+    const { container } = render(
+      <HeatmapChart cellRadius={4} data={ZERO_AND_MISSING} valueKey="v" x="col" y="row" />,
+    );
+    const mark = cellOf(container, "2:0").querySelector('[data-slot="heatmap-missing-mark"]');
+    const width = Number(mark?.getAttribute("width"));
+    const rx = Number(mark?.getAttribute("rx"));
+    expect(width).toBeGreaterThan(0);
+    // A circle's rx is exactly half its own side — never clamped to cellRadius,
+    // which would make a big cell's mark square-ish and a small cell's round.
+    expect(rx).toBeCloseTo(width / 2);
+  });
+
+  it("keys the legend with the identical circle, not a squared swatch", () => {
+    const { container } = render(
+      <HeatmapChart data={ZERO_AND_MISSING} valueKey="v" x="col" y="row" />,
+    );
+    const swatch = container
+      .querySelector('[data-slot="heatmap-legend-missing"]')
+      ?.querySelector('[data-slot="heatmap-missing-mark"]');
+    const width = Number(swatch?.getAttribute("width"));
+    const rx = Number(swatch?.getAttribute("rx"));
+    expect(width).toBeGreaterThan(0);
+    expect(rx).toBeCloseTo(width / 2);
+  });
+});
+
+describe("xAxisLabel sits between the plot and the legend (#280)", () => {
+  it("is absent by default", () => {
+    const { container } = render(
+      <HeatmapChart data={ZERO_AND_MISSING} valueKey="v" x="col" y="row" />,
+    );
+    expect(container.querySelector('[data-slot="heatmap-x-axis-label"]')).toBeNull();
+  });
+
+  it("prints the caller's title directly under the plot, before the legend", () => {
+    const { container } = render(
+      <HeatmapChart
+        data={ZERO_AND_MISSING}
+        valueKey="v"
+        x="col"
+        xAxisLabel="Months since signup"
+        y="row"
+      />,
+    );
+    const root = container.querySelector('[data-slot="heatmap-chart"]');
+    const children = Array.from(root?.children ?? []);
+    const labelIndex = children.findIndex(
+      (el) => el.getAttribute("data-slot") === "heatmap-x-axis-label",
+    );
+    const legendIndex = children.findIndex(
+      (el) => el.getAttribute("data-slot") === "heatmap-legend",
+    );
+    expect(labelIndex).toBeGreaterThan(-1);
+    expect(legendIndex).toBeGreaterThan(-1);
+    expect(labelIndex).toBeLessThan(legendIndex);
+    expect(children[labelIndex]).toHaveTextContent("Months since signup");
+  });
+});
+
 describe("value labels take the ink of the plate they sit on (#238)", () => {
   const RAMP_ROW = [1, 2, 3, 4, 5, 6, 7].map((v) => ({ col: `c${v}`, row: "r", v }));
   const ON_LIGHT = "var(--chart-ink-on-light)";

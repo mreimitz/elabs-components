@@ -310,6 +310,131 @@ describe("TreemapChart", () => {
       expect(valueTexts(container)).toEqual([]);
     });
   });
+
+  describe('labelOverflow="hide" (#280)', () => {
+    const mockBox = (width: number, height: number) =>
+      vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+        bottom: height,
+        height,
+        left: 0,
+        right: width,
+        toJSON: () => ({}),
+        top: 0,
+        width,
+        x: 0,
+        y: 0,
+      } as DOMRect);
+
+    const oneWideOneNarrow: TreemapNode = {
+      name: "Work",
+      children: [
+        { name: "Wide", value: 90 },
+        { name: "Considerably long name", value: 10 },
+      ],
+    };
+
+    it("drops a name too long for its tile instead of ellipsising it", () => {
+      const spy = mockBox(560, 320);
+      const { container } = render(
+        <TreemapChart data={oneWideOneNarrow} depth={1} labelMinArea={0} labelOverflow="hide" />,
+      );
+      spy.mockRestore();
+      const labels = Array.from(
+        container.querySelectorAll('[data-slot="treemap-leaf-label"]'),
+        (el) => el.textContent ?? "",
+      );
+      expect(labels).toContain("Wide");
+      expect(labels.some((text) => text.includes("…"))).toBe(false);
+      expect(labels.some((text) => text.startsWith("Considerably"))).toBe(false);
+    });
+
+    it("drops the name too when its value does not fit, so the tile never carries a name with no fact", () => {
+      const spy = mockBox(640, 400);
+      const { container } = render(
+        <TreemapChart
+          data={{
+            name: "Spend",
+            children: [
+              { name: "Cloud", value: 1_500_000 },
+              { name: "A very long category name indeed", value: 400 },
+            ],
+          }}
+          depth={1}
+          labelMinArea={0}
+          labelOverflow="hide"
+          showValues
+        />,
+      );
+      spy.mockRestore();
+      const labels = Array.from(
+        container.querySelectorAll('[data-slot="treemap-leaf-label"]'),
+        (el) => el.textContent ?? "",
+      );
+      // The narrow tile's name would fit alone, but its value would not — "whole
+      // fact or nothing" means both drop together, never a name with no value.
+      expect(labels).toEqual(["Cloud"]);
+    });
+  });
+
+  it("hideLeafLabel skips the native label for a matched leaf only", () => {
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    const { container } = render(
+      <TreemapChart
+        data={{
+          name: "Spend",
+          children: [
+            { name: "Cloud", value: 300 },
+            { name: "Tools", value: 100 },
+          ],
+        }}
+        depth={1}
+        hideLeafLabel={(leaf) => leaf.name === "Cloud"}
+        labelMinArea={0}
+      />,
+    );
+    spy.mockRestore();
+    const labels = Array.from(
+      container.querySelectorAll('[data-slot="treemap-leaf-label"]'),
+      (el) => el.textContent ?? "",
+    );
+    expect(labels).toEqual(["Tools"]);
+  });
+
+  it("monoLeafColor/monoBandColor override the shared mono shade, everything else default", () => {
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    const { container } = render(
+      <TreemapChart
+        data={whereTheWorkWent}
+        monoBandColor="var(--chart-mono-2)"
+        monoLeafColor="var(--chart-mono-2)"
+      />,
+    );
+    spy.mockRestore();
+    const leaf = container.querySelector("[data-treemap-leaf-id]") as SVGRectElement;
+    const band = container.querySelector('[data-slot="treemap-group"] rect') as SVGRectElement;
+    expect(leaf.getAttribute("fill")).toBe("var(--chart-mono-2)");
+    expect(band.getAttribute("fill")).toBe("var(--chart-mono-2)");
+  });
 });
 
 describe("TreemapChart decoration pattern channel (ADR 0011, #257)", () => {

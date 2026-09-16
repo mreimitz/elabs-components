@@ -52,8 +52,11 @@ const MIN_VALUE_LABEL_PX = 8;
 /** Largest in-cell value label — a big cell should not grow a headline. */
 const MAX_VALUE_LABEL_PX = 13;
 
-/** Side of the no-data outline, as a fraction of the cell's shorter side. */
-const MISSING_MARK_SCALE = 0.6;
+/**
+ * Default side of the no-data outline, as a fraction of the cell's shorter
+ * side. Overridable per chart via `HeatmapChartProps.emptyMarkScale` (#280).
+ */
+export const DEFAULT_EMPTY_MARK_SCALE = 0.6;
 
 /**
  * The no-data mark: a hairline outline in the grid ink with nothing inside it —
@@ -89,6 +92,8 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
     emptyValue,
     cellRadius,
     showValues,
+    showValueHalo,
+    emptyMarkScale,
     maxAbs,
     dotMaxRadius,
     formatValue,
@@ -111,7 +116,7 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
   const labelSize = Math.min(cell.height * 0.42, cell.width * 0.34, MAX_VALUE_LABEL_PX);
   // Inset so the outline reads as "this cell is empty", not as grid furniture
   // touching its neighbours.
-  const missingSide = Math.max(0, Math.min(cell.width, cell.height) * MISSING_MARK_SCALE);
+  const missingSide = Math.max(0, Math.min(cell.width, cell.height) * emptyMarkScale);
 
   return (
     <g
@@ -141,9 +146,14 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
           cell.state === "zero" ? (
             <QuietDot cx={cx} cy={cy} />
           ) : (
+            // A full circle at every size (#280) — clamping rx to `cellRadius`
+            // made a LARGE cell's mark read as a squared-off outline while a
+            // small one rounded down to a circle, so the same chart looked
+            // like two different marks depending on cell size. One shape,
+            // always: the ring, never the corners, carries "no data".
             <HeatmapMissingMark
               height={missingSide}
-              rx={Math.min(cellRadius, missingSide / 2)}
+              rx={missingSide / 2}
               width={missingSide}
               x={cx - missingSide / 2}
               y={cy - missingSide / 2}
@@ -194,6 +204,7 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
           fill={cell.ink}
           fontSize={labelSize}
           halo={cell.inkHalo}
+          haloWidth={showValueHalo ? undefined : 0}
           textAnchor="middle"
           x={cx}
           y={cy}

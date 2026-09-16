@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T17:39:41.025Z",
+  "generatedAt": "2026-09-16T18:18:58.730Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -553,6 +553,18 @@
       "type": "registry:block",
       "title": "KPI Cards — Should I act?",
       "description": "\"Should I act?\" — a status (icon + text, never colour alone) read against a visible on-track/at-risk/off-track threshold scale with today's value marked, plus how long the current status has held."
+    },
+    {
+      "name": "infographic-cohort-retention-01",
+      "type": "registry:block",
+      "title": "Infographic — Do customers stay?",
+      "description": "\"Do customers stay?\" — a triangular cohort retention heatmap: one row per monthly signup cohort, one column per month since signup, shaded by the share still active. A cohort younger than N months draws an empty cell, never a fabricated zero. One cohort is called out with a peak ring and a stated, computed gap against its named peers."
+    },
+    {
+      "name": "infographic-part-to-whole-01",
+      "type": "registry:block",
+      "title": "Infographic — Where does the money go?",
+      "description": "\"Where does the money go?\" — a two-level treemap of Q3 cost, category → sub-category, drawn in one neutral mono shade except for the single highlighted tile, outlined and named with a Leader + HaloText callout stating its share and the change from last quarter. Tile area is exactly proportional to cost."
     }
   ],
   "templates": [
