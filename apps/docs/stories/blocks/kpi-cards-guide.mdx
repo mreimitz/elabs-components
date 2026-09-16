@@ -1,0 +1,39 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Patterns/Blocks/KPI Cards/Which card?" />
+
+# Which KPI card?
+
+Every card in this family answers ONE question — pick the block by the
+question a reader is actually asking, not by which chart looks nicest.
+
+| Question                               | Block                      |
+| -------------------------------------- | -------------------------- |
+| Am I on target?                        | `kpi-target-bullet-01`     |
+| Compared to what?                      | `kpi-multi-baseline-01`    |
+| Will I make it by period end?          | `kpi-pace-01`              |
+| Better or worse than normal?           | `kpi-trend-reference-01`   |
+| Give me the whole picture in one table | `infographic-scorecard-01` |
+
+All five read from one shared, shipped part — `kpi-card-parts` — so
+`npx shadcn add <block>` pulls it automatically.
+
+## Design rules every block follows
+
+- **Every number names its baseline.** A KPI card never shows a bare value —
+  it is always "actual vs target", "actual vs last year", or "actual vs
+  budget", stated in words next to the number, not left for the reader to
+  infer from a colour.
+- **3–4 headline KPIs per view.** A dashboard that leads with a dozen
+  numbers leads with none of them — pick the few that matter to the reader
+  in front of you.
+- **Colour is never the only channel.** Every good/bad signal pairs colour
+  with an arrow, an icon, or a sign (`KpiComparisonRow`, `KpiStatus`) — a
+  greyscale reader gets the same fact a colour-sighted one does.
+- **Percentage points vs percent.** A delta on a percent-unit KPI (on-time
+  delivery, say) is reported in percentage points ("+3.4pp"), never re-run
+  through a second percent transform — "up 3.4%" would misstate a 3.4-point
+  move on a 91%-to-95% KPI.
+- **Bars are zero-based.** Every bar/length mark (`BulletChart`, `Progress`)
+  starts its scale at zero — a truncated axis exaggerates a small change into
+  a dramatic one.

@@ -787,6 +787,149 @@
           "target": "components/process-explorer-page/process-explorer-page.tsx"
         }
       ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-card-parts",
+      "type": "registry:block",
+      "title": "KPI Card — shared parts",
+      "description": "The pieces every KPI card block shares: a named-baseline comparison row (delta + arrow + sign, pp vs % handled explicitly), an on-track/at-risk/off-track status (icon + text, never colour alone), an as-of freshness footnote, Intl.* value/delta formatters, and the shared fictional 'Acme Logistics' Q3 dataset every block reads from. Installed once and reused by the KPI card blocks rather than copied into each.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-card-parts/data/acme-quarter.ts",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/data/acme-quarter.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-card-parts/format.ts",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/format.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-card-parts/kpi-as-of.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/kpi-as-of.tsx"
+        },
+        {
+          "path": "registry/blocks/kpi-card-parts/kpi-comparison-row.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/kpi-comparison-row.tsx"
+        },
+        {
+          "path": "registry/blocks/kpi-card-parts/kpi-status.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-card-parts/kpi-status.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-target-bullet-01",
+      "type": "registry:block",
+      "title": "KPI Cards — On target?",
+      "description": "\"Am I on target?\" — a grid of KPI cards, each a BulletChart (value against target, last year, and 2–3 qualitative bands) plus a named comparison row and an as-of footnote. A lower-is-better KPI states that its bands read best-to-worst in reverse.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-target-bullet-01/kpi-target-bullet.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-target-bullet-01/kpi-target-bullet.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-multi-baseline-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Compared to what?",
+      "description": "\"Compared to what?\" — one wide card per KPI stacking three named baselines (target, last year, budget), each with a shared-scale dot strip so the same number's distance to every reference reads at a glance.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-multi-baseline-01/kpi-multi-baseline.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-multi-baseline-01/kpi-multi-baseline.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-pace-01",
+      "type": "registry:block",
+      "title": "KPI Cards — On pace?",
+      "description": "\"Will I make it by period end?\" — quarter-to-date Progress bars with a marker for the expected pace and a computed days-ahead/behind status, plus a Gauge card reading a rate KPI against its target and thresholds.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-pace-01/kpi-pace.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-pace-01/kpi-pace.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-trend-reference-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Better or worse than normal?",
+      "description": "\"Better or worse than normal?\" — a 13-week Sparkline trend read against a target pace, last year, and a normal operating band, with a text legend spelling out the line styles so the encoding never rides on colour alone.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-trend-reference-01/kpi-trend-reference.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-trend-reference-01/kpi-trend-reference.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-scorecard-01",
+      "type": "registry:block",
+      "title": "Infographic Scorecard",
+      "description": "The Power BI-style scorecard, done with an honest baseline on every number: one row per KPI — actual, target, a signed delta, a BulletChart progress-to-target, a 13-week trend, and a named status — in a horizontally scrollable Table.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-scorecard-01/infographic-scorecard.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-scorecard-01/infographic-scorecard.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
     }
   ]
 }
