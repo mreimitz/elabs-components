@@ -38,6 +38,7 @@
 // bundle's tree-shaking mercy; naming the four modules the map actually needs takes it off
 // the table entirely. Same package, so this is an ordinary relative import.
 import type { Edge, Node } from "@xyflow/react";
+import type { ActivityColor, ActivityColorScale } from "../core/activity-color-scale";
 import { performanceValue } from "../core/aggregate-performance";
 import { EDGE_KEY_SEPARATOR } from "../core/discover-graph";
 import { minMax } from "../core/scale";
@@ -192,6 +193,12 @@ export interface ProcessActivityNodeData extends Record<string, unknown> {
   /** Repeat executions of this activity across the log; omitted when no rework data. */
   reworkCount?: number;
   selectionState: ProcessSelectionState;
+  /**
+   * The activity's identity colour from a shared `ActivityColorScale` (RM-054), painted as
+   * a small accent swatch — never the card fill, which would fight the metric reading.
+   * Absent when the map was given no `colorScale`.
+   */
+  accent?: ActivityColor;
 }
 
 /** `data` carried by every {@link ProcessMapEdge}. */
@@ -627,6 +634,11 @@ export interface BuildProcessMapModelOptions {
    * every edge starts `isBackEdge: false` exactly as `discoverGraph` leaves it.
    */
   backEdgeIds?: ReadonlySet<string>;
+  /**
+   * The shared activity colour scale (RM-054). When given, every node carries
+   * `data.accent`, so the map and `VariantExplorer` paint an activity identically.
+   */
+  colorScale?: ActivityColorScale;
 }
 
 /**
@@ -640,6 +652,7 @@ export function buildProcessMapModel({
   selection,
   selectionStates,
   backEdgeIds,
+  colorScale,
 }: BuildProcessMapModelOptions): ProcessMapModel {
   const neighbourhood = selectionNeighbourhood(graph, selection);
   const denominators = processEdgeDenominators(graph.transitions);
@@ -688,6 +701,7 @@ export function buildProcessMapModel({
       isEnd: activity.isEnd,
       reworkCount,
       selectionState,
+      ...(colorScale ? { accent: colorScale.colorFor(activity.id) } : {}),
     };
     return {
       id: activity.id,

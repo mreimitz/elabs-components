@@ -27,3 +27,16 @@ export * from "./abstraction-controls";
 export * from "./metric-layer-switch";
 export * from "./process-kpi-strip";
 export * from "./use-process-explorer";
+
+// VariantExplorer — RM-054
+export * from "./variant-explorer";
+export {
+  ACTIVITY_COLOR_SLOTS,
+  ACTIVITY_OTHER_TOKEN,
+  activityColorScale,
+} from "./core/activity-color-scale";
+export type {
+  ActivityColor,
+  ActivityColorLegendEntry,
+  ActivityColorScale,
+} from "./core/activity-color-scale";

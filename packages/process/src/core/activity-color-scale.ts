@@ -49,6 +49,8 @@ export interface ActivityColorScale {
   colorFor(activityId: string): ActivityColor;
   /** The two-character code for an activity; derived from the id when it is unknown. */
   codeFor(activityId: string): string;
+  /** The activity's display label; the id itself when it is unknown. */
+  labelFor(activityId: string): string;
   /** Every activity in the graph, ranked by case count descending, ties by id. */
   legend: ActivityColorLegendEntry[];
 }
@@ -107,6 +109,7 @@ export function activityColorScale(graph: ProcessGraph): ActivityColorScale {
 
   const colors = new Map<string, ActivityColor>();
   const codes = new Map<string, string>();
+  const labels = new Map<string, string>();
   const taken = new Set<string>();
   const legend: ActivityColorLegendEntry[] = ranked.map((activity, index) => {
     const color: ActivityColor =
@@ -116,6 +119,7 @@ export function activityColorScale(graph: ProcessGraph): ActivityColorScale {
     taken.add(code);
     colors.set(activity.id, color);
     codes.set(activity.id, code);
+    labels.set(activity.id, label);
     return { activityId: activity.id, label, code, ...color };
   });
 
@@ -123,6 +127,7 @@ export function activityColorScale(graph: ProcessGraph): ActivityColorScale {
     colorFor: (activityId) => colors.get(activityId) ?? OTHER,
     codeFor: (activityId) =>
       codes.get(activityId) ?? (alphanumerics(activityId).slice(0, 2) || "??").padEnd(2, "?"),
+    labelFor: (activityId) => labels.get(activityId) ?? activityId,
     legend,
   };
 }

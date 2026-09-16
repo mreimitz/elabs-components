@@ -11,6 +11,7 @@ import {
   waitForSettledCanvas,
 } from "@elabs-ai/components-flow/test";
 import { abstractGraph } from "../core/abstract-graph";
+import { activityColorScale } from "../core/activity-color-scale";
 import { detectRework } from "../core/detect-rework";
 import { discoverGraph } from "../core/discover-graph";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
@@ -277,6 +278,27 @@ export const Rework: Story = {
     graph,
     metric: { node: "absolute", edge: "absolute", secondary: "median" },
     rework,
+  },
+};
+
+/**
+ * With a shared `colorScale` (RM-054): each activity shows a small identity swatch beside
+ * its meter — the same colour `VariantExplorer` paints that activity's chips with when it
+ * gets the same scale. The swatch is a mark, never the card fill, so it does not compete
+ * with the metric reading.
+ */
+export const WithActivityColors: Story = {
+  args: {
+    graph,
+    metric: { node: "absolute_case", edge: "absolute" },
+    colorScale: activityColorScale(graph),
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelectorAll('[data-slot="process-activity-node-accent"]').length,
+      ).toBe(graph.activities.length),
+    );
   },
 };
 
