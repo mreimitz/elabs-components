@@ -1386,6 +1386,9 @@ importers:
       '@elabs-ai/components-marketing':
         specifier: workspace:*
         version: link:../packages/marketing
+      '@elabs-ai/components-process':
+        specifier: workspace:*
+        version: link:../packages/process
       '@elabs-ai/components-terminal':
         specifier: workspace:*
         version: link:../packages/terminal
@@ -11226,7 +11229,7 @@ snapshots:
       magic-string: 0.30.21
       sirv: 3.0.2
       tinyrainbow: 2.0.0
-      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.19)(@vitest/browser@3.2.6)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0)(yaml@2.9.1)
+      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.19)(@vitest/browser@3.2.6)(jiti@2.7.0)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.1)
       ws: 8.21.0
     optionalDependencies:
       playwright: 1.60.0
