@@ -55,13 +55,21 @@ import {
 } from "d3-hierarchy";
 import { linkHorizontal, linkVertical } from "d3-shape";
 import { localPoint } from "@visx/event";
-import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, stagger } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { resolvePalette } from "./chart-context";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
-import type { ChartInteractionProps } from "./chart-datapoint";
+import type { ChartDatapoint, ChartInteractionProps } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
   ChartDatapointProvider,
@@ -413,6 +421,105 @@ function pillWidth(label: string): number {
   return Math.max(MIN_PILL_WIDTH, label.length * PILL_CHAR_WIDTH + PILL_PADDING_X * 2);
 }
 
+// ── Accessible datapoint label ───────────────────────────────────────────────
+
+/** The datum shape every `TreeChart` keyboard target carries (#349). */
+export interface TreeDatapointDatum {
+  name: string;
+  depth: number;
+  isLeaf: boolean;
+  /** Full ancestor path, root first, this node last. */
+  path: string[];
+  descendantLeafCount: number;
+}
+
+/**
+ * The default accessible name of a node's keyboard target.
+ *
+ * `TreeChart` targets have no `value` — a tree answers "what contains what",
+ * never "how big" (module docblock) — so the shared `ChartDatapointLayer`
+ * default (`"<category>: <value>"`) degenerates to a bare name with a
+ * dangling separator. This mirrors the information a mouse user already gets
+ * from the tooltip's `Path`/`Members` rows (below), so the belonging
+ * relationship the chart exists to show reaches a screen-reader user too, not
+ * only a hovering pointer. Reference: `defaultNetworkDatapointLabel`
+ * (`network/network-chart.tsx`).
+ */
+export function defaultTreeDatapointLabel(
+  point: Omit<ChartDatapoint<TreeDatapointDatum>, "source">,
+): string {
+  const { name, path, isLeaf, descendantLeafCount } = point.datum;
+  const parts = [name];
+  if (path.length > 1) {
+    // Ancestors only, self excluded — the full path (with self) would repeat
+    // the leading name.
+    parts.push(`in ${path.slice(0, -1).join(" › ")}`);
+  }
+  if (!isLeaf) {
+    // Gated on `!isLeaf`, matching the tooltip's own suppression of the
+    // `Members` row for a non-collapsed leaf.
+    parts.push(`${descendantLeafCount} ${descendantLeafCount === 1 ? "member" : "members"}`);
+  }
+  return parts.join(", ");
+}
+
+// ── Scroll-edge fade (#278) ──────────────────────────────────────────────────
+//
+// The root is `overflow-auto` by design (module docblock) — a tree that
+// outgrows its box scrolls, it does not squeeze. But on a platform with
+// overlay scrollbars (macOS default) `offsetWidth − clientWidth` is `0`, so
+// at rest there is no pixel telling a reader the tree continues past the
+// fold. A `mask-image` on the root — computed from MEASURED overflow, never a
+// class name — fades exactly the edges that hide more content; a tree that
+// already fits gets no mask at all (a visual no-op). No token change: this is
+// layout affordance, not a themeable color.
+
+/** How wide the fade band is, in px — a chart-scale cue, not a page-level one. */
+const SCROLL_FADE_SIZE = 20;
+
+interface ScrollEdges {
+  top: boolean;
+  bottom: boolean;
+  left: boolean;
+  right: boolean;
+}
+
+const NO_SCROLL_EDGES: ScrollEdges = { top: false, bottom: false, left: false, right: false };
+
+/**
+ * One axis's fade stops. `fadeStart`/`fadeEnd` gate a `transparent` stop at
+ * that end; with neither set this degenerates to `black 0px, black 100%` — a
+ * fully opaque, no-op layer, which is what lets two axes be intersected
+ * unconditionally below instead of branching on which axes need a mask.
+ */
+function axisMaskStops(
+  direction: "to bottom" | "to right",
+  fadeStart: boolean,
+  fadeEnd: boolean,
+): string {
+  const stops: string[] = [fadeStart ? "transparent 0px" : "black 0px"];
+  if (fadeStart) stops.push(`black ${SCROLL_FADE_SIZE}px`);
+  if (fadeEnd) stops.push(`black calc(100% - ${SCROLL_FADE_SIZE}px)`);
+  stops.push(fadeEnd ? "transparent 100%" : "black 100%");
+  return `linear-gradient(${direction}, ${stops.join(", ")})`;
+}
+
+/**
+ * Combines the vertical and horizontal axis masks with `mask-composite:
+ * intersect`, so a corner that overflows both ways fades in both directions
+ * instead of one axis winning outright. Returns `undefined` when nothing
+ * overflows — callers skip the `mask-image`/`mask-composite` style entirely
+ * rather than shipping a no-op intersect of two fully opaque layers.
+ */
+function buildScrollMask(edges: ScrollEdges): string | undefined {
+  if (!edges.top && !edges.bottom && !edges.left && !edges.right) {
+    return undefined;
+  }
+  const vertical = axisMaskStops("to bottom", edges.top, edges.bottom);
+  const horizontal = axisMaskStops("to right", edges.left, edges.right);
+  return `${vertical}, ${horizontal}`;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────
 
 interface TooltipState {
@@ -469,6 +576,38 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
     [data, orientation, collapseDepth, palette, nodeRadius],
   );
 
+  // #278 — the scroll-edge fade. Measured from the root's own scroll metrics
+  // (never a class name), so a tree that fits gets no mask at all.
+  const [scrollEdges, setScrollEdges] = useState<ScrollEdges>(NO_SCROLL_EDGES);
+  const updateScrollAffordance = useCallback(() => {
+    const el = outerRef.current;
+    if (!el) return;
+    // 1px tolerance absorbs sub-pixel layout rounding (same as `DataTable`'s
+    // `#330` scroll-fade affordance).
+    setScrollEdges({
+      top: el.scrollTop > 1,
+      bottom: el.scrollTop + el.clientHeight < el.scrollHeight - 1,
+      left: el.scrollLeft > 1,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
+    });
+  }, []);
+  useLayoutEffect(() => {
+    updateScrollAffordance();
+    const el = outerRef.current;
+    const content = canvasRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    // Observe the SCROLLER (viewport changes) and the canvas div inside it
+    // (the tree's intrinsic size changes without the scroller resizing).
+    const observer = new ResizeObserver(updateScrollAffordance);
+    observer.observe(el);
+    if (content) observer.observe(content);
+    return () => observer.disconnect();
+  }, [updateScrollAffordance, layout.width, layout.height]);
+  const scrollMask = useMemo(() => buildScrollMask(scrollEdges), [scrollEdges]);
+  const scrollOverflowAttr = scrollMask
+    ? (["top", "bottom", "left", "right"] as const).filter((edge) => scrollEdges[edge]).join(" ")
+    : undefined;
+
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const handleEnter = useCallback((node: TreeLayoutNode, event: React.MouseEvent) => {
     const point = localPoint(event);
@@ -516,9 +655,16 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative h-full w-full select-none overflow-auto", className)}
+      data-scroll-overflow={scrollOverflowAttr}
       data-slot="tree-chart"
+      onScroll={updateScrollAffordance}
       ref={setOuterRef}
       role={role}
+      style={
+        scrollMask
+          ? { WebkitMaskImage: scrollMask, maskComposite: "intersect", maskImage: scrollMask }
+          : undefined
+      }
       tabIndex={tabIndex}
     >
       <ChartA11yLabel description={accessibleDescription} descId={descId} />
@@ -691,7 +837,9 @@ export const TreeChart = forwardRef<HTMLDivElement, TreeChartProps>(function Tre
   return (
     <ChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
-      datapointLabel={datapointLabel}
+      datapointLabel={
+        (datapointLabel ?? defaultTreeDatapointLabel) as unknown as ChartDatapointProviderLabel
+      }
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
@@ -699,6 +847,19 @@ export const TreeChart = forwardRef<HTMLDivElement, TreeChartProps>(function Tre
     </ChartDatapointProvider>
   );
 });
+
+/**
+ * The provider's `datapointLabel` is typed against the DEFAULT datum
+ * (`Record<string, unknown>`), while `defaultTreeDatapointLabel` is typed
+ * against the strictly NARROWER `TreeDatapointDatum` — which makes the
+ * position contravariant and non-overlapping to `tsc`. The cast through
+ * `unknown` is that one variance step, named here rather than hidden at the
+ * call site: the runtime shape is exactly what `nodeTargets` above builds, so
+ * the narrowing is sound. Same pattern as `NetworkChart`.
+ */
+type ChartDatapointProviderLabel = React.ComponentProps<
+  typeof ChartDatapointProvider
+>["datapointLabel"];
 
 TreeChart.displayName = "TreeChart";
 
