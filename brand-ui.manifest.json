@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T15:23:04.637Z",
+  "generatedAt": "2026-09-16T17:06:02.734Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -535,6 +535,24 @@
       "type": "registry:block",
       "title": "KPI Cards — How reliable is it?",
       "description": "\"How reliable is it?\" — a ratio/streak headline over a 30-day strip of day cells, missed days marked by shape as well as colour, with the current and longest streaks and a comparison to the prior 30 days."
+    },
+    {
+      "name": "infographic-small-multiples-01",
+      "type": "registry:block",
+      "title": "Infographic — Which Region Is The Outlier?",
+      "description": "\"Which region is the outlier?\" — twelve depots, one tiny 13-week line per tile, every tile on the same shared y-axis so height compares directly, with the one depot that stands out ringed and coloured (PeakRing) while every other depot stays on a muted neutral."
+    },
+    {
+      "name": "infographic-before-after-01",
+      "type": "registry:block",
+      "title": "Infographic — Who Improved, Who Slipped?",
+      "description": "\"Who improved, who slipped?\" — a DumbbellChart slope chart of 7 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line's own slope, never colour alone."
+    },
+    {
+      "name": "infographic-gap-to-benchmark-01",
+      "type": "registry:block",
+      "title": "Infographic — How Far From The Benchmark?",
+      "description": "\"How far from the benchmark?\" — a sorted DumbbellChart, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised; the gap's sign correctly flips for a lower-is-better metric."
     }
   ],
   "templates": [
@@ -17948,6 +17966,12 @@
               "optional": true,
               "type": "ChartPalette",
               "description": "Which colour family rows draw from. Default `\"categorical\"`."
+            },
+            {
+              "name": "rowColor",
+              "optional": true,
+              "type": "(row: DumbbellRow, index: number) => string | undefined",
+              "description": "Per-row colour override — return a `var(--…)` token to recolour that row's connector/markers/labels, or `undefined` to keep the row on the resolved `palette`. The one seam an \"argument, not a chart\" infographic needs to emphasise a row or two (a status tone) while the rest stay on the shared palette — never a second palette, since most rows should read as unremarkable, not as a competing category. Unset (default) is byte-identical to today's per-row palette colouring."
             },
             {
               "name": "valueFormat",
