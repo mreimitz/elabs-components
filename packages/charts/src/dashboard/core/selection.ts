@@ -61,6 +61,14 @@ export interface SelectionDriver {
   forward(): void;
   canBack(): boolean;
   canForward(): boolean;
+  /**
+   * Resolves once the driver has finished any async setup (loading external association
+   * data, say) — optional, additive (RM-083). `DashboardProvider`'s `initialState` applies
+   * after this resolves, so a selection restored from a URL/bookmark lands on ready data; a
+   * driver with no async work (the bundled local one) can resolve it immediately, and a host
+   * driver that never sets it is applied against synchronously.
+   */
+  ready?: Promise<void>;
   /** Local driver only: declare a consuming tile's rows; returns the unregister function. */
   register?(
     tileId: string,
