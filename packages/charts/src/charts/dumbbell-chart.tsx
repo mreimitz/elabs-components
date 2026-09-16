@@ -32,9 +32,9 @@
  */
 
 import { scaleLinear } from "@visx/scale";
-import { forwardRef, useId, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { forwardRef, useCallback, useId, useMemo, useRef, useState, type MutableRefObject } from "react";
 import useMeasure from "react-use-measure";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, useLocale } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ellipsize } from "./category-axis-plan";
@@ -1004,6 +1004,30 @@ function DumbbellBody({
   maxInteractiveDatapoints,
   ...plotProps
 }: BodyProps) {
+  const { t } = useLocale();
+  const formatValue = useChartValueFormatter(plotProps.valueFormat);
+  const rowByIndex = useMemo(
+    () => new Map(plotProps.rows.map((row) => [row.index, row])),
+    [plotProps.rows],
+  );
+  // A target's `value` is the END only (the drill-down payload), so the shared
+  // default would announce half the dumbbell. Both ends go in the name, formatted
+  // the way the chart draws them. An empty return falls through to the shared
+  // default in `ChartDatapointProvider`.
+  const defaultLabel = useCallback<ChartDatapointLabel>(
+    (point) => {
+      const row = rowByIndex.get(point.index);
+      if (!row) {
+        return "";
+      }
+      return t("charts.datapoint.labelRange", {
+        category: row.category,
+        start: formatValue(row.start),
+        end: formatValue(row.end),
+      });
+    },
+    [formatValue, rowByIndex, t],
+  );
   const core = <DumbbellPlot {...plotProps} />;
   if (!onDatapointClick && !copyValueOnActivate) {
     return core;
@@ -1011,7 +1035,7 @@ function DumbbellBody({
   return (
     <ChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
-      datapointLabel={datapointLabel}
+      datapointLabel={datapointLabel ?? defaultLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >

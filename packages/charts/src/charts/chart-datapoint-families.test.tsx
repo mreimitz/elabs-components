@@ -219,7 +219,7 @@ describe("FunnelChart drill-down (#349)", () => {
 
     const targets = container.querySelectorAll(TARGET);
     expect(targets).toHaveLength(3);
-    expect(targets[0]?.getAttribute("aria-label")).toBe("Visitors: 12000");
+    expect(targets[0]?.getAttribute("aria-label")).toBe("Visitors: 12,000");
 
     // The stage label overlay is the funnel's own pointer surface.
     const overlays = container.querySelectorAll(".absolute.cursor-pointer");

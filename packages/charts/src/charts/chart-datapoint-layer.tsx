@@ -55,7 +55,7 @@ import type {
   ChartDatapointClickHandler,
   ChartDatapointLabel,
 } from "./chart-datapoint";
-import { shortDateFmt } from "./chart-formatters";
+import { getDateFormat, getNumberFormat } from "./chart-formatters";
 import { exactValueString } from "./value-format";
 
 /** WCAG 2.5.8 (Target Size, Minimum). Every hit box is padded up to this. */
@@ -151,6 +151,78 @@ function createTargetStore(): TargetStore {
 }
 
 // ---------------------------------------------------------------------------
+// The shared default accessible name
+// ---------------------------------------------------------------------------
+
+type Translate = (key: string, vars?: Record<string, string | number>) => string;
+
+const DATE_OPTS: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
+const DATE_TIME_OPTS: Intl.DateTimeFormatOptions = {
+  ...DATE_OPTS,
+  hour: "numeric",
+  minute: "2-digit",
+};
+/**
+ * Grouped, never compacted: a spoken name has room for `12,000` and should not
+ * round `1.2K` away. Six fraction digits keep real data exact while hiding
+ * float noise (`0.30000000000000004` reads `0.3`).
+ */
+const VALUE_OPTS: Intl.NumberFormatOptions = { maximumFractionDigits: 6 };
+
+function formatCategory(category: ChartDatapoint["category"], locale: string): string {
+  if (category instanceof Date) {
+    if (Number.isNaN(category.getTime())) {
+      return "";
+    }
+    const hasTime =
+      category.getHours() !== 0 || category.getMinutes() !== 0 || category.getSeconds() !== 0;
+    return getDateFormat(locale, hasTime ? DATE_TIME_OPTS : DATE_OPTS).format(category);
+  }
+  // A numeric category is usually an identifier-like label (a year, a bucket
+  // number), so it is NOT grouped — `2024` must never read `2,024`.
+  if (typeof category === "number") {
+    return Number.isFinite(category) ? String(category) : "";
+  }
+  return String(category ?? "").trim();
+}
+
+/**
+ * The ONE default accessible name for a datapoint target, used whenever a chart
+ * family supplies no `datapointLabel` of its own (and as the floor under one
+ * that returns an empty string).
+ *
+ * The chart SVG is `aria-hidden`, so this name is all AT gets for a target. It
+ * is therefore never empty and never a bare id: every present part (series,
+ * category, formatted value) goes in, an absent part takes its separator with
+ * it (four templates, so a translator places — or drops — each separator for
+ * their own language), and a target with no category at all is named by its
+ * 1-based position.
+ */
+export function defaultDatapointLabel(
+  point: Omit<ChartDatapoint, "source">,
+  t: Translate,
+  locale: string,
+): string {
+  const category =
+    formatCategory(point.category, locale) ||
+    t("charts.datapoint.position", { position: point.index + 1 });
+  // A family that files each group as both its series and its category (a
+  // distribution strip) must not announce the group twice.
+  const rawSeries = (point.seriesLabel ?? point.seriesKey ?? "").trim();
+  const series = rawSeries === category ? "" : rawSeries;
+  const hasValue = typeof point.value === "number" && Number.isFinite(point.value);
+  if (!hasValue) {
+    return series
+      ? t("charts.datapoint.labelNoValue", { series, category })
+      : t("charts.datapoint.labelNoSeriesNoValue", { category });
+  }
+  const value = getNumberFormat(locale, VALUE_OPTS).format(point.value as number);
+  return series
+    ? t("charts.datapoint.label", { series, category, value })
+    : t("charts.datapoint.labelNoSeries", { category, value });
+}
+
+// ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
 
@@ -191,7 +263,7 @@ export function ChartDatapointProvider({
   maxInteractiveDatapoints = DEFAULT_MAX_INTERACTIVE_DATAPOINTS,
   onDatapointClick,
 }: ChartDatapointProviderProps) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { copied, copy } = useCopyToClipboard();
   const storeRef = useRef<TargetStore | null>(null);
   storeRef.current ??= createTargetStore();
@@ -225,22 +297,15 @@ export function ChartDatapointProvider({
       labelFor: (target) => {
         const { id: _id, rect: _rect, seriesIndex: _seriesIndex, ...point } = target;
         const custom = labelRef.current;
-        if (custom) {
-          return custom(point);
-        }
-        const category =
-          point.category instanceof Date
-            ? shortDateFmt.format(point.category)
-            : String(point.category ?? "");
-        const value_ = point.value == null ? "" : String(point.value);
-        const series = point.seriesLabel ?? point.seriesKey;
-        return series
-          ? t("charts.datapoint.label", { series, category, value: value_ })
-          : t("charts.datapoint.labelNoSeries", { category, value: value_ });
+        // A consumer (or family) label wins — but never with an EMPTY name: a
+        // nameless button is the one outcome the shared default exists to rule
+        // out, so a blank override falls through to it.
+        const customName = custom ? custom(point).trim() : "";
+        return customName || defaultDatapointLabel(point, t, locale);
       },
       maxInteractiveDatapoints,
     };
-  }, [copy, maxInteractiveDatapoints, t]);
+  }, [copy, locale, maxInteractiveDatapoints, t]);
 
   return (
     <ChartDatapointContext value={value}>
