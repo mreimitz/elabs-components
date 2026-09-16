@@ -132,3 +132,7 @@ export type {
 // casesFromLog — RM-055
 export { casesFromLog } from "./cases-from-log";
 export type { CaseRow } from "./cases-from-log";
+
+// fromXes — RM-063
+export { fromXes } from "./adapters/xes";
+export type { XesParseError, XesParseOptions, XesParseResult } from "./adapters/xes";

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  RM-063 fixture — a 3-trace IEEE 1849 XES log exercising: a complete-only (atomic) trace,
+  a trace using lifecycle:transition start/complete pairs, and a trace relying on a
+  <global scope="event"> default for org:resource. Hand-computed and asserted in xes.test.ts.
+-->
+<log xes.version="1.0" xes.features="nested-attributes">
+  <global scope="event">
+    <string key="org:resource" value="Unassigned"/>
+  </global>
+  <classifier name="Activity classifier" keys="concept:name"/>
+  <trace>
+    <string key="concept:name" value="case-1"/>
+    <string key="channel" value="web"/>
+    <event>
+      <string key="concept:name" value="Create Order"/>
+      <date key="time:timestamp" value="2026-01-05T09:00:00.000Z"/>
+      <string key="org:resource" value="A. Novak"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Check Credit"/>
+      <date key="time:timestamp" value="2026-01-05T09:15:00.000Z"/>
+      <string key="org:resource" value="Credit Service"/>
+      <float key="cost:total" value="120.5"/>
+    </event>
+  </trace>
+  <trace>
+    <string key="concept:name" value="case-2"/>
+    <string key="channel" value="mobile"/>
+    <event>
+      <string key="concept:name" value="Register"/>
+      <date key="time:timestamp" value="2026-01-06T09:00:00.000Z"/>
+      <string key="org:resource" value="System"/>
+      <string key="lifecycle:transition" value="start"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Register"/>
+      <date key="time:timestamp" value="2026-01-06T09:10:00.000Z"/>
+      <string key="org:resource" value="System"/>
+      <string key="lifecycle:transition" value="complete"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Approve"/>
+      <date key="time:timestamp" value="2026-01-06T09:10:00.000Z"/>
+      <string key="org:resource" value="B. Kowalski"/>
+      <string key="lifecycle:transition" value="start"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Approve"/>
+      <date key="time:timestamp" value="2026-01-06T09:30:00.000Z"/>
+      <string key="org:resource" value="B. Kowalski"/>
+      <string key="lifecycle:transition" value="complete"/>
+    </event>
+  </trace>
+  <trace>
+    <string key="concept:name" value="case-3"/>
+    <string key="channel" value="phone"/>
+    <event>
+      <string key="concept:name" value="Create Order"/>
+      <date key="time:timestamp" value="2026-01-07T09:00:00.000Z"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Ship Order"/>
+      <date key="time:timestamp" value="2026-01-07T09:20:00.000Z"/>
+      <string key="org:resource" value="Courier"/>
+    </event>
+  </trace>
+</log>
