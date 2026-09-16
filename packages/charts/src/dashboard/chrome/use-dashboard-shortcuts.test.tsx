@@ -44,6 +44,10 @@ function Harness(options: UseDashboardShortcutsOptions) {
   const containerRef = useDashboardShortcuts(options);
   return (
     <div ref={containerRef} data-testid="container">
+      {/* A stand-in for a real tile root (which always carries `data-tile-id` — `dashboard.md`) so
+          the Shift+F10 tests can dispatch on an element `dispatchAnchoredContextMenu` can anchor a
+          rect from, the same way a real focused tile does. */}
+      <div data-testid="tile" data-tile-id="chart-1" tabIndex={-1} />
       <input data-testid="input" />
       <textarea data-testid="textarea" />
       <div
@@ -78,6 +82,10 @@ function renderHarness(options: UseDashboardShortcutsOptions = {}): {
 
 function container(): HTMLElement {
   return screen.getByTestId("container");
+}
+
+function tileTarget(): HTMLElement {
+  return screen.getByTestId("tile");
 }
 
 describe("useDashboardShortcuts", () => {
@@ -287,22 +295,31 @@ describe("useDashboardShortcuts", () => {
       expect(store.getState().spec.tiles.map((t) => t.id)).toEqual(["chart-1", "chart-2"]);
     });
 
-    it("Shift+F10 with exactly one focused tile dispatches a native contextmenu event at the target", () => {
+    it("Shift+F10 with exactly one focused tile dispatches a native contextmenu event at the target, anchored at the tile's own rect", () => {
       const { store } = renderHarness();
       act(() => store.getState().actions.setFocus(["chart-1"]));
       // Must dispatch INSIDE the shortcuts container ref (the listener is scoped to that
-      // subtree — see "a keydown outside the container ref does nothing" above) and on a
-      // non-text-entry element (isTextEntry guards return early for input/textarea/editable).
-      const target = container();
+      // subtree — see "a keydown outside the container ref does nothing" above), on a
+      // non-text-entry element (isTextEntry guards return early for input/textarea/editable)
+      // that is (or sits inside) a real tile root — `dispatchAnchoredContextMenu`
+      // (visual P1, RM-081 follow-up 5) needs a `[data-tile-id]` ancestor to anchor a rect
+      // from, the same way Shift+F10 always fires from inside the focused tile in production.
+      const target = tileTarget();
       const onContextMenu = vi.fn();
       target.addEventListener("contextmenu", onContextMenu);
       fireEvent.keyDown(target, { key: "F10", shiftKey: true });
       expect(onContextMenu).toHaveBeenCalledTimes(1);
+      // Not the viewport's top-left corner — jsdom's own layout gives every element a
+      // 0×0 `getBoundingClientRect()`, so this just guards the dispatch actually carries
+      // `clientX`/`clientY` rather than leaving them at the `MouseEvent` default of 0.
+      const [event] = onContextMenu.mock.calls[0] as [MouseEvent];
+      expect(event.clientX).toBe(8); // ANCHOR_INSET past a 0×0 rect's left edge
+      expect(event.clientY).toBe(8);
     });
 
     it("Shift+F10 with no or multiple focused tiles does nothing", () => {
       const { store } = renderHarness();
-      const target = container();
+      const target = tileTarget();
       const onContextMenu = vi.fn();
       target.addEventListener("contextmenu", onContextMenu);
       fireEvent.keyDown(target, { key: "F10", shiftKey: true });

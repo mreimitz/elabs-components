@@ -16,6 +16,7 @@ import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { toast, useLocale } from "@elabs-ai/components-ui";
 
 import { readDashboardClipboard, writeDashboardClipboard } from "../edit/clipboard";
+import { dispatchAnchoredContextMenu } from "../edit/context-menu-anchor";
 import { useDashboard, useDashboardActions } from "../dashboard-sheet";
 
 export interface UseDashboardShortcutsOptions {
@@ -149,11 +150,15 @@ export function useDashboardShortcuts(
       } else if (event.shiftKey && event.key === "F10") {
         // tile operations — RM-081: the native way to open a context menu from the
         // keyboard — dispatch the real `contextmenu` event a mounted
-        // `DashboardTileContextMenu`'s trigger listens for, at the focused element.
+        // `DashboardTileContextMenu`'s trigger listens for, at the focused element. Anchored
+        // at the focused tile's own rect (`context-menu-anchor.ts`, visual P1) — a synthetic
+        // event with no coordinates opens Radix's `ContextMenu` at the viewport's top-left
+        // corner, disconnected from the tile it targets.
         if (currentFocus.length !== 1) return;
         event.preventDefault();
         const target = event.target as HTMLElement | null;
-        target?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+        const tile = target?.closest<HTMLElement>("[data-tile-id]");
+        if (target && tile) dispatchAnchoredContextMenu(target, tile);
       } else if (event.key === "Escape") {
         actions.setFocus([]);
       }

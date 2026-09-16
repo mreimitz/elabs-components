@@ -16,6 +16,7 @@ import { ChartFrame, type ChartFrameMenuApi } from "../../chart-frame/chart-fram
 import type { ChartDensity, ChartInteractions } from "../../charts/chart-config-context";
 import { EMPTY_SELECTION } from "../core/selection";
 import type { DashboardMode } from "../core/store";
+import { dispatchAnchoredContextMenu } from "../edit/context-menu-anchor";
 import { previewLayoutFor, useDashboardEdit } from "../edit/edit-context";
 import { DashboardTileContextMenu } from "../edit/tile-context-menu";
 import { TileDragHandle, useTileMove } from "../edit/tile-drag-handle";
@@ -196,13 +197,20 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     // edit-mode context menu wrapping this tile — dispatching a real `contextmenu` event at
     // the tile root is the same technique `useDashboardShortcuts` already uses for Shift+F10.
     // `setTimeout` lets the kebab dropdown finish closing first, so only one Radix menu is
-    // ever open at a time.
+    // ever open at a time. Anchored at the tile's own rect (`context-menu-anchor.ts`, visual
+    // P1) rather than the kebab button's — the button is inside a dropdown that is already
+    // closing when this fires, so the tile root is the stable, always-current rect. Focusing
+    // the tile FIRST (visual/focus P1 follow-up) makes it — not whatever the dropdown's own
+    // async close-focus-restore lands on — the element Radix's `ContextMenu` snapshots as "focus
+    // before open", so closing it (Escape, an action, clicking away) reliably returns focus to
+    // the tile instead of racing the kebab dropdown's own trigger-refocus.
     const onOpenTileMenu = editable
       ? () => {
           const node = rootRef.current;
           if (!node) return;
           setTimeout(() => {
-            node.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+            node.focus();
+            dispatchAnchoredContextMenu(node, node);
           }, 0);
         }
       : undefined;
