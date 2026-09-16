@@ -59,6 +59,7 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - BPI_2012_ACTIVITIES (`@elabs-ai/components-process/core` · component)
 - BPI_2012_SUBSET_EPOCH (`@elabs-ai/components-process/core` · component)
 - DEFAULT_LIFECYCLE_VALUES (`@elabs-ai/components-process/core` · component)
+- DEVIATION_TYPES (`@elabs-ai/components-process/core` · component)
 - DURATION_SAMPLE_CAP (`@elabs-ai/components-process/core` · component)
 - DURATION_UNIT_MS (`@elabs-ai/components-process/core` · component)
 - DurationSampler (`@elabs-ai/components-process/core` · component)
