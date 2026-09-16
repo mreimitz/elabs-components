@@ -226,6 +226,16 @@ const RESPONSIVE_SPEC: DashboardSpec = {
   },
 };
 
+// responsive layout — RM-084 follow-up 1: same tiles, but NO `spec.layouts.md` yet — so
+// `ResponsiveEditTarget` below can show `moveTile` at `ui.layoutTarget: "md"` CREATING the
+// override (seeded from the base layout, since `resolveBreakpointLayout` falls back to base
+// when `layouts.md` is absent) rather than editing a pre-authored one.
+const EDIT_TARGET_SPEC: DashboardSpec = {
+  ...RESPONSIVE_SPEC,
+  id: "responsive-edit-target-demo",
+  layouts: undefined,
+};
+
 function responsiveStory(widthPx: number): Story {
   return {
     render: (args) => (
@@ -247,18 +257,52 @@ function responsiveStory(widthPx: number): Story {
   };
 }
 
+/**
+ * responsive layout — RM-084 follow-up 1: `left`'s/`right`'s inline `transform: translate(x, y)`
+ * and `width`/`height` (set from the resolved `cellRect`, `dashboard-tile.tsx`) read back as
+ * numbers, so a play function can assert the ON-SCREEN rect at a breakpoint, not just DOM order.
+ */
+function tileRect(sheet: Element, id: string): { x: number; y: number; w: number; h: number } {
+  const el = sheet.querySelector(`[data-tile-id="${id}"]`) as HTMLElement;
+  const match = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(el.style.transform);
+  return {
+    x: match ? Number(match[1]) : NaN,
+    y: match ? Number(match[2]) : NaN,
+    w: Number.parseFloat(el.style.width),
+    h: Number.parseFloat(el.style.height),
+  };
+}
+
+/** Expected pixel rect for `cell` at the sheet's OWN measured width (`getBoundingClientRect`). */
+function expectedRect(sheet: Element, cell: { x: number; y: number; w: number; h: number }) {
+  const { width, height } = sheet.getBoundingClientRect();
+  return cellRect(cell, RESPONSIVE_SPEC.grid, { width, height });
+}
+
 export const ResponsiveWide: Story = {
   ...responsiveStory(1200),
   name: "Responsive — 1200 px (lg, base layout)",
   play: async (context) => {
     await responsiveStory(1200).play?.(context);
-    const sheet = context.canvasElement.querySelector('[data-slot="dashboard-sheet"]');
+    const sheet = context.canvasElement.querySelector('[data-slot="dashboard-sheet"]') as Element;
     await expect(sheet).toHaveAttribute("data-breakpoint", "lg");
     // Base layout: "left" then "right", side by side (same y, ascending x).
-    const ids = Array.from(sheet?.querySelectorAll("[data-tile-id]") ?? []).map((el) =>
+    const ids = Array.from(sheet.querySelectorAll("[data-tile-id]")).map((el) =>
       el.getAttribute("data-tile-id"),
     );
     await expect(ids).toEqual(["left", "right"]);
+    // Base layout rects: left {x:0,y:0,w:12,h:6}, right {x:12,y:0,w:12,h:6} — side by side.
+    const left = tileRect(sheet, "left");
+    const right = tileRect(sheet, "right");
+    const expectedLeft = expectedRect(sheet, { x: 0, y: 0, w: 12, h: 6 });
+    const expectedRight = expectedRect(sheet, { x: 12, y: 0, w: 12, h: 6 });
+    await expect(left.x).toBeCloseTo(expectedLeft.x, 0);
+    await expect(left.y).toBeCloseTo(expectedLeft.y, 0);
+    await expect(left.w).toBeCloseTo(expectedLeft.width, 0);
+    await expect(right.x).toBeCloseTo(expectedRight.x, 0);
+    await expect(right.y).toBeCloseTo(expectedRight.y, 0);
+    // "right" starts where "left" ends: not stacked, not overlapping.
+    await expect(right.x).toBeGreaterThan(left.x + left.w - 1);
   },
 };
 
@@ -267,8 +311,20 @@ export const ResponsiveMedium: Story = {
   name: "Responsive — 900 px (md, spec.layouts.md renders)",
   play: async (context) => {
     await responsiveStory(900).play?.(context);
-    const sheet = context.canvasElement.querySelector('[data-slot="dashboard-sheet"]');
+    const sheet = context.canvasElement.querySelector('[data-slot="dashboard-sheet"]') as Element;
     await waitFor(() => expect(sheet).toHaveAttribute("data-breakpoint", "md"));
+    // `spec.layouts.md`: left {x:0,y:0,w:24,h:4} above right {x:0,y:4,w:24,h:4} — full width, stacked.
+    const left = tileRect(sheet, "left");
+    const right = tileRect(sheet, "right");
+    const expectedLeft = expectedRect(sheet, { x: 0, y: 0, w: 24, h: 4 });
+    const expectedRight = expectedRect(sheet, { x: 0, y: 4, w: 24, h: 4 });
+    await expect(left.x).toBeCloseTo(expectedLeft.x, 0);
+    await expect(left.y).toBeCloseTo(expectedLeft.y, 0);
+    await expect(left.w).toBeCloseTo(expectedLeft.width, 0);
+    await expect(right.x).toBeCloseTo(expectedRight.x, 0);
+    await expect(right.y).toBeCloseTo(expectedRight.y, 0);
+    // "right" starts below "left" ends: stacked, not side by side.
+    await expect(right.y).toBeGreaterThan(left.y + left.h - 1);
   },
 };
 
@@ -277,13 +333,95 @@ export const ResponsiveNarrow: Story = {
   name: "Responsive — 500 px (sm, stacked; Edit disabled)",
   play: async (context) => {
     await responsiveStory(500).play?.(context);
-    const sheet = context.canvasElement.querySelector('[data-slot="dashboard-sheet"]');
+    const sheet = context.canvasElement.querySelector('[data-slot="dashboard-sheet"]') as Element;
     await waitFor(() => expect(sheet).toHaveAttribute("data-breakpoint", "sm"));
     // Edit mode (`mode="edit"` on the provider) is force-dropped to view rendering at "sm" —
     // the edit layer's always-on announcer never mounts, and no drag/resize chrome appears.
     await expect(
       context.canvasElement.querySelector('[data-slot="dashboard-edit-layer-announcer"]'),
     ).not.toBeInTheDocument();
+    // `stackForNarrow`: one column, every tile `w === columns` (24), "left" then "right" stacked.
+    const left = tileRect(sheet, "left");
+    const right = tileRect(sheet, "right");
+    const width = sheet.getBoundingClientRect().width;
+    const cellW = (width - (24 - 1) * 8) / 24;
+    await expect(left.w).toBeCloseTo(24 * cellW + 23 * 8, 0);
+    await expect(right.w).toBeCloseTo(24 * cellW + 23 * 8, 0);
+    await expect(left.x).toBeCloseTo(0, 0);
+    await expect(right.x).toBeCloseTo(0, 0);
+    await expect(right.y).toBeGreaterThan(left.y + left.h - 1);
+  },
+};
+
+/**
+ * responsive layout — RM-084 follow-up 1: `ui.layoutTarget` routes `moveTile` to `spec.layouts.md`
+ * instead of the base `tile.layout`, still one history entry (`actions.batch` inside `place`/
+ * `placeInLayoutTarget`, `core/store.ts`).
+ */
+function EditLayoutTargetDemo() {
+  const actions = useDashboardActions();
+  const target = useDashboard((s) => s.ui.layoutTarget);
+  const baseLeft = useDashboard((s) => s.spec.tiles.find((t) => t.id === "left")?.layout);
+  const mdLeft = useDashboard((s) => s.spec.layouts?.md?.find((c) => c.id === "left"));
+  const historyPast = useDashboard((s) => s.history.past);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => actions.setLayoutTarget("md")}>
+          Edit layout for: md
+        </Button>
+        <Button size="sm" onClick={() => actions.moveTile("left", { x: 2, y: 0 })}>
+          Move left
+        </Button>
+      </div>
+      <output data-testid="layout-target" className="text-caption font-mono">
+        {`target: ${target}`}
+      </output>
+      <output data-testid="base-left" className="text-caption font-mono">
+        {`base left: ${JSON.stringify(baseLeft)}`}
+      </output>
+      <output data-testid="md-left" className="text-caption font-mono">
+        {`md left: ${JSON.stringify(mdLeft ?? null)}`}
+      </output>
+      <output data-testid="history-past" className="text-caption font-mono">
+        {`history.past: ${historyPast}`}
+      </output>
+    </div>
+  );
+}
+
+export const ResponsiveEditTarget: Story = {
+  name: "Responsive — edit layout for: md (moveTile targets spec.layouts.md)",
+  render: () => (
+    <DashboardProvider spec={EDIT_TARGET_SPEC} tiles={TILES} mode="edit">
+      <EditLayoutTargetDemo />
+    </DashboardProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const baseLeftBefore = await canvas.findByTestId("base-left");
+    const mdLeftBefore = canvas.getByTestId("md-left");
+    const historyBefore = canvas.getByTestId("history-past");
+    // Before: no `layouts.md` override for "left" yet, base layout untouched, no history.
+    await expect(baseLeftBefore).toHaveTextContent('base left: {"x":0,"y":0,"w":12,"h":6}');
+    await expect(mdLeftBefore).toHaveTextContent("md left: null");
+    await expect(historyBefore).toHaveTextContent("history.past: 0");
+
+    await userEvent.click(canvas.getByRole("button", { name: "Edit layout for: md" }));
+    await expect(canvas.getByTestId("layout-target")).toHaveTextContent("target: md");
+    await userEvent.click(canvas.getByRole("button", { name: "Move left" }));
+
+    // After: `spec.layouts.md` gained/changed "left" at the moved position, the BASE `tile.layout`
+    // is untouched, and exactly one history entry was recorded for the move.
+    await waitFor(() =>
+      expect(canvas.getByTestId("md-left")).toHaveTextContent(
+        'md left: {"id":"left","x":2,"y":0,"w":12,"h":6}',
+      ),
+    );
+    await expect(canvas.getByTestId("base-left")).toHaveTextContent(
+      'base left: {"x":0,"y":0,"w":12,"h":6}',
+    );
+    await expect(canvas.getByTestId("history-past")).toHaveTextContent("history.past: 1");
   },
 };
 
