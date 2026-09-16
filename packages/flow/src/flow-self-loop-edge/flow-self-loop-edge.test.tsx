@@ -194,3 +194,41 @@ describe("FlowSelfLoopEdge", () => {
     expect(pill.parentElement!.style.transform).toContain(`translate(${labelX}px, ${labelY}px)`);
   });
 });
+
+// RM-065 prerequisite — `data.tokens` draws `FlowEdgeTokens` on the loop's own arc.
+describe("FlowSelfLoopEdge data.tokens", () => {
+  it("renders exactly the same markup with an empty list as with the field absent", () => {
+    internalNodeBox.current = measuredNode();
+    const absent = render(<FlowSelfLoopEdge {...makeEdgeProps()} />);
+    const absentHtml = absent.container.innerHTML;
+    expect(absent.container.querySelector('[data-slot="flow-edge-tokens"]')).toBeNull();
+    absent.unmount();
+    const empty = render(<FlowSelfLoopEdge {...makeEdgeProps({ data: { tokens: [] } })} />);
+    expect(empty.container.innerHTML).toBe(absentHtml);
+  });
+
+  it("starts and ends its tokens on the arc's own endpoints, outside the named graphic", () => {
+    internalNodeBox.current = measuredNode();
+    const { container } = render(
+      <FlowSelfLoopEdge
+        {...makeEdgeProps({
+          data: {
+            tokens: [
+              { id: "start", progress: 0 },
+              { id: "end", progress: 1 },
+            ],
+          },
+        })}
+      />,
+    );
+    const [start, end] = Array.from(
+      container.querySelectorAll<SVGCircleElement>('[data-slot="flow-edge-tokens-token"]'),
+    );
+    const arc = fixtureArc().path;
+    const [sx, sy] = arc.slice(2).split(" ")[0]!.split(",").map(Number);
+    expect(start!.style.transform).toBe(`translate(${sx}px, ${sy}px)`);
+    const [ex, ey] = arc.trim().split(" ").at(-1)!.split(",").map(Number);
+    expect(end!.style.transform).toBe(`translate(${ex}px, ${ey}px)`);
+    expect(screen.getByRole("img").querySelector('[data-slot="flow-edge-tokens"]')).toBeNull();
+  });
+});

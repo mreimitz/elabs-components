@@ -11,6 +11,7 @@ import {
 } from "@xyflow/react";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 import { FlowEdgePath } from "../flow-edge-path";
+import { FlowEdgeTokens, type FlowEdgeToken } from "../flow-edge-tokens";
 import { EdgeLabelPill, type EdgeLabelPillProps } from "./edge-label-pill";
 import { backEdgeDetour, type BackEdgeNodeRect } from "./back-edge-geometry";
 import {
@@ -63,6 +64,11 @@ export interface FlowWeightedEdgeData extends Record<string, unknown> {
    * own root button from outside this component, without a new semantic prop here.
    */
   labelProps?: Omit<EdgeLabelPillProps, "label" | "secondaryLabel" | "x" | "y" | "selected">;
+  /**
+   * Markers travelling along this edge's computed path (see `FlowEdgeTokens`). The parent
+   * drives each token's `progress`; omitted or empty renders exactly the edge without them.
+   */
+  tokens?: readonly FlowEdgeToken[];
 }
 
 export type BrandFlowWeightedEdge = Edge<FlowWeightedEdgeData, "weighted">;
@@ -295,6 +301,7 @@ export function FlowWeightedEdge({
       ) : (
         edge
       )}
+      {data?.tokens?.length ? <FlowEdgeTokens path={edgePath} tokens={data.tokens} /> : null}
       <EdgeLabelPill
         label={data?.label}
         secondaryLabel={data?.secondaryLabel}

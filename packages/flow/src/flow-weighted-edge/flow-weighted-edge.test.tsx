@@ -403,3 +403,43 @@ describe("edge focus contour contrast (#286)", () => {
     },
   );
 });
+
+// RM-065 prerequisite — `data.tokens` draws `FlowEdgeTokens` on the edge's own path.
+describe("FlowWeightedEdge data.tokens", () => {
+  it("renders exactly the same markup with an empty list as with the field absent", () => {
+    edgesBox.current = [{ id: "test-edge", data: { weight: 4, label: "4×" } }];
+    const absent = render(
+      <FlowWeightedEdge {...makeEdgeProps({ data: { weight: 4, label: "4×" } })} />,
+    );
+    const absentHtml = absent.container.innerHTML;
+    expect(absent.container.querySelector('[data-slot="flow-edge-tokens"]')).toBeNull();
+    absent.unmount();
+    const empty = render(
+      <FlowWeightedEdge {...makeEdgeProps({ data: { weight: 4, label: "4×", tokens: [] } })} />,
+    );
+    expect(empty.container.innerHTML).toBe(absentHtml);
+  });
+
+  it("draws one token per entry along the SAME path the edge draws", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    // The mocked getSmoothStepPath returns a straight `M0,0 L100,100`.
+    const { container } = render(
+      <FlowWeightedEdge
+        {...makeEdgeProps({
+          data: {
+            path: "smoothstep",
+            tokens: [
+              { id: "c1", progress: 0 },
+              { id: "c2", progress: 0.5 },
+            ],
+          },
+        })}
+      />,
+    );
+    const tokens = container.querySelectorAll<SVGCircleElement>(
+      '[data-slot="flow-edge-tokens-token"]',
+    );
+    expect(tokens).toHaveLength(2);
+    expect(tokens[1]!.style.transform).toBe("translate(50px, 50px)");
+  });
+});

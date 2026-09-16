@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useEdges, useInternalNode, type Edge, type EdgeProps } from "@xyflow/react";
 import { FlowEdgePath } from "../flow-edge-path";
+import { FlowEdgeTokens, type FlowEdgeToken } from "../flow-edge-tokens";
 import {
   computeEdgeWeightScale,
   DEFAULT_EDGE_WIDTH_RANGE,
@@ -37,6 +38,11 @@ export interface FlowSelfLoopEdgeData extends Record<string, unknown> {
    * own root button from outside this component, without a new semantic prop here.
    */
   labelProps?: Omit<EdgeLabelPillProps, "label" | "secondaryLabel" | "x" | "y" | "selected">;
+  /**
+   * Markers travelling along the loop's computed arc (see `FlowEdgeTokens`). The parent
+   * drives each token's `progress`; omitted or empty renders exactly the edge without them.
+   */
+  tokens?: readonly FlowEdgeToken[];
 }
 
 export type BrandFlowSelfLoopEdge = Edge<FlowSelfLoopEdgeData, "self-loop">;
@@ -159,6 +165,7 @@ export function FlowSelfLoopEdge({
           style={{ fill: "none", ...style }}
         />
       </g>
+      {data?.tokens?.length ? <FlowEdgeTokens path={path} tokens={data.tokens} /> : null}
       <EdgeLabelPill
         label={data?.label}
         secondaryLabel={data?.secondaryLabel}

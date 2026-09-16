@@ -44,7 +44,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-32 exported components — including `Background`, `CanvasShell`, `Controls`, `DEFAULT_EDGE_WIDTH_RANGE`, `DEFAULT_LOOP_RADIUS`.
+34 exported components — including `Background`, `CanvasShell`, `Controls`, `DEFAULT_EDGE_TOKEN_RADIUS`, `DEFAULT_EDGE_WIDTH_RANGE`.
 
 Don't guess the API — ask the CLI:
 
