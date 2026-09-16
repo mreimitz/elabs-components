@@ -93,7 +93,8 @@ miss.
 - **Scope (MVP, this PR):** the mechanism + Bar, Area, Line (incl. sparkline/#163),
   Pie, Scatter, and both legends. **Deferred to a tracked follow-up:** Radar, Funnel,
   Candlestick, Sankey, Choropleth, and ComposedChart `SeriesBar` — they reuse the
-  same resolver once wired. Filed at PR time.
+  same resolver once wired. Filed at PR time. _Superseded by the 2026-09-16
+  amendment below._
 - **Brush overlay not unified:** `chart-brush-selection-overlay.tsx` keeps its own
   preset→pattern mapping + portal `<defs>` (it works; unifying risked it). Full
   taxonomy unification is deferred.
@@ -103,3 +104,30 @@ miss.
 - Revisit trigger: a future "pattern density vs information density" tuning pass
   (dense charts may need coarser patterns to avoid moiré — `blueprint-decoration.md`
   density budget), and the deferred chart types.
+
+## Amendment — 2026-09-16: pattern channel added to six more charts (#257)
+
+The MVP scope note above is stale: Radar, Funnel, Sankey and ComposedChart `SeriesBar`
+were wired by later work, and the charts added after this ADR were named nowhere. As of
+this amendment the pattern channel (`useHighDecoration*` + `isPaletteFill` +
+`makeSeriesPattern`) also covers these six charts. Each one patterns only palette fills,
+only at decoration ≥ 8, and leaves an author's literal or `url()` fill as drawn:
+
+| Chart                                   | What gets the pattern                                                                            | Pattern index                                   |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| `CandlestickChart` (`Candlestick`)      | candle bodies; wick and outline stay solid; an explicit `bodyPattern*` wins                      | rising = 0, falling = 1                         |
+| `ChoroplethChart` (`ChoroplethFeature`) | region fills; the `noDataFill="hatch"` texture and `getFeaturePattern` stay as authored          | one per distinct palette fill, first-seen order |
+| `TreemapChart`                          | leaf tiles; group title bands carry the label and stay flat                                      | one per distinct palette leaf colour            |
+| `WaterfallChart`                        | step bars; `unit` rungs are strokes and stay solid                                               | increase = 0, decrease = 1, total = 2           |
+| `DumbbellChart`                         | filled markers, drawn inside a solid 1px outline; hollow markers, track and extra dots unchanged | one per distinct palette row colour             |
+| `DistributionChart`                     | histogram bars, box capsules, violin bodies; strip dots and `unit` rungs stay solid              | group index                                     |
+
+The per-datum charts (choropleth, treemap, dumbbell) share `indexPaletteFills()` in
+`series-pattern.tsx`: marks that share a colour share a pattern, so the texture carries
+exactly the distinction the hue carried. Each chart has a jsdom test that forces
+`--decoration` high and asserts the `bp-series-*` defs and `url(#…)` fills, plus a
+`High decoration (#257)` story pinned to decoration 10.
+
+Not covered by this amendment: `HeatmapChart`, `Gauge` and `RingChart` (RingChart
+already switches to a tick ring at high decoration) and a check that stops a future
+chart from shipping without a channel — #257's proposed gate is still open.

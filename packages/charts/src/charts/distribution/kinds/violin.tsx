@@ -35,6 +35,7 @@ export interface DistributionViolinProps extends DistributionKindProps {
 function DistributionViolinImpl({
   bandwidth,
   color,
+  fill,
   formatValue,
   geometry,
   group,
@@ -108,7 +109,7 @@ function DistributionViolinImpl({
       onPointerLeave={() => onHover(null)}
       onPointerMove={handleMove}
     >
-      <path d={path} fill={color} opacity={0.72} stroke={color} strokeWidth={1} />
+      <path d={path} fill={fill ?? color} opacity={0.72} stroke={color} strokeWidth={1} />
       {showMedian && summary ? (
         <line
           data-slot="distribution-chart-median"

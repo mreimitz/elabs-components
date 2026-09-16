@@ -56,6 +56,7 @@ import { ParentSize } from "@visx/responsive";
 import {
   forwardRef,
   useCallback,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -68,7 +69,9 @@ import { resolvePalette, type ChartPalette } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
 import { ChartDatapointLayer, ChartDatapointProvider } from "../chart-datapoint-layer";
 import { useChartValueFormatter } from "../chart-formatters";
+import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { ChartTooltipBox } from "../tooltip/tooltip-box";
+import { useHighDecorationOf } from "../use-high-decoration";
 import { ChartTooltipContent } from "../tooltip/tooltip-content";
 import type { ChartValueFormat } from "../value-format";
 import { binValues, extentOf, type DistributionBin } from "./bins";
@@ -388,6 +391,29 @@ function DistributionChartInner({
     setTooltip(payload);
   }, []);
 
+  // Decoration pattern (ADR 0011, #257): under high decoration each group's
+  // FILLED mark (histogram bar, box capsule, violin body) draws its series
+  // pattern — pattern index = group index, ink = the group's own colour — so
+  // groups stay apart without hue. Strip dots and `unit` rungs are too small /
+  // stroked to carry a texture and keep the solid colour.
+  const high = useHighDecorationOf(containerRef);
+  const patternScope = useId().replace(/:/g, "");
+  const patternGroups = useMemo(() => {
+    if (!high || kind === "strip") {
+      return [];
+    }
+    return groups
+      .map((group) => ({
+        color: colors[group.index] ?? colors[0] ?? "var(--chart-1)",
+        index: group.index,
+      }))
+      .filter(({ color }) => isPaletteFill(color));
+  }, [colors, groups, high, kind]);
+  const patternedGroups = useMemo(
+    () => new Set(patternGroups.map(({ index }) => index)),
+    [patternGroups],
+  );
+
   const margin = orientation === "horizontal" ? HORIZONTAL_MARGIN : VERTICAL_MARGIN;
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
@@ -410,12 +436,22 @@ function DistributionChartInner({
   return (
     <>
       <svg aria-hidden="true" height={height} role="presentation" width={width}>
+        {patternGroups.length > 0 && (
+          <defs>
+            {patternGroups.map(({ color, index }) =>
+              makeSeriesPattern(index, seriesPatternId(index, patternScope), color),
+            )}
+          </defs>
+        )}
         <g transform={`translate(${margin.left}, ${margin.top})`}>
           <DistributionValueAxis formatValue={formatValue} geometry={geometry} groups={groups} />
           {groups.map((group) => {
             const color = colors[group.index] ?? colors[0] ?? "var(--chart-1)";
             const common = {
               color,
+              fill: patternedGroups.has(group.index)
+                ? `url(#${seriesPatternId(group.index, patternScope)})`
+                : undefined,
               formatValue,
               geometry,
               group,

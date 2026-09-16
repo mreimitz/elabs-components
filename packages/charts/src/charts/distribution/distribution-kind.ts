@@ -47,6 +47,13 @@ export interface DistributionKindProps {
   group: DistributionGroup;
   /** The resolved series colour (a `var(--chart-…)` reference, never a literal). */
   color: string;
+  /**
+   * The AREA fill of a filled mark (histogram bar, box capsule, violin body).
+   * Defaults to `color`; under high decoration the container passes the
+   * group's series pattern `url(#…)` here (ADR 0011, #257) while `color` stays
+   * the solid ink for strokes, rungs, dots and tooltip swatches.
+   */
+  fill?: string;
   /** The shared scale + band layout. */
   geometry: DistributionGeometry;
   /** Draw the median flag / tick. */

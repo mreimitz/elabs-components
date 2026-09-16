@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, waitFor } from "storybook/test";
 import { feature } from "topojson-client";
 import type { Topology } from "topojson-specification";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -305,4 +306,36 @@ export const NoDataMuted: Story = {
       </ChoroplethChart>
     </div>
   ),
+};
+
+/** The series-pattern channel (ADR 0011) rendered: `bp-series-*` defs + marks filled from them. */
+function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: number) {
+  expect(root.querySelectorAll('pattern[id^="bp-series-"]').length).toBeGreaterThanOrEqual(
+    minPatterns,
+  );
+  const patterned = [...root.querySelectorAll(markSelector)].filter((mark) =>
+    (mark.getAttribute("fill") ?? "").startsWith("url(#bp-series-"),
+  );
+  expect(patterned.length).toBeGreaterThan(0);
+}
+
+/**
+ * High decoration (ADR 0011, #257) — each distinct palette fill gets its own
+ * series pattern, so regions that differ by hue also differ by texture. The
+ * no-data hatch stays its own, distinct texture.
+ */
+export const HighDecoration: Story = {
+  name: "High decoration (#257)",
+  globals: { decoration: "10" },
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]" data-decoration="10">
+      <ChoroplethChart data={worldData} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent />
+        <ChoroplethTooltip getFeatureValue={getFeatureValue} valueLabel="Score" />
+      </ChoroplethChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expectSeriesPatterns(canvasElement, ".choropleth-features path", 2));
+  },
 };

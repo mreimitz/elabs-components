@@ -29,6 +29,7 @@ import {
   WaterfallChart,
   type WaterfallDatum,
 } from "./waterfall-chart";
+import { seriesPatterns, stubHighDecoration } from "./high-decoration-fixture";
 
 const grossToNet: WaterfallDatum[] = [
   { kind: "total", label: "Gross", value: 1000 },
@@ -326,5 +327,37 @@ describe("computeWaterfallConnectorAnchors", () => {
     for (let i = 0; i < anchors.length; i++) {
       expect(anchors[i]?.from).toBe(rows[i]?.after);
     }
+  });
+});
+
+describe("WaterfallChart decoration pattern channel (ADR 0011, #257)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("patterns increase / decrease / total steps with one series pattern each", () => {
+    stubHighDecoration();
+    const data: WaterfallDatum[] = [...grossToNet.slice(0, 2), { label: "Price", value: 50 }];
+    const { container } = render(<WaterfallChart data={data} />);
+    const ids = seriesPatterns(container).map((pattern) => pattern.id);
+    expect(ids).toHaveLength(3);
+    const fills = Array.from(
+      container.querySelectorAll('[data-slot="waterfall-chart-step"]'),
+      (step) => step.getAttribute("fill"),
+    );
+    // Gross (total) = series 2, Refunds (decrease) = series 1, Price (increase) = series 0.
+    expect(fills).toEqual([`url(#${ids[2]})`, `url(#${ids[1]})`, `url(#${ids[0]})`]);
+  });
+
+  it("keeps an author's literal fill and paints no pattern at low decoration", () => {
+    const low = render(<WaterfallChart data={grossToNet} />);
+    expect(seriesPatterns(low.container)).toHaveLength(0);
+    low.unmount();
+
+    stubHighDecoration();
+    const { container } = render(
+      <WaterfallChart data={grossToNet} negativeFill="var(--destructive)" />,
+    );
+    expect(seriesPatterns(container)).toHaveLength(1);
+    const refunds = container.querySelectorAll('[data-slot="waterfall-chart-step"]')[1];
+    expect(refunds?.getAttribute("fill")).toBe("var(--destructive)");
   });
 });

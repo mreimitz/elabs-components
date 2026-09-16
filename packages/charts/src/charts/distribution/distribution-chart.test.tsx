@@ -11,7 +11,7 @@
  * budget.
  */
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 /** The mocked box. Mutable so a test can re-render the same chart at another height. */
 const mockSize = vi.hoisted(() => ({ width: 640, height: 320 }));
@@ -35,6 +35,7 @@ if (!globalThis.ResizeObserver) {
 
 import { seededRnd } from "../../marks/seeded-rnd";
 import { DistributionChart } from "./distribution-chart";
+import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
 import { rungCount } from "./kinds/histogram";
 
 /** The median flag runs from a horizontal histogram's baseline to the far edge of its band. */
@@ -446,5 +447,45 @@ describe("DistributionChart", () => {
     expect(after[500]).toBe(before);
     // …and the cost is a small fraction of drawing the strip, not another one.
     expect(elapsed * 4).toBeLessThan(mountCost);
+  });
+});
+
+describe("DistributionChart decoration pattern channel (ADR 0011, #257)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("patterns each group's box and violin body with its own series pattern at high decoration", () => {
+    stubHighDecoration();
+    for (const kind of ["box", "violin"] as const) {
+      const { container, unmount } = render(
+        <DistributionChart data={DATA} groupKey="team" kind={kind} valueKey="minutes" />,
+      );
+      const ids = seriesPatterns(container).map((pattern) => pattern.id);
+      expect(ids).toHaveLength(2);
+      const fills = seriesPatternFills(
+        container,
+        `[data-slot="distribution-chart-${kind}"] [fill]`,
+      );
+      expect(new Set(fills.map((el) => el.getAttribute("fill")))).toEqual(
+        new Set(ids.map((id) => `url(#${id})`)),
+      );
+      unmount();
+    }
+  });
+
+  it("patterns histogram bars but never strip dots, and nothing at low decoration", () => {
+    const low = render(<DistributionChart data={DATA} kind="histogram" valueKey="minutes" />);
+    expect(seriesPatterns(low.container)).toHaveLength(0);
+    low.unmount();
+
+    stubHighDecoration();
+    const histogram = render(<DistributionChart data={DATA} kind="histogram" valueKey="minutes" />);
+    expect(seriesPatterns(histogram.container)).toHaveLength(1);
+    expect(seriesPatternFills(histogram.container, "rect").length).toBeGreaterThan(0);
+    histogram.unmount();
+
+    const strip = render(
+      <DistributionChart data={DATA} groupKey="team" kind="strip" valueKey="minutes" />,
+    );
+    expect(seriesPatterns(strip.container)).toHaveLength(0);
   });
 });

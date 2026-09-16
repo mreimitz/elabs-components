@@ -38,6 +38,7 @@ export interface DistributionBoxProps extends DistributionKindProps {
 
 function DistributionBoxImpl({
   color,
+  fill,
   formatValue,
   geometry,
   group,
@@ -96,7 +97,7 @@ function DistributionBoxImpl({
         y2={horizontal ? centre : whiskerHi}
       />
       <rect
-        fill={color}
+        fill={fill ?? color}
         height={horizontal ? thickness : boxLength}
         onClick={
           onActivate

@@ -76,6 +76,7 @@ function DistributionHistogramImpl({
   bins,
   color,
   countMax,
+  fill,
   formatValue,
   geometry,
   group,
@@ -153,7 +154,7 @@ function DistributionHistogramImpl({
               />
             ) : (
               <rect
-                fill={color}
+                fill={fill ?? color}
                 height={horizontal ? length : thickness}
                 opacity={0.86}
                 width={horizontal ? thickness : length}

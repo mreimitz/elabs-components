@@ -17,10 +17,11 @@
  * `funnel-chart.test.tsx`.
  */
 
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/react";
 import type * as MotionReact from "motion/react";
 import { TreemapChart, type TreemapNode } from "./treemap-chart";
+import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
 
 // Provide a ResizeObserver stub so the effect does not throw in jsdom.
 beforeAll(() => {
@@ -308,5 +309,42 @@ describe("TreemapChart", () => {
       expect(container.querySelector('[data-slot="treemap-leaf-label"]')).toBeNull();
       expect(valueTexts(container)).toEqual([]);
     });
+  });
+});
+
+describe("TreemapChart decoration pattern channel (ADR 0011, #257)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function renderSized(palette: "mono" | "categorical") {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    return render(<TreemapChart data={whereTheWorkWent} palette={palette} />);
+  }
+
+  it("textures leaves by group colour at high decoration, keeping title bands flat", () => {
+    stubHighDecoration();
+    const { container } = renderSized("categorical");
+    const ids = seriesPatterns(container).map((pattern) => pattern.id);
+    expect(ids).toHaveLength(2);
+    const leafFills = seriesPatternFills(container, "[data-treemap-leaf-id]");
+    expect(leafFills).toHaveLength(6);
+    expect(new Set(leafFills.map((leaf) => leaf.getAttribute("fill")))).toEqual(
+      new Set(ids.map((id) => `url(#${id})`)),
+    );
+    expect(seriesPatternFills(container, '[data-slot="treemap-group"] rect')).toHaveLength(0);
+  });
+
+  it("paints no pattern at low decoration", () => {
+    const { container } = renderSized("categorical");
+    expect(seriesPatterns(container)).toHaveLength(0);
   });
 });

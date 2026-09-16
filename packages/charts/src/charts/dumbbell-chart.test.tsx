@@ -18,6 +18,7 @@ import {
   spaceSlopeLabels,
   type DumbbellRow,
 } from "./dumbbell-chart";
+import { seriesPatterns, stubHighDecoration } from "./high-decoration-fixture";
 
 afterEach(cleanup);
 
@@ -594,5 +595,34 @@ describe('DumbbellChart — variant="slope"', () => {
     const hitAreas = container.querySelectorAll('[data-slot="dumbbell-chart-hit-area"]');
     fireEvent.mouseEnter(hitAreas[0] as Element);
     expect(getAllByText(longLabel).length).toBeGreaterThan(0);
+  });
+});
+
+describe("DumbbellChart decoration pattern channel (ADR 0011, #257)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("pattern-fills the filled markers per row colour at high decoration, hollow ones stay hollow", () => {
+    stubHighDecoration();
+    const { container } = render(
+      <DumbbellChart data={onboardingData} category="step" endKey="after" startKey="before" />,
+    );
+    const ids = seriesPatterns(container).map((pattern) => pattern.id);
+    expect(ids.length).toBeGreaterThanOrEqual(2);
+    const ends = Array.from(container.querySelectorAll('[data-slot="dumbbell-chart-marker-end"]'));
+    expect(ends).toHaveLength(onboardingData.length);
+    for (const marker of ends) {
+      expect(marker.getAttribute("fill")).toMatch(/^url\(#bp-series-/);
+      expect(marker.getAttribute("stroke-width")).toBe("1");
+    }
+    for (const marker of container.querySelectorAll('[data-slot="dumbbell-chart-marker-start"]')) {
+      expect(marker.getAttribute("fill")).toBe("var(--chart-background)");
+    }
+  });
+
+  it("paints no pattern at low decoration", () => {
+    const { container } = render(
+      <DumbbellChart data={onboardingData} category="step" endKey="after" startKey="before" />,
+    );
+    expect(seriesPatterns(container)).toHaveLength(0);
   });
 });
