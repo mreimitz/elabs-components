@@ -9,6 +9,7 @@ import { SeriesMarkers, type SeriesMarkersProps } from "./series-markers";
 import { StaticSeriesPointMarker } from "./series-point-marker";
 import { isPaletteFill, type SeriesMarkerShape, seriesMarkerShape } from "./series-pattern";
 import { useHighDecoration } from "./use-high-decoration";
+import { Y_AXIS_DEFAULT_TICK_COUNT } from "./y-axis-ticks";
 
 export interface ScatterProps extends Omit<SeriesMarkersProps, "animate"> {
   /** Y-scale group id (Recharts `yAxisId`). Default: `"left"`. */
@@ -79,6 +80,17 @@ const DEFAULT_Y_GRADIENT_TO = "var(--color-emerald-500)";
 
 /** Hairline weight for `dropLines` — the lieflat "0.55px plumb line" value. */
 const DROP_LINE_WIDTH = CHART_HAIRLINE_WIDTH;
+
+/** Gap (px) between a point's marker edge and its `labelExtremes` label. */
+const EXTREME_LABEL_GAP = 8;
+
+/**
+ * Half the approximate glyph-box height of an 11px `HaloText` label — big
+ * enough that a gridline stroke (rendered with `<Grid horizontal />`, whose
+ * default is 5 rows) crossing anywhere in that band reads as debris crossing
+ * the label rather than a tolerable overlap (#252).
+ */
+const EXTREME_LABEL_HALF_HEIGHT = 7;
 
 /**
  * Seed for `jitter`'s `seededRnd(index, JITTER_SEED)` draw. A fixed constant
@@ -201,6 +213,44 @@ function resolveExtremes(
   return { bestSet, worstSet };
 }
 
+/**
+ * `labelExtremes`' hero label defaults above the point (`cy - radius - 8`).
+ * #252: with no collision check, whether that lands on one of `<Grid
+ * horizontal />`'s reference rules was decided entirely by the data — the
+ * label then crosses a line that carries no value, reading as two
+ * decorations colliding. Flip below the point when the default placement
+ * would cross a gridline or run off the plot's top edge; keep the default
+ * when the flip would ALSO collide (rare) rather than hide the label.
+ */
+function resolveExtremeLabelY({
+  cy,
+  radius,
+  gridLineYs,
+  innerHeight,
+}: {
+  cy: number;
+  radius: number;
+  gridLineYs: readonly number[];
+  innerHeight: number;
+}): number {
+  const collidesWithGrid = (y: number) =>
+    gridLineYs.some((gridY) => Math.abs(gridY - y) < EXTREME_LABEL_HALF_HEIGHT);
+
+  const above = cy - radius - EXTREME_LABEL_GAP;
+  const aboveClearsTop = above - EXTREME_LABEL_HALF_HEIGHT >= 0;
+  if (aboveClearsTop && !collidesWithGrid(above)) {
+    return above;
+  }
+
+  const below = cy + radius + EXTREME_LABEL_GAP + EXTREME_LABEL_HALF_HEIGHT;
+  const belowClearsBottom = below + EXTREME_LABEL_HALF_HEIGHT <= innerHeight;
+  if (belowClearsBottom && !collidesWithGrid(below)) {
+    return below;
+  }
+
+  return above;
+}
+
 function extremeLabelText(
   point: ScatterPointDatum,
   labelExtremes: NonNullable<ScatterProps["labelExtremes"]>,
@@ -285,6 +335,9 @@ interface ScatterCustomMarkersProps {
   radius: number;
   shape?: SeriesMarkerShape;
   dateLabels: string[];
+  /** Pixel y of each `<Grid horizontal />` reference line — for `labelExtremes` collision avoidance (#252). */
+  gridLineYs: readonly number[];
+  innerHeight: number;
 }
 
 /**
@@ -308,6 +361,8 @@ function ScatterCustomMarkers({
   radius,
   shape,
   dateLabels,
+  gridLineYs,
+  innerHeight,
 }: ScatterCustomMarkersProps) {
   const { bestSet, worstSet } = useMemo(
     () =>
@@ -348,7 +403,7 @@ function ScatterCustomMarkers({
                 key={p.index}
                 textAnchor="middle"
                 x={p.cx}
-                y={p.cy - radius - 8}
+                y={resolveExtremeLabelY({ cy: p.cy, gridLineYs, innerHeight, radius })}
               >
                 {extremeLabelText(p, labelExtremes, dateLabels)}
               </HaloText>
@@ -432,6 +487,18 @@ export function Scatter({
     innerHeight,
   });
 
+  // `<Grid horizontal />`'s reference-line y positions, recomputed from the
+  // SAME scale and default tick count `YAxis` uses (`Y_AXIS_DEFAULT_TICK_COUNT`)
+  // — `labelExtremes` reads these to keep its hero label off a gridline (#252).
+  // Only meaningful for `yType="number"` (a category y has no shared gridlines).
+  const gridLineYs = useMemo(
+    () =>
+      yType === "number"
+        ? seriesYScale.ticks(Y_AXIS_DEFAULT_TICK_COUNT).map((tick) => seriesYScale(tick) ?? 0)
+        : [],
+    [seriesYScale, yType],
+  );
+
   const seriesColor =
     defaultScatterColors[seriesIndex % defaultScatterColors.length] ?? defaultScatterColors[0];
   const finalFill = resolvedFill ?? seriesConfig?.stroke ?? seriesColor;
@@ -472,6 +539,8 @@ export function Scatter({
           dateLabels={dateLabels}
           fadedOpacity={fadedOpacity}
           fill={finalFill}
+          gridLineYs={gridLineYs}
+          innerHeight={innerHeight}
           labelExtremes={labelExtremes}
           outlineColor={outlineColor}
           outlineWidth={outlineWidth}
