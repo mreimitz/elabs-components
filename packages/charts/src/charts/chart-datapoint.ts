@@ -34,8 +34,11 @@ export type ChartDatapointClickHandler<TDatum = Record<string, unknown>> = (
 ) => void;
 
 /**
- * Overrides the accessible name of a keyboard target. Default:
- * `"<series>, <category>: <value>"` (or `"<category>: <value>"` without a series).
+ * Overrides the accessible name of a keyboard target. Default (localised through
+ * `t()`): `"<series>, <category>: <value>"`, dropping whichever part is absent —
+ * never a dangling separator; a target with no category is named by position
+ * (`"Data point 3"`). Returning an empty string falls back to that default, so a
+ * target is never nameless.
  */
 export type ChartDatapointLabel<TDatum = Record<string, unknown>> = (
   point: Omit<ChartDatapoint<TDatum>, "source">,

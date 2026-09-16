@@ -350,6 +350,15 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.datapointLayer.label": "Chart data points",
   "charts.datapoint.label": "{series}, {category}: {value}",
   "charts.datapoint.labelNoSeries": "{category}: {value}",
+  // A target with no value (a tree node, a parallel-coordinates line, an empty
+  // heatmap cell) drops the separator rather than announcing a dangling ":".
+  "charts.datapoint.labelNoValue": "{series}, {category}",
+  "charts.datapoint.labelNoSeriesNoValue": "{category}",
+  // Stands in for {category} when a target has none, so the name is never a
+  // bare value or an empty string. {position} is 1-based.
+  "charts.datapoint.position": "Data point {position}",
+  // DumbbellChart: a target spans two values, so both ends are announced.
+  "charts.datapoint.labelRange": "{category}: {start} to {end}",
   // Announced when `copyValueOnActivate` puts a datapoint's exact value on the
   // clipboard — the recovery path for a compact axis label.
   "charts.datapoint.copied": "Exact value copied",

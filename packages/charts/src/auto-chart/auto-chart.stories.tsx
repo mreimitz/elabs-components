@@ -236,7 +236,7 @@ export const CopyExactValue: Story = {
     const canvas = within(canvasElement);
     // One tab stop for the whole chart, named per point — not 3 buttons in the
     // tab order, and not a focusable node inside the aria-hidden <svg>.
-    const point = await canvas.findByRole("button", { name: /North.*50012102\.632741/ });
+    const point = await canvas.findByRole("button", { name: /North.*50,012,102\.632741/ });
     point.focus();
     await expect(point).toHaveFocus();
     // The live region is mounted from first paint (ARIA22), empty until a copy.
