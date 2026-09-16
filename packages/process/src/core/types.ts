@@ -7,8 +7,8 @@
  * additive: a required field added here is a breaking change for five items at once.
  *
  * NOTHING in this module — or anywhere under `src/core/` — may import React, React Flow,
- * visx, d3 or an `@elabs-ai/components-*` package. See `.claude/rules/process-components.md`
- * and `pnpm process:reuse:check`.
+ * visx, d3 or an `@elabs-ai/components-*` package. See `.claude/rules/data.md` ("Process
+ * mining" section) and `pnpm check --rule process-reuse`.
  */
 
 /**

@@ -2,7 +2,7 @@
 // Run `pnpm gen` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm gen:check` fails on a stale copy.
 //
-// 118 entries (data: 2, source: 19, font: 2, dependency: 95).
+// 119 entries (data: 2, source: 20, font: 2, dependency: 95).
 
 import type { Attribution } from "./attribution-types";
 
@@ -113,6 +113,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright: "Copyright (c) 2026 CrowdView Inc, dba Extend; portions Copyright (c) 2023 shadcn",
     url: "https://github.com/extend-hq/ui",
     usedBy: ["@elabs-ai/components-viewer"],
+    required: false,
+  },
+  {
+    version: null,
+    note: "The eXtensible Event Stream interchange format fromXes reads: a <log> of <trace>s of <event>s, each carrying typed key/value attributes, plus <classifier> and lifecycle:transition. Only the format is implemented, by a hand-rolled tokenizer; no text, schema file or code is copied. The license of the specification document itself was not established.",
+    id: "xes-ieee-1849",
+    category: "source",
+    name: "IEEE 1849-2016 (XES)",
+    license: "Published specification (license of the document not established)",
+    copyright: "© IEEE",
+    url: "https://standards.ieee.org/ieee/1849/6811/",
+    usedBy: ["@elabs-ai/components-process"],
     required: false,
   },
   {
