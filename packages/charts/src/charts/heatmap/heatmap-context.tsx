@@ -113,6 +113,21 @@ export interface HeatmapContextValue {
   cellRadius: number;
   /** Whether every cell carries its value as `HaloText`. */
   showValues: boolean;
+  /**
+   * Halo behind a `mode="cell"` value label (#280). Default `true` (a visible
+   * halo, matching every other in-plot label). A flat filled plate has no
+   * gridline or neighbour to separate the label from — set `false` when the
+   * label already reads cleanly against the plate's own resolved ink pair,
+   * so the halo does not ring-fringe a mid-tone fill.
+   */
+  showValueHalo: boolean;
+  /**
+   * Side of the no-data outline, as a fraction of the cell's shorter side
+   * (#280). Default {@link DEFAULT_EMPTY_MARK_SCALE}. A denser grid or a
+   * quieter empty state can shrink this; the legend's fixed-size swatch is
+   * unaffected, by design — it is a KEY, not a scaled copy of the mark.
+   */
+  emptyMarkScale: number;
   /** Largest magnitude in the data — the denominator of the dot-area encoding. */
   maxAbs: number;
   /** Largest radius a dot may take, in px. */

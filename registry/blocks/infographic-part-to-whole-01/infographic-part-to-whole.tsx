@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ChartConfigProvider,
   computeTreemapLayout,
   HaloText,
   Leader,
@@ -38,6 +39,16 @@ export interface InfographicPartToWholeProps {
 
 const TREEMAP_DEPTH = 2;
 const TREEMAP_GAP = 2;
+/** Acme's cost data is EUR, Q3 — see `data/cost-breakdown.ts`. */
+const CURRENCY = "EUR";
+/**
+ * A step close to each theme's own card lightness (#280) — quiet, not a
+ * "pale" mono-4 wash. The var already resolves to the right absolute
+ * lightness per theme (the mono ramp is authored in opposite directions in
+ * `themes/light.css` / `themes/dark.css`), so no `resolveThemeIsDark` branch
+ * is needed here — the token alone holds in both.
+ */
+const CONTEXT_TILE_COLOR = "var(--chart-mono-2)";
 
 /**
  * "Where does the money go?" — a two-level treemap of Q3 cost, category →
@@ -77,7 +88,7 @@ export function InfographicPartToWhole({
       <CardContent className="space-y-4 p-5">
         {loading ? <span className="sr-only">Loading the cost breakdown treemap…</span> : null}
         <div className="flex items-center justify-between gap-2">
-          <span className="min-w-0 truncate text-body text-muted-foreground">
+          <span className="min-w-0 break-words text-body text-muted-foreground">
             Where does the money go?
           </span>
           <Badge className="shrink-0" variant="secondary">
@@ -99,6 +110,7 @@ export function InfographicPartToWhole({
             <HighlightedTreemap
               accessibleDescription={accessibleDescription}
               accessibleLabel={accessibleLabel}
+              formattedHighlight={formattedHighlight}
               gapPp={gapPp}
               highlightSharePct={highlightSharePct}
               scenario={scenario}
@@ -138,6 +150,7 @@ function InfographicPartToWholeSkeleton() {
 function HighlightedTreemap({
   accessibleDescription,
   accessibleLabel,
+  formattedHighlight,
   gapPp,
   highlightSharePct,
   scenario,
@@ -145,6 +158,7 @@ function HighlightedTreemap({
 }: {
   accessibleDescription: string;
   accessibleLabel: string;
+  formattedHighlight: string;
   gapPp: number;
   highlightSharePct: number;
   scenario: CostScenario;
@@ -185,19 +199,28 @@ function HighlightedTreemap({
   }, [scenario.highlightGroup, scenario.highlightLeaf, size.h, size.w, tree]);
 
   const gapText = `${gapPp >= 0 ? "+" : "−"}${Math.abs(gapPp)}pp vs Q2`;
+  const isHighlightLeaf = (leaf: TreemapLeafDatum) =>
+    leaf.groupName === scenario.highlightGroup && leaf.name === scenario.highlightLeaf;
 
   return (
     <div className="relative w-full">
-      <TreemapChart
-        accessibleDescription={accessibleDescription}
-        accessibleLabel={accessibleLabel}
-        data={tree}
-        depth={TREEMAP_DEPTH}
-        gap={TREEMAP_GAP}
-        palette="mono"
-        ref={containerRef}
-        showValues
-      />
+      <ChartConfigProvider value={{ currency: CURRENCY }}>
+        <TreemapChart
+          accessibleDescription={accessibleDescription}
+          accessibleLabel={accessibleLabel}
+          data={tree}
+          depth={TREEMAP_DEPTH}
+          gap={TREEMAP_GAP}
+          hideLeafLabel={isHighlightLeaf}
+          labelOverflow="hide"
+          monoBandColor={CONTEXT_TILE_COLOR}
+          monoLeafColor={CONTEXT_TILE_COLOR}
+          palette="mono"
+          ref={containerRef}
+          showValues
+          valueFormat="currency"
+        />
+      </ChartConfigProvider>
       {highlightLeaf ? (
         <svg
           aria-hidden="true"
@@ -205,10 +228,11 @@ function HighlightedTreemap({
           role="presentation"
           viewBox={`0 0 ${size.w} ${size.h}`}
         >
+          {/* Opaque, saturated fill (#280) — the ONE thing in the tile grid that
+              reads as accented; every other tile is the quiet mono shade above. */}
           <rect
             data-slot="infographic-part-to-whole-highlight"
             fill="var(--chart-1)"
-            fillOpacity={0.28}
             height={highlightLeaf.y1 - highlightLeaf.y0}
             rx={2}
             stroke="var(--chart-1)"
@@ -217,7 +241,12 @@ function HighlightedTreemap({
             x={highlightLeaf.x0}
             y={highlightLeaf.y0}
           />
-          <CalloutLabel gapText={gapText} leaf={highlightLeaf} sharePct={highlightSharePct} />
+          <CalloutLabel
+            formattedValue={formattedHighlight}
+            gapText={gapText}
+            leaf={highlightLeaf}
+            sharePct={highlightSharePct}
+          />
         </svg>
       ) : null}
     </div>
@@ -232,17 +261,24 @@ const CALLOUT_PADDING = 8;
 const CALLOUT_LINE_GAP = 14;
 
 /**
- * The callout's label sits in the highlighted tile's OWN bottom-right corner —
- * never at a canvas-relative position, which could as easily land on top of a
- * neighbouring tile's name. A short `Leader` ties it back to the tile's right
- * edge, and both stay strictly inside `leaf`'s box, so the callout can never
- * collide with a mark it does not describe.
+ * The tile's SOLE annotation (#280) — `TreemapChart` never draws its own
+ * name/value label on this leaf (`hideLeafLabel`), so the two used to say
+ * "Fuel" twice. One block: name + € value on the bold line, share + the
+ * period-over-period change on the second. Ink is `--chart-ink-on-light`
+ * (not a text-role token) because it sits directly on the opaque `--chart-1`
+ * fill, not on the card — see the on-mark-ink convention in `chart-hairline`
+ * siblings. Sits in the highlighted tile's OWN bottom-right corner — never a
+ * canvas-relative position, which could as easily land on a neighbour's tile —
+ * and a short `Leader` ties it back to the tile's edge; both stay strictly
+ * inside `leaf`'s box.
  */
 function CalloutLabel({
+  formattedValue,
   gapText,
   leaf,
   sharePct,
 }: {
+  formattedValue: string;
   gapText: string;
   leaf: TreemapLeafDatum;
   sharePct: number;
@@ -252,25 +288,34 @@ function CalloutLabel({
   if (width < MIN_CALLOUT_WIDTH || height < MIN_CALLOUT_HEIGHT) return null;
 
   const labelX = leaf.x1 - CALLOUT_PADDING;
-  const gapLineY = leaf.y1 - CALLOUT_PADDING;
-  const nameLineY = gapLineY - CALLOUT_LINE_GAP;
+  const factLineY = leaf.y1 - CALLOUT_PADDING;
+  const nameLineY = factLineY - CALLOUT_LINE_GAP;
   const leaderFromY = leaf.y0 + height * 0.6;
   const leaderToY = nameLineY - CALLOUT_LINE_GAP;
 
   return (
     <g data-slot="infographic-part-to-whole-callout">
       <Leader dash="2 3" from={[leaf.x1, leaderFromY]} to={[labelX, leaderToY]} />
-      <HaloText fontSize={12} fontWeight={600} textAnchor="end" x={labelX} y={nameLineY}>
-        {leaf.name} · {sharePct}%
-      </HaloText>
       <HaloText
-        fill="var(--chart-foreground-muted)"
-        fontSize={10}
+        fill="var(--chart-ink-on-light)"
+        fontSize={12}
+        fontWeight={600}
+        halo="var(--chart-1)"
         textAnchor="end"
         x={labelX}
-        y={gapLineY}
+        y={nameLineY}
       >
-        {gapText}
+        {leaf.name} · {formattedValue}
+      </HaloText>
+      <HaloText
+        fill="var(--chart-ink-on-light)"
+        fontSize={10}
+        halo="var(--chart-1)"
+        textAnchor="end"
+        x={labelX}
+        y={factLineY}
+      >
+        {sharePct}% · {gapText}
       </HaloText>
     </g>
   );

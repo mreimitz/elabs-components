@@ -111,6 +111,16 @@ export interface TreemapLayoutOptions {
   /** Share (0..1) of a parent's total below which a leaf merges into "Other". `0` = off. */
   otherThreshold: number;
   otherLabel?: string;
+  /**
+   * Override for {@link TREEMAP_MONO_LEAF_COLOR} (#280). The mono ramp is the
+   * same absolute lightness in every theme (by design — see `on-mark-ink.ts`),
+   * so a leaf that must read as QUIET background against a dark card as well
+   * as a light one needs a theme-picked step; resolve it with
+   * `resolveThemeIsDark` and pass it here. Default: the shared constant.
+   */
+  monoLeafColor?: string;
+  /** Override for {@link TREEMAP_BAND_COLOR} — same reasoning as {@link monoLeafColor}. */
+  monoBandColor?: string;
 }
 
 // ── Tunables (the Finding's hard rules, named) ───────────────────────────────
@@ -299,7 +309,17 @@ export function computeTreemapLayout(
   root: TreemapNode,
   options: TreemapLayoutOptions,
 ): TreemapLayoutResult {
-  const { width, height, depth, gap, palette, otherThreshold, otherLabel = "Other" } = options;
+  const {
+    width,
+    height,
+    depth,
+    gap,
+    palette,
+    otherThreshold,
+    otherLabel = "Other",
+    monoLeafColor = TREEMAP_MONO_LEAF_COLOR,
+    monoBandColor = TREEMAP_BAND_COLOR,
+  } = options;
   if (width <= 0 || height <= 0) {
     return { leaves: [], groups: [], total: 0 };
   }
@@ -367,9 +387,9 @@ export function computeTreemapLayout(
       return sequentialColorFor(value, maxLeafValue);
     }
     if (useCategorical) {
-      return categoricalColors[groupIndex] ?? TREEMAP_MONO_LEAF_COLOR;
+      return categoricalColors[groupIndex] ?? monoLeafColor;
     }
-    return TREEMAP_MONO_LEAF_COLOR;
+    return monoLeafColor;
   };
 
   const groups: TreemapGroupDatum[] = [];
@@ -412,9 +432,7 @@ export function computeTreemapLayout(
         y1: groupNode.y1,
         value,
         share: total > 0 ? value / total : 0,
-        color: useCategorical
-          ? (categoricalColors[groupIndex] ?? TREEMAP_BAND_COLOR)
-          : TREEMAP_BAND_COLOR,
+        color: useCategorical ? (categoricalColors[groupIndex] ?? monoBandColor) : monoBandColor,
         bandHeight: TREEMAP_TITLE_BAND_HEIGHT,
       });
       (groupNode.children ?? []).forEach((leafNode, leafIndex) => {
