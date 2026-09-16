@@ -30,6 +30,8 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - HappyPathEditorContext
 - HappyPathStepNode
 - MetricLayerSwitch
+- OBJECT_CENTRIC_MAP_DEFAULT_LABELS
+- OBJECT_TYPE_ABSTRACTION_DEFAULT_LABELS
 - PERFORMANCE_SPECTRUM_DEFAULT_BIN_SIZE
 - PERFORMANCE_SPECTRUM_DEFAULT_LABELS
 - PERFORMANCE_SPECTRUM_ROW_HEIGHT
@@ -87,6 +89,8 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - DurationSampler (`@elabs-ai/components-process/core` · component)
 - EDGE_KEY_SEPARATOR (`@elabs-ai/components-process/core` · component)
 - EMPTY_DURATION_STATS (`@elabs-ai/components-process/core` · component)
+- OCEL_EVENT_ID_ATTRIBUTE (`@elabs-ai/components-process/core` · component)
+- OCEL_OBJECT_REFS_ATTRIBUTE (`@elabs-ai/components-process/core` · component)
 - SYNTHETIC_ACTIVITIES (`@elabs-ai/components-process/core` · component)
 - SYNTHETIC_LOG_EPOCH (`@elabs-ai/components-process/core` · component)
 - TRIM_FRACTION (`@elabs-ai/components-process/core` · component)

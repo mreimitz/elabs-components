@@ -58,3 +58,16 @@ export * from "./performance-spectrum";
 export * from "./conformance-overlay";
 export * from "./violation-list";
 export * from "./happy-path-editor";
+
+// Object-centric — RM-066
+export type {
+  AbstractedObjectCentricGraph,
+  ObjectCentricActivityStats,
+  ObjectCentricGraph,
+  ObjectTypeActivityCounts,
+} from "./core/discover-object-centric-graph";
+export { OBJECT_TYPE_ABSTRACTION_DEFAULT_LABELS } from "./abstraction-controls/abstraction-controls";
+export type {
+  ObjectTypeAbstraction,
+  ObjectTypeAbstractionLabels,
+} from "./abstraction-controls/abstraction-controls";

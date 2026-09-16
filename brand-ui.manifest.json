@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T11:44:14.062Z",
+  "generatedAt": "2026-09-16T12:08:24.326Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -26027,6 +26027,16 @@
           "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
         },
         {
+          "name": "OBJECT_CENTRIC_MAP_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "OBJECT_TYPE_ABSTRACTION_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
           "name": "PERFORMANCE_SPECTRUM_DEFAULT_BIN_SIZE",
           "kind": "value",
           "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
@@ -26181,6 +26191,10 @@
       ],
       "types": [
         {
+          "name": "AbstractedObjectCentricGraph",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
+        {
           "name": "AbstractionControlsProps",
           "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
         },
@@ -26207,6 +26221,10 @@
         {
           "name": "AutoAbstractionResult",
           "module": "packages/process/src/abstraction-controls/auto-abstraction.ts"
+        },
+        {
+          "name": "BuildObjectCentricMapModelOptions",
+          "module": "packages/process/src/process-map/map-model.ts"
         },
         {
           "name": "BuildProcessMapModelOptions",
@@ -26361,6 +26379,30 @@
           "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
         },
         {
+          "name": "ObjectCentricActivityStats",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
+        {
+          "name": "ObjectCentricGraph",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
+        {
+          "name": "ObjectCentricMapLabels",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ObjectTypeAbstraction",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
+          "name": "ObjectTypeAbstractionLabels",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
+          "name": "ObjectTypeActivityCounts",
+          "module": "packages/process/src/core/discover-object-centric-graph.ts"
+        },
+        {
           "name": "PerformanceSpectrumFilterIntent",
           "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
         },
@@ -26458,6 +26500,14 @@
         },
         {
           "name": "ProcessMetricSpec",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessObjectTypeCount",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessObjectTypeMark",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
@@ -26591,6 +26641,10 @@
           "module": "packages/process/src/case-timeline/case-timeline-model.ts"
         },
         {
+          "name": "buildObjectCentricMapModel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
           "name": "buildProcessMapModel",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -26652,6 +26706,10 @@
         },
         {
           "name": "nodeMetricLabel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "objectCentricEdgeId",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
@@ -26778,6 +26836,18 @@
               "optional": true,
               "type": "string",
               "description": "Accessible name for the control group. Default from locale."
+            },
+            {
+              "name": "perType",
+              "optional": true,
+              "type": "Readonly<Record<string, ObjectTypeAbstraction>>",
+              "description": "Object-centric — RM-066. One slider pair per object type, keyed by type, rendered as collapsible rows under the global pair. A `linked` type (the default) follows the global sliders proportionally; toggle its link to abstract it on its own. Feed the result to `abstractObjectCentricGraph`."
+            },
+            {
+              "name": "perTypeLabels",
+              "optional": true,
+              "type": "ObjectTypeAbstractionLabels",
+              "description": "Object-centric — RM-066. Strings for the per-type rows."
             }
           ]
         },
@@ -27349,6 +27419,18 @@
               "description": "A replay result (RM-061's `tokenReplay`) to overlay (RM-062). When given, every node and edge carries `data-conformance=\"both\" | \"logOnly\" | \"modelOnly\"` — additive to `data-selection` — painted as a status tone PLUS a glyph and a line style, with the state's word in the accessible name and a Conformance column in the table twin. Omit for today's map, unchanged. Usually reached through `ConformanceOverlay`."
             },
             {
+              "name": "objectCentric",
+              "optional": true,
+              "type": "ObjectCentricGraph",
+              "description": "Object-centric — RM-066. An object-centric graph (`discoverObjectCentricGraph`, e.g. over `fromOcel(…).logs`) to draw instead of `graph`/`log` — mutually exclusive with both, and it wins when given together (with a dev-mode console warning). Shared activities merge into one node carrying a chip per object type; edges are drawn once per object type in that type's chart colour, side by side. `abstraction` applies to every type alike; for per-type abstraction pass `abstractObjectCentricGraph(…)`'s result here instead."
+            },
+            {
+              "name": "objectCentricLabels",
+              "optional": true,
+              "type": "ObjectCentricMapLabels",
+              "description": "Object-centric — RM-066. Strings the object-centric mode composes."
+            },
+            {
               "name": "label",
               "optional": true,
               "type": "string",
@@ -27587,6 +27669,16 @@
               "module": "packages/process/src/core/duration-stats.ts"
             },
             {
+              "name": "OCEL_EVENT_ID_ATTRIBUTE",
+              "kind": "value",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OCEL_OBJECT_REFS_ATTRIBUTE",
+              "kind": "value",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
               "name": "SYNTHETIC_ACTIVITIES",
               "kind": "value",
               "module": "packages/process/src/core/fixtures/synthetic-log.ts"
@@ -27612,6 +27704,10 @@
             {
               "name": "AbstractedGraph",
               "module": "packages/process/src/core/abstract-graph.ts"
+            },
+            {
+              "name": "AbstractedObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
             },
             {
               "name": "AbstractionOptions",
@@ -27754,6 +27850,54 @@
               "module": "packages/process/src/core/event-log.ts"
             },
             {
+              "name": "ObjectCentricActivityStats",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "ObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "ObjectTypeActivityCounts",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "OcelAttribute",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelEvent",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelJson",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelObject",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelParseError",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelParseOptions",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelParseResult",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelRelationship",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
+              "name": "OcelTypeDeclaration",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
               "name": "PerformanceAgg",
               "module": "packages/process/src/core/types.ts"
             },
@@ -27860,6 +28004,10 @@
               "module": "packages/process/src/core/abstract-graph.ts"
             },
             {
+              "name": "abstractObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
               "name": "activityColorScale",
               "module": "packages/process/src/core/activity-color-scale.ts"
             },
@@ -27898,6 +28046,10 @@
             {
               "name": "discoverGraph",
               "module": "packages/process/src/core/discover-graph.ts"
+            },
+            {
+              "name": "discoverObjectCentricGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
             },
             {
               "name": "durationQuartile",
@@ -27940,6 +28092,10 @@
               "module": "packages/process/src/core/adapters/flat.ts"
             },
             {
+              "name": "fromOcel",
+              "module": "packages/process/src/core/adapters/ocel.ts"
+            },
+            {
               "name": "fromXes",
               "module": "packages/process/src/core/adapters/xes.ts"
             },
@@ -27964,6 +28120,10 @@
               "module": "packages/process/src/core/reference-model.ts"
             },
             {
+              "name": "mergeObjectCentricGraphs",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
               "name": "minMax",
               "module": "packages/process/src/core/scale.ts"
             },
@@ -27974,6 +28134,14 @@
             {
               "name": "normalizeLog",
               "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "objectCentricProcessGraph",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
+            },
+            {
+              "name": "objectTypeColorScale",
+              "module": "packages/process/src/core/discover-object-centric-graph.ts"
             },
             {
               "name": "parseDelimited",
@@ -27994,6 +28162,10 @@
             {
               "name": "quartileOf",
               "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "readObjectRefs",
+              "module": "packages/process/src/core/adapters/ocel.ts"
             },
             {
               "name": "reconcileGraph",
