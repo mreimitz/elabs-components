@@ -21,6 +21,7 @@ vi.mock("@visx/responsive", () => {
   };
 });
 
+import { UNIT_STACK_EMPHASIS } from "../marks";
 import { Bar } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
@@ -332,9 +333,11 @@ describe("BarChart", () => {
         </BarChart>,
       );
       // At least one negative bar (Feb: -50) must render via the path branch.
-      const barPaths = Array.from(container.querySelectorAll("path")).filter((p) =>
-        p.getAttribute("fill")?.includes("chart"),
-      );
+      // Selected by the stable `data-slot`, not by `fill` — at high decoration
+      // `bar.tsx` swaps the palette fill for a `url(#bp-series-…)` pattern
+      // (ADR 0011), so a fill-keyed selector only matches one of the two
+      // render paths (#254).
+      const barPaths = Array.from(container.querySelectorAll('[data-slot="bar-negative"]'));
       expect(barPaths.length).toBeGreaterThan(0);
       for (const p of barPaths) {
         expect(p.getAttribute("d")).toMatch(/^M/);
@@ -398,6 +401,32 @@ describe("BarChart", () => {
       );
       expect(container.querySelectorAll(".text-chart-value").length).toBe(0);
     });
+
+    // #250 — compaction was decided per value, so a series straddling
+    // `COMPACT_THRESHOLD` (1000) mixed "1K" beside "400" in one label set.
+    it("uses ONE notation across every value label, even when the series straddles the compact threshold", () => {
+      const { container } = render(
+        <BarChart
+          data={[
+            { month: "Jan", value: 4200 },
+            { month: "Feb", value: -900 },
+            { month: "Mar", value: 5600 },
+          ]}
+          xDataKey="month"
+        >
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" showValues />
+        </BarChart>,
+      );
+      const labels = [...container.querySelectorAll(".text-chart-value")].map((l) => l.textContent);
+      expect(labels).toHaveLength(3);
+      // Either every label is compact or none is — never a mix.
+      const compactCount = labels.filter((l) => /[KMB]/.test(l ?? "")).length;
+      expect(compactCount === 0 || compactCount === labels.length).toBe(true);
+      // -900 never compacts on its own, so the set (correctly) stays plain.
+      expect(container.textContent).toContain("4,200");
+      expect(container.textContent).toContain("−900");
+      expect(container.textContent).toContain("5,600");
+    });
   });
 
   // RM-027: unit mode (lieflat F1 Rung Bars) — a countable UnitStack instead
@@ -412,8 +441,10 @@ describe("BarChart", () => {
       const stacks = container.querySelectorAll('[data-slot="unit-stack"]');
       expect(stacks.length).toBe(minimalData.length);
       const units = container.querySelectorAll('[data-slot="unit-stack-unit"]');
-      // Jan: 100/20 = 5 rungs, Feb: 200/20 = 10, Mar: 150/20 = 7.5 -> 8 (rounded).
-      expect(units.length).toBe(5 + 10 + 8);
+      // Jan: 100/20 = 5 rungs, Feb: 200/20 = 10, Mar: 150/20 = 7.5 -> FLOORED
+      // to 7, not rounded to 8 — a rung ladder must never count past the
+      // value it encodes (#241).
+      expect(units.length).toBe(5 + 10 + 7);
     });
 
     it("renders instantly without an AnimatedBar grow-in even on first mount", () => {
@@ -434,6 +465,90 @@ describe("BarChart", () => {
         </BarChart>,
       );
       expect(container.querySelectorAll('[data-slot="unit-stack"]').length).toBe(0);
+    });
+
+    // #241 — two geometry bugs: the emphatic rung overran its own column into
+    // the next one, and the rung pitch was derived from the bar's own pixel
+    // span instead of the value scale (worth a different amount per column,
+    // and always one unit short of the bar's true value).
+    describe("rung geometry (#241)", () => {
+      const monthlyValues = [
+        { month: "Jan", value: 12000 },
+        { month: "Feb", value: 15500 },
+        { month: "Mar", value: 11000 },
+      ];
+
+      const rangeOf = (stack: Element) => {
+        const xs = [...stack.querySelectorAll('[data-slot="unit-stack-unit"]')].flatMap((u) => [
+          Number.parseFloat(u.getAttribute("x1") ?? "0"),
+          Number.parseFloat(u.getAttribute("x2") ?? "0"),
+        ]);
+        return [Math.min(...xs), Math.max(...xs)] as const;
+      };
+
+      it("keeps adjacent stacks' cross-axis extents disjoint (no emphatic-rung overhang)", () => {
+        const { container } = render(
+          <BarChart data={monthlyValues} xDataKey="month">
+            <Bar dataKey="value" fill="var(--chart-1)" unit={2000} />
+          </BarChart>,
+        );
+        const stacks = [...container.querySelectorAll('[data-slot="unit-stack"]')];
+        expect(stacks.length).toBe(3);
+        const ranges = stacks.map(rangeOf);
+        for (let i = 1; i < ranges.length; i++) {
+          // Adjacent bars run left to right, so the previous stack's right
+          // edge must not reach into the next stack's left edge.
+          expect(ranges[i - 1]![1]).toBeLessThanOrEqual(ranges[i]![0]);
+        }
+      });
+
+      it("uses the same rung pitch in every column of one chart", () => {
+        const { container } = render(
+          <BarChart data={monthlyValues} xDataKey="month">
+            <Bar dataKey="value" fill="var(--chart-1)" unit={2000} />
+          </BarChart>,
+        );
+        const pitchOf = (stack: Element) => {
+          const ys = [...stack.querySelectorAll('[data-slot="unit-stack-unit"]')]
+            .map((u) => Number.parseFloat(u.getAttribute("y1") ?? "0"))
+            .sort((a, b) => a - b);
+          return ys[1]! - ys[0]!;
+        };
+        const stacks = [...container.querySelectorAll('[data-slot="unit-stack"]')];
+        const pitches = stacks.map(pitchOf);
+        for (const pitch of pitches.slice(1)) {
+          expect(pitch).toBeCloseTo(pitches[0]!, 5);
+        }
+      });
+
+      it("floors the count so a rung ladder never counts past the value it encodes", () => {
+        // 11000 / 2000 = 5.5 — must floor to 5, never round to 6.
+        const { container } = render(
+          <BarChart data={[{ month: "Mar", value: 11000 }]} xDataKey="month">
+            <Bar dataKey="value" fill="var(--chart-1)" unit={2000} />
+          </BarChart>,
+        );
+        expect(container.querySelectorAll('[data-slot="unit-stack-unit"]').length).toBe(5);
+      });
+
+      it("keeps the emphatic (every-5th) rung within the bar's own cross-axis extent", () => {
+        const { container } = render(
+          <BarChart data={[{ month: "Jan", value: 12000 }]} xDataKey="month">
+            <Bar dataKey="value" fill="var(--chart-1)" unit={2000} />
+          </BarChart>,
+        );
+        const units = [...container.querySelectorAll('[data-slot="unit-stack-unit"]')];
+        const widthOf = (u: Element) =>
+          Math.abs(Number(u.getAttribute("x2")) - Number(u.getAttribute("x1")));
+        // 12000 / 2000 = 6 rungs; the 5th (index 4) is the emphatic one.
+        const ordinaryWidth = widthOf(units[0]!);
+        const emphaticWidth = widthOf(units[4]!);
+        expect(emphaticWidth).toBeGreaterThan(ordinaryWidth);
+        // The emphatic mark is reserved exactly UNIT_STACK_EMPHASIS× the
+        // ordinary width — never wider, which is what keeps it flush with
+        // (not beyond) the bar's own edge.
+        expect(emphaticWidth).toBeCloseTo(ordinaryWidth * UNIT_STACK_EMPHASIS, 5);
+      });
     });
   });
 

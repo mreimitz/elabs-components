@@ -468,14 +468,16 @@ export const WithValues: Story = {
 };
 
 /**
- * `unit` draws each bar as a countable `UnitStack` of `round(value / unit)`
+ * `unit` draws each bar as a countable `UnitStack` of `floor(value / unit)`
  * rungs instead of a solid fill — lieflat F1 Rung Bars. Renders instantly
- * (no grow-in).
+ * (no grow-in). The rung pitch comes from the value scale (not the bar's own
+ * pixel span), so one rung is worth the same amount in every column, and the
+ * ladder never counts past the value it encodes (#241).
  */
 export const UnitRungs: Story = {
   render: () => (
     <div className="h-72 w-[560px]">
-      <BarChart data={monthlyData} xDataKey="month">
+      <BarChart accessibleDescription="One rung = 2,000." data={monthlyData} xDataKey="month">
         <Grid horizontal />
         <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" unit={2000} />
         <BarXAxis />
@@ -520,12 +522,49 @@ export const Diverging: Story = {
       expect(canvasElement.querySelector("svg > g > line")).not.toBeNull();
     });
     // At least one negative bar renders via the asymmetric-radius path branch.
-    const barPaths = [...canvasElement.querySelectorAll("path")].filter((p) =>
-      p.getAttribute("fill")?.includes("chart"),
-    );
-    expect(barPaths.length).toBeGreaterThan(0);
+    // Selected by the stable `data-slot`, not by `fill` — at high decoration
+    // `bar.tsx` swaps the palette fill for `url(#bp-series-…)` (ADR 0011), so a
+    // fill-keyed selector only matches one of the two render paths (#254).
+    const negativeBars = canvasElement.querySelectorAll('[data-slot="bar-negative"]');
+    expect(negativeBars.length).toBeGreaterThan(0);
     // A negative label is signed with the Unicode minus, not a hyphen.
     expect(canvasElement.textContent).toContain("−");
+  },
+};
+
+/**
+ * #254: `Diverging` pinned to high decoration — the render path `Diverging`'s
+ * own lock cannot see. At `--decoration` 8-10 `bar.tsx` swaps the palette fill
+ * for a `url(#bp-series-…)` pattern (ADR 0011); this story proves that swap
+ * actually fires (not merely that a selector tolerates it) so the broadened
+ * `data-slot` selector above is verified on both render paths, not just one.
+ */
+export const DivergingDecorated: Story = {
+  name: "Diverging — high decoration (#254)",
+  globals: { decoration: "10" },
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]" data-decoration="10">
+      <BarChart data={profitLossData} xDataKey="month">
+        <Grid horizontal />
+        <Bar animate={false} dataKey="net" fill="var(--chart-1)" lineCap="round" showValues />
+        <BarXAxis />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      // The negative-bar branch still rendered under high decoration.
+      const negativeBars = canvasElement.querySelectorAll('[data-slot="bar-negative"]');
+      expect(negativeBars.length).toBeGreaterThan(0);
+      // …AND the pattern channel is actually present — a selector broadened to
+      // "either shape" proves nothing unless something renders the second shape.
+      const svg = canvasElement.querySelector("svg");
+      expect(svg?.querySelector('pattern[id^="bp-series-"]')).not.toBeNull();
+      const patternFilled = [...negativeBars].some((bar) =>
+        (bar.getAttribute("fill") ?? "").startsWith("url(#bp-series-"),
+      );
+      expect(patternFilled).toBe(true);
+    });
   },
 };
 
@@ -589,9 +628,14 @@ export const MonoPalette: Story = {
         (r) => r.hasAttribute("fill"),
       );
       expect(rects.length).toBeGreaterThan(0);
-      // Every series got a resolved colour — none fell back to the
-      // single-series default.
-      expect(rects.every((r) => r.getAttribute("fill") !== "var(--chart-line-primary)")).toBe(true);
+      // Every series got a DISTINCT resolved colour from the mono ladder — a
+      // fallback to one repeated default would collapse this to one value.
+      // An inequality against a single literal (`!== "var(--chart-line-primary)"`)
+      // stays true even when `bar.tsx` swaps every fill for a `url(#bp-series-…)`
+      // pattern at high decoration, so it stops asserting anything there (#254);
+      // counting distinct values holds on both render paths.
+      const fills = new Set(rects.map((r) => r.getAttribute("fill")));
+      expect(fills.size).toBeGreaterThan(1);
     });
   },
 };
