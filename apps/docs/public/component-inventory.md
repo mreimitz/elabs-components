@@ -1319,6 +1319,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | GRID_DENSITY_PRESETS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | RESIZE_HANDLES | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | SILENT_ANNOUNCEMENTS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| TILE_CHROME_Z | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| TILE_RAISED_Z | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| TILE_Z_BAND | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | TileDragHandle | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | TileResizeHandles | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | TileSizeBadge | component |  | `@elabs-ai/components-charts/dashboard` |  |

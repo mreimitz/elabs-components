@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T18:46:01.410Z",
+  "generatedAt": "2026-09-16T19:47:10.055Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22036,6 +22036,21 @@
               "name": "SILENT_ANNOUNCEMENTS",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
+              "name": "TILE_CHROME_Z",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "TILE_RAISED_Z",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
+            },
+            {
+              "name": "TILE_Z_BAND",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx"
             },
             {
               "name": "TileDragHandle",
