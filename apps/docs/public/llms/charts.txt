@@ -394,12 +394,15 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 
 ## Subpath exports
 
+- CONTENT_FIELD_PREFIX (`@elabs-ai/components-charts/dashboard` · component)
 - DASHBOARD_EDIT_SHIFT_STEP (`@elabs-ai/components-charts/dashboard` · component)
 - DASHBOARD_TILE_WARNING_THRESHOLD (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardAssetPanel (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardEditLayer (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardExpressionError (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardGridContext (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardMarquee (`@elabs-ai/components-charts/dashboard` · component)
+- DashboardPropertiesPanel (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardProvider (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardSelectionBar (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardSheet (`@elabs-ai/components-charts/dashboard` · component)
@@ -407,6 +410,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DashboardTileHeader (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardTileMenu (`@elabs-ai/components-charts/dashboard` · component)
 - DEFAULT_DASHBOARD_LABELS (`@elabs-ai/components-charts/dashboard` · component)
+- DEFAULT_DASHBOARD_PANEL_LABELS (`@elabs-ai/components-charts/dashboard` · component)
 - DEFAULT_FILTER_TILE_LABELS (`@elabs-ai/components-charts/dashboard` · component)
 - DEFAULT_GRID_COLUMNS (`@elabs-ai/components-charts/dashboard` · component)
 - DEFAULT_GRID_GAP (`@elabs-ai/components-charts/dashboard` · component)

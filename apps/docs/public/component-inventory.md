@@ -1288,12 +1288,15 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Y_AXIS_MAX_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_MIN_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | YAxis | component |  | `@elabs-ai/components-charts` |  |
+| CONTENT_FIELD_PREFIX | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_EDIT_SHIFT_STEP | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_TILE_WARNING_THRESHOLD | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardAssetPanel | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardEditLayer | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardExpressionError | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardGridContext | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardMarquee | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardPropertiesPanel | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardProvider | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardSelectionBar | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardSheet | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1301,6 +1304,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DashboardTileHeader | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_DASHBOARD_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_DASHBOARD_PANEL_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_FILTER_TILE_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_COLUMNS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_GAP | component |  | `@elabs-ai/components-charts/dashboard` |  |
