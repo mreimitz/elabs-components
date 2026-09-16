@@ -25,7 +25,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
 | `@elabs-ai/components-terminal` | packages/terminal | 31 | 1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
-| `@elabs-ai/components-process` | packages/process | 18 | 4 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
+| `@elabs-ai/components-process` | packages/process | 21 | 4 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
 
 ## @elabs-ai/components-tokens
 
@@ -1429,6 +1429,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
 | AbstractionControls | component |  | `@elabs-ai/components-process` |  |
+| CASE_TABLE_COLUMN_LABEL_KEYS | component |  | `@elabs-ai/components-process` |  |
+| CaseTable | component |  | `@elabs-ai/components-process` |  |
+| CaseTimeline | component |  | `@elabs-ai/components-process` |  |
 | DEFAULT_LAYOUT_DEBOUNCE_MS | component |  | `@elabs-ai/components-process` |  |
 | EMPTY_PROCESS_MAP_HOVER | component |  | `@elabs-ai/components-process` |  |
 | GHOST_OPACITY | component |  | `@elabs-ai/components-process` |  |
