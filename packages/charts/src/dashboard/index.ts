@@ -29,6 +29,7 @@ export * from "./edit";
 // Toolbar — RM-079
 
 // Panels — RM-080
+// DashboardAssetPanel, DashboardPropertiesPanel and their forms ship through `./chrome` above.
 
 // Interactions editor — RM-082
 

@@ -238,6 +238,17 @@ export interface DashboardSpec {
   theme?: DashboardTheme;
   /** Hand-tuned per-breakpoint layouts (R9); absent ones fall back to `stackForNarrow`. */
   layouts?: Partial<Record<"md" | "sm", TileLayout[]>>;
+  // sheet actions/showCondition — RM-080
+  /** Actions run, in order, when the sheet opens — the `button` tile's action vocabulary. */
+  actions?: Array<
+    | { type: "navigate"; sheetId: string }
+    | { type: "applyBookmark"; id: string }
+    | { type: "clearSelections" }
+    | { type: "setVariable"; name: string; value: VariableValue }
+    | { type: "host"; id: string }
+  >;
+  /** Show the sheet only when this condition holds (the `visibleWhen` grammar). */
+  showCondition?: string;
 }
 
 /** Codes a spec problem is reported under. */

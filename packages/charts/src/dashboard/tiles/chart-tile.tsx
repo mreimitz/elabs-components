@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import { AutoChart } from "../../auto-chart/auto-chart";
-import type { ChartSpec } from "../../auto-chart/chart-spec";
+import type { ChartSpec, ChartSpecEmphasis, ChartType } from "../../auto-chart/chart-spec";
 import { ChartFrame } from "../../chart-frame/chart-frame";
 import type { ChartDatapoint } from "../../charts/chart-datapoint";
 import type { ChartSelectionCategory } from "../../charts/chart-selection";
@@ -122,7 +122,7 @@ export function createChartTileKind(kind = "chart"): DashboardTileKind<ChartTile
         {
           type: "enum",
           name: "type",
-          label: "Chart type",
+          label: "Chart type", // i18n-exempt: config-form label
           options: [
             "line",
             "area",
@@ -131,11 +131,35 @@ export function createChartTileKind(kind = "chart"): DashboardTileKind<ChartTile
             "scatter",
             "radar",
             "funnel",
-            "waterfall",
+            "candlestick",
             "heatmap",
-          ],
+            "calendar",
+            "waterfall",
+            "dumbbell",
+            "unit",
+            "treemap",
+            "histogram",
+            "box",
+            "strip",
+            "bump",
+            "stream",
+            "diverging-bar",
+          ] satisfies ChartType[],
         },
-        { type: "string", name: "x", label: "Category field", required: true },
+        { type: "string", name: "x", label: "Category field", required: true }, // i18n-exempt: config-form label
+        { type: "list", name: "series", label: "Series fields" }, // i18n-exempt: config-form label
+        { type: "string", name: "fields.category", label: "Selection field" }, // i18n-exempt: config-form label
+        {
+          type: "enum",
+          name: "emphasis",
+          label: "Emphasis", // i18n-exempt: config-form label
+          options: ["analytical", "editorial"] satisfies ChartSpecEmphasis[],
+        },
+        { type: "string", name: "valueFormat", label: "Value format" }, // i18n-exempt: config-form label
+      ],
+      sections: [
+        { id: "data", label: "Data", fields: ["type", "x", "series", "fields.category"] }, // i18n-exempt: config-form label
+        { id: "appearance", label: "Appearance", fields: ["emphasis", "valueFormat"] }, // i18n-exempt: config-form label
       ],
     },
     defaultContent: { data: [], x: "category", series: [] },
