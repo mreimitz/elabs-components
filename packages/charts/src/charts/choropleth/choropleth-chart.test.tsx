@@ -11,7 +11,9 @@
  * @elabs-ai/components-editor / @elabs-ai/components-flow precedent.
  */
 
+import { geoArea, geoCentroid } from "d3-geo";
 import { describe, expect, it, vi } from "vitest";
+import { squareStateFeature, US_STATE_SEEDS } from "./us-states-fixture";
 
 // ---------------------------------------------------------------------------
 // Mock @visx/responsive so ParentSize calls its child with a concrete size
@@ -464,6 +466,36 @@ describe("ChoroplethFeature labelTop (RM-032)", () => {
     expect(labels).toHaveLength(2);
     for (const label of labels) {
       expect(label.textContent).not.toBe("No Data");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// #236 — `squareStateFeature`'s ring winding. Pure, fast, no browser and no
+// projection: `geoCentroid`/`geoArea` read a polygon SPHERICALLY, so a
+// counter-clockwise exterior ring (RFC 7946 order) is read as the sphere
+// MINUS the square — `geoCentroid` returns the ring's antipode and `geoArea`
+// returns close to a full sphere (~4*pi). This is the exact assertion that
+// would have caught the bug the existing `fill`/`<text>`-count jsdom suite
+// above could not: it never looks at geometry.
+// ---------------------------------------------------------------------------
+describe("squareStateFeature winding (#236)", () => {
+  it("every seed's centroid recovers its own [lon, lat] — never the antipode", () => {
+    // A correctly-wound square's spherical centroid sits within a fraction of
+    // a degree of its authored center (curvature grows with square size and
+    // latitude — measured up to ~0.003° for this fixture's largest tier at
+    // its highest latitude). An inverted ring returns the ANTIPODE — off by
+    // roughly 180°, nowhere near this bound.
+    for (const seed of US_STATE_SEEDS) {
+      const [lon, lat] = geoCentroid(squareStateFeature(seed));
+      expect(Math.abs(lon - seed.lon)).toBeLessThan(0.01);
+      expect(Math.abs(lat - seed.lat)).toBeLessThan(0.01);
+    }
+  });
+
+  it("every seed's spherical area is a small square, never ~4*pi (the antipodal complement)", () => {
+    for (const seed of US_STATE_SEEDS) {
+      expect(geoArea(squareStateFeature(seed))).toBeLessThan(0.01);
     }
   });
 });
