@@ -32,7 +32,7 @@ Element.prototype.releasePointerCapture ??= () => {};
 Element.prototype.scrollIntoView ??= () => {};
 
 describe("withBuiltInTiles", () => {
-  it("registers exactly the nine built-in kinds", () => {
+  it("registers exactly the ten built-in kinds", () => {
     const kinds = withBuiltInTiles({});
     expect(kinds.map((k) => k.kind).sort()).toEqual(
       [
@@ -40,6 +40,7 @@ describe("withBuiltInTiles", () => {
         "chart",
         "container",
         "divider",
+        "filter",
         "heading",
         "image",
         "metric",
@@ -47,6 +48,12 @@ describe("withBuiltInTiles", () => {
         "variable",
       ].sort(),
     );
+  });
+
+  it("includes the filter tile kind (RM-076)", () => {
+    expect(builtInTiles.filter).toBeDefined();
+    const kinds = withBuiltInTiles({});
+    expect(kinds.some((k) => k.kind === "filter")).toBe(true);
   });
 
   it("lets a host kind win over a built-in of the same name", () => {
