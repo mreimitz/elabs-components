@@ -45,7 +45,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-54 exported components — including `AbstractionControls`, `ACTIVITY_COLOR_SLOTS`, `ACTIVITY_OTHER_TOKEN`, `CASE_TABLE_COLUMN_LABEL_KEYS`, `CaseTable`.
+62 exported components — including `AbstractionControls`, `ACTIVITY_COLOR_SLOTS`, `ACTIVITY_OTHER_TOKEN`, `CASE_TABLE_COLUMN_LABEL_KEYS`, `CaseTable`.
 
 Don't guess the API — ask the CLI:
 

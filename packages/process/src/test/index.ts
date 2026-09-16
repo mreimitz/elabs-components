@@ -49,6 +49,10 @@ export type {
   ViolationListDoubleProps,
 } from "./doubles";
 
+// Doubles — RM-065
+export { ProcessReplayDouble } from "./doubles";
+export type { ProcessReplayDoubleProps } from "./doubles";
+
 // Fixture helper
 export { withProcessFixture } from "./primitives";
 export type { ProcessFixture } from "./primitives";

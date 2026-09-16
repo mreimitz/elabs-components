@@ -73,6 +73,7 @@ import {
   CONFORMANCE_STATE_ENCODING,
   type ConformanceState,
 } from "../conformance-overlay/conformance-state";
+import { useProcessReplayEdgeTokens } from "../process-replay/replay-tokens-context";
 
 /**
  * The label pill under a conformance state (RM-062): the state's glyph as a leading
@@ -161,6 +162,9 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
   }, [isExcluded, data?.ariaLabel, conformance, selected]);
   const strokeStyle = conformanceStrokeStyle(conformance, selected);
   const edgeStyle = strokeStyle ? { ...props.style, ...strokeStyle } : props.style;
+  // RM-065: tokens from an enclosing `ProcessReplay`. `undefined` outside one, and then the
+  // key is not added at all, so a map with no replay builds exactly the data it did before.
+  const replayTokens = useProcessReplayEdgeTokens(props.id);
 
   const weightedData = useMemo<FlowWeightedEdgeData>(
     () => ({
@@ -172,6 +176,7 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       secondaryLabel: data?.secondaryLabel,
       variant: data?.isBackEdge ? "back" : "forward",
       labelProps,
+      ...(replayTokens ? { tokens: replayTokens } : undefined),
     }),
     [
       data?.weight,
@@ -181,6 +186,7 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       data?.secondaryLabel,
       data?.isBackEdge,
       labelProps,
+      replayTokens,
     ],
   );
 
@@ -191,8 +197,9 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       label: data?.label,
       secondaryLabel: data?.secondaryLabel,
       labelProps,
+      ...(replayTokens ? { tokens: replayTokens } : undefined),
     }),
-    [data?.weight, data?.label, data?.secondaryLabel, labelProps],
+    [data?.weight, data?.label, data?.secondaryLabel, labelProps, replayTokens],
   );
 
   const opacity = isExcluded

@@ -177,3 +177,23 @@ export type {
 // diffGraphs — RM-064
 export { diffGraphs } from "./diff-graphs";
 export type { DiffEntry, DiffState, ProcessGraphDiff } from "./diff-graphs";
+
+// replayTimeline — RM-065
+export {
+  defaultReplayBucketMs,
+  rankReplayCongestion,
+  REPLAY_MAX_FRAMES,
+  REPLAY_TARGET_FRAMES,
+  REPLAY_TOKEN_RADIUS_RANGE,
+  replayFrameAt,
+  replayTimeline,
+  replayTokenRadius,
+} from "./replay-timeline";
+export type {
+  ReplayCongestionEntry,
+  ReplayFrame,
+  ReplayFrameToken,
+  ReplaySegment,
+  ReplayTimeline,
+  ReplayTimelineOptions,
+} from "./replay-timeline";

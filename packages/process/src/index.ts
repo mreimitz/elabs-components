@@ -61,3 +61,6 @@ export * from "./happy-path-editor";
 
 // ProcessCompare — RM-064
 export * from "./process-compare";
+
+// ProcessReplay — RM-065
+export * from "./process-replay";
