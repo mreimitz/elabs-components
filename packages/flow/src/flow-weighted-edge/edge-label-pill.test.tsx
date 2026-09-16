@@ -62,4 +62,24 @@ describe("EdgeLabelPill", () => {
     render(<EdgeLabelPill x={0} y={0} label="128×" data-selection="excluded" />);
     expect(screen.getByRole("button")).toHaveAttribute("data-selection", "excluded");
   });
+
+  // #354 — a caller-supplied `aria-label` (the seam #351 built) must win over the pill's
+  // own computed `[label, secondaryLabel].join(" · ")` string, since a composing package
+  // (e.g. `@elabs-ai/components-process`'s `ProcessTransitionEdge`) uses it to replace a
+  // bare printed number with a full, disambiguating sentence naming both endpoints.
+  it("lets a caller-supplied aria-label win over the computed label · secondaryLabel name", () => {
+    render(
+      <EdgeLabelPill
+        x={0}
+        y={0}
+        label="213"
+        aria-label="Transition from Check Credit to Approve Order, Transitions 213"
+      />,
+    );
+    expect(
+      screen.getByRole("button", {
+        name: "Transition from Check Credit to Approve Order, Transitions 213",
+      }),
+    ).toBeInTheDocument();
+  });
 });

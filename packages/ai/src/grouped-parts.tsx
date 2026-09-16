@@ -87,7 +87,7 @@ function DefaultGroup({
         className={cn(
           "group flex w-full items-center gap-2 p-3 text-body text-muted-foreground",
           "transition-colors duration-fast ease-standard hover:text-foreground motion-reduce:transition-none",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+          "focus-ring-inset",
         )}
       >
         <BrainIcon aria-hidden="true" className="size-4 shrink-0" />

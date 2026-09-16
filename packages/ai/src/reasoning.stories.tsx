@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "vitest";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "./reasoning";
 const meta = {
@@ -78,4 +79,30 @@ export const StructuredLedger: Story = {
       </ReasoningContent>
     </Reasoning>
   ),
+};
+
+/**
+ * Focus indicator: Tab to the trigger and assert a real box-shadow exists,
+ * mirroring the library's compound indicator (not the browser default).
+ */
+export const FocusIndicator: Story = {
+  name: "Focus indicator (#313)",
+  render: () => (
+    <Reasoning className="max-w-prose">
+      <ReasoningTrigger />
+      <ReasoningContent>{"Checked the schema and ran the aggregation."}</ReasoningContent>
+    </Reasoning>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    // Find the trigger button inside the Collapsible component
+    const trigger = canvas.getByRole("button");
+
+    // Tab rather than .focus(): `:focus-visible` is what `focus-ring` keys
+    // on, and a programmatic focus does not reliably match it.
+    await userEvent.tab();
+    await expect(trigger).toHaveFocus();
+
+    const focused = getComputedStyle(trigger);
+    await expect(focused.boxShadow).not.toBe("none");
+  },
 };

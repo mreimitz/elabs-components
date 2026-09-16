@@ -32,7 +32,15 @@
  */
 
 import { scaleLinear } from "@visx/scale";
-import { forwardRef, useCallback, useId, useMemo, useRef, useState, type MutableRefObject } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import useMeasure from "react-use-measure";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";

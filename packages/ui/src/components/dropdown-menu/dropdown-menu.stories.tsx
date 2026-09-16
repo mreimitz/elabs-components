@@ -174,3 +174,38 @@ export const SubmenuRadioAndCheckboxHighDecoration: Story = {
   render: SubmenuRadioAndCheckbox.render,
   play: SubmenuRadioAndCheckbox.play,
 };
+
+/**
+ * Locks WCAG 1.4.11 keyboard-focus contrast (#308): a menu item's
+ * `focus:bg-accent` fill alone measures ~1.17–1.40:1 against `--popover` in
+ * both themes — not a visible indicator. Moving focus with the keyboard must
+ * additionally paint a compound ring (`focus-ring-inset`): a real `boxShadow`
+ * layer, or a non-zero, non-`none` `outline`.
+ */
+export const KeyboardFocusIndicator: Story = {
+  name: "Keyboard focus indicator (#308)",
+  render: Default.render,
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const trigger = canvas.getByRole("button", { name: /open menu/i });
+    await userEvent.click(trigger);
+    const body = within(canvasElement.ownerDocument.body);
+    await body.findByRole("menuitem", { name: "Profile" });
+    await userEvent.keyboard("{ArrowDown}");
+    const focused = canvasElement.ownerDocument.activeElement as HTMLElement;
+    await expect(focused).toHaveAttribute("role", "menuitem");
+    const style = getComputedStyle(focused);
+    const hasRing = style.boxShadow !== "none";
+    const hasOutline = style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0;
+    await expect(hasRing || hasOutline).toBe(true);
+    // Close before the axe afterEach scan — an open portal otherwise leaves a
+    // stray focusable node behind an `aria-hidden` sibling from an earlier
+    // story's not-yet-cleaned-up DOM (aria-hidden-focus). Waiting for the menu
+    // to actually leave the DOM (not just sending the keystroke) matters: on a
+    // slower close — observed reproducibly under `STORYBOOK_THEME=dark`, never
+    // under light — the axe scan can otherwise run mid-close-transition, while
+    // the still-focusable menuitem sits inside a portal Radix has already
+    // marked `aria-hidden`.
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(body.queryByRole("menu")).not.toBeInTheDocument());
+  },
+};

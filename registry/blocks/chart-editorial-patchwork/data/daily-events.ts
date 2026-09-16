@@ -39,3 +39,36 @@ export function categoryTokenIndex(categories: string[], category: string): numb
   const i = categories.indexOf(category);
   return ((i >= 0 ? i : 0) % 12) + 1;
 }
+
+/**
+ * A category's non-hue stroke signature — the WCAG 1.4.1 "colour is never the
+ * only channel" fix (#293). Cycles through a small, visually distinct set of
+ * `stroke-dasharray` values (SVG user units) in the same first-seen order as
+ * `categoryTokenIndex`, so a category always gets the same signature on both
+ * the wedge and the legend swatch. `label` is what the `sr-only` summary
+ * names; `dasharray` of `undefined` renders a solid line.
+ */
+export interface CategoryStrokeSignature {
+  label: string;
+  dasharray: string | undefined;
+}
+
+const CATEGORY_STROKE_SIGNATURES: CategoryStrokeSignature[] = [
+  { label: "solid outline", dasharray: undefined },
+  { label: "dashed", dasharray: "5 3" },
+  // Round `strokeLinecap` turns this near-zero dash into a dot the width of
+  // the stroke itself, spaced 3.5 units apart — a true dotted line, not a
+  // sub-pixel dashed one.
+  { label: "dotted", dasharray: "0.5 3.5" },
+];
+
+export function categoryStrokeSignature(
+  categories: string[],
+  category: string,
+): CategoryStrokeSignature {
+  const i = categories.indexOf(category);
+  const signature =
+    CATEGORY_STROKE_SIGNATURES[(i >= 0 ? i : 0) % CATEGORY_STROKE_SIGNATURES.length];
+  if (!signature) throw new Error("unreachable: modulo index always in range");
+  return signature;
+}

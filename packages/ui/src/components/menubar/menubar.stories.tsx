@@ -65,3 +65,28 @@ export const Default: Story = {
     await userEvent.keyboard("{Escape}");
   },
 };
+
+/**
+ * Locks WCAG 1.4.11 keyboard-focus contrast (#308): a menu item's
+ * `focus:bg-accent` fill alone is not a visible indicator (~1.17–1.40:1
+ * against `--popover`). Moving focus with the keyboard must additionally
+ * paint a compound ring (`focus-ring-inset`): a real `boxShadow` layer, or a
+ * non-zero, non-`none` `outline`.
+ */
+export const KeyboardFocusIndicator: Story = {
+  name: "Keyboard focus indicator (#308)",
+  render: Default.render,
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await userEvent.click(canvas.getByRole("menuitem", { name: /file/i }));
+    const body = within(canvasElement.ownerDocument.body);
+    await body.findByRole("menu");
+    await userEvent.keyboard("{ArrowDown}");
+    const focused = canvasElement.ownerDocument.activeElement as HTMLElement;
+    await expect(focused).toHaveAttribute("role", "menuitem");
+    const style = getComputedStyle(focused);
+    const hasRing = style.boxShadow !== "none";
+    const hasOutline = style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0;
+    await expect(hasRing || hasOutline).toBe(true);
+    await userEvent.keyboard("{Escape}");
+  },
+};

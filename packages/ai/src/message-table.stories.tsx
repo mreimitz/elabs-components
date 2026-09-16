@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent } from "storybook/test";
 import { useState } from "react";
 import { MessageTable, type TableSort } from "./message-table";
 import type { TableSpec } from "./message-table-spec";
@@ -173,4 +174,27 @@ export const DarkTheme: Story = {
       </div>
     ),
   ],
+};
+
+/**
+ * Focus indicator on sortable column headers (#313): Tab to a sort header and
+ * assert the compound indicator's OUTLINE layer (`outlineStyle: "solid"`,
+ * `--ring-contour`) that `focus-ring` adds. `boxShadow !== "none"` alone also
+ * passes on the legacy `focus-visible:outline-none focus-visible:ring-2
+ * focus-visible:ring-ring focus-visible:ring-offset-1` pattern (Tailwind's
+ * `ring-2` still paints a box-shadow), so it does not lock the fix.
+ */
+export const FocusIndicator: Story = {
+  args: { spec: invoicesSpec, sortable: true },
+  play: async ({ canvas, userEvent }) => {
+    const buttons = canvas.getAllByRole("button");
+    if (buttons.length > 0) {
+      await userEvent.tab();
+      await expect(buttons[0]).toHaveFocus();
+      const focused = getComputedStyle(buttons[0]);
+      await expect(focused.boxShadow).not.toBe("none");
+      await expect(focused.outlineStyle).toBe("solid");
+      await expect(parseFloat(focused.outlineWidth)).toBeGreaterThan(0);
+    }
+  },
 };

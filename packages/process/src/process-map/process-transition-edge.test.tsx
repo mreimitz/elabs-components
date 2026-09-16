@@ -158,3 +158,50 @@ describe("ProcessTransitionEdge — reaches an excluded edge's label pill by dat
     expect(pill).not.toHaveAttribute("data-selection");
   });
 });
+
+// #354 — the focused element (this pill) and the named element (React Flow's own edge
+// `<g>`, which `data.ariaLabel` also reaches via the top-level `edge.ariaLabel` React Flow
+// itself reads — see `map-model.ts`) must be the SAME element. `data.ariaLabel` is the
+// channel; this locks that it actually lands on the rendered pill's accessible name,
+// merged with (never replacing) the excluded-state fields #351 already locks above.
+describe("ProcessTransitionEdge — folds data.ariaLabel onto the pill's accessible name (#354)", () => {
+  it("uses data.ariaLabel as the pill's accessible name instead of the bare printed label", () => {
+    render(
+      <ProcessTransitionEdge
+        {...makeEdgeProps({
+          data: {
+            ...BASE_EDGE_DATA,
+            ariaLabel: "Transition from a to b, Transitions 12",
+          },
+        })}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Transition from a to b, Transitions 12" }),
+    ).toBeInTheDocument();
+  });
+
+  it("merges data.ariaLabel with the excluded-state ghost frame rather than replacing it", () => {
+    render(
+      <ProcessTransitionEdge
+        {...makeEdgeProps({
+          data: {
+            ...BASE_EDGE_DATA,
+            selectionState: "excluded",
+            ariaLabel: "Transition from a to b, Transitions 12, excluded",
+          },
+        })}
+      />,
+    );
+    const pill = screen.getByRole("button", {
+      name: "Transition from a to b, Transitions 12, excluded",
+    });
+    expect(pill.className).toMatch(/\bborder-dashed\b/);
+    expect(pill).toHaveAttribute("data-selection", "excluded");
+  });
+
+  it("falls back to the pill's own computed name when data carries no ariaLabel", () => {
+    render(<ProcessTransitionEdge {...makeEdgeProps()} />);
+    expect(screen.getByRole("button", { name: "12×" })).toBeInTheDocument();
+  });
+});

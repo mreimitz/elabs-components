@@ -16,7 +16,10 @@ export type SourcesTriggerProps = ComponentProps<typeof CollapsibleTrigger> & {
 };
 
 export const SourcesTrigger = ({ className, count, children, ...props }: SourcesTriggerProps) => (
-  <CollapsibleTrigger className={cn("group flex items-center gap-2", className)} {...props}>
+  <CollapsibleTrigger
+    className={cn("group flex items-center gap-2 focus-ring", className)}
+    {...props}
+  >
     {children ?? (
       <>
         <p className="font-medium">Used {count} sources</p>

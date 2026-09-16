@@ -36,6 +36,23 @@ export const Default: Story = {
   },
 };
 
+// WCAG 1.4.11 keyboard-focus contrast (#308) for `SelectItem` is locked in
+// `select.test.tsx`, not here: a Storybook interaction story that opens this
+// `Select` and then either closes it (any method — Escape, `{Enter}`, or a
+// click) or leaves it open trips one of two PRE-EXISTING, unrelated axe
+// violations in this test environment on any story id not already
+// grandfathered into `scripts/a11y-baseline.json` — closing hits the same
+// `button-name` false-positive `forms-select--default` is already exempted
+// for (reproduced verbatim by a throwaway story that just re-runs `Default`'s
+// own play function under a new id), and leaving it open hits
+// `aria-hidden-focus` (reproduced even with `modal={false}`). Growing the
+// a11y baseline for a new story is exactly what `pnpm check --rule
+// a11y-baseline`'s ratchet forbids (`ratchet.maxStories` only goes down), so
+// rather than force a hand-baselined exemption for a defect this change did
+// not introduce, the keyboard-focus-ring assertion for `SelectItem` lives in
+// a plain RTL unit test instead (no axe gate there), matching the existing
+// `icon-button.test.tsx` precedent of asserting the utility class directly.
+
 const LONG_LABEL = "prod-eu-west-1 · 2026-08-01 · 12 tools";
 
 /**

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { expect, fn, userEvent } from "storybook/test";
 
 import { ChatGreeting } from "./chat-greeting";
 import { SessionHeader } from "./session-header";
@@ -125,4 +125,38 @@ export const WithChatGreeting: Story = {
       </div>
     </div>
   ),
+};
+
+/**
+ * Focus indicator on whats-new link (#313): Tab to the link and assert the
+ * compound indicator's OUTLINE layer (`outlineStyle: "solid"`,
+ * `--ring-contour`) that `focus-ring` adds. `boxShadow !== "none"` alone
+ * also passes on the legacy `focus-visible:outline-none
+ * focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`
+ * pattern (Tailwind's `ring-2` still paints a box-shadow), so it does not
+ * lock the fix.
+ */
+export const FocusIndicator: Story = {
+  args: {
+    whatsNew: [
+      { label: "New feature", href: "https://example.com" },
+      { label: "Bug fix", href: "https://example.com" },
+    ],
+  },
+  render: (args) => (
+    <div className="mx-auto max-w-md bg-background">
+      <SessionHeader {...args} />
+    </div>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const links = canvas.getAllByRole("link");
+    if (links.length > 0) {
+      await userEvent.tab();
+      await expect(links[0]).toHaveFocus();
+      const focused = getComputedStyle(links[0]);
+      await expect(focused.boxShadow).not.toBe("none");
+      await expect(focused.outlineStyle).toBe("solid");
+      await expect(parseFloat(focused.outlineWidth)).toBeGreaterThan(0);
+    }
+  },
 };

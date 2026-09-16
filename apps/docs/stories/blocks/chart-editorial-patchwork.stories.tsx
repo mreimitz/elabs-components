@@ -91,6 +91,39 @@ async function playPatchwork(canvasElement: HTMLElement, { focus }: { focus: boo
     await expect(figure.tabIndex).toBe(0);
     await expectHouseFocusRing(figure);
   }
+
+  // #293 — category has a NON-hue channel: every sector carries a
+  // category-keyed `stroke-dasharray` signature, one signature per category,
+  // no two categories sharing one, and the legend swatch repeats the exact
+  // same signature so the key matches what's on the dial.
+  const dasharraySignature = (el: Element) => el.getAttribute("stroke-dasharray") ?? "none";
+  const sectorsByCategory = new Map<string, Set<string>>();
+  for (const sector of sectors) {
+    const category = sector.getAttribute("data-category") as string;
+    const signatures = sectorsByCategory.get(category) ?? new Set<string>();
+    signatures.add(dasharraySignature(sector));
+    sectorsByCategory.set(category, signatures);
+  }
+  await expect(sectorsByCategory.size).toBeGreaterThan(1);
+  for (const signatures of sectorsByCategory.values()) {
+    await expect(signatures.size).toBe(1);
+  }
+  const perCategorySignature = [...sectorsByCategory.values()].map((set) => [...set][0]);
+  await expect(new Set(perCategorySignature).size).toBe(sectorsByCategory.size);
+
+  const legendSwatches = Array.from(
+    canvasElement.querySelectorAll<SVGElement>(
+      '[data-slot="chart-editorial-patchwork-legend-swatch"]',
+    ),
+  );
+  await expect(legendSwatches).toHaveLength(sectorsByCategory.size);
+  const legendSignatures = legendSwatches.map(dasharraySignature);
+  await expect(new Set(legendSignatures).size).toBe(sectorsByCategory.size);
+  for (const swatch of legendSwatches) {
+    const category = swatch.getAttribute("data-category") as string;
+    const [wedgeSignature] = [...(sectorsByCategory.get(category) ?? [])];
+    await expect(dasharraySignature(swatch)).toBe(wedgeSignature);
+  }
 }
 
 export const Default: Story = {

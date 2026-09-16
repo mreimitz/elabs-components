@@ -194,3 +194,82 @@ export const ChangeReviewComposition: Story = {
     </div>
   ),
 };
+
+/**
+ * Focus indicator on expandable line (#313): Tab to the "show more" button
+ * and assert the compound indicator's OUTLINE layer (`outlineStyle: "solid"`,
+ * `--ring-contour`) that `focus-ring` adds — not just `boxShadow !== "none"`,
+ * which the legacy `ring-2` pattern also produces.
+ *
+ * The prior version passed a `hiddenLineCount` prop that `DiffViewProps`
+ * (`diff-view.tsx:77`) does not define — React spread it onto the DOM as a
+ * meaningless `hiddenlinecount` attribute and warned about it, and the "show
+ * more" row NEVER rendered (a real diff never mentions "50" anywhere).
+ * `getByRole("button", …)` then always threw before the focus check ran.
+ * `CollapsedRow` (`diff-view.tsx:289`) only appears when `collapseDiffRows`
+ * (`packages/ui/src/lib/diff-rows.ts`) actually collapses a context run
+ * longer than `contextLines` — so this story now supplies a real 10-line
+ * context run with `contextLines={2}`, which collapses to
+ * `top(1) + collapsed(8) + bottom(1)`, i.e. a real "Show 8 more lines"
+ * button. The button's accessible name is
+ * `t("ai.diffView.showMore", { count })`, not the literal "Show more" —
+ * matched by a count-tolerant regex so it doesn't drift with the wording.
+ */
+export const FocusIndicatorExpand: Story = {
+  name: "Focus indicator expand (#313)",
+  render: () => (
+    <div className="max-w-2xl">
+      <DiffView
+        lines={Array.from({ length: 10 }, (_, i) => ({
+          type: "context" as const,
+          oldNumber: i + 1,
+          newNumber: i + 1,
+          text: `line ${i + 1}`,
+        }))}
+        contextLines={2}
+      />
+    </div>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole("button", { name: /show \d+ more lines?/i });
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    const focused = getComputedStyle(button);
+    await expect(focused.boxShadow).not.toBe("none");
+    await expect(focused.outlineStyle).toBe("solid");
+    await expect(parseFloat(focused.outlineWidth)).toBeGreaterThan(0);
+  },
+};
+
+/**
+ * Focus indicator on scrollable pager (#313): Tab to the diff body and
+ * assert the compound indicator's OUTLINE layer on the actual scroll
+ * container. The prior version located it via `getByText(/^export/)`, which
+ * throws "multiple elements" under `variant="split"` (the same line renders
+ * once per pane) — and even resolved, `scrollDiv.parentElement` was never
+ * the scroll container itself (the text sits several nodes deep inside it).
+ * Query the tabbable scroll container directly — it carries `tabIndex={0}`
+ * and `focus-ring-inset` (`diff-view.tsx`'s `DiffViewPager`) — instead of
+ * inferring it from rendered content.
+ */
+export const FocusIndicatorPager: Story = {
+  name: "Focus indicator pager (#313)",
+  render: () => (
+    <div className="max-w-2xl">
+      <DiffView lines={SAMPLE_LINES} pager variant="split" />
+    </div>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const pager = canvas.getByRole("region");
+    const scrollDiv = pager.querySelector<HTMLElement>('[tabindex="0"]');
+    if (scrollDiv == null) {
+      throw new Error("expected a tabbable scroll container inside the pager region");
+    }
+    await userEvent.tab();
+    await expect(scrollDiv).toHaveFocus();
+    const focused = getComputedStyle(scrollDiv);
+    await expect(focused.boxShadow).not.toBe("none");
+    await expect(focused.outlineStyle).toBe("solid");
+    await expect(parseFloat(focused.outlineWidth)).toBeGreaterThan(0);
+  },
+};

@@ -296,7 +296,7 @@ function CollapsedRow({ hiddenCount, onExpand }: { hiddenCount: number; onExpand
       <button
         type="button"
         onClick={onExpand}
-        className="col-start-4 w-fit rounded-sm px-1 text-info-text text-meta hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="col-start-4 w-fit rounded-sm px-1 text-info-text text-meta hover:underline focus-ring"
       >
         {t("ai.diffView.showMore", { count: hiddenCount })}
       </button>
@@ -579,7 +579,7 @@ function DiffViewPager({
         tabIndex={0}
         onScroll={updatePercent}
         onKeyDown={onKeyDown}
-        className="max-h-[32rem] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        className="max-h-[32rem] overflow-y-auto focus-ring-inset"
       >
         {children}
       </div>

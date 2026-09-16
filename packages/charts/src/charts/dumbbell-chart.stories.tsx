@@ -11,6 +11,22 @@ function rectsIntersect(a: DOMRect, b: DOMRect): boolean {
   return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 }
 
+/**
+ * Sub-pixel slack for the "label box lies inside the SVG" checks below.
+ * `deriveDumbbellMargin` sizes the margin from `measure()` (canvas
+ * `measureText`, chosen over `getBoundingClientRect` specifically to avoid
+ * forcing sync SVG layout — see `use-text-measurer.ts`), then the label is
+ * actually painted as real SVG `<text>` and read back via
+ * `getBoundingClientRect`. The two engines shape/round the same string
+ * independently, so on some font stacks (observed in CI, not reproducible on
+ * every machine) the rendered box can land a hair outside the estimate — e.g.
+ * `-0.011871337890625`px, roughly a hundredth of a device pixel and invisible
+ * at any zoom. That is measurement noise between two engines, not the
+ * component actually clipping a label; a real overflow would be many px, not
+ * hundredths. Kept far below a visible half-pixel.
+ */
+const LABEL_BOUNDARY_TOLERANCE_PX = 0.5;
+
 const meta = {
   title: "Charts/DumbbellChart",
   component: DumbbellChart,
@@ -96,8 +112,8 @@ export const ThisYearVsLast: Story = {
       expect(labels.length).toBeGreaterThan(0);
       labels.forEach((label) => {
         const box = label.getBoundingClientRect();
-        expect(box.left).toBeGreaterThanOrEqual(svgBox.left);
-        expect(box.right).toBeLessThanOrEqual(svgBox.right);
+        expect(box.left).toBeGreaterThanOrEqual(svgBox.left - LABEL_BOUNDARY_TOLERANCE_PX);
+        expect(box.right).toBeLessThanOrEqual(svgBox.right + LABEL_BOUNDARY_TOLERANCE_PX);
       });
     });
   },
