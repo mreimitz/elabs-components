@@ -64,8 +64,10 @@ const DENSE = replyTimes(2000, 41, "Support", (u) => 4 + u * u * 190);
 
 /**
  * **F14 — rung histogram.** `unit` turns each bin into COUNTABLE rungs instead of
- * a bar: one rung is five tickets, so the reader can count the tall bin rather
- * than measure it against an axis. The dashed flag is the median.
+ * a bar: one rung is five tickets (`unitLabel` renders that legend), so the
+ * reader can count the tall bin rather than measure it against an axis. The
+ * rung pitch is the plot's own count scale, so the stack fills the room it is
+ * given. The dashed flag is the median.
  *
  * Reach for a histogram when the bin EDGES carry meaning — here the first bucket
  * is "under 15 minutes", which is the queue's actual promise.
@@ -80,6 +82,7 @@ export const RungHistogram: Story = {
         data={SUPPORT_ONLY}
         kind="histogram"
         unit={5}
+        unitLabel="one rung = 5 tickets"
         valueFormat="number"
         valueKey="minutes"
       />
@@ -93,7 +96,20 @@ export const RungHistogram: Story = {
     });
     // Countable, not measured: the bin is drawn as a stack of unit rungs.
     expect(canvasElement.querySelectorAll('[data-slot="unit-stack"]').length).toBeGreaterThan(0);
-    expect(canvasElement.querySelector('[data-slot="distribution-chart-median"]')).not.toBeNull();
+    // …and the rendered legend says what one rung is worth.
+    expect(
+      canvasElement.querySelector('[data-slot="distribution-chart-unit-label"]')?.textContent,
+    ).toBe("one rung = 5 tickets");
+    const flag = canvasElement.querySelector('[data-slot="distribution-chart-median"] line');
+    expect(flag).not.toBeNull();
+    // The rungs ride the plot's count scale: the tallest stack reaches past half
+    // the band, not a fixed-pitch sliver on the baseline (#242).
+    const base = Number(flag?.getAttribute("y1"));
+    const band = base - Number(flag?.getAttribute("y2"));
+    const tops = [...canvasElement.querySelectorAll('[data-slot="unit-stack-unit"]')].map(
+      (rung) => base - Number(rung.getAttribute("y1")),
+    );
+    expect(Math.max(...tops)).toBeGreaterThan(band / 2);
   },
 };
 

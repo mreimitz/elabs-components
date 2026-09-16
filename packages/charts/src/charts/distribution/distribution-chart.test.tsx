@@ -13,13 +13,16 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+/** The mocked box. Mutable so a test can re-render the same chart at another height. */
+const mockSize = vi.hoisted(() => ({ width: 640, height: 320 }));
+
 vi.mock("@visx/responsive", () => ({
   ParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;
     debounceTime?: number;
-  }) => <>{children({ width: 640, height: 320 })}</>,
+  }) => <>{children({ width: mockSize.width, height: mockSize.height })}</>,
 }));
 
 if (!globalThis.ResizeObserver) {
@@ -32,6 +35,23 @@ if (!globalThis.ResizeObserver) {
 
 import { seededRnd } from "../../marks/seeded-rnd";
 import { DistributionChart } from "./distribution-chart";
+import { rungCount } from "./kinds/histogram";
+
+/** The median flag runs from a horizontal histogram's baseline to the far edge of its band. */
+function flagSpan(container: HTMLElement): { base: number; band: number } {
+  const flag = container.querySelector('[data-slot="distribution-chart-median"] line');
+  const base = Number(flag?.getAttribute("y1"));
+  return { base, band: base - Number(flag?.getAttribute("y2")) };
+}
+
+/** How far the tallest rung stack reaches above the baseline. */
+function tallestStackExtent(container: HTMLElement, base: number): number {
+  let extent = 0;
+  for (const rung of container.querySelectorAll('[data-slot="unit-stack-unit"]')) {
+    extent = Math.max(extent, base - Number(rung.getAttribute("y1")));
+  }
+  return extent;
+}
 
 /** The reply-time fixture the stories use, in miniature. */
 function replies(n: number, k: number, team: string) {
@@ -122,6 +142,87 @@ describe("DistributionChart", () => {
       <DistributionChart bins={6} data={DATA} kind="histogram" unit={2} valueKey="minutes" />,
     );
     expect(rungs.container.querySelectorAll('[data-slot="unit-stack"]').length).toBeGreaterThan(0);
+  });
+
+  it("puts rungs on the plot's count scale, so the stack grows with the plot (#242)", () => {
+    const measure = (height: number) => {
+      mockSize.height = height;
+      const view = render(
+        <DistributionChart bins={6} data={DATA} kind="histogram" unit={2} valueKey="minutes" />,
+      );
+      const { base, band } = flagSpan(view.container);
+      const extent = tallestStackExtent(view.container, base);
+      view.unmount();
+      return { band, extent };
+    };
+    try {
+      const short = measure(300);
+      const tall = measure(600);
+      // The tallest bin fills the count room (0.86 of the band), not a fixed 6px pitch.
+      expect(short.extent).toBeGreaterThanOrEqual(short.band * 0.86 * 0.8);
+      expect(tall.extent / short.extent).toBeGreaterThan(1.8);
+    } finally {
+      mockSize.height = 320;
+    }
+  });
+
+  it("draws a one-rung bin above the baseline, and never an occupied bin as empty (#242)", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { container } = render(
+      <DistributionChart
+        bins={[0, 50, 100]}
+        data={[{ minutes: 10 }, { minutes: 20 }, { minutes: 30 }, { minutes: 40 }, { minutes: 60 }]}
+        kind="histogram"
+        unit={4}
+        valueKey="minutes"
+      />,
+    );
+    const { base } = flagSpan(container);
+    const counts = [...container.querySelectorAll('[data-slot="unit-stack"]')].map(
+      (stack) => stack.querySelectorAll('[data-slot="unit-stack-unit"]').length,
+    );
+    // Four records → one rung; ONE record → still one rung, not an empty bin.
+    expect(counts).toEqual([1, 1]);
+    for (const rung of container.querySelectorAll('[data-slot="unit-stack-unit"]')) {
+      expect(Number(rung.getAttribute("y1"))).toBeLessThan(base);
+    }
+    expect(rungCount(0, 4)).toBe(0);
+    expect(rungCount(1, 4)).toBe(1);
+    expect(rungCount(11, 5)).toBe(2);
+    // A one-rung tallest bin is too coarse to count: the caller hears about it once.
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("too coarse to count"));
+    warn.mockRestore();
+  });
+
+  it("renders the unit legend and folds it into the description, only with rungs (#242)", () => {
+    const { container, rerender } = render(
+      <DistributionChart
+        accessibleLabel="Reply time"
+        data={DATA}
+        kind="histogram"
+        unit={2}
+        unitLabel="one rung = 2 tickets"
+        valueKey="minutes"
+      />,
+    );
+    expect(
+      container.querySelector('[data-slot="distribution-chart-unit-label"]')?.textContent,
+    ).toBe("one rung = 2 tickets");
+    const figure = screen.getByRole("figure", { name: "Reply time" });
+    const description = document.getElementById(figure.getAttribute("aria-describedby") as string);
+    expect(description?.textContent?.startsWith("one rung = 2 tickets. ")).toBe(true);
+
+    // Bars have nothing for the legend to decode.
+    rerender(
+      <DistributionChart
+        accessibleLabel="Reply time"
+        data={DATA}
+        kind="histogram"
+        unitLabel="one rung = 2 tickets"
+        valueKey="minutes"
+      />,
+    );
+    expect(container.querySelector('[data-slot="distribution-chart-unit-label"]')).toBeNull();
   });
 
   it("renders one record per row on a strip, jittered deterministically", () => {
