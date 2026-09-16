@@ -1,22 +1,28 @@
 /**
- * charts-honesty — `@elabs-ai/components-charts` draws honestly (RM-039, #265, #275).
+ * charts-honesty — `@elabs-ai/components-charts` draws honestly (RM-039, #265, #275, #299).
  * Ported from scripts/check-charts-honesty.mjs (rules 1–3; rule 4, unit captions,
  * is `chart-unit-caption`). Provenance: docs/review/2026-09-04-lieflat-charts-gap-analysis.md §5 C5.
  *
  *   1. zero-based bars — a `bar-chart`/`waterfall-chart`/`histogram` file that owns a
  *      `scaleLinear` domain must call `domain: resolveBarValueDomain(` / `return
  *      resolveBarValueDomain(` or `resolveYDomain(…, { includeZero: true })`.
- *   2. area radius sqrt — `const radius|r = … / …max…` must contain `sqrt(`.
+ *   2. area radius sqrt — `const radius|r = … / …max…` must contain `sqrt(`; also
+ *      catches the same ratio laundered through an intermediate variable and then
+ *      linearly interpolated (`MIN_x + t * (MAX_x - MIN_x)`, #299 (c)).
  *   3. no Math.random — use `seededRnd` (stories in scope; tests exempt).
- * Scope: rules 1–2 police a value ENCODING → `charts/**` + `marks/**`; rule 3 is
- * determinism → the whole package. Comments are blanked (line-preserving) first.
+ * Scope: rules 1–2 police a value ENCODING → `charts/**` + `marks/**` +
+ * `registry/blocks/**` (#299 (a) — a copy-own block is exactly where this lie ships
+ * and can never be patched after the fact); rule 3 is determinism → the whole
+ * package. Comments are blanked (line-preserving) first.
  * Escape hatch: `// honesty:allow <reason>` on the flagged line or the line above.
  */
 
 export const CHARTS_ROOT = "packages/charts/src";
+export const REGISTRY_BLOCKS_ROOT = "registry/blocks";
 export const ENCODING_GLOB = [
   `${CHARTS_ROOT}/charts/**/*.{ts,tsx}`,
   `${CHARTS_ROOT}/marks/**/*.{ts,tsx}`,
+  `${REGISTRY_BLOCKS_ROOT}/**/*.{ts,tsx}`,
 ];
 const DIRS_IGNORE = "**/{node_modules,dist}/**";
 const DOC_REF = "docs/review/2026-09-04-lieflat-charts-gap-analysis.md §5 C5";
@@ -59,8 +65,25 @@ export function findZeroBasedBarViolations(file, src) {
 
 // ── Rule 2 ──────────────────────────────────────────────────────────────────
 const RADIUS_ASSIGNMENT_RE = /\b(?:const|let)\s+(\w*[Rr]adius\w*|r)\s*=\s*([^;\n]+);?/g;
-const RATIO_OF_MAX_RE = /\/\s*\w*(?:[Mm]ax|MAX)\w*/;
+// #299 (b): a min–max normalisation's denominator is parenthesised
+// (`/ (maxValue - minValue)`), not a bare identifier — allow an optional `(`
+// after the `/` so the ratio is still recognised as "of a max".
+const RATIO_OF_MAX_RE = /\/\s*\(?\s*\w*(?:[Mm]ax|MAX)\w*/;
 const CONTAINS_SQRT_RE = /\bsqrt\s*\(/i;
+// #299 (c): the ratio is laundered through an intermediate variable (any name,
+// not just one shaped like a radius) and then linearly interpolated between a
+// MIN_ and a MAX_ constant — the exact `chart-editorial-almanac` idiom:
+//   const t = (value - minValue) / (maxValue - minValue);
+//   return MIN_RADIUS + t * (MAX_RADIUS - MIN_RADIUS);
+const RADIUS_INTERPOLATION_RE = /\bMIN_\w*\s*\+\s*(\w+)\s*\*\s*\(\s*MAX_\w*\s*-\s*MIN_\w*\s*\)/g;
+
+/** The last `const|let <name> = <rhs>` assignment to `name` before `beforeIndex`. */
+function findLastAssignmentBefore(code, name, beforeIndex) {
+  const re = new RegExp(`\\b(?:const|let)\\s+${name}\\s*=\\s*([^;\\n]+);?`, "g");
+  let last = null;
+  for (const m of code.slice(0, beforeIndex).matchAll(re)) last = m[1];
+  return last;
+}
 
 export function findAreaRadiusViolations(file, src) {
   const out = [];
@@ -73,6 +96,18 @@ export function findAreaRadiusViolations(file, src) {
       file,
       line,
       msg: `[area-radius-sqrt] "${m[0].trim()}" scales a radius linearly by a ratio of a max — use sqrt(value / max) (marks/area-radius.ts areaRadius) (${DOC_REF})`,
+    });
+  }
+  for (const m of code.matchAll(RADIUS_INTERPOLATION_RE)) {
+    const varName = m[1];
+    const ratioRhs = findLastAssignmentBefore(code, varName, m.index);
+    if (!ratioRhs || !RATIO_OF_MAX_RE.test(ratioRhs) || CONTAINS_SQRT_RE.test(ratioRhs)) continue;
+    const line = lineNoAt(code, m.index);
+    if (hasHonestyAllow(src, line)) continue;
+    out.push({
+      file,
+      line,
+      msg: `[area-radius-sqrt] "${m[0].trim()}" linearly interpolates a radius using "${varName}", a ratio-of-max computed without sqrt(...) — use sqrt(value / max) (marks/area-radius.ts areaRadius) (${DOC_REF})`,
     });
   }
   return out;
@@ -97,6 +132,12 @@ export function findMathRandomViolations(file, src) {
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
 const at = (file, body) => ({ files: { [`${CHARTS_ROOT}/${file}`]: body } });
+// #299 (a): a copy-own registry block, not a package chart/mark — the file this
+// gate missed. Deliberately a fixture, not the real block: fixing the block
+// itself is a separate change; this gate must catch the shape wherever it ships.
+const atRegistryBlock = (file, body) => ({
+  files: { [`${REGISTRY_BLOCKS_ROOT}/${file}`]: body },
+});
 
 export default {
   id: "charts-honesty",
@@ -176,6 +217,18 @@ export default {
         "charts/some-chart.tsx",
         "// honesty:allow dev-only warning, #125\nconst x = Math.random();",
       ),
+      // #299 (c): the ratio is laundered through an intermediate variable, but that
+      // variable is itself computed with sqrt — a legitimate area encoding.
+      at(
+        "charts/heatmap-scale.ts",
+        "const MIN_RADIUS = 3;\nconst MAX_RADIUS = 16;\nfunction radiusFor(value, maxValue, minValue) {\n  const t = Math.sqrt((value - minValue) / (maxValue - minValue));\n  return MIN_RADIUS + t * (MAX_RADIUS - MIN_RADIUS);\n}",
+      ),
+      // #299 (a): scope now reaches registry/blocks — a block using the honest
+      // sqrt helper must still pass.
+      atRegistryBlock(
+        "chart-editorial-almanac/chart-editorial-almanac.tsx",
+        'import { areaRadius } from "@elabs-ai/components-charts";\nconst radiusFor = (value) => areaRadius(value, maxValue, MAX_RADIUS);',
+      ),
     ],
     fail: [
       at(
@@ -196,6 +249,25 @@ export default {
       at("charts/some-chart.tsx", "const jitter = Math.random();"),
       at("charts/some.stories.tsx", "progress: Math.random(),"),
       at("gantt/gantt.stories.tsx", "export const tasks = [{ progress: Math.random() }];"),
+      // #299 (b): the min–max denominator is parenthesised — the shape the old
+      // RATIO_OF_MAX_RE could not see.
+      at(
+        "charts/heatmap-scale.ts",
+        "const radius = rMax * (value - minValue) / (maxValue - minValue);",
+      ),
+      // #299 (c): the ratio is laundered through an intermediate variable named
+      // `t` (no "radius"/"r" in its name) and then linearly interpolated — the
+      // exact `chart-editorial-almanac` idiom (verbatim fixture, not the block).
+      at(
+        "charts/heatmap-scale.ts",
+        "const MIN_RADIUS = 3;\nconst MAX_RADIUS = 16;\nfunction radiusFor(value, maxValue, minValue) {\n  const t = (value - minValue) / (maxValue - minValue);\n  return MIN_RADIUS + t * (MAX_RADIUS - MIN_RADIUS);\n}",
+      ),
+      // #299 (a): scope now reaches registry/blocks — the exact shape must be
+      // caught there too, via a fixture (fixing the real block is a separate change).
+      atRegistryBlock(
+        "chart-editorial-almanac/chart-editorial-almanac.tsx",
+        "const MIN_RADIUS = 3;\nconst MAX_RADIUS = 16;\nfunction radiusFor(value, maxValue, minValue) {\n  const t = (value - minValue) / (maxValue - minValue);\n  return MIN_RADIUS + t * (MAX_RADIUS - MIN_RADIUS);\n}",
+      ),
     ],
   },
 };
