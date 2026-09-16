@@ -139,28 +139,63 @@ describe("FunnelChart showConversion", () => {
     } as DOMRect);
   }
 
-  it("renders no conversion HaloText when unset (default) — unaffected", () => {
+  it("renders no conversion plate when unset (default) — unaffected", () => {
     stubMeasurement();
     const { container } = render(<FunnelChart data={sampleData} />);
-    expect(container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-slot="funnel-chart-conversion"]')).toHaveLength(0);
   });
 
-  it('"between" renders one HaloText per boundary, reconciling with the stage values', () => {
+  it('"between" renders one conversion plate per boundary, reconciling with the stage values', () => {
     stubMeasurement();
     const { container } = render(<FunnelChart data={sampleData} showConversion="between" />);
-    const labels = container.querySelectorAll('[data-slot="halo-text"]');
+    const labels = container.querySelectorAll('[data-slot="funnel-chart-conversion"]');
     // 4 stages → 3 boundaries.
     expect(labels).toHaveLength(3);
     // 4800/12000=40%, 2100/4800=44%(rounded), 840/2100=40%.
     expect(Array.from(labels).map((el) => el.textContent)).toEqual(["40%", "44%", "40%"]);
   });
 
-  it('"margin" also renders one HaloText per boundary, same reconciled values', () => {
+  it('"margin" also renders one conversion plate per boundary, same reconciled values', () => {
     stubMeasurement();
     const { container } = render(<FunnelChart data={sampleData} showConversion="margin" />);
-    const labels = container.querySelectorAll('[data-slot="halo-text"]');
+    const labels = container.querySelectorAll('[data-slot="funnel-chart-conversion"]');
     expect(labels).toHaveLength(3);
     expect(Array.from(labels).map((el) => el.textContent)).toEqual(["40%", "44%", "40%"]);
+  });
+
+  // #239 — the conversion caption used to be an on-mark `HaloText` whose
+  // ground-tuned ink (`--chart-foreground`) measured 1.23:1 against this
+  // package's theme-invariant lime band in `dark`. It is now an opaque
+  // plate with its own ground (`bg-card`) and ink (`text-muted-foreground`),
+  // the same pattern `SegmentLabel`'s percentage pill already uses — assert
+  // both classes are present so a future edit cannot silently drop either
+  // half of the ground/ink pair back onto the plot ground.
+  it("gives the conversion plate its own ground/ink pair — never bare on-mark ink (#239)", () => {
+    stubMeasurement();
+    const { container } = render(<FunnelChart data={sampleData} showConversion="between" />);
+    const plates = container.querySelectorAll('[data-slot="funnel-chart-conversion"]');
+    expect(plates.length).toBeGreaterThan(0);
+    for (const plate of plates) {
+      expect(plate.className).toContain("bg-card");
+      expect(plate.className).toContain("text-muted-foreground");
+    }
+    expect(container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
+  });
+
+  // #239 cause 1 — the conversion layer used to sit at `z-index: auto` while
+  // segments carried `z-index: 1` (10 hovered), so painting order put the
+  // segments on top regardless of DOM order. Lock the resolved ladder so a
+  // future refactor that removes the conversion layer's z-index (or raises a
+  // segment's) fails here instead of silently re-hiding the captions.
+  it("keeps the conversion layer above every segment's resting AND hovered z-index (#239)", () => {
+    stubMeasurement();
+    const { container } = render(<FunnelChart data={sampleData} showConversion="between" />);
+    const conversionLayer = container.querySelector<HTMLElement>(
+      '[data-slot="funnel-chart-conversion"]',
+    )?.parentElement?.parentElement;
+    expect(conversionLayer).not.toBeNull();
+    const conversionZ = Number(conversionLayer?.style.zIndex);
+    expect(conversionZ).toBeGreaterThan(10);
   });
 
   it("adds a native title tooltip with 'of previous stage' / 'of first stage' when set", () => {
