@@ -1,6 +1,9 @@
+import { useRef, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { Toaster } from "@elabs-ai/components-ui";
 
+import { useDashboardShortcuts } from "../chrome";
 import { compact } from "../core/layout";
 import type { DashboardSpec, TileLayout } from "../core/spec";
 import type { DashboardStore } from "../core/store";
@@ -11,6 +14,9 @@ import {
   useDashboard,
 } from "../dashboard-sheet";
 import { useDashboardContext } from "../dashboard-sheet/use-dashboard";
+import { DashboardTileContextMenu } from "./tile-context-menu";
+import { topLevelLayout } from "./geometry";
+import { DashboardMarquee, useDashboardMarquee } from "./marquee";
 import { EDIT_FIT_SPEC, EDIT_FLOW_SPEC } from "./edit-specs";
 
 declare global {
@@ -44,6 +50,67 @@ function EditSheet({ spec }: { spec: DashboardSpec }) {
       </div>
       <StoreProbe />
     </DashboardProvider>
+  );
+}
+
+/**
+ * RM-081's tile operations, driven end to end: `useDashboardShortcuts` (Mod+A/C/X/V, Delete
+ * with an Undo toast, Shift+F10) wraps the sheet; `useDashboardMarquee` overlays a drag-select
+ * rectangle on the same sheet element; `DashboardTileContextMenu` wraps one tile's move handle
+ * area to exercise Replace with…/Paste and replace/Bring forward through the real menu. None of
+ * this is wired into `DashboardEditLayer`/`DashboardTile` themselves (RM-078/079 files, out of
+ * this RM's touches) — a host composes these the same way this story does.
+ */
+function TileOpsSheet({ spec }: { spec: DashboardSpec }) {
+  return (
+    <DashboardProvider spec={spec} tiles={TILES} mode="edit">
+      <TileOpsBody />
+    </DashboardProvider>
+  );
+}
+
+function TileOpsBody() {
+  const containerRef = useDashboardShortcuts();
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const liveSpec = useDashboard((s) => s.spec);
+  const { rect } = useDashboardMarquee({
+    sheetRef,
+    grid: liveSpec.grid,
+    size,
+    layout: topLevelLayout(liveSpec),
+    onSelect: (ids, additive) => {
+      const actions = window.__dashboardStore!.getState().actions;
+      const current = window.__dashboardStore!.getState().focus;
+      actions.setFocus(additive ? [...new Set([...current, ...ids])] : ids);
+    },
+  });
+
+  return (
+    <div ref={containerRef}>
+      <Toaster />
+      <div data-testid="host" className="relative h-[480px] max-h-[80vh] w-full">
+        <DashboardSheet
+          renderAll
+          ref={(node) => {
+            sheetRef.current = node;
+            if (node) {
+              const box = node.getBoundingClientRect();
+              if (box.width !== size.width || box.height !== size.height) {
+                setSize({ width: box.width, height: box.height });
+              }
+            }
+          }}
+        />
+        {rect ? <DashboardMarquee rect={rect} data-testid="marquee" /> : null}
+      </div>
+      <DashboardTileContextMenu tileId="chart-1">
+        <button type="button" data-testid="chart-1-menu-trigger" className="mt-2">
+          Tile actions: Revenue
+        </button>
+      </DashboardTileContextMenu>
+      <StoreProbe />
+    </div>
   );
 }
 
@@ -297,5 +364,145 @@ export const ReducedMotion: Story = {
       // `--motion-factor` collapses every transition to (effectively) zero: the ghost snaps.
       expect(Math.max(...durations)).toBeLessThanOrEqual(1);
     });
+  },
+};
+
+/** A real pointer drag between two absolute points in `sheet`'s own coordinate space — the
+ * marquee's own drag, as opposed to `pointerDrag`'s drag-a-tile-by-an-offset. */
+async function dragRect(
+  sheet: HTMLElement,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+) {
+  const box = sheet.getBoundingClientRect();
+  const init = { bubbles: true, cancelable: true, isPrimary: true, button: 0, pointerId: 2 };
+  sheet.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      ...init,
+      pointerType: "mouse",
+      clientX: box.left + from.x,
+      clientY: box.top + from.y,
+    }),
+  );
+  const steps = 6;
+  for (let i = 1; i <= steps; i++) {
+    await sleep(16);
+    document.dispatchEvent(
+      new PointerEvent("pointermove", {
+        ...init,
+        pointerType: "mouse",
+        clientX: box.left + from.x + ((to.x - from.x) * i) / steps,
+        clientY: box.top + from.y + ((to.y - from.y) * i) / steps,
+      }),
+    );
+  }
+  await sleep(16);
+  document.dispatchEvent(
+    new PointerEvent("pointerup", {
+      ...init,
+      pointerType: "mouse",
+      clientX: box.left + to.x,
+      clientY: box.top + to.y,
+    }),
+  );
+  await sleep(16);
+}
+
+export const TileOperations: Story = {
+  name: "Tile operations (RM-081)",
+  render: () => <TileOpsSheet spec={EDIT_FIT_SPEC} />,
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const sheet = await canvas.findByRole("region", { name: EDIT_FIT_SPEC.title });
+    await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(4));
+    const p = pitch(sheet, EDIT_FIT_SPEC);
+    // Scoped to chart-1's own tile root: Copy/Paste below adds a SECOND tile also titled
+    // "Revenue" (a copy), so a plain `getByRole(..., { name: "Move Revenue" })` off the whole
+    // canvas would stop resolving to one element.
+    const moveChart1 = () =>
+      within(sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!).getByRole("button", {
+        name: "Move Revenue",
+      });
+    // The shortcuts listener is scoped to its container ref (never `window`-global); keep
+    // focus somewhere inside it so the keydowns below actually bubble to the listener.
+    moveChart1().focus();
+
+    await step("Mod+A selects every top-level tile", async () => {
+      await userEvent.keyboard("{Meta>}a{/Meta}");
+      await waitFor(() => expect(store().getState().focus).toHaveLength(4));
+    });
+
+    await step(
+      "Escape clears focus; a marquee drag over the left column selects chart-1 + text-1",
+      async () => {
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(store().getState().focus).toEqual([]));
+        // The 6–16 column gap between chart-1/text-1 (x0–12) and chart-2/chart-3 (x16–24)
+        // is empty at every row — a safe place to start the drag (never on a tile).
+        await dragRect(
+          sheet,
+          { x: 10 * p.width, y: 11 * p.height },
+          { x: 0.5 * p.width, y: 0.5 * p.height },
+        );
+        await waitFor(() =>
+          expect(store().getState().focus).toEqual(expect.arrayContaining(["chart-1", "text-1"])),
+        );
+        expect(store().getState().focus).toHaveLength(2);
+      },
+    );
+
+    await step(
+      "Mod+C copies the 2 focused tiles; Mod+V pastes them as ONE new history entry",
+      async () => {
+        const before = store().getState().spec.tiles.length;
+        const past = store().getState().history.past;
+        await userEvent.keyboard("{Meta>}c{/Meta}");
+        await userEvent.keyboard("{Escape}");
+        await userEvent.keyboard("{Meta>}v{/Meta}");
+        await waitFor(() => expect(store().getState().spec.tiles).toHaveLength(before + 2));
+        expect(store().getState().history.past).toBe(past + 1);
+      },
+    );
+
+    await step("Delete offers Undo via a toast; Undo restores the tile", async () => {
+      store().getState().actions.setFocus(["chart-2"]);
+      moveChart1().focus();
+      await userEvent.keyboard("{Delete}");
+      await waitFor(() =>
+        expect(
+          store()
+            .getState()
+            .spec.tiles.find((t) => t.id === "chart-2"),
+        ).toBeUndefined(),
+      );
+      const undoButton = await canvas.findByRole("button", { name: "Undo" });
+      await userEvent.click(undoButton);
+      await waitFor(() =>
+        expect(
+          store()
+            .getState()
+            .spec.tiles.find((t) => t.id === "chart-2"),
+        ).toBeDefined(),
+      );
+    });
+
+    await step(
+      "Bring forward (via the tile's context menu) raises chart-1 above chart-2",
+      async () => {
+        const before = layoutOf("chart-1").z ?? 0;
+        const trigger = canvas.getByTestId("chart-1-menu-trigger");
+        // A real right-click sequence (Radix's `ContextMenuTrigger` listens for the native
+        // `contextmenu` event a browser fires from it) — matches the recipe Shift+F10 itself
+        // uses in `useDashboardShortcuts`.
+        await userEvent.pointer({ keys: "[MouseRight]", target: trigger });
+        // `ContextMenuContent` portals to `document.body`, outside `canvasElement`.
+        const body = within(canvasElement.ownerDocument.body);
+        const bringForward = await body.findByRole("menuitem", { name: "Bring forward" });
+        await userEvent.click(bringForward);
+        await waitFor(() => expect(layoutOf("chart-1").z ?? 0).toBeGreaterThan(before));
+        const otherZ = layoutOf("chart-2").z ?? layoutOf("chart-3").z ?? 0;
+        expect((layoutOf("chart-1").z ?? 0) > otherZ).toBe(true);
+      },
+    );
   },
 };

@@ -279,9 +279,9 @@ export const Shortcuts: Story = {
     await userEvent.click(within(toolbar).getByRole("button", { name: "Grid" }));
     await waitFor(() => expect(body.queryByLabelText("Gap")).not.toBeInTheDocument());
 
-    // The shortcuts sheet lists all seven.
+    // The shortcuts sheet lists all twelve (RM-081 added copy/cut/paste/selectAll/contextMenu).
     await userEvent.click(within(toolbar).getByRole("button", { name: "Keyboard shortcuts" }));
     const dialog = await body.findByRole("dialog", { name: "Keyboard shortcuts" });
-    await waitFor(() => expect(within(dialog).getAllByRole("listitem")).toHaveLength(7));
+    await waitFor(() => expect(within(dialog).getAllByRole("listitem")).toHaveLength(12));
   },
 };
