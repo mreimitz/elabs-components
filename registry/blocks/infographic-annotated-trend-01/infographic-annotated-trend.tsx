@@ -10,8 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "@elabs-ai/components-charts";
-import { Skeleton } from "@elabs-ai/components-ui";
-import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { Badge, Card, CardContent, Skeleton } from "@elabs-ai/components-ui";
 import { AS_OF_DATE, DATA_SOURCE } from "@/components/kpi-card-parts/data/acme-quarter";
 import { KpiAsOf } from "@/components/kpi-card-parts/kpi-as-of";
 import { formatKpiValue } from "@/components/kpi-card-parts/format";
@@ -53,9 +52,18 @@ function yAxisFormatValue(unit: AnnotatedTrendSeries["unit"], locale: string) {
  * chart permanently clips at y = 0, `packages/charts/src/charts/chart-reveal
  * -clip.tsx`. Either way the label lands well inside the plot, never in the
  * margin, so it can never collide with the axis.
+ *
+ * An event within `EDGE_ZONE` of either plot edge switches from centring the
+ * label ON the point to hanging it FROM the point (`textAnchor="start"`/
+ * `"end"`) — a centred long label near an edge (e.g. a week-17-of-20 event)
+ * overflows the plot's own right boundary and gets silently clipped, which
+ * is exactly the "event labels collide/overflow at 1280 width" case this
+ * fixes.
  */
+const EVENT_LABEL_EDGE_ZONE = 0.15;
+
 function TrendEventMarks({ events }: { events: TrendEvent[] }) {
-  const { xScale, yScale, innerHeight } = useChart();
+  const { xScale, yScale, innerWidth, innerHeight } = useChart();
   return (
     <>
       {events.map((event) => {
@@ -64,11 +72,21 @@ function TrendEventMarks({ events }: { events: TrendEvent[] }) {
         const below = anchorY <= innerHeight / 2;
         const tailY = below ? anchorY + 16 : anchorY - 16;
         const labelY = below ? anchorY + 32 : anchorY - 32;
+        const nearStart = anchorX <= innerWidth * EVENT_LABEL_EDGE_ZONE;
+        const nearEnd = anchorX >= innerWidth * (1 - EVENT_LABEL_EDGE_ZONE);
+        const textAnchor = nearEnd ? "end" : nearStart ? "start" : "middle";
+        const labelX = nearEnd ? anchorX - 6 : nearStart ? anchorX + 6 : anchorX;
         return (
           <g data-slot="infographic-annotated-trend-event" key={event.label}>
             <circle cx={anchorX} cy={anchorY} fill="var(--chart-foreground)" r={2.5} />
             <Leader dash="1 3" from={[anchorX, anchorY]} kind="curve" to={[anchorX, tailY]} />
-            <HaloText fontSize={11} fontStyle="italic" textAnchor="middle" x={anchorX} y={labelY}>
+            <HaloText
+              fontSize={11}
+              fontStyle="italic"
+              textAnchor={textAnchor}
+              x={labelX}
+              y={labelY}
+            >
               {event.label}
             </HaloText>
           </g>
@@ -80,18 +98,23 @@ function TrendEventMarks({ events }: { events: TrendEvent[] }) {
 
 function InfographicAnnotatedTrendSkeleton({ className }: { className?: string }) {
   return (
-    <div
+    <Card
       aria-live="polite"
-      className={cn("w-full space-y-3", className)}
+      className={className}
       data-slot="infographic-annotated-trend"
       role="status"
     >
-      <span className="sr-only">Loading the trend…</span>
-      <Skeleton aria-hidden="true" className="h-6 w-3/4" />
-      <Skeleton aria-hidden="true" className="h-64 w-full" />
-      <Skeleton aria-hidden="true" className="h-3 w-2/3" />
-      <Skeleton aria-hidden="true" className="h-3 w-40" />
-    </div>
+      <CardContent className="space-y-3 p-5">
+        <span className="sr-only">Loading the trend…</span>
+        <div aria-hidden="true" className="flex items-center justify-between gap-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <Skeleton aria-hidden="true" className="h-6 w-3/4" />
+        <Skeleton aria-hidden="true" className="h-56 w-full" />
+        <Skeleton aria-hidden="true" className="h-3 w-2/3" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -121,26 +144,34 @@ export function InfographicAnnotatedTrend({
   const accessibleDescription = `${label}, weekly, ${points.length} points, ranging from ${formatKpiValue(min, unit, locale)} to ${formatKpiValue(max, unit, locale)}. Labelled events: ${eventList}.`;
 
   return (
-    <div className={cn("w-full space-y-3", className)} data-slot="infographic-annotated-trend">
-      <h3 className="text-title text-foreground">{headline}</h3>
-      <div className="h-72 w-full">
-        <LineChart
-          accessibleDescription={accessibleDescription}
-          accessibleLabel={`${label} — weekly trend with labelled events`}
-          data={points as unknown as Record<string, unknown>[]}
-          margin={{ bottom: 32, left: 48, right: 16, top: 24 }}
-          style={{ height: "100%" }}
-          xDataKey="date"
-        >
-          <Grid horizontal />
-          <Line dataKey="value" stroke="var(--chart-1)" strokeWidth={2.5} />
-          <TrendEventMarks events={events} />
-          <YAxis formatValue={yAxisFormatValue(unit, locale)} numTicks={4} />
-          <XAxis periodTicks="week" />
-        </LineChart>
-      </div>
-      <p className="text-caption text-muted-foreground">{methodNote}</p>
-      <KpiAsOf date={AS_OF_DATE} locale={locale} source={DATA_SOURCE} />
-    </div>
+    <Card className={className} data-slot="infographic-annotated-trend">
+      <CardContent className="space-y-3 p-5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate text-body text-muted-foreground">{label}</span>
+          <Badge className="shrink-0" variant="secondary">
+            Last {points.length} weeks
+          </Badge>
+        </div>
+        <h3 className="text-title text-foreground">{headline}</h3>
+        <div className="h-72 w-full">
+          <LineChart
+            accessibleDescription={accessibleDescription}
+            accessibleLabel={`${label} — weekly trend with labelled events`}
+            data={points as unknown as Record<string, unknown>[]}
+            margin={{ bottom: 32, left: 48, right: 16, top: 24 }}
+            style={{ height: "100%" }}
+            xDataKey="date"
+          >
+            <Grid horizontal />
+            <Line dataKey="value" stroke="var(--chart-1)" strokeWidth={2.5} />
+            <TrendEventMarks events={events} />
+            <YAxis formatValue={yAxisFormatValue(unit, locale)} numTicks={4} />
+            <XAxis periodTicks="week" />
+          </LineChart>
+        </div>
+        <p className="text-caption text-muted-foreground">{methodNote}</p>
+        <KpiAsOf date={AS_OF_DATE} locale={locale} source={DATA_SOURCE} />
+      </CardContent>
+    </Card>
   );
 }

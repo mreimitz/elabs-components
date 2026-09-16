@@ -56,7 +56,11 @@ export const ordersTrend: AnnotatedTrendSeries = {
   events: [
     { date: ordersDates[4] as Date, label: "Price increase", value: ORDERS_WEEKLY[4] as number },
     { date: ordersDates[11] as Date, label: "Depot outage", value: ORDERS_WEEKLY[11] as number },
-    { date: ordersDates[17] as Date, label: "Autumn campaign", value: ORDERS_WEEKLY[17] as number },
+    {
+      date: ordersDates[17] as Date,
+      label: "Back-to-school campaign",
+      value: ORDERS_WEEKLY[17] as number,
+    },
   ],
   headline: "A one-week depot outage cost more volume than the price change ever did",
   higherIsBetter: true,
