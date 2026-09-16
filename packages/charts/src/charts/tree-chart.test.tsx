@@ -1,13 +1,15 @@
 /**
  * tree-chart.test.tsx — the pure layout engine is unit-tested directly
  * (`computeTreeLayout`, no jsdom measurement involved — see the module
- * header for why TreeChart needs no `ResizeObserver`), plus a render smoke
- * test for the React component. A full interaction pass lives in the
- * co-located Storybook story (`tree-chart.stories.tsx`), exercised by
+ * header for why the LAYOUT needs no `ResizeObserver`), plus a render smoke
+ * test for the React component. The scroll-edge fade (#278) does observe the
+ * root's size, but only to re-measure overflow, never to relay out. A full
+ * interaction pass lives in the co-located Storybook story
+ * (`tree-chart.stories.tsx`), exercised by
  * `pnpm --filter @elabs-ai/components-docs test-storybook` in CI.
  */
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { computeTreeLayout, TreeChart, type TreeNode } from "./tree-chart";
 import { estimateTextWidth } from "./use-text-measurer";
@@ -227,6 +229,32 @@ describe("TreeChart", () => {
     expect(screen.getByRole("figure", { name: "Org chart" })).toBeInTheDocument();
   });
 
+  it("puts the hierarchy in the accessible NAME, not only the tooltip (#268)", () => {
+    render(<TreeChart accessibleLabel="Org chart" data={orgChart} onDatapointClick={() => {}} />);
+    // Query loosely, assert EXACTLY: a regex happily matches a polluted name.
+    expect(screen.getByRole("button", { name: /^Engineering/ })).toHaveAccessibleName(
+      "Engineering, 5 members",
+    );
+    expect(screen.getByRole("button", { name: /^Platform/ })).toHaveAccessibleName(
+      "Platform, in Engineering, 3 members",
+    );
+    expect(screen.getByRole("button", { name: /^CI/ })).toHaveAccessibleName(
+      "CI, in Engineering › Platform",
+    );
+  });
+
+  it("a consumer-supplied datapointLabel still wins over the default (#268)", () => {
+    render(
+      <TreeChart
+        accessibleLabel="Org chart"
+        data={orgChart}
+        datapointLabel={(point) => `custom:${String(point.category)}`}
+        onDatapointClick={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "custom:Engineering" })).toBeInTheDocument();
+  });
+
   it("activates a node via keyboard when onDatapointClick is set (#349 contract)", async () => {
     const user = userEvent.setup();
     const onDatapointClick = vi.fn();
@@ -243,5 +271,119 @@ describe("TreeChart", () => {
 
     expect(onDatapointClick).toHaveBeenCalledTimes(1);
     expect(onDatapointClick.mock.calls[0]?.[0]?.source).toBe("keyboard");
+  });
+});
+
+// ── #278: scroll-edge fade ───────────────────────────────────────────────────
+
+/** The root scroll/tab-stop element, addressed by its stable selector. */
+function treeRootOf(container: HTMLElement): HTMLElement {
+  const el = container.querySelector<HTMLElement>('[data-slot="tree-chart"]');
+  if (!el) throw new Error("no [data-slot=tree-chart] in the rendered output");
+  return el;
+}
+
+/**
+ * jsdom reports 0 for every layout metric, so overflow has to be simulated —
+ * same technique as `DataTable`'s `#330` scroll-fade affordance
+ * (`data-table.test.tsx`). Re-measurement is driven through the component's
+ * own `onScroll` handler, the same path a real scroll takes.
+ */
+function simulateScrollMetrics(
+  el: HTMLElement,
+  {
+    scrollWidth,
+    clientWidth,
+    scrollLeft = 0,
+    scrollHeight,
+    clientHeight,
+    scrollTop = 0,
+  }: {
+    scrollWidth: number;
+    clientWidth: number;
+    scrollLeft?: number;
+    scrollHeight: number;
+    clientHeight: number;
+    scrollTop?: number;
+  },
+) {
+  Object.defineProperty(el, "scrollWidth", { configurable: true, value: scrollWidth });
+  Object.defineProperty(el, "clientWidth", { configurable: true, value: clientWidth });
+  Object.defineProperty(el, "scrollLeft", {
+    configurable: true,
+    writable: true,
+    value: scrollLeft,
+  });
+  Object.defineProperty(el, "scrollHeight", { configurable: true, value: scrollHeight });
+  Object.defineProperty(el, "clientHeight", { configurable: true, value: clientHeight });
+  Object.defineProperty(el, "scrollTop", { configurable: true, writable: true, value: scrollTop });
+  fireEvent.scroll(el);
+}
+
+describe("TreeChart — scroll-edge fade affordance (#278)", () => {
+  it("shows no fade when the tree fits its container — visual no-op", () => {
+    const { container } = render(<TreeChart accessibleLabel="Org chart" data={orgChart} />);
+    const root = treeRootOf(container);
+    simulateScrollMetrics(root, {
+      scrollWidth: 400,
+      clientWidth: 400,
+      scrollHeight: 300,
+      clientHeight: 300,
+    });
+    expect(root).not.toHaveAttribute("data-scroll-overflow");
+    expect(root.style.maskImage).toBe("");
+  });
+
+  it("fades only the bottom edge at rest, before scrolling an overflowing tree", () => {
+    const { container } = render(<TreeChart accessibleLabel="Org chart" data={orgChart} />);
+    const root = treeRootOf(container);
+    simulateScrollMetrics(root, {
+      scrollWidth: 400,
+      clientWidth: 400,
+      scrollHeight: 900,
+      clientHeight: 300,
+      scrollTop: 0,
+    });
+    expect(root).toHaveAttribute("data-scroll-overflow", "bottom");
+    expect(root.style.maskImage).not.toBe("");
+  });
+
+  it("fades only the top edge once scrolled to the end", () => {
+    const { container } = render(<TreeChart accessibleLabel="Org chart" data={orgChart} />);
+    const root = treeRootOf(container);
+    simulateScrollMetrics(root, {
+      scrollWidth: 400,
+      clientWidth: 400,
+      scrollHeight: 900,
+      clientHeight: 300,
+      scrollTop: 600,
+    });
+    expect(root).toHaveAttribute("data-scroll-overflow", "top");
+  });
+
+  it("fades both edges of an axis when scrolled to the middle", () => {
+    const { container } = render(<TreeChart accessibleLabel="Org chart" data={orgChart} />);
+    const root = treeRootOf(container);
+    simulateScrollMetrics(root, {
+      scrollWidth: 400,
+      clientWidth: 400,
+      scrollHeight: 900,
+      clientHeight: 300,
+      scrollTop: 300,
+    });
+    expect(root.getAttribute("data-scroll-overflow")).toBe("top bottom");
+  });
+
+  it("fades an overflowing horizontal axis independently of the vertical one", () => {
+    const { container } = render(<TreeChart accessibleLabel="Org chart" data={orgChart} />);
+    const root = treeRootOf(container);
+    simulateScrollMetrics(root, {
+      scrollWidth: 900,
+      clientWidth: 400,
+      scrollLeft: 0,
+      scrollHeight: 300,
+      clientHeight: 300,
+    });
+    expect(root).toHaveAttribute("data-scroll-overflow", "right");
   });
 });

@@ -630,8 +630,10 @@ export {
 } from "./parallel-coordinates";
 // Tree — RM-035
 export {
+  defaultTreeDatapointLabel,
   TreeChart,
   type TreeChartProps,
+  type TreeDatapointDatum,
   type TreeNode,
   type TreeOrientation,
   type TreePalette,
