@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Button } from "@elabs-ai/components-ui";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { Bar } from "../charts/bar";
 import { BarChart } from "../charts/bar-chart";
@@ -307,5 +308,163 @@ export const Export: Story = {
     const pngBlob = pngCall?.[1] as Blob;
     await expect(pngBlob.type).toBe("image/png");
     await expect(pngBlob.size).toBeGreaterThan(0);
+  },
+};
+
+// ── RM-072: density tiers, tile chrome, interactions ─────────────────────────
+
+/** Fills the frame body instead of holding a 2:1 aspect, so a tile sets the height. */
+function FillChart() {
+  return (
+    <BarChart data={monthlyData} xDataKey="month" aspectRatio="auto" className="h-full">
+      <Grid horizontal />
+      <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />
+      <BarXAxis />
+      <ChartTooltip />
+    </BarChart>
+  );
+}
+
+const densityTiers = [
+  { id: "xs", label: "xs — 196 × 92", box: "w-[196px] h-[92px]", body: 64 },
+  { id: "sm", label: "sm — 392 × 184", box: "w-full max-w-[392px] h-[184px]", body: 148 },
+  { id: "md", label: "md — 784 × 368", box: "w-full max-w-[784px] h-[368px]", body: 300 },
+  { id: "lg", label: "lg — full width", box: "w-full h-[420px]", body: 350 },
+] as const;
+
+/**
+ * The same chart at the sheet-tile sizes a 24 × 12 fit grid produces at 1200 px.
+ * `density` only REMOVES furniture: `xs` drops every axis label, the legend, the
+ * description and the source row; `sm` keeps the category axis with at most four
+ * ticks; `md` is the default frame; `lg` is today’s frame at full width.
+ */
+export const DensityTiers: Story = {
+  name: "Density tiers",
+  render: () => (
+    <div className="flex w-full flex-col gap-6">
+      {densityTiers.map((tier) => (
+        <section key={tier.id} aria-label={tier.label} className="flex flex-col gap-2">
+          <p className="text-meta text-muted-foreground">{tier.label}</p>
+          <div className={`${tier.box} overflow-hidden rounded-lg border bg-card p-2`}>
+            <ChartFrame
+              chrome="tile"
+              density={tier.id}
+              height={tier.body}
+              title="Revenue is up 77% since January"
+              description="Monthly revenue, Jan – Jun 2025"
+              source="Source: Internal ledger"
+              data={monthlyData}
+              columns={monthlyColumns}
+            >
+              <FillChart />
+            </ChartFrame>
+          </div>
+        </section>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const xs = canvas.getByRole("region", { name: densityTiers[0].label });
+    const md = canvas.getByRole("region", { name: densityTiers[2].label });
+    await waitFor(() =>
+      expect(md.querySelectorAll(".text-chart-label.text-meta").length).toBeGreaterThan(0),
+    );
+    await expect(xs.querySelectorAll(".text-chart-label.text-meta")).toHaveLength(0);
+    await expect(within(xs).queryByText("Source: Internal ledger")).toBeNull();
+    await expect(within(md).getByText("Source: Internal ledger")).toBeInTheDocument();
+  },
+};
+
+const expandChangeSpy = fn();
+
+/**
+ * `chrome="tile"` for a dashboard sheet: the host tile owns the border and the
+ * header, so the frame draws no card. `headerSlot` and `menuSlot` replace the
+ * default title and toolbar; the menu receives the frame’s actions, so the
+ * expand modal still opens from the host’s own button and `onExpandChange`
+ * reports it.
+ */
+export const TileChrome: Story = {
+  render: () => (
+    <div className="w-full max-w-[560px] rounded-lg border bg-card p-3">
+      <ChartFrame
+        chrome="tile"
+        height={220}
+        title="Monthly revenue"
+        data={monthlyData}
+        columns={monthlyColumns}
+        source="Source: Internal ledger"
+        onExpandChange={expandChangeSpy}
+        headerSlot={<p className="text-subtitle truncate">Revenue tile</p>}
+        menuSlot={(api) => (
+          <Button variant="ghost" size="sm" onClick={api.expand}>
+            Open full view
+          </Button>
+        )}
+      >
+        <FillChart />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    expandChangeSpy.mockClear();
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Revenue tile")).toBeInTheDocument();
+    await expect(canvas.queryByLabelText("Expand chart")).toBeNull();
+    await userEvent.click(canvas.getByRole("button", { name: "Open full view" }));
+    const dialog = await within(document.body).findByRole("dialog");
+    await waitFor(() => expect(dialog).toBeVisible());
+    await expect(expandChangeSpy).toHaveBeenCalledWith(true);
+  },
+};
+
+/** `chrome="bare"`: the chart body only — for a host that draws everything else. */
+export const BareChrome: Story = {
+  render: () => (
+    <div className="h-[220px] w-full max-w-[560px]">
+      <ChartFrame chrome="bare" height={220} title="Monthly revenue" data={monthlyData}>
+        <FillChart />
+      </ChartFrame>
+    </div>
+  ),
+};
+
+const datapointSpy = fn();
+
+/**
+ * `interactions` switches behaviour off without unmounting children (the nebula.js
+ * `Interactions` model): `passive: false` removes the tooltip, `select: false`
+ * keeps the keyboard layer but never fires `onDatapointClick`.
+ */
+export const InteractionsOff: Story = {
+  render: () => (
+    <div className="w-full max-w-[560px]">
+      <ChartFrame
+        title="Monthly revenue (read-only)"
+        data={monthlyData}
+        columns={monthlyColumns}
+        interactions={{ passive: false, select: false }}
+      >
+        <BarChart data={monthlyData} xDataKey="month" onDatapointClick={datapointSpy}>
+          <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />
+          <BarXAxis />
+          <ChartTooltip />
+        </BarChart>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    datapointSpy.mockClear();
+    const target = await waitFor(() => {
+      const el = canvasElement.querySelector<HTMLButtonElement>(
+        '[data-slot="chart-datapoint-layer-target"]',
+      );
+      if (!el) throw new Error("datapoint layer not mounted yet");
+      return el;
+    });
+    target.focus();
+    await userEvent.keyboard("{Enter}");
+    await expect(datapointSpy).not.toHaveBeenCalled();
   },
 };

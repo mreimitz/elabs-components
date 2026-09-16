@@ -9,6 +9,11 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from "react";
+import {
+  DEFAULT_CHART_INTERACTIONS,
+  type ChartDensity,
+  type ChartInteractions,
+} from "../charts/chart-config-context";
 import { exportChartPng, exportChartSvg, findChartSvg, type ChartExportKind } from "./export-svg";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -60,6 +65,10 @@ export interface ChartFrameMeta {
   description?: ReactNode;
   /** Loading vs ready — inner parts (toolbar, body) read this off context. */
   loading: boolean;
+  /** Furniture tier forwarded to every chart family (RM-072). Default `"md"`. */
+  density: ChartDensity;
+  /** Resolved interaction switches forwarded to every chart family (RM-072). */
+  interactions: Required<ChartInteractions>;
 }
 
 export interface ChartFrameContextValue {
@@ -121,6 +130,12 @@ export interface ChartFrameProviderProps {
   onExport?: (kind: ChartExportKind, blob: Blob, filename: string) => void;
   /** Loading vs ready. Default: false. */
   loading?: boolean;
+  /** Furniture tier (RM-072). Default `"md"`. */
+  density?: ChartDensity;
+  /** Interaction switches (RM-072); missing keys keep their defaults. */
+  interactions?: ChartInteractions;
+  /** Fires whenever the expand modal opens or closes (RM-072). */
+  onExpandChange?: (open: boolean) => void;
 }
 
 export function ChartFrameProvider({
@@ -134,6 +149,9 @@ export function ChartFrameProvider({
   onDownload,
   onExport,
   loading = false,
+  density = "md",
+  interactions,
+  onExpandChange,
 }: ChartFrameProviderProps) {
   const [state, dispatch] = useReducer(reducer, {
     expanded: false,
@@ -151,9 +169,16 @@ export function ChartFrameProvider({
   const titleText = typeof title === "string" ? title : undefined;
   const sourceText = typeof source === "string" ? source : undefined;
 
+  // Latest-callback ref: an inline `onExpandChange` must not churn `actions`.
+  const onExpandChangeRef = useRef(onExpandChange);
+  onExpandChangeRef.current = onExpandChange;
+
   const actions: ChartFrameActions = useMemo(
     () => ({
-      setExpanded: (open: boolean) => dispatch({ type: "SET_EXPANDED", open }),
+      setExpanded: (open: boolean) => {
+        dispatch({ type: "SET_EXPANDED", open });
+        onExpandChangeRef.current?.(open);
+      },
       toggleView: () => dispatch({ type: "TOGGLE_VIEW" }),
       download: () => onDownload(rows, columns),
       setHasSvg: (hasSvg: boolean) => dispatch({ type: "SET_HAS_SVG", hasSvg }),
@@ -185,9 +210,19 @@ export function ChartFrameProvider({
     [onDownload, rows, columns, refs, titleText, sourceText, onExport],
   );
 
+  const { passive, active, select, edit } = { ...DEFAULT_CHART_INTERACTIONS, ...interactions };
   const meta: ChartFrameMeta = useMemo(
-    () => ({ rows, columns, features, title, description, loading }),
-    [rows, columns, features, title, description, loading],
+    () => ({
+      rows,
+      columns,
+      features,
+      title,
+      description,
+      loading,
+      density,
+      interactions: { passive, active, select, edit },
+    }),
+    [rows, columns, features, title, description, loading, density, passive, active, select, edit],
   );
 
   const value = useMemo(() => ({ state, actions, meta, refs }), [state, actions, meta, refs]);

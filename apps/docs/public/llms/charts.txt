@@ -43,6 +43,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Registering one ChartDatapointLayer target per point to 'get keyboard for free' — that is the DOM cost the canvas exists to avoid; the virtual cursor is the contract here.
 - CATEGORICAL_SOFT_CAP
 - CHART_CLIP_PASSTHROUGH
+- CHART_DENSITY_SM_MAX_TICKS
 - CHART_HAIRLINE_WIDTH
 - CHART_SPEC_PALETTES
 - CHART_STAGGER_BAR_MS
@@ -104,6 +105,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - CONTINUOUS_MIN_OPACITY
 - DateTicker
 - DEFAULT_CHART_CONFIG
+- DEFAULT_CHART_INTERACTIONS
 - DEFAULT_CHART_LIFECYCLE
 - DEFAULT_CHART_STATUS
 - DEFAULT_CIRCULAR_CURVENESS

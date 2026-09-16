@@ -1,6 +1,7 @@
 "use client";
 
 import { cloneElement, isValidElement, type ReactElement, useState } from "react";
+import { useChartConfig } from "../chart-config-context";
 import { cn } from "@elabs-ai/components-ui";
 import { type LegendItemData, LegendItemProvider, LegendProvider } from "./legend-context";
 
@@ -31,6 +32,7 @@ export function Legend({
   children,
 }: LegendProps) {
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
+  const { density } = useChartConfig();
 
   // Controlled or uncontrolled hover state
   const isControlled = controlledHoveredIndex !== undefined;
@@ -42,6 +44,11 @@ export function Legend({
       setInternalHoveredIndex(index);
     }
   };
+
+  // RM-072: `xs`/`sm` tiles have no room for a legend.
+  if (density === "xs" || density === "sm") {
+    return null;
+  }
 
   const contextValue = {
     items,

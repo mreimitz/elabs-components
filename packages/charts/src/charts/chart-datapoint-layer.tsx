@@ -57,6 +57,7 @@ import type {
 } from "./chart-datapoint";
 import { getDateFormat, getNumberFormat } from "./chart-formatters";
 import { exactValueString } from "./value-format";
+import { useChartConfig } from "./chart-config-context";
 
 /** WCAG 2.5.8 (Target Size, Minimum). Every hit box is padded up to this. */
 export const MIN_DATAPOINT_TARGET_SIZE = 24;
@@ -276,12 +277,20 @@ export function ChartDatapointProvider({
   labelRef.current = datapointLabel;
   const copyOnActivateRef = useRef(copyValueOnActivate);
   copyOnActivateRef.current = copyValueOnActivate;
+  const { interactions } = useChartConfig();
+  const selectRef = useRef(interactions.select);
+  selectRef.current = interactions.select;
 
   const value = useMemo<ChartDatapointContextValue>(() => {
     const store = storeRef.current as TargetStore;
     return {
       store,
       activate: (target, event, source) => {
+        // RM-072: `interactions.select === false` keeps the targets (focus,
+        // tooltips) but commits nothing — no handler call, no copy.
+        if (!selectRef.current) {
+          return;
+        }
         const { id: _id, rect: _rect, seriesIndex: _seriesIndex, ...point } = target;
         const handler = handlerRef.current;
         // A consumer handler always wins — the copy is the fallback that makes
@@ -412,6 +421,7 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
     const pendingFocusRef = useRef<string | null>(null);
     const warnedRef = useRef(false);
 
+    const { interactions } = useChartConfig();
     const store = context?.store;
     const subscribe = useCallback(
       (listener: () => void) => store?.subscribe(listener) ?? (() => {}),
@@ -450,7 +460,8 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
       }
     }, [max, targets.length]);
 
-    if (!(context && targets.length > 0)) {
+    // RM-072: `interactions.active === false` removes the target buttons.
+    if (!(context && targets.length > 0 && interactions.active)) {
       return null;
     }
 
