@@ -24,11 +24,9 @@
  * - `lock` is a documented gap: the mock engine has no field-lock primitive. A real associative
  *   engine's own lock call (Qlik's `Field.lock()`) belongs here — left as a comment, not silently
  *   swallowed.
- * - `ready` resolves once the engine has fired its first `onChange`. This is RM-083's optional
- *   `SelectionDriver["ready"]` field, not yet declared on `core/selection.ts`'s `SelectionDriver`
- *   as this ships (RM-083 adds it there). Feature-detected here as an extra property on the
- *   returned object, so this example is already a valid, complete `SelectionDriver` before and
- *   after RM-083 merges — a host reading `driver.ready` gets a real promise either way.
+ * - `ready` resolves once the engine has fired its first `onChange` — RM-083's optional
+ *   `SelectionDriver["ready"]` field (`core/selection.ts`), narrowed to required on `EngineDriver`
+ *   below so a host reading `driver.ready` always gets a real promise from this example.
  */
 import {
   createSelectionSnapshot,
@@ -54,7 +52,10 @@ function snapshotFromEngine(engine: MockEngine): SelectionSnapshot {
   return createSelectionSnapshot(fields, associated);
 }
 
-/** `createEngineDriver`'s return type: a real `SelectionDriver` plus RM-083's `ready`. */
+/**
+ * `createEngineDriver`'s return type: a `SelectionDriver` with `ready` (RM-083's optional field)
+ * narrowed to required — this example always resolves it.
+ */
 export interface EngineDriver extends SelectionDriver {
   /** Resolves once the engine's first `onChange` has fired. */
   ready: Promise<void>;
