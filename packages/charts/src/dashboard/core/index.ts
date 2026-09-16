@@ -7,6 +7,10 @@
  */
 
 // spec/validate/layout/expression — RM-070
+export type * from "./spec";
+export * from "./layout";
+export * from "./validate";
+export * from "./expression";
 
 // store/history/selection — RM-071
 

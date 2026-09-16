@@ -1,0 +1,271 @@
+{
+  "version": 1,
+  "id": "sales-overview",
+  "title": "EMEA overtook APAC in Q3",
+  "description": "Quarterly revenue by region for the regional sales leads.",
+  "grid": {
+    "mode": "fit",
+    "columns": 24,
+    "rows": 12,
+    "gap": 8
+  },
+  "tiles": [
+    {
+      "id": "kpi-revenue",
+      "kind": "kpi",
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 2
+      },
+      "title": "Revenue up 12 %",
+      "content": {
+        "label": "Revenue",
+        "value": 1200000
+      }
+    },
+    {
+      "id": "kpi-margin",
+      "kind": "kpi",
+      "layout": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 2
+      },
+      "title": "Margin held at 31 %",
+      "content": {
+        "label": "Margin",
+        "value": 0.31
+      }
+    },
+    {
+      "id": "kpi-deals",
+      "kind": "kpi",
+      "layout": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 2
+      },
+      "title": "Deals closed: 412",
+      "content": {
+        "label": "Deals",
+        "value": 412
+      }
+    },
+    {
+      "id": "kpi-churn",
+      "kind": "kpi",
+      "layout": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 2
+      },
+      "title": "Churn fell to 2.1 %",
+      "content": {
+        "label": "Churn",
+        "value": 0.021
+      }
+    },
+    {
+      "id": "revenue-trend",
+      "kind": "chart",
+      "layout": {
+        "x": 0,
+        "y": 2,
+        "w": 16,
+        "h": 5,
+        "minW": 8,
+        "minH": 3
+      },
+      "title": "EMEA overtook APAC in Q3",
+      "source": "CRM export",
+      "content": {
+        "type": "line",
+        "title": "Revenue by quarter",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      },
+      "consumes": {
+        "selection": true
+      },
+      "emits": {
+        "selection": ["Region"]
+      }
+    },
+    {
+      "id": "region-share",
+      "kind": "chart",
+      "layout": {
+        "x": 16,
+        "y": 2,
+        "w": 8,
+        "h": 5
+      },
+      "title": "EMEA is 41 % of revenue",
+      "content": {
+        "type": "pie",
+        "title": "Share by region",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      },
+      "emits": {
+        "selection": ["Region"]
+      }
+    },
+    {
+      "id": "top-products",
+      "kind": "chart",
+      "layout": {
+        "x": 0,
+        "y": 7,
+        "w": 8,
+        "h": 4
+      },
+      "title": "Three products carry half the revenue",
+      "content": {
+        "type": "bar",
+        "title": "Top products",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      },
+      "consumes": {
+        "selection": true
+      }
+    },
+    {
+      "id": "pipeline",
+      "kind": "chart",
+      "layout": {
+        "x": 8,
+        "y": 7,
+        "w": 8,
+        "h": 4
+      },
+      "title": "Pipeline coverage is 3.2×",
+      "content": {
+        "type": "funnel",
+        "title": "Pipeline",
+        "data": [
+          {
+            "x": "Q1",
+            "revenue": 10
+          },
+          {
+            "x": "Q2",
+            "revenue": 14
+          }
+        ],
+        "x": "x",
+        "series": [
+          {
+            "key": "revenue",
+            "label": "Revenue"
+          }
+        ]
+      },
+      "consumes": {
+        "selection": true
+      }
+    },
+    {
+      "id": "detail-note",
+      "kind": "text",
+      "layout": {
+        "x": 16,
+        "y": 7,
+        "w": 8,
+        "h": 4
+      },
+      "title": "Region detail",
+      "content": {
+        "markdown": "Filtered by the selected region."
+      },
+      "visibleWhen": "variables.showDetail && selection.count('Region') > 0"
+    }
+  ],
+  "filters": [
+    {
+      "id": "region",
+      "field": "Region",
+      "label": "Region",
+      "kind": "multi"
+    }
+  ],
+  "variables": [
+    {
+      "name": "showDetail",
+      "type": "boolean",
+      "default": true,
+      "label": "Show detail"
+    }
+  ],
+  "interactions": [
+    {
+      "from": "region-share",
+      "to": "*",
+      "effect": "filter"
+    }
+  ],
+  "bookmarks": [
+    {
+      "id": "emea-q3",
+      "label": "EMEA in Q3",
+      "selection": {
+        "Region": ["EMEA"],
+        "Quarter": ["Q3"]
+      },
+      "variables": {
+        "showDetail": true
+      }
+    }
+  ]
+}
