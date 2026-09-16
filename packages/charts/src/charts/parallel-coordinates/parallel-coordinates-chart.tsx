@@ -30,7 +30,15 @@
  *    and full opacity, with a halo label. Every other entity draws at a
  *    seeded 0.5–0.8 opacity hairline (0.65px) — lieflat's "lightness is data"
  *    contract: the reader's eye is drawn to the hero without the rest
- *    disappearing.
+ *    disappearing. The hero also gets a DEDICATED ink (`var(--chart-foreground)`,
+ *    {@link resolveParallelEntityColors}) rather than a colour read out of the
+ *    context ladder by its row position — the same pattern as
+ *    `bump-chart.tsx`'s `resolveEntityColors` (#280): otherwise how loudly the
+ *    hero reads depends on where it happens to sit in the caller's array. A
+ *    HOVERED non-hero line is deliberately NOT re-coloured (only promoted in
+ *    width/opacity, `resolveEntityLineStyle`) — it keeps its own ladder
+ *    colour, matching `BumpChart`'s hover treatment, so hovering never makes a
+ *    context line indistinguishable from the hero.
  *
  * ## What this does NOT compute
  *
@@ -52,7 +60,7 @@
 
 import { curveLinear, curveMonotoneX } from "@visx/curve";
 import { line as d3Line } from "d3-shape";
-import { forwardRef, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
 import useMeasure from "react-use-measure";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, seededRnd, stagger } from "../../marks";
@@ -61,6 +69,7 @@ import { type ChartPalette, type Margin, resolvePalette } from "../chart-context
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { makeValueFmt } from "../chart-formatters";
 import type {
+  ChartDatapoint,
   ChartDatapointClickHandler,
   ChartDatapointLabel,
   ChartInteractionProps,
@@ -379,6 +388,44 @@ export interface ParallelCoordinatesLineStyle {
 }
 
 /**
+ * `entity → colour`. With a hero, the hero is EXCLUDED from the mono ladder and
+ * given a dedicated ink (`var(--chart-foreground)`) instead of a colour read out
+ * of the ladder by its row position — the pattern `bump-chart.tsx`'s
+ * `resolveEntityColors` already uses (`bump-chart.tsx:303-320`), adopted here to
+ * fix #280 (the hero's prominence was a function of where it happened to sit in
+ * the caller's row order). `palette` is ignored while a hero is set — hero
+ * promotion is a "wire" look (one hero over a neutral ladder) independent of
+ * which palette the rest of the chart would otherwise use, matching BumpChart.
+ *
+ * The context ladder is resolved over ONE EXTRA rung, then the inkiest one is
+ * dropped — reserving it for the hero — so the darkest context line stays
+ * visually separated from `var(--chart-foreground)` at every entity count
+ * (#280 step 3), rather than only when there happen to be many rows.
+ *
+ * With NO hero, this is byte-identical to resolving `palette` over every row
+ * (today's behaviour) — order preserved, one colour per row by position.
+ */
+export function resolveParallelEntityColors(
+  rows: ParallelCoordinatesRow[],
+  heroEntity: string | undefined,
+  palette: ChartPalette | undefined,
+): Map<string, string> {
+  const colors = new Map<string, string>();
+  if (heroEntity != null) {
+    const rest = rows.filter((row) => row.entity !== heroEntity);
+    const restColors = resolvePalette("mono", Math.max(rest.length, 1) + 1).slice(0, -1);
+    colors.set(heroEntity, "var(--chart-foreground)");
+    rest.forEach((row, i) => colors.set(row.entity, restColors[i % restColors.length] as string));
+    return colors;
+  }
+  const resolved = resolvePalette(palette ?? "mono", Math.max(rows.length, 1), {
+    explicit: palette !== undefined,
+  });
+  rows.forEach((row, i) => colors.set(row.entity, resolved[i % resolved.length] as string));
+  return colors;
+}
+
+/**
  * The stroke width + opacity for one row, given whether it is the hero and
  * whether ANY entity (hero or not) is currently hovered/focused.
  *
@@ -453,12 +500,9 @@ function ParallelCoordinatesPlot({
   const activateDatapoint = useActivateDatapoint();
   const { locale } = useLocale();
 
-  const rowColors = useMemo(
-    () =>
-      resolvePalette(palette ?? "mono", Math.max(rows.length, 1), {
-        explicit: palette !== undefined,
-      }),
-    [palette, rows.length],
+  const entityColors = useMemo(
+    () => resolveParallelEntityColors(rows, heroEntity, palette),
+    [rows, heroEntity, palette],
   );
 
   const dimFormatters = useMemo(
@@ -525,7 +569,7 @@ function ParallelCoordinatesPlot({
       ? margin.top + hoveredPoints.reduce((sum, p) => sum + p[1], 0) / hoveredPoints.length
       : 0;
   const hoveredColor = hoveredRow
-    ? (rowColors[rows.indexOf(hoveredRow) % rowColors.length] as string)
+    ? (entityColors.get(hoveredRow.entity) ?? "var(--chart-foreground)")
     : "var(--chart-foreground)";
 
   return (
@@ -595,8 +639,7 @@ function ParallelCoordinatesPlot({
             const style = resolveEntityLineStyle(row, isHero, hoveredEntity);
             const points = rowPoints.get(row.index) ?? [];
             const d = lineGenerator(points) ?? undefined;
-            const originalPosition = rows.indexOf(row);
-            const color = rowColors[originalPosition % rowColors.length] as string;
+            const color = entityColors.get(row.entity) ?? "var(--chart-foreground)";
             const lastPoint = points.at(-1);
             return (
               <g data-slot="parallel-coordinates-line" key={row.index}>
@@ -678,6 +721,48 @@ interface BodyProps extends PlotProps {
   maxInteractiveDatapoints?: number;
 }
 
+/**
+ * The default accessible name of a keyboard target (#269) — every axis's
+ * label + its formatted value, in axis order, exactly what the mouse-hover
+ * tooltip lists (`buildTooltipRows`). A parallel-coordinates target is an
+ * ENTITY across N axes, not one scalar, so `ChartDatapointTarget.value` is
+ * structurally `undefined` (see the target construction above) and the
+ * shared generic default (`"<category>: <value>"`) would emit a dangling
+ * separator with nothing after it. Built here (not a module-level pure
+ * function like `defaultNetworkDatapointLabel`) because it needs the
+ * resolved axes and the locale-bound formatters, which the label signature
+ * does not carry — the same reason `SankeyChart`'s `threadDatapointLabel`
+ * closes over local state (`sankey-chart.tsx:383-391`). Reuses
+ * `makeValueFmt(locale, axis.format)` verbatim so a name never diverges from
+ * the tooltip it stands in for.
+ */
+function useDefaultParallelDatapointLabel(
+  rows: ParallelCoordinatesRow[],
+  axes: ParallelCoordinatesAxis[],
+): ChartDatapointLabel {
+  const { locale } = useLocale();
+  const dimFormatters = useMemo(
+    () => axes.map((axis) => makeValueFmt(locale, axis.format)),
+    [axes, locale],
+  );
+  const rowByEntity = useMemo(() => new Map(rows.map((row) => [row.entity, row])), [rows]);
+  return useCallback(
+    (point: Omit<ChartDatapoint, "source">) => {
+      const head = point.category == null ? "" : String(point.category);
+      const row = rowByEntity.get(head);
+      if (!row) {
+        return head;
+      }
+      const dimParts = axes.map((axis, i) => {
+        const formatted = (dimFormatters[i] ?? String)(row.values[axis.key] as number);
+        return `${axis.label} ${formatted}`;
+      });
+      return [head, ...dimParts].join(", ");
+    },
+    [axes, dimFormatters, rowByEntity],
+  );
+}
+
 function ParallelCoordinatesBody({
   onDatapointClick,
   copyValueOnActivate,
@@ -685,6 +770,7 @@ function ParallelCoordinatesBody({
   maxInteractiveDatapoints,
   ...plotProps
 }: BodyProps) {
+  const defaultDatapointLabel = useDefaultParallelDatapointLabel(plotProps.rows, plotProps.axes);
   const core = <ParallelCoordinatesPlot {...plotProps} />;
   if (!onDatapointClick && !copyValueOnActivate) {
     return core;
@@ -692,7 +778,7 @@ function ParallelCoordinatesBody({
   return (
     <ChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
-      datapointLabel={datapointLabel}
+      datapointLabel={datapointLabel ?? defaultDatapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
