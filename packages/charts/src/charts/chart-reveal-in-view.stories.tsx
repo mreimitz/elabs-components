@@ -8,9 +8,10 @@
  * kept that way so this story's geometry (viewport height, spacer height,
  * `amount: 0.3` threshold) stays exactly reasoned-about and the play
  * function's assertions stay about the PRIMITIVE, not about a real chart's own
- * rendered height. `LineChart` and `AreaChart` forward `revealOn`/
- * `replayOnClick` straight through to this same primitive on their public
- * props since #175 (`BarChart` does not yet — see `MOTION_GUIDELINES.md`).
+ * rendered height. `LineChart`, `AreaChart` and `BarChart` expose `revealOn`/
+ * `replayOnClick` on their public props since #175, all reading the same gate
+ * (`useChartRevealGate`); `BarChart`'s real-chart demos are
+ * `Charts/BarChart` → `RevealInView` / `ReplayOnClick`.
  */
 
 import type { Meta, StoryObj } from "@storybook/react-vite";

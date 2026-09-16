@@ -639,3 +639,173 @@ export const MonoPalette: Story = {
     });
   },
 };
+
+// ---------------------------------------------------------------------------
+// #175 — `revealOn="inView"` / `replayOnClick`, the same gate `LineChart` and
+// `AreaChart` use. Each demo mirrors its reported chart phase onto
+// `data-phase` so a play function can tell "held" (`revealing`, no timer
+// running) from "settled" (`ready`) in a real browser.
+// ---------------------------------------------------------------------------
+
+interface RevealBarChartProps {
+  label: string;
+  testId: string;
+  revealOn?: "mount" | "inView";
+  replayOnClick?: boolean;
+  revealSignature?: string;
+}
+
+function RevealBarChart({
+  label,
+  testId,
+  revealOn,
+  replayOnClick,
+  revealSignature,
+}: RevealBarChartProps) {
+  const [phase, setPhase] = useState<string>("");
+  return (
+    <div className="w-full max-w-[560px]" data-phase={phase} data-testid={testId}>
+      <p className="mb-2 text-body font-medium text-foreground">{label}</p>
+      <div className="h-56 w-full">
+        <BarChart
+          data={monthlyData}
+          onPhaseChange={setPhase}
+          replayOnClick={replayOnClick}
+          revealOn={revealOn}
+          revealSignature={revealSignature}
+          xDataKey="month"
+        >
+          <Grid horizontal />
+          <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />
+          <BarXAxis />
+        </BarChart>
+      </div>
+    </div>
+  );
+}
+
+const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * Three stacked `BarChart`s with `revealOn="inView"`. Only a chart that has
+ * actually scrolled 30% into view grows its bars; the ones below the fold stay
+ * held (no timer lapses them into "ready" off-screen). Under reduced motion
+ * nothing is held — a below-the-fold chart shows its bars without scrolling.
+ */
+export const RevealInView: Story = {
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <div
+      aria-label="Bar charts revealed on scroll"
+      className="h-[420px] w-full overflow-y-auto bg-background"
+      data-testid="bar-reveal-viewport"
+      role="region"
+      tabIndex={0}
+    >
+      <div className="flex flex-col items-start gap-6 p-6">
+        <RevealBarChart
+          label="Chart 1 — visible on mount"
+          revealOn="inView"
+          testId="bar-reveal-1"
+        />
+        <div aria-hidden="true" style={{ height: 700 }} />
+        <RevealBarChart label="Chart 2 — below the fold" revealOn="inView" testId="bar-reveal-2" />
+        <div aria-hidden="true" style={{ height: 700 }} />
+        <RevealBarChart
+          label="Chart 3 — further below the fold"
+          revealOn="inView"
+          testId="bar-reveal-3"
+        />
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chart1 = canvas.getByTestId("bar-reveal-1");
+    const chart2 = canvas.getByTestId("bar-reveal-2");
+    const chart3 = canvas.getByTestId("bar-reveal-3");
+
+    // Chart 1 is in view on mount — it settles on BOTH motion paths.
+    await waitFor(() => expect(chart1.dataset.phase).toBe("ready"), { timeout: 5000 });
+
+    // Reduced motion is a branch, not a shorter hold: holding would withhold
+    // data from someone who asked for less motion. The story-test browser can
+    // run either path, so assert the contract of the path actually running.
+    if (prefersReducedMotion()) {
+      await waitFor(() => {
+        expect(chart2.dataset.phase).toBe("ready");
+        expect(chart3.dataset.phase).toBe("ready");
+      });
+      return;
+    }
+
+    // Animated path: chart 1 has already settled, well past the reveal
+    // duration, yet chart 2 is still held because nobody scrolled to it.
+    await expect(chart2.dataset.phase).toBe("revealing");
+
+    chart2.scrollIntoView({ block: "center" });
+    await waitFor(() => expect(chart2.dataset.phase).toBe("ready"), { timeout: 5000 });
+  },
+};
+
+function ReplayBarChartDemo() {
+  // The KEYBOARD half of the replay affordance. `replayOnClick` is a
+  // pointer-only listener on the chart container (no role, no name, no tab
+  // stop), so a real `<button>` OUTSIDE the chart replays the reveal by
+  // changing `revealSignature`. Enter and Space activate it for free.
+  const [replays, setReplays] = useState(0);
+  return (
+    <div className="flex w-full max-w-[560px] flex-col items-start gap-2">
+      <button
+        className="rounded-md border border-input bg-background px-2 py-1 text-meta font-medium text-foreground hover:bg-muted focus-ring"
+        data-testid="bar-replay-button"
+        onClick={() => setReplays((n) => n + 1)}
+        type="button"
+      >
+        Replay reveal
+      </button>
+      <RevealBarChart
+        label="Click the chart to replay its reveal"
+        replayOnClick
+        revealSignature={String(replays)}
+        testId="bar-replay"
+      />
+    </div>
+  );
+}
+
+/**
+ * `replayOnClick`: clicking the chart body replays the bar grow; the button
+ * above is the keyboard equivalent. Under reduced motion a click does not put
+ * the grow back on screen.
+ */
+export const ReplayOnClick: Story = {
+  render: () => <ReplayBarChartDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chart = canvas.getByTestId("bar-replay");
+    await waitFor(() => expect(chart.dataset.phase).toBe("ready"), { timeout: 5000 });
+
+    const body = chart.querySelector<HTMLElement>('[class*="relative"]');
+    if (!body) {
+      throw new Error("chart container not found");
+    }
+
+    await userEvent.click(body);
+    if (prefersReducedMotion()) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await expect(chart.dataset.phase).toBe("ready");
+    } else {
+      await waitFor(() => expect(chart.dataset.phase).toBe("revealing"));
+      await waitFor(() => expect(chart.dataset.phase).toBe("ready"), { timeout: 5000 });
+    }
+
+    // Keyboard half: a real, focusable control activated with Enter.
+    const replayButton = canvas.getByTestId("bar-replay-button");
+    replayButton.focus();
+    await expect(replayButton).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(chart.dataset.phase).toBe("revealing"));
+    await waitFor(() => expect(chart.dataset.phase).toBe("ready"), { timeout: 5000 });
+  },
+};

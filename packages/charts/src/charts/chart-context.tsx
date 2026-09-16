@@ -334,7 +334,7 @@ export interface ChartContextValue extends ChartHoverContextValue {
   revealEpoch?: number;
   /**
    * When the enter reveal is allowed to play (RM-020, forwarded on `LineChart`/
-   * `AreaChart`'s public props since #175). `"mount"` (default, unset behaves
+   * `AreaChart`/`BarChart`'s public props since #175). `"mount"` (default, unset behaves
    * the same) plays as soon as the chart renders — no change from today.
    * `"inView"` defers the first reveal until the chart scrolls into the
    * viewport; see `ChartRevealClip`'s `revealOn`/`viewportRef` props, which
@@ -349,6 +349,13 @@ export interface ChartContextValue extends ChartHoverContextValue {
    * `ChartRevealClip`'s `shouldReplayOnClick`.
    */
   replayOnClick?: boolean;
+  /**
+   * The enter reveal is currently held by the in-view gate (`revealOn="inView"`
+   * before the chart has scrolled into view; never under reduced motion).
+   * Published by `BarChart` (#175) so each `Bar` renders at its pre-enter
+   * state instead of growing off-screen. Unset/`false` everywhere else.
+   */
+  revealHeld?: boolean;
   /** Fired when a one-shot loading pulse (exit / enter) completes. */
   notifyLoadingPulseComplete?: () => void;
 
@@ -461,6 +468,7 @@ export function ChartProvider({
       revealEpoch: value.revealEpoch,
       revealOn: value.revealOn,
       replayOnClick: value.replayOnClick,
+      revealHeld: value.revealHeld,
       notifyLoadingPulseComplete: value.notifyLoadingPulseComplete,
       xAccessor: value.xAccessor,
       xScaleType: value.xScaleType,
@@ -509,6 +517,7 @@ export function ChartProvider({
       value.revealEpoch,
       value.revealOn,
       value.replayOnClick,
+      value.revealHeld,
       value.notifyLoadingPulseComplete,
       value.xAccessor,
       value.xScaleType,

@@ -138,15 +138,21 @@ never swallow a datapoint's own click handling (`shouldReplayOnClick`). See
 `Charts/Reveal/InView` in Storybook and
 `packages/charts/src/charts/chart-reveal-clip.tsx`.
 
-**Reaches `LineChart` and `AreaChart`'s public props (#175); `BarChart` not
-yet.** `<LineChart revealOn="inView" replayOnClick />` and the `AreaChart`
-equivalent hold the chart's own reveal (gated on the chart's own container)
-and typecheck — `time-series-chart-shell.tsx` forwards both straight into
-`ChartRevealClip`. `BarChart` does not use `ChartRevealClip` at all (its bars
-tween in on their own `revealEpoch`, not a shared clip-path reveal), so it has
-no in-view hold today; giving it one is a separate, uniform-API decision
-(route it through `brand-ui-design-system-architect` rather than adding the
-props ad hoc to one more container) — see #175.
+**Reaches `LineChart`, `AreaChart` and `BarChart`'s public props (#175) — one
+gate, one semantics.** `<LineChart revealOn="inView" replayOnClick />` and the
+`AreaChart`/`BarChart` equivalents hold the chart's own reveal (gated on the
+chart's own container) with the same types and defaults (`"mount"` / `false`).
+All three read ONE hook, `useChartRevealGate` in `chart-reveal-clip.tsx` — the
+same one `ChartRevealClip` itself runs on: `time-series-chart-shell.tsx` feeds
+it to both its clip and its phase timer, and `BarChart` (whose bars grow on
+their own `revealEpoch`, not through a clip) holds each bar at its pre-enter
+state from it. The hold pauses the chart's settle timer too, so a below-the-fold
+chart stays held until it is actually scrolled to instead of lapsing into
+"ready" off-screen, and a click replays the reveal even after it settled. On a
+chart shell the keyboard half of the replay affordance is a real `<button>`
+outside the chart that changes `revealSignature` (`Charts/BarChart` →
+`ReplayOnClick`). Under reduced motion nothing is held, and `BarChart` ignores
+replay clicks rather than putting the grow back on screen.
 
 **`ChartRevealClip` neutralizes ITSELF under reduced motion — the consumer is
 not on the hook for it (#177).** It calls `useReducedMotion()` like every other

@@ -264,6 +264,8 @@ interface AnimatedBarProps {
   staggerDelay: number;
   enterTransition?: Transition;
   revealEpoch: number;
+  /** Held by the in-view gate (#175): render the pre-enter state, don't grow yet. */
+  held?: boolean;
   isHorizontal: boolean;
   /** Loading-chrome pulse class, applied instead of a real fill while data is fabricated. */
   className?: string;
@@ -287,6 +289,7 @@ function AnimatedBar({
   staggerDelay,
   enterTransition,
   revealEpoch,
+  held = false,
   isHorizontal,
   className,
   onClick,
@@ -294,16 +297,23 @@ function AnimatedBar({
   const enterAnim = transitionWithDelay(enterTransition, index * staggerDelay);
 
   if (animationType === "fade") {
+    const fadeInitial = { opacity: 0, filter: "blur(2px)" };
     return (
       <motion.rect
-        animate={{
-          opacity: isFaded ? fadedOpacity : 1,
-          filter: "blur(0px)",
-        }}
+        // Held (#175): stay at the pre-enter state; the release bumps
+        // `revealEpoch`, which remounts this rect and plays initial → target.
+        animate={
+          held
+            ? fadeInitial
+            : {
+                opacity: isFaded ? fadedOpacity : 1,
+                filter: "blur(0px)",
+              }
+        }
         className={className}
         fill={fill}
         height={height}
-        initial={{ opacity: 0, filter: "blur(2px)" }}
+        initial={fadeInitial}
         key={`fade-${index}-${revealEpoch}`}
         onClick={onClick}
         rx={rx}
@@ -327,7 +337,7 @@ function AnimatedBar({
       style={{ transition: "opacity var(--t-fast) var(--ease-standard)" }}
     >
       <motion.rect
-        animate={target}
+        animate={held ? initial : target}
         className={className}
         fill={fill}
         initial={initial}
@@ -374,6 +384,7 @@ const BarInner = memo(function BarInner({
     animationDuration,
     enterTransition,
     revealEpoch = 0,
+    revealHeld = false,
     chartPhase,
   } = useChart();
 
@@ -774,6 +785,7 @@ const BarInner = memo(function BarInner({
               fadedOpacity={fadedOpacity}
               fill={barFill}
               height={barHeight}
+              held={revealHeld}
               index={i}
               isFaded={isFaded}
               isHorizontal={isHorizontal}
