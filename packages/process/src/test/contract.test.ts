@@ -57,6 +57,25 @@ describe("assertProcessContract", () => {
     ).toThrow(ProcessContractError);
   });
 
+  // DottedChart — RM-059
+  it("passes for a non-empty log with parsable timestamps, and throws otherwise", () => {
+    const spec: ProcessContractSpec = { dataProp: "log" };
+    const row = { caseId: "c1", activity: "A", timestamp: "2026-01-05T09:00:00Z" };
+    expect(() =>
+      assertProcessContract("DottedChartDouble", { log: { events: [row] } }, spec),
+    ).not.toThrow();
+    expect(() => assertProcessContract("DottedChartDouble", { log: { events: [] } }, spec)).toThrow(
+      ProcessContractError,
+    );
+    expect(() =>
+      assertProcessContract(
+        "DottedChartDouble",
+        { log: { events: [{ ...row, timestamp: "nope" }] } },
+        spec,
+      ),
+    ).toThrow(/parsable timestamps/);
+  });
+
   it("throws when a required prop is undefined", () => {
     const spec: ProcessContractSpec = { dataProp: "graph", requiredProps: ["onSelectionChange"] };
     expect(() => assertProcessContract("ProcessMapDouble", { graph: emptyGraph }, spec)).toThrow(

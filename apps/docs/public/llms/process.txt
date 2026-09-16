@@ -13,6 +13,9 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - CaseTable
 - CaseTimeline
 - DEFAULT_LAYOUT_DEBOUNCE_MS
+- DOTTED_CHART_DEFAULT_LABELS
+- DOTTED_CHART_DOT_RADIUS
+- DottedChart
 - EMPTY_PROCESS_MAP_HOVER
 - GHOST_OPACITY
 - MetricLayerSwitch
