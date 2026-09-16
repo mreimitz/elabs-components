@@ -9,7 +9,6 @@ import {
   isValidElement,
   type ReactNode,
   useCallback,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -368,7 +367,6 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
   ref,
 ) {
   const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
-  const selectionHatchId = `selection-hatch-${useId().replace(/:/g, "")}`;
   // Internal ref anchors tooltips; merge with the forwarded ref via a callback ref.
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -457,9 +455,7 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
                 yDomainTweenDuration={yDomainTweenDuration}
               >
                 {children}
-                {selectionStates ? (
-                  <ChartSelectionSeriesLayer channel="hatch" hatchId={selectionHatchId} />
-                ) : null}
+                {selectionStates ? <ChartSelectionSeriesLayer /> : null}
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}

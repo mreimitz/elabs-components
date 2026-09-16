@@ -531,7 +531,6 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                 leafNode
               ) : (
                 <ChartSelectionMark
-                  channel="hatch"
                   key={leaf.id}
                   paint={selectionPaint}
                   shape={<rect height={box.height} width={box.width} x={box.x} y={box.y} />}

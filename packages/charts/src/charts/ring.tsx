@@ -380,7 +380,7 @@ export const Ring = memo(function Ring({
     selectionPaint["data-selection"] === undefined ? (
       node
     ) : (
-      <ChartSelectionMark channel="hatch" paint={selectionPaint} shape={<path d={bgPath} />}>
+      <ChartSelectionMark paint={selectionPaint} shape={<path d={bgPath} />}>
         {node}
       </ChartSelectionMark>
     );

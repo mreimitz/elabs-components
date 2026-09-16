@@ -36,8 +36,10 @@ Binding for everything under `packages/charts/src/dashboard/`. Decision record: 
 - **Selection is one tri-state vocabulary:** `selected | associated | excluded`, surfaced as a
   `data-selection` attribute — the encoding `@elabs-ai/components-process` ships. Never a fourth
   state or ink, and **no `--selection-*` tokens** (ADR 0037 §6). Excluded is ghosted at the shared
-  ghost opacity PLUS a non-colour channel (`border-strong` boundary swap or dashed frame) and the
-  state word in the accessible name.
+  ghost opacity PLUS a non-colour channel — a dashed frame at FULL opacity, never inside the ghost
+  and never a hatch (decoration owns fill patterns) — and the state word in the accessible name.
+  Selected is a compound `--chart-foreground`/`--chart-background` outline, never one series-like
+  ink such as `--ring`.
 - **Edit-mode chrome** (handles, ghost, marquee) paints in `--ring`/`--accent` at full opacity,
   one weight. The ghost is a dashed `CHART_HAIRLINE_WIDTH` outline, never a translucent fill over
   live charts.

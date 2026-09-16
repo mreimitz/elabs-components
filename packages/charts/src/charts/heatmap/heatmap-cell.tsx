@@ -227,7 +227,6 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
   if (selectionPaint["data-selection"] === undefined) return node;
   return (
     <ChartSelectionMark
-      channel="hatch"
       paint={selectionPaint}
       shape={<rect height={cell.height} width={cell.width} x={cell.x0} y={cell.y0} />}
     >

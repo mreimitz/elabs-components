@@ -68,7 +68,6 @@ import {
   type UnitRect,
 } from "./unit-layouts";
 import {
-  type ChartSelectionChannel,
   type ChartSelectionProps,
   ChartSelectionMark,
   ChartSelectionProvider,
@@ -358,7 +357,6 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     seriesIndex: number,
     node: React.ReactNode,
     shape: () => React.ReactElement<React.SVGProps<SVGElement>>,
-    channel: ChartSelectionChannel,
   ): React.ReactNode => {
     const d = displayData[seriesIndex];
     const paint = resolveMarkPaint(selection, {
@@ -367,12 +365,11 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     });
     if (paint["data-selection"] === undefined) return node;
     return (
-      <ChartSelectionMark channel={channel} key={seriesIndex} paint={paint} shape={shape()}>
+      <ChartSelectionMark key={seriesIndex} paint={paint} shape={shape()}>
         {node}
       </ChartSelectionMark>
     );
   };
-  const markChannel: ChartSelectionChannel = mark === "tick" ? "dash" : "hollow";
   const seriesGroupProps = (i: number) => ({
     className: "cursor-pointer",
     "data-slot": "unit-chart-series",
@@ -481,7 +478,6 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
                     y={row.y - (ROW_HEIGHT * 0.55) / 2}
                   />
                 ),
-                "hatch",
               );
             })}
           </svg>
@@ -505,7 +501,6 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
                     )}
                   </g>,
                   () => <g>{marks.map((m) => markShape(mark, m))}</g>,
-                  markChannel,
                 );
               })}
             {fieldGeom &&
@@ -555,7 +550,6 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
                     </text>
                   </g>,
                   () => <g>{clusterMarks.map((m) => markShape(mark, m))}</g>,
-                  markChannel,
                 );
               })}
           </svg>
