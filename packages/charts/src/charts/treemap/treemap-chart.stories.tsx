@@ -235,3 +235,36 @@ export const Interactive: Story = {
     await expect(canvas.getByTestId("drill-detail")).toHaveTextContent(/via keyboard/);
   },
 };
+
+/** The series-pattern channel (ADR 0011) rendered: `bp-series-*` defs + marks filled from them. */
+function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: number) {
+  expect(root.querySelectorAll('pattern[id^="bp-series-"]').length).toBeGreaterThanOrEqual(
+    minPatterns,
+  );
+  const patterned = [...root.querySelectorAll(markSelector)].filter((mark) =>
+    (mark.getAttribute("fill") ?? "").startsWith("url(#bp-series-"),
+  );
+  expect(patterned.length).toBeGreaterThan(0);
+}
+
+/**
+ * High decoration (ADR 0011, #257) — `palette="categorical"` leaves draw their
+ * group's series pattern, so the two groups read apart without hue. Title bands
+ * carry the group label and stay flat.
+ */
+export const HighDecoration: Story = {
+  name: "High decoration (#257)",
+  globals: { decoration: "10" },
+  args: {
+    data: whereTheWorkWent,
+    palette: "categorical",
+  },
+  render: (args) => (
+    <div className="h-[420px] w-full max-w-[720px]" data-decoration="10">
+      <TreemapChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expectSeriesPatterns(canvasElement, "[data-treemap-leaf-id]", 2));
+  },
+};

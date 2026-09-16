@@ -308,3 +308,41 @@ export const WithAccessibleLabel: Story = {
     </div>
   ),
 };
+
+/** The series-pattern channel (ADR 0011) rendered: `bp-series-*` defs + marks filled from them. */
+function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: number) {
+  expect(root.querySelectorAll('pattern[id^="bp-series-"]').length).toBeGreaterThanOrEqual(
+    minPatterns,
+  );
+  const patterned = [...root.querySelectorAll(markSelector)].filter((mark) =>
+    (mark.getAttribute("fill") ?? "").startsWith("url(#bp-series-"),
+  );
+  expect(patterned.length).toBeGreaterThan(0);
+}
+
+/**
+ * High decoration (ADR 0011, #257) — each filled (“after”) marker draws its row
+ * colour’s series pattern inside a solid hairline outline; hollow (“before”)
+ * markers stay hollow.
+ */
+export const HighDecoration: Story = {
+  name: "High decoration (#257)",
+  globals: { decoration: "10" },
+  args: {
+    data: onboardingSteps,
+    category: "step",
+    startKey: "before",
+    endKey: "after",
+    showDelta: true,
+  },
+  render: (args) => (
+    <div className="h-80 w-full max-w-[640px]" data-decoration="10">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expectSeriesPatterns(canvasElement, '[data-slot="dumbbell-chart-marker-end"]', 2),
+    );
+  },
+};

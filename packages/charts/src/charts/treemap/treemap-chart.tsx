@@ -8,6 +8,7 @@ import {
   type MutableRefObject,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -27,6 +28,8 @@ import {
 import { useChartValueFormatter } from "../chart-formatters";
 import type { ChartValueFormat } from "../value-format";
 import { CATEGORY_AXIS_ELLIPSIS, ellipsize } from "../category-axis-plan";
+import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "../series-pattern";
+import { useHighDecorationOf } from "../use-high-decoration";
 import { useTextMeasurerOf } from "../use-text-measurer";
 import { HaloText } from "../../marks/halo-text";
 import { ChartTooltipBox } from "../tooltip/tooltip-box";
@@ -96,6 +99,9 @@ interface TooltipState {
   x: number;
   y: number;
 }
+
+/** No leaf decoration patterns (low decoration, or no palette fills). */
+const NO_PATTERN_INDICES: ReadonlyMap<string, number> = new Map();
 
 /** So a non-interactive TreemapChart never re-registers keyboard targets. */
 const EMPTY_TREEMAP_TARGETS: ChartDatapointTarget[] = [];
@@ -248,6 +254,24 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
 
   const activeLayout = drilledLayout ?? baseLayout;
 
+  // Decoration pattern (ADR 0011, #257): under high decoration each distinct
+  // palette leaf colour gets its own series pattern, so tiles that differ by
+  // hue (categorical groups, sequential steps) also differ by texture. Only
+  // LEAVES are patterned — a group's title band carries its label and stays flat.
+  const high = useHighDecorationOf(internalRef);
+  const patternScope = useId().replace(/:/g, "");
+  const patternIndices = useMemo(
+    () =>
+      high ? indexPaletteFills(activeLayout.leaves.map((leaf) => leaf.color)) : NO_PATTERN_INDICES,
+    [activeLayout.leaves, high],
+  );
+  const leafFill = (color: string): string => {
+    const patternIndex = patternIndices.get(color);
+    return patternIndex === undefined
+      ? color
+      : `url(#${seriesPatternId(patternIndex, patternScope)})`;
+  };
+
   // Drill-down affordance: zooming into a group is a GROUP-band affordance,
   // never a leaf one — `onDatapointClick` is the only leaf click handler
   // (RM-025 acceptance: "static story has no click handlers beyond
@@ -348,6 +372,17 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
             viewBox={`0 0 ${sz.w} ${sz.h}`}
             width={sz.w}
           >
+            {patternIndices.size > 0 && (
+              <defs>
+                {Array.from(patternIndices, ([color, patternIndex]) =>
+                  makeSeriesPattern(
+                    patternIndex,
+                    seriesPatternId(patternIndex, patternScope),
+                    color,
+                  ),
+                )}
+              </defs>
+            )}
             <rect fill="var(--chart-background)" height={sz.h} width={sz.w} x={0} y={0} />
             {depth === 2 &&
               activeLayout.groups.map((group) => {
@@ -397,7 +432,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                     animate={{ x: box.x, y: box.y, width: box.width, height: box.height }}
                     className={cn(isActive && "cursor-pointer")}
                     data-treemap-leaf-id={leaf.id}
-                    fill={leaf.color}
+                    fill={leafFill(leaf.color)}
                     initial={false}
                     onClick={
                       isActive

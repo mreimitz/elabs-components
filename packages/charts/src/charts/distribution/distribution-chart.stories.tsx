@@ -329,3 +329,41 @@ export const DenseStrip: Story = {
     );
   },
 };
+
+/** The series-pattern channel (ADR 0011) rendered: `bp-series-*` defs + marks filled from them. */
+function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: number) {
+  expect(root.querySelectorAll('pattern[id^="bp-series-"]').length).toBeGreaterThanOrEqual(
+    minPatterns,
+  );
+  const patterned = [...root.querySelectorAll(markSelector)].filter((mark) =>
+    (mark.getAttribute("fill") ?? "").startsWith("url(#bp-series-"),
+  );
+  expect(patterned.length).toBeGreaterThan(0);
+}
+
+/**
+ * High decoration (ADR 0011, #257) — each queue's box draws its own series
+ * pattern, so the three groups read apart without hue. Histogram bars and violin
+ * bodies take the same channel; strip dots and `unit` rungs stay solid.
+ */
+export const HighDecoration: Story = {
+  name: "High decoration (#257)",
+  globals: { decoration: "10" },
+  render: () => (
+    <div className="h-72 w-full max-w-[640px]" data-decoration="10">
+      <DistributionChart
+        accessibleLabel="First-reply time by queue"
+        data={REPLIES}
+        groupKey="team"
+        kind="box"
+        valueFormat="number"
+        valueKey="minutes"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expectSeriesPatterns(canvasElement, '[data-slot="distribution-chart-box"] rect', 3),
+    );
+  },
+};

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, waitFor } from "storybook/test";
 import { CandlestickChart } from "./candlestick-chart";
 import { Candlestick } from "./candlestick";
 import { Grid } from "./grid";
@@ -89,4 +90,38 @@ export const WithAccessibleLabel: Story = {
       <YAxis />
     </CandlestickChart>
   ),
+};
+
+/** The series-pattern channel (ADR 0011) rendered: `bp-series-*` defs + marks filled from them. */
+function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: number) {
+  expect(root.querySelectorAll('pattern[id^="bp-series-"]').length).toBeGreaterThanOrEqual(
+    minPatterns,
+  );
+  const patterned = [...root.querySelectorAll(markSelector)].filter((mark) =>
+    (mark.getAttribute("fill") ?? "").startsWith("url(#bp-series-"),
+  );
+  expect(patterned.length).toBeGreaterThan(0);
+}
+
+/**
+ * High decoration (ADR 0011, #257) — rising and falling bodies each draw their
+ * own series pattern (diagonal hatch / dots) inside a solid outline, so the
+ * up/down split survives without hue. At decoration 0–7 this is `NoAnimation`.
+ */
+export const HighDecoration: Story = {
+  name: "High decoration (#257)",
+  globals: { decoration: "10" },
+  render: () => (
+    <div className="h-full w-full" data-decoration="10">
+      <CandlestickChart data={ohlcData} animationDuration={0}>
+        <Grid horizontal />
+        <Candlestick animate={false} />
+        <XAxis />
+        <YAxis />
+      </CandlestickChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expectSeriesPatterns(canvasElement, ".chart-candlesticks rect", 2));
+  },
 };

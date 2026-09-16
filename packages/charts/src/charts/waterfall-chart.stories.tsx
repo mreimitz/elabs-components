@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { WaterfallChart, type WaterfallDatum, type WaterfallStep } from "./waterfall-chart";
 
@@ -131,5 +131,43 @@ export const KeyboardDrilldown: Story = {
     await userEvent.keyboard("{Enter}");
 
     await expect(canvas.getByTestId("drill-detail")).toHaveTextContent(/via keyboard/);
+  },
+};
+
+/** The series-pattern channel (ADR 0011) rendered: `bp-series-*` defs + marks filled from them. */
+function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: number) {
+  expect(root.querySelectorAll('pattern[id^="bp-series-"]').length).toBeGreaterThanOrEqual(
+    minPatterns,
+  );
+  const patterned = [...root.querySelectorAll(markSelector)].filter((mark) =>
+    (mark.getAttribute("fill") ?? "").startsWith("url(#bp-series-"),
+  );
+  expect(patterned.length).toBeGreaterThan(0);
+}
+
+/**
+ * High decoration (ADR 0011, #257) — increase, decrease and total steps each
+ * draw one series pattern, so the bridge's three kinds of step survive without
+ * hue.
+ */
+export const HighDecoration: Story = {
+  name: "High decoration (#257)",
+  globals: { decoration: "10" },
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]" data-decoration="10">
+      <WaterfallChart
+        accessibleLabel="Gross to net revenue bridge"
+        data={[
+          ...grossToNet.slice(0, 4),
+          { label: "Price", value: 150 },
+          { kind: "total", label: "Net", value: 550 },
+        ]}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expectSeriesPatterns(canvasElement, '[data-slot="waterfall-chart-step"]', 3),
+    );
   },
 };

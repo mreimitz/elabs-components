@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isValidElement } from "react";
 import {
+  indexPaletteFills,
   isPaletteFill,
   makeSeriesPattern,
   seriesDashArray,
@@ -88,5 +89,23 @@ describe("makeSeriesPattern — raw <pattern> for a series (#164)", () => {
     const el = makeSeriesPattern(1, "id1", "var(--chart-1)");
     const children = (el.props as { children: { type: string }[] }).children;
     expect(children[1]?.type).toBe("circle");
+  });
+});
+
+describe("indexPaletteFills — per-datum palette fills (#257)", () => {
+  it("numbers distinct palette fills in first-seen order and skips author fills", () => {
+    const indices = indexPaletteFills([
+      "var(--chart-2)",
+      "var(--chart-1)",
+      "var(--chart-2)",
+      "url(#author)",
+      undefined,
+      "var(--chart-seq-3)",
+    ]);
+    expect([...indices]).toEqual([
+      ["var(--chart-2)", 0],
+      ["var(--chart-1)", 1],
+      ["var(--chart-seq-3)", 2],
+    ]);
   });
 });

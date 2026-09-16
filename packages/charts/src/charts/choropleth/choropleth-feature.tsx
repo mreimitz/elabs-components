@@ -4,7 +4,9 @@ import { geoCentroid } from "d3-geo";
 import { motion, useTransform } from "motion/react";
 import { memo, useCallback, useId, useMemo } from "react";
 import { HaloText } from "../../marks/halo-text";
+import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { useEnterComplete } from "../use-enter-complete";
+import { useHighDecorationOf } from "../use-high-decoration";
 import { useMountProgress } from "../use-mount-progress";
 import {
   type ChoroplethFeature as ChoroplethFeatureType,
@@ -54,6 +56,9 @@ interface FeatureRecord {
   feature: ChoroplethFeatureType;
   centroid: { x: number; y: number } | null;
 }
+
+/** No per-region decoration patterns (low decoration, or no palette fills). */
+const NO_PATTERN_INDICES: ReadonlyMap<string, number> = new Map();
 
 /** `properties.value`, when it is a finite number — the "does this region have data" test. */
 function getFeatureNumericValue(feature: ChoroplethFeatureType): number | undefined {
@@ -326,11 +331,17 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
     revealEpoch,
     width,
     height,
+    containerRef,
   } = useChoroplethStable();
   const { hoveredFeatureIndex, setHoveredFeatureIndex, focusedFeatureIndex, setTooltipData } =
     useChoroplethInteraction();
   const noDataHatchId = `choropleth-no-data-hatch-${useId().replace(/:/g, "")}`;
   const noDataHatchFillUrl = `url(#${noDataHatchId})`;
+  // Decoration pattern (ADR 0011, #257): under high decoration every distinct
+  // palette fill gets its own series pattern, so regions that differ by hue
+  // also differ by texture. Author fills (patterns, literals, no-data) stay.
+  const high = useHighDecorationOf(containerRef);
+  const patternScope = useId().replace(/:/g, "");
 
   const featureCentroids = useMemo(() => {
     return features.map((feature) => {
@@ -353,7 +364,7 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
     });
   }, [features, projectPoint, width, height]);
 
-  const records = useMemo(() => {
+  const baseRecords = useMemo(() => {
     const items: FeatureRecord[] = [];
     for (let index = 0; index < features.length; index++) {
       const feature = features[index];
@@ -394,6 +405,23 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
     noDataHatchFillUrl,
     pathGenerator,
   ]);
+
+  const patternIndices = useMemo(
+    () => (high ? indexPaletteFills(baseRecords.map((record) => record.fill)) : NO_PATTERN_INDICES),
+    [baseRecords, high],
+  );
+
+  const records = useMemo(() => {
+    if (patternIndices.size === 0) {
+      return baseRecords;
+    }
+    return baseRecords.map((record) => {
+      const patternIndex = patternIndices.get(record.fill);
+      return patternIndex === undefined
+        ? record
+        : { ...record, fill: `url(#${seriesPatternId(patternIndex, patternScope)})` };
+    });
+  }, [baseRecords, patternIndices, patternScope]);
 
   // labelTop (M1/M2) — the top-N regions by `properties.value`, inline
   // halo'd text at their centroid, collision-avoided.
@@ -451,9 +479,12 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
 
   return (
     <g className="choropleth-features">
-      {patterns || noDataFill === "hatch" ? (
+      {patterns || noDataFill === "hatch" || patternIndices.size > 0 ? (
         <defs>
           {patterns}
+          {Array.from(patternIndices, ([color, patternIndex]) =>
+            makeSeriesPattern(patternIndex, seriesPatternId(patternIndex, patternScope), color),
+          )}
           {noDataFill === "hatch" ? (
             <pattern height={8} id={noDataHatchId} patternUnits="userSpaceOnUse" width={8}>
               <rect fill="var(--chart-background)" height={8} width={8} />

@@ -25,6 +25,7 @@ vi.mock("@visx/responsive", () => {
 
 import { CandlestickChart } from "./candlestick-chart";
 import { Candlestick } from "./candlestick";
+import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "./high-decoration-fixture";
 
 const minimalData = [
   { date: new Date("2024-01-02"), open: 100, high: 108, low: 98, close: 105 },
@@ -107,5 +108,46 @@ describe("CandlestickChart", () => {
     const root = container.firstChild as HTMLElement;
     expect(root.getAttribute("role")).toBeNull();
     expect(root.getAttribute("aria-label")).toBeNull();
+  });
+});
+
+describe("Candlestick decoration pattern channel (ADR 0011, #257)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("patterns rising and falling bodies with distinct series patterns at high decoration", () => {
+    stubHighDecoration();
+    const { container } = render(
+      <CandlestickChart data={minimalData} animationDuration={0}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const ids = seriesPatterns(container).map((pattern) => pattern.id);
+    expect(ids).toHaveLength(2);
+    const bodyFills = new Set(
+      seriesPatternFills(container, "rect").map((r) => r.getAttribute("fill")),
+    );
+    expect([...bodyFills].sort()).toEqual(ids.map((id) => `url(#${id})`).sort());
+  });
+
+  it("stays solid at low decoration and never overrides an author body pattern", () => {
+    const low = render(
+      <CandlestickChart data={minimalData} animationDuration={0}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(seriesPatterns(low.container)).toHaveLength(0);
+    low.unmount();
+
+    stubHighDecoration();
+    const { container } = render(
+      <CandlestickChart data={minimalData} animationDuration={0}>
+        <Candlestick
+          animate={false}
+          bodyPatternNegative="url(#author-negative)"
+          bodyPatternPositive="url(#author-positive)"
+        />
+      </CandlestickChart>,
+    );
+    expect(seriesPatterns(container)).toHaveLength(0);
   });
 });

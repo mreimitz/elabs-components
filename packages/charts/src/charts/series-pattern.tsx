@@ -130,6 +130,23 @@ export function isPaletteFill(fill: string | null | undefined): boolean {
 }
 
 /**
+ * Pattern index per DISTINCT palette fill, in first-seen order — for charts whose
+ * marks are coloured per datum rather than per series (choropleth regions,
+ * treemap tiles, dumbbell rows). Two marks sharing a palette colour share a
+ * pattern, so the texture carries exactly the distinction the hue carried; a
+ * non-palette fill (an author's literal/url) is skipped and stays as authored.
+ */
+export function indexPaletteFills(fills: Iterable<string | null | undefined>): Map<string, number> {
+  const indices = new Map<string, number>();
+  for (const fill of fills) {
+    if (fill && isPaletteFill(fill) && !indices.has(fill)) {
+      indices.set(fill, indices.size);
+    }
+  }
+  return indices;
+}
+
+/**
  * Build the raw `<pattern>` element for a series index. Place the returned node
  * inside a `<defs>` and reference it as `fill="url(#id)"`.
  *

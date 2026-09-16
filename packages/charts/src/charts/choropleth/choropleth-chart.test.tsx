@@ -12,7 +12,7 @@
  */
 
 import { geoArea, geoCentroid } from "d3-geo";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { squareStateFeature, US_STATE_SEEDS } from "./us-states-fixture";
 
 // ---------------------------------------------------------------------------
@@ -54,6 +54,7 @@ if (!globalThis.ResizeObserver) {
 import { fireEvent, render } from "@testing-library/react";
 import { ChoroplethChart } from "./choropleth-chart";
 import { ChoroplethFeature as ChoroplethFeatureComponent } from "./choropleth-feature";
+import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { ChoroplethFeatureProperties } from "./choropleth-context";
 
@@ -529,5 +530,49 @@ describe("squareStateFeature winding (#236)", () => {
     for (const seed of US_STATE_SEEDS) {
       expect(geoArea(squareStateFeature(seed))).toBeLessThan(0.01);
     }
+  });
+});
+
+describe("ChoroplethFeature decoration pattern channel (ADR 0011, #257)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("gives each distinct palette fill its own series pattern at high decoration", () => {
+    stubHighDecoration();
+    const { container } = render(
+      <ChoroplethChart data={twoFeaturesOneNoData} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const ids = seriesPatterns(container).map((pattern) => pattern.id);
+    // Two regions on the default palette → --chart-1 and --chart-2 → two patterns.
+    expect(ids).toHaveLength(2);
+    const fills = seriesPatternFills(container, ".choropleth-features path").map((p) =>
+      p.getAttribute("fill"),
+    );
+    expect(new Set(fills)).toEqual(new Set(ids.map((id) => `url(#${id})`)));
+  });
+
+  it("leaves the no-data hatch and low decoration untouched", () => {
+    const low = render(
+      <ChoroplethChart data={twoFeaturesOneNoData} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    expect(seriesPatterns(low.container)).toHaveLength(0);
+    low.unmount();
+
+    stubHighDecoration();
+    const { container } = render(
+      <ChoroplethChart data={twoFeaturesOneNoData} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent noDataFill="hatch" />
+      </ChoroplethChart>,
+    );
+    const paths = Array.from(container.querySelectorAll(".choropleth-features path"));
+    expect(
+      paths.some((p) =>
+        (p.getAttribute("fill") ?? "").startsWith("url(#choropleth-no-data-hatch-"),
+      ),
+    ).toBe(true);
+    expect(seriesPatterns(container)).toHaveLength(1);
   });
 });

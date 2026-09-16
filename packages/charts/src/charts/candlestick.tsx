@@ -2,10 +2,12 @@
 
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
-import { memo, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
 import { useChart } from "./chart-context";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
+import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
+import { useHighDecoration } from "./use-high-decoration";
 
 const DEFAULT_POSITIVE = "url(#candlestick-positive)";
 const DEFAULT_NEGATIVE = "url(#candlestick-negative)";
@@ -44,14 +46,53 @@ interface CandleGeometry {
   wickHeight: number;
   wickLeft: number;
   bodySolidFill: string;
+  /** Body outline ink — the solid colour even when the body is patterned (ADR 0011). */
+  bodyStroke: string;
   wickFill: string;
   bodyPattern?: string;
   insideStrokeWidth: number;
   isPositive: boolean;
 }
 
+/**
+ * High-decoration body pattern for one candle direction (ADR 0011, #257): the
+ * `url(#…)` body fill plus the solid ink the wick and outline keep.
+ */
+interface CandleDecorationPattern {
+  fill: string;
+  ink: string;
+}
+
+interface CandleDecoration {
+  positive: CandleDecorationPattern | null;
+  negative: CandleDecorationPattern | null;
+}
+
+const NO_CANDLE_DECORATION: CandleDecoration = { positive: null, negative: null };
+
 function getSolidColor(isPositive: boolean): string {
   return isPositive ? SOLID_POSITIVE : SOLID_NEGATIVE;
+}
+
+/**
+ * The ink a direction's pattern is drawn in, or `null` when that direction must
+ * not auto-pattern: the default gradient sentinel resolves to its palette token,
+ * any other palette token is its own ink, and an author's literal/url or an
+ * explicit `bodyPattern*` always wins.
+ */
+function candlePatternInk(
+  fill: string,
+  defaultFill: string,
+  solid: string,
+  bodyPattern: string | undefined,
+): string | null {
+  if (bodyPattern) {
+    return null;
+  }
+  if (fill === defaultFill) {
+    return solid;
+  }
+  return isPaletteFill(fill) ? fill : null;
 }
 
 function computeGeometries(
@@ -65,6 +106,7 @@ function computeGeometries(
   bodyPatternPositive: string | undefined,
   bodyPatternNegative: string | undefined,
   insideStrokeWidth: number,
+  decoration: CandleDecoration = NO_CANDLE_DECORATION,
 ): CandleGeometry[] {
   return renderData.map((d) => {
     const date = xAccessor(d);
@@ -87,6 +129,27 @@ function computeGeometries(
     const bodyPattern = isPositive ? bodyPatternPositive : bodyPatternNegative;
     const hasPatternOverlay = Boolean(bodyPattern);
     const bodySolidFill = hasPatternOverlay ? getSolidColor(isPositive) : fill;
+    const decorated = isPositive ? decoration.positive : decoration.negative;
+
+    if (decorated) {
+      return {
+        time: date.getTime(),
+        centerX,
+        bodyTop,
+        bodyHeight,
+        bodyLeft,
+        candleWidth,
+        wickTop,
+        wickHeight,
+        wickLeft: centerX - WICK_WIDTH / 2,
+        bodySolidFill: decorated.fill,
+        bodyStroke: decorated.ink,
+        wickFill: decorated.ink,
+        bodyPattern: undefined,
+        insideStrokeWidth,
+        isPositive,
+      };
+    }
 
     return {
       time: date.getTime(),
@@ -99,6 +162,7 @@ function computeGeometries(
       wickHeight,
       wickLeft: centerX - WICK_WIDTH / 2,
       bodySolidFill,
+      bodyStroke: bodySolidFill,
       wickFill: hasPatternOverlay ? bodySolidFill : fill,
       bodyPattern: hasPatternOverlay ? bodyPattern : undefined,
       insideStrokeWidth,
@@ -136,6 +200,7 @@ const CandlestickBody = memo(function CandlestickBody({ geometry }: { geometry: 
     bodyHeight,
     candleWidth,
     bodySolidFill,
+    bodyStroke,
     bodyPattern,
     insideStrokeWidth,
   } = geometry;
@@ -148,7 +213,7 @@ const CandlestickBody = memo(function CandlestickBody({ geometry }: { geometry: 
         height={bodyHeight}
         rx={1}
         ry={1}
-        stroke={bodySolidFill}
+        stroke={bodyStroke}
         strokeWidth={1}
         width={candleWidth}
         x={bodyLeft}
@@ -171,7 +236,7 @@ const CandlestickBody = memo(function CandlestickBody({ geometry }: { geometry: 
           height={bodyHeight - insideStrokeWidth}
           rx={1}
           ry={1}
-          stroke={bodySolidFill}
+          stroke={bodyStroke}
           strokeWidth={insideStrokeWidth}
           width={candleWidth - insideStrokeWidth}
           x={bodyLeft + insideStrokeWidth / 2}
@@ -246,7 +311,7 @@ function AnimatedCandle({ geometry, delay, enterTransition, revealEpoch }: Anima
         initial={{ scaleY: 0 }}
         rx={1}
         ry={1}
-        stroke={geometry.bodySolidFill}
+        stroke={geometry.bodyStroke}
         strokeWidth={1}
         style={{ transformOrigin: bodyOrigin }}
         transition={t}
@@ -298,6 +363,48 @@ export function Candlestick({
   } = useChart();
   const { hoveredIndex: legendHoveredIndex } = useChartLegendHover();
 
+  // Decoration pattern (ADR 0011, #257): under high decoration each direction's
+  // palette body gains its own series pattern — rising = series 0, falling =
+  // series 1 — so up/down survives without hue. Wick and outline stay solid.
+  const high = useHighDecoration();
+  const patternScope = useId().replace(/:/g, "");
+  const decoration = useMemo<CandleDecoration>(() => {
+    if (!high) {
+      return NO_CANDLE_DECORATION;
+    }
+    const positiveInk = candlePatternInk(
+      positiveFill,
+      DEFAULT_POSITIVE,
+      SOLID_POSITIVE,
+      bodyPatternPositive,
+    );
+    const negativeInk = candlePatternInk(
+      negativeFill,
+      DEFAULT_NEGATIVE,
+      SOLID_NEGATIVE,
+      bodyPatternNegative,
+    );
+    return {
+      positive: positiveInk
+        ? { fill: `url(#${seriesPatternId(0, patternScope)})`, ink: positiveInk }
+        : null,
+      negative: negativeInk
+        ? { fill: `url(#${seriesPatternId(1, patternScope)})`, ink: negativeInk }
+        : null,
+    };
+  }, [high, positiveFill, negativeFill, bodyPatternPositive, bodyPatternNegative, patternScope]);
+  const patternDefs =
+    decoration.positive || decoration.negative ? (
+      <defs>
+        {decoration.positive
+          ? makeSeriesPattern(0, seriesPatternId(0, patternScope), decoration.positive.ink)
+          : null}
+        {decoration.negative
+          ? makeSeriesPattern(1, seriesPatternId(1, patternScope), decoration.negative.ink)
+          : null}
+      </defs>
+    ) : null;
+
   const candleWidth = Math.min(bandWidth ?? columnWidth * 0.8, columnWidth);
 
   const geometries = useMemo(
@@ -313,6 +420,7 @@ export function Candlestick({
         bodyPatternPositive,
         bodyPatternNegative,
         insideStrokeWidth,
+        decoration,
       ),
     [
       data,
@@ -325,6 +433,7 @@ export function Candlestick({
       bodyPatternPositive,
       bodyPatternNegative,
       insideStrokeWidth,
+      decoration,
     ],
   );
 
@@ -356,6 +465,7 @@ export function Candlestick({
         bodyPatternPositive,
         bodyPatternNegative,
         insideStrokeWidth,
+        decoration,
       )[0] ?? null
     );
   }, [
@@ -370,6 +480,7 @@ export function Candlestick({
     bodyPatternPositive,
     bodyPatternNegative,
     insideStrokeWidth,
+    decoration,
   ]);
 
   const defaultEnter: Transition = {
@@ -383,6 +494,7 @@ export function Candlestick({
   if (animate && !isLoaded) {
     return (
       <g className="chart-candlesticks">
+        {patternDefs}
         {geometries.map((geometry, index) => (
           <AnimatedCandle
             delay={(index * staggerDelayMs) / 1000}
@@ -398,6 +510,7 @@ export function Candlestick({
 
   return (
     <g className="chart-candlesticks">
+      {patternDefs}
       <CandlestickBodies
         fadedOpacity={fadedOpacity}
         geometries={geometries}

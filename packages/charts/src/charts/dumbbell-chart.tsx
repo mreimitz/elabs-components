@@ -32,7 +32,7 @@
  */
 
 import { scaleLinear } from "@visx/scale";
-import { forwardRef, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { forwardRef, useId, useMemo, useRef, useState, type MutableRefObject } from "react";
 import useMeasure from "react-use-measure";
 import { cn } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
@@ -57,6 +57,8 @@ import {
 import { useChartValueFormatter } from "./chart-formatters";
 import { ChartTooltipBox } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
+import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "./series-pattern";
+import { useHighDecorationOf } from "./use-high-decoration";
 import { useTextMeasurerOf } from "./use-text-measurer";
 import type { ChartValueFormat } from "./value-format";
 
@@ -136,6 +138,10 @@ const SLOPE_MARGIN: Margin = { top: 24, right: 120, bottom: 24, left: 120 };
 
 const MARKER_RADIUS = 5;
 const HOLLOW_MARKER_STROKE = 2;
+/** Outline of a pattern-filled marker at high decoration — thinner than a hollow ring. */
+const PATTERNED_MARKER_STROKE = 1;
+/** No marker decoration patterns (low decoration, or no palette row colours). */
+const NO_PATTERN_INDICES: ReadonlyMap<string, number> = new Map();
 const CONNECTOR_STROKE_WIDTH = 2;
 const TRACK_STROKE_WIDTH = CHART_HAIRLINE_WIDTH;
 const BEAD_OFFSET = MARKER_RADIUS + 3;
@@ -535,6 +541,33 @@ function DumbbellPlot({
     [extraKeys?.length],
   );
 
+  // Decoration pattern (ADR 0011, #257): under high decoration a FILLED marker
+  // whose row colour is a palette token draws that colour's series pattern
+  // inside a solid hairline outline (so the small dot keeps its silhouette),
+  // and rows that differ by hue also differ by texture. Hollow markers, the
+  // track and the mono extra dots are unchanged.
+  const high = useHighDecorationOf(containerRef);
+  const patternScope = useId().replace(/:/g, "");
+  const patternIndices = useMemo(
+    () =>
+      high
+        ? indexPaletteFills(rows.map((_, i) => rowColors[i % rowColors.length]))
+        : NO_PATTERN_INDICES,
+    [high, rows, rowColors],
+  );
+  const markerPaint = (filled: boolean, color: string) => {
+    if (!filled) {
+      return { fill: "var(--chart-background)", strokeWidth: HOLLOW_MARKER_STROKE };
+    }
+    const patternIndex = patternIndices.get(color);
+    return patternIndex === undefined
+      ? { fill: color, strokeWidth: 0 }
+      : {
+          fill: `url(#${seriesPatternId(patternIndex, patternScope)})`,
+          strokeWidth: PATTERNED_MARKER_STROKE,
+        };
+  };
+
   const domain = useMemo(() => computeDumbbellDomain(rows), [rows]);
 
   const isVertical = orientation === "vertical" && variant === "dumbbell";
@@ -646,6 +679,13 @@ function DumbbellPlot({
   return (
     <>
       <svg aria-hidden="true" height={height} width={width}>
+        {patternIndices.size > 0 && (
+          <defs>
+            {Array.from(patternIndices, ([color, patternIndex]) =>
+              makeSeriesPattern(patternIndex, seriesPatternId(patternIndex, patternScope), color),
+            )}
+          </defs>
+        )}
         <rect fill="transparent" height={height} width={width} x={0} y={0} />
         <g transform={`translate(${margin.left},${margin.top})`}>
           {isSlope
@@ -687,19 +727,17 @@ function DumbbellPlot({
                       cx={slopeStartX}
                       cy={y1}
                       data-slot="dumbbell-chart-marker-start"
-                      fill={markers.start === "filled" ? color : "var(--chart-background)"}
+                      {...markerPaint(markers.start === "filled", color)}
                       r={MARKER_RADIUS}
                       stroke={color}
-                      strokeWidth={markers.start === "filled" ? 0 : HOLLOW_MARKER_STROKE}
                     />
                     <circle
                       cx={slopeEndX}
                       cy={y2}
                       data-slot="dumbbell-chart-marker-end"
-                      fill={markers.end === "filled" ? color : "var(--chart-background)"}
+                      {...markerPaint(markers.end === "filled", color)}
                       r={MARKER_RADIUS}
                       stroke={color}
-                      strokeWidth={markers.end === "filled" ? 0 : HOLLOW_MARKER_STROKE}
                     />
                     <HaloText
                       className="text-meta"
@@ -848,19 +886,17 @@ function DumbbellPlot({
                       cx={isVertical ? crossCenter : startPos}
                       cy={isVertical ? startPos : crossCenter}
                       data-slot="dumbbell-chart-marker-start"
-                      fill={markers.start === "filled" ? color : "var(--chart-background)"}
+                      {...markerPaint(markers.start === "filled", color)}
                       r={MARKER_RADIUS}
                       stroke={color}
-                      strokeWidth={markers.start === "filled" ? 0 : HOLLOW_MARKER_STROKE}
                     />
                     <circle
                       cx={isVertical ? crossCenter : endPos}
                       cy={isVertical ? endPos : crossCenter}
                       data-slot="dumbbell-chart-marker-end"
-                      fill={markers.end === "filled" ? color : "var(--chart-background)"}
+                      {...markerPaint(markers.end === "filled", color)}
                       r={MARKER_RADIUS}
                       stroke={color}
-                      strokeWidth={markers.end === "filled" ? 0 : HOLLOW_MARKER_STROKE}
                     />
                     {/* Category label */}
                     {isVertical ? (

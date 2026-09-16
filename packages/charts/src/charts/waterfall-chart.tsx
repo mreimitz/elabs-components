@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, forwardRef, useMemo } from "react";
+import { type ReactNode, forwardRef, useId, useMemo } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { HaloText, Leader, type LeaderPoint, UNIT_STACK_EMPHASIS, UnitStack } from "../marks";
 import type { BarOrientation } from "./bar-chart";
@@ -24,6 +24,8 @@ import {
 import { useChartValueFormatter } from "./chart-formatters";
 import { Grid } from "./grid";
 import { ChartTooltip } from "./tooltip";
+import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
+import { useHighDecoration } from "./use-high-decoration";
 import { useResolvedRadius } from "./use-resolved-radius";
 import type { ChartValueFormat } from "./value-format";
 
@@ -216,6 +218,18 @@ function fillForRow(
   return row.isIncrease ? positiveFill : negativeFill;
 }
 
+/**
+ * The decoration pattern index a row's step draws with (ADR 0011, #257):
+ * increase = series 0, decrease = series 1, total = series 2 — fixed by the
+ * row's MEANING, so "up", "down" and "total" keep one texture each.
+ */
+function patternIndexForRow(row: WaterfallRow): number {
+  if (row.kind === "total") {
+    return 2;
+  }
+  return row.isIncrease ? 0 : 1;
+}
+
 // ── Bars + connectors + labels ──────────────────────────────────────────────
 
 interface WaterfallBarsProps {
@@ -248,6 +262,27 @@ function WaterfallBars({
   const format = useChartValueFormatter(valueFormat);
   const datapointsEnabled = useChartDatapointsEnabled();
   const activateDatapoint = useActivateDatapoint();
+
+  // Decoration pattern (ADR 0011, #257): under high decoration a palette step
+  // fill becomes its kind's series pattern (see `patternIndexForRow`), so the
+  // increase/decrease/total split survives without hue. An author's literal or
+  // url() fill, and the countable `unit` rungs (strokes), are left as drawn.
+  const high = useHighDecoration();
+  const patternScope = useId().replace(/:/g, "");
+  const patternFills = useMemo(() => {
+    if (!high) {
+      return [];
+    }
+    // Only the kinds actually drawn get a def — no orphan patterns.
+    const drawn = new Set(rows.map(patternIndexForRow));
+    return [positiveFill, negativeFill, totalFill]
+      .map((color, index) => ({ color, index }))
+      .filter(({ color, index }) => drawn.has(index) && isPaletteFill(color));
+  }, [high, rows, positiveFill, negativeFill, totalFill]);
+  const patternedIndices = useMemo(
+    () => new Set(patternFills.map(({ index }) => index)),
+    [patternFills],
+  );
 
   const geometry = useMemo(() => {
     if (!barScale || !bandWidth) {
@@ -327,8 +362,19 @@ function WaterfallBars({
 
   return (
     <g data-slot="waterfall-chart-bars">
+      {patternFills.length > 0 && (
+        <defs>
+          {patternFills.map(({ color, index }) =>
+            makeSeriesPattern(index, seriesPatternId(index, patternScope), color),
+          )}
+        </defs>
+      )}
       {geometry.map((g, i) => {
         const fill = fillForRow(g.row, positiveFill, negativeFill, totalFill);
+        const rowPatternIndex = patternIndexForRow(g.row);
+        const stepFill = patternedIndices.has(rowPatternIndex)
+          ? `url(#${seriesPatternId(rowPatternIndex, patternScope)})`
+          : fill;
         const target = datapointTargets[i];
         const onClick =
           activateDatapoint && target
@@ -382,7 +428,7 @@ function WaterfallBars({
             <path
               d={roundedRectPath(g.x, g.y, g.width, g.height, corners)}
               data-slot="waterfall-chart-step"
-              fill={fill}
+              fill={stepFill}
               onClick={onClick}
               style={onClick ? { cursor: "pointer" } : undefined}
             />
