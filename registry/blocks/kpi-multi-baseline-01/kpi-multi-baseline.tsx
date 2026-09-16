@@ -37,7 +37,7 @@ export function KpiMultiBaseline({
   return (
     <div
       aria-live={loading ? "polite" : undefined}
-      className={cn("grid gap-4", className)}
+      className={cn("grid grid-cols-1 gap-4", className)}
       data-slot="kpi-multi-baseline"
       role={loading ? "status" : undefined}
     >
