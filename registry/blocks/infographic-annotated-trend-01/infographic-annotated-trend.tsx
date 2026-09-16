@@ -14,7 +14,12 @@ import { Badge, Card, CardContent, Skeleton } from "@elabs-ai/components-ui";
 import { AS_OF_DATE, DATA_SOURCE } from "@/components/kpi-card-parts/data/acme-quarter";
 import { KpiAsOf } from "@/components/kpi-card-parts/kpi-as-of";
 import { formatKpiValue } from "@/components/kpi-card-parts/format";
-import { ordersTrend, type AnnotatedTrendSeries, type TrendEvent } from "./data/annotated-trend";
+import {
+  ordersTrend,
+  type AnnotatedTrendSeries,
+  type TrendEvent,
+  type TrendPoint,
+} from "./data/annotated-trend";
 
 export interface InfographicAnnotatedTrendProps {
   /** Defaults to weekly shipped orders — the price change / depot outage / campaign story. */
@@ -46,12 +51,19 @@ function yAxisFormatValue(unit: AnnotatedTrendSeries["unit"], locale: string) {
  * need `Marginalia`'s own text-alternative duty, only the container's
  * (`accessibleDescription` below, which names all three events in words).
  *
- * Placement rule: a trough (anchored in the lower half of the plot) labels
- * ABOVE, away from the x-axis; a peak (anchored in the upper half) labels
+ * Placement rule: a trough labels ABOVE, away from the x-axis; a peak labels
  * BELOW, away from the chart's own top edge — which a reveal-clip parent
  * chart permanently clips at y = 0, `packages/charts/src/charts/chart-reveal
  * -clip.tsx`. Either way the label lands well inside the plot, never in the
  * margin, so it can never collide with the axis.
+ *
+ * "Peak"/"trough" is decided against the SERIES' own min/max, not merely
+ * which half of the plot the point sits in: a point that is the series' own
+ * highest reading has nothing above it to collide with, so it labels ABOVE
+ * even though the upper-half heuristic would say "below" — which is exactly
+ * what put a label from a near-peak event ON TOP of the curve's own
+ * near-flat run past that peak. Only a genuine extremum overrides the
+ * half-based fallback, so an ordinary mid-height event is unaffected.
  *
  * An event within `EDGE_ZONE` of either plot edge switches from centring the
  * label ON the point to hanging it FROM the point (`textAnchor="start"`/
@@ -62,14 +74,18 @@ function yAxisFormatValue(unit: AnnotatedTrendSeries["unit"], locale: string) {
  */
 const EVENT_LABEL_EDGE_ZONE = 0.15;
 
-function TrendEventMarks({ events }: { events: TrendEvent[] }) {
+function TrendEventMarks({ events, points }: { events: TrendEvent[]; points: TrendPoint[] }) {
   const { xScale, yScale, innerWidth, innerHeight } = useChart();
+  const seriesMax = Math.max(...points.map((p) => p.value));
+  const seriesMin = Math.min(...points.map((p) => p.value));
   return (
     <>
       {events.map((event) => {
         const anchorX = xScale(event.date);
         const anchorY = yScale(event.value);
-        const below = anchorY <= innerHeight / 2;
+        const isSeriesPeak = event.value === seriesMax;
+        const isSeriesTrough = event.value === seriesMin;
+        const below = isSeriesPeak ? false : isSeriesTrough ? true : anchorY <= innerHeight / 2;
         const tailY = below ? anchorY + 16 : anchorY - 16;
         const labelY = below ? anchorY + 32 : anchorY - 32;
         const nearStart = anchorX <= innerWidth * EVENT_LABEL_EDGE_ZONE;
@@ -164,7 +180,7 @@ export function InfographicAnnotatedTrend({
           >
             <Grid horizontal />
             <Line dataKey="value" stroke="var(--chart-1)" strokeWidth={2.5} />
-            <TrendEventMarks events={events} />
+            <TrendEventMarks events={events} points={points} />
             <YAxis formatValue={yAxisFormatValue(unit, locale)} numTicks={4} />
             <XAxis periodTicks="week" />
           </LineChart>
