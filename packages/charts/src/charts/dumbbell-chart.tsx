@@ -37,6 +37,7 @@ import useMeasure from "react-use-measure";
 import { cn } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+import { ellipsize } from "./category-axis-plan";
 import { type ChartPalette, type Margin, resolvePalette } from "./chart-context";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import type {
@@ -56,6 +57,7 @@ import {
 import { useChartValueFormatter } from "./chart-formatters";
 import { ChartTooltipBox } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
+import { useTextMeasurerOf } from "./use-text-measurer";
 import type { ChartValueFormat } from "./value-format";
 
 // ─── Public types ───────────────────────────────────────────────────────────
@@ -143,7 +145,32 @@ const BEAD_MARK_EVERY = 5;
 const EXTRA_DOT_RADIUS = 3;
 const DOMAIN_PADDING_RATIO = 0.08;
 const SLOPE_ROW_SOFT_CAP = 8;
-const SLOPE_LABEL_MIN_GAP = 16;
+
+/** Px between a label's near edge and the track/plot edge it sits beside — the
+ *  offset already baked into every label's `x` (`slopeStartX - 10`, `x={-10}`,
+ *  `slopeEndX + 10`). Margins are derived to hold `measuredLabelWidth + this`. */
+const LABEL_GUTTER = 10;
+
+/** Derived margins never exceed this fraction of the container width — one
+ *  pathological label must not squeeze the plot to nothing. A label that still
+ *  does not fit the capped budget is ellipsized at render (see `ellipsize`
+ *  call sites below), never left to overflow. */
+const MAX_MARGIN_FRACTION = 0.4;
+
+/** Minimum clear space, in px, between two collision-spaced slope labels once
+ *  `SLOPE_LABEL_GAP_RATIO` has been applied — a floor for the jsdom/no-canvas
+ *  fallback and any font whose reported line height comes back tiny. */
+const SLOPE_LABEL_MIN_GAP_FLOOR = 12;
+
+/**
+ * `spaceSlopeLabels`' `minGap` is `lineHeightPx * SLOPE_LABEL_GAP_RATIO`, never
+ * a bare pixel constant (#240) — `text-meta`'s line height is density-scaled
+ * (#340), so a fixed gap that looks fine at `comfortable` collapses at
+ * `compact`/grows sloppy at `spacious`. The ratio sits in 1.35–1.5 so the
+ * clear space between two 14px line boxes is ~4.5–7px, never the ~1px a bare
+ * `16` left once the type was measured against instead of assumed.
+ */
+const SLOPE_LABEL_GAP_RATIO = 1.4;
 
 // ─── Row shaping ────────────────────────────────────────────────────────────
 
@@ -225,6 +252,78 @@ export function computeDumbbellDomain(rows: DumbbellRow[]): [number, number] {
   }
   const pad = (max - min) * DOMAIN_PADDING_RATIO;
   return [min - pad, max + pad];
+}
+
+function widestLabelWidth(labels: string[], measure: (text: string) => number): number {
+  let max = 0;
+  for (const label of labels) {
+    const width = measure(label);
+    if (width > max) {
+      max = width;
+    }
+  }
+  return max;
+}
+
+/** Clamps a measured requirement between `floor` (never shrink a short-label
+ *  chart) and `cap` (never grow past `MAX_MARGIN_FRACTION` of the container),
+ *  the cap itself never dropping below the floor. */
+function clampMargin(required: number, floor: number, cap: number): number {
+  return Math.min(Math.max(required, floor), Math.max(cap, floor));
+}
+
+export interface DeriveDumbbellMarginInput {
+  rows: DumbbellRow[];
+  variant: DumbbellVariant;
+  orientation: DumbbellOrientation;
+  /** The pre-measurement default (`HORIZONTAL_MARGIN`/`VERTICAL_MARGIN`/`SLOPE_MARGIN`). */
+  floor: Margin;
+  /** Container width, for the `MAX_MARGIN_FRACTION` cap. `0`/unmeasured → no cap. */
+  width: number;
+  measure: (text: string) => number;
+  formatValue: (value: number) => string;
+}
+
+/**
+ * Derives the margin(s) that hold the labels actually being painted (#240) —
+ * measured, not assumed. Short-label charts are pixel-unchanged (`floor` is
+ * always a lower bound); a chart with one very long label grows its margin up
+ * to `MAX_MARGIN_FRACTION` of the container width, past which the label is
+ * ellipsized at render rather than the plot being squeezed to nothing.
+ *
+ * `variant="slope"` grows both `left` (the `"{category} {start}"` label) and
+ * `right` (the end-value label); `orientation="horizontal"` dumbbells grow
+ * `left` (the category label). `orientation="vertical"` dumbbells are left
+ * alone here — their category label sits in a fixed-width band (the column),
+ * so its fallback is truncation against the band width, not a margin change.
+ */
+export function deriveDumbbellMargin({
+  rows,
+  variant,
+  orientation,
+  floor,
+  width,
+  measure,
+  formatValue,
+}: DeriveDumbbellMarginInput): Margin {
+  const cap = width > 0 ? width * MAX_MARGIN_FRACTION : Number.POSITIVE_INFINITY;
+  if (variant === "slope") {
+    const startLabels = rows.map((row) => `${row.category} ${formatValue(row.start)}`);
+    const endLabels = rows.map((row) => formatValue(row.end));
+    return {
+      ...floor,
+      left: clampMargin(widestLabelWidth(startLabels, measure) + LABEL_GUTTER, floor.left, cap),
+      right: clampMargin(widestLabelWidth(endLabels, measure) + LABEL_GUTTER, floor.right, cap),
+    };
+  }
+  if (orientation === "horizontal") {
+    const categoryLabels = rows.map((row) => row.category);
+    return {
+      ...floor,
+      left: clampMargin(widestLabelWidth(categoryLabels, measure) + LABEL_GUTTER, floor.left, cap),
+    };
+  }
+  return floor;
 }
 
 /**
@@ -325,6 +424,10 @@ interface PlotProps {
   palette?: ChartPalette;
   valueFormat?: ChartValueFormat;
   containerRef: MutableRefObject<HTMLDivElement | null>;
+  /** Rendered px width of `text` in the label font — see `use-text-measurer.ts`. */
+  measure: (text: string) => number;
+  /** Resolved line height of the label font, in px — feeds `SLOPE_LABEL_GAP_RATIO`. */
+  lineHeightPx: number;
 }
 
 function rowRect(
@@ -382,6 +485,8 @@ function DumbbellPlot({
   palette,
   valueFormat,
   containerRef,
+  measure,
+  lineHeightPx,
 }: PlotProps) {
   const instanceKeyRef = useRef({});
   const innerWidth = Math.max(width - margin.left - margin.right, 0);
@@ -426,13 +531,20 @@ function DumbbellPlot({
   const slopeEndX = innerWidth;
   const rawStartYs = useMemo(() => rows.map((row) => slopeScale(row.start)), [rows, slopeScale]);
   const rawEndYs = useMemo(() => rows.map((row) => slopeScale(row.end)), [rows, slopeScale]);
+  // Derived from the RENDERED line box (#240), never a bare pixel constant —
+  // `text-meta` is density-scaled, so a fixed gap drifts unsafe at every
+  // density but `comfortable`. See `SLOPE_LABEL_GAP_RATIO`'s docblock.
+  const slopeLabelMinGap = Math.max(
+    lineHeightPx * SLOPE_LABEL_GAP_RATIO,
+    SLOPE_LABEL_MIN_GAP_FLOOR,
+  );
   const startLabelYs = useMemo(
-    () => spaceSlopeLabels(rawStartYs, SLOPE_LABEL_MIN_GAP, [0, innerHeight]),
-    [rawStartYs, innerHeight],
+    () => spaceSlopeLabels(rawStartYs, slopeLabelMinGap, [0, innerHeight]),
+    [rawStartYs, slopeLabelMinGap, innerHeight],
   );
   const endLabelYs = useMemo(
-    () => spaceSlopeLabels(rawEndYs, SLOPE_LABEL_MIN_GAP, [0, innerHeight]),
-    [rawEndYs, innerHeight],
+    () => spaceSlopeLabels(rawEndYs, slopeLabelMinGap, [0, innerHeight]),
+    [rawEndYs, slopeLabelMinGap, innerHeight],
   );
 
   // ── Interactive targets (whole row/category) ───────────────────────────
@@ -515,6 +627,23 @@ function DumbbellPlot({
                 const y2 = rawEndYs[i] as number;
                 const labelY1 = startLabelYs[i] as number;
                 const labelY2 = endLabelYs[i] as number;
+                // Ellipsize to the DERIVED margin's actual budget (never the raw
+                // string) — `deriveDumbbellMargin` grows the margin to hold the
+                // widest label up to `MAX_MARGIN_FRACTION` of the container, so a
+                // label only gets cut when even that cap can't hold it. The full
+                // category name stays reachable via the tooltip title (#240).
+                const startLabelText = `${row.category} ${formatValue(row.start)}`;
+                const startDisplay = ellipsize(
+                  startLabelText,
+                  Math.max(margin.left - LABEL_GUTTER, 0),
+                  measure,
+                ).display;
+                const endLabelText = formatValue(row.end);
+                const endDisplay = ellipsize(
+                  endLabelText,
+                  Math.max(margin.right - LABEL_GUTTER, 0),
+                  measure,
+                ).display;
                 const isFaded = hoveredIndex != null && hoveredIndex !== row.index;
                 return (
                   <g key={row.index} opacity={isFaded ? 0.35 : 1}>
@@ -546,21 +675,23 @@ function DumbbellPlot({
                     />
                     <HaloText
                       className="text-meta"
+                      data-slot="dumbbell-chart-slope-label-start"
                       fill="var(--chart-label)"
                       textAnchor="end"
-                      x={slopeStartX - 10}
+                      x={slopeStartX - LABEL_GUTTER}
                       y={labelY1}
                     >
-                      {row.category} {formatValue(row.start)}
+                      {startDisplay}
                     </HaloText>
                     <HaloText
                       className="text-meta"
+                      data-slot="dumbbell-chart-slope-label-end"
                       fill="var(--chart-label)"
                       textAnchor="start"
-                      x={slopeEndX + 10}
+                      x={slopeEndX + LABEL_GUTTER}
                       y={labelY2}
                     >
-                      {formatValue(row.end)}
+                      {endDisplay}
                     </HaloText>
                   </g>
                 );
@@ -573,6 +704,17 @@ function DumbbellPlot({
                 const endPos = valueScale(row.end);
                 const crossCenter = isVertical ? rect.x + rect.width / 2 : rect.y + rect.height / 2;
                 const growsPositive = row.delta >= 0;
+                // Chosen fallback for a category label that does not fit (#240):
+                // TRUNCATE with an ellipsis, never overlap. `isVertical`'s budget
+                // is the fixed column width (the band pitch is what collided);
+                // horizontal's budget is the DERIVED margin (see
+                // `deriveDumbbellMargin`), which already grew to hold the label
+                // up to `MAX_MARGIN_FRACTION`. Either way the full name survives
+                // in the hover tooltip title and the datapoint's accessible name.
+                const categoryBudget = isVertical
+                  ? Math.max(rect.width - LABEL_GUTTER, 0)
+                  : Math.max(margin.left - LABEL_GUTTER, 0);
+                const categoryDisplay = ellipsize(row.category, categoryBudget, measure).display;
 
                 return (
                   <g key={row.index} opacity={isFaded ? 0.35 : 1}>
@@ -702,7 +844,7 @@ function DumbbellPlot({
                         x={crossCenter}
                         y={innerHeight + 20}
                       >
-                        {row.category}
+                        {categoryDisplay}
                       </HaloText>
                     ) : (
                       <HaloText
@@ -710,10 +852,10 @@ function DumbbellPlot({
                         data-slot="dumbbell-chart-category-label"
                         fill="var(--chart-label)"
                         textAnchor="end"
-                        x={-10}
+                        x={-LABEL_GUTTER}
                         y={crossCenter}
                       >
-                        {row.category}
+                        {categoryDisplay}
                       </HaloText>
                     )}
                     {/* Signed delta label */}
@@ -854,7 +996,8 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [measureRef, bounds] = useMeasure({ debounce: 10 });
-  const margin = { ...defaultMargin(orientation, variant), ...marginProp };
+  const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
+  const formatValueForMargin = useChartValueFormatter(valueFormat);
   const {
     role,
     "aria-label": ariaLabel,
@@ -881,6 +1024,21 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
   const width = bounds.width ?? 0;
   const height = bounds.height ?? 0;
 
+  // Measured, not assumed (#240) — grows past the constant floor only for
+  // labels that actually need it; an explicit `margin` prop still wins.
+  const margin = {
+    ...deriveDumbbellMargin({
+      rows,
+      variant,
+      orientation,
+      floor: defaultMargin(orientation, variant),
+      width,
+      measure,
+      formatValue: formatValueForMargin,
+    }),
+    ...marginProp,
+  };
+
   return (
     <div
       aria-describedby={ariaDescribedby}
@@ -906,9 +1064,11 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(func
           datapointLabel={datapointLabel}
           extraKeys={extraKeys}
           height={height}
+          lineHeightPx={lineHeightPx}
           margin={margin}
           markers={markers}
           maxInteractiveDatapoints={maxInteractiveDatapoints}
+          measure={measure}
           onDatapointClick={onDatapointClick}
           orientation={orientation}
           palette={palette}

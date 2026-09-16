@@ -2,6 +2,15 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
 import { DumbbellChart } from "./dumbbell-chart";
 
+// #240 geometry locks — jsdom returns zeros for SVG text metrics, so these MUST
+// be `play` functions running in a real browser (`@storybook/addon-vitest`),
+// never jsdom unit tests. Assert on measured geometry, never on the margin
+// constants — a test pinned to a constant re-encodes the bug as the spec.
+
+function rectsIntersect(a: DOMRect, b: DOMRect): boolean {
+  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+
 const meta = {
   title: "Charts/DumbbellChart",
   component: DumbbellChart,
@@ -72,12 +81,51 @@ export const ThisYearVsLast: Story = {
     variant: "slope",
     valueFormat: "compact",
   },
+  play: async ({ canvasElement }) => {
+    // #240 (a) — the longest slope start-label ("Organic search …") used to
+    // clip past the SVG's left edge because `SLOPE_MARGIN.left` was a bare
+    // constant never checked against the rendered label. Every label's box
+    // must now lie entirely inside the SVG.
+    await waitFor(() => {
+      const svg = canvasElement.querySelector("svg");
+      expect(svg).not.toBeNull();
+      const svgBox = svg!.getBoundingClientRect();
+      const labels = svg!.querySelectorAll(
+        '[data-slot="dumbbell-chart-slope-label-start"], [data-slot="dumbbell-chart-slope-label-end"]',
+      );
+      expect(labels.length).toBeGreaterThan(0);
+      labels.forEach((label) => {
+        const box = label.getBoundingClientRect();
+        expect(box.left).toBeGreaterThanOrEqual(svgBox.left);
+        expect(box.right).toBeLessThanOrEqual(svgBox.right);
+      });
+    });
+  },
   render: (args) => (
     <div className="h-80 w-[640px]">
       <DumbbellChart {...args} />
     </div>
   ),
 };
+
+async function assertNoCategoryLabelOverlap(canvasElement: HTMLElement) {
+  // #240 (b) — "Add payment method" and "Invite a teammate" used to render as
+  // a run-on string because the vertical category axis's band pitch could be
+  // narrower than the label. The chosen fallback is truncation (see
+  // `dumbbell-chart.tsx`'s `categoryDisplay`), so no two boxes may intersect.
+  await waitFor(() => {
+    const labels = Array.from(
+      canvasElement.querySelectorAll('[data-slot="dumbbell-chart-category-label"]'),
+    );
+    expect(labels.length).toBeGreaterThan(1);
+    const boxes = labels.map((label) => label.getBoundingClientRect());
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        expect(rectsIntersect(boxes[i] as DOMRect, boxes[j] as DOMRect)).toBe(false);
+      }
+    }
+  });
+}
 
 /** Vertical orientation — tracks run as columns instead of rows. */
 export const VerticalOrientation: Story = {
@@ -89,8 +137,29 @@ export const VerticalOrientation: Story = {
     orientation: "vertical",
     showDelta: true,
   },
+  play: async ({ canvasElement }) => {
+    await assertNoCategoryLabelOverlap(canvasElement);
+  },
   render: (args) => (
     <div className="h-[420px] w-[640px]">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+};
+
+/**
+ * Same fixture at `data-density="spacious"` (#340: `text-meta` scales
+ * +6.25%) — the density knob is what makes a pixel-constant label budget
+ * unsafe, so the no-overlap guarantee must hold here too, not just at
+ * `comfortable`.
+ */
+export const VerticalOrientationSpacious: Story = {
+  args: VerticalOrientation.args,
+  play: async ({ canvasElement }) => {
+    await assertNoCategoryLabelOverlap(canvasElement);
+  },
+  render: (args) => (
+    <div className="h-[420px] w-[640px]" data-density="spacious">
       <DumbbellChart {...args} />
     </div>
   ),
@@ -139,6 +208,26 @@ export const SlopeOverflowWarning: Story = {
     endKey: "q2",
     variant: "slope",
     palette: "mono",
+  },
+  play: async ({ canvasElement }) => {
+    // #240 (c) — the collision spacer's `minGap` was a bare `16` never
+    // reconciled with the rendered line box, leaving ~2px of clear space
+    // between adjacent labels. It is now `lineHeightPx * SLOPE_LABEL_GAP_RATIO`
+    // — assert the real clear space, never the constant.
+    await waitFor(() => {
+      const labels = Array.from(
+        canvasElement.querySelectorAll('[data-slot="dumbbell-chart-slope-label-end"]'),
+      );
+      expect(labels.length).toBeGreaterThan(1);
+      const boxes = labels
+        .map((label) => label.getBoundingClientRect())
+        .sort((a, b) => a.top - b.top);
+      for (let i = 1; i < boxes.length; i++) {
+        const prev = boxes[i - 1] as DOMRect;
+        const next = boxes[i] as DOMRect;
+        expect(next.top - prev.bottom).toBeGreaterThanOrEqual(4);
+      }
+    });
   },
   render: (args) => (
     <div className="h-96 w-[640px]">
