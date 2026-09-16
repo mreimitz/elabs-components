@@ -34,7 +34,8 @@ export const OffTarget: Story = {
   render: () => (
     // A synthetically worse tail on both metrics (every sample scaled up
     // 45%) — p90 misses both named SLAs by a wide margin, so both cards read
-    // "off track" instead of the default's "at risk"/"on track" split.
+    // "off track", including the pick-time card, which is "on track" by
+    // default (delivery time already breaches its SLA in the default story).
     <KpiDistribution
       metrics={[
         { ...deliveryTimeMetric, samples: deliveryTimeMetric.samples.map((v) => v * 1.45) },

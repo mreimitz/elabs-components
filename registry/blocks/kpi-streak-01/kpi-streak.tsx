@@ -163,8 +163,12 @@ function KpiStreakCard({ metric, locale }: { metric: StreakMetricConfig; locale:
   const longest = longestStreak(days);
   const priorMet = metCount(priorDays);
 
+  // "18-day streak" reads as "18 - day streak" at the `kpi` role's size —
+  // `tabular-nums` gives the hyphen a digit-width box at that scale, which
+  // opens a visible gap on both sides of it. Phrasing the headline as a full
+  // sentence sidesteps the mid-word hyphen entirely (#…).
   const headlineText =
-    metric.headline === "ratio" ? `${met} of ${days.length} days` : `${current}-day streak`;
+    metric.headline === "ratio" ? `${met} of ${days.length} days` : `${current} days in a row`;
   const metaText =
     metric.headline === "ratio"
       ? `Current streak: ${current} days · Longest: ${longest} days`
@@ -193,10 +197,12 @@ function KpiStreakCard({ metric, locale }: { metric: StreakMetricConfig; locale:
 }
 
 /**
- * The 30-day strip. Grouped into weeks (a wider gap between groups than
- * within one) so the eye can count weeks without a drawn rule. Every cell is
- * `aria-hidden` — the composed sentence on the wrapping `role="img"` carries
- * the same counts and the specific missed dates to assistive tech.
+ * The 30-day strip. Cells STRETCH to fill the card's content width (never a
+ * fixed size that strands the strip mid-card while the date labels below it
+ * are edge-to-edge), with a wider gap at each week boundary so the eye can
+ * count weeks without a drawn rule. Every cell is `aria-hidden` — the composed
+ * sentence on the wrapping `role="img"` carries the same counts and the
+ * specific missed dates to assistive tech.
  */
 function StreakStrip({
   days,
@@ -217,29 +223,34 @@ function StreakStrip({
       ? `, ${missed.length} ${missedNoun}: ${missed.map((day) => formatDay(day.date, locale)).join(", ")}.`
       : ".");
 
-  const weeks: StreakDay[][] = [];
-  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
-
   return (
     <div className="space-y-1" data-slot="kpi-streak-strip">
-      <div aria-label={summary} className="flex flex-wrap items-center gap-x-2 gap-y-1" role="img">
-        {weeks.map((week, weekIndex) => (
-          <div className="flex gap-1" key={week[0]?.date ?? weekIndex}>
-            {week.map((day) => (
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "flex size-3 shrink-0 items-center justify-center rounded-sm",
-                  day.met ? "bg-success" : "border border-destructive bg-transparent",
-                )}
-                data-slot="kpi-streak-day"
-                key={day.date}
-              >
-                {day.met ? null : <X className="size-2 text-destructive" />}
-              </span>
-            ))}
-          </div>
-        ))}
+      <div aria-label={summary} className="flex w-full items-center gap-0.5" role="img">
+        {days.map((day, index) => {
+          const endsWeek = index % 7 === 6 && index !== days.length - 1;
+          return (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "flex h-3 min-w-0 flex-1 items-center justify-center overflow-hidden rounded-sm",
+                endsWeek && "me-1",
+                day.met ? "bg-success" : "border border-destructive bg-transparent",
+              )}
+              data-slot="kpi-streak-day"
+              key={day.date}
+            >
+              {/* `overflow-hidden` on the cell clips this at the very narrowest
+                  card widths instead of letting it distort or bleed into the
+                  next cell — the hollow border alone already carries the
+                  "missed" shape at that scale (#…). */}
+              {day.met ? null : <X className="size-1.5 shrink-0 text-destructive" />}
+            </span>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-between text-caption text-muted-foreground">
+        {firstDay ? <span>{formatDay(firstDay.date, locale)}</span> : null}
+        {lastDay ? <span>{formatDay(lastDay.date, locale)}</span> : null}
       </div>
       {missed.length > 0 ? (
         <p className="text-caption text-muted-foreground">
@@ -247,10 +258,6 @@ function StreakStrip({
           {missedNoun.slice(1)}: {missed.map((day) => formatDay(day.date, locale)).join(", ")}
         </p>
       ) : null}
-      <div className="flex items-center justify-between text-caption text-muted-foreground">
-        {firstDay ? <span>{formatDay(firstDay.date, locale)}</span> : null}
-        {lastDay ? <span>{formatDay(lastDay.date, locale)}</span> : null}
-      </div>
     </div>
   );
 }
