@@ -18,7 +18,8 @@
  * `vi.mock("@elabs-ai/components-process", () => import("@elabs-ai/components-process/test"))`
  * the way `@elabs-ai/components-charts` consumers do — that rename is out of this item's scope.
  */
-import type { ProcessGraph, Variant } from "../core/types";
+import { toEpochMs } from "../core/event-log";
+import type { EventLog, ProcessGraph, Variant } from "../core/types";
 
 /** Selection carried by a process view's coordinated-selection contract (RM-068 completes it). */
 export type ProcessSelection = null | { kind: "node"; id: string } | { kind: "edge"; id: string };
@@ -26,7 +27,7 @@ export type ProcessSelection = null | { kind: "node"; id: string } | { kind: "ed
 /** What {@link assertProcessContract} checks for one double. */
 export interface ProcessContractSpec {
   /** Name of the prop carrying the double's primary data payload. */
-  dataProp: "graph" | "variants";
+  dataProp: "graph" | "variants" | "log";
   /** Other props the real component requires; the double must not silently accept `undefined`. */
   requiredProps?: string[];
 }
@@ -55,6 +56,19 @@ function isVariantArray(value: unknown): value is Variant[] {
   );
 }
 
+// DottedChart — RM-059
+/** A non-empty event log whose every row carries a parsable timestamp. */
+function isTimedEventLog(value: unknown): value is EventLog {
+  const events = (value as EventLog | null | undefined)?.events;
+  return (
+    Array.isArray(events) &&
+    events.length > 0 &&
+    events.every(
+      (row) => !!row && typeof row === "object" && Number.isFinite(toEpochMs(row.timestamp)),
+    )
+  );
+}
+
 /**
  * Validate a double's props against its contract spec. Throws {@link ProcessContractError} on
  * a missing/invalid required prop — mirroring what the real component would fail on at
@@ -77,6 +91,12 @@ export function assertProcessContract(
     throw new ProcessContractError(
       componentName,
       `"variants" prop must be a Variant[], got ${typeof data}`,
+    );
+  }
+  if (spec.dataProp === "log" && !isTimedEventLog(data)) {
+    throw new ProcessContractError(
+      componentName,
+      `"log" prop must be an EventLog with non-empty events and parsable timestamps`,
     );
   }
   for (const key of spec.requiredProps ?? []) {
@@ -103,9 +123,11 @@ export function buildProcessDoublePayload(
   const dataLength =
     spec.dataProp === "graph" && isProcessGraph(data)
       ? data.activities.length
-      : Array.isArray(data)
-        ? data.length
-        : 0;
+      : spec.dataProp === "log" && isTimedEventLog(data)
+        ? data.events.length
+        : Array.isArray(data)
+          ? data.length
+          : 0;
   const payload: ProcessDoublePayload = { component: componentName, dataLength };
   if ("selection" in props) payload.selection = props.selection as ProcessSelection;
   return payload;

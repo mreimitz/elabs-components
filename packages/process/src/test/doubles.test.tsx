@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest";
 import { discoverGraph } from "../core/discover-graph";
 import { extractVariants } from "../core/extract-variants";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
-import { ProcessKpiStripDouble, ProcessMapDouble, VariantExplorerDouble } from "./doubles";
+import {
+  DottedChartDouble,
+  ProcessKpiStripDouble,
+  ProcessMapDouble,
+  VariantExplorerDouble,
+} from "./doubles";
 import { readProcessDoubleProps } from "./contract";
 
 const log = generateSyntheticLog({ cases: 20, seed: 7 });
@@ -42,6 +47,22 @@ describe("process test doubles", () => {
       />,
     );
     expect(node).toBeInstanceOf(HTMLDivElement);
+  });
+
+  // DottedChart — RM-059
+  it("DottedChartDouble mounts and records the event count", () => {
+    const { container } = render(<DottedChartDouble log={log} />);
+    const el = container.querySelector('[data-process-double="DottedChartDouble"]');
+    expect(readProcessDoubleProps(el as Element)?.dataLength).toBe(log.events.length);
+  });
+
+  it("DottedChartDouble rejects an empty log or an unparsable timestamp", () => {
+    expect(() => render(<DottedChartDouble log={{ events: [] }} />)).toThrow(/DottedChartDouble/);
+    expect(() =>
+      render(
+        <DottedChartDouble log={{ events: [{ caseId: "c", activity: "A", timestamp: "nope" }] }} />,
+      ),
+    ).toThrow(/parsable timestamps/);
   });
 
   it("throws a contract error when required data is missing (a broken test fails loudly)", () => {

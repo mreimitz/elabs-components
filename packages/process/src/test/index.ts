@@ -29,6 +29,10 @@ export type {
   VariantExplorerDoubleProps,
 } from "./doubles";
 
+// DottedChart — RM-059
+export { DottedChartDouble } from "./doubles";
+export type { DottedChartDoubleProps } from "./doubles";
+
 // Fixture helper
 export { withProcessFixture } from "./primitives";
 export type { ProcessFixture } from "./primitives";

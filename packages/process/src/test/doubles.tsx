@@ -12,7 +12,7 @@
 import { forwardRef } from "react";
 import type { HTMLAttributes } from "react";
 
-import type { ProcessGraph, Variant } from "../core/types";
+import type { EventLog, ProcessGraph, Variant } from "../core/types";
 import {
   assertProcessContract,
   buildProcessDoublePayload,
@@ -41,7 +41,10 @@ const PROCESS_MAP_SPEC: ProcessContractSpec = { dataProp: "graph" };
 const VARIANT_EXPLORER_SPEC: ProcessContractSpec = { dataProp: "variants" };
 const PROCESS_KPI_STRIP_SPEC: ProcessContractSpec = { dataProp: "graph" };
 
-function createProcessDouble<P extends DoubleOwnProps>(name: string, spec: ProcessContractSpec) {
+function createProcessDouble<P extends Pick<HTMLAttributes<HTMLDivElement>, "className" | "style">>(
+  name: string,
+  spec: ProcessContractSpec,
+) {
   const Double = forwardRef<HTMLDivElement, P>(function ProcessTestDouble(props, ref) {
     const record = props as unknown as Record<string, unknown>;
     assertProcessContract(name, record, spec);
@@ -79,4 +82,21 @@ export const ProcessKpiStripDouble = createProcessDouble<ProcessKpiStripDoublePr
   PROCESS_KPI_STRIP_SPEC,
 );
 
-export type { ProcessMapDoubleProps, VariantExplorerDoubleProps, ProcessKpiStripDoubleProps };
+// DottedChart — RM-059
+interface DottedChartDoubleProps extends Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> {
+  log: EventLog;
+  selectedCaseIds?: readonly string[];
+  onSelect?: (caseIds: string[]) => void;
+}
+
+/** Stand-in for `DottedChart` (RM-059). Asserts a non-empty `log.events` with parsable timestamps. */
+export const DottedChartDouble = createProcessDouble<DottedChartDoubleProps>("DottedChartDouble", {
+  dataProp: "log",
+});
+
+export type {
+  DottedChartDoubleProps,
+  ProcessMapDoubleProps,
+  VariantExplorerDoubleProps,
+  ProcessKpiStripDoubleProps,
+};

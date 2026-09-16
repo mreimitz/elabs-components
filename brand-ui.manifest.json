@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T11:13:46.360Z",
+  "generatedAt": "2026-09-16T11:30:49.345Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25942,6 +25942,21 @@
           "module": "packages/process/src/process-map/use-process-layout.ts"
         },
         {
+          "name": "DOTTED_CHART_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/dotted-chart/dotted-chart-labels.ts"
+        },
+        {
+          "name": "DOTTED_CHART_DOT_RADIUS",
+          "kind": "value",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChart",
+          "kind": "value",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
           "name": "EMPTY_PROCESS_MAP_HOVER",
           "kind": "value",
           "module": "packages/process/src/process-map/process-map-context.ts"
@@ -26127,8 +26142,56 @@
           "module": "packages/process/src/case-timeline/case-timeline.tsx"
         },
         {
+          "name": "ComputeDotsOptions",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
           "name": "CreateCaseTableColumnsOptions",
           "module": "packages/process/src/case-table/columns.ts"
+        },
+        {
+          "name": "DottedChartCategory",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartColor",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChartDatum",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChartDot",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartFilterIntent",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChartLabels",
+          "module": "packages/process/src/dotted-chart/dotted-chart-labels.ts"
+        },
+        {
+          "name": "DottedChartModel",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartProps",
+          "module": "packages/process/src/dotted-chart/dotted-chart.tsx"
+        },
+        {
+          "name": "DottedChartRow",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartSort",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
+          "name": "DottedChartX",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
         },
         {
           "name": "FilterIntent",
@@ -26329,8 +26392,16 @@
           "module": "packages/process/src/core/cases-from-log.ts"
         },
         {
+          "name": "casesInBrush",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
+        },
+        {
           "name": "computeAutoAbstraction",
           "module": "packages/process/src/abstraction-controls/auto-abstraction.ts"
+        },
+        {
+          "name": "computeDots",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
         },
         {
           "name": "createCaseTableColumns",
@@ -26367,6 +26438,10 @@
         {
           "name": "processGraphStructureKey",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "rankCategoryColors",
+          "module": "packages/process/src/dotted-chart/compute-dots.ts"
         },
         {
           "name": "resolveActivityFrequencyMode",
@@ -26500,6 +26575,96 @@
               "optional": false,
               "type": "EventRow[]",
               "description": "This case's own events, straight from `core`'s `EventLog.events`."
+            }
+          ]
+        },
+        "DottedChart": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"title\" | \"color\"\n>"
+          ],
+          "props": [
+            {
+              "name": "log",
+              "optional": false,
+              "type": "EventLog"
+            },
+            {
+              "name": "x",
+              "optional": true,
+              "type": "DottedChartX",
+              "description": "How the x axis places an event. @default \"absolute\""
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "DottedChartSort",
+              "description": "How case rows are ordered, top to bottom. @default \"start\""
+            },
+            {
+              "name": "color",
+              "optional": true,
+              "type": "DottedChartColor",
+              "description": "What colours a dot. `\"activity\"` reads `colorScale`; `\"resource\"` and a function rank their category keys onto the same `--chart-1 …` budget. @default \"activity\""
+            },
+            {
+              "name": "colorScale",
+              "optional": true,
+              "type": "ActivityColorScale",
+              "description": "The shared activity colour scale — hand `ProcessMap` the same instance. Built from `log` when omitted."
+            },
+            {
+              "name": "selectedCaseIds",
+              "optional": true,
+              "type": "readonly string[]",
+              "description": "Case ids to highlight; every other dot dims."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "(caseIds: string[]) => void",
+              "description": "Fires with the case ids a click, brush or keyboard range selects."
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "(intent: DottedChartFilterIntent) => void",
+              "description": "Fires once when a brush is released (or a keyboard range committed), with ids in row order."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Card title — write the conclusion, not \"Dotted chart\"."
+            },
+            {
+              "name": "description",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Prose under the title."
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "number",
+              "description": "Body height in CSS pixels (legend + plot + axis). @default 360"
+            },
+            {
+              "name": "tableView",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the accessible table twin instead of the plot. @default false"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No log yet. Renders the frame's skeleton."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<DottedChartLabels>",
+              "description": "Override any user-visible string."
             }
           ]
         },
