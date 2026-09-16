@@ -3,6 +3,7 @@ import { expect, waitFor, within } from "storybook/test";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
 import { XAxis } from "./x-axis";
+import { YAxis } from "./y-axis";
 import { Scatter } from "./scatter";
 import { ScatterChart } from "./scatter-chart";
 
@@ -32,6 +33,7 @@ export const Default: Story = {
         <Scatter dataKey="sessions" />
         <Scatter dataKey="conversions" />
         <XAxis />
+        <YAxis />
         <ChartTooltip />
       </ScatterChart>
     </div>
@@ -45,6 +47,7 @@ export const SingleSeries: Story = {
         <Grid horizontal />
         <Scatter dataKey="sessions" />
         <XAxis />
+        <YAxis />
         <ChartTooltip />
       </ScatterChart>
     </div>
@@ -58,6 +61,7 @@ export const WithYGradient: Story = {
         <Grid horizontal />
         <Scatter dataKey="sessions" yGradient />
         <XAxis />
+        <YAxis />
         <ChartTooltip />
       </ScatterChart>
     </div>
@@ -77,6 +81,7 @@ export const WithAccessibleLabel: Story = {
         <Scatter dataKey="sessions" />
         <Scatter dataKey="conversions" />
         <XAxis />
+        <YAxis />
         <ChartTooltip />
       </ScatterChart>
     </div>
@@ -96,6 +101,7 @@ export const Plumb: Story = {
         <Grid horizontal />
         <Scatter dataKey="sessions" dropLines="x" />
         <XAxis />
+        <YAxis />
         <ChartTooltip />
       </ScatterChart>
     </div>
@@ -109,7 +115,17 @@ export const Plumb: Story = {
     // from the point it hangs from.
     expect(group.style.pointerEvents).toBe("none");
     expect(group.getAttribute("aria-hidden")).toBe("true");
-    expect(group.querySelectorAll("line").length).toBe(chartData.length);
+    const lines = Array.from(group.querySelectorAll("line"));
+    expect(lines.length).toBe(chartData.length);
+
+    // #252 — a plumb line only measures a value if the axis it drops to
+    // carries one: every line must land on the SAME floor (the y-scale's
+    // zero), and that floor must have a rendered y tick label.
+    const y2s = new Set(lines.map((line) => line.getAttribute("y2")));
+    expect(y2s.size).toBe(1);
+    await waitFor(() => {
+      expect(canvasElement.querySelector(".text-chart-label")).not.toBeNull();
+    });
   },
 };
 
@@ -143,6 +159,8 @@ export const Extremes: Story = {
           labelExtremes={{ by: "y", count: 1, labelKey: "name" }}
           radius={6}
         />
+        <XAxis />
+        <YAxis />
       </ScatterChart>
     </div>
   ),
@@ -159,6 +177,25 @@ export const Extremes: Story = {
     expect(points).toHaveLength(extremesData.length);
     const faded = Array.from(points).filter((p) => p.getAttribute("opacity") !== "1");
     expect(faded).toHaveLength(extremesData.length - 2);
+
+    // #252 — "best"/"worst" is meaningless with no scale to read them against.
+    await waitFor(() => {
+      expect(canvasElement.querySelector(".text-chart-label")).not.toBeNull();
+    });
+
+    // #252 — neither hero label's glyph box may cross a gridline's stroke; a
+    // label crossing an UNLABELLED rule reads as debris, not typography. Real
+    // geometry (`getBoundingClientRect`) — the "no layout reads" rule governs
+    // render, not tests.
+    const editorBox = canvas.getByText("Editor").getBoundingClientRect();
+    const hubBox = canvas.getByText("Hub").getBoundingClientRect();
+    const gridLines = Array.from(canvasElement.querySelectorAll(".chart-grid line"));
+    expect(gridLines.length).toBeGreaterThan(0);
+    for (const line of gridLines) {
+      const lineY = line.getBoundingClientRect().top;
+      expect(lineY < editorBox.top || lineY > editorBox.bottom).toBe(true);
+      expect(lineY < hubBox.top || lineY > hubBox.bottom).toBe(true);
+    }
   },
 };
 
@@ -198,5 +235,50 @@ export const JitterStrip: Story = {
         jitterStripData.length,
       );
     });
+  },
+};
+
+/**
+ * #302 — two continuous measures with a genuinely NUMERIC x (not a date):
+ * `xScale="linear"` renders numeric tick labels and a numeric tooltip title
+ * instead of collapsing `weight` into an epoch date. Every other scatter
+ * story on this page uses a `date` x, which is exactly why this shipped
+ * broken for `AutoChart`'s `xType: "number"` spec path.
+ */
+const numericXData = [
+  { weight: 1240, mpg: 41 },
+  { weight: 1835, mpg: 34 },
+  { weight: 2100, mpg: 29 },
+  { weight: 2490, mpg: 27 },
+  { weight: 2900, mpg: 22 },
+  { weight: 3400, mpg: 18 },
+];
+
+export const NumericX: Story = {
+  render: () => (
+    <div className="h-72 w-[560px]">
+      <ScatterChart data={numericXData} xDataKey="weight" xScale="linear">
+        <Grid horizontal />
+        <Scatter dataKey="mpg" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector(".text-chart-label")).not.toBeNull();
+    });
+    // Every x tick is a plain number — never a date string (no month name,
+    // no slash/dash-separated calendar text, no "1970").
+    const xTickLabels = Array.from(canvasElement.querySelectorAll(".text-chart-label")).map(
+      (el) => el.textContent ?? "",
+    );
+    const numericTicks = xTickLabels.filter((label) => /^\d[\d,.]*$/.test(label));
+    expect(numericTicks.length).toBeGreaterThan(0);
+    for (const label of xTickLabels) {
+      expect(label).not.toMatch(/1970|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/);
+    }
   },
 };

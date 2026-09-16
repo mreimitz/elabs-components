@@ -393,11 +393,14 @@ function renderChart(
       // ScatterChart does not accept a style prop; wrap in a sized div.
       // Coerce strings → Date only when xType is "time"; otherwise pass numeric x as-is.
       const scatterData = spec.xType === "time" ? timeCoercedData : resolvedData;
+      // #302: a numeric x (`xType: "number"`) needs ScatterChart's non-temporal
+      // scale, or the axis prints epoch dates — see `scatter-chart-shell.tsx`.
       return (
         <div style={{ height }}>
           <ScatterChart
             data={scatterData}
             xDataKey={x}
+            xScale={spec.xType === "number" ? "linear" : "time"}
             aspectRatio={undefined}
             className="h-full"
             accessibleLabel={spec.title}

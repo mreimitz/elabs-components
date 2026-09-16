@@ -9,7 +9,7 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import { defaultScatterColors, type LineConfig, type Margin } from "./chart-context";
 import type { ChartPhase } from "./chart-phase";
 import { Scatter, type ScatterProps } from "./scatter";
-import { ScatterChartInner } from "./scatter-chart-shell";
+import { ScatterChartInner, type ScatterXScaleType } from "./scatter-chart-shell";
 import { useStableValue } from "./use-stable-value";
 
 export interface ScatterChartProps {
@@ -17,6 +17,14 @@ export interface ScatterChartProps {
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
   xDataKey?: string;
+  /**
+   * How `xDataKey` values are interpreted (#302). Default: `"time"`, unless
+   * every value is already a `number`, which infers `"linear"` — a numeric x
+   * (weight, price, …) then renders numeric tick labels and a numeric
+   * tooltip title instead of an epoch date. A categorical x remains
+   * unsupported (still warns); only `"time"`/`"linear"` are offered.
+   */
+  xScale?: ScatterXScaleType;
   /** Chart margins */
   margin?: Partial<Margin>;
   /** Animation duration in milliseconds. Default: 1100 */
@@ -83,6 +91,7 @@ interface ChartInnerProps {
   height: number;
   data: Record<string, unknown>[];
   xDataKey: string;
+  xScaleType?: ScatterXScaleType;
   margin: Margin;
   animationDuration: number;
   animationEasing?: string;
@@ -98,6 +107,7 @@ function ChartInner({
   height,
   data,
   xDataKey,
+  xScaleType,
   margin,
   animationDuration,
   animationEasing,
@@ -126,6 +136,7 @@ function ChartInner({
       revealSignature={revealSignature}
       width={width}
       xDataKey={xDataKey}
+      xScaleType={xScaleType}
     >
       {children}
     </ScatterChartInner>
@@ -140,6 +151,7 @@ export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(functi
   {
     data,
     xDataKey = "date",
+    xScale: xScaleType,
     margin: marginProp,
     animationDuration = 1100,
     animationEasing,
@@ -205,6 +217,7 @@ export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(functi
           revealSignature={revealSignature}
           width={width}
           xDataKey={xDataKey}
+          xScaleType={xScaleType}
         >
           {children}
         </ChartInner>

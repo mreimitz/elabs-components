@@ -27,13 +27,53 @@ import { type ChartPhase, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { fallbackXLabel, isInvalidDate } from "./chart-x-value-utils";
 import { isPostOverlayComponent } from "./time-series-chart-shell";
 import { useScatterChartInteraction } from "./use-scatter-chart-interaction";
+import { buildXValueEncoder } from "./x-scale-mode";
 import { buildYScalesForLines, getPrimaryYScale } from "./y-axis-scales";
+
+/**
+ * How `ScatterChart` interprets `xDataKey` values (#302 — the non-temporal
+ * half of #352's `x-scale-mode.ts` work, scoped to Scatter's own two real
+ * cases). `"band"` is deliberately NOT offered here: a categorical x for a
+ * "two continuous measures" container is a design question (bar/dumbbell
+ * territory), not a bug fix, so it stays unsupported and keeps warning.
+ */
+export type ScatterXScaleType = "time" | "linear";
+
+/**
+ * Picks `"linear"` only when EVERY x value is already a `number` — a
+ * numeric-looking STRING keeps today's `new Date(...)` coercion (so
+ * `xScale` unset/`"time"` stays byte-for-byte unchanged). Explicit
+ * `xScaleType` always wins.
+ */
+function resolveScatterXScaleType({
+  data,
+  xDataKey,
+  xScaleType,
+}: {
+  data: Record<string, unknown>[];
+  xDataKey: string;
+  xScaleType: ScatterXScaleType | undefined;
+}): ScatterXScaleType {
+  if (xScaleType) {
+    return xScaleType;
+  }
+  if (data.length === 0) {
+    return "time";
+  }
+  const everyValueIsNumber = data.every((d) => typeof d[xDataKey] === "number");
+  return everyValueIsNumber ? "linear" : "time";
+}
 
 export interface ScatterChartInnerProps {
   width: number;
   height: number;
   data: Record<string, unknown>[];
   xDataKey: string;
+  /**
+   * How `xDataKey` values are interpreted (#302). Default: `"time"`, unless
+   * every value is a `number`, which infers `"linear"`.
+   */
+  xScaleType?: ScatterXScaleType;
   margin: Margin;
   animationDuration: number;
   animationEasing?: string;
@@ -50,6 +90,7 @@ export function ScatterChartInner({
   height,
   data,
   xDataKey,
+  xScaleType,
   margin,
   animationDuration,
   animationEasing = DEFAULT_ANIMATION_EASING,
@@ -66,12 +107,32 @@ export function ScatterChartInner({
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
+  const resolvedXScaleType = useMemo(
+    () => resolveScatterXScaleType({ data, xDataKey, xScaleType }),
+    [data, xDataKey, xScaleType],
+  );
+
+  // `"linear"` reuses #352's synthetic-instant encoder (see `x-scale-mode.ts`)
+  // so every downstream consumer — `xScale`, `Grid`, `XAxis`, `ChartTooltip`,
+  // the drop lines / extremes in `scatter.tsx` — keeps treating x as a Date
+  // and needs no change; only the position math and the label differ.
+  const linearEncoder = useMemo(
+    () =>
+      resolvedXScaleType === "linear"
+        ? buildXValueEncoder({ data, type: "linear", xDataKey })
+        : null,
+    [resolvedXScaleType, data, xDataKey],
+  );
+
   const xAccessor = useCallback(
     (d: Record<string, unknown>): Date => {
+      if (linearEncoder) {
+        return linearEncoder.xAccessor(d);
+      }
       const value = d[xDataKey];
       return value instanceof Date ? value : new Date(value as string | number);
     },
-    [xDataKey],
+    [xDataKey, linearEncoder],
   );
 
   const bisectDate = useMemo(
@@ -139,7 +200,17 @@ export function ScatterChartInner({
   // LineChart/AreaChart shell (time-series-chart-shell.tsx) was guarded
   // against; ScatterChart had an un-synced copy of this memo that still threw.
   // Render a text fallback (the raw value) for the affected point(s) instead.
+  //
+  // #302: in `"linear"` mode `xAccessor` returns a SYNTHETIC positional
+  // instant (see `x-scale-mode.ts`) — formatting it as a date would print a
+  // meaningless calendar day (the numeric-x-renders-as-a-date bug). The
+  // encoder's own `labelOf` returns the caller's real x value instead, and
+  // that value is always "valid" by construction (never the Invalid Date
+  // fallback path below).
   const dateLabelInfo = useMemo(() => {
+    if (linearEncoder) {
+      return { hasInvalid: false, labels: data.map((d) => linearEncoder.labelOf(d)) };
+    }
     let hasInvalid = false;
     const labels = data.map((d) => {
       const date = xAccessor(d);
@@ -150,7 +221,7 @@ export function ScatterChartInner({
       return shortDateFmt.format(date);
     });
     return { hasInvalid, labels };
-  }, [data, xAccessor, xDataKey]);
+  }, [data, xAccessor, xDataKey, linearEncoder]);
 
   const dateLabels = dateLabelInfo.labels;
 
@@ -255,6 +326,7 @@ export function ScatterChartInner({
     enterTransition,
     revealEpoch,
     xAccessor,
+    xScaleType: resolvedXScaleType,
     dateLabels,
     selection,
     clearSelection,
