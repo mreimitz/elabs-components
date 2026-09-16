@@ -18,7 +18,15 @@
  * `vi.mock("@elabs-ai/components-process", () => import("@elabs-ai/components-process/test"))`
  * the way `@elabs-ai/components-charts` consumers do — that rename is out of this item's scope.
  */
-import type { ProcessGraph, Variant } from "../core/types";
+import { discoverGraph } from "../core/discover-graph";
+import { extractVariants } from "../core/extract-variants";
+import {
+  segmentOrderByFrequency,
+  segmentOrderForVariant,
+  segmentsFor,
+  type SegmentDefinition,
+} from "../core/segments";
+import type { EventLog, ProcessGraph, Variant } from "../core/types";
 
 /** Selection carried by a process view's coordinated-selection contract (RM-068 completes it). */
 export type ProcessSelection = null | { kind: "node"; id: string } | { kind: "edge"; id: string };
@@ -26,9 +34,15 @@ export type ProcessSelection = null | { kind: "node"; id: string } | { kind: "ed
 /** What {@link assertProcessContract} checks for one double. */
 export interface ProcessContractSpec {
   /** Name of the prop carrying the double's primary data payload. */
-  dataProp: "graph" | "variants";
+  dataProp: "graph" | "variants" | "log";
   /** Other props the real component requires; the double must not silently accept `undefined`. */
   requiredProps?: string[];
+  /**
+   * PerformanceSpectrum — RM-060: the `order` prop (default `"frequency"`) must resolve to
+   * at least one segment that actually occurs in `log`, or the real view renders only its
+   * empty panel — almost always a test wired to the wrong activity names.
+   */
+  segmentOrder?: boolean;
 }
 
 /** Thrown by {@link assertProcessContract} when a double is used with an invalid prop shape. */
@@ -46,6 +60,26 @@ function isProcessGraph(value: unknown): value is ProcessGraph {
     Array.isArray((value as ProcessGraph).activities) &&
     Array.isArray((value as ProcessGraph).transitions)
   );
+}
+
+function isEventLog(value: unknown): value is EventLog {
+  return !!value && typeof value === "object" && Array.isArray((value as EventLog).events);
+}
+
+/** How many occurrences `order` (as `PerformanceSpectrum` reads it) finds in `log`. */
+function countSpectrumOccurrences(log: EventLog, order: unknown, limit: unknown): number {
+  const cap = typeof limit === "number" ? Math.max(0, Math.floor(limit)) : 12;
+  let definitions: SegmentDefinition[] = [];
+  if (order === undefined || order === "frequency") {
+    definitions = segmentOrderByFrequency(discoverGraph(log), cap);
+  } else if (Array.isArray(order)) {
+    definitions = (order as SegmentDefinition[]).slice(0, cap);
+  } else if (order && typeof order === "object" && "variantId" in order) {
+    const id = (order as { variantId: unknown }).variantId;
+    const variant = extractVariants(log).find((v) => v.id === id);
+    definitions = variant ? segmentOrderForVariant(variant).slice(0, cap) : [];
+  }
+  return segmentsFor(log, definitions).length;
 }
 
 function isVariantArray(value: unknown): value is Variant[] {
@@ -79,6 +113,23 @@ export function assertProcessContract(
       `"variants" prop must be a Variant[], got ${typeof data}`,
     );
   }
+  if (spec.dataProp === "log" && !isEventLog(data)) {
+    throw new ProcessContractError(
+      componentName,
+      `"log" prop must be an EventLog, got ${typeof data}`,
+    );
+  }
+  if (
+    spec.segmentOrder &&
+    isEventLog(data) &&
+    data.events.length > 0 &&
+    countSpectrumOccurrences(data, props.order, props.segmentLimit) === 0
+  ) {
+    throw new ProcessContractError(
+      componentName,
+      `"order" resolves to no segment that occurs in "log"`,
+    );
+  }
   for (const key of spec.requiredProps ?? []) {
     if (props[key] === undefined) {
       throw new ProcessContractError(componentName, `missing required prop "${key}"`);
@@ -103,9 +154,11 @@ export function buildProcessDoublePayload(
   const dataLength =
     spec.dataProp === "graph" && isProcessGraph(data)
       ? data.activities.length
-      : Array.isArray(data)
-        ? data.length
-        : 0;
+      : spec.dataProp === "log" && isEventLog(data)
+        ? data.events.length
+        : Array.isArray(data)
+          ? data.length
+          : 0;
   const payload: ProcessDoublePayload = { component: componentName, dataLength };
   if ("selection" in props) payload.selection = props.selection as ProcessSelection;
   return payload;

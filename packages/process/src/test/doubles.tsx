@@ -12,7 +12,7 @@
 import { forwardRef } from "react";
 import type { HTMLAttributes } from "react";
 
-import type { ProcessGraph, Variant } from "../core/types";
+import type { EventLog, ProcessGraph, Variant } from "../core/types";
 import {
   assertProcessContract,
   buildProcessDoublePayload,
@@ -79,4 +79,31 @@ export const ProcessKpiStripDouble = createProcessDouble<ProcessKpiStripDoublePr
   PROCESS_KPI_STRIP_SPEC,
 );
 
-export type { ProcessMapDoubleProps, VariantExplorerDoubleProps, ProcessKpiStripDoubleProps };
+// PerformanceSpectrum — RM-060
+interface PerformanceSpectrumDoubleProps extends HTMLAttributes<HTMLDivElement> {
+  log: EventLog;
+  /** Explicit segments, `"frequency"` (the default) or `{ variantId }` — as the real prop. */
+  order?: Array<{ from: string; to: string; label?: string }> | "frequency" | { variantId: string };
+  segmentLimit?: number;
+  mode?: "lines" | "aggregated";
+  binSize?: number;
+  onFilterIntent?: (intent: { kind: "cases"; ids: string[] }) => void;
+  height?: number;
+  tableView?: boolean;
+  loading?: boolean;
+}
+
+const PERFORMANCE_SPECTRUM_SPEC: ProcessContractSpec = { dataProp: "log", segmentOrder: true };
+
+/** Stand-in for `PerformanceSpectrum` (RM-060); asserts `order` resolves to a segment present in `log`. */
+export const PerformanceSpectrumDouble = createProcessDouble<PerformanceSpectrumDoubleProps>(
+  "PerformanceSpectrumDouble",
+  PERFORMANCE_SPECTRUM_SPEC,
+);
+
+export type {
+  PerformanceSpectrumDoubleProps,
+  ProcessMapDoubleProps,
+  VariantExplorerDoubleProps,
+  ProcessKpiStripDoubleProps,
+};

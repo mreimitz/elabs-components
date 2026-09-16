@@ -132,3 +132,20 @@ export type {
 // casesFromLog — RM-055
 export { casesFromLog } from "./cases-from-log";
 export type { CaseRow } from "./cases-from-log";
+
+// segments — RM-060
+export {
+  durationQuartile,
+  durationQuartileThresholds,
+  quartileOf,
+  segmentKey,
+  segmentOrderByFrequency,
+  segmentOrderForVariant,
+  segmentsFor,
+} from "./segments";
+export type {
+  DurationQuartile,
+  QuartileThresholds,
+  SegmentDefinition,
+  SegmentOccurrence,
+} from "./segments";

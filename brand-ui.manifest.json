@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T09:39:49.670Z",
+  "generatedAt": "2026-09-16T11:17:45.587Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25957,6 +25957,31 @@
           "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
         },
         {
+          "name": "PERFORMANCE_SPECTRUM_DEFAULT_BIN_SIZE",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PERFORMANCE_SPECTRUM_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum-context.tsx"
+        },
+        {
+          "name": "PERFORMANCE_SPECTRUM_ROW_HEIGHT",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PERFORMANCE_SPECTRUM_SEGMENT_LIMIT",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PerformanceSpectrum",
+          "kind": "value",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
           "name": "PROCESS_FILTER_INTENT_KINDS",
           "kind": "value",
           "module": "packages/process/src/process-map/map-model.ts"
@@ -26147,6 +26172,22 @@
           "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
         },
         {
+          "name": "PerformanceSpectrumFilterIntent",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PerformanceSpectrumLabels",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum-context.tsx"
+        },
+        {
+          "name": "PerformanceSpectrumOrder",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
+          "name": "PerformanceSpectrumProps",
+          "module": "packages/process/src/performance-spectrum/performance-spectrum.tsx"
+        },
+        {
           "name": "ProcessActivityNodeData",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -26259,6 +26300,18 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "SpectrumBin",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
+          "name": "SpectrumLine",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
+          "name": "SpectrumRow",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
           "name": "TransitionFrequencyMode",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -26313,6 +26366,10 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "aggregateSegmentBins",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
           "name": "applyLayoutSnapshot",
           "module": "packages/process/src/process-map/use-process-layout.ts"
         },
@@ -26325,8 +26382,16 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "buildSpectrumRows",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
           "name": "casesFromLog",
           "module": "packages/process/src/core/cases-from-log.ts"
+        },
+        {
+          "name": "casesInRange",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
         },
         {
           "name": "computeAutoAbstraction",
@@ -26391,6 +26456,14 @@
         {
           "name": "selectVariantsByCoverage",
           "module": "packages/process/src/variant-explorer/variant-explorer-model.ts"
+        },
+        {
+          "name": "spectrumDomain",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
+        },
+        {
+          "name": "spectrumTicks",
+          "module": "packages/process/src/performance-spectrum/aggregate-segments.ts"
         },
         {
           "name": "transitionAriaLabel",
@@ -26534,6 +26607,84 @@
               "name": "label",
               "optional": true,
               "type": "string"
+            }
+          ]
+        },
+        "PerformanceSpectrum": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "log",
+              "optional": false,
+              "type": "EventLog"
+            },
+            {
+              "name": "order",
+              "optional": true,
+              "type": "PerformanceSpectrumOrder",
+              "description": "Row order: explicit segments, the busiest transitions, or one variant's path. @default \"frequency\""
+            },
+            {
+              "name": "segmentLimit",
+              "optional": true,
+              "type": "number",
+              "description": "At most this many rows, whichever `order` is used. @default 12"
+            },
+            {
+              "name": "mode",
+              "optional": true,
+              "type": "\"lines\" | \"aggregated\"",
+              "description": "One line per occurrence, or one bar per time bucket. @default \"lines\""
+            },
+            {
+              "name": "binSize",
+              "optional": true,
+              "type": "number",
+              "description": "Bucket width in ms, aggregated mode only. @default 86_400_000 (1 day)"
+            },
+            {
+              "name": "selection",
+              "optional": true,
+              "type": "ProcessSelection | null",
+              "description": "Rows whose segment is (or touches) the selected transition/activity are marked."
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "(intent: PerformanceSpectrumFilterIntent) => void",
+              "description": "When given, the time axis becomes a brush that emits `{ kind: \"cases\", ids }`."
+            },
+            {
+              "name": "onCaseSelect",
+              "optional": true,
+              "type": "(caseId: string, occurrence: SpectrumLine) => void",
+              "description": "Click or `Enter` on an occurrence (lines) or on a bar's first case (aggregated)."
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "number",
+              "description": "Total plot height in CSS px, split evenly across rows (min 24 px a row)."
+            },
+            {
+              "name": "tableView",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the accessible table twin instead of the chart. @default false"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "Data not ready yet — renders the loading panel."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<PerformanceSpectrumLabels>",
+              "description": "Override any user-visible string."
             }
           ]
         },
@@ -26990,6 +27141,10 @@
               "module": "packages/process/src/core/discover-graph.ts"
             },
             {
+              "name": "DurationQuartile",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
               "name": "DurationStats",
               "module": "packages/process/src/core/types.ts"
             },
@@ -27078,12 +27233,24 @@
               "module": "packages/process/src/core/worker/process-worker.ts"
             },
             {
+              "name": "QuartileThresholds",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
               "name": "ReconciledGraph",
               "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
               "name": "ReworkStats",
               "module": "packages/process/src/core/detect-rework.ts"
+            },
+            {
+              "name": "SegmentDefinition",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "SegmentOccurrence",
+              "module": "packages/process/src/core/segments.ts"
             },
             {
               "name": "SyntheticActivity",
@@ -27142,6 +27309,14 @@
             {
               "name": "discoverGraph",
               "module": "packages/process/src/core/discover-graph.ts"
+            },
+            {
+              "name": "durationQuartile",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "durationQuartileThresholds",
+              "module": "packages/process/src/core/segments.ts"
             },
             {
               "name": "durationStats",
@@ -27216,8 +27391,28 @@
               "module": "packages/process/src/core/scale.ts"
             },
             {
+              "name": "quartileOf",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
               "name": "reconcileGraph",
               "module": "packages/process/src/core/reconcile-graph.ts"
+            },
+            {
+              "name": "segmentKey",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "segmentOrderByFrequency",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "segmentOrderForVariant",
+              "module": "packages/process/src/core/segments.ts"
+            },
+            {
+              "name": "segmentsFor",
+              "module": "packages/process/src/core/segments.ts"
             },
             {
               "name": "toEpochMs",

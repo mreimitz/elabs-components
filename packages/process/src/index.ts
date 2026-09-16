@@ -47,3 +47,6 @@ export * from "./process-filter-bar";
 // CaseTable / CaseTimeline — RM-055
 export * from "./case-table";
 export * from "./case-timeline";
+
+// PerformanceSpectrum — RM-060
+export * from "./performance-spectrum";
