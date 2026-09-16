@@ -62,13 +62,15 @@
  * themes). The meter's fill (a redundant, `aria-hidden`, non-text channel) still dims at the
  * shared rung.
  */
-import { useMemo, type CSSProperties } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { CircleDot, Flag, Play, RefreshCw } from "lucide-react";
 import { Badge } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { FlowNode, type FlowNodeData } from "@elabs-ai/components-flow";
 import type { NodeProps } from "@xyflow/react";
 import { useProcessMapHover } from "./process-map-context";
+import type { ActivityColor } from "../core/activity-color-scale";
+import { activityAccentStyle } from "./activity-accent";
 import { activityRole, GHOST_OPACITY, type ProcessMapNode } from "./map-model";
 
 /**
@@ -98,6 +100,32 @@ const GHOST_FRAME_STYLE = {
 function meterFill(saturation: number): string {
   const percent = Math.round(Math.min(1, Math.max(0, saturation)) * 100);
   return `color-mix(in oklab, var(--primary) ${percent}%, var(--surface-muted))`;
+}
+
+/**
+ * The footer row: the meter alone (today's rendering, byte-identical) or, when the map has
+ * a shared `colorScale` (RM-054), the activity's identity swatch in front of the meter.
+ *
+ * The swatch is a small mark, never the card fill, so identity colour and the metric's
+ * saturation ramp never compete for the same pixels. It is `aria-hidden`: the activity's
+ * identity already reaches the reader as its printed title and accessible name, so the
+ * colour is a redundant cross-view cue (WCAG 1.4.1), not a channel of its own.
+ */
+function accentFooter(accent: ActivityColor | undefined, isDimmed: boolean, meter: ReactNode) {
+  if (!accent) return meter;
+  return (
+    <div className="flex items-center gap-1.5">
+      <span
+        aria-hidden="true"
+        data-slot="process-activity-node-accent"
+        data-color-token={accent.token}
+        data-pattern={accent.pattern}
+        className="size-2.5 shrink-0 rounded-sm"
+        style={{ ...activityAccentStyle(accent), ...(isDimmed ? { opacity: GHOST_OPACITY } : {}) }}
+      />
+      <div className="min-w-0 flex-1">{meter}</div>
+    </div>
+  );
 }
 
 /** Start/end glyph pairing, in `FlowNode`'s own tone-glyph idiom. */
@@ -139,7 +167,9 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
       // same number is already printed in the subtitle above and repeated in the node's
       // accessible name — a third announcement would be noise, not access. The fill (not
       // the text) is the one thing here that still dims at the shared ghost rung.
-      footer: (
+      footer: accentFooter(
+        data.accent,
+        isDimmed,
         <div
           aria-hidden="true"
           data-slot="process-activity-node-meter"
@@ -151,7 +181,7 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
             className="h-full rounded-full transition-[width] duration-base ease-standard motion-reduce:transition-none"
             style={{ width: `${percent}%`, background: meterFill(data.saturation) }}
           />
-        </div>
+        </div>,
       ),
     }),
     [
@@ -160,6 +190,7 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
       data.primaryLabel,
       data.secondaryLabel,
       data.saturation,
+      data.accent,
       RoleIcon,
       percent,
       isDimmed,

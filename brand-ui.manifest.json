@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T08:28:43.796Z",
+  "generatedAt": "2026-09-16T08:55:19.426Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25756,6 +25756,16 @@
           "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
         },
         {
+          "name": "ACTIVITY_COLOR_SLOTS",
+          "kind": "value",
+          "module": "packages/process/src/core/activity-color-scale.ts"
+        },
+        {
+          "name": "ACTIVITY_OTHER_TOKEN",
+          "kind": "value",
+          "module": "packages/process/src/core/activity-color-scale.ts"
+        },
+        {
           "name": "DEFAULT_LAYOUT_DEBOUNCE_MS",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
@@ -25844,6 +25854,26 @@
           "name": "ProcessTransitionEdge",
           "kind": "value",
           "module": "packages/process/src/process-map/process-transition-edge.tsx"
+        },
+        {
+          "name": "VARIANT_EXPLORER_COLUMNS",
+          "kind": "value",
+          "module": "packages/process/src/variant-explorer/variant-explorer-model.ts"
+        },
+        {
+          "name": "VARIANT_EXPLORER_DEFAULT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
+        },
+        {
+          "name": "VARIANT_EXPLORER_ROW_HEIGHT",
+          "kind": "value",
+          "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
+        },
+        {
+          "name": "VariantExplorer",
+          "kind": "value",
+          "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
         }
       ],
       "hooks": [
@@ -25872,6 +25902,18 @@
         {
           "name": "AbstractionControlsProps",
           "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
+          "name": "ActivityColor",
+          "module": "packages/process/src/core/activity-color-scale.ts"
+        },
+        {
+          "name": "ActivityColorLegendEntry",
+          "module": "packages/process/src/core/activity-color-scale.ts"
+        },
+        {
+          "name": "ActivityColorScale",
+          "module": "packages/process/src/core/activity-color-scale.ts"
         },
         {
           "name": "ActivityFrequencyMode",
@@ -26032,12 +26074,36 @@
         {
           "name": "UseProcessLayoutResult",
           "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "VariantExplorerColumn",
+          "module": "packages/process/src/variant-explorer/variant-explorer-model.ts"
+        },
+        {
+          "name": "VariantExplorerLabels",
+          "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
+        },
+        {
+          "name": "VariantExplorerProps",
+          "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
+        },
+        {
+          "name": "VariantSelectMode",
+          "module": "packages/process/src/variant-explorer/variant-explorer.tsx"
         }
       ],
       "otherExports": [
         {
+          "name": "activityAccentStyle",
+          "module": "packages/process/src/process-map/activity-accent.ts"
+        },
+        {
           "name": "activityAriaLabel",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "activityColorScale",
+          "module": "packages/process/src/core/activity-color-scale.ts"
         },
         {
           "name": "activityMetricValue",
@@ -26110,6 +26176,10 @@
         {
           "name": "selectionStateLabel",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "selectVariantsByCoverage",
+          "module": "packages/process/src/variant-explorer/variant-explorer-model.ts"
         },
         {
           "name": "transitionAriaLabel",
@@ -26358,10 +26428,89 @@
               "description": "No graph yet. Renders the loading panel rather than an empty canvas."
             },
             {
+              "name": "colorScale",
+              "optional": true,
+              "type": "ActivityColorScale",
+              "description": "A shared activity colour scale (RM-054, `/core`'s `activityColorScale`). When given, each activity node shows its identity swatch — the same colour `VariantExplorer` paints that activity with. Build it once from the FULL graph and hand the same instance to both views. Omit for today's uncoloured nodes."
+            },
+            {
               "name": "label",
               "optional": true,
               "type": "string",
               "description": "Accessible name for the canvas region. Defaults to the localized `process.map.label` message."
+            }
+          ]
+        },
+        "VariantExplorer": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">"
+          ],
+          "props": [
+            {
+              "name": "variants",
+              "optional": false,
+              "type": "Variant[]",
+              "description": "Variants in `extractVariants` order (count descending)."
+            },
+            {
+              "name": "colorScale",
+              "optional": false,
+              "type": "ActivityColorScale",
+              "description": "The shared colour scale — hand `ProcessMap` the same instance."
+            },
+            {
+              "name": "selectionStates",
+              "optional": true,
+              "type": "ProcessSelectionStates",
+              "description": "Tri-state per variant id; an absent key means `\"associated\"`."
+            },
+            {
+              "name": "onSelect",
+              "optional": false,
+              "type": "(variantIds: string[], mode: VariantSelectMode) => void",
+              "description": "Fires with the ids to select and how to apply them. The explorer never filters."
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "(intent: FilterIntent) => void",
+              "description": "When given, a button emits `{ kind: \"variant\", ids }` for the selected variants."
+            },
+            {
+              "name": "columns",
+              "optional": true,
+              "type": "VariantExplorerColumn[]",
+              "description": "Numeric columns to show. @default [\"cases\", \"coverage\", \"medianDuration\"]"
+            },
+            {
+              "name": "coverageTarget",
+              "optional": true,
+              "type": "number",
+              "description": "Initial coverage target, `0..1`. When given, a slider selects the smallest prefix of variants whose cumulative share reaches the target (mode `\"replace\"`)."
+            },
+            {
+              "name": "abbreviate",
+              "optional": true,
+              "type": "boolean",
+              "description": "\"Variant DNA\" strip: two-character codes instead of full activity labels."
+            },
+            {
+              "name": "tableView",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the accessible table twin instead of the list. @default false"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No variants yet. Renders the loading panel rather than an empty list."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<VariantExplorerLabels>",
+              "description": "Override any user-visible string."
             }
           ]
         }
@@ -26437,6 +26586,16 @@
         "@elabs-ai/components-process/core": {
           "components": [
             {
+              "name": "ACTIVITY_COLOR_SLOTS",
+              "kind": "value",
+              "module": "packages/process/src/core/activity-color-scale.ts"
+            },
+            {
+              "name": "ACTIVITY_OTHER_TOKEN",
+              "kind": "value",
+              "module": "packages/process/src/core/activity-color-scale.ts"
+            },
+            {
               "name": "BPI_2012_ACTIVITIES",
               "kind": "value",
               "module": "packages/process/src/core/fixtures/generate-bpi-2012-subset.ts"
@@ -26506,6 +26665,18 @@
             {
               "name": "AbstractionOptions",
               "module": "packages/process/src/core/abstract-graph.ts"
+            },
+            {
+              "name": "ActivityColor",
+              "module": "packages/process/src/core/activity-color-scale.ts"
+            },
+            {
+              "name": "ActivityColorLegendEntry",
+              "module": "packages/process/src/core/activity-color-scale.ts"
+            },
+            {
+              "name": "ActivityColorScale",
+              "module": "packages/process/src/core/activity-color-scale.ts"
             },
             {
               "name": "ActivityRework",
@@ -26660,6 +26831,10 @@
             {
               "name": "abstractGraph",
               "module": "packages/process/src/core/abstract-graph.ts"
+            },
+            {
+              "name": "activityColorScale",
+              "module": "packages/process/src/core/activity-color-scale.ts"
             },
             {
               "name": "aggregatePerformance",

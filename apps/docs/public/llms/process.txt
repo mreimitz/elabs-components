@@ -7,6 +7,8 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 ## Components
 
 - AbstractionControls
+- ACTIVITY_COLOR_SLOTS
+- ACTIVITY_OTHER_TOKEN
 - DEFAULT_LAYOUT_DEBOUNCE_MS
 - EMPTY_PROCESS_MAP_HOVER
 - GHOST_OPACITY
@@ -35,6 +37,10 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
   - avoid: Writing a pixel width into `data.weight` — it is the RAW metric value, and `@elabs-ai/components-flow`'s `computeEdgeWeightScale` owns the min-max into `DEFAULT_EDGE_WIDTH_RANGE`.
   - avoid: Suppressing the label pill on a dense map — width alone is a colour-adjacent single channel, and the pill is what makes the reading recoverable.
   - avoid: Distinguishing a back-edge or a self-loop by hue — the shape (dash pattern, closed arc) is the cue that survives greyscale.
+- VARIANT_EXPLORER_COLUMNS
+- VARIANT_EXPLORER_DEFAULT_LABELS
+- VARIANT_EXPLORER_ROW_HEIGHT
+- VariantExplorer
 
 ## Hooks
 
@@ -45,6 +51,8 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 
 ## Subpath exports
 
+- ACTIVITY_COLOR_SLOTS (`@elabs-ai/components-process/core` · component)
+- ACTIVITY_OTHER_TOKEN (`@elabs-ai/components-process/core` · component)
 - BPI_2012_ACTIVITIES (`@elabs-ai/components-process/core` · component)
 - BPI_2012_SUBSET_EPOCH (`@elabs-ai/components-process/core` · component)
 - DEFAULT_LIFECYCLE_VALUES (`@elabs-ai/components-process/core` · component)

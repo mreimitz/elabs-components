@@ -116,3 +116,15 @@ export type { ProcessWorkerRequest, ProcessWorkerResponse } from "./worker/proce
 // EDGE_KEY_SEPARATOR — RM-050 (the edge-key convention abstraction and the
 // performance layer both index on; discovery has always used it internally)
 export { EDGE_KEY_SEPARATOR } from "./discover-graph";
+
+// activityColorScale — RM-054
+export {
+  ACTIVITY_COLOR_SLOTS,
+  ACTIVITY_OTHER_TOKEN,
+  activityColorScale,
+} from "./activity-color-scale";
+export type {
+  ActivityColor,
+  ActivityColorLegendEntry,
+  ActivityColorScale,
+} from "./activity-color-scale";

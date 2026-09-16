@@ -5,6 +5,7 @@
  * read, the layout hook, and the whole `map-model` vocabulary (the model is what keeps the
  * canvas and the `tableView` twin printing identical numbers, so it is public on purpose).
  */
+export * from "./activity-accent";
 export * from "./map-model";
 export * from "./process-map";
 export * from "./process-map-context";

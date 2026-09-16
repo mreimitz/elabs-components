@@ -89,6 +89,7 @@ import {
 import { abstractGraph, type AbstractionOptions } from "../core/abstract-graph";
 import { detectRework, type ReworkStats } from "../core/detect-rework";
 import { discoverGraph } from "../core/discover-graph";
+import type { ActivityColorScale } from "../core/activity-color-scale";
 import type { EventLog, ProcessGraph } from "../core/types";
 import {
   buildProcessMapModel,
@@ -210,6 +211,13 @@ export interface ProcessMapProps extends Omit<HTMLAttributes<HTMLDivElement>, "o
   /** No graph yet. Renders the loading panel rather than an empty canvas. */
   loading?: boolean;
   /**
+   * A shared activity colour scale (RM-054, `/core`'s `activityColorScale`). When given,
+   * each activity node shows its identity swatch — the same colour `VariantExplorer`
+   * paints that activity with. Build it once from the FULL graph and hand the same
+   * instance to both views. Omit for today's uncoloured nodes.
+   */
+  colorScale?: ActivityColorScale;
+  /**
    * Accessible name for the canvas region. Defaults to the localized
    * `process.map.label` message.
    */
@@ -259,6 +267,7 @@ export function ProcessMap({
   showLegend = true,
   tableView = false,
   loading = false,
+  colorScale,
   label,
   className,
   ...props
@@ -315,9 +324,10 @@ export function ProcessMap({
             rework: activeRework,
             selection: activeSelection,
             selectionStates,
+            colorScale,
           })
         : null,
-    [resolved, metric, activeRework, activeSelection, selectionStates],
+    [resolved, metric, activeRework, activeSelection, selectionStates, colorScale],
   );
 
   // ── Measured node sizes ───────────────────────────────────────────────────
@@ -402,9 +412,18 @@ export function ProcessMap({
             selection: activeSelection,
             selectionStates,
             backEdgeIds: layout.backEdgeIds,
+            colorScale,
           })
         : null,
-    [resolved, metric, activeRework, activeSelection, selectionStates, layout.backEdgeIds],
+    [
+      resolved,
+      metric,
+      activeRework,
+      activeSelection,
+      selectionStates,
+      layout.backEdgeIds,
+      colorScale,
+    ],
   );
 
   const positionedNodes = useMemo(

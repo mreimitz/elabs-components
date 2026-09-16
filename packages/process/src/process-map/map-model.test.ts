@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeEdgeWeightScale, DEFAULT_EDGE_WIDTH_RANGE } from "@elabs-ai/components-flow";
+import { activityColorScale } from "../core/activity-color-scale";
 import { discoverGraph } from "../core/discover-graph";
 import { detectRework } from "../core/detect-rework";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
@@ -322,5 +323,20 @@ describe("non-colour channels reach assistive technology", () => {
   it("names every node and edge, and stamps that name for React Flow", () => {
     for (const node of model.nodes) expect(node.ariaLabel).toBe(activityAriaLabel(node.data));
     for (const edge of model.edges) expect(edge.ariaLabel).toBeTruthy();
+  });
+});
+
+describe("activity colour accent (RM-054)", () => {
+  const metric = { node: "absolute_case", edge: "absolute" } as const;
+
+  it("carries no accent when no colour scale is given — today's model, unchanged", () => {
+    const plain = buildProcessMapModel({ graph, metric });
+    for (const node of plain.nodes) expect("accent" in node.data).toBe(false);
+  });
+
+  it("stamps each node with the scale's colour for its activity", () => {
+    const scale = activityColorScale(graph);
+    const coloured = buildProcessMapModel({ graph, metric, colorScale: scale });
+    for (const node of coloured.nodes) expect(node.data.accent).toEqual(scale.colorFor(node.id));
   });
 });
