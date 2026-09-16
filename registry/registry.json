@@ -930,6 +930,54 @@
         }
       ],
       "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-forecast-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Where will I land?",
+      "description": "\"Where will I land?\" — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a today marker separating the two, with the projection method stated in words.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@visx/curve"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-forecast-01/data/forecast.ts",
+          "type": "registry:component",
+          "target": "components/kpi-forecast-01/data/forecast.ts"
+        },
+        {
+          "path": "registry/blocks/kpi-forecast-01/kpi-forecast.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-forecast-01/kpi-forecast.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-hero-satellites-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What is the headline?",
+      "description": "\"What is the headline?\" — one hero KPI (a big value, a named comparison vs target, a 13-week trend against last year) with three compact satellite KPIs beside it, each a value + signed delta vs target + a tiny trend, composed as one card with a single separation gesture.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-hero-satellites-01/kpi-hero-satellites.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-hero-satellites-01/kpi-hero-satellites.tsx"
+        }
+      ],
+      "categories": ["kpi-card"]
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T13:36:05.995Z",
+  "generatedAt": "2026-09-16T14:19:45.050Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -493,6 +493,18 @@
       "type": "registry:block",
       "title": "Infographic Scorecard",
       "description": "The Power BI-style scorecard, done with an honest baseline on every number: one row per KPI — actual, target, a signed delta, a BulletChart progress-to-target, a 13-week trend, and a named status — in a horizontally scrollable Table."
+    },
+    {
+      "name": "kpi-forecast-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Where will I land?",
+      "description": "\"Where will I land?\" — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a today marker separating the two, with the projection method stated in words."
+    },
+    {
+      "name": "kpi-hero-satellites-01",
+      "type": "registry:block",
+      "title": "KPI Cards — What is the headline?",
+      "description": "\"What is the headline?\" — one hero KPI (a big value, a named comparison vs target, a 13-week trend against last year) with three compact satellite KPIs beside it, each a value + signed delta vs target + a tiny trend, composed as one card with a single separation gesture."
     }
   ],
   "templates": [
@@ -12784,6 +12796,11 @@
           "module": "packages/charts/src/charts/area.tsx"
         },
         {
+          "name": "AreaBand",
+          "kind": "value",
+          "module": "packages/charts/src/charts/area-band.tsx"
+        },
+        {
           "name": "AreaChart",
           "kind": "value",
           "module": "packages/charts/src/charts/area-chart.tsx"
@@ -13930,6 +13947,10 @@
         {
           "name": "ArcLayoutOptions",
           "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "AreaBandProps",
+          "module": "packages/charts/src/charts/area-band.tsx"
         },
         {
           "name": "AreaChartLoadingProps",
@@ -15931,6 +15952,52 @@
               "optional": true,
               "type": "boolean",
               "description": "Ring the peak sample with a filled dot + value label (RM-029). Only takes effect when this `Area` renders as a `HairlineArea` — a single-series chart under high decoration (`data-decoration` ≥ 8). Default: false."
+            }
+          ]
+        },
+        "AreaBand": {
+          "extends": [],
+          "props": [
+            {
+              "name": "lowKey",
+              "optional": false,
+              "type": "string",
+              "description": "Key in data for the band's lower edge."
+            },
+            {
+              "name": "highKey",
+              "optional": false,
+              "type": "string",
+              "description": "Key in data for the band's upper edge."
+            },
+            {
+              "name": "fill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill colour. Default `var(--chart-ring-background)` — the same quiet \"normal range\" wash `Sparkline`'s `band` prop already draws with."
+            },
+            {
+              "name": "fillOpacity",
+              "optional": true,
+              "type": "number",
+              "description": "Fill opacity. Default 1 — the token itself already carries the wash."
+            },
+            {
+              "name": "curve",
+              "optional": true,
+              "type": "CurveFactory",
+              "description": "Curve function, matching the series it brackets. Default `curveMonotoneX`."
+            },
+            {
+              "name": "yAxisId",
+              "optional": true,
+              "type": "string | number",
+              "description": "Y-scale group id (Recharts `yAxisId`). Default: `\"left\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
             }
           ]
         },
@@ -18531,6 +18598,48 @@
               "optional": true,
               "type": "string",
               "description": "Dash array for highlighted rows. Default: solid line"
+            },
+            {
+              "name": "highlightRowLabel",
+              "optional": true,
+              "type": "(value: number) => string | undefined",
+              "description": "Text label drawn at the right edge of each `highlightRowValues` entry (`HaloText`, so it survives sitting on the grid) — a KPI target/goal line the reader can name, not just see. Return `undefined`/`\"\"` to skip the label for a given value. Unset (default): no label, byte-identical to before this prop existed."
+            },
+            {
+              "name": "highlightColumnValues",
+              "optional": true,
+              "type": "Array<number | Date>",
+              "description": "Vertical reference lines at these `xDataKey`-domain values (e.g. \"today\" on a forecast chart) — the column counterpart of `highlightRowValues`. Default: none."
+            },
+            {
+              "name": "highlightColumnStroke",
+              "optional": true,
+              "type": "string",
+              "description": "Stroke for highlighted columns. Default: var(--chart-foreground-muted)"
+            },
+            {
+              "name": "highlightColumnStrokeOpacity",
+              "optional": true,
+              "type": "number",
+              "description": "Stroke opacity for highlighted columns. Default: 1"
+            },
+            {
+              "name": "highlightColumnStrokeWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Stroke width for highlighted columns. Default: 1"
+            },
+            {
+              "name": "highlightColumnStrokeDasharray",
+              "optional": true,
+              "type": "string",
+              "description": "Dash array for highlighted columns. Default: solid line"
+            },
+            {
+              "name": "highlightColumnLabel",
+              "optional": true,
+              "type": "(value: number | Date) => string | undefined",
+              "description": "Text label drawn near the top of each `highlightColumnValues` entry (`HaloText`), e.g. \"Today\". Return `undefined`/`\"\"` to skip the label for a given value. Unset (default): no label."
             },
             {
               "name": "fadeHorizontal",

@@ -7,6 +7,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 ## Components
 
 - Area
+- AreaBand
 - AreaChart — Cumulative or part-of-whole trend over time — a filled line.
   - avoid: Stacking areas that are not parts of one whole — a stack asserts summation; use lines.
   - avoid: Overlapping opaque areas — either stack them or switch to a LineChart.

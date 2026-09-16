@@ -38,9 +38,9 @@ stale-gated — never hand-edit between the markers.
 <!-- brand-ui:gen:catalogue:start -->
 <!-- GENERATED from brand-ui.manifest.json by 'pnpm gen' (WP-10 #87). Edit package purposes in the CLI's render-docs module (PKG_PURPOSE), not here. The gen:check gate fails on drift. -->
 
-**Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 255 · **Registry blocks:** 33
+**Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 255 · **Registry blocks:** 35
 
-**Exported surface:** 1235 components · 87 hooks across 13 packages.
+**Exported surface:** 1236 components · 87 hooks across 13 packages.
 
 | Package                          | Components | Hooks | Use it for                                                                                                    |
 | -------------------------------- | ---------: | ----: | ------------------------------------------------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ stale-gated — never hand-edit between the markers.
 | `@elabs-ai/components-ai`        |        442 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
 | `@elabs-ai/components-flow`      |         34 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                                                 |
 | `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                      |
-| `@elabs-ai/components-charts`    |        193 |    36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
+| `@elabs-ai/components-charts`    |        194 |    36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
 | `@elabs-ai/components-marketing` |          6 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                                             |
 | `@elabs-ai/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                            |
 | `@elabs-ai/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.                              |

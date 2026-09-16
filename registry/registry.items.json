@@ -10,7 +10,10 @@
       "title": "App shell",
       "description": "Sidebar + top nav + page layout scaffold for an internal app.",
       "fileOverrides": {
-        "app-shell-page.tsx": { "type": "registry:page", "target": "app/(app)/page.tsx" }
+        "app-shell-page.tsx": {
+          "type": "registry:page",
+          "target": "app/(app)/page.tsx"
+        }
       }
     },
     {
@@ -253,6 +256,22 @@
       "root": "registry/blocks/infographic-scorecard-01",
       "title": "Infographic Scorecard",
       "description": "The Power BI-style scorecard, done with an honest baseline on every number: one row per KPI — actual, target, a signed delta, a BulletChart progress-to-target, a 13-week trend, and a named status — in a horizontally scrollable Table.",
+      "categories": ["kpi-card"]
+    },
+    {
+      "name": "kpi-forecast-01",
+      "type": "registry:block",
+      "root": "registry/blocks/kpi-forecast-01",
+      "title": "KPI Cards — Where will I land?",
+      "description": "\"Where will I land?\" — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a today marker separating the two, with the projection method stated in words.",
+      "categories": ["kpi-card"]
+    },
+    {
+      "name": "kpi-hero-satellites-01",
+      "type": "registry:block",
+      "root": "registry/blocks/kpi-hero-satellites-01",
+      "title": "KPI Cards — What is the headline?",
+      "description": "\"What is the headline?\" — one hero KPI (a big value, a named comparison vs target, a 13-week trend against last year) with three compact satellite KPIs beside it, each a value + signed delta vs target + a tiny trend, composed as one card with a single separation gesture.",
       "categories": ["kpi-card"]
     }
   ]
