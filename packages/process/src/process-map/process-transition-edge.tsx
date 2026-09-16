@@ -47,6 +47,16 @@
  * attribute straight onto the pill's root button — visible, non-text, reachable by a
  * `[data-selection="excluded"]` selector same as the node and the edge, and never lower
  * than 4.5:1 because the label text itself is untouched.
+ *
+ * ## The label pill is also the only reachable place for the transition's name (#354)
+ *
+ * The same portal-out-of-the-`<g>` fact applies to `aria-label`: React Flow's `EdgeWrapper`
+ * puts `edge.ariaLabel` on the outer `<g>`, but that `<g>` is never a tab stop
+ * (`process-map.tsx` sets `edgesFocusable={false}` so the pill is the arrow's one stop —
+ * see that file's own docblock). `labelProps` carries `data.ariaLabel` (computed once, in
+ * `map-model.ts`'s `transitionAriaLabel`, and read here rather than recomputed, so the
+ * canvas and the `TableView` twin cannot drift) onto the pill's `aria-label`, merged with
+ * the excluded-state fields above rather than replacing them.
  */
 import { useMemo } from "react";
 import type { EdgeProps } from "@xyflow/react";
@@ -85,7 +95,18 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
   const hover = useProcessMapHover();
   const onEdgeKey = useProcessMapEdgeKeys();
   const isExcluded = data?.selectionState === "excluded";
-  const labelProps = isExcluded ? EXCLUDED_LABEL_PROPS : undefined;
+  // The focused element (the label pill's `<button>`) and the named element (React Flow's
+  // own edge `<g>`, unreachable — see this file's own docblock) are two different DOM
+  // nodes; `data.ariaLabel` (`transitionAriaLabel`, computed once in `map-model.ts`) is the
+  // channel that gets the same accessible name onto the one a screen-reader user actually
+  // lands on (#354). Merged with, never replacing, the excluded-state fields.
+  const labelProps = useMemo(() => {
+    if (!isExcluded && !data?.ariaLabel) return undefined;
+    return {
+      ...(isExcluded ? EXCLUDED_LABEL_PROPS : undefined),
+      ...(data?.ariaLabel ? { "aria-label": data.ariaLabel } : undefined),
+    };
+  }, [isExcluded, data?.ariaLabel]);
 
   const weightedData = useMemo<FlowWeightedEdgeData>(
     () => ({

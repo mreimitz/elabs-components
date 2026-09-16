@@ -239,6 +239,23 @@ export const Frequency: Story = {
     await expectWellFramedCanvas(canvasElement);
     expectClickableZoomControls(canvasElement);
 
+    // #354 — a focused label pill must announce the real transition (both endpoints +
+    // the measure), never the bare printed count: "Approve Order → Reserve Stock" and
+    // "Check Credit → Approve Order" both print "213" (same edge metric, different
+    // endpoints), so the bare number is not even locally unique, let alone informative.
+    // `toHaveAccessibleName`/`getByRole` with an exact string, never a regex — a regex
+    // still matches a truncated or polluted name and the bug survives.
+    await expect(
+      canvas.getByRole("button", {
+        name: "Transition from Check Credit to Approve Order, Transitions 213",
+      }),
+    ).toBeInTheDocument();
+    const pillNames = [
+      ...canvasElement.querySelectorAll<HTMLElement>('[data-slot="edge-label-pill"]'),
+    ].map((pill) => pill.getAttribute("aria-label"));
+    expect(pillNames.every((name) => Boolean(name))).toBe(true);
+    expect(new Set(pillNames).size).toBe(pillNames.length);
+
     // Click-to-select: a node picks itself, and the rest of the graph reads as excluded.
     const nodes = canvasElement.querySelectorAll<HTMLElement>(
       '[data-slot="process-activity-node"]',

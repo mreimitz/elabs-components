@@ -210,6 +210,18 @@ export interface ProcessTransitionEdgeData extends Record<string, unknown> {
   isSelfLoop: boolean;
   isBackEdge: boolean;
   selectionState: ProcessSelectionState;
+  /**
+   * This transition's composed accessible name ({@link transitionAriaLabel}), duplicated
+   * here from the edge object's own `ariaLabel` (#354). React Flow's `EdgeWrapper` reads
+   * `ariaLabel` off the edge OBJECT for the outer, non-focusable `<g>` — it never forwards
+   * it to the edge COMPONENT via `EdgeProps` (`@xyflow/react`'s `EdgeProps` type has no
+   * `ariaLabel` field) — so `ProcessTransitionEdge`, which only receives `data`, has no
+   * other channel to reach it. Read this field, never recompute the name locally, or the
+   * canvas and the `TableView` twin (`transitionRows`) can drift apart. Always set by
+   * {@link buildProcessMapModel} — optional only because it is filled in a step after the
+   * rest of this object (it is itself derived from this object).
+   */
+  ariaLabel?: string;
 }
 
 /** A process-map activity node. Register as `nodeTypes={{ "process-activity": … }}`. */
@@ -741,13 +753,18 @@ export function buildProcessMapModel({
       isBackEdge: backEdgeIds?.has(id) ?? transition.isBackEdge,
       selectionState,
     };
+    // Computed once, read from two places (#354): React Flow's own `EdgeWrapper` reads
+    // `ariaLabel` off THIS edge object for the outer, non-focusable `<g>`; `data.ariaLabel`
+    // is what `ProcessTransitionEdge` — which never sees this edge object, only `data` —
+    // folds onto the focused label pill. One computation, so the two can never drift.
+    data.ariaLabel = transitionAriaLabel(data, resolvedEdgeMetricLabel);
     return {
       id,
       source: transition.source,
       target: transition.target,
       type: "process-transition",
       data,
-      ariaLabel: transitionAriaLabel(data, resolvedEdgeMetricLabel),
+      ariaLabel: data.ariaLabel,
     };
   });
 
