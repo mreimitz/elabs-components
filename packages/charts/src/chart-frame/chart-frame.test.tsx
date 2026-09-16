@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
-import { ChartFrame } from "./chart-frame";
+import { render, screen, fireEvent, act, within } from "@testing-library/react";
+import { ChartFrame, type ChartFrameProps } from "./chart-frame";
 import { Bar } from "../charts/bar";
 import { BarChart } from "../charts/bar-chart";
 import { BarXAxis } from "../charts/bar-x-axis";
@@ -662,6 +662,67 @@ describe("ChartFrame density (RM-072)", () => {
     expect(container.querySelector(".legend-container")).not.toBeNull();
     expect(screen.getByText("Monthly")).toBeInTheDocument();
     expect(screen.getByText("Source: ledger")).toBeInTheDocument();
+  });
+});
+
+describe("ChartFrame density toolbar (#444)", () => {
+  function renderToolbarAt(density: "xs" | "sm" | "md", features?: ChartFrameProps["features"]) {
+    return render(
+      <ChartFrame
+        title="Revenue"
+        chrome="tile"
+        density={density}
+        data={sampleData}
+        features={features}
+      >
+        <div>chart</div>
+      </ChartFrame>,
+    );
+  }
+
+  it.each(["xs", "sm"] as const)("%s: the inline toolbar collapses to Expand only", (density) => {
+    const { container } = renderToolbarAt(density);
+    const header = container.querySelector('[data-slot="chart-frame-header"]') as HTMLElement;
+    expect(header.querySelectorAll("button")).toHaveLength(1);
+    expect(screen.getByLabelText("Expand chart")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Download CSV")).not.toBeInTheDocument();
+  });
+
+  it("xs: the collapsed actions are reachable inside the expanded view", () => {
+    renderToolbarAt("xs");
+    fireEvent.click(screen.getByLabelText("Expand chart"));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByLabelText("Download CSV")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Flip to table view")).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("Expand chart")).not.toBeInTheDocument();
+  });
+
+  it("xs without Expand keeps the full toolbar (nowhere to collapse into)", () => {
+    renderToolbarAt("xs", ["table", "download"]);
+    expect(screen.getByLabelText("Download CSV")).toBeInTheDocument();
+    expect(screen.getByLabelText("Flip to table view")).toBeInTheDocument();
+  });
+
+  it("md: the full toolbar stays inline and the expand view adds none", () => {
+    renderToolbarAt("md");
+    expect(screen.getByLabelText("Download CSV")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Expand chart"));
+    expect(document.querySelector('[data-slot="chart-frame-expanded-toolbar"]')).toBeNull();
+  });
+
+  it("tile without height fills its host; an explicit height stays fixed", () => {
+    const { container, rerender } = renderToolbarAt("md");
+    const root = container.querySelector('[data-slot="chart-frame"]') as HTMLElement;
+    expect(root.className).toContain("h-full");
+    const body = container.querySelector('[data-slot="chart-frame-body"] > div') as HTMLElement;
+    expect(body.style.height).toBe("");
+    rerender(
+      <ChartFrame title="Revenue" chrome="tile" height={120} data={sampleData}>
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    const fixed = container.querySelector('[data-slot="chart-frame-body"] > div') as HTMLElement;
+    expect(fixed.style.height).toBe("120px");
   });
 });
 

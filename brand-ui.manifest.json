@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T12:41:00.025Z",
+  "generatedAt": "2026-09-16T13:24:12.471Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17162,7 +17162,7 @@
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "Inline body height in px. Defaults to 260."
+              "description": "Inline body height in px. Defaults to 260 for `chrome=\"card\"`/`\"bare\"`. With `chrome=\"tile\"` and no `height`, the frame fills its host instead (`h-full` flex column, chart body takes the space left after header and source row) — the host tile sets the height (#444)."
             },
             {
               "name": "loading",

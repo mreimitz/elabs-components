@@ -5,6 +5,9 @@ import { Bar } from "../charts/bar";
 import { BarChart } from "../charts/bar-chart";
 import { BarXAxis } from "../charts/bar-x-axis";
 import { Grid } from "../charts/grid";
+import { PieCenter } from "../charts/pie-center";
+import { PieChart } from "../charts/pie-chart";
+import { PieSlice } from "../charts/pie-slice";
 import { ChartTooltip } from "../charts/tooltip";
 import { ChartFrame } from "./chart-frame";
 
@@ -326,11 +329,43 @@ function FillChart() {
 }
 
 const densityTiers = [
-  { id: "xs", label: "xs — 196 × 92", box: "w-[196px] h-[92px]", body: 64 },
-  { id: "sm", label: "sm — 392 × 184", box: "w-full max-w-[392px] h-[184px]", body: 148 },
-  { id: "md", label: "md — 784 × 368", box: "w-full max-w-[784px] h-[368px]", body: 300 },
-  { id: "lg", label: "lg — full width", box: "w-full h-[420px]", body: 350 },
+  { id: "xs", label: "xs — 196 × 92", box: "w-[196px] h-[92px]" },
+  { id: "sm", label: "sm — 392 × 184", box: "w-full max-w-[392px] h-[184px]" },
+  { id: "md", label: "md — 784 × 368", box: "w-full max-w-[784px] h-[368px]" },
+  { id: "lg", label: "lg — full width", box: "w-full h-[420px]" },
 ] as const;
+
+/** Characters of `el`'s single-line text actually painted before it clips (ellipsis excluded). */
+function visibleCharCount(el: HTMLElement): number {
+  const text = el.textContent ?? "";
+  const node = document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode();
+  if (!node) return 0;
+  const box = el.getBoundingClientRect();
+  // Reserve one character's width for the ellipsis that `truncate` paints.
+  const ellipsis = Number.parseFloat(getComputedStyle(el).fontSize) * 0.6;
+  const range = document.createRange();
+  let count = 0;
+  for (let i = 1; i <= text.length; i++) {
+    range.setStart(node, i - 1);
+    range.setEnd(node, i);
+    const limit = i === text.length ? box.right : box.right - ellipsis;
+    if (range.getBoundingClientRect().right > limit + 0.5) break;
+    count = i;
+  }
+  return count;
+}
+
+/** True when `inner` lies wholly inside `outer` (half-pixel tolerance for subpixel layout). */
+function isInside(inner: Element, outer: Element): boolean {
+  const a = inner.getBoundingClientRect();
+  const b = outer.getBoundingClientRect();
+  return (
+    a.left >= b.left - 0.5 &&
+    a.right <= b.right + 0.5 &&
+    a.top >= b.top - 0.5 &&
+    a.bottom <= b.bottom + 0.5
+  );
+}
 
 /**
  * The same chart at the sheet-tile sizes a 24 × 12 fit grid produces at 1200 px.
@@ -349,7 +384,6 @@ export const DensityTiers: Story = {
             <ChartFrame
               chrome="tile"
               density={tier.id}
-              height={tier.body}
               title="Revenue is up 77% since January"
               description="Monthly revenue, Jan – Jun 2025"
               source="Source: Internal ledger"
@@ -373,6 +407,131 @@ export const DensityTiers: Story = {
     await expect(xs.querySelectorAll(".text-chart-label.text-meta")).toHaveLength(0);
     await expect(within(xs).queryByText("Source: Internal ledger")).toBeNull();
     await expect(within(md).getByText("Source: Internal ledger")).toBeInTheDocument();
+
+    // #444: every tier FITS its tile — nothing is hidden by the host's overflow.
+    for (const tier of densityTiers) {
+      const section = canvas.getByRole("region", { name: tier.label });
+      const frame = section.querySelector<HTMLElement>('[data-slot="chart-frame"]')!;
+      const host = frame.parentElement!;
+      await waitFor(() => expect(frame.querySelector("svg")).not.toBeNull());
+      for (const box of [host, frame]) {
+        await expect(box.scrollHeight, `${tier.id} height`).toBeLessThanOrEqual(box.clientHeight);
+        await expect(box.scrollWidth, `${tier.id} width`).toBeLessThanOrEqual(box.clientWidth);
+      }
+      // The title keeps readable text: more than one painted character.
+      const title = frame.querySelector<HTMLElement>('[data-slot="card-title"]')!;
+      await expect(visibleCharCount(title), `${tier.id} title`).toBeGreaterThan(1);
+      // Axis labels and the source row are either absent or wholly inside the frame.
+      const furniture = frame.querySelectorAll(".text-chart-label, svg text");
+      for (const node of furniture) {
+        await expect(isInside(node, frame), `${tier.id} axis`).toBe(true);
+      }
+      const source = within(frame).queryByText("Source: Internal ledger");
+      if (source) await expect(isInside(source, frame), `${tier.id} source`).toBe(true);
+    }
+    // The smallest tiers collapse the toolbar to one control (Expand).
+    const xsFrame = xs.querySelector('[data-slot="chart-frame-header"]')!;
+    await expect(xsFrame.querySelectorAll("button")).toHaveLength(1);
+    await expect(within(xs).getByRole("button", { name: "Expand chart" })).toBeVisible();
+  },
+};
+
+const datapointClickSpy = fn();
+const DATAPOINT_TARGET = '[data-slot="chart-datapoint-layer-target"][tabindex="0"]';
+
+/**
+ * Keyboard users see what hover shows (#447): tabbing onto a datapoint target
+ * shows the chart’s own tooltip, and tabbing away hides it again.
+ */
+export const KeyboardTooltip: Story = {
+  render: () => (
+    <div className="h-[320px] w-full max-w-[560px] rounded-lg border bg-card p-3">
+      <ChartFrame chrome="tile" title="Monthly revenue" data={monthlyData} features={[]}>
+        <BarChart
+          data={monthlyData}
+          xDataKey="month"
+          aspectRatio="auto"
+          className="h-full"
+          onDatapointClick={datapointClickSpy}
+        >
+          <Grid horizontal />
+          <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />
+          <BarXAxis />
+          <ChartTooltip />
+        </BarChart>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const doc = canvasElement.ownerDocument;
+    const tooltip = () => doc.querySelector<HTMLElement>('[data-slot="chart-tooltip-box"]');
+    await waitFor(() => expect(canvasElement.querySelector(DATAPOINT_TARGET)).not.toBeNull());
+    await expect(tooltip()).toBeNull();
+
+    // One tab, one wait: the bridge replays once the chart accepts hover.
+    await userEvent.tab();
+    await expect(canvasElement.querySelector(DATAPOINT_TARGET)).toHaveFocus();
+    await waitFor(() => expect(tooltip()).toBeVisible(), { timeout: 3000 });
+
+    await userEvent.tab();
+    await waitFor(() => expect(tooltip()).toBeNull());
+  },
+};
+
+const pieData = [
+  { label: "Direct", value: 320 },
+  { label: "Organic", value: 280 },
+  { label: "Referral", value: 190 },
+];
+
+/**
+ * The same bridge on a family with its own hover vocabulary (#447): a Pie has
+ * no tooltip box — hovering a slice lifts it with a glow and names it in the
+ * donut centre — so focusing a slice’s keyboard target shows exactly that.
+ */
+export const KeyboardTooltipPie: Story = {
+  name: "Keyboard tooltip (Pie)",
+  render: () => (
+    <div className="w-full max-w-[360px] rounded-lg border bg-card p-3">
+      <ChartFrame chrome="tile" title="Traffic by source" data={pieData} features={[]}>
+        <PieChart
+          accessibleLabel="Traffic by source"
+          data={pieData}
+          innerRadius={70}
+          size={240}
+          onDatapointClick={datapointClickSpy}
+        >
+          {pieData.map((item, i) => (
+            <PieSlice index={i} key={item.label} />
+          ))}
+          <PieCenter defaultLabel="Traffic" />
+        </PieChart>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvasElement.querySelector(DATAPOINT_TARGET)).not.toBeNull());
+    await expect(canvas.getByText("Traffic")).toBeVisible();
+
+    // The pie's figure is its own tab stop (the chart summary); the slice
+    // targets come next.
+    await userEvent.tab();
+    await expect(canvas.getByRole("figure", { name: "Traffic by source" })).toHaveFocus();
+    await userEvent.tab();
+    const target = canvasElement.querySelector<HTMLElement>(DATAPOINT_TARGET)!;
+    await expect(target).toHaveFocus();
+    // The focused slice's hover feedback: its name in the centre and the glow.
+    await waitFor(
+      () => {
+        expect(canvas.getByText("Direct")).toBeVisible();
+        expect(canvasElement.querySelector('[style*="drop-shadow"]')).not.toBeNull();
+      },
+      { timeout: 3000 },
+    );
+
+    await userEvent.tab();
+    await waitFor(() => expect(canvas.getByText("Traffic")).toBeVisible());
   },
 };
 
