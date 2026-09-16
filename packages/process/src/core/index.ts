@@ -132,3 +132,23 @@ export type {
 // casesFromLog — RM-055
 export { casesFromLog } from "./cases-from-log";
 export type { CaseRow } from "./cases-from-log";
+
+// tokenReplay / conformance — RM-061
+export { liftHappyPath } from "./reference-model";
+export type {
+  HappyPath,
+  HappyPathStep,
+  ReplayModel,
+  ReplayTransition,
+  ReplayTransitionKind,
+} from "./reference-model";
+export {
+  DEVIATION_TYPES,
+  emptyDeviationCounts,
+  replayActivities,
+  replayTrace,
+  tokenReplay,
+} from "./token-replay";
+export type { Deviation, DeviationType, TraceReplayResult } from "./token-replay";
+export { conformanceRateSeries } from "./conformance";
+export type { ConformanceBucket, ConformanceRatePoint, ConformanceResult } from "./conformance";

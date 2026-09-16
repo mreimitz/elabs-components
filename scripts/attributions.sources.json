@@ -241,7 +241,7 @@
       "url": "https://github.com/pm4js/pm4js-core",
       "usedBy": ["@elabs-ai/components-process"],
       "required": false,
-      "note": "Algorithm shape for the framework-free process-mining core: which aggregates a directly-follows graph carries (discoverGraph) and how traces are grouped into variants (extractVariants), with durationStats as their shared summary. Re-typed in TypeScript from the published algorithms, not copied."
+      "note": "Algorithm shape for the framework-free process-mining core: which aggregates a directly-follows graph carries (discoverGraph) and how traces are grouped into variants (extractVariants), with durationStats as their shared summary; and the token-based replay procedure behind tokenReplay (produced/consumed/missing/remaining counting, silent-transition enabling before forcing missing tokens). Re-typed in TypeScript from the published algorithms, not copied."
     }
   ]
 }

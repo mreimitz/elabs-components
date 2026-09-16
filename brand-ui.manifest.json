@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T09:39:49.670Z",
+  "generatedAt": "2026-09-16T11:07:56.173Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -26882,6 +26882,11 @@
               "module": "packages/process/src/core/adapters/flat.ts"
             },
             {
+              "name": "DEVIATION_TYPES",
+              "kind": "value",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
               "name": "DURATION_SAMPLE_CAP",
               "kind": "value",
               "module": "packages/process/src/core/duration-stats.ts"
@@ -26974,6 +26979,18 @@
               "module": "packages/process/src/core/cases-from-log.ts"
             },
             {
+              "name": "ConformanceBucket",
+              "module": "packages/process/src/core/conformance.ts"
+            },
+            {
+              "name": "ConformanceRatePoint",
+              "module": "packages/process/src/core/conformance.ts"
+            },
+            {
+              "name": "ConformanceResult",
+              "module": "packages/process/src/core/conformance.ts"
+            },
+            {
               "name": "CreateProcessWorkerOptions",
               "module": "packages/process/src/core/worker/create-process-worker.ts"
             },
@@ -26984,6 +27001,14 @@
             {
               "name": "CsvOptions",
               "module": "packages/process/src/core/adapters/csv.ts"
+            },
+            {
+              "name": "Deviation",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
+              "name": "DeviationType",
+              "module": "packages/process/src/core/token-replay.ts"
             },
             {
               "name": "DiscoverGraphOptions",
@@ -27024,6 +27049,14 @@
             {
               "name": "FrequencyMode",
               "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "HappyPath",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
+              "name": "HappyPathStep",
+              "module": "packages/process/src/core/reference-model.ts"
             },
             {
               "name": "LifecycleValues",
@@ -27082,6 +27115,18 @@
               "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
+              "name": "ReplayModel",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
+              "name": "ReplayTransition",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
+              "name": "ReplayTransitionKind",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
               "name": "ReworkStats",
               "module": "packages/process/src/core/detect-rework.ts"
             },
@@ -27092,6 +27137,10 @@
             {
               "name": "SyntheticLogOptions",
               "module": "packages/process/src/core/fixtures/synthetic-log.ts"
+            },
+            {
+              "name": "TraceReplayResult",
+              "module": "packages/process/src/core/token-replay.ts"
             },
             {
               "name": "TransitionStats",
@@ -27132,6 +27181,10 @@
               "module": "packages/process/src/core/scale.ts"
             },
             {
+              "name": "conformanceRateSeries",
+              "module": "packages/process/src/core/conformance.ts"
+            },
+            {
               "name": "createProcessWorker",
               "module": "packages/process/src/core/worker/create-process-worker.ts"
             },
@@ -27146,6 +27199,10 @@
             {
               "name": "durationStats",
               "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "emptyDeviationCounts",
+              "module": "packages/process/src/core/token-replay.ts"
             },
             {
               "name": "emptyDurationStats",
@@ -27188,6 +27245,10 @@
               "module": "packages/process/src/core/event-log.ts"
             },
             {
+              "name": "liftHappyPath",
+              "module": "packages/process/src/core/reference-model.ts"
+            },
+            {
               "name": "minMax",
               "module": "packages/process/src/core/scale.ts"
             },
@@ -27220,8 +27281,20 @@
               "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
+              "name": "replayActivities",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
+              "name": "replayTrace",
+              "module": "packages/process/src/core/token-replay.ts"
+            },
+            {
               "name": "toEpochMs",
               "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "tokenReplay",
+              "module": "packages/process/src/core/token-replay.ts"
             },
             {
               "name": "variantId",

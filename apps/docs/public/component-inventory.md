@@ -1468,6 +1468,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | BPI_2012_ACTIVITIES | component |  | `@elabs-ai/components-process/core` |  |
 | BPI_2012_SUBSET_EPOCH | component |  | `@elabs-ai/components-process/core` |  |
 | DEFAULT_LIFECYCLE_VALUES | component |  | `@elabs-ai/components-process/core` |  |
+| DEVIATION_TYPES | component |  | `@elabs-ai/components-process/core` |  |
 | DURATION_SAMPLE_CAP | component |  | `@elabs-ai/components-process/core` |  |
 | DURATION_UNIT_MS | component |  | `@elabs-ai/components-process/core` |  |
 | DurationSampler | component |  | `@elabs-ai/components-process/core` |  |
