@@ -19,8 +19,9 @@ export interface QuietDotProps extends Omit<SVGProps<SVGCircleElement>, "r"> {
 }
 
 /**
- * QuietDot — a 0.9px pinprick. The default render for a `null` or `0` cell in a
- * matrix chart, and the reason those charts have no holes in them.
+ * QuietDot — a 0.9px pinprick. The default render for a measured `0` cell in a
+ * matrix chart, and the reason those charts have no holes in them. (`HeatmapChart`
+ * draws a `null` cell with a different mark — see the contract note below.)
  *
  * Provenance: "silence made visible" — `L5 Matrix Almanac` and `L3 Calendar
  * Ledger` in the lieflat gallery.

@@ -97,11 +97,60 @@ describe("HeatmapChart", () => {
     );
   });
 
-  it("renders the empty state instead of an empty grid", () => {
-    render(
-      <HeatmapChart data={[]} emptyMessage="Nothing yet." valueKey="count" x="hour" y="day" />,
-    );
-    expect(screen.getByText("Nothing yet.")).toBeInTheDocument();
+  describe("empty state is a state of the region, not an exit from it (#256)", () => {
+    /** The element carrying the plot box's inline aspect ratio. */
+    const plotBox = (container: HTMLElement) =>
+      container.querySelector<HTMLElement>('[data-slot="heatmap-chart"] > [style*="aspect-ratio"]');
+
+    // jsdom does not lay out, so a pixel height here would be vacuous. What can
+    // regress is the STRUCTURE: the empty state renders inside the same
+    // aspect-ratio box as the grid. The pixel lock is `Empty`'s play function.
+    it.each([
+      [{}, "16 / 9"],
+      [{ variant: "calendar" as const }, "6 / 1"],
+      [{ aspectRatio: "5 / 3" }, "5 / 3"],
+    ])("keeps the loaded chart's plot box (%o → %s)", (extra, ratio) => {
+      const empty = render(<HeatmapChart data={[]} valueKey="count" x="hour" y="day" {...extra} />);
+      expect(plotBox(empty.container)?.style.aspectRatio).toBe(ratio);
+      empty.unmount();
+      const loaded = render(
+        <HeatmapChart data={punchCard} valueKey="count" x="hour" y="day" {...extra} />,
+      );
+      expect(plotBox(loaded.container)?.style.aspectRatio).toBe(ratio);
+    });
+
+    it("keeps the figure name, the root slot and exactly one live region", () => {
+      const { container } = render(
+        <HeatmapChart data={[]} emptyMessage="Nothing yet." valueKey="count" x="hour" y="day" />,
+      );
+      const figure = screen.getByRole("figure");
+      expect(figure).toHaveAccessibleName("Heatmap, 0 rows × 0 columns, no values.");
+      expect(figure.dataset.slot).toBe("heatmap-chart");
+      const status = screen.getAllByRole("status");
+      expect(status).toHaveLength(1);
+      expect(status[0]).toHaveTextContent("Nothing yet.");
+      expect(container.querySelector('[data-slot="heatmap-legend"]')).toBeNull();
+    });
+
+    it("renders the empty anatomy: a default title, the message and an optional action", () => {
+      const { unmount } = render(<HeatmapChart data={[]} valueKey="count" x="hour" y="day" />);
+      expect(screen.getByRole("heading", { name: "No data" })).toBeInTheDocument();
+      expect(screen.getByText("No data to plot.")).toBeInTheDocument();
+      unmount();
+
+      render(
+        <HeatmapChart
+          data={[]}
+          emptyAction={<button type="button">Clear filters</button>}
+          emptyTitle="No traffic"
+          valueKey="count"
+          x="hour"
+          y="day"
+        />,
+      );
+      expect(screen.getByRole("heading", { name: "No traffic" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
+    });
   });
 
   it("forwards a ref to its root", () => {

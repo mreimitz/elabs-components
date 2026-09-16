@@ -117,8 +117,8 @@ const DELTA = PRODUCTS.flatMap((product, p) =>
 
 /**
  * The punch card: 7 weekdays × 24 hours, 168 cells, five countable shade steps
- * (L16). The two blank-looking cells at 03:00 and 04:00 on Monday are not
- * missing — they are measured zeroes, drawn as a pinprick.
+ * (L16). Measured zeroes draw a pinprick, keyed “zero” in the legend; a cell
+ * with no value would draw an outline instead (see `ZeroVersusMissing`).
  */
 export const Matrix: Story = {
   args: {
@@ -355,6 +355,41 @@ export const DivergingHatched: Story = {
   },
 };
 
+/**
+ * Zero is not missing. With the labels off, a measured `0` is a pinprick and a
+ * cell with no value is a hairline outline — two shapes, two legend keys, so a
+ * reader can tell “flat” from “never measured” without colour or numbers.
+ */
+export const ZeroVersusMissing: Story = {
+  name: "Zero versus missing",
+  args: {
+    data: DELTA.map((row, i) => ({
+      ...row,
+      delta: i === 7 ? 0 : i === 12 || i === 23 ? null : row.delta,
+    })),
+    x: "region",
+    y: "product",
+    valueKey: "delta",
+    palette: "diverging",
+    showValues: false,
+    cellRadius: 6,
+    aspectRatio: "5 / 3",
+  },
+  render: Diverging.render,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const figure = await canvas.findByRole("figure", { name: /2 cells have no data\.$/ });
+    await waitFor(() => {
+      const zero = figure.querySelector('[data-state="zero"]');
+      const missing = figure.querySelector('[data-state="missing"]');
+      expect(zero?.querySelector('[data-slot="quiet-dot"]')).toBeTruthy();
+      expect(missing?.querySelector('[data-slot="heatmap-missing-mark"]')).toBeTruthy();
+    });
+    await expect(figure.querySelector('[data-slot="heatmap-legend-zero"]')).toBeTruthy();
+    await expect(figure.querySelector('[data-slot="heatmap-legend-missing"]')).toBeTruthy();
+  },
+};
+
 /** The layout-shaped skeleton: the same grid, so nothing shifts when data lands. */
 export const Loading: Story = {
   args: { ...Matrix.args, loading: true },
@@ -382,9 +417,28 @@ export const LoadingDark: Story = {
   play: Loading.play,
 };
 
-/** No rows at all — a message, never an empty grid pretending to be data. */
+/**
+ * No rows at all — an empty state, never an empty grid pretending to be data.
+ * It fills the same 16 / 9 plot box a loaded chart does, so a filter that
+ * empties the grid does not collapse the page under the reader’s cursor.
+ */
 export const Empty: Story = {
-  args: { data: [], x: "hour", y: "day", valueKey: "count", emptyMessage: "No traffic recorded." },
+  args: {
+    data: [],
+    x: "hour",
+    y: "day",
+    valueKey: "count",
+    emptyTitle: "No traffic",
+    emptyMessage: "No traffic recorded.",
+    emptyAction: (
+      <button
+        className="focus-ring rounded-md border border-input px-3 py-1 text-body"
+        type="button"
+      >
+        Clear filters
+      </button>
+    ),
+  },
   render: (args) => (
     <div className="w-[560px]">
       <HeatmapChart {...args} />
@@ -393,6 +447,15 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("No traffic recorded.")).toBeInTheDocument();
+    await expect(canvas.getByRole("heading", { name: "No traffic" })).toBeInTheDocument();
+    await expect(canvas.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
+    // The pixel lock jsdom cannot take: the plot box keeps its 16 / 9 height.
+    const box = canvasElement.querySelector<HTMLElement>(
+      '[data-slot="heatmap-chart"] > [style*="aspect-ratio"]',
+    );
+    await expect(box).toBeTruthy();
+    const { width, height } = (box as HTMLElement).getBoundingClientRect();
+    await expect(Math.abs(height - (width * 9) / 16)).toBeLessThanOrEqual(1);
   },
 };
 

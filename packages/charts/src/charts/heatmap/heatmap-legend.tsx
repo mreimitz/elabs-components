@@ -29,8 +29,12 @@
  */
 
 import { cn } from "@elabs-ai/components-ui";
-import { QUIET_DOT_SIZE } from "../../marks/quiet-dot";
+import { QuietDot } from "../../marks/quiet-dot";
+import { HeatmapMissingMark } from "./heatmap-cell";
 import type { HeatmapEmptyValue } from "./heatmap-context";
+
+/** Key captions for the two non-value states. */
+const HEATMAP_LEGEND_LABELS = { zero: "zero", missing: "no data" } as const;
 
 /**
  * The 45° hatch that marks a NEGATIVE step, mirroring the `<pattern>` the cells
@@ -62,6 +66,10 @@ export interface HeatmapLegendProps {
    * naming a step count nobody can count.
    */
   continuous: boolean;
+  /** Cells holding a measured `0`. The zero key renders only when this is > 0. */
+  zeroCount?: number;
+  /** Cells holding no value (`null`). The no-data key renders only when this is > 0. */
+  missingCount?: number;
   className?: string;
 }
 
@@ -78,7 +86,9 @@ export function HeatmapLegend({
   formatValue,
   hi,
   lo,
+  missingCount = 0,
   swatches,
+  zeroCount = 0,
 }: HeatmapLegendProps) {
   if (swatches.length === 0) {
     return null;
@@ -122,12 +132,22 @@ export function HeatmapLegend({
       <span aria-hidden="true" className="tabular-nums">
         {formatValue(hi)}
       </span>
-      {emptyValue === "quiet" ? (
-        <span className="flex items-center gap-1.5">
+      {/* One key per non-value state, and only for a state the grid actually
+          holds (#251): a key for a category with no members is its own small lie. */}
+      {emptyValue === "quiet" && zeroCount > 0 ? (
+        <span className="flex items-center gap-1.5" data-slot="heatmap-legend-zero">
           <svg aria-hidden="true" className="shrink-0" height={10} role="presentation" width={10}>
-            <circle cx={5} cy={5} fill="var(--chart-foreground-muted)" r={QUIET_DOT_SIZE / 2} />
+            <QuietDot cx={5} cy={5} />
           </svg>
-          none or zero
+          {HEATMAP_LEGEND_LABELS.zero}
+        </span>
+      ) : null}
+      {emptyValue === "quiet" && missingCount > 0 ? (
+        <span className="flex items-center gap-1.5" data-slot="heatmap-legend-missing">
+          <svg aria-hidden="true" className="shrink-0" height={10} role="presentation" width={10}>
+            <HeatmapMissingMark height={9} width={9} x={0.5} y={0.5} />
+          </svg>
+          {HEATMAP_LEGEND_LABELS.missing}
         </span>
       ) : null}
     </div>

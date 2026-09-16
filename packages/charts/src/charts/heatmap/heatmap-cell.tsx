@@ -27,7 +27,8 @@
  * through the square.
  */
 
-import { memo } from "react";
+import { forwardRef, memo, type SVGProps } from "react";
+import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { PeakRing } from "../../marks/peak-ring";
 import { QuietDot } from "../../marks/quiet-dot";
 import { HaloText } from "../../marks/halo-text";
@@ -50,6 +51,32 @@ const MIN_VALUE_LABEL_PX = 8;
 
 /** Largest in-cell value label — a big cell should not grow a headline. */
 const MAX_VALUE_LABEL_PX = 13;
+
+/** Side of the no-data outline, as a fraction of the cell's shorter side. */
+const MISSING_MARK_SCALE = 0.6;
+
+/**
+ * The no-data mark: a hairline outline in the grid ink with nothing inside it —
+ * the cell is there, its value is not. Shared with the legend key so the key
+ * and the plot can never drift apart. A different SHAPE from the zero pinprick
+ * and from the diverging hatch, so no colour is needed to tell them apart.
+ */
+export const HeatmapMissingMark = forwardRef<
+  SVGRectElement,
+  Omit<SVGProps<SVGRectElement>, "fill" | "stroke" | "ref">
+>(function HeatmapMissingMark(props, ref) {
+  return (
+    <rect
+      aria-hidden="true"
+      data-slot="heatmap-missing-mark"
+      fill="none"
+      ref={ref}
+      stroke="var(--chart-grid)"
+      strokeWidth={CHART_HAIRLINE_WIDTH}
+      {...props}
+    />
+  );
+});
 
 export interface HeatmapCellProps {
   /** The laid-out cell to draw. */
@@ -74,18 +101,24 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
 
   const cx = cell.x0 + cell.width / 2;
   const cy = cell.y0 + cell.height / 2;
-  // `null` and `0` are both "the cell was visited and the answer was nothing" —
-  // see `QuietDot`'s docblock for why that is drawn rather than left blank.
-  const isEmpty = cell.value === null || cell.value === 0;
+  // Zero is not missing (#251). A `0` was measured and came back flat — the
+  // `QuietDot` pinprick. A `null` was never measured — a hairline outline of
+  // the empty cell. Two shapes, so the pair survives greyscale and a chart
+  // with its value labels turned off.
+  const isEmpty = cell.state !== "value";
   const isNegative = cell.value !== null && cell.value < 0;
   const radius = cell.value === null ? 0 : dotRadius(cell.value, maxAbs, dotMaxRadius);
   const labelSize = Math.min(cell.height * 0.42, cell.width * 0.34, MAX_VALUE_LABEL_PX);
+  // Inset so the outline reads as "this cell is empty", not as grid furniture
+  // touching its neighbours.
+  const missingSide = Math.max(0, Math.min(cell.width, cell.height) * MISSING_MARK_SCALE);
 
   return (
     <g
       className={revealed ? CELL_ENTER_CLASS : "opacity-0"}
       data-slot="heatmap-cell"
       data-heatmap-cell={cell.id}
+      data-state={cell.state}
       data-peak={cell.isPeak ? "" : undefined}
       onClick={activateCell ? (event) => activateCell(cell, event) : undefined}
       onMouseEnter={() => setHovered(cell)}
@@ -105,7 +138,17 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
 
       {isEmpty ? (
         emptyValue === "quiet" ? (
-          <QuietDot cx={cx} cy={cy} />
+          cell.state === "zero" ? (
+            <QuietDot cx={cx} cy={cy} />
+          ) : (
+            <HeatmapMissingMark
+              height={missingSide}
+              rx={Math.min(cellRadius, missingSide / 2)}
+              width={missingSide}
+              x={cx - missingSide / 2}
+              y={cy - missingSide / 2}
+            />
+          )
         ) : null
       ) : mode === "cell" ? (
         <rect
@@ -146,7 +189,15 @@ export const HeatmapCell = memo(function HeatmapCell({ cell }: HeatmapCellProps)
       ) : null}
 
       {showValues && cell.value !== null && labelSize >= MIN_VALUE_LABEL_PX ? (
-        <HaloText dominantBaseline="central" fontSize={labelSize} textAnchor="middle" x={cx} y={cy}>
+        <HaloText
+          dominantBaseline="central"
+          fill={cell.ink}
+          fontSize={labelSize}
+          halo={cell.inkHalo}
+          textAnchor="middle"
+          x={cx}
+          y={cy}
+        >
           {formatValue(cell.value)}
         </HaloText>
       ) : null}
