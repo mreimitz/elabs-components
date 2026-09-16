@@ -376,10 +376,39 @@ export const Fit24x12: Story = {
         expect(sheet.querySelector('[data-slot="dashboard-edit-layer-ghost"]')).not.toBeNull(),
       );
       await userEvent.keyboard("{Escape}");
-      await waitFor(() => expect(announcer(sheet)).toHaveTextContent("Cancelled"));
+      await waitFor(() =>
+        expect(announcer(sheet)).toHaveTextContent("Move cancelled. Restored to column 1, row 1"),
+      );
       await expect(layoutOf("chart-1")).toMatchObject({ x: 0, y: 0, w: 6, h: 4 });
       await expect(store().getState().history.past).toBe(past);
       await expect(sheet.querySelector('[data-slot="dashboard-edit-layer-ghost"]')).toBeNull();
+    });
+
+    // a11y P1 (RM-078 follow-up 5): a keyboard move clamped at the grid's own edge used to go
+    // silent on every press after the first that reached it — `retarget` returned before
+    // announcing anything once the (already-clamped) target stopped changing. chart-1 starts
+    // flush against the grid's left edge (x=0), so moving it right then back past that edge
+    // exercises BOTH halves of the fix in one step sequence: a real move still announces
+    // normally (no duplicate/clamp wording), and the repeated press that changes nothing gets a
+    // distinct "At the edge" announcement instead of silence.
+    await step("(i) a keyboard move clamped at the grid's left edge is announced", async () => {
+      const tile = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+      tile.focus();
+      await userEvent.keyboard("{Enter}");
+      await sleep(50);
+      await userEvent.keyboard("{ArrowRight}");
+      await waitFor(() => expect(announcer(sheet)).toHaveTextContent("Moved to column 2, row 1"));
+      await userEvent.keyboard("{ArrowLeft}");
+      await waitFor(() => expect(announcer(sheet)).toHaveTextContent("Moved to column 1, row 1"));
+      // Same key again: the target is already clamped to x=0 and does not move further — this
+      // used to leave the live region frozen on "Moved to column 1, row 1" with no further
+      // feedback at all.
+      await userEvent.keyboard("{ArrowLeft}");
+      await waitFor(() =>
+        expect(announcer(sheet)).toHaveTextContent("At the left edge. (1,1) 6 × 4"),
+      );
+      await userEvent.keyboard("{Escape}");
+      await reset(EDIT_FIT_SPEC);
     });
   },
 };
@@ -678,8 +707,41 @@ export const TileOperations: Story = {
       },
     );
 
+    // visual P1 (RM-081 follow-up 5): a synthetic `contextmenu` with no coordinates anchors
+    // Radix's `ContextMenu` at the viewport's top-left corner (0,0), disconnected from the tile
+    // it targets — `dispatchAnchoredContextMenu` (`context-menu-anchor.ts`) now carries the
+    // tile's own rect. Both keyboard routes (Shift+F10 directly, and the header kebab's own
+    // "Tile actions…" replay of the same recipe) are checked here.
+    const expectMenuNearTile = (tile: HTMLElement, menu: HTMLElement) => {
+      const tileRect = tile.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      // The bug this guards against: the menu opening flush against (0,0).
+      expect(menuRect.left).not.toBe(0);
+      expect(menuRect.top).not.toBe(0);
+      // "Within or adjacent to the tile's rect": inside its bounds, plus a small margin for the
+      // inset anchor point and the menu's own width/height extending past the tile's edge.
+      expect(menuRect.left).toBeGreaterThanOrEqual(tileRect.left - 24);
+      expect(menuRect.top).toBeGreaterThanOrEqual(tileRect.top - 24);
+      expect(menuRect.left).toBeLessThanOrEqual(tileRect.right + 24);
+      expect(menuRect.top).toBeLessThanOrEqual(tileRect.bottom + 24);
+      return { tileRect, menuRect };
+    };
+
+    await step("Shift+F10 opens the tile context menu anchored at the tile", async () => {
+      const tile = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
+      tile.focus();
+      await userEvent.keyboard("{Shift>}{F10}{/Shift}");
+      const body = within(canvasElement.ownerDocument.body);
+      const menu = await body.findByRole("menu");
+      const { tileRect, menuRect } = expectMenuNearTile(tile, menu);
+      console.info("Shift+F10 menu rect", menuRect, "tile rect", tileRect);
+      await userEvent.keyboard("{Escape}");
+      await waitForMenuClosed(body);
+      await waitFor(() => expect(tile).toHaveFocus());
+    });
+
     await step(
-      "The header kebab's “Tile actions…” entry opens the SAME context menu (Shift+F10 recipe)",
+      "The header kebab's “Tile actions…” entry opens the SAME context menu, also anchored at the tile",
       async () => {
         const tile = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
         const kebab = within(tile).getByRole("button", { name: "More actions" });
@@ -687,10 +749,14 @@ export const TileOperations: Story = {
         const body = within(canvasElement.ownerDocument.body);
         const openTileMenu = await body.findByRole("menuitem", { name: "Tile actions…" });
         await userEvent.click(openTileMenu);
+        const menu = await body.findByRole("menu");
         const duplicate = await body.findByRole("menuitem", { name: "Duplicate" });
         expect(duplicate).toBeInTheDocument();
+        const { tileRect, menuRect } = expectMenuNearTile(tile, menu);
+        console.info("Kebab menu rect", menuRect, "tile rect", tileRect);
         await userEvent.keyboard("{Escape}");
         await waitForMenuClosed(body);
+        await waitFor(() => expect(tile).toHaveFocus());
       },
     );
 
@@ -876,5 +942,93 @@ export const TabOrder: Story = {
         expect(hit === handle || handle.contains(hit)).toBe(true);
       },
     );
+  },
+};
+
+// The visual review could not render these three surfaces (marquee mid-drag, the floating
+// align toolbar, the Undo toast) because nothing in the existing plays left them on screen —
+// every prior marquee/toast play runs the gesture to completion. These three stop mid-gesture
+// deliberately so a later review can screenshot them in a stable state; no new product
+// behaviour, only a held moment of an existing one.
+
+/** A real pointer drag over the sheet's empty area, paused mid-gesture — deliberately no
+ * `pointerup`, so the marquee rectangle stays on screen instead of completing the selection. */
+async function holdMarqueeDrag(
+  sheet: HTMLElement,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+) {
+  const box = sheet.getBoundingClientRect();
+  const init = { bubbles: true, cancelable: true, isPrimary: true, button: 0, pointerId: 4 };
+  sheet.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      ...init,
+      pointerType: "mouse",
+      clientX: box.left + from.x,
+      clientY: box.top + from.y,
+    }),
+  );
+  const steps = 6;
+  for (let i = 1; i <= steps; i++) {
+    await sleep(16);
+    document.dispatchEvent(
+      new PointerEvent("pointermove", {
+        ...init,
+        pointerType: "mouse",
+        clientX: box.left + from.x + ((to.x - from.x) * i) / steps,
+        clientY: box.top + from.y + ((to.y - from.y) * i) / steps,
+      }),
+    );
+  }
+  // No `pointerup`: the gesture is deliberately left running.
+}
+
+export const MarqueeInProgress: Story = {
+  name: "Marquee In Progress",
+  render: () => <TileOpsSheet spec={ALIGN_SPEC} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const sheet = await canvas.findByRole("region", { name: ALIGN_SPEC.title });
+    await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(3));
+    const p = pitch(sheet, ALIGN_SPEC);
+    // Empty cell (col 20, row 0) down-left over chart-1/chart-2, held mid-drag.
+    await holdMarqueeDrag(sheet, { x: 20 * p.width, y: 0 }, { x: 0, y: 8 * p.height });
+    await waitFor(() =>
+      expect(sheet.querySelector('[data-slot="dashboard-marquee"]')).not.toBeNull(),
+    );
+  },
+};
+
+export const AlignToolbar: Story = {
+  name: "Align Toolbar",
+  render: () => <TileOpsSheet spec={ALIGN_SPEC} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const sheet = await canvas.findByRole("region", { name: ALIGN_SPEC.title });
+    await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(3));
+    const p = pitch(sheet, ALIGN_SPEC);
+    // Marquee-select all 3 tiles; leave them selected so the floating align/distribute
+    // toolbar (≥ 2 selected) stays visible — no align button click.
+    await dragRect(sheet, { x: 20 * p.width, y: 0 }, { x: 0, y: 12 * p.height });
+    await waitFor(() => expect(store().getState().focus).toHaveLength(3));
+    await canvas.findByRole("button", { name: "Align left edges" });
+  },
+};
+
+export const UndoToast: Story = {
+  name: "Undo Toast",
+  render: () => <TileOpsSheet spec={EDIT_FIT_SPEC} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const sheet = await canvas.findByRole("region", { name: EDIT_FIT_SPEC.title });
+    await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(4));
+    const moveChart1 = within(
+      sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!,
+    ).getByRole("button", { name: "Move Revenue" });
+    store().getState().actions.setFocus(["chart-2"]);
+    moveChart1.focus();
+    await userEvent.keyboard("{Delete}");
+    // Leave the toast's own Undo button visible — no click.
+    await canvas.findByRole("button", { name: "Undo" });
   },
 };
