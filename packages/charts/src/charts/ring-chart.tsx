@@ -481,10 +481,7 @@ function ringChartCorePropsEqual(prev: RingChartInnerProps, next: RingChartInner
   );
 }
 
-/**
- * @dataShape one proportion against its maximum, read as a single ring
- * @avoidWhen several categories matter — use a pie or unit chart
- */
+// Unwrapped implementation; the public docblock sits on `RingChart` below.
 const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
   {
     data,
@@ -633,6 +630,10 @@ RingChartBase.displayName = "RingChartBase";
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+/**
+ * @dataShape one proportion against its maximum, read as a single ring
+ * @avoidWhen several categories matter — use a pie or unit chart
+ */
 export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(props, ref) {
   return (
     <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>

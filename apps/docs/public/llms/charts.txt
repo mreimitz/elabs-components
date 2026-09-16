@@ -399,4 +399,5 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_GRID_GAP (`@elabs-ai/components-charts/dashboard` · component)
 - DEFAULT_GRID_ROWS (`@elabs-ai/components-charts/dashboard` · component)
 - DEFAULT_ROW_HEIGHT (`@elabs-ai/components-charts/dashboard` · component)
+- EMPTY_SELECTION (`@elabs-ai/components-charts/dashboard` · component)
 - GRID_DENSITY_PRESETS (`@elabs-ai/components-charts/dashboard` · component)

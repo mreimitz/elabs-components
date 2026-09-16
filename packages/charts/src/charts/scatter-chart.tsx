@@ -144,10 +144,7 @@ function ChartInner({
   );
 }
 
-/**
- * @dataShape two continuous measures per row — correlation, or the shape of a distribution
- * @avoidWhen one axis is categorical — use a bar or dumbbell chart
- */
+// Unwrapped implementation; the public docblock sits on `ScatterChart` below.
 const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function ScatterChart(
   {
     data,
@@ -231,6 +228,10 @@ ScatterChartBase.displayName = "ScatterChartBase";
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+/**
+ * @dataShape two continuous measures per row — correlation, or the shape of a distribution
+ * @avoidWhen one axis is categorical — use a bar or dumbbell chart
+ */
 export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
   function ScatterChart(props, ref) {
     return (

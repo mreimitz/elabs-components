@@ -628,22 +628,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   );
 });
 
-/**
- * `TreemapChart` — a two-level squarified treemap (RM-025). Area encodes
- * value straight from the `d3-hierarchy` layout (no sqrt); the default
- * `palette: "mono"` gives every leaf one shade, so groups are separated by
- * their title band + paper gap alone, never by colour.
- *
- * Token-driven, theme-safe, keyboard-operable: leaves register as
- * `ChartDatapointLayer` targets when `onDatapointClick`/`copyValueOnActivate`
- * is set (the shared cross-family interaction contract, #349); the optional
- * `drilldown` zoom is a SEPARATE, real-`<button>` affordance on each group's
- * title band, so a static chart never gains a click handler beyond
- * `onDatapointClick`.
- *
- * @dataShape a nested hierarchy sized by one measure
- * @avoidWhen the hierarchy has fewer than 2 levels — a flat bar chart is clearer
- */
+// Unwrapped implementation; the public docblock sits on `TreemapChart` below.
 const TreemapChartBase = forwardRef<HTMLDivElement, TreemapChartProps>(
   function TreemapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
@@ -668,6 +653,22 @@ TreemapChartBase.displayName = "TreemapChartBase";
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+/**
+ * `TreemapChart` — a two-level squarified treemap (RM-025). Area encodes
+ * value straight from the `d3-hierarchy` layout (no sqrt); the default
+ * `palette: "mono"` gives every leaf one shade, so groups are separated by
+ * their title band + paper gap alone, never by colour.
+ *
+ * Token-driven, theme-safe, keyboard-operable: leaves register as
+ * `ChartDatapointLayer` targets when `onDatapointClick`/`copyValueOnActivate`
+ * is set (the shared cross-family interaction contract, #349); the optional
+ * `drilldown` zoom is a SEPARATE, real-`<button>` affordance on each group's
+ * title band, so a static chart never gains a click handler beyond
+ * `onDatapointClick`.
+ *
+ * @dataShape a nested hierarchy sized by one measure
+ * @avoidWhen the hierarchy has fewer than 2 levels — a flat bar chart is clearer
+ */
 export const TreemapChart = forwardRef<HTMLDivElement, TreemapChartProps>(
   function TreemapChart(props, ref) {
     return (

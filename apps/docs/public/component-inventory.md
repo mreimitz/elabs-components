@@ -1291,6 +1291,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_GRID_GAP | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_ROWS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_ROW_HEIGHT | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| EMPTY_SELECTION | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | GRID_DENSITY_PRESETS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 
 ## @elabs-ai/components-marketing
