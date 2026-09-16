@@ -18,6 +18,9 @@ export * from "./history";
 export * from "./local-selection-driver";
 export * from "./store";
 
+// URL/bookmark state codec — RM-083
+export * from "./url";
+
 // autoLayout/schema — RM-086
 
 // Presentation/Theme/Workbook — RM-087

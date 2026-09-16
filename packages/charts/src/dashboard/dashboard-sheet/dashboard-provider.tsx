@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { SelectionDriver, SelectionSnapshot } from "../core/selection";
-import type { DashboardSpec } from "../core/spec";
+import type { DashboardSpec, VariableValue } from "../core/spec";
+// bookmarks/URL state — RM-083
+import type { DecodedState } from "../core/url";
 import { createDashboardStore, type DashboardMode } from "../core/store";
 import { normalizeDashboardSpec } from "../core/validate";
 import { DEFAULT_DASHBOARD_LABELS, type DashboardLabels } from "./labels";
@@ -18,6 +20,12 @@ export interface DashboardChangeMeta {
    */
   conflict: boolean;
   incoming?: DashboardSpec;
+  /**
+   * Why the store changed, when the store itself knows (RM-083) — currently only
+   * `"bookmark"` (`saveBookmark` with `bookmarks.storage === "spec"`). Absent otherwise
+   * (an ordinary edit, undo/redo, `discard`, a re-synced `spec` prop).
+   */
+  reason?: string;
 }
 
 export interface DashboardProviderProps {
@@ -29,9 +37,28 @@ export interface DashboardProviderProps {
   tiles: DashboardTileKinds | TileRegistry;
   /** View or edit. Follows the prop when it changes. Default `spec.view.mode`, then `view`. */
   mode?: DashboardMode;
-  /** Every spec change the store makes, plus re-sync conflicts (`meta.conflict`). */
+  /**
+   * Every spec change the store makes, plus re-sync conflicts (`meta.conflict`). A conflict
+   * fires immediately; every other change is debounced by `autosaveMs` (RM-083).
+   */
   onChange?: (spec: DashboardSpec, meta: DashboardChangeMeta) => void;
-  onSelectionChange?: (selection: SelectionSnapshot) => void;
+  /**
+   * Debounces `onChange` (trailing edge) — rapid edits (a drag, five quick moves) collapse
+   * into one call `autosaveMs` after the last of them. Default `0`: every change fires
+   * immediately, as before RM-083. Flushed on unmount so a pending edit is never dropped.
+   * A `{ conflict: true }` re-sync call is never debounced.
+   */
+  autosaveMs?: number;
+  /**
+   * Fires on a selection OR variable change — whichever moved — with the full snapshot of
+   * both (RM-083; was selection-only). Selection/variable changes never touch history and
+   * never call `onChange` themselves; wire this when a host wants to react to them (persist
+   * to a URL, say) without listening for spec edits.
+   */
+  onSelectionChange?: (
+    selection: SelectionSnapshot,
+    variables: Readonly<Record<string, VariableValue>>,
+  ) => void;
   /** A bookmark or drill names another sheet; the host routes (D5). */
   onNavigate?: (sheetId: string) => void;
   /** A tile asks for fresh data; the host fetches (D5). */
@@ -41,6 +68,20 @@ export interface DashboardProviderProps {
    * the host decides what `id` means (D5). Threaded to `DashboardTileProps.emit.action`.
    */
   onAction?: (id: string) => void;
+  /**
+   * A selection + variables to restore once the store's selection driver is ready
+   * (`driver.ready`, when the driver sets it) — the decoded result of
+   * `decodeDashboardState`/`useDashboardUrlState().apply` from a share link, or a bookmark
+   * applied before mount. Read once, when the store is created (RM-083).
+   */
+  initialState?: Pick<DecodedState, "selection" | "variables">;
+  /**
+   * Where "Save bookmark…" persists (RM-083; store option, `core/store.ts`). `"spec"`:
+   * `saveBookmark` appends to `spec.bookmarks` and `onChange` fires with `meta.reason ===
+   * "bookmark"`. `"host"` (default): `saveBookmark` only returns the `BookmarkSpec` — the
+   * host persists it (D5), typically from `DashboardSelectionBar`'s `onSaveBookmark`.
+   */
+  bookmarks?: { storage: "spec" | "host" };
   /** Strings for the sheet chrome; missing keys fall back to English. */
   labels?: Partial<DashboardLabels>;
   children: ReactNode;
@@ -63,10 +104,13 @@ export function DashboardProvider({
   tiles,
   mode,
   onChange,
+  autosaveMs = 0,
   onSelectionChange,
   onNavigate,
   onRefresh,
   onAction,
+  initialState,
+  bookmarks,
   labels,
   children,
 }: DashboardProviderProps) {
@@ -78,6 +122,7 @@ export function DashboardProvider({
       spec,
       driver,
       mode,
+      bookmarks,
       onNavigate: (sheetId) => callbacks.current.onNavigate?.(sheetId),
     }),
   );
@@ -105,22 +150,71 @@ export function DashboardProvider({
     if (mode !== undefined) store.getState().actions.setMode(mode);
   }, [mode, store]);
 
+  // initialState — RM-083: applied once, after the driver is ready (`driver.ready`, when the
+  // driver sets it — the bundled local driver resolves it immediately). Captured in a ref so
+  // a later prop change (the host re-rendering with a different object) does not re-apply it.
+  const initialStateRef = useRef(initialState);
+  useEffect(() => {
+    const init = initialStateRef.current;
+    if (!init) return;
+    let cancelled = false;
+    (driver?.ready ?? Promise.resolve()).then(() => {
+      if (cancelled) return;
+      const { actions } = store.getState();
+      for (const [field, values] of Object.entries(init.selection ?? {}))
+        actions.select(field, values, { replace: true });
+      for (const [name, value] of Object.entries(init.variables ?? {}))
+        actions.setVariable(name, value);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialState is read once (ref)
+  }, [store, driver]);
+
+  // autosave — RM-083: an ordinary spec commit debounces `onChange` (trailing edge); a
+  // `saveBookmark`-with-`storage:"spec"` commit's reason ("bookmark", `state.changeReason`)
+  // rides along. A `{ conflict: true }` re-sync (above) is never debounced — it needs the
+  // host's attention now, not after `autosaveMs`.
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pendingChange = useRef<{ spec: DashboardSpec; meta: DashboardChangeMeta } | null>(null);
+  const flushAutosave = useCallback(() => {
+    clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = undefined;
+    const pending = pendingChange.current;
+    pendingChange.current = null;
+    if (pending) callbacks.current.onChange?.(pending.spec, pending.meta);
+  }, []);
+
   useEffect(() => {
     const offSpec = store.subscribe(
       (state) => state.spec,
       (next) => {
-        if (!syncing.current) callbacks.current.onChange?.(next, { conflict: false });
+        if (syncing.current) return;
+        const meta: DashboardChangeMeta = { conflict: false };
+        const reason = store.getState().changeReason;
+        if (reason !== undefined) meta.reason = reason;
+        if (autosaveMs <= 0) {
+          callbacks.current.onChange?.(next, meta);
+          return;
+        }
+        pendingChange.current = { spec: next, meta };
+        clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = setTimeout(flushAutosave, autosaveMs);
       },
     );
     const offSelection = store.subscribe(
-      (state) => state.selection,
-      (next) => callbacks.current.onSelectionChange?.(next),
+      (state) => ({ selection: state.selection, variables: state.variables }),
+      ({ selection, variables }) => callbacks.current.onSelectionChange?.(selection, variables),
+      { equalityFn: (a, b) => a.selection === b.selection && a.variables === b.variables },
     );
     return () => {
       offSpec();
       offSelection();
+      // Flush a pending debounced change rather than drop it.
+      if (autosaveTimer.current) flushAutosave();
     };
-  }, [store]);
+  }, [store, autosaveMs, flushAutosave]);
 
   // Stop mirroring the driver on a real unmount. Deferred so StrictMode's simulated
   // unmount/remount (which keeps this store) does not cut the driver subscription.

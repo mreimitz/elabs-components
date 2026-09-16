@@ -160,6 +160,8 @@ export function createLocalSelectionDriver(
   };
 
   const driver: LocalSelectionDriver = {
+    // RM-083: fully synchronous, so `ready` resolves immediately.
+    ready: Promise.resolve(),
     getSnapshot() {
       if (snapshot) return snapshot;
       const fields: Record<string, SelectionFieldState> = {};

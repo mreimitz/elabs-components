@@ -39,7 +39,14 @@ import type {
   SelectionSnapshot,
   SelectionValue,
 } from "./selection";
-import type { DashboardSpec, GridSpec, TileLayout, TileSpec, VariableValue } from "./spec";
+import type {
+  BookmarkSpec,
+  DashboardSpec,
+  GridSpec,
+  TileLayout,
+  TileSpec,
+  VariableValue,
+} from "./spec";
 import { GRID_DENSITY_PRESETS, normalizeDashboardSpec } from "./validate";
 
 /** View or edit. */
@@ -153,6 +160,15 @@ export interface DashboardActions {
   setVariable(name: string, value: VariableValue): void;
   setTileState(id: string, patch: Record<string, unknown>): void;
   applyBookmark(id: string): void;
+  /**
+   * Save the current selection + variables as a `BookmarkSpec` (RM-083). When
+   * `CreateDashboardStoreOptions.bookmarks?.storage === "spec"` it is also appended to
+   * `spec.bookmarks` — one history entry, `changeReason` set to `"bookmark"` so
+   * `DashboardProvider`'s `onChange` can report it. `storage: "host"` (the default) returns
+   * the bookmark without touching `spec` — the host persists it itself (D5).
+   */
+  // bookmarks — RM-083
+  saveBookmark(label: string): BookmarkSpec;
   /** Stop mirroring the driver. Call when the sheet unmounts. */
   dispose(): void;
 }
@@ -173,6 +189,15 @@ export interface DashboardState {
   history: { past: number; future: number; canUndo: boolean; canRedo: boolean };
   /** UI slice — RM-079. */
   ui: DashboardUiState;
+  /**
+   * Set by the commit right behind it when that specific spec change carries a reason
+   * (currently only `saveBookmark`'s spec-storage commit, `"bookmark"`); every OTHER commit
+   * resets it to `undefined` so a later, unrelated change never inherits a stale reason.
+   * `DashboardProvider` reads it, right after `state.spec` changes, to fill
+   * `DashboardChangeMeta.reason`.
+   */
+  // bookmarks — RM-083
+  changeReason?: string;
   actions: DashboardActions;
 }
 
@@ -187,6 +212,13 @@ export interface CreateDashboardStoreOptions {
   historyLimit?: number;
   /** Called when a bookmark names another sheet (the host routes; D5). */
   onNavigate?: (sheetId: string) => void;
+  /**
+   * Where "Save bookmark…" persists (RM-083). `"spec"`: `saveBookmark` appends to
+   * `spec.bookmarks` itself. `"host"` (default): `saveBookmark` only returns the
+   * `BookmarkSpec`; the host is expected to persist it (D5).
+   */
+  // bookmarks — RM-083
+  bookmarks?: { storage: "spec" | "host" };
 }
 
 /** The store instance type: a zustand `StoreApi` whose `subscribe` also takes a selector. */
@@ -254,6 +286,24 @@ function defaultVariables(spec: DashboardSpec): Record<string, VariableValue> {
   return Object.fromEntries((spec.variables ?? []).map((v) => [v.name, v.default]));
 }
 
+// bookmarks — RM-083
+/** A `label` slug, deduped against `spec.bookmarks`' existing ids the way `uniqueId` dedupes
+ * tile ids — `-2`, `-3`, … on a collision. Falls back to `"bookmark"` for an all-punctuation
+ * label. */
+function bookmarkId(spec: DashboardSpec, label: string): string {
+  const base =
+    label
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "bookmark";
+  const used = new Set((spec.bookmarks ?? []).map((b) => b.id));
+  if (!used.has(base)) return base;
+  let n = 2;
+  while (used.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}
+
 /** Create one store for one sheet. */
 export function createDashboardStore(options: CreateDashboardStoreOptions): DashboardStore {
   const driver =
@@ -270,15 +320,23 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
         canRedo: history.canRedo(),
       });
 
-      const sync = () =>
-        set({ spec: history.present, dirty: history.isDirtySince(), history: historyState() });
+      // `reason` (RM-083): set on every sync — undefined for every ordinary commit, so it
+      // never leaks onto a later, unrelated change; only `saveBookmark`'s spec-storage
+      // commit passes one ("bookmark").
+      const sync = (reason?: string) =>
+        set({
+          spec: history.present,
+          dirty: history.isDirtySince(),
+          history: historyState(),
+          changeReason: reason,
+        });
 
-      const commit = (next: DashboardSpec) => {
+      const commit = (next: DashboardSpec, reason?: string) => {
         const normalized = normalize(next);
         // Specs are small; a no-op gesture must not cost an undo step.
         if (JSON.stringify(normalized) === JSON.stringify(history.present)) return;
         history.push(normalized);
-        sync();
+        sync(reason);
       };
 
       const tileById = (id: string) => history.present.tiles.find((tile) => tile.id === id);
@@ -597,6 +655,25 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
           if (bookmark.sheetId && bookmark.sheetId !== spec.id)
             options.onNavigate?.(bookmark.sheetId);
         },
+        // bookmarks — RM-083
+        saveBookmark(label) {
+          const snapshot = driver.getSnapshot();
+          const selection: BookmarkSpec["selection"] = {};
+          for (const [field, state] of Object.entries(snapshot.fields))
+            if (state.values.length > 0) selection[field] = [...state.values];
+          const bookmark: BookmarkSpec = {
+            id: bookmarkId(history.present, label),
+            label,
+            selection,
+            variables: { ...get().variables },
+          };
+          if (options.bookmarks?.storage === "spec")
+            commit(
+              { ...history.present, bookmarks: [...(history.present.bookmarks ?? []), bookmark] },
+              "bookmark",
+            );
+          return bookmark;
+        },
         dispose() {
           unsubscribe();
         },
@@ -613,6 +690,8 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
         dirty: false,
         history: historyState(),
         ui: { assets: false, properties: false },
+        // bookmarks — RM-083
+        changeReason: undefined,
         actions,
       };
     }),
