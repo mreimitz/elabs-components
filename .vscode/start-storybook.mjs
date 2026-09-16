@@ -15,9 +15,11 @@
 //
 // It also makes F5 idempotent: `storybook dev` runs with --exact-port and EXITS 1
 // when :6006 is taken (a leftover server, or one a Claude agent started), printing
-// no banner at all. Rather than fail, reuse the server that is already answering.
+// no banner at all. Rather than fail, reuse the server that is already answering —
+// but only when it runs from THIS checkout (see `serverFolder`).
 
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
+import { join, resolve } from "node:path";
 
 const ORIGIN = "http://localhost:6006";
 const PROBE = `${ORIGIN}/index.json`;
@@ -35,9 +37,43 @@ const isUp = async () => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Which folder the server on :6006 runs from. A Storybook started in a git worktree
+// (.claude/worktrees/…) serves THAT checkout's stories, so reusing it silently shows
+// another branch — new stories "missing" from this one. `null` when it can't be told
+// (no lsof, e.g. Windows); then reuse stays the fallback.
+const serverFolder = () => {
+  try {
+    const pid = execFileSync("lsof", ["-nP", "-iTCP:6006", "-sTCP:LISTEN", "-t"], {
+      encoding: "utf8",
+    })
+      .split("\n")[0]
+      ?.trim();
+    if (!pid) return null;
+    const cwdLine = execFileSync("lsof", ["-p", pid, "-a", "-d", "cwd", "-Fn"], {
+      encoding: "utf8",
+    })
+      .split("\n")
+      .find((line) => line.startsWith("n"));
+    return cwdLine ? resolve(cwdLine.slice(1)) : null;
+  } catch {
+    return null;
+  }
+};
+
 console.log(`__STORYBOOK_BOOT__ probing ${ORIGIN}`);
 
 if (await isUp()) {
+  const folder = serverFolder();
+  const root = resolve(process.cwd());
+  // Exact match only: worktrees live INSIDE this folder, so a prefix test would accept them.
+  if (folder && folder !== root && folder !== join(root, "apps", "docs")) {
+    console.error(
+      `The Storybook on ${ORIGIN} runs from another checkout:\n  ${folder}\n` +
+        `It shows that checkout's stories, not this folder's. Run the "stop: storybook" ` +
+        `task (or stop it where it was started), then Run again.`,
+    );
+    process.exit(1);
+  }
   console.log(`Reusing the Storybook already serving ${ORIGIN}`);
   console.log(`__STORYBOOK_READY__ ${ORIGIN}`);
   // Deliberately do NOT exit here. A background task that ends immediately makes VS Code
