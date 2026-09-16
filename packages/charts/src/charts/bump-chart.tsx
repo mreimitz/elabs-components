@@ -44,7 +44,7 @@
 import { curveMonotoneX } from "@visx/curve";
 import { scaleLinear, scalePoint } from "@visx/scale";
 import { LinePath } from "@visx/shape";
-import { forwardRef, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
 import useMeasure from "react-use-measure";
 import { cn } from "@elabs-ai/components-ui";
 import { HaloText, QuietDot } from "../marks";
@@ -64,7 +64,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
-import { useChartValueFormatter } from "./chart-formatters";
+import { shortDateFmt, useChartValueFormatter } from "./chart-formatters";
 // Reuses the dumbbell "slope" collision-avoidance pass — see spaceSlopeLabels'
 // own docblock. One shared implementation is what stops the two charts'
 // "no overlapping end labels" guarantees from drifting apart.
@@ -99,8 +99,23 @@ export interface BumpChartProps extends ChartInteractionProps {
   highlightKey?: string;
   /** Show a ▲n / ▼n delta flag (rank movement into the LAST period) per row. Default `false`. */
   showDelta?: boolean;
-  /** Cap on plotted entities, kept by final rank. Default `10`; dev-warns once when the data has more. */
+  /**
+   * Cap on plotted entities, kept by final rank. Default `10`; dev-warns once
+   * when the data has more. For `variant="strip"` this is also intersected
+   * with the largest row count whose printed rank still fits legibly (#273)
+   * — a raised `maxEntities` that would no longer fit is quietly lowered and
+   * warned about by name, never silently dropped to colour-only.
+   */
   maxEntities?: number;
+  /**
+   * `variant="strip"` only: cap on plotted periods (columns), kept as the
+   * MOST RECENT N — a rank race reads right-to-left, so the oldest periods
+   * are the meaningful ones to drop. Defaults to the largest column count
+   * whose printed rank still reaches the legibility floor for the chart's
+   * current width; dev-warns once naming `maxPeriods` when data (or an
+   * explicit value) would cross it (#273). Ignored by `"lines"`.
+   */
+  maxPeriods?: number;
   /** Which colour family the `"strip"` cell shade draws from. Default `"sequential"` (rank 1 = most ink). Ignored by `"lines"`, which always draws hero-ink + mono. */
   palette?: ChartPalette;
   /** How the tooltip's raw value cell is formatted. Default `"compact"`. */
@@ -136,6 +151,12 @@ const STRIP_CELL_STROKE_WIDTH = 0.5;
 const STRIP_CELL_STROKE_WIDTH_HERO = 1.5;
 const STRIP_MIN_LABEL_PX = 8;
 const STRIP_MAX_LABEL_PX = 13;
+/** `labelSize`'s column term: `colWidth * STRIP_LABEL_WIDTH_FACTOR`. Named so
+ * `deriveStripMaxPeriods` can invert the exact same arithmetic (#273). */
+const STRIP_LABEL_WIDTH_FACTOR = 0.34;
+/** `labelSize`'s row term: `rowHeight * STRIP_LABEL_HEIGHT_FACTOR`. Named so
+ * `deriveStripMaxEntities` can invert the exact same arithmetic (#273). */
+const STRIP_LABEL_HEIGHT_FACTOR = 0.42;
 
 // ─── Matrix shaping (the one function both variants read from) ────────────
 
@@ -285,6 +306,86 @@ export function limitBumpSeries(
   if (series.length <= maxEntities) return series;
   if (warnInstanceKey) warnMaxEntities(warnInstanceKey, series.length, maxEntities);
   return series.slice(0, maxEntities);
+}
+
+// ── `variant="strip"` legibility caps (#273) ────────────────────────────────
+//
+// A `strip` cell draws its rank twice — a sequential-ramp fill AND a printed
+// numeral — but the numeral has a legibility floor (`STRIP_MIN_LABEL_PX`) the
+// fill does not. Rendering the fill without the numeral leaves rank encoded
+// by colour alone, which fails the greyscale test (WCAG 1.4.1). Rather than
+// let that happen silently past the floor, the column and row counts are
+// capped BEFORE render so `labelSize` can never fall under the floor in the
+// first place — the same trade `limitBumpSeries` already makes for entities,
+// applied to periods too.
+
+/**
+ * `variant="strip"`: the largest number of PERIODS (columns) whose cell still
+ * reaches `STRIP_MIN_LABEL_PX` for its printed rank, given the plot's
+ * available inner width. The exact inverse of `labelSize`'s column term
+ * (`colWidth * STRIP_LABEL_WIDTH_FACTOR`).
+ */
+export function deriveStripMaxPeriods(innerWidth: number): number {
+  if (!Number.isFinite(innerWidth) || innerWidth <= 0) return 1;
+  return Math.max(1, Math.floor((innerWidth * STRIP_LABEL_WIDTH_FACTOR) / STRIP_MIN_LABEL_PX));
+}
+
+/**
+ * `variant="strip"`: the largest number of ENTITIES (rows) whose cell still
+ * reaches `STRIP_MIN_LABEL_PX` for its printed rank, given the plot's
+ * available inner height. The exact inverse of `labelSize`'s row term
+ * (`rowHeight * STRIP_LABEL_HEIGHT_FACTOR`).
+ */
+export function deriveStripMaxEntities(innerHeight: number): number {
+  if (!Number.isFinite(innerHeight) || innerHeight <= 0) return 1;
+  return Math.max(1, Math.floor((innerHeight * STRIP_LABEL_HEIGHT_FACTOR) / STRIP_MIN_LABEL_PX));
+}
+
+const warnedPeriodCounts = new WeakSet<object>();
+
+function warnMaxPeriods(instanceKey: object, total: number, max: number): void {
+  if (process.env.NODE_ENV === "production") return;
+  if (warnedPeriodCounts.has(instanceKey)) return;
+  warnedPeriodCounts.add(instanceKey);
+  console.warn(
+    `[BumpChart] ${total} periods exceeds maxPeriods (${max}) for variant="strip" — showing ` +
+      `the most recent ${max} so every cell's printed rank stays legible. Widen the chart, or ` +
+      "pre-filter the data, to plot the rest.",
+  );
+}
+
+/**
+ * `variant="strip"` only: keeps the most recent `maxPeriods` periods — a rank
+ * race reads right-to-left, so the oldest periods are the meaningful ones to
+ * drop — and re-indexes each kept series' `periodIndex` so it stays
+ * contiguous for the matrix's other consumers (column lookups, `scalePoint`
+ * domains). A series with no points left in the kept window is dropped.
+ */
+export function limitBumpPeriods(
+  matrix: BumpMatrix,
+  maxPeriods: number,
+  warnInstanceKey?: object,
+): BumpMatrix {
+  if (matrix.periods.length <= maxPeriods) return matrix;
+  if (warnInstanceKey) warnMaxPeriods(warnInstanceKey, matrix.periods.length, maxPeriods);
+  const keptPeriods = matrix.periods.slice(-maxPeriods);
+  const newIndexByPeriod = new Map(keptPeriods.map((p, i) => [p, i]));
+  const series = matrix.series
+    .map((s): BumpSeries | null => {
+      const points = s.points
+        .filter((p) => newIndexByPeriod.has(p.period))
+        .map((p) => ({ ...p, periodIndex: newIndexByPeriod.get(p.period) as number }));
+      if (points.length === 0) return null;
+      const last = points[points.length - 1] as BumpPoint;
+      return {
+        entity: s.entity,
+        points,
+        finalRank: last.rank,
+        finalPeriodIndex: last.periodIndex,
+      };
+    })
+    .filter((s): s is BumpSeries => s !== null);
+  return { periods: keptPeriods, series, maxRank: matrix.maxRank };
 }
 
 /**
@@ -649,7 +750,11 @@ function StripPlot({
             const rowY = rowIndex * rowHeight;
             const rowCenterY = rowY + rowHeight / 2;
             const delta = computeBumpDelta(series.points);
-            const labelSize = Math.min(rowHeight * 0.42, colWidth * 0.34, STRIP_MAX_LABEL_PX);
+            const labelSize = Math.min(
+              rowHeight * STRIP_LABEL_HEIGHT_FACTOR,
+              colWidth * STRIP_LABEL_WIDTH_FACTOR,
+              STRIP_MAX_LABEL_PX,
+            );
             return (
               <g data-slot="bump-chart-row" key={series.entity}>
                 <HaloText
@@ -687,17 +792,25 @@ function StripPlot({
                             x={cellX}
                             y={cellY}
                           />
-                          {labelSize >= STRIP_MIN_LABEL_PX ? (
-                            <HaloText
-                              dominantBaseline="central"
-                              fontSize={labelSize}
-                              textAnchor="middle"
-                              x={cx}
-                              y={cy}
-                            >
-                              {point.rank}
-                            </HaloText>
-                          ) : null}
+                          {/*
+                            No legibility-floor branch here (#273): the caller
+                            (`BumpChart`) already caps periods/entities via
+                            `deriveStripMaxPeriods`/`deriveStripMaxEntities` so
+                            `labelSize` can never fall under
+                            `STRIP_MIN_LABEL_PX` by the time a cell reaches
+                            this render — a cell's fill and its printed rank
+                            are rendered together or not at all, never fill
+                            alone (WCAG 1.4.1).
+                          */}
+                          <HaloText
+                            dominantBaseline="central"
+                            fontSize={labelSize}
+                            textAnchor="middle"
+                            x={cx}
+                            y={cy}
+                          >
+                            {point.rank}
+                          </HaloText>
                         </>
                       ) : (
                         <QuietDot cx={cx} cy={cy} />
@@ -783,15 +896,54 @@ function BumpBody({
   maxInteractiveDatapoints,
   ...plotProps
 }: BodyProps) {
+  const { matrix, valueFormat } = plotProps;
   const core =
     plotProps.variant === "strip" ? <StripPlot {...plotProps} /> : <LinesPlot {...plotProps} />;
+
+  // #270 — the chart's entire visual encoding is RANK, but `ChartDatapoint.value`
+  // (both `LinesPlot`'s and `StripPlot`'s target `value: point.value ?? point.rank`)
+  // exists for the DRILL-DOWN payload, not the accessible name: whenever `valueKey`
+  // is set that `??` never fires, so a keyboard target announces the metric and
+  // never the rank. Look the point back up by its source-array `index` (unique,
+  // and shared by both plots' target construction) and read `rank` AND `value`
+  // off the real `BumpPoint` — never off `ChartDatapoint.value`, which must keep
+  // carrying the metric unchanged for `onDatapointClick` consumers.
+  const pointByIndex = useMemo(() => {
+    const map = new Map<number, BumpPoint>();
+    for (const series of matrix.series) {
+      for (const point of series.points) {
+        map.set(point.index, point);
+      }
+    }
+    return map;
+  }, [matrix]);
+  const formatValue = useChartValueFormatter(valueFormat);
+  const defaultLabel = useCallback<ChartDatapointLabel>(
+    (target) => {
+      const category =
+        target.category instanceof Date
+          ? shortDateFmt.format(target.category)
+          : String(target.category ?? "");
+      const series = target.seriesLabel ?? target.seriesKey;
+      const head = series ? `${series}, ${category}` : category;
+      const point = pointByIndex.get(target.index);
+      if (!point) return head;
+      const parts = [`rank ${point.rank}`];
+      if (point.value !== undefined) {
+        parts.push(formatValue(point.value));
+      }
+      return `${head}: ${parts.join(", ")}`;
+    },
+    [formatValue, pointByIndex],
+  );
+
   if (!onDatapointClick && !copyValueOnActivate) {
     return core;
   }
   return (
     <ChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
-      datapointLabel={datapointLabel}
+      datapointLabel={datapointLabel ?? defaultLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
@@ -819,6 +971,7 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(function Bum
     highlightKey,
     showDelta = false,
     maxEntities = DEFAULT_MAX_ENTITIES,
+    maxPeriods,
     palette,
     valueFormat,
     margin: marginProp,
@@ -837,6 +990,7 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(function Bum
   const [measureRef, bounds] = useMeasure({ debounce: 10 });
   const margin = { ...defaultMargin(variant), ...marginProp };
   const instanceKeyRef = useRef({});
+  const periodsInstanceKeyRef = useRef({});
   const {
     role,
     "aria-label": ariaLabel,
@@ -855,16 +1009,32 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(function Bum
     }
   };
 
-  const matrix = useMemo(() => {
-    const full = buildBumpMatrix(data, period, entity, valueKey, rankKey);
-    return {
-      ...full,
-      series: limitBumpSeries(full.series, maxEntities, instanceKeyRef.current),
-    };
-  }, [data, period, entity, valueKey, rankKey, maxEntities]);
-
   const width = bounds.width ?? 0;
   const height = bounds.height ?? 0;
+  const innerWidth = Math.max(width - margin.left - margin.right, 0);
+  const innerHeight = Math.max(height - margin.top - margin.bottom, 0);
+
+  // `variant="strip"` only (#273): intersect the caller's caps with the
+  // largest column/row counts whose printed rank still reaches the
+  // legibility floor, so a strip cell's fill never renders without its rank.
+  const effectiveMaxPeriods =
+    variant === "strip"
+      ? Math.min(maxPeriods ?? Infinity, deriveStripMaxPeriods(innerWidth))
+      : (maxPeriods ?? Infinity);
+  const effectiveMaxEntities =
+    variant === "strip" ? Math.min(maxEntities, deriveStripMaxEntities(innerHeight)) : maxEntities;
+
+  const matrix = useMemo(() => {
+    const full = buildBumpMatrix(data, period, entity, valueKey, rankKey);
+    const periodLimited =
+      variant === "strip"
+        ? limitBumpPeriods(full, effectiveMaxPeriods, periodsInstanceKeyRef.current)
+        : full;
+    return {
+      ...periodLimited,
+      series: limitBumpSeries(periodLimited.series, effectiveMaxEntities, instanceKeyRef.current),
+    };
+  }, [data, period, entity, valueKey, rankKey, variant, effectiveMaxPeriods, effectiveMaxEntities]);
 
   return (
     <div

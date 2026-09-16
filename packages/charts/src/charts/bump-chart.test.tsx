@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // react-use-measure uses ResizeObserver for layout measurement, which jsdom
@@ -13,6 +13,8 @@ import {
   BumpChart,
   buildBumpMatrix,
   computeBumpDelta,
+  deriveStripMaxEntities,
+  deriveStripMaxPeriods,
   limitBumpSeries,
   type BumpPoint,
   type BumpSeries,
@@ -236,5 +238,178 @@ describe("BumpChart", () => {
       <BumpChart data={[]} entity="product" period="quarter" valueKey="share" />,
     );
     expect(container.firstChild).toBeInTheDocument();
+  });
+});
+
+// ── #270 — the accessible name announces RANK, not only the metric ──────────
+
+describe("BumpChart — datapoint accessible name (#270)", () => {
+  it("announces the RANK, not only the metric, when valueKey is set (lines)", () => {
+    const { container } = render(
+      <BumpChart
+        data={shareData}
+        entity="product"
+        onDatapointClick={() => undefined}
+        period="quarter"
+        valueKey="share"
+      />,
+    );
+    const targets = [
+      ...container.querySelectorAll<HTMLButtonElement>(
+        '[data-slot="chart-datapoint-layer-target"]',
+      ),
+    ];
+    // Exact string, never a name regex — a regex happily matches a polluted name.
+    expect(targets[0]).toHaveAccessibleName("Atlas, Q1: rank 2, 28");
+    expect(targets[1]).toHaveAccessibleName("Atlas, Q2: rank 1, 31");
+  });
+
+  it("has the same gap for the strip variant fed valueKey alone", () => {
+    const { container } = render(
+      <BumpChart
+        data={shareData}
+        entity="product"
+        onDatapointClick={() => undefined}
+        period="quarter"
+        valueKey="share"
+        variant="strip"
+      />,
+    );
+    const targets = [
+      ...container.querySelectorAll<HTMLButtonElement>(
+        '[data-slot="chart-datapoint-layer-target"]',
+      ),
+    ];
+    expect(targets.length).toBeGreaterThan(0);
+    for (const target of targets) {
+      expect(target.getAttribute("aria-label")).toMatch(/rank \d+/);
+    }
+  });
+
+  it("reads 'rank N' with no metric clause when only rankKey is supplied", () => {
+    // A single entity/period — `matrix.series` sorting by final rank cannot
+    // reorder a one-row matrix, so the sole target is unambiguous.
+    const rankOnlyData = [{ period: "Q1", team: "Flows", rank: 2 }];
+    const { container } = render(
+      <BumpChart
+        data={rankOnlyData}
+        entity="team"
+        onDatapointClick={() => undefined}
+        period="period"
+        rankKey="rank"
+      />,
+    );
+    const target = container.querySelector('[data-slot="chart-datapoint-layer-target"]');
+    expect(target).toHaveAccessibleName("Flows, Q1: rank 2");
+  });
+
+  it("leaves the ChartDatapoint payload's value as the METRIC, not the rank", () => {
+    let received: { value: number | undefined } | undefined;
+    const { container } = render(
+      <BumpChart
+        data={shareData}
+        entity="product"
+        onDatapointClick={(point) => {
+          received = point;
+        }}
+        period="quarter"
+        valueKey="share"
+      />,
+    );
+    const target = container.querySelector<HTMLButtonElement>(
+      '[data-slot="chart-datapoint-layer-target"]',
+    );
+    if (target) fireEvent.click(target);
+    // Atlas Q1 share is 28 — the metric, never the rank (2). A "fix" that
+    // changes the payload to the rank must red here.
+    expect(received?.value).toBe(28);
+  });
+
+  it("lets a consumer-supplied datapointLabel win over the default", () => {
+    const { container } = render(
+      <BumpChart
+        data={shareData}
+        datapointLabel={() => "custom label"}
+        entity="product"
+        onDatapointClick={() => undefined}
+        period="quarter"
+        valueKey="share"
+      />,
+    );
+    const target = container.querySelector('[data-slot="chart-datapoint-layer-target"]');
+    expect(target).toHaveAccessibleName("custom label");
+  });
+});
+
+// ── #273 — a "strip" cell never renders its fill without its rank ───────────
+
+describe("BumpChart — strip legibility caps (#273)", () => {
+  // `react-use-measure` is mocked (top of file) to a fixed 560x288, so
+  // `innerWidth`/`innerHeight` here are fixed regardless of any wrapper
+  // style — 20 periods is deliberately more than that geometry's derived
+  // cap, so the fix's trimming actually has work to do.
+  it("caps periods so a strip cell's rank never drops below the legibility floor", () => {
+    const denseData: { period: string; team: string; rank: number }[] = [];
+    const teams = ["Alpha", "Bravo", "Charlie", "Delta"];
+    for (let p = 0; p < 20; p++) {
+      teams.forEach((team, i) => {
+        denseData.push({ period: `P${p + 1}`, team, rank: ((i + p) % teams.length) + 1 });
+      });
+    }
+    const { container } = render(
+      <BumpChart data={denseData} entity="team" period="period" rankKey="rank" variant="strip" />,
+    );
+    const fills = container.querySelectorAll('[data-slot="bump-chart-cell"] rect[data-bump-rank]');
+    const ranks = container.querySelectorAll('[data-slot="bump-chart-cell"] text');
+    // Non-vacuity: the grid must actually be plotting cells.
+    expect(fills.length).toBeGreaterThan(0);
+    // The invariant: every plotted fill carries its rank in a second channel.
+    expect(ranks.length).toBe(fills.length);
+  });
+
+  it("warns once (dev only) when data exceeds the derived maxPeriods cap", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const denseData: { period: string; team: string; rank: number }[] = [];
+    for (let p = 0; p < 20; p++) {
+      denseData.push({ period: `P${p + 1}`, team: "Alpha", rank: 1 });
+      denseData.push({ period: `P${p + 1}`, team: "Bravo", rank: 2 });
+    }
+    render(
+      <BumpChart data={denseData} entity="team" period="period" rankKey="rank" variant="strip" />,
+    );
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]?.[0]).toMatch(/maxPeriods/);
+    warnSpy.mockRestore();
+  });
+});
+
+// ── deriveStripMaxPeriods / deriveStripMaxEntities — the pure derivation ────
+
+describe("deriveStripMaxPeriods / deriveStripMaxEntities (#273)", () => {
+  // Below ~23.5px (period) / ~19.0px (entity) even a single column/row cannot
+  // reach the legibility floor — that residual, sub-one-column narrowness is
+  // out of scope for this derivation (see #273 "the row arm is partly
+  // self-limiting but not closed"). Above it, the invariant always holds.
+  it("never derives a period count whose column would drop below the legibility floor", () => {
+    for (const innerWidth of [24, 100, 276, 1000]) {
+      const maxPeriods = deriveStripMaxPeriods(innerWidth);
+      const colWidth = innerWidth / maxPeriods;
+      expect(colWidth * 0.34).toBeGreaterThanOrEqual(8 - 1e-9);
+    }
+  });
+
+  it("never derives an entity count whose row would drop below the legibility floor", () => {
+    for (const innerHeight of [20, 100, 208, 1000]) {
+      const maxEntities = deriveStripMaxEntities(innerHeight);
+      const rowHeight = innerHeight / maxEntities;
+      expect(rowHeight * 0.42).toBeGreaterThanOrEqual(8 - 1e-9);
+    }
+  });
+
+  it("always returns at least 1, even for a zero or negative extent", () => {
+    expect(deriveStripMaxPeriods(0)).toBe(1);
+    expect(deriveStripMaxPeriods(-10)).toBe(1);
+    expect(deriveStripMaxEntities(0)).toBe(1);
+    expect(deriveStripMaxEntities(-10)).toBe(1);
   });
 });
