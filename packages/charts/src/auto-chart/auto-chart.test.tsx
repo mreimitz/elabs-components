@@ -293,6 +293,32 @@ describe("AutoChart", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
+  it("'scatter' with xType: 'number' renders numeric x ticks, never an epoch date (#302)", () => {
+    // The spec-level lock: `xType: "number"` is a documented, public
+    // `ChartSpec` field (`chart-spec.ts`) — a caller who sets it correctly
+    // must not get `new Date(weight)` silently mislabeling the axis.
+    const weightMpgData = [
+      { weight: 1240, mpg: 41 },
+      { weight: 2900, mpg: 22 },
+      { weight: 3400, mpg: 18 },
+    ];
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "scatter",
+          data: weightMpgData,
+          x: "weight",
+          xType: "number",
+          series: ["mpg"],
+        }}
+        height={280}
+      />,
+    );
+    const text = container.textContent ?? "";
+    expect(text).toContain("1240");
+    expect(text).not.toMatch(/1970|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/);
+  });
+
   it("renders without throwing for 'scatter' type with a categorical (non-Date) x (#352)", () => {
     // No `xType: "time"` hint, so `renderChart`'s scatter branch does NOT
     // coerce `x` to Date — the raw categorical strings reach ScatterChart's
