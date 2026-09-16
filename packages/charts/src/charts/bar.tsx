@@ -4,7 +4,13 @@ import type { scaleBand } from "@visx/scale";
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { memo, useId, useMemo } from "react";
-import { HaloText, UnitStack, type UnitStackDirection, type UnitStackKind } from "../marks";
+import {
+  HaloText,
+  UNIT_STACK_EMPHASIS,
+  UnitStack,
+  type UnitStackDirection,
+  type UnitStackKind,
+} from "../marks";
 import {
   chartCssVars,
   type ChartPalette,
@@ -21,7 +27,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
-import { useChartValueFormatter } from "./chart-formatters";
+import { useChartValueSetFormatter } from "./chart-formatters";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 import { useHighDecoration } from "./use-high-decoration";
@@ -195,13 +201,16 @@ export interface BarProps {
    */
   showValues?: BarShowValues;
   /**
-   * Draw each bar as a countable `UnitStack` of `round(value / unit)` rungs
+   * Draw each bar as a countable `UnitStack` of `floor(value / unit)` rungs
    * (vertical bars, `kind="rung"`) or ticks (horizontal bars,
-   * `kind="tick"`) instead of a solid fill — lieflat F1 Rung Bars. Width and
-   * opacity jitter via `seededRnd`, keyed per bar so neighbours never jitter
-   * in lockstep; every 5th unit draws heavier so the stack stays countable.
-   * Renders instantly (no `animate`/`animationType` grow-in). Default: off
-   * (solid fill).
+   * `kind="tick"`) instead of a solid fill — lieflat F1 Rung Bars. The rung
+   * pitch is derived from the value scale, not the bar's own pixel span, so
+   * one rung is worth the same amount in every column and the ladder never
+   * counts past the bar's own value (#241) — a value that is not an exact
+   * multiple of `unit` draws an honest partial. Width and opacity jitter via
+   * `seededRnd`, keyed per bar so neighbours never jitter in lockstep; every
+   * 5th unit draws heavier so the stack stays countable. Renders instantly
+   * (no `animate`/`animationType` grow-in). Default: off (solid fill).
    */
   unit?: number;
   /**
@@ -409,7 +418,14 @@ const BarInner = memo(function BarInner({
 
   const seriesConfig = lines[seriesIndex];
   const valueScale = useYScale(yAxisId ?? seriesConfig?.yAxisId);
-  const formatValue = useChartValueFormatter();
+  // One notation across every bar's value label in THIS series (#250) — a
+  // per-value formatter mixes "1K" beside "400" whenever the series straddles
+  // `COMPACT_THRESHOLD`.
+  const seriesValues = useMemo(
+    () => data.map((d) => d[dataKey]).filter((v): v is number => typeof v === "number"),
+    [data, dataKey],
+  );
+  const formatValue = useChartValueSetFormatter(seriesValues);
 
   const isLegendDimmed = legendHoveredIndex !== null && legendHoveredIndex !== seriesIndex;
 
@@ -695,7 +711,20 @@ const BarInner = memo(function BarInner({
         // there being no single rect to tween.
         if (useUnitMode) {
           const unitLength = unit as number;
-          const unitCount = Math.round(Math.abs(bar.value) / unitLength);
+          const absValue = Math.abs(bar.value);
+          // A rung's pitch is derived from the VALUE SCALE (px per unit), not
+          // from the bar's own pixel span — deriving it from the span makes a
+          // rung worth a different amount in every column and, combined with
+          // the `i = 0…n-1` fencepost, always understates the value by one
+          // unit (#241). `barHeight`/`barW` are already scaled from a
+          // zero-based domain (`charts-honesty`), so they map linearly to
+          // `absValue` and a stable px-per-unit falls out directly.
+          const pixelSpan = isHorizontal ? barW : barHeight;
+          const pxPerUnit = absValue > 0 ? (pixelSpan / absValue) * unitLength : 0;
+          // Floor, not round: a rung ladder must never count past the value
+          // it encodes. A value that is not an exact multiple of `unit` draws
+          // an honest partial (a visible remainder above the top rung).
+          const unitCount = Math.floor(absValue / unitLength);
           const kind: UnitStackKind = isHorizontal ? "tick" : "rung";
           const direction: UnitStackDirection = isHorizontal
             ? isNegative
@@ -706,9 +735,10 @@ const BarInner = memo(function BarInner({
               : "up";
           const originX = isHorizontal ? baseline : x + barW / 2;
           const originY = isHorizontal ? y + barHeight / 2 : baseline;
-          const pixelSpan = isHorizontal ? barW : barHeight;
-          const step = unitCount > 0 ? pixelSpan / unitCount : 0;
-          const crossLength = isHorizontal ? barHeight : barW;
+          // The emphatic (every-5th) mark draws UNIT_STACK_EMPHASIS× the
+          // ordinary cross-axis length — reserve that headroom so it never
+          // overruns into the neighbouring band's bar.
+          const crossLength = (isHorizontal ? barHeight : barW) / UNIT_STACK_EMPHASIS;
 
           return (
             <g key={barKey}>
@@ -719,8 +749,12 @@ const BarInner = memo(function BarInner({
                 length={crossLength}
                 markEvery={5}
                 n={unitCount}
+                // Mark 0 sits one full pitch from the origin, so the top rung
+                // lands at the bar's own end (for an exact multiple of
+                // `unit`) instead of one unit short of it.
+                originOffset={1}
                 seed={i}
-                step={step}
+                step={pxPerUnit}
                 stroke={barFill}
                 x={originX}
                 y={originY}
@@ -765,6 +799,7 @@ const BarInner = memo(function BarInner({
               <path
                 className={loadingPulseClassName}
                 d={negativeBarPath(x, y, barW, barHeight, cornerRadius, isHorizontal)}
+                data-slot="bar-negative"
                 fill={barFill}
                 onClick={onBarClick}
                 opacity={isFaded ? fadedOpacity : 1}

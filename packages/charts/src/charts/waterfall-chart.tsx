@@ -2,7 +2,7 @@
 
 import { type ReactNode, forwardRef, useMemo } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { HaloText, Leader, type LeaderPoint, UnitStack } from "../marks";
+import { HaloText, Leader, type LeaderPoint, UNIT_STACK_EMPHASIS, UnitStack } from "../marks";
 import type { BarOrientation } from "./bar-chart";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
@@ -347,19 +347,32 @@ function WaterfallBars({
           tr: roundTop || roundRight ? r : 0,
         };
 
-        const unitCount =
-          unit && unit > 0 ? Math.max(1, Math.round((g.row.top - g.row.base) / unit)) : 0;
+        const stepValue = g.row.top - g.row.base;
+        // Pitch from the VALUE SCALE (px per unit), not the step's own pixel
+        // span — a span-derived pitch is worth a different amount in every
+        // column and always understates the step by one unit (#241, shared
+        // root cause with `bar.tsx`'s `unit` mode).
+        const pixelSpan = isHorizontal ? g.width : g.height;
+        const pxPerUnit = unit && stepValue > 0 ? (pixelSpan / stepValue) * unit : 0;
+        const unitCount = unit && unit > 0 ? Math.max(1, Math.floor(stepValue / unit)) : 0;
 
         const shape =
           unitCount > 0 ? (
             <UnitStack
               direction={isHorizontal ? "right" : "up"}
               kind="rung"
-              length={isHorizontal ? g.height : g.width}
+              // Reserve headroom for the emphatic (every-5th) mark, which
+              // draws UNIT_STACK_EMPHASIS× the ordinary cross-axis length, so
+              // it never overruns into the neighbouring step's band.
+              length={(isHorizontal ? g.height : g.width) / UNIT_STACK_EMPHASIS}
               n={unitCount}
               onClick={onClick}
+              // Mark 0 sits one full pitch from the origin, so the top rung
+              // lands at the step's own end (for an exact multiple of `unit`)
+              // instead of one unit short of it.
+              originOffset={1}
               seed={g.row.index}
-              step={(isHorizontal ? g.width : g.height) / unitCount}
+              step={pxPerUnit}
               stroke={fill}
               style={onClick ? { cursor: "pointer" } : undefined}
               x={isHorizontal ? g.x : g.x + g.width / 2}

@@ -46,6 +46,7 @@ export { QUIET_DOT_SIZE, QuietDot, type QuietDotProps } from "./quiet-dot";
 export { seededRnd } from "./seeded-rnd";
 export { CHART_STAGGER_BAR_MS, CHART_STAGGER_DOT_MS, stagger } from "./stagger";
 export {
+  UNIT_STACK_EMPHASIS,
   UnitStack,
   type UnitStackDirection,
   type UnitStackKind,

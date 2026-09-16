@@ -58,11 +58,13 @@ export const Horizontal: Story = {
 };
 
 /** `unit` renders each bar as a counted `UnitStack` of rungs — the F9 look —
- * instead of a solid capsule. */
+ * instead of a solid capsule. The pitch comes from the value scale, so one
+ * rung is worth the same amount in every step (#241) — stated here since the
+ * waterfall renders no axis of its own to read it from. */
 export const UnitRungs: Story = {
   render: () => (
     <div className="h-72 w-[560px]">
-      <WaterfallChart accessibleDescription="one rung = 25" data={grossToNet} unit={25} />
+      <WaterfallChart accessibleDescription="One rung = 25." data={grossToNet} unit={25} />
     </div>
   ),
 };

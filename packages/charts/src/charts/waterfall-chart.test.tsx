@@ -113,6 +113,41 @@ describe("WaterfallChart", () => {
     expect(steps).toHaveLength(0);
   });
 
+  // #241 — shares its root cause with `bar.tsx`'s `unit` mode: an emphatic
+  // rung overran its own column, and the pitch was derived from the step's
+  // own pixel span rather than the value scale.
+  it("keeps adjacent step's unit-stacks disjoint on the cross axis (no emphatic-rung overhang)", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} unit={25} />);
+    const stacks = [...container.querySelectorAll('[data-slot="unit-stack"]')];
+    expect(stacks.length).toBe(grossToNet.length);
+    const rangeOf = (stack: Element) => {
+      const xs = [...stack.querySelectorAll('[data-slot="unit-stack-unit"]')].flatMap((u) => [
+        Number.parseFloat(u.getAttribute("x1") ?? "0"),
+        Number.parseFloat(u.getAttribute("x2") ?? "0"),
+      ]);
+      return [Math.min(...xs), Math.max(...xs)] as const;
+    };
+    const ranges = stacks.map(rangeOf);
+    for (let i = 1; i < ranges.length; i++) {
+      expect(ranges[i - 1]![1]).toBeLessThanOrEqual(ranges[i]![0]);
+    }
+  });
+
+  it("uses the same rung pitch for every step in one waterfall", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} unit={25} />);
+    const stacks = [...container.querySelectorAll('[data-slot="unit-stack"]')];
+    const pitchOf = (stack: Element) => {
+      const ys = [...stack.querySelectorAll('[data-slot="unit-stack-unit"]')]
+        .map((u) => Number.parseFloat(u.getAttribute("y1") ?? "0"))
+        .sort((a, b) => a - b);
+      return ys[1]! - ys[0]!;
+    };
+    const pitches = stacks.map(pitchOf).filter((p) => Number.isFinite(p));
+    for (const pitch of pitches.slice(1)) {
+      expect(pitch).toBeCloseTo(pitches[0]!, 5);
+    }
+  });
+
   it("forwards a ref to the root container element", () => {
     const ref = createRef<HTMLDivElement>();
     render(<WaterfallChart data={grossToNet} ref={ref} />);

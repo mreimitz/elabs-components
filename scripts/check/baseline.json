@@ -1,7 +1,6 @@
 {
   "attribution-provenance": ["packages/charts/src/gantt/gantt-dependencies.tsx:6"],
   "chart-unit-caption": [
-    "packages/charts/src/charts/bar-chart.stories.tsx#UnitRungs",
     "packages/charts/src/charts/dumbbell-chart.stories.tsx#Default",
     "packages/charts/src/charts/dumbbell-chart.stories.tsx#WithAccessibleLabel",
     "packages/charts/src/charts/heatmap/heatmap-chart.stories.tsx#DotHeat",
@@ -176,7 +175,7 @@
     "packages/charts/src/charts/bar-chart.tsx": 1,
     "packages/charts/src/charts/bar-x-axis.tsx": 1,
     "packages/charts/src/charts/bar-y-axis.tsx": 1,
-    "packages/charts/src/charts/bar.tsx": 1,
+    "packages/charts/src/charts/bar.tsx": 0,
     "packages/charts/src/charts/bump-chart.tsx": -10,
     "packages/charts/src/charts/candlestick-chart.tsx": 1,
     "packages/charts/src/charts/candlestick.tsx": 1,

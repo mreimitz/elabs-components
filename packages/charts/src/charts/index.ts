@@ -424,6 +424,7 @@ export {
   type QuietDotProps,
   seededRnd,
   stagger,
+  UNIT_STACK_EMPHASIS,
   UnitStack,
   type UnitStackDirection,
   type UnitStackKind,
@@ -713,3 +714,9 @@ export {
   type UseCanvasDrawOptions,
   type UseCanvasDrawResult,
 } from "./canvas-layer";
+
+// Value-set formatting (#250) — one notation across a whole label set (an
+// axis' ticks, a bar set's value labels), so independent per-value
+// compaction decisions can't mix "1K" beside "400" within one scale.
+export { useChartValueSetFormatter } from "./chart-formatters";
+export { valueFormatOptionsForSet } from "./value-format";
