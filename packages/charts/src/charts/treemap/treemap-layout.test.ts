@@ -239,6 +239,65 @@ describe("computeTreemapLayout", () => {
     expect(other?.isOther).toBe(true);
   });
 
+  it("the Other leaf reports how many leaves it folded (#247)", () => {
+    const data: TreemapNode = {
+      name: "root",
+      children: [
+        {
+          name: "Group",
+          children: [
+            { name: "Big", value: 90 },
+            { name: "Tiny A", value: 1 },
+            { name: "Tiny B", value: 1 },
+            { name: "Tiny C", value: 1 },
+          ],
+        },
+      ],
+    };
+    const result = computeTreemapLayout(data, {
+      width: 640,
+      height: 400,
+      depth: 2,
+      gap: 2,
+      palette: "mono",
+      otherThreshold: 0.05,
+    });
+    const other = result.leaves.find((l) => l.name === "Other");
+    expect(other?.mergedCount).toBe(3); // Tiny A, Tiny B, Tiny C
+  });
+
+  it("both merge paths (otherThreshold + TREEMAP_MAX_LEAVES) contribute to mergedCount (#247)", () => {
+    // 3 leaves qualify for otherThreshold; the group also has more than
+    // TREEMAP_MAX_LEAVES leaves overall, so the unconditional cap fires too —
+    // a single-path implementation would silently drop one count.
+    const tinyOtherLeaves = [
+      { name: "Tiny A", value: 1 },
+      { name: "Tiny B", value: 1 },
+      { name: "Tiny C", value: 1 },
+    ];
+    const capLeaves = Array.from({ length: TREEMAP_MAX_LEAVES + 5 }, (_, i) => ({
+      name: `Mid ${i}`,
+      value: 50 + i, // all above the otherThreshold cut, distinct
+    }));
+    const data: TreemapNode = {
+      name: "root",
+      children: [{ name: "Group", children: [...tinyOtherLeaves, ...capLeaves] }],
+    };
+    const result = computeTreemapLayout(data, {
+      width: 640,
+      height: 400,
+      depth: 2,
+      gap: 2,
+      palette: "mono",
+      otherThreshold: 0.001, // small enough that only the 3 tiny leaves qualify
+    });
+    const other = result.leaves.find((l) => l.name === "Other");
+    expect(other).toBeDefined();
+    // 3 from the otherThreshold pass (Tiny A/B/C) + 6 from the unconditional
+    // TREEMAP_MAX_LEAVES cap (35 survivors - 29 kept = 6 trimmed) = 9.
+    expect(other?.mergedCount).toBe(9);
+  });
+
   it("otherThreshold: off (0) does not merge, even with small leaves", () => {
     const data: TreemapNode = {
       name: "root",
