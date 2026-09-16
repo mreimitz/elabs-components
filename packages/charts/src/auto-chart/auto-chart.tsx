@@ -23,6 +23,7 @@
 
 import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
+import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
 import type { ChartHoverCategory } from "../charts/chart-hover-link";
 import type { ChartSelectionStatesResolver } from "../charts/chart-selection";
 import { useChartValueFormatter } from "../charts/chart-formatters";
@@ -66,6 +67,7 @@ import {
   type UnitChartDatum,
   WaterfallChart,
   type WaterfallDatum,
+  type WaterfallStep,
   XAxis,
   YAxis,
 } from "../charts";
@@ -301,6 +303,7 @@ function renderChart(
           onHoverCategory={links.onHoverCategory}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
+          onDatapointClick={links.onDatapointClick}
         >
           <Grid horizontal />
           {series.map((s) => (
@@ -335,6 +338,7 @@ function renderChart(
           onHoverCategory={links.onHoverCategory}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
+          onDatapointClick={links.onDatapointClick}
         >
           <Grid horizontal />
           {series.map((s) => (
@@ -356,6 +360,7 @@ function renderChart(
           <BarChart
             dimExcluded={links.dimExcluded}
             selectionStates={links.selectionStates}
+            onDatapointClick={links.onDatapointClick}
             data={resolvedData}
             xDataKey={x}
             stacked={stacked ?? false}
@@ -406,6 +411,7 @@ function renderChart(
           <PieChart
             dimExcluded={links.dimExcluded}
             selectionStates={links.selectionStates}
+            onDatapointClick={links.onDatapointClick}
             data={pieData}
             innerRadius={innerRadius}
             className="h-full"
@@ -526,6 +532,7 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
+          onDatapointClick={links.onDatapointClick}
         />
       );
     }
@@ -584,6 +591,7 @@ function renderChart(
           <HeatmapChart
             dimExcluded={links.dimExcluded}
             selectionStates={links.selectionStates}
+            onDatapointClick={links.onDatapointClick}
             data={resolvedData}
             x={x}
             y={yKey}
@@ -619,6 +627,13 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
+          // WaterfallChart types its handler on its own `WaterfallStep` datum; the spec-driven
+          // link is family-agnostic, so it is cast the same way `WaterfallChart` itself casts
+          // an internal handler (see its own `onDatapointClick={onDatapointClick as
+          // ChartDatapointClickHandler | undefined}`).
+          onDatapointClick={
+            links.onDatapointClick as unknown as ChartDatapointClickHandler<WaterfallStep>
+          }
         />
       );
     }
@@ -631,6 +646,7 @@ function renderChart(
           <DumbbellChart
             dimExcluded={links.dimExcluded}
             selectionStates={links.selectionStates}
+            onDatapointClick={links.onDatapointClick}
             data={resolvedData}
             category={x}
             startKey={startKey}
@@ -656,6 +672,7 @@ function renderChart(
         <UnitChart
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
+          onDatapointClick={links.onDatapointClick}
           data={unitData}
           layout="waffle"
           style={{ height }}
@@ -682,6 +699,7 @@ function renderChart(
         <TreemapChart
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
+          onDatapointClick={links.onDatapointClick}
           data={hierarchy}
           // A spec is model output: an invented palette falls back to the
           // documented mono default rather than reaching the layout (#306).
@@ -714,6 +732,7 @@ function renderChart(
             accessibleLabel={spec.title}
             accessibleDescription={spec.description}
             copyValueOnActivate={copyValueOnActivate}
+            onDatapointClick={links.onDatapointClick}
           />
         </div>
       );
@@ -737,6 +756,7 @@ function renderChart(
             accessibleLabel={spec.title}
             accessibleDescription={spec.description}
             copyValueOnActivate={copyValueOnActivate}
+            onDatapointClick={links.onDatapointClick}
           />
         </div>
       );
@@ -754,6 +774,7 @@ function renderChart(
           <BarChart
             dimExcluded={links.dimExcluded}
             selectionStates={links.selectionStates}
+            onDatapointClick={links.onDatapointClick}
             data={resolvedData}
             xDataKey={x}
             orientation={orientation ?? "vertical"}
@@ -875,12 +896,21 @@ export interface AutoChartProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
   hoverCategory?: ChartHoverCategory;
   /** Fires with the hovered category on pointer move, `null` on leave (RM-073). */
   onHoverCategory?: (category: ChartHoverCategory) => void;
+  /**
+   * Forwarded to the chosen container's own `onDatapointClick` (RM-075), when that
+   * family accepts one (bar, line, area/stream, pie, waterfall, heatmap/calendar,
+   * dumbbell, unit, treemap, histogram/box/strip, bump, funnel, diverging-bar).
+   * Absent on scatter/radar/candlestick — those containers don't accept it yet.
+   * Unset by default, so the default render stays byte-identical (#349's own rule:
+   * "with it unset the chart renders exactly as before").
+   */
+  onDatapointClick?: ChartDatapointClickHandler;
 }
 
 /** The link inputs `AutoChart` forwards to its container. */
 type AutoChartLinkProps = Pick<
   AutoChartProps,
-  "dimExcluded" | "hoverCategory" | "onHoverCategory" | "selectionStates"
+  "dimExcluded" | "hoverCategory" | "onHoverCategory" | "selectionStates" | "onDatapointClick"
 >;
 
 /**
@@ -925,6 +955,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     hoverCategory,
     onHoverCategory,
     selectionStates,
+    onDatapointClick,
     ...props
   },
   ref,
@@ -1042,6 +1073,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     hoverCategory,
     onHoverCategory,
     selectionStates: resolveSpecSelection(spec, selectionStates),
+    onDatapointClick,
   };
 
   // ── Render ────────────────────────────────────────────────────────────────

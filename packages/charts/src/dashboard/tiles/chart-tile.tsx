@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { AutoChart } from "../../auto-chart/auto-chart";
 import type { ChartSpec } from "../../auto-chart/chart-spec";
 import { ChartFrame } from "../../chart-frame/chart-frame";
+import type { ChartDatapoint } from "../../charts/chart-datapoint";
 import type { ChartSelectionCategory } from "../../charts/chart-selection";
 import type { DashboardTileKind, DashboardTileProps } from "../dashboard-sheet/tile-registry";
 
@@ -23,11 +24,19 @@ function selectionField(
   return spec.fields?.category ?? spec.x;
 }
 
-function ChartTile({ tile, selection, hover, emit, frame }: DashboardTileProps<ChartTileContent>) {
+function ChartTile({
+  tile,
+  selection,
+  hover,
+  emit,
+  frame,
+  interactions,
+}: DashboardTileProps<ChartTileContent>) {
   const spec = tile.content;
   const consumesSelection = Boolean(tile.consumes?.selection);
   const consumesHover = Boolean(tile.consumes?.hover);
   const emitsHover = Boolean(tile.emits?.hover);
+  const emitsSelection = Boolean(tile.emits?.selection);
 
   const field = useMemo(
     () => selectionField(tile.emits?.selection ?? tile.consumes?.selection, spec),
@@ -50,6 +59,22 @@ function ChartTile({ tile, selection, hover, emit, frame }: DashboardTileProps<C
       }
     : undefined;
 
+  // Click-to-select (RM-075 follow-up): a mark's `category` is the row value the
+  // sheet's selection driver already tracks under `field` — the same field
+  // `selectionStates`/`hoverCategory` read/write above. `interactions.select`
+  // gates it off in edit mode, matching every other tile's edit-mode contract.
+  const onDatapointClick =
+    emitsSelection && field && interactions.select
+      ? (point: ChartDatapoint) => {
+          if (point.category === undefined) return;
+          // `SelectionValue` is `string | number` — a time-scale category (a `Date`) is
+          // keyed by its ISO string, same as `hover.value` already carries for chart marks.
+          const value =
+            point.category instanceof Date ? point.category.toISOString() : point.category;
+          emit.select(field, [value], { toggle: true });
+        }
+      : undefined;
+
   return (
     <ChartFrame {...frame} data={spec.data}>
       <AutoChart
@@ -57,6 +82,7 @@ function ChartTile({ tile, selection, hover, emit, frame }: DashboardTileProps<C
         selectionStates={selectionStates}
         hoverCategory={hoverCategory}
         onHoverCategory={onHoverCategory}
+        onDatapointClick={onDatapointClick}
       />
     </ChartFrame>
   );
@@ -64,13 +90,14 @@ function ChartTile({ tile, selection, hover, emit, frame }: DashboardTileProps<C
 
 /**
  * `chart` — `AutoChart` in a self-owned `ChartFrame chrome="tile"` (`capabilities.frame`),
- * wired to the sheet's selection/hover channels via `tile.consumes`/`tile.emits`.
+ * wired to the sheet's selection/hover channels via `tile.consumes`/`tile.emits`. A click
+ * on a mark calls `emit.select(field, [category], { toggle: true })` when the tile
+ * `emits.selection` and `interactions.select` is on (view mode) — off in edit mode.
  *
- * KNOWN GAP (RM-075 result file): `AutoChart` has no `onDatapointClick` prop, so a click
- * on a mark does not emit a selection intent yet — `selectionStates`/`hoverCategory`/
- * `onHoverCategory` are wired, click-to-select is not. Registering the tile's rows with
- * the local `SelectionDriver` (`driver.register`) is also not wired: `DashboardTileProps`
- * does not expose the driver to a tile component.
+ * KNOWN GAP: registering the tile's rows with the local `SelectionDriver`
+ * (`driver.register`) is not wired — `DashboardTileProps` does not expose the driver to
+ * a tile component. Click-to-select above works through the store's `select` action
+ * directly, which does not need `driver.register`.
  */
 export function createChartTileKind(kind = "chart"): DashboardTileKind<ChartTileContent> {
   return {

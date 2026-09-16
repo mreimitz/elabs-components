@@ -2,6 +2,7 @@
 
 import { cn } from "@elabs-ai/components-ui";
 
+import type { DashboardSpecError } from "../core/spec";
 import type { DashboardTileKind, DashboardTileProps } from "../dashboard-sheet/tile-registry";
 
 /** Content of an `image` tile. `alt` is required (asked in the config form). */
@@ -29,10 +30,19 @@ function ImageTile({ tile }: DashboardTileProps<ImageTileContent>) {
   );
 }
 
+/** `alt` is required — enforced twice: the config form's `required: true` AND this
+ * runtime check, so content written before that rule existed (or built by a host
+ * bypassing the form) still fails a validator that calls it. */
+function validateImageContent(content: ImageTileContent): DashboardSpecError | null {
+  if (!content.alt || content.alt.trim() === "") {
+    return { path: "content.alt", code: "missing", message: "image tile: alt text is required" };
+  }
+  return null;
+}
+
 /**
- * `image` — a static image. The tile contract has no `validateContent?` hook yet
- * (RM-075 result file flags this for RM-070), so `alt` is only enforced by the
- * config form's `required: true`, not by a runtime content validator.
+ * `image` — a static image. `alt` is required (config form's `required: true`, plus
+ * `validateContent` for a host or test that builds content without the form).
  */
 export function createImageTileKind(kind = "image"): DashboardTileKind<ImageTileContent> {
   return {
@@ -42,6 +52,7 @@ export function createImageTileKind(kind = "image"): DashboardTileKind<ImageTile
     defaultSize: { w: 6, h: 4 },
     minSize: { w: 2, h: 2 },
     capabilities: { expand: true },
+    validateContent: validateImageContent,
     configForm: {
       formName: `${kind}-tile`,
       fields: [

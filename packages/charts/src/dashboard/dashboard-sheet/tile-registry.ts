@@ -8,7 +8,7 @@ import type { FormSpec } from "@elabs-ai/components-ui";
 import type { ChartFrameMenuApi } from "../../chart-frame/chart-frame";
 import type { ChartDensity, ChartInteractions } from "../../charts/chart-config-context";
 import type { SelectionOptions, SelectionSnapshot, SelectionValue } from "../core/selection";
-import type { TileSpec, VariableValue } from "../core/spec";
+import type { DashboardSpecError, TileSpec, VariableValue } from "../core/spec";
 import type { DashboardHover, DashboardMode } from "../core/store";
 
 /** What a tile kind can do. Absent flags are `false`, except `expand` (default `true`). */
@@ -68,6 +68,12 @@ export interface DashboardTileProps<TContent = unknown> {
     openBookmark(id: string): void;
     /** Ask the host to refresh this tile's data (D5: the host fetches). */
     refresh(): void;
+    /**
+     * Fire a `button` tile's `{ type: "host" }` action (or any kind's own host-defined
+     * action) — the host decides what `id` means (D5). No-op with no `onAction` on
+     * `DashboardProvider`.
+     */
+    action(id: string): void;
   };
   density: ChartDensity;
   /** Spread onto `ChartFrame` when the kind declares `capabilities.frame`. */
@@ -93,6 +99,14 @@ export interface DashboardTileKind<TContent = unknown> {
   defaultContent: TContent;
   /** Upgrade `content` written by an older version of this kind. */
   migrate?: (content: unknown, fromVersion: number) => TContent;
+  /**
+   * Validate `content` beyond what the config form's own field rules cover (a rule that
+   * spans fields, or one the form vocabulary can't express, e.g. `image`'s required
+   * `alt`). Returns `null` when `content` is valid. Not yet called by the sheet or the
+   * validator in `core/validate.ts` — no run-every-kind entry point exists today, so a
+   * kind that declares this exposes it for its own tests/host to call directly.
+   */
+  validateContent?: (content: TContent) => DashboardSpecError | null;
 }
 
 /** Tile kinds keyed by `kind`. */

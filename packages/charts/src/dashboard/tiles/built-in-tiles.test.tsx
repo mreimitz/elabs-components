@@ -7,6 +7,7 @@ import type { DashboardSpec, TileSpec } from "../core/spec";
 import { DashboardProvider, DashboardSheet } from "../dashboard-sheet";
 import { builtInTiles, withBuiltInTiles } from "./built-in-tiles";
 import { parseInlineMarkup, renderInlineMarkup } from "./inline-markup";
+import { imageTileKind } from "./image-tile";
 
 vi.mock("react-use-measure", () => ({
   default: () => [
@@ -99,6 +100,22 @@ describe("inline-markup", () => {
   });
 });
 
+describe("validateContent (image tile, RM-075 follow-up)", () => {
+  it("flags missing alt text", () => {
+    expect(imageTileKind.validateContent?.({ src: "https://example.com/x.png", alt: "" })).toEqual({
+      path: "content.alt",
+      code: "missing",
+      message: expect.any(String),
+    });
+  });
+
+  it("passes with alt text set", () => {
+    expect(
+      imageTileKind.validateContent?.({ src: "https://example.com/x.png", alt: "A map" }),
+    ).toBeNull();
+  });
+});
+
 function sheetWith(tiles: TileSpec[], extra?: Partial<DashboardSpec>): DashboardSpec {
   return {
     version: 1,
@@ -110,10 +127,10 @@ function sheetWith(tiles: TileSpec[], extra?: Partial<DashboardSpec>): Dashboard
   };
 }
 
-function renderSheet(spec: DashboardSpec) {
+function renderSheet(spec: DashboardSpec, onAction?: (id: string) => void) {
   return render(
     <div style={{ width: 960, height: 540 }}>
-      <DashboardProvider spec={spec} tiles={withBuiltInTiles({})}>
+      <DashboardProvider spec={spec} tiles={withBuiltInTiles({})} onAction={onAction}>
         <DashboardSheet />
       </DashboardProvider>
     </div>,
@@ -192,6 +209,25 @@ describe("built-in tile kinds render", () => {
     const button = await screen.findByRole("button", { name: "Clear" });
     await user.click(button);
     expect(button).toBeEnabled();
+  });
+
+  it("button tile's host action calls DashboardProvider's onAction (RM-075 follow-up)", async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn();
+    renderSheet(
+      sheetWith([
+        {
+          id: "b1",
+          kind: "button",
+          layout: { x: 0, y: 0, w: 3, h: 1 },
+          content: { label: "Run", action: { type: "host", id: "custom-export" } },
+        },
+      ]),
+      onAction,
+    );
+    const button = await screen.findByRole("button", { name: "Run" });
+    await user.click(button);
+    expect(onAction).toHaveBeenCalledWith("custom-export");
   });
 
   it("button tile is disabled (via aria-disabled through the interactions gate) in edit mode", async () => {

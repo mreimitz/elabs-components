@@ -40,8 +40,7 @@ function ButtonTile({ tile, emit, interactions }: DashboardTileProps<ButtonTileC
         emit.setVariable(action.name, action.value);
         return;
       case "host":
-        // No host-action channel on the tile contract yet — DashboardProvider has no
-        // `onAction` prop to call here. See the RM-075 result file.
+        emit.action(action.id);
         return;
       default:
         return;
@@ -59,8 +58,8 @@ function ButtonTile({ tile, emit, interactions }: DashboardTileProps<ButtonTileC
 
 /**
  * `button` — fires a sheet-level action (navigate, apply a bookmark, clear selections,
- * set a variable). `host` actions are accepted by the content shape but not yet wired —
- * see the kind's docblock in `button-tile.tsx`.
+ * set a variable, or a host-defined `host` action via `emit.action`/`DashboardProvider`'s
+ * `onAction`).
  */
 export function createButtonTileKind(kind = "button"): DashboardTileKind<ButtonTileContent> {
   return {

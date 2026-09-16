@@ -18,7 +18,9 @@ const ALL_BUILT_INS: DashboardSpec = {
       id: "heading",
       kind: "heading",
       layout: { x: 0, y: 0, w: 24, h: 1 },
-      content: { text: "EMEA overtook APAC in Q3", level: 1 },
+      // level 2, not 1: every tile's own header is an h3 (`DashboardTileHeader`), so a
+      // sheet-level h1 here would make axe's `heading-order` skip a level (#RM-075).
+      content: { text: "EMEA overtook APAC in Q3", level: 2 },
     },
     {
       id: "kpi-revenue",
@@ -175,6 +177,48 @@ export const ChartKind: Story = {
     }),
 };
 
+/**
+ * RM-075 Acceptance: "clicking a bar in the 'All built-ins' story selects that
+ * category". `revenue-by-region` both `emits` and `consumes` selection on `region`
+ * (RM-072/073's shared-filter pattern), so a click on its own EMEA bar is enough to
+ * observe both halves of the click-to-select seam: the emit AND the resulting
+ * `data-selection` repaint, without depending on a second chart sharing the same
+ * category values.
+ */
+export const ChartClickSelects: Story = {
+  name: "Chart tile: click a bar to select",
+  render: () =>
+    renderSheet({
+      ...ALL_BUILT_INS,
+      id: "chart-click",
+      title: "Revenue by region",
+      tiles: [ALL_BUILT_INS.tiles.find((t) => t.id === "revenue-by-region")!],
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Revenue by region" });
+    // The bar's real, focusable keyboard target — see charts.md "Drill-down": targets
+    // live outside the <svg>. AutoChart's `<Bar>` here carries no `label`, so the shared
+    // default name falls back to the series `dataKey` ("revenue"), not `series.label`
+    // ("Revenue") — a pre-existing AutoChart quirk, not something this seam changes.
+    const emeaBar = await canvas.findByRole("button", { name: "revenue, EMEA: 41" });
+    // Keyboard activation, not `userEvent.click`: `ChartDatapointLayer`'s targets sit
+    // under a `pointer-events: none` layer BY DESIGN (the SVG mark underneath owns the
+    // pointer path — see the docblock in `chart-datapoint-layer.tsx`), so `userEvent`'s
+    // own visibility check rejects a synthetic pointer click on the button. A real Enter
+    // key on the focused target exercises the exact same `onDatapointClick` handler this
+    // seam wires up (`source: "keyboard"` instead of `"pointer"`).
+    emeaBar.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => {
+      const selected = canvasElement.querySelectorAll('[data-selection="selected"]');
+      expect(selected.length).toBeGreaterThan(0);
+    });
+    const excluded = canvasElement.querySelectorAll('[data-selection="excluded"]');
+    expect(excluded.length).toBeGreaterThan(0);
+  },
+};
+
 export const MetricKind: Story = {
   render: () =>
     renderSheet({
@@ -246,7 +290,10 @@ export const ContainerKind: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole("region", { name: "Container" });
-    const tabs = canvas.getAllByRole("tab");
+    // `findAllByRole` (not `getAllByRole`): the tile body lazy-mounts once its
+    // `IntersectionObserver` entry fires, so the tabs are not necessarily in the DOM the
+    // instant the sheet's own region role is.
+    const tabs = await canvas.findAllByRole("tab");
     expect(tabs.length).toBe(2);
     await userEvent.click(tabs[1]!);
   },

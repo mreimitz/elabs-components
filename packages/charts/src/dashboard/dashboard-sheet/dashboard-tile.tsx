@@ -61,7 +61,7 @@ export interface DashboardTileRootProps extends HTMLAttributes<HTMLDivElement> {
  */
 export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
   function DashboardTile({ tileId, className, style, onFocus, ...props }, forwardedRef) {
-    const { registry, labels, onNavigate, onRefresh } = useDashboardContext();
+    const { registry, labels, onNavigate, onRefresh, onAction } = useDashboardContext();
     const sheet = useDashboardSheetContext();
     const actions = useDashboardActions();
     const tile = useDashboard((s) => s.spec.tiles.find((t) => t.id === tileId));
@@ -116,8 +116,9 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         navigate: (sheetId) => onNavigate?.(sheetId),
         openBookmark: actions.applyBookmark,
         refresh: () => onRefresh?.(tileId),
+        action: (id) => onAction?.(id),
       }),
-      [actions, tileId, onNavigate, onRefresh],
+      [actions, tileId, onNavigate, onRefresh, onAction],
     );
 
     if (!tile) return null;
