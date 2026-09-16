@@ -23,6 +23,32 @@
  * OUTSIDE the sector wash — never on top of it — so the compounding opacity of
  * overlapping sectors can never erode a label's contrast against `--chart-background`.
  *
+ * ## What makes a wedge visible (#298)
+ *
+ * The translucent fill alone does NOT: at α 0.07–0.16 over a light card a wedge
+ * measures 1.03–1.13:1, and the light chart ramp is below 3:1 even at full
+ * opacity, so no value inside (or outside) the sanctioned band can reach WCAG
+ * 1.4.11's 3:1. Overlaps rarely compound enough to help. Each wedge therefore
+ * carries a full-opacity `--border-strong` outline — the token contracted to
+ * reach ≥3:1 against the card in every theme — and that edge is the mark's
+ * compliant cue. The fill keeps its band and still carries relative weight.
+ *
+ * ## Layout (#303)
+ *
+ * The ring radius is DERIVED from the box, outside-in: edge padding, then half
+ * the widest hour label ("06:00" is wide, not tall), then the gap that clears the
+ * rim ticks. A fixed `size * 0.42` ring used to push the 06:00 and 18:00 labels
+ * half outside the viewBox, where the SVG clipped them.
+ *
+ * ## Focus (#307)
+ *
+ * This figure never scrolls, but it stays a tab stop on purpose — the same
+ * contract every named package chart figure follows — so a keyboard or
+ * screen-reader user can land on the named figure and hear its summary. It
+ * carries the house `focus-ring`.
+ *
+ * If you copied this block before those fixes, re-add it.
+ *
  * Copy-own it: `npx shadcn add chart-editorial-patchwork`.
  */
 
@@ -40,6 +66,18 @@ export interface ChartEditorialPatchworkProps {
 const MIN_OPACITY = 0.07;
 const MAX_OPACITY = 0.16;
 const WEDGE_HALF_WIDTH_DEG = 6;
+/** Wedge outline width — thick enough that anti-aliasing keeps its 3:1 edge. */
+const WEDGE_OUTLINE_WIDTH = 1;
+
+const LABEL_FONT_SIZE = 10;
+/** Half the width of "00:00" — five glyphs at up to ~0.6 em. */
+const LABEL_HALF_WIDTH = LABEL_FONT_SIZE * 1.5;
+/** Clearance between the widest label and the viewBox edge. */
+const EDGE_PADDING = 4;
+/** How far the rim ticks reach past the ring (see the `HairlineFloor` call). */
+const TICK_OUTSET = 4;
+/** Label centre distance past the ring: clears the ticks by 3px for a label on its side. */
+const LABEL_GAP = TICK_OUTSET + LABEL_HALF_WIDTH + 3;
 
 function angleDeg(hour: number): number {
   return (hour / 24) * 360;
@@ -94,7 +132,8 @@ export function ChartEditorialPatchwork({
 }: ChartEditorialPatchworkProps) {
   const cx = size / 2;
   const cy = size / 2;
-  const outerR = size * 0.42;
+  const labelR = size / 2 - EDGE_PADDING - LABEL_HALF_WIDTH;
+  const outerR = labelR - LABEL_GAP;
   const innerR = size * 0.16;
   const categories = Array.from(new Set(data.map((event) => event.category)));
   const summary = `${data.length} events across ${categories.length} categories: ${categories.join(", ")}.`;
@@ -102,7 +141,7 @@ export function ChartEditorialPatchwork({
   return (
     <div
       aria-label={accessibleLabel}
-      className="w-full max-w-[420px] rounded-lg border border-border bg-card p-4"
+      className="focus-ring w-full max-w-[420px] rounded-lg border border-border bg-card p-4"
       role="figure"
       tabIndex={0}
     >
@@ -111,7 +150,7 @@ export function ChartEditorialPatchwork({
         aria-hidden="true"
         height={size}
         role="presentation"
-        style={{ display: "block", margin: "0 auto" }}
+        style={{ display: "block", margin: "0 auto", maxWidth: "100%", height: "auto" }}
         viewBox={`0 0 ${size} ${size}`}
         width={size}
       >
@@ -150,7 +189,9 @@ export function ChartEditorialPatchwork({
               fill={`var(--chart-${categoryTokenIndex(categories, event.category)})`}
               fillOpacity={opacity}
               key={`${event.category}-${event.hour}-${i}`}
-              stroke="none"
+              stroke="var(--border-strong)"
+              strokeLinejoin="round"
+              strokeWidth={WEDGE_OUTLINE_WIDTH}
             />
           );
         })}
@@ -165,18 +206,19 @@ export function ChartEditorialPatchwork({
               height={hour % 6 === 0 ? 10 : 6}
               periods={[hour]}
               scale={() => 0}
-              y={-(outerR + 4)}
+              y={-(outerR + TICK_OUTSET)}
             />
           </g>
         ))}
 
         {[0, 6, 12, 18].map((hour) => {
-          const p = polarToCartesian(cx, cy, outerR + 18, angleDeg(hour));
+          const p = polarToCartesian(cx, cy, labelR, angleDeg(hour));
           return (
             <text
+              data-slot="chart-editorial-patchwork-hour-label"
               dominantBaseline="middle"
               fill="var(--chart-foreground-muted)"
-              fontSize={10}
+              fontSize={LABEL_FONT_SIZE}
               key={hour}
               textAnchor="middle"
               x={p.x}

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { ChartEditorialAlmanac } from "@/components/chart-editorial-almanac/chart-editorial-almanac";
 import { ACTIVITY_MATRIX } from "@/components/chart-editorial-almanac/data/activity-matrix";
+import { expectHouseFocusRing } from "./_chart-editorial-assertions";
 
 const meta = {
   title: "Patterns/Blocks/Chart Editorial — Bubble Almanac",
@@ -42,6 +43,15 @@ export const Default: Story = {
     const peakBlob = blobs.find((blob) => Number(blob.getAttribute("data-value")) === trueMax);
     await expect(peakBlob).toBeDefined();
     await expect(Number(peakBlob?.getAttribute("data-radius"))).toBe(maxRadius);
+
+    // #299 — a SCALE lock, not only a monotonicity lock: drawn AREA is
+    // proportional to value for every blob. Expressed as the property, never as
+    // the formula, so a linear radius (which passes the check above) fails here.
+    for (const blob of blobs) {
+      const areaShare = (Number(blob.getAttribute("data-radius")) / maxRadius) ** 2;
+      const valueShare = Number(blob.getAttribute("data-value")) / trueMax;
+      await expect(Math.abs(areaShare / valueShare - 1)).toBeLessThanOrEqual(0.02);
+    }
 
     // Exactly one margin note, naming the true peak value.
     const notes = canvasElement.querySelectorAll('[data-slot="marginalia"]');
@@ -101,5 +111,10 @@ export const Default: Story = {
     // The table is sr-only, not interactive: no new focusable element enters
     // the page from this fix.
     await expect(canvasElement.querySelectorAll("button")).toHaveLength(0);
+
+    // #307 — a scroll container at narrow widths, so it stays a tab stop, and
+    // focusing it paints the house ring rather than the UA default outline.
+    await expect(figure.tabIndex).toBe(0);
+    await expectHouseFocusRing(figure);
   },
 };

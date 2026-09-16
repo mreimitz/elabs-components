@@ -33,6 +33,24 @@ import { ChoroplethGraticule as ChoroplethGraticuleLayer } from "./choropleth-gr
 import { ChoroplethKeyboardNav, type ChoroplethKeyboardNavProps } from "./choropleth-keyboard-nav";
 import { ChoroplethTooltip as ChoroplethTooltipLayer } from "./choropleth-tooltip";
 
+/** Messages already logged, so a re-rendering chart does not re-log every frame. */
+const warnedMessages = new Set<string>();
+function warnOnce(message: string): void {
+  if (process.env.NODE_ENV === "production" || warnedMessages.has(message)) return;
+  warnedMessages.add(message);
+  console.warn(message);
+}
+
+/** True when `data` really is a collection carrying a `features` array. */
+function hasFeatureArray(data: unknown): boolean {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    !Array.isArray(data) &&
+    Array.isArray((data as { features?: unknown }).features)
+  );
+}
+
 export interface ChoroplethChartProps {
   /** GeoJSON FeatureCollection data */
   data: FeatureCollection<Geometry, ChoroplethFeatureProperties>;
@@ -417,6 +435,21 @@ function ChoroplethChartInner({
   }, [animationDuration, revealSignature]);
 
   if (width < 10 || height < 10) {
+    return null;
+  }
+
+  // #288 — a bare feature ARRAY (or anything without `features`) used to reach
+  // @visx/geo's Projection as `undefined` and crash there with an anonymous
+  // "reading 'map'", the container's name nowhere in the stack. Fail legibly
+  // instead: warn once in dev and render nothing. Never coerce the wrong shape —
+  // a guard that silently repairs a wrong prop hides the bug one layer down.
+  if (!hasFeatureArray(data)) {
+    warnOnce(
+      "ChoroplethChart: `data` must be a GeoJSON FeatureCollection " +
+        "({ type: 'FeatureCollection', features: [...] }), received " +
+        (Array.isArray(data) ? "an array" : typeof data) +
+        ".",
+    );
     return null;
   }
 

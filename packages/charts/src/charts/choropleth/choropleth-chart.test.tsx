@@ -81,6 +81,38 @@ const minimalData: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
   ],
 };
 
+describe("ChoroplethChart data-shape guard (#288)", () => {
+  it.each([
+    ["a bare feature array", minimalData.features],
+    ["an object without features", { type: "FeatureCollection" }],
+    ["undefined", undefined],
+  ])("renders without throwing and warns once for %s", (_label, bad) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect(() =>
+        render(
+          <ChoroplethChart aspectRatio="16 / 9" data={bad as never}>
+            <ChoroplethFeatureComponent />
+          </ChoroplethChart>,
+        ),
+      ).not.toThrow();
+      const messages = warn.mock.calls.map((call) => String(call[0]));
+      expect(messages.filter((m) => m.startsWith("ChoroplethChart: `data`"))).toHaveLength(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("still draws the happy path, so the guard cannot pass by refusing everything", () => {
+    const { container } = render(
+      <ChoroplethChart aspectRatio="16 / 9" data={minimalData}>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    expect(container.querySelector("svg")).not.toBeNull();
+  });
+});
+
 describe("ChoroplethChart", () => {
   it("is exported as a function / forwardRef object", () => {
     // Guards the named export exists and is callable by React
