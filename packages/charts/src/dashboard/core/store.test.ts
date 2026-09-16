@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { extendRows } from "./layout";
 import * as localDriverModule from "./local-selection-driver";
 import salesJson from "./__fixtures__/sales-overview.json";
 import { createSelectionSnapshot, type SelectionDriver, type SelectionSnapshot } from "./selection";
@@ -166,5 +167,61 @@ describe("createDashboardStore — ephemeral slices and selection", () => {
 
     actions.dispose();
     expect(listeners.size).toBe(0);
+  });
+});
+
+// UI slice / setGrid — RM-079
+describe("createDashboardStore — UI slice and setGrid", () => {
+  it("setPanel opens/closes a chrome panel without touching history", () => {
+    const { store, actions } = setup();
+    expect(store.getState().ui).toEqual({ assets: false, properties: false });
+    actions.setPanel("assets", true);
+    expect(store.getState().ui).toEqual({ assets: true, properties: false });
+    expect(store.getState().history.past).toBe(0);
+    actions.setPanel("properties", true);
+    expect(store.getState().ui).toEqual({ assets: true, properties: true });
+    actions.setPanel("assets", false);
+    expect(store.getState().ui).toEqual({ assets: false, properties: true });
+  });
+
+  it("setGrid without a density change merges the patch as one history entry", () => {
+    const { store, actions } = setup();
+    const before = layoutOf(store.getState().spec, "kpi-revenue");
+    actions.setGrid({ mode: "flow" });
+    expect(store.getState().spec.grid).toMatchObject({ mode: "flow", rowHeight: 30 });
+    expect(layoutOf(store.getState().spec, "kpi-revenue")).toEqual(before);
+    expect(store.getState().history.past).toBe(1);
+  });
+
+  it("switching density wide → medium doubles every tile's x, y, w, h", () => {
+    const { store, actions } = setup();
+    actions.setGrid({ density: "wide" }); // 24×12, the sales fixture's own dimensions
+    const before = layoutOf(store.getState().spec, "kpi-revenue")!;
+    actions.setGrid({ density: "medium" }); // 48×24
+    expect(store.getState().spec.grid).toMatchObject({ columns: 48, rows: 24 });
+    const after = layoutOf(store.getState().spec, "kpi-revenue")!;
+    expect(after).toMatchObject({
+      x: before.x * 2,
+      y: before.y * 2,
+      w: before.w * 2,
+      h: before.h * 2,
+    });
+  });
+
+  it("switching fit → flow keeps x, y, w, h and sets rowHeight 30", () => {
+    const { store, actions } = setup();
+    const before = layoutOf(store.getState().spec, "kpi-revenue");
+    actions.setGrid({ mode: "flow" });
+    expect(store.getState().spec.grid).toMatchObject({ mode: "flow", rowHeight: 30 });
+    expect(layoutOf(store.getState().spec, "kpi-revenue")).toEqual(before);
+  });
+
+  it("Extend sheet (extendRows) adds 6 rows to a 12-row fit grid, as one history entry", () => {
+    const { store, actions } = setup();
+    expect(store.getState().spec.grid).toMatchObject({ rows: 12 });
+    const grown = extendRows(store.getState().spec.grid);
+    actions.setGrid({ extendable: true, rows: grown.rows, extensions: grown.extensions });
+    expect(store.getState().spec.grid).toMatchObject({ rows: 18, extensions: 1, extendable: true });
+    expect(store.getState().history.past).toBe(1);
   });
 });

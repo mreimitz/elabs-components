@@ -15,7 +15,13 @@ import { subscribeWithSelector } from "zustand/middleware";
 import { createStore, type Mutate, type StoreApi } from "zustand/vanilla";
 
 import { createHistory, type History } from "./history";
-import { findEmptySlot, resolveCollisions, type CollisionStrategy } from "./layout";
+import {
+  DEFAULT_GRID_COLUMNS,
+  DEFAULT_GRID_ROWS,
+  findEmptySlot,
+  resolveCollisions,
+  type CollisionStrategy,
+} from "./layout";
 import { createLocalSelectionDriver } from "./local-selection-driver";
 import type {
   SelectionDriver,
@@ -24,10 +30,19 @@ import type {
   SelectionValue,
 } from "./selection";
 import type { DashboardSpec, GridSpec, TileLayout, TileSpec, VariableValue } from "./spec";
-import { normalizeDashboardSpec } from "./validate";
+import { GRID_DENSITY_PRESETS, normalizeDashboardSpec } from "./validate";
 
 /** View or edit. */
 export type DashboardMode = "view" | "edit";
+
+// UI slice — RM-079: which chrome side panels are open. Ephemeral, never in history.
+/** Which side panels the chrome shows. Never persisted, never touches history. */
+export interface DashboardUiState {
+  /** RM-080's asset panel (the "Add" affordance opens it). */
+  assets: boolean;
+  /** RM-080's properties panel. */
+  properties: boolean;
+}
 
 /** The shared hover channel (R15): ephemeral, never persisted, never in history. */
 export interface DashboardHover {
@@ -66,8 +81,16 @@ export interface DashboardActions {
   /** Returns the copy's id, or `null` when there is no room. */
   duplicateTile(id: string): string | null;
   replaceTile(id: string, kind: string, content?: unknown): void;
+  /**
+   * Merge `patch` into the grid. When `patch.density` names a preset (`wide`/`medium`/
+   * `narrow`) and differs from the current density, every tile's and container's `x, y,
+   * w, h` is rescaled by the ratio of the new `columns`/`rows` to the old ones (RM-070's
+   * normaliser then clamps the result) — one history entry either way.
+   */
   setGrid(patch: Partial<GridSpec>): void;
   setFocus(ids: string[]): void;
+  /** UI slice — RM-079: open or close a chrome side panel (RM-080's asset/properties panels). */
+  setPanel(panel: keyof DashboardUiState, open: boolean): void;
   undo(): void;
   redo(): void;
   /** Fold every spec change inside `fn` into one undo step. */
@@ -104,6 +127,8 @@ export interface DashboardState {
   focus: string[];
   dirty: boolean;
   history: { past: number; future: number; canUndo: boolean; canRedo: boolean };
+  /** UI slice — RM-079. */
+  ui: DashboardUiState;
   actions: DashboardActions;
 }
 
@@ -304,11 +329,60 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
           actions.patchTile(id, { kind, content: content === undefined ? {} : content });
         },
         setGrid(patch) {
+          // UI slice — RM-079: the grid-settings popover is the one caller; density
+          // rescale keeps tiles' proportions when the preset (and so columns/rows)
+          // changes, matching the RM-070 normaliser's own clamp-after pass.
           const spec = history.present;
-          commit({ ...spec, grid: { ...spec.grid, ...clone(patch) } });
+          const prevGrid = spec.grid;
+          const clonedPatch = clone(patch);
+          let nextGrid: GridSpec = { ...prevGrid, ...clonedPatch };
+          if (clonedPatch.density && clonedPatch.density !== "custom") {
+            const preset = GRID_DENSITY_PRESETS[clonedPatch.density];
+            nextGrid = { ...nextGrid, columns: preset.columns, rows: preset.rows };
+          }
+          // Only a switch BETWEEN NAMED PRESETS (wide/medium/narrow) rescales: it is the one
+          // case where the caller means "re-map every coordinate to the new density's own
+          // columns × rows" (the acceptance bullet's wide → medium doubling). Switching TO
+          // "custom" (including the grid-settings popover's own "Extend sheet", which sets
+          // `density: "custom"` precisely so the normaliser's `resolveGrid` stops re-locking
+          // `rows` to the OLD preset) is the caller being fully explicit about the next
+          // columns/rows already — rescaling on top of that would double-apply the change.
+          const isPresetDensity = (d: GridSpec["density"]) =>
+            d === "wide" || d === "medium" || d === "narrow";
+          const densityChanged =
+            clonedPatch.density !== undefined &&
+            clonedPatch.density !== prevGrid.density &&
+            isPresetDensity(clonedPatch.density);
+          if (!densityChanged) {
+            commit({ ...spec, grid: nextGrid });
+            return;
+          }
+          const prevColumns = prevGrid.columns || DEFAULT_GRID_COLUMNS;
+          const prevRows = prevGrid.rows ?? DEFAULT_GRID_ROWS;
+          const scaleX = (nextGrid.columns || DEFAULT_GRID_COLUMNS) / prevColumns;
+          // `flow` height is `rowHeight` px, not a bounded row count — only `fit` rescales y/h.
+          const scaleY = nextGrid.mode === "fit" ? (nextGrid.rows ?? prevRows) / prevRows : 1;
+          const rescale = <L extends Omit<TileLayout, "id">>(layout: L): L => ({
+            ...layout,
+            x: Math.round(layout.x * scaleX),
+            y: Math.round(layout.y * scaleY),
+            w: Math.max(1, Math.round(layout.w * scaleX)),
+            h: Math.max(1, Math.round(layout.h * scaleY)),
+          });
+          commit({
+            ...spec,
+            grid: nextGrid,
+            tiles: spec.tiles.map((tile) => ({ ...tile, layout: rescale(tile.layout) })),
+            containers: spec.containers?.map((c) => ({ ...c, layout: rescale(c.layout) })),
+          });
         },
         setFocus(ids) {
           set({ focus: [...ids] });
+        },
+        setPanel(panel, open) {
+          const ui = get().ui;
+          if (ui[panel] === open) return;
+          set({ ui: { ...ui, [panel]: open } });
         },
         undo() {
           if (history.undo() !== undefined) sync();
@@ -393,6 +467,7 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
         focus: [],
         dirty: false,
         history: historyState(),
+        ui: { assets: false, properties: false },
         actions,
       };
     }),
