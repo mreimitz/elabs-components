@@ -452,6 +452,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useDashboardUrlState (`@elabs-ai/components-charts/dashboard` · hook)
 - useExportSheet (`@elabs-ai/components-charts/dashboard` · hook)
 - useHover (`@elabs-ai/components-charts/dashboard` · hook)
+- useResolvedCell (`@elabs-ai/components-charts/dashboard` · hook)
 - useSelection (`@elabs-ai/components-charts/dashboard` · hook)
 - useTile (`@elabs-ai/components-charts/dashboard` · hook)
 - useTileMove (`@elabs-ai/components-charts/dashboard` · hook)

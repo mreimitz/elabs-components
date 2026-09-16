@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T22:47:59.661Z",
+  "generatedAt": "2026-09-16T23:12:53.771Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22687,6 +22687,11 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-hover.ts"
             },
             {
+              "name": "useResolvedCell",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
+            },
+            {
               "name": "useSelection",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-selection.ts"
@@ -23079,6 +23084,10 @@
             {
               "name": "ResizeHandle",
               "module": "packages/charts/src/dashboard/edit/announcer.ts"
+            },
+            {
+              "name": "ResolvedCell",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-cell-rect.ts"
             },
             {
               "name": "ResolvedInteraction",

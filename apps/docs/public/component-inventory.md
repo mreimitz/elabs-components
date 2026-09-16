@@ -1346,6 +1346,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useDashboardUrlState | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useExportSheet | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useHover | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useResolvedCell | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useSelection | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useTile | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useTileMove | hook |  | `@elabs-ai/components-charts/dashboard` |  |
