@@ -26,6 +26,8 @@ export * from "./url";
 
 // autoLayout/schema — RM-086
 
-// Presentation/Theme/Workbook — RM-087
+// Presentation/Theme/Workbook — RM-087: `WorkbookSpec` (`./spec`, already re-exported by the
+// `export type * from "./spec"` above) and `validateWorkbookSpec` (`./validate`, already
+// re-exported by the `export * from "./validate"` above) — nothing new here.
 
 export {};

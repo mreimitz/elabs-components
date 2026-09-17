@@ -4,8 +4,8 @@ import minimalJson from "./__fixtures__/minimal.json";
 import opsJson from "./__fixtures__/ops-flow.json";
 import salesJson from "./__fixtures__/sales-overview.json";
 import { collides } from "./layout";
-import type { DashboardSpec, DashboardSpecErrorCode, TileLayout } from "./spec";
-import { normalizeDashboardSpec, validateDashboardSpec } from "./validate";
+import type { DashboardSpec, DashboardSpecErrorCode, TileLayout, WorkbookSpec } from "./spec";
+import { normalizeDashboardSpec, validateDashboardSpec, validateWorkbookSpec } from "./validate";
 
 const GOLDEN: Array<[string, DashboardSpec]> = [
   ["sales-overview", salesJson as unknown as DashboardSpec],
@@ -153,5 +153,84 @@ describe("normalizeDashboardSpec", () => {
       ...(fixed.containers ?? []).map((c) => ({ ...c.layout, id: c.id })),
     ];
     expect(top.every((a, i) => top.slice(i + 1).every((b) => !collides(a, b)))).toBe(true);
+  });
+});
+
+function sheet(id: string, extra: Partial<DashboardSpec> = {}): DashboardSpec {
+  return {
+    version: 1,
+    id,
+    grid: { mode: "fit", columns: 12, rows: 6 },
+    tiles: [],
+    ...extra,
+  };
+}
+
+function workbook(sheets: DashboardSpec[], extra: Partial<WorkbookSpec> = {}): WorkbookSpec {
+  return { version: 1, id: "wb", sheets, ...extra };
+}
+
+describe("validateWorkbookSpec — RM-087", () => {
+  it("accepts a workbook of valid, uniquely-id'd sheets", () => {
+    const result = validateWorkbookSpec(workbook([sheet("sheet-1"), sheet("sheet-2")]));
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a duplicate sheet id", () => {
+    const result = validateWorkbookSpec(workbook([sheet("sheet-1"), sheet("sheet-1")]));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.map((e) => e.code)).toContain("duplicate-id");
+  });
+
+  it("rejects a dangling drill.sheetId", () => {
+    const result = validateWorkbookSpec(
+      workbook([
+        sheet("sheet-1", {
+          tiles: [
+            {
+              id: "t1",
+              kind: "filter",
+              layout: { x: 0, y: 0, w: 2, h: 2 },
+              content: {},
+              emits: { selection: ["Region"] },
+            },
+          ],
+          interactions: [{ from: "t1", to: "*", effect: { drill: { sheetId: "nowhere" } } }],
+        }),
+      ]),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({
+          code: "unknown-ref",
+          path: "$.sheets[0].interactions[0].effect.drill.sheetId",
+        }),
+      );
+    }
+  });
+
+  it("rejects a dangling navigate action and a dangling bookmark sheetId", () => {
+    const result = validateWorkbookSpec(
+      workbook([
+        sheet("sheet-1", {
+          actions: [{ type: "navigate", sheetId: "nowhere" }],
+          bookmarks: [{ id: "b1", label: "B", selection: {}, sheetId: "nowhere-else" }],
+        }),
+      ]),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.filter((e) => e.code === "unknown-ref")).toHaveLength(2);
+  });
+
+  it("re-paths a sheet's own validation errors under $.sheets[i]", () => {
+    const result = validateWorkbookSpec(workbook([{ version: 1, id: "s1" } as DashboardSpec]));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.some((e) => e.path === "$.sheets[0].grid")).toBe(true);
+  });
+
+  it("rejects a missing sheets array and a non-1 version", () => {
+    expect(validateWorkbookSpec({ version: 1, id: "wb" }).ok).toBe(false);
+    expect(validateWorkbookSpec(workbook([sheet("sheet-1")], { version: 2 as 1 })).ok).toBe(false);
   });
 });
