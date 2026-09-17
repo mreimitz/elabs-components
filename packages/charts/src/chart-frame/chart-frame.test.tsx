@@ -825,9 +825,10 @@ describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
     const body = getScrollBody();
     expect(body).not.toHaveAttribute("tabindex");
     expect(body).not.toHaveAttribute("aria-label");
+    expect(body).not.toHaveAttribute("role");
   });
 
-  it("gets tabIndex=0 and a name once it measurably overflows", () => {
+  it("gets tabIndex=0, role=group and a name once it measurably overflows", () => {
     render(
       <ChartFrame title="Orders" chrome="tile" data={sampleData}>
         <div>chart</div>
@@ -839,6 +840,9 @@ describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
       capturedCallback?.([], {} as ResizeObserver);
     });
     expect(body).toHaveAttribute("tabindex", "0");
+    // ARIA 1.2 forbids `aria-label` on a generic element (axe
+    // `aria-prohibited-attr`) — `role="group"` gives the label a valid host.
+    expect(body).toHaveAttribute("role", "group");
     expect(body).toHaveAccessibleName("Scrollable chart: Orders");
   });
 
@@ -854,6 +858,7 @@ describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
       capturedCallback?.([], {} as ResizeObserver);
     });
     expect(body).toHaveAttribute("tabindex", "0");
+    expect(body).toHaveAttribute("role", "group");
 
     mockOverflow(body, false);
     act(() => {
@@ -861,5 +866,6 @@ describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
     });
     expect(body).not.toHaveAttribute("tabindex");
     expect(body).not.toHaveAttribute("aria-label");
+    expect(body).not.toHaveAttribute("role");
   });
 });

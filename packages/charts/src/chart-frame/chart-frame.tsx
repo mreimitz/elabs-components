@@ -840,14 +840,19 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         overflowing && "focus-ring-inset",
       )}
       tabIndex={overflowing ? 0 : undefined}
-      aria-label={
-        overflowing
-          ? t("charts.chartFrame.scrollableRegion", {
-              title: titleText ?? t("charts.chartFrame.defaultTitle"),
-            })
-          : undefined
-      }
-      {...(loading ? { role: "status", "aria-live": "polite" as const } : {})}
+      {...(loading
+        ? { role: "status", "aria-live": "polite" as const }
+        : overflowing
+          ? {
+              // ARIA 1.2 forbids `aria-label` on a generic element (axe
+              // `aria-prohibited-attr`) — `role="group"` gives the label a
+              // host without adding landmark noise (not `region`/`article`).
+              role: "group" as const,
+              "aria-label": t("charts.chartFrame.scrollableRegion", {
+                title: titleText ?? t("charts.chartFrame.defaultTitle"),
+              }),
+            }
+          : {})}
     >
       {loading ? (
         <>
