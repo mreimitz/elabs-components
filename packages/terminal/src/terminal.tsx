@@ -32,6 +32,7 @@ const TerminalContext = createContext<TerminalContextType>({
 export type TerminalHeaderProps = HTMLAttributes<HTMLDivElement>;
 
 export const TerminalHeader = ({ className, children, ...props }: TerminalHeaderProps) => (
+  // header-band-exempt: a terminal window title bar inside its frame, not shell chrome
   <div
     className={cn(
       "flex items-center justify-between border-terminal-border border-b px-4 py-2",

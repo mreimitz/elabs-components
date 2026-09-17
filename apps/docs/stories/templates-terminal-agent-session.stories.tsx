@@ -29,12 +29,10 @@
 import { useLayoutEffect, useRef } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, within } from "storybook/test";
-import { Bot, LogOut, Plus, Settings, ShieldAlert, Sparkles } from "lucide-react";
+import { Bot, Plus, ShieldAlert, Sparkles } from "lucide-react";
 import { AppIcon } from "@elabs-ai/components-icons";
 import type { DiffLine } from "@elabs-ai/components-ui";
 import {
-  Avatar,
-  AvatarFallback,
   Badge,
   Breadcrumb,
   BreadcrumbItem,
@@ -47,15 +45,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
   Separator,
   Sidebar,
   SidebarContent,
+  NavUser,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
@@ -167,6 +160,12 @@ function ConsoleSidebar({ activeId }: { activeId: string }) {
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="New session">
+              <Plus aria-hidden="true" />
+              <span>New session</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
@@ -189,43 +188,7 @@ function ConsoleSidebar({ activeId }: { activeId: string }) {
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="New session">
-              <Plus aria-hidden="true" />
-              <span>New session</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" tooltip="Account">
-                  <Avatar className="size-7 rounded-md">
-                    <AvatarFallback className="rounded-md text-meta">PC</AvatarFallback>
-                  </Avatar>
-                  <span className="grid flex-1 text-start leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="truncate text-body font-medium">Priya Chen</span>
-                    <span className="truncate text-meta text-sidebar-muted-foreground">
-                      priya@acme.dev
-                    </span>
-                  </span>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="end" className="w-48">
-                <DropdownMenuLabel>Account</DropdownMenuLabel>
-                <DropdownMenuItem>
-                  <Settings className="me-2 size-4" aria-hidden="true" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <LogOut className="me-2 size-4" aria-hidden="true" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <NavUser user={{ name: "Priya Chen", email: "priya@acme.dev" }} />
       </SidebarFooter>
 
       <SidebarRail />
@@ -433,7 +396,7 @@ function AgentSessionScreen({ state }: { state: SessionState }) {
       <ConsoleSidebar activeId={activeId} />
 
       <SidebarInset className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-surface-elevated/80 px-3 backdrop-blur">
+        <header className="flex h-header shrink-0 items-center gap-2 border-b bg-surface-elevated/80 px-3 backdrop-blur">
           <SidebarTrigger className="-ms-1" />
           <Separator orientation="vertical" className="me-1 h-5" />
           <Breadcrumb>

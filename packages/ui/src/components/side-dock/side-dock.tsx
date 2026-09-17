@@ -44,9 +44,10 @@ export interface SideDockProps extends Omit<ComponentProps<"aside">, "title"> {
    */
   title: ReactNode;
   /**
-   * Optional longer description. Visible under the title in the column
-   * presentation; `sr-only` in the overlay presentation (the compact sheet
-   * header has no room for it, but it still reaches assistive tech).
+   * Optional longer description. Visible at the top of the body in the column
+   * presentation — never inside the header band, which is fixed at the app
+   * shell's header height; `sr-only` in the overlay presentation (the compact
+   * sheet header has no room for it, but it still reaches assistive tech).
    */
   description?: ReactNode;
   /** Optional controls placed in the header row beside the built-in close button. */
@@ -423,7 +424,10 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
         >
           <SheetHeader
             data-slot="side-dock-header"
-            className="flex-row items-start gap-2 space-y-0 border-b border-border px-4 py-3"
+            // `h-header`, never padding: a dock's header band sits beside the app
+            // shell's top bar and MUST share its height in every theme (a theme
+            // retunes `--header-size`). See the column branch.
+            className="h-header flex-row items-center gap-2 space-y-0 border-b border-border px-4"
           >
             <div className="min-w-0 flex-1">
               <SheetTitle data-slot="side-dock-title" className="text-title">
@@ -492,13 +496,19 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
       >
         <div
           data-slot="side-dock-header"
-          className="flex items-start gap-2 border-b border-border px-4 py-3"
+          // ONE fixed band at `h-header` — the same height the app shell's top
+          // bar takes, so the two rules under them sit on one line in every
+          // theme. Never size it from padding: a padded header grows with its
+          // content (a two-line description made it 73px beside a 56px bar).
+          // The description therefore lives UNDER the band, not inside it.
+          className="flex h-header shrink-0 items-center gap-2 border-b border-border px-4"
         >
-          <div className="min-w-0 flex-1">
-            <div id={titleId} data-slot="side-dock-title" className="text-title">
-              {title}
-            </div>
-            {description && <div className="text-body text-muted-foreground">{description}</div>}
+          <div
+            id={titleId}
+            data-slot="side-dock-title"
+            className="min-w-0 flex-1 truncate text-title"
+          >
+            {title}
           </div>
           {headerActions}
           <button
@@ -523,6 +533,11 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
           tabIndex={0}
           className="min-h-0 flex-1 overflow-y-auto p-4 focus-ring-inset"
         >
+          {description && (
+            <p data-slot="side-dock-description" className="mb-4 text-body text-muted-foreground">
+              {description}
+            </p>
+          )}
           {children}
         </div>
         {resizeHandle}

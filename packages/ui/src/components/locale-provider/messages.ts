@@ -170,6 +170,11 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.themeSwitcher.light": "Light",
   "ui.themeSwitcher.dark": "Dark",
   "ui.navNotifications.label": "Notifications",
+  // NavUser — the standard sidebar footer: account menu group label and its
+  // two default actions.
+  "ui.navUser.label": "Account",
+  "ui.navUser.settings": "Settings",
+  "ui.navUser.signOut": "Sign out",
   "ui.teamSwitcher.label": "Teams",
   "ui.teamSwitcher.addTeam": "Add team",
   // Table's own scroll wrapper (#366). Rendered ONLY when the wrapper actually

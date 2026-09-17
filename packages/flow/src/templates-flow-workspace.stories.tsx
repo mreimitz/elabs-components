@@ -10,8 +10,10 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import {
   Button,
+  NavUser,
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -131,9 +133,12 @@ function FlowWorkspaceTemplate() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+        <SidebarFooter>
+          <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+        <header className="flex h-header shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <h1 className="text-body font-medium capitalize">{active}</h1>
         </header>

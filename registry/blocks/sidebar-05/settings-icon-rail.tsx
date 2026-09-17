@@ -29,6 +29,8 @@ import { ArrowLeft } from "lucide-react";
 import { AppIcon } from "@elabs-ai/components-icons";
 import {
   cn,
+  NavUser,
+  type NavUserUser,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -55,7 +57,11 @@ export interface SettingsIconRailProps extends ComponentProps<"div"> {
   exitHref?: string;
   /** Product name — the brand mark's accessible name. @default "Northwind" */
   productName?: string;
+  /** The signed-in user — the rail ends with the standard account menu. */
+  user?: NavUserUser;
 }
+
+export const DEMO_USER: NavUserUser = { name: "Ada Okonkwo", email: "ada@acme.co" };
 
 export function SettingsIconRail({
   areas = SETTINGS_AREAS,
@@ -64,6 +70,7 @@ export function SettingsIconRail({
   onAreaSelect,
   exitHref = "/",
   productName = "Northwind",
+  user = DEMO_USER,
   className,
   ...props
 }: SettingsIconRailProps) {
@@ -144,6 +151,13 @@ export function SettingsIconRail({
           </Tooltip>
         </SidebarMenuItem>
       </SidebarMenu>
+
+      {/* The standard footer every shell ends with: the user, opening the
+          account menu. `group` + `data-collapsible="icon"` put NavUser in its
+          icon-rail form — avatar only — because this rail never widens. */}
+      <div data-collapsible="icon" className="group shrink-0">
+        <NavUser user={user} settingsHref="/settings" />
+      </div>
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { TopNav } from "../top-nav";
 import { PageShell } from "../page-shell";
 import { SectionHeader } from "../section-header";
 import { Button } from "../button";
+import { NavUser } from "../nav-user";
+import { SidebarProvider } from "../sidebar";
 
 const meta = {
   title: "Layout/App Shell/Minimal",
@@ -14,7 +16,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const nav = ["Dashboard", "Projects", "Reports", "Settings"];
+// Settings is not a nav row — it lives in the user menu at the foot of the rail.
+const nav = ["Dashboard", "Projects", "Reports"];
 
 export const Default: Story = {
   render: () => (
@@ -36,6 +39,17 @@ export const Default: Story = {
                 {n}
               </button>
             ))}
+            {/* The standard footer every shell ends with. NavUser reads the
+                sidebar context, so a nested (context-only) provider carries it
+                without turning this plain nav into a Sidebar frame. */}
+            <div className="mt-auto">
+              <SidebarProvider frame="nested">
+                <NavUser
+                  user={{ name: "Avery Rao", email: "avery@acme.co" }}
+                  settingsHref="/settings"
+                />
+              </SidebarProvider>
+            </div>
           </nav>
         }
         topNav={

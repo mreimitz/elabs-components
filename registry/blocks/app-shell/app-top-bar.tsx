@@ -141,7 +141,7 @@ export function AppTopBar({
       // structural cue between chrome and content and takes the strong rung
       // (WCAG 1.4.11; see .claude/rules/conventions.md).
       className={cn(
-        "flex h-14 shrink-0 items-center gap-2 border-b border-border-strong px-3",
+        "flex h-header shrink-0 items-center gap-2 border-b border-border-strong px-3",
         className,
       )}
       {...props}

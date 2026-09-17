@@ -147,6 +147,7 @@ export const TerminalOverlay = forwardRef<HTMLDivElement, TerminalOverlayProps>(
           )}
           {...props}
         >
+          {/* header-band-exempt: a dialog header inside the overlay, not shell chrome */}
           <div
             data-slot="terminal-overlay-header"
             className="flex items-start justify-between gap-3 border-b border-terminal-border px-4 py-3"

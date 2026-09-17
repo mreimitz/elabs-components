@@ -102,7 +102,7 @@ function WorkspaceDemo(providerProps: Omit<ContextPanelProviderProps, "children"
     <ContextPanelProvider {...providerProps}>
       <div className="flex h-[520px] w-full overflow-hidden rounded-xl border bg-background">
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-12 shrink-0 items-center justify-between border-b px-4">
+          <header className="flex h-header shrink-0 items-center justify-between border-b px-4">
             <span className="text-subtitle">Agentic workspace</span>
             <ContextPanelTrigger />
           </header>

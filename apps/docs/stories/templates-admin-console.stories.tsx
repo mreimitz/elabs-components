@@ -35,14 +35,11 @@ import {
   Cable,
   LayoutDashboard,
   ListFilter,
-  LogOut,
   ScrollText,
   Settings,
   Workflow,
 } from "lucide-react";
 import {
-  Avatar,
-  AvatarFallback,
   Badge,
   Breadcrumb,
   BreadcrumbItem,
@@ -61,8 +58,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
   FilterChip,
   Label,
@@ -77,6 +72,7 @@ import {
   SheetTitle,
   Sidebar,
   SidebarContent,
+  NavUser,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
@@ -215,37 +211,7 @@ function ConsoleSidebar({ active, onSelect }: { active: string; onSelect: (id: s
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" tooltip="Account">
-                  <Avatar className="size-7 rounded-md">
-                    <AvatarFallback className="rounded-md text-meta">AR</AvatarFallback>
-                  </Avatar>
-                  <span className="grid flex-1 text-start leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="truncate text-body font-medium">Avery Rao</span>
-                    <span className="truncate text-meta text-sidebar-muted-foreground">
-                      avery@acme.co
-                    </span>
-                  </span>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="end" className="w-48">
-                <DropdownMenuLabel>Account</DropdownMenuLabel>
-                <DropdownMenuItem>
-                  <Settings className="me-2 size-4" aria-hidden="true" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <LogOut className="me-2 size-4" aria-hidden="true" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
       </SidebarFooter>
 
       <SidebarRail />
@@ -532,7 +498,7 @@ function AdminConsole({ defaultSidebarOpen = true }: { defaultSidebarOpen?: bool
 
       <SidebarInset className="flex min-w-0 flex-col">
         {/* TopNav: start = trigger + breadcrumb ("where am I"); end = theme + settings + action. */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-surface-elevated/80 px-3 backdrop-blur">
+        <header className="sticky top-0 z-30 flex h-header shrink-0 items-center gap-2 border-b bg-surface-elevated/80 px-3 backdrop-blur">
           <SidebarTrigger className="-ms-1" />
           <Separator orientation="vertical" className="me-1 h-5" />
           <Breadcrumb>

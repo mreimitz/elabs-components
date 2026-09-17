@@ -416,6 +416,7 @@ export const MessageCompareColumn = forwardRef<HTMLDivElement, MessageCompareCol
         role="region"
         {...props}
       >
+        {/* header-band-exempt: a column header inside the comparison grid, not shell chrome */}
         <div
           className="flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2"
           data-slot="message-compare-column-header"

@@ -5,7 +5,6 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import { Settings } from "lucide-react";
 import { AppIcon } from "@elabs-ai/components-icons";
 import {
   Sidebar,
@@ -21,18 +20,23 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  NavUser,
+  type NavUserUser,
 } from "@elabs-ai/components-ui";
 import { isPathActive, NAV_GROUPS, type NavItem } from "./nav-items";
+
+/** Demo signed-in user — replace with your own session. */
+export const DEMO_USER: NavUserUser = { name: "Ada Okonkwo", email: "ada@acme.co" };
 
 export interface AppNavRailProps extends Omit<ComponentProps<typeof Sidebar>, "collapsible"> {
   /** Current route, for the R1 active-state indicator (router-agnostic — see `nav-items.ts`). */
   activePath: string;
   /** Product name shown in the brand block (hidden when the rail is collapsed). */
   productName?: string;
-  /** Org / environment line under the product name (hidden when the rail is collapsed). */
+  /** Org line under the product name (hidden when the rail is collapsed). */
   orgName?: string;
-  /** Short environment label rendered in the footer meta line. */
-  environment?: string;
+  /** The signed-in user shown in the footer account menu. @default DEMO_USER */
+  user?: NavUserUser;
 }
 
 function renderNavItem(item: NavItem, activePath: string) {
@@ -102,7 +106,7 @@ export function AppNavRail({
   activePath,
   productName = "Console",
   orgName = "Acme Corp",
-  environment = "Production",
+  user = DEMO_USER,
   className,
   ...props
 }: AppNavRailProps) {
@@ -123,7 +127,7 @@ export function AppNavRail({
               by re-pointing the brand tokens, not by editing this block. */}
           <AppIcon morph="auto" title={productName} height={22} className="shrink-0" />
           {/* The lockup above already carries the product name, so this line is
-              the org / environment only. Sidebar ink, not page ink: the rail is a
+              the org only. Sidebar ink, not page ink: the rail is a
               `--sidebar` ground, and in the light reference theme page ink on it
               is a real contrast failure. */}
           <span className="min-w-0 truncate text-meta text-sidebar-muted-foreground group-data-[collapsible=icon]:hidden">
@@ -149,24 +153,11 @@ export function AppNavRail({
         </SidebarContent>
       </nav>
 
+      {/* The standard footer for every app shell: the signed-in user, which
+          opens the account menu (Settings, Sign out). Settings lives in that
+          menu, never as a loose row here, and the footer carries no meta line. */}
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isPathActive("/settings", activePath)}
-              tooltip="Settings"
-            >
-              <a href="/settings">
-                <Settings />
-                <span>Settings</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <span className="truncate px-2 text-meta text-sidebar-muted-foreground group-data-[collapsible=icon]:hidden">
-          {environment}
-        </span>
+        <NavUser user={user} settingsHref="/settings" />
       </SidebarFooter>
     </Sidebar>
   );

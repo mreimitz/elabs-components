@@ -1,7 +1,7 @@
 /**
  * The dashboard shell's nav rail — one collapsible-icon `Sidebar` carrying the
- * tenant switcher, the router-agnostic `NAV_GROUPS` from `nav-items.ts`, and a
- * settings row pinned to the foot.
+ * tenant switcher, the router-agnostic `NAV_GROUPS` from `nav-items.ts`, and the
+ * standard `NavUser` account menu (Settings, Sign out) pinned to the foot.
  *
  * The rail is app CHROME, so every string on it reaches for the sidebar ink
  * pair (`text-sidebar-foreground` / `text-sidebar-muted-foreground`), never the
@@ -13,7 +13,7 @@
 "use client";
 
 import { Fragment, type ComponentProps } from "react";
-import { Settings, Ship, Store, Warehouse } from "lucide-react";
+import { Ship, Store, Warehouse } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,7 +29,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarSeparator,
+  NavUser,
   TeamSwitcher,
+  type NavUserUser,
   type TeamSwitcherTeam,
 } from "@elabs-ai/components-ui";
 import { AppIcon } from "@elabs-ai/components-icons";
@@ -42,6 +44,9 @@ export const DEMO_TEAMS: TeamSwitcherTeam[] = [
   { name: "Harbour Trading", logo: Ship, plan: "Growth" },
 ];
 
+/** Demo signed-in user — replace with your own session. */
+export const DEMO_USER: NavUserUser = { name: "Ada Okonkwo", email: "ada@acme.co" };
+
 export interface DashboardSidebarProps extends Omit<ComponentProps<typeof Sidebar>, "collapsible"> {
   /** Current route, for the active-state indicator (router-agnostic — see `nav-items.ts`). */
   activePath: string;
@@ -49,8 +54,8 @@ export interface DashboardSidebarProps extends Omit<ComponentProps<typeof Sideba
   teams?: TeamSwitcherTeam[];
   /** Product name — the wordmark half of the brand lockup. @default "Northwind" */
   productName?: string;
-  /** Short environment label rendered in the footer meta line. */
-  environment?: string;
+  /** The signed-in user shown in the footer account menu. @default DEMO_USER */
+  user?: NavUserUser;
 }
 
 function renderNavItem(item: NavItem, activePath: string) {
@@ -132,7 +137,7 @@ export function DashboardSidebar({
   activePath,
   teams = DEMO_TEAMS,
   productName = "Northwind",
-  environment = "Production",
+  user = DEMO_USER,
   className,
   ...props
 }: DashboardSidebarProps) {
@@ -197,24 +202,11 @@ export function DashboardSidebar({
         </SidebarContent>
       </nav>
 
+      {/* The standard footer for every app shell: the signed-in user, which
+          opens the account menu (Settings, Sign out). Settings lives in that
+          menu, never as a loose row here, and the footer carries no meta line. */}
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isPathActive("/settings", activePath)}
-              tooltip="Settings"
-            >
-              <a href="/settings">
-                <Settings />
-                <span>Settings</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <span className="truncate px-2 text-meta text-sidebar-muted-foreground group-data-[collapsible=icon]:hidden">
-          {environment}
-        </span>
+        <NavUser user={user} settingsHref="/settings" />
       </SidebarFooter>
     </Sidebar>
   );

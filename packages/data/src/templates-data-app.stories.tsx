@@ -9,8 +9,10 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import {
   Badge,
+  NavUser,
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -108,9 +110,12 @@ function DataAppTemplate({ loading = false }: { loading?: boolean }) {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+        <SidebarFooter>
+          <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center gap-2 border-b px-4">
+        <header className="flex h-header items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <h1 className="text-body font-medium capitalize">{active}</h1>
         </header>

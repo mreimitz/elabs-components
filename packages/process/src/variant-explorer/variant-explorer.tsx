@@ -494,6 +494,7 @@ export const VariantExplorer = forwardRef<HTMLDivElement, VariantExplorerProps>(
         {...props}
       >
         {toolbar}
+        {/* header-band-exempt: a table column header row, not shell chrome */}
         <div
           aria-hidden="true"
           data-slot="variant-explorer-header"

@@ -703,7 +703,7 @@ export const SidebarMenuItem = forwardRef<HTMLLIElement, ComponentProps<"li">>(
 );
 
 export const sidebarMenuButtonVariants = cva(
-  "peer/menu-button relative flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-start text-body text-sidebar-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pe-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground data-[active=true]:[&>svg]:text-sidebar-primary data-[active=true]:before:pointer-events-none data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:start-0 data-[active=true]:before:w-1 data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+  "peer/menu-button relative flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-start text-body text-sidebar-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pe-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground data-[active=true]:[&>svg]:text-sidebar-primary data-[active=true]:before:pointer-events-none data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:start-0 data-[active=true]:before:w-1 data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -717,8 +717,12 @@ export const sidebarMenuButtonVariants = cva(
           "bg-background shadow-hairline [--shadow-ring-color:var(--sidebar-border)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:[--shadow-ring-color:var(--sidebar-accent)]",
       },
       size: {
-        default: "h-8 text-body",
-        sm: "h-7 text-meta",
+        // The icon-rail padding lives PER SIZE, never as a base `p-2!` that `lg`
+        // overrides: tailwind-merge keeps both `…:p-2!` and `…:p-0!`, and the
+        // stylesheet order then let `p-2` win — an 8px inset inside the 32px
+        // collapsed square that clipped every `lg` avatar (NavUser, TeamSwitcher).
+        default: "h-8 text-body group-data-[collapsible=icon]:p-2!",
+        sm: "h-7 text-meta group-data-[collapsible=icon]:p-2!",
         lg: "h-12 text-body group-data-[collapsible=icon]:p-0!",
       },
     },

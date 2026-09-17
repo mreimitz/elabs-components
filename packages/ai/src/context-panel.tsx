@@ -469,7 +469,7 @@ export const ContextPanelHeader = forwardRef<HTMLDivElement, ContextPanelHeaderP
       <div
         ref={ref}
         data-slot="context-panel-header"
-        className={cn("flex h-12 shrink-0 items-center gap-2 border-b px-3", className)}
+        className={cn("flex h-header shrink-0 items-center gap-2 border-b px-3", className)}
         {...props}
       >
         {isDetail ? (

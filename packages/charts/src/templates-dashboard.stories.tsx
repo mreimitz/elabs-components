@@ -9,8 +9,11 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 import { useState } from "react";
 import {
+  MetricCard,
+  NavUser,
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -20,7 +23,6 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-  MetricCard,
 } from "@elabs-ai/components-ui";
 import { AppIcon } from "@elabs-ai/components-icons";
 import { MetricGrid } from "./metric-grid/metric-grid";
@@ -154,9 +156,12 @@ function DashboardTemplate() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+        <SidebarFooter>
+          <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center gap-2 border-b px-4">
+        <header className="flex h-header items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <h1 className="text-body font-medium capitalize">{active}</h1>
         </header>

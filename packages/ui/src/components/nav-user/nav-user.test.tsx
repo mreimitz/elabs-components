@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { SidebarProvider } from "../sidebar";
 import { NavUser } from "./nav-user";
 
@@ -25,5 +26,26 @@ describe("NavUser", () => {
       </Wrapper>,
     );
     expect(screen.getAllByText("JS").length).toBeGreaterThan(0);
+  });
+
+  it("opens the account menu with Settings and Sign out", async () => {
+    const onSignOut = vi.fn();
+    render(
+      <Wrapper>
+        <NavUser
+          user={{ name: "Jane Doe", email: "jane@example.com" }}
+          settingsHref="/settings"
+          onSignOut={onSignOut}
+        />
+      </Wrapper>,
+    );
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Jane Doe jane@example.com" }));
+    expect(await screen.findByRole("menuitem", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "/settings",
+    );
+    await user.click(screen.getByRole("menuitem", { name: "Sign out" }));
+    expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T08:28:21.274Z",
+  "generatedAt": "2026-09-17T15:55:34.229Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -38720,6 +38720,30 @@
               "name": "user",
               "optional": false,
               "type": "NavUserUser"
+            },
+            {
+              "name": "onSettings",
+              "optional": true,
+              "type": "() => void",
+              "description": "Fires when \"Settings\" is chosen. Ignored when `settingsHref` is set."
+            },
+            {
+              "name": "settingsHref",
+              "optional": true,
+              "type": "string",
+              "description": "Route of the settings screen — \"Settings\" renders as a link to it."
+            },
+            {
+              "name": "onSignOut",
+              "optional": true,
+              "type": "() => void",
+              "description": "Fires when \"Sign out\" is chosen."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Extra `DropdownMenuItem`s, placed above \"Settings\" (e.g. Profile, Billing). Settings and Sign out are always present — they are the standard pair."
             }
           ]
         },
@@ -39513,7 +39537,7 @@
               "name": "description",
               "optional": true,
               "type": "ReactNode",
-              "description": "Optional longer description. Visible under the title in the column presentation; `sr-only` in the overlay presentation (the compact sheet header has no room for it, but it still reaches assistive tech)."
+              "description": "Optional longer description. Visible at the top of the body in the column presentation — never inside the header band, which is fixed at the app shell's header height; `sr-only` in the overlay presentation (the compact sheet header has no room for it, but it still reaches assistive tech)."
             },
             {
               "name": "headerActions",

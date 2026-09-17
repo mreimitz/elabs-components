@@ -18,8 +18,10 @@
 
 import { useState } from "react";
 import {
+  NavUser,
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -180,9 +182,12 @@ export function DashboardSheetApp() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+        <SidebarFooter>
+          <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="min-w-0">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+        <header className="flex h-header shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <h1 className="text-body font-medium">{activeLabel}</h1>
         </header>

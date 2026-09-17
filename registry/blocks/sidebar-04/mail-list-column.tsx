@@ -89,8 +89,12 @@ export function MailListColumn({
       )}
       {...props}
     >
-      {/* Matches the top bar's 3.5rem row so the two zones share one horizon. */}
-      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-strong px-3">
+      {/* `h-header`, like the top bar, so the two zones share one horizon in
+          every theme. */}
+      <div
+        data-slot="mail-list-column-header"
+        className="flex h-header shrink-0 items-center gap-2 border-b border-border-strong px-3"
+      >
         <h2 id={headingId} className="min-w-0 truncate text-subtitle text-foreground">
           {heading}
         </h2>

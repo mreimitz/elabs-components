@@ -486,6 +486,7 @@ function DiffViewHeader({
 }) {
   const { t } = useLocale();
   return (
+    // header-band-exempt: a file header inside the diff card, not shell chrome
     <div
       data-slot="diff-view-header"
       className="flex items-center justify-between gap-3 border-b bg-muted/80 px-3 py-2 text-meta text-muted-foreground"

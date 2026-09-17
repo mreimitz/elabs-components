@@ -58,8 +58,8 @@ describe("ChatShell — slots", () => {
 
   it("omits the header row entirely when no header is supplied", () => {
     const { container } = render(<ChatShell>t</ChatShell>);
-    // An empty header would still occupy its fixed h-12 row.
-    expect(container.querySelector(".h-12")).toBeNull();
+    // An empty header would still occupy its fixed h-header row.
+    expect(container.querySelector(".h-header")).toBeNull();
   });
 
   it("omits the aside rail entirely when no aside is supplied", () => {

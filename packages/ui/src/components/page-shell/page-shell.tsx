@@ -92,6 +92,7 @@ export const PageShell = forwardRef<HTMLDivElement, PageShellProps>(function Pag
 
   const headerNode = header ? (
     headerVariant === "toolbar" ? (
+      // header-band-exempt: a page-section toolbar under the top bar, not beside it
       <div
         data-slot="page-shell-toolbar-header"
         className="sticky top-0 z-10 border-b border-border bg-background/95 py-3 backdrop-blur"

@@ -1,22 +1,15 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
-  Avatar,
-  AvatarFallback,
   Badge,
   Button,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
   Separator,
   Sidebar,
   SidebarContent,
+  NavUser,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupAction,
@@ -52,18 +45,15 @@ import {
   Boxes,
   Calculator,
   ChevronRight,
-  ChevronsUpDown,
   Copy,
   Database,
   FolderKanban,
   Globe,
   History,
-  LogOut,
   MessageSquarePlus,
   PencilLine,
   RefreshCw,
   Search,
-  Settings,
   Share2,
   Sparkles,
   ThumbsDown,
@@ -479,38 +469,7 @@ function WorkspaceSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" tooltip="Account" className="group">
-                  <Avatar className="size-7 rounded-md">
-                    <AvatarFallback className="rounded-md text-meta">AR</AvatarFallback>
-                  </Avatar>
-                  <span className="grid flex-1 text-start leading-tight">
-                    <span className="truncate text-body font-medium">Avery Rao</span>
-                    <span className="truncate text-meta text-sidebar-muted-foreground group-hover:text-sidebar-accent-foreground">
-                      avery@acme.co
-                    </span>
-                  </span>
-                  <ChevronsUpDown className="ms-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="end" className="w-48">
-                <DropdownMenuLabel>Account</DropdownMenuLabel>
-                <DropdownMenuItem>
-                  <Settings className="me-2 size-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <LogOut className="me-2 size-4" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
       </SidebarFooter>
 
       <SidebarRail />
@@ -974,7 +933,7 @@ function AgenticWorkspace({ defaultSidebarOpen = true }: { defaultSidebarOpen?: 
           <SidebarInset className="flex min-w-0 flex-col">
             {/* Header bar — h-12 to align with the right ContextPanelHeader and
                 the library header convention (ChatShell/ContextPanel). */}
-            <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-background px-3">
+            <header className="flex h-header shrink-0 items-center gap-2 border-b bg-background px-3">
               <SidebarTrigger className="-ms-1" />
               <Separator orientation="vertical" className="me-1 h-5" />
               <div className="flex min-w-0 items-center gap-1.5 text-body">

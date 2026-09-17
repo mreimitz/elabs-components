@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { CSSProperties } from "react";
 import { expect, userEvent, waitFor } from "storybook/test";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import DashboardShell from "@/components/sidebar-02/dashboard-shell";
 import { DEMO_ACTIVITY, type ActivityEntry } from "@/components/sidebar-02/storefront-overview";
+import { expectHeaderBandsAligned } from "./_header-bands";
 
 const meta = {
   title: "Layout/App Shell/Dashboard",
@@ -217,6 +219,17 @@ export const Collapsed: Story = {
     await expect(
       canvasElement.querySelector('[data-slot="sidebar-trigger"]')?.getAttribute("aria-expanded"),
     ).toBe("false");
+    // The footer avatar fits its collapsed 32px square whole. A base `p-2!`
+    // once out-cascaded the `lg` size's `p-0!`, insetting the avatar 8px inside
+    // an `overflow-hidden` button — the rail's one "cut off" icon.
+    const avatar = canvasElement.querySelector(
+      '[data-slot="sidebar-footer"] [data-slot="avatar"]',
+    ) as HTMLElement;
+    const avatarBox = avatar.getBoundingClientRect();
+    const buttonBox = avatar.closest("button")!.getBoundingClientRect();
+    await expect(
+      `avatar overflows its button by ${Math.max(0, avatarBox.right - buttonBox.right, avatarBox.bottom - buttonBox.bottom).toFixed(0)}px`,
+    ).toBe("avatar overflows its button by 0px");
   },
 };
 
@@ -573,5 +586,38 @@ export const NarrowRailBesideInsetCard: Story = {
     const barY = barRect.top + barRect.height / 2;
     // One line, within a pixel of rounding.
     await expect(Math.abs(iconY - barY)).toBeLessThanOrEqual(1);
+  },
+};
+
+/**
+ * Every header band on screen — the top bar and the right-hand panel's header
+ * (and the list column's, where there is one) — ends on ONE line. Measured, not
+ * implied: each band is its own component, and sizing any one of them on its
+ * own is exactly how they drifted apart.
+ */
+export const HeaderBandsAligned: Story = {
+  tags: ["!dev"],
+  render: () => <DashboardShell activePath="/" defaultDetailsOpen />,
+  play: async ({ canvasElement }) => {
+    await expectHeaderBandsAligned(canvasElement);
+  },
+};
+
+/**
+ * The same lock at a 48px header — what a theme like Qlik sets through
+ * `--header-size`. A band with a hard-coded height passes at the default 56px
+ * and fails only here.
+ */
+export const HeaderBandsAlignedAtThemeHeight: Story = {
+  tags: ["!dev"],
+  render: () => (
+    <div style={{ display: "contents", "--header-size": 12 } as CSSProperties}>
+      <DashboardShell activePath="/" defaultDetailsOpen />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expectHeaderBandsAligned(canvasElement);
+    const bar = canvasElement.querySelector<HTMLElement>('[data-slot$="top-bar"]')!;
+    await expect(`top bar ${bar.getBoundingClientRect().height}px`).toBe("top bar 48px");
   },
 };

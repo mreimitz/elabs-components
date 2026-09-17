@@ -149,6 +149,7 @@ const logos = Array.from({ length: 6 }, (_, i) => (
 function MarketingLandingTemplate() {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* header-band-exempt: a marketing site nav, not an app shell band */}
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
         <nav
           aria-label="Main"

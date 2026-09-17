@@ -211,6 +211,7 @@ Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pn
 - A `useEffect`/`useLayoutEffect` that adds a listener, starts a timer/interval, creates an observer or subscribes returns a cleanup that removes/clears/disconnects/unsubscribes it. (`effect-cleanup`)
 - Focus indicators use `focus-ring`/`focus-ring-within`/`focus-ring-inset`/`focus-ring-static`, never a hand-rolled `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring` stack. (`focus-ring-only`)
 - An exported component that spreads `...props` onto a DOM element is wrapped in `forwardRef`. (`forward-ref-required`)
+- Size every header band (`<header>`, or a `data-slot` ending `-header`/`top-bar`, with a `border-b`) with `h-header`, never `h-14`/`h-12` or padding, so side-by-side shell headers share one bottom line in every theme; opt out with `// header-band-exempt: <reason>`. (`header-band`)
 - UI text in package source (JSX text, `aria-label`/`title`/`placeholder` literals) comes from props or a labels object so apps can localize it; stories, tests, templates and registry are exempt. (`i18n-strings`)
 - Format numbers and dates with `Intl.*` and a locale prop: no `toLocaleString()`/`toLocaleDateString()`/`toLocaleTimeString()` without a locale, no `new Date(…).toString()` in JSX. (`locale-formatting`)
 - Use logical direction utilities (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`border-s`/`rounded-s`/`text-start`), never physical `ml-`/`pr-`/`left-`/`border-l`/`text-right`, so layouts mirror in RTL. (`logical-props`)

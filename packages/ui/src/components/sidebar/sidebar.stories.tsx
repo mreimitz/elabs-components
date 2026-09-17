@@ -68,7 +68,7 @@ export const Default: Story = {
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
-          <header className="flex h-14 items-center gap-2 border-b px-4">
+          <header className="flex h-header items-center gap-2 border-b px-4">
             <SidebarTrigger />
             <span className="text-body font-medium">Dashboard</span>
           </header>
@@ -357,7 +357,7 @@ export const NestedFrameProvider: Story = {
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
-          <header className="flex h-14 items-center gap-2 border-b px-4">
+          <header className="flex h-header items-center gap-2 border-b px-4">
             <SidebarTrigger />
             <span className="text-body font-medium">Dashboard</span>
           </header>
@@ -435,7 +435,7 @@ export const Mobile: Story = {
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center gap-2 border-b px-4">
+        <header className="flex h-header items-center gap-2 border-b px-4">
           <SidebarTrigger />
         </header>
       </SidebarInset>

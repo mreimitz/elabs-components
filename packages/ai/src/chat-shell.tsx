@@ -56,7 +56,7 @@ export function ChatShell({
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {header ? (
-          <div className={cn("flex h-12 shrink-0 items-center px-4", bare ? null : "border-b")}>
+          <div className={cn("flex h-header shrink-0 items-center px-4", bare ? null : "border-b")}>
             {header}
           </div>
         ) : null}

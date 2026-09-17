@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { CSSProperties } from "react";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import AppShellPage from "@/components/app-shell/app-shell-page";
@@ -10,6 +11,7 @@ import {
   type RunRow,
 } from "@/components/app-shell/console-overview";
 import { holdsViewportPremise } from "./_viewport-premise";
+import { expectHeaderBandsAligned } from "./_header-bands";
 
 const meta = {
   title: "Layout/App Shell/Flagship",
@@ -657,5 +659,38 @@ export const OverflowingContent: Story = {
     const dockBody = canvasElement.querySelector('[data-slot="side-dock-body"]') as HTMLElement;
     await expect(dockBody).toBeVisible();
     await expect(dockBody.getAttribute("tabindex")).toBe("0");
+  },
+};
+
+/**
+ * Every header band on screen — the top bar and the right-hand panel's header
+ * (and the list column's, where there is one) — ends on ONE line. Measured, not
+ * implied: each band is its own component, and sizing any one of them on its
+ * own is exactly how they drifted apart.
+ */
+export const HeaderBandsAligned: Story = {
+  tags: ["!dev"],
+  render: () => <AppShellPage activePath="/runs" defaultDockOpen />,
+  play: async ({ canvasElement }) => {
+    await expectHeaderBandsAligned(canvasElement);
+  },
+};
+
+/**
+ * The same lock at a 48px header — what a theme like Qlik sets through
+ * `--header-size`. A band with a hard-coded height passes at the default 56px
+ * and fails only here.
+ */
+export const HeaderBandsAlignedAtThemeHeight: Story = {
+  tags: ["!dev"],
+  render: () => (
+    <div style={{ display: "contents", "--header-size": 12 } as CSSProperties}>
+      <AppShellPage activePath="/runs" defaultDockOpen />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expectHeaderBandsAligned(canvasElement);
+    const bar = canvasElement.querySelector<HTMLElement>('[data-slot$="top-bar"]')!;
+    await expect(`top bar ${bar.getBoundingClientRect().height}px`).toBe("top bar 48px");
   },
 };

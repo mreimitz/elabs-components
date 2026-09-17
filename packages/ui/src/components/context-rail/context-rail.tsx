@@ -155,8 +155,10 @@ const COUNT_BADGE_BASE =
 // (measured before the strip gained its own padding). `CONTEXT_RAIL_HEADER`'s
 // `px-2` now buys that margin back, so this is belt and braces rather than the
 // only guard — keep it: a host restyling the rail through `className` can put
-// the item back on the edge. The vertical `-top-1` overhang is kept: nothing
-// clips it.
+// the item back on the edge. The vertical `-top-1` overhang is kept — but the
+// expanded row switcher is an `overflow-x-auto` scroller, which clips on BOTH
+// axes, so that row carries `py-1` to keep the overhang inside its own box
+// (measured: without it the count was cut in half at the top).
 const COUNT_BADGE_POSITION = "end-0 -top-1 h-4 min-w-4 px-0.5";
 
 // The rail's own header band. Two jobs, and both are geometry the rail cannot
@@ -216,7 +218,7 @@ function ContextRailSwitcher({
         // narrow strip) it is the whole column again, with no cap and no
         // scroller.
         orientation === "row"
-          ? "w-auto max-w-1/2 shrink-0 flex-row overflow-x-auto [&>li]:shrink-0 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:max-w-none group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:overflow-x-visible"
+          ? "w-auto max-w-1/2 shrink-0 flex-row overflow-x-auto py-1 [&>li]:shrink-0 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:max-w-none group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:overflow-x-visible"
           : "flex-col"
       }
     >
@@ -241,6 +243,11 @@ function ContextRailSwitcher({
               aria-current={isActive ? "true" : undefined}
               disabled={section.disabled}
               onClick={() => handleClick(section)}
+              // No leading accent bar: in a nav LIST it marks the row, but on a
+              // 32px icon button in this switcher it read as a stray vertical
+              // line beside the glyph. The accent fill is the active cue here
+              // (a shape, so it survives greyscale), and `aria-current` names it.
+              className="data-[active=true]:before:hidden"
             >
               <span
                 aria-hidden="true"
@@ -658,7 +665,18 @@ export const ContextRail = forwardRef<HTMLDivElement, ContextRailProps>(function
       ) : (
         // `variant` is hardcoded, not a public prop (#382) — see the doc
         // comment on `ContextRailProps` above.
-        <Sidebar side="right" collapsible="icon" variant="sidebar">
+        // No edge line (the variant draws it under the same group selector, so the
+        // override uses that selector too). The rail's `bg-sidebar` chrome fill is
+        // already the boundary against the canvas (`surface-elevation` keeps
+        // the two apart in every theme), and beside an inset content card the
+        // card's own elevation is — so the line only ever drew a stray hairline.
+        <Sidebar
+          side="right"
+          collapsible="icon"
+          variant="sidebar"
+          // eslint-disable-next-line conventions/logical-props -- must cancel Sidebar's own physical `group-data-[side=right]:border-l` under the same selector; a logical override loses the cascade
+          className="group-data-[side=right]:border-l-0"
+        >
           <ContextRailWide
             ref={ref}
             sections={sections}

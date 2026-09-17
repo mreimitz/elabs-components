@@ -59,6 +59,7 @@ export const RealisticShell: Story = {
   render: () => (
     <div>
       <SkipLink />
+      {/* header-band-exempt: a skip-link demo page, not an app shell */}
       <header className="flex items-center justify-between gap-4 border-b border-border p-4">
         <nav aria-label="Primary" className="flex items-center gap-4">
           <a href="#dashboard" className="text-body text-foreground">

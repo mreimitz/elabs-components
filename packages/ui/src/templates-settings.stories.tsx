@@ -18,9 +18,11 @@ import {
   DescriptionsItem,
   Input,
   Label,
+  NavUser,
   Separator,
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -33,8 +35,8 @@ import {
   Wizard,
   WizardNav,
   WizardStep,
-  WizardSteps,
   type WizardStepMeta,
+  WizardSteps,
 } from "./index";
 import { Bell, Home, Shield, User } from "lucide-react";
 
@@ -222,9 +224,12 @@ function SettingsTemplate() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+        <SidebarFooter>
+          <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center gap-2 border-b px-4">
+        <header className="flex h-header items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <h1 className="text-body font-medium capitalize">{active}</h1>
         </header>

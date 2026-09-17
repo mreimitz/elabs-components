@@ -11,7 +11,7 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import { PenSquare, Settings } from "lucide-react";
+import { PenSquare } from "lucide-react";
 import {
   Button,
   Sidebar,
@@ -25,6 +25,7 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  NavUser,
 } from "@elabs-ai/components-ui";
 import { AppIcon } from "@elabs-ai/components-icons";
 import { isPathActive, NAV_GROUPS } from "./nav-items";
@@ -32,9 +33,9 @@ import { isPathActive, NAV_GROUPS } from "./nav-items";
 export interface MailNavRailProps extends Omit<ComponentProps<typeof Sidebar>, "collapsible"> {
   /** Current route, for the active-state indicator (router-agnostic — see `nav-items.ts`). */
   activePath: string;
-  /** Mailbox owner shown in the brand block (hidden when the rail is collapsed). */
+  /** Mailbox owner — the signed-in user in the footer account menu. */
   accountName?: string;
-  /** Address under the owner's name (hidden when the rail is collapsed). */
+  /** Address under the owner's name in the footer account menu. */
   accountEmail?: string;
   /** Product name — the wordmark half of the brand lockup. @default "Northwind Mail" */
   productName?: string;
@@ -55,21 +56,12 @@ export function MailNavRail({
     <Sidebar collapsible="icon" className={className} {...props}>
       <SidebarHeader>
         <div className="flex min-w-0 flex-col gap-2 px-1 py-1">
-          {/* The product mark, above the account block. `AppIcon` is the
+          {/* The product mark, above the compose action. `AppIcon` is the
               library's own brand component — theme-correct on its own, and
               `morph="auto"` folds the lockup down to the glyph when this rail
               collapses. Re-brand by re-pointing the brand tokens. */}
           <div className="flex items-center group-data-[collapsible=icon]:justify-center">
             <AppIcon morph="auto" title={productName} height={22} />
-          </div>
-          <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-            <div className="truncate text-body font-semibold text-sidebar-foreground">
-              {accountName}
-            </div>
-            {/* Sidebar ink, not canvas ink: `--muted-foreground` on the sidebar
-                ground measures ~2.3:1 in `light`. The sidebar pair is the one
-                tuned for this surface. */}
-            <div className="truncate text-meta text-sidebar-muted-foreground">{accountEmail}</div>
           </div>
           {/* The one action a mail client must never hide. It keeps its icon in
               the collapsed rail (the label folds away with the rest of the
@@ -146,21 +138,11 @@ export function MailNavRail({
         </SidebarContent>
       </nav>
 
+      {/* The standard footer for every app shell: the signed-in user, which
+          opens the account menu (Settings, Sign out). Settings lives in that
+          menu, never as a loose row here. */}
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isPathActive("/settings", activePath)}
-              tooltip="Settings"
-            >
-              <a href="/settings">
-                <Settings />
-                <span>Settings</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <NavUser user={{ name: accountName, email: accountEmail }} settingsHref="/settings" />
       </SidebarFooter>
     </Sidebar>
   );
