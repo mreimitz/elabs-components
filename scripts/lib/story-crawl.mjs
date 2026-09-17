@@ -82,11 +82,20 @@ export function judgeStory(entry, probe) {
   return out;
 }
 
-/** What one browser page reports about a story. Runs INSIDE the page. */
+/**
+ * What one browser page reports about a story. Runs INSIDE the page.
+ *
+ * The measured element is the first child that actually generates a BOX.
+ * `display: contents` elements have no box of their own, so their rect is always
+ * 0×0 — `Dashboard/Chrome/DashboardThemeScope` renders a `class="contents"`
+ * provider wrapper around a perfectly visible 1248×256 sheet and was reported
+ * broken by the first real crawl. Walk past those wrappers before measuring.
+ */
 const PROBE = `(() => {
   const overlayEl = document.querySelector(".sb-errordisplay");
   const root = document.querySelector("#storybook-root") || document.querySelector("#root");
-  const child = root && root.firstElementChild;
+  let child = root && root.firstElementChild;
+  while (child && getComputedStyle(child).display === "contents") child = child.firstElementChild;
   const box = child ? child.getBoundingClientRect() : { width: 0, height: 0 };
   const svgs = root ? root.querySelectorAll("svg") : [];
   let marks = 0;
@@ -154,8 +163,12 @@ export async function crawlStories({
   concurrency = 8,
   settleMs = 700,
   timeoutMs = 30000,
-  // Room for a slow load AND a slow settle, then the story is declared hung.
-  storyTimeoutMs = timeoutMs * 2 + settleMs,
+  // A slow load, a slow settle AND slack on top: set to the exact worst case, the
+  // deadline fires at the same moment Playwright's own timeout would, and a story
+  // that is merely slow is reported as "never settled" instead of by its real
+  // error. `AI/Persona/Live remote artwork` — the one story that reaches the
+  // network — did exactly that under concurrency 8.
+  storyTimeoutMs = timeoutMs * 2 + settleMs + 10000,
   log = () => {},
 }) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
