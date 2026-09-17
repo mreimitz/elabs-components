@@ -18,7 +18,50 @@ import {
   validateDashboardSpec,
 } from "./dashboard-spec.generated.mjs";
 
-export const DASHBOARD_SPEC_VERBS = ["schema", "validate", "kinds", "layout"];
+/**
+ * The verbs, one row each — the single source for the generated `dashboard-spec`
+ * region of skills/brand-ui/SKILL.md (`pnpm gen`).
+ */
+export const DASHBOARD_SPEC_VERB_DOCS = [
+  {
+    verb: "schema",
+    usage: "brand-ui dashboard-spec schema",
+    does: "Prints the DashboardSpec v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-charts/dashboard/schema.json`).",
+  },
+  {
+    verb: "validate",
+    usage: "brand-ui dashboard-spec validate <file> [--json]",
+    does: "Runs `validateDashboardSpec`: one `path code message` line per problem (shape, duplicate ids, dangling refs, overlaps, conditions); exit 1 when invalid.",
+  },
+  {
+    verb: "kinds",
+    usage: "brand-ui dashboard-spec kinds [--json]",
+    does: "Lists the nine built-in tile kinds with default and minimum sizes and capabilities.",
+  },
+  {
+    verb: "layout",
+    usage: "brand-ui dashboard-spec layout <file> [--strategy=by-kind|reading-order]",
+    does: "Places every tile that has no `layout` with `autoLayout` (existing layouts kept) and prints the spec.",
+  },
+];
+
+export const DASHBOARD_SPEC_VERBS = DASHBOARD_SPEC_VERB_DOCS.map((d) => d.verb);
+
+/** The generated SKILL.md region: a verb table an agent reads before emitting a sheet. */
+export function renderDashboardSpecSkillTable() {
+  const rows = DASHBOARD_SPEC_VERB_DOCS.map(
+    (d) => `| \`${d.usage.replaceAll("|", "\\|")}\` | ${d.does} |`,
+  );
+  return [
+    "> **Generated** by `pnpm gen` from the CLI's dashboard-spec module — edit there, not here.",
+    "",
+    "| Command | What it does |",
+    "| --- | --- |",
+    ...rows,
+    "",
+  ].join("\n");
+}
+
 export const AUTO_LAYOUT_STRATEGIES = ["by-kind", "reading-order"];
 
 export const DASHBOARD_SPEC_USAGE =
