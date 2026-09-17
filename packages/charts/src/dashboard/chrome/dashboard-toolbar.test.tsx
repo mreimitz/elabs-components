@@ -154,6 +154,12 @@ describe("DashboardToolbar — narrow viewport (R8)", () => {
     const wrap = document.querySelector('[data-slot="dashboard-toolbar-edit-toggle-wrap"]');
     if (!wrap) throw new Error("edit-toggle wrap never rendered");
     await user.hover(wrap);
-    expect(await screen.findByRole("tooltip")).toHaveTextContent("Editing needs a wider screen");
+    // Radix's Tooltip default `delayDuration` is 700ms; Testing Library's default `findBy*`
+    // poll timeout is 1000ms, leaving ~300ms of margin. Under CPU oversubscription (many
+    // package test files running in parallel) that margin isn't reliable — extend this one
+    // query's timeout well past the delay rather than raising the file's global testTimeout.
+    expect(await screen.findByRole("tooltip", {}, { timeout: 5000 })).toHaveTextContent(
+      "Editing needs a wider screen",
+    );
   });
 });
