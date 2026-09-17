@@ -29,6 +29,7 @@
     "test": "node --test"
   },
   "devDependencies": {
+    "esbuild": "0.27.7",
     "prettier": "^3.4.2",
     "react-docgen-typescript": "^2.2.2"
   },

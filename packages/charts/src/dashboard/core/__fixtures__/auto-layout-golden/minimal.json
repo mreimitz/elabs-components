@@ -1,0 +1,15 @@
+{
+  "grid": {
+    "mode": "fit",
+    "columns": 24,
+    "rows": 12
+  },
+  "layouts": {
+    "revenue": {
+      "x": 0,
+      "y": 0,
+      "w": 12,
+      "h": 6
+    }
+  }
+}
