@@ -83,8 +83,17 @@ export function buildIntentIndex(manifest, pages) {
   /** @type {Record<string, {pkg: string, intent: object|undefined}>} */
   const byComponent = {};
   for (const [pkg, info] of Object.entries(manifest.packages || {})) {
+    // A component exported from a subpath imports from THAT path, not the root
+    // barrel — DashboardSheet is `@elabs-ai/components-charts/dashboard`.
+    const importPathOf = {};
+    for (const [importPath, sub] of Object.entries(info.subpaths || {}))
+      for (const c of sub.components || []) importPathOf[c.name] = importPath;
     for (const [name, storyId] of Object.entries(info.stories || {})) {
-      byComponent[name] = { pkg, storyId, intent: info.intent?.[name] };
+      byComponent[name] = {
+        pkg: importPathOf[name] || pkg,
+        storyId,
+        intent: info.intent?.[name],
+      };
     }
     // A component with authored intent but no story of its own still matters:
     // its record is reachable from a page that documents it under another title.

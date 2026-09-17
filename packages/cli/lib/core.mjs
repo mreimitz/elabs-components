@@ -1516,7 +1516,12 @@ export function generateManifest(repoRoot, opts = {}) {
     // `meta.title`. This is the link between the two surfaces that never met:
     // `brand-ui docs <Name>` can print the live story URL, and Storybook's
     // Intent block is generated from the same record (2026-09-17 review §4.2.3).
-    const stories = collectStoryIds(repoRoot, bucketed.components);
+    const stories = collectStoryIds(repoRoot, [
+      ...bucketed.components,
+      // Subpath components (`@elabs-ai/components-charts/dashboard`) have docs
+      // pages too — DashboardSheet is one — so they get a storyId as well.
+      ...Object.values(subpaths).flatMap((sub) => sub.components || []),
+    ]);
     packages[name] = {
       path: `packages/${entry}`,
       ...(peerDependencies && Object.keys(peerDependencies).length ? { peerDependencies } : {}),
@@ -1665,6 +1670,7 @@ export function flat(manifest) {
         ...(info.variants?.[c.name] ? { variants: info.variants[c.name] } : {}),
         ...(info.props?.[c.name] ? { props: info.props[c.name] } : {}),
         ...(info.intent?.[c.name] ? { intent: info.intent[c.name] } : {}),
+        ...(info.stories?.[c.name] ? { storyId: info.stories[c.name] } : {}),
       });
     for (const h of info.hooks) rows.push({ name: h.name, kind: "hook", pkg, module: h.module });
     // Type-only exports (interfaces/types, e.g. `DataTableColumnMeta`) and plain
@@ -1684,7 +1690,14 @@ export function flat(manifest) {
     // them too so `search`/`docs` find them (importPath records the real import).
     for (const [importPath, sub] of Object.entries(info.subpaths || {})) {
       for (const c of sub.components)
-        rows.push({ name: c.name, kind: "component", pkg, importPath, module: c.module });
+        rows.push({
+          name: c.name,
+          kind: "component",
+          pkg,
+          importPath,
+          module: c.module,
+          ...(info.stories?.[c.name] ? { storyId: info.stories[c.name] } : {}),
+        });
       for (const h of sub.hooks)
         rows.push({ name: h.name, kind: "hook", pkg, importPath, module: h.module });
       for (const t of sub.types) {

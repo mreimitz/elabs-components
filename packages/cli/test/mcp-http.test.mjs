@@ -106,3 +106,57 @@ test("local (non-hosted) mode still lists audit", () => {
   const res = handleMessage(rpc("tools/list"), { root });
   assert.ok(res.result.tools.some((t) => t.name === "audit"));
 });
+
+// ── What a REMOTE agent gets back (2026-09-17 review §4.2) ───────────────────
+// The hosted server used to answer with repo-relative paths a caller on
+// elabs-ai.com cannot open, a `docs` entry with no usage, and an `info` that
+// never named the route. These pin the three fixes.
+
+test("hosted search returns release-pinned raw URLs, not repo paths", async (t) => {
+  if (!manifest) return t.skip("not inside the brand-ui monorepo");
+  const body = await (
+    await post(rpc("tools/call", { name: "search", arguments: { query: "dashboard" } }))
+  ).json();
+  const text = body.result.content[0].text;
+  const raw = "https://raw.githubusercontent.com/mreimitz/elabs-components/";
+  assert.match(
+    text,
+    new RegExp(`${raw}@elabs-ai/components-cli@[0-9.]+/docs/playbooks/dashboard\\.md`),
+  );
+  assert.match(text, /template https:\/\/raw\.githubusercontent\.com\/\S+\.tsx/);
+  // No bare repo path survives in a hosted answer.
+  assert.doesNotMatch(text, /^ {4}docs\/playbooks\//m);
+  assert.doesNotMatch(text, /^ {4}templates\//m);
+});
+
+test("hosted docs prints the import line and the live story URL", async (t) => {
+  if (!manifest) return t.skip("not inside the brand-ui monorepo");
+  const body = await (
+    await post(rpc("tools/call", { name: "docs", arguments: { component: "Button" } }))
+  ).json();
+  const text = body.result.content[0].text;
+  assert.match(text, /^import: import \{ Button \} from "@elabs-ai\/components-ui";$/m);
+  assert.match(text, /^story: https:\/\/elabs-ai\.com\/\?path=\/docs\/core-button--docs$/m);
+});
+
+test("hosted docs uses the SUBPATH a component is actually exported from", async (t) => {
+  if (!manifest) return t.skip("not inside the brand-ui monorepo");
+  const body = await (
+    await post(rpc("tools/call", { name: "docs", arguments: { component: "DashboardSheet" } }))
+  ).json();
+  const text = body.result.content[0].text;
+  assert.match(
+    text,
+    /^import: import \{ DashboardSheet \} from "@elabs-ai\/components-charts\/dashboard";$/m,
+  );
+  assert.match(text, /^story: https:\/\/elabs-ai\.com\/\?path=\/docs\/dashboard-sheet--docs$/m);
+});
+
+test("info hands a fresh session the whole routine", async (t) => {
+  if (!manifest) return t.skip("not inside the brand-ui monorepo");
+  const body = await (await post(rpc("tools/call", { name: "info" }))).json();
+  const text = body.result.content[0].text;
+  assert.match(text, /the routine:/);
+  for (const step of ["info", "search", "docs", "build", "audit"])
+    assert.match(text, new RegExp(`^ {2}\\d\\. ${step}`, "m"), `routine names ${step}`);
+});

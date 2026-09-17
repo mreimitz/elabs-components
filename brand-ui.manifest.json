@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T18:23:16.931Z",
+  "generatedAt": "2026-09-17T18:58:07.641Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22519,6 +22519,10 @@
         "ChartLegend": "charts-chartlegend--docs",
         "ChoroplethChart": "charts-choroplethchart--docs",
         "ComposedChart": "charts-composedchart--docs",
+        "DashboardInteractionsEditor": "dashboard-interactions--docs",
+        "DashboardSelectionBar": "dashboard-selection-bar--docs",
+        "DashboardSheet": "dashboard-sheet--docs",
+        "DashboardToolbar": "dashboard-chrome-toolbar--docs",
         "DistributionChart": "charts-distributionchart--docs",
         "DumbbellChart": "charts-dumbbellchart--docs",
         "FunnelChart": "charts-funnelchart--docs",
@@ -24680,10 +24684,25 @@
         }
       },
       "stories": {
+        "CalcBlock": "editor-calcblock--docs",
+        "CalcInline": "editor-calcinline--docs",
         "CodeEditor": "editor-codeeditor--docs",
         "CodeWorkspace": "editor-codeworkspace--docs",
+        "DecisionCard": "editor-aiobjects-decisioncard--docs",
         "DiffEditor": "editor-diffeditor--docs",
-        "MarkdownEditor": "editor-markdowneditor--docs"
+        "DocumentOutline": "editor-documentoutline--docs",
+        "IterationBuilderDialog": "editor-iteration-builderdialog--docs",
+        "IterationTemplateDialog": "editor-iteration-templatedialog--docs",
+        "MarkdownEditor": "editor-markdowneditor--docs",
+        "MarkdownPreview": "editor-markdownpreview--docs",
+        "MarkdownToolbar": "editor-markdowntoolbar--docs",
+        "MarkdownWorkspace": "editor-markdownworkspace--docs",
+        "MermaidDiagram": "editor-mermaiddiagram--docs",
+        "MermaidWorkspace": "editor-mermaidworkspace--docs",
+        "MetricBlock": "editor-metricblock--docs",
+        "SlashMenu": "editor-markdowneditor-slashmenu--docs",
+        "Text": "foundations-typography--docs",
+        "Timeline": "core-timeline--docs"
       },
       "subpaths": {
         "@elabs-ai/components-editor/markdown": {

@@ -46,6 +46,51 @@ export const SUPPORTED_PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", PROTOCOL
 export const LOCAL_ONLY_TOOLS = new Set(["audit"]);
 export const SERVER_INFO = { name: "brand-ui", version: "4.2.0" };
 
+/**
+ * Where a REMOTE caller can actually open what this server names.
+ *
+ * `search` answered with repo-relative paths ("docs/playbooks/dashboard.md ·
+ * template templates/dashboard.tsx") — right for a developer inside the
+ * monorepo, dead for an agent talking to elabs-ai.com, which has no such tree
+ * (2026-09-17 review §4.2.2). Hosted answers therefore carry raw-GitHub URLs,
+ * pinned to the release this server serves so a link never drifts to `main`.
+ *
+ * The ref is the CLI's own release tag, not `v<version>`: Changesets tags each
+ * package (`@elabs-ai/components-cli@4.2.0`) and release.yml checks out exactly
+ * that tag to deploy the hosted server, while the repo-wide `v4.2.0` tag does
+ * not exist (`v4.1.0` was the last one) and would 404. `version-sync` keeps
+ * SERVER_INFO.version equal to the published version.
+ */
+export const DOCS_SITE_URL = "https://elabs-ai.com";
+const RELEASE_TAG = `@elabs-ai/components-cli@${SERVER_INFO.version}`;
+const RAW_BASE = `https://raw.githubusercontent.com/mreimitz/elabs-components/${RELEASE_TAG}`;
+
+/** Playbook `template` paths are relative to the playbook folder. */
+const PLAYBOOK_DIR = "docs/playbooks";
+const templateRepoPath = (file) =>
+  String(file).startsWith("docs/") ? String(file) : `${PLAYBOOK_DIR}/${file}`;
+
+/** A repo path as the caller can open it: a raw URL when hosted, the path locally. */
+const openablePath = (ctx, repoPath) =>
+  ctx.hosted ? `${RAW_BASE}/${String(repoPath).replace(/^\/+/, "")}` : String(repoPath);
+
+/** The live Storybook docs page for a component, from the manifest's storyId. */
+const storyUrl = (storyId) => `${DOCS_SITE_URL}/?path=/docs/${storyId}`;
+
+/**
+ * The routine from the Storybook "Getting Started" page. `info` is the first
+ * call an agent makes, so it is the one place a fresh session can be handed the
+ * whole route instead of discovering it one tool at a time (review §4.2.4).
+ */
+const ROUTINE = [
+  "the routine:",
+  "  1. info                       — this call: packages, themes, taste profile",
+  "  2. search <what you build>    — playbook + template + components for the screen",
+  "  3. docs <Component>           — real props, variants, anti-patterns, import line, story link",
+  "  4. build                      — semantic tokens only; never hardcode a colour",
+  "  5. audit <path>               — locally: `npx -y @elabs-ai/components-cli audit <path>`",
+];
+
 /** The tool catalogue advertised over `tools/list`. */
 export const TOOLS = [
   {
@@ -156,6 +201,7 @@ function toolInfo(ctx) {
     lines.push(
       "hosted server: the taste profile is the shipped default — it cannot read your project's brand-ui.config.json. Run `npx @elabs-ai/components-cli mcp` locally for your project's profile and the audit tool.",
     );
+  lines.push("", ...ROUTINE);
   return textContent(lines.join("\n"));
 }
 
@@ -210,14 +256,15 @@ function toolSearch(ctx, q) {
     lines.push("", `Playbooks matching "${query}" (start a WHOLE screen here):`);
     for (const p of books) {
       lines.push(`  ${p.archetype}  — ${p.intent}`);
-      lines.push(`    ${p.file}${p.template ? `  · template ${p.template}` : ""}`);
+      lines.push(`    ${openablePath(ctx, p.file)}`);
+      if (p.template) lines.push(`    template ${openablePath(ctx, templateRepoPath(p.template))}`);
     }
   }
   if (templates.length) {
     lines.push("", `Templates matching "${query}":`);
     for (const t of templates) {
       lines.push(`  ${t.name}  (template)`);
-      lines.push(`    ${t.file}`);
+      lines.push(`    ${openablePath(ctx, templateRepoPath(t.file))}`);
     }
   }
   if (verbs.length) {
@@ -233,7 +280,13 @@ function toolSearch(ctx, q) {
 /** Compact docs rendering from the manifest entry (the same data `brand-ui docs` prints). */
 function renderDocsEntry(hit) {
   const lines = [`# ${hit.name}  (${hit.pkg})`];
-  if (hit.importPath) lines.push(`import from: ${hit.importPath}`);
+  // The API without the usage was the gap: no import line, no link to the live
+  // story (review §4.2.3). Both are printed for every caller — the loop only
+  // closes if Storybook's Intent block and this output name each other.
+  if (hit.kind === "component" || hit.kind === "hook")
+    lines.push(`import: import { ${hit.name} } from "${hit.importPath || hit.pkg}";`);
+  else if (hit.importPath) lines.push(`import from: ${hit.importPath}`);
+  if (hit.storyId) lines.push(`story: ${storyUrl(hit.storyId)}`);
   lines.push(`source: ${hit.module}`);
   const intent = hit.intent;
   if (intent) {
