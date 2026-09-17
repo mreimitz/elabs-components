@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T01:22:25.500Z",
+  "generatedAt": "2026-09-17T02:47:03.206Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22510,6 +22510,11 @@
               "module": "packages/charts/src/dashboard/edit/marquee.tsx"
             },
             {
+              "name": "DashboardPresentation",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-presentation.tsx"
+            },
+            {
               "name": "DashboardPropertiesPanel",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/dashboard-properties-panel.tsx"
@@ -22528,6 +22533,11 @@
               "name": "DashboardSheet",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-sheet.tsx"
+            },
+            {
+              "name": "DashboardThemeScope",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-theme-scope.tsx"
             },
             {
               "name": "DashboardTile",
@@ -22555,6 +22565,11 @@
               "module": "packages/charts/src/dashboard/chrome/dashboard-toolbar.tsx"
             },
             {
+              "name": "DashboardWorkbook",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/workbook/dashboard-workbook.tsx"
+            },
+            {
               "name": "DEFAULT_DASHBOARD_INTERACTIONS_EDITOR_LABELS",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/dashboard-interactions-editor.tsx"
@@ -22568,6 +22583,11 @@
               "name": "DEFAULT_DASHBOARD_PANEL_LABELS",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
+            },
+            {
+              "name": "DEFAULT_DASHBOARD_PRESENTATION_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-presentation.tsx"
             },
             {
               "name": "DEFAULT_FILTER_TILE_LABELS",
@@ -22598,6 +22618,11 @@
               "name": "DEFAULT_SELECTION_BAR_LABELS",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/dashboard-selection-bar.tsx"
+            },
+            {
+              "name": "DEFAULT_WORKBOOK_NAV_LABELS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/workbook/workbook-nav.tsx"
             },
             {
               "name": "EMPTY_SELECTION",
@@ -22668,6 +22693,11 @@
               "name": "TileSizeBadge",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/tile-size-badge.tsx"
+            },
+            {
+              "name": "WorkbookNav",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/workbook/workbook-nav.tsx"
             }
           ],
           "hooks": [
@@ -22750,6 +22780,11 @@
               "name": "useVariable",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-variable.ts"
+            },
+            {
+              "name": "useWorkbook",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/workbook/use-workbook.ts"
             }
           ],
           "types": [
@@ -22962,6 +22997,14 @@
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
             },
             {
+              "name": "DashboardPresentationLabels",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-presentation.tsx"
+            },
+            {
+              "name": "DashboardPresentationProps",
+              "module": "packages/charts/src/dashboard/chrome/dashboard-presentation.tsx"
+            },
+            {
               "name": "DashboardPropertiesPanelProps",
               "module": "packages/charts/src/dashboard/chrome/dashboard-properties-panel.tsx"
             },
@@ -23000,6 +23043,10 @@
             {
               "name": "DashboardStore",
               "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardThemeScopeProps",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/dashboard-theme-scope.tsx"
             },
             {
               "name": "DashboardTileCapabilities",
@@ -23052,6 +23099,10 @@
             {
               "name": "DashboardUiState",
               "module": "packages/charts/src/dashboard/core/store.ts"
+            },
+            {
+              "name": "DashboardWorkbookProps",
+              "module": "packages/charts/src/dashboard/workbook/dashboard-workbook.tsx"
             },
             {
               "name": "DecodedState",
@@ -23270,14 +23321,38 @@
               "module": "packages/charts/src/dashboard/export/use-export-sheet.ts"
             },
             {
+              "name": "UseWorkbookOptions",
+              "module": "packages/charts/src/dashboard/workbook/use-workbook.ts"
+            },
+            {
+              "name": "UseWorkbookResult",
+              "module": "packages/charts/src/dashboard/workbook/use-workbook.ts"
+            },
+            {
               "name": "VariableTileContent",
               "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
+            },
+            {
+              "name": "WorkbookNavLabels",
+              "module": "packages/charts/src/dashboard/workbook/workbook-nav.tsx"
+            },
+            {
+              "name": "WorkbookNavProps",
+              "module": "packages/charts/src/dashboard/workbook/workbook-nav.tsx"
+            },
+            {
+              "name": "WorkbookSpecValidation",
+              "module": "packages/charts/src/dashboard/core/validate.ts"
             }
           ],
           "otherExports": [
             {
               "name": "alignTiles",
               "module": "packages/charts/src/dashboard/edit/align.ts"
+            },
+            {
+              "name": "applyCarriedSelection",
+              "module": "packages/charts/src/dashboard/workbook/use-workbook.ts"
             },
             {
               "name": "applyLayout",
@@ -23484,6 +23559,10 @@
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
             },
             {
+              "name": "mergeSharedIntoSheet",
+              "module": "packages/charts/src/dashboard/workbook/use-workbook.ts"
+            },
+            {
               "name": "metricTileKind",
               "module": "packages/charts/src/dashboard/tiles/metric-tile.tsx"
             },
@@ -23612,8 +23691,16 @@
               "module": "packages/charts/src/dashboard/core/validate.ts"
             },
             {
+              "name": "validateWorkbookSpec",
+              "module": "packages/charts/src/dashboard/core/validate.ts"
+            },
+            {
               "name": "variableTileKind",
               "module": "packages/charts/src/dashboard/tiles/variable-tile.tsx"
+            },
+            {
+              "name": "visibleWorkbookSheets",
+              "module": "packages/charts/src/dashboard/workbook/use-workbook.ts"
             },
             {
               "name": "withBuiltInTiles",

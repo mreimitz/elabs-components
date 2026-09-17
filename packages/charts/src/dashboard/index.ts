@@ -40,4 +40,6 @@ export * from "./edit";
 // Export — RM-084
 export * from "./export";
 
-// Presentation/Theme/Workbook — RM-087
+// Presentation/Theme/Workbook — RM-087: `DashboardPresentation` ships through `./chrome`
+// above; `DashboardThemeScope` ships through `./dashboard-sheet` above.
+export * from "./workbook";

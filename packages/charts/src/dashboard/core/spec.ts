@@ -276,3 +276,27 @@ export interface DashboardSpecWarning {
   code: "unknown-kind" | "overlap-repaired" | "clamped" | "id-assigned";
   message: string;
 }
+
+// workbook — RM-087
+/**
+ * A multi-sheet container (analysis §2.0, §7): the tenant's 16-sheet app with a sheet
+ * navigator. `shared` is merged into every sheet's OWN spec at mount (`useWorkbook`) — a
+ * sheet's own `variables`/`bookmarks`/`library` entry wins a name/id clash, so a sheet can
+ * still override one shared item. Serializable, same promise as `DashboardSpec`.
+ */
+export interface WorkbookSpec {
+  /** Spec version; always `1` for this build. */
+  version: DashboardSpecVersion;
+  /** Stable workbook id. */
+  id: string;
+  /** Write the title as the conclusion, as for a sheet. */
+  title?: string;
+  /** The sheets, in nav order. */
+  sheets: DashboardSpec[];
+  /** State merged into every sheet at mount; a sheet's own entry wins a clash. */
+  shared?: {
+    variables?: VariableSpec[];
+    bookmarks?: BookmarkSpec[];
+    library?: LibraryTileSpec[];
+  };
+}

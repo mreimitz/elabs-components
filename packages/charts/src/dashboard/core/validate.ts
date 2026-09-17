@@ -25,6 +25,7 @@ import type {
   GridSpec,
   TileLayout,
   TileSpec,
+  WorkbookSpec,
 } from "./spec";
 
 /** Result of `validateDashboardSpec`. */
@@ -422,4 +423,86 @@ export function normalizeDashboardSpec(
   const out: DashboardSpec = { ...spec, grid, tiles };
   if (containers) out.containers = containers;
   return { spec: out, warnings };
+}
+
+// workbook — RM-087
+/** Result of `validateWorkbookSpec`. */
+export type WorkbookSpecValidation =
+  | { ok: true; spec: WorkbookSpec }
+  | { ok: false; errors: DashboardSpecError[] };
+
+/**
+ * Check an unknown value against the `WorkbookSpec` contract: unique sheet ids (each sheet is
+ * itself run through `validateDashboardSpec`, errors re-pathed under `$.sheets[i]`), and every
+ * `sheetId` a sheet's `drill` interaction, `navigate` action or `bookmark` names resolves to a
+ * sheet in THIS workbook. Never throws, never repairs.
+ */
+export function validateWorkbookSpec(input: unknown): WorkbookSpecValidation {
+  const errors: DashboardSpecError[] = [];
+  const err = (path: string, code: DashboardSpecError["code"], message: string) =>
+    errors.push({ path, code, message });
+
+  if (!isRecord(input))
+    return {
+      ok: false,
+      errors: [{ path: "$", code: "type", message: "workbook must be an object" }],
+    };
+  if (input.version === undefined) err("$.version", "missing", "version is required");
+  else if (input.version !== 1) err("$.version", "version", "only version 1 is supported");
+  if (typeof input.id !== "string")
+    err("$.id", input.id === undefined ? "missing" : "type", "id is required");
+  if (input.title !== undefined && typeof input.title !== "string")
+    err("$.title", "type", "title must be a string");
+
+  if (!Array.isArray(input.sheets)) {
+    err("$.sheets", "missing", "sheets is required");
+    return { ok: false, errors };
+  }
+
+  const sheetIds = new Set<string>();
+  input.sheets.forEach((sheet, i) => {
+    const path = `$.sheets[${i}]`;
+    const result = validateDashboardSpec(sheet);
+    if (!result.ok) {
+      for (const e of result.errors) errors.push({ ...e, path: `${path}${e.path.slice(1)}` });
+      return;
+    }
+    if (sheetIds.has(result.spec.id))
+      err(`${path}.id`, "duplicate-id", `sheet id “${result.spec.id}” is already used`);
+    sheetIds.add(result.spec.id);
+  });
+
+  const checkSheetRef = (id: unknown, path: string) => {
+    if (typeof id === "string" && !sheetIds.has(id)) err(path, "unknown-ref", `no sheet “${id}”`);
+  };
+  input.sheets.forEach((sheet, i) => {
+    if (!isRecord(sheet)) return;
+    const path = `$.sheets[${i}]`;
+    if (Array.isArray(sheet.interactions))
+      sheet.interactions.forEach((interaction, j) => {
+        if (!isRecord(interaction) || !isRecord(interaction.effect)) return;
+        const drill = interaction.effect.drill;
+        if (isRecord(drill))
+          checkSheetRef(drill.sheetId, `${path}.interactions[${j}].effect.drill.sheetId`);
+      });
+    if (Array.isArray(sheet.actions))
+      sheet.actions.forEach((action, j) => {
+        if (isRecord(action) && action.type === "navigate")
+          checkSheetRef(action.sheetId, `${path}.actions[${j}].sheetId`);
+      });
+    if (Array.isArray(sheet.bookmarks))
+      sheet.bookmarks.forEach((bookmark, j) => {
+        if (isRecord(bookmark) && bookmark.sheetId !== undefined)
+          checkSheetRef(bookmark.sheetId, `${path}.bookmarks[${j}].sheetId`);
+      });
+  });
+  if (isRecord(input.shared) && Array.isArray(input.shared.bookmarks))
+    input.shared.bookmarks.forEach((bookmark, j) => {
+      if (isRecord(bookmark) && bookmark.sheetId !== undefined)
+        checkSheetRef(bookmark.sheetId, `$.shared.bookmarks[${j}].sheetId`);
+    });
+
+  return errors.length > 0
+    ? { ok: false, errors }
+    : { ok: true, spec: input as unknown as WorkbookSpec };
 }
