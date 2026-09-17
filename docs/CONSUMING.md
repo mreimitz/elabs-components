@@ -607,7 +607,6 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   spec-driven grid of tiles (KPIs, charts, filters, text, host-registered kinds) with selection,
   edit mode and a bookmark/interaction graph, published as its own subpath so `charts`'s main
   barrel stays free of it. Four things to know before you reach for it:
-
   1. **Import from the subpath, not the package root.**
      ```tsx
      import {
@@ -632,8 +631,9 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
      `packages/charts/src/dashboard/examples/qlik-object-tile/`.
   4. **Test it with the engine-free double**, the same pattern as the main `charts` barrel:
      ```ts
-     vi.mock("@elabs-ai/components-charts/dashboard", async () =>
-       import("@elabs-ai/components-charts/dashboard/test"),
+     vi.mock(
+       "@elabs-ai/components-charts/dashboard",
+       async () => import("@elabs-ai/components-charts/dashboard/test"),
      );
      ```
      `./dashboard/test` never imports `@dnd-kit/*`/visx/d3/motion or the real dashboard barrel, so
@@ -758,15 +758,17 @@ layer to match an exact component set.
 
 The consumer-facing skills:
 
-| Skill                     | Use it for                                                           |
-| ------------------------- | -------------------------------------------------------------------- |
-| **`brand-ui`**            | Build/compose with the components — live context, real API, patterns |
-| **`brand-ui-start`**      | The router when you don't know where to begin                        |
-| **`brand-ui-new-app`**    | Scaffold a whole app from a plain-language description               |
-| **`brand-ui-theme`**      | Re-brand to a customer palette; token-level work                     |
-| **`brand-ui-audit`**      | Score an existing screen — tokens, a11y, cross-theme, design quality |
-| **`brand-ui-migrate`**    | Bring an app that already exists onto brand-ui, phase by phase       |
-| **`brand-ui-enterprise`** | Design judgment for admin consoles / dense data apps                 |
+| Skill                       | Use it for                                                            |
+| --------------------------- | --------------------------------------------------------------------- |
+| **`brand-ui`**              | Build/compose with the components — live context, real API, patterns  |
+| **`brand-ui-start`**        | The router when you don't know where to begin                         |
+| **`brand-ui-new-app`**      | Scaffold a whole app from a plain-language description                |
+| **`brand-ui-theme`**        | Re-brand to a customer palette; token-level work                      |
+| **`brand-ui-create-theme`** | Research a brand from links/files → sourced theme family, on approval |
+| **`brand-ui-update-theme`** | Improve an existing theme family from new brand material              |
+| **`brand-ui-audit`**        | Score an existing screen — tokens, a11y, cross-theme, design quality  |
+| **`brand-ui-migrate`**      | Bring an app that already exists onto brand-ui, phase by phase        |
+| **`brand-ui-enterprise`**   | Design judgment for admin consoles / dense data apps                  |
 
 **Other harnesses** (Cursor, Copilot, Gemini, Continue): point the tool at
 `llms.txt` and the per-package `llms/<pkg>.txt` from the kit — a compact,

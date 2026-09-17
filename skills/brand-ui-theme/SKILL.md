@@ -64,6 +64,11 @@ are true of every theme either way:
 
 ## Re-brand from a customer palette
 
+Starting from a real brand's material (links, guidelines, a logo, a live product) rather
+than a palette you already hold? Use **`brand-ui-create-theme`** — it researches the
+sources, captures the logo and proposes a sourced theme family before writing anything.
+To improve a family that already exists from new material, use **`brand-ui-update-theme`**.
+
 Derive the brand color → set `--primary` (+ `--ring`, sidebar/chart accents),
 compose surfaces/ink around it, keep `--destructive` conventional. Carry warmth via
 accent + type, not a tinted near-white body. Preserve an existing committed brand

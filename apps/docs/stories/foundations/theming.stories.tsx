@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import {
@@ -399,9 +399,11 @@ export const ShippedThemes: Story = {
       <p className="m-0 max-w-prose text-caption text-muted-foreground">
         Two <strong>reference</strong> themes ship in{" "}
         <code className="text-code">@elabs-ai/components-tokens</code> — enough to prove the
-        light/dark contract, and the worked example for one you author yourself. Pass the{" "}
-        <strong>slug</strong> (the <code className="text-code">data-theme</code> value), never the
-        display name, when setting a theme programmatically or via the Storybook globals.
+        light/dark contract, and the worked example for one you author yourself. Downloadable brand
+        families (Ocean, Qlik, Snowflake) and the create/update tools are under &ldquo;Create or
+        update a theme&rdquo;. Pass the <strong>slug</strong> (the{" "}
+        <code className="text-code">data-theme</code> value), never the display name, when setting a
+        theme programmatically or via the Storybook globals.
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {THEMES.map((t) => (
@@ -675,6 +677,99 @@ const sandstone = defineTheme({
       expect(canvasElement.ownerDocument.querySelector("[data-aria-hidden]")).toBeNull(),
     );
   },
+};
+
+const REPO_URL = "https://github.com/mreimitz/elabs-components";
+
+/** A plain external docs link, styled with tokens only. */
+function DocLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="focus-ring rounded-sm text-primary-text underline underline-offset-2"
+    >
+      {children}
+    </a>
+  );
+}
+
+// The ways to get a theme beyond the reference pair, in the order most people want them.
+const THEME_ROUTES = [
+  {
+    title: "Use a ready-made theme family",
+    when: "A downloadable family already matches the brand (Ocean, Qlik, Snowflake).",
+    how: "Copy its folder from themes/ into your app, import its stylesheets, spread its theme list into ThemeProvider.",
+    link: { href: `${REPO_URL}/tree/main/themes#readme`, label: "Theme families" },
+  },
+  {
+    title: "Create a theme from a brand (AI)",
+    when: "You have a brand name, website links, brand guidelines, a logo or screenshots.",
+    how: "In Claude Code, ask for the brand-ui-create-theme skill from the brand-ui plugin (/create-theme <name> <links, files> in this repo). It researches the sources and proposes a sourced light/dark family; nothing is written until you approve.",
+    link: {
+      href: `${REPO_URL}/blob/main/skills/brand-ui-create-theme/SKILL.md`,
+      label: "brand-ui-create-theme skill",
+    },
+  },
+  {
+    title: "Update an existing theme family (AI)",
+    when: "A family exists but the brand changed, or a value looks off.",
+    how: "Ask for the brand-ui-update-theme skill (/update-theme <family> <links, files, what should change> in this repo). You get a per-token current → proposed diff with sources; edits land only after approval.",
+    link: {
+      href: `${REPO_URL}/blob/main/skills/brand-ui-update-theme/SKILL.md`,
+      label: "brand-ui-update-theme skill",
+    },
+  },
+  {
+    title: "Scaffold a family by hand",
+    when: "You want to author the token values yourself.",
+    how: 'In this repo: pnpm theme:new <slug> --label "Name" [--hue 0-360] [--only light|dark], then pnpm check --rule community-themes and pnpm gen.',
+    link: { href: `${REPO_URL}/blob/main/themes/README.md`, label: "Authoring guide" },
+  },
+  {
+    title: "Derive from one colour, or override at runtime",
+    when: "Only a primary colour is known, or it arrives per tenant at runtime.",
+    how: "deriveTheme(…) builds a full theme from one colour; ThemeProvider tokenOverrides patches tokens live. Both are shown further down this page.",
+    link: null,
+  },
+] as const;
+
+export const CreateOrUpdateATheme: Story = {
+  name: "Create or update a theme",
+  render: () => (
+    <div className="space-y-4">
+      <p className="m-0 max-w-prose text-body text-foreground">
+        You rarely hand-write a <code className="text-code">[data-theme]</code> block from zero.
+        Pick the route that matches what you start with.
+      </p>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {THEME_ROUTES.map((route) => (
+          <div
+            key={route.title}
+            className="space-y-1.5 rounded-lg border border-border bg-card p-4"
+          >
+            <h4 className="m-0 text-subtitle text-card-foreground">{route.title}</h4>
+            <p className="m-0 text-caption text-muted-foreground">
+              <strong>When:</strong> {route.when}
+            </p>
+            <p className="m-0 text-caption text-card-foreground">{route.how}</p>
+            {route.link ? (
+              <p className="m-0 text-caption">
+                <DocLink href={route.link.href}>{route.link.label}</DocLink>
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <p className="m-0 max-w-prose text-caption text-muted-foreground">
+        The AI routes ship in the brand-ui Claude plugin (
+        <DocLink href={`${REPO_URL}/blob/main/docs/SKILLS.md`}>skills guide</DocLink>). Every route
+        ends in the same contract: every token covered, a matching{" "}
+        <code className="text-code">color-scheme</code>, and AA-contrast ink pairs.
+      </p>
+    </div>
+  ),
 };
 
 /**

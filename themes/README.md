@@ -7,10 +7,11 @@ or alongside them.
 These themes are not published with the npm packages. To use one, copy its folder into
 your app.
 
-| Family            | Modes                              |
-| ----------------- | ---------------------------------- |
-| [Ocean](./ocean/) | light + dark                       |
-| [Qlik](./qlik/)   | light + dark · ships Source Sans 3 |
+| Family                    | Modes                              |
+| ------------------------- | ---------------------------------- |
+| [Ocean](./ocean/)         | light + dark                       |
+| [Qlik](./qlik/)           | light + dark · ships Source Sans 3 |
+| [Snowflake](./snowflake/) | light + dark                       |
 
 ## Use a theme
 

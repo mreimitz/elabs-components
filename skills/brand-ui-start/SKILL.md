@@ -28,6 +28,8 @@ question the person has already answered:
 | "audit / review / is this accessible / check contrast"                                                                | `brand-ui-audit`                             |
 | "how do I use / add / compose <component>", already on @brand                                                         | `brand-ui`                                   |
 | "new theme / re-brand / our colors"                                                                                   | `brand-ui-theme`                             |
+| "create a theme from <brand / links / brand guidelines>"                                                              | `brand-ui-create-theme`                      |
+| "update / refresh <existing theme> from <new material>"                                                               | `brand-ui-update-theme`                      |
 
 Only ask the routing question when the intent is genuinely unclear.
 

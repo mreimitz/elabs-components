@@ -51,6 +51,8 @@ const SKILLS = [
   "brand-ui",
   "brand-ui-audit",
   "brand-ui-theme",
+  "brand-ui-create-theme",
+  "brand-ui-update-theme",
   "brand-ui-new-app",
   "brand-ui-migrate",
   "brand-ui-enterprise",

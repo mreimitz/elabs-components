@@ -4,4 +4,6 @@
 @import "../../../themes/ocean/ocean-dark.css";
 @import "../../../themes/qlik/qlik-light.css";
 @import "../../../themes/qlik/qlik-dark.css";
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="ocean-dark"], [data-theme="ocean-dark"] *, [data-theme="qlik-dark"], [data-theme="qlik-dark"] *));
+@import "../../../themes/snowflake/snowflake-light.css";
+@import "../../../themes/snowflake/snowflake-dark.css";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="ocean-dark"], [data-theme="ocean-dark"] *, [data-theme="qlik-dark"], [data-theme="qlik-dark"] *, [data-theme="snowflake-dark"], [data-theme="snowflake-dark"] *));

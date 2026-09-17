@@ -8,6 +8,8 @@ and `npx skills add <path-to-this-repo>` reads it directly.
 - `brand-ui-audit/` — design audit: static lint + cross-theme contrast/visual review.
 - `brand-ui-component/` — maintainer: scaffold/extend a component.
 - `brand-ui-theme/` — themes + global tokens.
+- `brand-ui-create-theme/` — research a brand (links, files, live product, logo) → sourced theme-family proposal → written on approval (entry point: `/create-theme` in this repo). Ships `scripts/theme-kit.mjs`.
+- `brand-ui-update-theme/` — enhance an existing theme family from new material as a per-token, sourced diff (entry point: `/update-theme` in this repo).
 - `brand-ui-registry/` — curate the shadcn-compatible registry.
 - `brand-ui-new-app/` — define-to-build: guided interview → `app-spec.md` → annotated app scaffold + starter `CLAUDE.md` (entry point: `/brand-ui-new-app`).
 - `brand-ui-migrate/` — brownfield adoption: scan → map → phased plan → reviewed migration of an app that already exists (entry point: `/brand-ui-migrate`).

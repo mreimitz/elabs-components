@@ -9,6 +9,12 @@ prototypes, POCs, AI/chat clients, data grids, dashboards and React Flow
 surfaces. The default look is modern enterprise SaaS — restrained, app-first,
 and themeable to any brand.
 
+- **Source:** [github.com/mreimitz/elabs-components](https://github.com/mreimitz/elabs-components)
+- **npm:** [`@elabs-ai` on npm](https://www.npmjs.com/org/elabs-ai) — every package below is public
+- **Full guide:** [README](https://github.com/mreimitz/elabs-components#readme) ·
+  [Consuming guide](https://github.com/mreimitz/elabs-components/blob/main/docs/CONSUMING.md) ·
+  [Registry guidelines](https://github.com/mreimitz/elabs-components/blob/main/docs/REGISTRY_GUIDELINES.md)
+
 ## Packages
 
 {/* This list is GENERATED from the manifest by `pnpm gen` (PKG_PURPOSE in packages/cli/lib/render-docs.mjs). Do not hand-edit between the markers. */}
@@ -40,8 +46,42 @@ colors — they reference tokens like `bg-background`, `text-muted-foreground`,
 
 ## Two ways to consume
 
-1. **Import** stable primitives: `import { Button } from "@elabs-ai/components-ui"`.
-2. **Copy-own** prototype blocks via the internal shadcn-compatible registry:
-   `npx shadcn add <item>`.
+### 1. Import stable primitives
 
-See the repo `README.md` and `docs/` for the full guide.
+```sh
+pnpm add @elabs-ai/components-tokens @elabs-ai/components-ui
+```
+
+```tsx
+import { Button } from "@elabs-ai/components-ui";
+```
+
+Each package links from [npm](https://www.npmjs.com/org/elabs-ai); for example
+[`@elabs-ai/components-ui`](https://www.npmjs.com/package/@elabs-ai/components-ui).
+
+### 2. Copy-own prototype blocks from the registry
+
+Blocks and templates live in the brand-ui shadcn-compatible registry
+([source](https://github.com/mreimitz/elabs-components/tree/main/registry)). Install
+one by its full URL:
+
+```sh
+npx shadcn@latest add https://mreimitz.github.io/elabs-components/r/latest/data-table.json
+```
+
+Or register the `@brand-ui` namespace once in your app's `components.json` and
+install by name:
+
+```json
+{
+  "registries": {
+    "@brand-ui": "https://mreimitz.github.io/elabs-components/r/latest/{name}.json"
+  }
+}
+```
+
+```sh
+npx shadcn@latest add @brand-ui/data-table
+```
+
+Swap `latest` for a release version (e.g. `4.2.0`) to pin a block.

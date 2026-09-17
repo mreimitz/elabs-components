@@ -36,11 +36,11 @@ const SPARK = [
 function Sparkline({ tone, seriesIndex }: { tone: string; seriesIndex: number }) {
   return (
     <div className="h-10 w-full">
-      <LineChart
-        data={SPARK}
-        aspectRatio={undefined}
-        margin={{ top: 4, right: 0, bottom: 4, left: 0 }}
-      >
+      {/* `h-full` pins the chart to the 40px strip. `aspectRatio={undefined}`
+          alone is NOT enough: the prop's destructuring default ("2 / 1") still
+          kicks in, the chart grows to half the card's width and the card's
+          overflow-hidden clips all but a sliver of the line. */}
+      <LineChart className="h-full" data={SPARK} margin={{ top: 4, right: 0, bottom: 4, left: 0 }}>
         <Line dataKey="v" stroke={tone} strokeWidth={2} seriesIndex={seriesIndex} />
       </LineChart>
     </div>
