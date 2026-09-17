@@ -377,6 +377,38 @@
       "title": "Infographic — How far from the benchmark?",
       "description": "\"How far from the benchmark?\" — a sorted DumbbellChart, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised; the gap's sign correctly flips for a lower-is-better metric.",
       "categories": ["infographic"]
+    },
+    {
+      "name": "dashboard-tile-table",
+      "type": "registry:block",
+      "root": "registry/blocks/dashboard-tile-table",
+      "title": "Dashboard tile — table",
+      "description": "A DashboardTileKind wrapping @elabs-ai/components-data's DataTable: selection tri-state dims/frames excluded rows, a row click toggles that row's field value into the sheet's selection.",
+      "categories": ["dashboard"]
+    },
+    {
+      "name": "dashboard-tile-chat",
+      "type": "registry:block",
+      "root": "registry/blocks/dashboard-tile-chat",
+      "title": "Dashboard tile — chat",
+      "description": "A DashboardTileKind wrapping @elabs-ai/components-ai's ChatShell/Composer: the composer is disabled when the sheet's interactions.active is false.",
+      "categories": ["dashboard"]
+    },
+    {
+      "name": "dashboard-tile-process-map",
+      "type": "registry:block",
+      "root": "registry/blocks/dashboard-tile-process-map",
+      "title": "Dashboard tile — process map",
+      "description": "A DashboardTileKind wrapping @elabs-ai/components-process's ProcessMap: the sheet's tri-state selection maps 1:1 onto ProcessMap's own selectionStates, and a node click emits that activity as the tile's selection.",
+      "categories": ["dashboard"]
+    },
+    {
+      "name": "dashboard-sheet-app",
+      "type": "registry:block",
+      "root": "registry/blocks/dashboard-sheet-app",
+      "title": "Dashboard sheet app",
+      "description": "The installable canonical full-screen, user-editable dashboard: app nav + DashboardToolbar + DashboardSelectionBar + asset/properties panels + DashboardSheet, with the table/chat/process-map tile blocks registered alongside the built-in kinds.",
+      "categories": ["dashboard"]
     }
   ]
 }
