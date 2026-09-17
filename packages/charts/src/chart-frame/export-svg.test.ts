@@ -74,4 +74,38 @@ describe("composeSvg (RM-084)", () => {
     const composed = composeSvg([], { width: 10, height: 10, backgroundColor: "rgb(1, 2, 3)" });
     expect(composed.querySelector("rect")?.getAttribute("fill")).toBe("rgb(1, 2, 3)");
   });
+
+  it("carries role=img and aria-labelledby pointing at a root <title> as the first child", () => {
+    const composed = composeSvg([], { width: 10, height: 10, title: "Q3 sales" });
+    expect(composed.getAttribute("role")).toBe("img");
+    const title = composed.firstElementChild;
+    expect(title?.tagName).toBe("title");
+    expect(title?.textContent).toBe("Q3 sales");
+    expect(title?.getAttribute("id")).toBeTruthy();
+    expect(composed.getAttribute("aria-labelledby")).toBe(title?.getAttribute("id"));
+  });
+
+  it("falls back to a non-empty root title when `title` is not set — every export needs a name", () => {
+    const composed = composeSvg([], { width: 10, height: 10 });
+    const title = composed.firstElementChild;
+    expect(title?.tagName).toBe("title");
+    expect(title?.textContent).toBeTruthy();
+    expect(composed.getAttribute("aria-labelledby")).toBe(title?.getAttribute("id"));
+  });
+
+  it("adds a root <desc> + aria-describedby only when `description` is set", () => {
+    const withDesc = composeSvg([], {
+      width: 10,
+      height: 10,
+      title: "Q3 sales",
+      description: "Revenue by region, EMEA vs APAC.",
+    });
+    const desc = withDesc.querySelector("desc");
+    expect(desc?.textContent).toBe("Revenue by region, EMEA vs APAC.");
+    expect(withDesc.getAttribute("aria-describedby")).toBe(desc?.getAttribute("id"));
+
+    const withoutDesc = composeSvg([], { width: 10, height: 10, title: "Q3 sales" });
+    expect(withoutDesc.querySelector("desc")).toBeNull();
+    expect(withoutDesc.getAttribute("aria-describedby")).toBeNull();
+  });
 });

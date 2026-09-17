@@ -87,6 +87,8 @@ function EngineStatePanel({ engine }: { engine: MockEngine }) {
   return (
     <div
       data-testid="engine-state-panel"
+      role="status"
+      aria-live="polite"
       className="flex h-full flex-col gap-2 overflow-auto rounded-lg border border-border-strong bg-card p-3"
     >
       <span className="text-meta font-medium text-foreground">

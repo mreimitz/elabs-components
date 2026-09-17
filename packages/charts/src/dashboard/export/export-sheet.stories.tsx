@@ -67,6 +67,13 @@ export const ExportSvg: Story = {
     // Chart tiles keep their marks; every group carries an accessible <title> from tile.title.
     const withTitles = groups.filter((g) => g.querySelector("title")?.textContent);
     await expect(withTitles.length).toBeGreaterThan(0);
+    // The whole composed picture also gets its own accessible name (WCAG 1.1.1): a root
+    // <title> as the first child, named via aria-labelledby, role="img" on the root itself.
+    await expect(svg.getAttribute("role")).toBe("img");
+    const rootTitle = svg.firstElementChild;
+    await expect(rootTitle?.tagName).toBe("title");
+    await expect(rootTitle?.textContent).toBe(EXPORT_SPEC.title);
+    await expect(svg.getAttribute("aria-labelledby")).toBe(rootTitle?.getAttribute("id"));
   },
 };
 

@@ -11,6 +11,7 @@ import { builtInTiles } from "../tiles";
 import {
   DashboardInteractionsDialog,
   DashboardInteractionsEditor,
+  INTERACTIONS_MATRIX_MAX_TILES,
 } from "./dashboard-interactions-editor";
 import { DashboardPropertiesPanel } from "./dashboard-properties-panel";
 import { DashboardSelectionBar } from "./dashboard-selection-bar";
@@ -348,6 +349,72 @@ export const ListForBig40: Story = {
     await expect(editor).toHaveAttribute("data-layout", "list");
     await expect(within(canvasElement).queryByRole("table")).toBeNull();
     await expect(within(canvasElement).getAllByRole("combobox").length).toBeGreaterThan(0);
+
+    // The row's tile-name label keeps its width: either it isn't clipped at all, or it still
+    // claims a real share of the row (not squeezed down to "Pane…" by the Select sibling).
+    const firstRow = canvasElement.querySelector<HTMLElement>(
+      '[data-slot="dashboard-interactions-editor-list"] li',
+    )!;
+    const label = firstRow.querySelector<HTMLElement>("span")!;
+    const rowWidth = firstRow.getBoundingClientRect().width;
+    const labelWidth = label.getBoundingClientRect().width;
+    const fits = label.scrollWidth <= label.clientWidth;
+    const share = rowWidth > 0 ? labelWidth / rowWidth : 0;
+    console.info(
+      `[list-big40] rowWidth=${rowWidth} labelWidth=${labelWidth} ` +
+        `scrollWidth=${label.scrollWidth} clientWidth=${label.clientWidth} share=${share}`,
+    );
+    await expect(fits || share >= 0.4).toBe(true);
+  },
+};
+
+/**
+ * Exactly `INTERACTIONS_MATRIX_MAX_TILES` (12) tiles: the matrix's own documented ceiling.
+ * One cell change still writes ONE history entry, same as the 5-tile `MatrixEditor` story.
+ */
+function matrixAtLimitSpec(): DashboardSpec {
+  const tiles: TileSpec[] = Array.from({ length: INTERACTIONS_MATRIX_MAX_TILES }, (_, i) => ({
+    ...chart(`chart-${i + 1}`, `Panel ${i + 1}`, "revenue", (i % 6) * 4, {
+      ...(i === 0 ? { emits: { selection: ["Region"] } } : {}),
+      consumes: { selection: true },
+    }),
+    layout: { x: (i % 6) * 4, y: Math.floor(i / 6) * 6, w: 4, h: 6 },
+  }));
+  return {
+    version: 1,
+    id: "matrix-at-limit",
+    title: "Matrix editor at its 12-tile ceiling",
+    grid: { mode: "flow", columns: 24, rowHeight: 30, gap: 8 },
+    tiles,
+  };
+}
+
+export const MatrixEditorAtLimit: Story = {
+  name: "Matrix Editor at Limit",
+  render: () => (
+    <DashboardProvider spec={matrixAtLimitSpec()} tiles={builtInTiles}>
+      <StoreProbe />
+      <DashboardInteractionsEditor />
+    </DashboardProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const editor = canvasElement.querySelector('[data-slot="dashboard-interactions-editor"]');
+    await expect(editor).toHaveAttribute("data-layout", "matrix");
+    await expect(canvas.getByRole("table")).toBeInTheDocument();
+    await expect(
+      canvasElement.querySelector('[data-slot="dashboard-interactions-editor-list"]'),
+    ).toBeNull();
+
+    const store = window.__dashboardStore!;
+    const before = store.getState().history.past;
+    const trigger = canvas.getAllByRole("combobox")[0]!;
+    await userEvent.click(trigger);
+    await userEvent.click(await within(document.body).findByRole("option", { name: "None" }));
+    await waitFor(() => expect(store.getState().history.past).toBe(before + 1));
+    const after = store.getState().history.past;
+    console.info(`[matrix-at-limit] history.past before=${before} after=${after}`);
+    await expect(after).toBe(before + 1);
   },
 };
 
