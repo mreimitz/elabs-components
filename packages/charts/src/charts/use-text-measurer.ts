@@ -256,7 +256,7 @@ export function useTextMeasurerOf(
   const measure = useCallback(
     (text: string): number => {
       const cache = cacheRef.current;
-      const key = `${font}/${letterSpacingPx} ${text}`;
+      const key = `${font}/${letterSpacingPx}\u0000${text}`;
       const hit = cache.get(key);
       if (hit !== undefined) {
         return hit;
