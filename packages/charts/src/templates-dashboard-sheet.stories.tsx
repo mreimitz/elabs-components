@@ -143,6 +143,7 @@ function DashboardChrome() {
 
 function DashboardSheetTemplate() {
   const [active, setActive] = useState("dashboards");
+  const activeLabel = nav.find((n) => n.id === active)?.label ?? active;
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
@@ -178,9 +179,13 @@ function DashboardSheetTemplate() {
       <SidebarInset className="min-w-0">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
-          <h1 className="text-body font-medium capitalize">{active}</h1>
+          <h1 className="text-body font-medium">{activeLabel}</h1>
         </header>
         <DashboardProvider spec={STARTER_SPEC} tiles={builtInTiles}>
+          {/* Every tile chrome title renders as an h3 (dashboard-tile.tsx) — this sr-only h2
+           * keeps the page's heading order unbroken (h1 page title -> h2 sheet title -> h3
+           * tile titles) without adding visible chrome. */}
+          <h2 className="sr-only">{STARTER_SPEC.title}</h2>
           <DashboardChrome />
         </DashboardProvider>
       </SidebarInset>
@@ -204,11 +209,17 @@ export const Default: Story = {
     await expect(canvas.getByRole("heading", { name: "Dashboards" })).toBeInTheDocument();
     await expect(canvas.getByRole("radio", { name: "View" })).toBeInTheDocument();
     await expect(canvas.getByText("Revenue by month")).toBeInTheDocument();
-    await expect(canvas.getByText("Total revenue")).toBeInTheDocument();
+    // "Total revenue" appears twice by design (the tile's own chrome title, plus the
+    // metric content's own label) — assert the metric's actual value instead, which is unique.
+    await expect(canvas.getByText("$45,000")).toBeInTheDocument();
 
     // Every tile root carries data-tile-kind (.claude/rules/dashboard.md), so the
     // starter spec 4 tiles are countable straight from the DOM with no hidden probe.
-    const tilesBefore = canvasElement.querySelectorAll("[data-tile-kind]").length;
+    // Scoped to the sheet's own `data-slot="dashboard-tile"` wrapper — the built-in
+    // `filter` kind also stamps `data-tile-kind` on its inner root, which an unscoped
+    // query would double-count.
+    const tileSelector = '[data-slot="dashboard-tile"][data-tile-kind]';
+    const tilesBefore = canvasElement.querySelectorAll(tileSelector).length;
     await expect(tilesBefore).toBe(4);
 
     // Toggling Edit mounts the edit layer and the asset panel Add affordance;
@@ -219,7 +230,7 @@ export const Default: Story = {
     await expect(canvas.getByRole("button", { name: "Undo" })).toBeDisabled();
     await userEvent.click(canvas.getByRole("button", { name: "Add" }));
     await userEvent.click(canvas.getByRole("option", { name: "Heading" }));
-    const tilesAfter = canvasElement.querySelectorAll("[data-tile-kind]").length;
+    const tilesAfter = canvasElement.querySelectorAll(tileSelector).length;
     await expect(tilesAfter).toBe(tilesBefore + 1);
     await expect(canvas.getByRole("button", { name: "Undo" })).toBeEnabled();
   },

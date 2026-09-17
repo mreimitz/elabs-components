@@ -25,8 +25,11 @@ export const Default: Story = {
     await expect(canvas.getByRole("heading", { name: "Dashboards" })).toBeInTheDocument();
     await expect(canvas.getByRole("radio", { name: "View" })).toBeInTheDocument();
     await expect(canvas.getByText("Orders by month")).toBeInTheDocument();
-    // "3 tiles on the starter sheet: a month filter, a revenue chart, an orders table"
-    const tiles = canvasElement.querySelectorAll("[data-tile-kind]");
+    // "3 tiles on the starter sheet: a month filter, a revenue chart, an orders table".
+    // Scoped to the sheet's own `data-slot="dashboard-tile"` wrapper — some tile kinds
+    // (the built-in `filter`, this block's own `table`) also stamp `data-tile-kind` on
+    // their inner root, which an unscoped query would double-count.
+    const tiles = canvasElement.querySelectorAll('[data-slot="dashboard-tile"][data-tile-kind]');
     await expect(tiles.length).toBe(3);
   },
 };

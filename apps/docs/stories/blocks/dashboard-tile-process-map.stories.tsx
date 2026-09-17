@@ -56,11 +56,15 @@ export const Default: Story = {
     const first = nodes()[0] as HTMLElement;
     await userEvent.click(first);
 
+    // Scoped to `.react-flow__node` — `ProcessMap` also keeps a visually-hidden `Table`
+    // twin of the same rows for accessibility (data.md "tableView is the accessible twin
+    // every canvas keeps"), which carries its own `data-selection` per row; an unscoped
+    // query would double-count every element.
     const selected = canvasElement.querySelectorAll(
-      '[data-slot="dashboard-tile-process-map"] [data-selection="selected"]',
+      '[data-slot="dashboard-tile-process-map"] .react-flow__node [data-selection="selected"]',
     );
     const excluded = canvasElement.querySelectorAll(
-      '[data-slot="dashboard-tile-process-map"] [data-selection="excluded"]',
+      '[data-slot="dashboard-tile-process-map"] .react-flow__node [data-selection="excluded"]',
     );
     // "1 node selected, the rest excluded once an activity is clicked"
     await expect(selected.length).toBe(1);

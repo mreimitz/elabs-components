@@ -70,7 +70,13 @@ function TableTile({
   const rowClassName = (row: { original: Row }) => {
     if (!field) return "";
     const state = selection.states(field, row.original[field]);
-    if (state === "excluded") return "border border-dashed border-chart-foreground opacity-50";
+    // Excluded rows still carry running text, so they de-emphasise with the
+    // `muted-foreground` ink (AA against every theme) rather than the shared chart-mark
+    // ghost opacity, which would drop text below 4.5:1 — the dashed frame (full opacity, a
+    // shape channel independent of colour) is the required second channel
+    // (.claude/rules/dashboard.md, matching the built-in `filter` tile).
+    if (state === "excluded")
+      return "border border-dashed border-chart-foreground text-muted-foreground";
     if (state === "selected") return "bg-accent/10";
     return "";
   };

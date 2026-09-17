@@ -148,6 +148,7 @@ function DashboardChrome() {
 
 export function DashboardSheetApp() {
   const [active, setActive] = useState("dashboards");
+  const activeLabel = nav.find((n) => n.id === active)?.label ?? active;
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
@@ -183,9 +184,13 @@ export function DashboardSheetApp() {
       <SidebarInset className="min-w-0">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
-          <h1 className="text-body font-medium capitalize">{active}</h1>
+          <h1 className="text-body font-medium">{activeLabel}</h1>
         </header>
         <DashboardProvider spec={STARTER_SPEC} tiles={TILES}>
+          {/* Every tile chrome title renders as an h3 (dashboard-tile.tsx) — this sr-only h2
+           * keeps the page's heading order unbroken (h1 page title -> h2 sheet title -> h3
+           * tile titles) without adding visible chrome. */}
+          <h2 className="sr-only">{STARTER_SPEC.title}</h2>
           <DashboardChrome />
         </DashboardProvider>
       </SidebarInset>

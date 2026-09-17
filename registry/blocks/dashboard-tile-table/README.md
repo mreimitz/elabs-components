@@ -20,9 +20,10 @@ source), `selection` (a `SelectionSnapshot`), `interactions`, and `emit`.
 (`selected | associated | excluded`) from the tile's `selection` snapshot against its own
 selection field, and applies it through `DataTable`'s `rowClassName={(row) => string}` prop
 (`packages/data/src/data-table/data-table.tsx`), the same tri-state vocabulary and ink rules
-`.claude/rules/dashboard.md` binds for every other tile kind (ghosted at the shared ghost
-opacity plus a non-colour channel for excluded; a compound outline for selected — never a
-`--selection-*` token).
+`.claude/rules/dashboard.md` binds for every other tile kind — but since a row still carries
+running TEXT (unlike a chart mark), excluded uses `text-muted-foreground` plus the dashed
+frame instead of the shared ghost opacity, which would drop the text below the 4.5:1 contrast
+floor; selected gets a compound outline — never a `--selection-*` token.
 
 ## Row click → selection
 

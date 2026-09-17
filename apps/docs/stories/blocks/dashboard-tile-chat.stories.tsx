@@ -56,7 +56,10 @@ export const Default: Story = {
 
 export const InteractionsInactive: Story = {
   render: () => (
-    <div className="h-[420px] w-full min-w-[420px]">
+    // min-w must clear the `sm` (640px) container-query threshold — below it the sheet
+    // force-drops `mode="edit"` to view (dashboard-panels.stories.tsx), which would flip
+    // `interactions.active` back to `true` and defeat this story.
+    <div className="h-[420px] w-full min-w-[680px]">
       <DashboardProvider spec={SPEC} tiles={[chatTileKind]} mode="edit">
         <DashboardSheet renderAll />
       </DashboardProvider>
@@ -64,9 +67,12 @@ export const InteractionsInactive: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const field = canvas.getByPlaceholderText(
+    // findBy* (not getBy*): the sheet's edit-mode tile layer mounts one measurement pass
+    // after first paint (a container-query `ResizeObserver` read), so the composer is not
+    // in the DOM synchronously on mount.
+    const field = (await canvas.findByPlaceholderText(
       "Chat is inactive on this sheet",
-    ) as HTMLTextAreaElement;
+    )) as HTMLTextAreaElement;
     // "composer disabled while the sheet is in edit mode (interactions.active === false)"
     await expect(field.disabled).toBe(true);
   },

@@ -74,13 +74,14 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Orders")).toBeInTheDocument();
 
-    // Selecting "Feb" excludes the other two rows — dimmed with the ghost opacity +
-    // dashed-frame recipe (`.claude/rules/dashboard.md`).
+    // Selecting "Feb" excludes the other two rows — de-emphasised with the
+    // muted-foreground ink + dashed-frame recipe (`.claude/rules/dashboard.md`), never the
+    // ghost opacity (that drops running text below the 4.5:1 contrast floor).
     await userEvent.click(canvas.getByRole("option", { name: /^Feb/ }));
     const dimmed = canvasElement.querySelectorAll(
-      '[data-slot="dashboard-tile-table"] tr.opacity-50',
+      '[data-slot="dashboard-tile-table"] tr.text-muted-foreground',
     );
-    // "2 rows dimmed (Jan, Mar) once Feb is selected"
+    // "2 rows de-emphasised (Jan, Mar) once Feb is selected"
     await expect(dimmed.length).toBe(2);
   },
 };
