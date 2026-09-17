@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "vitest";
+import { expect } from "storybook/test";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "./reasoning";
 const meta = {

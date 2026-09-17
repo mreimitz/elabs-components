@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "vitest";
+import { expect } from "storybook/test";
 import { Source, SourceList, Sources, SourcesContent, SourcesTrigger } from "./sources";
 const meta = {
   title: "AI/Sources",

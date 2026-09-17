@@ -21,8 +21,10 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 
 const meta = {
-  title: "Docs/Storybook Motion Harness",
-  tags: ["autodocs"],
+  // `Internal/` + `!dev`: the story stays in the vitest/addon-vitest run and
+  // out of the customer-facing sidebar (2026-09-17 review, P1).
+  title: "Internal/Storybook Motion Harness",
+  tags: ["!dev"],
   parameters: {
     layout: "centered",
     docs: {

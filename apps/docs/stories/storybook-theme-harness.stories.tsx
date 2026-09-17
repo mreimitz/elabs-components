@@ -17,8 +17,10 @@ import { expect, waitFor } from "storybook/test";
 import { DEFAULT_THEME } from "@elabs-ai/components-tokens";
 
 const meta = {
-  title: "Docs/Storybook Theme Harness",
-  tags: ["autodocs"],
+  // `Internal/` + `!dev`: the story stays in the vitest/addon-vitest run and
+  // out of the customer-facing sidebar (2026-09-17 review, P1).
+  title: "Internal/Storybook Theme Harness",
+  tags: ["!dev"],
   parameters: {
     layout: "centered",
     docs: {

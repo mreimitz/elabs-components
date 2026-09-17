@@ -26,8 +26,9 @@ Maps while this list stopped at 20 entries — so update both in the same change
    **Introduction** (what it is) → **Getting Started** (how to consume) → the
    agent/MCP detail pages (brand-ui MCP Server → Storybook MCP for Agents → AI
    Output Contract for Agents → AI Content Access → View Toolbar Contract →
-   Testing Charts in jsdom → Storybook Theme Harness) → Choosing between similar
-   components.
+   Testing Charts in jsdom) → Choosing between similar components. Harness
+   stories that only assert a test-runner invariant live under `Internal/` with
+   `tags: ["!dev"]` — in the test run, out of the sidebar.
 2. **Foundations** — the design/token layer, in reading order (explicit, NOT
    alphabetical): Colors → Typography → Spacing & Radius → Elevation → Motion →
    Decoration → Paper → Theming → Localization. (Tokens and scales, plus the two

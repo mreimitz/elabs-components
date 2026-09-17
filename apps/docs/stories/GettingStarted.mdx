@@ -42,10 +42,12 @@ plugin's skills do the work.
 1. **Install the plugin** (once per machine):
 
    ```text
-   /plugin marketplace add <path-to-this-repo>
+   /plugin marketplace add mreimitz/elabs-components
+   /plugin install brand-ui@brand-ui
    ```
 
-   This registers the skills, the reviewer agents, and both MCP servers (see Path C).
+   (Inside a clone of this repo, `/plugin marketplace add .` works too.) This
+   registers the skills, the reviewer agents, and both MCP servers (see Path C).
 
 2. **Say what you want to build.** `brand-ui-start` is the concierge — it routes
    "build me a sales dashboard" / "I need an admin console" to **`brand-ui-new-app`**,
@@ -61,8 +63,8 @@ plugin's skills do the work.
 
 > **Status / gap:** the interview + template scaffold are shipped; the deeper
 > spec-driven file-emitting scaffold engine (the CLI `scaffold` command) is still
-> evolving (VP-02). And the new-app flow doesn't yet run the Path B `pnpm add`
-> for a _standalone_ project — you do that one step yourself today.
+> evolving. And the new-app flow doesn't yet run the Path B `pnpm add` for a
+> _standalone_ project — you do that one step yourself today.
 
 ## Path B — Add brand-ui to an existing app
 
@@ -137,8 +139,8 @@ npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/ai-chat-shel
 
 > **Pin to a version** for stability across a later major:
 > `.../r/4.0.0/ai-chat-shell.json` instead of `.../r/latest/...`. The registry is
-> built and published to GitHub Pages by `.github/workflows/release.yml` on every
-> version tag (issue #31) — `latest` always tracks the newest release. If you'd
+> built and published to GitHub Pages on every release — `latest` always tracks
+> the newest release. If you'd
 > rather not depend on the hosted copy at all, skip hosting entirely and copy
 > block source straight from `registry/blocks/<name>/`. Most consumers only need
 > the imported packages (steps 1–4); reach for copy-own only for one-off
@@ -149,10 +151,19 @@ npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/ai-chat-shel
 Components alone don't tell an AI agent **what exists or how to compose it**. Add the
 agent layer so it uses the real inventory instead of guessing.
 
+- **Any MCP client, nothing to install** — the brand-ui MCP is hosted at
+  **`https://elabs-ai.com/mcp`** (Streamable HTTP; `info`/`search`/`docs`/`tokens`/
+  `chart_for`, answered from the manifest of the latest release):
+
+  ```bash
+  claude mcp add --transport http brand-ui https://elabs-ai.com/mcp
+  ```
+
 - **Claude Code / Cowork** — install the plugin (Path A step 1). It ships the
   skills, the reviewer agents, and **two MCP servers**:
-  - **`brand-ui`** (always-on) — the **API** ground truth (`info`/`search`/`docs`/
-    `tokens`/`audit`), works with Storybook down. See
+  - **`brand-ui`** (always-on, local) — the **API** ground truth (`info`/`search`/`docs`/
+    `tokens`/`chart_for`/`audit`), works with Storybook down and reads your
+    project's own taste profile. See
     [Docs / brand-ui MCP Server](?path=/docs/docs-brand-ui-mcp-server--docs).
   - **`storybook`** (while `pnpm storybook` runs) — the **rendered** view (previews,
     interaction + a11y tests). See
@@ -189,24 +200,27 @@ new component end-to-end with `/new-component <pkg> <Name> "<purpose>"`; it writ
 
 ## Commands & when
 
-| When                                    | Command                                                                           | Where        |
-| --------------------------------------- | --------------------------------------------------------------------------------- | ------------ |
-| Once per machine, to get the AI tooling | `/plugin marketplace add <path-to-this-repo>`                                     | Claude Code  |
-| Start a new app                         | tell `brand-ui-start` what to build                                               | Claude Code  |
-| Install components into your app        | `pnpm add @elabs-ai/components-ui @elabs-ai/components-tokens`                    | your project |
-| Before writing UI (every session)       | `brand-ui info` / `mcp__brand-ui__info`                                           | your project |
-| Find a component                        | `brand-ui search <q>`                                                             | your project |
-| Get a component's real props            | `brand-ui docs <Name>`                                                            | your project |
-| Copy-own a prototype block              | `npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/<item>.json` | your project |
-| Check token/style violations            | `brand-ui audit <path>`                                                           | your project |
+| When                                    | Command                                                                                   | Where        |
+| --------------------------------------- | ----------------------------------------------------------------------------------------- | ------------ |
+| Zero-install agent access               | `claude mcp add --transport http brand-ui https://elabs-ai.com/mcp`                       | any MCP host |
+| Once per machine, to get the AI tooling | `/plugin marketplace add mreimitz/elabs-components` · `/plugin install brand-ui@brand-ui` | Claude Code  |
+| Start a new app                         | tell `brand-ui-start` what to build                                                       | Claude Code  |
+| Install components into your app        | `pnpm add @elabs-ai/components-ui @elabs-ai/components-tokens`                            | your project |
+| Before writing UI (every session)       | `brand-ui info` / `mcp__brand-ui__info`                                                   | your project |
+| Find a component                        | `brand-ui search <q>`                                                                     | your project |
+| Get a component's real props            | `brand-ui docs <Name>`                                                                    | your project |
+| Copy-own a prototype block              | `npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/<item>.json`         | your project |
+| Check token/style violations            | `brand-ui audit <path>`                                                                   | your project |
 
 ## Theming basics
 
 Theming is the `data-theme` attribute + semantic tokens — components never hardcode
 colors, they reference tokens (`bg-background`, `text-muted-foreground`,
-`border-border`). Two themes ship: **light** (default) and **dark**.
-In these docs, switch with the **theme** toolbar control (and try the
-orthogonal **Decoration**, **Density**, **Motion** dials). In an app, wrap the tree in
+`border-border`). The reference themes are **light** (default) and **dark**;
+the downloadable families (Ocean, Qlik, Snowflake, …) are one stylesheet each.
+In these docs, pick a family with the **Theme** toolbar control and flip
+**Mode** between light and dark (and try the orthogonal **Decoration**,
+**Density**, **Motion** dials). In an app, wrap the tree in
 `ThemeProvider` and read/set with `useTheme()`. Re-branding is a token change in
 `@elabs-ai/components-tokens` `themes.css`, never a component change.
 

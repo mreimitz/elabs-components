@@ -32,6 +32,28 @@ const managerTheme = create({
 
 addons.setConfig({ theme: managerTheme });
 
+// Storybook composes `document.title` as "<story> - <kind> ⋅ Storybook" and the
+// suffix is hard-coded (storybook/manager: getDescription), so the theme's
+// brandTitle never reaches the tab title or a shared link's unfurl. Rewrite the
+// suffix whenever the manager sets it; the rewritten value no longer matches,
+// so the observer settles after one pass.
+const titleEl = document.querySelector("title");
+if (titleEl) {
+  const rebrand = () => {
+    if (/ ⋅ Storybook$/.test(document.title)) {
+      document.title = document.title.replace(/ ⋅ Storybook$/, " ⋅ brand-ui");
+    } else if (document.title === "Storybook") {
+      document.title = "brand-ui";
+    }
+  };
+  rebrand();
+  new MutationObserver(rebrand).observe(titleEl, {
+    childList: true,
+    characterData: true,
+    subtree: true,
+  });
+}
+
 // Vercel Web Analytics for the hosted docs. Injected in the MANAGER (the top
 // window whose URL changes as people browse stories), not the preview iframe,
 // so each visit counts once. `@vercel/analytics/next` is the Next.js wrapper;

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import type { StorybookConfig } from "@storybook/react-vite";
 import tailwindcss from "@tailwindcss/vite";
+import remarkGfm from "remark-gfm";
 
 const require = createRequire(import.meta.url);
 
@@ -39,7 +40,14 @@ const config: StorybookConfig = {
   stories: ["../stories/**/*.mdx", "../stories/**/*.stories.@(ts|tsx)", ...packageStoryGlobs()],
   addons: [
     getAbsolutePath("@storybook/addon-a11y"),
-    getAbsolutePath("@storybook/addon-docs"),
+    {
+      name: getAbsolutePath("@storybook/addon-docs"),
+      // Storybook's MDX compiler is CommonMark-only; without remark-gfm every
+      // pipe table in the Docs/* pages renders as literal `| --- |` text
+      // (2026-09-17 review, P0). GFM also brings task lists, strikethrough
+      // and autolinks, which the generated contract pages use.
+      options: { mdxPluginOptions: { mdxCompileOptions: { remarkPlugins: [remarkGfm] } } },
+    },
     getAbsolutePath("@chromatic-com/storybook"),
     // Testing + agent surface: addon-vitest runs stories as tests; addon-mcp
     // exposes Storybook to coding agents over MCP (see test-storybook setup).
@@ -55,6 +63,19 @@ const config: StorybookConfig = {
   managerHead: (head) =>
     `${head}
     <link rel="icon" type="image/svg+xml" href="./brand-favicon.svg" />
+    <!-- Page metadata for the hosted docs (elabs-ai.com). Storybook's default
+         gives shared links the title "Storybook" and no description; these tags
+         are what link unfurls and search engines read (2026-09-17 review). -->
+    <meta name="description" content="brand-ui — a source-owned, token-driven React component system: app UI, data grids, AI chat, charts, dashboards, flow canvases, maps, editors and terminals on one semantic token system. Themeable to any brand, legible to coding agents through a CLI and a hosted MCP server." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="brand-ui" />
+    <meta property="og:title" content="brand-ui — the component system built for AI coding projects" />
+    <meta property="og:description" content="React 19 + Tailwind v4 components for dashboards, data apps, AI assistants, flow canvases, maps and editors — one token system, every theme, and a hosted MCP server so coding agents use the real API." />
+    <meta property="og:url" content="https://elabs-ai.com/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="brand-ui — the component system built for AI coding projects" />
+    <meta name="twitter:description" content="Token-driven React components for real applications, with a hosted MCP server for coding agents." />
+    <link rel="alternate" type="text/plain" href="https://elabs-ai.com/llms.txt" title="llms.txt" />
     <style>
       /* Hide the addon-vitest "Run tests" testing-module bar at the sidebar
          bottom. UI-only: the CLI test-storybook script and the MCP

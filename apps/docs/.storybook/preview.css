@@ -40,3 +40,29 @@
    source, so their classes must be compiled here too — without this they render
    unstyled and the story proves nothing. */
 @source "../../../registry/blocks/**/*.{ts,tsx}";
+
+/* Storybook's `layout: "centered"` makes #storybook-root a shrink-to-fit flex
+   item of the centred body. A story wrapper sized `w-full max-w-[…]` then
+   resolves to 0 px, and every measure-driven component (each chart's
+   ResizeObserver) draws nothing — 26 chart stories, Charts/BarChart/Default
+   among them, showed a blank canvas on the hosted site (2026-09-17 review).
+   Give the root a definite width and centre its children instead, so `w-full`
+   wrappers get the viewport and small stories still sit in the middle. */
+.sb-main-centered #storybook-root {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Docs pages paint on the brand surface tokens so the Mode toolbar (and every
+   theme family) is visible on a docs page, not only on a story canvas. The
+   docs container's own theme is switched in preview.tsx (ThemedDocsContainer). */
+.sbdocs.sbdocs-wrapper {
+  background: var(--background);
+  color: var(--foreground);
+}
+.docs-story {
+  background: var(--background);
+  color: var(--foreground);
+}

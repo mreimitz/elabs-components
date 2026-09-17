@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# Agents: the machine-readable entry points
+# https://elabs-ai.com/llms.txt
+# https://elabs-ai.com/mcp  (brand-ui MCP server, Streamable HTTP)

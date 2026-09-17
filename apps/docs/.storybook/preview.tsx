@@ -6,7 +6,9 @@ import {
   DEFAULT_MOTION_PREFERENCE,
   groupThemeFamilies,
 } from "@elabs-ai/components-tokens";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { DocsContainer, type DocsContainerProps } from "@storybook/addon-docs/blocks";
+import { themes } from "storybook/theming";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
 import "./preview.css";
 import { COMMUNITY_THEME_DEFINITIONS } from "./community-themes.generated";
@@ -67,6 +69,30 @@ function DecorationBoundary({ decoration, children }: { decoration: string; chil
     else el.setAttribute("data-decoration", decoration);
   }, [decoration]);
   return <>{children}</>;
+}
+
+/**
+ * Docs pages follow the Mode toolbar. Storybook's docs container carries its own
+ * light theme, so before this a "Dark" selection changed `data-theme` on the
+ * iframe root while the page and every embedded preview stayed white — the one
+ * control that proves "themeable to any brand" did nothing visible on a docs
+ * page (2026-09-17 review, P0). The container now mirrors the resolved theme's
+ * `color-scheme`, which `withTheme` writes to the root for every family.
+ */
+function ThemedDocsContainer(props: DocsContainerProps) {
+  const readDark = () =>
+    typeof document !== "undefined" &&
+    getComputedStyle(document.documentElement).colorScheme === "dark";
+  const [dark, setDark] = useState(readDark);
+  useEffect(() => {
+    const el = document.documentElement;
+    const sync = () => setDark(readDark());
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+  return <DocsContainer {...props} theme={dark ? themes.dark : themes.light} />;
 }
 
 const withDecoration: Decorator = (Story, context) => {
@@ -288,6 +314,7 @@ const preview: Preview = {
     },
   },
   parameters: {
+    docs: { container: ThemedDocsContainer },
     // #78 AC3 / #316: axe FAILS the build. addon-a11y's default is `"todo"`
     // (= report, never fail) — at that setting the blocking Storybook CI job
     // enforced only the interaction half, and a new component could ship an
@@ -350,7 +377,6 @@ const preview: Preview = {
             "AI Content Access",
             "View Toolbar Contract",
             "Testing Charts in jsdom",
-            "Storybook Theme Harness",
             "Choosing between similar components",
           ],
           "Foundations",
@@ -388,6 +414,8 @@ const preview: Preview = {
           "Process",
           "Patterns",
           ["Templates", "Scenarios", "Blocks"],
+          // `!dev` harness stories (hidden from the sidebar, kept in the test run).
+          "Internal",
         ],
       },
     },

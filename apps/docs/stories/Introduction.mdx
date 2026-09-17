@@ -4,13 +4,29 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 # brand-ui
 
-A **source-owned, token-driven** React component system for internal apps,
-prototypes, POCs, AI/chat clients, data grids, dashboards and React Flow
-surfaces. The default look is modern enterprise SaaS — restrained, app-first,
-and themeable to any brand.
+A **source-owned, token-driven** React component system for building real
+applications — dashboards, data grids, AI chat clients, node canvases, maps, code
+editors, terminals and the marketing page in front of them. Most component
+libraries give you buttons and inputs, then leave you to invent the hard parts.
+brand-ui ships the hard parts, all rendered through **one semantic token
+system**, so re-branding the entire surface is a stylesheet change — never a
+component change. The default look is modern enterprise SaaS — restrained,
+app-first, and themeable to any brand.
 
+It is also built to be **read by coding agents**: a CLI, a generated manifest and
+a hosted MCP server expose the real props, intent and tokens, so an assistant
+extends the system from ground truth instead of guessing.
+
+- **Start here:** [Getting Started](?path=/docs/docs-getting-started--docs) —
+  install, wire Tailwind + tokens, or scaffold an app with an agent.
+- **For agents, nothing to install:** `claude mcp add --transport http brand-ui https://elabs-ai.com/mcp`
+  — see [brand-ui MCP Server](?path=/docs/docs-brand-ui-mcp-server--docs).
+- **Which component?** [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).
+- **See it whole:** the [Dashboard](?path=/story/patterns-templates-dashboard--default),
+  [AI Assistant](?path=/story/patterns-templates-ai-assistant--default) and
+  [Data App](?path=/story/patterns-templates-data-app--default) templates.
 - **Source:** [github.com/mreimitz/elabs-components](https://github.com/mreimitz/elabs-components)
-- **npm:** [`@elabs-ai` on npm](https://www.npmjs.com/org/elabs-ai) — every package below is public
+  · **npm:** [`@elabs-ai` on npm](https://www.npmjs.com/org/elabs-ai) — every package below is public
 - **Full guide:** [README](https://github.com/mreimitz/elabs-components#readme) ·
   [Consuming guide](https://github.com/mreimitz/elabs-components/blob/main/docs/CONSUMING.md) ·
   [Registry guidelines](https://github.com/mreimitz/elabs-components/blob/main/docs/REGISTRY_GUIDELINES.md)
@@ -38,8 +54,9 @@ and themeable to any brand.
 
 ## Theming
 
-Switch themes with the toolbar (sun/paint icon): **Light** (default) and
-**Dark**. Themes are driven entirely by `data-theme` +
+Pick a theme family with the **Theme** toolbar control (Default, plus the
+downloadable families such as Ocean, Qlik and Snowflake) and flip **Mode**
+between light and dark. Themes are driven entirely by `data-theme` +
 semantic tokens defined in `@elabs-ai/components-tokens/themes.css`. Components never hardcode
 colors — they reference tokens like `bg-background`, `text-muted-foreground`,
 `border-border`, so re-branding (e.g. swapping the primary hue) is a token change.
