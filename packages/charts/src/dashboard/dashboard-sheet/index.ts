@@ -1,5 +1,6 @@
 export * from "./dashboard-provider";
 export * from "./dashboard-sheet";
+export * from "./dashboard-theme-scope";
 export * from "./dashboard-tile";
 export * from "./dashboard-tile-header";
 export * from "./dashboard-tile-menu";
