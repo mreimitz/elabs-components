@@ -231,8 +231,10 @@ export const DashboardInteractionsEditor = forwardRef<
                   .filter((to) => to.id !== from.id)
                   .map((to) => (
                     <li key={to.id} className="flex min-w-0 items-center justify-between gap-3">
-                      <span className="min-w-0 truncate text-body">{name(to)}</span>
-                      {cell(from, to)}
+                      <span className="min-w-0 flex-1 truncate text-body" title={name(to)}>
+                        {name(to)}
+                      </span>
+                      <div className="w-40 shrink-0">{cell(from, to)}</div>
                     </li>
                   ))}
               </ul>
