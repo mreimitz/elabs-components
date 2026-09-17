@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "id": "minimal-positionless",
+  "grid": { "mode": "fit", "columns": 24, "rows": 12, "extendable": true },
+  "tiles": [
+    { "id": "revenue-kpi", "kind": "metric", "content": { "label": "Revenue", "value": 1240000 } },
+    { "id": "deals-kpi", "kind": "metric", "content": { "label": "Deals won", "value": 42 } },
+    { "id": "region", "kind": "filter", "content": { "field": "Region" } },
+    {
+      "id": "revenue-trend",
+      "kind": "chart",
+      "title": "Revenue grew 12 % year on year",
+      "content": {
+        "type": "line",
+        "data": [
+          { "x": "Q1", "revenue": 10 },
+          { "x": "Q2", "revenue": 14 }
+        ],
+        "x": "x",
+        "series": [{ "key": "revenue", "label": "Revenue" }]
+      }
+    },
+    {
+      "id": "by-region",
+      "kind": "chart",
+      "content": {
+        "type": "bar",
+        "data": [
+          { "x": "North", "revenue": 6 },
+          { "x": "South", "revenue": 8 }
+        ],
+        "x": "x",
+        "series": ["revenue"]
+      }
+    }
+  ]
+}

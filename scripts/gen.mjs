@@ -35,6 +35,7 @@
  *   plugin-agents     agents/*.md → .claude-plugin/plugin.json
  *   registry          registry.items.json + blocks → registry.json    (manifest reads it)
  *   attributions      package deps, fonts, sources.json → ATTRIBUTION.md + generated .ts
+ *   dashboard-spec    charts dashboard/core → cli bundle + charts/schemas JSON Schema (RM-086)
  *   manifest          package source + registry + templates → brand-ui.manifest.json
  *   inventory / llms / context / doc-regions / readmes   manifest → docs
  *   community-themes  themes/ → Storybook generated css/ts
@@ -78,6 +79,16 @@ export const STEPS = [
     outputs: [
       "ATTRIBUTION.md",
       "packages/ui/src/components/attribution-panel/attributions.generated.ts",
+    ],
+  },
+  // dashboard-spec — RM-086
+  {
+    id: "dashboard-spec",
+    run: node("packages/cli/scripts/gen-dashboard-spec.mjs"),
+    check: node("packages/cli/scripts/gen-dashboard-spec.mjs", "--check"),
+    outputs: [
+      "packages/charts/schemas/dashboard-spec.v1.schema.json",
+      "packages/cli/lib/dashboard-spec.generated.mjs",
     ],
   },
   {
