@@ -8,9 +8,11 @@
  *
  * Selection: a row's tri-state comes from `tile.content.field`'s value on that row,
  * read with `SelectionSnapshot.states` — never filtered locally (core/selection.ts).
- * `excluded` rows use the same dashed-frame-plus-ghost-opacity recipe as the built-in
- * `filter` tile; `selected` rows get the tinted background. A row click toggles that
- * row's value into the field's selection (`emit.select(field, [value], { toggle: true })`).
+ * `excluded` rows carry running TEXT, so they de-emphasise with `text-muted-foreground`
+ * (AA against every theme) plus the dashed-frame shape channel, never the shared
+ * chart-mark ghost opacity (which drops text below the 4.5:1 contrast floor); `selected`
+ * rows get the tinted background. A row click toggles that row's value into the field's
+ * selection (`emit.select(field, [value], { toggle: true })`).
  *
  * Depends on installed @elabs-ai/components-data + @elabs-ai/components-charts (its
  * /dashboard subpath) + @elabs-ai/components-ui.
