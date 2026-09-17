@@ -240,7 +240,7 @@ export function findEmptySlot(
   const lastY = unbounded ? bottom : rowsOf(grid) - h;
   for (let y = 0; y <= lastY; y++) {
     for (let x = 0; x + w <= columns; x++) {
-      if (!collidesAny({ id: " slot", x, y, w, h }, layout)) return { x, y };
+      if (!collidesAny({ id: "\u0000slot", x, y, w, h }, layout)) return { x, y };
     }
   }
   return null;
