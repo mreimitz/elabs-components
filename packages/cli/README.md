@@ -50,7 +50,7 @@ manifest of the latest release (the release workflow deploys it; `main` between
 releases is not live):
 
 ```bash
-claude mcp add --transport http brand-ui https://elabs-components-elabs-ai.vercel.app/mcp
+claude mcp add --transport http brand-ui https://elabs-ai.com/mcp
 ```
 
 `audit` is not hosted — it reads files on your machine — so run `brand-ui mcp`

@@ -1,5 +1,5 @@
 /**
- * Hosted brand-ui MCP server — https://<docs deployment>/mcp (rewritten here).
+ * Hosted brand-ui MCP server — https://elabs-ai.com/mcp (rewritten here).
  *
  * The lookup tools (info, search, docs, tokens, chart_for) over stateless
  * Streamable HTTP, answered from the committed repo manifest bundled into this

@@ -249,7 +249,7 @@ jobs:
       # Protection; `deploy --prod` returns only after the alias points here.)
       - name: Smoke the hosted MCP
         env:
-          PRODUCTION_URL: https://elabs-components-elabs-ai.vercel.app
+          PRODUCTION_URL: https://elabs-ai.com
         run: |
           expected="${{ steps.tag.outputs.tag }}"; expected="${expected##*@}"
           body="$(curl -fsS --retry 3 --retry-delay 10 -X POST "${PRODUCTION_URL}/mcp" \
