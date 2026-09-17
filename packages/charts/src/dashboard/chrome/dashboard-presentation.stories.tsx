@@ -32,11 +32,18 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Three sheets cycling every 300 ms (real time — the interval is created against the real
- * clock the instant this story mounts, before `play` runs, so fake timers can't step it; a
- * short interval keeps the wait practical); Escape calls `onExit`; `refreshMs` calls
- * `onRefresh` on schedule. The `dashboard-presentation.test.tsx` unit tests cover the same
- * cycling/refresh/unmount behavior against fake timers, engaged before mount. */
+/**
+ * Three sheets cycling every 300 ms (real time). RM-087 follow-up 1, F4: Storybook's
+ * `addon-vitest` browser runner DOES support `vi.useFakeTimers()` inside a `play` function —
+ * the blocker isn't availability, it's ORDERING: `render()` mounts the component (starting
+ * the real `setInterval`) strictly before `play()` runs, in every Storybook story regardless
+ * of test runner, so fake timers installed inside `play` can never intercept an interval
+ * already bound to the real clock. A short real interval plus real-time `waitFor`s is the
+ * only way to drive this in a genuine Storybook play; `dashboard-presentation.test.tsx`'s
+ * jsdom unit tests cover the deterministic fake-timer version (exact `cycleMs` advances,
+ * `onRefresh` call counts, stop-on-unmount), where `vi.useFakeTimers()` runs in `beforeEach`,
+ * before `render()` ever executes.
+ */
 export const Presentation: Story = {
   args: {
     sheets: [
@@ -61,6 +68,9 @@ export const Presentation: Story = {
     // (`findByText`/`waitFor`) rather than asserting synchronously.
     await expect(await canvas.findByText("First sheet")).toBeInTheDocument();
     await expect(await canvas.findByText("Second sheet")).toBeInTheDocument();
+    await expect(await canvas.findByText("Third sheet")).toBeInTheDocument();
+    // Wraps back to the first sheet (the acceptance text's "wrapping around").
+    await expect(await canvas.findByText("First sheet")).toBeInTheDocument();
     await waitFor(() => expect(args.onRefresh).toHaveBeenCalled());
 
     const root = canvasElement.querySelector('[data-slot="dashboard-presentation"]') as HTMLElement;
