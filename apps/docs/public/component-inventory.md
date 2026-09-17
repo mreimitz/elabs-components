@@ -1290,9 +1290,17 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Y_AXIS_MAX_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_MIN_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | YAxis | component |  | `@elabs-ai/components-charts` |  |
+| AUTO_LAYOUT_BAND_KINDS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| AUTO_LAYOUT_COLUMN_KINDS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| AUTO_LAYOUT_METRIC_KINDS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| AUTO_LAYOUT_WIDE_CHART_TYPES | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| BUILT_IN_TILE_KIND_DEFAULTS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| CHART_SPEC_SCHEMA | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | CONTENT_FIELD_PREFIX | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_CLIPBOARD_MARKER | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_EDIT_SHIFT_STEP | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DASHBOARD_SPEC_SCHEMA | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DASHBOARD_SPEC_SCHEMA_ID | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_TILE_WARNING_THRESHOLD | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_URL_STATE_MAX_LENGTH | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardAssetPanel | component |  | `@elabs-ai/components-charts/dashboard` |  |

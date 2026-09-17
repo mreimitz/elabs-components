@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T23:12:53.771Z",
+  "generatedAt": "2026-09-17T01:22:25.500Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22405,6 +22405,36 @@
         "@elabs-ai/components-charts/dashboard": {
           "components": [
             {
+              "name": "AUTO_LAYOUT_BAND_KINDS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "AUTO_LAYOUT_COLUMN_KINDS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "AUTO_LAYOUT_METRIC_KINDS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "AUTO_LAYOUT_WIDE_CHART_TYPES",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "BUILT_IN_TILE_KIND_DEFAULTS",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/schema.ts"
+            },
+            {
+              "name": "CHART_SPEC_SCHEMA",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/schema.ts"
+            },
+            {
               "name": "CONTENT_FIELD_PREFIX",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
@@ -22418,6 +22448,16 @@
               "name": "DASHBOARD_EDIT_SHIFT_STEP",
               "kind": "value",
               "module": "packages/charts/src/dashboard/edit/cell-coordinate-getter.ts"
+            },
+            {
+              "name": "DASHBOARD_SPEC_SCHEMA",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/schema.ts"
+            },
+            {
+              "name": "DASHBOARD_SPEC_SCHEMA_ID",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/core/schema.ts"
             },
             {
               "name": "DASHBOARD_TILE_WARNING_THRESHOLD",
@@ -22718,12 +22758,48 @@
               "module": "packages/charts/src/dashboard/edit/align.ts"
             },
             {
+              "name": "AutoLayoutCellSize",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "AutoLayoutKinds",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "AutoLayoutKindSizing",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "AutoLayoutOptions",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "AutoLayoutResult",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "AutoLayoutStrategy",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
+              "name": "AutoLayoutTileInput",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
+            },
+            {
               "name": "Breakpoint",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-breakpoint.ts"
             },
             {
               "name": "BreakpointThresholds",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-breakpoint.ts"
+            },
+            {
+              "name": "BuiltInTileKindCapabilities",
+              "module": "packages/charts/src/dashboard/core/schema.ts"
+            },
+            {
+              "name": "BuiltInTileKindDefaults",
+              "module": "packages/charts/src/dashboard/core/schema.ts"
             },
             {
               "name": "ButtonTileAction",
@@ -23054,6 +23130,10 @@
               "module": "packages/charts/src/dashboard/core/interactions.ts"
             },
             {
+              "name": "JsonSchema",
+              "module": "packages/charts/src/dashboard/core/schema.ts"
+            },
+            {
               "name": "LocalSelectionDriver",
               "module": "packages/charts/src/dashboard/core/local-selection-driver.ts"
             },
@@ -23210,6 +23290,10 @@
             {
               "name": "arrowCellStep",
               "module": "packages/charts/src/dashboard/edit/cell-coordinate-getter.ts"
+            },
+            {
+              "name": "autoLayout",
+              "module": "packages/charts/src/dashboard/core/auto-layout.ts"
             },
             {
               "name": "builtInTiles",
