@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T02:47:03.206Z",
+  "generatedAt": "2026-09-17T03:09:35.870Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -583,6 +583,30 @@
       "type": "registry:block",
       "title": "Infographic — How far from the benchmark?",
       "description": "\"How far from the benchmark?\" — a sorted DumbbellChart, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised; the gap's sign correctly flips for a lower-is-better metric."
+    },
+    {
+      "name": "dashboard-tile-table",
+      "type": "registry:block",
+      "title": "Dashboard tile — table",
+      "description": "A DashboardTileKind wrapping @elabs-ai/components-data's DataTable: selection tri-state dims/frames excluded rows, a row click toggles that row's field value into the sheet's selection."
+    },
+    {
+      "name": "dashboard-tile-chat",
+      "type": "registry:block",
+      "title": "Dashboard tile — chat",
+      "description": "A DashboardTileKind wrapping @elabs-ai/components-ai's ChatShell/Composer: the composer is disabled when the sheet's interactions.active is false."
+    },
+    {
+      "name": "dashboard-tile-process-map",
+      "type": "registry:block",
+      "title": "Dashboard tile — process map",
+      "description": "A DashboardTileKind wrapping @elabs-ai/components-process's ProcessMap: the sheet's tri-state selection maps 1:1 onto ProcessMap's own selectionStates, and a node click emits that activity as the tile's selection."
+    },
+    {
+      "name": "dashboard-sheet-app",
+      "type": "registry:block",
+      "title": "Dashboard sheet app",
+      "description": "The installable canonical full-screen, user-editable dashboard: app nav + DashboardToolbar + DashboardSelectionBar + asset/properties panels + DashboardSheet, with the table/chat/process-map tile blocks registered alongside the built-in kinds."
     }
   ],
   "templates": [
@@ -609,6 +633,18 @@
       ],
       "sourceStory": "packages/charts/src/templates-dashboard.stories.tsx",
       "file": "templates/dashboard.tsx"
+    },
+    {
+      "name": "dashboard-sheet",
+      "title": "Patterns/Templates/Dashboard Sheet",
+      "description": "Dashboard sheet template — the canonical full-screen, user-editable dashboard (docs/playbooks/dashboard.md’s “editable dashboard sheet” archetype): app nav + `DashboardToolbar` (mode switch, undo/redo, add, save) + `DashboardSelectionBar` + `DashboardAssetPanel` / `DashboardPropertiesPanel` + `DashboardSheet`, all sharing one `DashboardProvider`. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/dashboard-sheet.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
+      "packages": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-ui"
+      ],
+      "sourceStory": "packages/charts/src/templates-dashboard-sheet.stories.tsx",
+      "file": "templates/dashboard-sheet.tsx"
     },
     {
       "name": "data-app",
@@ -713,7 +749,7 @@
     },
     {
       "archetype": "dashboard",
-      "intent": "KPI overview screen — metrics first, charts second, records last",
+      "intent": "KPI overview screen (static) or a drag-and-drop, user-editable grid of tiles (sheet) — metrics, charts and records in one screen",
       "keywords": [
         "dashboard",
         "kpi",
@@ -723,7 +759,11 @@
         "charts",
         "reporting",
         "summary",
-        "drill-down"
+        "drill-down",
+        "sheet",
+        "editable dashboard",
+        "tiles",
+        "BI"
       ],
       "packages": [
         "@elabs-ai/components-ui",
@@ -844,6 +884,32 @@
       ],
       "file": "docs/playbooks/settings.md",
       "template": "templates/settings.tsx"
+    }
+  ],
+  "cliVerbs": [
+    {
+      "group": "dashboard-spec",
+      "verb": "schema",
+      "usage": "brand-ui dashboard-spec schema",
+      "does": "Prints the DashboardSpec v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-charts/dashboard/schema.json`)."
+    },
+    {
+      "group": "dashboard-spec",
+      "verb": "validate",
+      "usage": "brand-ui dashboard-spec validate <file> [--json]",
+      "does": "Runs `validateDashboardSpec`: one `path code message` line per problem (shape, duplicate ids, dangling refs, overlaps, conditions); exit 1 when invalid."
+    },
+    {
+      "group": "dashboard-spec",
+      "verb": "kinds",
+      "usage": "brand-ui dashboard-spec kinds [--json]",
+      "does": "Lists the nine built-in tile kinds with default and minimum sizes and capabilities."
+    },
+    {
+      "group": "dashboard-spec",
+      "verb": "layout",
+      "usage": "brand-ui dashboard-spec layout <file> [--strategy=by-kind|reading-order]",
+      "does": "Places every tile that has no `layout` with `autoLayout` (existing layouts kept) and prints the spec."
     }
   ],
   "agentOutput": {

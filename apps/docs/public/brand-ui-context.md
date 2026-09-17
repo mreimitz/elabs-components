@@ -4,7 +4,7 @@
 Generated from `brand-ui.manifest.json` by `brand-ui context`. Do not hand-edit inside the markers. The live, queryable API is `brand-ui docs <Component>`.
 
 Themes (2): dark, light (default)
-Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 255 · Registry items: 48
+Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 255 · Registry items: 52
 
 Rules: semantic tokens only (no raw hex); forwardRef + cn() + spread props; Radix for
 overlays; compound composition; visible focus ring; works in every theme. Dependency
@@ -56,7 +56,7 @@ AbstractionControls, ACTIVITY_COLOR_SLOTS, ACTIVITY_OTHER_TOKEN, CASE_TABLE_COLU
 Building a WHOLE screen? Match the intent below, read the playbook, then start from its template. `brand-ui search <intent>` matches these too.
 
 - **ai-assistant** — Chat-first surface rendering rich agent output (markdown, reasoning, tools, sources) · keywords: ai assistant, chat, chatbot, conversation, agent, copilot, streaming, reasoning, tool calls, sources · docs/playbooks/ai-assistant.md · template templates/ai-assistant.tsx
-- **dashboard** — KPI overview screen — metrics first, charts second, records last · keywords: dashboard, kpi, metrics, overview, analytics, charts, reporting, summary, drill-down · docs/playbooks/dashboard.md · template templates/dashboard.tsx
+- **dashboard** — KPI overview screen (static) or a drag-and-drop, user-editable grid of tiles (sheet) — metrics, charts and records in one screen · keywords: dashboard, kpi, metrics, overview, analytics, charts, reporting, summary, drill-down, sheet, editable dashboard, tiles, BI · docs/playbooks/dashboard.md · template templates/dashboard.tsx
 - **data-app** — Tool-first table surface for browsing and operating on records · keywords: data app, admin console, table, grid, records, crud, search, filter, facets, bulk actions, back-office · docs/playbooks/data-app.md · template templates/data-app.tsx
 - **flow-workspace** — Node-and-edge canvas for editing a pipeline or workflow, with a selection inspector · keywords: flow, canvas, workflow, pipeline, graph, nodes, edges, diagram, workspace, react flow, inspector · docs/playbooks/flow-workspace.md · template templates/flow-workspace.tsx
 - **marketing** — Standalone pitch page — nav → hero → proof → capability → relevance → trust → ask · keywords: marketing, landing page, pitch, presales, hero, features, call to action, logos, testimonial, website · docs/playbooks/marketing.md · template templates/marketing.tsx

@@ -23,6 +23,7 @@ import {
   flat,
   matchPlaybooks,
   matchTemplates,
+  matchCliVerbs,
   resolveTasteProfile,
   tasteSearchDirs,
 } from "./core.mjs";
@@ -43,7 +44,7 @@ export const TOOLS = [
   {
     name: "search",
     description:
-      'Find components/hooks/registry items by name or package substring, AND archetype playbooks by free-text intent ("build a dashboard" → the dashboard playbook). Use before writing UI — prefer an existing component, and start a whole screen from its playbook.',
+      'Find components/hooks/registry items by name or package substring, archetype playbooks by free-text intent ("build a dashboard" → the dashboard playbook), and standalone CLI verbs (e.g. `dashboard-spec schema|validate|kinds|layout`). Use before writing UI — prefer an existing component, and start a whole screen from its playbook.',
     inputSchema: {
       type: "object",
       properties: {
@@ -165,6 +166,10 @@ function toolSearch(root, q) {
   // the persistent/recommended MCP path, can reach screen-states/object-detail-hub
   // exactly like the CLI's `brand-ui search` can.
   const templates = matchTemplates(manifest, query);
+  // CLI verbs (RM-086's `dashboard-spec`, …) — same arm as the CLI's cmdSearch()
+  // (RM-088 follow-up 1, validator FAIL #1: `search dashboard` must surface the
+  // `dashboard-spec` verbs over MCP too, not just the CLI).
+  const verbs = matchCliVerbs(manifest, query);
   const lines = [`Components/hooks matching "${query}":`];
   for (const r of rows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
   if (!rows.length) lines.push("  (none)");
@@ -189,6 +194,13 @@ function toolSearch(root, q) {
     for (const t of templates) {
       lines.push(`  ${t.name}  (template)`);
       lines.push(`    ${t.file}`);
+    }
+  }
+  if (verbs.length) {
+    lines.push("", `CLI commands matching "${query}":`);
+    for (const v of verbs) {
+      lines.push(`  ${v.usage}`);
+      lines.push(`    ${v.does}`);
     }
   }
   return textContent(lines.join("\n"));

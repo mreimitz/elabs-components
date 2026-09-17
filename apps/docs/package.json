@@ -20,6 +20,7 @@
     "@elabs-ai/components-flow": "workspace:*",
     "@elabs-ai/components-icons": "workspace:*",
     "@elabs-ai/components-marketing": "workspace:*",
+    "@elabs-ai/components-process": "workspace:*",
     "@elabs-ai/components-terminal": "workspace:*",
     "@elabs-ai/components-tokens": "workspace:*",
     "@elabs-ai/components-ui": "workspace:*",

@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { collectIntent } from "./intent.mjs";
 import { collectAgentOutput } from "./agent-output.mjs";
 import { mergeResolvedProps } from "./docgen.mjs";
+import { DASHBOARD_SPEC_VERB_DOCS } from "./dashboard-spec.mjs";
 
 const CONFIG_PKGS = new Set([
   "@elabs-ai/components-eslint-config",
@@ -460,6 +461,37 @@ function loadTemplates(repoRoot) {
   } catch {
     return [];
   }
+}
+
+/**
+ * CLI subcommand verbs that are real, standalone tooling — not components — and
+ * so were invisible to `search`/`context`/the MCP server (validator FAIL #1,
+ * RM-088 follow-up 1). Each CLI verb GROUP (currently only `dashboard-spec`,
+ * RM-086 #427) exports its own `<GROUP>_VERB_DOCS` array as the single source
+ * for its own docs; this just folds every group into one manifest arm so a new
+ * verb group is auto-registered here the same way a new playbook is (loadPlaybooks
+ * above) — add the group's docs array to `GROUPS` below, nothing else.
+ */
+function loadCliVerbs() {
+  const GROUPS = [{ group: "dashboard-spec", docs: DASHBOARD_SPEC_VERB_DOCS }];
+  return GROUPS.flatMap(({ group, docs }) =>
+    docs.map((d) => ({ group, verb: d.verb, usage: d.usage, does: d.does })),
+  );
+}
+
+/**
+ * Match a free-text query against the manifest's CLI verbs (group, verb, usage,
+ * does). Modeled on `matchTemplates()` — a name/description substring or
+ * whole-query hit, not a fuzzy intent match.
+ * @returns {object[]}
+ */
+export function matchCliVerbs(manifest, query) {
+  const q = String(query || "")
+    .toLowerCase()
+    .trim();
+  if (!q) return [];
+  const verbs = manifest?.cliVerbs || [];
+  return verbs.filter((v) => `${v.group} ${v.verb} ${v.usage} ${v.does}`.toLowerCase().includes(q));
 }
 
 // ---- playbooks (WP-09 #66 / #84) -------------------------------------------
@@ -1507,6 +1539,10 @@ export function generateManifest(repoRoot, opts = {}) {
     // from each playbook's own front matter so a new docs/playbooks/<a>.md is
     // auto-registered here (and therefore in `search`, `context` and the MCP server).
     playbooks: loadPlaybooks(repoRoot),
+    // Standalone CLI verbs (e.g. `dashboard-spec schema|validate|kinds|layout`,
+    // RM-086 #427) — real tooling with no component/registry/playbook shape of
+    // its own, so it needs its own manifest arm to be reachable from `search`.
+    cliVerbs: loadCliVerbs(),
     // The agent-output contract (how an agent structures output for the @elabs-ai/components-ai
     // GenUI components to render it). Path-keyed, cross-package; authored sidecar
     // (lib/agent-output.mjs), gate-verified against source (the `agent-output-contract` rule in `pnpm check`).

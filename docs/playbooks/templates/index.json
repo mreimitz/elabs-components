@@ -24,6 +24,18 @@
     "file": "templates/dashboard.tsx"
   },
   {
+    "name": "dashboard-sheet",
+    "title": "Patterns/Templates/Dashboard Sheet",
+    "description": "Dashboard sheet template — the canonical full-screen, user-editable dashboard (docs/playbooks/dashboard.md’s “editable dashboard sheet” archetype): app nav + `DashboardToolbar` (mode switch, undo/redo, add, save) + `DashboardSelectionBar` + `DashboardAssetPanel` / `DashboardPropertiesPanel` + `DashboardSheet`, all sharing one `DashboardProvider`. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/dashboard-sheet.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
+    "packages": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-ui"
+    ],
+    "sourceStory": "packages/charts/src/templates-dashboard-sheet.stories.tsx",
+    "file": "templates/dashboard-sheet.tsx"
+  },
+  {
     "name": "data-app",
     "title": "Patterns/Templates/Data App",
     "description": "Data app template — the canonical full-screen data-app composition (app-shell + DataTable with toolbar). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/data-app.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
