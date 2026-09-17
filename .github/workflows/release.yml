@@ -17,6 +17,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch: # manual rerun, e.g. after adding a missing secret
+    inputs:
+      deploy-docs:
+        description: Redeploy the LATEST RELEASED docs + hosted MCP to Vercel production
+        type: boolean
+        default: false
 
 concurrency:
   group: release
@@ -181,3 +186,75 @@ jobs:
 
       - name: Publish to gh-pages
         run: pnpm registry:publish
+
+  # ── deploy the released Storybook + hosted MCP to Vercel production ────────
+  #
+  # Vercel's Git integration is OFF for this project (`git.deploymentEnabled:
+  # false` in apps/docs/vercel.json), so a push to `main` never deploys: production
+  # only ever serves a released version, and keeps the previous one until the next
+  # release. This job deploys the newest `@elabs-ai/components-cli@<version>` tag —
+  # the release commit itself — so an unreleased commit on `main` cannot ride along.
+  # The build runs on Vercel with the project's settings (root apps/docs).
+  #
+  # Runs after a successful npm publish (same `!cancelled()` reasoning as
+  # publish-registry), or from a manual run with the `deploy-docs` input.
+  deploy-docs:
+    name: Deploy docs + hosted MCP to Vercel
+    needs: release
+    if: ${{ !cancelled() && (needs.release.outputs.published == 'true' || inputs.deploy-docs) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERCEL_ORG_ID: team_CREpBGwTjqJ21Rj1cpNRTPCv # elabs-ai (not a secret)
+      VERCEL_PROJECT_ID: prj_vAhDf9Ako9r9kiLJQqCQQXOPdTp8 # elabs-components (not a secret)
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Verify Vercel deploy credential
+        run: |
+          if [ -z "${VERCEL_TOKEN}" ]; then
+            echo "::error::secrets.VERCEL_TOKEN is empty — the released docs and hosted MCP cannot be" >&2
+            echo "deployed. Create a token scoped to the elabs-ai team (vercel.com/account/tokens)" >&2
+            echo "and add it as the VERCEL_TOKEN repository secret, then re-run with deploy-docs." >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out the latest release tag
+        id: tag
+        run: |
+          git fetch --tags --force
+          tag="$(git tag -l '@elabs-ai/components-cli@*' --sort=-v:refname | head -1)"
+          if [ -z "$tag" ]; then
+            echo "::error::no @elabs-ai/components-cli@<version> tag — nothing released to deploy." >&2
+            exit 1
+          fi
+          git checkout --quiet "$tag"
+          echo "deploying $tag ($(git rev-parse --short HEAD))"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to production
+        id: deploy
+        run: |
+          url="$(npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" \
+            --meta releaseTag="${{ steps.tag.outputs.tag }}")"
+          echo "deployed: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # The public production address must now serve the hosted MCP at the version
+      # just released. (The per-deployment URL can sit behind Vercel Deployment
+      # Protection; `deploy --prod` returns only after the alias points here.)
+      - name: Smoke the hosted MCP
+        env:
+          PRODUCTION_URL: https://elabs-components-elabs-ai.vercel.app
+        run: |
+          expected="${{ steps.tag.outputs.tag }}"; expected="${expected##*@}"
+          body="$(curl -fsS --retry 3 --retry-delay 10 -X POST "${PRODUCTION_URL}/mcp" \
+            -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}')"
+          echo "$body"
+          echo "$body" | grep -q "\"version\":\"${expected}\"" \
+            || { echo "::error::hosted MCP does not report version ${expected}" >&2; exit 1; }

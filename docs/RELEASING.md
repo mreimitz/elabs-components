@@ -51,6 +51,13 @@ Merging the Version PR leaves no pending changesets, so the next run publishes:
    (`r/<version>/` + `r/latest/`). Needs `secrets.PAGES_DEPLOY_TOKEN`: a push with the
    default `GITHUB_TOKEN` does not trigger a Pages build. Runs whenever the npm publish
    succeeded, even if a later step of the release job failed.
+7. **`deploy-docs`** — deploys the Storybook and the hosted MCP (`/mcp`) to Vercel
+   production from the newest `@elabs-ai/components-cli@<version>` tag, then checks that
+   `/mcp` reports that version. Vercel's Git integration is off (`git.deploymentEnabled:
+false` in `apps/docs/vercel.json`), so pushes to `main` never deploy: production keeps
+   the previous release until this job replaces it. Needs `secrets.VERCEL_TOKEN` (a token
+   scoped to the `elabs-ai` Vercel team). Redeploy the current release by hand: run the
+   Release workflow with **deploy-docs** ticked.
 
 Watch with `gh run list --workflow=Release`. Confirm: `npm view @elabs-ai/components-ui@<v>`,
 or re-run the smoke from a checkout: `GITHUB_REPOSITORY=mreimitz/elabs-components pnpm release:smoke`.

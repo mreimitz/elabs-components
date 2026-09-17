@@ -46,7 +46,8 @@ MIT
 
 The lookup tools (`info`, `search`, `docs`, `tokens`, `chart_for`) are also served
 over stateless Streamable HTTP from the docs deployment, answered from the
-committed repo manifest (so they match `main`, not your installed version):
+manifest of the latest release (the release workflow deploys it; `main` between
+releases is not live):
 
 ```bash
 claude mcp add --transport http brand-ui https://elabs-components-elabs-ai.vercel.app/mcp
