@@ -2,7 +2,7 @@
 
 > Source-owned, token-driven React component system for internal apps, dashboards, AI/chat clients, data grids, React Flow canvases and presales demos. Default look: modern enterprise SaaS, themeable to any brand. Tailwind v4 (CSS-variable tokens) + Radix + React 19.
 
-This file is generated from `brand-ui.manifest.json` — the anti-hallucination ground truth. Never hand-edit it. For the live, queryable API, install the CLI as a dev dependency from GitHub Packages (`pnpm add -D @elabs-ai/components-cli`, see docs/CONSUMING.md) and run `pnpm exec brand-ui docs <Component>`, or, when the Storybook dev server runs, use the Storybook MCP at `http://localhost:6006/mcp`.
+This file is generated from `brand-ui.manifest.json` — the anti-hallucination ground truth. Never hand-edit it. For the live, queryable API, connect the hosted brand-ui MCP at `https://elabs-ai.com/mcp` (nothing to install) and call `info` · `search <q>` · `docs <Component>`; the same tools run locally over stdio with `npx -y @elabs-ai/components-cli mcp`.
 
 ## Rules of the road
 
@@ -34,7 +34,9 @@ dark, light (default)
 
 ## Entry points
 
-- CLI: install first — `pnpm add -D @elabs-ai/components-cli` (GitHub Packages, see docs/CONSUMING.md §1+§7a) — then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>`
+- Hosted MCP (no install): `claude mcp add --transport http brand-ui https://elabs-ai.com/mcp` — Streamable HTTP, tools `info` · `search <q>` · `docs <Component>` · `tokens` · `chart_for`
+- CLI over stdio: `npx -y @elabs-ai/components-cli mcp`, or `pnpm add -D @elabs-ai/components-cli` then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>` (the local CLI also has `audit`, which the hosted server cannot run)
+- Docs site: https://elabs-ai.com (Storybook — every component, live, in every theme)
 - Manifest: `brand-ui.manifest.json` (machine-readable ground truth)
-- Live MCP (dev): Storybook addon-mcp at `http://localhost:6006/mcp`
+- Contributors only: the Storybook dev MCP at `http://localhost:6006/mcp`, available while `pnpm storybook` runs in this repo
 - Registry (copy-own): self-hosted registry JSON — `pnpm registry:build`, then `npx shadcn@latest add <your-host>/<item>.json` (or copy from `registry/blocks/<name>/`)

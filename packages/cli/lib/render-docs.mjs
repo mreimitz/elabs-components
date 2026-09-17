@@ -19,6 +19,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+/** The public docs deployment (Storybook static build) and the hosted MCP it serves. */
+export const HOSTED_DOCS_URL = "https://elabs-ai.com";
+export const HOSTED_MCP_URL = `${HOSTED_DOCS_URL}/mcp`;
+
 /** Packages in stable, dependency-order-ish display order (tokens → ui → domain). */
 const PKG_ORDER = [
   "@elabs-ai/components-tokens",
@@ -235,10 +239,10 @@ export function renderLlmsHub(manifest) {
   lines.push("");
   lines.push(
     "This file is generated from `brand-ui.manifest.json` — the anti-hallucination ground " +
-      "truth. Never hand-edit it. For the live, queryable API, install the CLI as a dev " +
-      "dependency from GitHub Packages (`pnpm add -D @elabs-ai/components-cli`, see " +
-      "docs/CONSUMING.md) and run `pnpm exec brand-ui docs <Component>`, or, when the Storybook " +
-      "dev server runs, use the Storybook MCP at `http://localhost:6006/mcp`.",
+      "truth. Never hand-edit it. For the live, queryable API, connect the hosted brand-ui " +
+      `MCP at \`${HOSTED_MCP_URL}\` (nothing to install) and call \`info\` · \`search <q>\` · ` +
+      "`docs <Component>`; the same tools run locally over stdio with " +
+      "`npx -y @elabs-ai/components-cli mcp`.",
   );
   lines.push("");
   lines.push("## Rules of the road");
@@ -268,11 +272,20 @@ export function renderLlmsHub(manifest) {
   lines.push("## Entry points");
   lines.push("");
   lines.push(
-    "- CLI: install first — `pnpm add -D @elabs-ai/components-cli` (GitHub Packages, " +
-      "see docs/CONSUMING.md §1+§7a) — then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>`",
+    `- Hosted MCP (no install): \`claude mcp add --transport http brand-ui ${HOSTED_MCP_URL}\` ` +
+      "— Streamable HTTP, tools `info` · `search <q>` · `docs <Component>` · `tokens` · `chart_for`",
   );
+  lines.push(
+    "- CLI over stdio: `npx -y @elabs-ai/components-cli mcp`, or `pnpm add -D " +
+      "@elabs-ai/components-cli` then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>` " +
+      "(the local CLI also has `audit`, which the hosted server cannot run)",
+  );
+  lines.push(`- Docs site: ${HOSTED_DOCS_URL} (Storybook — every component, live, in every theme)`);
   lines.push("- Manifest: `brand-ui.manifest.json` (machine-readable ground truth)");
-  lines.push("- Live MCP (dev): Storybook addon-mcp at `http://localhost:6006/mcp`");
+  lines.push(
+    "- Contributors only: the Storybook dev MCP at `http://localhost:6006/mcp`, available " +
+      "while `pnpm storybook` runs in this repo",
+  );
   lines.push(
     "- Registry (copy-own): self-hosted registry JSON — `pnpm registry:build`, then " +
       "`npx shadcn@latest add <your-host>/<item>.json` (or copy from `registry/blocks/<name>/`)",
