@@ -49,6 +49,13 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "padded",
+    // `color` here picks a COLOURING STRATEGY ("activity" | "resource" | a
+    // function), not a CSS colour. The controls colour matcher is keyed on the
+    // prop NAME, and it runs (and warns) before any argTypes enhancer can veto
+    // it, so the opt-out has to be the matcher itself: a pattern no prop name
+    // matches. Without this the props table offered a hex picker whose value the
+    // component cannot use (2026-09-17 review §A5).
+    controls: { matchers: { color: /^$/ } },
     docs: {
       description: {
         component:

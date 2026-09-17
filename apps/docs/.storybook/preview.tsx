@@ -18,6 +18,7 @@ import {
   type DocsContainerProps,
 } from "@storybook/addon-docs/blocks";
 import { Intent } from "./intent-block";
+import { enhanceArgTypes, stripCustomTags } from "./docgen";
 import { themes } from "storybook/theming";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
 import "./preview.css";
@@ -274,6 +275,12 @@ const A11Y_MEASURE_ALL =
     ?.STORYBOOK_A11Y_MODE === "todo";
 
 const preview: Preview = {
+  // Runs after the framework infers controls — see ./docgen.ts.
+  // Cast: the enhancer only reads/writes `control`, `description` and `type`, which
+  // is a structural subset of StrictArgTypes; it never constructs an arg type.
+  argTypesEnhancers: [
+    enhanceArgTypes as unknown as NonNullable<Preview["argTypesEnhancers"]>[number],
+  ],
   /**
    * The axe ratchet's teeth (#78 AC3 / #316). `parameters.a11y.test` is
    * `"error"` globally (below), so ANY axe violation fails the blocking
@@ -352,7 +359,18 @@ const preview: Preview = {
     },
   },
   parameters: {
-    docs: { container: ThemedDocsContainer, page: BrandDocsPage },
+    docs: {
+      container: ThemedDocsContainer,
+      page: BrandDocsPage,
+      // react-docgen hands over the whole JSDoc block, `@dataShape`/`@avoidWhen`
+      // included; the Intent block above already renders those two as "Best for"
+      // and "Avoid when", so they are not also prose. See ./docgen.ts.
+      extractComponentDescription: (component: unknown) =>
+        stripCustomTags(
+          (component as { __docgenInfo?: { description?: string } })?.__docgenInfo?.description ??
+            "",
+        ) || null,
+    },
     // #78 AC3 / #316: axe FAILS the build. addon-a11y's default is `"todo"`
     // (= report, never fail) — at that setting the blocking Storybook CI job
     // enforced only the interaction half, and a new component could ship an
@@ -363,7 +381,16 @@ const preview: Preview = {
     // can only shrink (`pnpm check --rule a11y-baseline`).
     a11y: { test: "error" },
     layout: "centered",
-    controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
+    // ANCHORED on purpose: the shipped default `/(background|color)$/i` matches
+    // any prop ENDING in "color" — `accessibleDescription`… no, but `seriesColor`,
+    // `gridColor`, `emptyColor` and every `*BackgroundColor` yes, including the
+    // ones typed as a function or a token union. Those got a hex colour picker
+    // that writes a value the component cannot use. Match the exact names that
+    // really do take a CSS colour; ./docgen.ts then vetoes the control on any of
+    // them whose TYPE is not a colour string (2026-09-17 review §A5).
+    controls: {
+      matchers: { color: /^(background|color|accentColor|fill|stroke)$/, date: /Date$/i },
+    },
     options: {
       storySort: {
         // ── The sidebar order. Keep in step with the numbered list in
