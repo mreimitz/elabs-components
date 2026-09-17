@@ -85,6 +85,19 @@ const config: StorybookConfig = {
       // lets a story render the SHIPPED file instead of a copy of it.
       "@/components": join(REPO_ROOT, "registry/blocks"),
     };
+
+    // Package source carries `"use client"` for RSC consumers (the
+    // `use-client-source` rule). Rollup drops it when bundling the static
+    // Storybook and warns once per module, plus a follow-up SOURCEMAP_ERROR for
+    // the same line — hundreds of harmless lines that CI log viewers paint red.
+    viteConfig.build = viteConfig.build ?? {};
+    viteConfig.build.rollupOptions = viteConfig.build.rollupOptions ?? {};
+    const userOnwarn = viteConfig.build.rollupOptions.onwarn;
+    viteConfig.build.rollupOptions.onwarn = (warning, defaultHandler) => {
+      if (warning.code === "MODULE_LEVEL_DIRECTIVE" || warning.code === "SOURCEMAP_ERROR") return;
+      if (userOnwarn) userOnwarn(warning, defaultHandler);
+      else defaultHandler(warning);
+    };
     return viteConfig;
   },
 };
