@@ -26,6 +26,8 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
+  useState,
   type HTMLAttributes,
   type MutableRefObject,
   type ReactNode,
@@ -798,10 +800,53 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   // A tile without an explicit `height` fills its host (#444); every other
   // chrome keeps the fixed 260px default.
   const fillHost = chrome === "tile" && height === undefined;
+  const titleText = typeof title === "string" ? title : undefined;
+
+  // WCAG 2.1.1 (axe `scrollable-region-focusable`, #432 round 3): this box is
+  // `overflow-auto`, so it needs a keyboard tab stop whenever its content is
+  // genuinely taller/wider than it — a real timing race at narrow tile
+  // widths, not a fixed layout. Unlike `side-dock-body`
+  // (packages/ui/src/components/side-dock/side-dock.tsx), whose
+  // caller-supplied children are assumed to always be able to overflow, a
+  // chart's content is data-dependent and can fit OR overflow depending on
+  // the tile's own size, so `tabIndex`/the accessible name are measured with
+  // a `ResizeObserver` rather than always on — that also keeps the DOM
+  // byte-identical (no `tabIndex`, no `aria-label`) for the common
+  // non-overflowing case, so no existing chart snapshot/story changes.
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+  const [overflowing, setOverflowing] = useState(false);
+
+  useEffect(() => {
+    const el = bodyScrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const measure = () => {
+      const next = el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight;
+      setOverflowing((prev) => (prev === next ? prev : next));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    if (el.firstElementChild) observer.observe(el.firstElementChild);
+    return () => observer.disconnect();
+  }, [state.view, loading, children]);
+
   const body = (
     <div
+      ref={bodyScrollRef}
       style={fillHost ? undefined : { height: height ?? 260 }}
-      className={cn("w-full overflow-auto", fillHost && "h-full")}
+      className={cn(
+        "w-full overflow-auto",
+        fillHost && "h-full",
+        overflowing && "focus-ring-inset",
+      )}
+      tabIndex={overflowing ? 0 : undefined}
+      aria-label={
+        overflowing
+          ? t("charts.chartFrame.scrollableRegion", {
+              title: titleText ?? t("charts.chartFrame.defaultTitle"),
+            })
+          : undefined
+      }
       {...(loading ? { role: "status", "aria-live": "polite" as const } : {})}
     >
       {loading ? (

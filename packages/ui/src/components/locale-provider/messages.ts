@@ -384,6 +384,9 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.chartFrame.noDataToSummarize": "No data to summarize.",
   "charts.chartFrame.defaultTitle": "Chart",
   "charts.chartFrame.summaryDetailLabel": "Chart summary",
+  // ChartFrame's scrollable body (#432 round 3, WCAG 2.1.1): only set as
+  // `aria-label`/`tabIndex` while the body actually overflows its box.
+  "charts.chartFrame.scrollableRegion": "Scrollable chart: {title}",
   "charts.legend.label": "Chart legend",
   "charts.gantt.timeline": "Timeline",
   "charts.gantt.dragToResizeColumn": "Drag to resize column",
