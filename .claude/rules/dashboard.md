@@ -53,3 +53,32 @@ Binding for everything under `packages/charts/src/dashboard/`. Decision record: 
 
 `GridSpec`: `mode: "fit"`, `columns: 24`, `rows: 12` (fit), `rowHeight: 30` px (flow).
 `DashboardSpec.version` is the literal `1` (ADR 0037 §7).
+
+## Density tiers
+
+The only adaptation mechanism (see Encoding above) — a tile's rendered pixel box picks its
+tier, never its own text measurement: `xs` < 200×100 px, `sm` < 400×200, `md` < 800×400,
+else `lg` (`DashboardTile`, `packages/charts/src/dashboard/dashboard-sheet/dashboard-tile.tsx`).
+A tile kind reads its tier off `DashboardTileProps.density` (`ChartDensity`) — never
+re-derives it from `size.width`/`size.height` itself.
+
+## Edit-layer announcements
+
+Every edit announcement (pick-up, move, drop, reject, resize, cancel, and the silent-clamp
+and cancel-mid-gesture cases) goes to **one** polite live region per sheet
+(`DashboardEditLayer`), so a screen reader hears one voice — never a second `role="status"`
+region from a tile or a host. dnd-kit's own announcements are silenced
+(`SILENT_ANNOUNCEMENTS`, `edit/announcer.ts`); its screen-reader drag instructions are kept
+and localized. Every string routes through `t()` (`editMessages(t)`) — no literal English in
+`edit/`.
+
+## Interaction routing (`fromTileId`)
+
+`resolveInteractions(spec)` (`core/interactions.ts`, whose JSDoc is the binding text)
+resolves `spec.interactions[]` into the effective emitter → consumer map: a tile-level
+`consumes`/`emits` gate first, then explicit pair > `from → "*"` wildcard > default `filter`
+(last entry of equal specificity wins), no self-interaction (`"*"` skips `from`,
+`from === to` is ignored), and a write with **no** `fromTileId` (the filter tile, the
+selection bar, an external driver, a bookmark) is global and always `filter`. A
+`DashboardTileKind` never inspects `fromTileId` itself — it reads the resolved
+`tile.selection`/`tile.hover` the sheet already scoped for it.
