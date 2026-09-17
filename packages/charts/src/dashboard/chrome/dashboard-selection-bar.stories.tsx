@@ -271,6 +271,36 @@ export const Bookmarks: Story = {
   },
 };
 
+/**
+ * `bookmarks` stays `true` and a bookmark already exists, but no `onSaveBookmark` is passed:
+ * "Save bookmark…" would be a dead control, so it is omitted — the existing bookmark still
+ * applies normally.
+ */
+export const SaveBookmarkOmittedWithoutHandler: Story = {
+  name: "Save bookmark hidden (no handler)",
+  render: () => {
+    const driver = createLocalSelectionDriver();
+    driver.register("rows", ROWS, ["Region", "Product"]);
+    return (
+      <DashboardProvider
+        spec={buildSpec()}
+        driver={driver}
+        tiles={[filterTileKind, regionBarKind, productBarKind]}
+      >
+        <DashboardSelectionBar driver={driver} />
+      </DashboardProvider>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(document.body);
+    const bar = await canvas.findByRole("toolbar", { name: "Selections" });
+    await userEvent.click(within(bar).getByRole("button", { name: "Bookmarks" }));
+    await expect(await body.findByRole("menuitem", { name: "EMEA focus" })).toBeInTheDocument();
+    await expect(body.queryByRole("menuitem", { name: "Save bookmark…" })).not.toBeInTheDocument();
+  },
+};
+
 /** No bookmarks configured: the `bookmarks` prop hides the menu entirely. */
 export const NoBookmarksMenu: Story = {
   name: "Bookmarks hidden",

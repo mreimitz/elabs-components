@@ -111,6 +111,25 @@ describe("DashboardSelectionBar", () => {
     await waitFor(() => expect(driver.getSnapshot().fields.Region?.values).toEqual(["EMEA"]));
   });
 
+  it('omits "Save bookmark…" (but keeps existing bookmarks) with no onSaveBookmark', async () => {
+    const user = userEvent.setup();
+    renderBar();
+    await user.click(screen.getByRole("button", { name: "Bookmarks" }));
+    expect(await screen.findByRole("menuitem", { name: "EMEA saved" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Save bookmark…" })).not.toBeInTheDocument();
+  });
+
+  it("hides the Bookmarks trigger entirely with no bookmarks and no onSaveBookmark", () => {
+    const driver = createLocalSelectionDriver();
+    const spec: DashboardSpec = { ...SPEC, bookmarks: [] };
+    render(
+      <DashboardProvider spec={spec} driver={driver} tiles={[]}>
+        <DashboardSelectionBar driver={driver} />
+      </DashboardProvider>,
+    );
+    expect(screen.queryByRole("button", { name: "Bookmarks" })).not.toBeInTheDocument();
+  });
+
   it('"Save bookmark…" calls onSaveBookmark with the current snapshot and variables', async () => {
     const user = userEvent.setup();
     const onSaveBookmark = vi.fn();
