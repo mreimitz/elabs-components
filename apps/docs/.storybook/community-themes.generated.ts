@@ -3,6 +3,32 @@ import type { ThemeDefinition } from "@elabs-ai/components-tokens";
 
 export const COMMUNITY_THEME_DEFINITIONS: readonly ThemeDefinition[] = [
   {
+    value: "claude-light",
+    label: "Claude Light",
+    dark: false,
+    family: "claude",
+    familyLabel: "Claude",
+  },
+  { value: "claude-dark", label: "Claude Dark", dark: true, family: "claude" },
+  {
+    value: "clickhouse-light",
+    label: "ClickHouse Light",
+    dark: false,
+    family: "clickhouse",
+    familyLabel: "ClickHouse",
+  },
+  { value: "clickhouse-dark", label: "ClickHouse Dark", dark: true, family: "clickhouse" },
+  {
+    value: "graphite-light",
+    label: "Graphite Light",
+    dark: false,
+    family: "graphite",
+    familyLabel: "Graphite",
+  },
+  { value: "graphite-dark", label: "Graphite Dark", dark: true, family: "graphite" },
+  { value: "heap-light", label: "Heap Light", dark: false, family: "heap", familyLabel: "Heap" },
+  { value: "heap-dark", label: "Heap Dark", dark: true, family: "heap" },
+  {
     value: "ocean-light",
     label: "Ocean Light",
     dark: false,
@@ -12,6 +38,14 @@ export const COMMUNITY_THEME_DEFINITIONS: readonly ThemeDefinition[] = [
   { value: "ocean-dark", label: "Ocean Dark", dark: true, family: "ocean" },
   { value: "qlik-light", label: "Qlik Bright", dark: false, family: "qlik", familyLabel: "Qlik" },
   { value: "qlik-dark", label: "Qlik Dark", dark: true, family: "qlik" },
+  {
+    value: "salesforce-light",
+    label: "Salesforce Light",
+    dark: false,
+    family: "salesforce",
+    familyLabel: "Salesforce",
+  },
+  { value: "salesforce-dark", label: "Salesforce Dark", dark: true, family: "salesforce" },
   {
     value: "snowflake-light",
     label: "Snowflake Light",

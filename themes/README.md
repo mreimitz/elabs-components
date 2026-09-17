@@ -7,11 +7,16 @@ or alongside them.
 These themes are not published with the npm packages. To use one, copy its folder into
 your app.
 
-| Family                    | Modes                              |
-| ------------------------- | ---------------------------------- |
-| [Ocean](./ocean/)         | light + dark                       |
-| [Qlik](./qlik/)           | light + dark · ships Source Sans 3 |
-| [Snowflake](./snowflake/) | light + dark                       |
+| Family                      | Modes                              |
+| --------------------------- | ---------------------------------- |
+| [ClickHouse](./clickhouse/) | light + dark                       |
+| [Graphite](./graphite/)     | light + dark                       |
+| [Heap](./heap/)             | light + dark                       |
+| [Claude](./claude/)         | light + dark                       |
+| [Ocean](./ocean/)           | light + dark                       |
+| [Qlik](./qlik/)             | light + dark · ships Source Sans 3 |
+| [Salesforce](./salesforce/) | light + dark                       |
+| [Snowflake](./snowflake/)   | light + dark                       |
 
 ## Use a theme
 
