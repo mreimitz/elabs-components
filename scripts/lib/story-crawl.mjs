@@ -108,6 +108,41 @@ const READY = `(() => {
 })()`;
 
 /**
+ * A story that never stops working. Playwright's `timeout` covers waiting for
+ * something to APPEAR; `page.evaluate` has no timeout at all, so a story that
+ * pegs the renderer (a runaway animation frame, an endless layout loop) blocks
+ * the worker for ever. The first full run of this crawl stopped dead at
+ * 1900/1958 and sat there: no verdict, no failure, nothing to read. A crawl
+ * that can hang is worse than no crawl — in CI it burns the job timeout and
+ * reports nothing. Every story therefore gets one hard deadline, and blowing it
+ * is a FAILURE, not a skip.
+ */
+const HUNG = Symbol("hung");
+
+/** Resolve to `HUNG` if `promise` has not settled within `ms`. Never rejects. */
+export async function withDeadline(promise, ms) {
+  let timer;
+  // NOT unref'd on purpose: a hung page holds nothing else on the event loop, so
+  // an unref'd deadline lets the process exit before the verdict is written.
+  const deadline = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(HUNG), ms);
+  });
+  try {
+    return await Promise.race([
+      promise.then(
+        (v) => v,
+        (err) => ({ __error: err }),
+      ),
+      deadline,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export { HUNG };
+
+/**
  * Open every entry in `entries` and judge it. `browser` is a Playwright browser
  * (or anything with the same `newContext`), injected so the caller owns the
  * install. Returns `{ visited, failures: [{ id, title, problems }] }`.
@@ -119,6 +154,8 @@ export async function crawlStories({
   concurrency = 8,
   settleMs = 700,
   timeoutMs = 30000,
+  // Room for a slow load AND a slow settle, then the story is declared hung.
+  storyTimeoutMs = timeoutMs * 2 + settleMs,
   log = () => {},
 }) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
@@ -132,19 +169,33 @@ export async function crawlStories({
     page.on("pageerror", (e) => pageErrors.push(String(e?.message ?? e).slice(0, 200)));
     let loadError = null;
     let probe = null;
-    try {
-      await page.goto(storyUrl(base, entry.id), { waitUntil: "load", timeout: timeoutMs });
-      await page.waitForFunction(READY, undefined, { timeout: timeoutMs }).catch(() => {});
-      await page.waitForTimeout(settleMs);
-      probe = await page.evaluate(PROBE);
-    } catch (err) {
-      loadError = String(err?.message ?? err)
+
+    const outcome = await withDeadline(
+      (async () => {
+        await page.goto(storyUrl(base, entry.id), { waitUntil: "load", timeout: timeoutMs });
+        await page.waitForFunction(READY, undefined, { timeout: timeoutMs }).catch(() => {});
+        await page.waitForTimeout(settleMs);
+        return page.evaluate(PROBE);
+      })(),
+      storyTimeoutMs,
+    );
+    if (outcome === HUNG) {
+      loadError = `it never settled within ${storyTimeoutMs}ms (the page is still working)`;
+    } else if (outcome && outcome.__error) {
+      loadError = String(outcome.__error?.message ?? outcome.__error)
         .split("\n")[0]
         .slice(0, 160);
+    } else {
+      probe = outcome;
     }
+
     const problems = judgeStory(entry, { ...(probe ?? {}), loadError, pageErrors });
     if (problems.length > 0) failures.push({ id: entry.id, title: entry.title, problems });
-    await page.close();
+    // A hung page can hang its own close, too — never let cleanup stall the queue.
+    await withDeadline(
+      Promise.resolve(page.close()).catch(() => {}),
+      5000,
+    );
     if (++visited % 100 === 0) log(`  …${visited}/${entries.length} stories`);
   }
 
@@ -153,7 +204,10 @@ export async function crawlStories({
       while (queue.length > 0) await visit(queue.shift());
     }),
   );
-  await context.close();
+  await withDeadline(
+    Promise.resolve(context.close()).catch(() => {}),
+    10000,
+  );
   failures.sort((a, b) => String(a.id).localeCompare(String(b.id)));
   return { visited, failures };
 }

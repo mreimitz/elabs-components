@@ -1,11 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  HUNG,
   crawlStories,
   isChartStory,
   judgeStory,
   storiesFromIndex,
   storyUrl,
+  withDeadline,
 } from "./lib/story-crawl.mjs";
 
 const chart = { id: "charts-barchart--default", title: "Charts/BarChart" };
@@ -136,4 +138,62 @@ test("crawlStories visits every entry and reports only the broken ones", async (
   assert.equal(failures.length, 1);
   assert.equal(failures[0].id, "charts-barchart--default");
   assert.match(failures[0].problems[0], /measured 0×0 px/);
+});
+
+test("a deadline turns a promise that never settles into a value, never a reject", async () => {
+  assert.equal(await withDeadline(new Promise(() => {}), 10), HUNG);
+  assert.equal(await withDeadline(Promise.resolve("probe"), 1000), "probe");
+  const { __error } = await withDeadline(Promise.reject(new Error("boom")), 1000);
+  assert.equal(__error.message, "boom");
+});
+
+test("a story that never settles FAILS the crawl instead of hanging it", async () => {
+  // The first full run stopped at 1900/1958 and sat there: `page.evaluate` has
+  // no timeout, so one story pegging the renderer blocked its worker for ever.
+  const entries = storiesFromIndex({
+    entries: {
+      "a--hangs": { id: "a--hangs", type: "story", title: "A" },
+      "b--fine": { id: "b--fine", type: "story", title: "B" },
+    },
+  });
+  let closed = 0;
+  const context = {
+    async newPage() {
+      let id = null;
+      return {
+        on() {},
+        async goto(url) {
+          id = new URL(url).searchParams.get("id");
+        },
+        async waitForFunction() {},
+        async waitForTimeout() {},
+        async evaluate() {
+          if (id === "a--hangs") return new Promise(() => {});
+          return drawn;
+        },
+        async close() {
+          closed += 1;
+        },
+      };
+    },
+    async close() {},
+  };
+
+  const { visited, failures } = await crawlStories({
+    browser: {
+      async newContext() {
+        return context;
+      },
+    },
+    base: "http://localhost:6006",
+    entries,
+    concurrency: 2,
+    settleMs: 0,
+    storyTimeoutMs: 30,
+  });
+  assert.equal(visited, 2);
+  assert.equal(closed, 2); // the hung page is still closed — the queue keeps moving
+  assert.equal(failures.length, 1);
+  assert.equal(failures[0].id, "a--hangs");
+  assert.match(failures[0].problems[0], /never settled within 30ms/);
 });
