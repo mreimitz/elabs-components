@@ -32,6 +32,7 @@ import {
   flat,
   matchPlaybooks,
   matchTemplates,
+  matchCliVerbs,
 } from "../lib/core.mjs";
 import { writeContext, checkContext } from "../lib/context.mjs";
 import { resolveAllProps } from "../lib/docgen.mjs";
@@ -317,6 +318,10 @@ function cmdSearch() {
   // object-detail-hub are patterns/anatomies, not scaffoldable archetypes), so
   // matchPlaybooks() alone leaves them unreachable even by their own exact name.
   const templates = matchTemplates(manifest, q);
+  // CLI verbs (RM-086's `dashboard-spec`, …): real standalone tooling with no
+  // component/registry/playbook shape, so it needs its own arm (validator FAIL
+  // #1, RM-088 follow-up 1 — `search dashboard` must surface `dashboard-spec`).
+  const verbs = matchCliVerbs(manifest, q);
   if (json)
     return out({
       components: rows,
@@ -324,6 +329,7 @@ function cmdSearch() {
       registry: reg,
       playbooks: books,
       templates,
+      cliVerbs: verbs,
     });
   console.log(`Components/hooks matching "${q}":`);
   for (const r of rows.slice(0, 30)) console.log(`  ${r.name}  (${r.pkg} · ${r.kind})`);
@@ -348,6 +354,13 @@ function cmdSearch() {
     for (const t of templates) {
       console.log(`  ${t.name}  — ${firstSentence(t.description)}`);
       console.log(`    ${t.file}`);
+    }
+  }
+  if (verbs.length) {
+    console.log(`\nCLI commands matching "${q}":`);
+    for (const v of verbs) {
+      console.log(`  ${v.usage}`);
+      console.log(`    ${v.does}`);
     }
   }
 }

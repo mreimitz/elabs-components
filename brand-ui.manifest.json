@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T02:07:02.223Z",
+  "generatedAt": "2026-09-17T02:54:13.947Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -884,6 +884,32 @@
       ],
       "file": "docs/playbooks/settings.md",
       "template": "templates/settings.tsx"
+    }
+  ],
+  "cliVerbs": [
+    {
+      "group": "dashboard-spec",
+      "verb": "schema",
+      "usage": "brand-ui dashboard-spec schema",
+      "does": "Prints the DashboardSpec v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-charts/dashboard/schema.json`)."
+    },
+    {
+      "group": "dashboard-spec",
+      "verb": "validate",
+      "usage": "brand-ui dashboard-spec validate <file> [--json]",
+      "does": "Runs `validateDashboardSpec`: one `path code message` line per problem (shape, duplicate ids, dangling refs, overlaps, conditions); exit 1 when invalid."
+    },
+    {
+      "group": "dashboard-spec",
+      "verb": "kinds",
+      "usage": "brand-ui dashboard-spec kinds [--json]",
+      "does": "Lists the nine built-in tile kinds with default and minimum sizes and capabilities."
+    },
+    {
+      "group": "dashboard-spec",
+      "verb": "layout",
+      "usage": "brand-ui dashboard-spec layout <file> [--strategy=by-kind|reading-order]",
+      "does": "Places every tile that has no `layout` with `autoLayout` (existing layouts kept) and prints the spec."
     }
   ],
   "agentOutput": {
