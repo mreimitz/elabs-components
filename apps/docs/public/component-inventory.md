@@ -1303,24 +1303,29 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DashboardInteractionsDialog | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardInteractionsEditor | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardMarquee | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardPresentation | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardPropertiesPanel | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardProvider | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardSelectionBar | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardSheet | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardThemeScope | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTile | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileContextMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileHeader | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardTileMenu | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DashboardToolbar | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DashboardWorkbook | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_DASHBOARD_INTERACTIONS_EDITOR_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_DASHBOARD_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_DASHBOARD_PANEL_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_DASHBOARD_PRESENTATION_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_FILTER_TILE_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_COLUMNS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_GAP | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_GRID_ROWS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_ROW_HEIGHT | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DEFAULT_SELECTION_BAR_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| DEFAULT_WORKBOOK_NAV_LABELS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | EMPTY_SELECTION | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | EXPORT_SHEET_HEIGHT | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | EXPORT_SHEET_SCALE | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1351,6 +1356,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useTile | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useTileMove | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useVariable | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useWorkbook | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| WorkbookNav | component |  | `@elabs-ai/components-charts/dashboard` |  |
 
 ## @elabs-ai/components-marketing
 
