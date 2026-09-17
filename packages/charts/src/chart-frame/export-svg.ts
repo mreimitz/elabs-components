@@ -335,14 +335,26 @@ export interface ComposeSvgPart {
 /** Height (px) reserved for the title row a composed export prepends when `title` is set. */
 const COMPOSE_TITLE_ROW_HEIGHT = 40;
 
+/**
+ * Accessible name used when `options.title` is not set — a composed export is still a whole
+ * picture a screen reader or an `<img>`/`<object>` embed needs a name for (WCAG 1.1.1), even
+ * with no visible title row.
+ */
+const DEFAULT_COMPOSED_SVG_TITLE = "Exported chart";
+
+const COMPOSE_SVG_TITLE_ID = "composed-svg-title";
+const COMPOSE_SVG_DESC_ID = "composed-svg-desc";
+
 export interface ComposeSvgOptions {
   /** Canvas size the parts' `x`/`y`/`width`/`height` are positioned within. */
   width: number;
   height: number;
   /** Resolved (computed, not `var(…)`) background colour painted behind every part. */
   backgroundColor?: string;
-  /** Sheet/composition title, rendered as a row above every part. */
+  /** Sheet/composition title, rendered as a row above every part AND the root's accessible name. */
   title?: string;
+  /** One or two sentences on what the export shows; rendered as the root `<desc>` when set. */
+  description?: string;
   /** Attribution/source text (RM-019's row, reused), rendered at the bottom. */
   source?: string;
 }
@@ -354,6 +366,13 @@ export interface ComposeSvgOptions {
  * correctly, plus an optional title row above and a source row below (both reuse this
  * module's existing row conventions). Deterministic — no timestamps, no random ids — so two
  * calls with the same parts produce byte-identical output.
+ *
+ * The root itself carries `role="img"` and `aria-labelledby` pointing at a root `<title>` —
+ * `options.title` when set, else `DEFAULT_COMPOSED_SVG_TITLE` — placed as the FIRST child (the
+ * SVG spec's own requirement for a `<title>` to name its element), plus a root `<desc>` +
+ * `aria-describedby` when `options.description` is set. This is the whole-picture accessible
+ * name a screen reader or an `<img>`/`<object>` embed reads, separate from each part's own
+ * per-tile `<title>` below (only reachable by an AT walking the SVG's own tree).
  */
 export function composeSvg(
   parts: readonly ComposeSvgPart[],
@@ -368,6 +387,21 @@ export function composeSvg(
   root.setAttribute("width", String(options.width));
   root.setAttribute("height", String(totalHeight));
   root.setAttribute("viewBox", `0 0 ${options.width} ${totalHeight}`);
+  root.setAttribute("role", "img");
+  root.setAttribute("aria-labelledby", COMPOSE_SVG_TITLE_ID);
+
+  const rootTitle = document.createElementNS(SVG_NS, "title");
+  rootTitle.setAttribute("id", COMPOSE_SVG_TITLE_ID);
+  rootTitle.textContent = options.title || DEFAULT_COMPOSED_SVG_TITLE;
+  root.append(rootTitle);
+
+  if (options.description) {
+    root.setAttribute("aria-describedby", COMPOSE_SVG_DESC_ID);
+    const rootDesc = document.createElementNS(SVG_NS, "desc");
+    rootDesc.setAttribute("id", COMPOSE_SVG_DESC_ID);
+    rootDesc.textContent = options.description;
+    root.append(rootDesc);
+  }
 
   const background = document.createElementNS(SVG_NS, "rect");
   background.setAttribute("x", "0");
