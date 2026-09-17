@@ -280,7 +280,13 @@ export function renderLlmsHub(manifest) {
       "@elabs-ai/components-cli` then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>` " +
       "(the local CLI also has `audit`, which the hosted server cannot run)",
   );
+  lines.push(
+    "- New app in one command: `npx -y @elabs-ai/components-cli create <dir> --template dashboard` " +
+      "(data-app · ai-assistant · flow-workspace · settings · marketing) — a runnable Vite + React app " +
+      "with tokens, Tailwind `@source` lines and `ThemeProvider` wired",
+  );
   lines.push(`- Docs site: ${HOSTED_DOCS_URL} (Storybook — every component, live, in every theme)`);
+  lines.push(`- Discovery: ${HOSTED_DOCS_URL}/.well-known/mcp.json`);
   lines.push("- Manifest: `brand-ui.manifest.json` (machine-readable ground truth)");
   lines.push(
     "- Contributors only: the Storybook dev MCP at `http://localhost:6006/mcp`, available " +

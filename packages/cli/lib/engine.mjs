@@ -514,6 +514,7 @@ export function planScaffold(spec, { root, bundledDir } = {}) {
       ...(r.data.entities ? { entities: r.data.entities } : {}),
       ...(r.data.standalone !== undefined ? { standalone: r.data.standalone } : {}),
       ...(r.data.release ? { release: r.data.release } : {}),
+      ...(r.data.packageName ? { packageName: r.data.packageName } : {}),
     },
     template: {
       name: archetype,
@@ -1174,7 +1175,9 @@ function buildPackageJson(spec, install, { lucide, tooling, cliRange }) {
   return (
     JSON.stringify(
       {
-        name: slug(spec.title),
+        // `brand-ui create <dir>` names the package after the directory; the
+        // interview path keeps deriving it from the title.
+        name: spec.packageName || slug(spec.title),
         private: true,
         type: "module",
         scripts: {

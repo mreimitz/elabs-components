@@ -1,0 +1,25 @@
+{
+  "$comment": "Five screens every app has. Each prompt is what a developer would type; the harness adds a per-library context pack, never a hint about which components to use.",
+  "tasks": [
+    {
+      "id": "dashboard",
+      "prompt": "Build an overview dashboard page for a SaaS analytics product: a sidebar with four nav entries (Overview, Analytics, Users, Settings), four KPI tiles (monthly revenue, active users, average session, open issues — each with a delta vs. the prior period), a bar chart of monthly revenue for the last six months, and a line chart of daily sessions for the last two weeks. Light theme, dark theme must also work. Export a default React component named App."
+    },
+    {
+      "id": "data-app",
+      "prompt": "Build a customer list page: a search input, a status facet filter (active, trial, churned), a sortable table of 25 customers (name, plan, MRR, status as a badge, last seen date), pagination, an empty state when the filter matches nothing, and a row action menu (View, Edit, Archive). Export a default React component named App."
+    },
+    {
+      "id": "ai-assistant",
+      "prompt": "Build a chat assistant screen: a conversation transcript with user and assistant turns, one assistant turn that shows a collapsed reasoning section and a tool call (name, input, JSON output, status complete), a sources list with three citations, and a prompt composer at the bottom with a submit button that is disabled while empty and a stop button while streaming. Export a default React component named App."
+    },
+    {
+      "id": "settings",
+      "prompt": "Build a settings page with a left section nav (Profile, Notifications, Security, Billing) and the Profile form: display name, email, avatar upload, timezone select, a notifications switch group, a destructive 'Delete account' action that asks for confirmation before running, and a save bar that appears when the form is dirty. Export a default React component named App."
+    },
+    {
+      "id": "marketing",
+      "prompt": "Build a product landing page: a hero with headline, subheadline and two CTAs, a logo strip of six customers, a three-column feature grid with icons, a stats band with four numbers, a pricing section with three tiers, and a final CTA section. Export a default React component named App."
+    }
+  ]
+}

@@ -20,7 +20,8 @@
  *   brand-ui codemod <map.json>     Plan AST codemods (generate/dry-run; read-only)
  */
 import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, basename } from "node:path";
+import { spawnSync } from "node:child_process";
 import {
   findRepoRoot,
   generateManifest,
@@ -39,6 +40,7 @@ import { resolveAllProps } from "../lib/docgen.mjs";
 import { scanText } from "../lib/audit.mjs";
 import { matchChartFor, renderChartForText } from "../lib/chart-for.mjs";
 import {
+  ARCHETYPES,
   planScaffold,
   emitScaffold,
   scanRepo,
@@ -852,6 +854,93 @@ function cmdScaffold() {
 }
 
 /**
+ * `brand-ui create <dir> [--template <archetype>] [--theme light|dark] [--title "…"]`
+ *
+ * The zero-friction start (2026-09-17 review): one command from nothing to a
+ * runnable Vite + React app on a template screen, with tokens, Tailwind
+ * `@source` lines, `ThemeProvider` and the agent context files wired — the
+ * same emitter `scaffold` uses, fed a minimal spec instead of an interview.
+ * Nothing is installed; the next steps are printed (and `--install` runs them).
+ */
+function cmdCreate() {
+  const templateFlag = flagValue("--template", "--archetype");
+  const dir = args.find(
+    (a) => a !== templateFlag && a !== flagValue("--theme") && a !== flagValue("--title"),
+  );
+  if (!dir) {
+    console.error(
+      `usage: brand-ui create <dir> [--template ${ARCHETYPES.join("|")}] [--theme light|dark] [--title "<name>"] [--force] [--install]`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+  const archetype = templateFlag || "dashboard";
+  if (!ARCHETYPES.includes(archetype)) {
+    console.error(
+      `create: --template must be one of ${ARCHETYPES.join(", ")} (got "${archetype}")`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+  const base = basename(resolve(dir));
+  const title =
+    flagValue("--title") ||
+    base.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) ||
+    archetype;
+  const spec = {
+    archetype,
+    theme: flagValue("--theme") || "light",
+    title,
+    packageName:
+      base
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "app",
+    standalone: true,
+    intent: { purpose: `${title} — started from the brand-ui ${archetype} template.` },
+  };
+  const r = emitScaffold(spec, { root, target: dir, force: flags.has("--force") });
+  if (r.status === "error") return engineEmit(r, [`create: ${r.error}`]);
+  const lines = [
+    `brand-ui create — ${r.status}`,
+    `  template: ${archetype} · theme: ${spec.theme} · title: ${title}`,
+    `  target: ${r.target}`,
+    ...r.written.map((f) => `  wrote: ${f}`),
+    ...r.skipped.map(
+      (f) =>
+        `  skipped (exists): ${f}${r.missingCritical?.includes(f) ? "  ← app incomplete (use --force)" : ""}`,
+    ),
+  ];
+  if (flags.has("--install")) {
+    const pm =
+      existsSync(join(r.target, "pnpm-lock.yaml")) ||
+      !process.env.npm_config_user_agent?.includes("npm")
+        ? "pnpm"
+        : "npm";
+    lines.push(`  installing with ${pm}…`);
+    const res = spawnSync(pm, ["install"], {
+      cwd: r.target,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
+    if (res.status !== 0) {
+      lines.push(
+        `  install failed (exit ${res.status}) — run it yourself: cd ${dir} && ${pm} install`,
+      );
+      process.exitCode = 1;
+    }
+  }
+  lines.push(
+    "",
+    "  Next:",
+    `    cd ${dir}${flags.has("--install") ? "" : " && pnpm install"} && pnpm dev`,
+    "  Then tell your agent: `brand-ui info` (or the hosted MCP) before touching the UI —",
+    "  the app ships a CLAUDE.md / AGENTS.md that already say so.",
+  );
+  return engineEmit(r, lines);
+}
+
+/**
  * Write the rendered migration markdown into `--out <dir>`. This is the ONLY
  * place the brownfield path touches the filesystem, and it only ever creates the
  * three files `renderMigrationDocs` produces — it never reads, moves or rewrites
@@ -971,6 +1060,7 @@ const commands = {
   "dashboard-spec": cmdDashboardSpec,
   audit: cmdAudit,
   scaffold: cmdScaffold,
+  create: cmdCreate,
   scan: cmdScan,
   map: cmdMap,
   codemod: cmdCodemod,
@@ -1001,6 +1091,10 @@ const GENERAL_HELP = `brand-ui <command>
                          slop (the "blocks done" gate for generated output)
                          [--register=product|brand] overrides the active taste profile
 
+  create <dir>           New runnable app from a template, no interview:
+      [--template <a>]   dashboard (default) | data-app | ai-assistant | flow-workspace
+      [--theme light|dark] | settings | marketing — then: cd <dir> && pnpm install && pnpm dev
+      [--title "…"] [--force] [--install]
   scaffold <app-spec.md> Plan a born-compliant app from an app-spec (greenfield)
       [--write <dir>]    …and EMIT a RUNNABLE app: index.html, src/{App,main}.tsx,
       [--dry-run]        src/styles.css, vite.config.ts, tsconfig.json, app-spec.md,
@@ -1046,6 +1140,9 @@ const SUBCOMMAND_HELP = {
     "usage: brand-ui dashboard-spec <schema|validate <file>|kinds|layout <file> [--strategy=by-kind|reading-order]> [--json]\n  Agent tooling for DashboardSpec v1 — see skills/brand-ui/reference/sheet-for.md",
   audit:
     "usage: brand-ui audit <path> [--json] [--strict] [--register=product|brand]\n  Static token/style + content & visual anti-slop lint",
+  create:
+    'usage: brand-ui create <dir> [--template dashboard|data-app|ai-assistant|flow-workspace|settings|marketing] [--theme light|dark] [--title "<name>"] [--force] [--install]\n' +
+    "  New runnable Vite + React app on a brand-ui template — tokens, Tailwind @source lines, ThemeProvider and agent context wired",
   scaffold:
     "usage: brand-ui scaffold <app-spec.md> [--write <dir>] [--dry-run] [--force]\n" +
     "  Plan / emit a born-compliant app from an app-spec\n" +

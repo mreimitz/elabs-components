@@ -89,6 +89,7 @@ const ROUTINE = [
   "  3. docs <Component>           — real props, variants, anti-patterns, import line, story link",
   "  4. build                      — semantic tokens only; never hardcode a colour",
   "  5. audit <path>               — locally: `npx -y @elabs-ai/components-cli audit <path>`",
+  "  new app: `npx -y @elabs-ai/components-cli create <dir> --template dashboard` (runnable Vite app, tokens + ThemeProvider wired)",
 ];
 
 /** The tool catalogue advertised over `tools/list`. */

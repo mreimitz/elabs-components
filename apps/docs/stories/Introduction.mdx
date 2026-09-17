@@ -1,4 +1,6 @@
-import { Meta } from "@storybook/addon-docs/blocks";
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as DashboardTemplate from "../../../packages/charts/src/templates-dashboard.stories";
+import * as AiAssistantTemplate from "../../../packages/ai/src/templates-ai-assistant.stories";
 
 <Meta title="Docs/Introduction" />
 
@@ -17,14 +19,37 @@ It is also built to be **read by coding agents**: a CLI, a generated manifest an
 a hosted MCP server expose the real props, intent and tokens, so an assistant
 extends the system from ground truth instead of guessing.
 
-- **Start here:** [Getting Started](?path=/docs/docs-getting-started--docs) —
-  install, wire Tailwind + tokens, or scaffold an app with an agent.
-- **For agents, nothing to install:** `claude mcp add --transport http brand-ui https://elabs-ai.com/mcp`
-  — see [brand-ui MCP Server](?path=/docs/docs-brand-ui-mcp-server--docs).
-- **Which component?** [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).
-- **See it whole:** the [Dashboard](?path=/story/patterns-templates-dashboard--default),
-  [AI Assistant](?path=/story/patterns-templates-ai-assistant--default) and
-  [Data App](?path=/story/patterns-templates-data-app--default) templates.
+## Four ways in
+
+- **Build an app now:** `npx -y @elabs-ai/components-cli create my-app --template dashboard`
+  — a runnable Vite + React app with tokens, Tailwind and a template screen wired
+  (`data-app`, `ai-assistant`, `flow-workspace`, `settings`, `marketing` too).
+- **Add it to an app you have:** [Getting Started](?path=/docs/docs-getting-started--docs) —
+  `pnpm add`, two lines of CSS, one provider.
+- **Point your coding agent at it, nothing to install:**
+  `claude mcp add --transport http brand-ui https://elabs-ai.com/mcp` — see
+  [brand-ui MCP Server](?path=/docs/docs-brand-ui-mcp-server--docs). Every component
+  page below carries the same intent block the agent reads.
+- **Choose the right component:** [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).
+
+## See it whole
+
+Every template below is a real, full-screen story — switch **Theme** and **Mode**
+in the toolbar and it re-renders; open it in its own tab with the corner icon.
+
+<Canvas of={DashboardTemplate.Default} story={{ inline: false, height: "560px" }} />
+
+<Canvas of={AiAssistantTemplate.Default} story={{ inline: false, height: "560px" }} />
+
+More: the [Data App](?path=/story/patterns-templates-data-app--default),
+[Flow Workspace](?path=/story/patterns-templates-flow-workspace--default),
+[Process Explorer](?path=/story/patterns-templates-process-explorer--default) and
+[Settings](?path=/story/patterns-templates-settings--default) templates, and the
+[Dashboard Sheet](?path=/story/patterns-templates-dashboard-sheet--default) —
+a drag-and-drop, user-editable grid of chart tiles.
+
+## Source and packages
+
 - **Source:** [github.com/mreimitz/elabs-components](https://github.com/mreimitz/elabs-components)
   · **npm:** [`@elabs-ai` on npm](https://www.npmjs.com/org/elabs-ai) — every package below is public
 - **Full guide:** [README](https://github.com/mreimitz/elabs-components#readme) ·

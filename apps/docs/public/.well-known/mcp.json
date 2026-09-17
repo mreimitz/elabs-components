@@ -1,0 +1,21 @@
+{
+  "name": "brand-ui",
+  "description": "The brand-ui component system for coding agents: real props, intent, tokens, component search and chart selection, answered from the manifest of the latest release.",
+  "homepage": "https://elabs-ai.com",
+  "documentation": "https://elabs-ai.com/llms.txt",
+  "servers": [
+    {
+      "name": "brand-ui",
+      "transport": "streamable-http",
+      "url": "https://elabs-ai.com/mcp",
+      "authentication": "none",
+      "tools": ["info", "search", "docs", "tokens", "chart_for"]
+    },
+    {
+      "name": "brand-ui (local, with audit + your taste profile)",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@elabs-ai/components-cli", "mcp"]
+    }
+  ]
+}

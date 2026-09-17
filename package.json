@@ -37,7 +37,9 @@
     "check:update": "node scripts/check/run.mjs --update-baseline",
     "changeset": "changeset",
     "changeset:version": "changeset version && node scripts/sync-version-extras.mjs && pnpm install --lockfile-only",
-    "release:publish": "turbo run build --filter=./packages/* && changeset publish"
+    "release:publish": "turbo run build --filter=./packages/* && changeset publish",
+    "bench:run": "node scripts/bench/run.mjs",
+    "bench:score": "node scripts/bench/score.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

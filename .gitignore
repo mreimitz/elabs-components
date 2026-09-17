@@ -82,3 +82,7 @@ scripts/.a11y-run.json
 # repo-cleanup audit output (#audit) — generated, machine-specific, never maintained
 # source. The skill writes report/baseline/evidence here on every run.
 .repo-cleanup/
+
+# Benchmark runs (scripts/bench) — model output and throw-away apps; publish a
+# run by copying its scores.md into docs/review/.
+scripts/bench/out/

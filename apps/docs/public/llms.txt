@@ -36,7 +36,9 @@ dark, light (default)
 
 - Hosted MCP (no install): `claude mcp add --transport http brand-ui https://elabs-ai.com/mcp` — Streamable HTTP, tools `info` · `search <q>` · `docs <Component>` · `tokens` · `chart_for`
 - CLI over stdio: `npx -y @elabs-ai/components-cli mcp`, or `pnpm add -D @elabs-ai/components-cli` then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>` (the local CLI also has `audit`, which the hosted server cannot run)
+- New app in one command: `npx -y @elabs-ai/components-cli create <dir> --template dashboard` (data-app · ai-assistant · flow-workspace · settings · marketing) — a runnable Vite + React app with tokens, Tailwind `@source` lines and `ThemeProvider` wired
 - Docs site: https://elabs-ai.com (Storybook — every component, live, in every theme)
+- Discovery: https://elabs-ai.com/.well-known/mcp.json
 - Manifest: `brand-ui.manifest.json` (machine-readable ground truth)
 - Contributors only: the Storybook dev MCP at `http://localhost:6006/mcp`, available while `pnpm storybook` runs in this repo
 - Registry (copy-own): self-hosted registry JSON — `pnpm registry:build`, then `npx shadcn@latest add <your-host>/<item>.json` (or copy from `registry/blocks/<name>/`)

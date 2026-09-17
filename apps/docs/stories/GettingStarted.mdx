@@ -13,6 +13,7 @@ today and what still needs a manual step.
 
 | I want to…                                     | Go to                                                    | Needs                         |
 | ---------------------------------------------- | -------------------------------------------------------- | ----------------------------- |
+| **Start a brand-new app in one command**       | [Path 0](#path-0--one-command-new-app)                   | Node ≥ 20 + pnpm (or npm)     |
 | **Start a brand-new app** with an AI assistant | [Path A](#path-a--start-a-new-app-in-claude-code)        | Claude Code + the plugin      |
 | **Add brand-ui to an app I already have**      | [Path B](#path-b--add-brand-ui-to-an-existing-app)       | npm + a bundler               |
 | **Make my coding agent brand-ui-aware**        | [Path C](#path-c--make-your-coding-agent-brand-ui-aware) | the plugin _or_ the agent kit |
@@ -33,6 +34,23 @@ today and what still needs a manual step.
 | **The plugin**                                                                                                                                                                                                                                                                                       | the AI skills + reviewer subagents + **two MCP servers** for Claude Code / Cowork             | `/plugin marketplace add`                                 |
 | **The agent kit**                                                                                                                                                                                                                                                                                    | sanitized skills + `brand-ui.manifest.json` + `llms.txt` for _any_ harness (Cursor/Copilot/…) | release zip, vendored into your repo                      |
 | **The registry**                                                                                                                                                                                                                                                                                     | copy-own block/template JSON (`shadcn add`)                                                   | **GitHub Pages** — hosted per release (see Path B step 5) |
+
+## Path 0 — One-command new app
+
+No interview, no plugin, nothing to configure: the CLI writes a runnable Vite +
+React app on one of the template screens, with the token stylesheet, the Tailwind
+`@source` lines, `<ThemeProvider>` and a starter `CLAUDE.md`/`AGENTS.md` already
+wired.
+
+```bash
+npx -y @elabs-ai/components-cli create my-app --template dashboard
+cd my-app && pnpm install && pnpm dev
+```
+
+Templates: `dashboard` (default) · `data-app` · `ai-assistant` · `flow-workspace` ·
+`settings` · `marketing`. Flags: `--theme light|dark`, `--title "…"`, `--install`
+(runs the install for you). From here, Path C makes your agent aware of what it
+is working in.
 
 ## Path A — Start a new app in Claude Code
 
