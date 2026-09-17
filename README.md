@@ -21,6 +21,25 @@ It is also built to be **read and edited**. Nothing is hidden behind a clever
 abstraction, every component is plain TypeScript you can open and change, and the whole
 system is legible to coding agents through a CLI, an MCP server and a generated manifest.
 
+## Docs & hosted MCP
+
+- **Docs site:** **[elabs-ai.com](https://elabs-ai.com)** — the Storybook build. Every
+  component, every variant, live, in every theme, with a props table per component.
+- **Hosted MCP (nothing to install):** point any MCP host at
+  `https://elabs-ai.com/mcp` and it can look up real props, variants, intent, tokens and
+  chart choices instead of guessing.
+
+  ```bash
+  claude mcp add --transport http brand-ui https://elabs-ai.com/mcp
+  ```
+
+  Same tools over stdio, offline or in CI: `npx -y @elabs-ai/components-cli mcp`
+  (the local server adds `audit`, which needs your source tree).
+
+- **For agents without MCP:** **[elabs-ai.com/llms.txt](https://elabs-ai.com/llms.txt)** —
+  a generated hub with the package routing map, the rules of the road and per-package
+  spokes at `/llms/<package>.txt`.
+
 ## Scope
 
 brand-ui is a **presentation layer**, not an SDK or a runtime. It renders messages,
@@ -33,9 +52,9 @@ statement: decision **D5** in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ## Highlights
 
-- **Twelve packages, one design language.** App UI, data, AI, flow, maps, charts,
-  editor, viewer, marketing, icons and tokens — all built on the same semantic tokens,
-  the same variant conventions and the same accessibility baseline.
+- **Thirteen packages, one design language.** App UI, data, AI, flow, maps, charts,
+  editor, viewer, terminal, process, marketing, icons and tokens — all built on the same
+  semantic tokens, the same variant conventions and the same accessibility baseline.
 - **Open theming.** A theme is not a member of a list this project controls. Write a
   stylesheet, register it, done — no fork required. The two themes we ship are worked
   examples, not the menu.
@@ -54,7 +73,7 @@ statement: decision **D5** in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ## Packages
 
-All twelve publish to the public npm registry under the `@elabs-ai` scope. Package
+All fourteen publish to the public npm registry under the `@elabs-ai` scope. Package
 names below link to their npm page.
 
 | Package                                                                                          | What it gives you                                                                                                                  |
@@ -69,6 +88,8 @@ names below link to their npm page.
 | [`@elabs-ai/components-charts`](https://www.npmjs.com/package/@elabs-ai/components-charts)       | Metric cards, chart frames with expand/flip/download, and `AutoChart` — the right chart from a serializable spec                   |
 | [`@elabs-ai/components-editor`](https://www.npmjs.com/package/@elabs-ai/components-editor)       | A token-themed Monaco editor: code, diff, multi-file workspace, brand context menu                                                 |
 | [`@elabs-ai/components-viewer`](https://www.npmjs.com/package/@elabs-ai/components-viewer)       | `FileViewer` — render a file your app did not write (upload, signed URL, agent output) through a pluggable adapter registry        |
+| [`@elabs-ai/components-terminal`](https://www.npmjs.com/package/@elabs-ai/components-terminal)   | Terminal surfaces — shell and agent output, and coding-agent CLI look-alikes                                                       |
+| [`@elabs-ai/components-process`](https://www.npmjs.com/package/@elabs-ai/components-process)     | Process mining and event-log analysis — process map, variant explorer, case list, conformance (composes flow, charts and data)     |
 | [`@elabs-ai/components-marketing`](https://www.npmjs.com/package/@elabs-ai/components-marketing) | Hero, feature grid, stats band, CTA, logo strip — for the page in front of the product                                             |
 | [`@elabs-ai/components-cli`](https://www.npmjs.com/package/@elabs-ai/components-cli)             | The `brand-ui` CLI and MCP server: project context, component search, real props, static audit, app scaffolding, migration tooling |
 
@@ -314,7 +335,7 @@ project, credit it in the same change.
 
 Published and public, and still actively developed:
 
-- **Released to npm.** All twelve packages ship to the public registry under the
+- **Released to npm.** All fourteen packages ship to the public registry under the
   `@elabs-ai` scope, versioned in lockstep. Release procedure:
   [`docs/RELEASING.md`](docs/RELEASING.md).
 - **MIT licensed** ([`LICENSE`](LICENSE)). Several dependencies listed in
