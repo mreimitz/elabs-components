@@ -2,5 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "storybook-static",
   "git": { "deploymentEnabled": false },
+  "functions": {
+    "api/mcp.mjs": {
+      "excludeFiles": "**/*.{ts,tsx,mts,cts}"
+    }
+  },
   "rewrites": [{ "source": "/mcp", "destination": "/api/mcp" }]
 }
