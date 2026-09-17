@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act, within } from "@testing-library/react";
 import { ChartFrame, type ChartFrameProps } from "./chart-frame";
 import { Bar } from "../charts/bar";
@@ -768,5 +768,104 @@ describe("ChartFrame chrome (RM-072)", () => {
     expect(screen.queryByLabelText("Expand chart")).not.toBeInTheDocument();
     expect(screen.queryByText("Source: bare")).not.toBeInTheDocument();
     expect(container.querySelector('[data-chrome="bare"]')).not.toBeNull();
+  });
+});
+
+// WCAG 2.1.1 (axe `scrollable-region-focusable`, #432 round 3): `chart-frame-body`'s
+// `overflow-auto` box is only a keyboard tab stop while it genuinely overflows. jsdom's
+// `ResizeObserver` is a no-op stub (vitest.setup.ts), so this test supplies its own
+// capturing mock and drives measurement by hand — mirroring
+// dashboard-sheet.responsive.test.tsx's `FixedWidthResizeObserver`.
+describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
+  const realResizeObserver = globalThis.ResizeObserver;
+  let capturedCallback: ResizeObserverCallback | undefined;
+
+  beforeEach(() => {
+    capturedCallback = undefined;
+    class CapturingResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        capturedCallback = callback;
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    globalThis.ResizeObserver = CapturingResizeObserver as unknown as typeof ResizeObserver;
+  });
+
+  afterEach(() => {
+    globalThis.ResizeObserver = realResizeObserver;
+  });
+
+  function getScrollBody(): HTMLDivElement {
+    const el = document.querySelector('[data-slot="chart-frame-body"] > div');
+    if (!el) throw new Error("chart-frame-body scroll container not found");
+    return el as HTMLDivElement;
+  }
+
+  function mockOverflow(el: HTMLDivElement, overflowing: boolean) {
+    Object.defineProperty(el, "scrollWidth", {
+      configurable: true,
+      value: overflowing ? 800 : 100,
+    });
+    Object.defineProperty(el, "clientWidth", { configurable: true, value: 100 });
+    Object.defineProperty(el, "scrollHeight", {
+      configurable: true,
+      value: overflowing ? 800 : 100,
+    });
+    Object.defineProperty(el, "clientHeight", { configurable: true, value: 100 });
+  }
+
+  it("has no tabIndex/aria-label while not overflowing (byte-identical to today)", () => {
+    render(
+      <ChartFrame title="Orders" chrome="tile" data={sampleData}>
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    const body = getScrollBody();
+    expect(body).not.toHaveAttribute("tabindex");
+    expect(body).not.toHaveAttribute("aria-label");
+    expect(body).not.toHaveAttribute("role");
+  });
+
+  it("gets tabIndex=0, role=group and a name once it measurably overflows", () => {
+    render(
+      <ChartFrame title="Orders" chrome="tile" data={sampleData}>
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    const body = getScrollBody();
+    mockOverflow(body, true);
+    act(() => {
+      capturedCallback?.([], {} as ResizeObserver);
+    });
+    expect(body).toHaveAttribute("tabindex", "0");
+    // ARIA 1.2 forbids `aria-label` on a generic element (axe
+    // `aria-prohibited-attr`) — `role="group"` gives the label a valid host.
+    expect(body).toHaveAttribute("role", "group");
+    expect(body).toHaveAccessibleName("Scrollable chart: Orders");
+  });
+
+  it("toggles the tab stop off again once content no longer overflows", () => {
+    render(
+      <ChartFrame title="Orders" chrome="tile" data={sampleData}>
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    const body = getScrollBody();
+    mockOverflow(body, true);
+    act(() => {
+      capturedCallback?.([], {} as ResizeObserver);
+    });
+    expect(body).toHaveAttribute("tabindex", "0");
+    expect(body).toHaveAttribute("role", "group");
+
+    mockOverflow(body, false);
+    act(() => {
+      capturedCallback?.([], {} as ResizeObserver);
+    });
+    expect(body).not.toHaveAttribute("tabindex");
+    expect(body).not.toHaveAttribute("aria-label");
+    expect(body).not.toHaveAttribute("role");
   });
 });

@@ -65,5 +65,23 @@ export const Default: Story = {
     await expect(overlaps).toBe(false);
     await expect(dockRect.left).toBeGreaterThanOrEqual(sidebarRect.right);
     await expect(Math.abs(canvasRect.left - dockRect.right)).toBeLessThanOrEqual(1);
+
+    // #432 round 3 (wave-4-review-3.md §4): the Assets dock stays open (never
+    // silence the underlying gap by closing it here) and the sheet's canvas is
+    // now genuinely narrower, which can make "Orders by month" overflow its
+    // `chart-frame-body` box intermittently. That box is now overflow-aware
+    // (ResizeObserver-driven `tabIndex`) — wait for its measurement to settle
+    // so Storybook's a11y addon runs its post-play axe check against final
+    // layout, never a mid-measurement frame.
+    const chartBodies = Array.from(
+      canvasElement.querySelectorAll('[data-slot="chart-frame-body"] > div'),
+    ) as HTMLElement[];
+    await waitFor(() => {
+      for (const body of chartBodies) {
+        const overflowing =
+          body.scrollWidth > body.clientWidth || body.scrollHeight > body.clientHeight;
+        expect(body.tabIndex === 0).toBe(overflowing);
+      }
+    });
   },
 };

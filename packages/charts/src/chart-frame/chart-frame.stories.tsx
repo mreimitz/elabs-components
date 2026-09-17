@@ -627,3 +627,31 @@ export const InteractionsOff: Story = {
     await expect(datapointSpy).not.toHaveBeenCalled();
   },
 };
+
+/**
+ * A fixed short body with genuinely tall content — the scrollable region ALWAYS
+ * overflows, so this deterministically (never intermittently) exercises the
+ * overflow-aware `tabIndex`/`role="group"`/`aria-label` fix (#432 round 3), and
+ * Storybook's own axe check (`a11y: { test: "error" }`) runs against a body that
+ * is guaranteed to be in the labelled/focusable state — proving `role="group"`
+ * (not `aria-label` on a bare `div`) satisfies axe's `aria-prohibited-attr` rule.
+ */
+export const OverflowingBody: Story = {
+  render: () => (
+    <div className="w-[320px]">
+      <ChartFrame title="Tall content" chrome="tile" height={80}>
+        <div style={{ height: 400 }}>Tall content that always overflows its 80px box.</div>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const body = canvasElement.querySelector<HTMLElement>('[data-slot="chart-frame-body"] > div');
+    if (!body) throw new Error("chart-frame-body scroll container not found");
+    await waitFor(() => {
+      expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);
+      expect(body).toHaveAttribute("tabindex", "0");
+    });
+    expect(body).toHaveAttribute("role", "group");
+    expect(body).toHaveAccessibleName("Scrollable chart: Tall content");
+  },
+};
