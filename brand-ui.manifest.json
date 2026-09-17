@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T07:44:49.503Z",
+  "generatedAt": "2026-09-17T08:28:21.274Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23405,6 +23405,10 @@
             {
               "name": "WorkbookNavProps",
               "module": "packages/charts/src/dashboard/workbook/workbook-nav.tsx"
+            },
+            {
+              "name": "WorkbookProgrammaticSwitch",
+              "module": "packages/charts/src/dashboard/workbook/use-workbook.ts"
             },
             {
               "name": "WorkbookSpecValidation",

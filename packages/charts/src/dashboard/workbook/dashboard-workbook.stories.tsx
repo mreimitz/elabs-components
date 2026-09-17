@@ -160,6 +160,13 @@ export const Workbook: Story = {
       await expect(canvas.getByRole("option", { name: "EMEA, selected" })).toBeInTheDocument();
     });
     await expect(canvas.queryByRole("option", { name: "APAC, selected" })).toBeNull();
+
+    // #429: the drill is a PROGRAMMATIC switch — focus moves to the new tab and the nav's own
+    // live region announces it, quoted exactly.
+    const detailTab = canvas.getByRole("tab", { name: "Detail" });
+    await expect(document.activeElement).toBe(detailTab);
+    const status = canvasElement.querySelector('[data-slot="workbook-nav-status"]');
+    await expect(status?.textContent).toBe("Showing sheet Detail.");
   },
 };
 
@@ -273,6 +280,7 @@ function WorkbookHarness({
         sheets={wb.visibleSheets}
         activeSheetId={wb.activeSheetId}
         onActiveSheetChange={wb.setActiveSheetId}
+        switchSignal={wb.programmaticSwitch}
       />
       <div className="min-h-0 flex-1">
         {wb.visitedSheetIds.map((sheetId) => {
@@ -336,6 +344,11 @@ export const BookmarkAndEditPersistence: Story = {
     await expect(canvas.getByTestId("probe-layout-layout-probe")).toHaveTextContent("x:0,y:2");
     await expect(canvas.getByTestId("probe-dirty-layout-probe")).toHaveTextContent("dirty:true");
 
+    // #429: the two tab clicks just above are DIRECT user interaction (never routed through
+    // `onNavigate`/`applyWorkbookBookmark`) — the nav's live region must still be empty, quoted.
+    const status = canvasElement.querySelector('[data-slot="workbook-nav-status"]');
+    await expect(status?.textContent).toBe("");
+
     // --- F2: a sheetId-bearing bookmark switches sheets, then applies -----------------------
     expect(window.__applyWorkbookBookmark).toBeTypeOf("function");
     window.__applyWorkbookBookmark!({
@@ -352,5 +365,11 @@ export const BookmarkAndEditPersistence: Story = {
       expect(canvas.getByRole("option", { name: "EMEA, selected" })).toBeInTheDocument(),
     );
     await expect(canvas.queryByRole("option", { name: "APAC, selected" })).toBeNull();
+
+    // #429: this switch WAS programmatic (a bookmark's own `sheetId`) — focus moves to the new
+    // tab and the announcement is quoted exactly.
+    const bookmarksTab = canvas.getByRole("tab", { name: "Bookmarks" });
+    await expect(document.activeElement).toBe(bookmarksTab);
+    await expect(status?.textContent).toBe("Showing sheet Bookmarks.");
   },
 };
