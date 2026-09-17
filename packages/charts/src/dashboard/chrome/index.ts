@@ -1,3 +1,4 @@
+export * from "./dashboard-presentation";
 export * from "./dashboard-selection-bar";
 
 // Toolbar — RM-079
