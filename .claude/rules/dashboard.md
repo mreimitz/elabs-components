@@ -72,6 +72,23 @@ region from a tile or a host. dnd-kit's own announcements are silenced
 and localized. Every string routes through `t()` (`editMessages(t)`) — no literal English in
 `edit/`.
 
+## Presentation, conditions, theme override, workbook (RM-087)
+
+- **`DashboardPresentation`** is the kiosk wrapper for an audience view — never fetches or
+  routes itself (D5): `onRefresh`/`onExit` are host callbacks. Real OS fullscreen is requested
+  only from a user gesture (its own "Present" button), never on mount. Auto-advance
+  (`cycleMs`) is pausable (WCAG 2.2.2: hover or focus inside the surface stops it) and Escape
+  is never the only way out.
+- **`showCondition`** (sheet) and **`visibleWhen`** (tile) both evaluate through the one
+  `visibleWhen` expression grammar (`core/expression.ts`) — no second condition syntax.
+- **`DashboardThemeScope`** scopes `DashboardSpec.theme` via a nested `ThemeProvider` whose
+  `attributeTarget` is its own root, never the page's provider — a sheet's theme never leaks
+  onto the host app, and a lone `overrides` map falls back to the page's own active theme
+  rather than silently reverting to `light`.
+- **`DashboardWorkbook`** is the one multi-sheet container — one `useWorkbook` store per
+  sheet, kept alive for the workbook's lifetime; only the active sheet's `DashboardSheet` is
+  visible, others stay mounted `hidden` so edits survive switching away and back.
+
 ## Interaction routing (`fromTileId`)
 
 `resolveInteractions(spec)` (`core/interactions.ts`, whose JSDoc is the binding text)

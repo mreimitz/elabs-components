@@ -307,6 +307,27 @@ reads.
 - Giving the sheet's host element no definite height and being surprised it scrolls with
   square cells instead of filling the viewport — see "Wiring diagram" above.
 
+### Presentation mode, conditions, theme override, workbook (RM-087)
+
+Four more `@elabs-ai/components-charts/dashboard` surfaces sit alongside the editing
+experience above — none of them change the editing wiring diagram, they compose around it:
+
+- **Presentation mode:** `DashboardPresentation` is a kiosk wrapper for an audience view —
+  full-bleed, no toolbar/asset/properties chrome. Pass one already-composed sheet (typically
+  `DashboardProvider` wrapping `DashboardSheet chrome={false}`, no `DashboardSelectionBar`) as
+  `children`, or several as `sheets` to auto-advance/step through with `cycleMs`. Real OS
+  fullscreen is requested only from its "Present" button (a user gesture), never on mount.
+- **Conditional visibility:** a sheet's `showCondition` and a tile's `visibleWhen` (both the
+  `visibleWhen` expression grammar, `core/expression.ts`) hide a sheet or tile without deleting
+  it from the spec — evaluated wherever the spec is rendered (`DashboardSheet`, `DashboardWorkbook`).
+- **Theme override:** `DashboardThemeScope` applies a sheet's own `DashboardSpec.theme` to its
+  subtree through a nested, scoped `ThemeProvider` (not the page's own provider) — wrap a
+  sheet's rendered content in it when that sheet's `theme` should differ from the host app's
+  active theme. No `theme` set: children render unwrapped, inheriting the page theme.
+- **Workbook (multi-sheet):** `DashboardWorkbook` hosts several sheets with tab navigation
+  (`WorkbookNav`) and `useWorkbook`, keeping one store per sheet alive for the workbook's
+  lifetime so edits on an inactive sheet survive switching away and back.
+
 ## References
 
 `packages/charts/src/dashboard/README.md` (full API, state-persistence seams, drivers, BI-host
