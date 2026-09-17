@@ -11,8 +11,13 @@
  * `excluded` rows carry running TEXT, so they de-emphasise with `text-muted-foreground`
  * (AA against every theme) plus the dashed-frame shape channel, never the shared
  * chart-mark ghost opacity (which drops text below the 4.5:1 contrast floor); `selected`
- * rows get the tinted background. A row click toggles that row's value into the field's
- * selection (`emit.select(field, [value], { toggle: true })`).
+ * rows get the tinted background PLUS a solid `--chart-foreground` outline (the same
+ * compound-outline rule `.claude/rules/dashboard.md` sets for a tile's selected state,
+ * mirroring the built-in `filter` tile's own selected glyph+outline) — never colour
+ * alone (#429). `rowActionLabel` appends ", selected" to the row's hidden activation
+ * button's accessible name so the state reaches assistive tech too, the same suffix
+ * pattern `filter`'s own `valueState` label uses. A row click toggles that row's value
+ * into the field's selection (`emit.select(field, [value], { toggle: true })`).
  *
  * Depends on installed @elabs-ai/components-data + @elabs-ai/components-charts (its
  * /dashboard subpath) + @elabs-ai/components-ui.
@@ -79,8 +84,24 @@ function TableTile({
     // (.claude/rules/dashboard.md, matching the built-in `filter` tile).
     if (state === "excluded")
       return "border border-dashed border-chart-foreground text-muted-foreground";
-    if (state === "selected") return "bg-accent/10";
+    // A solid (never dashed — that shape is `excluded`'s) `--chart-foreground` outline
+    // is the required second channel alongside the tint (#429; dashboard.md's compound
+    // outline rule).
+    if (state === "selected") return "border border-chart-foreground bg-accent/10";
     return "";
+  };
+
+  // First DATA column's raw value — the same "first visible cell" a row's hidden
+  // activation button names itself after by default (`DataTable`'s own
+  // `firstDataCellValue`); recomputed here only so the "selected" suffix below can be
+  // appended to it (#429).
+  const primaryColumnId = content?.columns[0]?.id;
+  const rowActionLabel = (row: { original: Row }): string => {
+    const primary = primaryColumnId ? row.original[primaryColumnId] : undefined;
+    const name = typeof primary === "string" || typeof primary === "number" ? String(primary) : "";
+    if (!field) return name;
+    const state = selection.states(field, row.original[field]);
+    return state === "selected" ? `${name}, selected` : name;
   };
 
   const onRowClick: DataTableRowClickHandler<Row> | undefined =
@@ -99,6 +120,7 @@ function TableTile({
         columns={columns}
         onRowClick={onRowClick}
         rowClassName={rowClassName}
+        rowActionLabel={onRowClick ? rowActionLabel : undefined}
         className="size-full"
       />
     </div>

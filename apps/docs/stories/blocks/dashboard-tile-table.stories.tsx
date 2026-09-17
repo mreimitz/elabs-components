@@ -83,5 +83,17 @@ export const Default: Story = {
     );
     // "2 rows de-emphasised (Jan, Mar) once Feb is selected"
     await expect(dimmed.length).toBe(2);
+
+    // #429 P1-3: the selected row (Feb) is never colour-only — a solid `chart-foreground`
+    // outline is the second channel, and the row's hidden activation button's accessible
+    // name carries the state to assistive tech too.
+    const selectedRow = canvasElement.querySelector<HTMLElement>(
+      '[data-slot="dashboard-tile-table"] tr.border-chart-foreground',
+    );
+    await expect(selectedRow).not.toBeNull();
+    const outline = getComputedStyle(selectedRow!).borderColor;
+    await expect(outline).not.toBe(""); // quoted below via the assertion message
+    await expect(getComputedStyle(selectedRow!).borderStyle).not.toBe("none");
+    await expect(canvas.getByRole("button", { name: "Feb, selected" })).toBeInTheDocument();
   },
 };
