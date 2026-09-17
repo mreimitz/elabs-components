@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T15:55:34.229Z",
+  "generatedAt": "2026-09-17T18:23:16.931Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12923,6 +12923,45 @@
             "Treating the console drawer as a log store — it renders what you pass; keep the buffer in the app."
           ]
         }
+      },
+      "stories": {
+        "AgentEvent": "ai-agentevent--docs",
+        "AgentTimeline": "ai-agenttimeline--docs",
+        "ApprovalCard": "ai-approvalcard--docs",
+        "AssetPreview": "ai-assetpreview--docs",
+        "AudioPlayer": "ai-audioplayer--docs",
+        "AudioVisualizer": "ai-audiovisualizer--docs",
+        "Canvas": "ai-canvas--docs",
+        "ChatGreeting": "ai-chatgreeting--docs",
+        "CodeBlock": "ai-codeblock--docs",
+        "Composer": "ai-composer--docs",
+        "ContextPanel": "ai-contextpanel--docs",
+        "DiffView": "ai-diffview--docs",
+        "FileTree": "ai-filetree--docs",
+        "Gallery": "ai-gallery--docs",
+        "GroupedParts": "ai-groupedparts--docs",
+        "MarkdownView": "ai-markdownview--docs",
+        "MessageCompare": "ai-messagecompare--docs",
+        "MessageEdit": "ai-messageedit--docs",
+        "MessageFeedback": "ai-messagefeedback--docs",
+        "MessageForm": "ai-messageform--docs",
+        "MessageTable": "ai-messagetable--docs",
+        "ModelProviderLogo": "ai-modelproviderlogo--docs",
+        "PermissionModeSelect": "ai-permissionmodeselect--docs",
+        "Persona": "ai-persona--docs",
+        "Plan": "ai-plan--docs",
+        "PromptInput": "ai-composer-promptinput--docs",
+        "PromptInputEffort": "ai-composer-promptinputeffort--docs",
+        "PromptInputMode": "ai-composer-promptinputmode--docs",
+        "PromptInputSlash": "ai-composer-promptinputslash--docs",
+        "SelectionToolbar": "ai-selectiontoolbar--docs",
+        "SessionHeader": "ai-sessionheader--docs",
+        "SessionStatusBar": "ai-sessionstatusbar--docs",
+        "Suggestions": "ai-suggestion--docs",
+        "TestResults": "ai-testresults--docs",
+        "ToolResultCard": "ai-toolresultcard--docs",
+        "Toolbar": "layout-toolbar--docs",
+        "TurnStatus": "ai-turnstatus--docs"
       }
     },
     "@elabs-ai/components-charts": {
@@ -22467,6 +22506,44 @@
           "avoidWhen": "several categories matter — use a pie or unit chart"
         }
       },
+      "stories": {
+        "AreaChart": "charts-areachart--docs",
+        "AutoChart": "charts-autochart--docs",
+        "BarChart": "charts-barchart--docs",
+        "BulletChart": "charts-bulletchart--docs",
+        "BumpChart": "charts-bumpchart--docs",
+        "CandlestickChart": "charts-candlestickchart--docs",
+        "CanvasLayer": "charts-canvaslayer--docs",
+        "ChartCard": "charts-chartcard--docs",
+        "ChartFrame": "charts-chartframe--docs",
+        "ChartLegend": "charts-chartlegend--docs",
+        "ChoroplethChart": "charts-choroplethchart--docs",
+        "ComposedChart": "charts-composedchart--docs",
+        "DistributionChart": "charts-distributionchart--docs",
+        "DumbbellChart": "charts-dumbbellchart--docs",
+        "FunnelChart": "charts-funnelchart--docs",
+        "Gantt": "charts-gantt--docs",
+        "Gauge": "charts-gauge--docs",
+        "HaloText": "charts-editorialmarks--docs",
+        "HeatmapChart": "charts-heatmapchart--docs",
+        "Legend": "flow-legend--docs",
+        "LineChart": "charts-linechart--docs",
+        "LiveLineChart": "charts-livelinechart--docs",
+        "MetricCard": "core-metriccard--docs",
+        "MetricGrid": "charts-metricgrid--docs",
+        "NetworkChart": "charts-networkchart--docs",
+        "ParallelCoordinatesChart": "charts-parallelcoordinateschart--docs",
+        "PieChart": "charts-piechart--docs",
+        "RadarChart": "charts-radarchart--docs",
+        "RingChart": "charts-ringchart--docs",
+        "SankeyChart": "charts-sankeychart--docs",
+        "ScatterChart": "charts-scatterchart--docs",
+        "Sparkline": "charts-sparkline--docs",
+        "TreeChart": "charts-treechart--docs",
+        "TreemapChart": "charts-treemapchart--docs",
+        "UnitChart": "charts-unitchart--docs",
+        "WaterfallChart": "charts-waterfallchart--docs"
+      },
       "subpaths": {
         "@elabs-ai/components-charts/dashboard": {
           "components": [
@@ -24399,6 +24476,14 @@
             "Keeping uncontrolled internal state — SearchInput is controlled (value + onChange); reflect filter state into the table."
           ]
         }
+      },
+      "stories": {
+        "ColumnPicker": "data-columnpicker--docs",
+        "DataTable": "data-datatable--docs",
+        "FacetFilter": "data-facetfilter--docs",
+        "FilterBar": "data-filterbar--docs",
+        "FilterChip": "data-filterbar-filterchip--docs",
+        "SearchInput": "data-searchinput--docs"
       }
     },
     "@elabs-ai/components-editor": {
@@ -24593,6 +24678,12 @@
             "Rendering it in a jsdom unit test — it is Monaco; test the surrounding wiring and leave the editor to a browser story."
           ]
         }
+      },
+      "stories": {
+        "CodeEditor": "editor-codeeditor--docs",
+        "CodeWorkspace": "editor-codeworkspace--docs",
+        "DiffEditor": "editor-diffeditor--docs",
+        "MarkdownEditor": "editor-markdowneditor--docs"
       },
       "subpaths": {
         "@elabs-ai/components-editor/markdown": {
@@ -26463,6 +26554,23 @@
             "Stacking several panels in one corner — they occlude each other; give each corner one job."
           ]
         }
+      },
+      "stories": {
+        "FlowButtonEdge": "flow-flowbuttonedge--docs",
+        "FlowEdge": "flow-flowedge--docs",
+        "FlowEdgeTokens": "flow-flowedgetokens--docs",
+        "FlowFloatingEdge": "flow-flowfloatingedge--docs",
+        "FlowGroupNode": "flow-flowgroupnode--docs",
+        "FlowMiniMap": "flow-flowminimap--docs",
+        "FlowNode": "flow-flownode--docs",
+        "FlowPlaceholderNode": "flow-flowplaceholdernode--docs",
+        "FlowSelfLoopEdge": "flow-flowselfloopedge--docs",
+        "FlowSmartEdge": "flow-flowsmartedge--docs",
+        "FlowWeightedEdge": "flow-flowweightededge--docs",
+        "HelperLines": "flow-helperlines--docs",
+        "InspectorPanel": "flow-inspectorpanel--docs",
+        "Legend": "flow-legend--docs",
+        "ZoomControls": "flow-zoomcontrols--docs"
       }
     },
     "@elabs-ai/components-icons": {
@@ -26868,6 +26976,13 @@
             "A raw color on an icon — it inherits currentColor so it adapts per theme."
           ]
         }
+      },
+      "stories": {
+        "AppIcon": "icons-appicon--docs",
+        "BrandLogo": "icons-brandlogo--docs",
+        "DashboardIcon": "icons-gallery--docs",
+        "Icon": "icons-icon--docs",
+        "ServiceLogo": "icons-servicelogo--docs"
       }
     },
     "@elabs-ai/components-maps": {
@@ -27725,6 +27840,15 @@
             "Styling the popup with raw colors — the brand popup overrides are token-driven (maps.css)."
           ]
         }
+      },
+      "stories": {
+        "MapArc": "maps-maparc--docs",
+        "MapCanvas": "maps-mapcanvas--docs",
+        "MapClusterLayer": "maps-mapclusterlayer--docs",
+        "MapControls": "maps-mapcontrols--docs",
+        "MapGeoJSON": "maps-mapgeojson--docs",
+        "MapMarker": "maps-mapmarker--docs",
+        "MapRoute": "maps-maproute--docs"
       }
     },
     "@elabs-ai/components-marketing": {
@@ -28043,6 +28167,14 @@
             "Version/beta eyebrows in the hero — a marketing-surface tell; drop it unless the brief is about the launch."
           ]
         }
+      },
+      "stories": {
+        "CTASection": "marketing-ctasection--docs",
+        "FeatureGrid": "marketing-featuregrid--docs",
+        "Hero": "marketing-hero--docs",
+        "LogoStrip": "marketing-logostrip--docs",
+        "StatsBand": "marketing-statsband--docs",
+        "UseCaseCard": "marketing-usecasecard--docs"
       }
     },
     "@elabs-ai/components-process": {
@@ -30212,6 +30344,24 @@
             "Distinguishing a back-edge or a self-loop by hue — the shape (dash pattern, closed arc) is the cue that survives greyscale."
           ]
         }
+      },
+      "stories": {
+        "AbstractionControls": "process-abstractioncontrols--docs",
+        "CaseTable": "process-casetable--docs",
+        "CaseTimeline": "process-casetimeline--docs",
+        "CompareKpiStrip": "process-processcompare-comparekpistrip--docs",
+        "ConformanceOverlay": "process-conformanceoverlay--docs",
+        "DottedChart": "process-dottedchart--docs",
+        "HappyPathEditor": "process-happypatheditor--docs",
+        "MetricLayerSwitch": "process-metriclayerswitch--docs",
+        "PerformanceSpectrum": "process-performancespectrum--docs",
+        "ProcessCompare": "process-processcompare--docs",
+        "ProcessFilterBar": "process-processfilterbar--docs",
+        "ProcessKpiStrip": "process-processkpistrip--docs",
+        "ProcessMap": "process-processmap--docs",
+        "ProcessReplay": "process-processreplay--docs",
+        "VariantExplorer": "process-variantexplorer--docs",
+        "ViolationList": "process-violationlist--docs"
       },
       "subpaths": {
         "@elabs-ai/components-process/core": {
@@ -32480,6 +32630,24 @@
             "Hand-rolling a second compact-number formatter for `tokens` — it renders through `useLocale().formatNumber`, not a bespoke compacter."
           ]
         }
+      },
+      "stories": {
+        "InteractiveTerminal": "terminal-interactiveterminal--docs",
+        "Terminal": "terminal-terminal--docs",
+        "TerminalBanner": "terminal-terminalbanner--docs",
+        "TerminalComposer": "terminal-terminalcomposer--docs",
+        "TerminalConsole": "terminal-terminalconsole--docs",
+        "TerminalDiffHunk": "terminal-terminaldiffhunk--docs",
+        "TerminalEventLine": "terminal-terminaleventline--docs",
+        "TerminalOverlay": "terminal-terminaloverlay--docs",
+        "TerminalPermission": "terminal-terminalpermission--docs",
+        "TerminalSlashMenu": "terminal-terminalslashmenu--docs",
+        "TerminalStatusBar": "terminal-terminalstatusbar--docs",
+        "TerminalSurface": "terminal-terminalsurface--docs",
+        "TerminalTodoList": "terminal-terminaltodolist--docs",
+        "TerminalToolCall": "terminal-terminaltoolcall--docs",
+        "TerminalTranscriptRow": "terminal-terminaltranscriptrow--docs",
+        "TerminalWorking": "terminal-terminalworking--docs"
       }
     },
     "@elabs-ai/components-tokens": {
@@ -41209,6 +41377,113 @@
           ]
         }
       },
+      "stories": {
+        "Accordion": "disclosure-accordion--docs",
+        "AdvancedGroup": "forms-advancedgroup--docs",
+        "Alert": "states-alert--docs",
+        "AlertDialog": "overlays-alertdialog--docs",
+        "AppSidebar": "layout-appsidebar--docs",
+        "AspectRatio": "display-aspectratio--docs",
+        "AttributionPanel": "core-attributionpanel--docs",
+        "Avatar": "display-avatar--docs",
+        "Badge": "core-badge--docs",
+        "BentoGrid": "layout-bentogrid--docs",
+        "BoundedNumber": "forms-boundednumber--docs",
+        "Breadcrumb": "navigation-breadcrumb--docs",
+        "Button": "core-button--docs",
+        "ButtonGroup": "forms-buttongroup--docs",
+        "Calendar": "forms-calendar--docs",
+        "Card": "core-card--docs",
+        "ChangeReview": "ai-changereview--docs",
+        "Checkbox": "forms-checkbox--docs",
+        "Collapsible": "disclosure-collapsible--docs",
+        "ColorPicker": "forms-colorpicker--docs",
+        "Combobox": "forms-combobox--docs",
+        "Command": "overlays-command--docs",
+        "CommandTrigger": "navigation-commandtrigger--docs",
+        "ConfirmDialog": "overlays-confirmdialog--docs",
+        "ContextMenu": "overlays-contextmenu--docs",
+        "ContextRail": "layout-contextrail--docs",
+        "CopyableValue": "display-copyablevalue--docs",
+        "DatePicker": "forms-datepicker--docs",
+        "DateRangePicker": "forms-daterangepicker--docs",
+        "Descriptions": "layout-descriptions--docs",
+        "Dialog": "overlays-dialog--docs",
+        "Drawer": "overlays-drawer--docs",
+        "DropdownMenu": "overlays-dropdownmenu--docs",
+        "EmptyState": "states-emptystate--docs",
+        "ErrorState": "states-errorstate--docs",
+        "ExpandDialog": "overlays-expanddialog--docs",
+        "FieldRoot": "forms-field--docs",
+        "FieldRow": "forms-fieldrow--docs",
+        "FileUpload": "forms-fileupload--docs",
+        "FilterChip": "data-filterbar-filterchip--docs",
+        "HoverCard": "overlays-hovercard--docs",
+        "IconButton": "core-iconbutton--docs",
+        "Input": "core-input--docs",
+        "InputGroup": "forms-inputgroup--docs",
+        "InputOTP": "forms-inputotp--docs",
+        "Kbd": "display-kbd--docs",
+        "KeyValueEditor": "forms-keyvalueeditor--docs",
+        "KeyboardShortcuts": "disclosure-keyboardshortcuts--docs",
+        "Label": "forms-label--docs",
+        "LinkPreviewCard": "core-linkpreviewcard--docs",
+        "ListEditor": "forms-listeditor--docs",
+        "LoadingState": "states-loadingstate--docs",
+        "LocaleProvider": "foundations-localization--docs",
+        "MatchHighlight": "display-matchhighlight--docs",
+        "MentionInput": "forms-mentioninput--docs",
+        "Menubar": "navigation-menubar--docs",
+        "MetricCard": "core-metriccard--docs",
+        "ModelPicker": "core-modelpicker--docs",
+        "NavNotifications": "navigation-navnotifications--docs",
+        "NavigationMenu": "navigation-navigationmenu--docs",
+        "NumberInput": "forms-numberinput--docs",
+        "Pagination": "navigation-pagination--docs",
+        "Popover": "overlays-popover--docs",
+        "Progress": "display-progress--docs",
+        "RadioGroup": "forms-radiogroup--docs",
+        "Rating": "forms-rating--docs",
+        "ResizablePanelGroup": "layout-resizable--docs",
+        "Reveal": "core-reveal--docs",
+        "RevisionTimeline": "data-revisiontimeline--docs",
+        "SchemaForm": "forms-schemaform--docs",
+        "ScrollArea": "display-scrollarea--docs",
+        "SectionHeader": "layout-sectionheader--docs",
+        "SegmentedField": "forms-segmentedfield--docs",
+        "Select": "forms-select--docs",
+        "Separator": "display-separator--docs",
+        "Sheet": "overlays-sheet--docs",
+        "SideDock": "layout-sidedock--docs",
+        "Skeleton": "states-skeleton--docs",
+        "SkipLink": "navigation-skiplink--docs",
+        "Slider": "forms-slider--docs",
+        "SliderNumber": "forms-slidernumber--docs",
+        "Spinner": "display-spinner--docs",
+        "SplitPanel": "layout-splitpanel--docs",
+        "StatePanel": "states-statepanel--docs",
+        "StatusBadge": "core-statusbadge--docs",
+        "Switch": "forms-switch--docs",
+        "Table": "data-table--docs",
+        "Tabs": "core-tabs--docs",
+        "TagInput": "forms-taginput--docs",
+        "Text": "foundations-typography--docs",
+        "Textarea": "core-textarea--docs",
+        "ThemeSwitcher": "core-themeswitcher--docs",
+        "Timeline": "core-timeline--docs",
+        "Toaster": "feedback-toast--docs",
+        "Toggle": "forms-toggle--docs",
+        "ToggleGroup": "forms-togglegroup--docs",
+        "Toolbar": "layout-toolbar--docs",
+        "Tooltip": "overlays-tooltip--docs",
+        "Transfer": "forms-transfer--docs",
+        "Tree": "navigation-tree--docs",
+        "TreeSelect": "forms-treeselect--docs",
+        "ViewToolbar": "layout-viewtoolbar--docs",
+        "VirtualSelect": "forms-virtualselect--docs",
+        "Wizard": "navigation-wizard--docs",
+        "WorkspacePicker": "core-workspacepicker--docs"
+      },
       "subpaths": {
         "@elabs-ai/components-ui/lib/cn": {
           "components": [],
@@ -41936,6 +42211,9 @@
             "Clearing an error with the `loading` prop — a parent's loading is additive; it can add the not-ready state but never hide a real failure."
           ]
         }
+      },
+      "stories": {
+        "FileViewer": "viewer-fileviewer--docs"
       }
     }
   }

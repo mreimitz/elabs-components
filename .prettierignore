@@ -16,6 +16,9 @@ apps/docs/public/component-inventory.md
 apps/docs/public/brand-ui-context.md
 apps/docs/public/llms.txt
 apps/docs/public/llms/
+# The Storybook Intent block's data file — one page per line so a diff is
+# readable AND the file stays small enough to bundle. Prettier would expand it.
+apps/docs/.storybook/intent.generated.json
 # Review evidence (#288-#307) — the six contact sheets are captured browser output
 # accompanying 166 screenshots. They are artifacts of a review run, not source, and
 # their value is being exactly what was rendered, so Prettier must not rewrite them.

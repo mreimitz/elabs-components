@@ -9,6 +9,7 @@ import { readFileSync, existsSync, readdirSync, writeFileSync, statSync } from "
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectIntent } from "./intent.mjs";
+import { collectStoryIds } from "./story-ids.mjs";
 import { collectAgentOutput } from "./agent-output.mjs";
 import { mergeResolvedProps } from "./docgen.mjs";
 import { DASHBOARD_SPEC_VERB_DOCS } from "./dashboard-spec.mjs";
@@ -1510,6 +1511,12 @@ export function generateManifest(repoRoot, opts = {}) {
     )) {
       intent[comp] = { ...(intent[comp] || {}), ...shapes };
     }
+    // The Storybook DOCS page that documents each exported component
+    // (`{ Button: "core-button--docs" }`), read from the story files' own
+    // `meta.title`. This is the link between the two surfaces that never met:
+    // `brand-ui docs <Name>` can print the live story URL, and Storybook's
+    // Intent block is generated from the same record (2026-09-17 review §4.2.3).
+    const stories = collectStoryIds(repoRoot, bucketed.components);
     packages[name] = {
       path: `packages/${entry}`,
       ...(peerDependencies && Object.keys(peerDependencies).length ? { peerDependencies } : {}),
@@ -1517,6 +1524,7 @@ export function generateManifest(repoRoot, opts = {}) {
       ...(Object.keys(variants).length ? { variants } : {}),
       ...(Object.keys(props).length ? { props } : {}),
       ...(Object.keys(intent).length ? { intent } : {}),
+      ...(Object.keys(stories).length ? { stories } : {}),
       ...(Object.keys(subpaths).length ? { subpaths } : {}),
     };
   }

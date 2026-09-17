@@ -7,7 +7,17 @@ import {
   groupThemeFamilies,
 } from "@elabs-ai/components-tokens";
 import { useEffect, useState, type ReactNode } from "react";
-import { DocsContainer, type DocsContainerProps } from "@storybook/addon-docs/blocks";
+import {
+  Controls,
+  Description,
+  DocsContainer,
+  Primary,
+  Stories,
+  Subtitle,
+  Title,
+  type DocsContainerProps,
+} from "@storybook/addon-docs/blocks";
+import { Intent } from "./intent-block";
 import { themes } from "storybook/theming";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
 import "./preview.css";
@@ -93,6 +103,34 @@ function ThemedDocsContainer(props: DocsContainerProps) {
     return () => observer.disconnect();
   }, []);
   return <DocsContainer {...props} theme={dark ? themes.dark : themes.light} />;
+}
+
+/**
+ * The autodocs page template.
+ *
+ * Storybook's stock page is Title → Subtitle → Description → Primary → Controls
+ * → Stories, which is why a component page could open with an H1 and go straight
+ * to a preview: everything the project knows about WHY the component exists
+ * lives in the manifest, and the manifest was never on the page (2026-09-17
+ * review §1.7). `Intent` slots in directly under the heading, so the first thing
+ * read is what the component is for, what it sits next to, and what not to do
+ * with it.
+ *
+ * `Description` (the component's own TSDoc) is kept AFTER `Intent` rather than
+ * dropped: the two say different things, and 280 of the 349 pages have one.
+ */
+function BrandDocsPage() {
+  return (
+    <>
+      <Title />
+      <Subtitle />
+      <Intent />
+      <Description />
+      <Primary />
+      <Controls />
+      <Stories />
+    </>
+  );
 }
 
 const withDecoration: Decorator = (Story, context) => {
@@ -314,7 +352,7 @@ const preview: Preview = {
     },
   },
   parameters: {
-    docs: { container: ThemedDocsContainer },
+    docs: { container: ThemedDocsContainer, page: BrandDocsPage },
     // #78 AC3 / #316: axe FAILS the build. addon-a11y's default is `"todo"`
     // (= report, never fail) — at that setting the blocking Storybook CI job
     // enforced only the interaction half, and a new component could ship an

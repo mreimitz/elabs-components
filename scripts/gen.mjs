@@ -37,6 +37,7 @@
  *   attributions      package deps, fonts, sources.json → ATTRIBUTION.md + generated .ts
  *   dashboard-spec    charts dashboard/core → cli bundle + charts/schemas JSON Schema (RM-086)
  *   manifest          package source + registry + templates → brand-ui.manifest.json
+ *   intent-json       manifest + story titles → apps/docs/.storybook/intent.generated.json
  *   inventory / llms / context / doc-regions / readmes   manifest → docs
  *   community-themes  themes/ → Storybook generated css/ts
  *   contract-tests    manifest + Default stories → __contract__ tests + apps/docs/contract
@@ -96,6 +97,14 @@ export const STEPS = [
     run: node(CLI, "manifest", "--write"),
     check: node(CLI, "manifest", "--check"),
     outputs: ["brand-ui.manifest.json"],
+  },
+  {
+    // The Storybook Intent block's data file — a small projection of the manifest
+    // (purpose, relationships, anti-patterns, storyId) keyed by `meta.title`.
+    id: "intent-json",
+    run: node("scripts/gen-intent-json.mjs"),
+    check: node("scripts/gen-intent-json.mjs", "--check"),
+    outputs: ["apps/docs/.storybook/intent.generated.json"],
   },
   {
     id: "inventory",
