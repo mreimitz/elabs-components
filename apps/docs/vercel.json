@@ -1,4 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": "storybook-static"
+  "outputDirectory": "storybook-static",
+  "rewrites": [{ "source": "/mcp", "destination": "/api/mcp" }]
 }

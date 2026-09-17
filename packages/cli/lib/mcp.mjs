@@ -31,6 +31,19 @@ import { scanText } from "./audit.mjs";
 import { matchChartFor, renderChartForText } from "./chart-for.mjs";
 
 export const PROTOCOL_VERSION = "2024-11-05";
+
+/**
+ * Protocol revisions this server can speak, newest first. The tool surface is the
+ * same in each; negotiating lets a Streamable-HTTP client (2025-03-26+) connect to
+ * the hosted server without a downgrade warning.
+ */
+export const SUPPORTED_PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", PROTOCOL_VERSION];
+
+/**
+ * Tools that read the caller's own disk. A hosted server cannot see that disk, so
+ * `hosted` mode leaves these out of `tools/list` and refuses them by name.
+ */
+export const LOCAL_ONLY_TOOLS = new Set(["audit"]);
 export const SERVER_INFO = { name: "brand-ui", version: "4.2.0" };
 
 /** The tool catalogue advertised over `tools/list`. */
@@ -116,22 +129,33 @@ const result = (id, value) => ({ jsonrpc: "2.0", id, result: value });
 const error = (id, code, message) => ({ jsonrpc: "2.0", id, error: { code, message } });
 const textContent = (text) => ({ content: [{ type: "text", text }] });
 
+/**
+ * The manifest for a request: an injected one (the hosted server bundles it)
+ * wins, otherwise it is read from the repo root.
+ * @param {{ root?: string|null, manifest?: object|null }} ctx
+ */
+const manifestOf = (ctx) => ctx.manifest ?? (ctx.root ? loadManifest(ctx.root) : null);
+
 // ── tool implementations (reuse the engine; render compact text) ─────────────
 
-function toolInfo(root) {
-  const manifest = root ? loadManifest(root) : null;
+function toolInfo(ctx) {
+  const manifest = manifestOf(ctx);
   if (!manifest)
     return textContent(
       "No manifest — run inside the brand-ui monorepo or install @elabs-ai/components-cli.",
     );
   const pkgs = Object.keys(manifest.packages);
-  const taste = activeTaste(root, manifest);
+  const taste = activeTaste(ctx.root, manifest);
   const lines = [
     `packages (${pkgs.length}): ${pkgs.join(", ")}`,
     `themes (${(manifest.themes || []).length}): ${(manifest.themes || []).join(", ")}  · default: ${manifest.defaultTheme ?? "—"}`,
     `radius: ${manifest.radius ?? "—"} · tokens: ${manifest.tokenCount ?? 0} · registry items: ${(manifest.registry || []).length}`,
     `taste profile [${taste.source}]: register ${taste.register} · density ${taste.density} · motion ${taste.motion} · expressiveness ${taste.expressiveness} (the --decoration dial)`,
   ];
+  if (ctx.hosted)
+    lines.push(
+      "hosted server: the taste profile is the shipped default — it cannot read your project's brand-ui.config.json. Run `npx @elabs-ai/components-cli mcp` locally for your project's profile and the audit tool.",
+    );
   return textContent(lines.join("\n"));
 }
 
@@ -145,10 +169,10 @@ function activeTaste(root, manifest, target = null) {
   return resolveTasteProfile({ manifest, dirs: tasteSearchDirs({ target, root }) });
 }
 
-function toolSearch(root, q) {
+function toolSearch(ctx, q) {
   const query = String(q || "").toLowerCase();
   if (!query) return { ...textContent("usage: search { query }"), isError: true };
-  const manifest = root ? loadManifest(root) : null;
+  const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
   const matches = flat(manifest).filter(
     (r) => r.name.toLowerCase().includes(query) || r.pkg.toLowerCase().includes(query),
@@ -264,18 +288,18 @@ function renderDocsEntry(hit) {
   return lines.join("\n");
 }
 
-function toolDocs(root, component) {
+function toolDocs(ctx, component) {
   const name = String(component || "");
   if (!name) return { ...textContent("usage: docs { component }"), isError: true };
-  const manifest = root ? loadManifest(root) : null;
+  const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
   const hit = flat(manifest).find((r) => r.name.toLowerCase() === name.toLowerCase());
   if (!hit) return textContent(`${name} not found. Try the search tool with "${name}".`);
   return textContent(renderDocsEntry(hit));
 }
 
-function toolTokens(root) {
-  const manifest = root ? loadManifest(root) : null;
+function toolTokens(ctx) {
+  const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
   const lines = [
     `themes (${(manifest.themes || []).length}): ${(manifest.themes || []).join(", ")}`,
@@ -299,13 +323,13 @@ function walkFiles(dir, acc) {
   return acc;
 }
 
-function toolAudit(root, targetPath, registerOverride) {
+function toolAudit(ctx, targetPath, registerOverride) {
   const target = String(targetPath || "");
   if (!target) return { ...textContent("usage: audit { path }"), isError: true };
   const abs = resolve(target);
   if (!existsSync(abs)) return { ...textContent(`not found: ${target}`), isError: true };
   const files = statSync(abs).isDirectory() ? walkFiles(abs, []) : [abs];
-  const taste = activeTaste(root, root ? loadManifest(root) : null, abs);
+  const taste = activeTaste(ctx.root, manifestOf(ctx), abs);
   const register =
     registerOverride === "brand" || registerOverride === "product"
       ? registerOverride
@@ -339,29 +363,36 @@ function toolAudit(root, targetPath, registerOverride) {
   return textContent(lines.join("\n"));
 }
 
-function toolChartFor(root, shape) {
+function toolChartFor(ctx, shape) {
   const query = String(shape || "");
   if (!query) return { ...textContent("usage: chart_for { shape }"), isError: true };
-  const manifest = root ? loadManifest(root) : null;
+  const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
   const candidates = matchChartFor(manifest, query);
   return textContent(renderChartForText(query, candidates));
 }
 
-function callTool(root, name, argsObj = {}) {
+function callTool(ctx, name, argsObj = {}) {
+  if (ctx.hosted && LOCAL_ONLY_TOOLS.has(name))
+    return {
+      ...textContent(
+        `${name} reads files on your machine, which the hosted server cannot see. Run \`npx @elabs-ai/components-cli mcp\` locally to use it.`,
+      ),
+      isError: true,
+    };
   switch (name) {
     case "info":
-      return toolInfo(root);
+      return toolInfo(ctx);
     case "search":
-      return toolSearch(root, argsObj.query);
+      return toolSearch(ctx, argsObj.query);
     case "docs":
-      return toolDocs(root, argsObj.component);
+      return toolDocs(ctx, argsObj.component);
     case "tokens":
-      return toolTokens(root);
+      return toolTokens(ctx);
     case "audit":
-      return toolAudit(root, argsObj.path, argsObj.register);
+      return toolAudit(ctx, argsObj.path, argsObj.register);
     case "chart_for":
-      return toolChartFor(root, argsObj.shape);
+      return toolChartFor(ctx, argsObj.shape);
     default:
       return null; // unknown tool → caller emits an MCP error
   }
@@ -371,18 +402,24 @@ function callTool(root, name, argsObj = {}) {
  * The PURE protocol handler: one JSON-RPC request in, one response out (or `null`
  * for notifications, which get no reply). Spawning a process is unnecessary to
  * exercise this — the stdio loop (`runMcpServer`) is a thin wrapper that only does
- * line framing + I/O. `root` is the repo root (the engine's data source).
+ * line framing + I/O. `root` is the repo root (the engine's data source);
+ * `manifest` injects the manifest instead of reading it from `root`; `hosted`
+ * drops the tools that need the caller's disk (LOCAL_ONLY_TOOLS).
+ * @param {{ root?: string|null, manifest?: object|null, hosted?: boolean }} [opts]
  * @returns {object|null}
  */
-export function handleMessage(msg, { root } = {}) {
+export function handleMessage(msg, { root = null, manifest = null, hosted = false } = {}) {
   if (!msg || typeof msg !== "object") return error(null, -32600, "Invalid Request");
   const { id, method, params } = msg;
+  const ctx = { root, manifest, hosted };
   const isNotification = id === undefined || id === null;
 
   switch (method) {
     case "initialize":
       return result(id, {
-        protocolVersion: PROTOCOL_VERSION,
+        protocolVersion: SUPPORTED_PROTOCOL_VERSIONS.includes(params?.protocolVersion)
+          ? params.protocolVersion
+          : PROTOCOL_VERSION,
         capabilities: { tools: {} },
         serverInfo: SERVER_INFO,
       });
@@ -392,10 +429,12 @@ export function handleMessage(msg, { root } = {}) {
     case "ping":
       return result(id, {});
     case "tools/list":
-      return result(id, { tools: TOOLS });
+      return result(id, {
+        tools: hosted ? TOOLS.filter((t) => !LOCAL_ONLY_TOOLS.has(t.name)) : TOOLS,
+      });
     case "tools/call": {
       const name = params?.name;
-      const out = callTool(root, name, params?.arguments || {});
+      const out = callTool(ctx, name, params?.arguments || {});
       if (out === null) return error(id, -32602, `Unknown tool: ${name}`);
       return result(id, out);
     }

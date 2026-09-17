@@ -42,6 +42,22 @@ MIT
 
 <!-- brand-ui:gen:readme:end -->
 
+## Hosted MCP — connect by URL, nothing to install
+
+The lookup tools (`info`, `search`, `docs`, `tokens`, `chart_for`) are also served
+over stateless Streamable HTTP from the docs deployment, answered from the
+committed repo manifest (so they match `main`, not your installed version):
+
+```bash
+claude mcp add --transport http brand-ui https://elabs-components-elabs-ai.vercel.app/mcp
+```
+
+`audit` is not hosted — it reads files on your machine — so run `brand-ui mcp`
+(stdio) locally when you need it or your project's own taste profile. The
+transport is `lib/mcp-http.mjs` (a Fetch-API `Request` → `Response` handler around
+the same `handleMessage` the stdio server uses); the Vercel function is
+`apps/docs/api/mcp.mjs`.
+
 ## `chart-for` — which chart for this data shape? (RM-040)
 
 ```bash

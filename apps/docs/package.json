@@ -15,6 +15,7 @@
   "dependencies": {
     "@elabs-ai/components-ai": "workspace:*",
     "@elabs-ai/components-charts": "workspace:*",
+    "@elabs-ai/components-cli": "workspace:*",
     "@elabs-ai/components-data": "workspace:*",
     "@elabs-ai/components-editor": "workspace:*",
     "@elabs-ai/components-flow": "workspace:*",

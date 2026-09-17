@@ -46,6 +46,9 @@ importers:
       '@elabs-ai/components-charts':
         specifier: workspace:*
         version: link:../../packages/charts
+      '@elabs-ai/components-cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
       '@elabs-ai/components-data':
         specifier: workspace:*
         version: link:../../packages/data
