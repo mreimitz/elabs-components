@@ -192,6 +192,7 @@ export const DashboardWorkbook = forwardRef<HTMLDivElement, DashboardWorkbookPro
           activeSheetId={wb.activeSheetId}
           onActiveSheetChange={wb.setActiveSheetId}
           labels={{ ...DEFAULT_WORKBOOK_NAV_LABELS, ...navLabels }}
+          switchSignal={wb.programmaticSwitch}
         />
         <div className="min-h-0 flex-1">
           {wb.visitedSheetIds.map((sheetId) => {

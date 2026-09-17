@@ -110,6 +110,74 @@ describe("useWorkbook — RM-087", () => {
     ]);
   });
 
+  it("a drill that actually switches sheets sets programmaticSwitch (#429)", () => {
+    const { result } = renderHook(() => useWorkbook({ workbook: WORKBOOK }));
+    expect(result.current.programmaticSwitch).toBeNull();
+
+    act(() => {
+      result.current.onNavigate("sheet-2", { carry: { Region: ["EMEA"] } });
+    });
+    expect(result.current.programmaticSwitch).toEqual({ sheetId: "sheet-2", nonce: 1 });
+  });
+
+  it("a drill to the ALREADY-active sheet never sets programmaticSwitch — nothing to announce", () => {
+    const { result } = renderHook(() => useWorkbook({ workbook: WORKBOOK }));
+    act(() => {
+      result.current.onNavigate("sheet-1");
+    });
+    expect(result.current.programmaticSwitch).toBeNull();
+  });
+
+  it("a direct setActiveSheetId (a plain tab click/arrow) never sets programmaticSwitch", () => {
+    const { result } = renderHook(() => useWorkbook({ workbook: WORKBOOK }));
+    act(() => {
+      result.current.setActiveSheetId("sheet-2");
+    });
+    expect(result.current.activeSheetId).toBe("sheet-2");
+    expect(result.current.programmaticSwitch).toBeNull();
+  });
+
+  it("a sheetId-bearing bookmark that switches sheets sets programmaticSwitch, with a bumped nonce on a repeat", () => {
+    const { result } = renderHook(() => useWorkbook({ workbook: WORKBOOK }));
+    act(() => {
+      result.current.applyWorkbookBookmark({
+        id: "shared-1",
+        label: "Shared",
+        selection: { Region: ["APAC"] },
+        sheetId: "sheet-3",
+      });
+    });
+    expect(result.current.programmaticSwitch).toEqual({ sheetId: "sheet-3", nonce: 1 });
+
+    act(() => {
+      result.current.setActiveSheetId("sheet-1");
+    });
+    act(() => {
+      result.current.applyWorkbookBookmark({
+        id: "shared-1",
+        label: "Shared",
+        selection: { Region: ["APAC"] },
+        sheetId: "sheet-3",
+      });
+    });
+    // A repeat switch to the same sheet still bumps the nonce, so a consumer keyed on it
+    // (`WorkbookNav`) re-fires its effect instead of seeing an unchanged value.
+    expect(result.current.programmaticSwitch).toEqual({ sheetId: "sheet-3", nonce: 2 });
+  });
+
+  it("a bookmark with no sheetId (applies to the current sheet) never sets programmaticSwitch", () => {
+    const { result } = renderHook(() => useWorkbook({ workbook: WORKBOOK }));
+    act(() => {
+      result.current.applyWorkbookBookmark({
+        id: "q3",
+        label: "Q3 EMEA",
+        selection: { Region: ["EMEA"] },
+      });
+    });
+    expect(result.current.activeSheetId).toBe("sheet-1");
+    expect(result.current.programmaticSwitch).toBeNull();
+  });
+
   it("dirty aggregates across every visited sheet's store", () => {
     const { result } = renderHook(() => useWorkbook({ workbook: WORKBOOK }));
     expect(result.current.dirty).toBe(false);

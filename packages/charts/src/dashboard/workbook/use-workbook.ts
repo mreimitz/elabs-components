@@ -92,6 +92,16 @@ export interface UseWorkbookOptions {
   onActiveSheetChange?: (sheetId: string) => void;
 }
 
+/** A sheet switch that happened WITHOUT the user directly clicking/arrowing a tab (a drill's
+ * `onNavigate`, or a `sheetId`-bearing bookmark) — `WorkbookNav` uses this to move focus and
+ * announce the change (#429); a direct tab interaction never produces one, so it never gets a
+ * duplicate announcement or an unexpected focus jump. `nonce` changes on every occurrence, even
+ * a repeat switch to the same sheet, so a consumer's effect can key off it directly. */
+export interface WorkbookProgrammaticSwitch {
+  sheetId: string;
+  nonce: number;
+}
+
 export interface UseWorkbookResult {
   activeSheetId: string;
   setActiveSheetId: (sheetId: string) => void;
@@ -110,6 +120,9 @@ export interface UseWorkbookResult {
   /** `true` while any visited sheet carries unsaved edits (`DashboardToolbar`'s dirty dot,
    * aggregated). */
   dirty: boolean;
+  /** Set only when a drill or a `sheetId`-bearing bookmark actually changed the active sheet
+   * (never for a direct tab click/arrow) — `null` until the first one happens. */
+  programmaticSwitch: WorkbookProgrammaticSwitch | null;
 }
 
 export function useWorkbook(options: UseWorkbookOptions): UseWorkbookResult {
@@ -140,6 +153,17 @@ export function useWorkbook(options: UseWorkbookOptions): UseWorkbookResult {
   const storesRef = useRef(new Map<string, DashboardStore>());
   const [visitedSheetIds, setVisitedSheetIds] = useState<string[]>([]);
   const [dirtyMap, setDirtyMap] = useState<Record<string, boolean>>({});
+  const [programmaticSwitch, setProgrammaticSwitch] = useState<WorkbookProgrammaticSwitch | null>(
+    null,
+  );
+  const switchNonceRef = useRef(0);
+  // A drill/bookmark switch to a sheet id equal to the CURRENT active one (e.g. a bookmark whose
+  // own sheet is already showing) applies its selection but never counts as a "switch" — nothing
+  // to announce or refocus.
+  const markProgrammaticSwitch = useCallback((sheetId: string) => {
+    switchNonceRef.current += 1;
+    setProgrammaticSwitch({ sheetId, nonce: switchNonceRef.current });
+  }, []);
 
   // `onNavigate` closes over `getStore`, and every store's OWN `onNavigate` option (below)
   // closes back over this — a ref breaks the cycle without a stale closure.
@@ -171,14 +195,17 @@ export function useWorkbook(options: UseWorkbookOptions): UseWorkbookResult {
   );
 
   onNavigateRef.current = (sheetId, context) => {
+    const isSwitch = sheetId !== activeSheetId;
     const store = getStore(sheetId);
     if (context?.carry) applyCarriedSelection(store, context.carry);
     setActiveSheetId(sheetId);
+    if (isSwitch) markProgrammaticSwitch(sheetId);
   };
 
   const applyWorkbookBookmark = useCallback(
     (bookmark: BookmarkSpec) => {
       const targetId = bookmark.sheetId ?? activeSheetId;
+      const isSwitch = targetId !== activeSheetId;
       const store = getStore(targetId);
       setActiveSheetId(targetId);
       const { actions } = store.getState();
@@ -186,8 +213,9 @@ export function useWorkbook(options: UseWorkbookOptions): UseWorkbookResult {
         actions.select(field, values, { replace: true });
       for (const [name, value] of Object.entries(bookmark.variables ?? {}))
         actions.setVariable(name, value);
+      if (isSwitch) markProgrammaticSwitch(targetId);
     },
-    [activeSheetId, getStore, setActiveSheetId],
+    [activeSheetId, getStore, setActiveSheetId, markProgrammaticSwitch],
   );
 
   const dirty = useMemo(() => Object.values(dirtyMap).some(Boolean), [dirtyMap]);
@@ -201,5 +229,6 @@ export function useWorkbook(options: UseWorkbookOptions): UseWorkbookResult {
     onNavigate: (sheetId, context) => onNavigateRef.current(sheetId, context),
     applyWorkbookBookmark,
     dirty,
+    programmaticSwitch,
   };
 }

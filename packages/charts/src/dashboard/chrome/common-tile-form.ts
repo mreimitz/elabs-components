@@ -22,6 +22,8 @@ export interface DashboardPanelLabels {
   noRoom: string;
   /** Announced (polite) after a row places a tile; `x`/`y` are zero-based cells. */
   placed: (label: string, x: number, y: number) => string;
+  /** Announced (polite) after the Bookmarks tab applies a bookmark (#429). */
+  bookmarkApplied: (label: string) => string;
   sheetSection: { general: string; grid: string; theme: string; actions: string };
   sheetFields: {
     title: string;
@@ -81,6 +83,7 @@ export const DEFAULT_DASHBOARD_PANEL_LABELS: DashboardPanelLabels = {
   noResults: "Nothing matches.",
   noRoom: "There is no room on the sheet for this tile.",
   placed: (label, x, y) => `${label} added at column ${x + 1}, row ${y + 1}.`,
+  bookmarkApplied: (label) => `Bookmark “${label}” applied.`,
   sheetSection: { general: "General", grid: "Grid", theme: "Theme", actions: "Actions" },
   sheetFields: {
     title: "Title",

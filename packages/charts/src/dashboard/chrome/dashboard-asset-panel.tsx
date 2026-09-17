@@ -37,7 +37,7 @@ import {
 } from "@elabs-ai/components-ui";
 
 import { findEmptySlot } from "../core/layout";
-import type { DashboardSpec } from "../core/spec";
+import type { BookmarkSpec, DashboardSpec } from "../core/spec";
 import type { NewTileSpec } from "../core/store";
 import {
   useDashboard,
@@ -266,6 +266,15 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
 
     const navigate = onNavigate ?? providerNavigate;
 
+    // #429: a sighted user sees the sheet's selection/chart states change; announce it for
+    // everyone else too. Reuses the same live region `place` already writes to (one region per
+    // panel), with the same repeat-announcement trick.
+    const applyBookmark = (bookmark: BookmarkSpec) => {
+      actions.applyBookmark(bookmark.id);
+      const message = labels.bookmarkApplied(bookmark.label);
+      setAnnouncement((prev) => (prev === message ? `${message}\u00a0` : message));
+    };
+
     return (
       <SideDock
         ref={ref}
@@ -329,7 +338,7 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
                   <CommandItem
                     key={bookmark.id}
                     value={`${bookmark.label}${SEP}${bookmark.id}`}
-                    onSelect={() => actions.applyBookmark(bookmark.id)}
+                    onSelect={() => applyBookmark(bookmark)}
                   >
                     {bookmark.label}
                   </CommandItem>

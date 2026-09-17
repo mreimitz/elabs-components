@@ -233,6 +233,17 @@ export const Default: Story = {
       await canvas.findByRole("alert");
       await expect(tileOf("chart")?.visibleWhen).toBeUndefined();
     });
+
+    await step("applying a bookmark announces it (#429)", async () => {
+      await userEvent.click(canvas.getByRole("tab", { name: "Bookmarks" }));
+      await userEvent.click(await canvas.findByRole("option", { name: "Q1 only" }));
+      await waitFor(() =>
+        expect(store().getState().selection.fields.month?.values).toEqual(["Jan", "Feb", "Mar"]),
+      );
+      // Reuses the asset panel's own `place` live region (one region, per the brief).
+      const status = canvasElement.querySelector('[data-slot="dashboard-asset-panel-status"]');
+      await waitFor(() => expect(status).toHaveTextContent("Bookmark “Q1 only” applied."));
+    });
   },
 };
 
