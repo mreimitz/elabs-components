@@ -103,8 +103,18 @@ test("renderLlmsHub routes to per-package spokes and lists themes + entry points
   assert.match(hub, /# brand-ui/);
   assert.match(hub, /\[@elabs-ai\/components-ui\]\(\.\/llms\/ui\.txt\)/, "spoke link");
   assert.match(hub, /light \(default\)/);
-  assert.match(hub, /pnpm add -D @elabs-ai\/components-cli/);
-  assert.match(hub, /pnpm exec brand-ui docs/);
+  // Entry points lead with the HOSTED MCP: an agent reading this file from
+  // https://elabs-ai.com/llms.txt has nothing to install, and the registry the
+  // old copy pointed at ("GitHub Packages") no longer exists (2026-09-17 review).
+  assert.match(hub, /https:\/\/elabs-ai\.com\/mcp/, "hosted MCP endpoint");
+  assert.doesNotMatch(hub, /GitHub Packages/, "no dead private-registry instructions");
+  const entryPoints = hub.slice(hub.indexOf("## Entry points"));
+  assert.ok(
+    entryPoints.indexOf("elabs-ai.com/mcp") < entryPoints.indexOf("localhost:6006"),
+    "the hosted endpoint is listed before the contributor-only dev server",
+  );
+  assert.match(hub, /npx -y @elabs-ai\/components-cli mcp/);
+  assert.match(hub, /pnpm exec brand-ui info/);
   assert.match(hub, /tokens → ui\/icons → data/);
 });
 
