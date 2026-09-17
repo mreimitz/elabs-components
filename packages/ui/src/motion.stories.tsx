@@ -180,6 +180,7 @@ export const GateFullMotion: Story = {
  * transitionend and would strand Radix's unmount-suspension).
  */
 export const GateReducedMotion: Story = {
+  tags: ["!dev"],
   render: () => <MotionDemo />,
   play: async ({ canvasElement }) => {
     const root = document.documentElement;

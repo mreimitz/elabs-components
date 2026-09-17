@@ -191,7 +191,7 @@ export const PartialSet: Story = {
  * the one thing only `focus-ring`/`focus-ring-inset` add.
  */
 export const FocusIndicator: Story = {
-  name: "Focus indicator (#313)",
+  name: "Keyboard focus",
   args: { images: IMAGES.slice(0, 4) },
   play: async ({ canvas, userEvent }) => {
     const buttons = canvas.getAllByRole("button", { name: /fjord|desert/i });
@@ -210,7 +210,7 @@ export const FocusIndicator: Story = {
  * prior test (`gallery.tsx:409`, `GalleryOverflowTile`).
  */
 export const OverflowFocusIndicator: Story = {
-  name: "Overflow tile focus indicator (#313)",
+  name: "Overflow tile keyboard focus",
   args: { images: IMAGES },
   play: async ({ canvas, userEvent }) => {
     const overflow = canvas.getByRole("button", { name: /show all 12 images/i });

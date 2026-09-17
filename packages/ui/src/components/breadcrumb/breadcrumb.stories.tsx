@@ -57,7 +57,7 @@ export const Default: Story = {
  * mirroring `Button`'s `CompoundFocusIndicator` lock.
  */
 export const FocusIndicator: Story = {
-  name: "Focus indicator (#310)",
+  name: "Keyboard focus",
   render: () => (
     <Breadcrumb>
       <BreadcrumbList>

@@ -240,6 +240,7 @@ Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pn
 - A component with a `loading`/`isStreaming` (or chart `status: ChartStatus`) prop ships a story that shows it: a `*Loading`/`*Streaming` export or a not-ready arg (`loading: true`, `status="loading"`). (`loading-states`)
 - Story decorators and render wrappers never pin a fixed width above 320px (`w-[800px]`, `style={{ width: 800 }}`) without a max — use `w-full max-w-*` or `parameters.layout`. (`no-fixed-story-wrapper`)
 - Every allowlisted stateful component (`STATEFUL_COMPONENTS` in the rule) exports a story named for a non-happy state (`Loading`, `Empty`, `Error`, `Disabled`, `Skeleton`, `FirstRun`, `Awaiting`). (`state-coverage`)
+- A story's visible name says what the story shows — never an issue number (`#123`), an `ADR`, an `RM-` roadmap item, `harness` or `regression`; that reference belongs in a comment or `parameters.docs.description.story`. (`story-name-hygiene`)
 - A story meta for a layout-level surface (`Layout/*`, `Patterns/Templates/*`, `Patterns/Scenarios/*`, AppShell, Sidebar, DataTable, ChatShell, Hero, …) sets `parameters.layout` (`"fullscreen"`/`"padded"`) or a viewport — never the centered default. (`story-viewport-guard`)
 - Render every `cva` variant value in a story (`variant="success"` or `args: { variant: "success" }`); `argTypes.options` does not count, a default is met by a story that leaves the axis unset. (`variant-coverage`)
 

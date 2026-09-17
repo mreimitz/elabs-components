@@ -184,6 +184,7 @@ export const Matrix: Story = {
 };
 
 export const MatrixDark: Story = {
+  tags: ["!dev"],
   name: "Matrix — dark",
   args: Matrix.args,
   decorators: [
@@ -225,6 +226,7 @@ export const MatrixWithValues: Story = {
 };
 
 export const MatrixWithValuesDark: Story = {
+  tags: ["!dev"],
   name: "MatrixWithValues — dark",
   args: MatrixWithValues.args,
   decorators: [
@@ -269,6 +271,7 @@ export const DotHeat: Story = {
 };
 
 export const DotHeatDark: Story = {
+  tags: ["!dev"],
   name: "DotHeat — dark",
   args: DotHeat.args,
   decorators: [
@@ -317,6 +320,7 @@ export const Calendar: Story = {
 };
 
 export const CalendarDark: Story = {
+  tags: ["!dev"],
   name: "Calendar — dark",
   args: Calendar.args,
   decorators: [
@@ -367,6 +371,7 @@ export const Diverging: Story = {
 };
 
 export const DivergingDark: Story = {
+  tags: ["!dev"],
   name: "Diverging — dark",
   args: Diverging.args,
   decorators: [
@@ -444,6 +449,7 @@ export const Loading: Story = {
 };
 
 export const LoadingDark: Story = {
+  tags: ["!dev"],
   name: "Loading — dark",
   args: Loading.args,
   decorators: [
@@ -500,6 +506,7 @@ export const Empty: Story = {
 };
 
 export const EmptyDark: Story = {
+  tags: ["!dev"],
   name: "Empty — dark",
   args: Empty.args,
   decorators: [
@@ -599,6 +606,7 @@ export const KeyboardDrilldown: Story = {
 };
 
 export const KeyboardDrilldownDark: Story = {
+  tags: ["!dev"],
   name: "KeyboardDrilldown — dark",
   args: DRILLDOWN_ARGS,
   decorators: [

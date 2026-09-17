@@ -42,6 +42,10 @@ export const Ghost: Story = { args: { variant: "ghost" } };
 // `rgba(0, 0, 0, 0)` and fail — where a plain `toBeVisible()` would still pass
 // on the unstyled element.
 export const CssCheck: Story = {
+  // A harness, not a demo: it renders the default Button and asserts the token
+  // stylesheet resolved. `!dev` keeps it in the test run and out of the sidebar.
+  name: "Theme tokens applied",
+  tags: ["!dev"],
   play: async ({ canvas }) => {
     const btn = canvas.getByRole("button", { name: "Button" });
 
@@ -99,7 +103,7 @@ export const AllVariants: Story = {
  * one story covers `light`, `dark` and any consumer theme a fork adds.
  */
 export const CompoundFocusIndicator: Story = {
-  name: "Compound focus indicator (WCAG 1.4.11)",
+  name: "Keyboard focus (WCAG 1.4.11)",
   play: async ({ canvas, userEvent }) => {
     const btn = canvas.getByRole("button", { name: "Button" });
 

@@ -1,4 +1,4 @@
-// Docs / AI Content Access
+// Editor / AI Content Access
 // Cross-package composition story: @elabs-ai/components-editor + @elabs-ai/components-ui
 // All "AI actions" are LOCAL stub transforms — no model call (D5).
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -251,7 +251,7 @@ function MarkdownWorkspaceDemo() {
 // ---------------------------------------------------------------------------
 
 const meta = {
-  title: "Docs/AI Content Access",
+  title: "Editor/AI Content Access",
   tags: ["autodocs"],
   parameters: {
     layout: "padded",

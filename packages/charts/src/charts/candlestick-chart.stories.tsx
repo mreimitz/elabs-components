@@ -109,7 +109,8 @@ function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: 
  * up/down split survives without hue. At decoration 0–7 this is `NoAnimation`.
  */
 export const HighDecoration: Story = {
-  name: "High decoration (#257)",
+  tags: ["!dev"],
+  name: "High decoration",
   globals: { decoration: "10" },
   render: () => (
     <div className="h-full w-full" data-decoration="10">

@@ -325,7 +325,8 @@ function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: 
  * no-data hatch stays its own, distinct texture.
  */
 export const HighDecoration: Story = {
-  name: "High decoration (#257)",
+  tags: ["!dev"],
+  name: "High decoration",
   globals: { decoration: "10" },
   render: () => (
     <div className="h-72 w-full max-w-[560px]" data-decoration="10">

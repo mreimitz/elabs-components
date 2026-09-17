@@ -126,6 +126,7 @@ export const Loading: Story = {
  * them.
  */
 export const ReflowRegressionLock: Story = {
+  name: "Conformance tile keeps its height when unmeasured",
   render: () => (
     <div className="flex flex-col gap-6">
       <ProcessKpiStrip kpis={kpis} conformance={0.91} data-testid="measured" />

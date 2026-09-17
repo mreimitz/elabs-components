@@ -156,6 +156,7 @@ export const SubmenuRadioAndCheckbox: Story = {
  * persisting to localStorage across runs.
  */
 export const SubmenuRadioAndCheckboxDark: Story = {
+  tags: ["!dev"],
   name: "Submenu, radio group and checkbox item — dark",
   decorators: [
     (Story) => (
@@ -169,6 +170,7 @@ export const SubmenuRadioAndCheckboxDark: Story = {
 };
 
 export const SubmenuRadioAndCheckboxHighDecoration: Story = {
+  tags: ["!dev"],
   name: "Submenu, radio group and checkbox item — high decoration",
   globals: { decoration: "10" },
   render: SubmenuRadioAndCheckbox.render,
@@ -183,7 +185,7 @@ export const SubmenuRadioAndCheckboxHighDecoration: Story = {
  * layer, or a non-zero, non-`none` `outline`.
  */
 export const KeyboardFocusIndicator: Story = {
-  name: "Keyboard focus indicator (#308)",
+  name: "Keyboard focus",
   render: Default.render,
   play: async ({ canvas, canvasElement, userEvent }) => {
     const trigger = canvas.getByRole("button", { name: /open menu/i });

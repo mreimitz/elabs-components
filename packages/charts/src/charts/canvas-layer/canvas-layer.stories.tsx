@@ -262,7 +262,7 @@ export const Default: Story = {
  */
 export const FiftyThousandMarks: Story = {
   args: PLACEHOLDER_ARGS,
-  name: "50,000 marks (perf harness)",
+  name: "50,000 marks",
   render: () => <DottedCanvas count={50_000} rows={40} showTiming />,
   play: async ({ canvas }) => {
     // The measurement is the point of the story: assert it actually appeared.

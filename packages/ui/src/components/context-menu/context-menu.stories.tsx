@@ -77,7 +77,7 @@ export const Default: Story = {
  * non-zero, non-`none` `outline`.
  */
 export const KeyboardFocusIndicator: Story = {
-  name: "Keyboard focus indicator (#308)",
+  name: "Keyboard focus",
   render: Default.render,
   play: async ({ canvas, canvasElement, userEvent }) => {
     const trigger = canvas.getByText("Right-click here");

@@ -137,6 +137,7 @@ export const LongLabelWithCount: Story = {
 };
 
 export const WithCountHighDecoration: Story = {
+  tags: ["!dev"],
   name: "With count — high decoration",
   globals: { decoration: "10" },
   args: { count: 1204, countLabel: "excluded" },

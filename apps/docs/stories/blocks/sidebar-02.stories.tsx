@@ -369,6 +369,7 @@ export const Empty: Story = {
  * the block pins a density of its own.
  */
 export const CompactDensity: Story = {
+  tags: ["!dev"],
   render: () => (
     // `data-density` on a wrapper, i.e. exactly how an app sets it: the
     // attribute overrides `--spacing` for the whole subtree.

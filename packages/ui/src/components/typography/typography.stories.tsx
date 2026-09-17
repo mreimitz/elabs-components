@@ -385,7 +385,7 @@ function CjkPanel({ sample }: { sample: CjkSample }) {
 }
 
 export const CJKFontAndLineBreaking: Story = {
-  name: "CJK font fallback + line-breaking (#15)",
+  name: "CJK font fallback + line-breaking",
   parameters: {
     docs: {
       description: {

@@ -351,6 +351,7 @@ export const KeyboardDrilldown: Story = {
  * `storageKey={null}` keeps the override out of localStorage.
  */
 export const KeyboardDrilldownDark: Story = {
+  tags: ["!dev"],
   name: "KeyboardDrilldown — dark",
   decorators: [
     (Story) => (
@@ -364,6 +365,7 @@ export const KeyboardDrilldownDark: Story = {
 };
 
 export const KeyboardDrilldownHighDecoration: Story = {
+  tags: ["!dev"],
   name: "KeyboardDrilldown — high decoration",
   globals: { decoration: "10" },
   render: KeyboardDrilldown.render,
@@ -380,7 +382,7 @@ export const KeyboardDrilldownHighDecoration: Story = {
  * comfortable / 12.75px spacious, styling-and-tokens.md).
  */
 export const DensityComparison: Story = {
-  name: "Density comparison (#394)",
+  name: "Density comparison",
   parameters: {
     docs: {
       description: {
@@ -541,7 +543,7 @@ export const Diverging: Story = {
  * `data-slot` selector above is verified on both render paths, not just one.
  */
 export const DivergingDecorated: Story = {
-  name: "Diverging — high decoration (#254)",
+  name: "Diverging — high decoration",
   globals: { decoration: "10" },
   render: () => (
     <div className="h-72 w-full max-w-[560px]" data-decoration="10">

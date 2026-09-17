@@ -354,7 +354,7 @@ function OverviewView({ onInspect }: { onInspect: (c: Connection) => void }) {
   const active = CONNECTIONS.filter((c) => c.status === "active").length;
   // The one active-filter slice this screen supports. The picker lives in the
   // toolbar's `actions`; what it produces shows up on the left as a FilterChip
-  // (see Docs/View Toolbar Contract, R2 + R3).
+  // (see Layout/ViewToolbar → Contract, R2 + R3).
   const [statusFilter, setStatusFilter] = useState<ConnStatus | null>(null);
   const visible = statusFilter ? CONNECTIONS.filter((c) => c.status === statusFilter) : CONNECTIONS;
 

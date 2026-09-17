@@ -39,7 +39,7 @@ export const GroundingFooter: Story = {
  * mirroring the library's compound indicator (not the browser default).
  */
 export const FocusIndicator: Story = {
-  name: "Focus indicator (#313)",
+  name: "Keyboard focus",
   render: () => (
     <Sources>
       <SourcesTrigger count={2} />

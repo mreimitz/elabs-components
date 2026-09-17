@@ -216,7 +216,7 @@ export const ChangeReviewComposition: Story = {
  * matched by a count-tolerant regex so it doesn't drift with the wording.
  */
 export const FocusIndicatorExpand: Story = {
-  name: "Focus indicator expand (#313)",
+  name: "Keyboard focus — expand",
   render: () => (
     <div className="max-w-2xl">
       <DiffView
@@ -253,7 +253,7 @@ export const FocusIndicatorExpand: Story = {
  * inferring it from rendered content.
  */
 export const FocusIndicatorPager: Story = {
-  name: "Focus indicator pager (#313)",
+  name: "Keyboard focus — pager",
   render: () => (
     <div className="max-w-2xl">
       <DiffView lines={SAMPLE_LINES} pager variant="split" />

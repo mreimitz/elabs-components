@@ -16,7 +16,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The row above a list, table or board — filters and context on the left, actions on the right. Its controls are ordinary tab stops on purpose: a dense secondary control row that should cost ONE tab stop with arrow-key roving is `Layout/Toolbar`, the component that actually claims the `toolbar` ARIA role. See [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs) and [Docs / View Toolbar Contract](?path=/docs/docs-view-toolbar-contract--docs) (rule R10) for the filter-chip, result-count and control-height rules of this row.",
+          "The row above a list, table or board — filters and context on the left, actions on the right. Its controls are ordinary tab stops on purpose: a dense secondary control row that should cost ONE tab stop with arrow-key roving is `Layout/Toolbar`, the component that actually claims the `toolbar` ARIA role. See [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs) and [ViewToolbar → Contract](?path=/docs/layout-viewtoolbar--contract) (rule R10) for the filter-chip, result-count and control-height rules of this row.",
       },
     },
   },
@@ -369,6 +369,7 @@ export const DarkTheme: Story = {
 
 /** The same row at decoration 10 — drawn, not filled. */
 export const HighDecoration: Story = {
+  tags: ["!dev"],
   globals: { decoration: "10" },
   render: () => (
     <ViewToolbar info={VIEW_INFO} actions={<ViewActions />} className="w-full max-w-4xl">

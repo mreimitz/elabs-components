@@ -135,7 +135,7 @@ export const Default: Story = {
  * a residual follow-up, not fixed here.
  */
 export const KeyboardFocusIndicator: Story = {
-  name: "Keyboard focus indicator (#308)",
+  name: "Keyboard focus",
   render: Default.render,
   play: async ({ canvas, userEvent }) => {
     const trigger = canvas.getByRole("button", { name: /products/i });

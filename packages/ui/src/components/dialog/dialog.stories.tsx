@@ -66,6 +66,7 @@ export const Default: Story = {
  * horizontally. Before the fix the implicit `auto` column blew past `max-w-md`.
  */
 export const OverflowGuard: Story = {
+  name: "Long unbreakable text keeps the dialog width",
   render: () => (
     <Dialog>
       <DialogTrigger asChild>
@@ -392,6 +393,7 @@ export const FocusRingClearance: Story = {
  * `play` so a future regression of THIS story is caught rather than repeated.
  */
 export const FocusRingClearanceDark: Story = {
+  tags: ["!dev"],
   name: "Focus ring clearance — dark",
   globals: { theme: "dark" },
   render: FocusRingClearance.render,
@@ -450,6 +452,7 @@ export const WideWithSections: Story = {
 };
 
 export const WideWithSectionsDark: Story = {
+  tags: ["!dev"],
   name: "Wide with sections — dark",
   decorators: [
     (Story) => (
@@ -463,6 +466,7 @@ export const WideWithSectionsDark: Story = {
 };
 
 export const WideWithSectionsHighDecoration: Story = {
+  tags: ["!dev"],
   name: "Wide with sections — high decoration",
   globals: { decoration: "10" },
   render: () => <WideSettingsDialog prefix="wide-decorated" />,
@@ -685,6 +689,7 @@ function GuardedDialog({ children }: { children?: ReactNode }) {
  * because the component must not own app state (D5).
  */
 export const DirtyGuard: Story = {
+  name: "Unsaved changes confirm before closing",
   render: () => <GuardedDialog />,
   play: async ({ canvas, canvasElement, userEvent }) => {
     const doc = within(canvasElement.ownerDocument.body);

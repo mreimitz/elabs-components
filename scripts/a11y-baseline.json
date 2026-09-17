@@ -13,7 +13,7 @@
     "display-progress--empty": ["aria-progressbar-name"],
     "display-progress--full": ["aria-progressbar-name"],
     "display-scrollarea--default": ["scrollable-region-focusable"],
-    "docs-ai-content-access--with-markdown-workspace": ["scrollable-region-focusable"],
+    "editor-ai-content-access--with-markdown-workspace": ["scrollable-region-focusable"],
     "editor-calcblock--default": ["aria-prohibited-attr"],
     "editor-calcblock--total-override": ["aria-prohibited-attr"],
     "editor-calcblock--without-total": ["aria-prohibited-attr"],

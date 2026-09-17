@@ -901,6 +901,7 @@ export const WithColumnResizing: Story = {
  * hide from a comfortable-only check.
  */
 export const WithColumnResizingCompactDensity: Story = {
+  tags: ["!dev"],
   parameters: {
     docs: {
       description: {
@@ -999,6 +1000,7 @@ export const WithColumnResizingRealDoubleClick: Story = {
  * growing) should still be caught on the unproblematic column too.
  */
 export const WithColumnResizingSortToggleHitTest: Story = {
+  name: "Column resizing — sort button vs. resize handle",
   parameters: {
     docs: {
       description: {
@@ -1157,6 +1159,7 @@ export const RowSelectionWithToolbar: Story = {
  * `FocusRingClearanceDark`.
  */
 export const RowSelectionWithToolbarDark: Story = {
+  tags: ["!dev"],
   name: "Row selection — with toolbar (dark)",
   globals: { theme: "dark" },
   render: RowSelectionWithToolbar.render,

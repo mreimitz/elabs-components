@@ -294,7 +294,7 @@ export const AllColors: Story = {
 };
 
 export const FocusRingVsStatus: Story = {
-  name: "Focus ring vs. status (supplementary — ADR 0027)",
+  name: "Focus ring vs. status (supplementary)",
   render: () => (
     <div className="max-w-2xl space-y-3">
       {/* Supplementary evidence for issue #427 / ADR 0027 — a purpose-built
@@ -384,7 +384,7 @@ const FOREGROUND_RUNGS = [
 ] as const;
 
 export const OrderedNeutralRamp: Story = {
-  name: "Ordered neutral ramp — judgeable hierarchy (#14)",
+  name: "Ordered neutral ramp — judgeable hierarchy",
   parameters: {
     docs: {
       description: {

@@ -377,7 +377,8 @@ function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: 
  * markers stay hollow.
  */
 export const HighDecoration: Story = {
-  name: "High decoration (#257)",
+  tags: ["!dev"],
+  name: "High decoration",
   globals: { decoration: "10" },
   args: {
     data: onboardingSteps,

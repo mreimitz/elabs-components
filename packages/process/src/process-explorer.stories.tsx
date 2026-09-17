@@ -24,7 +24,7 @@
  *
  * 1. **Header + KPI strip** — the reading a stakeholder needs before any interaction.
  * 2. **`ViewToolbar`** — the repo's one-row grammar for "what am I looking at / what can I
- *    do about it" (`Docs/View Toolbar Contract`). Active filters are `FilterChip`s here,
+ *    do about it" (`Layout/ViewToolbar → Contract`). Active filters are `FilterChip`s here,
  *    not a bespoke pill row, and the case count is a `ResultCount` so "142 of 240" reads
  *    the same as it does on every table in the system.
  * 3. **Rail + canvas** — a `SplitPanel` with the two dials and the inspector on the

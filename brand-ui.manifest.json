@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T18:58:07.641Z",
+  "generatedAt": "2026-09-17T19:21:20.078Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -39039,7 +39039,7 @@
               "name": "headerVariant",
               "optional": true,
               "type": "\"default\" | \"toolbar\"",
-              "description": "\"default\" (unset) — `header` renders inline, scrolls with the body. Byte-identical to today. \"toolbar\" — for a `<ViewToolbar>` header (`@elabs-ai/components-ui`, `Docs/View Toolbar Contract`): wraps `header` in a `sticky top-0` container with an opaque/blurred fill and a bottom hairline, so it stays pinned while the body scrolls beneath it. PLACES whatever node `header` is — it does not reimplement ViewToolbar's own info/left-cluster/actions grammar, and it does NOT cap the row's height (a `<ViewToolbar>` wraps at narrow widths; see `Docs/View Toolbar Contract` R7)."
+              "description": "\"default\" (unset) — `header` renders inline, scrolls with the body. Byte-identical to today. \"toolbar\" — for a `<ViewToolbar>` header (`@elabs-ai/components-ui`, `Layout/ViewToolbar → Contract`): wraps `header` in a `sticky top-0` container with an opaque/blurred fill and a bottom hairline, so it stays pinned while the body scrolls beneath it. PLACES whatever node `header` is — it does not reimplement ViewToolbar's own info/left-cluster/actions grammar, and it does NOT cap the row's height (a `<ViewToolbar>` wraps at narrow widths; see `Layout/ViewToolbar → Contract` R7)."
             },
             {
               "name": "width",
@@ -40595,7 +40595,7 @@
               "name": "info",
               "optional": true,
               "type": "ReactNode",
-              "description": "What this view is, as a tooltip on an ⓘ trigger at the start of the row — so a view does not need an in-page `<h1>` + paragraph block just to explain itself. Omit it when the surrounding page already says what the view is. **Pointer/keyboard only.** A Radix tooltip opens on hover and on keyboard focus but deliberately NOT on tap (and Radix suppresses the focus-open when focus arrived from a pointer), so on a touch device this text is unreachable. Treat `info` as progressive enhancement: never put something a phone user cannot do without in it. See `Docs/View Toolbar Contract`."
+              "description": "What this view is, as a tooltip on an ⓘ trigger at the start of the row — so a view does not need an in-page `<h1>` + paragraph block just to explain itself. Omit it when the surrounding page already says what the view is. **Pointer/keyboard only.** A Radix tooltip opens on hover and on keyboard focus but deliberately NOT on tap (and Radix suppresses the focus-open when focus arrived from a pointer), so on a touch device this text is unreachable. Treat `info` as progressive enhancement: never put something a phone user cannot do without in it. See `Layout/ViewToolbar → Contract`."
             },
             {
               "name": "children",

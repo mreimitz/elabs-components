@@ -533,6 +533,7 @@ export const SidebarInkContrast: Story = {
  * needs a disagreement, not merely an attribute.)
  */
 export const CompactDensity: Story = {
+  tags: ["!dev"],
   render: () => (
     <div data-density="compact">
       <MailShell activePath="/inbox" defaultSelectedId={FIRST.id} defaultSidebarOpen={false} />

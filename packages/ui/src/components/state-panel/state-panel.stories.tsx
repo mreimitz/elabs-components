@@ -84,8 +84,9 @@ export const EmptyNoIcon: Story = {
   },
 };
 
+/** #24 — the empty state gained a spot illustration slot beside title/description. */
 export const WithIllustration: Story = {
-  name: "Empty (with illustration, #24)",
+  name: "Empty (with illustration)",
   args: {
     kind: "empty",
     title: "No projects yet",
@@ -112,8 +113,9 @@ export const NoAccess: Story = {
   },
 };
 
+/** #24 P0-2 — the error state carries the same illustration slot as empty. */
 export const ErrorWithIllustration: Story = {
-  name: "Error (with illustration, #24 P0-2)",
+  name: "Error (with illustration)",
   args: {
     // The one panel `kind` that re-tints the illustration slot (`text-destructive`)
     // — pairing it with an illustration is what surfaces whether the accent

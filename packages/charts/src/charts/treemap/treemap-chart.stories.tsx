@@ -310,7 +310,8 @@ function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: 
  * carry the group label and stay flat.
  */
 export const HighDecoration: Story = {
-  name: "High decoration (#257)",
+  tags: ["!dev"],
+  name: "High decoration",
   globals: { decoration: "10" },
   args: {
     data: whereTheWorkWent,

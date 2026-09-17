@@ -163,6 +163,7 @@ export const NeutralTone: Story = {
  * dark sweep and the workaround is retired.
  */
 export const DestructiveDark: Story = {
+  tags: ["!dev"],
   name: "Destructive — dark",
   decorators: [
     (Story) => (
@@ -176,6 +177,7 @@ export const DestructiveDark: Story = {
 };
 
 export const DestructiveHighDecoration: Story = {
+  tags: ["!dev"],
   name: "Destructive — high decoration",
   globals: { decoration: "10" },
   render: () => <DestructiveConfirm />,

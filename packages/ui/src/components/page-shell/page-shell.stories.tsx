@@ -26,7 +26,7 @@ export const Default: Story = {
 /**
  * `headerVariant="toolbar"` places a real `<ViewToolbar>` in `PageShell`'s
  * header slot and pins it in POSITION (never a fixed height — see
- * `Docs/View Toolbar Contract` R7) while the body scrolls beneath it. The
+ * `Layout/ViewToolbar → Contract` R7) while the body scrolls beneath it. The
  * outer `h-[420px] overflow-y-auto` div stands in for the `SidebarInset`
  * scroll region `PageShell` is normally embedded in — `PageShell` itself
  * never owns a scroll container (#367).

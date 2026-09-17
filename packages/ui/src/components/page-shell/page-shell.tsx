@@ -10,12 +10,12 @@ export interface PageShellProps extends ComponentProps<"div"> {
    * Byte-identical to today.
    *
    * "toolbar" — for a `<ViewToolbar>` header (`@elabs-ai/components-ui`,
-   * `Docs/View Toolbar Contract`): wraps `header` in a `sticky top-0` container
+   * `Layout/ViewToolbar → Contract`): wraps `header` in a `sticky top-0` container
    * with an opaque/blurred fill and a bottom hairline, so it stays pinned while
    * the body scrolls beneath it. PLACES whatever node `header` is — it does not
    * reimplement ViewToolbar's own info/left-cluster/actions grammar, and it does
    * NOT cap the row's height (a `<ViewToolbar>` wraps at narrow widths; see
-   * `Docs/View Toolbar Contract` R7).
+   * `Layout/ViewToolbar → Contract` R7).
    */
   headerVariant?: "default" | "toolbar";
   /** Constrain content width. Defaults to "xl". */

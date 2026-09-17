@@ -339,6 +339,7 @@ export const Editable: Story = {
 };
 
 export const CompactDensity: Story = {
+  tags: ["!dev"],
   args: {
     tasks: simpleTasks,
     density: "compact",
@@ -577,6 +578,7 @@ export const GapBands: Story = {
  * enhancement, unlike an ordinary series fill (ADR 0011).
  */
 export const GapBandsHighDecoration: Story = {
+  tags: ["!dev"],
   name: "GapBands — high decoration",
   globals: { decoration: "10" },
   args: GapBands.args,

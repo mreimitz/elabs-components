@@ -530,6 +530,7 @@ export const IterationContextMenu: Story = {
  * to localStorage across runs.
  */
 export const NodeMenuDark: Story = {
+  tags: ["!dev"],
   name: "Iteration node menu (⋯ dropdown) — dark",
   decorators: [
     (Story) => (
@@ -543,6 +544,7 @@ export const NodeMenuDark: Story = {
 };
 
 export const NodeMenuHighDecoration: Story = {
+  tags: ["!dev"],
   name: "Iteration node menu (⋯ dropdown) — high decoration",
   globals: { decoration: "10" },
   render: NodeMenu.render,
@@ -550,6 +552,7 @@ export const NodeMenuHighDecoration: Story = {
 };
 
 export const IterationContextMenuDark: Story = {
+  tags: ["!dev"],
   name: "Iteration node menu (right-click) — dark",
   decorators: [
     (Story) => (
@@ -563,6 +566,7 @@ export const IterationContextMenuDark: Story = {
 };
 
 export const IterationContextMenuHighDecoration: Story = {
+  tags: ["!dev"],
   name: "Iteration node menu (right-click) — high decoration",
   globals: { decoration: "10" },
   render: IterationContextMenu.render,
@@ -580,7 +584,7 @@ export const IterationContextMenuHighDecoration: Story = {
  * stylesheet TEXT; this is the rendered-surface proof.
  */
 export const FocusIndicator: Story = {
-  name: "Focus indicator (#309)",
+  name: "Keyboard focus",
   render: () => (
     <div className="mx-auto max-w-3xl p-6">
       <MarkdownEditor
@@ -661,7 +665,8 @@ export const FocusIndicator: Story = {
 };
 
 export const FocusIndicatorDark: Story = {
-  name: "Focus indicator (#309) — dark",
+  tags: ["!dev"],
+  name: "Keyboard focus — dark",
   decorators: [
     (Story) => (
       <ThemeProvider defaultTheme="dark" storageKey={null}>
@@ -674,7 +679,8 @@ export const FocusIndicatorDark: Story = {
 };
 
 export const FocusIndicatorHighDecoration: Story = {
-  name: "Focus indicator (#309) — high decoration",
+  tags: ["!dev"],
+  name: "Keyboard focus — high decoration",
   globals: { decoration: "10" },
   render: FocusIndicator.render,
   play: FocusIndicator.play,

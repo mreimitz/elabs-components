@@ -213,6 +213,7 @@ export const TwoSeriesPie: Story = {
  * and NO `url(#bp-series-*)` fills in EVERY theme, proving the gate. (#175)
  */
 export const NoPatternOutsideHighDecoration: Story = {
+  tags: ["!dev"],
   render: () => (
     <div data-decoration="0" className="p-4 rounded-lg bg-card">
       <div className="h-72 w-[560px]">

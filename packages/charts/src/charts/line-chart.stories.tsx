@@ -259,6 +259,7 @@ export const Drilldown: Story = {
  * instead of relying on a one-off manual toggle.
  */
 export const CategoricalXScaleDark: Story = {
+  tags: ["!dev"],
   name: "CategoricalXScale — dark",
   decorators: [
     (Story) => (
@@ -271,12 +272,14 @@ export const CategoricalXScaleDark: Story = {
 };
 
 export const CategoricalXScaleHighDecoration: Story = {
+  tags: ["!dev"],
   name: "CategoricalXScale — high decoration",
   globals: { decoration: "10" },
   render: CategoricalXScale.render,
 };
 
 export const DrilldownDark: Story = {
+  tags: ["!dev"],
   name: "Drilldown — dark",
   decorators: [
     (Story) => (
@@ -289,6 +292,7 @@ export const DrilldownDark: Story = {
 };
 
 export const DrilldownHighDecoration: Story = {
+  tags: ["!dev"],
   name: "Drilldown — high decoration",
   globals: { decoration: "10" },
   render: () => <LineDrilldownDemo />,
@@ -306,7 +310,7 @@ export const DrilldownHighDecoration: Story = {
  * styling-and-tokens.md).
  */
 export const DensityComparison: Story = {
-  name: "Density comparison (#394)",
+  name: "Density comparison",
   parameters: {
     docs: {
       description: {

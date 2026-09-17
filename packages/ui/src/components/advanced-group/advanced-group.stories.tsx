@@ -123,6 +123,7 @@ export const InsideDialog: Story = {
 };
 
 export const DefaultDark: Story = {
+  tags: ["!dev"],
   name: "Default — dark",
   args: { changedCount: 3 },
   decorators: [
@@ -136,6 +137,7 @@ export const DefaultDark: Story = {
 };
 
 export const DefaultHighDecoration: Story = {
+  tags: ["!dev"],
   name: "Default — high decoration",
   args: { changedCount: 3 },
   globals: { decoration: "10" },

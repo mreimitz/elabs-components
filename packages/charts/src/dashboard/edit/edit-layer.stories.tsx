@@ -544,7 +544,7 @@ async function dragRect(
 }
 
 export const TileOperations: Story = {
-  name: "Tile operations (RM-081)",
+  name: "Tile operations",
   render: () => <TileOpsSheet spec={EDIT_FIT_SPEC} />,
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
@@ -872,7 +872,7 @@ async function tabUntilNextTile(sheet: HTMLElement, fromId: string): Promise<str
 }
 
 export const TabOrder: Story = {
-  name: "Tab order (RM-081 follow-up 4)",
+  name: "Tab order",
   render: () => <TileOpsSheet spec={EDIT_FIT_SPEC} />,
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);

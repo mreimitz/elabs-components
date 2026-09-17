@@ -73,7 +73,7 @@ export const Interactive: Story = {
  * comfortable / 12.75px spacious, styling-and-tokens.md).
  */
 export const DensityComparison: Story = {
-  name: "Density comparison (#394)",
+  name: "Density comparison",
   parameters: {
     docs: {
       description: {

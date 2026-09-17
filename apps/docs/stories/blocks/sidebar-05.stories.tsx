@@ -877,6 +877,7 @@ export const JustAboveTheBreakpoint: Story = {
  * scale key, which the dial never touches.
  */
 export const CompactDensity: Story = {
+  tags: ["!dev"],
   render: () => (
     <div data-density="compact" className="h-svh">
       <SettingsShell activePath={SIGN_IN} />

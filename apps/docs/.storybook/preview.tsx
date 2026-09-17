@@ -405,6 +405,11 @@ const preview: Preview = {
         // is the classic way a naive first-match parser reads the wrong bytes.)
         method: "alphabetical",
         order: [
+          // `Docs` is the CUSTOMER-facing front section: what brand-ui is, how to
+          // get it, how an agent talks to it. Reference material about one
+          // component (the ViewToolbar contract, the jsdom chart recipe, the
+          // CodeWorkspace content-access note) sits with that component instead,
+          // where a reader is already looking — 2026-09-17 review §1.8.
           "Docs",
           [
             "Introduction",
@@ -412,9 +417,6 @@ const preview: Preview = {
             "brand-ui MCP Server",
             "Storybook MCP for Agents",
             "AI Output Contract for Agents",
-            "AI Content Access",
-            "View Toolbar Contract",
-            "Testing Charts in jsdom",
             "Choosing between similar components",
           ],
           "Foundations",

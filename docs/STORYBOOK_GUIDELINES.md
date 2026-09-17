@@ -22,11 +22,15 @@ order.** The two had already drifted once — the array carried Terminal, Viewer
 Maps while this list stopped at 20 entries — so update both in the same change; see
 "Adding a group" below.
 
-1. **Docs** — in reading order (explicit in `storySort.order`, NOT alphabetical):
-   **Introduction** (what it is) → **Getting Started** (how to consume) → the
-   agent/MCP detail pages (brand-ui MCP Server → Storybook MCP for Agents → AI
-   Output Contract for Agents → AI Content Access → View Toolbar Contract →
-   Testing Charts in jsdom) → Choosing between similar components. Harness
+1. **Docs** — the customer-facing front section, in reading order (explicit in
+   `storySort.order`, NOT alphabetical): **Introduction** (what it is) →
+   **Getting Started** (how to consume) → the agent/MCP detail pages (brand-ui
+   MCP Server → Storybook MCP for Agents → AI Output Contract for Agents) →
+   Choosing between similar components. **Nothing about ONE component belongs
+   here** — reference material for a component sits with that component, where a
+   reader is already looking: the ViewToolbar contract is a docs page attached to
+   `Layout/ViewToolbar`, the jsdom recipe is `Charts/Testing in jsdom`, the
+   CodeWorkspace content-access note is `Editor/AI Content Access`. Harness
    stories that only assert a test-runner invariant live under `Internal/` with
    `tags: ["!dev"]` — in the test run, out of the sidebar.
 2. **Foundations** — the design/token layer, in reading order (explicit, NOT
@@ -118,6 +122,19 @@ Foundations.
 - **No implementation leakage in titles.** The public name is the concept, not the
   library or block id: `Feedback/Toast` (not "Toast (Sonner)"), `Layout/App Shell/Mail`
   (not "… (sidebar-04)").
+- **A story NAME is not a bug tracker.** The sidebar is the first thing a visitor
+  reads, so a story is named for what it shows — "Keyboard focus", "High
+  decoration", "Tile operations" — never "Keyboard focus indicator (#308)",
+  "Tile operations (RM-081)", "50,000 marks (perf harness)" or "Reflow Regression
+  Lock". The reference is still worth keeping: put it in the JSDoc comment over
+  the export, or in `parameters.docs.description.story`. Enforced by `pnpm check
+--rule story-name-hygiene`, which rejects `#123`, `ADR`, `RM-`, "harness" and
+  "regression" in the name Storybook displays — including the one derived from
+  the export identifier when the story declares no `name` of its own.
+- **A story that exists only to sweep a variant does not belong in the sidebar.**
+  A `— dark` / `— high decoration` / `compact density` twin of a story above it
+  gets `tags: ["!dev"]`: it stays in `test-storybook`, leaves the navigation, and
+  the toolbar already gives a visitor the same view on the original.
 
 ## Group by concern, signpost duplicates
 

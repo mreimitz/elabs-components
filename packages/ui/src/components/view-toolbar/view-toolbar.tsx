@@ -21,7 +21,7 @@
  *
  * - **No `cva`.** None of the four parts has a second visual axis today, and the
  *   rules forbid dead variants. A sticky/bounded bar is a caller `className`
- *   recipe (documented in `Docs/View Toolbar Contract`), not a variant.
+ *   recipe (documented in `Layout/ViewToolbar → Contract`), not a variant.
  * - **No `role="toolbar"` on the root.** That role promises roving-tabindex
  *   arrow-key navigation, which this row does not implement; claiming it would
  *   mislead assistive tech. Every control is an ordinary tab stop instead, and
@@ -65,7 +65,7 @@ export interface ViewToolbarProps extends HTMLAttributes<HTMLDivElement> {
    * focus but deliberately NOT on tap (and Radix suppresses the focus-open when
    * focus arrived from a pointer), so on a touch device this text is
    * unreachable. Treat `info` as progressive enhancement: never put something a
-   * phone user cannot do without in it. See `Docs/View Toolbar Contract`.
+   * phone user cannot do without in it. See `Layout/ViewToolbar → Contract`.
    */
   info?: ReactNode;
   /** Left cluster — status/context, `ViewToolbarFilters`, `ResultCount`. */

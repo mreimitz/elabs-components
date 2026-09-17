@@ -199,6 +199,7 @@ export const TwoThousandVariants: Story = {
 
 /** Decoration dial at 10 — chips and bars are marks inside a control-like row, so they stay put. */
 export const HighDecoration: Story = {
+  tags: ["!dev"],
   globals: { decoration: "10" },
   args: { variants: variants.slice(0, 10), coverageTarget: 0.5 },
 };

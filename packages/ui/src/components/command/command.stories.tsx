@@ -322,7 +322,7 @@ function ExternalInputComboboxDemo() {
 }
 
 export const ExternalInputCombobox: Story = {
-  name: "External input combobox (aria-activedescendant, #365)",
+  name: "External input combobox (aria-activedescendant)",
   parameters: {
     docs: {
       description: {

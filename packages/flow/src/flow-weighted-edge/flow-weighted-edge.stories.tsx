@@ -406,6 +406,7 @@ export const TenEdgesMixed: Story = {
  * add" for the full trap. Do not "simplify" `nameOf` away.
  */
 export const NamingContractEdges: Story = {
+  name: "Edge names come from node titles, never ids",
   render: function NamingContractEdgesStory() {
     const nodes: BrandFlowNode[] = [
       { id: "n1", type: "brand", position: { x: 0, y: 0 }, data: { kind: "Step", title: "Start" } },
