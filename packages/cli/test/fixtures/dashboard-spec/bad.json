@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "bad",
+  "tiles": [
+    {
+      "id": "a",
+      "kind": "chart",
+      "layout": { "x": 0, "y": 0, "w": "wide", "h": 4 },
+      "content": {}
+    },
+    { "id": "a", "kind": "metric", "layout": { "x": 8, "y": 0, "w": 4, "h": 2 }, "content": {} },
+    { "id": "b", "layout": { "x": 12, "y": 0, "w": 4, "h": 2 }, "content": {} }
+  ]
+}

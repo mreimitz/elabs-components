@@ -25,6 +25,8 @@ export * from "./interactions";
 export * from "./url";
 
 // autoLayout/schema — RM-086
+export * from "./auto-layout";
+export * from "./schema";
 
 // Presentation/Theme/Workbook — RM-087
 

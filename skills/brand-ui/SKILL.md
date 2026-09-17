@@ -388,6 +388,28 @@ MCP tool). The quick table below is a shorter, pre-RM-038 cheat sheet covering
 | `ChoroplethChart`  | Geographic data mapped to regions (world/country polygons)     |
 | `SankeyChart`      | Flow allocation between nodes (budget, traffic, energy)        |
 
+### Dashboard sheets (agent-emitted)
+
+A whole dashboard is a serialisable `DashboardSpec` for `@elabs-ai/components-charts/dashboard`.
+Pick tiles by the question the reader asks (3–5 metrics on top, trends 12×6, records
+full width at the bottom, filters in a left column, at most 12 tiles), omit `layout` and let
+`autoLayout` place them, then validate — see
+[reference/sheet-for.md](reference/sheet-for.md) for the mapping, size rules and three
+copyable specs.
+
+<!-- brand-ui:gen:dashboard-spec:start -->
+
+> **Generated** by `pnpm gen` from the CLI's dashboard-spec module — edit there, not here.
+
+| Command                                                                     | What it does                                                                                                                                             |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `brand-ui dashboard-spec schema`                                            | Prints the DashboardSpec v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-charts/dashboard/schema.json`).                          |
+| `brand-ui dashboard-spec validate <file> [--json]`                          | Runs `validateDashboardSpec`: one `path code message` line per problem (shape, duplicate ids, dangling refs, overlaps, conditions); exit 1 when invalid. |
+| `brand-ui dashboard-spec kinds [--json]`                                    | Lists the nine built-in tile kinds with default and minimum sizes and capabilities.                                                                      |
+| `brand-ui dashboard-spec layout <file> [--strategy=by-kind\|reading-order]` | Places every tile that has no `layout` with `autoLayout` (existing layouts kept) and prints the spec.                                                    |
+
+<!-- brand-ui:gen:dashboard-spec:end -->
+
 ### Composition pattern
 
 Charts follow a provider-children model: the chart container owns a
@@ -546,4 +568,7 @@ tokens and every theme renders correctly for free.
 - [reference/chart-selection.md](reference/chart-selection.md) — data-shape table for all
   25 chart containers, the four chart-selection rules, palette-by-cardinality guidance;
   query it directly with `brand-ui chart-for "<data shape>"` / the `chart_for` MCP tool.
+- [reference/sheet-for.md](reference/sheet-for.md) — which dashboard tiles answer which question,
+  sizes, the auto-layout rules and three copyable `DashboardSpec` examples; check a spec with
+  `brand-ui dashboard-spec validate <file>`.
 - [reference/theming.md](reference/theming.md) — tokens, ThemeProvider, themes, contrast.

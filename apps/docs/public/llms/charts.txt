@@ -396,9 +396,17 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 
 ## Subpath exports
 
+- AUTO_LAYOUT_BAND_KINDS (`@elabs-ai/components-charts/dashboard` · component)
+- AUTO_LAYOUT_COLUMN_KINDS (`@elabs-ai/components-charts/dashboard` · component)
+- AUTO_LAYOUT_METRIC_KINDS (`@elabs-ai/components-charts/dashboard` · component)
+- AUTO_LAYOUT_WIDE_CHART_TYPES (`@elabs-ai/components-charts/dashboard` · component)
+- BUILT_IN_TILE_KIND_DEFAULTS (`@elabs-ai/components-charts/dashboard` · component)
+- CHART_SPEC_SCHEMA (`@elabs-ai/components-charts/dashboard` · component)
 - CONTENT_FIELD_PREFIX (`@elabs-ai/components-charts/dashboard` · component)
 - DASHBOARD_CLIPBOARD_MARKER (`@elabs-ai/components-charts/dashboard` · component)
 - DASHBOARD_EDIT_SHIFT_STEP (`@elabs-ai/components-charts/dashboard` · component)
+- DASHBOARD_SPEC_SCHEMA (`@elabs-ai/components-charts/dashboard` · component)
+- DASHBOARD_SPEC_SCHEMA_ID (`@elabs-ai/components-charts/dashboard` · component)
 - DASHBOARD_TILE_WARNING_THRESHOLD (`@elabs-ai/components-charts/dashboard` · component)
 - DASHBOARD_URL_STATE_MAX_LENGTH (`@elabs-ai/components-charts/dashboard` · component)
 - DashboardAssetPanel (`@elabs-ai/components-charts/dashboard` · component)

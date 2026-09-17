@@ -10,6 +10,7 @@
   "type": "module",
   "files": [
     "dist",
+    "schemas",
     "src"
   ],
   "sideEffects": false,
@@ -29,7 +30,8 @@
     "./dashboard/test": {
       "types": "./src/dashboard/test/index.ts",
       "default": "./src/dashboard/test/index.ts"
-    }
+    },
+    "./dashboard/schema.json": "./schemas/dashboard-spec.v1.schema.json"
   },
   "publishConfig": {
     "access": "public",
@@ -50,7 +52,8 @@
       "./dashboard/test": {
         "types": "./dist/dashboard/test/index.d.ts",
         "default": "./dist/dashboard/test/index.js"
-      }
+      },
+      "./dashboard/schema.json": "./schemas/dashboard-spec.v1.schema.json"
     }
   },
   "scripts": {
@@ -117,6 +120,7 @@
     "@types/react-dom": "^19.0.2",
     "@types/topojson-client": "^3.1.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "ajv": "^8.17.1",
     "eslint": "^9.17.0",
     "jsdom": "^25.0.1",
     "react": "^19.0.0",

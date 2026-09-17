@@ -25,6 +25,7 @@ import { join } from "node:path";
 import prettier from "prettier";
 import { loadManifest } from "./core.mjs";
 import { applyNamedMarkerBlock } from "./context.mjs";
+import { renderDashboardSpecSkillTable } from "./dashboard-spec.mjs";
 import {
   renderPackageTable,
   renderDecisionSummary,
@@ -100,6 +101,8 @@ export function genTargets(root, manifest) {
         { name: "catalogue", render: () => renderSkillCatalogue(manifest) },
         // The agent-output contract (how an agent structures output for @elabs-ai/components-ai).
         { name: "agent-output", render: () => renderAgentOutputGuidance(manifest) },
+        // The `brand-ui dashboard-spec` verbs (RM-086) — agent tooling for DashboardSpec v1.
+        { name: "dashboard-spec", render: () => renderDashboardSpecSkillTable() },
       ],
     },
     {

@@ -1,0 +1,64 @@
+{
+  "grid": {
+    "mode": "fit",
+    "columns": 24,
+    "rows": 12,
+    "gap": 8
+  },
+  "layouts": {
+    "kpi-revenue": {
+      "x": 0,
+      "y": 0,
+      "w": 4,
+      "h": 2
+    },
+    "kpi-margin": {
+      "x": 4,
+      "y": 0,
+      "w": 4,
+      "h": 2
+    },
+    "kpi-deals": {
+      "x": 8,
+      "y": 0,
+      "w": 4,
+      "h": 2
+    },
+    "kpi-churn": {
+      "x": 12,
+      "y": 0,
+      "w": 4,
+      "h": 2
+    },
+    "revenue-trend": {
+      "x": 0,
+      "y": 2,
+      "w": 12,
+      "h": 4
+    },
+    "region-share": {
+      "x": 12,
+      "y": 2,
+      "w": 12,
+      "h": 6
+    },
+    "top-products": {
+      "x": 0,
+      "y": 6,
+      "w": 12,
+      "h": 6
+    },
+    "pipeline": {
+      "x": 12,
+      "y": 8,
+      "w": 12,
+      "h": 6
+    },
+    "detail-note": {
+      "x": 0,
+      "y": 14,
+      "w": 24,
+      "h": 3
+    }
+  }
+}
