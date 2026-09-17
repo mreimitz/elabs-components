@@ -8,9 +8,10 @@
 #     publishes every fixed-group version not yet on npm, tags it and creates the
 #     GitHub Releases. When nothing is new, it publishes nothing.
 #
-# The quality battery is `ci.yml` on the PRs that land on `main`; this workflow does
-# not re-run it. What it DOES check is the artefact: the post-publish fresh-install
-# smoke installs what the registry serves.
+# The quality battery is `ci.yml`, EXCEPT for the one job a release cannot be
+# allowed to outrun (`storybook-gate` below). What this workflow also checks is the
+# artefact: the post-publish fresh-install smoke installs what the registry serves,
+# and the post-deploy story crawl opens what the docs site serves.
 name: Release
 
 on:
@@ -33,8 +34,50 @@ permissions:
   id-token: write # npm provenance (best-effort; see the changesets step)
 
 jobs:
+  # ── The one gate a release may not outrun ────────────────────────────────────
+  #
+  # `ci.yml` and this workflow are BOTH triggered by the push to `main`, and
+  # nothing connects them: they are separate workflows, so a red CI run does not
+  # stop a publish. `main` also carries no required status checks
+  # (`gh api repos/:owner/:repo/branches/main/protection` → no
+  # `required_status_checks`), which is what makes a direct push to `main`
+  # possible in the first place. The result, measured on 2026-09-17: the live
+  # docs site was serving stories whose play functions THREW, published by a
+  # release whose own workflow was green, because the only job that would have
+  # caught them ran somewhere else and was advisory.
+  #
+  # So the Storybook run is duplicated here on purpose — it is the same command
+  # ci.yml runs, and `release` needs it. A red story run now fails the release
+  # workflow itself, with no repository setting in the loop. (Making it a
+  # REQUIRED CHECK on `main` as well is a repo-settings change and is the other
+  # half of this fix; see docs/RELEASING.md § Gates.)
+  storybook-gate:
+    name: Storybook interaction + axe (release gate, ${{ matrix.theme }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        theme: [light, dark]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm --filter @elabs-ai/components-docs exec playwright install --with-deps chromium
+      - name: Story tests
+        env:
+          STORYBOOK_THEME: ${{ matrix.theme }}
+        run: pnpm --filter @elabs-ai/components-docs test-storybook
+
   release:
     name: Version or publish
+    needs: storybook-gate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -258,3 +301,26 @@ jobs:
           echo "$body"
           echo "$body" | grep -q "\"version\":\"${expected}\"" \
             || { echo "::error::hosted MCP does not report version ${expected}" >&2; exit 1; }
+
+      # The docs site is the other artefact this job just published, and until
+      # now nothing ever opened it. `--stories-only` loads every story from the
+      # deployed `index.json` in Chromium and fails on a visible error overlay,
+      # an uncaught page error, or a chart that measured to nothing — the exact
+      # three symptoms the 2026-09-17 crawl found on a green release
+      # (scripts/lib/story-crawl.mjs).
+      #
+      # The deploy itself runs on Vercel, so this job had no toolchain of its own
+      # until here; the crawl needs one (Playwright is apps/docs's devDependency).
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm --filter @elabs-ai/components-docs exec playwright install --with-deps chromium
+      - name: Smoke the published stories
+        run: node scripts/release-smoke.mjs --stories-only --stories https://elabs-ai.com

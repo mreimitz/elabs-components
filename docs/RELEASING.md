@@ -36,6 +36,8 @@ Review the PR like any other: CI runs the full pipeline on it, including `pnpm c
 
 Merging the Version PR leaves no pending changesets, so the next run publishes:
 
+0. **`storybook-gate`** — the Storybook interaction + axe run, light and dark, as a
+   `needs:` of the release job. See § Gates below for why it is duplicated here.
 1. **Release mode** — publishes only if some distributable's version is not on npm yet
    (a routine push builds nothing; a partial publish resumes);
 2. **Registry authentication** — fails loudly if `secrets.NPM_TOKEN` is empty, then `npm whoami`;
@@ -53,7 +55,9 @@ Merging the Version PR leaves no pending changesets, so the next run publishes:
    succeeded, even if a later step of the release job failed.
 7. **`deploy-docs`** — deploys the Storybook and the hosted MCP (`/mcp`) to Vercel
    production from the newest `@elabs-ai/components-cli@<version>` tag, then checks that
-   `/mcp` reports that version. Vercel's Git integration is off (`git.deploymentEnabled:
+   `/mcp` reports that version and **crawls every story the deployed site serves**
+   (`node scripts/release-smoke.mjs --stories-only`), failing on a visible error
+   overlay, an uncaught page error, or a chart that measured to nothing. Vercel's Git integration is off (`git.deploymentEnabled:
 false` in `apps/docs/vercel.json`), so pushes to `main` never deploy: production keeps
    the previous release until this job replaces it. Needs `secrets.VERCEL_TOKEN` (a token
    scoped to the `elabs-ai` Vercel team). Redeploy the current release by hand: run the
@@ -61,6 +65,38 @@ false` in `apps/docs/vercel.json`), so pushes to `main` never deploy: production
 
 Watch with `gh run list --workflow=Release`. Confirm: `npm view @elabs-ai/components-ui@<v>`,
 or re-run the smoke from a checkout: `GITHUB_REPOSITORY=mreimitz/elabs-components pnpm release:smoke`.
+
+## Gates — what can actually stop a release
+
+**A red `ci.yml` does not.** `ci.yml` and `release.yml` are both triggered by the push
+to `main` and nothing connects them; `main` carries no required status checks
+(`gh api repos/:owner/:repo/branches/main/protection` returns no
+`required_status_checks`), which is what makes a direct push to `main` possible at all.
+On 2026-09-17 that combination shipped a docs site whose stories were throwing, from a
+release workflow that was green.
+
+Two halves fix it, and only one of them lives in this repo:
+
+- **In the repo (done).** `release.yml` runs the Storybook interaction + axe job itself
+  as `storybook-gate`, and `release` has `needs: storybook-gate`. The same command as
+  `ci.yml`, deliberately duplicated: it is the one job whose failure must stop a
+  publish, with no repository setting in the loop. The post-deploy story crawl in
+  `deploy-docs` is the second half of the same idea, aimed at the artefact rather than
+  the source.
+- **In repository settings (for a maintainer).** Make the CI jobs required on `main`, so
+  a red run also stops the merge and not only the publish:
+
+  ```bash
+  gh api -X PUT repos/mreimitz/elabs-components/branches/main/protection \
+    -F required_status_checks[strict]=true \
+    -F 'required_status_checks[contexts][]=Storybook interaction + axe (light)' \
+    -F 'required_status_checks[contexts][]=Storybook interaction + axe (dark)' \
+    -F 'required_status_checks[contexts][]=Quality' \
+    -F enforce_admins=false -F required_pull_request_reviews=null -F restrictions=null
+  ```
+
+  This changes who can push to `main`, so it is a deliberate maintainer decision, not
+  something a workflow file can do for you.
 
 ## 4. Rollback
 

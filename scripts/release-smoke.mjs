@@ -59,13 +59,27 @@
  * publish-only preflight AND keeps it inside the post-release smoke: the
  * preflight is what saves the release, the smoke is what proves the end state.
  *
+ * STEP 5 IS THE DEPLOYED DOCS SITE (`--stories-only`), and it belongs to the docs
+ * job, not this one: it crawls the Storybook that was JUST deployed. On
+ * 2026-09-17 the live site was serving 26 chart stories that drew nothing and
+ * several whose play functions threw, with a green CI — because nothing in the
+ * pipeline had ever opened the published Storybook. It loads every story from
+ * the site's own `index.json` in Chromium and fails on a visible error overlay,
+ * an uncaught page error, or a chart that measured to nothing
+ * (scripts/lib/story-crawl.mjs). It needs a Chromium: `pnpm --filter
+ * @elabs-ai/components-docs exec playwright install --with-deps chromium`.
+ *
  *   pnpm release:smoke                        # every distributable package at the root version
  *   node scripts/release-smoke.mjs --pointer-only  # ONLY step 4, safe to run before the publish
+ *   node scripts/release-smoke.mjs --stories-only  # ONLY step 5, against the deployed site
  *   node scripts/release-smoke.mjs --version 2.0.0 --manifest <path> --registry <url>
  *
  * Flags:
  *   --pointer-only    run ONLY the marketplace-pointer assertion (no install, no
  *                     package list needed) — the pre-publish preflight
+ *   --stories-only    run ONLY the published-story crawl (no install, no registry)
+ *   --stories <url>   the Storybook to crawl (default: https://elabs-ai.com)
+ *   --concurrency <n> pages open at once during the crawl (default: 8)
  *   --version <v>     released version (default: the root package.json version)
  *   --manifest <p>    JSON package list to install instead of the derived distributables
  *   --registry <url>  registry the RELEASE SCOPES map to in the generated `.npmrc`
@@ -80,11 +94,13 @@
  * Dependency-free; ESM; cwd-independent.
  */
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { REPO_ROOT, distributablePackages } from "./lib/distributables.mjs";
+import { crawlStories, storiesFromIndex } from "./lib/story-crawl.mjs";
 
 /**
  * Where a release lands by default — the PUBLIC npm registry.
@@ -297,6 +313,108 @@ export function judgeMarketplacePointer({ pointer, version, repo, ci = Boolean(p
   return { failures, logs, warnings };
 }
 
+/** The Storybook a release deploys — the address a customer opens. */
+export const DEFAULT_STORIES_URL = "https://elabs-ai.com";
+
+/**
+ * The one-line verdict of a story crawl. Pure, so the wording is pinned by the
+ * self-test rather than by reading CI logs.
+ */
+export function summariseCrawl({ visited, failures }, base) {
+  if (failures.length === 0)
+    return `✔ release:smoke: ${visited} published stories at ${base} render — no error overlay, no page error, every chart drew something.`;
+  const lines = [
+    `✖ release:smoke: ${failures.length} of ${visited} published stories at ${base} are broken for a visitor:`,
+  ];
+  for (const f of failures) for (const p of f.problems) lines.push(`  - ${f.id}  ${p}`);
+  return lines.join("\n");
+}
+
+/**
+ * Playwright's entry point is CommonJS, and its `module.exports` is built at
+ * runtime, so Node's named-export detection finds nothing: `import("playwright")`
+ * hands back a namespace whose only real member is `default`. Reading
+ * `.chromium` off it gives `undefined`, and the first crawl died on
+ * "Cannot read properties of undefined (reading 'launch')" AFTER printing
+ * "crawling 1958 stories" — a failure that looks like a broken site. Take the
+ * browser from whichever shape the namespace has.
+ */
+export function pickChromium(mod) {
+  return mod?.chromium ?? mod?.default?.chromium;
+}
+
+/**
+ * Step 5 — open every story the deployed site serves. Returns an exit code.
+ *
+ * `launch` is injected so the self-test drives it without a browser; by default
+ * it is Playwright's Chromium, resolved from the workspace (this script is
+ * dependency-free, so the import is lazy and its absence is a clear message
+ * rather than a module-load crash).
+ */
+export async function smokeStories({
+  base = DEFAULT_STORIES_URL,
+  concurrency = 8,
+  root = REPO_ROOT,
+  launch,
+  log = console.log,
+  error = console.error,
+} = {}) {
+  let index;
+  try {
+    const res = await fetch(`${String(base).replace(/\/+$/, "")}/index.json`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    index = await res.json();
+  } catch (err) {
+    error(`✖ release:smoke: cannot read ${base}/index.json — ${err.message}`);
+    return 1;
+  }
+  const entries = storiesFromIndex(index);
+  if (entries.length === 0) {
+    error(
+      `✖ release:smoke: ${base}/index.json lists ZERO stories — the crawl would pass vacuously.`,
+    );
+    return 1;
+  }
+
+  let open = launch;
+  if (!open) {
+    // Playwright is apps/docs's devDependency (the Storybook Vitest browser
+    // runner owns it), not the root's, so resolve it from there rather than
+    // from this file — pnpm does not hoist it to the repo root.
+    const from = pathToFileURL(join(root, "apps", "docs", "package.json")).href;
+    let chromium;
+    try {
+      const resolved = createRequire(from).resolve("playwright");
+      chromium = pickChromium(await import(pathToFileURL(resolved).href));
+    } catch {
+      chromium = undefined;
+    }
+    if (!chromium) {
+      error(
+        "✖ release:smoke: playwright is not installed — run `pnpm --filter " +
+          "@elabs-ai/components-docs exec playwright install --with-deps chromium`.",
+      );
+      return 1;
+    }
+    open = () => chromium.launch();
+  }
+
+  log(`  crawling ${entries.length} stories at ${base} (${concurrency} at a time) …`);
+  const browser = await open();
+  try {
+    const result = await crawlStories({ browser, base, entries, concurrency, log });
+    const summary = summariseCrawl(result, base);
+    if (result.failures.length > 0) {
+      error(summary);
+      return 1;
+    }
+    log(summary);
+    return 0;
+  } finally {
+    await browser.close();
+  }
+}
+
 // ──────────────────────────────── CLI ─────────────────────────────────────────
 function argValue(argv, flag) {
   const i = argv.indexOf(flag);
@@ -339,6 +457,17 @@ async function main(argv) {
       `✔ marketplace:check: the pointer a \`/plugin marketplace add\` consumer follows names v${version}.`,
     );
     return 0;
+  }
+
+  // ── The post-deploy story crawl (`--stories-only`) ───────────────────────────
+  // Belongs to the docs job: it looks at the Storybook that was just deployed,
+  // which is the artefact no other step in this pipeline had ever opened.
+  if (argv.includes("--stories-only")) {
+    return smokeStories({
+      root,
+      base: argValue(argv, "--stories") ?? DEFAULT_STORIES_URL,
+      concurrency: Number(argValue(argv, "--concurrency") ?? 8),
+    });
   }
 
   // The package set is DERIVED, never retyped: the workspace's distributables by

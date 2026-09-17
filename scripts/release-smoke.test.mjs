@@ -32,6 +32,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   DEFAULT_REGISTRY,
+  DEFAULT_STORIES_URL,
+  pickChromium,
+  smokeStories,
+  summariseCrawl,
   checkInstalledEntries,
   consumerNpmrc,
   installArgs,
@@ -494,3 +498,125 @@ function run(args, env = {}) {
     );
   });
 }
+
+// ── Step 5: the published-story crawl (2026-09-17 review C2) ─────────────────
+
+test("the crawl verdict names the site and every broken story", () => {
+  assert.match(
+    summariseCrawl({ visited: 1958, failures: [] }, "https://elabs-ai.com"),
+    /^✔ release:smoke: 1958 published stories at https:\/\/elabs-ai\.com render/,
+  );
+  const bad = summariseCrawl(
+    {
+      visited: 1958,
+      failures: [{ id: "charts-barchart--default", problems: ["chart canvas measured 32×0 px"] }],
+    },
+    "https://elabs-ai.com",
+  );
+  assert.match(bad, /^✖ release:smoke: 1 of 1958 published stories/);
+  assert.match(bad, /charts-barchart--default {2}chart canvas measured 32×0 px/);
+});
+
+test("the browser is taken from whichever shape the playwright namespace has", () => {
+  // Playwright is CommonJS: `import("playwright")` gives `{ default: { chromium } }`,
+  // not `{ chromium }`. Reading the named export killed the first real crawl with
+  // "Cannot read properties of undefined (reading 'launch')".
+  const chromium = { launch: () => {} };
+  assert.equal(pickChromium({ default: { chromium }, __esModule: true }), chromium);
+  assert.equal(pickChromium({ chromium }), chromium);
+  assert.equal(pickChromium({ default: {} }), undefined);
+  assert.equal(pickChromium(undefined), undefined);
+});
+
+test("the crawl REFUSES to pass on an index that lists no stories", async () => {
+  const errors = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ entries: {} }), { status: 200 });
+  try {
+    const code = await smokeStories({
+      base: "https://elabs-ai.com",
+      launch: () => {
+        throw new Error("must not launch a browser");
+      },
+      log: () => {},
+      error: (m) => errors.push(m),
+    });
+    assert.equal(code, 1);
+    assert.match(errors.join("\n"), /ZERO stories — the crawl would pass vacuously/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("the crawl fails when the deployed index cannot be read at all", async () => {
+  const errors = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("nope", { status: 503 });
+  try {
+    const code = await smokeStories({
+      base: DEFAULT_STORIES_URL,
+      launch: () => {
+        throw new Error("must not launch a browser");
+      },
+      log: () => {},
+      error: (m) => errors.push(m),
+    });
+    assert.equal(code, 1);
+    assert.match(errors.join("\n"), /cannot read https:\/\/elabs-ai\.com\/index\.json — HTTP 503/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("a crawl that finds a broken story exits non-zero", async () => {
+  const logs = [];
+  const errors = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        entries: {
+          "charts-barchart--default": {
+            id: "charts-barchart--default",
+            type: "story",
+            title: "Charts/BarChart",
+          },
+        },
+      }),
+      { status: 200 },
+    );
+  // A browser that reports a 0-px chart, exactly the 2026-09-17 symptom.
+  const page = {
+    on() {},
+    async goto() {},
+    async waitForFunction() {},
+    async waitForTimeout() {},
+    async evaluate() {
+      return { firstChild: { width: 0, height: 0 }, svgCount: 1, markCount: 0 };
+    },
+    async close() {},
+  };
+  const browser = {
+    async newContext() {
+      return {
+        async newPage() {
+          return page;
+        },
+        async close() {},
+      };
+    },
+    async close() {},
+  };
+  try {
+    const code = await smokeStories({
+      base: "https://elabs-ai.com",
+      launch: async () => browser,
+      log: (m) => logs.push(m),
+      error: (m) => errors.push(m),
+    });
+    assert.equal(code, 1);
+    assert.match(errors.join("\n"), /charts-barchart--default {2}chart canvas measured 0×0 px/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
