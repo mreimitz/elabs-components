@@ -31,7 +31,7 @@ import { X } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { mergeRefs } from "../../lib/merge-refs";
 import { useIsMobile } from "../../lib/use-mobile";
-import { useCollapsiblePanel } from "../collapsible-panel";
+import { useCollapsiblePanel, type CollapsiblePanelContainerPosition } from "../collapsible-panel";
 import { useLocale } from "../locale-provider/locale-provider";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../sheet";
 
@@ -61,6 +61,18 @@ export interface SideDockProps extends Omit<ComponentProps<"aside">, "title"> {
 
   /** Which edge it docks to. Default `"right"`. */
   side?: "left" | "right";
+
+  /**
+   * Where the column presentation's fixed/absolute container positions
+   * itself. Default `"viewport"` (pins to the viewport edge — byte-identical
+   * pre-#432 behavior). `"inset"` pins to the dock's OWN position in the
+   * layout instead (`absolute` against a `relative` wrapper this component
+   * provides) — use this when the dock is nested inside another element that
+   * already pins itself to the same viewport edge (e.g. an app `Sidebar`),
+   * so the two never race for the same edge (#432). Has no effect on the
+   * overlay `Sheet` presentation below `overlayBreakpoint`.
+   */
+  containerPosition?: CollapsiblePanelContainerPosition;
 
   /**
    * `width`, `defaultWidth`, `minWidth`, `maxWidth`, `minContentWidth` and
@@ -135,6 +147,7 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
     defaultOpen = false,
     onOpenChange,
     side = "right",
+    containerPosition = "viewport",
     width,
     defaultWidth = DEFAULT_WIDTH,
     onWidthChange,
@@ -155,7 +168,7 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
   const titleId = useId();
   const resizeLabelId = useId();
 
-  const panel = useCollapsiblePanel({ side, open, defaultOpen, onOpenChange });
+  const panel = useCollapsiblePanel({ side, open, defaultOpen, onOpenChange, containerPosition });
   const isOverlay = useIsMobile(overlayBreakpoint);
 
   // Focus restoration for the COLUMN presentation only (Finding 2,
@@ -452,7 +465,11 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
       // programmatically.
       ref={groupRef}
       tabIndex={-1}
-      className="group"
+      // `relative`: only in "inset" mode, so the container's `absolute`
+      // positioning below resolves against THIS wrapper (its own slot in
+      // the layout) instead of the viewport (#432). No-op in "viewport"
+      // mode — the container stays `fixed`.
+      className={cn("group", containerPosition === "inset" && "relative")}
       {...panel.attrs}
       style={{ "--collapsible-panel-width": `${clampedWidth}px` } as CSSProperties}
     >

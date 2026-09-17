@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { DashboardSheetApp } from "@/components/dashboard-sheet-app/dashboard-sheet-app";
 
 /**
@@ -31,5 +31,39 @@ export const Default: Story = {
     // their inner root, which an unscoped query would double-count.
     const tiles = canvasElement.querySelectorAll('[data-slot="dashboard-tile"][data-tile-kind]');
     await expect(tiles.length).toBe(3);
+
+    // #432 regression (wave-4-review-visual.md P0-1): Edit -> Add opens the
+    // Assets dock beside the block's own Sidebar — it must never paint over
+    // the nav, leave a dead gap, or intersect the Sidebar's rect.
+    await userEvent.click(canvas.getByRole("radio", { name: "Edit" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Add" }));
+    const dashboardsNav = canvas.getByRole("button", { name: "Dashboards" });
+    await expect(dashboardsNav).toBeVisible();
+    const sidebarContainer = canvasElement.querySelector(
+      '[data-slot="sidebar-container"]',
+    ) as HTMLElement;
+    const dockContainer = canvasElement.querySelector(
+      '[data-dashboard-panel="assets"][data-slot="side-dock-container"]',
+    ) as HTMLElement;
+    const canvasWrapper = (
+      canvasElement.querySelector('[data-slot="dashboard-sheet"]') as HTMLElement
+    ).parentElement as HTMLElement;
+    // Settle the open tween before measuring (mirrors the ui SideDock stories).
+    await waitFor(() => {
+      const dockRect = dockContainer.getBoundingClientRect();
+      const sidebarRect = sidebarContainer.getBoundingClientRect();
+      expect(dockRect.left).toBeGreaterThanOrEqual(sidebarRect.right);
+    });
+    const sidebarRect = sidebarContainer.getBoundingClientRect();
+    const dockRect = dockContainer.getBoundingClientRect();
+    const canvasRect = canvasWrapper.getBoundingClientRect();
+    const overlaps =
+      sidebarRect.left < dockRect.right &&
+      dockRect.left < sidebarRect.right &&
+      sidebarRect.top < dockRect.bottom &&
+      dockRect.top < sidebarRect.bottom;
+    await expect(overlaps).toBe(false);
+    await expect(dockRect.left).toBeGreaterThanOrEqual(sidebarRect.right);
+    await expect(Math.abs(canvasRect.left - dockRect.right)).toBeLessThanOrEqual(1);
   },
 };

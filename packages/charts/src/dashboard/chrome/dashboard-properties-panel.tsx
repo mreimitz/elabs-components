@@ -237,6 +237,11 @@ export const DashboardPropertiesPanel = forwardRef<HTMLElement, DashboardPropert
         side="right"
         title={heading}
         overlayBreakpoint={overlayBreakpoint}
+        // The sheet mounts inside a host layout that may itself pin an app
+        // `Sidebar`/chrome to the SAME viewport edge — "inset" keeps this
+        // dock's fixed container scoped to its own layout slot instead of
+        // racing that chrome for the viewport edge (#432).
+        containerPosition="inset"
         data-dashboard-panel="properties"
         {...props}
       >
