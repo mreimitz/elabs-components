@@ -4,6 +4,7 @@ import React, { memo, useState } from "react";
 import { Select } from "storybook/internal/components";
 import { addons, types, useChannel, useGlobals, useParameter } from "storybook/manager-api";
 import { create } from "storybook/theming";
+import { inject } from "@vercel/analytics";
 
 import {
   THEME_FAMILIES_EVENT,
@@ -30,6 +31,15 @@ const managerTheme = create({
 });
 
 addons.setConfig({ theme: managerTheme });
+
+// Vercel Web Analytics for the hosted docs. Injected in the MANAGER (the top
+// window whose URL changes as people browse stories), not the preview iframe,
+// so each visit counts once. `@vercel/analytics/next` is the Next.js wrapper;
+// Storybook is a static Vite app, so it uses the framework-agnostic `inject`.
+// Local `pnpm storybook` has no `/_vercel/insights` endpoint — skip it there.
+if (!["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+  inject({ mode: "production", framework: "storybook" });
+}
 
 /**
  * Theme / Mode toolbar (ADR 0036) — replaces `@storybook/addon-themes`' single
