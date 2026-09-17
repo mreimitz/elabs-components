@@ -1,0 +1,1177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mreimitz/elabs-components/packages/charts/schemas/dashboard-spec.v1.schema.json",
+  "title": "DashboardSpec",
+  "description": "A dashboard sheet (R1): a versioned, JSON-serialisable object an agent can emit the way it emits a `ChartSpec`. Shape only — also run `validateDashboardSpec` (ids, refs, overlaps, expressions).",
+  "type": "object",
+  "required": ["version", "id", "grid", "tiles"],
+  "additionalProperties": false,
+  "x-brand-ui-kind-defaults": {
+    "chart": {
+      "defaultSize": {
+        "w": 8,
+        "h": 4
+      },
+      "minSize": {
+        "w": 4,
+        "h": 2
+      }
+    },
+    "metric": {
+      "defaultSize": {
+        "w": 4,
+        "h": 2
+      },
+      "minSize": {
+        "w": 3,
+        "h": 2
+      }
+    },
+    "text": {
+      "defaultSize": {
+        "w": 6,
+        "h": 3
+      },
+      "minSize": {
+        "w": 2,
+        "h": 1
+      }
+    },
+    "heading": {
+      "defaultSize": {
+        "w": 6,
+        "h": 1
+      },
+      "minSize": {
+        "w": 2,
+        "h": 1
+      }
+    },
+    "divider": {
+      "defaultSize": {
+        "w": 4,
+        "h": 1
+      },
+      "minSize": {
+        "w": 1,
+        "h": 1
+      }
+    },
+    "image": {
+      "defaultSize": {
+        "w": 6,
+        "h": 4
+      },
+      "minSize": {
+        "w": 2,
+        "h": 2
+      }
+    },
+    "button": {
+      "defaultSize": {
+        "w": 3,
+        "h": 1
+      },
+      "minSize": {
+        "w": 2,
+        "h": 1
+      }
+    },
+    "variable": {
+      "defaultSize": {
+        "w": 4,
+        "h": 1
+      },
+      "minSize": {
+        "w": 2,
+        "h": 1
+      }
+    },
+    "filter": {
+      "defaultSize": {
+        "w": 4,
+        "h": 6
+      },
+      "minSize": {
+        "w": 3,
+        "h": 3
+      }
+    }
+  },
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Spec version; always `1` for this build."
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable sheet id."
+    },
+    "title": {
+      "type": "string",
+      "description": "Write the title as the conclusion of the sheet, not its topic."
+    },
+    "description": {
+      "type": "string",
+      "description": "One or two sentences on what the sheet answers and for whom."
+    },
+    "grid": {
+      "$ref": "#/$defs/GridSpec"
+    },
+    "tiles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TileSpec"
+      },
+      "description": "The tiles, in reading order."
+    },
+    "containers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ContainerSpec"
+      },
+      "description": "Container tiles (one level)."
+    },
+    "library": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LibraryTileSpec"
+      },
+      "description": "Reusable tile definitions."
+    },
+    "filters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FilterSpec"
+      },
+      "description": "Author-defined filter fields."
+    },
+    "variables": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/VariableSpec"
+      },
+      "description": "Author-defined variables."
+    },
+    "interactions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/InteractionSpec"
+      },
+      "description": "Cross-tile interactions."
+    },
+    "bookmarks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BookmarkSpec"
+      },
+      "description": "Saved states."
+    },
+    "view": {
+      "type": "object",
+      "description": "View-level settings.",
+      "properties": {
+        "mode": {
+          "enum": ["view", "edit"],
+          "description": "Mode the sheet opens in. Default `view`."
+        },
+        "presentation": {
+          "type": "object",
+          "description": "Presentation mode: advance every `cycleMs`.",
+          "properties": {
+            "cycleMs": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "refreshMs": {
+          "type": "number",
+          "description": "Host refresh interval hint in ms.",
+          "minimum": 0
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "description": "Theme the sheet asks for (ADR 0031/0036). The host's `ThemeProvider` still decides.",
+      "properties": {
+        "family": {
+          "type": "string",
+          "description": "Theme family slug, e.g. `qlik`."
+        },
+        "mode": {
+          "enum": ["light", "dark"],
+          "description": "Light or dark scheme within the family."
+        },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Token overrides, `--token-name` → value."
+        }
+      }
+    },
+    "layouts": {
+      "type": "object",
+      "description": "Hand-tuned per-breakpoint layouts (R9); absent ones fall back to `stackForNarrow`.",
+      "properties": {
+        "md": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TileLayout"
+          }
+        },
+        "sm": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TileLayout"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Action"
+      },
+      "description": "Actions run, in order, when the sheet opens — the `button` tile's action vocabulary."
+    },
+    "showCondition": {
+      "type": "string",
+      "description": "Show the sheet only when this condition holds (the `visibleWhen` grammar)."
+    }
+  },
+  "$defs": {
+    "ChartSpec": {
+      "type": "object",
+      "description": "The serializable chart specification emitted by an LLM tool-call (`AutoChart`).",
+      "required": ["data", "x", "series"],
+      "properties": {
+        "type": {
+          "enum": [
+            "line",
+            "area",
+            "bar",
+            "pie",
+            "scatter",
+            "radar",
+            "funnel",
+            "candlestick",
+            "heatmap",
+            "calendar",
+            "waterfall",
+            "dumbbell",
+            "unit",
+            "treemap",
+            "histogram",
+            "box",
+            "strip",
+            "bump",
+            "stream",
+            "diverging-bar"
+          ],
+          "description": "Chart type; inferred from the data when omitted."
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Row records."
+        },
+        "x": {
+          "type": "string",
+          "description": "Field used for the x axis / category."
+        },
+        "xType": {
+          "enum": ["time", "category", "number"],
+          "description": "How the x field is read."
+        },
+        "series": {
+          "type": "array",
+          "description": "Value fields, as keys or `{ key, label?, color? }`.",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "required": ["key"],
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "y2": {
+          "type": "string",
+          "description": "Field plotted on a secondary axis."
+        },
+        "group": {
+          "type": "string",
+          "description": "Field grouping records (strip/box/dumbbell)."
+        },
+        "hierarchy": {
+          "type": "object",
+          "description": "Treemap root node."
+        },
+        "palette": {
+          "enum": ["mono", "sequential", "categorical"],
+          "description": "Colour ramp."
+        },
+        "kind": {
+          "enum": ["steps", "records", "ranking"],
+          "description": "Data shape hint."
+        },
+        "emphasis": {
+          "enum": ["analytical", "editorial"],
+          "description": "Presentation register."
+        },
+        "title": {
+          "type": "string",
+          "description": "Chart title."
+        },
+        "description": {
+          "type": "string",
+          "description": "Accessible description."
+        },
+        "stacked": {
+          "type": "boolean",
+          "description": "Stack the series."
+        },
+        "orientation": {
+          "enum": ["vertical", "horizontal"],
+          "description": "Bar orientation."
+        },
+        "donut": {
+          "type": "boolean",
+          "description": "Pie as donut."
+        },
+        "legend": {
+          "type": "boolean",
+          "description": "Show the legend."
+        },
+        "valueFormat": {
+          "enum": ["number", "compact", "currency", "percent"],
+          "description": "How values are formatted."
+        },
+        "currency": {
+          "type": "string",
+          "description": "ISO-4217 currency code for `valueFormat: currency`."
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string"
+            },
+            "series": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "GridSpec": {
+      "type": "object",
+      "description": "The grid a sheet lays its tiles on — Qlik's `fit` model and Grafana's `flow` model in one union (R3).",
+      "properties": {
+        "mode": {
+          "enum": ["fit", "flow"],
+          "description": "`fit` (scale to the viewport, Qlik) or `flow` (fixed row height, compacts, Grafana). Default `fit`."
+        },
+        "columns": {
+          "type": "integer",
+          "description": "Number of columns. Default 24.",
+          "minimum": 1
+        },
+        "rows": {
+          "type": "integer",
+          "description": "`fit` only: number of rows the viewport is divided into. Default 12.",
+          "minimum": 1
+        },
+        "rowHeight": {
+          "type": "number",
+          "description": "`flow` only: height of one row in px. Default 30.",
+          "minimum": 1
+        },
+        "gap": {
+          "type": "number",
+          "description": "Gap between cells in px. Default 8.",
+          "minimum": 0
+        },
+        "density": {
+          "enum": ["narrow", "medium", "wide", "custom"],
+          "description": "Preset resolving to `columns × rows`: `wide` 24×12, `medium` 48×24, `narrow` 72×36."
+        },
+        "extendable": {
+          "type": "boolean",
+          "description": "`fit` only: allow adding rows (in 50 % steps of the original `rows`) when the sheet is full."
+        },
+        "extensions": {
+          "type": "integer",
+          "description": "How many times `extendRows` has grown this grid. Written by the engine, not authors.",
+          "minimum": 0
+        }
+      }
+    },
+    "TileLayoutInCells": {
+      "type": "object",
+      "description": "Where one tile sits on the grid, in cell units (never pixels).",
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "Left column, 0-based.",
+          "minimum": 0
+        },
+        "y": {
+          "type": "number",
+          "description": "Top row, 0-based.",
+          "minimum": 0
+        },
+        "w": {
+          "type": "number",
+          "description": "Width in columns, ≥ 1.",
+          "minimum": 1
+        },
+        "h": {
+          "type": "number",
+          "description": "Height in rows, ≥ 1.",
+          "minimum": 1
+        },
+        "minW": {
+          "type": "number",
+          "description": "Smallest width a resize may reach.",
+          "minimum": 0
+        },
+        "minH": {
+          "type": "number",
+          "description": "Smallest height a resize may reach.",
+          "minimum": 0
+        },
+        "maxW": {
+          "type": "number",
+          "description": "Largest width a resize may reach.",
+          "minimum": 0
+        },
+        "maxH": {
+          "type": "number",
+          "description": "Largest height a resize may reach.",
+          "minimum": 0
+        },
+        "aspect": {
+          "type": "number",
+          "description": "Width ÷ height (in cells) a resize keeps, e.g. `2` for a 2:1 tile.",
+          "minimum": 0
+        },
+        "z": {
+          "type": "number",
+          "description": "Stacking order hint for overlapping chrome (never for overlapping tiles)."
+        }
+      }
+    },
+    "TileLayout": {
+      "type": "object",
+      "required": ["id", "x", "y", "w", "h"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The tile's id — matches `TileSpec.id`."
+        },
+        "x": {
+          "type": "number",
+          "description": "Left column, 0-based.",
+          "minimum": 0
+        },
+        "y": {
+          "type": "number",
+          "description": "Top row, 0-based.",
+          "minimum": 0
+        },
+        "w": {
+          "type": "number",
+          "description": "Width in columns, ≥ 1.",
+          "minimum": 1
+        },
+        "h": {
+          "type": "number",
+          "description": "Height in rows, ≥ 1.",
+          "minimum": 1
+        },
+        "minW": {
+          "type": "number",
+          "description": "Smallest width a resize may reach.",
+          "minimum": 0
+        },
+        "minH": {
+          "type": "number",
+          "description": "Smallest height a resize may reach.",
+          "minimum": 0
+        },
+        "maxW": {
+          "type": "number",
+          "description": "Largest width a resize may reach.",
+          "minimum": 0
+        },
+        "maxH": {
+          "type": "number",
+          "description": "Largest height a resize may reach.",
+          "minimum": 0
+        },
+        "aspect": {
+          "type": "number",
+          "description": "Width ÷ height (in cells) a resize keeps, e.g. `2` for a 2:1 tile.",
+          "minimum": 0
+        },
+        "z": {
+          "type": "number",
+          "description": "Stacking order hint for overlapping chrome (never for overlapping tiles)."
+        }
+      }
+    },
+    "TileSpec": {
+      "type": "object",
+      "description": "One tile on the sheet (R2). `content` is typed by `kind` (a `ChartSpec` for `chart`).",
+      "required": ["kind", "layout", "content"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique across tiles, containers and library entries. `normalizeDashboardSpec` assigns `tile-<n>` when missing."
+        },
+        "kind": {
+          "type": "string",
+          "description": "Which tile renderer draws this (`chart`, `metric`, `text`, …). Unknown kinds warn; the renderer decides."
+        },
+        "layout": {
+          "$ref": "#/$defs/TileLayoutInCells"
+        },
+        "ref": {
+          "type": "string",
+          "description": "A `LibraryTileSpec.id` this tile instantiates (R25); its `content` is taken from the library."
+        },
+        "title": {
+          "type": "string",
+          "description": "Write the title as the conclusion (“EMEA overtook APAC in Q3”), not the topic (“Revenue by region”)."
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "One line of context under the title: the unit, the period, the population."
+        },
+        "footnote": {
+          "type": "string",
+          "description": "Caveats and definitions the reader needs to trust the number."
+        },
+        "source": {
+          "type": "string",
+          "description": "Where the data comes from, as the reader would name it."
+        },
+        "content": {
+          "description": "Kind-specific payload, e.g. a `ChartSpec`."
+        },
+        "visibleWhen": {
+          "type": "string",
+          "description": "Show the tile only when this condition holds (R31)."
+        },
+        "consumes": {
+          "type": "object",
+          "description": "What shared state this tile listens to.",
+          "properties": {
+            "selection": {
+              "oneOf": [
+                {
+                  "const": true
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "hover": {
+              "type": "boolean"
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "emits": {
+          "type": "object",
+          "description": "What shared state this tile publishes.",
+          "properties": {
+            "selection": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "hover": {
+              "type": "boolean"
+            }
+          }
+        },
+        "container": {
+          "type": "object",
+          "description": "The container this tile lives in, and the tab/slot within it.",
+          "required": ["id"],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "slot": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "chart"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "$ref": "#/$defs/ChartSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "metric"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "type": "object",
+                "required": ["label", "value"],
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": ["number", "string"]
+                  },
+                  "delta": {
+                    "type": "string"
+                  },
+                  "deltaDirection": {
+                    "enum": ["up", "down", "neutral"]
+                  },
+                  "positiveIsGood": {
+                    "type": "boolean"
+                  },
+                  "series": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "text"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  },
+                  "markdown": {
+                    "type": "string"
+                  },
+                  "align": {
+                    "enum": ["start", "center", "end"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "heading"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "level": {
+                    "enum": [1, 2, 3]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "divider"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "type": "object",
+                "properties": {
+                  "orientation": {
+                    "enum": ["horizontal", "vertical"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "image"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "type": "object",
+                "required": ["src", "alt"],
+                "properties": {
+                  "src": {
+                    "type": "string"
+                  },
+                  "alt": {
+                    "type": "string"
+                  },
+                  "fit": {
+                    "enum": ["cover", "contain"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "button"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "type": "object",
+                "required": ["label", "action"],
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "$ref": "#/$defs/Action"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "variable"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "type": "object",
+                "required": ["name", "control"],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "control": {
+                    "enum": ["select", "slider", "date"]
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": ["string", "number"]
+                    }
+                  },
+                  "min": {
+                    "type": "number"
+                  },
+                  "max": {
+                    "type": "number"
+                  },
+                  "step": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "filter"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "type": "object",
+                "required": ["field"],
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "enum": ["single", "multi"]
+                  },
+                  "search": {
+                    "type": "boolean"
+                  },
+                  "showCounts": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ContainerSpec": {
+      "type": "object",
+      "description": "A container tile hosting other tiles (R11). One level only: a container never holds a container.",
+      "required": ["id", "kind", "layout", "children"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique across tiles, containers and library entries."
+        },
+        "kind": {
+          "enum": ["tabs", "stack"],
+          "description": "`tabs` shows one child at a time; `stack` shows them one under another."
+        },
+        "layout": {
+          "$ref": "#/$defs/TileLayoutInCells"
+        },
+        "title": {
+          "type": "string",
+          "description": "Write the title as the conclusion, as for a tile."
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Child tile ids, in display order."
+        }
+      }
+    },
+    "LibraryTileSpec": {
+      "type": "object",
+      "description": "A reusable tile definition tiles point at through `ref` (R25).",
+      "required": ["id", "kind", "label"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique across tiles, containers and library entries."
+        },
+        "kind": {
+          "type": "string",
+          "description": "Tile kind, as for `TileSpec.kind`."
+        },
+        "label": {
+          "type": "string",
+          "description": "Name the asset panel shows."
+        },
+        "title": {
+          "type": "string",
+          "description": "Default title for tiles instantiated from this entry."
+        },
+        "content": {
+          "description": "Kind-specific payload shared by every instance."
+        }
+      }
+    },
+    "FilterSpec": {
+      "type": "object",
+      "description": "An author-defined filter field shown in the selection bar.",
+      "required": ["id", "field"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique among filters."
+        },
+        "field": {
+          "type": "string",
+          "description": "The data field the filter selects on."
+        },
+        "label": {
+          "type": "string",
+          "description": "Label the reader sees; defaults to `field`."
+        },
+        "kind": {
+          "enum": ["single", "multi", "range"],
+          "description": "Pick one value, many values, or a range."
+        },
+        "default": {
+          "type": "array",
+          "items": {
+            "type": ["string", "number"]
+          },
+          "description": "Values selected when the sheet opens."
+        }
+      }
+    },
+    "VariableSpec": {
+      "type": "object",
+      "description": "A named, author-defined input (a toggle, a threshold, a period) expressions can read.",
+      "required": ["name", "type", "default"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique among variables; read in expressions as `variables.<name>`."
+        },
+        "type": {
+          "enum": ["string", "number", "boolean", "date"],
+          "description": "Value type. `date` values are ISO-8601 strings."
+        },
+        "default": {
+          "type": ["string", "number", "boolean"],
+          "description": "Value when the sheet opens."
+        },
+        "label": {
+          "type": "string",
+          "description": "Label the reader sees; defaults to `name`."
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": ["string", "number", "boolean"]
+          },
+          "description": "Allowed values, when the variable is a choice."
+        }
+      }
+    },
+    "InteractionSpec": {
+      "type": "object",
+      "description": "How a selection or hover in one tile affects others.",
+      "required": ["from", "to"],
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Source tile id."
+        },
+        "to": {
+          "type": "string",
+          "description": "Target tile id, or `*` for every tile."
+        },
+        "effect": {
+          "description": "Filter, highlight, nothing, or drill to another sheet carrying some fields.",
+          "oneOf": [
+            {
+              "enum": ["filter", "highlight", "none"]
+            },
+            {
+              "type": "object",
+              "required": ["drill"],
+              "properties": {
+                "drill": {
+                  "type": "object",
+                  "required": ["sheetId"],
+                  "properties": {
+                    "sheetId": {
+                      "type": "string"
+                    },
+                    "carry": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "BookmarkSpec": {
+      "type": "object",
+      "description": "A saved selection + variable state the reader can return to.",
+      "required": ["id", "label", "selection"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique among bookmarks."
+        },
+        "label": {
+          "type": "string",
+          "description": "Write the label as what the reader will see (“Q3 EMEA churn spike”)."
+        },
+        "selection": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": ["string", "number"]
+            }
+          },
+          "description": "Selected values per field."
+        },
+        "variables": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["string", "number", "boolean"]
+          },
+          "description": "Variable values to restore."
+        },
+        "sheetId": {
+          "type": "string",
+          "description": "Sheet the bookmark opens, when it belongs to a multi-sheet workbook."
+        }
+      }
+    },
+    "Action": {
+      "description": "A sheet/button action.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "sheetId"],
+          "properties": {
+            "type": {
+              "const": "navigate"
+            },
+            "sheetId": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "id"],
+          "properties": {
+            "type": {
+              "const": "applyBookmark"
+            },
+            "id": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "const": "clearSelections"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "name", "value"],
+          "properties": {
+            "type": {
+              "const": "setVariable"
+            },
+            "name": {
+              "type": "string"
+            },
+            "value": {
+              "type": ["string", "number", "boolean"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "id"],
+          "properties": {
+            "type": {
+              "const": "host"
+            },
+            "id": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
