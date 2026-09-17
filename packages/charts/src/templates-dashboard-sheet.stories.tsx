@@ -8,7 +8,7 @@
  * Verify across every theme with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { useState } from "react";
 import {
   Sidebar,
@@ -229,6 +229,58 @@ export const Default: Story = {
     await userEvent.click(canvas.getByRole("radio", { name: "Edit" }));
     await expect(canvas.getByRole("button", { name: "Undo" })).toBeDisabled();
     await userEvent.click(canvas.getByRole("button", { name: "Add" }));
+
+    // #432 regression: opening the Assets dock must never hide the host app’s
+    // own Sidebar nav (wave-4-review-visual.md P0-1) — asserted geometrically,
+    // not just "still in the DOM".
+    const dashboardsNav = canvas.getByRole("button", { name: "Dashboards" });
+    await expect(dashboardsNav).toBeVisible();
+    const sidebarContainer = canvasElement.querySelector(
+      '[data-slot="sidebar-container"]',
+    ) as HTMLElement;
+    const dockContainer = canvasElement.querySelector(
+      '[data-dashboard-panel="assets"][data-slot="side-dock-container"]',
+    ) as HTMLElement;
+    // The immediate flex sibling that HOLDS the sheet (not the sheet’s own
+    // root, which carries its own internal padding) — this is the element
+    // whose left edge the dock’s flow spacer is actually reserving space
+    // against.
+    const canvasWrapper = (
+      canvasElement.querySelector('[data-slot="dashboard-sheet"]') as HTMLElement
+    ).parentElement as HTMLElement;
+    // The open/close tween (`duration-base`) is still animating right after
+    // the click — settle before measuring, the same way the SideDock Default
+    // story waits for its own width tween to finish.
+    await waitFor(() => {
+      const dockRect = dockContainer.getBoundingClientRect();
+      const sidebarRect = sidebarContainer.getBoundingClientRect();
+      expect(dockRect.left).toBeGreaterThanOrEqual(sidebarRect.right);
+    });
+    const sidebarRect = sidebarContainer.getBoundingClientRect();
+    const dockRect = dockContainer.getBoundingClientRect();
+    const canvasRect = canvasWrapper.getBoundingClientRect();
+    const overlaps =
+      sidebarRect.left < dockRect.right &&
+      dockRect.left < sidebarRect.right &&
+      sidebarRect.top < dockRect.bottom &&
+      dockRect.top < sidebarRect.bottom;
+    await expect(overlaps).toBe(false);
+    await expect(dockRect.left).toBeGreaterThanOrEqual(sidebarRect.right);
+    await expect(Math.abs(canvasRect.left - dockRect.right)).toBeLessThanOrEqual(1);
+
+    // P2 re-check (wave-4-review-visual.md): the dead gap is gone (asserted
+    // above), but the "Month" tile is a FIXED `w:4`-of-24 grid column
+    // competing with a real Sidebar (256px) AND this Assets dock (240px) at
+    // 1280px — genuinely narrow, not a regression this fix owns. Text
+    // integrity survives truncation either way (`truncate` is CSS-only, per
+    // `wave-4-review-visual.md`’s own micro-typography check); this does NOT
+    // assert non-truncation — see `wave-4-fix-result.md` for the measured
+    // widths and the "report, don’t hack" call.
+    const monthTitle = canvas.getByText("Month", {
+      selector: '[data-slot="dashboard-tile-header-title"]',
+    });
+    await expect(monthTitle.textContent).toBe("Month");
+
     await userEvent.click(canvas.getByRole("option", { name: "Heading" }));
     const tilesAfter = canvasElement.querySelectorAll(tileSelector).length;
     await expect(tilesAfter).toBe(tilesBefore + 1);

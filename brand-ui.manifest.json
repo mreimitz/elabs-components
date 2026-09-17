@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T03:09:35.870Z",
+  "generatedAt": "2026-09-17T07:44:49.503Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -35034,6 +35034,10 @@
           "module": "packages/ui/src/components/collapsible-panel/use-collapsible-panel.ts"
         },
         {
+          "name": "CollapsiblePanelContainerPosition",
+          "module": "packages/ui/src/components/collapsible-panel/use-collapsible-panel.ts"
+        },
+        {
           "name": "CollapsiblePanelSide",
           "module": "packages/ui/src/components/collapsible-panel/use-collapsible-panel.ts"
         },
@@ -39536,6 +39540,12 @@
               "optional": true,
               "type": "\"left\" | \"right\"",
               "description": "Which edge it docks to. Default `\"right\"`."
+            },
+            {
+              "name": "containerPosition",
+              "optional": true,
+              "type": "CollapsiblePanelContainerPosition",
+              "description": "Where the column presentation's fixed/absolute container positions itself. Default `\"viewport\"` (pins to the viewport edge — byte-identical pre-#432 behavior). `\"inset\"` pins to the dock's OWN position in the layout instead (`absolute` against a `relative` wrapper this component provides) — use this when the dock is nested inside another element that already pins itself to the same viewport edge (e.g. an app `Sidebar`), so the two never race for the same edge (#432). Has no effect on the overlay `Sheet` presentation below `overlayBreakpoint`."
             },
             {
               "name": "width",

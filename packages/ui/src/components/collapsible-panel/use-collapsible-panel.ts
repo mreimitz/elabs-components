@@ -31,6 +31,17 @@ import { cn } from "../../lib/cn";
 
 export type CollapsiblePanelSide = "left" | "right";
 export type CollapsiblePanelState = "expanded" | "collapsed";
+/**
+ * Where the CONTAINER fragment positions itself. `"viewport"` (default) pins
+ * to the viewport edge (`fixed`) — Sidebar's original mechanism, byte-
+ * identical to pre-#432 output. `"inset"` pins to the panel's OWN nearest
+ * `relative` ancestor instead (`absolute`) — for a panel nested inside
+ * another `fixed`-to-viewport element (e.g. a `SideDock` inside a Sidebar's
+ * `SidebarInset`), so the two never race for the same viewport edge (#432).
+ * The consumer must give that ancestor `relative` itself; `SideDock` does
+ * this via its own `containerPosition` prop.
+ */
+export type CollapsiblePanelContainerPosition = "viewport" | "inset";
 
 /**
  * State-keyed defaults for a generic panel: the consumer wraps the panel in a
@@ -67,6 +78,11 @@ export interface UseCollapsiblePanelOptions {
    * (e.g. `left: "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"`).
    */
   containerSlideClassNames?: Record<CollapsiblePanelSide, string>;
+  /**
+   * `"viewport"` (default, byte-identical to pre-#432) or `"inset"` — see
+   * `CollapsiblePanelContainerPosition`.
+   */
+  containerPosition?: CollapsiblePanelContainerPosition;
 }
 
 /** Data attributes for the panel's `group` element. */
@@ -100,6 +116,7 @@ export function useCollapsiblePanel({
   widthClassName = DEFAULT_WIDTH_CLASSNAME,
   spacerCollapsedClassName = DEFAULT_SPACER_COLLAPSED_CLASSNAME,
   containerSlideClassNames = DEFAULT_CONTAINER_SLIDE_CLASSNAMES,
+  containerPosition = "viewport",
 }: UseCollapsiblePanelOptions = {}): UseCollapsiblePanelReturn {
   // Controlled/uncontrolled per component-api.md: controlled iff the `open`
   // prop is provided; the mode never flips mid-life.
@@ -136,12 +153,14 @@ export function useCollapsiblePanel({
   const containerClassName = useMemo(
     () =>
       cn(
-        "fixed inset-y-0 z-10 hidden h-svh",
+        containerPosition === "inset"
+          ? "absolute inset-y-0 z-10 hidden h-full"
+          : "fixed inset-y-0 z-10 hidden h-svh",
         widthClassName,
         "transition-[left,right,width] duration-base ease-linear md:flex",
         containerSlideClassNames[side],
       ),
-    [containerSlideClassNames, side, widthClassName],
+    [containerPosition, containerSlideClassNames, side, widthClassName],
   );
 
   const attrs = useMemo<CollapsiblePanelAttrs>(

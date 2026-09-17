@@ -1,6 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
 
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "../sidebar";
 import { SideDock } from "./side-dock";
 
 const meta = {
@@ -133,5 +142,79 @@ export const Overlay: Story = {
     });
     await expect(dialog).toHaveAccessibleName("Assistant");
     await expect(canvasElement.querySelector('[data-slot="side-dock-resize-handle"]')).toBeNull();
+  },
+};
+
+/**
+ * `containerPosition="inset"` (#432): nested inside a `Sidebar` + `SidebarInset`
+ * host layout — mirroring the real composition (`DashboardAssetPanel` on the
+ * left, `DashboardPropertiesPanel` on the right of a sheet inside an app
+ * `Sidebar`) — `side="left"` would otherwise race the Sidebar's own `fixed
+ * left-0` container for the SAME viewport edge — the later-mounted dock wins
+ * the paint and hides the app's own nav (`wave-4-review-visual.md` P0-1). The
+ * play function proves the fix geometrically for BOTH edges: the Sidebar's
+ * nav stays visible, and neither dock's rect ever intersects the Sidebar's or
+ * the canvas's.
+ */
+export const InSidebar: Story = {
+  render: () => (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive>Dashboards</SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset className="min-w-0">
+        <div className="flex h-[560px] min-w-0 flex-1">
+          <SideDock title="Assets" open side="left" containerPosition="inset">
+            {dockBody}
+          </SideDock>
+          <div
+            data-testid="canvas"
+            className="min-w-0 flex-1 bg-background p-6 text-muted-foreground"
+          >
+            Canvas content
+          </div>
+          <SideDock title="Properties" open side="right" containerPosition="inset">
+            {dockBody}
+          </SideDock>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const nav = await canvas.findByRole("button", { name: "Dashboards" });
+    await expect(nav).toBeVisible();
+
+    const sidebar = canvasElement.querySelector('[data-slot="sidebar-container"]') as HTMLElement;
+    const docks = canvasElement.querySelectorAll('[data-slot="side-dock-container"]');
+    const leftDock = docks[0] as HTMLElement;
+    const rightDock = docks[1] as HTMLElement;
+    const dockCanvas = canvas.getByTestId("canvas");
+
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const leftDockRect = leftDock.getBoundingClientRect();
+    const rightDockRect = rightDock.getBoundingClientRect();
+    const canvasRect = dockCanvas.getBoundingClientRect();
+    const viewport = canvasElement.getBoundingClientRect();
+
+    const intersects = (a: DOMRect, b: DOMRect) =>
+      a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+    // The Sidebar and the left dock never intersect.
+    await expect(intersects(sidebarRect, leftDockRect)).toBe(false);
+    // The left dock starts exactly where the Sidebar ends...
+    await expect(leftDockRect.left).toBeGreaterThanOrEqual(sidebarRect.right);
+    // ...and the canvas starts exactly where the left dock ends (no dead gap).
+    await expect(Math.abs(canvasRect.left - leftDockRect.right)).toBeLessThanOrEqual(1);
+
+    // The right dock never intersects the canvas, and stays inside the viewport.
+    await expect(intersects(rightDockRect, canvasRect)).toBe(false);
+    await expect(rightDockRect.right).toBeLessThanOrEqual(viewport.right + 1);
+    await expect(rightDockRect.left).toBeGreaterThanOrEqual(viewport.left - 1);
   },
 };

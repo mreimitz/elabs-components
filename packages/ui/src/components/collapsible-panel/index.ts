@@ -1,6 +1,7 @@
 export {
   useCollapsiblePanel,
   type CollapsiblePanelAttrs,
+  type CollapsiblePanelContainerPosition,
   type CollapsiblePanelSide,
   type CollapsiblePanelState,
   type UseCollapsiblePanelOptions,
