@@ -82,6 +82,7 @@ import {
   isTemporalField,
 } from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
+import { ChartFrame } from "../chart-frame/chart-frame";
 
 afterEach(cleanup);
 
@@ -1012,5 +1013,43 @@ describe("AutoChart selection pass-through (RM-073)", () => {
       ),
     );
     expect(painted).toEqual(new Set(["selected", "associated", "excluded"]));
+  });
+});
+
+// A dashboard chart tile is `ChartFrame chrome="tile"` with no plot height: the
+// frame hands its chart "fill", i.e. `height: 100%`. That only resolves when
+// EVERY box from the frame body down to the plot is definite — an auto-height
+// link collapses the plot to 0 px and no bars render (wave-0 gate, cluster B).
+describe("AutoChart inside a fill-host tile", () => {
+  const definite = (el: HTMLElement) =>
+    el.style.height !== "" || /(^|\s)(h-full|size-full|flex-1)(\s|$)/.test(el.className);
+
+  it.each([
+    ["bar", { type: "bar", x: "region", series: [{ key: "revenue" }] }],
+    ["heatmap", { type: "heatmap", x: "hour", series: [{ key: "count" }] }],
+  ] as const)("keeps a definite height chain from the tile body to the %s plot", (_t, partial) => {
+    const spec = {
+      ...partial,
+      data: [
+        { region: "EMEA", hour: "09", day: "Mon", revenue: 41, count: 4 },
+        { region: "APAC", hour: "10", day: "Tue", revenue: 30, count: 7 },
+      ],
+    } as unknown as ChartSpec;
+    const { container } = render(
+      <ChartFrame chrome="tile" title="Revenue">
+        <AutoChart spec={spec} />
+      </ChartFrame>,
+    );
+    const body = container.querySelector<HTMLElement>('[data-slot="chart-frame-body"]');
+    const plots = [...container.querySelectorAll<HTMLElement>("[style]")].filter(
+      (el) => el.style.height === "100%",
+    );
+    expect(body).not.toBeNull();
+    expect(plots.length, "no fill plot box rendered").toBeGreaterThan(0);
+    for (const plot of plots) {
+      for (let el = plot.parentElement; el && el !== body; el = el.parentElement) {
+        expect(definite(el), `auto-height link: <div class="${el.className}">`).toBe(true);
+      }
+    }
   });
 });
