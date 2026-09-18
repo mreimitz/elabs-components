@@ -149,6 +149,7 @@ export const GradientPurpleTeal = createInertPart("GradientPurpleTeal");
 export const GradientSteelPurple = createInertPart("GradientSteelPurple");
 export const GradientTealBlue = createInertPart("GradientTealBlue");
 export const Grid = createInertPart("Grid");
+export const ReferenceLine = createInertPart("ReferenceLine");
 export const HairlineFloor = createInertPart("HairlineFloor");
 export const HaloText = createInertPart("HaloText");
 export const Leader = createInertPart("Leader");

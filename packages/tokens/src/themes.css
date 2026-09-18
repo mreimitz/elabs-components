@@ -1633,11 +1633,12 @@
    values out-rank page titles. Leading is tuned per role — the dimension the
    numeric scale gets wrong for app UI.
 
-   Role guide: display = page/hero headline · title = section/card/dialog ·
+   Role guide: display-lg = hero/deck headline · display = page headline · title = section/card/dialog ·
    subtitle = sub-section / prominent body · body = default (== text-sm) ·
-   caption = secondary/supporting body · meta = metadata/eyebrow/timestamp ·
-   kpi = executive metric values (pair with `tabular-nums`) · code = inline/
-   block code (pair with `font-mono`).
+   caption = secondary/supporting body · meta = metadata/timestamp · eyebrow =
+   uppercase tracked label (pair with `uppercase`) · kpi = executive metric
+   values · kpi-sm = tile/satellite values (both pair with `tabular-nums`) ·
+   code = inline/block code (pair with `font-mono`).
 
    Type IS density-aware (#340, maintainer decision 2026-08-02 — this SUPERSEDES
    research 07 §E.4 "type is NOT density-aware", and withdraws the reserved sixth
@@ -1724,6 +1725,32 @@
   --type-weight-code: 400;
   --type-tracking-code: 0em;
 
+  /* Three additive rungs (2026-09-18 agentic-dataviz review, docs/review/
+     2026-09-18-agentic-dataviz-patterns-review.md §5). Additive: no existing
+     rung changes value, so no surface re-renders.
+     - kpi-sm: a tile/satellite value (24px) — out-ranks a title, sits under
+       kpi. Pair with `tabular-nums` like kpi.
+     - eyebrow: the uppercase tracked label above a title, a table column
+       header, a stat-strip label — meta's size, medium weight, wide tracking.
+       Pair with `uppercase` at the call site (Tailwind has no text-transform
+       companion key), exactly as chart-source does.
+     - display-lg: a hero/deck headline (48px) — the home site and marketing
+       Hero rung above display. */
+  --type-size-kpi-sm: 1.5rem;
+  --type-leading-kpi-sm: 1.75rem;
+  --type-weight-kpi-sm: 600;
+  --type-tracking-kpi-sm: -0.015em;
+
+  --type-size-eyebrow: var(--type-size-meta);
+  --type-leading-eyebrow: var(--type-leading-meta);
+  --type-weight-eyebrow: 500;
+  --type-tracking-eyebrow: 0.06em;
+
+  --type-size-display-lg: 3rem;
+  --type-leading-display-lg: 3.25rem;
+  --type-weight-display-lg: 600;
+  --type-tracking-display-lg: -0.025em;
+
   /* chart type roles — RM-019. Two card-contract rungs (lieflat's fixed
      four-part card: title/description/chart/source) — NOT among the eight
      `ROLES` density-type-scale.test.ts enumerates (that suite's list is
@@ -1782,6 +1809,21 @@
   --text-code--line-height: var(--type-leading-code);
   --text-code--font-weight: var(--type-weight-code);
   --text-code--letter-spacing: var(--type-tracking-code);
+
+  --text-kpi-sm: var(--type-size-kpi-sm);
+  --text-kpi-sm--line-height: var(--type-leading-kpi-sm);
+  --text-kpi-sm--font-weight: var(--type-weight-kpi-sm);
+  --text-kpi-sm--letter-spacing: var(--type-tracking-kpi-sm);
+
+  --text-eyebrow: var(--type-size-eyebrow);
+  --text-eyebrow--line-height: var(--type-leading-eyebrow);
+  --text-eyebrow--font-weight: var(--type-weight-eyebrow);
+  --text-eyebrow--letter-spacing: var(--type-tracking-eyebrow);
+
+  --text-display-lg: var(--type-size-display-lg);
+  --text-display-lg--line-height: var(--type-leading-display-lg);
+  --text-display-lg--font-weight: var(--type-weight-display-lg);
+  --text-display-lg--letter-spacing: var(--type-tracking-display-lg);
 
   /* chart type roles — RM-019: `text-chart-value` / `text-chart-source`, the
      ChartCard/ChartFrame card-contract value + source rungs (RM-041/RM-042

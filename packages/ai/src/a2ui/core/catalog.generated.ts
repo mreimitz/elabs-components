@@ -386,7 +386,7 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
       },
       size: {
         type: "string",
-        enum: ["display", "title", "subtitle"],
+        enum: ["display-lg", "display", "title", "subtitle"],
         default: "title",
       },
     },
@@ -943,7 +943,7 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
       },
       variant: {
         type: "string",
-        enum: ["lead", "body", "caption", "meta", "kpi", "code"],
+        enum: ["lead", "body", "caption", "meta", "kpi", "kpi-sm", "eyebrow", "code"],
         default: "body",
       },
     },

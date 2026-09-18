@@ -1418,6 +1418,241 @@
         }
       ],
       "categories": ["dashboard"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "agent-ops-parts",
+      "type": "registry:block",
+      "title": "Agent Ops — shared parts",
+      "description": "The pieces every agent-ops block shares: a provenance line (source · freshness) for any figure, a word-sized confidence meter, an evidence chip (the kind of document a derivation read), a countable evidence-strength meter (\"|||| 4 of 5\"), an actor avatar that tells copilot / agent / person apart by glyph, Intl.* money/count/relative-time formatters, and the shared fictional \"Atlas\" AI-ops dataset (Acme Logistics) every block reads from. Installed once and reused by the agent-ops blocks rather than copied into each.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/agent-ops-parts/data/atlas-ops.ts",
+          "type": "registry:component",
+          "target": "components/agent-ops-parts/data/atlas-ops.ts"
+        },
+        {
+          "path": "registry/blocks/agent-ops-parts/format.ts",
+          "type": "registry:component",
+          "target": "components/agent-ops-parts/format.ts"
+        },
+        {
+          "path": "registry/blocks/agent-ops-parts/provenance.tsx",
+          "type": "registry:component",
+          "target": "components/agent-ops-parts/provenance.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kpi-provenance-strip-01",
+      "type": "registry:block",
+      "title": "KPI Cards — Where does this number come from?",
+      "description": "\"Where the business stands\" — four headline figures on ONE surface, each with an inline signed delta and the line that earns the number its place: source and freshness (\"ERP · 2 min ago\", \"Derived from 61 open orders · 06:02\"). Peers separated by hairlines, no value without provenance; the delta is secondary (arrow + sign, never colour alone).",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/kpi-provenance-strip-01/kpi-provenance-strip.tsx",
+          "type": "registry:component",
+          "target": "components/kpi-provenance-strip-01/kpi-provenance-strip.tsx"
+        }
+      ],
+      "categories": ["agent-ops", "kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "insight-feed-01",
+      "type": "registry:block",
+      "title": "Insight Feed — What changed while you were away?",
+      "description": "The AI-ops briefing pattern: a numbered feed of things the copilot did or noticed — a one-sentence fact, a paragraph of why, the evidence it read, its confidence and two actions — with a conflict item that carries no confidence (\"No verdict — a person decides\"). Beside it, a \"Needs a person\" rail of what stopped and a \"Derivation load\" split of applied / sent to you / pinned by people.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/insight-feed-01/insight-feed.tsx",
+          "type": "registry:component",
+          "target": "components/insight-feed-01/insight-feed.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "provenance-record-01",
+      "type": "registry:block",
+      "title": "Provenance Record — Where did each field come from?",
+      "description": "A record whose every field says where its value came from: derived (confidence meter + evidence kind), pinned (who and when — a pin out-ranks any derivation), conflict (two permitted sources disagree; nothing chosen) or empty (\"No signal yet\" — never a guess). Each state has its own glyph + text, and the footer counts the four so the reader knows how much of the record is machine-derived.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/provenance-record-01/provenance-record.tsx",
+          "type": "registry:component",
+          "target": "components/provenance-record-01/provenance-record.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "score-explanation-01",
+      "type": "registry:block",
+      "title": "Score Explanation — Why is the score 91?",
+      "description": "A scored decision decomposed into its signals: one row per signal, a signed bar whose length is the contribution in points and whose direction is the sign — ink for positive, the warning rung for negative, each with a signed number so the sign never rides on colour. One shared zero-based scale; the footer states how many weaker signals were considered but not shown.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/score-explanation-01/score-explanation.tsx",
+          "type": "registry:component",
+          "target": "components/score-explanation-01/score-explanation.tsx"
+        }
+      ],
+      "categories": ["agent-ops", "kpi-card"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "spend-against-limit-01",
+      "type": "registry:block",
+      "title": "Spend Against Limit — How close is each agent to its ceiling?",
+      "description": "Every non-human spender on the card programme, sorted by share of ceiling: monospace agent id, autonomy band as a status badge (Auto / Review / Hold), a bar with the ceiling drawn as a vertical mark, the literal \"$612 of $500\", and Revoke. Over the ceiling paints the destructive rung and says so. Above it, three autonomy-band tiles total the envelopes per band.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/spend-against-limit-01/spend-against-limit.tsx",
+          "type": "registry:component",
+          "target": "components/spend-against-limit-01/spend-against-limit.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "escalation-boundary-01",
+      "type": "registry:block",
+      "title": "Escalation Boundary — Where does autonomy end?",
+      "description": "The one dial an AI-ops product must put on screen: a stacked distribution bar of every decision by how well it was corroborated, with the evidence threshold drawn as a mark; the evidence ladder (countable tick meter, meaning, decisions, share, side); and three \"If you move it\" scenario cards that state the trade in the reader’s units (cleared share, queue delta, catches, reviews per catch) and MOVE the boundary when clicked.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/escalation-boundary-01/escalation-boundary.tsx",
+          "type": "registry:component",
+          "target": "components/escalation-boundary-01/escalation-boundary.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "decision-record-01",
+      "type": "registry:block",
+      "title": "Decision Record — Why did the AI do that?",
+      "description": "Every AI action expanded into the reason it happened: what it did, what it looked at (named, openable evidence), what rule applied (the clause, monospace), how confident (or an honest \"not applicable\"), and how to reverse it. Below: the check list (confirmed / not confirmed) and what the copilot proposes — numbered, editable, nothing actioned until a person approves.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/decision-record-01/decision-record.tsx",
+          "type": "registry:component",
+          "target": "components/decision-record-01/decision-record.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "audit-log-01",
+      "type": "registry:block",
+      "title": "Audit Log — Who did what, and did it apply?",
+      "description": "An append-only audit table whose actor column tells three authors apart by glyph — copilot, delegated agent, person — and whose result column is a status badge with an icon (Applied / Held / Stopped / Reverted), so a row still reads in greyscale. Monospace tabular timestamps; the action is one plain sentence with the number it wrote in it.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/audit-log-01/audit-log.tsx",
+          "type": "registry:component",
+          "target": "components/audit-log-01/audit-log.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "agent-trace-waterfall-01",
+      "type": "registry:block",
+      "title": "Agent Trace — Where did the run spend its time, and where did it fail?",
+      "description": "An execution waterfall for one multi-agent run: a stat strip where every number carries its comparison (duration vs p95, retries, tokens in/out, cost vs workflow average, failed at), the charts package’s Gantt at sub-second granularity with one row per agent span nested under its caller, and a context-flow chain that shows the hop where a required field was dropped.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/agent-trace-waterfall-01/agent-trace-waterfall.tsx",
+          "type": "registry:component",
+          "target": "components/agent-trace-waterfall-01/agent-trace-waterfall.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "finding-cards-01",
+      "type": "registry:block",
+      "title": "Finding Cards — What did the copilot find?",
+      "description": "Recoverable-spend findings as a row of cards: a status badge naming the kind, a one-line title, the recoverable figure as the only coloured number (kpi-sm), a two-sentence summary and a primary + secondary action, under a header that states the programme and the total the cards add up to. The primary action is what a person signs; the secondary always opens the evidence.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/finding-cards-01/finding-cards.tsx",
+          "type": "registry:component",
+          "target": "components/finding-cards-01/finding-cards.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "verdict-side-by-side-01",
+      "type": "registry:block",
+      "title": "Verdict — Keep this, cancel that?",
+      "description": "A keep-vs-cancel verdict side by side: two cards on the success/destructive washes with annual cost, a segmented seat-utilisation Meter and the deciding facts; a one-line reading of the comparison; “If you cancel” as four consequence stats; “How the copilot knows” as a numbered evidence list; and the refusal — the copilot prepares everything, a person signs.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/verdict-side-by-side-01/verdict-side-by-side.tsx",
+          "type": "registry:component",
+          "target": "components/verdict-side-by-side-01/verdict-side-by-side.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "handoff-inspector-01",
+      "type": "registry:block",
+      "title": "Handoff Inspector — Where was the context dropped?",
+      "description": "One edge of a multi-agent run: sender → a metric pill on the arrow (context size, latency, tokens, fields present of required) → receiver; a context-comparison table (sent vs expected, status badge per field) that shows the required field that was not sent; the payload size against the workflow baseline as a Meter with a marker; and the edge’s 24-hour health beside it.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/handoff-inspector-01/handoff-inspector.tsx",
+          "type": "registry:component",
+          "target": "components/handoff-inspector-01/handoff-inspector.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
     }
   ]
 }

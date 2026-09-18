@@ -4,11 +4,11 @@
     "source": "brand-ui.manifest.json#packages"
   },
   "componentExports": {
-    "value": 1400,
+    "value": 1402,
     "source": "brand-ui.manifest.json#packages[].components"
   },
   "registryBlocks": {
-    "value": 52,
+    "value": 65,
     "source": "registry/registry.json#items"
   },
   "templates": {

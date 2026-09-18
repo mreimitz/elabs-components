@@ -36,7 +36,7 @@ const src = (body, file = "packages/ui/src/a.tsx") => ({ files: { [file]: body }
 export default {
   id: "text-scale",
   scope: "components",
-  doc: "Set type with a role (`text-display|title|subtitle|body|caption|meta|kpi|code` or `<Heading>`/`<Text>`), never a raw size utility (`text-sm`, `text-xl`, `text-[17px]`) in package source or stories.",
+  doc: "Set type with a role (`text-display-lg|display|title|subtitle|body|caption|meta|eyebrow|kpi|kpi-sm|code` or `<Heading>`/`<Text>`), never a raw size utility (`text-sm`, `text-xl`, `text-[17px]`) in package source or stories.",
   baseline: "per-file",
   run(ctx) {
     return [

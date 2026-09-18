@@ -39,3 +39,21 @@ describe("Descriptions", () => {
     expect(container.querySelectorAll("dd")).toHaveLength(1);
   });
 });
+
+describe("Descriptions labelWidth", () => {
+  it("defaults the horizontal label column to a third and honours a narrower share", () => {
+    const { rerender } = render(
+      <Descriptions>
+        <DescriptionsItem label="Owner">Sofia</DescriptionsItem>
+      </Descriptions>,
+    );
+    expect(screen.getByText("Owner")).toHaveClass("w-1/3");
+    rerender(
+      <Descriptions labelWidth="1/5">
+        <DescriptionsItem label="Owner">Sofia</DescriptionsItem>
+      </Descriptions>,
+    );
+    expect(screen.getByText("Owner")).toHaveClass("w-1/5");
+    expect(screen.getByText("Owner")).not.toHaveClass("w-1/3");
+  });
+});
