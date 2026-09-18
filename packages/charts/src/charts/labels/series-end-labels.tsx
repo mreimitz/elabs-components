@@ -2,6 +2,7 @@
 
 import { HaloText } from "../../marks/halo-text";
 import type { LabelPlacement } from "./label-layout";
+import { seriesLabelInk } from "./series-label-ink";
 import {
   type ChartLabelBox,
   KEY_ROW_HEIGHT,
@@ -41,6 +42,7 @@ export function SeriesEndLabels({ placements }: SeriesEndLabelsProps) {
             <HaloText
               data-slot="series-end-label"
               dominantBaseline="central"
+              fill={seriesLabelInk(p.label.stroke)}
               fontSize={LABEL_FONT_SIZE}
               x={p.x}
               y={midY}
@@ -84,6 +86,7 @@ export function SeriesKeyRow({ items, top }: SeriesKeyRowProps) {
             />
             <HaloText
               dominantBaseline="central"
+              fill={seriesLabelInk(item.stroke)}
               fontSize={LABEL_FONT_SIZE}
               x={item.x + KEY_SWATCH_WIDTH}
               y={cy}

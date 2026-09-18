@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { assertLabelChildrenContract, assertLabelsSpecContract } from "../../test/doubles";
 import { ChartContractError } from "../../test/contract";
+import { describeSeries } from "../chart-a11y";
+import { SERIES_LABEL_INK_MIX, seriesLabelInk } from "./series-label-ink";
 import { ChartConfigProvider } from "../chart-config-context";
 import type { ChartBreakpoint } from "../chart-breakpoint";
 import { Area } from "../area";
@@ -116,6 +118,16 @@ describe("label engine — series end labels", () => {
       "City bikes",
       "Road bikes",
     ]);
+  });
+
+  it("paints label text in a contrast-safe mix of the series stroke; the leader keeps the stroke", () => {
+    const { container } = at("wide", <Line dataKey="ebikes" stroke="var(--chart-3)" />);
+    const group = container.querySelector('[data-slot="series-end-labels"] [data-series="ebikes"]');
+    expect(group?.querySelector("line")?.getAttribute("stroke")).toBe("var(--chart-3)");
+    expect(group?.querySelector("text")?.getAttribute("fill")).toBe(
+      `color-mix(in oklch, var(--chart-3) ${SERIES_LABEL_INK_MIX}%, var(--chart-label))`,
+    );
+    expect(seriesLabelInk("url(#g)")).toBe("var(--chart-label)");
   });
 
   it("labels each series at its end by default (seriesLabel unset)", () => {
@@ -284,6 +296,20 @@ describe("label engine — scatter point labels", () => {
 });
 
 describe("label engine — describeSeries auto summary", () => {
+  it("words a scatter's top point as a position, not a period", () => {
+    const rows = [
+      { debt: 9000, rate: 4 },
+      { debt: 27109, rate: 19 },
+    ];
+    const summary = describeSeries(rows, [{ dataKey: "rate", name: "Default rate" }], undefined, {
+      kind: "scatter",
+      xKey: "debt",
+      formatX: (x) => String(x),
+      formatValue: (v) => String(v),
+    });
+    expect(summary).toBe("Scatter chart, 1 series, 2 points; highest Default rate: 19 at 27109");
+  });
+
   it("describes a labelled chart that has no accessibleDescription", () => {
     box.width = 900;
     box.height = 450;

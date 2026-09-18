@@ -815,6 +815,7 @@ export {
   type ValueLabelPlacement,
 } from "./labels/use-chart-labels";
 export { type ScatterLabels } from "./labels/point-labels";
+export { SERIES_LABEL_INK_MIX, seriesLabelInk } from "./labels/series-label-ink";
 export {
   type AutoSummaryKind,
   DEFAULT_DESCRIBE_SERIES_PHRASES,

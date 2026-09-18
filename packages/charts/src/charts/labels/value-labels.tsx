@@ -5,6 +5,7 @@ import { chartCssVars } from "../chart-context";
 import { StaticSeriesPointMarker } from "../series-point-marker";
 import type { LabelPlacement } from "./label-layout";
 import { type ChartLabelBox, LABEL_FONT_SIZE, LABEL_LINE_HEIGHT } from "./use-chart-labels";
+import { seriesLabelInk } from "./series-label-ink";
 
 export interface ValueLabelsProps {
   /** Placed value labels (plot px), from `placeChartLabels`. */
@@ -33,7 +34,8 @@ export function ValueLabels({ placements }: ValueLabelsProps) {
       {[...groups.entries()].map(([dataKey, list]) => {
         const spec = list[0]?.label.spec;
         if (!spec) return null;
-        const ink = spec.matchColor ? list[0]?.label.stroke : chartCssVars.foreground;
+        const stroke = list[0]?.label.stroke;
+        const ink = spec.matchColor && stroke ? seriesLabelInk(stroke) : chartCssVars.foreground;
         return (
           <g aria-hidden="true" data-series={dataKey} data-slot={spec.slot} key={dataKey}>
             {list.map((p) => {
