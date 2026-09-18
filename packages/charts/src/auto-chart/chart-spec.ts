@@ -243,16 +243,9 @@ export interface ChartSpec {
    */
   fields?: { category?: string; series?: string };
 
-  // Pie/donut labels, grouping, sort, half preset — RM-114
-  /**
-   * Slice labels for `type: "pie"`. Named `pieLabels`, not `labels` — RM-110
-   * claimed `labels` for the shared label engine below (`ChartLabelsSpec`)
-   * first; a pie/donut spec field is pie-only serialisable state
-   * (`ChartSpecPieLabels`) with an incompatible shape, so it keeps its own
-   * name rather than overloading one property with two unrelated types. See
-   * {@link ChartSpecPieLabels}. Ignored elsewhere.
-   */
-  pieLabels?: ChartSpecPieLabels;
+  // Pie/donut grouping, sort, half preset — RM-114. Slice labels moved to
+  // `labels.slices` (see `ChartLabelsSpec` below) so `ChartSpec` keeps one
+  // `labels` object with a sub-key per mark family.
   /** Fold small `type: "pie"` slices into an "Other" slice. See {@link ChartSpecPieGroupSmall}. Ignored elsewhere. */
   groupSmall?: ChartSpecPieGroupSmall;
   /**
@@ -273,15 +266,15 @@ export interface ChartSpec {
   labels?: ChartLabelsSpec;
 }
 
-// Pie/donut labels, grouping, sort, half preset — RM-114
+// Pie/donut grouping, sort, half preset — RM-114
 
 /** Which facts a pie/donut slice label states, in `label → value → percent` reading order. */
 export type ChartSpecPieLabelField = "label" | "value" | "percent";
 
 /**
  * Slice labels for `type: "pie"` (RM-114) — the serialisable subset of
- * `PieChartLabelsConfig` (`../charts/pie-chart.tsx`). Field name on
- * `ChartSpec` is `pieLabels` — see the docblock there for why.
+ * `PieChartLabelsConfig` (`../charts/pie-chart.tsx`). Reached via
+ * `ChartLabelsSpec.slices` below.
  */
 export interface ChartSpecPieLabels {
   /** `"inside"`, `"outside"`, or `"none"`. Default: `"outside"` (`"none"` under 480px). */
@@ -319,6 +312,10 @@ export interface ChartLabelsSpec {
   values?: ChartValueLabels;
   /** scatter: point labels — `key` is the row field holding the text; `mode` `"auto"` (default) | `"all"`; `priorityKey` a numeric row field (higher survives). */
   points?: { key: string; mode?: "auto" | "all"; priorityKey?: string };
+
+  // Pie slices — RM-114
+  /** pie/donut: slice labels — see {@link ChartSpecPieLabels}. Ignored elsewhere. */
+  slices?: ChartSpecPieLabels;
 }
 
 // Axes — RM-108

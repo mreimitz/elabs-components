@@ -380,11 +380,11 @@ function renderChart(
   copyValueOnActivate: boolean,
   links: AutoChartLinkProps = {},
 ): ReactNode {
-  // `pieLabels`/`groupSmall`/`sort`/`half` (RM-114) — pie/donut only, ignored
-  // elsewhere. `pieLabels`, not `labels` — `spec.labels` is RM-110's shared
-  // label engine (`ChartLabelsSpec`), a different, incompatible type; see
-  // `chart-spec.ts`'s docblock on `ChartSpec.pieLabels`.
-  const { x, stacked, orientation, donut, pieLabels, groupSmall, sort, half } = spec;
+  // `groupSmall`/`sort`/`half` (RM-114) — pie/donut only, ignored elsewhere.
+  // Slice labels live under the shared label engine's `labels.slices`
+  // (RM-110's `ChartLabelsSpec`, `chart-spec.ts`), not a top-level field.
+  const { x, stacked, orientation, donut, groupSmall, sort, half } = spec;
+  const pieLabels = spec.labels?.slices;
   const axisProps = resolveAxisSpecProps(spec.axes, orientation === "horizontal");
   // Unit and distribution charts size themselves from their data; a numeric
   // plot height still fixes their box, as the deprecated `height` did.
