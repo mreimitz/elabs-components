@@ -37,7 +37,7 @@ import { resolveDashTailBounds, usePathStrokeMetrics } from "./path-stroke-utils
 import { SeriesDashTailOverlay } from "./series-dash-tail-overlay";
 import { SeriesHighlightLayer } from "./series-highlight-layer";
 import { SeriesHoverDim } from "./series-hover-dim";
-import { SeriesMarkers } from "./series-markers";
+import { resolveSeriesSymbols, SeriesMarkers, type SeriesSymbolsSpec } from "./series-markers";
 import type { SeriesPointMarkerStyle } from "./series-point-marker";
 import {
   isPaletteFill,
@@ -55,6 +55,12 @@ import { useHighDecoration } from "./use-high-decoration";
  * `Expand` (normalized to a 0–1 band per index, i.e. a 100% stacked area).
  */
 export type AreaStackOffset = "none" | "silhouette" | "wiggle" | "expand";
+
+/**
+ * Minimum width (px) of the invisible hit-stroke `focusOnHover` (RM-112)
+ * renders on top of the visible crest — mirrors `Line`'s identical constant.
+ */
+const FOCUS_HOVER_HIT_STROKE_MIN_WIDTH = 8;
 
 /** One series' stacked band: `[y0, y1]` in DATA units, one pair per rendered sample. */
 export interface AreaStackBand {
@@ -248,16 +254,15 @@ export interface AreaProps {
   /** Marker styling (same options as Scatter). */
   markers?: SeriesPointMarkerStyle;
   /**
-   * Placement/style wrapper over `showMarkers`/`markers` (RM-112) — see
-   * `Line symbols`. Setting this turns markers on regardless of
-   * `showMarkers`.
+   * Placement/style wrapper over `showMarkers`/`markers` (RM-112) — same
+   * shape and resolution rule as `Line symbols` (shared helper,
+   * `resolveSeriesSymbols`): unset → no symbols; set without a `placement`
+   * on a series with more than 12 points → also no symbols (avoid symbols on
+   * a dense, regularly-sampled series); otherwise `placement` defaults
+   * `"ends"`, `style` defaults `"hollow"`. Setting this turns markers on
+   * regardless of `showMarkers`.
    */
-  symbols?: {
-    placement?: "all" | "ends" | "first" | "last";
-    shape?: SeriesPointMarkerStyle["shape"];
-    style?: "filled" | "hollow";
-    size?: number;
-  };
+  symbols?: SeriesSymbolsSpec;
   /**
    * Data index from which the line stroke becomes dashed (inclusive).
    * Useful for projecting incomplete periods, e.g. dashed from yesterday through today.
@@ -483,6 +488,12 @@ export function Area({
     [dataKey],
   );
 
+  // Symbols (RM-112) — the one `Line`/`Area`-shared resolution rule.
+  const resolvedSymbols = useMemo(
+    () => resolveSeriesSymbols(symbols, data.length),
+    [symbols, data.length],
+  );
+
   const pathRef = useRef<SVGPathElement>(null);
   const { pathLength, pathD } = usePathStrokeMetrics(pathRef, [
     areaRenderData,
@@ -630,6 +641,25 @@ export function Area({
           y={stackY1}
         />
       ) : null}
+
+      {seriesMode.focusOnHover && showSeriesContent ? (
+        // Invisible, wide hit target for `focusOnHover` (RM-112) — mirrors
+        // `Line`'s identical hit-stroke; see its comment for the paint-order
+        // / tooltip-overlay reasoning. Traces the same crest geometry as the
+        // visible LinePath above.
+        <LinePath
+          aria-hidden="true"
+          curve={resolvedCurve}
+          data={isStacked ? renderData : areaRenderData}
+          defined={!isStacked && resolvedNulls === "gap" ? isDefined : undefined}
+          pointerEvents="stroke"
+          stroke="transparent"
+          strokeLinecap="round"
+          strokeWidth={Math.max(FOCUS_HOVER_HIT_STROKE_MIN_WIDTH, crestStrokeWidth + 6)}
+          x={(d) => xScale(xAccessor(d)) ?? 0}
+          y={crestY}
+        />
+      ) : null}
     </>
   );
 
@@ -670,19 +700,19 @@ export function Area({
         strokeWidth={crestStrokeWidth}
       />
 
-      {(showMarkers || symbols) && showSeriesContent ? (
+      {(showMarkers || resolvedSymbols !== null) && showSeriesContent ? (
         <SeriesMarkers
           animate={animate}
           dataKey={dataKey}
           {...markers}
           fill={
-            symbols?.style === "hollow"
+            resolvedSymbols?.style === "hollow"
               ? chartCssVars.background
               : (markers?.fill ?? resolvedStroke)
           }
-          placement={symbols?.placement}
-          radius={symbols?.size ?? markers?.radius}
-          shape={symbols?.shape ?? markers?.shape}
+          placement={resolvedSymbols?.placement}
+          radius={resolvedSymbols?.size ?? markers?.radius}
+          shape={resolvedSymbols?.shape ?? markers?.shape}
           stroke={markers?.stroke ?? markers?.fill ?? resolvedStroke}
         />
       ) : null}
