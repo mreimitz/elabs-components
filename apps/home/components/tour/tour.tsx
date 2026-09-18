@@ -34,6 +34,22 @@ function TabSkeleton({ label }: { label: string }) {
   );
 }
 
+// RM-097 — server-rendered surfaces (Dashboard, Data app, Settings). `next/dynamic` still
+// code-splits each into its own chunk (kept out of the tour's own bundle until its tab is
+// hovered/opened) while leaving `ssr` at its default `true`, so the tab's content is in the
+// server HTML the way RM-096's `render: "server"` metadata expects.
+const DashboardSurface = dynamic(
+  () => import("./surfaces/dashboard").then((m) => m.DashboardSurface),
+  { loading: () => <TabSkeleton label={tourCopy.tabs.dashboard.label} /> },
+);
+const DataAppSurface = dynamic(() => import("./surfaces/data-app").then((m) => m.DataAppSurface), {
+  loading: () => <TabSkeleton label={tourCopy.tabs["data-app"].label} />,
+});
+const SettingsSurface = dynamic(
+  () => import("./surfaces/settings").then((m) => m.SettingsSurface),
+  { loading: () => <TabSkeleton label={tourCopy.tabs.settings.label} /> },
+);
+
 const FLOW_LABEL = tourCopy.tabs["flow-workspace"].label;
 const loadFlow = () => import("@elabs-ai/components-flow");
 const FlowPreview = dynamic(
@@ -67,6 +83,18 @@ const FlowPreview = dynamic(
 const SURFACES: Partial<Record<TourTabId, { render: () => ReactNode; prefetch?: () => void }>> = {
   "flow-workspace": { render: () => <FlowPreview />, prefetch: () => void loadFlow() },
   // RM-097
+  dashboard: {
+    render: () => <DashboardSurface />,
+    prefetch: () => void import("./surfaces/dashboard"),
+  },
+  "data-app": {
+    render: () => <DataAppSurface />,
+    prefetch: () => void import("./surfaces/data-app"),
+  },
+  settings: {
+    render: () => <SettingsSurface />,
+    prefetch: () => void import("./surfaces/settings"),
+  },
 
   // RM-098
 };
