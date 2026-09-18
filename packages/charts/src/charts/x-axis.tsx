@@ -2,12 +2,13 @@
 
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, useLocale } from "@elabs-ai/components-ui";
 import { HairlineFloor } from "../marks/hairline-floor";
 import { CHART_DENSITY_SM_MAX_TICKS, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
-import { shortDateFmt } from "./chart-formatters";
+import { makeDateFmtForPreset, shortDateFmt } from "./chart-formatters";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
+import { dateFormatForSpan, finerDateFormatPreset, type DateFormatPreset } from "./date-format";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
 
 const X_AXIS_POSITION_TWEEN_MS = DEFAULT_Y_DOMAIN_TWEEN_MS;
@@ -135,6 +136,21 @@ export interface XAxisProps {
    * x value. Format categorical/numeric x values in your data. #352.
    */
   tickFormat?: (value: Date) => string;
+  /**
+   * The date-format LADDER (RM-109): a preset from `date-format.ts`
+   * (`"year"` → `"yearShort"` → `"month"` → `"day"` → `"weekday"` →
+   * `"hour"` → `"minute"`), or a formatter function for full control.
+   *
+   * Unset (default) — the axis picks a rung itself via `dateFormatForSpan`,
+   * from the time domain's span and how many ticks are on screen, instead of
+   * the old fixed `"Mon d"` shape whatever the span. A ten-year series reads
+   * years; a 36-hour series reads hours.
+   *
+   * `tickFormat` still wins outright when both are set — it is the raw
+   * escape hatch this package has always had; `dateFormat` is the smart
+   * default underneath it. Same time-scale-only caveat as `tickFormat` (#352).
+   */
+  dateFormat?: DateFormatPreset | ((value: Date) => string);
   /**
    * Render exactly these tick positions, bypassing tick generation AND the
    * default label-collision de-dupe entirely — use when the default de-dupe
@@ -309,6 +325,11 @@ function dedupeIndicesByLabel(
   dateLabels: string[],
   xAccessor: (d: Record<string, unknown>) => Date,
   tickFormat?: (value: Date) => string,
+  // RM-109: the span/width ladder's fallback when neither `tickFormat` nor a
+  // `dateLabels` entry names the label — defaults to the pre-RM-109 shape so
+  // an external caller of the (exported) `selectEvenlySpacedIndices` sees no
+  // behaviour change unless it opts in.
+  dateFormatFn: (value: Date) => string = (value) => shortDateFmt.format(value),
 ): number[] {
   const seenLabels = new Set<string>();
   const deduped: number[] = [];
@@ -320,7 +341,7 @@ function dedupeIndicesByLabel(
     }
     const label = tickFormat
       ? tickFormat(xAccessor(point))
-      : (dateLabels[index] ?? shortDateFmt.format(xAccessor(point)));
+      : (dateLabels[index] ?? dateFormatFn(xAccessor(point)));
     if (seenLabels.has(label)) {
       continue;
     }
@@ -453,6 +474,8 @@ export function selectEvenlySpacedIndices(
     xAccessor?: (d: Record<string, unknown>) => Date;
     resolveXPx?: (index: number) => number;
     tickFormat?: (value: Date) => string;
+    /** RM-109: the date-ladder fallback threaded to `dedupeIndicesByLabel`. */
+    dateFormatFn?: (value: Date) => string;
   },
 ): number[] {
   if (length <= 0) {
@@ -484,6 +507,7 @@ export function selectEvenlySpacedIndices(
               options.dateLabels,
               options.xAccessor,
               options.tickFormat,
+              options.dateFormatFn,
             )
           : rawIndices;
 
@@ -508,6 +532,7 @@ export function selectEvenlySpacedIndices(
 function buildDataAlignedTicks({
   data,
   dateLabels,
+  dateFormatFn,
   marginLeft,
   targetTickCount,
   tickFormat,
@@ -516,6 +541,8 @@ function buildDataAlignedTicks({
 }: {
   data: Record<string, unknown>[];
   dateLabels: string[];
+  /** RM-109: the date-ladder fallback used once neither `tickFormat` nor `dateLabels` names a label. */
+  dateFormatFn?: (value: Date) => string;
   marginLeft: number;
   targetTickCount: number;
   tickFormat?: (value: Date) => string;
@@ -524,6 +551,7 @@ function buildDataAlignedTicks({
 }): AxisTick[] {
   const seenLabels = new Set<string>();
   const ticks: AxisTick[] = [];
+  const resolveDateLabel = dateFormatFn ?? ((value: Date) => shortDateFmt.format(value));
 
   const resolveXPx = (index: number) => {
     const point = data[index];
@@ -535,6 +563,7 @@ function buildDataAlignedTicks({
 
   for (const index of selectEvenlySpacedIndices(data.length, targetTickCount, {
     data,
+    dateFormatFn,
     dateLabels,
     resolveXPx,
     tickFormat,
@@ -545,7 +574,7 @@ function buildDataAlignedTicks({
       continue;
     }
     const date = xAccessor(point);
-    const label = tickFormat ? tickFormat(date) : (dateLabels[index] ?? shortDateFmt.format(date));
+    const label = tickFormat ? tickFormat(date) : (dateLabels[index] ?? resolveDateLabel(date));
     if (seenLabels.has(label)) {
       continue;
     }
@@ -564,11 +593,14 @@ function buildDomainTicks({
   marginLeft,
   numTicks,
   tickFormat,
+  dateFormatFn,
   xScale,
 }: {
   marginLeft: number;
   numTicks: number;
   tickFormat?: (value: Date) => string;
+  /** RM-109: the date-ladder fallback — replaces the old fixed `"Mon d"` shape. */
+  dateFormatFn?: (value: Date) => string;
   xScale: {
     domain: () => Date[];
     (date: Date): number | undefined;
@@ -600,11 +632,12 @@ function buildDomainTicks({
   const tickCount = Math.max(2, numTicks);
   const seenLabels = new Set<string>();
   const ticks: AxisTick[] = [];
+  const resolveDateLabel = dateFormatFn ?? ((value: Date) => shortDateFmt.format(value));
 
   for (let i = 0; i < tickCount; i++) {
     const t = i / (tickCount - 1);
     const date = new Date(startTime + t * timeRange);
-    const label = tickFormat ? tickFormat(date) : shortDateFmt.format(date);
+    const label = tickFormat ? tickFormat(date) : resolveDateLabel(date);
     if (seenLabels.has(label)) {
       continue;
     }
@@ -654,6 +687,7 @@ const XAxisInner = memo(function XAxisInner({
   tickerHalfWidth = 50,
   tickMode = "domain",
   tickFormat,
+  dateFormat,
   tickValues,
   periodTicks = false,
   container,
@@ -671,6 +705,40 @@ const XAxisInner = memo(function XAxisInner({
     height,
     innerHeight,
   } = useChart();
+  const { locale } = useLocale();
+
+  // RM-109: the ladder rung this axis paints, resolved once per render —
+  // `dateFormat` as an explicit preset wins outright; a function is honoured
+  // as-is (same escape hatch as `tickFormat`); unset, `dateFormatForSpan`
+  // picks a rung from the time domain's span and how many ticks are on
+  // screen, replacing the old fixed `shortDateFmt` ("Mon d") shape.
+  const ladderPreset = useMemo<DateFormatPreset>(() => {
+    if (dateFormat != null && typeof dateFormat !== "function") {
+      return dateFormat;
+    }
+    const [start, end] = xScale.domain();
+    if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return "day";
+    }
+    return dateFormatForSpan([start, end], numTicks, locale);
+  }, [dateFormat, xScale, numTicks, locale]);
+
+  // The axis' own tick formatter for the resolved rung.
+  const ladderDateFormat = useMemo(
+    () =>
+      typeof dateFormat === "function" ? dateFormat : makeDateFmtForPreset(locale, ladderPreset),
+    [dateFormat, locale, ladderPreset],
+  );
+  // Tooltips/hover read the FINER sibling rung (RM-109) — an axis showing
+  // "year" ticks still wants a hovered point to read "month", not repeat the
+  // same year the visible tick already named.
+  const hoveredDateFormat = useMemo(
+    () =>
+      typeof dateFormat === "function"
+        ? dateFormat
+        : makeDateFmtForPreset(locale, finerDateFormatPreset(ladderPreset)),
+    [dateFormat, locale, ladderPreset],
+  );
 
   // #352: on a band/linear axis the scale's domain holds SYNTHETIC instants, so
   // interpolating dates across it (the `"domain"` tick path) would invent
@@ -689,6 +757,11 @@ const XAxisInner = memo(function XAxisInner({
   // scale; labels come from `dateLabels`, and a dev warning says so.
   const effectiveTickFormat = isNonTimeScale ? undefined : tickFormat;
   const effectiveTickValues = isNonTimeScale ? undefined : tickValues;
+  // RM-109: the ladder is a Date-shaped default formatter, same #352 exemption
+  // as `tickFormat`/`tickValues` — a non-time scale's labels come from
+  // `dateLabels` (the caller's own x values), never a fabricated calendar date.
+  const effectiveDateFormat = isNonTimeScale ? undefined : ladderDateFormat;
+  const effectiveHoveredDateFormat = isNonTimeScale ? undefined : hoveredDateFormat;
   // RM-028: `periodTicks` generates real calendar Dates (one per day/week/
   // month) and interpolates them through the time scale — the same synthetic-
   // instant problem `tickFormat`/`tickValues` have on a band/linear axis, so
@@ -713,9 +786,11 @@ const XAxisInner = memo(function XAxisInner({
     // Explicit tick positions bypass generation AND the label-collision de-dupe
     // entirely — the caller owns exactly which ticks render (#357).
     if (effectiveTickValues != null) {
+      const resolveDateLabel =
+        effectiveTickFormat ?? effectiveDateFormat ?? ((date: Date) => shortDateFmt.format(date));
       return effectiveTickValues.map((date) => ({
         date,
-        label: effectiveTickFormat ? effectiveTickFormat(date) : shortDateFmt.format(date),
+        label: resolveDateLabel(date),
         x: (xScale(date) ?? 0) + margin.left,
       }));
     }
@@ -724,6 +799,7 @@ const XAxisInner = memo(function XAxisInner({
     if (tickMode === "data" || xDomain != null || isNonTimeScale) {
       return buildDataAlignedTicks({
         data,
+        dateFormatFn: effectiveDateFormat,
         dateLabels,
         marginLeft: margin.left,
         targetTickCount: numTicks,
@@ -734,6 +810,7 @@ const XAxisInner = memo(function XAxisInner({
     }
 
     return buildDomainTicks({
+      dateFormatFn: effectiveDateFormat,
       marginLeft: margin.left,
       numTicks,
       tickFormat: effectiveTickFormat,
@@ -742,6 +819,7 @@ const XAxisInner = memo(function XAxisInner({
   }, [
     effectiveTickValues,
     effectiveTickFormat,
+    effectiveDateFormat,
     tickMode,
     xDomain,
     isNonTimeScale,
@@ -819,7 +897,8 @@ const XAxisInner = memo(function XAxisInner({
     isHovering && tooltipData
       ? effectiveTickFormat
         ? effectiveTickFormat(xAccessor(tooltipData.point))
-        : (dateLabels[tooltipData.index] ?? shortDateFmt.format(xAccessor(tooltipData.point)))
+        : (dateLabels[tooltipData.index] ??
+          (effectiveHoveredDateFormat ?? shortDateFmt.format)(xAccessor(tooltipData.point)))
       : null;
 
   return createPortal(

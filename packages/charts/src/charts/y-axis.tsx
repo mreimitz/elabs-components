@@ -40,6 +40,15 @@ export interface YAxisProps {
   currency?: string;
   /** Custom formatter for tick labels. Overrides `valueFormat` entirely when set. */
   formatValue?: (value: number) => string;
+  /**
+   * Unit text appended to {@link unitOn} tick(s) — `<YAxis unit="%" />` paints
+   * `"80 %"` on that tick, not every tick (RM-109). The tooltip is the place a
+   * unit repeats on every value (the blog's "3.4 % unemployed", not a bare
+   * "3.4 %"); see `TooltipRow.unit`.
+   */
+  unit?: string;
+  /** Which tick(s) {@link unit} paints on. Default: `"last"`. */
+  unitOn?: "last" | "first" | "all";
 }
 
 export function YAxis(props: YAxisProps) {
@@ -69,6 +78,8 @@ const YAxisInner = memo(function YAxisInner({
   valueFormat,
   currency,
   formatValue,
+  unit,
+  unitOn = "last",
   container,
 }: YAxisProps & { container: HTMLDivElement }) {
   const { margin } = useChartStable();
@@ -84,12 +95,22 @@ const YAxisInner = memo(function YAxisInner({
 
   const ticks = useMemo(() => {
     const tickValues = yScale.ticks(resolveYAxisTickCount(numTicks));
-    return tickValues.map((value) => ({
-      value,
-      y: (yScale(value) ?? 0) + margin.top,
-      label: format(value),
-    }));
-  }, [yScale, margin.top, numTicks, format]);
+    return tickValues.map((value, index) => {
+      // A unit repeated on every tick is visual noise the reader already
+      // filtered out by the second tick — Datawrapper's River charts paint it
+      // once (RM-109). `unitOn` names WHICH tick carries it.
+      const paintsUnit =
+        unit != null &&
+        (unitOn === "all" ||
+          (unitOn === "first" && index === 0) ||
+          (unitOn === "last" && index === tickValues.length - 1));
+      return {
+        value,
+        y: (yScale(value) ?? 0) + margin.top,
+        label: paintsUnit ? `${format(value)} ${unit}` : format(value),
+      };
+    });
+  }, [yScale, margin.top, numTicks, format, unit, unitOn]);
 
   return createPortal(
     <div className="pointer-events-none absolute inset-0">

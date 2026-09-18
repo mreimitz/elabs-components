@@ -103,6 +103,13 @@ describe("XAxis — tickFormat / tickValues (#357)", () => {
       // All three points fall within the same day (default formatter is
       // {month:"short", day:"numeric"} — no time component), so every
       // domain-interpolated tick collapses to the same "Jan 1" label.
+      //
+      // RM-109: the default formatter is now the span/width ladder
+      // (`dateFormatForSpan`), which resolves a ten-minute span to the
+      // "minute" rung on its own and would no longer collapse — that's the
+      // bug this RM fixes. `dateFormat="day"` pins the OLD coarse shape
+      // explicitly so this test still exercises the collapse-warning
+      // mechanism itself, independent of which rung is in play.
       const denseData = [
         { date: new Date("2024-01-01T00:00:00"), value: 1 },
         { date: new Date("2024-01-01T00:05:00"), value: 2 },
@@ -110,7 +117,7 @@ describe("XAxis — tickFormat / tickValues (#357)", () => {
       ];
       render(
         <LineChart data={denseData}>
-          <XAxis />
+          <XAxis dateFormat="day" />
         </LineChart>,
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);

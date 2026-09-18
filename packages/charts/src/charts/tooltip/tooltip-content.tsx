@@ -7,6 +7,14 @@ export interface TooltipRow {
   color: string;
   label: string;
   value: string | number;
+  /**
+   * Unit text appended after the formatted `value` (RM-109) — the blog's
+   * "3.4 % unemployed", not a bare "3.4 %": where an axis paints its `unit`
+   * on one tick only, a row's OWN value repeats it every time, since the
+   * tooltip is a single figure the reader is not scanning a whole scale of.
+   * Ignored when `value` is already a string (the caller owns the text).
+   */
+  unit?: string;
 }
 
 export interface ChartTooltipContentProps {
@@ -48,7 +56,11 @@ export function ChartTooltipContent({ title, rows, children }: ChartTooltipConte
                 <span className="text-chart-tooltip-muted text-sm">{row.label}</span>
               </div>
               <span className="font-medium text-chart-tooltip-foreground text-sm tabular-nums">
-                {typeof row.value === "number" ? format(row.value) : row.value}
+                {typeof row.value === "number"
+                  ? row.unit
+                    ? `${format(row.value)} ${row.unit}`
+                    : format(row.value)
+                  : row.value}
               </span>
             </div>
           ))}
