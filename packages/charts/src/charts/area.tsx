@@ -1,5 +1,7 @@
 "use client";
 
+import type { Responsive } from "./chart-breakpoint";
+import type { ChartValueLabels, SeriesLabelMode } from "./labels/use-chart-labels";
 import { curveMonotoneX } from "@visx/curve";
 import { scaleLinear } from "@visx/scale";
 import { Area as VisxArea, AreaClosed, LinePath } from "@visx/shape";
@@ -267,6 +269,17 @@ export interface AreaProps {
    * chart under high decoration (`data-decoration` ≥ 8). Default: false.
    */
   labelPeaks?: boolean;
+  /** Series display name — the text of its end label, key item and auto summary (RM-110). Default: `dataKey`. */
+  name?: string;
+  /**
+   * Where the series names itself (RM-110): `"end"` | `"key"` | `"none"`, or a
+   * `Responsive` value. Default: as `LineProps.seriesLabel` (two or more
+   * series, and only for a series with a real `name`). Read by the chart
+   * shell, which reserves the margin and places every label in one pass.
+   */
+  seriesLabel?: Responsive<SeriesLabelMode>;
+  /** Automatic value labels (RM-110) — see `LineProps.valueLabels`. */
+  valueLabels?: ChartValueLabels;
 }
 
 function useAreaLoadingPulseState(
@@ -645,5 +658,15 @@ export function Area({
 }
 
 Area.displayName = "Area";
+
+// Labels — RM-110
+/**
+ * True inside a stacked `AreaChart` (`offset` set). Stacked bands name
+ * themselves through `labelBands`; the label engine positions end/value labels
+ * from RAW values, so it leaves stacked areas alone.
+ */
+export function useAreaStacked(): boolean {
+  return useAreaStackConfig() !== undefined;
+}
 
 export default Area;
