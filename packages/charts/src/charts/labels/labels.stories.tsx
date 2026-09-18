@@ -180,8 +180,8 @@ const SCHOOLS = [
 ];
 const loans = SCHOOLS.map((name, i) => ({
   name: `${name} College`,
-  debt: 9000 + ((i * 7919) % 23000),
-  defaultRate: 2 + ((i * 37) % 17) + (i % 3) * 0.5,
+  debt: 9000 + ((i * 9973) % 23011),
+  defaultRate: 2 + ((i * i * 31 + i * 7) % 170) / 10,
   borrowers: 400 + ((i * 131) % 5200),
 }));
 
@@ -206,7 +206,7 @@ export const LabelledScatter: Story = {
           fill="var(--chart-1)"
           labels={{ key: "name", priority: (d) => Number(d.borrowers) }}
         />
-        <XAxis />
+        <XAxis ticks={[10000, 15000, 20000, 25000, 30000]} />
         <YAxis />
       </ScatterChart>
     </div>

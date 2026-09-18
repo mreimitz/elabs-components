@@ -126,6 +126,8 @@ export interface DescribeSeriesPhrases {
   points: (count: number) => string;
   slices: (count: number) => string;
   peak: (name: string, value: string, x: string) => string;
+  /** Scatter: the highest point (x is a position, not a period). */
+  highestPoint: (name: string, value: string, x: string) => string;
   largestSlice: (name: string, value: string, share: string) => string;
 }
 
@@ -142,6 +144,8 @@ export const DEFAULT_DESCRIBE_SERIES_PHRASES: DescribeSeriesPhrases = {
   points: (count) => (count === 1 ? "1 point" : `${count} points`),
   slices: (count) => (count === 1 ? "1 slice" : `${count} slices`),
   peak: (name, value, x) => (x ? `${name} peaks at ${value} in ${x}` : `${name} peaks at ${value}`),
+  highestPoint: (name, value, x) =>
+    x ? `highest ${name}: ${value} at ${x}` : `highest ${name}: ${value}`,
   largestSlice: (name, value, share) => `largest: ${name} at ${value} (${share})`,
 };
 
@@ -259,7 +263,8 @@ export function describeSeries(
     if (!best || value > best.value) best = { item, index: c.index, value };
   }
   if (!best) return head;
-  return `${head}; ${phrases.peak(best.item.name, fmtValue(best.value), xAt(best.index))}`;
+  const phrase = options.kind === "scatter" ? phrases.highestPoint : phrases.peak;
+  return `${head}; ${phrase(best.item.name, fmtValue(best.value), xAt(best.index))}`;
 }
 
 const SUMMARISED_SERIES = new Set(["Line", "Area", "Bar", "Scatter"]);
