@@ -1016,6 +1016,93 @@ describe("AutoChart selection pass-through (RM-073)", () => {
   });
 });
 
+// nulls / curve / symbols — RM-112
+describe("AutoChart nulls/curve/symbols pass-through (RM-112)", () => {
+  const nullsData = [
+    { date: "2024-01-01", revenue: 12000 },
+    { date: "2024-01-02", revenue: 15200 },
+    { date: "2024-01-03", revenue: null },
+    { date: "2024-01-04", revenue: 14100 },
+  ];
+
+  it("spec.nulls reaches the 'line' family and breaks the path at the gap", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{ type: "line", data: nullsData, x: "date", series: ["revenue"], nulls: "gap" }}
+        height={280}
+      />,
+    );
+    const d = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect((d.match(/M/g) ?? []).length).toBe(2);
+  });
+
+  it("spec.nulls reaches the 'area' family and breaks the crest at the gap", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{ type: "area", data: nullsData, x: "date", series: ["revenue"], nulls: "gap" }}
+        height={280}
+      />,
+    );
+    const d = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect((d.match(/M/g) ?? []).length).toBe(2);
+  });
+
+  it("spec.curve reaches every 'line' series", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          curve: "step-after",
+        }}
+        height={280}
+      />,
+    );
+    const stepD = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    const { container: monotoneContainer } = render(
+      <AutoChart
+        spec={{ type: "line", data: temporalData, x: "date", series: ["revenue"] }}
+        height={280}
+      />,
+    );
+    const monotoneD =
+      monotoneContainer.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect(stepD).not.toBe(monotoneD);
+  });
+
+  it("spec.symbols reaches every 'line'/'area' series as hollow markers", () => {
+    const { container: lineContainer } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          symbols: { style: "hollow" },
+        }}
+        height={280}
+      />,
+    );
+    expect(lineContainer.querySelectorAll("circle").length).toBeGreaterThan(0);
+
+    const { container: areaContainer } = render(
+      <AutoChart
+        spec={{
+          type: "area",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          symbols: { style: "hollow" },
+        }}
+        height={280}
+      />,
+    );
+    expect(areaContainer.querySelectorAll("circle").length).toBeGreaterThan(0);
+  });
+});
+
 // A dashboard chart tile is `ChartFrame chrome="tile"` with no plot height: the
 // frame hands its chart "fill", i.e. `height: 100%`. That only resolves when
 // EVERY box from the frame body down to the plot is definite — an auto-height

@@ -1,6 +1,9 @@
 "use client";
 
+import { motion } from "motion/react";
 import { HaloText } from "../../marks/halo-text";
+import { SELECTION_EXCLUDED_OPACITY } from "../chart-selection";
+import { useChartSeriesMode } from "../time-series-chart-shell";
 import type { LabelPlacement } from "./label-layout";
 import { seriesLabelInk } from "./series-label-ink";
 import {
@@ -21,15 +24,32 @@ export interface SeriesEndLabelsProps {
  * Series names at the line ends (RM-110). A label the solver nudged away from
  * its line end gets a short leader back to the point, in the series' colour.
  * Ink only — `aria-hidden`; the chart's summary names every series.
+ *
+ * Wave-1 integration (RM-112 `focusOnHover`): each label group reads
+ * `useChartSeriesMode()` directly, the same leaf-context trick
+ * `SeriesHoverDim` uses on the line/area geometry itself, so a hover change
+ * re-renders only this component — never the memoised label-placement
+ * solver above it (`ChartSeriesModeProvider`'s docblock in
+ * `../time-series-chart-shell`). When a series is dimmed to
+ * `SELECTION_EXCLUDED_OPACITY`, its end label dims to the same opacity, on
+ * the same tween, so the label never outshines its own now-faded line.
  */
 export function SeriesEndLabels({ placements }: SeriesEndLabelsProps) {
+  const { focusOnHover, hoveredKey } = useChartSeriesMode();
   if (placements.length === 0) return null;
   return (
     <g aria-hidden="true" data-slot="series-end-labels">
       {placements.map((p) => {
         const midY = p.y + LABEL_LINE_HEIGHT / 2;
+        const isDimmed = focusOnHover && hoveredKey !== null && hoveredKey !== p.label.dataKey;
         return (
-          <g data-series={p.label.dataKey} key={p.id}>
+          <motion.g
+            animate={{ opacity: isDimmed ? SELECTION_EXCLUDED_OPACITY : 1 }}
+            data-series={p.label.dataKey}
+            initial={{ opacity: 1 }}
+            key={p.id}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+          >
             <line
               stroke={p.label.stroke}
               strokeLinecap="round"
@@ -49,7 +69,7 @@ export function SeriesEndLabels({ placements }: SeriesEndLabelsProps) {
             >
               {p.label.text}
             </HaloText>
-          </g>
+          </motion.g>
         );
       })}
     </g>
