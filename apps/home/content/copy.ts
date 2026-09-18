@@ -139,3 +139,77 @@ export const heroCopy = {
     flowStep: (step: number, steps: number) => `Step ${step} of ${steps}`,
   },
 } as const;
+
+// RM-096 — the surface tour (concept §4.2): movement title, per-tab labels, use cases, hints
+// and the agent prompt. The MCP URL, archetype intents, story ids and commands are NOT here —
+// they come from `content/generated/*.json` through `lib/content.ts` (see `tour/tabs.ts`).
+export const tourCopy = {
+  title: "Seven surfaces, one system",
+  description:
+    "Each tab is a full-size screen built from the library. Open it in Storybook, copy a prompt for your coding agent, or scaffold it.",
+  tabs: {
+    dashboard: {
+      label: "Dashboard",
+      useCase: "KPIs, charts and records in one screen, with tiles people can rearrange.",
+      hint: "Drag a tile",
+    },
+    "ai-assistant": {
+      label: "AI assistant",
+      useCase: "A chat that renders tool calls, reasoning and sources, not only text.",
+      hint: "Expand the tool call",
+    },
+    "data-app": {
+      label: "Data app",
+      useCase: "A table for browsing and operating on records: search, facets, bulk actions.",
+      hint: "Sort a column",
+    },
+    "flow-workspace": {
+      label: "Flow workspace",
+      useCase: "A node canvas with an inspector, for pipelines and agent graphs.",
+      hint: "Drag a node",
+    },
+    "process-explorer": {
+      label: "Process explorer",
+      useCase: "Process mining on an event log: the map, variants and throughput.",
+      hint: "Hover a path",
+    },
+    settings: {
+      label: "Settings",
+      useCase: "Grouped forms with sections, descriptions and saved state.",
+      hint: null,
+    },
+    marketing: {
+      label: "Marketing",
+      useCase: "A landing page: hero, feature grid, stats and a call to action.",
+      hint: null,
+    },
+  },
+  /** Screen-reader label of a tab whose surface has not landed yet (RM-097/098 replace these). */
+  placeholder: (label: string) => `${label} preview`,
+  /** The multi-line prompt "Copy prompt" writes: the hosted MCP URL, the archetype, its intent. */
+  prompt: ({
+    mcpUrl,
+    archetype,
+    intent,
+    useCase,
+  }: {
+    mcpUrl: string;
+    archetype: string;
+    intent: string;
+    useCase: string;
+  }) =>
+    [
+      `Using brand-ui (MCP: ${mcpUrl}), build a ${archetype} screen.`,
+      `Intent: ${intent}.`,
+      `Use case: ${useCase}`,
+      "Use only @elabs-ai/components-* components and semantic tokens; follow the brand-ui playbook for this archetype.",
+    ].join("\n"),
+  actions: {
+    openInStorybook: "Open in Storybook",
+    copyPrompt: "Copy prompt",
+    promptCopied: "Prompt copied",
+    promptCopyFailed: "Could not copy the prompt",
+    scaffold: "Scaffold",
+    copyCommand: "Copy scaffold command",
+  },
+} as const;
