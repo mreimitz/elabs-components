@@ -22,6 +22,8 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+// Labels — RM-110
+import { useChartAutoSummary } from "./chart-a11y";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -792,13 +794,19 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     [ref],
   );
 
+  // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
+  const description = useChartAutoSummary("pie", {
+    accessibleLabel,
+    accessibleDescription,
+    data,
+  });
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+  } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
 
   // If fixed size is provided, use it directly
   // The provider sits ABOVE the chart body so `PieSlice` can read the
@@ -828,7 +836,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
         style={{ width: fixedSize, height: fixedSize }}
         tabIndex={tabIndex}
       >
-        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        <ChartA11yLabel descId={descId} description={description} />
         {withInteraction(
           <PieChartInner
             containerRef={containerRef}
@@ -868,7 +876,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
       role={role}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      <ChartA11yLabel descId={descId} description={description} />
       <ParentSize debounceTime={10}>
         {({ width, height }) =>
           withInteraction(
