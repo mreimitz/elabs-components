@@ -6,8 +6,15 @@
  * skipped by a NUL sniff.
  */
 
-/** A machine-specific absolute home path: /Users/<name>/… or /home/<name>/… */
-export const MACHINE_PATH_RE = /\/(?:Users|home)\/[A-Za-z0-9._-]+\//;
+/**
+ * A machine-specific absolute home path: /Users/<name>/… or /home/<name>/…
+ * The negative lookbehind requires the leading `/` to START a path (string
+ * start, or preceded by a non-path-segment character such as quote/backtick/
+ * `:`/`(`/`=`/whitespace) — otherwise a repo-relative path that merely
+ * contains a `home` segment (`apps/home/content/x`, `packages/home/foo/`)
+ * false-positives on the trailing `/home/…/` substring.
+ */
+export const MACHINE_PATH_RE = /(?<![A-Za-z0-9._-])\/(?:Users|home)\/[A-Za-z0-9._-]+\//;
 
 /** Files that legitimately carry a home-path STRING as test data. */
 const IGNORE = [
@@ -68,6 +75,8 @@ export default {
       ),
       { files: { "packages/cli/test/docgen.test.mjs": `import("${mac}x.ts")` } },
       { files: { "public/logo.png": `\0PNG${mac}` } },
+      // Repo-relative paths that merely contain a `home` segment are not machine paths.
+      file("See apps/home/content/agent-loop.json and packages/home/foo/ for the home site track."),
     ],
     fail: [
       file(`import { chromium } from "${mac}node_modules/playwright/index.mjs";`),
