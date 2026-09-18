@@ -1,7 +1,7 @@
 # ADR 0038 — The website lives in `apps/home` (Next.js); Storybook moves to `/storybook`; `/mcp` moves with the domain
 
-- **Status:** Proposed — awaiting the maintainer's confirmation of the four proposals under
-  "Maintainer confirmation" below. Nothing is scaffolded until they are confirmed.
+- **Status:** Accepted — confirmed by the maintainer on 2026-09-18 (all four proposals under
+  "Maintainer confirmation" below accepted as drafted).
 - **Date:** 2026-09-18
 - **Deciders:** maintainer (drafted by `brand-ui-component-builder` for RM-089)
 - **Context:** `docs/review/2026-09-18-homepage-concept.md` §1, §6, §8;
@@ -233,19 +233,23 @@ the old behaviour if the Storybook project's live deployment still carries `/mcp
 | G. Leave `/mcp` on the Storybook project and have the site rewrite `/mcp` to it                       | rejected — zero code moves and zero gap, but the agent surface stays split across two apps (concept §6 puts `/mcp`, `/llms.txt` and `.well-known` together on the site), every MCP call gains a proxy hop, and the `excludeFiles` workaround stays forever |
 | H. Delete `apps/docs/api/mcp.mjs` in RM-089 and freeze releases until RM-105 (the roadmap as written) | the realistic alternative to §4's proposal — one file fewer for a few days, but safety rests on nobody merging the release PR in between, and nothing enforces that                                                                                        |
 
-## Maintainer confirmation
+## Maintainer confirmation (2026-09-18)
 
-Pending. The four proposals to confirm:
+The maintainer confirmed each proposal as drafted, in chat to the orchestrator, on 2026-09-18:
 
-1. Next.js App Router on React 19 and Tailwind v4 in `apps/home`, using the current stable Next.js
-   major at scaffold time (§1).
-2. Two Vercel projects; Storybook at `/storybook/` through a rewrite to its own project, with the
-   trailing-slash settings in §2; no base-path flag; subdomain only as a fallback rewrite target
-   (§2).
-3. `elabs-ai.com` moves to the home project in the order in §3, with rollback by moving it back
-   (§3).
-4. `/mcp` moves into the site; the Storybook copy stays until the cut-over and is deleted by RM-105,
-   not RM-089 (§4) — or, alternatively, option H.
+1. Framework (§1): Next.js App Router, the **current stable major at scaffold time** (not pinned to
+   15.x), React 19, Tailwind v4 — accepted. Resolved at scaffold: `next` 16.3.5.
+2. Storybook (§2): its own Vercel project, reached at `elabs-ai.com/storybook/` through a rewrite;
+   bare `/storybook` redirects to `/storybook/`; trailing-slash handling lives in the site. If the
+   Storybook project's `vercel.app` origin is login-protected, a subdomain becomes the rewrite
+   target behind the scenes — visitors still use `/storybook/` — accepted.
+3. Domain move (§3): deploy the site on its own `vercel.app` address first; verify `/mcp`,
+   `/storybook/` and old Storybook links there; the maintainer moves `elabs-ai.com` in the Vercel
+   dashboard; re-verify on the domain. Moving it back is the rollback. The maintainer creates the
+   new Vercel project by hand — accepted.
+4. `/mcp` (§4): added to the site now (`apps/home/app/mcp/route.ts`); `apps/docs/api/mcp.mjs` and
+   the `functions`/`/mcp` rewrite in `apps/docs/vercel.json` stay until the domain cut-over, and
+   RM-105 deletes them — accepted (option H not taken).
 
 ## Watch for
 
