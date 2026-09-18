@@ -1,6 +1,5 @@
 "use client";
 
-import { curveMonotoneX } from "@visx/curve";
 import { scaleLinear } from "@visx/scale";
 import { Area as VisxArea, AreaClosed, LinePath } from "@visx/shape";
 import {
@@ -25,7 +24,7 @@ import { HaloText } from "../marks/halo-text";
 import { AreaGradientDefs } from "./area-gradient-defs";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import type { ChartPhase } from "./chart-phase";
-import type { CurveFactory } from "./curve-types";
+import { type CurveAlias, type CurveFactory, resolveCurve } from "./curve-types";
 import { type FadeEdges, resolveFadeSides } from "./fade-edges";
 import { HairlineArea } from "./hairline-area";
 import {
@@ -46,6 +45,7 @@ import {
   seriesDashArray,
   seriesPatternId,
 } from "./series-pattern";
+import { useChartSeriesMode, type NullsMode } from "./time-series-chart-shell";
 import { useHighDecoration } from "./use-high-decoration";
 
 /**
@@ -207,8 +207,12 @@ export interface AreaProps {
   stroke?: string;
   /** Stroke width. Default: 2 */
   strokeWidth?: number;
-  /** Curve function. Default: curveMonotoneX */
-  curve?: CurveFactory;
+  /**
+   * Curve interpolation — a named alias (`"linear"` | `"monotone"` |
+   * `"natural"` | `"step"` | `"step-before"` | `"step-after"`, RM-112) or a
+   * raw `@visx/curve` factory. Default: `"monotone"` (unchanged).
+   */
+  curve?: CurveFactory | CurveAlias;
   /** Whether to animate the area. Default: true */
   animate?: boolean;
   /** Whether to show the stroke line. Default: true */
@@ -244,12 +248,30 @@ export interface AreaProps {
   /** Marker styling (same options as Scatter). */
   markers?: SeriesPointMarkerStyle;
   /**
+   * Placement/style wrapper over `showMarkers`/`markers` (RM-112) — see
+   * `Line symbols`. Setting this turns markers on regardless of
+   * `showMarkers`.
+   */
+  symbols?: {
+    placement?: "all" | "ends" | "first" | "last";
+    shape?: SeriesPointMarkerStyle["shape"];
+    style?: "filled" | "hollow";
+    size?: number;
+  };
+  /**
    * Data index from which the line stroke becomes dashed (inclusive).
    * Useful for projecting incomplete periods, e.g. dashed from yesterday through today.
    */
   dashFromIndex?: number;
   /** Dash pattern for the tail segment when `dashFromIndex` is set. Default: "6,4" */
   dashArray?: string;
+  /**
+   * How this area draws a non-numeric sample (RM-112). Overrides the
+   * container-level `AreaChart nulls` default. Unset — read the container
+   * default, or `"gap"` with no container default (a visible break in the
+   * fill/crest at that sample, never a silent zero).
+   */
+  nulls?: NullsMode;
   /** Pulse stroke color while chart is loading. Default: var(--foreground) */
   loadingStroke?: string;
   /** Pulse stroke opacity while chart is loading. Default: 0.5 */
@@ -310,7 +332,7 @@ export function Area({
   fillOpacity = 0.4,
   stroke,
   strokeWidth = 2,
-  curve = curveMonotoneX,
+  curve = "monotone",
   animate = true,
   showLine = true,
   showHighlight = true,
@@ -319,8 +341,10 @@ export function Area({
   fadeEdges = false,
   showMarkers = false,
   markers,
+  symbols,
   dashFromIndex,
   dashArray = "6,4",
+  nulls: nullsProp,
   loading,
   loadingStroke = chartCssVars.foreground,
   loadingStrokeOpacity = 0.5,
@@ -347,6 +371,9 @@ export function Area({
   const yScale = useYScale(yAxisId);
   const { handleLoadingPulseComplete, pulseMode, pulseEpoch, showLoadingPulse, showSeriesContent } =
     useAreaLoadingPulseState(chartPhase, loading, loadingPulseMode, notifyLoadingPulseComplete);
+  const seriesMode = useChartSeriesMode();
+  const resolvedNulls: NullsMode = nullsProp ?? seriesMode.nulls ?? "gap";
+  const resolvedCurve = useMemo(() => resolveCurve(curve), [curve]);
 
   const seriesIndex = useMemo(() => {
     const index = lines.findIndex((line) => line.dataKey === dataKey);
@@ -439,9 +466,27 @@ export function Area({
   const useDecorationPattern = high && !useHairline && isPaletteFill(fill);
   const bpPatternId = seriesPatternId(seriesIndex, patternRawScope);
 
+  // `nulls="connect"` (RM-112) — see `Line`'s identical `lineRenderData`.
+  // Applies only to the ordinary (unstacked, non-hairline) fill/crest below:
+  // a stacked band always has a defined value per index
+  // (`computeAreaStackBands` substitutes 0), and `HairlineArea` is a
+  // single-series decoration variant with its own data path.
+  const areaRenderData = useMemo(() => {
+    if (resolvedNulls !== "connect") {
+      return renderData;
+    }
+    return renderData.filter((d) => typeof d[dataKey] === "number");
+  }, [renderData, resolvedNulls, dataKey]);
+
+  const isDefined = useCallback(
+    (d: Record<string, unknown>) => typeof d[dataKey] === "number",
+    [dataKey],
+  );
+
   const pathRef = useRef<SVGPathElement>(null);
   const { pathLength, pathD } = usePathStrokeMetrics(pathRef, [
-    renderData,
+    areaRenderData,
+    resolvedNulls,
     innerWidth,
     dashFromIndex,
     showLine,
@@ -503,7 +548,7 @@ export function Area({
     <>
       {showSeriesContent && isStacked ? (
         <VisxArea
-          curve={curve}
+          curve={resolvedCurve}
           data={renderData}
           fill={areaFill}
           x={(d) => xScale(xAccessor(d)) ?? 0}
@@ -520,8 +565,9 @@ export function Area({
         />
       ) : showSeriesContent && showAreaFill ? (
         <AreaClosed
-          curve={curve}
-          data={renderData}
+          curve={resolvedCurve}
+          data={areaRenderData}
+          defined={resolvedNulls === "gap" ? isDefined : undefined}
           fill={areaFill}
           x={(d) => xScale(xAccessor(d)) ?? 0}
           y={getY}
@@ -538,8 +584,9 @@ export function Area({
       {shouldMeasurePath ? (
         <>
           <LinePath
-            curve={curve}
-            data={renderData}
+            curve={resolvedCurve}
+            data={isStacked ? renderData : areaRenderData}
+            defined={!isStacked && resolvedNulls === "gap" ? isDefined : undefined}
             innerRef={pathRef}
             stroke={visibleStroke}
             strokeDasharray={useDecorationPattern ? seriesDashArray(seriesIndex) : undefined}
@@ -575,7 +622,7 @@ export function Area({
         // of this edge; `seamOwnsEdge` above also makes the crest's own
         // stroke transparent, so this order can't silently regress again.
         <LinePath
-          curve={curve}
+          curve={resolvedCurve}
           data={renderData}
           stroke={chartCssVars.background}
           strokeWidth={stackConfig.seams}
@@ -605,7 +652,12 @@ export function Area({
         strokeGradientId={strokeGradientId}
       />
 
-      <SeriesHoverDim dimOpacity={0.6} enabled={showHighlight} seriesIndex={seriesIndex}>
+      <SeriesHoverDim
+        dataKey={dataKey}
+        dimOpacity={0.6}
+        enabled={showHighlight}
+        seriesIndex={seriesIndex}
+      >
         {useViewportEdgeFade ? <g mask={`url(#${edgeMaskId})`}>{seriesLayers}</g> : seriesLayers}
       </SeriesHoverDim>
 
@@ -618,12 +670,19 @@ export function Area({
         strokeWidth={crestStrokeWidth}
       />
 
-      {showMarkers && showSeriesContent ? (
+      {(showMarkers || symbols) && showSeriesContent ? (
         <SeriesMarkers
           animate={animate}
           dataKey={dataKey}
           {...markers}
-          fill={markers?.fill ?? resolvedStroke}
+          fill={
+            symbols?.style === "hollow"
+              ? chartCssVars.background
+              : (markers?.fill ?? resolvedStroke)
+          }
+          placement={symbols?.placement}
+          radius={symbols?.size ?? markers?.radius}
+          shape={symbols?.shape ?? markers?.shape}
           stroke={markers?.stroke ?? markers?.fill ?? resolvedStroke}
         />
       ) : null}

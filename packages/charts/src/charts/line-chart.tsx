@@ -42,7 +42,11 @@ import type { ChartRevealOn } from "./chart-reveal-clip";
 import { Line, type LineProps } from "./line";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
-import { TimeSeriesChartInner } from "./time-series-chart-shell";
+import {
+  ChartSeriesModeProvider,
+  type NullsMode,
+  TimeSeriesChartInner,
+} from "./time-series-chart-shell";
 import {
   ChartPlotRoot,
   type ChartPlotHeight,
@@ -136,6 +140,17 @@ export interface LineChartProps extends ChartSelectionProps, ChartHoverLinkProps
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. series names + value range). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Container-level default for a `Line`'s own `nulls` prop (RM-112). Unset
+   * — every `Line` keeps its own default (`"gap"`).
+   */
+  nulls?: NullsMode;
+  /**
+   * Hovering (or, on touch, tapping) one series dims every other series to
+   * the shared selection-excluded opacity (RM-112, `dw-river.md` §2.3).
+   * Default false — today's behaviour.
+   */
+  focusOnHover?: boolean;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -237,6 +252,10 @@ interface ChartInnerProps {
   children: ReactNode;
   containerRef: React.RefObject<HTMLDivElement | null>;
   onPhaseChange: (phase: ChartPhase) => void;
+  /** Container-level `nulls` default — see `LineChartProps.nulls`. */
+  nulls?: NullsMode;
+  /** Dim non-hovered series — see `LineChartProps.focusOnHover`. */
+  focusOnHover?: boolean;
 }
 
 function ChartInner({
@@ -266,6 +285,8 @@ function ChartInner({
   datapointLabel,
   maxInteractiveDatapoints,
   onPhaseChange,
+  nulls,
+  focusOnHover,
 }: ChartInnerProps) {
   // See `use-stable-value.ts`: collapses back to the previous reference when
   // the extracted series content is unchanged, even though `children` gets a
@@ -276,33 +297,40 @@ function ChartInner({
   // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
   const clipPathId = `chart-grow-clip-${useId().replace(/:/g, "")}`;
   const chart = (
-    <TimeSeriesChartInner
-      animationDuration={animationDuration}
-      animationEasing={animationEasing}
-      chartStatus={chartStatus}
-      clipPathId={clipPathId}
-      containerRef={containerRef}
-      data={data}
-      enterTransition={enterTransition}
-      height={height}
-      lines={lines}
-      loadingLabel={loadingLabel}
-      margin={margin}
-      onPhaseChange={onPhaseChange}
-      replayOnClick={replayOnClick}
-      revealOn={revealOn}
-      revealSignature={revealSignature}
-      tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
-      width={width}
-      xDataKey={xDataKey}
-      xDomain={xDomain}
-      xDomainSlotCount={xDomainSlotCount}
-      xScaleType={xScaleType}
-      yDomainTween={yDomainTween}
-      yDomainTweenDuration={yDomainTweenDuration}
-    >
-      {children}
-    </TimeSeriesChartInner>
+    // Mirrors `AreaChart`'s `AreaStackProvider` placement: the provider wraps
+    // the WHOLE `TimeSeriesChartInner` tree, not `children`, so a
+    // `focusOnHover` hover-state change re-renders only this provider and its
+    // consumers, never the memoised chart-shell tree. See
+    // `ChartSeriesModeProvider`'s own docblock in `./time-series-chart-shell`.
+    <ChartSeriesModeProvider focusOnHover={focusOnHover} nulls={nulls}>
+      <TimeSeriesChartInner
+        animationDuration={animationDuration}
+        animationEasing={animationEasing}
+        chartStatus={chartStatus}
+        clipPathId={clipPathId}
+        containerRef={containerRef}
+        data={data}
+        enterTransition={enterTransition}
+        height={height}
+        lines={lines}
+        loadingLabel={loadingLabel}
+        margin={margin}
+        onPhaseChange={onPhaseChange}
+        replayOnClick={replayOnClick}
+        revealOn={revealOn}
+        revealSignature={revealSignature}
+        tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
+        width={width}
+        xDataKey={xDataKey}
+        xDomain={xDomain}
+        xDomainSlotCount={xDomainSlotCount}
+        xScaleType={xScaleType}
+        yDomainTween={yDomainTween}
+        yDomainTweenDuration={yDomainTweenDuration}
+      >
+        {children}
+      </TimeSeriesChartInner>
+    </ChartSeriesModeProvider>
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
@@ -363,6 +391,8 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
     dimExcluded,
     hoverCategory,
     onHoverCategory,
+    nulls,
+    focusOnHover,
   },
   ref,
 ) {
@@ -439,6 +469,8 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
                 margin={margin}
                 copyValueOnActivate={copyValueOnActivate}
+                focusOnHover={focusOnHover}
+                nulls={nulls}
                 onDatapointClick={onDatapointClick}
                 onPhaseChange={handlePhaseChange}
                 replayOnClick={replayOnClick}

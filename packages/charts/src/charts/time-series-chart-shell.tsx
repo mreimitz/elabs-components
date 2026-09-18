@@ -6,14 +6,17 @@ import type { Transition } from "motion/react";
 import {
   Children,
   cloneElement,
+  createContext,
   isValidElement,
   memo,
   type ReactElement,
   type ReactNode,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { resolveChartChildElement } from "./chart-child-passthrough";
@@ -272,6 +275,86 @@ export interface TimeSeriesChartInnerProps {
   revealOn?: ChartRevealOn;
   /** Clicking the chart body replays the enter reveal (#175). Default `false`. */
   replayOnClick?: boolean;
+}
+
+// ── Series mode context (RM-112: `nulls` default + `focusOnHover`) ─────────
+
+/**
+ * How a `Line`/`Area` draws a non-numeric (`null`/`undefined`/`NaN`) sample.
+ * `"gap"` (default) breaks the path there — the honest "we have no data
+ * here" reading (Datawrapper's "connect all points" toggle, inverted: this
+ * is the toggle OFF). `"connect"` skips the missing sample so the path draws
+ * straight across it — Datawrapper's "connect all points" ON. `"zero"` is
+ * this package's pre-RM-112 behaviour (a silent honesty failure — a missing
+ * value drew as if it were the pixel origin) kept only for callers that
+ * relied on it.
+ */
+export type NullsMode = "gap" | "zero" | "connect";
+
+interface ChartSeriesModeValue {
+  /** Container-level `nulls` default; a `Line`/`Area`'s own `nulls` prop wins. */
+  nulls: NullsMode | undefined;
+  /** `LineChart`/`AreaChart` `focusOnHover` — dim every series but the hovered one. */
+  focusOnHover: boolean;
+  /** `dataKey` of the series currently hovered/tapped, or `null`. */
+  hoveredKey: string | null;
+  setHoveredKey: (key: string | null) => void;
+}
+
+const ChartSeriesModeContext = createContext<ChartSeriesModeValue | undefined>(undefined);
+
+export interface ChartSeriesModeProviderProps {
+  /** Container-level `nulls` default. Unset — every series keeps its own default. */
+  nulls?: NullsMode;
+  /**
+   * Hovering (or, on touch, tapping) one series dims every other series to
+   * the shared selection-excluded opacity (`SELECTION_EXCLUDED_OPACITY`,
+   * `chart-selection.ts`) — Datawrapper's line-chart hover fade
+   * (`dw-river.md` §2.3). Default false — today's behaviour (only the
+   * chart-wide tooltip dim and legend hover apply).
+   */
+  focusOnHover?: boolean;
+  children: ReactNode;
+}
+
+/**
+ * Wraps the chart body — mounted OUTSIDE `TimeSeriesChartInner` by
+ * `LineChart`/`AreaChart`, mirroring `AreaStackProvider` (`./area`), so a
+ * `hoveredKey` change re-renders only this provider and its consumers, never
+ * the memoised `TimeSeriesChartCore` tree.
+ */
+export function ChartSeriesModeProvider({
+  nulls,
+  focusOnHover = false,
+  children,
+}: ChartSeriesModeProviderProps) {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const value = useMemo<ChartSeriesModeValue>(
+    () => ({
+      nulls,
+      focusOnHover,
+      hoveredKey: focusOnHover ? hoveredKey : null,
+      setHoveredKey,
+    }),
+    [nulls, focusOnHover, hoveredKey],
+  );
+  return (
+    <ChartSeriesModeContext.Provider value={value}>{children}</ChartSeriesModeContext.Provider>
+  );
+}
+
+const DEFAULT_SERIES_MODE: ChartSeriesModeValue = {
+  nulls: undefined,
+  focusOnHover: false,
+  hoveredKey: null,
+  setHoveredKey: () => {
+    /* noop outside ChartSeriesModeProvider */
+  },
+};
+
+/** Reads {@link ChartSeriesModeProvider}'s value; safe defaults outside one. */
+export function useChartSeriesMode(): ChartSeriesModeValue {
+  return useContext(ChartSeriesModeContext) ?? DEFAULT_SERIES_MODE;
 }
 
 export function TimeSeriesChartInner(props: TimeSeriesChartInnerProps) {

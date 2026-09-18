@@ -17,6 +17,29 @@ export interface SeriesMarkersProps extends SeriesPointMarkerStyle {
   fill?: string;
   /** Whether to animate markers with clip reveal. Default: true */
   animate?: boolean;
+  /**
+   * Which points get a marker (RM-112, `Line`/`Area` `symbols`). `"all"`
+   * (today's behaviour, and the default when unset) renders one per point;
+   * `"ends"` only the first and last defined point; `"first"`/`"last"` only
+   * that one.
+   */
+  placement?: "all" | "ends" | "first" | "last";
+}
+
+function filterByPlacement<T>(points: T[], placement: SeriesMarkersProps["placement"]): T[] {
+  if (points.length === 0 || placement === undefined || placement === "all") {
+    return points;
+  }
+  const first = points[0] as T;
+  const last = points[points.length - 1] as T;
+  if (placement === "first") {
+    return [first];
+  }
+  if (placement === "last") {
+    return [last];
+  }
+  // "ends" — de-dupe a single-point series.
+  return first === last ? [first] : [first, last];
 }
 
 interface PointAt {
@@ -53,6 +76,7 @@ export function SeriesMarkers({
   enterBlur = 2,
   showActiveHighlight = true,
   shape,
+  placement,
 }: SeriesMarkersProps) {
   // Stable slice only. Hover-driven dim + active-highlight live in the inner
   // <SeriesMarkersDimWrapper> / <SeriesMarkersActiveHighlight> components, so
@@ -124,6 +148,12 @@ export function SeriesMarkers({
     [data, getY, xScale, xAccessor, innerWidth, isRevealing, revealDurationSec, visualExtent],
   );
 
+  // `placement` (RM-112 `symbols`) narrows the defined-point grid computed
+  // above to first/last/ends/all BEFORE either render branch below — the
+  // active-highlight lookup by `tooltipData.index` still works unchanged
+  // since it searches by index, not position.
+  const placedPoints = useMemo(() => filterByPlacement(points, placement), [points, placement]);
+
   // Memo so the inner <SeriesMarkersActiveHighlight> sees a stable prop and
   // can be cheaply re-rendered on hover without re-creating the spread.
   const markerStyle = useMemo<MarkerStyle>(
@@ -143,7 +173,7 @@ export function SeriesMarkers({
   if (isRevealing) {
     return (
       <g>
-        {points.map((point) => (
+        {placedPoints.map((point) => (
           <SeriesPointMarker
             cx={point.cx}
             cy={point.cy}
@@ -163,7 +193,7 @@ export function SeriesMarkers({
 
   // Stable base layer — its children come from the parent and stay
   // referentially identical when the dim wrapper re-renders for hover.
-  const baseMarkers = points.map((point) => (
+  const baseMarkers = placedPoints.map((point) => (
     <StaticSeriesPointMarker
       cx={point.cx}
       cy={point.cy}
