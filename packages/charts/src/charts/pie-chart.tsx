@@ -819,7 +819,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
 
   if (fixedSize) {
     return (
-      <div
+      <ChartPlotRoot
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative flex items-center justify-center", className)}
@@ -853,7 +853,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
             {children}
           </PieChartInner>,
         )}
-      </div>
+      </ChartPlotRoot>
     );
   }
 

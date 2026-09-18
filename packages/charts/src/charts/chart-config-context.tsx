@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useMemo } from "react";
-import type { ChartBreakpoint, Responsive } from "./chart-breakpoint";
+import { resolveResponsive, type ChartBreakpoint, type Responsive } from "./chart-breakpoint";
 
 export interface SpringConfig {
   stiffness: number;
@@ -137,7 +137,8 @@ export function ChartConfigProvider({ value, children }: ChartConfigProviderProp
 }
 
 function densityBase(density: Responsive<ChartDensity>): ChartDensity {
-  return typeof density === "object" ? density.base : density;
+  // The wide tier resolves to `base`: the value outside any measured chart.
+  return resolveResponsive(density, "wide");
 }
 
 /**

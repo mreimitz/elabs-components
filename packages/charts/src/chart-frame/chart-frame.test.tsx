@@ -881,3 +881,77 @@ describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
     expect(body).not.toHaveAttribute("role");
   });
 });
+
+// ADR 0039 §3–§4: `plotHeight` is the drawing area only — the title, legend,
+// notes and source row stack around it — and `height` is its deprecated alias.
+describe("ChartFrame plotHeight", () => {
+  function plotBoxOf(container: HTMLElement): HTMLElement {
+    // The frame root publishes the tier too; the chart's own root is the last one.
+    const roots = container.querySelectorAll<HTMLElement>("[data-chart-breakpoint]");
+    const box = roots[roots.length - 1];
+    if (roots.length < 2 || !box) throw new Error("no chart plot box inside the frame");
+    return box;
+  }
+
+  it.each([
+    ["a one-line title", "Revenue"],
+    [
+      "a two-line title",
+      "Revenue by region and month, before returns, discounts and the one-off Q3 correction",
+    ],
+  ])("sizes the chart's plot box to plotHeight with %s", (_label, title) => {
+    const { container } = render(
+      <ChartFrame title={title} plotHeight={240} data={sampleData}>
+        <BarChart data={sampleData} xDataKey="month" animationDuration={0}>
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    expect(plotBoxOf(container).style.height).toBe("240px");
+  });
+
+  it("no longer fixes the framed body to 260px by default", () => {
+    const { container } = render(
+      <ChartFrame title="Revenue" data={sampleData}>
+        <BarChart data={sampleData} xDataKey="month" animationDuration={0}>
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    expect(container.innerHTML).not.toContain("height: 260px");
+    expect(plotBoxOf(container).style.aspectRatio).toBe("2 / 1");
+  });
+
+  it("reads the deprecated height as plotHeight and warns exactly once per page", async () => {
+    // The once-per-page set is module state; a fresh module graph starts it empty.
+    vi.resetModules();
+    const { ChartFrame: FreshFrame } = await import("./chart-frame");
+    const { BarChart: FreshBarChart } = await import("../charts/bar-chart");
+    const { Bar: FreshBar } = await import("../charts/bar");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const chart = (
+        <FreshBarChart data={sampleData} xDataKey="month" animationDuration={0}>
+          <FreshBar dataKey="revenue" fill="var(--chart-1)" />
+        </FreshBarChart>
+      );
+      const first = render(
+        <FreshFrame title="Revenue" height={260} data={sampleData}>
+          {chart}
+        </FreshFrame>,
+      );
+      render(
+        <FreshFrame title="Costs" height={260} data={sampleData}>
+          {chart}
+        </FreshFrame>,
+      );
+      expect(plotBoxOf(first.container).style.height).toBe("260px");
+      const deprecations = warn.mock.calls.filter((args) =>
+        String(args[0]).includes('"height" is deprecated'),
+      );
+      expect(deprecations).toHaveLength(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});

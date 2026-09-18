@@ -558,7 +558,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
   // If fixed size is provided, use it directly
   if (fixedSize) {
     return (
-      <div
+      <ChartPlotRoot
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative flex items-center justify-center", className)}
@@ -589,7 +589,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
             {children}
           </RingChartInner>,
         )}
-      </div>
+      </ChartPlotRoot>
     );
   }
 

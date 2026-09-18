@@ -254,7 +254,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
   // If fixed size is provided, use it directly
   if (fixedSize) {
     return (
-      <div
+      <ChartPlotRoot
         ref={mergedRef}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
@@ -282,7 +282,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
         >
           {children}
         </RadarChartInner>
-      </div>
+      </ChartPlotRoot>
     );
   }
 

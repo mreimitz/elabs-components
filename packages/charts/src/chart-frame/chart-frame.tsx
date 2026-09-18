@@ -87,6 +87,7 @@ import {
   resolvePlotBoxStyle,
   useMeasuredChartBreakpoint,
   warnChartOnce,
+  resolveResponsive,
 } from "../charts/chart-breakpoint";
 
 // ── Minimal local CSV serializer (RFC 4180 + injection guard) ─────────────────
@@ -730,7 +731,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
       onDownload={resolvedDownload}
       onExport={onExport}
       loading={loading}
-      density={typeof density === "object" ? density.base : density}
+      density={resolveResponsive(density, "wide")}
       interactions={interactions}
       onExpandChange={onExpandChange}
     >

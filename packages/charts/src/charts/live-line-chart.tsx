@@ -27,6 +27,7 @@ import { DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import type { LiveLineProps } from "./live-line";
 import { useStableValue } from "./use-stable-value";
 import { wrapSingleYScale } from "./y-axis-scales";
+import { ChartPlotRoot } from "./chart-breakpoint";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -660,7 +661,7 @@ export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(func
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
   return (
-    <div
+    <ChartPlotRoot
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full", className)}
@@ -691,7 +692,7 @@ export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(func
           </LiveLineChartInner>
         )}
       </ParentSize>
-    </div>
+    </ChartPlotRoot>
   );
 });
 
