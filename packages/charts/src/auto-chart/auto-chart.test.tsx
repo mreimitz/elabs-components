@@ -399,6 +399,46 @@ describe("AutoChart", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
+  it("'scatter' with spec.colorBy colours points by that column (one ChartSpec field shared with 'bar')", () => {
+    // Orchestrator ruling: ChartSpec has ONE `colorBy` field — bar (RM-113)
+    // and scatter (RM-115) both read `spec.colorBy`, since `ChartColorBy`'s
+    // shape (`{ key, scale?, steps? }`) already covers both. This is the
+    // scatter-side half of that contract: a categorical `colorBy.key` must
+    // reach `<Scatter colorBy>` and paint a different fill per group.
+    const studentLoanData = [
+      { income: 20000, repaymentRate: 2, eu: "eu" },
+      { income: 25000, repaymentRate: 3, eu: "eu" },
+      { income: 30000, repaymentRate: 5, eu: "non-eu" },
+      { income: 35000, repaymentRate: 6, eu: "non-eu" },
+    ];
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "scatter",
+          data: studentLoanData,
+          x: "income",
+          xType: "number",
+          series: ["repaymentRate"],
+          colorBy: { key: "eu" },
+        }}
+        height={280}
+      />,
+    );
+    // Each point renders 2 circles (an inner filled shape, an unfilled outer
+    // ring) — keep only the filled one.
+    const fills = Array.from(container.querySelectorAll('[data-slot="scatter-point"] circle'))
+      .map((el) => el.getAttribute("fill"))
+      .filter((f) => f !== "none");
+    expect(fills).toHaveLength(4);
+    expect(fills.every((f) => Boolean(f))).toBe(true);
+    // Two distinct groups ("eu" vs "non-eu") must resolve to two distinct fills.
+    expect(new Set(fills).size).toBe(2);
+    // Same-group points share exactly one fill.
+    expect(fills[0]).toBe(fills[1]);
+    expect(fills[2]).toBe(fills[3]);
+    expect(fills[0]).not.toBe(fills[2]);
+  });
+
   it("renders without throwing for 'radar' type", () => {
     const radarData = [
       { metric: "Speed", teamA: 80, teamB: 70 },

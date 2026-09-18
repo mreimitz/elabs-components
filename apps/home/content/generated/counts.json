@@ -4,7 +4,7 @@
     "source": "brand-ui.manifest.json#packages"
   },
   "componentExports": {
-    "value": 1415,
+    "value": 1419,
     "source": "brand-ui.manifest.json#packages[].components"
   },
   "registryBlocks": {

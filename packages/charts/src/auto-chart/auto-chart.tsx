@@ -67,6 +67,7 @@ import {
   type RadarMetric,
   ScatterChart,
   Scatter,
+  CustomShapes,
   TreemapChart,
   type TreemapNode,
   UnitChart,
@@ -600,13 +601,21 @@ function renderChart(
           accessibleDescription={spec.description}
         >
           <Grid horizontal mode={axisProps.gridMode} />
+          {spec.shapes && spec.shapes.length > 0 ? <CustomShapes shapes={spec.shapes} /> : null}
           {series.map((s) => (
             <Scatter
               key={s.key}
+              colorBy={spec.colorBy}
               dataKey={s.key}
               fill={s.color}
-              // Labels — RM-110
+              // Labels — RM-110 (priority defaults to `spec.size.key` inside
+              // `Scatter` itself when `size` is set and `points.priorityKey`
+              // is not — see `scatter.tsx`'s `effectiveLabels`.)
               labels={scatterPointLabels(spec.labels?.points)}
+              shapeBy={spec.shapeBy}
+              sizeKey={spec.size?.key}
+              sizeRange={spec.size?.range}
+              trend={spec.trend ?? false}
             />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />

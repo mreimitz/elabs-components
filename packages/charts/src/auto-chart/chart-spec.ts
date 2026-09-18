@@ -15,6 +15,8 @@ import type { DateFormatPreset } from "../charts/date-format";
 import type { SeriesSymbolsSpec } from "../charts/series-markers";
 import type { NullsMode } from "../charts/time-series-chart-shell";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
+import type { SeriesMarkerShape } from "../charts/series-pattern";
+import type { ScatterShapeSpec } from "../charts/custom-shapes";
 import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/bar-overlays";
 import type { BarSort } from "../charts/bar-stacking";
 import type { ChartColorBy } from "../charts/chart-context";
@@ -276,6 +278,20 @@ export interface ChartSpec {
    */
   fields?: { category?: string; series?: string };
 
+  // Scatter depth — RM-115. Honoured by `"scatter"` only; ignored elsewhere.
+
+  /** Bubble size by a numeric column — `Scatter sizeKey`/`sizeRange`. */
+  size?: { key: string; range?: [number, number] };
+
+  /** Shape points by a categorical column — `Scatter shapeBy`. */
+  shapeBy?: { key: string; shapes?: SeriesMarkerShape[] };
+
+  /** A least-squares trend line across every series — `Scatter trend`. */
+  trend?: "linear" | "log";
+
+  /** Custom lines/areas drawn in data space behind the marks — `CustomShapes shapes`. */
+  shapes?: ScatterShapeSpec[];
+
   // Pie/donut grouping, half preset — RM-114. Slice labels moved to
   // `labels.slices` (see `ChartLabelsSpec` below) so `ChartSpec` keeps one
   // `labels` object with a sub-key per mark family. Slice order shares the
@@ -314,7 +330,12 @@ export interface ChartSpec {
   sort?: BarSort;
   /** Gather bar rows by this column, with a header per group. */
   groupBy?: string;
-  /** Colour bars by another column (categorical ≤ 6 hues, or a sequential / diverging ramp). */
+  /**
+   * Colour marks by another column (categorical ≤ 6 hues, or a sequential /
+   * diverging ramp) — `"bar"`'s per-bar colour (RM-113) AND `"scatter"`'s
+   * per-point colour (RM-115) both read this one field; the two families'
+   * `ChartColorBy` shape is identical, so there is no need for a second.
+   */
   colorBy?: ChartColorBy;
   /** Per-bar value markers and range spans (confidence intervals, targets). */
   overlays?: BarOverlay[];
