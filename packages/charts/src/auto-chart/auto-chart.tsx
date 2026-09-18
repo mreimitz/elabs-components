@@ -21,6 +21,8 @@
  * - `"use client"` — uses hooks and relies on ResizeObserver internally.
  */
 
+import type { ScatterLabels } from "../charts/labels/point-labels";
+import { hasDisplayName, resolveSeriesLabelMode } from "../charts/labels/use-chart-labels";
 import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
 import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
@@ -84,7 +86,13 @@ import {
   type Responsive,
 } from "../charts/chart-breakpoint";
 
-import type { AxisSpec, ChartSpec, ChartSeriesSpec, ChartType } from "./chart-spec";
+import type {
+  AxisSpec,
+  ChartLabelsSpec,
+  ChartSpec,
+  ChartSeriesSpec,
+  ChartType,
+} from "./chart-spec";
 import {
   inferChartType,
   isChartSpecPalette,
@@ -206,6 +214,47 @@ function warnUnsupportedChartType(type: unknown): void {
   console.warn(
     `[AutoChart] Chart type "${name}" is not a ChartType, so AutoChart rendered its fallback. ` +
       "Use one of CHART_TYPES, or render that chart's own container directly.",
+  );
+}
+
+// Labels — RM-110
+/** `ChartSpec.labels.points` → `Scatter labels` (a `priorityKey` field becomes the priority reader). */
+function scatterPointLabels(points: ChartLabelsSpec["points"]): ScatterLabels | undefined {
+  if (!points) return undefined;
+  const { key, mode, priorityKey } = points;
+  return {
+    key,
+    mode,
+    priority: priorityKey
+      ? (d) => {
+          const v = Number(d[priorityKey]);
+          return Number.isFinite(v) ? v : 0;
+        }
+      : undefined,
+  };
+}
+
+/**
+ * True when every Line/Area series the spec draws paints an end label at the
+ * wide tier (maintainer decision 7: two or more series, each with a real
+ * display name, or an explicit `labels.series`). Only then is the AutoLegend
+ * redundant. Stacked areas name their bands themselves, never with end labels.
+ */
+function everySeriesEndLabelled(
+  spec: ChartSpec,
+  type: ChartType,
+  series: NormalizedSeries[],
+): boolean {
+  const drawsLines = type === "line" || (type === "area" && !spec.stacked);
+  if (!drawsLines || series.length === 0) return false;
+  const context = { hasLegend: false, seriesCount: series.length };
+  return series.every(
+    (s) =>
+      resolveSeriesLabelMode(
+        { seriesLabel: spec.labels?.series, hasDisplayName: hasDisplayName(s.label, s.key) },
+        context,
+        "wide",
+      ) === "end",
   );
 }
 
@@ -359,7 +408,17 @@ function renderChart(
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
-            <Line curve={curve} dataKey={s.key} key={s.key} stroke={s.color} symbols={symbols} />
+            <Line
+              curve={curve}
+              dataKey={s.key}
+              key={s.key}
+              stroke={s.color}
+              symbols={symbols}
+              // Labels — RM-110
+              name={s.label}
+              seriesLabel={spec.labels?.series}
+              valueLabels={spec.labels?.values}
+            />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
@@ -400,6 +459,10 @@ function renderChart(
               key={s.key}
               stroke={s.color}
               symbols={symbols}
+              // Labels — RM-110
+              name={s.label}
+              seriesLabel={spec.labels?.series}
+              valueLabels={spec.labels?.values}
             />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
@@ -502,7 +565,13 @@ function renderChart(
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
-            <Scatter key={s.key} dataKey={s.key} fill={s.color} />
+            <Scatter
+              key={s.key}
+              dataKey={s.key}
+              fill={s.color}
+              // Labels — RM-110
+              labels={scatterPointLabels(spec.labels?.points)}
+            />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
@@ -1140,7 +1209,10 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       : series;
 
   // ── Legend visibility ──────────────────────────────────────────────────────
-  const showLegend = spec.legend ?? legendItems.length > 1;
+  // Labels — RM-110: a line/area chart whose every series paints an end label
+  // does not repeat those names in a legend below it, unless the spec asks.
+  const showLegend =
+    spec.legend ?? (legendItems.length > 1 && !everySeriesEndLabelled(spec, type, series));
 
   // ── Chart title ───────────────────────────────────────────────────────────
   const title = spec.title;

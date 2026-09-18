@@ -15,6 +15,7 @@ import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { SeriesMarkers, type SeriesMarkersProps } from "./series-markers";
 import { StaticSeriesPointMarker } from "./series-point-marker";
 import { isPaletteFill, type SeriesMarkerShape, seriesMarkerShape } from "./series-pattern";
+import { PointLabels, type ScatterLabels } from "./labels/point-labels";
 import { useHighDecoration } from "./use-high-decoration";
 import { Y_AXIS_DEFAULT_TICK_COUNT } from "./y-axis-ticks";
 
@@ -80,6 +81,15 @@ export interface ScatterProps extends Omit<SeriesMarkersProps, "animate"> {
    * function is called with the row and returns whether it is highlighted.
    */
   highlightKey?: string | ((d: Record<string, unknown>) => boolean);
+  /**
+   * Point labels with collision avoidance (RM-110): `{ key, mode?, priority? }`
+   * — `key` is the row field holding the label text; `mode` `"auto"`
+   * (default: thinned by plot area, fewer at narrow widths) | `"all"` | a
+   * predicate; `priority` decides who survives (default: the y value). Every
+   * label that is not painted is restated `sr-only` by the chart. Unlike
+   * `labelExtremes` it never fades the unlabelled points.
+   */
+  labels?: ScatterLabels;
 }
 
 const DEFAULT_Y_GRADIENT_FROM = "var(--color-red-500)";
@@ -474,6 +484,7 @@ export function Scatter({
   jitter,
   yType = "number",
   highlightKey,
+  labels,
 }: ScatterProps) {
   const stable = useChartStable();
   const { data, xScale, xAccessor, innerHeight, lines, dateLabels } = stable;
@@ -625,6 +636,10 @@ export function Scatter({
           ringGap={ringGap}
           strokeWidth={strokeWidth}
         />
+      ) : null}
+
+      {labels ? (
+        <PointLabels labels={labels} points={points} radius={radius} seriesKey={dataKey} />
       ) : null}
     </>
   );

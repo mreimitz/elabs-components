@@ -116,6 +116,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_CHART_PLOT_HEIGHT
 - DEFAULT_CHART_STATUS
 - DEFAULT_CIRCULAR_CURVENESS
+- DEFAULT_DESCRIBE_SERIES_PHRASES
 - DEFAULT_FORCE_SEED
 - DEFAULT_HEATMAP_STEPS
 - DEFAULT_HOVER_OFFSET
@@ -313,6 +314,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - SegmentLineTo
 - SELECTED_OUTLINE_WIDTH
 - SELECTION_EXCLUDED_OPACITY
+- SERIES_LABEL_INK_MIX
 - SeriesBar
 - SeriesMarkers
 - SeriesPointMarker
@@ -374,6 +376,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useChartHover
 - useChartInteraction
 - useChartLegendHover
+- useChartSeriesKey
 - useChartStable
 - useChartValueSetFormatter
 - useChoropleth

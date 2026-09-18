@@ -6,6 +6,8 @@ import useMeasure from "react-use-measure";
 import { cn } from "@elabs-ai/components-ui";
 import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+// Labels — RM-110
+import { useChartAutoSummary } from "./chart-a11y";
 import { defaultScatterColors, type LineConfig, type Margin } from "./chart-context";
 import type { ChartPhase } from "./chart-phase";
 import { Scatter, type ScatterProps } from "./scatter";
@@ -179,13 +181,21 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
   const containerRef = useRef<HTMLDivElement>(null);
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
   const [measureRef, bounds] = useMeasure({ debounce: 10 });
+  // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
+  const description = useChartAutoSummary("scatter", {
+    accessibleLabel,
+    accessibleDescription,
+    children,
+    data,
+    xDataKey,
+  });
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+  } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
 
   const setContainerRef = (node: HTMLDivElement | null) => {
     // Keep the internal ref (anchors tooltips) in sync.
@@ -214,7 +224,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
       style={{ touchAction: "none" }}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      <ChartA11yLabel descId={descId} description={description} />
       {width > 0 && height > 0 ? (
         <ChartInner
           animationDuration={animationDuration}
