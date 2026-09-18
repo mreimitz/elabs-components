@@ -5,7 +5,6 @@ import { ChartFrame } from "../chart-frame/chart-frame";
 import { Bar } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
-import { BarYAxis } from "./bar-y-axis";
 import { breakpointForWidth } from "./chart-breakpoint";
 import { Grid } from "./grid";
 import { HeatmapChart } from "./heatmap/heatmap-chart";
@@ -139,7 +138,6 @@ export const BarColumns: Story = {
           <Grid horizontal />
           <Bar dataKey="revenue" />
           <BarXAxis />
-          <BarYAxis />
         </BarChart>
       )}
     </Trio>
@@ -185,8 +183,7 @@ export const Heatmap: Story = {
 // squeezes the plot.
 
 const ONE_LINE_TITLE = "Revenue by region";
-const TWO_LINE_TITLE =
-  "Revenue by region, before returns, discounts and the one-off third-quarter correction";
+const TWO_LINE_TITLE = "Revenue by region, net of returns";
 
 function RegionBars({ label }: { label: string }) {
   return (
@@ -194,7 +191,6 @@ function RegionBars({ label }: { label: string }) {
       <Grid horizontal />
       <Bar dataKey="revenue" />
       <BarXAxis />
-      <BarYAxis />
     </BarChart>
   );
 }
