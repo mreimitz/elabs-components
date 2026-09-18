@@ -40,7 +40,7 @@ import {
   timeAxis,
   valueAxis,
 } from "./resolve-annotation-position";
-import { legibleSeriesInk } from "./legible-series-ink";
+import { seriesLabelInk } from "../labels/series-label-ink";
 
 /** Note font size in px — one step above the `Marginalia` default: an annotation explains the chart. */
 const NOTE_FONT_SIZE = 11;
@@ -104,7 +104,7 @@ export function resolveAnnotationInk(
 
 /**
  * The TEXT ink of an annotation: a series or ramp colour pulled toward the
- * label ink by `legibleSeriesInk` so 11px text stays ≥ 4.5:1; the muted ink
+ * label ink by `seriesLabelInk` (RM-110) so 11px text stays ≥ 4.5:1; the muted ink
  * as is. Connectors and marker rings use `resolveAnnotationInk` (pure stroke).
  */
 export function resolveAnnotationTextInk(
@@ -112,7 +112,7 @@ export function resolveAnnotationTextInk(
   lines: readonly LineConfig[] = [],
 ): string {
   const ink = resolveAnnotationInk(color, lines);
-  return ink === chartCssVars.foregroundMuted ? ink : legibleSeriesInk(ink);
+  return ink === chartCssVars.foregroundMuted ? ink : seriesLabelInk(ink);
 }
 
 /** The anchor's horizontal text alignment and vertical block edge. */
@@ -451,7 +451,7 @@ function renderMarker(
  * A solid range fills the pale band ink (`--chart-ring-background`); stripes
  * and reference lines paint the furniture ink (`--chart-grid`); all at full
  * opacity. Series-coloured text is mixed toward the label ink for contrast
- * (`legibleSeriesInk`). The layer is `aria-hidden`, like every mark: the
+ * (`seriesLabelInk`). The layer is `aria-hidden`, like every mark: the
  * notes reach assistive tech through the figure description.
  */
 export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(

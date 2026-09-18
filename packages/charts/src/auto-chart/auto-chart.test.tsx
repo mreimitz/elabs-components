@@ -1053,3 +1053,47 @@ describe("AutoChart inside a fill-host tile", () => {
     }
   });
 });
+
+// Labels — RM-110 (maintainer decision 7): the AutoLegend steps aside for a
+// line/area spec only when every series gets an end label under the default.
+describe("AutoChart legend vs series end labels", () => {
+  const trend = [
+    { date: "2024-01-01", ebikes: 10, cargo: 4 },
+    { date: "2024-02-01", ebikes: 14, cargo: 6 },
+    { date: "2024-03-01", ebikes: 19, cargo: 9 },
+  ];
+  const legendOf = (spec: ChartSpec) =>
+    render(<AutoChart spec={spec} height={280} />).container.querySelector(
+      'ul[aria-label="Chart legend"]',
+    );
+
+  it("hides the legend when every line series has a real name", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [
+        { key: "ebikes", label: "E-bikes" },
+        { key: "cargo", label: "Cargo bikes" },
+      ],
+    };
+    expect(legendOf(spec)).toBeNull();
+  });
+
+  it("keeps the legend when a series is known only by its column name", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [{ key: "ebikes", label: "E-bikes" }, { key: "cargo" }],
+    };
+    expect(legendOf(spec)).not.toBeNull();
+  });
+
+  it("keeps the legend when labels.series opts out, and hides it for an explicit end", () => {
+    const base: ChartSpec = { type: "area", data: trend, x: "date", series: ["ebikes", "cargo"] };
+    expect(legendOf({ ...base, labels: { series: "none" } })).not.toBeNull();
+    cleanup();
+    expect(legendOf({ ...base, labels: { series: "end" } })).toBeNull();
+  });
+});

@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  UnpaintedLabels,
+  UnpaintedLabelsProvider,
+  useUnpaintedLabelsStore,
+} from "./labels/unpainted-labels";
 import { bisector } from "d3-array";
 import { scaleLinear, scaleTime } from "d3-scale";
 import type { Transition } from "motion/react";
@@ -116,6 +121,7 @@ export function ScatterChartInner({
   lines,
   onPhaseChange,
 }: ScatterChartInnerProps) {
+  const unpaintedStore = useUnpaintedLabelsStore(); // Labels — RM-110
   const [isLoaded, setIsLoaded] = useState(false);
   const [revealEpoch, setRevealEpoch] = useState(0);
 
@@ -434,26 +440,30 @@ export function ScatterChartInner({
 
   return (
     <NumericXRulerContext.Provider value={numericXRuler}>
-      <ChartProvider value={contextValue}>
-        <svg aria-hidden="true" className="overflow-visible" height={height} width={width}>
-          {defsChildren.length > 0 && <defs>{defsChildren}</defs>}
+      <UnpaintedLabelsProvider store={unpaintedStore}>
+        <ChartProvider value={contextValue}>
+          <svg aria-hidden="true" className="overflow-visible" height={height} width={width}>
+            {defsChildren.length > 0 && <defs>{defsChildren}</defs>}
 
-          <rect fill="transparent" height={height} width={width} x={0} y={0} />
+            <rect fill="transparent" height={height} width={width} x={0} y={0} />
 
-          <g
-            {...interactionHandlers}
-            style={interactionStyle}
-            transform={`translate(${margin.left},${margin.top})`}
-          >
-            <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
+            <g
+              {...interactionHandlers}
+              style={interactionStyle}
+              transform={`translate(${margin.left},${margin.top})`}
+            >
+              <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
 
-            {annotationBackChildren}
-            {preOverlayChildren}
-            {annotationFrontChildren}
-            {postOverlayChildren}
-          </g>
-        </svg>
-      </ChartProvider>
+              {annotationBackChildren}
+              {preOverlayChildren}
+              {annotationFrontChildren}
+              {postOverlayChildren}
+            </g>
+          </svg>
+          {/* Point labels a Scatter dropped, restated for AT (RM-110). */}
+          <UnpaintedLabels store={unpaintedStore} />
+        </ChartProvider>
+      </UnpaintedLabelsProvider>
     </NumericXRulerContext.Provider>
   );
 }

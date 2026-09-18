@@ -15,7 +15,26 @@ import {
   useMemo,
   useRef,
 } from "react";
+import { useLocale } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
+import { useChartBreakpoint } from "./chart-breakpoint";
+import { useChartConfig } from "./chart-config-context";
+import { makeValueSetFmt } from "./chart-formatters";
+import { useAreaStacked } from "./area";
+import { SeriesEndLabels, SeriesKeyRow } from "./labels/series-end-labels";
+import {
+  ChartSeriesKeyProvider,
+  collectLabelRequests,
+  placeChartLabels,
+  reserveChartLabels,
+} from "./labels/use-chart-labels";
+import {
+  UnpaintedLabels,
+  UnpaintedLabelsProvider,
+  useUnpaintedLabelsStore,
+} from "./labels/unpainted-labels";
+import { ValueLabels } from "./labels/value-labels";
+import { useTextMeasurerOf } from "./use-text-measurer";
 import { resolveChartChildElement } from "./chart-child-passthrough";
 import { ChartProvider, type LineConfig, type Margin, type TooltipData } from "./chart-context";
 import {
@@ -289,7 +308,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   data,
   xDataKey,
   xScaleType,
-  margin,
+  margin: marginProp,
   animationDuration,
   animationEasing = DEFAULT_ANIMATION_EASING,
   enterTransition,
@@ -318,6 +337,43 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   replayOnClick = false,
 }: TimeSeriesChartInnerProps) {
   const staticPreview = useStaticChartPreview();
+
+  // RM-110 label engine, reserve half: decide each series' end-label / key
+  // mode for this breakpoint and grow the margin ONCE for what they need,
+  // before any scale exists (the bar category-axis pattern — the reserve
+  // depends on label TEXT widths only, never on positions, so it is acyclic).
+  const breakpoint = useChartBreakpoint();
+  const unpaintedStore = useUnpaintedLabelsStore();
+  const { locale } = useLocale();
+  const { currency: configCurrency } = useChartConfig();
+  const { measure: measureLabel } = useTextMeasurerOf(containerRef);
+  const areaStacked = useAreaStacked();
+  const labelRequests = useMemo(
+    () => collectLabelRequests(children, { skipAreas: areaStacked }),
+    [children, areaStacked],
+  );
+  const labelReserve = useMemo(
+    () =>
+      reserveChartLabels(
+        labelRequests,
+        breakpoint,
+        measureLabel,
+        marginProp.right,
+        width - marginProp.left - marginProp.right,
+      ),
+    [labelRequests, breakpoint, measureLabel, marginProp.right, marginProp.left, width],
+  );
+  const margin = useMemo(
+    () =>
+      labelReserve.right === 0 && labelReserve.top === 0
+        ? marginProp
+        : {
+            ...marginProp,
+            right: marginProp.right + labelReserve.right,
+            top: marginProp.top + labelReserve.top,
+          },
+    [marginProp, labelReserve.right, labelReserve.top],
+  );
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -893,6 +949,55 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     plotData.length,
   ]);
 
+  const labelsVisible =
+    chartPhase === "revealing" || chartPhase === "ready" || chartPhase === "exitingReady";
+  const labelPlan = useMemo(() => {
+    const valueSeries = labelRequests.series.filter((s) => s.valueLabels);
+    if (!labelsVisible || (labelReserve.endSeries.length === 0 && valueSeries.length === 0)) {
+      return null;
+    }
+    return placeChartLabels({
+      endSeries: labelReserve.endSeries,
+      valueSeries,
+      data: visiblePlotData,
+      x: (row) => xScale(xAccessor(row)) ?? 0,
+      y: (value, request) => {
+        const id =
+          request.yAxisId == null || request.yAxisId === ""
+            ? DEFAULT_Y_AXIS_ID
+            : String(request.yAxisId);
+        return (yScales[id] ?? yScale)(value) ?? 0;
+      },
+      measure: measureLabel,
+      formatSet: (values, format) => makeValueSetFmt(locale, values, format, configCurrency),
+      bounds: {
+        x: 0,
+        y: -margin.top + labelReserve.top,
+        width: innerWidth + margin.right,
+        height: innerHeight + margin.top - labelReserve.top + margin.bottom,
+      },
+    });
+  }, [
+    labelsVisible,
+    labelRequests,
+    labelReserve,
+    visiblePlotData,
+    xScale,
+    xAccessor,
+    yScales,
+    yScale,
+    measureLabel,
+    locale,
+    configCurrency,
+    margin.top,
+    margin.right,
+    margin.bottom,
+    innerWidth,
+    innerHeight,
+  ]);
+  const unpaintedLabels =
+    labelPlan?.dropped.map((d) => (d.kind === "end" ? d.text : `${d.dataKey}: ${d.text}`)) ?? [];
+
   // #352: the x values are neither Date-coercible NOR labellable (all null /
   // undefined / empty), so there is no time scale to draw with AND no category
   // to name — an ordinal axis would just be a row of blank ticks. Render the
@@ -950,24 +1055,36 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
         )}
         {annotationFrontChildren}
         {postOverlayChildren}
+        {labelPlan ? (
+          <>
+            <ValueLabels placements={labelPlan.placed.filter((p) => p.label.kind === "value")} />
+            <SeriesEndLabels placements={labelPlan.placed.filter((p) => p.label.kind === "end")} />
+          </>
+        ) : null}
+        <SeriesKeyRow items={labelReserve.keyLayout} top={-margin.top} />
       </g>
     </svg>
   );
-
   return (
-    <ChartProvider value={contextValue}>
-      {datapointsEnabled ? (
-        // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
-        // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
-        // exists on the interactive path, so a chart without `onDatapointClick`
-        // keeps byte-identical DOM.
-        <div className="relative" style={{ width, height }}>
-          {svg}
-          <ChartDatapointLayer />
-        </div>
-      ) : (
-        svg
-      )}
-    </ChartProvider>
+    <ChartSeriesKeyProvider value={labelReserve.keyItems}>
+      <UnpaintedLabelsProvider store={unpaintedStore}>
+        <ChartProvider value={contextValue}>
+          {datapointsEnabled ? (
+            // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
+            // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
+            // exists on the interactive path, so a chart without `onDatapointClick`
+            // keeps byte-identical DOM.
+            <div className="relative" style={{ width, height }}>
+              {svg}
+              <ChartDatapointLayer />
+            </div>
+          ) : (
+            svg
+          )}
+          {/* Labels the solver (or a mark) dropped, restated for AT — the category-axis precedent. */}
+          <UnpaintedLabels extra={unpaintedLabels} store={unpaintedStore} />
+        </ChartProvider>
+      </UnpaintedLabelsProvider>
+    </ChartSeriesKeyProvider>
   );
 });

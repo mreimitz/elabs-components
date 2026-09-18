@@ -19,6 +19,8 @@ import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from ".
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+// Labels — RM-110
+import { useChartAutoSummary } from "./chart-a11y";
 import type { LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
@@ -398,13 +400,21 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
   );
 
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
+  const description = useChartAutoSummary("area", {
+    accessibleLabel,
+    accessibleDescription,
+    children,
+    data,
+    xDataKey,
+  });
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+  } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
   const [chartPhase, setChartPhase] = useState<ChartPhase>(() => resolveRestingChartPhase(status));
   const handlePhaseChange = useCallback(
     (phase: ChartPhase) => {
@@ -433,7 +443,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
       style={{ touchAction: "none", ...style }}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      <ChartA11yLabel descId={descId} description={description} />
       <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
         <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
           <ParentSize debounceTime={100}>
