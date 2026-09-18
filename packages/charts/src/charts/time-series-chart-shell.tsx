@@ -423,6 +423,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   // through zero.
   const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
   const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
+  const hasComposedBars = (composedBarDataKeys?.length ?? 0) > 0;
   const valueAxisData = xDomain ? visiblePlotData : data;
   const valueAxes = useMemo(
     () =>
@@ -432,9 +433,21 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
             configs: valueAxisConfigs,
             data: valueAxisData,
             lines,
+            // A ComposedChart with bars draws LENGTHS: every axis stays
+            // zero-based and linear under any `domain`/`scale` request
+            // (charts-honesty). Conservative — it also covers a line-only axis
+            // beside the bars.
+            lengthEncoding: hasComposedBars,
           })
         : null,
-    [animatedYDomainsByAxis, hasValueAxisConfigs, lines, valueAxisConfigs, valueAxisData],
+    [
+      animatedYDomainsByAxis,
+      hasComposedBars,
+      hasValueAxisConfigs,
+      lines,
+      valueAxisConfigs,
+      valueAxisData,
+    ],
   );
   const valueAxisWarnings = valueAxes?.warningsByAxis;
   useEffect(() => {
