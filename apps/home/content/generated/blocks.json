@@ -1,0 +1,594 @@
+[
+  {
+    "name": "ai-chart",
+    "title": "AI chart in conversation",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "ai-chat-shell",
+    "title": "AI chat shell",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "app-shell",
+    "title": "App shell",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-card-kpi-01",
+    "title": "Chart Card — KPI header",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@visx/curve"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-editorial-almanac",
+    "title": "Chart Editorial — Bubble Almanac",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-editorial-hourglass",
+    "title": "Chart Editorial — Hourglass Stream",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-editorial-patchwork",
+    "title": "Chart Editorial — Radial Patchwork",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-frame-data",
+    "title": "ChartFrame + data table",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "code-workspace",
+    "title": "Code workspace",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-editor",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "monaco-editor"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "dashboard-sheet-app",
+    "title": "Dashboard sheet app",
+    "categories": ["dashboard"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "dashboard-tile-chat",
+    "title": "Dashboard tile — chat",
+    "categories": ["dashboard"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "dashboard-tile-process-map",
+    "title": "Dashboard tile — process map",
+    "categories": ["dashboard"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-process",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "process-explorer"
+  },
+  {
+    "name": "dashboard-tile-table",
+    "title": "Dashboard tile — table",
+    "categories": ["dashboard"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "data-table",
+    "title": "Data table",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "flow-builder",
+    "title": "Flow builder",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@xyflow/react",
+      "lucide-react"
+    ],
+    "archetype": "flow-workspace"
+  },
+  {
+    "name": "flow-canvas",
+    "title": "Flow canvas",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@xyflow/react"
+    ],
+    "archetype": "flow-workspace"
+  },
+  {
+    "name": "form-wizard-01",
+    "title": "Form Wizard — checkout flow",
+    "categories": [],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "infographic-annotated-trend-01",
+    "title": "Infographic — What happened, and when?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "infographic-before-after-01",
+    "title": "Infographic — Who improved, who slipped?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "infographic-cohort-retention-01",
+    "title": "Infographic — Do customers stay?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "infographic-gap-to-benchmark-01",
+    "title": "Infographic — How far from the benchmark?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "infographic-part-to-whole-01",
+    "title": "Infographic — Where does the money go?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "infographic-scorecard-01",
+    "title": "Infographic Scorecard",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "infographic-small-multiples-01",
+    "title": "Infographic — Which depot is the outlier?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "infographic-variance-bridge-01",
+    "title": "Infographic — What drove the change?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "integration-grid-01",
+    "title": "Integration Grid",
+    "categories": [],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "kpi-card-parts",
+    "title": "KPI Card — shared parts",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "kpi-composition-01",
+    "title": "KPI Cards — What is it made of?",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "kpi-distribution-01",
+    "title": "KPI Cards — Is it consistent?",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "kpi-forecast-01",
+    "title": "KPI Cards — Where will I land?",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@visx/curve"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "kpi-hero-satellites-01",
+    "title": "KPI Cards — What is the headline?",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "kpi-movers-01",
+    "title": "KPI Cards — What changed most?",
+    "categories": ["kpi-card"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "kpi-multi-baseline-01",
+    "title": "KPI Cards — Compared to what?",
+    "categories": ["kpi-card"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "kpi-pace-01",
+    "title": "KPI Cards — On pace?",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "kpi-ratio-unit-01",
+    "title": "KPI Cards — How big is it?",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "kpi-status-threshold-01",
+    "title": "KPI Cards — Should I act?",
+    "categories": ["kpi-card"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "kpi-streak-01",
+    "title": "KPI Cards — How reliable is it?",
+    "categories": ["kpi-card"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "kpi-target-bullet-01",
+    "title": "KPI Cards — On target?",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "kpi-trend-reference-01",
+    "title": "KPI Cards — Better or worse than normal?",
+    "categories": ["kpi-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "marketing-hero",
+    "title": "Marketing hero",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-marketing",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "marketing"
+  },
+  {
+    "name": "process-explorer-page",
+    "title": "Process explorer page",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-process",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@xyflow/react",
+      "lucide-react"
+    ],
+    "archetype": "process-explorer"
+  },
+  {
+    "name": "sidebar-02",
+    "title": "App shell — dashboard inset",
+    "categories": ["sidebar", "app-shell"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@visx/curve",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "sidebar-04",
+    "title": "App shell — mail",
+    "categories": ["sidebar", "app-shell"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "sidebar-05",
+    "title": "App shell — dual rail",
+    "categories": ["sidebar", "app-shell"],
+    "dependencies": [
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "marketing"
+  },
+  {
+    "name": "stat-card-area-01",
+    "title": "Stat Card — Area",
+    "categories": ["stat-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@visx/curve"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "stat-card-choropleth-01",
+    "title": "Stat Card — Choropleth Map",
+    "categories": ["stat-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "geojson",
+      "topojson-client"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "stat-card-line-01",
+    "title": "Stat Card — Line",
+    "categories": ["stat-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@visx/curve"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "stat-card-parts",
+    "title": "Stat Card — shared parts",
+    "categories": ["stat-card"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "stat-cards-01",
+    "title": "Stat Cards — elevated KPI tiles",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "stat-list-01",
+    "title": "Stat List — ranked list, leaderboard, activity feed",
+    "categories": [],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "terminal-session-idle",
+    "title": "Terminal session (idle)",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-terminal",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "terminal-session-mid-turn",
+    "title": "Terminal session (mid-turn)",
+    "categories": [],
+    "dependencies": [
+      "@elabs-ai/components-terminal",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  }
+]

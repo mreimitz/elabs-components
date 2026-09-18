@@ -1,0 +1,55 @@
+{
+  "verbGroups": {
+    "dashboard-spec": [
+      {
+        "verb": "kinds",
+        "usage": "brand-ui dashboard-spec kinds [--json]",
+        "does": "Lists the nine built-in tile kinds with default and minimum sizes and capabilities."
+      },
+      {
+        "verb": "layout",
+        "usage": "brand-ui dashboard-spec layout <file> [--strategy=by-kind|reading-order]",
+        "does": "Places every tile that has no `layout` with `autoLayout` (existing layouts kept) and prints the spec."
+      },
+      {
+        "verb": "schema",
+        "usage": "brand-ui dashboard-spec schema",
+        "does": "Prints the DashboardSpec v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-charts/dashboard/schema.json`)."
+      },
+      {
+        "verb": "validate",
+        "usage": "brand-ui dashboard-spec validate <file> [--json]",
+        "does": "Runs `validateDashboardSpec`: one `path code message` line per problem (shape, duplicate ids, dangling refs, overlaps, conditions); exit 1 when invalid."
+      }
+    ],
+    "a2ui": [
+      {
+        "verb": "catalog",
+        "usage": "brand-ui a2ui catalog [<Type>] [--json]",
+        "does": "Lists every type an agent may emit in a surface — props with enums and defaults, required props, events (`on.click` → the host action), whether it takes children — or the full entry for one type."
+      },
+      {
+        "verb": "example",
+        "usage": "brand-ui a2ui example",
+        "does": "Prints a small valid surface (Card → Grid of MetricCards → Button with an `on.click` action) to start from."
+      },
+      {
+        "verb": "schema",
+        "usage": "brand-ui a2ui schema",
+        "does": "Prints the A2UI surface v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-ai/a2ui/schema.json`) — feed it to a structured-output mode."
+      },
+      {
+        "verb": "validate",
+        "usage": "brand-ui a2ui validate <file> [--json]",
+        "does": "Runs `validateA2uiSurface`: one `path code message` line per problem (unknown type/prop/event, enum value, missing required prop, children on a leaf); exit 1 when invalid."
+      }
+    ]
+  },
+  "hostedMcpTools": ["a2ui", "chart_for", "docs", "info", "search", "tokens"],
+  "localOnlyTools": ["audit"],
+  "routine": "info → search → docs → build → audit",
+  "hostedMcpUrl": "https://elabs-ai.com/mcp",
+  "hostedMcpCommand": "claude mcp add --transport http brand-ui https://elabs-ai.com/mcp",
+  "localMcpCommand": "npx -y @elabs-ai/components-cli mcp",
+  "cliInstallCommand": "pnpm add -D @elabs-ai/components-cli"
+}

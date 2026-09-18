@@ -51,6 +51,7 @@ const edges: Edge[] = [
 const meta = {
   title: "Flow/CanvasShell",
   component: CanvasShell,
+  tags: ["autodocs"],
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof CanvasShell>;
 export default meta;
