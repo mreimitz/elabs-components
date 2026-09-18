@@ -53,7 +53,7 @@ function BikesChart({ annotations }: { annotations: ChartAnnotation[] }) {
     >
       <Grid horizontal />
       {BIKES_SERIES.map((s) => (
-        <Line dataKey={s.key} key={s.key} stroke={s.color} />
+        <Line dataKey={s.key} key={s.key} name={s.label} stroke={s.color} />
       ))}
       <XAxis />
       <YAxis valueFormat={{ sign: true, suffix: "%" }} />

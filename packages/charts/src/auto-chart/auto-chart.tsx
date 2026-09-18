@@ -26,6 +26,7 @@ import { hasDisplayName, resolveSeriesLabelMode } from "../charts/labels/use-cha
 import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
 import { AnnotationKey } from "../charts/annotations/annotation-key";
+import { AnnotationLayoutProvider } from "../charts/annotations/annotation-layout-context";
 import { withAnnotationDescription } from "../charts/annotations/annotation-types";
 import { ChartAnnotations } from "../charts/annotations/chart-annotations";
 import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
@@ -1275,6 +1276,18 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     );
   }
 
+  // The `try/catch` above only covers errors thrown while BUILDING this
+  // element tree; an error thrown once React actually renders/commits one
+  // of these chart containers only a class boundary can catch (see
+  // `AutoChartErrorBoundary`'s doc comment) — without it, that error would
+  // escape AutoChart's documented "never throws" contract.
+  const chartBody = (
+    <AutoChartErrorBoundary
+      fallback={<ChartFallback message="Unable to display this chart" style={fallbackStyle} />}
+    >
+      {fillsFrame ? <div className="min-h-0 flex-1">{chartNode}</div> : chartNode}
+    </AutoChartErrorBoundary>
+  );
   return (
     <div
       ref={ref}
@@ -1282,21 +1295,16 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       {...props}
     >
       {title ? <p className="mb-1 text-subtitle text-foreground">{title}</p> : null}
-      {/*
-       * The `try/catch` above only covers errors thrown while BUILDING this
-       * element tree; an error thrown once React actually renders/commits one
-       * of these chart containers only a class boundary can catch (see
-       * `AutoChartErrorBoundary`'s doc comment) — without it, that error would
-       * escape AutoChart's documented "never throws" contract.
-       */}
-      <AutoChartErrorBoundary
-        fallback={<ChartFallback message="Unable to display this chart" style={fallbackStyle} />}
-      >
-        {fillsFrame ? <div className="min-h-0 flex-1">{chartNode}</div> : chartNode}
-      </AutoChartErrorBoundary>
       {spec.annotations?.length && ANNOTATED_CHART_TYPES.has(type) ? (
-        <AnnotationKey annotations={spec.annotations} />
-      ) : null}
+        // Annotations — RM-111: one layout scope for the plot and its key, so
+        // the key lists the notes the layer had to demote to a marker.
+        <AnnotationLayoutProvider>
+          {chartBody}
+          <AnnotationKey annotations={spec.annotations} />
+        </AnnotationLayoutProvider>
+      ) : (
+        chartBody
+      )}
       {showLegend ? <AutoLegend series={legendItems} /> : null}
     </div>
   );

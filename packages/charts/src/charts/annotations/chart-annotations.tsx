@@ -7,13 +7,15 @@ import {
   type ReactElement,
   type ReactNode,
   type SVGProps,
+  useCallback,
   useContext,
   useId,
   useMemo,
+  useRef,
 } from "react";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { HaloText } from "../../marks/halo-text";
-import { estimateNoteLines, Marginalia, noteLineHeight } from "../../marks/marginalia";
+import { Marginalia, noteLineHeight, wrapNote } from "../../marks/marginalia";
 import { PeakRing } from "../../marks/peak-ring";
 import { useChartA11yContainerProps } from "../chart-a11y";
 import { useChartBreakpoint } from "../chart-breakpoint";
@@ -40,7 +42,19 @@ import {
   timeAxis,
   valueAxis,
 } from "./resolve-annotation-position";
+import type { LabelAnchorSide, LabelRect } from "../labels/label-layout";
 import { seriesLabelInk } from "../labels/series-label-ink";
+import { useTextMeasurerOf } from "../use-text-measurer";
+import {
+  type AnnotationBox,
+  annotationLayoutBounds,
+  layoutAnnotationBoxes,
+} from "./annotation-layout";
+import {
+  useAnnotationLayoutScope,
+  useAnnotationObstacles,
+  useReportDemotedAnnotations,
+} from "./annotation-layout-context";
 
 /** Note font size in px — one step above the `Marginalia` default: an annotation explains the chart. */
 const NOTE_FONT_SIZE = 11;
@@ -297,27 +311,146 @@ function renderLine(
   );
 }
 
-function renderRow(
-  annotation: ChartRowAnnotation,
-  index: number,
+/** Row-note text width runs a little wide for its bold `**…**` subset. */
+const BOLD_WIDTH_FACTOR = 1.08;
+
+/**
+ * Row notes are pinned to their row, so the solver places them before the
+ * free-floating text notes.
+ */
+const ROW_NOTE_PRIORITY = Number.MAX_SAFE_INTEGER;
+
+/** Where a painted text or row note sits before layout, plus its box (plot px). */
+interface NoteGeometry {
+  kind: "text" | "row";
+  /** Text x before any move. */
+  x: number;
+  /** Text y before any move: a text note's first-line centre, a row note's baseline point. */
+  y: number;
+  /** The box the solver places; `null` for a note it cannot measure (a React node). */
+  box: LabelRect | null;
+  priority: number;
+  anchorSide: LabelAnchorSide;
+  retryAnchorSide?: LabelAnchorSide;
+  /** Text notes: the wrap width handed to `Marginalia`. */
+  maxWidth?: number;
+  textAnchor: "start" | "middle" | "end";
+  /** Row notes: laid along the y axis (a horizontal chart). */
+  onY?: boolean;
+}
+
+type MeasureNote = (text: string) => number;
+
+function textNoteGeometry(
+  annotation: ChartTextAnnotation,
   scales: AnnotationScales,
-  ink: string,
-): ReactNode {
+  measure: MeasureNote,
+): NoteGeometry | null {
+  const point = resolveAnnotationPosition(annotation, scales);
+  if (!point) return null;
+  const maxWidth =
+    (scales.innerWidth * clamp(annotation.width ?? DEFAULT_NOTE_WIDTH_PERCENT, 1, 100)) / 100;
+  const plain = typeof annotation.text === "string" ? annotation.text : null;
+  const wrapped = plain === null ? null : wrapNote(plain, maxWidth, NOTE_FONT_SIZE);
+  const lineCount = Math.max(1, wrapped?.length ?? 1);
+  const pitch = noteLineHeight(NOTE_FONT_SIZE);
+  const blockHeight = lineCount * pitch;
+  const anchor = annotation.anchor ?? "nw";
+  const { textAnchor, edge } = anchorParts(anchor);
+  const rawTop =
+    edge === "top"
+      ? point.y
+      : edge === "middle"
+        ? point.y - blockHeight / 2
+        : point.y - blockHeight;
+  const top = clamp(rawTop, 0, scales.innerHeight - blockHeight);
+  const x = clamp(point.x, 0, scales.innerWidth);
+  let box: LabelRect | null = null;
+  if (wrapped?.length) {
+    const width = Math.max(...wrapped.map((line) => measure(line.text)));
+    const left = textAnchor === "start" ? x : textAnchor === "end" ? x - width : x - width / 2;
+    box = { x: left, y: top, width, height: blockHeight };
+  }
+  // A note beside its anchor (w / e and the corners) slides vertically; one
+  // straight above or below it (n / s) slides horizontally.
+  const beside = anchor !== "n" && anchor !== "s";
+  return {
+    kind: "text",
+    x,
+    y: top + pitch / 2,
+    box,
+    priority: annotation.priority ?? 0,
+    anchorSide: beside ? "left" : "top",
+    maxWidth: plain === null ? undefined : maxWidth,
+    textAnchor,
+  };
+}
+
+function rowNoteGeometry(
+  annotation: ChartRowAnnotation,
+  scales: AnnotationScales,
+  measure: MeasureNote,
+): NoteGeometry | null {
   if (!scales.category) return null;
   const onY = scales.category === "y";
   const at = scales[scales.category].point(annotation.category);
   if (at === undefined) return null;
+  const x = onY ? scales.innerWidth : at;
+  const y = onY ? at : LABEL_INSET;
+  const height = noteLineHeight(NOTE_FONT_SIZE);
+  let box: LabelRect | null = null;
+  if (typeof annotation.text === "string") {
+    const width = measure(annotation.text);
+    box = onY
+      ? { x: x - width, y: y - height / 2, width, height }
+      : { x: x - width / 2, y, width, height };
+  }
+  // A row note slides along its row (x) first; a column's note may then
+  // drop down its column (y).
+  return {
+    kind: "row",
+    x,
+    y,
+    box,
+    priority: ROW_NOTE_PRIORITY,
+    anchorSide: "top",
+    retryAnchorSide: onY ? "top" : "left",
+    textAnchor: onY ? "end" : "middle",
+    onY,
+  };
+}
+
+/** Where a keyed row note puts its numbered marker: the note's own spot on the row. */
+function rowMarkerPoint(
+  annotation: ChartRowAnnotation,
+  scales: AnnotationScales,
+): { x: number; y: number } | null {
+  if (!scales.category) return null;
+  const at = scales[scales.category].point(annotation.category);
+  if (at === undefined) return null;
+  return scales.category === "y"
+    ? { x: scales.innerWidth - MARKER_RADIUS, y: at }
+    : { x: at, y: LABEL_INSET + MARKER_RADIUS };
+}
+
+function renderRow(
+  annotation: ChartRowAnnotation,
+  index: number,
+  geometry: NoteGeometry,
+  ink: string,
+  move: { dx: number; dy: number } | undefined,
+): ReactNode {
   return (
     <HaloText
       data-annotation-index={index}
       data-slot="chart-annotations-row"
-      dominantBaseline={onY ? "middle" : "hanging"}
+      dominantBaseline={geometry.onY ? "middle" : "hanging"}
       fill={ink}
       fontSize={NOTE_FONT_SIZE}
       key={`row-${index}`}
-      textAnchor={onY ? "end" : "middle"}
-      x={onY ? scales.innerWidth : at}
-      y={onY ? at : LABEL_INSET}
+      textAnchor={geometry.textAnchor}
+      x={geometry.x + (move?.dx ?? 0)}
+      y={geometry.y + (move?.dy ?? 0)}
     >
       {renderRowText(annotation.text)}
     </HaloText>
@@ -347,25 +480,13 @@ function renderRowText(text: ReactNode): ReactNode {
 function renderNote(
   annotation: ChartTextAnnotation,
   index: number,
+  geometry: NoteGeometry,
   scales: AnnotationScales,
   lines: readonly LineConfig[],
+  move: { dx: number; dy: number } | undefined,
 ): ReactNode {
   const point = resolveAnnotationPosition(annotation, scales);
   if (!point) return null;
-  const maxWidth =
-    (scales.innerWidth * clamp(annotation.width ?? DEFAULT_NOTE_WIDTH_PERCENT, 1, 100)) / 100;
-  const plain = typeof annotation.text === "string" ? annotation.text : null;
-  const lineCount = plain === null ? 1 : estimateNoteLines(plain, maxWidth, NOTE_FONT_SIZE);
-  const pitch = noteLineHeight(NOTE_FONT_SIZE);
-  const blockHeight = lineCount * pitch;
-  const { textAnchor, edge } = anchorParts(annotation.anchor ?? "nw");
-  const rawTop =
-    edge === "top"
-      ? point.y
-      : edge === "middle"
-        ? point.y - blockHeight / 2
-        : point.y - blockHeight;
-  const top = clamp(rawTop, 0, scales.innerHeight - blockHeight);
   const target = annotation.connector
     ? resolveAnnotationPosition(annotation.connector.to, scales)
     : undefined;
@@ -383,11 +504,11 @@ function renderNote(
         fontSize={NOTE_FONT_SIZE}
         leaderKind={annotation.connector?.kind}
         leaderStroke={annotation.color ? resolveAnnotationInk(annotation.color, lines) : undefined}
-        maxWidth={plain === null ? undefined : maxWidth}
+        maxWidth={geometry.maxWidth}
         noteFill={resolveAnnotationTextInk(annotation.color, lines)}
-        textAnchor={textAnchor}
-        x={clamp(point.x, 0, scales.innerWidth)}
-        y={top + pitch / 2}
+        textAnchor={geometry.textAnchor}
+        x={geometry.x + (move?.dx ?? 0)}
+        y={geometry.y + (move?.dy ?? 0)}
       >
         {annotation.text}
       </Marginalia>
@@ -396,14 +517,13 @@ function renderNote(
 }
 
 function renderMarker(
-  annotation: ChartTextAnnotation,
+  annotation: ChartTextAnnotation | ChartRowAnnotation,
   index: number,
   number: number,
+  point: { x: number; y: number },
   scales: AnnotationScales,
   lines: readonly LineConfig[],
 ): ReactNode {
-  const point = resolveAnnotationPosition(annotation, scales);
-  if (!point) return null;
   const cx = clamp(point.x, MARKER_RADIUS, scales.innerWidth - MARKER_RADIUS);
   const cy = clamp(point.y, MARKER_RADIUS, scales.innerHeight - MARKER_RADIUS);
   return (
@@ -448,6 +568,13 @@ function renderMarker(
  * description with `withAnnotationDescription` (`AutoChart` does all three
  * for `ChartSpec.annotations`).
  *
+ * Painted text and row notes are placed with RM-110's `layoutLabels`: clear
+ * of each other and of the labels the chart already paints (series end and
+ * value labels, a waterfall's value labels), nudged when they collide. A note
+ * the solver cannot place is never hidden: inside an annotated container (the
+ * `annotations` prop, `AutoChart`) it becomes a numbered marker listed in the
+ * key; a hand-composed layer paints it where it asked to be.
+ *
  * A solid range fills the pale band ink (`--chart-ring-background`); stripes
  * and reference lines paint the furniture ink (`--chart-grid`); all at full
  * opacity. Series-coloured text is mixed toward the label ink for contrast
@@ -458,12 +585,83 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
   function ChartAnnotations({ annotations, layer = "all", yAxisId, ...props }, ref) {
     const scales = useAnnotationScales(yAxisId);
     const breakpoint = useChartBreakpoint();
-    const lines = useContext(ChartStableContext)?.lines ?? NO_LINES;
+    const stable = useContext(ChartStableContext);
+    const lines = stable?.lines ?? NO_LINES;
     const patternId = `chart-annotations-stripes-${useId().replace(/:/g, "")}`;
-    const plan = useMemo(() => planAnnotations(annotations, breakpoint), [annotations, breakpoint]);
     const back = layer !== "front";
     const front = layer !== "back";
     const striped = back && annotations.some((a) => a.kind === "range" && a.pattern === "stripes");
+
+    // Text is measured in the chart container's font; a container without a
+    // chart context (DumbbellChart) measures inside the layer itself.
+    const ownRef = useRef<SVGGElement | null>(null);
+    const setRef = useCallback(
+      (node: SVGGElement | null) => {
+        ownRef.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      },
+      [ref],
+    );
+    const measurer = useTextMeasurerOf(stable?.containerRef ?? ownRef);
+    const measureNote = useCallback<MeasureNote>(
+      (text) => {
+        const width =
+          (measurer.measure(text.replace(/\*\*/g, "")) * NOTE_FONT_SIZE) / measurer.fontSizePx;
+        return text.includes("**") ? width * BOLD_WIDTH_FACTOR : width;
+      },
+      [measurer],
+    );
+    const scoped = useAnnotationLayoutScope();
+    const obstacles = useAnnotationObstacles();
+
+    const basePlan = useMemo(
+      () => planAnnotations(annotations, breakpoint),
+      [annotations, breakpoint],
+    );
+    const geometry = useMemo(() => {
+      const out = new Map<number, NoteGeometry>();
+      if (!front) return out;
+      for (const { annotation, index, display } of basePlan) {
+        if (display !== "painted") continue;
+        const g =
+          annotation.kind === "text"
+            ? textNoteGeometry(annotation, scales, measureNote)
+            : annotation.kind === "row"
+              ? rowNoteGeometry(annotation, scales, measureNote)
+              : null;
+        if (g) out.set(index, g);
+      }
+      return out;
+    }, [front, basePlan, scales, measureNote]);
+    const layout = useMemo(() => {
+      const boxes: AnnotationBox[] = [];
+      for (const [index, g] of geometry) {
+        if (!g.box) continue;
+        boxes.push({
+          ...g.box,
+          anchorSide: g.anchorSide,
+          id: `${g.kind}-${index}`,
+          index,
+          priority: g.priority,
+          retryAnchorSide: g.retryAnchorSide,
+        });
+      }
+      return layoutAnnotationBoxes(boxes, {
+        bounds: annotationLayoutBounds(boxes, scales.innerWidth, scales.innerHeight),
+        obstacles,
+      });
+    }, [geometry, obstacles, scales]);
+    // Only a key can carry a demoted note; without one it paints where it asked.
+    const demoted = useMemo(
+      () => (front && scoped ? [...layout.dropped].sort((a, b) => a - b) : null),
+      [front, scoped, layout],
+    );
+    useReportDemotedAnnotations(demoted);
+    const plan = useMemo(
+      () => (demoted?.length ? planAnnotations(annotations, breakpoint, demoted) : basePlan),
+      [annotations, breakpoint, demoted, basePlan],
+    );
 
     const ranges: ReactNode[] = [];
     const overlays: ReactNode[] = [];
@@ -477,17 +675,30 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
       if (!front) continue;
       if (annotation.kind === "line") {
         overlays.push(renderLine(annotation, index, scales));
-      } else if (annotation.kind === "row") {
+        continue;
+      }
+      if (entry.display === "keyed" && entry.number !== undefined) {
+        const point =
+          annotation.kind === "row"
+            ? rowMarkerPoint(annotation, scales)
+            : resolveAnnotationPosition(annotation, scales);
+        if (point) {
+          overlays.push(renderMarker(annotation, index, entry.number, point, scales, lines));
+        }
+        continue;
+      }
+      const g = geometry.get(index);
+      if (entry.display !== "painted" || !g) continue;
+      const move = layout.moves.get(index);
+      if (annotation.kind === "row") {
         overlays.push(
-          renderRow(annotation, index, scales, resolveAnnotationTextInk(annotation.color, lines)),
+          renderRow(annotation, index, g, resolveAnnotationTextInk(annotation.color, lines), move),
         );
-      } else if (entry.display === "painted") {
+      } else {
         notes.push({
           priority: annotation.priority ?? 0,
-          node: renderNote(annotation, index, scales, lines),
+          node: renderNote(annotation, index, g, scales, lines, move),
         });
-      } else if (entry.display === "keyed" && entry.number !== undefined) {
-        overlays.push(renderMarker(annotation, index, entry.number, scales, lines));
       }
     }
     // A stable sort: equal priorities keep reading order, a higher one paints on top.
@@ -500,7 +711,7 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
         data-layer={layer}
         data-slot="chart-annotations"
         pointerEvents="none"
-        ref={ref}
+        ref={setRef}
         {...props}
       >
         {striped ? (

@@ -3,6 +3,7 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { type ChartBreakpoint, useMeasuredChartBreakpoint } from "../chart-breakpoint";
+import { useDemotedAnnotations } from "./annotation-layout-context";
 import { type ChartAnnotation, circledNumber, planAnnotations } from "./annotation-types";
 
 /** A note's inline `**bold**` subset as HTML; any non-string node is rendered as given. */
@@ -45,7 +46,9 @@ export const AnnotationKey = forwardRef<HTMLOListElement, AnnotationKeyProps>(
   function AnnotationKey({ annotations, breakpoint: forced, className, ...props }, ref) {
     const { ref: measureRef, breakpoint: measured } =
       useMeasuredChartBreakpoint<HTMLOListElement>(ref);
-    const keyed = planAnnotations(annotations, forced ?? measured).filter(
+    // Notes the layer could not paint without an overlap are keyed at any tier.
+    const demoted = useDemotedAnnotations();
+    const keyed = planAnnotations(annotations, forced ?? measured, demoted).filter(
       (entry) => entry.display === "keyed",
     );
     return (
@@ -61,17 +64,20 @@ export const AnnotationKey = forwardRef<HTMLOListElement, AnnotationKeyProps>(
         ref={measureRef}
         {...props}
       >
-        {keyed.map((entry) =>
-          entry.annotation.kind === "text" && entry.number !== undefined ? (
+        {keyed.map(({ annotation, index, number }) =>
+          (annotation.kind === "text" || annotation.kind === "row") && number !== undefined ? (
             <li
               className="flex gap-1.5 text-caption text-muted-foreground"
               data-slot="annotation-key-item"
-              key={entry.index}
+              key={index}
             >
               <span className="shrink-0 text-foreground" data-slot="annotation-key-number">
-                {circledNumber(entry.number)}
+                {circledNumber(number)}
               </span>
-              <span className="min-w-0 break-words">{renderKeyText(entry.annotation.text)}</span>
+              <span className="min-w-0 break-words">
+                {annotation.kind === "row" ? `${annotation.category}: ` : null}
+                {renderKeyText(annotation.text)}
+              </span>
             </li>
           ) : null,
         )}

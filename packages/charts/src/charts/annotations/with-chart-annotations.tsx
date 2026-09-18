@@ -13,6 +13,7 @@ import {
 import { cn } from "@elabs-ai/components-ui";
 import { useChartFramePlotHeight } from "../chart-breakpoint";
 import { AnnotationKey } from "./annotation-key";
+import { AnnotationLayoutProvider } from "./annotation-layout-context";
 import { type ChartAnnotation, withAnnotationDescription } from "./annotation-types";
 import { AnnotationScalesContext, ChartAnnotations } from "./chart-annotations";
 import type { AnnotationScales } from "./resolve-annotation-position";
@@ -70,14 +71,18 @@ export function useAnnotatedChart<P extends ChartAnnotationsHostProps>(
         <ChartAnnotations annotations={annotations} />
       </Plot>
     );
+  // One layout scope for the plot and its key: the key lists the notes the
+  // layer had to demote to a numbered marker.
   return (
-    <div
-      className={cn("flex w-full flex-col", fill && "h-full min-h-0")}
-      data-slot="chart-annotations-host"
-    >
-      {fill ? <div className="min-h-0 flex-1">{plot}</div> : plot}
-      <AnnotationKey annotations={annotations} />
-    </div>
+    <AnnotationLayoutProvider>
+      <div
+        className={cn("flex w-full flex-col", fill && "h-full min-h-0")}
+        data-slot="chart-annotations-host"
+      >
+        {fill ? <div className="min-h-0 flex-1">{plot}</div> : plot}
+        <AnnotationKey annotations={annotations} />
+      </div>
+    </AnnotationLayoutProvider>
   );
 }
 

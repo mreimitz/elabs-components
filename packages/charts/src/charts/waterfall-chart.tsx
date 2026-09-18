@@ -6,6 +6,11 @@ import { HaloText, Leader, type LeaderPoint, UNIT_STACK_EMPHASIS, UnitStack } fr
 import type { BarOrientation } from "./bar-chart";
 import { BarChart } from "./bar-chart";
 import type { ChartAnnotation } from "./annotations/annotation-types"; // Annotations — RM-111
+import {
+  useAnnotationLayoutScope,
+  usePublishAnnotationObstacles,
+} from "./annotations/annotation-layout-context"; // Annotations — RM-111
+import { estimateTextWidth } from "./use-text-measurer"; // Annotations — RM-111
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
 import type { ChartA11yProps } from "./chart-a11y";
@@ -342,6 +347,25 @@ function WaterfallBars({
       };
     });
   }, [rows, barScale, bandWidth, yScale, isHorizontal]);
+
+  // Annotations — RM-111: inside an annotated chart the value labels are
+  // obstacles for annotation text. The boxes mirror the label placement below
+  // (11px, weight 800, so the width estimate is widened).
+  const annotated = useAnnotationLayoutScope();
+  const valueLabelRects = useMemo(() => {
+    if (!annotated || !showValues) return null;
+    return geometry.map((g) => {
+      const text = formatSigned(g.row.value, format, g.row.kind !== "total");
+      const width = estimateTextWidth(text, 11) * 1.15;
+      if (isHorizontal) {
+        const x = g.row.isIncrease ? g.x + g.width + 6 : g.x - 6 - width;
+        return { x, y: g.y + g.height / 2 - 7, width, height: 14 };
+      }
+      const y = g.row.isIncrease ? g.y - 6 : g.y + g.height + 14;
+      return { x: g.x + g.width / 2 - width / 2, y: y - 11, width, height: 14 };
+    });
+  }, [annotated, showValues, geometry, format, isHorizontal]);
+  usePublishAnnotationObstacles("waterfall-values", valueLabelRects);
 
   const datapointTargets = useMemo<ChartDatapointTarget[]>(() => {
     if (!datapointsEnabled || geometry.length === 0) {

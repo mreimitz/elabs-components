@@ -29,6 +29,10 @@ import { WaterfallChart } from "../waterfall-chart";
 import { LineChart } from "../line-chart";
 import { AnnotationKey } from "./annotation-key";
 import {
+  AnnotationLayoutProvider,
+  usePublishAnnotationObstacles,
+} from "./annotation-layout-context";
+import {
   type ChartAnnotation,
   circledNumber,
   describeAnnotations,
@@ -432,5 +436,146 @@ describe("the annotations prop on WaterfallChart", () => {
     expect(slot(container, "chart-annotations-row")[0]?.textContent).toBe("Worst quarter");
     expect(slot(container, "chart-annotations-marker")).toHaveLength(1);
     expect(slot(container, "annotation-key-item")[0]?.textContent).toBe("①Upsell carried the year");
+  });
+});
+
+describe("annotation placement through the label solver", () => {
+  const last = BIKES_DATA[BIKES_DATA.length - 1] as { date: Date; paris: number };
+  // A one-line note starting at Paris's last point: exactly where Paris's end label paints.
+  const AT_PARIS_END: ChartAnnotation = {
+    kind: "text",
+    x: last.date,
+    y: last.paris,
+    anchor: "w",
+    text: "Still climbing",
+  };
+
+  const noteXY = (root: ParentNode) => {
+    const note = root.querySelector('[data-slot="marginalia-note"]');
+    return [Number(note?.getAttribute("x")), Number(note?.getAttribute("y"))] as const;
+  };
+
+  it("moves a note off a series end label inside an annotated chart", () => {
+    const chart = (named: boolean) => (
+      <ChartConfigProvider value={{ breakpoint: "wide" }}>
+        <LineChart
+          accessibleLabel="Bikes"
+          annotations={[AT_PARIS_END]}
+          data={BIKES_DATA}
+          xDataKey="date"
+        >
+          {BIKES_SERIES.map((s) => (
+            <Line dataKey={s.key} key={s.key} name={named ? s.label : undefined} stroke={s.color} />
+          ))}
+        </LineChart>
+      </ChartConfigProvider>
+    );
+    const bare = render(chart(false));
+    expect(slot(bare.container, "series-end-label")).toHaveLength(0);
+    const [x0, y0] = noteXY(bare.container);
+    cleanup();
+
+    const labelled = render(chart(true));
+    expect(slot(labelled.container, "series-end-label")).toHaveLength(4);
+    const [x1, y1] = noteXY(labelled.container);
+    expect(Math.abs(x1 - x0) + Math.abs(y1 - y0)).toBeGreaterThan(10);
+    expect(slot(labelled.container, "chart-annotations-text")).toHaveLength(1);
+    expect(slot(labelled.container, "chart-annotations-marker")).toHaveLength(0);
+  });
+
+  function Blanket() {
+    // Every plot pixel is taken: the solver can place no note at all.
+    usePublishAnnotationObstacles("blanket", BLANKET);
+    return null;
+  }
+  const BLANKET = [{ x: -1e4, y: -1e4, width: 2e4, height: 2e4 }];
+
+  it("shows a note it cannot place as a numbered marker and a key row, even at wide", () => {
+    const { container } = render(
+      <ChartConfigProvider value={{ breakpoint: "wide" }}>
+        <AnnotationLayoutProvider>
+          <Blanket />
+          <LineChart accessibleLabel="Bikes" data={BIKES_DATA} xDataKey="date">
+            {BIKES_SERIES.map((s) => (
+              <Line dataKey={s.key} key={s.key} stroke={s.color} />
+            ))}
+            <ChartAnnotations annotations={BIKES_ANNOTATIONS} />
+          </LineChart>
+          <AnnotationKey annotations={BIKES_ANNOTATIONS} breakpoint="wide" />
+        </AnnotationLayoutProvider>
+      </ChartConfigProvider>,
+    );
+    expect(slot(container, "chart-annotations-text")).toHaveLength(0);
+    const markers = [...slot(container, "chart-annotations-marker")];
+    expect(markers.map((m) => m.getAttribute("data-annotation-number"))).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+    ]);
+    const rows = [...slot(container, "annotation-key-item")].map((li) => li.textContent);
+    expect(rows).toHaveLength(4);
+    expect(rows[0]).toBe(
+      `${circledNumber(1)}Paris opens 50 km of pop-up cycle lanes and keeps them`,
+    );
+  });
+
+  it("keys a row note it cannot place as “category: note”", () => {
+    const row: ChartAnnotation = { kind: "row", category: "Beta", text: "**Record** year" };
+    const { container } = render(
+      <AnnotationLayoutProvider>
+        <Blanket />
+        <BarChart
+          data={[
+            { team: "Alpha", score: 30 },
+            { team: "Beta", score: 80 },
+          ]}
+          orientation="horizontal"
+          xDataKey="team"
+        >
+          <Bar dataKey="score" />
+          <ChartAnnotations annotations={[row]} />
+        </BarChart>
+        <AnnotationKey annotations={[row]} breakpoint="wide" />
+      </AnnotationLayoutProvider>,
+    );
+    expect(slot(container, "chart-annotations-row")).toHaveLength(0);
+    expect(slot(container, "chart-annotations-marker")).toHaveLength(1);
+    expect(slot(container, "annotation-key-item")[0]?.textContent).toBe(
+      `${circledNumber(1)}Beta: Record year`,
+    );
+  });
+
+  it("paints every crowded note somewhere: keyed inside a scope, in place without one", () => {
+    // Eight notes on one anchor: the solver can place only a few of them.
+    const crowd: ChartAnnotation[] = Array.from({ length: 8 }, () => ({ ...AT_PARIS_END }));
+    const chart = (
+      <LineChart accessibleLabel="Bikes" data={BIKES_DATA} xDataKey="date">
+        {BIKES_SERIES.map((s) => (
+          <Line dataKey={s.key} key={s.key} stroke={s.color} />
+        ))}
+        <ChartAnnotations annotations={crowd} />
+      </LineChart>
+    );
+    const bare = render(
+      <ChartConfigProvider value={{ breakpoint: "wide" }}>{chart}</ChartConfigProvider>,
+    );
+    expect(slot(bare.container, "chart-annotations-text")).toHaveLength(8);
+    expect(slot(bare.container, "chart-annotations-marker")).toHaveLength(0);
+    cleanup();
+
+    const scoped = render(
+      <ChartConfigProvider value={{ breakpoint: "wide" }}>
+        <AnnotationLayoutProvider>
+          {chart}
+          <AnnotationKey annotations={crowd} breakpoint="wide" />
+        </AnnotationLayoutProvider>
+      </ChartConfigProvider>,
+    );
+    const painted = slot(scoped.container, "chart-annotations-text").length;
+    const markers = slot(scoped.container, "chart-annotations-marker").length;
+    expect(markers).toBeGreaterThan(0);
+    expect(painted + markers).toBe(8);
+    expect(slot(scoped.container, "annotation-key-item")).toHaveLength(markers);
   });
 });

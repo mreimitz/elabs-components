@@ -48,6 +48,10 @@ import {
 } from "./chart-datapoint-layer";
 import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
 import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
+import {
+  placementRects,
+  usePublishAnnotationObstacles,
+} from "./annotations/annotation-layout-context"; // Annotations — RM-111
 import { ChartFallback } from "./chart-fallback";
 import {
   type ChartPhase,
@@ -997,6 +1001,9 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   ]);
   const unpaintedLabels =
     labelPlan?.dropped.map((d) => (d.kind === "end" ? d.text : `${d.dataKey}: ${d.text}`)) ?? [];
+  // Annotations — RM-111: the labels placed above are obstacles for annotation text.
+  const annotationObstacles = useMemo(() => placementRects(labelPlan?.placed), [labelPlan]);
+  usePublishAnnotationObstacles("series-labels", annotationObstacles);
 
   // #352: the x values are neither Date-coercible NOR labellable (all null /
   // undefined / empty), so there is no time scale to draw with AND no category

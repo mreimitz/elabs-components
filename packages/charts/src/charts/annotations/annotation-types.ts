@@ -199,17 +199,27 @@ export interface AnnotationPlanEntry {
  * Decide how every annotation shows at `breakpoint`: a `text` note whose
  * `showAt` resolves `false` is hidden; at `narrow` a visible note is keyed
  * (numbered in array order); everything else is painted in place.
+ *
+ * `demoted` lists the indices of `text` and `row` notes the layout could not
+ * paint without an overlap: those are keyed too, at any tier, so a crowded
+ * note becomes a numbered marker plus a key row instead of disappearing.
  */
 export function planAnnotations(
   annotations: readonly ChartAnnotation[],
   breakpoint: ChartBreakpoint,
+  demoted: readonly number[] = [],
 ): AnnotationPlanEntry[] {
   let next = 1;
   return annotations.map((annotation, index) => {
+    if (annotation.kind === "row" && demoted.includes(index)) {
+      return { annotation, index, display: "keyed", number: next++ };
+    }
     if (annotation.kind !== "text") return { annotation, index, display: "painted" };
     const visible = resolveResponsive(annotation.showAt ?? true, breakpoint);
     if (!visible) return { annotation, index, display: "hidden" };
-    if (breakpoint === "narrow") return { annotation, index, display: "keyed", number: next++ };
+    if (breakpoint === "narrow" || demoted.includes(index)) {
+      return { annotation, index, display: "keyed", number: next++ };
+    }
     return { annotation, index, display: "painted" };
   });
 }
