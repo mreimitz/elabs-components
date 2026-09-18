@@ -112,6 +112,12 @@
   --text-kpi--line-height: calc(var(--type-leading-kpi) * var(--type-factor));
   --text-code: calc(var(--type-size-code) * var(--type-factor));
   --text-code--line-height: calc(var(--type-leading-code) * var(--type-factor));
+  --text-kpi-sm: calc(var(--type-size-kpi-sm) * var(--type-factor));
+  --text-kpi-sm--line-height: calc(var(--type-leading-kpi-sm) * var(--type-factor));
+  --text-eyebrow: calc(var(--type-size-eyebrow) * var(--type-factor));
+  --text-eyebrow--line-height: calc(var(--type-leading-eyebrow) * var(--type-factor));
+  --text-display-lg: calc(var(--type-size-display-lg) * var(--type-factor));
+  --text-display-lg--line-height: calc(var(--type-leading-display-lg) * var(--type-factor));
 
   /* chart type roles — RM-019 */
   --text-chart-value: calc(var(--type-size-chart-value) * var(--type-factor));
@@ -140,6 +146,12 @@
   --text-kpi--line-height: calc(var(--type-leading-kpi) * var(--type-factor));
   --text-code: calc(var(--type-size-code) * var(--type-factor));
   --text-code--line-height: calc(var(--type-leading-code) * var(--type-factor));
+  --text-kpi-sm: calc(var(--type-size-kpi-sm) * var(--type-factor));
+  --text-kpi-sm--line-height: calc(var(--type-leading-kpi-sm) * var(--type-factor));
+  --text-eyebrow: calc(var(--type-size-eyebrow) * var(--type-factor));
+  --text-eyebrow--line-height: calc(var(--type-leading-eyebrow) * var(--type-factor));
+  --text-display-lg: calc(var(--type-size-display-lg) * var(--type-factor));
+  --text-display-lg--line-height: calc(var(--type-leading-display-lg) * var(--type-factor));
 
   /* chart type roles — RM-019 */
   --text-chart-value: calc(var(--type-size-chart-value) * var(--type-factor));
@@ -168,6 +180,12 @@
   --text-kpi--line-height: calc(var(--type-leading-kpi) * var(--type-factor));
   --text-code: calc(var(--type-size-code) * var(--type-factor));
   --text-code--line-height: calc(var(--type-leading-code) * var(--type-factor));
+  --text-kpi-sm: calc(var(--type-size-kpi-sm) * var(--type-factor));
+  --text-kpi-sm--line-height: calc(var(--type-leading-kpi-sm) * var(--type-factor));
+  --text-eyebrow: calc(var(--type-size-eyebrow) * var(--type-factor));
+  --text-eyebrow--line-height: calc(var(--type-leading-eyebrow) * var(--type-factor));
+  --text-display-lg: calc(var(--type-size-display-lg) * var(--type-factor));
+  --text-display-lg--line-height: calc(var(--type-leading-display-lg) * var(--type-factor));
 
   /* chart type roles — RM-019 */
   --text-chart-value: calc(var(--type-size-chart-value) * var(--type-factor));

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T11:47:14.801Z",
+  "generatedAt": "2026-09-18T14:41:41.069Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -667,6 +667,24 @@
       "type": "registry:block",
       "title": "Agent Trace — Where did the run spend its time, and where did it fail?",
       "description": "An execution waterfall for one multi-agent run: a stat strip where every number carries its comparison (duration vs p95, retries, tokens in/out, cost vs workflow average, failed at), the charts package’s Gantt at sub-second granularity with one row per agent span nested under its caller, and a context-flow chain that shows the hop where a required field was dropped."
+    },
+    {
+      "name": "finding-cards-01",
+      "type": "registry:block",
+      "title": "Finding Cards — What did the copilot find?",
+      "description": "Recoverable-spend findings as a row of cards: a status badge naming the kind, a one-line title, the recoverable figure as the only coloured number (kpi-sm), a two-sentence summary and a primary + secondary action, under a header that states the programme and the total the cards add up to. The primary action is what a person signs; the secondary always opens the evidence."
+    },
+    {
+      "name": "verdict-side-by-side-01",
+      "type": "registry:block",
+      "title": "Verdict — Keep this, cancel that?",
+      "description": "A keep-vs-cancel verdict side by side: two cards on the success/destructive washes with annual cost, a segmented seat-utilisation Meter and the deciding facts; a one-line reading of the comparison; “If you cancel” as four consequence stats; “How the copilot knows” as a numbered evidence list; and the refusal — the copilot prepares everything, a person signs."
+    },
+    {
+      "name": "handoff-inspector-01",
+      "type": "registry:block",
+      "title": "Handoff Inspector — Where was the context dropped?",
+      "description": "One edge of a multi-agent run: sender → a metric pill on the arrow (context size, latency, tokens, fields present of required) → receiver; a context-comparison table (sent vs expected, status badge per field) that shows the required field that was not sent; the payload size against the workflow baseline as a Meter with a marker; and the edge’s 24-hour health beside it."
     }
   ],
   "templates": [
@@ -13153,7 +13171,7 @@
         }
       },
       "stories": {
-        "A2uiSurface": "ai-a2ui-analytics--docs",
+        "A2uiSurface": "ai-a2ui-agent-ops--docs",
         "AgentEvent": "ai-agentevent--docs",
         "AgentTimeline": "ai-agenttimeline--docs",
         "ApprovalCard": "ai-approvalcard--docs",
@@ -13996,6 +14014,11 @@
           "name": "RadialGradient",
           "kind": "value",
           "module": "packages/charts/src/charts/index.ts"
+        },
+        {
+          "name": "ReferenceLine",
+          "kind": "value",
+          "module": "packages/charts/src/charts/reference-line.tsx"
         },
         {
           "name": "Ring",
@@ -15417,6 +15440,10 @@
         {
           "name": "RadarMetric",
           "module": "packages/charts/src/charts/radar-context.tsx"
+        },
+        {
+          "name": "ReferenceLineProps",
+          "module": "packages/charts/src/charts/reference-line.tsx"
         },
         {
           "name": "ResolveBulletDomainInput",
@@ -20722,6 +20749,41 @@
               "optional": true,
               "type": "string",
               "description": "Additional class name"
+            }
+          ]
+        },
+        "ReferenceLine": {
+          "extends": [],
+          "props": [
+            {
+              "name": "value",
+              "optional": false,
+              "type": "number",
+              "description": "Position on the y-axis, in data units."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Short label drawn above the rule, e.g. \"target $155k\". Omit for an unlabelled rule."
+            },
+            {
+              "name": "labelPosition",
+              "optional": true,
+              "type": "\"start\" | \"end\"",
+              "description": "Which end of the rule the label sits at. Default `\"end\"`."
+            },
+            {
+              "name": "yAxisId",
+              "optional": true,
+              "type": "string | number",
+              "description": "The y-axis this value belongs to when a chart has several. Default: the primary axis."
+            },
+            {
+              "name": "strokeWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Stroke width. Default 1.5 — a threshold, heavier than the hairline grid."
             }
           ]
         },
@@ -34391,6 +34453,11 @@
           "module": "packages/ui/src/components/menubar/menubar.tsx"
         },
         {
+          "name": "Meter",
+          "kind": "value",
+          "module": "packages/ui/src/components/meter/meter.tsx"
+        },
+        {
           "name": "MetricCard",
           "kind": "value",
           "module": "packages/ui/src/components/metric-card/metric-card.tsx"
@@ -35560,6 +35627,10 @@
           "module": "packages/ui/src/components/descriptions/descriptions.tsx"
         },
         {
+          "name": "DescriptionsLabelWidth",
+          "module": "packages/ui/src/components/descriptions/descriptions.tsx"
+        },
+        {
           "name": "DescriptionsProps",
           "module": "packages/ui/src/components/descriptions/descriptions.tsx"
         },
@@ -35870,6 +35941,10 @@
         {
           "name": "MessageValue",
           "module": "packages/ui/src/components/locale-provider/messages.ts"
+        },
+        {
+          "name": "MeterProps",
+          "module": "packages/ui/src/components/meter/meter.tsx"
         },
         {
           "name": "MetricCardEmphasis",
@@ -36662,6 +36737,14 @@
           "module": "packages/ui/src/components/mention-input/mention-value.ts"
         },
         {
+          "name": "meterFillVariants",
+          "module": "packages/ui/src/components/meter/meter.tsx"
+        },
+        {
+          "name": "meterVariants",
+          "module": "packages/ui/src/components/meter/meter.tsx"
+        },
+        {
           "name": "modelPickerBody",
           "module": "packages/ui/src/components/model-picker/model-picker-state.ts"
         },
@@ -36952,6 +37035,8 @@
               "caption",
               "meta",
               "kpi",
+              "kpi-sm",
+              "eyebrow",
               "code"
             ],
             "tone": [
@@ -36969,6 +37054,7 @@
         "Heading": {
           "variants": {
             "size": [
+              "display-lg",
               "display",
               "title",
               "subtitle"
@@ -37005,6 +37091,33 @@
             "align": "inline-start"
           },
           "source": "inputGroupAddonVariants"
+        },
+        "Meter": {
+          "variants": {
+            "size": [
+              "xs",
+              "sm",
+              "md"
+            ]
+          },
+          "defaultVariants": {
+            "size": "sm"
+          },
+          "source": "meterVariants"
+        },
+        "MeterFill": {
+          "variants": {
+            "variant": [
+              "default",
+              "success",
+              "warning",
+              "destructive"
+            ]
+          },
+          "defaultVariants": {
+            "variant": "default"
+          },
+          "source": "meterFillVariants"
         },
         "ProgressIndicator": {
           "variants": {
@@ -38042,6 +38155,12 @@
               "optional": true,
               "type": "DescriptionsLayout",
               "description": "`horizontal` places the label beside the value; `vertical` stacks the label above the value. Default `horizontal`."
+            },
+            {
+              "name": "labelWidth",
+              "optional": true,
+              "type": "DescriptionsLabelWidth",
+              "description": "Width of the label column in the `horizontal` layout, as a share of the item. Default `\"1/3\"`. Ignored by `vertical`."
             }
           ]
         },
@@ -38927,6 +39046,51 @@
               "optional": true,
               "type": "boolean",
               "description": "Render the consumer's own textarea-rendering component instead of a `Textarea` — e.g. `PromptInputTextarea`. The child must ultimately render a real `<textarea>`; everything this component needs is spread onto it."
+            }
+          ]
+        },
+        "Meter": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">",
+            "VariantProps<typeof meterVariants>",
+            "VariantProps<typeof meterFillVariants>"
+          ],
+          "props": [
+            {
+              "name": "value",
+              "optional": false,
+              "type": "number",
+              "description": "The measured value. Clamped to `[min, max]` for the fill; reported as-is to AT."
+            },
+            {
+              "name": "min",
+              "optional": true,
+              "type": "number",
+              "description": "Range floor. Default 0."
+            },
+            {
+              "name": "max",
+              "optional": true,
+              "type": "number",
+              "description": "Range ceiling. Default 100."
+            },
+            {
+              "name": "segments",
+              "optional": true,
+              "type": "number",
+              "description": "Draw the track as this many discrete cells instead of one continuous fill; the value fills `round((value − min) / (max − min) × segments)` of them. For \"n of m\" facts pass `segments={m}` with `max={m}`."
+            },
+            {
+              "name": "marker",
+              "optional": true,
+              "type": "number",
+              "description": "Reference point on the same scale as `value` (a ceiling, a target), rendered as a thin vertical tick on the track. Unset renders no tick."
+            },
+            {
+              "name": "markerLabel",
+              "optional": true,
+              "type": "string",
+              "description": "What `marker` represents, already localized (\"ceiling $500\"). Appended to the accessible value text; a caller-supplied `aria-valuetext` always wins."
             }
           ]
         },
@@ -41704,6 +41868,7 @@
         "MatchHighlight": "display-matchhighlight--docs",
         "MentionInput": "forms-mentioninput--docs",
         "Menubar": "navigation-menubar--docs",
+        "Meter": "display-meter--docs",
         "MetricCard": "core-metriccard--docs",
         "ModelPicker": "core-modelpicker--docs",
         "NavNotifications": "navigation-navnotifications--docs",

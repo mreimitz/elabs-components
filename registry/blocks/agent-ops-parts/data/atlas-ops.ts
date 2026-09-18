@@ -798,3 +798,175 @@ export const trace = {
     },
   ] satisfies TraceSpan[],
 };
+
+// ─── Findings & verdicts (subscriptions) ─────────────────────────────────────
+
+export type FindingKind = "duplicate" | "unused-seats" | "price-rise";
+
+export interface Finding {
+  id: string;
+  kind: FindingKind;
+  title: string;
+  /** Recoverable per year, USD. */
+  recoverablePerYear: number;
+  summary: string;
+  primaryAction: string;
+  secondaryAction: string;
+}
+
+export const findings: Finding[] = [
+  {
+    id: "duplicate-tooling",
+    kind: "duplicate",
+    title: "Paying twice for the same job",
+    recoverablePerYear: 52_800,
+    summary:
+      "Linear and Jira are both billed monthly. 38 of 42 Linear seats have not opened Jira in 90 days.",
+    primaryAction: "Cancel Jira",
+    secondaryAction: "See evidence",
+  },
+  {
+    id: "unused-seats",
+    kind: "unused-seats",
+    title: "Seats licensed but not used",
+    recoverablePerYear: 96_720,
+    summary: "Figma 48 seats licensed, 19 active in 30 days. Slack 210 licensed, 148 active.",
+    primaryAction: "Right-size seats",
+    secondaryAction: "See evidence",
+  },
+  {
+    id: "price-rise",
+    kind: "price-rise",
+    title: "Renewal price rises 14%",
+    recoverablePerYear: 34_800,
+    summary: "Datadog renews 14 Sep at +14%. No usage increase recorded to justify it.",
+    primaryAction: "Open negotiation",
+    secondaryAction: "See evidence",
+  },
+];
+
+export const findingsTotals = {
+  activeTools: 42,
+  annualised: 1_418_400,
+  recoverable: 184_320,
+};
+
+/** One side of a keep-vs-cancel comparison. */
+export interface ToolSide {
+  name: string;
+  verdict: "keep" | "cancel";
+  costPerYear: number;
+  licensed: number;
+  activeIn30Days: number;
+  /** Throughput in the tool’s own unit over 30 days. */
+  throughput: number;
+  throughputUnit: string;
+}
+
+export const duplicateVerdict = {
+  headline: "You are paying twice for the same job",
+  lede: "Linear and Jira are both billed monthly against the Engineering budget. Atlas compared seat lists, last-opened timestamps and issue volume.",
+  sides: [
+    {
+      name: "Linear",
+      verdict: "keep",
+      costPerYear: 12_096,
+      licensed: 42,
+      activeIn30Days: 41,
+      throughput: 1_284,
+      throughputUnit: "issues moved",
+    },
+    {
+      name: "Jira",
+      verdict: "cancel",
+      costPerYear: 52_800,
+      licensed: 42,
+      activeIn30Days: 4,
+      throughput: 19,
+      throughputUnit: "issues moved",
+    },
+  ] satisfies [ToolSide, ToolSide],
+  consequence: [
+    {
+      label: "Recovered per year",
+      value: 52_800,
+      unit: "currency",
+      note: "Engineering budget drops to 62% used",
+    },
+    {
+      label: "People affected",
+      value: 4,
+      unit: "count",
+      note: "Service accounts — Atlas will migrate the syncs",
+    },
+    {
+      label: "Data retained",
+      value: 90,
+      unit: "days",
+      note: "Atlassian export queued before cancellation",
+    },
+    {
+      label: "Takes effect",
+      value: Date.UTC(2026, 8, 30),
+      unit: "date",
+      note: "Next billing cycle · no early-exit fee",
+    },
+  ] as const,
+  howItKnows: [
+    {
+      label: "Seat lists from both vendors",
+      detail: "42 identical work emails. Not a partial overlap — the same team, twice.",
+    },
+    {
+      label: "Last-opened timestamps",
+      detail: "38 of 42 have no Jira session in 90 days. 4 are automation service accounts.",
+    },
+    {
+      label: "Issue throughput",
+      detail: "Linear 1,284 issues moved in 30 days. Jira 19, of which 14 were automated syncs.",
+    },
+    {
+      label: "Invoice history",
+      detail: "Both renewed within the same week for the last 3 cycles. Nobody compared them.",
+    },
+    {
+      label: "Contract terms",
+      detail:
+        "Jira is month-to-month. Cancelling costs nothing and takes effect at the next cycle.",
+    },
+  ],
+  refusal:
+    "Cancelling a vendor contract is outside every autonomy level. Atlas can prepare the export, draft the notice and schedule the cut-off — a person signs it.",
+};
+
+// ─── Handoff inspector ────────────────────────────────────────────────────────
+
+export type HandoffFieldStatus = "match" | "missing" | "unused";
+
+export interface HandoffField {
+  name: string;
+  sent: boolean;
+  expected: "required" | "optional" | "not used";
+}
+
+export const handoff = {
+  from: { agent: "Router agent", note: "sends context · scope: admin" },
+  to: { agent: "Billing agent", note: "receives context · needs authorization_scope" },
+  traceId: "tr_84921",
+  at: new Date(Date.UTC(2026, 7, 31, 9, 42, 18, 204)),
+  contextKb: 12.4,
+  baselineKb: 9.1,
+  latencyMs: 188,
+  tokens: 1_904,
+  fields: [
+    { name: "customer_id", sent: true, expected: "required" },
+    { name: "intent", sent: true, expected: "required" },
+    { name: "order_id", sent: true, expected: "required" },
+    { name: "authorization_scope", sent: false, expected: "required" },
+    { name: "conversation_history", sent: true, expected: "optional" },
+    { name: "session_metadata", sent: true, expected: "not used" },
+  ] satisfies HandoffField[],
+  edge: { runs24h: 1_842, avgLatencyMs: 190, completeShare: 0.981 },
+  analysis:
+    "authorization_scope is present at Supervisor and Router and absent at Billing — the field was dropped in this hop, not upstream. The same edge completed 98.1% of runs in the last 24 hours; this is the contract being violated, not the contract being wrong.",
+};

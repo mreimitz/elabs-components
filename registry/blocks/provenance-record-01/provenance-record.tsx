@@ -10,7 +10,7 @@ import {
   type RecordField,
 } from "@/components/agent-ops-parts/data/atlas-ops";
 import { formatDayMonth } from "@/components/agent-ops-parts/format";
-import { ConfidenceBar, EvidenceChip } from "@/components/agent-ops-parts/provenance";
+import { ConfidenceBar, SourceChip } from "@/components/agent-ops-parts/provenance";
 
 export interface ProvenanceRecordProps {
   /** Record title, e.g. the contact’s name. */
@@ -135,7 +135,7 @@ function Provenance({
             locale={locale}
             value={provenance.confidence}
           />
-          <EvidenceChip evidence={provenance.evidence} />
+          <SourceChip evidence={provenance.evidence} />
         </>
       );
     case "pinned":

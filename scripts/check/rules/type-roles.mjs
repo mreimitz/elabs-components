@@ -8,7 +8,7 @@ const src = (body, file = "packages/ui/src/x.tsx") => ({ files: { [file]: body }
 export default {
   id: "type-roles",
   scope: "components",
-  doc: "Type is a role: use `text-display|title|subtitle|body|caption|meta|kpi|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by the `text-scale` rule).",
+  doc: "Type is a role: use `text-display-lg|display|title|subtitle|body|caption|meta|eyebrow|kpi|kpi-sm|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by the `text-scale` rule).",
   baseline: "per-file",
   eslint: "conventions/type-roles",
   eslintPatterns: ["packages/*/src/**/*.tsx"],

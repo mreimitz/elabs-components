@@ -8,6 +8,7 @@ import { AreaBand } from "./area-band";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
+import { ReferenceLine } from "./reference-line";
 import { XAxis } from "./x-axis";
 import { Line } from "./line";
 import { LineChart } from "./line-chart";
@@ -38,6 +39,25 @@ export const Default: Story = {
     <div className="h-72 w-full max-w-[560px]">
       <LineChart data={chartData} aspectRatio={undefined}>
         <Grid horizontal />
+        <Line dataKey="users" curve={curveNatural} stroke="var(--chart-1)" />
+        <XAxis />
+        <ChartTooltip />
+      </LineChart>
+    </div>
+  ),
+};
+
+/**
+ * A labelled threshold on the series’ own y-scale — a target, a budget, an
+ * SLA. Drawn in `--chart-foreground` with a dash (meaning, not gridline) and a
+ * haloed label; it stays outside the reveal clip like `Grid`.
+ */
+export const WithReferenceLine: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart data={chartData} aspectRatio={undefined}>
+        <Grid horizontal />
+        <ReferenceLine label="target 1,500" value={1500} />
         <Line dataKey="users" curve={curveNatural} stroke="var(--chart-1)" />
         <XAxis />
         <ChartTooltip />

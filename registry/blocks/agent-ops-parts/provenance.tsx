@@ -13,7 +13,7 @@ import {
   Video,
   type LucideIcon,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@elabs-ai/components-ui";
+import { Avatar, AvatarFallback, Badge, Meter } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { Actor, Evidence, EvidenceKind } from "./data/atlas-ops";
 import { formatClock, formatRelative, formatShare } from "./format";
@@ -72,16 +72,16 @@ export function ProvenanceLine({
 export interface ConfidenceBarProps extends HTMLAttributes<HTMLSpanElement> {
   /** 0–1. */
   value: number;
-  /** What the confidence is OF, for the accessible name: "confidence that the stage is Negotiation". Default "confidence". */
+  /** What the confidence is OF, for the accessible name: "Atlas’s confidence". Default "confidence". */
   label?: string;
   locale?: string;
 }
 
 /**
- * A word-sized confidence meter — a short neutral track, an ink fill and the
- * percentage beside it. The fill is `bg-foreground` on purpose: confidence
- * is a quantity, not a verdict, so it carries no status hue. Two channels
- * (length + the printed number) for WCAG 1.4.1.
+ * A word-sized confidence meter: the ui `Meter` at its `xs` rung with the
+ * percentage printed beside it. Default ink on purpose — confidence is a
+ * quantity, not a verdict, so it carries no status hue. Two channels (length
+ * + the printed number) for WCAG 1.4.1. A preset, not a primitive.
  */
 export function ConfidenceBar({
   value,
@@ -94,22 +94,18 @@ export function ConfidenceBar({
   const pct = formatShare(clamped, locale, 0);
   return (
     <span
-      aria-label={`${label}: ${pct}`}
       className={cn("inline-flex items-center gap-2", className)}
       data-slot="confidence-bar"
-      role="meter"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(clamped * 100)}
       {...props}
     >
-      <span aria-hidden="true" className="h-1 w-14 shrink-0 overflow-hidden rounded-full bg-muted">
-        <span
-          className="block h-full rounded-full bg-foreground"
-          data-slot="confidence-bar-fill"
-          style={{ width: `${clamped * 100}%` }}
-        />
-      </span>
+      <Meter
+        aria-label={label}
+        aria-valuetext={pct}
+        className="w-14 shrink-0"
+        max={1}
+        size="xs"
+        value={clamped}
+      />
       <span aria-hidden="true" className="text-meta tabular-nums text-muted-foreground">
         {pct}
       </span>
@@ -117,9 +113,9 @@ export function ConfidenceBar({
   );
 }
 
-// ─── EvidenceChip ─────────────────────────────────────────────────────────────
+// ─── SourceChip ───────────────────────────────────────────────────────────────
 
-const EVIDENCE_ICONS: Record<EvidenceKind, LucideIcon> = {
+const SOURCE_ICONS: Record<EvidenceKind, LucideIcon> = {
   email: Mail,
   meeting: Video,
   call: Phone,
@@ -129,29 +125,30 @@ const EVIDENCE_ICONS: Record<EvidenceKind, LucideIcon> = {
   filing: FileText,
 };
 
-export interface EvidenceChipProps extends HTMLAttributes<HTMLSpanElement> {
+export interface SourceChipProps extends HTMLAttributes<HTMLSpanElement> {
   evidence: Evidence;
 }
 
 /**
- * The kind of source document a derivation read — an icon + label chip. Not
- * a `Badge` (which carries a status tone) and not a `StatusBadge`: evidence
- * has no status, it is a pointer at a thing.
+ * The kind of source document a derivation read — the ui `Badge` in its
+ * `outline` variant with a leading glyph, the same construction every chip in
+ * the library uses (`FilterChip`, ai’s `InlineCitationCardTrigger`). Not a new
+ * primitive. Named SourceChip, not EvidenceChip: `@elabs-ai/components-ai`
+ * already exports an `EvidenceChip` (a grounded-citation hover trigger), and
+ * this is a different thing — a tone-free pointer at a document kind.
  */
-export function EvidenceChip({ evidence, className, ...props }: EvidenceChipProps) {
-  const Icon = EVIDENCE_ICONS[evidence.kind];
+export function SourceChip({ evidence, className, ...props }: SourceChipProps) {
+  const Icon = SOURCE_ICONS[evidence.kind];
   return (
-    <span
-      className={cn(
-        "inline-flex h-6 items-center gap-1.5 rounded-md border border-border-strong px-2 text-meta text-foreground",
-        className,
-      )}
-      data-slot="evidence-chip"
+    <Badge
+      className={cn("font-normal text-foreground", className)}
+      data-slot="source-chip"
+      variant="outline"
       {...props}
     >
-      <Icon aria-hidden="true" className="size-3.5 text-muted-foreground" />
+      <Icon aria-hidden="true" className="size-3 text-muted-foreground" />
       {evidence.label}
-    </span>
+    </Badge>
   );
 }
 
@@ -162,14 +159,15 @@ export interface EvidenceMeterProps extends HTMLAttributes<HTMLSpanElement> {
   held: number;
   /** Signals checked in total. Default 5. */
   of?: number;
-  /** Print "4 of 5" beside the ticks. Default true. */
+  /** Print "4 of 5" beside the cells. Default true. */
   showLabel?: boolean;
 }
 
 /**
- * "|||| 4 of 5" — how many of the checked signals held. A countable tick
- * strip (each tick is one signal, stated in the label) rather than a
- * percentage bar: five discrete facts read better as five marks than as 80%.
+ * "|||| 4 of 5" — how many of the checked signals held: the ui `Meter` in
+ * its segmented form (one cell per signal, stated in the label) rather than a
+ * percentage bar. Five discrete facts read better as five marks than as 80%.
+ * A preset, not a primitive.
  */
 export function EvidenceMeter({
   held,
@@ -181,23 +179,18 @@ export function EvidenceMeter({
   const clamped = Math.min(of, Math.max(0, Math.floor(held)));
   return (
     <span
-      aria-label={`${clamped} of ${of} signals held`}
       className={cn("inline-flex items-center gap-1.5", className)}
       data-slot="evidence-meter"
-      role="img"
       {...props}
     >
-      <span aria-hidden="true" className="inline-flex items-end gap-px">
-        {Array.from({ length: of }, (_, i) => (
-          <span
-            className={cn(
-              "block h-3 w-0.5 rounded-full",
-              i < clamped ? "bg-foreground" : "bg-border-strong",
-            )}
-            key={i}
-          />
-        ))}
-      </span>
+      <Meter
+        aria-label="Signals held"
+        aria-valuetext={`${clamped} of ${of} signals held`}
+        className="w-6 shrink-0"
+        max={of}
+        segments={of}
+        value={clamped}
+      />
       {showLabel ? (
         <span aria-hidden="true" className="font-mono text-code tabular-nums text-muted-foreground">
           {clamped} of {of}

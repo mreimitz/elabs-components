@@ -1,6 +1,13 @@
 "use client";
 
-import { Button, Card, CardContent, STATUS_TONE_ICONS, StatusBadge } from "@elabs-ai/components-ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  Meter,
+  STATUS_TONE_ICONS,
+  StatusBadge,
+} from "@elabs-ai/components-ui";
 import type { StatusTone } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
@@ -27,9 +34,6 @@ const AUTONOMY_LABEL: Record<Autonomy, string> = {
   review: "Review",
   hold: "Hold",
 };
-
-/** Where the ceiling mark sits on the track — leaves room to SHOW an over-limit bar. */
-const CEILING_AT = 0.8;
 
 export interface SpendAgainstLimitProps {
   /** Defaults to the shared Atlas dataset. Rows are sorted by share of ceiling, highest first. */
@@ -84,7 +88,7 @@ export function SpendAgainstLimit({
               </p>
             </div>
             <p className="text-caption tabular-nums text-muted-foreground">
-              mark = the agent’s ceiling · {formatMoney(totalSpent, currency, locale)} of{" "}
+              tick = the agent’s ceiling · {formatMoney(totalSpent, currency, locale)} of{" "}
               {formatMoney(totalLimit, currency, locale)} authorised
             </p>
           </div>
@@ -123,9 +127,6 @@ function AgentRow({
   const share = agent.spent / agent.limit;
   const over = share > 1;
   const tone = AUTONOMY_TONE[agent.autonomy];
-  // Track: the ceiling sits at CEILING_AT; the bar is share × CEILING_AT,
-  // clamped to the track so a runaway agent cannot paint outside the card.
-  const fill = Math.min(1, share * CEILING_AT);
 
   return (
     <li
@@ -144,29 +145,18 @@ function AgentRow({
         status={{ label: AUTONOMY_LABEL[agent.autonomy], tone, icon: STATUS_TONE_ICONS[tone] }}
       />
 
-      <div
-        aria-label={`${formatMoney(agent.spent, currency, locale)} of ${formatMoney(agent.limit, currency, locale)}, ${formatShare(share, locale, 0)} of ceiling${over ? ", over limit" : ""}`}
-        className="relative col-span-2 h-2 rounded-full bg-muted @2xl:col-span-1"
-        role="meter"
-        aria-valuemin={0}
-        aria-valuemax={agent.limit}
-        aria-valuenow={agent.spent}
-      >
-        <span
-          className={cn(
-            "absolute inset-y-0 start-0 rounded-full",
-            over ? "bg-destructive" : "bg-foreground",
-          )}
-          data-slot="spend-against-limit-fill"
-          style={{ width: `${fill * 100}%` }}
-        />
-        <span
-          aria-hidden="true"
-          className="absolute -inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-foreground"
-          data-slot="spend-against-limit-ceiling"
-          style={{ insetInlineStart: `${CEILING_AT * 100}%` }}
-        />
-      </div>
+      {/* `max` is the larger of spend and ceiling so an over-limit bar visibly
+          runs PAST the ceiling tick instead of clipping at it; the value text
+          carries the fact for AT. */}
+      <Meter
+        aria-label={`${agent.name} spend`}
+        aria-valuetext={`${formatMoney(agent.spent, currency, locale)} of ${formatMoney(agent.limit, currency, locale)}, ${formatShare(share, locale, 0)} of ceiling${over ? ", over limit" : ""}`}
+        className="col-span-2 @2xl:col-span-1"
+        marker={agent.limit}
+        max={Math.max(agent.limit, agent.spent) * 1.05}
+        value={agent.spent}
+        variant={over ? "destructive" : "default"}
+      />
 
       <p
         className={cn(
@@ -263,18 +253,15 @@ function AutonomyBands({
                       of {formatMoney(limit, currency, locale)}
                     </span>
                   </p>
-                  <div
-                    aria-hidden="true"
-                    className="my-2 h-1.5 overflow-hidden rounded-full bg-muted"
-                  >
-                    <div
-                      className={cn(
-                        "h-full rounded-full",
-                        over ? "bg-destructive" : "bg-foreground",
-                      )}
-                      style={{ width: `${Math.min(1, limit > 0 ? spent / limit : 0) * 100}%` }}
-                    />
-                  </div>
+                  <Meter
+                    aria-label={`${AUTONOMY_LABEL[band]} band spend`}
+                    aria-valuetext={`${formatMoney(spent, currency, locale)} of ${formatMoney(limit, currency, locale)}${over ? ", over limit" : ""}`}
+                    className="my-2"
+                    max={Math.max(limit, spent, 1)}
+                    size="xs"
+                    value={spent}
+                    variant={over ? "destructive" : "default"}
+                  />
                   <p className="text-caption text-muted-foreground">{note[band](count)}</p>
                 </dd>
               </div>

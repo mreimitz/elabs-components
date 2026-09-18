@@ -12,7 +12,7 @@ import {
   type Insight,
 } from "@/components/agent-ops-parts/data/atlas-ops";
 import { formatCount } from "@/components/agent-ops-parts/format";
-import { ConfidenceBar, EvidenceChip } from "@/components/agent-ops-parts/provenance";
+import { ConfidenceBar, SourceChip } from "@/components/agent-ops-parts/provenance";
 
 export interface InsightFeedProps {
   /** Defaults to the shared Atlas dataset. */
@@ -231,7 +231,7 @@ function InsightRow({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-1">
           <div className="flex flex-wrap items-center gap-2">
             {item.evidence.map((e) => (
-              <EvidenceChip evidence={e} key={`${e.kind}-${e.label}`} />
+              <SourceChip evidence={e} key={`${e.kind}-${e.label}`} />
             ))}
             {typeof item.confidence === "number" ? (
               <ConfidenceBar

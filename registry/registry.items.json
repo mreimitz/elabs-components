@@ -489,6 +489,30 @@
       "title": "Agent Trace — Where did the run spend its time, and where did it fail?",
       "description": "An execution waterfall for one multi-agent run: a stat strip where every number carries its comparison (duration vs p95, retries, tokens in/out, cost vs workflow average, failed at), the charts package’s Gantt at sub-second granularity with one row per agent span nested under its caller, and a context-flow chain that shows the hop where a required field was dropped.",
       "categories": ["agent-ops"]
+    },
+    {
+      "name": "finding-cards-01",
+      "type": "registry:block",
+      "root": "registry/blocks/finding-cards-01",
+      "title": "Finding Cards — What did the copilot find?",
+      "description": "Recoverable-spend findings as a row of cards: a status badge naming the kind, a one-line title, the recoverable figure as the only coloured number (kpi-sm), a two-sentence summary and a primary + secondary action, under a header that states the programme and the total the cards add up to. The primary action is what a person signs; the secondary always opens the evidence.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "verdict-side-by-side-01",
+      "type": "registry:block",
+      "root": "registry/blocks/verdict-side-by-side-01",
+      "title": "Verdict — Keep this, cancel that?",
+      "description": "A keep-vs-cancel verdict side by side: two cards on the success/destructive washes with annual cost, a segmented seat-utilisation Meter and the deciding facts; a one-line reading of the comparison; “If you cancel” as four consequence stats; “How the copilot knows” as a numbered evidence list; and the refusal — the copilot prepares everything, a person signs.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "handoff-inspector-01",
+      "type": "registry:block",
+      "root": "registry/blocks/handoff-inspector-01",
+      "title": "Handoff Inspector — Where was the context dropped?",
+      "description": "One edge of a multi-agent run: sender → a metric pill on the arrow (context size, latency, tokens, fields present of required) → receiver; a context-comparison table (sent vs expected, status badge per field) that shows the required field that was not sent; the payload size against the workflow baseline as a Meter with a marker; and the edge’s 24-hour health beside it.",
+      "categories": ["agent-ops"]
     }
   ]
 }

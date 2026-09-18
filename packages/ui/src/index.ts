@@ -205,6 +205,7 @@ export * from "./components/number-input";
 export * from "./components/page-shell";
 export * from "./components/pagination";
 export * from "./components/popover";
+export * from "./components/meter";
 export * from "./components/progress";
 export * from "./components/radio-group";
 export * from "./components/rating";

@@ -19,7 +19,7 @@ import {
   formatDuration,
   formatMoney,
 } from "@/components/agent-ops-parts/format";
-import { EvidenceChip } from "@/components/agent-ops-parts/provenance";
+import { SourceChip } from "@/components/agent-ops-parts/provenance";
 
 export interface DecisionRecordProps {
   record?: typeof decisionRecord;
@@ -79,19 +79,14 @@ export function DecisionRecord({
           <AlertDescription>{record.verdictDetail}</AlertDescription>
         </Alert>
 
-        {/* `[&>dt]:w-40`: the label column is a fixed 10rem, not the default
-            third of the card — five short labels do not earn a third of it. */}
-        <Descriptions
-          className="gap-y-3 [&>div>dt]:w-40 [&>div>dt]:shrink-0"
-          data-slot="decision-record-fields"
-        >
+        <Descriptions className="gap-y-3" labelWidth="1/5" data-slot="decision-record-fields">
           <DescriptionsItem label="What it did">
             <p className="text-body">{record.whatItDid}</p>
           </DescriptionsItem>
           <DescriptionsItem label="What it looked at">
             <div className="flex flex-wrap gap-2">
               {record.whatItLookedAt.map((e) => (
-                <EvidenceChip evidence={e} key={`${e.kind}-${e.label}`} />
+                <SourceChip evidence={e} key={`${e.kind}-${e.label}`} />
               ))}
             </div>
             <p className="mt-1.5 text-caption text-muted-foreground">{record.lookedAtDetail}</p>

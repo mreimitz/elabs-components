@@ -15,12 +15,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 379 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 380 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 200 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 201 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -264,7 +264,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FileUploadList | component |  | `@elabs-ai/components-ui` |  |
 | FilterChip | component |  | `@elabs-ai/components-ui` |  |
 | FirstRunIllustration | component |  | `@elabs-ai/components-ui` |  |
-| Heading | component | size=display\|title*\|subtitle | `@elabs-ai/components-ui` |  |
+| Heading | component | size=display-lg\|display\|title*\|subtitle | `@elabs-ai/components-ui` |  |
 | HoverCard | component |  | `@elabs-ai/components-ui` |  |
 | HoverCardContent | component |  | `@elabs-ai/components-ui` |  |
 | HoverCardTrigger | component |  | `@elabs-ai/components-ui` |  |
@@ -312,6 +312,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MenubarSubContent | component |  | `@elabs-ai/components-ui` |  |
 | MenubarSubTrigger | component |  | `@elabs-ai/components-ui` |  |
 | MenubarTrigger | component |  | `@elabs-ai/components-ui` |  |
+| Meter | component | size=xs\|sm*\|md | `@elabs-ai/components-ui` |  |
 | MetricCard | component |  | `@elabs-ai/components-ui` | Single KPI tile — label, value, delta/trend. |
 | ModelPicker | component |  | `@elabs-ai/components-ui` |  |
 | NavigationMenu | component |  | `@elabs-ai/components-ui` |  |
@@ -449,7 +450,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TabsTrigger | component | variant=segmented*\|underline | `@elabs-ai/components-ui` |  |
 | TagInput | component |  | `@elabs-ai/components-ui` |  |
 | TeamSwitcher | component |  | `@elabs-ai/components-ui` |  |
-| Text | component | variant=lead\|body*\|caption\|meta\|kpi\|code · tone=default*\|muted\|primary | `@elabs-ai/components-ui` |  |
+| Text | component | variant=lead\|body*\|caption\|meta\|kpi\|kpi-sm\|eyebrow\|code · tone=default*\|muted\|primary | `@elabs-ai/components-ui` |  |
 | TEXT_ROLE_REM | component |  | `@elabs-ai/components-ui` |  |
 | Textarea | component |  | `@elabs-ai/components-ui` |  |
 | ThemeSwitcher | component |  | `@elabs-ai/components-ui` |  |
@@ -1222,6 +1223,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | RadarLabels | component |  | `@elabs-ai/components-charts` |  |
 | RadarProvider | component |  | `@elabs-ai/components-charts` |  |
 | RadialGradient | component |  | `@elabs-ai/components-charts` |  |
+| ReferenceLine | component |  | `@elabs-ai/components-charts` |  |
 | Ring | component |  | `@elabs-ai/components-charts` |  |
 | RingCenter | component |  | `@elabs-ai/components-charts` |  |
 | RingChart | component |  | `@elabs-ai/components-charts` |  |

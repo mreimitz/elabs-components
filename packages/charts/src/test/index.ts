@@ -153,6 +153,7 @@ export {
   GradientSteelPurple,
   GradientTealBlue,
   Grid,
+  ReferenceLine,
   HairlineFloor,
   HaloText,
   Leader,

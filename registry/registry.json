@@ -1602,6 +1602,57 @@
         }
       ],
       "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "finding-cards-01",
+      "type": "registry:block",
+      "title": "Finding Cards — What did the copilot find?",
+      "description": "Recoverable-spend findings as a row of cards: a status badge naming the kind, a one-line title, the recoverable figure as the only coloured number (kpi-sm), a two-sentence summary and a primary + secondary action, under a header that states the programme and the total the cards add up to. The primary action is what a person signs; the secondary always opens the evidence.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/finding-cards-01/finding-cards.tsx",
+          "type": "registry:component",
+          "target": "components/finding-cards-01/finding-cards.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "verdict-side-by-side-01",
+      "type": "registry:block",
+      "title": "Verdict — Keep this, cancel that?",
+      "description": "A keep-vs-cancel verdict side by side: two cards on the success/destructive washes with annual cost, a segmented seat-utilisation Meter and the deciding facts; a one-line reading of the comparison; “If you cancel” as four consequence stats; “How the copilot knows” as a numbered evidence list; and the refusal — the copilot prepares everything, a person signs.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/verdict-side-by-side-01/verdict-side-by-side.tsx",
+          "type": "registry:component",
+          "target": "components/verdict-side-by-side-01/verdict-side-by-side.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "handoff-inspector-01",
+      "type": "registry:block",
+      "title": "Handoff Inspector — Where was the context dropped?",
+      "description": "One edge of a multi-agent run: sender → a metric pill on the arrow (context size, latency, tokens, fields present of required) → receiver; a context-comparison table (sent vs expected, status badge per field) that shows the required field that was not sent; the payload size against the workflow baseline as a Meter with a marker; and the edge’s 24-hour health beside it.",
+      "registryDependencies": ["agent-ops-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/handoff-inspector-01/handoff-inspector.tsx",
+          "type": "registry:component",
+          "target": "components/handoff-inspector-01/handoff-inspector.tsx"
+        }
+      ],
+      "categories": ["agent-ops"]
     }
   ]
 }
