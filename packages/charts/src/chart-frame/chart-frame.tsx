@@ -90,6 +90,9 @@ import {
   resolveResponsive,
 } from "../charts/chart-breakpoint";
 
+/** The body box of a frame whose content does not size itself (pre-ADR 0039 default). */
+const BOUNDED_BODY_HEIGHT = 260;
+
 // ── Minimal local CSV serializer (RFC 4180 + injection guard) ─────────────────
 // The canonical reusable version lives in @elabs-ai/components-data (`toCsv`). This local
 // copy keeps @elabs-ai/components-charts free of a sibling dependency; value
@@ -856,16 +859,28 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   // ADR 0039: the frame's own tier (measured on the body) scopes frame-level
   // parts outside the chart container, e.g. a legend composed beside it.
   const { ref: bodyRef, breakpoint } = useMeasuredChartBreakpoint(bodyScrollRef);
-  // Not-ready: no chart to size the body yet, so the skeleton takes the plot
-  // box the chart will take (no layout shift on arrival).
-  const loadingBoxStyle = loading
-    ? fillHost
-      ? undefined
-      : resolvePlotBoxStyle(
+  // A chart that sizes its own plot box (a `ChartPlotRoot`/`ChartPlotBox`
+  // reading the plot-height context) registers here; while one is mounted the
+  // body is as tall as its content (ADR 0039 §3). Anything else — plain
+  // children, a canvas plot such as the process DottedChart, the table flip —
+  // keeps the bounded body box it always had: `plotHeight` (or the deprecated
+  // `height`), else 260 px.
+  const [plotConsumers, setPlotConsumers] = useState(0);
+  const registerPlotConsumer = useCallback(() => {
+    setPlotConsumers((n) => n + 1);
+    return () => setPlotConsumers((n) => n - 1);
+  }, []);
+  const bodyBoxStyle = fillHost
+    ? undefined
+    : loading
+      ? // Not-ready: the skeleton takes the plot box the chart will take.
+        resolvePlotBoxStyle(
           { plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT },
           breakpoint,
         )
-    : undefined;
+      : plotConsumers > 0
+        ? undefined
+        : resolvePlotBoxStyle({ plotHeight, defaultPlotHeight: BOUNDED_BODY_HEIGHT }, breakpoint);
 
   useEffect(() => {
     const el = bodyScrollRef.current;
@@ -884,7 +899,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   const body = (
     <div
       ref={bodyRef}
-      style={loadingBoxStyle}
+      style={bodyBoxStyle}
       className={cn(
         "w-full overflow-auto",
         fillHost && "h-full",
@@ -924,7 +939,10 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
             renderTable(rows, columns)
           ) : (
             <ChartConfigBridge density={densityInput}>
-              <ChartFramePlotHeightProvider value={fillHost ? "fill" : plotHeight}>
+              <ChartFramePlotHeightProvider
+                value={fillHost ? "fill" : plotHeight}
+                onPlotConsumer={registerPlotConsumer}
+              >
                 <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
               </ChartFramePlotHeightProvider>
             </ChartConfigBridge>

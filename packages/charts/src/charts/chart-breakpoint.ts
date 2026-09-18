@@ -231,15 +231,46 @@ export type ChartFramePlotHeight = Responsive<ChartPlotHeight> | "fill";
 
 const ChartFramePlotHeightContext = createContext<ChartFramePlotHeight | undefined>(undefined);
 
+/**
+ * Internal: lets a chart that sizes its own plot box tell the enclosing frame
+ * so. Returns the unregister function. A frame with no registered chart (plain
+ * children, a canvas plot, a table) keeps a bounded body box, as before 0039.
+ */
+type RegisterFramePlotConsumer = () => () => void;
+const ChartFramePlotConsumerContext = createContext<RegisterFramePlotConsumer | undefined>(
+  undefined,
+);
+
 /** Internal: `ChartFrame` → its chart (ADR 0039 §3, precedence rung 4). */
 export function ChartFramePlotHeightProvider({
   value,
+  onPlotConsumer,
   children,
 }: {
   value: ChartFramePlotHeight | undefined;
+  onPlotConsumer?: RegisterFramePlotConsumer;
   children?: ReactNode;
 }) {
-  return createElement(ChartFramePlotHeightContext.Provider, { value }, children);
+  return createElement(
+    ChartFramePlotHeightContext.Provider,
+    { value },
+    createElement(ChartFramePlotConsumerContext.Provider, { value: onPlotConsumer }, children),
+  );
+}
+
+/** Internal: the enclosing frame's plot height — `"fill"` inside a fill-host tile. */
+export function useChartFramePlotHeight(): ChartFramePlotHeight | undefined {
+  return useContext(ChartFramePlotHeightContext);
+}
+
+/** Register with the enclosing frame while `active` (a plot box that sizes itself). */
+function useRegisterFramePlotConsumer(active: boolean): void {
+  const register = useContext(ChartFramePlotConsumerContext);
+  useLayoutEffect(() => {
+    if (!active || !register) return undefined;
+    const unregister = register();
+    return () => unregister();
+  }, [active, register]);
 }
 
 const warned = new Set<string>();
@@ -320,6 +351,11 @@ export function resolvePlotBoxStyle(
 export interface ChartPlotRootProps extends HTMLAttributes<HTMLDivElement> {
   /** Omit when the plot box is a descendant (`ChartPlotBox`) or data-derived. */
   plotBox?: ChartPlotBoxInput;
+  /**
+   * With no `plotBox`: take the full height of a fill-host frame (a dashboard
+   * tile) so a descendant `ChartPlotBox` has a definite box to fill (heatmap).
+   */
+  fillsFrame?: boolean;
 }
 
 /**
@@ -328,14 +364,17 @@ export interface ChartPlotRootProps extends HTMLAttributes<HTMLDivElement> {
  * `style` still wins, as before) and provides the breakpoint scope inside.
  */
 export const ChartPlotRoot = forwardRef<HTMLDivElement, ChartPlotRootProps>(function ChartPlotRoot(
-  { plotBox, style, children, ...props },
+  { plotBox, fillsFrame, style, children, ...props },
   forwardedRef,
 ) {
   const { ref, breakpoint } = useMeasuredChartBreakpoint<HTMLDivElement>(forwardedRef);
   const framePlotHeight = useContext(ChartFramePlotHeightContext);
+  useRegisterFramePlotConsumer(plotBox !== undefined);
   const boxStyle = plotBox
     ? resolvePlotBoxStyle({ ...plotBox, framePlotHeight }, breakpoint)
-    : undefined;
+    : fillsFrame && framePlotHeight === "fill"
+      ? { height: "100%" }
+      : undefined;
   return createElement(
     "div",
     {
@@ -358,6 +397,15 @@ export const ChartPlotBox = forwardRef<
 >(function ChartPlotBox({ plotBox, style, ...props }, ref) {
   const breakpoint = useChartBreakpoint();
   const framePlotHeight = useContext(ChartFramePlotHeightContext);
+  useRegisterFramePlotConsumer(true);
   const boxStyle = resolvePlotBoxStyle({ ...plotBox, framePlotHeight }, breakpoint);
-  return createElement("div", { ...props, ref, style: { ...boxStyle, ...style } });
+  // In a fill-host tile this box is `height: 100%` of a flex column that also
+  // holds the legend, so it must be allowed to shrink (only there, so the DOM
+  // outside a tile is unchanged).
+  const fillShrink = framePlotHeight === "fill" ? { minHeight: 0 } : undefined;
+  return createElement("div", {
+    ...props,
+    ref,
+    style: { ...boxStyle, ...fillShrink, ...style },
+  });
 });

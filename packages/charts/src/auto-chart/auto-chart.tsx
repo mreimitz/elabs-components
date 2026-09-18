@@ -75,6 +75,7 @@ import { ChartFallback } from "../charts/chart-fallback";
 import {
   DEFAULT_CHART_PLOT_HEIGHT,
   resolvePlotBoxStyle,
+  useChartFramePlotHeight,
   warnChartOnce,
   type ChartPlotHeight,
   type Responsive,
@@ -972,10 +973,20 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   const effectivePlotHeight = plotHeight ?? height;
   // Loading and fallback boxes reserve the box the chart will draw, at the
   // wide tier (they render before any chart measures its container).
+  const framePlotHeight = useChartFramePlotHeight();
   const fallbackStyle = resolvePlotBoxStyle(
-    { plotHeight: effectivePlotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT },
+    {
+      plotHeight: effectivePlotHeight,
+      defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT,
+      framePlotHeight,
+    },
     "wide",
   );
+  // In a fill-host frame (a dashboard tile) the chart's plot box is
+  // `height: 100%`, which only resolves if every box between the frame body and
+  // the plot is definite — this root included. The chart then takes what the
+  // title and legend leave (`flex-1 min-h-0`).
+  const fillsFrame = framePlotHeight === "fill" && effectivePlotHeight === undefined;
   // Resolved here, above every early return, because it is a hook. `renderChart`
   // is a plain function and receives the result.
   const yFormat = useChartValueFormatter(spec.valueFormat, spec.currency);
@@ -1132,7 +1143,11 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   }
 
   return (
-    <div ref={ref} className={cn("flex w-full flex-col", className)} {...props}>
+    <div
+      ref={ref}
+      className={cn("flex w-full flex-col", fillsFrame && "h-full min-h-0", className)}
+      {...props}
+    >
       {title ? <p className="mb-1 text-subtitle text-foreground">{title}</p> : null}
       {/*
        * The `try/catch` above only covers errors thrown while BUILDING this
@@ -1144,7 +1159,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       <AutoChartErrorBoundary
         fallback={<ChartFallback message="Unable to display this chart" style={fallbackStyle} />}
       >
-        {chartNode}
+        {fillsFrame ? <div className="min-h-0 flex-1">{chartNode}</div> : chartNode}
       </AutoChartErrorBoundary>
       {showLegend ? <AutoLegend series={legendItems} /> : null}
     </div>

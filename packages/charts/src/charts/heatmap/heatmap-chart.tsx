@@ -1128,6 +1128,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
       aria-label={ariaLabel}
       className={cn("flex w-full flex-col gap-2", className)}
       data-slot="heatmap-chart"
+      fillsFrame
       ref={ref}
       role={role}
       style={style}
