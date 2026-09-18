@@ -23,7 +23,7 @@ import { resolveDashTailBounds, usePathStrokeMetrics } from "./path-stroke-utils
 import { SeriesDashTailOverlay } from "./series-dash-tail-overlay";
 import { SeriesHighlightLayer } from "./series-highlight-layer";
 import { SeriesHoverDim } from "./series-hover-dim";
-import { SeriesMarkers } from "./series-markers";
+import { resolveSeriesSymbols, SeriesMarkers, type SeriesSymbolsSpec } from "./series-markers";
 import {
   type MarkerVariant,
   resolveMarkerVariantFill,
@@ -103,6 +103,13 @@ const PEAK_MARKER_RADIUS = 6;
 /** Vertical offset (px) of a peak's `HaloText` value label above its marker. */
 const PEAK_LABEL_OFFSET = 12;
 
+/**
+ * Minimum width (px) of the invisible hit-stroke `focusOnHover` (RM-112)
+ * renders on top of the visible line — the real stroke (`strokeWidth`,
+ * default 2.5) is too thin a target for a pointer to land on reliably.
+ */
+const FOCUS_HOVER_HIT_STROKE_MIN_WIDTH = 8;
+
 export interface LineProps {
   /** Key in data to use for y values */
   dataKey: string;
@@ -158,12 +165,7 @@ export interface LineProps {
    * `shape`/`size` map onto `markers.shape`/`markers.radius`. Default unset:
    * no symbols — today's behaviour, driven by `showMarkers`/`markers` alone.
    */
-  symbols?: {
-    placement?: "all" | "ends" | "first" | "last";
-    shape?: SeriesPointMarkerStyle["shape"];
-    style?: "filled" | "hollow";
-    size?: number;
-  };
+  symbols?: SeriesSymbolsSpec;
   /**
    * How this line draws a non-numeric sample (RM-112). Overrides the
    * container-level `LineChart nulls` default. Unset — read the container
@@ -306,24 +308,21 @@ export function Line({
   const useDecorationDash = high && isPaletteFill(stroke);
   const bpDashArray = useDecorationDash ? seriesDashArray(resolvedIndex) : undefined;
   const bpMarkerShape = useDecorationDash ? seriesMarkerShape(resolvedIndex) : undefined;
-  // Symbols (RM-112): placement/style wrapper over showMarkers/markers. Skips
-  // rendering on a dense, regularly-sampled series when placement wasn't
-  // explicitly requested — the blog's "avoid symbols on regular dense
-  // intervals" — so setting `symbols={{ placement: "all" }}` still always
-  // renders, only the ambient default backs off.
-  const symbolsEnabled =
-    symbols !== undefined && (symbols.placement !== undefined || data.length <= 12);
-  const symbolsPlacement = symbols?.placement ?? "ends";
-  const symbolsStyle = symbols?.style ?? "hollow";
+  // Symbols (RM-112): placement/style wrapper over showMarkers/markers,
+  // resolved by the one `Line`/`Area`-shared helper (`series-markers.tsx`).
+  const resolvedSymbols = useMemo(
+    () => resolveSeriesSymbols(symbols, data.length),
+    [symbols, data.length],
+  );
   const symbolsFill =
-    symbolsStyle === "hollow" ? chartCssVars.background : (markers?.fill ?? stroke);
+    resolvedSymbols?.style === "hollow" ? chartCssVars.background : (markers?.fill ?? stroke);
   const symbolsStroke =
-    symbolsStyle === "hollow"
+    resolvedSymbols?.style === "hollow"
       ? (markers?.stroke ?? stroke)
       : (markers?.stroke ?? markers?.fill ?? stroke);
 
   // At high decoration, force markers on (with shape differentiation)
-  const effectiveShowMarkers = showMarkers || useDecorationDash || symbolsEnabled;
+  const effectiveShowMarkers = showMarkers || useDecorationDash || resolvedSymbols !== null;
 
   // `nulls="connect"` (RM-112) filters the missing samples out of the data
   // FED to `LinePath` — the path draws straight across the gap, exactly as
@@ -488,6 +487,31 @@ export function Line({
           xAccessor={xAccessor}
           xScale={xScale}
         />
+
+        {seriesMode.focusOnHover ? (
+          // Invisible, wide hit target for `focusOnHover` (RM-112) — the
+          // visible stroke above is too thin to hover reliably. Rendered
+          // LAST (topmost) within this series' own <g> so it sits above the
+          // shared tooltip-tracking rect underneath (`time-series-chart-shell.tsx`
+          // renders that rect FIRST, i.e. earlier == lower in paint order),
+          // and pointer events still bubble to that rect's ancestor listener
+          // — nothing here calls `stopPropagation`, so the chart-wide
+          // crosshair/tooltip tracking keeps working over a focused line.
+          // Only rendered when `focusOnHover` is set, so a chart that never
+          // opts in keeps byte-identical DOM.
+          <LinePath
+            aria-hidden="true"
+            curve={resolvedCurve}
+            data={lineRenderData}
+            defined={resolvedNulls === "gap" ? isDefined : undefined}
+            pointerEvents="stroke"
+            stroke="transparent"
+            strokeLinecap="round"
+            strokeWidth={Math.max(FOCUS_HOVER_HIT_STROKE_MIN_WIDTH, strokeWidth + 6)}
+            x={(d) => xScale(xAccessor(d)) ?? 0}
+            y={getY}
+          />
+        ) : null}
       </SeriesHoverDim>
 
       {effectiveShowMarkers ? (
@@ -495,11 +519,11 @@ export function Line({
           animate={animate}
           dataKey={dataKey}
           {...markers}
-          fill={symbolsEnabled ? symbolsFill : (markers?.fill ?? stroke)}
-          placement={symbolsEnabled ? symbolsPlacement : undefined}
-          radius={symbols?.size ?? markers?.radius}
-          shape={bpMarkerShape ?? symbols?.shape ?? markers?.shape}
-          stroke={symbolsEnabled ? symbolsStroke : (markers?.stroke ?? markers?.fill ?? stroke)}
+          fill={resolvedSymbols ? symbolsFill : (markers?.fill ?? stroke)}
+          placement={resolvedSymbols?.placement}
+          radius={resolvedSymbols?.size ?? markers?.radius}
+          shape={bpMarkerShape ?? resolvedSymbols?.shape ?? markers?.shape}
+          stroke={resolvedSymbols ? symbolsStroke : (markers?.stroke ?? markers?.fill ?? stroke)}
         />
       ) : null}
 
