@@ -8,3 +8,5 @@ export * from "./use-case-card";
 export * from "./stats-band";
 export * from "./cta-section";
 export * from "./logo-strip";
+// CommandChip, TrustStrip — RM-094 (CommandChip lives in @elabs-ai/components-ui: it is client code)
+export * from "./trust-strip";
