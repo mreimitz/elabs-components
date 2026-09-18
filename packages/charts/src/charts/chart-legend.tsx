@@ -3,9 +3,10 @@
 import { useId, useMemo, useRef, type ReactNode } from "react";
 import { useChartConfig } from "./chart-config-context";
 import { cn, useLocale } from "@elabs-ai/components-ui";
-import { useChartFormatters } from "./chart-formatters";
+import { useChartValueSetFormatter } from "./chart-formatters";
 import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";
+import type { ChartValueFormat } from "./value-format";
 
 export interface LegendItem {
   /** Display label */
@@ -52,8 +53,18 @@ export interface ChartLegendProps {
   showValue?: boolean;
   /** Show percentage value. Default: true when showProgress is true */
   showPercentage?: boolean;
-  /** Format function for displaying values. Default: locale-aware (LocaleProvider). */
+  /** Format function for displaying values. Overrides `valueFormat` entirely when set. */
   formatValue?: (value: number) => string;
+  /**
+   * How to format `value`/`maxValue` (RM-109) — a preset or the object form
+   * (`{ decimals, abbreviate, sign, prefix, suffix, … }`, `value-format.ts`).
+   * Resolved as a SET across every item (#250, `useChartValueSetFormatter`)
+   * so the legend never mixes "1K" beside "400". Default: locale-aware plain
+   * grouping (`intFmt`), unchanged from before this prop existed.
+   */
+  valueFormat?: ChartValueFormat;
+  /** ISO 4217 code for `valueFormat: "currency"`. Falls back to `ChartConfigProvider`, then `"USD"`. */
+  currency?: string;
   /** Title shown above the legend */
   title?: string;
   /** Additional class name for the container */
@@ -239,6 +250,8 @@ export function ChartLegend({
   showValue = true,
   showPercentage,
   formatValue,
+  valueFormat,
+  currency,
   title,
   className = "",
   titleClassName = "text-sm font-semibold",
@@ -250,14 +263,19 @@ export function ChartLegend({
   // Default showPercentage to true when showProgress is true
   const displayPercentage = showPercentage ?? showProgress;
 
-  // Locale-aware defaults (were the host-locale `intFmt` and a bare
-  // `toFixed(0)`) — bound to the active `LocaleProvider` locale so a legend
-  // under `<LocaleProvider locale="de-DE">` reads "1.234" / "42 %", not
-  // whatever the host machine happens to be set to. A caller-supplied
-  // `formatValue` still wins outright.
-  const { intFmt } = useChartFormatters();
+  // Locale-aware defaults, bound to the active `LocaleProvider` locale so a
+  // legend under `<LocaleProvider locale="de-DE">` reads "1.234" / "42 %",
+  // not whatever the host machine happens to be set to. `valueFormat`
+  // (RM-109, preset or object spec) resolves as a SET across every item's
+  // `value` (#250) so the legend never mixes "1K" beside "400"; a
+  // caller-supplied `formatValue` still wins outright.
   const { locale } = useLocale();
-  const resolvedFormatValue = formatValue ?? intFmt;
+  const setFormatValue = useChartValueSetFormatter(
+    items.map((item) => item.value),
+    valueFormat,
+    currency,
+  );
+  const resolvedFormatValue = formatValue ?? setFormatValue;
   const formatPercentage = useMemo(() => {
     const fmt = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
     return (value: number) => fmt.format(value / 100);

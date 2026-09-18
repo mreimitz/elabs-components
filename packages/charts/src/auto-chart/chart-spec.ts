@@ -7,6 +7,7 @@
  */
 
 import type { ChartValueFormat } from "../charts/value-format";
+import type { DateFormatPreset } from "../charts/date-format";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
 
 /**
@@ -218,6 +219,16 @@ export interface ChartSpec {
    * locale — the reader's language does not tell you what the money is.
    */
   currency?: string;
+
+  /**
+   * How to format an x-axis Date tick (RM-109) — one rung of the
+   * `date-format.ts` ladder (`"year"|"yearShort"|"month"|"day"|"weekday"|
+   * "hour"|"minute"`). Default: the ladder picks a rung from the series'
+   * own span and tick count (`dateFormatForSpan`) — a 36-hour series reads
+   * hours, a decade-long one reads years. Ignored on a non-time x-scale
+   * (category/linear), same as every other Date-shaped axis input.
+   */
+  dateFormat?: DateFormatPreset;
 
   /**
    * Which spec fields a host's selection resolves against (RM-073). Defaults:
