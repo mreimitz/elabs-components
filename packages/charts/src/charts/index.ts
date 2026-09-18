@@ -788,3 +788,11 @@ export {
   useChartBreakpoint,
   useResponsiveValue,
 } from "./chart-breakpoint";
+// Axes — RM-108
+export { type AxisTitlePlacement } from "./axis-title";
+export { type CategoryAxisFit } from "./category-axis-plan";
+export { type GridMode } from "./grid";
+export { type AxisTickCount } from "./tick-targets";
+export { type XAxisOrientation } from "./x-axis";
+export { type AxisLabelPlacement } from "./y-axis";
+export { type AxisDomain, type AxisDomainBound, type ValueScaleType } from "./y-axis-scales";
