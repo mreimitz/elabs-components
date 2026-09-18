@@ -24,6 +24,7 @@ import {
 import { SeriesMarkers, type SeriesMarkersProps } from "./series-markers";
 import { StaticSeriesPointMarker } from "./series-point-marker";
 import { isPaletteFill, type SeriesMarkerShape, seriesMarkerShape } from "./series-pattern";
+import { PointLabels, type ScatterLabels } from "./labels/point-labels";
 import { TrendLine } from "./trend-line";
 import { useHighDecoration } from "./use-high-decoration";
 import { Y_AXIS_DEFAULT_TICK_COUNT } from "./y-axis-ticks";
@@ -121,6 +122,19 @@ export interface ScatterProps extends Omit<SeriesMarkersProps, "animate"> {
    * it fits in and its accuracy caveat for `"log"` on a `xScale="linear"` chart.
    */
   trend?: "linear" | "log" | false;
+  /**
+   * Point labels with collision avoidance (RM-110): `{ key, mode?, priority? }`
+   * — `key` is the row field holding the label text; `mode` `"auto"`
+   * (default: thinned by plot area, fewer at narrow widths) | `"all"` | a
+   * predicate; `priority` decides who survives (default: the y value).
+   * Wave-1 integration (RM-115 × RM-110): when `sizeKey` is set and `labels`
+   * does not supply its own `priority`, the bubble's OWN `sizeKey` value
+   * becomes the priority reader — the biggest bubbles keep their labels
+   * first, matching what the eye already reads as "important" on a bubble
+   * chart. Every label that is not painted is restated `sr-only` by the
+   * chart. Unlike `labelExtremes` it never fades the unlabelled points.
+   */
+  labels?: ScatterLabels;
 }
 
 const DEFAULT_Y_GRADIENT_FROM = "var(--color-red-500)";
@@ -532,6 +546,7 @@ export function Scatter({
   colorBy,
   shapeBy,
   trend = false,
+  labels,
 }: ScatterProps) {
   const stable = useChartStable();
   const { data, xScale, xAccessor, innerHeight, lines, dateLabels } = stable;
@@ -620,6 +635,20 @@ export function Scatter({
   const shapeOf = shapeBy
     ? (p: ScatterPointDatum) => shapeByResolution.shapeOf(p.d) ?? bpShape
     : undefined;
+
+  // Wave-1 integration (RM-115 × RM-110): a bubble's OWN sizeKey value is the
+  // natural label priority — the biggest bubbles keep their labels first.
+  // Only defaults when `labels` sets no `priority` of its own.
+  const effectiveLabels = useMemo(() => {
+    if (!labels || labels.priority || !sizeKey) return labels;
+    return {
+      ...labels,
+      priority: (d: Record<string, unknown>) => {
+        const v = Number(d[sizeKey]);
+        return Number.isFinite(v) ? v : 0;
+      },
+    };
+  }, [labels, sizeKey]);
 
   // A jittered/categorical position, per-point (`labelExtremes`) opacity, or a
   // per-point size/colour/shape encoding is more than `SeriesMarkers` can
@@ -711,6 +740,15 @@ export function Scatter({
           radius={radius}
           ringGap={ringGap}
           strokeWidth={strokeWidth}
+        />
+      ) : null}
+
+      {effectiveLabels ? (
+        <PointLabels
+          labels={effectiveLabels}
+          points={points}
+          radius={sizeKey ? sizeRange[1] : radius}
+          seriesKey={dataKey}
         />
       ) : null}
     </>

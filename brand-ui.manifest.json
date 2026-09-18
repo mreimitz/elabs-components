@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T21:12:57.993Z",
+  "generatedAt": "2026-09-18T22:00:14.700Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13522,11 +13522,6 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
-          "name": "CustomShapes",
-          "kind": "value",
-          "module": "packages/charts/src/charts/custom-shapes.tsx"
-        },
-        {
           "name": "DateTicker",
           "kind": "value",
           "module": "packages/charts/src/charts/tooltip/index.ts"
@@ -13562,6 +13557,11 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "DEFAULT_DESCRIBE_SERIES_PHRASES",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-a11y.tsx"
+        },
+        {
           "name": "DEFAULT_FORCE_SEED",
           "kind": "value",
           "module": "packages/charts/src/charts/network/index.ts"
@@ -13580,11 +13580,6 @@
           "name": "DEFAULT_MAX_INTERACTIVE_DATAPOINTS",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
-        },
-        {
-          "name": "DEFAULT_SCATTER_SIZE_RANGE",
-          "kind": "value",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
         },
         {
           "name": "DEFAULT_WHISKER_MULTIPLIER",
@@ -14102,11 +14097,6 @@
           "module": "packages/charts/src/charts/scatter.tsx"
         },
         {
-          "name": "SCATTER_SHAPE_SOFT_CAP",
-          "kind": "value",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
-        },
-        {
           "name": "ScatterChart",
           "kind": "value",
           "module": "packages/charts/src/charts/scatter-chart.tsx"
@@ -14135,6 +14125,11 @@
           "name": "SELECTION_EXCLUDED_OPACITY",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
+          "name": "SERIES_LABEL_INK_MIX",
+          "kind": "value",
+          "module": "packages/charts/src/charts/labels/series-label-ink.ts"
         },
         {
           "name": "SeriesBar",
@@ -14200,11 +14195,6 @@
           "name": "TreemapChart",
           "kind": "value",
           "module": "packages/charts/src/charts/treemap/index.ts"
-        },
-        {
-          "name": "TrendLine",
-          "kind": "value",
-          "module": "packages/charts/src/charts/trend-line.tsx"
         },
         {
           "name": "UNIT_CHART_GROUP_STAGGER_MS",
@@ -14317,6 +14307,11 @@
           "name": "useChartLegendHover",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-legend-hover.tsx"
+        },
+        {
+          "name": "useChartSeriesKey",
+          "kind": "value",
+          "module": "packages/charts/src/charts/labels/use-chart-labels.ts"
         },
         {
           "name": "useChartStable",
@@ -14480,6 +14475,10 @@
           "module": "packages/charts/src/auto-chart/auto-chart.tsx"
         },
         {
+          "name": "AutoSummaryKind",
+          "module": "packages/charts/src/charts/chart-a11y.tsx"
+        },
+        {
           "name": "AxisDomain",
           "module": "packages/charts/src/charts/y-axis-scales.ts"
         },
@@ -14521,6 +14520,14 @@
         },
         {
           "name": "BarProps",
+          "module": "packages/charts/src/charts/bar.tsx"
+        },
+        {
+          "name": "BarShowValues",
+          "module": "packages/charts/src/charts/bar.tsx"
+        },
+        {
+          "name": "BarShowValuesSpec",
           "module": "packages/charts/src/charts/bar.tsx"
         },
         {
@@ -14732,6 +14739,10 @@
           "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
         {
+          "name": "ChartLabelsSpec",
+          "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
           "name": "ChartLegendProps",
           "module": "packages/charts/src/charts/chart-legend.tsx"
         },
@@ -14804,6 +14815,10 @@
           "module": "packages/charts/src/charts/chart-selection.ts"
         },
         {
+          "name": "ChartSeriesKeyItem",
+          "module": "packages/charts/src/charts/labels/use-chart-labels.ts"
+        },
+        {
           "name": "ChartSeriesSpec",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
@@ -14868,6 +14883,10 @@
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
+          "name": "ChartValueLabels",
+          "module": "packages/charts/src/charts/labels/use-chart-labels.ts"
+        },
+        {
           "name": "ChartXScaleType",
           "module": "packages/charts/src/charts/x-scale-mode.ts"
         },
@@ -14920,16 +14939,28 @@
           "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
         {
-          "name": "CustomShapesProps",
-          "module": "packages/charts/src/charts/custom-shapes.tsx"
-        },
-        {
           "name": "DateTickerProps",
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
           "name": "DescribeBulletChartInput",
           "module": "packages/charts/src/charts/bullet-chart.tsx"
+        },
+        {
+          "name": "DescribeSeriesItem",
+          "module": "packages/charts/src/charts/chart-a11y.tsx"
+        },
+        {
+          "name": "DescribeSeriesNotable",
+          "module": "packages/charts/src/charts/chart-a11y.tsx"
+        },
+        {
+          "name": "DescribeSeriesOptions",
+          "module": "packages/charts/src/charts/chart-a11y.tsx"
+        },
+        {
+          "name": "DescribeSeriesPhrases",
+          "module": "packages/charts/src/charts/chart-a11y.tsx"
         },
         {
           "name": "DistributionBin",
@@ -15226,6 +15257,34 @@
         {
           "name": "KdeResult",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "LabelAnchorSide",
+          "module": "packages/charts/src/charts/labels/label-layout.ts"
+        },
+        {
+          "name": "LabelBox",
+          "module": "packages/charts/src/charts/labels/label-layout.ts"
+        },
+        {
+          "name": "LabelLayoutOptions",
+          "module": "packages/charts/src/charts/labels/label-layout.ts"
+        },
+        {
+          "name": "LabelLayoutResult",
+          "module": "packages/charts/src/charts/labels/label-layout.ts"
+        },
+        {
+          "name": "LabelPlacement",
+          "module": "packages/charts/src/charts/labels/label-layout.ts"
+        },
+        {
+          "name": "LabelPlacementStatus",
+          "module": "packages/charts/src/charts/labels/label-layout.ts"
+        },
+        {
+          "name": "LabelRect",
+          "module": "packages/charts/src/charts/labels/label-layout.ts"
         },
         {
           "name": "LeaderDash",
@@ -15640,36 +15699,12 @@
           "module": "packages/charts/src/charts/scatter-chart.tsx"
         },
         {
-          "name": "ScatterColorByConfig",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
-        },
-        {
-          "name": "ScatterColorByResolution",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
-        },
-        {
-          "name": "ScatterEncodingLegendItem",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
+          "name": "ScatterLabels",
+          "module": "packages/charts/src/charts/labels/point-labels.tsx"
         },
         {
           "name": "ScatterProps",
           "module": "packages/charts/src/charts/scatter.tsx"
-        },
-        {
-          "name": "ScatterShapeByConfig",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
-        },
-        {
-          "name": "ScatterShapeByResolution",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
-        },
-        {
-          "name": "ScatterShapeSpec",
-          "module": "packages/charts/src/charts/custom-shapes.tsx"
-        },
-        {
-          "name": "ScatterShapeStyle",
-          "module": "packages/charts/src/charts/custom-shapes.tsx"
         },
         {
           "name": "SegmentBackgroundProps",
@@ -15690,6 +15725,10 @@
         {
           "name": "SeriesBarProps",
           "module": "packages/charts/src/charts/series-bar.tsx"
+        },
+        {
+          "name": "SeriesLabelMode",
+          "module": "packages/charts/src/charts/labels/use-chart-labels.ts"
         },
         {
           "name": "SeriesMarkerShape",
@@ -15800,18 +15839,6 @@
           "module": "packages/charts/src/charts/tree-chart.tsx"
         },
         {
-          "name": "TrendFit",
-          "module": "packages/charts/src/charts/trend-line.tsx"
-        },
-        {
-          "name": "TrendLineProps",
-          "module": "packages/charts/src/charts/trend-line.tsx"
-        },
-        {
-          "name": "TrendPoint",
-          "module": "packages/charts/src/charts/trend-line.tsx"
-        },
-        {
           "name": "UnitArithmetic",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -15862,6 +15889,10 @@
         {
           "name": "ValueFormat",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
+          "name": "ValueLabelPlacement",
+          "module": "packages/charts/src/charts/labels/use-chart-labels.ts"
         },
         {
           "name": "ValueScaleType",
@@ -16138,6 +16169,10 @@
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
+          "name": "describeSeries",
+          "module": "packages/charts/src/charts/chart-a11y.tsx"
+        },
+        {
           "name": "detectMomentum",
           "module": "packages/charts/src/charts/live-line.tsx"
         },
@@ -16168,10 +16203,6 @@
         {
           "name": "fitToBox",
           "module": "packages/charts/src/charts/network/index.ts"
-        },
-        {
-          "name": "fitTrend",
-          "module": "packages/charts/src/charts/trend-line.tsx"
         },
         {
           "name": "fiveNumberSummary",
@@ -16286,6 +16317,10 @@
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
+          "name": "layoutLabels",
+          "module": "packages/charts/src/charts/labels/label-layout.ts"
+        },
+        {
           "name": "layoutRows",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -16386,10 +16421,6 @@
           "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
-          "name": "resolveColorBy",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
-        },
-        {
           "name": "resolveDensityForBreakpoint",
           "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
@@ -16446,14 +16477,6 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
-          "name": "resolveScatterSizeRadius",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
-        },
-        {
-          "name": "resolveShapeBy",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
-        },
-        {
           "name": "resolveYAxisTickCount",
           "module": "packages/charts/src/charts/y-axis-ticks.ts"
         },
@@ -16474,10 +16497,6 @@
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
         {
-          "name": "scatterSizeDomainMax",
-          "module": "packages/charts/src/charts/scatter-encodings.ts"
-        },
-        {
           "name": "seededRandomSource",
           "module": "packages/charts/src/charts/network/index.ts"
         },
@@ -16492,6 +16511,10 @@
         {
           "name": "seriesDashArray",
           "module": "packages/charts/src/charts/series-pattern.tsx"
+        },
+        {
+          "name": "seriesLabelInk",
+          "module": "packages/charts/src/charts/labels/series-label-ink.ts"
         },
         {
           "name": "seriesMarkerShape",
@@ -16540,10 +16563,6 @@
         {
           "name": "thinToDensity",
           "module": "packages/charts/src/charts/chart-config-context.tsx"
-        },
-        {
-          "name": "trendDirection",
-          "module": "packages/charts/src/charts/trend-line.tsx"
         },
         {
           "name": "unitMarkDelayMs",
@@ -16711,6 +16730,24 @@
               "optional": true,
               "type": "boolean",
               "description": "Ring the peak sample with a filled dot + value label (RM-029). Only takes effect when this `Area` renders as a `HairlineArea` — a single-series chart under high decoration (`data-decoration` ≥ 8). Default: false."
+            },
+            {
+              "name": "name",
+              "optional": true,
+              "type": "string",
+              "description": "Series display name — the text of its end label, key item and auto summary (RM-110). Default: `dataKey`."
+            },
+            {
+              "name": "seriesLabel",
+              "optional": true,
+              "type": "Responsive<SeriesLabelMode>",
+              "description": "Where the series names itself (RM-110): `\"end\"` | `\"key\"` | `\"none\"`, or a `Responsive` value. Default: as `LineProps.seriesLabel` (two or more series, and only for a series with a real `name`). Read by the chart shell, which reserves the margin and places every label in one pass."
+            },
+            {
+              "name": "valueLabels",
+              "optional": true,
+              "type": "ChartValueLabels",
+              "description": "Automatic value labels (RM-110) — see `LineProps.valueLabels`."
             }
           ]
         },
@@ -18618,22 +18655,6 @@
             }
           ]
         },
-        "CustomShapes": {
-          "extends": [],
-          "props": [
-            {
-              "name": "shapes",
-              "optional": false,
-              "type": "ScatterShapeSpec[]"
-            },
-            {
-              "name": "yAxisId",
-              "optional": true,
-              "type": "string | number",
-              "description": "The y-axis these shapes' `y` values belong to when a chart has several."
-            }
-          ]
-        },
         "DistributionChart": {
           "extends": [
             "ChartInteractionProps",
@@ -19730,6 +19751,24 @@
               "optional": true,
               "type": "number | { count: number; minGap?: number }",
               "description": "Label the top-k highest points on the line (RM-028) — lieflat's \"top-2/top-3 peaks, enlarged and labelled\" rule (L3 Barcode Lollipop). A bare number is the peak count at the default {@link DEFAULT_PEAK_MIN_GAP} -sample spacing; pass `{ count, minGap }` to override spacing. A peak within `minGap` samples of an already-picked (necessarily higher — peaks are picked highest-first) peak is skipped — \"the barcode lesson: adjacent peaks must be forced apart\" — so two close peaks label only the taller one. Uses the exported {@link spacedTopK} helper. Default: unset — no peak labels, today's behaviour."
+            },
+            {
+              "name": "name",
+              "optional": true,
+              "type": "string",
+              "description": "Series display name — the text of its end label, key item and auto summary (RM-110). Default: `dataKey`."
+            },
+            {
+              "name": "seriesLabel",
+              "optional": true,
+              "type": "Responsive<SeriesLabelMode>",
+              "description": "Where the series names itself (RM-110): `\"end\"` — a label at its last point (the chart reserves right margin for it); `\"key\"` — a swatch + name in a key row above the plot; `\"none\"`. Takes a `Responsive` value, e.g. `{ base: \"end\", narrow: \"key\" }`. Default: in a chart with two or more `Line`/`Area` series, a series whose `name` is set and differs from its `dataKey` gets `{ base: \"end\", narrow: \"key\" }` when a `ChartLegend` is composed, else `\"end\"`; every other series gets `\"none\"`. An explicit value always wins. Colliding end labels are nudged apart, or dropped and restated `sr-only`."
+            },
+            {
+              "name": "valueLabels",
+              "optional": true,
+              "type": "ChartValueLabels",
+              "description": "Automatic value labels (RM-110): `{ placement: \"first\" | \"last\" | \"all\" | \"peaks\", count?, outline?, matchColor?, format? }`. Placed with every other label through one collision pass — a label that cannot be placed is dropped and restated `sr-only`. `labelPeaks={n}` is the alias `{ placement: \"peaks\", count: n }` (exact, uncompacted numbers)."
             },
             {
               "name": "dashFromIndex",
@@ -21373,34 +21412,10 @@
               "description": "Highlight matching points with a non-color ring (`PeakRing` — shape, not hue, carries the emphasis; see `.claude/rules/accessibility.md`). A string names a data field read as a truthy flag (`d[highlightKey]`); a function is called with the row and returns whether it is highlighted."
             },
             {
-              "name": "sizeKey",
+              "name": "labels",
               "optional": true,
-              "type": "string",
-              "description": "Bubble size by a numeric column (RM-115) — `d[sizeKey]` scales the marker's radius by `sqrt(value / max)` (honesty gate: AREA, not radius, carries the value — see `areaRadius`). Rows missing `sizeKey` (or the whole series, when `sizeKey` is set but every value is non-numeric) draw at `sizeRange[0]`. Unset (default): every marker draws at `radius`."
-            },
-            {
-              "name": "sizeRange",
-              "optional": true,
-              "type": "[number, number]",
-              "description": "`[minRadius, maxRadius]` in px for `sizeKey`. Default: `[4, 22]`."
-            },
-            {
-              "name": "colorBy",
-              "optional": true,
-              "type": "ScatterColorByConfig",
-              "description": "Colour each point by a fixed/categorical/numeric column (RM-115) instead of the series' own colour. A row whose `colorBy.key` is missing/unusable keeps drawing in the series' own `fill`. See `scatter-encodings.ts`' `resolveColorBy` — a consumer building a legend (RM-118) calls it with the same `data`/`colorBy` to get the identical colour stops."
-            },
-            {
-              "name": "shapeBy",
-              "optional": true,
-              "type": "ScatterShapeByConfig",
-              "description": "Shape each point by a categorical column (RM-115), cycling through the series-marker ramp (≤ 6 shapes; a 7th+ distinct value repeats the last shape). See `resolveShapeBy` for the legend a consumer (RM-118) reads."
-            },
-            {
-              "name": "trend",
-              "optional": true,
-              "type": "\"linear\" | \"log\" | false",
-              "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart."
+              "type": "ScatterLabels",
+              "description": "Point labels with collision avoidance (RM-110): `{ key, mode?, priority? }` — `key` is the row field holding the label text; `mode` `\"auto\"` (default: thinned by plot area, fewer at narrow widths) | `\"all\"` | a predicate; `priority` decides who survives (default: the y value). Every label that is not painted is restated `sr-only` by the chart. Unlike `labelExtremes` it never fades the unlabelled points."
             }
           ]
         },
@@ -21763,34 +21778,6 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT."
-            }
-          ]
-        },
-        "TrendLine": {
-          "extends": [],
-          "props": [
-            {
-              "name": "dataKey",
-              "optional": false,
-              "type": "string",
-              "description": "The series' value field — same `dataKey` the sibling `Scatter` reads."
-            },
-            {
-              "name": "kind",
-              "optional": true,
-              "type": "\"linear\" | \"log\"",
-              "description": "Least-squares model. Default: `\"linear\"`."
-            },
-            {
-              "name": "yAxisId",
-              "optional": true,
-              "type": "string | number",
-              "description": "The y-axis this series belongs to when a chart has several."
-            },
-            {
-              "name": "strokeWidth",
-              "optional": true,
-              "type": "number"
             }
           ]
         },
