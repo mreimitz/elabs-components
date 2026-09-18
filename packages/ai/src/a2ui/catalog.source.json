@@ -1,0 +1,569 @@
+{
+  "$comment": "A2UI catalog SOURCE (D2 — the generative-UI path). Hand-authored: which @elabs-ai/components-ui components an agent may name in a surface, which may hold children, and which events a node's `on` map can bind. `pnpm gen` (packages/cli/scripts/gen-a2ui-catalog.mjs) merges each entry with the manifest's prop table + cva variants into core/catalog.generated.ts. Two entries are `builtin` layout nodes the renderer draws itself. Keep the list small and real: a type here is a promise an agent will rely on.",
+  "version": "1",
+  "types": {
+    "Stack": {
+      "builtin": true,
+      "children": true,
+      "summary": "Vertical or horizontal flex group. The default container — put siblings in a Stack, never bare.",
+      "props": {
+        "direction": {
+          "enum": ["column", "row"],
+          "default": "column"
+        },
+        "gap": {
+          "enum": ["none", "xs", "sm", "md", "lg"],
+          "default": "md"
+        },
+        "align": {
+          "enum": ["start", "center", "end", "stretch"],
+          "default": "stretch"
+        },
+        "justify": {
+          "enum": ["start", "center", "end", "between"],
+          "default": "start"
+        },
+        "wrap": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "Grid": {
+      "builtin": true,
+      "children": true,
+      "summary": "Responsive CSS grid, 1–4 equal columns (collapses to one column on narrow screens).",
+      "props": {
+        "columns": {
+          "enum": [1, 2, 3, 4],
+          "default": 2
+        },
+        "gap": {
+          "enum": ["none", "xs", "sm", "md", "lg"],
+          "default": "md"
+        }
+      }
+    },
+    "Heading": {
+      "children": true,
+      "summary": "Section heading; `level` sets the HTML rank (1–6), `size` the type role.",
+      "props": {
+        "level": {
+          "enum": [1, 2, 3, 4, 5, 6],
+          "default": 2
+        }
+      }
+    },
+    "Text": {
+      "children": true,
+      "summary": "A paragraph or inline run of text with a type role and tone."
+    },
+    "Card": {
+      "children": true,
+      "summary": "The one generic surface — compose CardHeader / CardContent / CardFooter inside."
+    },
+    "CardHeader": {
+      "children": true
+    },
+    "CardTitle": {
+      "children": true
+    },
+    "CardDescription": {
+      "children": true
+    },
+    "CardContent": {
+      "children": true
+    },
+    "CardFooter": {
+      "children": true
+    },
+    "CardAction": {
+      "children": true,
+      "summary": "The header's trailing action slot (a Button, a Badge)."
+    },
+    "SectionHeader": {
+      "summary": "Title + description + optional actions above a region.",
+      "props": {
+        "title": {
+          "type": "node",
+          "required": true
+        },
+        "description": {
+          "type": "node"
+        },
+        "eyebrow": {
+          "type": "node"
+        },
+        "actions": {
+          "type": "node"
+        }
+      }
+    },
+    "Separator": {
+      "props": {
+        "orientation": {
+          "enum": ["horizontal", "vertical"],
+          "default": "horizontal"
+        }
+      }
+    },
+    "Badge": {
+      "children": true
+    },
+    "StatusBadge": {
+      "summary": "A closed status vocabulary with icon + text (never colour alone).",
+      "props": {
+        "status": {
+          "enum": [
+            "pending",
+            "running",
+            "complete",
+            "awaiting-approval",
+            "denied",
+            "failed",
+            "skipped"
+          ],
+          "required": true
+        },
+        "hideIcon": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Alert": {
+      "children": true,
+      "summary": "Compose AlertTitle + AlertDescription inside.",
+      "props": {
+        "variant": {
+          "enum": ["default", "destructive", "success", "warning", "info"]
+        }
+      }
+    },
+    "AlertTitle": {
+      "children": true
+    },
+    "AlertDescription": {
+      "children": true
+    },
+    "Progress": {
+      "props": {
+        "value": {
+          "type": "number",
+          "required": true
+        },
+        "max": {
+          "type": "number"
+        },
+        "aria-label": {
+          "type": "string"
+        }
+      }
+    },
+    "MetricCard": {
+      "summary": "One KPI: label, value, optional delta. Put several in a Grid.",
+      "props": {
+        "valueFormat": {
+          "enum": ["number", "compact", "currency", "percent"]
+        },
+        "delta": {
+          "type": "string"
+        },
+        "deltaDirection": {
+          "enum": ["up", "down", "neutral"]
+        },
+        "positiveIsGood": {
+          "type": "boolean"
+        },
+        "currency": {
+          "type": "string"
+        }
+      }
+    },
+    "Descriptions": {
+      "children": true,
+      "summary": "Key–value list; children are DescriptionsItem.",
+      "props": {
+        "columns": {
+          "enum": [1, 2, 3]
+        },
+        "layout": {
+          "enum": ["horizontal", "vertical"]
+        }
+      }
+    },
+    "DescriptionsItem": {
+      "children": true
+    },
+    "Table": {
+      "children": true,
+      "summary": "Compose TableHeader/TableBody → TableRow → TableHead/TableCell."
+    },
+    "TableHeader": {
+      "children": true
+    },
+    "TableBody": {
+      "children": true
+    },
+    "TableFooter": {
+      "children": true
+    },
+    "TableRow": {
+      "children": true
+    },
+    "TableHead": {
+      "children": true
+    },
+    "TableCell": {
+      "children": true
+    },
+    "TableCaption": {
+      "children": true
+    },
+    "Tabs": {
+      "children": true,
+      "summary": "Compose TabsList (TabsTrigger…) + TabsContent per value.",
+      "props": {
+        "defaultValue": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "events": {
+        "change": "onValueChange"
+      }
+    },
+    "TabsList": {
+      "children": true
+    },
+    "TabsTrigger": {
+      "children": true,
+      "props": {
+        "value": {
+          "type": "string",
+          "required": true
+        },
+        "disabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "TabsContent": {
+      "children": true,
+      "props": {
+        "value": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "Accordion": {
+      "children": true,
+      "props": {
+        "type": {
+          "enum": ["single", "multiple"],
+          "required": true
+        },
+        "defaultValue": {
+          "type": "string"
+        },
+        "collapsible": {
+          "type": "boolean"
+        }
+      },
+      "events": {
+        "change": "onValueChange"
+      }
+    },
+    "AccordionItem": {
+      "children": true,
+      "props": {
+        "value": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "AccordionTrigger": {
+      "children": true
+    },
+    "AccordionContent": {
+      "children": true
+    },
+    "Timeline": {
+      "summary": "Ordered status timeline from `items` (title, status, timestamp, description).",
+      "props": {
+        "items": {
+          "type": "array",
+          "required": true,
+          "description": "[{ title, description?, status?: \"done\"|\"active\"|\"pending\", timestamp? }]"
+        }
+      }
+    },
+    "EmptyState": {
+      "summary": "Nothing here yet — title, description, optional actions."
+    },
+    "StatePanel": {
+      "summary": "An empty / error / loading message panel."
+    },
+    "Avatar": {
+      "children": true,
+      "summary": "Compose AvatarFallback (initials) inside."
+    },
+    "AvatarFallback": {
+      "children": true
+    },
+    "Kbd": {
+      "children": true
+    },
+    "Button": {
+      "children": true,
+      "summary": "An action. Bind `on.click`; one `variant: \"default\"` per group.",
+      "props": {
+        "disabled": {
+          "type": "boolean"
+        },
+        "type": {
+          "enum": ["button", "submit"],
+          "default": "button"
+        }
+      },
+      "events": {
+        "click": "onClick"
+      }
+    },
+    "ButtonGroup": {
+      "children": true
+    },
+    "Label": {
+      "children": true,
+      "props": {
+        "htmlFor": {
+          "type": "string"
+        }
+      }
+    },
+    "Input": {
+      "props": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "enum": ["text", "email", "number", "password", "search", "tel", "url", "date"]
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "defaultValue": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "aria-label": {
+          "type": "string"
+        }
+      },
+      "events": {
+        "change": "onChange"
+      }
+    },
+    "Textarea": {
+      "props": {
+        "id": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "defaultValue": {
+          "type": "string"
+        },
+        "rows": {
+          "type": "number"
+        },
+        "disabled": {
+          "type": "boolean"
+        },
+        "aria-label": {
+          "type": "string"
+        }
+      },
+      "events": {
+        "change": "onChange"
+      }
+    },
+    "Checkbox": {
+      "props": {
+        "id": {
+          "type": "string"
+        },
+        "defaultChecked": {
+          "type": "boolean"
+        },
+        "disabled": {
+          "type": "boolean"
+        },
+        "aria-label": {
+          "type": "string"
+        }
+      },
+      "events": {
+        "change": "onCheckedChange"
+      }
+    },
+    "Switch": {
+      "props": {
+        "id": {
+          "type": "string"
+        },
+        "defaultChecked": {
+          "type": "boolean"
+        },
+        "disabled": {
+          "type": "boolean"
+        },
+        "aria-label": {
+          "type": "string"
+        }
+      },
+      "events": {
+        "change": "onCheckedChange"
+      }
+    },
+    "RadioGroup": {
+      "children": true,
+      "props": {
+        "defaultValue": {
+          "type": "string"
+        },
+        "aria-label": {
+          "type": "string"
+        }
+      },
+      "events": {
+        "change": "onValueChange"
+      }
+    },
+    "RadioGroupItem": {
+      "props": {
+        "value": {
+          "type": "string",
+          "required": true
+        },
+        "id": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "boolean"
+        },
+        "aria-label": {
+          "type": "string"
+        }
+      }
+    },
+    "Slider": {
+      "props": {
+        "defaultValue": {
+          "type": "array"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "step": {
+          "type": "number"
+        },
+        "aria-label": {
+          "type": "string"
+        }
+      },
+      "events": {
+        "change": "onValueChange"
+      }
+    },
+    "Select": {
+      "children": true,
+      "summary": "Compose SelectTrigger (SelectValue) + SelectContent (SelectItem…).",
+      "props": {
+        "defaultValue": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "boolean"
+        }
+      },
+      "events": {
+        "change": "onValueChange"
+      }
+    },
+    "SelectTrigger": {
+      "children": true,
+      "props": {
+        "aria-label": {
+          "type": "string"
+        }
+      }
+    },
+    "SelectValue": {
+      "props": {
+        "placeholder": {
+          "type": "string"
+        }
+      }
+    },
+    "SelectContent": {
+      "children": true
+    },
+    "SelectItem": {
+      "children": true,
+      "props": {
+        "value": {
+          "type": "string",
+          "required": true
+        },
+        "disabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Collapsible": {
+      "children": true,
+      "props": {
+        "defaultOpen": {
+          "type": "boolean"
+        }
+      },
+      "events": {
+        "change": "onOpenChange"
+      }
+    },
+    "CollapsibleTrigger": {
+      "children": true,
+      "props": {
+        "asChild": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CollapsibleContent": {
+      "children": true
+    },
+    "BentoGrid": {
+      "children": true,
+      "summary": "Feature/bento grid; children are BentoGridItem."
+    },
+    "BentoGridItem": {
+      "children": true,
+      "props": {
+        "size": {
+          "enum": ["sm", "md", "lg", "hero"]
+        }
+      }
+    }
+  }
+}

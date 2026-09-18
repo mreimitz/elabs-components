@@ -24,10 +24,10 @@ test("initialize advertises the brand-ui server + tools capability", () => {
   assert.ok(res.result.capabilities.tools, "the tools capability is advertised");
 });
 
-test("tools/list returns the six read tools, each with an input schema", () => {
+test("tools/list returns the seven tools, each with an input schema", () => {
   const res = call("tools/list", {});
   const names = res.result.tools.map((t) => t.name).sort();
-  assert.deepEqual(names, ["audit", "chart_for", "docs", "info", "search", "tokens"]);
+  assert.deepEqual(names, ["a2ui", "audit", "chart_for", "docs", "info", "search", "tokens"]);
   for (const t of res.result.tools) {
     assert.ok(t.description, `${t.name} has a description`);
     assert.equal(t.inputSchema.type, "object", `${t.name} has an object input schema`);
@@ -122,4 +122,39 @@ test("tools/call search reaches whole-screen templates (screen-states, object-de
       `${name} lists its template file path`,
     );
   }
+});
+
+test("a2ui tool: catalog lists types, validate reports problems with isError, example validates", () => {
+  const catalog = call("tools/call", { name: "a2ui", arguments: { verb: "catalog" } });
+  assert.match(catalog.result.content[0].text, /A2UI catalog v1 — \d+ types/);
+  assert.match(catalog.result.content[0].text, /Button\s+children, on\.click/);
+  const one = call("tools/call", { name: "a2ui", arguments: { verb: "catalog", type: "Button" } });
+  assert.match(one.result.content[0].text, /variant\?: "default" \| "secondary"/);
+  const unknown = call("tools/call", {
+    name: "a2ui",
+    arguments: { verb: "catalog", type: "Nope" },
+  });
+  assert.equal(unknown.result.isError, true);
+  const bad = call("tools/call", {
+    name: "a2ui",
+    arguments: {
+      verb: "validate",
+      surface: { a2ui: "1", root: { type: "Button", props: { variant: "loud" } } },
+    },
+  });
+  assert.equal(bad.result.isError, true);
+  assert.match(bad.result.content[0].text, /root\.props\.variant\s+invalid-value/);
+  const example = JSON.parse(
+    call("tools/call", { name: "a2ui", arguments: { verb: "example" } }).result.content[0].text,
+  );
+  const ok = call("tools/call", {
+    name: "a2ui",
+    arguments: { verb: "validate", surface: example },
+  });
+  assert.equal(ok.result.isError, false);
+  assert.match(ok.result.content[0].text, /valid A2UI surface v1/);
+  const schema = JSON.parse(
+    call("tools/call", { name: "a2ui", arguments: { verb: "schema" } }).result.content[0].text,
+  );
+  assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
 });

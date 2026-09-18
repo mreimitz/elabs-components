@@ -128,5 +128,6 @@ tool-state badges (`ToolHeader state`) · markdown + code highlighting
 - Rendering one text blob when the runtime gives you `parts` — you lose
   reasoning/tools/sources.
 - For agent-designed surfaces (the agent emits a _screen_, not a message):
-  that's A2UI (WP-11, unshipped) — compose it yourself until then; don't
+  that's A2UI — the agent emits `{ "a2ui": "1", "root": … }` from
+  `brand-ui a2ui catalog`, `<A2uiSurface surface onAction />` renders it; don't
   default to `JSXPreview`. See `docs/DECISIONS.md` D2.

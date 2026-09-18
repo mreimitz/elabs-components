@@ -40,7 +40,7 @@ stale-gated — never hand-edit between the markers.
 
 **Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 255 · **Registry blocks:** 52
 
-**Exported surface:** 1250 components · 89 hooks across 13 packages.
+**Exported surface:** 1257 components · 89 hooks across 13 packages.
 
 | Package                          | Components | Hooks | Use it for                                                                                                    |
 | -------------------------------- | ---------: | ----: | ------------------------------------------------------------------------------------------------------------- |
@@ -48,7 +48,7 @@ stale-gated — never hand-edit between the markers.
 | `@elabs-ai/components-icons`     |         32 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).                                 |
 | `@elabs-ai/components-ui`        |        379 |    14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                |
 | `@elabs-ai/components-data`      |          6 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                                        |
-| `@elabs-ai/components-ai`        |        442 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
+| `@elabs-ai/components-ai`        |        449 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
 | `@elabs-ai/components-flow`      |         34 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                                                 |
 | `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                      |
 | `@elabs-ai/components-charts`    |        198 |    36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
@@ -187,7 +187,7 @@ token values, never hardcode in components. See [reference/theming.md](reference
 ## Rendering agent output (the @elabs-ai/components-ai contract)
 
 `@elabs-ai/components-ai` renders **agent-produced** data; your app owns the model call (D5). When you
-(or an agent) produce chat/GenUI output, emit one of the two **shipped** shapes below and
+(or an agent) produce chat/GenUI output, emit one of the three **shipped** shapes below and
 let the components render it — **there is no system prompt to copy**. Full routing lives in
 `docs/DECISIONS.md` §D2 and the `ai-sdk-vs-a2ui` rule; the machine-readable version is
 `brand-ui.manifest.json` (`agentOutput`); the live page is Storybook → _Docs/AI Output
@@ -202,11 +202,11 @@ never hand-edit between the markers.
 
 ### Which path (D2)
 
-| The agent is producing…                          | Emit         | Status                 |
-| ------------------------------------------------ | ------------ | ---------------------- |
-| A conversation (text, tools, reasoning, sources) | ai/UIMessage | shipped                |
-| Ad-hoc UI as a JSX string                        | `JSXPreview` | shipped (escape hatch) |
-| An agent-designed surface (UI as data)           | A2UI         | **not yet — WP-11**    |
+| The agent is producing…                          | Emit          | Status                             |
+| ------------------------------------------------ | ------------- | ---------------------------------- |
+| A conversation (text, tools, reasoning, sources) | ai/UIMessage  | shipped                            |
+| Ad-hoc UI as a JSX string                        | `JSXPreview`  | shipped (escape hatch)             |
+| An agent-designed surface (UI as data)           | `A2uiSurface` | shipped (the safe generative path) |
 
 _Mental model: AI SDK = what the agent **said**; A2UI = a screen the agent **designed**. A chat that shows messages is still "build-with" — don't reach for generative UI just because there's a chatbox._
 
@@ -306,7 +306,7 @@ Map each turn's parts onto the components (**in your app** — `@elabs-ai/compon
 
 ### Path B · Ad-hoc JSX — JSXPreview (the escape hatch)
 
-When the agent emits UI as a JSX markup STRING. Flexible but less safe — prefer A2UI once it ships (WP-11).
+When the agent emits UI as a JSX markup STRING. Flexible but less safe — prefer A2UI (data, validated) for an agent-designed surface.
 
 | Prop          | Type                                     |
 | ------------- | ---------------------------------------- |
@@ -331,9 +331,73 @@ const jsx = `<Stat label="Revenue" value="$1.2M" delta="+12%" />`;
 
 > Pass the agent's JSX string to `<JSXPreview jsx={…} components={allowList} />`. The allow-list is yours.
 
-### A2UI — an agent-DESIGNED surface (NOT YET — WP-11)
+### Path C · A2UI — an agent-DESIGNED surface (data, validated against the catalog)
 
-> The SAFE generative-UI path: the agent describes a screen as data, validated against a catalog. NOT yet built. Until it ships, compose the surface yourself (Build-with) or use JSXPreview.
+The SAFE generative-UI path: the agent describes a screen as JSON — a tree of catalog types with props, children and `on.<event>` action bindings — brand-ui validates it against the catalog and renders it with the real components. No code, no className, no style in a surface.
+
+- **Protocol:** `{ "a2ui": "1", "title"?: string, "root": node } · node = string | { type, id?, props?, children?, on? }`
+
+| Prop          | Type                                                                           |
+| ------------- | ------------------------------------------------------------------------------ |
+| `surface`     | `A2uiSurfaceSpec \| string (JSON text, may be a streaming prefix)`             |
+| `catalog`     | `A2uiCatalog? — defaults to uiCatalog; extend with createA2uiCatalog`          |
+| `onAction`    | `(action: { name, payload? }, context: { event, value?, node, path }) => void` |
+| `isStreaming` | `boolean?`                                                                     |
+| `loading`     | `boolean?`                                                                     |
+| `onError`     | `(errors: A2uiError[]) => void`                                                |
+
+- **Safety:** Only catalog types render; every prop is checked against the type's schema (unknown props, enum values, required props); className/style/code never pass. Actions are names the HOST resolves in onAction — a surface cannot call anything.
+- **Streaming:** Pass the JSON text as it arrives with isStreaming: the surface completes the partial document, draws every node that already validates and prunes the rest; nothing errors until the input settles.
+- **Tooling:**
+  - `brand-ui a2ui catalog [<Type>]` — the types, props, enums and events you may emit
+  - `brand-ui a2ui schema` — JSON Schema (draft 2020-12) for structured output
+  - `brand-ui a2ui validate <file>` — every problem with its path; exit 1 when invalid
+  - `brand-ui a2ui example` — a starter surface
+  - MCP tool `a2ui` with `{ verb: catalog|schema|validate|example }` on the hosted server
+
+```tsx
+// The agent emits JSON naming catalog types (brand-ui a2ui catalog) and host actions.
+const surface = {
+  a2ui: "1",
+  title: "Order 4711",
+  root: {
+    type: "Card",
+    children: [
+      { type: "CardHeader", children: [{ type: "CardTitle", children: ["Order 4711"] }] },
+      {
+        type: "CardContent",
+        children: [
+          {
+            type: "Grid",
+            props: { columns: 2 },
+            children: [
+              {
+                type: "MetricCard",
+                props: { label: "Total", value: 1240, valueFormat: "currency", currency: "EUR" },
+              },
+              { type: "StatusBadge", props: { status: "awaiting-approval" } },
+            ],
+          },
+        ],
+      },
+      {
+        type: "CardFooter",
+        children: [
+          {
+            type: "Button",
+            on: { click: { name: "approve", payload: { id: 4711 } } },
+            children: ["Approve"],
+          },
+        ],
+      },
+    ],
+  },
+};
+
+<A2uiSurface surface={surface} onAction={(action) => approve(action.payload)} />;
+```
+
+> Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Apps add their own types with createA2uiCatalog (a chart, a domain card).
 
 ### Wire it into YOUR runtime
 
@@ -344,13 +408,35 @@ The app owns the model. `useChat()` (from `ai`, **in your app**) gives you `mess
 - Don't expect @elabs-ai/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).
 - Don't paste a frozen system prompt from this contract — assemble tool defs / prompt fragments in YOUR app from the manifest + this block.
 - Don't emit tags outside the JSXPreview `components` allow-list.
-- Don't emit A2UI surfaces — not shipped (WP-11).
+- Don't put className, style, JSX or code in an A2UI surface — it is data; a type or prop outside `brand-ui a2ui catalog` fails validation.
 - Don't reach for JSXPreview/generative UI just because there's a chatbox — a chat that shows messages is still Build-with.
 - Don't invent component props — verify via `brand-ui docs <Component>` or the Storybook MCP.
 
 _Verify every component name/prop with `brand-ui docs <Component>` or the Storybook MCP — never guess._
 
 <!-- brand-ui:gen:agent-output:end -->
+
+### Agent-designed surfaces (A2UI)
+
+When the agent must **design** a screen at runtime — an order card with actions, a KPI
+row for the question just asked — it emits an A2UI surface: JSON, not code. Read the
+catalog first, emit `{ "a2ui": "1", "root": … }` using only catalog types and props, bind
+interaction as `on.<event>` → `{ name, payload }`, validate, and let `<A2uiSurface>`
+(`@elabs-ai/components-ai`) render it. The host app receives every action in `onAction`
+and decides what it means (D5). Never put `className`, `style` or code in a surface.
+
+<!-- brand-ui:gen:a2ui:start -->
+
+> **Generated** by `pnpm gen` from the CLI's a2ui module — edit there, not here.
+
+| Command                                   | What it does                                                                                                                                                                                        |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `brand-ui a2ui catalog [<Type>] [--json]` | Lists every type an agent may emit in a surface — props with enums and defaults, required props, events (`on.click` → the host action), whether it takes children — or the full entry for one type. |
+| `brand-ui a2ui schema`                    | Prints the A2UI surface v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-ai/a2ui/schema.json`) — feed it to a structured-output mode.                                         |
+| `brand-ui a2ui validate <file> [--json]`  | Runs `validateA2uiSurface`: one `path code message` line per problem (unknown type/prop/event, enum value, missing required prop, children on a leaf); exit 1 when invalid.                         |
+| `brand-ui a2ui example`                   | Prints a small valid surface (Card → Grid of MetricCards → Button with an `on.click` action) to start from.                                                                                         |
+
+<!-- brand-ui:gen:a2ui:end -->
 
 ## Charts (@elabs-ai/components-charts)
 

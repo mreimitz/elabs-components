@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T19:21:20.078Z",
+  "generatedAt": "2026-09-18T07:50:30.414Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -910,6 +910,30 @@
       "verb": "layout",
       "usage": "brand-ui dashboard-spec layout <file> [--strategy=by-kind|reading-order]",
       "does": "Places every tile that has no `layout` with `autoLayout` (existing layouts kept) and prints the spec."
+    },
+    {
+      "group": "a2ui",
+      "verb": "catalog",
+      "usage": "brand-ui a2ui catalog [<Type>] [--json]",
+      "does": "Lists every type an agent may emit in a surface — props with enums and defaults, required props, events (`on.click` → the host action), whether it takes children — or the full entry for one type."
+    },
+    {
+      "group": "a2ui",
+      "verb": "schema",
+      "usage": "brand-ui a2ui schema",
+      "does": "Prints the A2UI surface v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-ai/a2ui/schema.json`) — feed it to a structured-output mode."
+    },
+    {
+      "group": "a2ui",
+      "verb": "validate",
+      "usage": "brand-ui a2ui validate <file> [--json]",
+      "does": "Runs `validateA2uiSurface`: one `path code message` line per problem (unknown type/prop/event, enum value, missing required prop, children on a leaf); exit 1 when invalid."
+    },
+    {
+      "group": "a2ui",
+      "verb": "example",
+      "usage": "brand-ui a2ui example",
+      "does": "Prints a small valid surface (Card → Grid of MetricCards → Button with an `on.click` action) to start from."
     }
   ],
   "agentOutput": {
@@ -1007,7 +1031,7 @@
       "jsxPreview": {
         "status": "shipped",
         "title": "Ad-hoc JSX — JSXPreview (the escape hatch)",
-        "summary": "When the agent emits UI as a JSX markup STRING. Flexible but less safe — prefer A2UI once it ships (WP-11).",
+        "summary": "When the agent emits UI as a JSX markup STRING. Flexible but less safe — prefer A2UI (data, validated) for an agent-designed surface.",
         "component": "JSXPreview",
         "props": {
           "jsx": "string",
@@ -1022,18 +1046,38 @@
         "wiring": "Pass the agent's JSX string to `<JSXPreview jsx={…} components={allowList} />`. The allow-list is yours."
       },
       "a2ui": {
-        "status": "not-shipped",
-        "title": "A2UI — an agent-DESIGNED surface (NOT YET — WP-11)",
-        "available": false,
-        "tracking": "WP-11",
-        "summary": "The SAFE generative-UI path: the agent describes a screen as data, validated against a catalog. NOT yet built. Until it ships, compose the surface yourself (Build-with) or use JSXPreview."
+        "status": "shipped",
+        "title": "A2UI — an agent-DESIGNED surface (data, validated against the catalog)",
+        "available": true,
+        "summary": "The SAFE generative-UI path: the agent describes a screen as JSON — a tree of catalog types with props, children and `on.<event>` action bindings — brand-ui validates it against the catalog and renders it with the real components. No code, no className, no style in a surface.",
+        "component": "A2uiSurface",
+        "protocol": "{ \"a2ui\": \"1\", \"title\"?: string, \"root\": node } · node = string | { type, id?, props?, children?, on? }",
+        "props": {
+          "surface": "A2uiSurfaceSpec | string (JSON text, may be a streaming prefix)",
+          "catalog": "A2uiCatalog? — defaults to uiCatalog; extend with createA2uiCatalog",
+          "onAction": "(action: { name, payload? }, context: { event, value?, node, path }) => void",
+          "isStreaming": "boolean?",
+          "loading": "boolean?",
+          "onError": "(errors: A2uiError[]) => void"
+        },
+        "tooling": [
+          "`brand-ui a2ui catalog [<Type>]` — the types, props, enums and events you may emit",
+          "`brand-ui a2ui schema` — JSON Schema (draft 2020-12) for structured output",
+          "`brand-ui a2ui validate <file>` — every problem with its path; exit 1 when invalid",
+          "`brand-ui a2ui example` — a starter surface",
+          "MCP tool `a2ui` with `{ verb: catalog|schema|validate|example }` on the hosted server"
+        ],
+        "streaming": "Pass the JSON text as it arrives with isStreaming: the surface completes the partial document, draws every node that already validates and prunes the rest; nothing errors until the input settles.",
+        "safety": "Only catalog types render; every prop is checked against the type's schema (unknown props, enum values, required props); className/style/code never pass. Actions are names the HOST resolves in onAction — a surface cannot call anything.",
+        "example": "// The agent emits JSON naming catalog types (brand-ui a2ui catalog) and host actions.\nconst surface = {\n  a2ui: \"1\",\n  title: \"Order 4711\",\n  root: {\n    type: \"Card\",\n    children: [\n      { type: \"CardHeader\", children: [{ type: \"CardTitle\", children: [\"Order 4711\"] }] },\n      {\n        type: \"CardContent\",\n        children: [{\n          type: \"Grid\", props: { columns: 2 },\n          children: [\n            { type: \"MetricCard\", props: { label: \"Total\", value: 1240, valueFormat: \"currency\", currency: \"EUR\" } },\n            { type: \"StatusBadge\", props: { status: \"awaiting-approval\" } },\n          ],\n        }],\n      },\n      {\n        type: \"CardFooter\",\n        children: [{ type: \"Button\", on: { click: { name: \"approve\", payload: { id: 4711 } } }, children: [\"Approve\"] }],\n      },\n    ],\n  },\n};\n\n<A2uiSurface surface={surface} onAction={(action) => approve(action.payload)} />;",
+        "wiring": "Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Apps add their own types with createA2uiCatalog (a chart, a domain card)."
       }
     },
     "donts": [
       "Don't expect @elabs-ai/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).",
       "Don't paste a frozen system prompt from this contract — assemble tool defs / prompt fragments in YOUR app from the manifest + this block.",
       "Don't emit tags outside the JSXPreview `components` allow-list.",
-      "Don't emit A2UI surfaces — not shipped (WP-11).",
+      "Don't put className, style, JSX or code in an A2UI surface — it is data; a type or prop outside `brand-ui a2ui catalog` fails validation.",
       "Don't reach for JSXPreview/generative UI just because there's a chatbox — a chat that shows messages is still Build-with.",
       "Don't invent component props — verify via `brand-ui docs <Component>` or the Storybook MCP."
     ]
@@ -1054,6 +1098,36 @@
         "react-dom": "^18.2.0 || ^19.0.0"
       },
       "components": [
+        {
+          "name": "A2UI_CATALOG_SCHEMA",
+          "kind": "value",
+          "module": "packages/ai/src/a2ui/core/catalog.generated.ts"
+        },
+        {
+          "name": "A2UI_CATALOG_VERSION",
+          "kind": "value",
+          "module": "packages/ai/src/a2ui/core/catalog.generated.ts"
+        },
+        {
+          "name": "A2UI_COMMON_PROPS",
+          "kind": "value",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2UI_SURFACE_SCHEMA_ID",
+          "kind": "value",
+          "module": "packages/ai/src/a2ui/core/schema.ts"
+        },
+        {
+          "name": "A2UI_VERSION",
+          "kind": "value",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiSurface",
+          "kind": "value",
+          "module": "packages/ai/src/a2ui/a2ui-surface.tsx"
+        },
         {
           "name": "Agent",
           "kind": "value",
@@ -3135,6 +3209,11 @@
           "module": "packages/ai/src/turn-status.tsx"
         },
         {
+          "name": "UI_CATALOG_BINDINGS",
+          "kind": "value",
+          "module": "packages/ai/src/a2ui/ui-catalog.tsx"
+        },
+        {
           "name": "UserMessage",
           "kind": "value",
           "module": "packages/ai/src/message.tsx"
@@ -3338,6 +3417,82 @@
         }
       ],
       "types": [
+        {
+          "name": "A2uiAction",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiActionContext",
+          "module": "packages/ai/src/a2ui/a2ui-surface.tsx"
+        },
+        {
+          "name": "A2uiActionHandler",
+          "module": "packages/ai/src/a2ui/a2ui-surface.tsx"
+        },
+        {
+          "name": "A2uiCatalog",
+          "module": "packages/ai/src/a2ui/ui-catalog.tsx"
+        },
+        {
+          "name": "A2uiCatalogEntry",
+          "module": "packages/ai/src/a2ui/ui-catalog.tsx"
+        },
+        {
+          "name": "A2uiCatalogSchema",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiCatalogTypeSchema",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiElement",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiError",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiErrorCode",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiJson",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiNode",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiPropSchema",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiPropType",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiPropValue",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiSurfaceProps",
+          "module": "packages/ai/src/a2ui/a2ui-surface.tsx"
+        },
+        {
+          "name": "A2uiSurfaceSpec",
+          "module": "packages/ai/src/a2ui/core/spec.ts"
+        },
+        {
+          "name": "A2uiSurfaceStatus",
+          "module": "packages/ai/src/a2ui/a2ui-surface.tsx"
+        },
+        {
+          "name": "A2uiValidation",
+          "module": "packages/ai/src/a2ui/core/validate.ts"
+        },
         {
           "name": "AgentContentProps",
           "module": "packages/ai/src/agent.tsx"
@@ -5401,8 +5556,16 @@
           "module": "packages/ai/src/message-form-spec.ts"
         },
         {
+          "name": "buildA2uiSurfaceSchema",
+          "module": "packages/ai/src/a2ui/core/schema.ts"
+        },
+        {
           "name": "buildPartGroups",
           "module": "packages/ai/src/part-groups.ts"
+        },
+        {
+          "name": "catalogSchema",
+          "module": "packages/ai/src/a2ui/ui-catalog.tsx"
         },
         {
           "name": "cellFormatSchema",
@@ -5417,12 +5580,24 @@
           "module": "packages/ai/src/message-table-spec.ts"
         },
         {
+          "name": "completeJson",
+          "module": "packages/ai/src/a2ui/a2ui-surface.tsx"
+        },
+        {
+          "name": "createA2uiCatalog",
+          "module": "packages/ai/src/a2ui/ui-catalog.tsx"
+        },
+        {
           "name": "createLazyMermaidPlugin",
           "module": "packages/ai/src/_lazy-mermaid.ts"
         },
         {
           "name": "defaultPartStatus",
           "module": "packages/ai/src/part-groups.ts"
+        },
+        {
+          "name": "defineA2uiType",
+          "module": "packages/ai/src/a2ui/ui-catalog.tsx"
         },
         {
           "name": "diffRowVariants",
@@ -5485,6 +5660,14 @@
           "module": "packages/ai/src/message-form-spec.ts"
         },
         {
+          "name": "invalidNodePaths",
+          "module": "packages/ai/src/a2ui/core/validate.ts"
+        },
+        {
+          "name": "isA2uiElement",
+          "module": "packages/ai/src/a2ui/core/validate.ts"
+        },
+        {
           "name": "isEmptyCell",
           "module": "packages/ai/src/message-table-spec.ts"
         },
@@ -5537,6 +5720,10 @@
           "module": "packages/ai/src/message-form-spec.ts"
         },
         {
+          "name": "parseSurfaceJson",
+          "module": "packages/ai/src/a2ui/core/complete-json.ts"
+        },
+        {
           "name": "partsFingerprint",
           "module": "packages/ai/src/part-groups.ts"
         },
@@ -5563,6 +5750,14 @@
         {
           "name": "tableSpecSchema",
           "module": "packages/ai/src/message-table-spec.ts"
+        },
+        {
+          "name": "uiCatalog",
+          "module": "packages/ai/src/a2ui/ui-catalog.tsx"
+        },
+        {
+          "name": "validateA2uiSurface",
+          "module": "packages/ai/src/a2ui/core/validate.ts"
         },
         {
           "name": "validateField",
@@ -5632,6 +5827,55 @@
         }
       },
       "props": {
+        "A2uiSurface": {
+          "extends": [
+            "Omit<ComponentProps<\"div\">, \"children\" | \"onError\">"
+          ],
+          "props": [
+            {
+              "name": "surface",
+              "optional": false,
+              "type": "A2uiSurfaceSpec | string | null | undefined",
+              "description": "The agent's surface: a parsed spec, or its JSON text (may be a streaming prefix)."
+            },
+            {
+              "name": "catalog",
+              "optional": true,
+              "type": "A2uiCatalog",
+              "description": "Which types render, and how. Defaults to the shipped `uiCatalog`."
+            },
+            {
+              "name": "onAction",
+              "optional": true,
+              "type": "A2uiActionHandler",
+              "description": "Receives every `on.<event>` binding the user triggers."
+            },
+            {
+              "name": "isStreaming",
+              "optional": true,
+              "type": "boolean",
+              "description": "Content is arriving incrementally — build up, suppress transient errors."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No surface yet (fetch-then-show) — forces the skeleton."
+            },
+            {
+              "name": "onError",
+              "optional": true,
+              "type": "(errors: A2uiError[]) => void",
+              "description": "Fires once per settled, invalid surface with the validation errors."
+            },
+            {
+              "name": "skeleton",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Replace the default skeleton (shown before the first paint while pending)."
+            }
+          ]
+        },
         "Agent": {
           "extends": [
             "ComponentProps<\"div\">"
@@ -11085,6 +11329,36 @@
         }
       },
       "intent": {
+        "A2uiSurface": {
+          "purpose": "The SAFE generative-UI path (D2): renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "Message",
+              "ToolOutput",
+              "Artifact"
+            ],
+            "pairsWith": [
+              "uiCatalog",
+              "createA2uiCatalog",
+              "validateA2uiSurface"
+            ],
+            "avoidNextTo": [
+              "JSXPreview for the same surface — pick the data path or the escape hatch, not both"
+            ]
+          },
+          "stateTokens": {
+            "loading": "layout-shaped Skeleton + role=status live region until the first node paints",
+            "streaming": "isStreaming → the JSON prefix is completed, valid nodes draw, invalid-yet nodes are pruned; no error until the input settles",
+            "error": "settled + invalid → role=alert listing every problem with its path; onError once"
+          },
+          "antiPatterns": [
+            "Letting the agent emit className, style or code — a surface is data; the validator rejects anything outside `brand-ui a2ui catalog`.",
+            "Resolving actions inside the surface — `on.<event>` names a host verb; the app's onAction decides what it means (D5).",
+            "Reaching for A2UI for a chat that only shows messages — that is a conversation (UIMessage); A2UI is for screens the agent designs.",
+            "Extending the catalog with a component that owns its own colours — every catalog type renders on semantic tokens so a surface inherits the app's theme."
+          ]
+        },
         "Agent": {
           "purpose": "Accordion-shaped disclosure describing a sub-agent: its instructions, tools and output.",
           "category": "ai",
@@ -11824,7 +12098,7 @@
             "streaming": "isStreaming → build up; parse errors suppressed until the tag completes"
           },
           "antiPatterns": [
-            "Making JSXPreview the default generative path — render a conversation (UIMessage) or, once it lands, A2UI; this is the escape hatch (D2).",
+            "Making JSXPreview the default generative path — render a conversation (UIMessage) or an A2UI surface (A2uiSurface, validated data); this is the escape hatch (D2).",
             "Rendering JSXPreviewError on a half-arrived tag — an incomplete tag is not an error; suppress it until the input settles.",
             "Omitting JSXPreviewSkeleton — the preview must reserve its final space instead of popping in.",
             "Passing untrusted JSX without deciding the trust boundary in the app — the component renders what it is given."
@@ -12925,6 +13199,7 @@
         }
       },
       "stories": {
+        "A2uiSurface": "ai-a2ui-surface--docs",
         "AgentEvent": "ai-agentevent--docs",
         "AgentTimeline": "ai-agenttimeline--docs",
         "ApprovalCard": "ai-approvalcard--docs",

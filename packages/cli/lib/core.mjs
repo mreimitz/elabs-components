@@ -13,6 +13,7 @@ import { collectStoryIds } from "./story-ids.mjs";
 import { collectAgentOutput } from "./agent-output.mjs";
 import { mergeResolvedProps } from "./docgen.mjs";
 import { DASHBOARD_SPEC_VERB_DOCS } from "./dashboard-spec.mjs";
+import { A2UI_VERB_DOCS } from "./a2ui.mjs";
 
 const CONFIG_PKGS = new Set([
   "@elabs-ai/components-eslint-config",
@@ -474,7 +475,10 @@ function loadTemplates(repoRoot) {
  * above) — add the group's docs array to `GROUPS` below, nothing else.
  */
 function loadCliVerbs() {
-  const GROUPS = [{ group: "dashboard-spec", docs: DASHBOARD_SPEC_VERB_DOCS }];
+  const GROUPS = [
+    { group: "dashboard-spec", docs: DASHBOARD_SPEC_VERB_DOCS },
+    { group: "a2ui", docs: A2UI_VERB_DOCS },
+  ];
   return GROUPS.flatMap(({ group, docs }) =>
     docs.map((d) => ({ group, verb: d.verb, usage: d.usage, does: d.does })),
   );

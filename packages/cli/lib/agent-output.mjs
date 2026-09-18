@@ -21,8 +21,9 @@
  *     NOT redefine the SDK schema — it points at it and encodes only the
  *     brand-ui-OWNED projection: the tool-state→Status mapping, the role
  *     narrowing, the fields our components consume, and `SourceListItem`.
- *   - A2UI is NOT shipped (WP-11) — it is documented ONLY as a future path,
- *     never as a usable surface.
+ *   - A2UI (the third path, shipped) is DATA, never code: a surface names catalog
+ *     types and host actions; `<A2uiSurface>` validates and renders, the app
+ *     resolves actions. `brand-ui a2ui catalog|schema|validate` are its tooling.
  *
  * `stateToStatus` and `statusEnum` below are AUTHORED here and must match
  *   source (`statusFromToolState` in packages/ai/src/tool.tsx + `STATUSES` in
@@ -100,9 +101,40 @@ const JSX_PREVIEW_EXAMPLE = [
   "</JSXPreview>;",
 ].join("\n");
 
+/** A worked A2UI example: the DATA an agent emits for an agent-designed surface. */
+const A2UI_EXAMPLE = [
+  "// The agent emits JSON naming catalog types (brand-ui a2ui catalog) and host actions.",
+  "const surface = {",
+  '  a2ui: "1",',
+  '  title: "Order 4711",',
+  "  root: {",
+  '    type: "Card",',
+  "    children: [",
+  '      { type: "CardHeader", children: [{ type: "CardTitle", children: ["Order 4711"] }] },',
+  "      {",
+  '        type: "CardContent",',
+  "        children: [{",
+  '          type: "Grid", props: { columns: 2 },',
+  "          children: [",
+  '            { type: "MetricCard", props: { label: "Total", value: 1240, valueFormat: "currency", currency: "EUR" } },',
+  '            { type: "StatusBadge", props: { status: "awaiting-approval" } },',
+  "          ],",
+  "        }],",
+  "      },",
+  "      {",
+  '        type: "CardFooter",',
+  '        children: [{ type: "Button", on: { click: { name: "approve", payload: { id: 4711 } } }, children: ["Approve"] }],',
+  "      },",
+  "    ],",
+  "  },",
+  "};",
+  "",
+  "<A2uiSurface surface={surface} onAction={(action) => approve(action.payload)} />;",
+].join("\n");
+
 /**
- * The agent-output contract, in `docs/DECISIONS.md` §D2 order: the two SHIPPED
- * paths first, then the WP-11 future path. Deterministic (authored order, no
+ * The agent-output contract, in `docs/DECISIONS.md` §D2 order: the default
+ * conversation path, the escape hatch, then the A2UI surface path. Deterministic (authored order, no
  * timestamps) so the manifest stays byte-stable.
  */
 export const AGENT_OUTPUT = {
@@ -154,7 +186,7 @@ export const AGENT_OUTPUT = {
       status: "shipped",
       title: "Ad-hoc JSX — JSXPreview (the escape hatch)",
       summary:
-        "When the agent emits UI as a JSX markup STRING. Flexible but less safe — prefer A2UI once it ships (WP-11).",
+        "When the agent emits UI as a JSX markup STRING. Flexible but less safe — prefer A2UI (data, validated) for an agent-designed surface.",
       component: "JSXPreview",
       props: {
         jsx: "string",
@@ -172,12 +204,36 @@ export const AGENT_OUTPUT = {
         "Pass the agent's JSX string to `<JSXPreview jsx={…} components={allowList} />`. The allow-list is yours.",
     },
     a2ui: {
-      status: "not-shipped",
-      title: "A2UI — an agent-DESIGNED surface (NOT YET — WP-11)",
-      available: false,
-      tracking: "WP-11",
+      status: "shipped",
+      title: "A2UI — an agent-DESIGNED surface (data, validated against the catalog)",
+      available: true,
       summary:
-        "The SAFE generative-UI path: the agent describes a screen as data, validated against a catalog. NOT yet built. Until it ships, compose the surface yourself (Build-with) or use JSXPreview.",
+        "The SAFE generative-UI path: the agent describes a screen as JSON — a tree of catalog types with props, children and `on.<event>` action bindings — brand-ui validates it against the catalog and renders it with the real components. No code, no className, no style in a surface.",
+      component: "A2uiSurface",
+      protocol:
+        '{ "a2ui": "1", "title"?: string, "root": node } · node = string | { type, id?, props?, children?, on? }',
+      props: {
+        surface: "A2uiSurfaceSpec | string (JSON text, may be a streaming prefix)",
+        catalog: "A2uiCatalog? — defaults to uiCatalog; extend with createA2uiCatalog",
+        onAction: "(action: { name, payload? }, context: { event, value?, node, path }) => void",
+        isStreaming: "boolean?",
+        loading: "boolean?",
+        onError: "(errors: A2uiError[]) => void",
+      },
+      tooling: [
+        "`brand-ui a2ui catalog [<Type>]` — the types, props, enums and events you may emit",
+        "`brand-ui a2ui schema` — JSON Schema (draft 2020-12) for structured output",
+        "`brand-ui a2ui validate <file>` — every problem with its path; exit 1 when invalid",
+        "`brand-ui a2ui example` — a starter surface",
+        "MCP tool `a2ui` with `{ verb: catalog|schema|validate|example }` on the hosted server",
+      ],
+      streaming:
+        "Pass the JSON text as it arrives with isStreaming: the surface completes the partial document, draws every node that already validates and prunes the rest; nothing errors until the input settles.",
+      safety:
+        "Only catalog types render; every prop is checked against the type's schema (unknown props, enum values, required props); className/style/code never pass. Actions are names the HOST resolves in onAction — a surface cannot call anything.",
+      example: A2UI_EXAMPLE,
+      wiring:
+        "Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Apps add their own types with createA2uiCatalog (a chart, a domain card).",
     },
   },
   /** What an agent must NOT do — rendered as the DON'T list. */
@@ -185,7 +241,7 @@ export const AGENT_OUTPUT = {
     "Don't expect @elabs-ai/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).",
     "Don't paste a frozen system prompt from this contract — assemble tool defs / prompt fragments in YOUR app from the manifest + this block.",
     "Don't emit tags outside the JSXPreview `components` allow-list.",
-    "Don't emit A2UI surfaces — not shipped (WP-11).",
+    "Don't put className, style, JSX or code in an A2UI surface — it is data; a type or prop outside `brand-ui a2ui catalog` fails validation.",
     "Don't reach for JSXPreview/generative UI just because there's a chatbox — a chat that shows messages is still Build-with.",
     "Don't invent component props — verify via `brand-ui docs <Component>` or the Storybook MCP.",
   ],

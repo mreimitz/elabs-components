@@ -50,8 +50,8 @@ Read [`.claude/rules/conventions.md`](.claude/rules/conventions.md) (component A
 <!-- prettier-ignore -->
 | # | Decision | The short answer | Detail rule |
 | --- | --- | --- | --- |
-| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decisions.md`](.claude/rules/decisions.md) |
-| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai.md`](.claude/rules/ai.md) |
+| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI (A2UI) is for screens the agent must design at runtime. | [`decisions.md`](.claude/rules/decisions.md) |
+| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI: JSON validated against the catalog, rendered by `A2uiSurface`. | [`ai.md`](.claude/rules/ai.md) |
 | **D3** | Which package | `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · dashboard sheet → `@elabs-ai/components-charts/dashboard` · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai) | `skills/brand-ui/SKILL.md` (generated table) |
 | **D4** | Import vs copy-own | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry). | [`registry.md`](.claude/rules/registry.md) |
 | **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`decisions.md`](.claude/rules/decisions.md) |

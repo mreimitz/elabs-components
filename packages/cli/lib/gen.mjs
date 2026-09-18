@@ -26,6 +26,7 @@ import prettier from "prettier";
 import { loadManifest } from "./core.mjs";
 import { applyNamedMarkerBlock } from "./context.mjs";
 import { renderDashboardSpecSkillTable } from "./dashboard-spec.mjs";
+import { renderA2uiSkillTable } from "./a2ui.mjs";
 import {
   renderPackageTable,
   renderDecisionSummary,
@@ -103,6 +104,8 @@ export function genTargets(root, manifest) {
         { name: "agent-output", render: () => renderAgentOutputGuidance(manifest) },
         // The `brand-ui dashboard-spec` verbs (RM-086) — agent tooling for DashboardSpec v1.
         { name: "dashboard-spec", render: () => renderDashboardSpecSkillTable() },
+        // The `brand-ui a2ui` verbs (D2) — agent tooling for A2UI surfaces v1.
+        { name: "a2ui", render: () => renderA2uiSkillTable() },
       ],
     },
     {

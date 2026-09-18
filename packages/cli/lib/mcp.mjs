@@ -29,6 +29,14 @@ import {
 } from "./core.mjs";
 import { scanText } from "./audit.mjs";
 import { matchChartFor, renderChartForText } from "./chart-for.mjs";
+import {
+  A2UI_EXAMPLE,
+  a2uiCatalog,
+  a2uiSchema,
+  renderCatalogText,
+  renderValidationText,
+  validateSurface,
+} from "./a2ui.mjs";
 
 export const PROTOCOL_VERSION = "2024-11-05";
 
@@ -90,6 +98,7 @@ const ROUTINE = [
   "  4. build                      — semantic tokens only; never hardcode a colour",
   "  5. audit <path>               — locally: `npx -y @elabs-ai/components-cli audit <path>`",
   "  new app: `npx -y @elabs-ai/components-cli create <dir> --template dashboard` (runnable Vite app, tokens + ThemeProvider wired)",
+  '  agent-designed screen (generative UI): a2ui catalog → emit { a2ui: "1", root } → a2ui validate → <A2uiSurface> renders it',
 ];
 
 /** The tool catalogue advertised over `tools/list`. */
@@ -164,6 +173,21 @@ export const TOOLS = [
         },
       },
       required: ["shape"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "a2ui",
+    description:
+      'Generative UI (D2): an agent-designed screen as DATA, validated against the brand-ui catalog and rendered by <A2uiSurface> from @elabs-ai/components-ai. `catalog` lists the types you may emit (props, enums, events, children) or one type in full; `validate` checks a surface object and returns every problem with its path; `schema` returns the JSON Schema; `example` a starter surface. A surface is { "a2ui": "1", "root": node }; a node is a string or { type, props?, children?, on? }; interaction is on.<event> → { name, payload } which the host app receives in onAction.',
+    inputSchema: {
+      type: "object",
+      properties: {
+        verb: { type: "string", enum: ["catalog", "schema", "validate", "example"] },
+        type: { type: "string", description: "catalog only: one catalog type, e.g. Button." },
+        surface: { type: "object", description: "validate only: the surface to check." },
+      },
+      required: ["verb"],
       additionalProperties: false,
     },
   },
@@ -426,6 +450,34 @@ function toolChartFor(ctx, shape) {
   return textContent(renderChartForText(query, candidates));
 }
 
+function toolA2ui(verb, type, surface) {
+  switch (verb) {
+    case "catalog": {
+      if (type && !a2uiCatalog(type))
+        return { ...textContent(renderCatalogText(a2uiCatalog(), type)), isError: true };
+      return textContent(renderCatalogText(a2uiCatalog(), type));
+    }
+    case "schema":
+      return textContent(JSON.stringify(a2uiSchema(), null, 2));
+    case "example":
+      return textContent(JSON.stringify(A2UI_EXAMPLE, null, 2));
+    case "validate": {
+      if (!surface || typeof surface !== "object")
+        return {
+          ...textContent("usage: a2ui { verb: 'validate', surface: { … } }"),
+          isError: true,
+        };
+      const result = validateSurface(surface);
+      return { ...textContent(renderValidationText("surface", result)), isError: !result.ok };
+    }
+    default:
+      return {
+        ...textContent("usage: a2ui { verb: catalog|schema|validate|example }"),
+        isError: true,
+      };
+  }
+}
+
 function callTool(ctx, name, argsObj = {}) {
   if (ctx.hosted && LOCAL_ONLY_TOOLS.has(name))
     return {
@@ -447,6 +499,8 @@ function callTool(ctx, name, argsObj = {}) {
       return toolAudit(ctx, argsObj.path, argsObj.register);
     case "chart_for":
       return toolChartFor(ctx, argsObj.shape);
+    case "a2ui":
+      return toolA2ui(argsObj.verb, argsObj.type, argsObj.surface);
     default:
       return null; // unknown tool → caller emits an MCP error
   }

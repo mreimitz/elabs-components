@@ -10,6 +10,7 @@
   "type": "module",
   "files": [
     "dist",
+    "schemas",
     "src"
   ],
   "sideEffects": false,
@@ -17,7 +18,8 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
-    }
+    },
+    "./a2ui/schema.json": "./schemas/a2ui-surface.v1.schema.json"
   },
   "publishConfig": {
     "access": "public",
@@ -26,7 +28,8 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
-      }
+      },
+      "./a2ui/schema.json": "./schemas/a2ui-surface.v1.schema.json"
     }
   },
   "scripts": {

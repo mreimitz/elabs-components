@@ -8,15 +8,17 @@ Always-on. Canonical decisions (D1–D7) live once in [`docs/DECISIONS.md`](../.
 
 1. You (or the agent) write the screen's code → **Build-with**: import `@elabs-ai/components-*`
    or copy-own a registry block. Default, ~99%. Stop here.
-2. The agent must **design and emit** the UI at runtime → **Generative UI** (D2). Rare,
-   phase-gated (WP-11). A chat that shows messages is still Build-with.
+2. The agent must **design and emit** the UI at runtime → **Generative UI** (D2): an A2UI
+   surface, data validated against the catalog. Rare. A chat that shows messages is still
+   Build-with.
 
 ## D2 — rendering agent output
 
 Pick by what the agent produces: a **conversation** (text, tool calls, reasoning, sources)
 → AI SDK `UIMessage` via `@elabs-ai/components-ai`, default; an **agent-designed surface
-inside the chat** → A2UI, not shipped yet (WP-11), Build-with until then; **ad-hoc agent
-JSX** → `JSXPreview` (shipped), never the default. Never wire model calls into a component
+inside the chat** → A2UI: `{ "a2ui": "1", "root": … }` of catalog types (`brand-ui a2ui
+catalog`), rendered by `A2uiSurface`, actions to the host's `onAction`; **ad-hoc agent
+JSX** → `JSXPreview` (shipped), the escape hatch, never the default. Never wire model calls into a component
 (D5). Detail: `.claude/rules/ai.md`.
 
 ## D5 — scope boundary (what brand-ui ISN'T)

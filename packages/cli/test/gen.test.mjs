@@ -63,11 +63,18 @@ const AGENT_OUTPUT_FIXTURE = {
       wiring: "Pass the JSX string.",
     },
     a2ui: {
-      status: "not-shipped",
-      title: "A2UI — NOT YET",
-      available: false,
-      tracking: "WP-11",
-      summary: "Not built.",
+      status: "shipped",
+      title: "A2UI — an agent-designed surface",
+      available: true,
+      summary: "Data validated against the catalog.",
+      component: "A2uiSurface",
+      protocol: '{ "a2ui": "1", "root": node }',
+      props: { surface: "A2uiSurfaceSpec | string", onAction: "fn" },
+      tooling: ["brand-ui a2ui catalog"],
+      streaming: "prunes what does not validate yet.",
+      safety: "catalog types only.",
+      example: "const surface = { a2ui: '1' };",
+      wiring: "Render with A2uiSurface.",
     },
   },
   donts: ["Don't call the model in a component."],
@@ -200,6 +207,9 @@ function makeRoot({ decisionBody } = {}) {
       "",
       "<!-- brand-ui:gen:dashboard-spec:start -->",
       "<!-- brand-ui:gen:dashboard-spec:end -->",
+      "",
+      "<!-- brand-ui:gen:a2ui:start -->",
+      "<!-- brand-ui:gen:a2ui:end -->",
       "",
       "Hand prose BELOW the catalogue.",
       "",
@@ -373,19 +383,19 @@ test("SKILL CATALOGUE: generated from the manifest; hand prose survives; drift i
 // ── 6. the agent-output contract region: generated into the skill + the MDX page,
 //      A2UI shown as future-only, and a consumedBy rename is gated ───────────────
 
-test("AGENT OUTPUT: generated into skill + MDX page; A2UI is future; rename gates", async () => {
+test("AGENT OUTPUT: generated into skill + MDX page; three paths; rename gates", async () => {
   const root = makeRoot();
   const skill = join(root, "skills/brand-ui/SKILL.md");
   const page = join(root, "apps/docs/stories/AI-Output-Contract-for-Agents.mdx");
   try {
     await writeGen(root);
     const md = readFileSync(skill, "utf8");
-    // Both SHIPPED paths are documented.
+    // All three SHIPPED paths are documented.
     assert.ok(md.includes("Path A"), "Path A (UIMessage) heading present");
     assert.ok(md.includes("Path B"), "Path B (JSXPreview) heading present");
-    // A2UI is rendered as NOT YET / WP-11 — never as a usable surface.
-    assert.ok(/WP-11/.test(md), "A2UI shown as WP-11");
-    assert.ok(/not yet/i.test(md), "A2UI shown as not-yet");
+    assert.ok(md.includes("Path C"), "Path C (A2UI) heading present");
+    assert.ok(md.includes("A2uiSurface"), "A2UI rendered by its component");
+    assert.ok(!/WP-11|not yet/i.test(md), "A2UI no longer shown as a future path");
     // The tool state→Status mapping is rendered FROM the manifest.
     assert.ok(md.includes("input-streaming"), "tool state mapping present");
     // The same contract region landed in the MDX page too (one source).

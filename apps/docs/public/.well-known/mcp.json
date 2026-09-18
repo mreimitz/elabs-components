@@ -9,7 +9,7 @@
       "transport": "streamable-http",
       "url": "https://elabs-ai.com/mcp",
       "authentication": "none",
-      "tools": ["info", "search", "docs", "tokens", "chart_for"]
+      "tools": ["info", "search", "docs", "tokens", "chart_for", "a2ui"]
     },
     {
       "name": "brand-ui (local, with audit + your taste profile)",

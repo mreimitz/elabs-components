@@ -741,10 +741,33 @@ export const INTENT = {
       streaming: "isStreaming → build up; parse errors suppressed until the tag completes",
     },
     antiPatterns: [
-      "Making JSXPreview the default generative path — render a conversation (UIMessage) or, once it lands, A2UI; this is the escape hatch (D2).",
+      "Making JSXPreview the default generative path — render a conversation (UIMessage) or an A2UI surface (A2uiSurface, validated data); this is the escape hatch (D2).",
       "Rendering JSXPreviewError on a half-arrived tag — an incomplete tag is not an error; suppress it until the input settles.",
       "Omitting JSXPreviewSkeleton — the preview must reserve its final space instead of popping in.",
       "Passing untrusted JSX without deciding the trust boundary in the app — the component renders what it is given.",
+    ],
+  },
+
+  A2uiSurface: {
+    purpose:
+      "The SAFE generative-UI path (D2): renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction.",
+    category: "ai",
+    relationships: {
+      usedInside: ["Message", "ToolOutput", "Artifact"],
+      pairsWith: ["uiCatalog", "createA2uiCatalog", "validateA2uiSurface"],
+      avoidNextTo: ["JSXPreview for the same surface — pick the data path or the escape hatch, not both"],
+    },
+    stateTokens: {
+      loading: "layout-shaped Skeleton + role=status live region until the first node paints",
+      streaming:
+        "isStreaming → the JSON prefix is completed, valid nodes draw, invalid-yet nodes are pruned; no error until the input settles",
+      error: "settled + invalid → role=alert listing every problem with its path; onError once",
+    },
+    antiPatterns: [
+      "Letting the agent emit className, style or code — a surface is data; the validator rejects anything outside `brand-ui a2ui catalog`.",
+      "Resolving actions inside the surface — `on.<event>` names a host verb; the app's onAction decides what it means (D5).",
+      "Reaching for A2UI for a chat that only shows messages — that is a conversation (UIMessage); A2UI is for screens the agent designs.",
+      "Extending the catalog with a component that owns its own colours — every catalog type renders on semantic tokens so a surface inherits the app's theme.",
     ],
   },
 

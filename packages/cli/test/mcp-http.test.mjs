@@ -42,7 +42,7 @@ test("initialize negotiates a supported protocol version and falls back otherwis
 test("hosted tools/list leaves out audit, which needs the caller's disk", async () => {
   const body = await (await post(rpc("tools/list"))).json();
   const names = body.result.tools.map((t) => t.name).sort();
-  assert.deepEqual(names, ["chart_for", "docs", "info", "search", "tokens"]);
+  assert.deepEqual(names, ["a2ui", "chart_for", "docs", "info", "search", "tokens"]);
 });
 
 test("hosted audit call is a tool-level error that points at the local server", async () => {

@@ -21,8 +21,8 @@ decisions **here**, regenerate there. Everything between the two markers is the 
 <!-- prettier-ignore -->
 | # | Decision | The short answer | Detail rule |
 | --- | --- | --- | --- |
-| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decisions.md`](../.claude/rules/decisions.md) |
-| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai.md`](../.claude/rules/ai.md) |
+| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI (A2UI) is for screens the agent must design at runtime. | [`decisions.md`](../.claude/rules/decisions.md) |
+| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI: JSON validated against the catalog, rendered by `A2uiSurface`. | [`ai.md`](../.claude/rules/ai.md) |
 | **D3** | Which package | `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · dashboard sheet → `@elabs-ai/components-charts/dashboard` · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai) | `skills/brand-ui/SKILL.md` (generated table) |
 | **D4** | Import vs copy-own | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry). | [`registry.md`](../.claude/rules/registry.md) |
 | **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`decisions.md`](../.claude/rules/decisions.md) |
@@ -39,25 +39,28 @@ are not re-stated here.
 
 ## D1 — Which paradigm? (the top fork)
 
-| You want…                                                                  | Use                                                                | Notes                                                   |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
-| To build an app/screen _with_ components (you or the agent write the code) | **Build-with** — import `@elabs-ai/components-*` / copy-own blocks | The default. ~99% of work. "Aware-of-library."          |
-| The agent to _emit_ the UI at runtime (it designs the screen)              | **Generative UI** — A2UI (see D2)                                  | Rare, phase-gated (WP-11). Don't reach here by default. |
+| You want…                                                                  | Use                                                                | Notes                                                                        |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| To build an app/screen _with_ components (you or the agent write the code) | **Build-with** — import `@elabs-ai/components-*` / copy-own blocks | The default. ~99% of work. "Aware-of-library."                               |
+| The agent to _emit_ the UI at runtime (it designs the screen)              | **Generative UI** — A2UI (see D2)                                  | Rare. Don't reach here by default; a chat that shows messages is Build-with. |
 
 Apply it with the routing checklist in [`decisions.md`](../.claude/rules/decisions.md).
 
 ## D2 — Rendering agent output: message vs surface vs ad-hoc
 
-| The agent is producing…                                          | Render with                                                        | Status                                                 |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------ |
-| A **conversation** (text, tool calls, reasoning, sources, files) | **AI SDK `UIMessage`** + `@elabs-ai/components-ai` chat components | **Shipped.** The default.                              |
-| A **rich, agent-designed surface** inside the chat               | **A2UI** (`<A2uiSurface>`), validated against the catalog          | **Not yet shipped — WP-11.** The _safe_ path.          |
-| **Ad-hoc agent JSX** (flexible, less safe)                       | **`JSXPreview`** (`@elabs-ai/components-ai`)                       | **Shipped.** Escape hatch — prefer A2UI when it lands. |
+| The agent is producing…                                          | Render with                                                        | Status                                          |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------- |
+| A **conversation** (text, tool calls, reasoning, sources, files) | **AI SDK `UIMessage`** + `@elabs-ai/components-ai` chat components | **Shipped.** The default.                       |
+| A **rich, agent-designed surface** inside the chat               | **A2UI** (`<A2uiSurface>`), validated against the catalog          | **Shipped.** The _safe_ path: data, never code. |
+| **Ad-hoc agent JSX** (flexible, less safe)                       | **`JSXPreview`** (`@elabs-ai/components-ai`)                       | **Shipped.** Escape hatch — prefer A2UI.        |
 
 Mental model: **AI SDK = "what the agent said" (a chat). A2UI = "what the agent wants you to
 show" (a screen). A2UI rides _inside_ the AI SDK chat.** Full distinction + import discipline
-in [`ai.md`](../.claude/rules/ai.md). The A2UI concept paper was
-removed when this fork was debranded; this section and that rule are what survive of it.
+in [`ai.md`](../.claude/rules/ai.md). A2UI surface = `{ "a2ui": "1", "root": node }` where every
+`type` is a catalog entry (`brand-ui a2ui catalog`), props are validated per type, and
+`on.<event>` → `{ name, payload }` reaches the host's `onAction` — the app resolves the
+verb (D5). Source: `packages/ai/src/a2ui/` (engine-free core + `A2uiSurface`); the CLI and
+the hosted MCP run the same validator (`pnpm gen` bundles it).
 
 ## D5 — Scope boundary (what brand-ui is NOT)
 

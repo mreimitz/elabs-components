@@ -99,6 +99,18 @@ export const STEPS = [
     outputs: ["brand-ui.manifest.json"],
   },
   {
+    // A2UI (D2): the catalog schema (from catalog.source.json + the manifest), the
+    // CLI bundle of the engine-free core, and the surface JSON Schema.
+    id: "a2ui",
+    run: node("packages/cli/scripts/gen-a2ui-catalog.mjs"),
+    check: node("packages/cli/scripts/gen-a2ui-catalog.mjs", "--check"),
+    outputs: [
+      "packages/ai/src/a2ui/core/catalog.generated.ts",
+      "packages/cli/lib/a2ui.generated.mjs",
+      "packages/ai/schemas/a2ui-surface.v1.schema.json",
+    ],
+  },
+  {
     // The Storybook Intent block's data file — a small projection of the manifest
     // (purpose, relationships, anti-patterns, storyId) keyed by `meta.title`.
     id: "intent-json",
