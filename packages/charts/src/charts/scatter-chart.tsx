@@ -85,10 +85,18 @@ function extractScatterConfigs(children: ReactNode): LineConfig[] {
     if (isScatterComponent && props?.dataKey) {
       const seriesColor =
         defaultScatterColors[seriesIndex % defaultScatterColors.length] ?? defaultScatterColors[0];
+      // RM-115: `sizeKey` can draw a marker larger than the fixed `radius` —
+      // the shell's x padding (`xRangePadding`, keyed off `strokeWidth` here)
+      // needs the LARGER of the two so a big bubble at the plot's edge never
+      // clips.
+      const maxRadius = Math.max(
+        props.radius ?? 5,
+        props.sizeKey ? (props.sizeRange?.[1] ?? 22) : 0,
+      );
       configs.push({
         dataKey: props.dataKey,
         stroke: props.fill || props.stroke || seriesColor,
-        strokeWidth: props.radius ?? 5,
+        strokeWidth: maxRadius,
         yAxisId: props.yAxisId,
       });
       seriesIndex += 1;

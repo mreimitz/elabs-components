@@ -12,9 +12,19 @@ import {
   useChartSelection,
 } from "./chart-selection";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
+import {
+  DEFAULT_SCATTER_SIZE_RANGE,
+  resolveColorBy,
+  resolveScatterSizeRadius,
+  resolveShapeBy,
+  scatterSizeDomainMax,
+  type ScatterColorByConfig,
+  type ScatterShapeByConfig,
+} from "./scatter-encodings";
 import { SeriesMarkers, type SeriesMarkersProps } from "./series-markers";
 import { StaticSeriesPointMarker } from "./series-point-marker";
 import { isPaletteFill, type SeriesMarkerShape, seriesMarkerShape } from "./series-pattern";
+import { TrendLine } from "./trend-line";
 import { useHighDecoration } from "./use-high-decoration";
 import { Y_AXIS_DEFAULT_TICK_COUNT } from "./y-axis-ticks";
 
@@ -80,6 +90,37 @@ export interface ScatterProps extends Omit<SeriesMarkersProps, "animate"> {
    * function is called with the row and returns whether it is highlighted.
    */
   highlightKey?: string | ((d: Record<string, unknown>) => boolean);
+  /**
+   * Bubble size by a numeric column (RM-115) — `d[sizeKey]` scales the
+   * marker's radius by `sqrt(value / max)` (honesty gate: AREA, not radius,
+   * carries the value — see `areaRadius`). Rows missing `sizeKey` (or the
+   * whole series, when `sizeKey` is set but every value is non-numeric) draw
+   * at `sizeRange[0]`. Unset (default): every marker draws at `radius`.
+   */
+  sizeKey?: string;
+  /** `[minRadius, maxRadius]` in px for `sizeKey`. Default: `[4, 22]`. */
+  sizeRange?: [number, number];
+  /**
+   * Colour each point by a fixed/categorical/numeric column (RM-115) instead
+   * of the series' own colour. A row whose `colorBy.key` is missing/unusable
+   * keeps drawing in the series' own `fill`. See `scatter-encodings.ts`'
+   * `resolveColorBy` — a consumer building a legend (RM-118) calls it with
+   * the same `data`/`colorBy` to get the identical colour stops.
+   */
+  colorBy?: ScatterColorByConfig;
+  /**
+   * Shape each point by a categorical column (RM-115), cycling through the
+   * series-marker ramp (≤ 6 shapes; a 7th+ distinct value repeats the last
+   * shape). See `resolveShapeBy` for the legend a consumer (RM-118) reads.
+   */
+  shapeBy?: ScatterShapeByConfig;
+  /**
+   * A least-squares trend line (RM-115): `"linear"` (`y = a + bx`) or `"log"`
+   * (`y = a + b·ln(x)`, points with a non-positive x dropped). `false`
+   * (default): no trend line. See `trend-line.tsx` for the regression space
+   * it fits in and its accuracy caveat for `"log"` on a `xScale="linear"` chart.
+   */
+  trend?: "linear" | "log" | false;
 }
 
 const DEFAULT_Y_GRADIENT_FROM = "var(--color-red-500)";
@@ -358,6 +399,12 @@ interface ScatterCustomMarkersProps {
   selection?: ChartSelectionProps | null;
   /** Category of a row index (selection key). */
   categoryAt?: (index: number) => string | number | Date | undefined;
+  /** Per-point radius override (RM-115 `sizeKey`). Falls back to `radius` when unset/returns `undefined`. */
+  radiusOf?: (point: ScatterPointDatum) => number | undefined;
+  /** Per-point fill override (RM-115 `colorBy`). Falls back to `fill` when unset/returns `undefined`. */
+  fillOf?: (point: ScatterPointDatum) => string | undefined;
+  /** Per-point shape override (RM-115 `shapeBy`). Falls back to `shape` when unset/returns `undefined`. */
+  shapeOf?: (point: ScatterPointDatum) => SeriesMarkerShape | undefined;
 }
 
 /**
@@ -385,6 +432,9 @@ function ScatterCustomMarkers({
   innerHeight,
   selection = null,
   categoryAt,
+  radiusOf,
+  fillOf,
+  shapeOf,
 }: ScatterCustomMarkersProps) {
   const { bestSet, worstSet } = useMemo(
     () =>
@@ -404,17 +454,20 @@ function ScatterCustomMarkers({
           category === undefined
             ? resolveMarkPaint(null, { category: "" })
             : resolveMarkPaint(selection, { category, datum: p.d });
+        const pointRadius = radiusOf?.(p) ?? radius;
+        const pointFill = fillOf?.(p) ?? fill;
+        const pointShape = shapeOf?.(p) ?? shape;
         const marker = (
           <g data-index={p.index} data-slot="scatter-point" key={p.index} opacity={opacity}>
             <StaticSeriesPointMarker
               cx={p.cx}
               cy={p.cy}
-              fill={fill}
+              fill={pointFill}
               outlineColor={outlineColor}
               outlineWidth={outlineWidth}
-              radius={radius}
+              radius={pointRadius}
               ringGap={ringGap}
-              shape={shape}
+              shape={pointShape}
               stroke={stroke}
               strokeWidth={strokeWidth}
             />
@@ -427,7 +480,7 @@ function ScatterCustomMarkers({
           <ChartSelectionMark
             key={p.index}
             paint={selectionPaint}
-            shape={<circle cx={p.cx} cy={p.cy} r={radius} />}
+            shape={<circle cx={p.cx} cy={p.cy} r={pointRadius} />}
           >
             {marker}
           </ChartSelectionMark>
@@ -474,6 +527,11 @@ export function Scatter({
   jitter,
   yType = "number",
   highlightKey,
+  sizeKey,
+  sizeRange = DEFAULT_SCATTER_SIZE_RANGE,
+  colorBy,
+  shapeBy,
+  trend = false,
 }: ScatterProps) {
   const stable = useChartStable();
   const { data, xScale, xAccessor, innerHeight, lines, dateLabels } = stable;
@@ -545,16 +603,40 @@ export function Scatter({
   const finalFill = resolvedFill ?? seriesConfig?.stroke ?? seriesColor;
   const finalStroke = resolvedStroke ?? finalFill;
 
-  // A jittered/categorical position or per-point (`labelExtremes`) opacity is
-  // more than `SeriesMarkers` can express, so those two cases render through
-  // the static custom grid instead. Everything else — including plain
-  // `dropLines` and `highlightKey` — keeps rendering through `SeriesMarkers`
-  // unchanged, so a story that sets NEITHER of these two renders exactly as
-  // it did before this feature existed.
+  // RM-115: sizeKey / colorBy / shapeBy — per-point encodings resolved once
+  // per render, cheap and side-effect-free like `points` above.
+  const sizeDomainMax = useMemo(
+    () => (sizeKey ? scatterSizeDomainMax(data, sizeKey) : 0),
+    [data, sizeKey],
+  );
+  const colorByResolution = useMemo(() => resolveColorBy(data, colorBy), [data, colorBy]);
+  const shapeByResolution = useMemo(() => resolveShapeBy(data, shapeBy), [data, shapeBy]);
+  const radiusOf = sizeKey
+    ? (p: ScatterPointDatum) => resolveScatterSizeRadius(p.d[sizeKey], sizeDomainMax, sizeRange)
+    : undefined;
+  const fillOf = colorBy
+    ? (p: ScatterPointDatum) => colorByResolution.colorOf(p.d) ?? finalFill
+    : undefined;
+  const shapeOf = shapeBy
+    ? (p: ScatterPointDatum) => shapeByResolution.shapeOf(p.d) ?? bpShape
+    : undefined;
+
+  // A jittered/categorical position, per-point (`labelExtremes`) opacity, or a
+  // per-point size/colour/shape encoding is more than `SeriesMarkers` can
+  // express, so those cases render through the static custom grid instead.
+  // Everything else — including plain `dropLines` and `highlightKey` — keeps
+  // rendering through `SeriesMarkers` unchanged, so a story that sets NONE of
+  // these renders exactly as it did before this feature existed.
   // A selection input (RM-073) needs per-point paint, so it also routes through
   // the static grid — only when `selectionStates` is set, so the opt-out DOM is unchanged.
   const hasSelection = Boolean(selection?.selectionStates);
-  const useCustomMarkers = yType === "category" || Boolean(labelExtremes) || hasSelection;
+  const useCustomMarkers =
+    yType === "category" ||
+    Boolean(labelExtremes) ||
+    hasSelection ||
+    Boolean(sizeKey) ||
+    Boolean(colorBy) ||
+    Boolean(shapeBy);
 
   return (
     <>
@@ -578,6 +660,8 @@ export function Scatter({
         <ScatterDropLines dropLines={dropLines} innerHeight={innerHeight} points={points} />
       ) : null}
 
+      {trend ? <TrendLine dataKey={dataKey} kind={trend} yAxisId={seriesConfig?.yAxisId} /> : null}
+
       {useCustomMarkers ? (
         <ScatterCustomMarkers
           dateLabels={dateLabels}
@@ -592,8 +676,11 @@ export function Scatter({
           radius={radius}
           ringGap={ringGap}
           categoryAt={hasSelection ? (index) => chartRowCategory(stable, index) : undefined}
+          fillOf={fillOf}
+          radiusOf={radiusOf}
           selection={hasSelection ? selection : null}
           shape={bpShape}
+          shapeOf={shapeOf}
           stroke={finalStroke}
           strokeWidth={strokeWidth}
         />

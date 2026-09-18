@@ -795,4 +795,32 @@ export { type GridMode } from "./grid";
 export { type AxisTickCount } from "./tick-targets";
 export { type XAxisOrientation } from "./x-axis";
 export { type AxisLabelPlacement } from "./y-axis";
+// Scatter depth — RM-115
+export {
+  DEFAULT_SCATTER_SIZE_RANGE,
+  resolveColorBy,
+  resolveScatterSizeRadius,
+  resolveShapeBy,
+  SCATTER_SHAPE_SOFT_CAP,
+  scatterSizeDomainMax,
+  type ScatterColorByConfig,
+  type ScatterColorByResolution,
+  type ScatterEncodingLegendItem,
+  type ScatterShapeByConfig,
+  type ScatterShapeByResolution,
+} from "./scatter-encodings";
+export {
+  fitTrend,
+  TrendLine,
+  trendDirection,
+  type TrendFit,
+  type TrendLineProps,
+  type TrendPoint,
+} from "./trend-line";
+export {
+  CustomShapes,
+  type CustomShapesProps,
+  type ScatterShapeSpec,
+  type ScatterShapeStyle,
+} from "./custom-shapes";
 export { type AxisDomain, type AxisDomainBound, type ValueScaleType } from "./y-axis-scales";
