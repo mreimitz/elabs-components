@@ -9,6 +9,9 @@
 import type { ChartValueFormat } from "../charts/value-format";
 import type { DateFormatPreset } from "../charts/date-format";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
+import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/bar-overlays";
+import type { BarSort } from "../charts/bar-stacking";
+import type { ChartColorBy } from "../charts/chart-context";
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -190,8 +193,12 @@ export interface ChartSpec {
   /** Supplemental description for screen readers (e.g. "Revenue 2024, 3 series"). */
   description?: string;
 
-  /** Stack bars/areas instead of grouping them. Default: false */
-  stacked?: boolean;
+  /**
+   * Stack bars/areas instead of grouping them. Bars also take `"percent"`
+   * (each category normalised to 100 %) and `"diverging"` (Likert rows
+   * centred on `divergingCenter`) — RM-113. Default: false
+   */
+  stacked?: boolean | "percent" | "diverging";
 
   /** Bar/funnel orientation. Default: "vertical" for bars. */
   orientation?: "vertical" | "horizontal";
@@ -240,6 +247,20 @@ export interface ChartSpec {
    * selection field to any chart without knowing the chart type.
    */
   fields?: { category?: string; series?: string };
+
+  // BarChart — RM-113
+  /** `stacked: "diverging"`: the series centred on the zero line (a Likert "Neutral"). */
+  divergingCenter?: string;
+  /** Bar row order: `"asc"`/`"desc"` by value (stack total when stacked) or `{ by, dir }`. */
+  sort?: BarSort;
+  /** Gather bar rows by this column, with a header per group. */
+  groupBy?: string;
+  /** Colour bars by another column (categorical ≤ 6 hues, or a sequential / diverging ramp). */
+  colorBy?: ChartColorBy;
+  /** Per-bar value markers and range spans (confidence intervals, targets). */
+  overlays?: BarOverlay[];
+  /** A muted prior-period column behind each bar; `labels` picks its grey label. */
+  comparison?: BarComparison & { labels?: BarComparisonLabel };
 }
 
 // Axes — RM-108

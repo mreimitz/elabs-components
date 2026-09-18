@@ -10,6 +10,7 @@ import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
+import { YAxis } from "./y-axis";
 
 const meta = {
   title: "Charts/BarChart",
@@ -926,4 +927,339 @@ export const SelectionStates: Story = {
       expect(canvasElement.querySelectorAll(`[data-selection="${state}"]`)).toHaveLength(4);
     }
   },
+};
+
+// --- Bar / column richness (RM-113) -----------------------------------------
+// Datawrapper's bar vocabulary: percent and diverging stacks, sorting,
+// grouping, colour-by-column, tracks, overlays and comparison columns.
+
+const LIKERT_SERIES = [
+  { key: "Strongly disagree", fill: "var(--chart-div-neg-2)" },
+  { key: "Disagree", fill: "var(--chart-div-neg-1)" },
+  { key: "Neutral", fill: "var(--chart-mono-3)" },
+  { key: "Agree", fill: "var(--chart-div-pos-1)" },
+  { key: "Strongly agree", fill: "var(--chart-div-pos-2)" },
+];
+
+const likertData = [
+  {
+    question: "Onboarding",
+    "Strongly disagree": 6,
+    Disagree: 14,
+    Neutral: 22,
+    Agree: 38,
+    "Strongly agree": 20,
+  },
+  {
+    question: "Docs",
+    "Strongly disagree": 10,
+    Disagree: 21,
+    Neutral: 25,
+    Agree: 30,
+    "Strongly agree": 14,
+  },
+  {
+    question: "Support",
+    "Strongly disagree": 4,
+    Disagree: 9,
+    Neutral: 17,
+    Agree: 41,
+    "Strongly agree": 29,
+  },
+  {
+    question: "Pricing",
+    "Strongly disagree": 18,
+    Disagree: 27,
+    Neutral: 24,
+    Agree: 21,
+    "Strongly agree": 10,
+  },
+  {
+    question: "Speed",
+    "Strongly disagree": 3,
+    Disagree: 8,
+    Neutral: 19,
+    Agree: 44,
+    "Strongly agree": 26,
+  },
+];
+
+function likertBars() {
+  return LIKERT_SERIES.map((series) => (
+    <Bar
+      dataKey={series.key}
+      fill={series.fill}
+      key={series.key}
+      lineCap="butt"
+      showValues="inside"
+    />
+  ));
+}
+
+/**
+ * Likert rows as a diverging stack: `stacked="diverging"` with
+ * `divergingCenter="Neutral"` centres the neutral answers on the zero line;
+ * disagreement grows left, agreement right. Sign is carried by side AND by
+ * the value labels, never by hue alone.
+ */
+export const LikertDiverging: Story = {
+  name: "Likert diverging stack",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-80 w-full">
+      <BarChart
+        accessibleLabel="Survey answers per question, centred on neutral"
+        data={likertData}
+        divergingCenter="Neutral"
+        orientation="horizontal"
+        stacked="diverging"
+        xDataKey="question"
+      >
+        <Grid vertical />
+        {likertBars()}
+        <BarYAxis />
+        <ChartTooltip />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const neutral = [
+        ...canvasElement.querySelectorAll<SVGRectElement>('rect[fill="var(--chart-mono-3)"]'),
+      ];
+      const zero = canvasElement.querySelector("svg g > line");
+      expect(neutral).toHaveLength(5);
+      const zeroX = Number(zero?.getAttribute("x1"));
+      for (const rect of neutral) {
+        const box = Number(rect.getAttribute("x")) + Number(rect.getAttribute("width")) / 2;
+        expect(Math.abs(box - zeroX)).toBeLessThan(0.5);
+      }
+    });
+  },
+};
+
+/**
+ * The same answers as `stacked="percent"`: every category normalised to
+ * 100 %, the value axis reads 0–100 % and each segment prints its share.
+ */
+export const PercentStacked: Story = {
+  name: "Percent stack",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-80 w-full">
+      <BarChart
+        accessibleLabel="Survey answers per question as shares of 100 percent"
+        data={likertData}
+        stacked="percent"
+        xDataKey="question"
+      >
+        <Grid horizontal />
+        {likertBars()}
+        <BarXAxis />
+        <YAxis />
+        <ChartTooltip />
+      </BarChart>
+    </div>
+  ),
+};
+
+/** `stacked` + `stackOrder="desc"` + `showTotals`: largest segment first, the total past each stack. */
+export const StackedTotals: Story = {
+  name: "Stacked with totals",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-72 w-full">
+      <BarChart data={monthlyData} showTotals stackOrder="desc" stacked xDataKey="month">
+        <Grid horizontal />
+        <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="butt" />
+        <Bar dataKey="profit" fill="var(--chart-2)" lineCap="butt" />
+        <BarXAxis />
+      </BarChart>
+    </div>
+  ),
+};
+
+const carWeights = [
+  { model: "City A", class: "Small", lo90: 980, hi90: 1260, lo50: 1060, hi50: 1180, avg: 1120 },
+  { model: "City B", class: "Small", lo90: 1010, hi90: 1330, lo50: 1100, hi50: 1240, avg: 1170 },
+  {
+    model: "Compact C",
+    class: "Compact",
+    lo90: 1240,
+    hi90: 1560,
+    lo50: 1320,
+    hi50: 1480,
+    avg: 1400,
+  },
+  {
+    model: "Compact D",
+    class: "Compact",
+    lo90: 1290,
+    hi90: 1640,
+    lo50: 1380,
+    hi50: 1540,
+    avg: 1460,
+  },
+  { model: "SUV E", class: "SUV", lo90: 1720, hi90: 2380, lo50: 1880, hi50: 2190, avg: 2030 },
+  { model: "SUV F", class: "SUV", lo90: 1810, hi90: 2520, lo50: 1990, hi50: 2330, avg: 2150 },
+];
+
+/**
+ * The range-bar recipe: two range overlays (light 90 %, dark 50 %) and an
+ * average tick per model, grouped by class with a bold header per group. The
+ * overlays are listed in the legend items the chart exposes.
+ */
+export const RangeOverlaysGrouped: Story = {
+  name: "Range overlays, grouped",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-96 w-full">
+      <BarChart
+        accessibleLabel="Car weight ranges per model, grouped by class"
+        accessibleDescription="Light span: middle 90 percent of weights; dark span: middle 50 percent; tick: average weight."
+        data={carWeights}
+        groupBy="class"
+        orientation="horizontal"
+        overlays={[
+          { kind: "range", lowKey: "lo90", highKey: "hi90", label: "90 % of cars" },
+          { kind: "range", lowKey: "lo50", highKey: "hi50", label: "50 % of cars" },
+          { kind: "value", key: "avg", label: "Average", marker: "tick" },
+        ]}
+        xDataKey="model"
+      >
+        <Grid vertical />
+        <BarYAxis />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll('[data-slot="bar-chart-overlay"]')).toHaveLength(3);
+      expect(canvasElement.querySelectorAll('[data-slot="bar-chart-group-header"]')).toHaveLength(
+        3,
+      );
+    });
+  },
+};
+
+const regionSales = [
+  { store: "Harbour", sales: 420, region: "North" },
+  { store: "Market St", sales: 310, region: "South" },
+  { store: "Old Town", sales: 505, region: "North" },
+  { store: "Airport", sales: 280, region: "East" },
+  { store: "Riverside", sales: 360, region: "West" },
+  { store: "Station", sales: 455, region: "South" },
+];
+
+/** `sort="desc"` + `colorBy={{ key: "region" }}`: value order, one hue per region, and a key. */
+export const SortedColorBy: Story = {
+  name: "Sorted, coloured by region",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-80 w-full">
+      <BarChart
+        accessibleLabel="Sales per store, largest first, coloured by region"
+        colorBy={{ key: "region" }}
+        data={regionSales}
+        orientation="horizontal"
+        sort="desc"
+        xDataKey="store"
+      >
+        <Grid vertical />
+        <Bar dataKey="sales" lineCap="butt" showValues />
+        <BarYAxis />
+      </BarChart>
+    </div>
+  ),
+};
+
+const quarterly = [
+  { quarter: "Q1", revenue: 128, prev: 110 },
+  { quarter: "Q2", revenue: 141, prev: 150 },
+  { quarter: "Q3", revenue: 156, prev: 132 },
+  { quarter: "Q4", revenue: 171, prev: 160 },
+];
+
+/** `comparison={{ key: "prev" }}`: last year as a muted column behind each quarter, grey differences on top. */
+export const ComparisonColumns: Story = {
+  name: "Comparison columns",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-72 w-full">
+      <BarChart
+        accessibleLabel="Quarterly revenue against the previous year"
+        comparison={{ key: "prev", label: "Previous year" }}
+        comparisonLabel="difference"
+        data={quarterly}
+        xDataKey="quarter"
+      >
+        <Grid horizontal />
+        <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="butt" />
+        <BarXAxis />
+        <YAxis />
+      </BarChart>
+    </div>
+  ),
+};
+
+const completion = [
+  { team: "Design", done: 82 },
+  { team: "Platform", done: 64 },
+  { team: "Mobile", done: 47 },
+  { team: "Data", done: 91 },
+];
+
+/** `track`: a grey bar to the axis maximum behind each bar — "what is missing". */
+export const TrackBars: Story = {
+  name: "Track bars",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-64 w-full">
+      <BarChart data={completion} orientation="horizontal" track xDataKey="team">
+        <Bar dataKey="done" fill="var(--chart-1)" lineCap="butt" showValues="inside" />
+        <BarYAxis />
+      </BarChart>
+    </div>
+  ),
+};
+
+const netChange = [
+  { team: "Design", change: 12 },
+  { team: "Platform", change: -8 },
+  { team: "Mobile", change: 4 },
+  { team: "Data", change: -15 },
+  { team: "Sales", change: 9 },
+];
+
+/**
+ * The signed reading: negative bars grow left from the zero line and every
+ * label sits at its bar's end, signed with a real minus.
+ */
+export const SignedHorizontal: Story = {
+  name: "Signed horizontal",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-64 w-full">
+      <BarChart data={netChange} orientation="horizontal" xDataKey="team">
+        <Bar dataKey="change" fill="var(--chart-1)" showValues zeroLine />
+        <BarYAxis />
+      </BarChart>
+    </div>
+  ),
+};
+
+/** `showValues={{ visibility: "hover" }}`: a value label only for the hovered category. */
+export const ValuesOnHover: Story = {
+  name: "Values on hover",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-72 w-full">
+      <BarChart data={monthlyData} xDataKey="month">
+        <Grid horizontal />
+        <Bar dataKey="revenue" fill="var(--chart-1)" showValues={{ visibility: "hover" }} />
+        <BarXAxis />
+        <ChartTooltip />
+      </BarChart>
+    </div>
+  ),
 };
