@@ -273,7 +273,14 @@ export const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
       <div
         ref={ref}
         data-slot="card-header"
-        className={cn("flex flex-col gap-1.5 p-6", className)}
+        // With a `CardAction` inside, the header becomes the two-column grid the
+        // action's `col-start-2 row-span-2` placement assumes (title + description
+        // stack on the left, the action top-right); without one, nothing changes.
+        className={cn(
+          "flex flex-col gap-1.5 p-6",
+          "has-data-[slot=card-action]:grid has-data-[slot=card-action]:auto-rows-min has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-action]:items-start",
+          className,
+        )}
         {...props}
       />
     );

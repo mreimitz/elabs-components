@@ -748,6 +748,10 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.assetPreview.raw": "Raw",
   // WebPreview's sandboxed iframe accessible name.
   "ai.webPreview.previewTitle": "Preview",
+  // A2UI surface (D2 — an agent-designed screen rendered from data)
+  "ai.a2ui.loading": "Loading surface…",
+  "ai.a2ui.invalid": "This surface can’t be shown — it doesn’t match the catalog.",
+  "ai.a2ui.moreErrors": { one: "…and {count} more problem", other: "…and {count} more problems" },
   // FileTree's expand/collapse chevron control.
   "ai.fileTree.expandFolder": "Expand {name}",
   "ai.fileTree.collapseFolder": "Collapse {name}",

@@ -27,6 +27,11 @@ streaming|error"`; empty (no text/attachments) never submits. ADR 0022: running 
 - Never re-export a wrapped renderer's security-default prop (#36): a `...props` wrapper
   around Streamdown must `Omit<>` sanitizer-override keys AND strip them at runtime
   (`stripSanitizerOverrides`). `pnpm check --rule sanitizer-passthrough`.
+- A2UI (`packages/ai/src/a2ui/`, D2): `core/` is engine-free (no React) — the validator,
+  JSON completer and schema builder are bundled into the CLI by `pnpm gen`; never import
+  React there. `catalog.source.json` decides what an agent may emit; `catalog.generated.ts`
+  is derived (never hand-edit); every non-builtin type needs a binding in `ui-catalog.tsx`
+  (a test asserts the key sets match). A surface never carries `className`/`style`/code.
 - Microcopy (ADR 0017): `useLocale()` → `t("ai.<area>.<key>")`, never a literal; checked by
   `pnpm check --rule microcopy,ai-microcopy-a11y`.
 

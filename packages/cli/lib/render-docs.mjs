@@ -273,7 +273,7 @@ export function renderLlmsHub(manifest) {
   lines.push("");
   lines.push(
     `- Hosted MCP (no install): \`claude mcp add --transport http brand-ui ${HOSTED_MCP_URL}\` ` +
-      "— Streamable HTTP, tools `info` · `search <q>` · `docs <Component>` · `tokens` · `chart_for`",
+      "— Streamable HTTP, tools `info` · `search <q>` · `docs <Component>` · `tokens` · `chart_for` · `a2ui`",
   );
   lines.push(
     "- CLI over stdio: `npx -y @elabs-ai/components-cli mcp`, or `pnpm add -D " +
@@ -284,6 +284,11 @@ export function renderLlmsHub(manifest) {
     "- New app in one command: `npx -y @elabs-ai/components-cli create <dir> --template dashboard` " +
       "(data-app · ai-assistant · flow-workspace · settings · marketing) — a runnable Vite + React app " +
       "with tokens, Tailwind `@source` lines and `ThemeProvider` wired",
+  );
+  lines.push(
+    "- Generative UI (an agent DESIGNS a screen): emit an A2UI surface — JSON of catalog types " +
+      "(`npx -y @elabs-ai/components-cli a2ui catalog`, `… a2ui validate <file>`, or the MCP `a2ui` tool) — " +
+      "and render it with `<A2uiSurface surface onAction />` from `@elabs-ai/components-ai`",
   );
   lines.push(`- Docs site: ${HOSTED_DOCS_URL} (Storybook — every component, live, in every theme)`);
   lines.push(`- Discovery: ${HOSTED_DOCS_URL}/.well-known/mcp.json`);
@@ -357,7 +362,10 @@ export function renderLlmsSpoke(manifest, pkgName) {
       `- Ad-hoc JSX → ${jsxPreview.component} (${jsxPreview.status}); ` +
         `renders only tags present in the components allow-list.`,
     );
-    lines.push(`- A2UI → ${a2ui.status} (${a2ui.tracking}); not usable yet.`);
+    lines.push(
+      `- Agent-designed surface (UI as data) → ${a2ui.component} (${a2ui.status}); ` +
+        "only catalog types render (`brand-ui a2ui catalog`); actions reach the host's onAction.",
+    );
     const tool = conversation.parts.find((p) => p.kind === "tool");
     if (tool) {
       lines.push(
@@ -660,7 +668,7 @@ export function renderAgentOutputGuidance(manifest) {
   );
   lines.push(`| Ad-hoc UI as a JSX string | \`${cell(jsx.component)}\` | shipped (escape hatch) |`);
   lines.push(
-    `| An agent-designed surface (UI as data) | A2UI | **not yet — ${cell(a2ui.tracking)}** |`,
+    `| An agent-designed surface (UI as data) | \`${cell(a2ui.component)}\` | shipped (the safe generative path) |`,
   );
   lines.push("");
   lines.push(
@@ -775,10 +783,29 @@ export function renderAgentOutputGuidance(manifest) {
   lines.push(`> ${jsx.wiring}`);
   lines.push("");
 
-  // ── A2UI — NOT YET ────────────────────────────────────────────────────────
-  lines.push(`### ${a2ui.title}`);
+  // ── Path C — A2UI ─────────────────────────────────────────────────────────
+  lines.push(`### Path C · ${a2ui.title}`);
   lines.push("");
-  lines.push(`> ${a2ui.summary}`);
+  lines.push(a2ui.summary);
+  lines.push("");
+  lines.push(`- **Protocol:** \`${a2ui.protocol}\``);
+  lines.push("");
+  lines.push("| Prop | Type |");
+  lines.push("| --- | --- |");
+  for (const [prop, type] of Object.entries(a2ui.props)) {
+    lines.push(`| \`${cell(prop)}\` | \`${cell(type)}\` |`);
+  }
+  lines.push("");
+  lines.push(`- **Safety:** ${a2ui.safety}`);
+  lines.push(`- **Streaming:** ${a2ui.streaming}`);
+  lines.push("- **Tooling:**");
+  for (const t of a2ui.tooling) lines.push(`  - ${t}`);
+  lines.push("");
+  lines.push("```tsx");
+  lines.push(a2ui.example);
+  lines.push("```");
+  lines.push("");
+  lines.push(`> ${a2ui.wiring}`);
   lines.push("");
 
   // ── Wire into YOUR runtime ──────────────────────────────────────────────

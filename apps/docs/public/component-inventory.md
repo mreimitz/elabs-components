@@ -17,7 +17,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
 | `@elabs-ai/components-ui` | packages/ui | 379 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
-| `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
+| `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 198 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
@@ -525,6 +525,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
+| A2UI_CATALOG_SCHEMA | component |  | `@elabs-ai/components-ai` |  |
+| A2UI_CATALOG_VERSION | component |  | `@elabs-ai/components-ai` |  |
+| A2UI_COMMON_PROPS | component |  | `@elabs-ai/components-ai` |  |
+| A2UI_SURFACE_SCHEMA_ID | component |  | `@elabs-ai/components-ai` |  |
+| A2UI_VERSION | component |  | `@elabs-ai/components-ai` |  |
+| A2uiSurface | component |  | `@elabs-ai/components-ai` | The SAFE generative-UI path (D2): renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction. |
 | Agent | component |  | `@elabs-ai/components-ai` | Accordion-shaped disclosure describing a sub-agent: its instructions, tools and output. |
 | AgentContent | component |  | `@elabs-ai/components-ai` |  |
 | AgentEvent | component |  | `@elabs-ai/components-ai` | One lifecycle or hook event on the agent timeline — what fired around a tool call, and whether its checks passed. |
@@ -941,6 +947,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Transcription | component |  | `@elabs-ai/components-ai` | Time-coded speech segments, highlighted against playback position and seekable. |
 | TranscriptionSegment | component |  | `@elabs-ai/components-ai` |  |
 | TurnStatus | component |  | `@elabs-ai/components-ai` | In-turn footer reporting the three facts a running turn owes the user: elapsed time, cost, and how to stop it. |
+| UI_CATALOG_BINDINGS | component |  | `@elabs-ai/components-ai` |  |
 | useAssetPreviewRenderer | hook |  | `@elabs-ai/components-ai` |  |
 | useAttachmentContext | hook |  | `@elabs-ai/components-ai` |  |
 | useAttachmentsContext | hook |  | `@elabs-ai/components-ai` |  |

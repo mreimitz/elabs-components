@@ -10,6 +10,7 @@
  *   brand-ui docs <Component...>    Locate a component + print its real props
  *   brand-ui chart-for "<shape>"    Rank chart containers for a data shape (RM-040)
  *   brand-ui dashboard-spec <verb>  DashboardSpec schema / validate / kinds / layout (RM-086)
+ *   brand-ui a2ui <verb>            A2UI surface catalog / schema / validate / example (D2)
  *   brand-ui audit <path> [--json] [--strict]  Static token/style + anti-slop lint (no LLM)
  *
  * The vibe-coder-plugin experience engine (scaffold is implemented — VP-02 #123;
@@ -535,6 +536,47 @@ async function cmdDashboardSpec() {
   fail(verb ? `unknown verb "${verb}"\n${lib.DASHBOARD_SPEC_USAGE}` : lib.DASHBOARD_SPEC_USAGE);
 }
 
+/**
+ * `brand-ui a2ui catalog [<Type>] | schema | validate <file> | example` (D2 — the
+ * generative-UI path) — agent tooling for A2UI surfaces v1. Thin renderer over
+ * lib/a2ui.mjs, which runs the `pnpm gen` bundle of the ai package's engine-free
+ * core. `validate` and a failed read/parse exit 1. Lazily imported, like `mcp`.
+ */
+async function cmdA2ui() {
+  const lib = await import("../lib/a2ui.mjs");
+  const [verb, arg] = args;
+  const fail = (message) => {
+    console.error(`a2ui: ${message}`);
+    process.exit(1);
+  };
+  if (verb === "schema") return console.log(JSON.stringify(lib.a2uiSchema(), null, 2));
+  if (verb === "example") return console.log(JSON.stringify(lib.A2UI_EXAMPLE, null, 2));
+  if (verb === "catalog") {
+    const catalog = lib.a2uiCatalog(arg);
+    if (arg && !catalog) fail(lib.renderCatalogText(lib.a2uiCatalog(), arg));
+    return out(
+      arg ? { type: arg, ...catalog } : { types: catalog },
+      lib.renderCatalogText(lib.a2uiCatalog(), arg),
+    );
+  }
+  if (verb === "validate") {
+    if (!arg) fail(`validate needs a <file>\n${lib.A2UI_USAGE}`);
+    const abs = resolve(arg);
+    if (!existsSync(abs)) fail(`not found: ${arg}`);
+    let spec;
+    try {
+      spec = JSON.parse(readFileSync(abs, "utf8"));
+    } catch (error) {
+      return fail(`${arg} is not valid JSON (${error.message})`);
+    }
+    const result = lib.validateSurface(spec);
+    out({ file: arg, ...result }, lib.renderValidationText(arg, result));
+    if (!result.ok) process.exit(1);
+    return;
+  }
+  fail(verb ? `unknown verb "${verb}"\n${lib.A2UI_USAGE}` : lib.A2UI_USAGE);
+}
+
 function cmdDocs() {
   const manifest = loadManifest(root);
   if (!manifest) return console.error("docs: no manifest.");
@@ -1058,6 +1100,7 @@ const commands = {
   docs: cmdDocs,
   "chart-for": cmdChartFor,
   "dashboard-spec": cmdDashboardSpec,
+  a2ui: cmdA2ui,
   audit: cmdAudit,
   scaffold: cmdScaffold,
   create: cmdCreate,
@@ -1086,6 +1129,11 @@ const GENERAL_HELP = `brand-ui <command>
       kinds              the nine built-in tile kinds with sizes and capabilities
       layout <file>      place tiles without a layout (autoLayout) and print the spec
         [--strategy=by-kind|reading-order]
+  a2ui <verb>            A2UI surface v1 agent tooling — an agent-designed screen as data,
+      catalog [<Type>]   rendered by <A2uiSurface> (@elabs-ai/components-ai): the types an
+      schema             agent may emit (props, enums, events), the JSON Schema, a validator
+      validate <file>    (path, code, message; exit 1 when invalid) and a starter example
+      example
   audit <path> [--json]  Static token/style + content & visual anti-slop lint
                          [--strict] exit 1 on any blocking style finding or content
                          slop (the "blocks done" gate for generated output)
@@ -1106,8 +1154,8 @@ const GENERAL_HELP = `brand-ui <command>
   map <scan.json>        Map existing components → brand-ui via the manifest (VP-03)
   codemod <map.json>     Plan AST codemods [--dry-run|--apply] — read-only until VP-03
 
---json (agent-consumable) is supported by info, search, scan, map, audit, docs
-and dashboard-spec kinds/validate. The brand-ui skill + vibe-coder-plugin flows call these so behavior is
+--json (agent-consumable) is supported by info, search, scan, map, audit, docs,
+dashboard-spec kinds/validate and a2ui catalog/validate. The brand-ui skill + vibe-coder-plugin flows call these so behavior is
 deterministic, never guessed.
 
 --help / -h on ANY subcommand (e.g. \`brand-ui context --help\`) prints that
@@ -1138,6 +1186,7 @@ const SUBCOMMAND_HELP = {
     'usage: brand-ui chart-for "<data shape>" [--json]\n  Rank @elabs-ai/components-charts chart containers for a data shape — see skills/brand-ui/reference/chart-selection.md',
   "dashboard-spec":
     "usage: brand-ui dashboard-spec <schema|validate <file>|kinds|layout <file> [--strategy=by-kind|reading-order]> [--json]\n  Agent tooling for DashboardSpec v1 — see skills/brand-ui/reference/sheet-for.md",
+  a2ui: "usage: brand-ui a2ui <catalog [<Type>]|schema|validate <file>|example> [--json]\n  Agent tooling for A2UI surfaces v1 — an agent-designed screen as data, rendered by <A2uiSurface>",
   audit:
     "usage: brand-ui audit <path> [--json] [--strict] [--register=product|brand]\n  Static token/style + content & visual anti-slop lint",
   create:

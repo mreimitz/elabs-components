@@ -1,0 +1,4796 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mreimitz/elabs-components/packages/ai/schemas/a2ui-surface.v1.schema.json",
+  "title": "A2UI surface v1 (brand-ui)",
+  "description": "An agent-designed screen as data: a tree of brand-ui catalog nodes. Every `type` is a catalog entry, props are checked per type, and `on` binds catalog events to host actions. Text is a plain string child.",
+  "type": "object",
+  "properties": {
+    "a2ui": {
+      "const": "1"
+    },
+    "title": {
+      "type": "string",
+      "description": "Accessible name of the surface region."
+    },
+    "root": {
+      "$ref": "#/$defs/node"
+    }
+  },
+  "required": ["a2ui", "root"],
+  "additionalProperties": false,
+  "$defs": {
+    "action": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The host-side verb."
+        },
+        "payload": {
+          "description": "Free JSON attached to the action."
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "node": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/element"
+        }
+      ]
+    },
+    "element": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Accordion"
+        },
+        {
+          "$ref": "#/$defs/AccordionContent"
+        },
+        {
+          "$ref": "#/$defs/AccordionItem"
+        },
+        {
+          "$ref": "#/$defs/AccordionTrigger"
+        },
+        {
+          "$ref": "#/$defs/Alert"
+        },
+        {
+          "$ref": "#/$defs/AlertDescription"
+        },
+        {
+          "$ref": "#/$defs/AlertTitle"
+        },
+        {
+          "$ref": "#/$defs/Avatar"
+        },
+        {
+          "$ref": "#/$defs/AvatarFallback"
+        },
+        {
+          "$ref": "#/$defs/Badge"
+        },
+        {
+          "$ref": "#/$defs/BentoGrid"
+        },
+        {
+          "$ref": "#/$defs/BentoGridItem"
+        },
+        {
+          "$ref": "#/$defs/Button"
+        },
+        {
+          "$ref": "#/$defs/ButtonGroup"
+        },
+        {
+          "$ref": "#/$defs/Card"
+        },
+        {
+          "$ref": "#/$defs/CardAction"
+        },
+        {
+          "$ref": "#/$defs/CardContent"
+        },
+        {
+          "$ref": "#/$defs/CardDescription"
+        },
+        {
+          "$ref": "#/$defs/CardFooter"
+        },
+        {
+          "$ref": "#/$defs/CardHeader"
+        },
+        {
+          "$ref": "#/$defs/CardTitle"
+        },
+        {
+          "$ref": "#/$defs/Checkbox"
+        },
+        {
+          "$ref": "#/$defs/Collapsible"
+        },
+        {
+          "$ref": "#/$defs/CollapsibleContent"
+        },
+        {
+          "$ref": "#/$defs/CollapsibleTrigger"
+        },
+        {
+          "$ref": "#/$defs/Descriptions"
+        },
+        {
+          "$ref": "#/$defs/DescriptionsItem"
+        },
+        {
+          "$ref": "#/$defs/EmptyState"
+        },
+        {
+          "$ref": "#/$defs/Grid"
+        },
+        {
+          "$ref": "#/$defs/Heading"
+        },
+        {
+          "$ref": "#/$defs/Input"
+        },
+        {
+          "$ref": "#/$defs/Kbd"
+        },
+        {
+          "$ref": "#/$defs/Label"
+        },
+        {
+          "$ref": "#/$defs/MetricCard"
+        },
+        {
+          "$ref": "#/$defs/Progress"
+        },
+        {
+          "$ref": "#/$defs/RadioGroup"
+        },
+        {
+          "$ref": "#/$defs/RadioGroupItem"
+        },
+        {
+          "$ref": "#/$defs/SectionHeader"
+        },
+        {
+          "$ref": "#/$defs/Select"
+        },
+        {
+          "$ref": "#/$defs/SelectContent"
+        },
+        {
+          "$ref": "#/$defs/SelectItem"
+        },
+        {
+          "$ref": "#/$defs/SelectTrigger"
+        },
+        {
+          "$ref": "#/$defs/SelectValue"
+        },
+        {
+          "$ref": "#/$defs/Separator"
+        },
+        {
+          "$ref": "#/$defs/Slider"
+        },
+        {
+          "$ref": "#/$defs/Stack"
+        },
+        {
+          "$ref": "#/$defs/StatePanel"
+        },
+        {
+          "$ref": "#/$defs/StatusBadge"
+        },
+        {
+          "$ref": "#/$defs/Switch"
+        },
+        {
+          "$ref": "#/$defs/Table"
+        },
+        {
+          "$ref": "#/$defs/TableBody"
+        },
+        {
+          "$ref": "#/$defs/TableCaption"
+        },
+        {
+          "$ref": "#/$defs/TableCell"
+        },
+        {
+          "$ref": "#/$defs/TableFooter"
+        },
+        {
+          "$ref": "#/$defs/TableHead"
+        },
+        {
+          "$ref": "#/$defs/TableHeader"
+        },
+        {
+          "$ref": "#/$defs/TableRow"
+        },
+        {
+          "$ref": "#/$defs/Tabs"
+        },
+        {
+          "$ref": "#/$defs/TabsContent"
+        },
+        {
+          "$ref": "#/$defs/TabsList"
+        },
+        {
+          "$ref": "#/$defs/TabsTrigger"
+        },
+        {
+          "$ref": "#/$defs/Text"
+        },
+        {
+          "$ref": "#/$defs/Textarea"
+        },
+        {
+          "$ref": "#/$defs/Timeline"
+        }
+      ]
+    },
+    "Accordion": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Accordion"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "collapsible": {
+              "type": "boolean"
+            },
+            "defaultValue": {
+              "type": "string"
+            },
+            "type": {
+              "enum": ["single", "multiple"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "AccordionContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "AccordionContent"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "AccordionItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "AccordionItem"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["value"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "AccordionTrigger": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "AccordionTrigger"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Alert": {
+      "type": "object",
+      "description": "Compose AlertTitle + AlertDescription inside.",
+      "properties": {
+        "type": {
+          "const": "Alert"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "variant": {
+              "enum": ["default", "destructive", "success", "warning", "info"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "AlertDescription": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "AlertDescription"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "measure": {
+              "description": "Cap the line length to a readable prose measure (`max-w-prose`, ~65ch) for genuine paragraph content (#339). Off by default — short, label-style descriptions…",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "AlertTitle": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "AlertTitle"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Avatar": {
+      "type": "object",
+      "description": "Compose AvatarFallback (initials) inside.",
+      "properties": {
+        "type": {
+          "const": "Avatar"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "AvatarFallback": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "AvatarFallback"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Badge": {
+      "type": "object",
+      "description": "Compact status/label chip (status, count, category).",
+      "properties": {
+        "type": {
+          "const": "Badge"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "variant": {
+              "default": "default",
+              "enum": [
+                "default",
+                "secondary",
+                "outline",
+                "success",
+                "warning",
+                "destructive",
+                "info"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "BentoGrid": {
+      "type": "object",
+      "description": "Feature/bento grid; children are BentoGridItem.",
+      "properties": {
+        "type": {
+          "const": "BentoGrid"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "spotlight": {
+              "description": "Enable the cursor-following spotlight on every tile in this grid. Individual tiles can still opt out (or in) with their own `spotlight` prop. Disabled entire…",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "BentoGridItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "BentoGridItem"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "size": {
+              "description": "Size preset. Resolves to a col + row span. Overridden by explicit `span`. @default \"sm\"",
+              "enum": ["sm", "md", "lg", "hero"]
+            },
+            "span": {
+              "description": "Explicit grid span. Wins over `size`. Spans clamp gracefully on narrow layouts — a `col: 4` on a 2-col grid becomes `span min(4, 2)`.",
+              "type": "object"
+            },
+            "spotlight": {
+              "description": "Enable the cursor-following spotlight gradient on this tile. Omit to inherit the parent `BentoGrid`'s `spotlight` (itself `false` by default) — so the effect…",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Button": {
+      "type": "object",
+      "description": "An action. Bind `on.click`; one `variant: \"default\"` per group.",
+      "properties": {
+        "type": {
+          "const": "Button"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "disabled": {
+              "type": "boolean"
+            },
+            "size": {
+              "default": "default",
+              "enum": ["sm", "default", "lg", "icon", "icon-sm", "icon-lg"]
+            },
+            "type": {
+              "default": "button",
+              "enum": ["button", "submit"]
+            },
+            "variant": {
+              "default": "default",
+              "enum": [
+                "default",
+                "secondary",
+                "destructive",
+                "outline",
+                "outline-subtle",
+                "ghost",
+                "link"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "click": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "ButtonGroup": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "ButtonGroup"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Card": {
+      "type": "object",
+      "description": "The one generic surface — compose CardHeader / CardContent / CardFooter inside.",
+      "properties": {
+        "type": {
+          "const": "Card"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "detail": {
+              "description": "Optional detail-panel content. **Undefined → a plain card** (today's single `<div>` — no grid, no panel, zero behaviour change).",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "detailLabel": {
+              "description": "Accessible label for the detail region. @default \"Details\"",
+              "type": "string"
+            },
+            "detailPlacement": {
+              "description": "Which edge the detail panel sits on. @default \"side\"",
+              "enum": ["side", "bottom"]
+            },
+            "detailReveal": {
+              "description": "`fixed` (default, accessible) → panel always visible. `hover` → hidden at rest, revealed on hover **and** keyboard `focus-within` at a FIXED outer footprint …",
+              "enum": ["fixed", "hover"]
+            },
+            "detailSize": {
+              "description": "Detail track size (any CSS length). @default \"16rem\" (side) / \"auto\" (bottom)",
+              "type": "string"
+            },
+            "interactive": {
+              "default": "false",
+              "enum": ["true", "false"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "CardAction": {
+      "type": "object",
+      "description": "The header's trailing action slot (a Button, a Badge).",
+      "properties": {
+        "type": {
+          "const": "CardAction"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "CardContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CardContent"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "CardDescription": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CardDescription"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "measure": {
+              "description": "Cap the line length to a readable prose measure (`max-w-prose`, ~65ch) for genuine paragraph content (#339). Off by default — short, subtitle-style descripti…",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "CardFooter": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CardFooter"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "CardHeader": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CardHeader"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "CardTitle": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CardTitle"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Checkbox": {
+      "type": "object",
+      "description": "Binary on/off toggle within a form (multi-select within a group).",
+      "properties": {
+        "type": {
+          "const": "Checkbox"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "defaultChecked": {
+              "type": "boolean"
+            },
+            "disabled": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Collapsible": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Collapsible"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "defaultOpen": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "CollapsibleContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CollapsibleContent"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "CollapsibleTrigger": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CollapsibleTrigger"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "asChild": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Descriptions": {
+      "type": "object",
+      "description": "Key–value list; children are DescriptionsItem.",
+      "properties": {
+        "type": {
+          "const": "Descriptions"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "columns": {
+              "description": "Number of columns at the widest breakpoint. Collapses to a single column on small screens. Default 1.",
+              "enum": [1, 2, 3]
+            },
+            "layout": {
+              "description": "`horizontal` places the label beside the value; `vertical` stacks the label above the value. Default `horizontal`.",
+              "enum": ["horizontal", "vertical"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "DescriptionsItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "DescriptionsItem"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "label": {
+              "description": "The term / label for this entry.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "numeric": {
+              "description": "When the value is numeric, set this so the value uses `tabular-nums` for aligned digits.",
+              "type": "boolean"
+            }
+          },
+          "required": ["label"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "EmptyState": {
+      "type": "object",
+      "description": "Nothing here yet — title, description, optional actions.",
+      "properties": {
+        "type": {
+          "const": "EmptyState"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "actions": {
+              "description": "Primary/secondary actions.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "description": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "icon": {
+              "description": "Optional icon shown above the title, clamped to a fixed 40×40 (this wrapper only ever forwards `icon` to `StatePanel`, never `illustration` — for a larger, u…",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            }
+          },
+          "required": ["title"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "Grid": {
+      "type": "object",
+      "description": "Responsive CSS grid, 1–4 equal columns (collapses to one column on narrow screens).",
+      "properties": {
+        "type": {
+          "const": "Grid"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "columns": {
+              "default": 2,
+              "enum": [1, 2, 3, 4]
+            },
+            "gap": {
+              "default": "md",
+              "enum": ["none", "xs", "sm", "md", "lg"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Heading": {
+      "type": "object",
+      "description": "Section heading; `level` sets the HTML rank (1–6), `size` the type role.",
+      "properties": {
+        "type": {
+          "const": "Heading"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "level": {
+              "description": "Semantic heading level — drives the rendered tag AND the default size.",
+              "default": 2,
+              "enum": [1, 2, 3, 4, 5, 6]
+            },
+            "size": {
+              "default": "title",
+              "enum": ["display", "title", "subtitle"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Input": {
+      "type": "object",
+      "description": "Single-line text field — the base form input.",
+      "properties": {
+        "type": {
+          "const": "Input"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "defaultValue": {
+              "type": "string"
+            },
+            "disabled": {
+              "type": "boolean"
+            },
+            "placeholder": {
+              "type": "string"
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "type": {
+              "enum": ["text", "email", "number", "password", "search", "tel", "url", "date"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Kbd": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Kbd"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Label": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Label"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "htmlFor": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "MetricCard": {
+      "type": "object",
+      "description": "One KPI: label, value, optional delta. Put several in a Grid.",
+      "properties": {
+        "type": {
+          "const": "MetricCard"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "announceLoading": {
+              "description": "Whether this tile announces its own `loading` state via a live region. Set to `false` when several tiles are composed inside a container that already announc…",
+              "type": "boolean"
+            },
+            "copyExactValue": {
+              "description": "Offer the exact figure on click when a numeric `value` was shortened. Default: `true`. Turning it off leaves a compacted number with no way back to its digit…",
+              "type": "boolean"
+            },
+            "currency": {
+              "description": "ISO 4217 code for `valueFormat: \"currency\"`. Default: `\"USD\"`.",
+              "type": "string"
+            },
+            "delta": {
+              "description": "Signed change, e.g. \"+12.4%\". Direction colors it.",
+              "type": "string"
+            },
+            "deltaDirection": {
+              "enum": ["up", "down", "neutral"]
+            },
+            "description": {
+              "description": "Secondary line under the value — sublabel / context.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "evidence": {
+              "description": "Optional grounding footer (research 11 §B.5 KPI-3) — connects a cited figure to its source (e.g. an `EvidenceChip` from `@elabs-ai/components-ai`). Rendered …",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "icon": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "label": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "loading": {
+              "description": "Loading vs ready — renders a layout-shaped skeleton (matching the real box height) instead of the value/label/delta text. Default: `false`.",
+              "type": "boolean"
+            },
+            "positiveIsGood": {
+              "description": "Whether \"up\" is good (green) — flip for metrics where down is good.",
+              "type": "boolean"
+            },
+            "sparkline": {
+              "description": "Trend slot rendered directly under the value (RM-072) — pass a `<Sparkline …/>` from `@elabs-ai/components-charts`. Hidden at `size=\"sm\"`.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "valueFormat": {
+              "description": "How to render a NUMERIC `value`. Default: `\"compact\"`. Ignored for every other `ReactNode` — a string you already formatted is rendered verbatim.",
+              "enum": ["number", "compact", "currency", "percent"]
+            },
+            "visual": {
+              "description": "Optional inline visual shown under the value/description.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            }
+          },
+          "required": ["label", "value"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "Progress": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Progress"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "marker": {
+              "description": "Reference point (0–100, same scale as `value`) — e.g. an \"expected by today\" pace or a target — rendered as a thin vertical tick on the track. Unset (default…",
+              "type": "number"
+            },
+            "markerLabel": {
+              "description": "What `marker` represents (already localized by the caller — e.g. `\"expected 70% by today\"`). When set, it is appended to the progress bar's accessible value …",
+              "type": "string"
+            },
+            "max": {
+              "type": "number"
+            },
+            "value": {
+              "type": "number"
+            },
+            "variant": {
+              "default": "default",
+              "enum": ["default", "success", "warning", "destructive"]
+            }
+          },
+          "required": ["value"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "RadioGroup": {
+      "type": "object",
+      "description": "Mutually-exclusive single choice from a small visible set.",
+      "properties": {
+        "type": {
+          "const": "RadioGroup"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "defaultValue": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "RadioGroupItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "RadioGroupItem"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "disabled": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["value"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "SectionHeader": {
+      "type": "object",
+      "description": "Title + description + optional actions above a region.",
+      "properties": {
+        "type": {
+          "const": "SectionHeader"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "actions": {
+              "description": "Right-aligned actions (buttons, menus).",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "description": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "eyebrow": {
+              "description": "Optional element rendered above the title (eyebrow / breadcrumbs).",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            }
+          },
+          "required": ["title"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "Select": {
+      "type": "object",
+      "description": "Compose SelectTrigger (SelectValue) + SelectContent (SelectItem…).",
+      "properties": {
+        "type": {
+          "const": "Select"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "defaultValue": {
+              "type": "string"
+            },
+            "disabled": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "SelectContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "SelectContent"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "SelectItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "SelectItem"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "disabled": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["value"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "SelectTrigger": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "SelectTrigger"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "autoTitle": {
+              "description": "Auto-set a native `title` from the trigger's rendered text — but ONLY while that text is actually clipped (default `true`). Set `false` when the trigger is a…",
+              "type": "boolean"
+            },
+            "size": {
+              "enum": ["sm", "default"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "SelectValue": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "SelectValue"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "placeholder": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Separator": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Separator"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "orientation": {
+              "default": "horizontal",
+              "enum": ["horizontal", "vertical"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Slider": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Slider"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "defaultValue": {
+              "type": "array"
+            },
+            "max": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "step": {
+              "type": "number"
+            },
+            "thumbProps": {
+              "description": "Escape hatch spread onto the thumb LAST — for `data-*`/`style`/etc, or to deliberately override `aria-label`/`aria-labelledby`/`aria-valuetext` (an explicit …",
+              "type": "array"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Stack": {
+      "type": "object",
+      "description": "Vertical or horizontal flex group. The default container — put siblings in a Stack, never bare.",
+      "properties": {
+        "type": {
+          "const": "Stack"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "align": {
+              "default": "stretch",
+              "enum": ["start", "center", "end", "stretch"]
+            },
+            "direction": {
+              "default": "column",
+              "enum": ["column", "row"]
+            },
+            "gap": {
+              "default": "md",
+              "enum": ["none", "xs", "sm", "md", "lg"]
+            },
+            "justify": {
+              "default": "start",
+              "enum": ["start", "center", "end", "between"]
+            },
+            "wrap": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "StatePanel": {
+      "type": "object",
+      "description": "An empty / error / loading message panel.",
+      "properties": {
+        "type": {
+          "const": "StatePanel"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "description": "Heading text.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "actions": {
+              "description": "Primary / secondary action buttons.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "description": {
+              "description": "Supporting description below the title.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "icon": {
+              "description": "Icon shown above the title, clamped to a uniform 40×40 so mismatched glyphs stay tidy. For `\"error\"` defaults to a built-in warning triangle. For `\"loading\"`…",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "illustration": {
+              "description": "A larger illustration (one of `@elabs-ai/components-ui`'s shipped `*Illustration` components, or a consumer's own `ReactNode`) shown above the title instead …",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "kind": {
+              "default": "empty",
+              "enum": ["empty", "error", "loading"]
+            },
+            "loadingLabel": {
+              "description": "Accessible label for the spinner in loading state. @default \"Loading…\"",
+              "type": "string"
+            },
+            "size": {
+              "description": "Spinner size (loading kind only). @default \"md\"",
+              "enum": ["sm", "md", "lg"]
+            },
+            "titleAs": {
+              "description": "Heading level for the panel's title (#328 convention). Set this to the level that correctly follows whatever heading precedes this panel in the document outl…",
+              "enum": ["div", "h1", "h2", "h3", "h4", "h5", "h6"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "StatusBadge": {
+      "type": "object",
+      "description": "A closed status vocabulary with icon + text (never colour alone).",
+      "properties": {
+        "type": {
+          "const": "StatusBadge"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "hideIcon": {
+              "description": "Render label-only (no status icon).",
+              "type": "boolean"
+            },
+            "size": {
+              "default": "md",
+              "enum": ["sm", "md"]
+            },
+            "status": {
+              "description": "The canonical execution status, or a mapped out-of-vocabulary one (#363).",
+              "enum": [
+                "pending",
+                "running",
+                "complete",
+                "awaiting-approval",
+                "denied",
+                "failed",
+                "skipped"
+              ]
+            }
+          },
+          "required": ["status"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "Switch": {
+      "type": "object",
+      "description": "Immediate on/off setting toggle (applies on change, not on submit).",
+      "properties": {
+        "type": {
+          "const": "Switch"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "defaultChecked": {
+              "type": "boolean"
+            },
+            "disabled": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Table": {
+      "type": "object",
+      "description": "Compose TableHeader/TableBody → TableRow → TableHead/TableCell.",
+      "properties": {
+        "type": {
+          "const": "Table"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TableBody": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TableBody"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TableCaption": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TableCaption"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TableCell": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TableCell"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TableFooter": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TableFooter"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TableHead": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TableHead"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TableHeader": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TableHeader"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TableRow": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TableRow"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Tabs": {
+      "type": "object",
+      "description": "Compose TabsList (TabsTrigger…) + TabsContent per value.",
+      "properties": {
+        "type": {
+          "const": "Tabs"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "defaultValue": {
+              "type": "string"
+            }
+          },
+          "required": ["defaultValue"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "TabsContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TabsContent"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["value"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "TabsList": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TabsList"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "variant": {
+              "default": "segmented",
+              "enum": ["segmented", "underline"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TabsTrigger": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "TabsTrigger"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "disabled": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["value"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "Text": {
+      "type": "object",
+      "description": "A paragraph or inline run of text with a type role and tone.",
+      "properties": {
+        "type": {
+          "const": "Text"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "tone": {
+              "default": "default",
+              "enum": ["default", "muted", "primary"]
+            },
+            "variant": {
+              "default": "body",
+              "enum": ["lead", "body", "caption", "meta", "kpi", "code"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Textarea": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Textarea"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "defaultValue": {
+              "type": "string"
+            },
+            "disabled": {
+              "type": "boolean"
+            },
+            "placeholder": {
+              "type": "string"
+            },
+            "rows": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "change": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Timeline": {
+      "type": "object",
+      "description": "Ordered status timeline from `items` (title, status, timestamp, description).",
+      "properties": {
+        "type": {
+          "const": "Timeline"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "items": {
+              "description": "[{ title, description?, status?: \"done\"|\"active\"|\"pending\", timestamp? }]",
+              "type": "array"
+            }
+          },
+          "required": ["items"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    }
+  }
+}

@@ -47,6 +47,7 @@ export * from "./gallery";
 export * from "./grouped-parts";
 export * from "./image";
 export * from "./inline-citation";
+export * from "./a2ui";
 export * from "./jsx-preview";
 // Mermaid loads on first diagram render, not in the entry chunk. `preloadMermaid`
 // warms it early when a surface is known to render diagrams.
