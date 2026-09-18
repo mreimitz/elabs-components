@@ -8,6 +8,7 @@ import { XAxis } from "./x-axis";
 import { YAxis } from "./y-axis";
 import { Scatter } from "./scatter";
 import { ScatterChart } from "./scatter-chart";
+import { CustomShapes } from "./custom-shapes";
 
 const meta = {
   title: "Charts/ScatterChart",
@@ -400,5 +401,206 @@ export const SelectionStates: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
+  },
+};
+
+// RM-115 — scatter depth: sizeKey bubbles, colorBy / shapeBy columns, trend
+// line, custom lines / areas, log axes, axis positions inside the plot.
+
+/** Datawrapper's own scatter fixture shape (`dw-charts.md` §2.13): EU student-loan
+ * schemes, loan amount (log x) against repayment rate, bubble size by amount loaned,
+ * colour by EU membership, a labelled reference line at the median repayment rate. */
+const studentLoanData = [
+  { country: "UK", loaned: 46000, rate: 0.62, eu: "Non-EU" },
+  { country: "US", loaned: 37000, rate: 0.44, eu: "Non-EU" },
+  { country: "Germany", loaned: 9200, rate: 0.81, eu: "EU" },
+  { country: "France", loaned: 12500, rate: 0.76, eu: "EU" },
+  { country: "Netherlands", loaned: 21000, rate: 0.79, eu: "EU" },
+  { country: "Sweden", loaned: 18700, rate: 0.83, eu: "EU" },
+  { country: "Poland", loaned: 4100, rate: 0.7, eu: "EU" },
+  { country: "Australia", loaned: 15400, rate: 0.55, eu: "Non-EU" },
+];
+
+export const BubbleSizeColorAndLogAxis: Story = {
+  name: "Bubble size, colour-by and a log x-axis",
+  render: () => (
+    <div className="h-80 w-full max-w-[640px]">
+      <ScatterChart
+        accessibleLabel="Student loan amount vs repayment rate"
+        data={studentLoanData}
+        xDataKey="loaned"
+        xScale="linear"
+      >
+        <Grid horizontal />
+        <CustomShapes shapes={[{ kind: "line", y: 0.62, label: "UK" }]} />
+        <Scatter colorBy={{ key: "eu" }} dataKey="rate" sizeKey="loaned" sizeRange={[6, 26]} />
+        <XAxis scale="log" title="Amount loaned" />
+        <YAxis title="Repayment rate" titlePlacement="inside" />
+        <ChartTooltip />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll('[data-slot="scatter-point"]').length).toBe(
+        studentLoanData.length,
+      );
+    });
+    // Radius honesty: the biggest loan (UK, 46000) draws visibly larger than
+    // the smallest (Poland, 4100) — sqrt-scaled, never linear.
+    const radii = Array.from(
+      canvasElement.querySelectorAll('[data-slot="scatter-point"] circle'),
+    ).map((el) => Number(el.getAttribute("r")));
+    expect(Math.max(...radii)).toBeGreaterThan(Math.min(...radii));
+    // colorBy: EU and Non-EU rows do not share a fill.
+    const fills = new Set(
+      Array.from(canvasElement.querySelectorAll('[data-slot="scatter-point"] circle'), (el) =>
+        el.getAttribute("fill"),
+      ),
+    );
+    expect(fills.size).toBeGreaterThan(1);
+    expect(canvasElement.querySelector('[data-slot="scatter-custom-shapes"]')).not.toBeNull();
+  },
+};
+
+const bubbleSizeData = [
+  { rank: 1, share: 12, population: 4_000_000 },
+  { rank: 2, share: 26, population: 16_000_000 },
+  { rank: 3, share: 8, population: 1_000_000 },
+  { rank: 4, share: 34, population: 25_000_000 },
+];
+
+/** A 4x population draws at 2x radius (RM-039 honesty: AREA, not radius, carries the value). */
+export const BubbleSize: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ScatterChart data={bubbleSizeData} xDataKey="rank" xScale="linear">
+        <Grid horizontal />
+        <Scatter dataKey="share" sizeKey="population" sizeRange={[0, 24]} />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll('[data-slot="scatter-point"]').length).toBe(
+        bubbleSizeData.length,
+      );
+    });
+    const radii = Array.from(
+      canvasElement.querySelectorAll('[data-slot="scatter-point"] circle'),
+    ).map((el) => Number(el.getAttribute("r")));
+    // rank 4 (25M, the domain max) draws at sizeRange[1]=24; rank 3 (1M, 1/25th) at sqrt(1/25)*24.
+    expect(radii[3]).toBeCloseTo(24, 1);
+    expect(radii[3] / radii[2]).toBeCloseTo(5, 0); // sqrt(25) = 5
+  },
+};
+
+const shapeByData = [
+  { x: 1, share: 20, team: "Platform" },
+  { x: 2, share: 44, team: "Growth" },
+  { x: 3, share: 30, team: "Platform" },
+  { x: 4, share: 55, team: "Data" },
+];
+
+/** Each `team` draws with its own marker shape, not just its own colour (WCAG 1.4.1). */
+export const ShapeByColumn: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ScatterChart data={shapeByData} xDataKey="x" xScale="linear">
+        <Grid horizontal />
+        <Scatter dataKey="share" radius={7} shapeBy={{ key: "team" }} />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll('[data-slot="scatter-point"]').length).toBe(
+        shapeByData.length,
+      );
+    });
+  },
+};
+
+const trendData = [
+  { x: 1, revenue: 12 },
+  { x: 2, revenue: 19 },
+  { x: 3, revenue: 24 },
+  { x: 4, revenue: 28 },
+  { x: 5, revenue: 39 },
+  { x: 6, revenue: 44 },
+];
+
+/** A least-squares fit drawn as dashed furniture; direction/fit reach `data-trend`/`data-r2`. */
+export const WithTrendLine: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ScatterChart data={trendData} xDataKey="x" xScale="linear">
+        <Grid horizontal />
+        <Scatter dataKey="revenue" trend="linear" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-slot="scatter-trend-line"]')).not.toBeNull();
+    });
+    const trend = canvasElement.querySelector('[data-slot="scatter-trend-line"]') as HTMLElement;
+    expect(trend.getAttribute("aria-hidden")).toBe("true");
+    expect(trend.getAttribute("data-trend")).toBe("increasing");
+    expect(Number(trend.getAttribute("data-r2"))).toBeGreaterThan(0.9);
+  },
+};
+
+const customShapeData = [
+  { x: 0, y: 4 },
+  { x: 5, y: 9 },
+  { x: 10, y: 6 },
+];
+
+/** Custom lines / areas (Datawrapper "custom lines & areas"): a constant `y=`, a constant
+ * `x=`, and a multi-point path — all drawn in data space, behind the marks. */
+export const WithCustomShapes: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ScatterChart data={customShapeData} xDataKey="x" xScale="linear">
+        <Grid horizontal />
+        <CustomShapes
+          shapes={[
+            { kind: "line", y: 7, label: "Target", style: { dashed: true } },
+            { kind: "line", x: 5 },
+            {
+              kind: "path",
+              points: [
+                [0, 2],
+                [5, 8],
+                [10, 3],
+              ],
+              style: { color: "var(--chart-2)" },
+            },
+          ]}
+        />
+        <Scatter dataKey="y" />
+        <XAxis />
+        <YAxis />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-slot="scatter-custom-shapes"]')).not.toBeNull();
+    });
+    const group = canvasElement.querySelector('[data-slot="scatter-custom-shapes"]') as HTMLElement;
+    expect(group.getAttribute("aria-hidden")).toBe("true");
+    expect(group.querySelectorAll("line").length).toBe(2);
+    expect(group.querySelector("polyline")).not.toBeNull();
   },
 };

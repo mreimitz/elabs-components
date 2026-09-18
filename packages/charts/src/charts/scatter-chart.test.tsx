@@ -11,6 +11,7 @@ vi.mock("react-use-measure", () => ({
 
 import { resolveExtremeLabelY } from "./scatter";
 import { ScatterChart, Scatter } from "./scatter-chart";
+import { CustomShapes } from "./custom-shapes";
 import { XAxis } from "./x-axis";
 
 afterEach(cleanup);
@@ -510,5 +511,174 @@ describe("resolveExtremeLabelY (#252)", () => {
 
   it("keeps the default above placement when it is already clear", () => {
     expect(resolveExtremeLabelY({ cy: 120, radius: 6, gridLineYs, innerHeight: 200 })).toBe(106);
+  });
+});
+
+// RM-115: sizeKey bubbles, colorBy / shapeBy columns, trend line, custom shapes.
+describe("Scatter — RM-115 sizeKey / colorBy / shapeBy / trend", () => {
+  const bubbleData = [
+    { x: 1, y: 10, loaned: 25 },
+    { x: 2, y: 20, loaned: 100 },
+  ];
+
+  // The FIRST <circle> under a marker's <g> is the filled inner shape
+  // (`MarkerInnerShape`); the ring stroke circle that follows is `fill="none"`.
+  const fillCircleOf = (markerGroup: Element) => markerGroup.querySelector("circle");
+
+  it("scales bubble radius by sqrt(value / max) — a 4x value draws at 2x radius", () => {
+    const { container } = render(
+      <ScatterChart data={bubbleData} xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="y" sizeKey="loaned" sizeRange={[0, 20]} />
+      </ScatterChart>,
+    );
+    const points = container.querySelectorAll('[data-slot="scatter-point"]');
+    expect(points).toHaveLength(2);
+    const [smallCircle, largeCircle] = Array.from(points).map(
+      (p) => fillCircleOf(p) as SVGCircleElement,
+    );
+    const smallR = Number(smallCircle?.getAttribute("r"));
+    const largeR = Number(largeCircle?.getAttribute("r"));
+    expect(largeR).toBeCloseTo(20, 5); // the larger value IS the domain max → draws at sizeRange[1]
+    expect(largeR / smallR).toBeCloseTo(2, 5);
+  });
+
+  it("colorBy assigns a distinct fill per category, keeping the series fill for an unset row", () => {
+    const data = [
+      { x: 1, y: 1, region: "EU" },
+      { x: 2, y: 2, region: "US" },
+      { x: 3, y: 3, region: undefined },
+    ];
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="y" colorBy={{ key: "region" }} fill="var(--chart-2)" />
+      </ScatterChart>,
+    );
+    const points = Array.from(container.querySelectorAll('[data-slot="scatter-point"]'));
+    expect(points).toHaveLength(3);
+    const fills = points.map((p) => fillCircleOf(p)?.getAttribute("fill"));
+    expect(fills[0]).not.toBe(fills[1]);
+    expect(fills[2]).toBe("var(--chart-2)"); // no `region` on this row → falls back to `fill`
+  });
+
+  it("shapeBy assigns a distinct marker shape per category", () => {
+    const data = [
+      { x: 1, y: 1, kind: "a" },
+      { x: 2, y: 2, kind: "b" },
+    ];
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <Scatter
+          animate={false}
+          dataKey="y"
+          shapeBy={{ key: "kind", shapes: ["star", "hexagon"] }}
+        />
+      </ScatterChart>,
+    );
+    const points = Array.from(container.querySelectorAll('[data-slot="scatter-point"]'));
+    // "star"/"hexagon" render a <polygon>, never the default <circle>.
+    expect(points[0]?.querySelector("polygon")).not.toBeNull();
+    expect(points[1]?.querySelector("polygon")).not.toBeNull();
+    expect(points[0]?.querySelector("polygon")?.getAttribute("points")).not.toBe(
+      points[1]?.querySelector("polygon")?.getAttribute("points"),
+    );
+  });
+
+  it("trend draws a least-squares path and exposes r² / slope sign as data attributes", () => {
+    // y = 2x + 1 exactly → r² = 1, "increasing".
+    const linearData = [0, 1, 2, 3, 4].map((x) => ({ x, y: 2 * x + 1 }));
+    const { container } = render(
+      <ScatterChart data={linearData} xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="y" trend="linear" />
+      </ScatterChart>,
+    );
+    const trend = container.querySelector('[data-slot="scatter-trend-line"]');
+    expect(trend).not.toBeNull();
+    expect(trend).toHaveAttribute("aria-hidden", "true");
+    expect(trend).toHaveAttribute("data-trend", "increasing");
+    expect(Number(trend?.getAttribute("data-r2"))).toBeCloseTo(1, 2);
+    expect(trend?.querySelector("line")).not.toBeNull();
+  });
+
+  it("renders no trend line for fewer than 2 usable points", () => {
+    const { container } = render(
+      <ScatterChart data={[{ x: 1, y: 1 }]} xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="y" trend="linear" />
+      </ScatterChart>,
+    );
+    expect(container.querySelector('[data-slot="scatter-trend-line"]')).toBeNull();
+  });
+});
+
+describe("CustomShapes — RM-115 lines / paths in data space", () => {
+  const data = [
+    { x: 0, y: 0 },
+    { x: 10, y: 10 },
+  ];
+
+  it("draws a horizontal `y=` line spanning the full plot width", () => {
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <CustomShapes shapes={[{ kind: "line", y: 5 }]} />
+        <Scatter animate={false} dataKey="y" />
+      </ScatterChart>,
+    );
+    const group = container.querySelector('[data-slot="scatter-custom-shapes"]');
+    expect(group).toHaveAttribute("aria-hidden", "true");
+    const line = group?.querySelector("line");
+    expect(line).not.toBeNull();
+    expect(line?.getAttribute("x1")).toBe("0");
+    expect(Number(line?.getAttribute("x2"))).toBeGreaterThan(0);
+    expect(line?.getAttribute("y1")).toBe(line?.getAttribute("y2"));
+  });
+
+  it("draws a vertical `x=` line and a multi-point path", () => {
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <CustomShapes
+          shapes={[
+            { kind: "line", x: 5 },
+            {
+              kind: "path",
+              points: [
+                [0, 0],
+                [5, 5],
+                [10, 2],
+              ],
+            },
+          ]}
+        />
+        <Scatter animate={false} dataKey="y" />
+      </ScatterChart>,
+    );
+    const group = container.querySelector('[data-slot="scatter-custom-shapes"]');
+    const lines = group?.querySelectorAll("line");
+    expect(lines).toHaveLength(1);
+    expect(lines?.[0]?.getAttribute("y1")).toBe("0");
+    const polyline = group?.querySelector("polyline");
+    expect(polyline?.getAttribute("points")?.split(" ")).toHaveLength(3);
+  });
+
+  it("draws a closed path as a filled polygon", () => {
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <CustomShapes
+          shapes={[
+            {
+              kind: "path",
+              closed: true,
+              points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+              ],
+            },
+          ]}
+        />
+        <Scatter animate={false} dataKey="y" />
+      </ScatterChart>,
+    );
+    const group = container.querySelector('[data-slot="scatter-custom-shapes"]');
+    expect(group?.querySelector("polygon")).not.toBeNull();
+    expect(group?.querySelector("polyline")).toBeNull();
   });
 });
