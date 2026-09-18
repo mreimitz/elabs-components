@@ -12,6 +12,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { Area, type AreaProps } from "./area";
@@ -335,11 +336,14 @@ function ChartInner({
     [data, lines, barDataKeys, stacked],
   );
 
+  // One clip per chart instance: a fixed id makes every chart on a page
+  // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
+  const clipPathId = `composed-chart-grow-clip-${useId().replace(/:/g, "")}`;
   const chart = (
     <TimeSeriesChartInner
       animationDuration={animationDuration}
       animationEasing={animationEasing}
-      clipPathId="composed-chart-grow-clip"
+      clipPathId={clipPathId}
       composedBarDataKeys={barDataKeys.length > 0 ? barDataKeys : undefined}
       composedBarGap={barGap}
       composedBarSize={barSize}

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { expect, within } from "storybook/test";
+import { ChartFrame } from "../chart-frame/chart-frame";
 import { Bar } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
@@ -176,4 +177,123 @@ export const Heatmap: Story = {
     </Trio>
   ),
   play: expectTierPerColumn,
+};
+
+// ── Framed charts ─────────────────────────────────────────────────────────────
+// `plotHeight` sizes the drawing area only; the frame's title, legend, notes
+// and source row stack around it, so a longer title grows the FRAME, never
+// squeezes the plot.
+
+const ONE_LINE_TITLE = "Revenue by region";
+const TWO_LINE_TITLE =
+  "Revenue by region, before returns, discounts and the one-off third-quarter correction";
+
+function RegionBars({ label }: { label: string }) {
+  return (
+    <BarChart accessibleLabel={label} data={regions} xDataKey="region">
+      <Grid horizontal />
+      <Bar dataKey="revenue" />
+      <BarXAxis />
+      <BarYAxis />
+    </BarChart>
+  );
+}
+
+/** The chart's own plot box: the frame root publishes a tier too, so take the last one. */
+function plotBoxIn(el: HTMLElement): HTMLElement {
+  const roots = el.querySelectorAll<HTMLElement>("[data-chart-breakpoint]");
+  const box = roots[roots.length - 1];
+  if (!box) throw new Error("no chart plot box in the frame");
+  return box;
+}
+
+export const FramedPlotHeight: Story = {
+  name: "Framed, fixed plot height",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "`plotHeight={240}` with a one-line and a two-line title: both plots are 240 px tall; the frame with the longer title is taller by the extra line.",
+      },
+    },
+  },
+  render: () => (
+    <div className="flex w-full flex-wrap items-start gap-6">
+      {[
+        { key: "one-line", title: ONE_LINE_TITLE },
+        { key: "two-line", title: TWO_LINE_TITLE },
+      ].map(({ key, title }) => (
+        <div key={key} className="w-full max-w-[400px]" data-testid={`frame-${key}`}>
+          <ChartFrame title={title} data={regions} plotHeight={240}>
+            <RegionBars label={title} />
+          </ChartFrame>
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const one = canvas.getByTestId("frame-one-line");
+    const two = canvas.getByTestId("frame-two-line");
+    for (const frame of [one, two]) {
+      await expect(Math.round(plotBoxIn(frame).getBoundingClientRect().height)).toBe(240);
+    }
+    await expect(two.getBoundingClientRect().height).toBeGreaterThan(
+      one.getBoundingClientRect().height,
+    );
+  },
+};
+
+export const FramedDeprecatedHeight: Story = {
+  name: "Framed, deprecated height alias",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Deprecated: `height` on ChartFrame is read as `plotHeight` (here 260 px, the old fixed body) and logs one development warning per page. It is removed in 5.0.0 — pass `plotHeight={260}` to keep this look.",
+      },
+    },
+  },
+  render: () => (
+    <div className="w-full max-w-[600px]" data-testid="frame-deprecated">
+      {/* This story shows the deprecated alias on purpose. */}
+      <ChartFrame title={ONE_LINE_TITLE} data={regions} height={260}>
+        <RegionBars label={ONE_LINE_TITLE} />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const frame = within(canvasElement).getByTestId("frame-deprecated");
+    await expect(Math.round(plotBoxIn(frame).getBoundingClientRect().height)).toBe(260);
+  },
+};
+
+export const FramedGrowsWithWidth: Story = {
+  name: "Framed, grows with width",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "No `plotHeight`: a framed chart keeps the family default — 2:1 at medium and wide, 1.25:1 at narrow — so the plot grows with the column instead of sitting in a fixed 260 px body.",
+      },
+    },
+  },
+  render: () => (
+    <Trio>
+      {(width) => (
+        <ChartFrame title={`${ONE_LINE_TITLE}, ${width} px column`} data={regions}>
+          <RegionBars label={`${ONE_LINE_TITLE}, ${width} pixel column`} />
+        </ChartFrame>
+      )}
+    </Trio>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    for (const { width } of COLUMNS) {
+      const box = plotBoxIn(canvas.getByTestId(`column-${width}`)).getBoundingClientRect();
+      const tier = breakpointForWidth(box.width);
+      const aspect = tier === "narrow" ? 1.25 : 2;
+      await expect(Math.abs(box.height - box.width / aspect)).toBeLessThan(2);
+    }
+  },
 };

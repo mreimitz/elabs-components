@@ -12,6 +12,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
@@ -277,6 +278,9 @@ function ChartInner({
   // recompute on an unrelated re-render.
   const lines = useStableValue(useMemo(() => extractAreaConfigs(children), [children]));
 
+  // One clip per chart instance: a fixed id makes every chart on a page
+  // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
+  const clipPathId = `chart-area-grow-clip-${useId().replace(/:/g, "")}`;
   const chart = (
     // The provider wraps the WHOLE `TimeSeriesChartInner` tree, not `children`
     // — so `Children.forEach`'s series/def/axis classification inside the
@@ -287,7 +291,7 @@ function ChartInner({
         animationDuration={animationDuration}
         animationEasing={animationEasing}
         chartStatus={chartStatus}
-        clipPathId="chart-area-grow-clip"
+        clipPathId={clipPathId}
         containerRef={containerRef}
         data={data}
         enterTransition={enterTransition}

@@ -353,3 +353,39 @@ describe.each([
     expect(root?.getAttribute("data-chart-breakpoint")).toBe(tier);
   });
 });
+
+// Several time-series charts on one page (the Charts/Responsive matrix): each
+// must clip to ITS OWN reveal rect. A fixed `<clipPath id>` made every chart
+// resolve `url(#…)` to the first chart's rect, cutting wider charts short.
+describe("per-instance reveal clip", () => {
+  it.each([
+    ["LineChart", CASES.LineChart],
+    ["AreaChart", CASES.AreaChart],
+    ["ComposedChart", CASES.ComposedChart],
+  ] as const)("two %s instances clip to two distinct, self-owned clip paths", (_name, element) => {
+    BOX.width = 600;
+    const { container } = render(
+      <>
+        {(element as () => ReactElement)()}
+        {(element as () => ReactElement)()}
+      </>,
+    );
+    const roots = [...container.querySelectorAll<HTMLElement>(":scope > [data-chart-breakpoint]")];
+    expect(roots).toHaveLength(2);
+    const ids = roots.map((root) => {
+      const clipIds = [...root.querySelectorAll("clipPath")].map((c) => c.id);
+      expect(clipIds.length, "a chart renders no <clipPath>").toBeGreaterThan(0);
+      const refs = [...root.querySelectorAll("[clip-path]")].map((el) =>
+        el.getAttribute("clip-path"),
+      );
+      expect(refs.length, "no element references a clip path").toBeGreaterThan(0);
+      for (const ref of refs) {
+        const id = /^url\(#(.+)\)$/.exec(ref ?? "")?.[1];
+        expect(clipIds, `${ref} points outside its own chart`).toContain(id);
+      }
+      return clipIds;
+    });
+    const [first, second] = ids as [string[], string[]];
+    expect(first.filter((id) => second.includes(id))).toEqual([]);
+  });
+});

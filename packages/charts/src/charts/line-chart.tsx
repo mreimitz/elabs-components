@@ -13,6 +13,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -271,12 +272,15 @@ function ChartInner({
   // fresh identity from React on every parent render.
   const lines = useStableValue(useMemo(() => extractLineConfigs(children), [children]));
 
+  // One clip per chart instance: a fixed id makes every chart on a page
+  // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
+  const clipPathId = `chart-grow-clip-${useId().replace(/:/g, "")}`;
   const chart = (
     <TimeSeriesChartInner
       animationDuration={animationDuration}
       animationEasing={animationEasing}
       chartStatus={chartStatus}
-      clipPathId="chart-grow-clip"
+      clipPathId={clipPathId}
       containerRef={containerRef}
       data={data}
       enterTransition={enterTransition}
