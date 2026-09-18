@@ -27,6 +27,7 @@ question the person has already answered:
 | "migrate / move / port / adopt brand-ui in <existing app>"                                                            | `brand-ui-migrate`                           |
 | "audit / review / is this accessible / check contrast"                                                                | `brand-ui-audit`                             |
 | "how do I use / add / compose <component>", already on @brand                                                         | `brand-ui`                                   |
+| "the agent should design / generate the screen at runtime", "render agent UI", "generative UI", "A2UI"                | `brand-ui` (→ Agent-designed surfaces, A2UI) |
 | "new theme / re-brand / our colors"                                                                                   | `brand-ui-theme`                             |
 | "create a theme from <brand / links / brand guidelines>"                                                              | `brand-ui-create-theme`                      |
 | "update / refresh <existing theme> from <new material>"                                                               | `brand-ui-update-theme`                      |

@@ -26,7 +26,7 @@ import prettier from "prettier";
 import { loadManifest } from "./core.mjs";
 import { applyNamedMarkerBlock } from "./context.mjs";
 import { renderDashboardSpecSkillTable } from "./dashboard-spec.mjs";
-import { renderA2uiSkillTable } from "./a2ui.mjs";
+import { renderA2uiCatalogTable, renderA2uiSkillTable } from "./a2ui.mjs";
 import {
   renderPackageTable,
   renderDecisionSummary,
@@ -115,6 +115,15 @@ export function genTargets(root, manifest) {
       // `.mdx` → `{/* … */}` markers (HTML comments break the MDX indexer).
       file: join(root, "apps/docs/stories/AI-Output-Contract-for-Agents.mdx"),
       regions: [{ name: "agent-output", render: () => renderAgentOutputGuidance(manifest) }],
+    },
+    {
+      // The "Generative UI (A2UI)" Storybook page: the catalog table and the verb
+      // table come from the same generated catalog the validator uses.
+      file: join(root, "apps/docs/stories/Generative-UI-A2UI.mdx"),
+      regions: [
+        { name: "a2ui-catalog", render: () => renderA2uiCatalogTable() },
+        { name: "a2ui", render: () => renderA2uiSkillTable() },
+      ],
     },
     {
       // The human playbook index (WP-09 #84). It used to be a hand-kept table, so a

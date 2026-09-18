@@ -221,6 +221,24 @@ function makeRoot({ decisionBody } = {}) {
     join(root, "apps/docs/stories/AI-Output-Contract-for-Agents.mdx"),
     docWithRegion("agent-output", { mdx: true }),
   );
+  // The Generative UI (A2UI) page — two regions (catalog table + verb table).
+  writeFileSync(
+    join(root, "apps/docs/stories/Generative-UI-A2UI.mdx"),
+    [
+      "# Doc",
+      "",
+      "Hand prose ABOVE.",
+      "",
+      "{/* brand-ui:gen:a2ui-catalog:start */}",
+      "{/* brand-ui:gen:a2ui-catalog:end */}",
+      "",
+      "{/* brand-ui:gen:a2ui:start */}",
+      "{/* brand-ui:gen:a2ui:end */}",
+      "",
+      "Hand prose BELOW.",
+      "",
+    ].join("\n"),
+  );
   // The human playbook index (#84) — a generated table inside hand-written prose.
   writeFileSync(join(root, "docs/playbooks/README.md"), docWithRegion("playbooks"));
   return root;

@@ -131,6 +131,47 @@ export const A2UI_EXAMPLE = {
   },
 };
 
+/**
+ * The generated docs-page region: every catalog type as a Markdown table an agent (or a
+ * developer) can scan — accepts, events, props with enums. MDX-safe: no bare `<`/`{`.
+ */
+export function renderA2uiCatalogTable() {
+  const esc = (v) =>
+    String(v)
+      .replace(/\|/g, "\\|")
+      .replace(/[<>{}]/g, (c) => `\\${c}`);
+  const propCell = (props) =>
+    Object.entries(props)
+      .map(([n, p]) => {
+        const shape = p.enum ? p.enum.map((v) => JSON.stringify(v)).join(" \| ") : p.type;
+        return `\`${n}${p.required ? "" : "?"}\`: ${esc(shape)}`;
+      })
+      .join(" · ") || "—";
+  const rows = Object.entries(A2UI_CATALOG_SCHEMA).map(([t, e]) => {
+    const accepts = [
+      e.children ? "children" : "",
+      ...Object.keys(e.events).map((ev) => `\`on.${ev}\``),
+    ]
+      .filter(Boolean)
+      .join(", ");
+    return `| \`${t}\` | ${accepts || "—"} | ${propCell(e.props)} |`;
+  });
+  return [
+    "> **Generated** by `pnpm gen` from the A2UI catalog (`catalog.source.json` + the manifest) — edit there, not here.",
+    "",
+    `${Object.keys(A2UI_CATALOG_SCHEMA).length} types, protocol \`"a2ui": "${A2UI_VERSION}"\`. Every non-builtin type also accepts ${Object.keys(
+      A2UI_COMMON_PROPS,
+    )
+      .map((k) => `\`${k}\``)
+      .join(", ")}.`,
+    "",
+    "| Type | Accepts | Props |",
+    "| --- | --- | --- |",
+    ...rows,
+    "",
+  ].join("\n");
+}
+
 /** The JSON Schema object (identical to `@elabs-ai/components-ai/a2ui/schema.json`). */
 export function a2uiSchema() {
   return buildA2uiSurfaceSchema(A2UI_CATALOG_SCHEMA);

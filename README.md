@@ -225,7 +225,15 @@ brand-ui docs Button          # real props, read from source — not from a doc 
 brand-ui audit src/Page.tsx   # static token, style and content lint (--strict to gate)
 brand-ui scaffold spec.md     # plan or emit a runnable, born-compliant app
 brand-ui scan . --out ./m     # profile an existing repo for migration
+brand-ui a2ui catalog         # generative UI: the types an agent may emit as data
 ```
+
+When the agent has to **design a screen at runtime** — not write it ahead of time — it
+emits an A2UI surface: JSON naming catalog types, validated against the catalog and
+rendered by `<A2uiSurface>` from `@elabs-ai/components-ai`, with actions routed back to
+your app. `brand-ui a2ui catalog | schema | validate | example` and the hosted MCP's `a2ui`
+tool are its tooling; the page is
+[Generative UI (A2UI)](https://elabs-ai.com/?path=/docs/docs-generative-ui-a2ui--docs).
 
 `scaffold` auto-detects whether it is running **inside** this monorepo (a
 `packages/ui` sibling) and defaults its app-spec's `"standalone"` key accordingly —

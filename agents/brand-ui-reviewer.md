@@ -64,6 +64,10 @@ pass plus a source-level read and say which checks you could not render.
 available, or do the equivalent static read of the user's source for raw colors,
 removed focus rings, ad-hoc spacing and the visual/content anti-slop tells. Fold
 the token/style hits in (separate blocking from advisory).
+If the app renders agent-designed surfaces (`<A2uiSurface>` from `@elabs-ai/components-ai`),
+also run `brand-ui a2ui validate <surface.json>` on a captured surface (or the fixtures the
+app ships) and treat a surface the app itself pre-styles or resolves actions inside as a
+finding — a surface is data; the catalog and `onAction` own what it can do.
 
 ## Synthesize — scored health report
 

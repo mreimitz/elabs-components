@@ -4,7 +4,7 @@ Canonical, harness-agnostic [Agent Skills](https://agentskills.io) for brand-ui.
 This folder is the **source of truth**; Claude Code reads it via `../.claude-plugin/`,
 and `npx skills add <path-to-this-repo>` reads it directly.
 
-- `brand-ui/` — consumer skill: build UI with `@elabs-ai/components-*` (auto-triggers).
+- `brand-ui/` — consumer skill: build UI with `@elabs-ai/components-*` (auto-triggers); includes the agent-output contract and the A2UI generative path (`brand-ui a2ui`).
 - `brand-ui-audit/` — design audit: static lint + cross-theme contrast/visual review.
 - `brand-ui-component/` — maintainer: scaffold/extend a component.
 - `brand-ui-theme/` — themes + global tokens.

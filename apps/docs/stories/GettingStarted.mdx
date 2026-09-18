@@ -171,7 +171,7 @@ agent layer so it uses the real inventory instead of guessing.
 
 - **Any MCP client, nothing to install** — the brand-ui MCP is hosted at
   **`https://elabs-ai.com/mcp`** (Streamable HTTP; `info`/`search`/`docs`/`tokens`/
-  `chart_for`, answered from the manifest of the latest release):
+  `chart_for`/`a2ui`, answered from the manifest of the latest release):
 
   ```bash
   claude mcp add --transport http brand-ui https://elabs-ai.com/mcp
@@ -180,7 +180,7 @@ agent layer so it uses the real inventory instead of guessing.
 - **Claude Code / Cowork** — install the plugin (Path A step 1). It ships the
   skills, the reviewer agents, and **two MCP servers**:
   - **`brand-ui`** (always-on, local) — the **API** ground truth (`info`/`search`/`docs`/
-    `tokens`/`chart_for`/`audit`), works with Storybook down and reads your
+    `tokens`/`chart_for`/`a2ui`/`audit`), works with Storybook down and reads your
     project's own taste profile. See
     [Docs / brand-ui MCP Server](?path=/docs/docs-brand-ui-mcp-server--docs).
   - **`storybook`** (while `pnpm storybook` runs) — the **rendered** view (previews,
