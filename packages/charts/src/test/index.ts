@@ -181,6 +181,7 @@ export {
   PeakRing,
   PieCenter,
   PieCenterShell,
+  PieLabels,
   PieProvider,
   PieSlice,
   ProfitLossLegend,

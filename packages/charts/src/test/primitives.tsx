@@ -177,6 +177,9 @@ export const PatternWaves = createInertPart("PatternWaves");
 export const PeakRing = createInertPart("PeakRing");
 export const PieCenter = createInertPart("PieCenter");
 export const PieCenterShell = createInertPart("PieCenterShell");
+// PieLabels (RM-114) — an internal label layer, never a consumer-composed child,
+// but still a real barrel export; inert stand-in keeps mock-namespace parity.
+export const PieLabels = createInertPart("PieLabels");
 export const PieSlice = createInertPart("PieSlice");
 export const ProfitLossLegend = createInertPart("ProfitLossLegend");
 export const ProfitLossLine = createInertPart("ProfitLossLine");
