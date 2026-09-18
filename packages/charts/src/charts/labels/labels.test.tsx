@@ -121,11 +121,14 @@ describe("label engine — series end labels", () => {
   });
 
   it("paints label text in a contrast-safe mix of the series stroke; the leader keeps the stroke", () => {
-    const { container } = at("wide", <Line dataKey="ebikes" stroke="var(--chart-3)" />);
+    const { container } = at(
+      "wide",
+      <Line dataKey="ebikes" stroke="var(--chart-3)" seriesLabel="end" />,
+    );
     const group = container.querySelector('[data-slot="series-end-labels"] [data-series="ebikes"]');
     expect(group?.querySelector("line")?.getAttribute("stroke")).toBe("var(--chart-3)");
     expect(group?.querySelector("text")?.getAttribute("fill")).toBe(
-      `color-mix(in oklch, var(--chart-3) ${SERIES_LABEL_INK_MIX}%, var(--chart-label))`,
+      `color-mix(in oklab, var(--chart-3) ${SERIES_LABEL_INK_MIX}%, var(--chart-label))`,
     );
     expect(seriesLabelInk("url(#g)")).toBe("var(--chart-label)");
   });
