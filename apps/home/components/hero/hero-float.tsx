@@ -35,7 +35,7 @@ export function HeroFloat() {
         />
       </ParallaxPlane>
       <ParallaxPlane plane="float" className="absolute -end-4 -bottom-6 w-48">
-        <Card className="gap-1 border-s-4 border-s-primary p-3 shadow-lg">
+        <Card className="flex flex-col gap-1 border-s-4 border-s-primary p-3 shadow-lg">
           <span className="text-body font-medium">{scene.flowNode.title}</span>
           <span className="text-meta text-muted-foreground">{scene.flowNode.meta}</span>
         </Card>

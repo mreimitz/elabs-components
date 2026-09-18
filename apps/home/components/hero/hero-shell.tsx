@@ -19,7 +19,8 @@ import {
 } from "@elabs-ai/components-ai";
 import { HeroNavRail } from "../blocks/app-shell/hero-nav-rail";
 import { heroCopy } from "../../content/copy";
-import { HERO_SEED, formatKpi, kpiValueAt, textAt, toolOpenAt, useHeroStream } from "./hero-stream";
+import { HERO_SEED, formatKpi, kpiValueAt, textAt, toolOpenAt } from "./hero-stream";
+import { useHeroStream } from "./use-hero-stream";
 
 const scene = heroCopy.scene;
 type Run = (typeof HERO_SEED.runs)[number];
@@ -62,7 +63,7 @@ export function HeroShell() {
   const toolOpen = toolOpenAt(stream);
 
   return (
-    <div ref={ref} data-slot="hero-scene" className="flex h-full min-w-3xl">
+    <div ref={ref} data-slot="hero-scene" className="flex h-full min-w-175">
       <HeroNavRail
         productName={scene.product}
         orgName={scene.org}
