@@ -199,7 +199,7 @@
     "packages/charts/src/charts/line-chart-loading.tsx": 1,
     "packages/charts/src/charts/line-chart.tsx": 1,
     "packages/charts/src/charts/line-loading-pulse.tsx": 1,
-    "packages/charts/src/charts/line.tsx": -1,
+    "packages/charts/src/charts/line.tsx": 0,
     "packages/charts/src/charts/live-line-chart.tsx": 1,
     "packages/charts/src/charts/live-line.tsx": 1,
     "packages/charts/src/charts/live-x-axis.tsx": 1,

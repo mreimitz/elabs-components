@@ -661,5 +661,89 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
       // No focusOnHover handler is attached at all — opacity stays at 1.
       expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
     });
+
+    // Wave-1 integration: RM-110's end labels must dim in lockstep with
+    // RM-112's `focusOnHover` line dimming — a dimmed line with a
+    // full-strength floating label would read as a rendering bug.
+    it("dims a series' end label to the same opacity as its line", async () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} focusOnHover xDataKey="date">
+          <Line
+            animate={false}
+            dataKey="a"
+            fadeEdges={false}
+            name="Alpha"
+            stroke="var(--chart-1)"
+          />
+          <Line animate={false} dataKey="b" fadeEdges={false} name="Beta" stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+      const seriesBGroup = paths[1]?.closest("g");
+      fireEvent.mouseOver(seriesBGroup as Element);
+
+      const endLabelA = () => container.querySelector('g[data-series="a"]');
+      const endLabelB = () => container.querySelector('g[data-series="b"]');
+
+      await waitFor(() => {
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+        expect(endLabelB()?.getAttribute("opacity")).toBe("1");
+        expect(endLabelA()?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      });
+    });
+  });
+
+  // Wave-1 integration (RM-110 end labels + RM-112 nulls="gap"): the end
+  // label's anchor comes from `placeChartLabels` scanning a series' RAW data
+  // backward for the last finite value — it never reads the rendered/gapped
+  // path, so a trailing null cannot put the label at a phantom position.
+  // This locks that contract in from the RM-112 side of the integration.
+  describe('end labels (RM-110) anchor on the last painted point under nulls="gap"', () => {
+    it("a trailing null does not move the end label off the last real sample", async () => {
+      const trailingNullData: Record<string, unknown>[] = [
+        { date: new Date(2024, 0, 1), a: 10, b: 5 },
+        { date: new Date(2024, 0, 2), a: 20, b: 15 },
+        { date: new Date(2024, 0, 3), a: null, b: 25 },
+      ];
+      const { container } = render(
+        <LineChart animationDuration={0} data={trailingNullData} xDataKey="date">
+          <Line
+            animate={false}
+            dataKey="a"
+            fadeEdges={false}
+            name="Alpha"
+            stroke="var(--chart-1)"
+          />
+          <Line animate={false} dataKey="b" fadeEdges={false} name="Beta" stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+
+      // Series "a" is first in JSX order — under the default nulls="gap" its
+      // visible path breaks before the trailing null, so the LAST drawn
+      // point on its `d` is index 1 (value 20), not index 2 (the null).
+      const pathA =
+        container.querySelectorAll("path.visx-linepath:not([aria-hidden])")[0]?.getAttribute("d") ??
+        "";
+      const numbers = (pathA.match(/-?\d+\.?\d*/g) ?? []).map(Number);
+      const lastPaintedY = numbers.at(-1) as number;
+
+      const connector = container.querySelector('g[data-series="a"] line');
+      expect(connector).not.toBeNull();
+      const anchorY = Number(connector?.getAttribute("y1"));
+      // The Acceptance case: with a null last row, the label anchors to the
+      // last PAINTED point — not pixel 0, not NaN, not a phantom position for
+      // the null itself. `d` rounds to 3 decimal places (visx), `anchorY`
+      // does not — 1 decimal clears that rounding gap while still catching
+      // any real (multi-pixel) mismatch.
+      expect(anchorY).toBeCloseTo(lastPaintedY, 1);
+    });
   });
 });
