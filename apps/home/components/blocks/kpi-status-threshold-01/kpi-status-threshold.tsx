@@ -14,6 +14,7 @@ import { KpiAsOf } from "../kpi-card-parts/kpi-as-of";
 import { KpiComparisonRow } from "../kpi-card-parts/kpi-comparison-row";
 import { KpiStatus, type KpiStatusValue } from "../kpi-card-parts/kpi-status";
 import { formatKpiValue } from "../kpi-card-parts/format";
+import { agentLoopCopy } from "../../../content/copy";
 
 export interface KpiStatusThresholdProps {
   /** Defaults to on-time delivery — the shared Acme Logistics Q3 dataset. */
@@ -22,7 +23,11 @@ export interface KpiStatusThresholdProps {
   /** Renders a layout-shaped skeleton card instead of the real values. Default false. */
   loading?: boolean;
   className?: string;
+  /** Site copy (RM-099); defaults from `agentLoopCopy.blocks.statusThreshold`. */
+  labels?: KpiStatusThresholdLabels;
 }
+
+export type KpiStatusThresholdLabels = (typeof agentLoopCopy)["blocks"]["statusThreshold"];
 
 /**
  * Same margin-of-target RULE the scorecard uses (`statusForMetric` in
@@ -158,7 +163,15 @@ const MARKER_FILL: Record<KpiStatusValue, string> = {
   "on-track": "bg-success",
 };
 
-function ThresholdScale({ metric, locale }: { metric: KpiMetric; locale: string }) {
+function ThresholdScale({
+  metric,
+  locale,
+  labels,
+}: {
+  metric: KpiMetric;
+  locale: string;
+  labels: KpiStatusThresholdLabels;
+}) {
   const { actual, target, higherIsBetter, unit } = metric;
   const margin = marginFor(target, unit);
   const domain = scaleDomain(metric);
@@ -189,7 +202,7 @@ function ThresholdScale({ metric, locale }: { metric: KpiMetric; locale: string 
           style={{ insetInlineStart: pct(actual) }}
         >
           <span className="text-meta font-semibold tabular-nums text-foreground">{actualFmt}</span>
-          <span className={cn("size-2.5 rotate-45 rounded-[2px]", MARKER_FILL[currentStatus])} />
+          <span className={cn("size-2.5 rotate-45 rounded-sm", MARKER_FILL[currentStatus])} />
         </div>
         <div className="relative flex h-3 w-full overflow-hidden rounded-full">
           {zones.map((zone) => (
@@ -230,7 +243,7 @@ function ThresholdScale({ metric, locale }: { metric: KpiMetric; locale: string 
           className="absolute -translate-x-1/2 whitespace-nowrap font-medium text-foreground"
           style={{ insetInlineStart: pct(target) }}
         >
-          {targetFmt} target
+          {labels.target(targetFmt)}
         </span>
       </div>
       <div className="relative h-4 text-caption text-muted-foreground">
@@ -251,11 +264,17 @@ function ThresholdScale({ metric, locale }: { metric: KpiMetric; locale: string 
   );
 }
 
-function KpiStatusThresholdSkeleton({ className }: { className?: string }) {
+function KpiStatusThresholdSkeleton({
+  className,
+  labels,
+}: {
+  className?: string;
+  labels: KpiStatusThresholdLabels;
+}) {
   return (
     <Card aria-live="polite" className={className} data-slot="kpi-status-threshold" role="status">
       <CardContent className="space-y-3 p-5">
-        <span className="sr-only">Loading the KPI card…</span>
+        <span className="sr-only">{labels.loading}</span>
         <div aria-hidden="true" className="flex items-center justify-between gap-2">
           <Skeleton className="h-4 w-28" />
           <Skeleton className="h-5 w-16 rounded-full" />
@@ -280,9 +299,10 @@ export function KpiStatusThreshold({
   locale = "en-US",
   loading = false,
   className,
+  labels = agentLoopCopy.blocks.statusThreshold,
 }: KpiStatusThresholdProps) {
   if (loading) {
-    return <KpiStatusThresholdSkeleton className={className} />;
+    return <KpiStatusThresholdSkeleton className={className} labels={labels} />;
   }
 
   const status = statusForValue(metric.actual, metric.target, metric.higherIsBetter, metric.unit);
@@ -300,7 +320,7 @@ export function KpiStatusThreshold({
         <div className="text-kpi tabular-nums text-foreground">
           {formatKpiValue(metric.actual, metric.unit, locale, metric.currency)}
         </div>
-        <ThresholdScale locale={locale} metric={metric} />
+        <ThresholdScale labels={labels} locale={locale} metric={metric} />
         <KpiComparisonRow
           actual={metric.actual}
           baseline={metric.target}

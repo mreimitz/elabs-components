@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import { Badge, Card, CardContent, Skeleton } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { QUARTER_LABEL } from "../kpi-card-parts/data/acme-quarter";
+import { agentLoopCopy } from "../../../content/copy";
 import { formatKpiDelta, formatKpiValue, type KpiUnit } from "../kpi-card-parts/format";
 import {
   type DepotMetricPoint,
@@ -29,7 +30,11 @@ export interface KpiMoversProps {
   /** Renders layout-shaped skeleton cards instead of the real values. Default false. */
   loading?: boolean;
   className?: string;
+  /** Site copy (RM-099); defaults from `agentLoopCopy.blocks.movers`. */
+  labels?: KpiMoversLabels;
 }
+
+export type KpiMoversLabels = (typeof agentLoopCopy)["blocks"]["movers"];
 
 /**
  * "What changed most?" — the biggest risers and fallers in a ranked field,
@@ -46,6 +51,7 @@ export function KpiMovers({
   locale = "en-US",
   loading = false,
   className,
+  labels = agentLoopCopy.blocks.movers,
 }: KpiMoversProps) {
   const showOnTime = only !== "revenue";
   const showRevenue = only !== "onTime";
@@ -61,7 +67,7 @@ export function KpiMovers({
       data-slot="kpi-movers"
       role={loading ? "status" : undefined}
     >
-      {loading ? <span className="sr-only">Loading movers cards…</span> : null}
+      {loading ? <span className="sr-only">{labels.loading}</span> : null}
       {loading ? (
         <>
           {showOnTime && <KpiMoversCardSkeleton />}
@@ -78,7 +84,8 @@ export function KpiMovers({
               scaleStep={5}
               scaleSuffix="pp"
               subtitle="On-time delivery, by depot"
-              title="Biggest movers this quarter"
+              title={labels.title}
+              labels={labels}
               unit="percent"
               valueChangeFn={ppChange}
             />
@@ -92,7 +99,8 @@ export function KpiMovers({
               scaleStep={5}
               scaleSuffix="%"
               subtitle="Revenue, by depot"
-              title="Biggest movers this quarter"
+              title={labels.title}
+              labels={labels}
               unit="currency"
               valueChangeFn={pctChange}
             />
@@ -143,6 +151,7 @@ function KpiMoversCard({
   valueChangeFn,
   deltaText,
   locale,
+  labels,
 }: {
   title: string;
   subtitle: string;
@@ -154,6 +163,7 @@ function KpiMoversCard({
   valueChangeFn: (p: DepotMetricPoint) => number;
   deltaText: (m: RankedMover) => string;
   locale: string;
+  labels: KpiMoversLabels;
 }) {
   const ranked = rankMovers(data, valueChangeFn);
   const { risers, fallers } = topMovers(ranked, count);
@@ -173,12 +183,12 @@ function KpiMoversCard({
           </Badge>
         </div>
         <p className="text-caption text-muted-foreground">
-          Bars scaled to{" "}
+          {labels.scaleBefore}{" "}
           <span className="tabular-nums">
             ±{scaleMax}
             {scaleSuffix}
           </span>{" "}
-          vs last quarter, zero at center.
+          {labels.scaleAfter}
         </p>
         <ol className="list-none space-y-2" data-slot="kpi-movers-list">
           {rows.map((m) => (

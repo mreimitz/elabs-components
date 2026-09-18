@@ -17,6 +17,7 @@ import {
 import { KpiAsOf } from "../kpi-card-parts/kpi-as-of";
 import { KpiComparisonRow } from "../kpi-card-parts/kpi-comparison-row";
 import { formatKpiValue } from "../kpi-card-parts/format";
+import { agentLoopCopy } from "../../../content/copy";
 
 /**
  * A cumulative (QTD) KPI's `target` is already prorated to the snapshot day —
@@ -39,7 +40,11 @@ export interface KpiTrendReferenceProps {
   className?: string;
   /** Merged onto the metric-cards GRID itself (not the outer legend+grid wrapper `className` reaches) — override its `sm:`/`lg:` column counts for a narrow container regardless of viewport. */
   gridClassName?: string;
+  /** Site copy (RM-099); defaults from `agentLoopCopy.blocks.trendReference`. */
+  labels?: KpiTrendReferenceLabels;
 }
+
+export type KpiTrendReferenceLabels = (typeof agentLoopCopy)["blocks"]["trendReference"];
 
 /**
  * "Better or worse than normal?" — a 13-week trend read against three
@@ -53,6 +58,7 @@ export function KpiTrendReference({
   loading = false,
   className,
   gridClassName,
+  labels = agentLoopCopy.blocks.trendReference,
 }: KpiTrendReferenceProps) {
   if (loading) {
     return (
@@ -62,7 +68,7 @@ export function KpiTrendReference({
         data-slot="kpi-trend-reference"
         role="status"
       >
-        <span className="sr-only">Loading KPI cards…</span>
+        <span className="sr-only">{labels.loading}</span>
         <Skeleton className="h-4 w-72" />
         <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-3", gridClassName)}>
           {metrics.map((metric) => (
@@ -74,10 +80,10 @@ export function KpiTrendReference({
   }
   return (
     <div className={cn("space-y-3", className)} data-slot="kpi-trend-reference">
-      <TrendLegend />
+      <TrendLegend labels={labels} />
       <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-3", gridClassName)}>
         {metrics.map((metric) => (
-          <KpiTrendReferenceCard key={metric.id} locale={locale} metric={metric} />
+          <KpiTrendReferenceCard key={metric.id} labels={labels} locale={locale} metric={metric} />
         ))}
       </div>
     </div>
@@ -101,7 +107,7 @@ function KpiTrendReferenceCardSkeleton() {
   );
 }
 
-function TrendLegend() {
+function TrendLegend({ labels }: { labels: KpiTrendReferenceLabels }) {
   return (
     // Style word FIRST, reference name second ("Solid: this year" not "This
     // year (solid line)") — shorter per item so more fit on one row before
@@ -113,34 +119,42 @@ function TrendLegend() {
     >
       <span className="flex items-center gap-1.5">
         <span aria-hidden="true" className="inline-block h-0.5 w-4 rounded-full bg-foreground" />
-        Solid: this year
+        {labels.legendThisYear}
       </span>
       <span className="flex items-center gap-1.5">
         <span
           aria-hidden="true"
           className="inline-block h-px w-4 rounded-full bg-muted-foreground"
         />
-        Faint: last year
+        {labels.legendLastYear}
       </span>
       <span className="flex items-center gap-1.5">
         <span
           aria-hidden="true"
           className="inline-block h-2.5 w-4 rounded-sm bg-chart-ring-background"
         />
-        Shaded: normal range
+        {labels.legendNormalRange}
       </span>
       <span className="flex items-center gap-1.5">
         <span
           aria-hidden="true"
           className="inline-block h-0.5 w-4 rounded-full border-t border-dashed border-foreground"
         />
-        Dashed: target pace
+        {labels.legendTargetPace}
       </span>
     </div>
   );
 }
 
-function KpiTrendReferenceCard({ metric, locale }: { metric: KpiMetric; locale: string }) {
+function KpiTrendReferenceCard({
+  metric,
+  locale,
+  labels,
+}: {
+  metric: KpiMetric;
+  locale: string;
+  labels: KpiTrendReferenceLabels;
+}) {
   const target = weeklyEquivalentTarget(metric);
   const lastWeek = metric.weekly[metric.weekly.length - 1] as number;
   const lastWeekPriorYear = metric.weeklyPriorYear[metric.weeklyPriorYear.length - 1] as number;
@@ -163,7 +177,7 @@ function KpiTrendReferenceCard({ metric, locale }: { metric: KpiMetric; locale: 
             {formatKpiValue(metric.actual, metric.unit, locale, metric.currency)}
           </div>
           {isCumulative ? (
-            <p className="text-caption text-muted-foreground">Quarter-to-date total</p>
+            <p className="text-caption text-muted-foreground">{labels.quarterToDate}</p>
           ) : null}
         </div>
         <div className="space-y-1">
@@ -181,7 +195,7 @@ function KpiTrendReferenceCard({ metric, locale }: { metric: KpiMetric; locale: 
             variant="line"
             width={240}
           />
-          <p className="text-caption text-muted-foreground">Weekly, last 13 weeks</p>
+          <p className="text-caption text-muted-foreground">{labels.weekly}</p>
         </div>
         <KpiComparisonRow
           actual={lastWeek}

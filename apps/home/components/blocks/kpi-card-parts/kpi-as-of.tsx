@@ -3,6 +3,7 @@
 
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { formatAsOf } from "./format";
+import { agentLoopCopy } from "../../../content/copy";
 
 export interface KpiAsOfProps {
   /** When the figures were last refreshed. */
@@ -11,14 +12,21 @@ export interface KpiAsOfProps {
   source?: string;
   locale?: string;
   className?: string;
+  /** Site copy (RM-099); defaults from `agentLoopCopy.blocks.asOf`. */
+  labels?: { asOf: (when: string, source?: string) => string };
 }
 
 /** Freshness/source footnote — "As of 31 Aug, 09:40 · Source: ERP". */
-export function KpiAsOf({ date, source, locale = "en-US", className }: KpiAsOfProps) {
+export function KpiAsOf({
+  date,
+  source,
+  locale = "en-US",
+  className,
+  labels = agentLoopCopy.blocks.asOf,
+}: KpiAsOfProps) {
   return (
     <p className={cn("text-caption text-muted-foreground", className)} data-slot="kpi-as-of">
-      As of {formatAsOf(date, locale)}
-      {source ? ` · Source: ${source}` : ""}
+      {labels.asOf(formatAsOf(date, locale), source)}
     </p>
   );
 }

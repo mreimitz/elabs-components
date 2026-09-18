@@ -344,4 +344,48 @@ export const agentLoopCopy = {
     "brand-ui never owns model calls. This demo calls the same hosted MCP your agent would; the picking was done ahead of time.",
   honestyLinkLabel: "Why: decision D5",
   honestyLinkHref: `${shellCopy.links.github}/blob/main/docs/DECISIONS.md`,
+  /** Default `labels` for the copy-owned registry blocks the loop renders (site lint: every
+   * literal comes from copy). Wording is the blocks' own, moved here unchanged. */
+  blocks: {
+    asOf: {
+      asOf: (when: string, source?: string) =>
+        `As of ${when}${source ? ` · Source: ${source}` : ""}`,
+    },
+    movers: {
+      loading: "Loading movers cards…",
+      title: "Biggest movers this quarter",
+      scaleBefore: "Bars scaled to",
+      scaleAfter: "vs last quarter, zero at center.",
+    },
+    trendReference: {
+      loading: "Loading KPI cards…",
+      legendThisYear: "Solid: this year",
+      legendLastYear: "Faint: last year",
+      legendNormalRange: "Shaded: normal range",
+      legendTargetPace: "Dashed: target pace",
+      quarterToDate: "Quarter-to-date total",
+      weekly: "Weekly, last 13 weeks",
+    },
+    statusThreshold: {
+      loading: "Loading the KPI card…",
+      target: (value: string) => `${value} target`,
+    },
+    cohortRetention: {
+      loading: "Loading the cohort retention heatmap…",
+      heading: "Do customers stay?",
+      cohortsBadge: (count: number) => `${count} monthly cohorts`,
+      finding: (
+        cohort: string,
+        gapPp: number,
+        direction: string,
+        peerCount: number,
+        month: number,
+      ) =>
+        `${cohort} held ${gapPp}pp ${direction} retention than ${peerCount === 1 ? "its peer" : "its peers"} by month ${month}`,
+      retained: (highlightPct: number, peerAvgPct: number, peers: string, context: string) =>
+        `${highlightPct}% retained vs ${peerAvgPct}% for ${peers}, ${context}.`,
+      footnote:
+        "Each cell is the share of a cohort still active N months after signup; blank cells are months a cohort has not reached yet, not zero retention.",
+    },
+  },
 } as const;

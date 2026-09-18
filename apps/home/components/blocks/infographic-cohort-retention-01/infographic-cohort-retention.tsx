@@ -6,6 +6,7 @@ import { Badge, Card, CardContent, Skeleton } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { AS_OF_DATE } from "../kpi-card-parts/data/acme-quarter";
 import { KpiAsOf } from "../kpi-card-parts/kpi-as-of";
+import { agentLoopCopy } from "../../../content/copy";
 import {
   cohortFindingGap,
   type CohortRetentionScenario,
@@ -21,7 +22,11 @@ export interface InfographicCohortRetentionProps {
   /** Renders a layout-shaped skeleton instead of the real values. Default false. */
   loading?: boolean;
   className?: string;
+  /** Site copy (RM-099); defaults from `agentLoopCopy.blocks.cohortRetention`. */
+  labels?: InfographicCohortRetentionLabels;
 }
+
+export type InfographicCohortRetentionLabels = (typeof agentLoopCopy)["blocks"]["cohortRetention"];
 
 const MONTHS_SINCE_ORDER = Array.from({ length: MONTHS_SINCE_MAX + 1 }, (_, i) => String(i));
 
@@ -38,6 +43,7 @@ export function InfographicCohortRetention({
   locale = "en-US",
   loading = false,
   className,
+  labels = agentLoopCopy.blocks.cohortRetention,
 }: InfographicCohortRetentionProps) {
   const { highlightPct, peerAvgPct, gapPp, direction } = cohortFindingGap(scenario);
   const absGap = Math.abs(gapPp);
@@ -62,13 +68,11 @@ export function InfographicCohortRetention({
       role={loading ? "status" : undefined}
     >
       <CardContent className="space-y-4 p-5">
-        {loading ? <span className="sr-only">Loading the cohort retention heatmap…</span> : null}
+        {loading ? <span className="sr-only">{labels.loading}</span> : null}
         <div className="flex items-center justify-between gap-2">
-          <span className="min-w-0 truncate text-body text-muted-foreground">
-            Do customers stay?
-          </span>
+          <span className="min-w-0 truncate text-body text-muted-foreground">{labels.heading}</span>
           <Badge className="shrink-0" variant="secondary">
-            {scenario.cohortOrder.length} monthly cohorts
+            {labels.cohortsBadge(scenario.cohortOrder.length)}
           </Badge>
         </div>
         {loading ? (
@@ -76,14 +80,16 @@ export function InfographicCohortRetention({
         ) : (
           <>
             <p className="text-title text-foreground">
-              {scenario.highlightCohort} held {absGap}pp {direction} retention than{" "}
-              {scenario.peerCohorts.length === 1 ? "its peer" : "its peers"} by month{" "}
-              {scenario.highlightMonthsSince}
+              {labels.finding(
+                scenario.highlightCohort,
+                absGap,
+                direction,
+                scenario.peerCohorts.length,
+                scenario.highlightMonthsSince,
+              )}
             </p>
-            <p className="text-caption text-muted-foreground">
-              <span className="tabular-nums">{highlightPct}%</span> retained vs{" "}
-              <span className="tabular-nums">{peerAvgPct}%</span> for {peerList}, {scenario.context}
-              .
+            <p className="text-caption tabular-nums text-muted-foreground">
+              {labels.retained(highlightPct, peerAvgPct, peerList, scenario.context)}
             </p>
             <HeatmapChart
               accessibleLabel={accessibleLabel}
@@ -107,10 +113,7 @@ export function InfographicCohortRetention({
               y="cohort"
               yOrder={scenario.cohortOrder}
             />
-            <p className="text-caption text-muted-foreground">
-              Each cell is the share of a cohort still active N months after signup; blank cells are
-              months a cohort has not reached yet, not zero retention.
-            </p>
+            <p className="text-caption text-muted-foreground">{labels.footnote}</p>
           </>
         )}
         <KpiAsOf date={AS_OF_DATE} locale={locale} source="CRM" />
