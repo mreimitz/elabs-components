@@ -57,6 +57,13 @@ export const PRODUCTS = [
 export type Product = (typeof PRODUCTS)[number];
 
 /**
+ * The module Ashgrove's own revenue team reads its KPIs in — Ashgrove runs its analytics
+ * product on its own numbers. The hero scene (RM-094) is this app: its nav rail names it,
+ * over `COMPANY_FULL_NAME` as the workspace.
+ */
+export const CONSOLE_PRODUCT: Product = "Ledger Insights";
+
+/**
  * The account team — reused verbatim as `orders.ts`' `owner` field and `settings.ts`'
  * workspace members, so the same nine names show up in the data-app table, the settings tab
  * and (via `churn.ts`) the movers list.

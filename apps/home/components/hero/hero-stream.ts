@@ -1,25 +1,36 @@
 /**
  * hero-stream.ts — the hero scene's seed data and its one-time stream-in (RM-094).
  *
- * The seed has the shape RM-095's fixtures will export; the orchestrator swaps it after both
- * merge. Values are fixed literals (no Math.random — charts-honesty). The stream-in plays once
- * per session, on first mount, with motion on: KPIs count up over 600 ms on `--ease-entrance`,
- * the assistant reply arrives word by word over ~900 ms and the tool call opens; everything is
- * settled by `STREAM_TOTAL_MS`. Reduced motion or a return visit renders the final state.
+ * The seed is READ from the fixture set (`content/fixtures/**`, RM-095): the scene is Ashgrove
+ * Systems' own revenue console (`company.ts`), its KPI row and tiles are `KPI_HEADLINES`, the
+ * line chart is `CHURN_SERIES` (so its last point is the churn KPI), the table is
+ * `CHURN_MOVERS`, the chat is `CONVERSATION`'s question, answer and tool call, and the
+ * pipeline tile and flow-node float are `FLOW_NODES` at `FLOW_ACTIVE_NODE_ID`. Nothing below
+ * is a typed number: every value is a fixture value, and every delta is the fixture's
+ * computed delta. Only labels and sentence frames come from `copy.ts` (`heroCopy.scene`).
+ * Imports name the fixture modules one by one (never the barrel) so the hero never pulls in
+ * the process log (the churn movers do generate their 6,000-order sample on import).
+ *
+ * The stream-in plays once per session, on first mount, with motion on: KPIs count up to the
+ * fixture value over 600 ms on `--ease-entrance`, the assistant reply arrives word by word
+ * over ~900 ms and the tool call opens; everything is settled by `STREAM_TOTAL_MS`. Reduced
+ * motion or a return visit renders the final state — the fixture values themselves.
  *
  * Server-safe: no React import, so the server-rendered hero can read the seed and the gate
  * script. The client hook that drives the stream lives in `use-hero-stream.ts`.
- *
- * Wave-1 fixture audit (Refs #455 #456): checked every fact here — the 3 KPIs, the
- * runs-per-day series, the 8-row run table, the tile row and the chat/tool exchange — against
- * `apps/home/content/fixtures/**` (RM-095). None match: this scene narrates "Atlas Ops", a
- * generic AI agent-ops console for "Acme" watching agent runs (invoice triage, support
- * routing, …), while the fixtures narrate Ashgrove Systems, Inc., a fictional B2B billing
- * platform, with its own KPIs (ARR, NRR, churn, …), orders/accounts table and an EMEA-churn
- * chat. No value below has a same-fact counterpart in the fixture set, so every one stays
- * local. Reconciling the two narratives (or keeping them deliberately distinct) is a
- * maintainer call, not a mechanical swap.
  */
+import { heroCopy } from "../../content/copy";
+import { COMPANY_FULL_NAME, CONSOLE_PRODUCT, FISCAL_QUARTER } from "../../content/fixtures/company";
+import {
+  CHURN_BY_REGION,
+  CHURN_SERIES,
+  KPI_HEADLINES,
+  type KpiHeadline,
+} from "../../content/fixtures/kpis";
+import { CHURN_MOVERS } from "../../content/fixtures/churn";
+import { CONVERSATION } from "../../content/fixtures/conversation";
+import { FLOW_ACTIVE_NODE_ID, FLOW_NODES } from "../../content/fixtures/flow";
+
 export const STREAM_SESSION_KEY = "brand-ui-hero-streamed";
 /** Set on the scene host by the inline gate script while a stream-in is about to play. */
 export const STREAM_PENDING_ATTR = "data-stream-pending";
@@ -28,49 +39,146 @@ export const CHAT_START_MS = 250;
 export const CHAT_MS = 900;
 export const STREAM_TOTAL_MS = CHAT_START_MS + CHAT_MS + 100;
 
-export const HERO_SEED = {
-  kpis: [
-    { id: "runs", value: 18_240, format: "number", delta: "+12.4%", direction: "up" },
-    { id: "success", value: 97.3, format: "percent", delta: "+0.8 pts", direction: "up" },
-    { id: "spend", value: 3_412, format: "currency", delta: "68% of limit", direction: "neutral" },
-  ],
-  runsPerDay: [
-    { day: "Mon", runs: 2410 },
-    { day: "Tue", runs: 2630 },
-    { day: "Wed", runs: 2580 },
-    { day: "Thu", runs: 1980 },
-    { day: "Fri", runs: 2890 },
-    { day: "Sat", runs: 2760 },
-    { day: "Sun", runs: 2990 },
-  ],
-  runs: [
-    { id: "run-4821", agent: "Invoice triage", status: "complete", duration: "42 s" },
-    { id: "run-4820", agent: "Support router", status: "running", duration: "18 s" },
-    { id: "run-4819", agent: "Invoice triage", status: "complete", duration: "3 min 04 s" },
-    { id: "run-4818", agent: "Contract review", status: "complete", duration: "1 min 12 s" },
-    { id: "run-4817", agent: "Lead enrichment", status: "pending", duration: "—" },
-    { id: "run-4816", agent: "Support router", status: "complete", duration: "21 s" },
-    { id: "run-4815", agent: "Contract review", status: "complete", duration: "58 s" },
-    { id: "run-4814", agent: "Invoice triage", status: "complete", duration: "39 s" },
-  ],
-  tiles: { queue: "14", model: "gpt-5-mini", budget: 68 },
-} as const;
+const scene = heroCopy.scene;
+const LOCALE = "en-US";
 
-export type HeroKpi = (typeof HERO_SEED.kpis)[number];
+type KpiFormat = "currency" | "percent" | "number";
+const FORMAT_BY_UNIT: Record<KpiHeadline["unit"], KpiFormat> = {
+  usd: "currency",
+  percent: "percent",
+  accounts: "number",
+  tickets: "number",
+};
+/** Metrics where a rise is bad news — the delta colours flip for these. */
+const LOWER_IS_BETTER: ReadonlySet<string> = new Set(["churn", "support-backlog"]);
 
 const FORMATTERS = {
-  number: new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }),
-  percent: new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
-  currency: new Intl.NumberFormat("en-US", {
+  number: new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 }),
+  percent: new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+  currency: new Intl.NumberFormat(LOCALE, {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0,
+    notation: "compact",
+    // Explicit: currency style's default minimum (2 for USD) is clamped differently across ICU
+    // versions — Node rendered "$162.0K" where Chromium rendered "$162K".
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
   }),
 } as const;
+/**
+ * Signed values: the sign is prefixed by hand over the unsigned formatter, so a delta and the
+ * value it sits beside share one formatting path — the server and the browser must render the
+ * same text or the scene fails to hydrate.
+ */
+function signed(format: KpiFormat, value: number): string {
+  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+  return `${sign}${FORMATTERS[format].format(Math.abs(value))}`;
+}
+const WEEK = new Intl.DateTimeFormat(LOCALE, { month: "short", day: "numeric", timeZone: "UTC" });
+const MONTH = new Intl.DateTimeFormat(LOCALE, { month: "short", timeZone: "UTC" });
+const utc = (isoDate: string) => new Date(`${isoDate}T00:00:00Z`);
+
+export interface HeroKpi {
+  id: string;
+  label: string;
+  value: number;
+  format: KpiFormat;
+  delta: string;
+  direction: "up" | "down" | "neutral";
+  positiveIsGood: boolean;
+}
+
+function toKpi(h: KpiHeadline): HeroKpi {
+  const format = FORMAT_BY_UNIT[h.unit];
+  const delta = signed(format, h.delta);
+  return {
+    id: h.id,
+    label: h.label,
+    value: h.value,
+    format,
+    delta: format === "percent" ? `${delta} ${scene.pointsUnit}` : delta,
+    direction: h.delta > 0 ? "up" : h.delta < 0 ? "down" : "neutral",
+    positiveIsGood: !LOWER_IS_BETTER.has(h.id),
+  };
+}
+
+function headline(id: string): HeroKpi {
+  const h = KPI_HEADLINES.find((k) => k.id === id);
+  if (!h) throw new Error(`hero-stream: no KPI_HEADLINES entry "${id}"`);
+  return toKpi(h);
+}
+
+type Part = (typeof CONVERSATION)[number]["parts"][number];
+type TextPart = Extract<Part, { type: "text" }>;
+type ToolPart = Extract<Part, { type: `tool-${string}` }>;
+
+const [question, answer] = CONVERSATION;
+const lastText = (parts: readonly Part[] = []) =>
+  parts.filter((p): p is TextPart => p.type === "text").at(-1)?.text ?? "";
+const toolPart = answer?.parts.find((p): p is ToolPart => p.type.startsWith("tool-"));
+if (!toolPart) throw new Error("hero-stream: CONVERSATION has no tool call");
+const toolInput: unknown = toolPart.input;
+
+const activeIndex = FLOW_NODES.findIndex((n) => n.id === FLOW_ACTIVE_NODE_ID);
+const activeNode = FLOW_NODES[activeIndex];
+if (!activeNode) throw new Error(`hero-stream: no FLOW_NODES entry "${FLOW_ACTIVE_NODE_ID}"`);
+
+const churn = headline("churn");
+
+export const HERO_SEED = {
+  product: CONSOLE_PRODUCT,
+  org: COMPANY_FULL_NAME,
+  /** The KPI row — churn is the one the chart's last point equals. */
+  kpis: [headline("arr"), headline("nrr"), churn],
+  churnKpi: churn,
+  kpiSince: scene.kpiSince(WEEK.format(utc(CHURN_SERIES.points[0]!.week))),
+  churn: {
+    title: scene.chartTitle(CHURN_SERIES.label, FISCAL_QUARTER),
+    label: CHURN_SERIES.label,
+    /**
+     * The fixture's own values (4.66, not 0.0466), so the chart's last point reads the same
+     * number as the churn KPI in its tooltip and accessible name. The week is a LOCAL-midnight
+     * ISO timestamp: the line chart coerces x to a `Date`, and a date-only ISO string would be
+     * UTC midnight — the previous day west of Greenwich.
+     */
+    points: CHURN_SERIES.points.map((p) => ({
+      week: `${p.week}T00:00:00`,
+      churn: p.value,
+    })),
+  },
+  movers: CHURN_MOVERS.map((m) => ({ ...m })),
+  moversMonth: MONTH.format(utc(CHURN_SERIES.points.at(-1)!.week)),
+  chat: {
+    question: lastText(question?.parts),
+    answer: lastText(answer?.parts),
+    tool: {
+      name: toolPart.type.slice("tool-".length),
+      state: toolPart.state,
+      summary:
+        typeof toolInput === "object" && toolInput !== null
+          ? Object.values(toolInput).map(String).join(" · ")
+          : "",
+      result: scene.toolResult(CHURN_SERIES.points.length, Object.keys(CHURN_BY_REGION).length),
+    },
+  },
+  tiles: [headline("active-accounts"), headline("support-backlog")],
+  pipeline: {
+    node: activeNode.data.label,
+    step: scene.flowStep(activeIndex + 1, FLOW_NODES.length),
+    /** Share of steps finished before the active one. */
+    progress: Math.round((activeIndex / FLOW_NODES.length) * 100),
+  },
+};
+
+export type HeroMover = (typeof HERO_SEED.movers)[number];
 
 export function formatKpi(kpi: HeroKpi, value: number): string {
   const text = FORMATTERS[kpi.format].format(value);
   return kpi.format === "percent" ? `${text}%` : text;
+}
+
+export function formatUsd(value: number, withSign = false): string {
+  return withSign ? signed("currency", value) : FORMATTERS.currency.format(value);
 }
 
 export interface HeroStream {

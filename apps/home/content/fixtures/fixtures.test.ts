@@ -6,7 +6,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { OWNERS, REGIONS } from "./company";
+import { CONSOLE_PRODUCT, OWNERS, PRODUCTS, REGIONS } from "./company";
 import {
   CHURN_BY_REGION,
   CHURN_SERIES,
@@ -24,7 +24,7 @@ import {
   CHURN_MOVERS_COUNT,
 } from "./churn";
 import { CONVERSATION } from "./conversation";
-import { FLOW_NODES } from "./flow";
+import { FLOW_ACTIVE_NODE_ID, FLOW_NODES } from "./flow";
 import {
   generateProcessLog,
   PROCESS_LOG,
@@ -246,5 +246,17 @@ describe("process-log.ts — case count and slow-variant share", () => {
 describe("settings.ts — members match orders.ts owners", () => {
   it("SETTINGS_MEMBERS names exactly OWNERS, in order", () => {
     expect(SETTINGS_MEMBERS.map((m) => m.name)).toEqual([...OWNERS]);
+  });
+});
+
+describe("hero additions (RM-094-fx) — facts the hero scene reads", () => {
+  it("CONSOLE_PRODUCT is one of the company's own products", () => {
+    expect(PRODUCTS).toContain(CONSOLE_PRODUCT);
+  });
+
+  it("FLOW_ACTIVE_NODE_ID names a pipeline step that is neither the first nor the last", () => {
+    const index = FLOW_NODES.findIndex((n) => n.id === FLOW_ACTIVE_NODE_ID);
+    expect(index).toBeGreaterThan(0);
+    expect(index).toBeLessThan(FLOW_NODES.length - 1);
   });
 });

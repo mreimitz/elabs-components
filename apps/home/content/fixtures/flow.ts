@@ -59,3 +59,10 @@ export const FLOW_EDGES: Edge[] = [
   { id: "enrich-score", source: "enrich", target: "score" },
   { id: "score-publish", source: "score", target: "publish" },
 ];
+
+/**
+ * The step the pipeline's current run is on. The hero scene (RM-094) reads it three times —
+ * the header's "running" badge, the pipeline tile's progress (steps finished before this one)
+ * and the flow-node float's "Step n of m" — so all three agree by construction.
+ */
+export const FLOW_ACTIVE_NODE_ID = "score";
