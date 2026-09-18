@@ -283,8 +283,12 @@ export interface ChartSpec {
   /** Bubble size by a numeric column — `Scatter sizeKey`/`sizeRange`. */
   size?: { key: string; range?: [number, number] };
 
-  /** Colour points by a fixed/categorical/numeric column — `Scatter colorBy`. */
-  colorBy?: {
+  /**
+   * Colour points by a fixed/categorical/numeric column — `Scatter colorBy`.
+   * Named `scatterColorBy` (not `colorBy`) because `"bar"`'s own `colorBy`
+   * below is a distinct, differently-shaped field (RM-113 vs RM-115).
+   */
+  scatterColorBy?: {
     key: string;
     scale?: "categorical" | "sequential" | "diverging";
     steps?: number;

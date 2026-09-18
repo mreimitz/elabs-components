@@ -590,7 +590,7 @@ function renderChart(
           {series.map((s) => (
             <Scatter
               key={s.key}
-              colorBy={spec.colorBy}
+              colorBy={spec.scatterColorBy}
               dataKey={s.key}
               fill={s.color}
               // Labels — RM-110 (priority defaults to `spec.size.key` inside
