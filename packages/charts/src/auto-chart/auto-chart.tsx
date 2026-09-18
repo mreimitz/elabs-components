@@ -331,7 +331,7 @@ function renderChart(
   copyValueOnActivate: boolean,
   links: AutoChartLinkProps = {},
 ): ReactNode {
-  const { x, stacked, orientation, donut } = spec;
+  const { x, stacked, orientation, donut, nulls, curve, symbols } = spec;
   const axisProps = resolveAxisSpecProps(spec.axes, orientation === "horizontal");
   // Unit and distribution charts size themselves from their data; a numeric
   // plot height still fixes their box, as the deprecated `height` did.
@@ -346,6 +346,7 @@ function renderChart(
         <LineChart
           data={timeData}
           xDataKey={x}
+          nulls={nulls}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
@@ -358,7 +359,7 @@ function renderChart(
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
-            <Line key={s.key} dataKey={s.key} stroke={s.color} />
+            <Line curve={curve} dataKey={s.key} key={s.key} stroke={s.color} symbols={symbols} />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
@@ -378,6 +379,7 @@ function renderChart(
         <AreaChart
           data={timeData}
           xDataKey={x}
+          nulls={nulls}
           offset={type === "stream" ? "wiggle" : stacked ? "none" : undefined}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
@@ -391,7 +393,14 @@ function renderChart(
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
-            <Area key={s.key} dataKey={s.key} stroke={s.color} fill={s.color} />
+            <Area
+              curve={curve}
+              dataKey={s.key}
+              fill={s.color}
+              key={s.key}
+              stroke={s.color}
+              symbols={symbols}
+            />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
