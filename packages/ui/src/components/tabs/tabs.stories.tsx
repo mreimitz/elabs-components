@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
 import { Button } from "../button";
@@ -309,6 +309,52 @@ export const Underline: Story = {
     await expect(activity).toHaveAttribute("aria-selected", "true");
     await expect(activity.getBoundingClientRect().height).toBe(restingHeight);
     // The panel mounts on switch and fades in (gated entrance) — wait for it to settle.
+    const panel = await canvas.findByText("Activity panel.");
+    await waitFor(() => expect(panel).toBeVisible());
+  },
+};
+
+/**
+ * Token-driven default (#392): NO `variant` prop on `TabsList` — an ancestor
+ * setting `--tabs-variant: underline` renders the exact same look as the
+ * explicit `Underline` story above, entirely via CSS (a theme could set this
+ * token instead of a region wrapper). Neither the list nor its triggers
+ * carry a `data-variant` attribute here.
+ */
+export const TokenDrivenUnderline: Story = {
+  render: () => (
+    <div className="w-[28rem]" style={{ "--tabs-variant": "underline" } as CSSProperties}>
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="text-body text-muted-foreground">
+          Overview panel.
+        </TabsContent>
+        <TabsContent value="activity" className="text-body text-muted-foreground">
+          Activity panel.
+        </TabsContent>
+        <TabsContent value="settings" className="text-body text-muted-foreground">
+          Settings panel.
+        </TabsContent>
+      </Tabs>
+    </div>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const list = canvas.getByRole("tablist");
+    const overview = canvas.getByRole("tab", { name: "Overview" });
+    await expect(list).not.toHaveAttribute("data-variant");
+    await expect(overview).not.toHaveAttribute("data-variant");
+
+    const activity = canvas.getByRole("tab", { name: "Activity" });
+    await expect(getComputedStyle(activity).borderBottomWidth).toBe("2px");
+
+    await userEvent.click(overview);
+    await userEvent.keyboard("{ArrowRight}");
+    await expect(activity).toHaveFocus();
+    await expect(activity).toHaveAttribute("aria-selected", "true");
     const panel = await canvas.findByText("Activity panel.");
     await waitFor(() => expect(panel).toBeVisible());
   },

@@ -47,7 +47,12 @@ import {
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
-import { badgeVariants } from "../badge/badge";
+import {
+  BADGE_APPEARANCE_RECIPES,
+  BADGE_APPEARANCE_RECIPES_CALM,
+  badgeVariants,
+  type BadgeAppearance,
+} from "../badge/badge";
 import { cn } from "../../lib/cn";
 
 /** The canonical, closed 7-state status enum (research 10 §B.1). */
@@ -220,17 +225,35 @@ export const statusBadgeVariants = cva(
   {
     variants: {
       status: {
-        // calm: neutral fill
+        // calm: neutral fill — structural, not a colour role: `appearance`
+        // has no effect (see badge.tsx's `secondary`/`outline` variants).
         pending: "border-transparent bg-secondary text-secondary-foreground",
         // calm: status alpha-wash (escapes the decoration drawn-not-filled rule)
-        running: "border-info/40 bg-info/10 text-info-text",
-        complete: "border-success/40 bg-success/10 text-success-text",
+        running: cn(
+          "border-info/40 bg-info/10 text-info-text",
+          "[--badge-fill:var(--info)] [--badge-ink:var(--info-text)] [--badge-on:var(--info-foreground)]",
+          BADGE_APPEARANCE_RECIPES,
+        ),
+        complete: cn(
+          "border-success/40 bg-success/10 text-success-text",
+          "[--badge-fill:var(--success)] [--badge-ink:var(--success-text)] [--badge-on:var(--success-foreground)]",
+          BADGE_APPEARANCE_RECIPES,
+        ),
         // ATTENTION: solid fill — must grab the eye
-        "awaiting-approval": "border-transparent bg-warning text-warning-foreground",
-        // calm: de-emphasized neutrals
+        "awaiting-approval": cn(
+          "border-transparent bg-warning text-warning-foreground",
+          "[--badge-fill:var(--warning)] [--badge-ink:var(--warning-text)] [--badge-on:var(--warning-foreground)]",
+          BADGE_APPEARANCE_RECIPES,
+        ),
+        // calm: de-emphasized neutrals — structural, `appearance` has no effect.
         denied: "border-transparent bg-muted text-muted-foreground",
         // ATTENTION: solid fill — must grab the eye
-        failed: "border-transparent bg-destructive text-destructive-foreground",
+        failed: cn(
+          "border-transparent bg-destructive text-destructive-foreground",
+          "[--badge-fill:var(--destructive)] [--badge-ink:var(--destructive-text)] [--badge-on:var(--destructive-foreground)]",
+          BADGE_APPEARANCE_RECIPES,
+        ),
+        // calm: neutral fill — structural, `appearance` has no effect.
         skipped: "border-transparent bg-secondary text-muted-foreground",
       },
       /**
@@ -238,14 +261,36 @@ export const statusBadgeVariants = cva(
        * same alpha-wash/neutral technique as the calm `status` recipes above).
        * There is deliberately no solid/attention recipe here: the loud fill
        * stays exclusive to the canonical `awaiting-approval`/`failed` states
-       * (integrity constraint 2, see the file docblock).
+       * (integrity constraint 2, see the file docblock). For the same reason,
+       * a non-neutral tone only ever wires `BADGE_APPEARANCE_RECIPES_CALM`
+       * (tint/outline/neutral — never solid), so even a theme's global
+       * `--badge-appearance: solid` cannot loudify the hatch; `StatusBadge`
+       * also clamps an explicit `appearance="solid"` prop away below.
        */
       tone: {
+        // Already a neutral pill — `appearance` has no effect (mirrors
+        // Badge's `secondary`).
         neutral: "border-transparent bg-secondary text-secondary-foreground",
-        info: "border-info/40 bg-info/10 text-info-text",
-        success: "border-success/40 bg-success/10 text-success-text",
-        warning: "border-warning/40 bg-warning/10 text-warning-text",
-        destructive: "border-destructive/40 bg-destructive/10 text-destructive-text",
+        info: cn(
+          "border-info/40 bg-info/10 text-info-text",
+          "[--badge-fill:var(--info)] [--badge-ink:var(--info-text)]",
+          BADGE_APPEARANCE_RECIPES_CALM,
+        ),
+        success: cn(
+          "border-success/40 bg-success/10 text-success-text",
+          "[--badge-fill:var(--success)] [--badge-ink:var(--success-text)]",
+          BADGE_APPEARANCE_RECIPES_CALM,
+        ),
+        warning: cn(
+          "border-warning/40 bg-warning/10 text-warning-text",
+          "[--badge-fill:var(--warning)] [--badge-ink:var(--warning-text)]",
+          BADGE_APPEARANCE_RECIPES_CALM,
+        ),
+        destructive: cn(
+          "border-destructive/40 bg-destructive/10 text-destructive-text",
+          "[--badge-fill:var(--destructive)] [--badge-ink:var(--destructive-text)]",
+          BADGE_APPEARANCE_RECIPES_CALM,
+        ),
       },
       /** `md` for inline use; `sm` for rail nodes / dense rows. */
       size: {
@@ -265,20 +310,36 @@ export interface StatusBadgeProps
   status: Status | CustomStatus;
   /** Render label-only (no status icon). */
   hideIcon?: boolean;
+  /**
+   * Explicit per-instance override of the fill/border/ink treatment — see
+   * `Badge`'s own doc. Meaningful only on the colour-bearing statuses
+   * (`running`/`complete`/`awaiting-approval`/`failed`) and tones
+   * (`info`/`success`/`warning`/`destructive`); `pending`/`denied`/`skipped`
+   * and the `neutral` tone are already neutral pills. On a `CustomStatus`
+   * (the out-of-vocabulary hatch), `"solid"` is never honoured — the hatch
+   * is calm-only (integrity constraint 2, file docblock).
+   */
+  appearance?: BadgeAppearance;
 }
 
 export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(function StatusBadge(
-  { status, size, hideIcon = false, className, children, ...props },
+  { status, size, appearance, hideIcon = false, className, children, ...props },
   ref,
 ) {
   if (isCustomStatus(status)) {
     const { label, tone, icon: Icon } = status;
+    // Calm-only hatch: `solid` never reaches a custom tone, even via an
+    // explicit prop (integrity constraint 2) — `statusBadgeVariants`'
+    // `tone` branches also never wire the `solid` recipe, so a theme's
+    // global `--badge-appearance: solid` can't reach it either.
+    const toneAppearance = appearance === "solid" ? undefined : appearance;
     return (
       <span
         ref={ref}
         data-slot="status-badge"
         data-status="custom"
         data-tone={tone}
+        data-appearance={toneAppearance}
         className={cn(statusBadgeVariants({ tone, size }), className)}
         {...props}
       >
@@ -295,6 +356,7 @@ export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(functio
       data-slot="status-badge"
       data-status={status}
       data-tone={STATUS_TONE_MAP[status]}
+      data-appearance={appearance}
       className={cn(statusBadgeVariants({ status, size }), className)}
       {...props}
     >

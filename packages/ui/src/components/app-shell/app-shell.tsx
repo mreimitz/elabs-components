@@ -1,12 +1,71 @@
 import { forwardRef, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { SkipLink } from "../skip-link";
+import { TopNav } from "../top-nav";
+
+/** `topBar` slots — see `AppShellProps.topBar`. */
+export interface AppShellTopBarSlots {
+  /** Leading content, after the brand (when `brandPlacement="topbar"`). */
+  start?: ReactNode;
+  /** Centred content (e.g. a global search field) — see `TopNav`'s `center`. */
+  center?: ReactNode;
+  /** Trailing content (actions, account menu). */
+  end?: ReactNode;
+}
 
 export interface AppShellProps {
-  /** Persistent left navigation (often a <Sidebar />). */
+  /**
+   * Persistent left navigation (often a <Sidebar />). Not rendered when
+   * `navigation="topbar"` — put the primary navigation in `topBar`/`topNav`
+   * instead.
+   */
   sidebar?: ReactNode;
-  /** Top bar (often a <TopNav />). */
+  /**
+   * Top bar (often a <TopNav />), a fully-formed node the caller already
+   * brought. **Wins over `topBar` when both are passed** — this shell never
+   * merges the two, so pass one or the other, never both. Use `topNav` when
+   * you want to compose `TopNav` (or any other element) yourself; use
+   * `topBar` for the common case where this shell should compose `TopNav`
+   * for you from plain slots.
+   */
   topNav?: ReactNode;
+  /**
+   * Slots this shell composes into a `TopNav` for you — the convenience path
+   * for the common case (see `topNav` for precedence when both are set).
+   * `center` renders through `TopNav`'s own `center` prop: a true 3-column
+   * grid, so centred content (e.g. a global search field) stays centred
+   * regardless of how wide `start`/`end` are.
+   */
+  topBar?: AppShellTopBarSlots;
+  /**
+   * Where the brand mark lives. `"sidebar"` (default) is today's behavior:
+   * this shell renders no brand of its own — the caller's `sidebar` node
+   * (e.g. a `SidebarHeader` / `TeamSwitcher`) owns it. `"topbar"` renders
+   * `brand` as the leading element of the top bar, before `topBar.start`.
+   * Has no effect without a `brand` node, and no effect when `topNav` is
+   * passed instead of `topBar` (bring your own top bar, bring your own
+   * brand placement inside it).
+   * @default "sidebar"
+   */
+  brandPlacement?: "sidebar" | "topbar";
+  /** Brand mark rendered in the top bar when `brandPlacement="topbar"`. */
+  brand?: ReactNode;
+  /**
+   * Where the primary navigation lives. `"sidebar"` (default) renders
+   * `sidebar` in the left column, unchanged. `"topbar"` renders no sidebar
+   * column at all — compose the primary navigation into `topBar`/`topNav`
+   * instead (e.g. a `NavigationMenu` in `topBar.center`).
+   * @default "sidebar"
+   */
+  navigation?: "sidebar" | "topbar";
+  /**
+   * A second column beside the sidebar (e.g. a resource/filter panel) —
+   * `w-(--shell-secondary-width)` (16rem by default, every theme), hidden
+   * below `md` exactly like `sidebar`. Independent of `navigation`/`sidebar`:
+   * renders whenever it is passed. Pure layout, like `sidebar` — bring your
+   * own chrome (background, border) on the node itself.
+   */
+  secondaryPanel?: ReactNode;
   children: ReactNode;
   className?: string;
   /** Class for the scrolling main content region. */
@@ -44,11 +103,58 @@ export interface AppShellProps {
  * AppShell code change is needed to reach navigation below `md`, because
  * `SidebarProvider` is a plain React context and is never blocked by this
  * component's internal wrapper `<div>`.
+ *
+ * `brandPlacement`, `topBar`, `navigation` and `secondaryPanel` are all
+ * optional, off by default: with none of them passed this renders exactly
+ * what it always has (a `sidebar` column, `topNav` verbatim, `<main>`). They
+ * generalise the shape `Layout/App Shell/Flagship` already hand-builds —
+ * brand in the top bar, a centred search field, horizontal primary
+ * navigation, a second resource column — into props any consumer can reach
+ * for without hand-rolling the layout again.
  */
 export const AppShell = forwardRef<HTMLDivElement, AppShellProps>(function AppShell(
-  { sidebar, topNav, children, className, mainClassName, mainId = "main-content" },
+  {
+    sidebar,
+    topNav,
+    topBar,
+    brandPlacement = "sidebar",
+    brand,
+    navigation = "sidebar",
+    secondaryPanel,
+    children,
+    className,
+    mainClassName,
+    mainId = "main-content",
+  },
   ref,
 ) {
+  const showSidebar = navigation !== "topbar" && !!sidebar;
+  const showBrandInTopBar = brandPlacement === "topbar" && !!brand;
+
+  // `topNav` is a fully-formed node the caller already brought, so it always
+  // wins over `topBar` — the shell's own compose-from-slots convenience path.
+  // See the `topNav`/`topBar` JSDoc for the full precedence note.
+  const composedTopBar =
+    topBar || showBrandInTopBar ? (
+      <TopNav
+        start={
+          showBrandInTopBar ? (
+            <>
+              <div data-slot="app-shell-brand" className="flex items-center">
+                {brand}
+              </div>
+              {topBar?.start}
+            </>
+          ) : (
+            topBar?.start
+          )
+        }
+        center={topBar?.center}
+        end={topBar?.end}
+      />
+    ) : null;
+  const resolvedTopBar = topNav ?? composedTopBar;
+
   return (
     <div
       ref={ref}
@@ -60,9 +166,17 @@ export const AppShell = forwardRef<HTMLDivElement, AppShellProps>(function AppSh
           beside must not be the exception, and it is the surface with the widest
           reach — it is imported, not copy-owned. */}
       <SkipLink targetId={mainId} />
-      {sidebar ? <div className="hidden md:flex">{sidebar}</div> : null}
+      {showSidebar ? <div className="hidden md:flex">{sidebar}</div> : null}
+      {secondaryPanel ? (
+        <div
+          data-slot="app-shell-secondary-panel"
+          className="hidden w-(--shell-secondary-width) shrink-0 md:flex"
+        >
+          {secondaryPanel}
+        </div>
+      ) : null}
       <div className="flex min-w-0 flex-1 flex-col">
-        {topNav}
+        {resolvedTopBar}
         {/* `<main>` IS the scroll port here (in the blocks the skip target and
             the scroll port are separate elements), so it takes `tabIndex={0}`
             rather than `{-1}`: a region that scrolls has to be keyboard-operable

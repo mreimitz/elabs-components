@@ -73,8 +73,8 @@ export interface TreeProps<T = unknown> extends Omit<HTMLAttributes<HTMLDivEleme
   checkboxes?: boolean;
   /**
    * The surface on which the tree is rendered.
-   * - `"default"` (default) — renders selected rows with `bg-accent` (for use on
-   *   background/card surfaces).
+   * - `"default"` (default) — renders selected rows with `bg-selection` (for use
+   *   on background/card surfaces).
    * - `"sidebar"` — renders selected rows with the sidebar's own active-item
    *   treatment (`bg-sidebar-accent` + `text-sidebar-accent-foreground` +
    *   `font-medium`), so selection reads consistently with `SidebarMenuButton`'s
@@ -311,7 +311,7 @@ function VirtualFlatRow<T>({
           selectionMode !== "none" &&
           (surface === "sidebar"
             ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-            : "bg-accent text-accent-foreground font-medium"),
+            : "bg-selection text-selection-foreground font-medium"),
         node.disabled && "cursor-not-allowed opacity-50 pointer-events-none",
       )}
       style={indentStyle}
@@ -594,7 +594,7 @@ function TreeItem<T>({
             selectionMode !== "none" &&
             (surface === "sidebar"
               ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-              : "bg-accent text-accent-foreground font-medium"),
+              : "bg-selection text-selection-foreground font-medium"),
           node.disabled && "cursor-not-allowed opacity-50 pointer-events-none",
         )}
         style={indentStyle}

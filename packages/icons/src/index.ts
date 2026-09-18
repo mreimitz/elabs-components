@@ -8,7 +8,7 @@
  * For generic UI glyphs (chevrons, X, search, bell, …) the DEFAULT is `lucide-react`
  * — import it directly. See `.claude/rules/icons.md`.
  */
-export { Icon, createIcon, type IconProps } from "./icon";
+export { Icon, createIcon, type IconProps, type IconVariant, type CreateIconOptions } from "./icon";
 export { BrandLogo, type BrandLogoProps, type BrandLogoVariant } from "./brand-logo";
 export { AppIcon, type AppIconProps, type AppIconMorph } from "./app-icon";
 export {

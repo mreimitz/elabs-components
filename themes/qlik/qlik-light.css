@@ -1,12 +1,14 @@
 /* Qlik Bright — brand-ui downloadable theme family "qlik" (see README.md).
- * Values: Qlik Cloud "Sprout" design tokens measured live on the Analytics hub (qlik-light),
- * chart sequence + accents from the Qlik Brand & Logo Guidelines (March 2026).
- * Hex sources are listed in README.md; the oklch() literals below are what the engine reads. */
+ * Values: Qlik Cloud "Sprout" design tokens, `[data-qlik-theme="qlik-light"]` from the public
+ * npm package @qlik/design-tokens 1.4.2, cross-checked against help.qlik.com screenshots of the
+ * 2025 Analytics activity center (white 48 px top bar, 260 px white left nav with a green
+ * active bar, #fafafa page, flat white cards with a 1 px hairline, 4 px corners, Source Sans).
+ * Chart series follow the Sense Horizon app theme (what a new app renders), then Sprout's
+ * categorical-0 ramp. Hex sources are listed in README.md; the oklch() literals are what the
+ * engine reads. */
 [data-theme="qlik-light"] {
   color-scheme: light;
   --radius-base: 0.25rem;
-  /* Product type scale: 24/32 page titles, 20/26 section titles, and no negative tracking —
-     the engine tracking is tuned for Inter, not Source Sans. Body stays 14/20. */
   --type-size-display: 1.5rem;
   --type-leading-display: 2rem;
   --type-tracking-display: 0em;
@@ -46,18 +48,18 @@
   --canvas-grid: oklch(0.925 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.371 0 0);
-  --chart-1: oklch(0.594 0.163 150);
-  --chart-10: oklch(0.416 0.178 344.1);
-  --chart-11: oklch(0.801 0.091 244.2);
-  --chart-12: oklch(0.64 0.216 353.6);
-  --chart-2: oklch(0.453 0.007 264.5);
-  --chart-3: oklch(0.373 0.086 251.7);
-  --chart-4: oklch(0.471 0.089 224.4);
-  --chart-5: oklch(0.772 0.131 191);
-  --chart-6: oklch(0.7 0.108 169.8);
-  --chart-7: oklch(0.552 0.124 322.8);
-  --chart-8: oklch(0.76 0.012 217.6);
-  --chart-9: oklch(0.831 0.145 74.2);
+  --chart-1: oklch(0.471 0.089 224.4);
+  --chart-10: oklch(0.64 0.216 353.6);
+  --chart-11: oklch(0.696 0.121 187.1);
+  --chart-12: oklch(0.493 0.204 352.1);
+  --chart-2: oklch(0.772 0.131 191);
+  --chart-3: oklch(0.432 0.15 349);
+  --chart-4: oklch(0.831 0.145 74.2);
+  --chart-5: oklch(0.43 0.175 259.9);
+  --chart-6: oklch(0.641 0.058 227);
+  --chart-7: oklch(0.675 0.187 7.8);
+  --chart-8: oklch(0.545 0.149 150.2);
+  --chart-9: oklch(0.801 0.091 244.2);
   --chart-accent: var(--chart-1);
   --chart-ink-on-dark: oklch(1 0 0);
   --chart-ink-on-light: oklch(0 0 0);
@@ -71,12 +73,12 @@
   --chart-div-pos-2: oklch(0.539 0.149 149.9);
   --chart-foreground: var(--foreground);
   --chart-foreground-muted: oklch(0.464 0 0);
-  --chart-grid: oklch(0.873 0.003 264.5);
+  --chart-grid: oklch(0.925 0 0);
   --chart-indicator-color: var(--chart-1);
-  --chart-indicator-secondary-color: var(--chart-3);
+  --chart-indicator-secondary-color: var(--chart-2);
   --chart-label: var(--foreground);
   --chart-line-primary: var(--chart-1);
-  --chart-line-secondary: var(--chart-3);
+  --chart-line-secondary: var(--chart-2);
   --chart-marker-background: var(--card);
   --chart-marker-badge-background: var(--primary);
   --chart-marker-badge-foreground: var(--primary-foreground);
@@ -144,7 +146,7 @@
   --info: oklch(0.488 0.163 255.5);
   --info-foreground: oklch(1 0 0);
   --info-text: oklch(0.488 0.163 255.5);
-  --input: oklch(0.657 0 0);
+  --input: oklch(0.885 0 0);
   --legend-foreground: var(--foreground);
   --legend-muted: var(--muted);
   --legend-muted-foreground: var(--muted-foreground);
@@ -164,14 +166,14 @@
   --secondary-foreground: oklch(0.371 0 0);
   --shadow-color: oklch(0 0 0);
   --shadow-ring-color: oklch(0 0 0 / 0.05);
-  --shadow-strength: 1.5;
+  --shadow-strength: 0.4;
   --sidebar: oklch(1 0 0);
   --sidebar-accent: oklch(0.961 0 0);
-  --sidebar-accent-foreground: var(--accent-foreground);
-  --sidebar-border: oklch(0.94 0 0);
+  --sidebar-accent-foreground: oklch(0.371 0 0);
+  --sidebar-border: oklch(0.885 0 0);
   --sidebar-foreground: oklch(0.371 0 0);
   --sidebar-muted-foreground: oklch(0.538 0 0);
-  --sidebar-primary: var(--sidebar-foreground);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-ring: var(--ring);
   --success: oklch(0.545 0.149 150.2);
@@ -209,7 +211,7 @@
   --terminal-muted: oklch(0.715 0 0);
   --terminal-selection: oklch(0.43 0.05 153.4);
   --warning: oklch(0.681 0.184 48.5);
-  --warning-foreground: oklch(1 0 0);
+  --warning-foreground: oklch(0.286 0 0);
   --warning-text: oklch(0.539 0.179 37.5);
   --brand-logo-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='115 105 298 288'%3E%3Cpath d='M326.63 336.35C307.83 351.27 284.05 360.19 258.18 360.19 197.32 360.19 147.99 310.86 147.99 250 147.99 223.85 157.11 199.83 172.33 180.93L152.16 160.62C131.79 184.76 119.51 215.94 119.51 250 119.51 326.59 181.6 388.67 258.18 388.67 291.88 388.67 322.77 376.64 346.8 356.66L326.63 336.35Z' fill='%2354565A'/%3E%3Cpath d='M369.4 381.55 407.6 381.55 366.4 336.67C385.44 312.93 396.84 282.8 396.84 249.99 396.84 173.4 334.75 111.32 258.17 111.32 215.64 111.32 177.59 130.47 152.15 160.62L172.32 180.93C192.52 155.86 223.47 139.81 258.17 139.81 319.03 139.81 368.36 189.14 368.36 250 368.36 284.99 352.05 316.16 326.62 336.35L345.51 355.37 346.58 356.46 369.39 381.56Z' fill='%2300873D'/%3E%3C/svg%3E");
   --brand-logo-lockup: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='119 111 662 278'%3E%3Crect x='444.93' y='117.39' width='27.6' height='264.09' fill='%2354565A'/%3E%3Crect x='519.96' y='197.03' width='27.47' height='184.45' fill='%2354565A'/%3E%3Ccircle cx='533.98' cy='136.23' r='18.84' fill='%2354565A'/%3E%3Cpath d='M740.71 197.01 702.38 197.01 622.94 266.59 622.78 117.39 595.31 117.39 595.31 381.48 622.78 381.48 622.78 296.28 704.39 381.48 742.59 381.48 645.31 282.85 740.71 197.01Z' fill='%2354565A'/%3E%3Cpath d='M780.5 368.45 780.5 381.55 778.22 381.55 778.22 372.63 774.27 381.55 773.06 381.55 769.11 372.64 769.11 381.55 766.83 381.55 766.83 368.45 769.6 368.45 773.67 378.06 777.72 368.45 780.5 368.45Z' fill='%2354565A'/%3E%3Cpath d='M764.55 368.45 764.55 370.45 760.57 370.45 760.57 381.55 758.29 381.55 758.29 370.45 754.31 370.45 754.31 368.45 764.55 368.45Z' fill='%2354565A'/%3E%3Cpath d='M326.63 336.35C307.83 351.27 284.05 360.19 258.18 360.19 197.32 360.19 147.99 310.86 147.99 250 147.99 223.85 157.11 199.83 172.33 180.93L152.16 160.62C131.79 184.76 119.51 215.94 119.51 250 119.51 326.59 181.6 388.67 258.18 388.67 291.88 388.67 322.77 376.64 346.8 356.66L326.63 336.35Z' fill='%2354565A'/%3E%3Cpath d='M369.4 381.55 407.6 381.55 366.4 336.67C385.44 312.93 396.84 282.8 396.84 249.99 396.84 173.4 334.75 111.32 258.17 111.32 215.64 111.32 177.59 130.47 152.15 160.62L172.32 180.93C192.52 155.86 223.47 139.81 258.17 139.81 319.03 139.81 368.36 189.14 368.36 250 368.36 284.99 352.05 316.16 326.62 336.35L345.51 355.37 346.58 356.46 369.39 381.56Z' fill='%2300873D'/%3E%3C/svg%3E");
@@ -229,8 +231,44 @@
   --scrim: oklch(0 0 0 / 0.2);
   --table-header-weight: 600;
   --table-stripe: transparent;
-  --table-row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --table-row-hover: color-mix(in oklab, var(--foreground) 3%, transparent);
   --table-row-rule-width: 1px;
   --icon-stroke: 1.5;
   --header-size: 12;
+  --sidebar-indicator: var(--sidebar-primary);
+  --sidebar-indicator-width: 0.125rem;
+  --sidebar-indicator-radius: 9999px;
+  --sidebar-indicator-inset: 0rem;
+  --shell-secondary-width: 16rem;
+  --button-outline-border: var(--border-strong);
+  --secondary-border: transparent;
+  --secondary-text: var(--secondary-foreground);
+  --table-header-background: var(--background);
+  --table-header-foreground: var(--foreground);
+  --table-header-size: 1em;
+  --table-header-transform: none;
+  --table-header-tracking: var(--type-tracking-body);
+  --card-shadow: none;
+  --card-border: oklch(0.925 0 0);
+  --card-title-leading: 1.3;
+  --popover-shadow: var(--shadow-ring-md);
+  --dialog-shadow: var(--shadow-ring-lg);
+  --badge-radius: 0.25rem;
+  --badge-appearance: auto;
+  --tabs-variant: underline;
+  --tabs-indicator-width: 2px;
+  --tabs-active-weight: 600;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 0px;
+  --input-focus-border: var(--ring);
+  --icon-fill: outline;
+  --selection: var(--accent);
+  --selection-foreground: var(--accent-foreground);
+  --selection-muted: color-mix(in oklab, var(--accent) 50%, transparent);
+  --type-weight-display: 600;
+  --type-weight-title: 600;
+  --type-size-subtitle: 1rem;
+  --type-leading-subtitle: 1.25rem;
+  --type-weight-subtitle: 600;
+  --type-tracking-eyebrow: 0.04em;
 }

@@ -768,7 +768,7 @@ function GaugeInner({
           // leaves a small margin inside the hole; `text-balance` keeps a
           // wrapped two-line caption from breaking raggedly.
           <div
-            className="mt-1 text-center text-balance text-meta text-muted-foreground uppercase tracking-wide"
+            className="mt-1 text-center text-balance text-eyebrow text-muted-foreground uppercase"
             style={{ maxWidth: innerRadius * 2 * 0.9 }}
           >
             {remainingLabel(Math.max(totalNotches - activeNotches, 0))}

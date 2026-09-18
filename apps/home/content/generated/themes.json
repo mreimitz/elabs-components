@@ -54,13 +54,13 @@
         "value": "clickhouse-dark",
         "label": "ClickHouse Dark",
         "primary": "oklch(0.969 0.17 111)",
-        "background": "oklch(0.145 0 0)"
+        "background": "oklch(0.238 0.006 106.8)"
       },
       {
         "mode": "light",
         "value": "clickhouse-light",
         "label": "ClickHouse Light",
-        "primary": "oklch(0.33 0.01 312.1)",
+        "primary": "oklch(0.305 0.008 308.2)",
         "background": "oklch(1 0 0)"
       }
     ]
@@ -170,7 +170,7 @@
         "mode": "light",
         "value": "salesforce-light",
         "label": "Salesforce Light",
-        "primary": "oklch(0.571 0.235 260.4)",
+        "primary": "oklch(0.563 0.167 251.9)",
         "background": "oklch(0.964 0 0)"
       }
     ]
@@ -185,15 +185,15 @@
         "mode": "dark",
         "value": "snowflake-dark",
         "label": "Snowflake Dark",
-        "primary": "oklch(0.725 0.133 228.8)",
-        "background": "oklch(0.2 0.02 235)"
+        "primary": "oklch(0.614 0.187 258.9)",
+        "background": "oklch(0.209 0.01 268.2)"
       },
       {
         "mode": "light",
         "value": "snowflake-light",
         "label": "Snowflake Light",
-        "primary": "oklch(0.725 0.133 228.8)",
-        "background": "oklch(0.985 0.004 235)"
+        "primary": "oklch(0.558 0.202 259.5)",
+        "background": "oklch(1 0 0)"
       }
     ]
   }

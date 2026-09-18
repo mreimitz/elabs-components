@@ -983,7 +983,7 @@ export const MentionInputContent = forwardRef<
       // an axe `aria-dialog-name` violation (serious). The panel is a plain
       // container — the `role="listbox"` inside carries all the semantics.
       role="presentation"
-      // No border, no ring: PopoverContent already carries `shadow-ring-md`.
+      // No border, no ring: PopoverContent already carries `shadow-popover`.
       className={cn("w-72 p-0", className)}
       onOpenAutoFocus={(event) => event.preventDefault()}
       onCloseAutoFocus={(event) => event.preventDefault()}

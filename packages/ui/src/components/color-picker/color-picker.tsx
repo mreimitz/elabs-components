@@ -271,7 +271,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
               "inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-body shadow-sm",
               "transition-[color,box-shadow] duration-fast",
               "hover:bg-accent hover:text-accent-foreground",
-              "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+              "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:border-input-focus",
               "disabled:pointer-events-none disabled:opacity-50",
             )}
           >
@@ -323,7 +323,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
                   }}
                   className={cn(
                     "h-8 w-28 rounded-md border border-input bg-background px-2 text-body",
-                    "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:border-input-focus",
                     "placeholder:text-muted-foreground",
                   )}
                 />
@@ -333,7 +333,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
                   className={cn(
                     "h-8 rounded-md border border-input bg-background px-2 text-body",
                     "hover:bg-accent hover:text-accent-foreground",
-                    "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:border-input-focus",
                   )}
                 >
                   Apply

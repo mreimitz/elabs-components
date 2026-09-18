@@ -16,16 +16,22 @@ export const buttonVariants = cva(
         // what made Input's disabled state internally inconsistent (#286).
         default:
           "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        // `inset-ring`, not `border`: a real border would widen the plate by 2px.
+        // `--secondary-border` defaults to transparent (today's borderless plate);
+        // a theme can give the neutral button an edge without switching variants.
+        secondary:
+          "inset-ring inset-ring-secondary-border bg-secondary text-secondary-text hover:bg-secondary/80",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        outline:
+          "border border-button-outline-border bg-background hover:bg-accent hover:text-accent-foreground",
         // The calm "outlined but quiet" rung (#194, research 02 §3a). `outline` uses
-        // the form-field `border-input` token, `outline-subtle` uses `border-border`.
-        // Since the ADR 0010 Amendment (2026-06-20) returned `--input` to the subtle
-        // rung, these two are now VISUALLY IDENTICAL by default — both variant names
-        // are kept as a SEMANTIC SEAM (a future brand could re-separate `--input` from
-        // `--border`) and to avoid churning `outline-subtle` callers (e.g.
+        // `--button-outline-border` (default `var(--input)`, split from the
+        // form-field token), `outline-subtle` uses `border-border`. Since the ADR
+        // 0010 Amendment (2026-06-20) returned `--input` to the subtle rung, these
+        // two are now VISUALLY IDENTICAL by default — both variant names are kept
+        // as a SEMANTIC SEAM (a theme can now give buttons and text fields
+        // different edges) and to avoid churning `outline-subtle` callers (e.g.
         // change-review.tsx). `outline` stays for genuinely form-adjacent controls.
         "outline-subtle":
           "border border-border bg-background hover:bg-accent hover:text-accent-foreground",

@@ -116,6 +116,8 @@
   --text-kpi-sm--line-height: calc(var(--type-leading-kpi-sm) * var(--type-factor));
   --text-eyebrow: calc(var(--type-size-eyebrow) * var(--type-factor));
   --text-eyebrow--line-height: calc(var(--type-leading-eyebrow) * var(--type-factor));
+  --text-heading-xs: calc(var(--type-size-heading-xs) * var(--type-factor));
+  --text-heading-xs--line-height: calc(var(--type-leading-heading-xs) * var(--type-factor));
   --text-display-lg: calc(var(--type-size-display-lg) * var(--type-factor));
   --text-display-lg--line-height: calc(var(--type-leading-display-lg) * var(--type-factor));
 
@@ -150,6 +152,8 @@
   --text-kpi-sm--line-height: calc(var(--type-leading-kpi-sm) * var(--type-factor));
   --text-eyebrow: calc(var(--type-size-eyebrow) * var(--type-factor));
   --text-eyebrow--line-height: calc(var(--type-leading-eyebrow) * var(--type-factor));
+  --text-heading-xs: calc(var(--type-size-heading-xs) * var(--type-factor));
+  --text-heading-xs--line-height: calc(var(--type-leading-heading-xs) * var(--type-factor));
   --text-display-lg: calc(var(--type-size-display-lg) * var(--type-factor));
   --text-display-lg--line-height: calc(var(--type-leading-display-lg) * var(--type-factor));
 
@@ -184,6 +188,8 @@
   --text-kpi-sm--line-height: calc(var(--type-leading-kpi-sm) * var(--type-factor));
   --text-eyebrow: calc(var(--type-size-eyebrow) * var(--type-factor));
   --text-eyebrow--line-height: calc(var(--type-leading-eyebrow) * var(--type-factor));
+  --text-heading-xs: calc(var(--type-size-heading-xs) * var(--type-factor));
+  --text-heading-xs--line-height: calc(var(--type-leading-heading-xs) * var(--type-factor));
   --text-display-lg: calc(var(--type-size-display-lg) * var(--type-factor));
   --text-display-lg--line-height: calc(var(--type-leading-display-lg) * var(--type-factor));
 

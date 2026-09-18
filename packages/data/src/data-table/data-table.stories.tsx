@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, waitFor } from "storybook/test";
 import { Badge, Button } from "@elabs-ai/components-ui";
@@ -1166,6 +1167,53 @@ export const RowSelectionWithToolbarDark: Story = {
   play: async (context) => {
     await waitFor(() => expect(document.documentElement.getAttribute("data-theme")).toBe("dark"));
     await RowSelectionWithToolbar.play!(context);
+  },
+};
+
+// ─── Table-header & selection theming seams ────────────────────────────────
+
+/**
+ * A theme dials the header row's background/foreground/size/transform/tracking
+ * and the row-selection colour through the `--table-header-*` and
+ * `--selection*` contract tokens — independently of `--accent`, so a
+ * "selected" row can read differently from a hovered/focused one. Every token
+ * defaults to today's rendering (see `RowSelectionPartial`); this story sets
+ * them on an ancestor `style`, the same seam a theme author dials once in
+ * `themes.css`.
+ */
+export const ThemedHeaderAndSelection: Story = {
+  render: () => (
+    <div
+      style={
+        {
+          "--table-header-background": "var(--muted)",
+          "--table-header-transform": "uppercase",
+          "--table-header-size": "0.75rem",
+          "--table-header-tracking": "0.06em",
+          // A light wash, not the solid `--info` mark — the row's own body
+          // text (unmanaged by `--selection-foreground`, see below) has to
+          // stay readable ON this fill, the same reason `--accent`'s default
+          // is a near-white tint rather than a saturated color.
+          "--selection": "color-mix(in oklab, var(--info) 20%, var(--card))",
+          "--selection-foreground": "var(--info-foreground)",
+        } as CSSProperties
+      }
+    >
+      <DataTable
+        columns={selectableColumns}
+        data={rows}
+        rowSelection={{ "0": true, "2": true }}
+        onRowSelectionChange={fn()}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const bodyRows = canvasElement.querySelectorAll("tbody tr");
+    await expect(bodyRows[0]).toHaveAttribute("data-state", "selected");
+    await expect(bodyRows[1]).not.toHaveAttribute("data-state", "selected");
+    await expect(bodyRows[2]).toHaveAttribute("data-state", "selected");
+    const headerCell = canvasElement.querySelector("thead th");
+    await expect(headerCell).not.toBeNull();
   },
 };
 

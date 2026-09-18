@@ -9,20 +9,45 @@ import { extendTailwindMerge } from "tailwind-merge";
  * group makes role-vs-role and role-vs-raw-size conflicts resolve correctly while
  * keeping role + color independent.
  */
-const TEXT_ROLES = ["display", "title", "subtitle", "body", "caption", "meta", "kpi", "code"];
+const TEXT_ROLES = [
+  "display-lg",
+  "display",
+  "title",
+  "subtitle",
+  "body",
+  "caption",
+  "meta",
+  "eyebrow",
+  "heading-xs",
+  "kpi",
+  "kpi-sm",
+  "code",
+];
+
+/**
+ * Tailwind v4's CSS-variable shorthand (`leading-(--card-title-leading)`).
+ * tailwind-merge 2.x predates it and leaves such a class beside a caller's
+ * `leading-tight`, letting stylesheet order pick the winner. A typed hint
+ * (`text-(length:--x)`) is read as a variant prefix by 2.x and cannot be
+ * registered — give that seam a named `@theme` utility instead
+ * (`text-table-header`).
+ */
+const isVarShorthand = (value: string) => /^\(--[\w-]+\)$/.test(value);
 
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
-      "font-size": [{ text: TEXT_ROLES }],
+      "font-size": [{ text: [...TEXT_ROLES, "table-header"] }],
+      leading: [{ leading: [isVarShorthand] }],
+      tracking: [{ tracking: [isVarShorthand] }],
       // `font-display` is the display-face seam (sibling of font-mono, #187).
       "font-family": [{ font: ["display"] }],
-      // Theme-driven control/table knobs (themes.css § CONTROL UTILITIES and the
-      // `@theme inline` bridge) — so a caller's `h-8` / `rounded-none` /
+      // Theme-driven control/table/surface knobs (themes.css § CONTROL UTILITIES
+      // and the `@theme inline` bridge) — so a caller's `h-8` / `rounded-none` /
       // `font-bold` / `shadow-none` still replaces the token default.
-      "font-weight": [{ font: ["control", "table-header"] }],
-      rounded: [{ rounded: ["control"] }],
-      shadow: [{ shadow: ["input"] }],
+      "font-weight": [{ font: ["control", "table-header", "tabs-active"] }],
+      rounded: [{ rounded: ["control", "badge"] }],
+      shadow: [{ shadow: ["input", "card", "popover", "dialog"] }],
       h: [{ h: ["control", "control-sm", "control-lg", "header"] }],
       size: [{ size: ["control", "control-sm", "control-lg"] }],
       "min-w": [{ "min-w": ["control", "control-sm", "control-lg"] }],

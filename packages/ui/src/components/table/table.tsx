@@ -134,7 +134,7 @@ export const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTable
           // alternation on the plain Table primitive). Decision test: "If
           // deleted, could a sighted user still tell the two rows apart?" No
           // (no fill change) → load-bearing → border-strong.
-          "border-b border-border-strong transition-colors duration-fast ease-standard hover:bg-surface-muted/50 data-[state=selected]:bg-accent",
+          "border-b border-border-strong transition-colors duration-fast ease-standard hover:bg-surface-muted/50 data-[state=selected]:bg-selection",
           className,
         )}
         {...props}
@@ -148,7 +148,10 @@ export const TableHead = forwardRef<HTMLTableCellElement, ThHTMLAttributes<HTMLT
       <th
         ref={ref}
         className={cn(
-          "h-10 px-3 text-start align-middle font-table-header text-muted-foreground",
+          // Table-header seams (fidelity review #4): every default equals
+          // today's byte-identical rendering — see the matching comment on
+          // `DataTable`'s `<th>` (packages/data/src/data-table/data-table.tsx).
+          "h-10 px-3 text-start align-middle font-table-header bg-table-header-background text-table-header-foreground text-table-header tracking-(--table-header-tracking) [text-transform:var(--table-header-transform)]",
           className,
         )}
         {...props}

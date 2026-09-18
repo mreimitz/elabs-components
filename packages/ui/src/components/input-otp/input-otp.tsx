@@ -47,8 +47,10 @@ export const InputOTPSlot = forwardRef<
         // The OTP slot IS the field's focus indicator: the real focused element is
         // InputOTP's visually-hidden <input>, and `isActive` is the caret's slot. It
         // therefore carries the compound indicator (#67) — the state is JS-driven, so
-        // it is the `-static` flavour rather than a `:focus-visible` one.
-        isActive && "z-10 focus-ring-static",
+        // it is the `-static` flavour rather than a `:focus-visible` one, and the
+        // border-color swap is a plain class (twMerge drops `border-input` for it)
+        // rather than a `focus-visible:` variant.
+        isActive && "z-10 focus-ring-static border-input-focus",
         className,
       )}
       {...props}

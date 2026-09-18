@@ -23,7 +23,7 @@ describe("Card", () => {
     render(<CardTitle as="h2">Section title</CardTitle>);
     const heading = screen.getByRole("heading", { level: 2, name: "Section title" });
     expect(heading.tagName).toBe("H2");
-    expect(heading).toHaveClass("text-title", "leading-none");
+    expect(heading).toHaveClass("text-title", "leading-(--card-title-leading)");
   });
 
   // --- CardDescription `text-muted-foreground` drop (#336) ---

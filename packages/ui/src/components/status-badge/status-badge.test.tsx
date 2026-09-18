@@ -65,6 +65,43 @@ describe("StatusBadge", () => {
     expect(icon?.getAttribute("class")).toContain("motion-reduce:animate-none");
   });
 
+  it("renders no data-appearance attribute when appearance is unset", () => {
+    const { container } = render(<StatusBadge status="running" />);
+    expect(container.querySelector('[data-status="running"]')).not.toHaveAttribute(
+      "data-appearance",
+    );
+  });
+
+  it("renders data-appearance when an explicit appearance is passed", () => {
+    const { container } = render(<StatusBadge appearance="outline" status="running" />);
+    expect(container.querySelector('[data-status="running"]')).toHaveAttribute(
+      "data-appearance",
+      "outline",
+    );
+  });
+
+  it("clamps an explicit appearance=solid away on a CustomStatus tone (calm-only hatch)", () => {
+    render(
+      <StatusBadge
+        appearance="solid"
+        status={{ label: "Stopped", tone: "warning", icon: ShieldAlert }}
+      />,
+    );
+    const badge = screen.getByText("Stopped").closest("[data-slot='status-badge']");
+    expect(badge).not.toHaveAttribute("data-appearance");
+  });
+
+  it("honours a non-solid explicit appearance on a CustomStatus tone", () => {
+    render(
+      <StatusBadge
+        appearance="outline"
+        status={{ label: "Stopped", tone: "warning", icon: ShieldAlert }}
+      />,
+    );
+    const badge = screen.getByText("Stopped").closest("[data-slot='status-badge']");
+    expect(badge).toHaveAttribute("data-appearance", "outline");
+  });
+
   it("merges className last and spreads props", () => {
     const { container } = render(
       <StatusBadge className="bg-muted" data-testid="badge" status="pending" />,

@@ -1741,7 +1741,11 @@ function DataTableInner<TData, TValue>(
         {table.getHeaderGroups().map((headerGroup, groupIndex) => (
           <tr key={headerGroup.id} aria-rowindex={withRowIndex ? groupIndex + 1 : undefined}>
             {hasGripColumn && (
-              <th key="__reorder" scope="col" className="h-10 w-10 px-3 align-middle">
+              <th
+                key="__reorder"
+                scope="col"
+                className="h-10 w-10 px-3 align-middle bg-table-header-background"
+              >
                 <span className="sr-only">{t("data.table.reorderColumnHeader")}</span>
               </th>
             )}
@@ -1791,7 +1795,13 @@ function DataTableInner<TData, TValue>(
                     // must stay byte-identical to the body's so an
                     // end-aligned numeric column's header lines up with its
                     // own values.
-                    "h-10 px-3 text-start align-middle font-table-header text-muted-foreground",
+                    // Table-header seams (fidelity review #4): a theme dials
+                    // background/foreground/size/transform/tracking via the
+                    // `--table-header-*` contract; every default equals
+                    // today's byte-identical rendering (transparent bg,
+                    // `--muted-foreground` ink, 1em size = the table's own
+                    // body size, no transform, body tracking).
+                    "h-10 px-3 text-start align-middle font-table-header bg-table-header-background text-table-header-foreground text-table-header tracking-(--table-header-tracking) [text-transform:var(--table-header-transform)]",
                     // #69: a numeric column's `meta` overrides the default
                     // `text-start` — placed right after the base string so
                     // tailwind-merge lets it win over that default.
@@ -1821,6 +1831,17 @@ function DataTableInner<TData, TValue>(
                       (sticky
                         ? "bg-surface-muted"
                         : "bg-card before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-surface-muted/60 before:content-['']"),
+                    // Pinned corner keeps its OPAQUE ground above (unchanged
+                    // default `transparent` on `--table-header-background`
+                    // paints nothing here, byte-identical). A theme that fills
+                    // the header instead layers that fill on an `after:`
+                    // pseudo ABOVE the ground/wash (source order after
+                    // `before:` at the same `-z-10` rung, below the cell's own
+                    // text) so the corner stays opaque either way — it never
+                    // replaces the ground the way overwriting `background-color`
+                    // directly would.
+                    geometry &&
+                      "after:pointer-events-none after:absolute after:inset-0 after:-z-10 after:bg-table-header-background after:content-['']",
                     // Separate cn() argument on purpose: the seam is the sole
                     // structural cue between the frozen and scrolling blocks, so
                     // it must not read as a "boundary + fill in one class string"
@@ -2041,7 +2062,7 @@ function DataTableInner<TData, TValue>(
       "before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:content-['']",
       zebra && rowIndex % 2 === 1 && "before:bg-table-stripe",
       "group-hover/row:before:bg-table-row-hover",
-      "group-data-[state=selected]/row:before:bg-accent",
+      "group-data-[state=selected]/row:before:bg-selection",
     );
   }
 
@@ -2108,7 +2129,7 @@ function DataTableInner<TData, TValue>(
           // (only movement is neutralized); the gated duration-fast/ease-standard
           // pair already collapses toward ~0ms via --motion-factor when the user
           // or OS asks for reduced motion, matching the header sort button.
-          "transition-colors duration-fast ease-standard hover:bg-table-row-hover data-[state=selected]:bg-accent",
+          "transition-colors duration-fast ease-standard hover:bg-table-row-hover data-[state=selected]:bg-selection",
           // #13: the dragged row's live `transform` (set inline via `extras.style`,
           // see `SortableDataRow`) is what actually MOVES it — this class only
           // makes that movement glide instead of snapping, through the gated

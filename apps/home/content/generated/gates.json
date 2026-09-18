@@ -427,7 +427,7 @@
   },
   {
     "id": "text-scale",
-    "doc": "Set type with a role (`text-display-lg|display|title|subtitle|body|caption|meta|eyebrow|kpi|kpi-sm|code` or `<Heading>`/`<Text>`), never a raw size utility (`text-sm`, `text-xl`, `text-[17px]`) in package source or stories.",
+    "doc": "Set type with a role (`text-display-lg|display|title|subtitle|heading-xs|body|caption|meta|eyebrow|kpi|kpi-sm|code` or `<Heading>`/`<Text>`), never a raw size utility (`text-sm`, `text-xl`, `text-[17px]`) in package source or stories.",
     "category": "components",
     "source": "scripts/check/rules/text-scale.mjs"
   },
@@ -481,7 +481,7 @@
   },
   {
     "id": "type-roles",
-    "doc": "Type is a role: use `text-display-lg|display|title|subtitle|body|caption|meta|eyebrow|kpi|kpi-sm|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by the `text-scale` rule).",
+    "doc": "Type is a role: use `text-display-lg|display|title|subtitle|heading-xs|body|caption|meta|eyebrow|kpi|kpi-sm|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by the `text-scale` rule).",
     "category": "components",
     "source": "scripts/check/rules/type-roles.mjs"
   },

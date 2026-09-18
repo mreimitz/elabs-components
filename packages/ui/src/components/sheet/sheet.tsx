@@ -38,7 +38,7 @@ const sheetVariants = cva(
   // `overflow-y-auto` so content taller than the sheet scrolls INSIDE it
   // instead of overflowing the fixed-position box (unreachable below the
   // viewport edge).
-  "fixed z-50 gap-4 overflow-y-auto overscroll-contain bg-card p-6 text-card-foreground shadow-ring-lg transition duration-slow ease-standard data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:[--tw-ease:var(--ease-entrance)] data-[state=closed]:[--tw-ease:var(--ease-exit)]",
+  "fixed z-50 gap-4 overflow-y-auto overscroll-contain bg-card p-6 text-card-foreground shadow-dialog transition duration-slow ease-standard data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:[--tw-ease:var(--ease-entrance)] data-[state=closed]:[--tw-ease:var(--ease-exit)]",
   {
     variants: {
       side: {

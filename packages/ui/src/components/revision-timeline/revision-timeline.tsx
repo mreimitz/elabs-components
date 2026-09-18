@@ -528,9 +528,7 @@ function DayHeader({ label }: DayHeaderProps) {
       style={{ height: DAY_HEADER_H }}
       className="box-border flex items-center gap-3 px-3"
     >
-      <span className="text-meta font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
+      <span className="text-eyebrow uppercase text-muted-foreground">{label}</span>
       <div className="h-px flex-1 bg-border" aria-hidden="true" />
     </div>
   );

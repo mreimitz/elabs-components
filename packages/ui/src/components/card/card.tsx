@@ -18,18 +18,21 @@ import { cn } from "../../lib/cn";
 // this one rung so the SAME logical block shows ONE radius across editor↔preview
 // (was rounded-xl = 8px, whose meaning silently changed with the --radius-xl override
 // — see #19). Overlays (Dialog/AlertDialog) deliberately use a larger rung.
-export const cardVariants = cva("rounded-lg border bg-card text-card-foreground shadow-sm", {
-  variants: {
-    // Opt-in hover-lift for clickable cards. Gated by --motion-factor via the
-    // duration-* utility; the transform is neutralized under OS reduced-motion
-    // (the shadow/border still respond — "reduced != none").
-    interactive: {
-      true: "cursor-pointer transition-[translate,box-shadow,border-color] duration-base ease-standard hover:-translate-y-1 hover:border-ring/40 hover:shadow-md focus-ring motion-reduce:hover:translate-y-0",
-      false: "",
+export const cardVariants = cva(
+  "rounded-lg border border-card-border bg-card text-card-foreground shadow-card",
+  {
+    variants: {
+      // Opt-in hover-lift for clickable cards. Gated by --motion-factor via the
+      // duration-* utility; the transform is neutralized under OS reduced-motion
+      // (the shadow/border still respond — "reduced != none").
+      interactive: {
+        true: "cursor-pointer transition-[translate,box-shadow,border-color] duration-base ease-standard hover:-translate-y-1 hover:border-ring/40 hover:shadow-md focus-ring motion-reduce:hover:translate-y-0",
+        false: "",
+      },
     },
+    defaultVariants: { interactive: false },
   },
-  defaultVariants: { interactive: false },
-});
+);
 
 // Grid container for the OPTIONAL detail panel — applied only when `detail` is set.
 // `fixed` keeps the panel track at its full size; `hover` collapses it to 0 at rest and
@@ -310,7 +313,7 @@ export const CardTitle = forwardRef<HTMLDivElement, CardTitleProps>(function Car
     <Tag
       ref={ref}
       data-slot="card-title"
-      className={cn("text-title leading-none", className)}
+      className={cn("text-title leading-(--card-title-leading)", className)}
       {...props}
     />
   );

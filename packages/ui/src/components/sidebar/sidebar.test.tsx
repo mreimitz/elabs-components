@@ -73,7 +73,7 @@ describe("SidebarProvider", () => {
     // Asserting the two class strings merely DIFFER passes on colour-only code and
     // is not sufficient (.claude/rules/accessibility.md §1.4.1). Assert the cues
     // that survive greyscale: a drawn bar, and a heavier weight.
-    expect(active.className).toContain("data-[active=true]:before:w-1");
+    expect(active.className).toContain("data-[active=true]:before:w-(--sidebar-indicator-width)");
     expect(active.className).toContain("data-[active=true]:font-semibold");
     expect(resting).toHaveAttribute("data-active", "false");
   });

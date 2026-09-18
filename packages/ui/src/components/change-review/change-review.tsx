@@ -295,7 +295,7 @@ export const ChangeReviewHeader = forwardRef<HTMLDivElement, ChangeReviewHeaderP
         {...props}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span id={headingId} className="text-subtitle font-semibold text-foreground truncate">
+          <span id={headingId} className="text-subtitle text-foreground truncate">
             {t("ui.changeReview.heading")}
           </span>
           <Badge variant={allApproved ? "success" : approvedCount > 0 ? "info" : "secondary"}>

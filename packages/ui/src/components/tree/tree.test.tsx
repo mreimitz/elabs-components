@@ -466,24 +466,24 @@ describe("Tree (surface prop)", () => {
     { id: "b", label: "Beta" },
   ];
 
-  it("default surface uses bg-accent on the selected row", async () => {
+  it("default surface uses bg-selection on the selected row", async () => {
     const user = userEvent.setup();
     render(<Tree nodes={simpleNodes} />);
     await user.click(screen.getByRole("treeitem", { name: /Alpha/ }));
     const selected = screen.getByRole("treeitem", { name: /Alpha/ });
     expect(selected).toHaveAttribute("aria-selected", "true");
     // classList gives exact token membership — avoids false matches from hover:bg-accent
-    expect(selected.classList.contains("bg-accent")).toBe(true);
+    expect(selected.classList.contains("bg-selection")).toBe(true);
     expect(selected.classList.contains("bg-sidebar-accent")).toBe(false);
   });
 
-  it("surface='default' (explicit) uses bg-accent on the selected row", async () => {
+  it("surface='default' (explicit) uses bg-selection on the selected row", async () => {
     const user = userEvent.setup();
     render(<Tree nodes={simpleNodes} surface="default" />);
     await user.click(screen.getByRole("treeitem", { name: /Alpha/ }));
     const selected = screen.getByRole("treeitem", { name: /Alpha/ });
     expect(selected).toHaveAttribute("aria-selected", "true");
-    expect(selected.classList.contains("bg-accent")).toBe(true);
+    expect(selected.classList.contains("bg-selection")).toBe(true);
     expect(selected.classList.contains("bg-sidebar-accent")).toBe(false);
   });
 

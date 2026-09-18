@@ -1,13 +1,15 @@
-/* Salesforce — dark. Downloadable theme family "salesforce" (see README.md). */
+/* Salesforce Dark — brand-ui downloadable theme family "salesforce" (see README.md).
+ * Lightning Blue has no dark mode; this scheme keeps SLDS 2's own dark palette
+ * (`light-dark()` pairs of the Cosmos theme) on the Lightning Blue shape rules above. */
 [data-theme="salesforce-dark"] {
   color-scheme: dark;
-  --radius-base: 0.5rem;
+  --radius-base: 0.25rem;
   --font-sans:
-    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    var(--font-cjk-sans), sans-serif;
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica,
+    Arial, var(--font-cjk-sans), sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --font-display:
-    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    var(--font-cjk-sans), sans-serif;
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica,
+    Arial, var(--font-cjk-sans), sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --font-mono: Consolas, Menlo, Monaco, ui-monospace, "Courier New", monospace;
   font-family: var(--font-sans);
   --background: oklch(0.209 0 0);
@@ -65,7 +67,7 @@
   --sidebar-border: oklch(0.3 0.014 257);
   --sidebar-accent: oklch(0.217 0.089 260.1);
   --sidebar-accent-foreground: oklch(0.922 0.036 261.3);
-  --sidebar-primary: var(--primary);
+  --sidebar-primary: oklch(0.665 0.184 251);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-ring: var(--ring);
   --canvas: oklch(0.18 0.012 257);
@@ -94,9 +96,9 @@
   --chart-10: oklch(0.691 0.229 312.5);
   --chart-11: oklch(0.763 0.162 56.3);
   --chart-12: oklch(0.663 0 0);
-  --chart-grid: oklch(0.52 0.012 257);
+  --chart-grid: oklch(0.387 0 0);
   --chart-foreground: var(--foreground);
-  --chart-foreground-muted: var(--muted-foreground);
+  --chart-foreground-muted: oklch(0.751 0 0);
   --chart-background: var(--card);
   --chart-label: var(--foreground);
   --chart-crosshair: var(--muted-foreground);
@@ -121,7 +123,7 @@
   --legend-muted-foreground: var(--muted-foreground);
   --legend-track: var(--muted);
   --shadow-color: oklch(0 0 0);
-  --shadow-strength: 2.2;
+  --shadow-strength: 2;
   --shadow-ring-color: oklch(1 0 0 / 0.18);
   --rule: oklch(0.32 0.012 257);
   --rule-strong: oklch(0.45 0.012 257);
@@ -178,25 +180,55 @@
   --brand-logo-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='xMinYMid' viewBox='0 0 4000 2800'%3E%3Cpath fill='%2300a1e0' d='m1666 307a700 700 0 011123 148 866 866 0 011211 795c1 480-385 870-861 870a857 857 0 01-170-18 630 630 0 01-825 260 719 719 0 01-1337-33 671 671 0 01-805-659c0-250 134-468 333-584a776 776 0 011330-780'/%3E%3C/svg%3E");
   --brand-logo-lockup: initial;
   --brand-logo-lockup-aspect: initial;
-  --control-size: 9;
-  --control-radius: calc(var(--radius) - 2px);
-  --control-weight: 500;
+  --control-size: 8;
+  --control-radius: var(--radius);
+  --control-weight: 400;
   --input-background: var(--background);
-  --input-shadow: var(--shadow-sm);
+  --input-shadow: none;
   --primary-hover: oklch(0.53 0.228 261.1);
   --primary-active: oklch(0.488 0.22 261.7);
   --destructive-hover: oklch(0.846 0.084 5.1);
   --destructive-active: oklch(0.926 0.036 5.1);
   --link: oklch(0.755 0.125 257.7);
   --overlay: color-mix(in oklab, var(--foreground) 50%, transparent);
-  --overlay-blur: 8px;
+  --overlay-blur: 0px;
   --scrim: oklch(0 0 0 / 0.2);
-  --table-header-weight: var(--control-weight);
-  --table-stripe: color-mix(in oklab, var(--foreground) 5%, transparent);
-  --table-row-hover: color-mix(in oklab, var(--foreground) 10%, transparent);
-  --table-row-rule-width: 0px;
-  --icon-stroke: 2;
-  --header-size: 14;
+  --table-header-weight: 700;
+  --table-stripe: transparent;
+  --table-row-hover: color-mix(in oklab, var(--foreground) 8%, transparent);
+  --table-row-rule-width: 1px;
+  --icon-stroke: 1.5;
+  --header-size: 12;
+  --sidebar-indicator: var(--sidebar-primary);
+  --sidebar-indicator-width: 0.25rem;
+  --sidebar-indicator-radius: 0px;
+  --sidebar-indicator-inset: 0rem;
+  --shell-secondary-width: 16rem;
+  --button-outline-border: var(--input);
+  --secondary-border: var(--border);
+  --secondary-text: var(--secondary-foreground);
+  --table-header-background: var(--muted);
+  --table-header-foreground: var(--muted-foreground);
+  --table-header-size: 1em;
+  --table-header-transform: none;
+  --table-header-tracking: var(--type-tracking-body);
+  --card-shadow: var(--shadow-sm);
+  --card-border: var(--border);
+  --card-title-leading: 1.25;
+  --popover-shadow: var(--shadow-ring-md);
+  --dialog-shadow: var(--shadow-ring-lg);
+  --badge-radius: 9999px;
+  --badge-appearance: auto;
+  --tabs-variant: underline;
+  --tabs-indicator-width: 3px;
+  --tabs-active-weight: 700;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 0px;
+  --input-focus-border: var(--ring);
+  --icon-fill: outline;
+  --selection: var(--accent);
+  --selection-foreground: var(--accent-foreground);
+  --selection-muted: color-mix(in oklab, var(--accent) 50%, transparent);
   --chart-seq-1: oklch(0.309 0.14 261.7);
   --chart-seq-2: oklch(0.4 0.23 264.2);
   --chart-seq-3: oklch(0.488 0.22 261.7);
@@ -221,4 +253,22 @@
   --chart-ink-on-dark: oklch(1 0 0);
   --flow-edge-weak: oklch(0.5 0.04 242);
   --flow-edge-strong: oklch(0.75 0.16 242);
+  --type-size-body: 0.8125rem;
+  --type-leading-body: 1.25rem;
+  --type-size-caption: 0.75rem;
+  --type-leading-caption: 1rem;
+  --type-size-display: 1.125rem;
+  --type-leading-display: 1.375rem;
+  --type-weight-display: 700;
+  --type-size-title: 1rem;
+  --type-leading-title: 1.25rem;
+  --type-weight-title: 700;
+  --type-size-subtitle: 0.875rem;
+  --type-leading-subtitle: 1.125rem;
+  --type-weight-subtitle: 700;
+  --type-tracking-display: 0em;
+  --type-tracking-title: 0em;
+  --type-tracking-subtitle: 0em;
+  --type-tracking-eyebrow: 0.0625em;
+  --type-weight-eyebrow: 400;
 }
