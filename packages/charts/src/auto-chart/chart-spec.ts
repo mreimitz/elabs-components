@@ -283,17 +283,6 @@ export interface ChartSpec {
   /** Bubble size by a numeric column — `Scatter sizeKey`/`sizeRange`. */
   size?: { key: string; range?: [number, number] };
 
-  /**
-   * Colour points by a fixed/categorical/numeric column — `Scatter colorBy`.
-   * Named `scatterColorBy` (not `colorBy`) because `"bar"`'s own `colorBy`
-   * below is a distinct, differently-shaped field (RM-113 vs RM-115).
-   */
-  scatterColorBy?: {
-    key: string;
-    scale?: "categorical" | "sequential" | "diverging";
-    steps?: number;
-  };
-
   /** Shape points by a categorical column — `Scatter shapeBy`. */
   shapeBy?: { key: string; shapes?: SeriesMarkerShape[] };
 
@@ -317,7 +306,12 @@ export interface ChartSpec {
   sort?: BarSort;
   /** Gather bar rows by this column, with a header per group. */
   groupBy?: string;
-  /** Colour bars by another column (categorical ≤ 6 hues, or a sequential / diverging ramp). */
+  /**
+   * Colour marks by another column (categorical ≤ 6 hues, or a sequential /
+   * diverging ramp) — `"bar"`'s per-bar colour (RM-113) AND `"scatter"`'s
+   * per-point colour (RM-115) both read this one field; the two families'
+   * `ChartColorBy` shape is identical, so there is no need for a second.
+   */
   colorBy?: ChartColorBy;
   /** Per-bar value markers and range spans (confidence intervals, targets). */
   overlays?: BarOverlay[];
