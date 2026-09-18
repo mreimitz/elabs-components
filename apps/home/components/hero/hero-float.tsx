@@ -16,7 +16,7 @@ const KPI = HERO_SEED.kpis[1];
 export function HeroFloat() {
   return (
     <div aria-hidden="true" inert className="pointer-events-none absolute inset-0 hidden lg:block">
-      <ParallaxPlane plane="float" className="absolute -end-6 top-24 w-60">
+      <ParallaxPlane plane="float" className="absolute -start-4 top-60 w-52">
         <Card className="gap-2 p-3 shadow-lg">
           <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-code">{scene.toolTitle}</span>

@@ -93,7 +93,7 @@ export function Hero() {
         </div>
         <TrustStrip aria-label={heroCopy.trust.label} facts={FACTS} />
       </div>
-      <div className="relative min-w-0 lg:col-span-7">
+      <div className="relative min-w-0 self-start lg:col-span-7">
         <Card
           role="region"
           aria-label={heroCopy.scene.label}
