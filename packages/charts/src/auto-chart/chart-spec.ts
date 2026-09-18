@@ -276,19 +276,12 @@ export interface ChartSpec {
    */
   fields?: { category?: string; series?: string };
 
-  // Pie/donut grouping, sort, half preset — RM-114. Slice labels moved to
+  // Pie/donut grouping, half preset — RM-114. Slice labels moved to
   // `labels.slices` (see `ChartLabelsSpec` below) so `ChartSpec` keeps one
-  // `labels` object with a sub-key per mark family.
+  // `labels` object with a sub-key per mark family. Slice order shares the
+  // one `sort` field below (see its docblock) rather than a `pieSort`.
   /** Fold small `type: "pie"` slices into an "Other" slice. See {@link ChartSpecPieGroupSmall}. Ignored elsewhere. */
   groupSmall?: ChartSpecPieGroupSmall;
-  /**
-   * Slice order for `type: "pie"`: `"desc"` (largest first) or `"none"`
-   * (data order). Default: `"none"` — matches `PieChart`'s own default, kept
-   * so an existing spec renders byte-identical wedges. Ignored elsewhere.
-   * Named `pieSort`, not `sort` — RM-113's bar row `sort` (`BarSort`, below)
-   * claimed that name first, with an incompatible shape.
-   */
-  pieSort?: "desc" | "none";
   /**
    * Render `type: "pie"` as a half-donut: a 180° arc (top half) with the
    * centre value slot under the arc instead of in the middle. Default:
@@ -306,7 +299,18 @@ export interface ChartSpec {
   // BarChart — RM-113
   /** `stacked: "diverging"`: the series centred on the zero line (a Likert "Neutral"). */
   divergingCenter?: string;
-  /** Bar row order: `"asc"`/`"desc"` by value (stack total when stacked) or `{ by, dir }`. */
+  /**
+   * One row/slice order field, narrowed per chart family in `auto-chart.tsx`
+   * (orchestrator ruling — one `sort` on `ChartSpec`, not a `pieSort`/
+   * `barSort` per family). Bar (RM-113): `"asc"`/`"desc"` by value (stack
+   * total when stacked) or `{ by, dir }` — see {@link BarSort}. Pie/donut
+   * (RM-114): only the string literals `"desc"` (largest first) or `"none"`
+   * (data order, the default — matches `PieChart`'s own default, kept so an
+   * existing spec renders byte-identical wedges) are honoured; any other
+   * value (an object form, `"asc"`) is ignored for pie. Type stays
+   * `BarSort` for now — RM-116 widens it to `BarSort | DumbbellSortBy` when
+   * it merges; pie's two string literals already sit inside that union.
+   */
   sort?: BarSort;
   /** Gather bar rows by this column, with a header per group. */
   groupBy?: string;
