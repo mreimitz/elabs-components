@@ -40,7 +40,7 @@ export function HeroNavRail({ productName, orgName, items, activeId }: HeroNavRa
         <SidebarHeader>
           <div className="flex flex-col px-2 py-1">
             <span className="truncate text-body font-semibold">{productName}</span>
-            <span className="truncate text-meta text-muted-foreground">{orgName}</span>
+            <span className="truncate text-meta text-sidebar-muted-foreground">{orgName}</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
