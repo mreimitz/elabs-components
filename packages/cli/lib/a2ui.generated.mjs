@@ -559,17 +559,6 @@ var A2UI_CATALOG_SCHEMA = {
         enum: ["side", "bottom"],
         description: 'Which edge the detail panel sits on. @default "side"',
       },
-      detailReveal: {
-        type: "string",
-        enum: ["fixed", "hover"],
-        description:
-          "`fixed` (default, accessible) \u2192 panel always visible. `hover` \u2192 hidden at rest, revealed on hover **and** keyboard `focus-within` at a FIXED outer footprint \u2026",
-      },
-      detailSize: {
-        type: "string",
-        description:
-          'Detail track size (any CSS length). @default "16rem" (side) / "auto" (bottom)',
-      },
       interactive: {
         type: "string",
         enum: ["true", "false"],
@@ -824,16 +813,6 @@ var A2UI_CATALOG_SCHEMA = {
   MetricCard: {
     children: false,
     props: {
-      announceLoading: {
-        type: "boolean",
-        description:
-          "Whether this tile announces its own `loading` state via a live region. Set to `false` when several tiles are composed inside a container that already announc\u2026",
-      },
-      copyExactValue: {
-        type: "boolean",
-        description:
-          "Offer the exact figure on click when a numeric `value` was shortened. Default: `true`. Turning it off leaves a compacted number with no way back to its digit\u2026",
-      },
       currency: {
         type: "string",
         description: 'ISO 4217 code for `valueFormat: "currency"`. Default: `"USD"`.',
@@ -854,9 +833,6 @@ var A2UI_CATALOG_SCHEMA = {
         type: "node",
         description:
           "Optional grounding footer (research 11 \xA7B.5 KPI-3) \u2014 connects a cited figure to its source (e.g. an `EvidenceChip` from `@elabs-ai/components-ai`). Rendered \u2026",
-      },
-      icon: {
-        type: "node",
       },
       label: {
         type: "node",
@@ -885,10 +861,6 @@ var A2UI_CATALOG_SCHEMA = {
         description:
           'How to render a NUMERIC `value`. Default: `"compact"`. Ignored for every other `ReactNode` \u2014 a string you already formatted is rendered verbatim.',
         enum: ["number", "compact", "currency", "percent"],
-      },
-      visual: {
-        type: "node",
-        description: "Optional inline visual shown under the value/description.",
       },
     },
     events: {},
@@ -1388,12 +1360,358 @@ var A2UI_CATALOG_SCHEMA = {
     summary: "Ordered status timeline from `items` (title, status, timestamp, description).",
   },
 };
+
+// fresh-charts:packages/charts/src/a2ui/catalog.generated.ts
+var CHARTS_A2UI_CATALOG_SCHEMA = {
+  AutoChart: {
+    children: false,
+    props: {
+      height: {
+        type: "number",
+        description: "Pixels; omit for the default.",
+      },
+      loading: {
+        type: "boolean",
+        description:
+          "Loading vs ready \u2014 renders a layout-shaped skeleton at the normal chart height instead of resolving `spec`. Default: `false`.",
+      },
+      spec: {
+        type: "object",
+        required: true,
+        description:
+          "{ data: row[], x: string, series: string[] | { key, label? }[], type?: line|area|bar|pie|scatter|radar|funnel|candlestick|heatmap|calendar|waterfall|dumbbell|unit|treemap|histogram|box|strip|bump|stream|diverging-bar, xType?: time|category|number, y2?, group?, title?, description?, stacked?, orientation?: vertical|horizontal, donut?, legend?, valueFormat?: number|compact|currency|percent, currency?, palette?: mono|sequential|categorical, emphasis?: analytical|editorial, kind?: steps|records|ranking }",
+      },
+    },
+    events: {
+      datapointClick: "onDatapointClick",
+    },
+    source: "@elabs-ai/components-charts",
+    summary:
+      "ONE chart from a serializable ChartSpec \u2014 AutoChart picks the mark when `type` is omitted. The chart the agent should reach for.",
+  },
+  BulletChart: {
+    children: false,
+    props: {
+      accessibleLabel: {
+        type: "string",
+      },
+      bands: {
+        type: "array",
+        description: "[{ to: number, label?: string }] ascending.",
+      },
+      comparative: {
+        type: "number",
+        description: "A second reference, e.g. last year.",
+      },
+      higherIsBetter: {
+        type: "boolean",
+        description:
+          'Whether ASCENDING band values read better (default `true`). Bands are always drawn low\u2192high by position (`to` is ascending), but which END is "worst" depends\u2026',
+      },
+      max: {
+        type: "number",
+        description:
+          'Scale ceiling. Default: the largest of `value`/`target`/`comparative`/the last band\'s `to`, "nice"-rounded with 5% headroom.',
+      },
+      min: {
+        type: "number",
+        description:
+          "Scale floor. Default `0` \u2014 bars are zero-based; a caller-supplied negative floor is only honored when `value` itself is negative.",
+      },
+      orientation: {
+        type: "string",
+        description: 'Bar direction. Default `"horizontal"`.',
+        enum: ["horizontal", "vertical"],
+      },
+      showAxis: {
+        type: "boolean",
+        description: 'Show the hairline tick axis. Default `size === "md"`.',
+      },
+      size: {
+        type: "string",
+        description:
+          '`"sm"` (default) is word-sized with no axis; `"md"` adds a hairline tick axis.',
+        enum: ["sm", "md"],
+      },
+      target: {
+        type: "number",
+        description: "The target \u2014 drawn as a tick, taller and darker than the bar.",
+      },
+      value: {
+        type: "number",
+        required: true,
+        description: "The actual value \u2014 drawn as the bar.",
+      },
+      valueFormat: {
+        type: "string",
+        description:
+          'How the value/target/comparative numbers are formatted. Default `"compact"`, one notation shared across the whole scale.',
+        enum: ["number", "compact", "currency", "percent"],
+      },
+    },
+    events: {},
+    source: "@elabs-ai/components-charts",
+    summary: "Actual vs target inside qualitative bands \u2014 the honest 'am I on target?' mark.",
+  },
+  ChartCard: {
+    children: true,
+    props: {
+      actions: {
+        type: "node",
+        description: "Header actions (range picker, menu).",
+      },
+      description: {
+        type: "node",
+        description:
+          "Prose that IS the legend \u2014 what a reader needs to read the chart correctly (series, units, scope), written as a sentence, not a caption.",
+      },
+      height: {
+        type: "number",
+        description: "Fixed body height so charts have a sizing context. Defaults to 260.",
+      },
+      loading: {
+        type: "boolean",
+        description:
+          "Loading vs ready \u2014 the body becomes a layout-shaped skeleton at the same height; title/description keep rendering. Default: `false`.",
+      },
+      source: {
+        type: "node",
+        description: "Where the numbers come from \u2014 always state it.",
+      },
+      title: {
+        type: "node",
+        required: true,
+        description:
+          'Write the title as the CONCLUSION, not the chart type \u2014 "Revenue is up 8% QoQ", not "Revenue chart". Put what each series means in prose in `description` (li\u2026',
+      },
+    },
+    events: {},
+    source: "@elabs-ai/components-charts",
+    summary:
+      "A titled card around a chart: title, description, source line; put an AutoChart inside.",
+  },
+  Gauge: {
+    children: false,
+    props: {
+      accessibleLabel: {
+        type: "string",
+      },
+      activeFill: {
+        type: "string",
+        description:
+          "Active notch fill \u2014 CSS color or `url(#patternId)`. When set, overrides solid / gradient active fills for that layer.",
+      },
+      activeFillOpacity: {
+        type: "number",
+        description: "SVG `fill-opacity` for active notches (0\u20131). Default **1**.",
+      },
+      centerValue: {
+        type: "number",
+        required: true,
+        description: "The figure shown in the middle.",
+      },
+      defaultLabel: {
+        type: "string",
+      },
+      endAngle: {
+        type: "number",
+      },
+      enterStaggerScale: {
+        type: "number",
+        description: "Scales notch stagger delays relative to default timing (1 = reference).",
+      },
+      height: {
+        type: "number",
+      },
+      inactiveFill: {
+        type: "string",
+        description:
+          "Inactive / track notch fill \u2014 CSS color or `url(#patternId)` (define patterns in `children`).",
+      },
+      inactiveFillOpacity: {
+        type: "number",
+        description:
+          "SVG `fill-opacity` for inactive / track notches (0\u20131). Default **1** \u2014 the track rung is already tuned lighter than the hairline ink.",
+      },
+      milestones: {
+        type: "array",
+        description:
+          "Milestone values (0\u2013100) marked with a small dot on the dial and a halo-text number just **outside** the notch band, joined by a short dotted leader \u2014 e.g. `\u2026",
+      },
+      minWidth: {
+        type: "number",
+        description: "Minimum width (px) when using the built-in responsive wrapper. Default 300",
+      },
+      notchCornerRadius: {
+        type: "number",
+        description:
+          "Corner fillet radius for each notch corner (pixels). **0** = sharp corners; higher values read more rounded; geometry clamps so large values approach a capsu\u2026",
+      },
+      notchLengthPercent: {
+        type: "number",
+        description:
+          "Radial depth of notches as a **%** of the built-in default (outer 42% / inner 28% of `size`). **100** = full length; lower values pull the inner edge toward \u2026",
+      },
+      prefix: {
+        type: "string",
+      },
+      spacing: {
+        type: "number",
+        description: "Percentage of the arc reserved for gaps between notches",
+      },
+      startAngle: {
+        type: "number",
+      },
+      suffix: {
+        type: "string",
+      },
+      target: {
+        type: "number",
+        description:
+          "A radial tick crossing the notch band at this value (0\u2013100) \u2014 e.g. a quarterly target. Reuses the same value\u2192angle mapping as notches/ milestones. Unset (def\u2026",
+      },
+      thresholds: {
+        type: "array",
+        description:
+          'Short outer-rim ticks (furniture \u2014 `--chart-grid`, `CHART_HAIRLINE_WIDTH`) marking named bands (e.g. `{ value: 75, label: "Good" }`). No colour zones \u2014 colou\u2026',
+      },
+      totalNotches: {
+        type: "number",
+        description: "Number of arc notches",
+      },
+      uniformWidth: {
+        type: "boolean",
+        description: "`true` = rectangular notches; `false` = tapered toward the center",
+      },
+      useGradient: {
+        type: "boolean",
+      },
+      value: {
+        type: "number",
+        required: true,
+        description: "0\u2013100 share of the scale.",
+      },
+      width: {
+        type: "number",
+        description:
+          "Explicit pixel size. When omitted, the gauge fills its parent; give the parent a size (e.g. `min-w-[300px]` + aspect box) for responsive layouts.",
+      },
+    },
+    events: {},
+    source: "@elabs-ai/components-charts",
+    summary: "A notched gauge for one value against a scale, with optional target and milestones.",
+  },
+  MetricGrid: {
+    children: true,
+    props: {
+      columns: {
+        type: "number",
+        enum: [2, 3, 4],
+        description: "Target columns at the largest breakpoint. Defaults to 4.",
+      },
+      featured: {
+        type: "number",
+        description: "Index of the tile to feature (0-based).",
+      },
+      featuredSpan: {
+        type: "number",
+        enum: [2, 3],
+        description: "Columns the featured tile spans at the larger breakpoints. Defaults to 2.",
+      },
+      loading: {
+        type: "boolean",
+        description:
+          "Loading vs ready \u2014 forwards `loading` to every child tile; when there are no children yet, renders `columns` placeholder `MetricCard`s so the grid reserves i\u2026",
+      },
+      reveal: {
+        type: "boolean",
+        description:
+          "Stagger the tiles in on mount. Motion-gated. Defaults to false (dashboards opt in).",
+      },
+    },
+    events: {},
+    source: "@elabs-ai/components-charts",
+    summary: "The KPI summary row: 2\u20134 MetricCards, optionally one featured (wider).",
+  },
+  Sparkline: {
+    children: false,
+    props: {
+      band: {
+        type: "array",
+        description: "[low, high] \u2014 the normal range, shaded.",
+      },
+      baseline: {
+        type: "array",
+        description:
+          "A comparison series (e.g. last year), same index alignment as `values`. Drawn as a thin `--chart-foreground-muted` line behind the main series, in both varia\u2026",
+      },
+      emphasizeLast: {
+        type: "boolean",
+        description:
+          "Emphasize the newest value with the `--chart-1` token. Default true for bars.",
+      },
+      fit: {
+        type: "string",
+        enum: ["fixed", "fill"],
+        description:
+          'Sizing strategy. `"fixed"` (default) draws at exactly `width`\xD7`height` \u2014 unchanged no matter what CSS box (`className="w-full"`, a table cell, \u2026) the caller \u2026',
+      },
+      fitDomain: {
+        type: "boolean",
+        description:
+          'For `variant="line"` with no `target`/`baseline`/`band`: use the series\' own min\u2013max (padded) domain instead of the shared zero-based bar scale. A tight-rang\u2026',
+      },
+      height: {
+        type: "number",
+      },
+      label: {
+        type: "string",
+        description: "Accessible name \u2014 say what the series is.",
+      },
+      lastValueSuffix: {
+        type: "string",
+        description:
+          'Appended (with a leading space) to the `showLastValue` text and to the accessible name\'s "latest \u2026" phrase \u2014 e.g. `"this wk"` when the plotted series is week\u2026',
+      },
+      showLastValue: {
+        type: "boolean",
+        description:
+          "Render the formatted latest value as text to the right of the plot. Default false.",
+      },
+      target: {
+        type: "number",
+        description:
+          'A horizontal reference line ("goal", "quota") drawn across the plot in `--chart-foreground`, dashed \u2014 never recolours the series even when the latest value f\u2026',
+      },
+      values: {
+        type: "array",
+        required: true,
+        description: "Numbers, oldest first.",
+      },
+      variant: {
+        type: "string",
+        enum: ["bar", "line"],
+        description: 'Visual form. Default "bar".',
+      },
+      width: {
+        type: "number",
+        description:
+          'Rendered size when `fit="fixed"` (default) \u2014 the SVG\'s actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit=\u2026',
+      },
+    },
+    events: {},
+    source: "@elabs-ai/components-charts",
+    summary:
+      "A tiny trend (bar or line) with an optional target line and normal band \u2014 inside a MetricCard or a table cell.",
+  },
+};
 export {
   A2UI_CATALOG_SCHEMA,
   A2UI_CATALOG_VERSION,
   A2UI_COMMON_PROPS,
   A2UI_SURFACE_SCHEMA_ID,
   A2UI_VERSION,
+  CHARTS_A2UI_CATALOG_SCHEMA,
   buildA2uiSurfaceSchema,
   completeJson,
   invalidNodePaths,

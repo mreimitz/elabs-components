@@ -18,8 +18,21 @@
 /** Protocol version this module understands (`"a2ui": "1"` on the root). */
 export const A2UI_VERSION = "1";
 
-/** A JSON value an agent may place in a prop. */
-export type A2uiJson = string | number | boolean | null | A2uiJson[] | { [key: string]: A2uiJson };
+/**
+ * A JSON value an agent may place in a prop. The `object` arm is there for
+ * authoring: an app hands typed records (an interface for a KPI, a chart row) to
+ * a spec literal without an index-signature cast; the runtime validator, not the
+ * type, is what decides whether a value is acceptable.
+ */
+export type A2uiJson =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | readonly A2uiJson[]
+  | { readonly [key: string]: A2uiJson }
+  | object;
 
 /**
  * A node's prop value: a JSON value, or — for props the catalog types as `node`

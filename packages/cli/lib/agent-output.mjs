@@ -233,7 +233,7 @@ export const AGENT_OUTPUT = {
         "Only catalog types render; every prop is checked against the type's schema (unknown props, enum values, required props); className/style/code never pass. Actions are names the HOST resolves in onAction — a surface cannot call anything.",
       example: A2UI_EXAMPLE,
       wiring:
-        "Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Apps add their own types with createA2uiCatalog (a chart, a domain card).",
+        "Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Charts: merge CHARTS_A2UI_BINDINGS + CHARTS_A2UI_CATALOG_SCHEMA from @elabs-ai/components-charts with createA2uiCatalog (AutoChart, ChartCard, MetricGrid, Sparkline, BulletChart, Gauge); apps add their own types the same way (a KPI block, a domain card).",
     },
   },
   /** What an agent must NOT do — rendered as the DON'T list. */

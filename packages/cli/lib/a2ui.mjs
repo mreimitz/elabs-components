@@ -15,9 +15,24 @@ import {
   A2UI_CATALOG_VERSION,
   A2UI_COMMON_PROPS,
   A2UI_VERSION,
+  CHARTS_A2UI_CATALOG_SCHEMA,
   buildA2uiSurfaceSchema,
   validateA2uiSurface,
 } from "./a2ui.generated.mjs";
+
+/**
+ * Every shipped catalog in one map: the ai package's (ui types + builtins) and the
+ * charts package's. The CLI and the hosted MCP answer for the whole system; an app
+ * binds the halves it installs (`createA2uiCatalog`) and an unbound type fails at render.
+ */
+export const FULL_CATALOG_SCHEMA = { ...A2UI_CATALOG_SCHEMA, ...CHARTS_A2UI_CATALOG_SCHEMA };
+
+const PKG_SHORT = {
+  builtin: "builtin",
+  "@elabs-ai/components-ui": "ui",
+  "@elabs-ai/components-charts": "charts",
+};
+const short = (source) => PKG_SHORT[source] ?? source;
 
 export const A2UI_VERB_DOCS = [
   {
@@ -147,7 +162,7 @@ export function renderA2uiCatalogTable() {
         return `\`${n}${p.required ? "" : "?"}\`: ${esc(shape)}`;
       })
       .join(" · ") || "—";
-  const rows = Object.entries(A2UI_CATALOG_SCHEMA).map(([t, e]) => {
+  const rows = Object.entries(FULL_CATALOG_SCHEMA).map(([t, e]) => {
     const accepts = [
       e.children ? "children" : "",
       ...Object.keys(e.events).map((ev) => `\`on.${ev}\``),
@@ -174,18 +189,18 @@ export function renderA2uiCatalogTable() {
 
 /** The JSON Schema object (identical to `@elabs-ai/components-ai/a2ui/schema.json`). */
 export function a2uiSchema() {
-  return buildA2uiSurfaceSchema(A2UI_CATALOG_SCHEMA);
+  return buildA2uiSurfaceSchema(FULL_CATALOG_SCHEMA);
 }
 
 /** The catalog schema (per type), or one type's entry (`null` when unknown). */
 export function a2uiCatalog(type) {
-  if (!type) return A2UI_CATALOG_SCHEMA;
-  return A2UI_CATALOG_SCHEMA[type] ?? null;
+  if (!type) return FULL_CATALOG_SCHEMA;
+  return FULL_CATALOG_SCHEMA[type] ?? null;
 }
 
 /** `validateA2uiSurface` over a parsed value: `{ ok, errors }`. */
 export function validateSurface(input) {
-  const result = validateA2uiSurface(input, A2UI_CATALOG_SCHEMA);
+  const result = validateA2uiSurface(input, FULL_CATALOG_SCHEMA);
   return { ok: result.ok, errors: result.errors };
 }
 
@@ -201,7 +216,7 @@ export function renderCatalogText(catalog, type) {
   if (type) {
     const entry = catalog[type];
     if (!entry) {
-      return `a2ui: unknown type "${type}". Types: ${Object.keys(A2UI_CATALOG_SCHEMA).join(", ")}`;
+      return `a2ui: unknown type "${type}". Types: ${Object.keys(FULL_CATALOG_SCHEMA).join(", ")}`;
     }
     const lines = [`${type}  (${entry.source}${entry.children ? " · takes children" : ""})`];
     if (entry.summary) lines.push(`  ${entry.summary}`);
@@ -227,14 +242,15 @@ export function renderCatalogText(catalog, type) {
       .filter(Boolean)
       .join(", ");
     const shown = props.slice(0, 6).join(", ") + (props.length > 6 ? `, +${props.length - 6}` : "");
-    return `  ${t.padEnd(width)}  ${(marks || "—").padEnd(18)}  ${shown || "—"}`;
+    return `  ${t.padEnd(width)}  ${short(e.source).padEnd(8)}  ${(marks || "—").padEnd(28)}  ${shown || "—"}`;
   });
   return [
     `A2UI catalog v${A2UI_CATALOG_VERSION} — ${Object.keys(catalog).length} types an agent may emit (protocol "a2ui": "${A2UI_VERSION}").`,
+    `Packages: ui + builtins render with <A2uiSurface>'s default catalog (@elabs-ai/components-ai); charts types need the app to merge CHARTS_A2UI_BINDINGS (@elabs-ai/components-charts) via createA2uiCatalog.`,
     `A surface is { "a2ui": "1", "title"?, "root": <node> }; a node is a string or { "type", "id"?, "props"?, "children"?, "on"? }.`,
     `Interaction: "on": { "click": { "name": "approve", "payload": { … } } } → the host's onAction. No code, no className, no style.`,
     "",
-    `  ${"type".padEnd(width)}  ${"accepts".padEnd(18)}  props (first six)`,
+    `  ${"type".padEnd(width)}  ${"package".padEnd(8)}  ${"accepts".padEnd(28)}  props (first six)`,
     ...rows,
     "",
     "Details: brand-ui a2ui catalog <Type> · schema: brand-ui a2ui schema · start: brand-ui a2ui example",

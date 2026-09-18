@@ -68,6 +68,9 @@
           "$ref": "#/$defs/AlertTitle"
         },
         {
+          "$ref": "#/$defs/AutoChart"
+        },
+        {
           "$ref": "#/$defs/Avatar"
         },
         {
@@ -81,6 +84,9 @@
         },
         {
           "$ref": "#/$defs/BentoGridItem"
+        },
+        {
+          "$ref": "#/$defs/BulletChart"
         },
         {
           "$ref": "#/$defs/Button"
@@ -110,6 +116,9 @@
           "$ref": "#/$defs/CardTitle"
         },
         {
+          "$ref": "#/$defs/ChartCard"
+        },
+        {
           "$ref": "#/$defs/Checkbox"
         },
         {
@@ -131,6 +140,9 @@
           "$ref": "#/$defs/EmptyState"
         },
         {
+          "$ref": "#/$defs/Gauge"
+        },
+        {
           "$ref": "#/$defs/Grid"
         },
         {
@@ -147,6 +159,9 @@
         },
         {
           "$ref": "#/$defs/MetricCard"
+        },
+        {
+          "$ref": "#/$defs/MetricGrid"
         },
         {
           "$ref": "#/$defs/Progress"
@@ -180,6 +195,9 @@
         },
         {
           "$ref": "#/$defs/Slider"
+        },
+        {
+          "$ref": "#/$defs/Sparkline"
         },
         {
           "$ref": "#/$defs/Stack"
@@ -686,6 +704,78 @@
       "required": ["type"],
       "additionalProperties": false
     },
+    "AutoChart": {
+      "type": "object",
+      "description": "ONE chart from a serializable ChartSpec — AutoChart picks the mark when `type` is omitted. The chart the agent should reach for.",
+      "properties": {
+        "type": {
+          "const": "AutoChart"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "height": {
+              "description": "Pixels; omit for the default.",
+              "type": "number"
+            },
+            "loading": {
+              "description": "Loading vs ready — renders a layout-shaped skeleton at the normal chart height instead of resolving `spec`. Default: `false`.",
+              "type": "boolean"
+            },
+            "spec": {
+              "description": "{ data: row[], x: string, series: string[] | { key, label? }[], type?: line|area|bar|pie|scatter|radar|funnel|candlestick|heatmap|calendar|waterfall|dumbbell|unit|treemap|histogram|box|strip|bump|stream|diverging-bar, xType?: time|category|number, y2?, group?, title?, description?, stacked?, orientation?: vertical|horizontal, donut?, legend?, valueFormat?: number|compact|currency|percent, currency?, palette?: mono|sequential|categorical, emphasis?: analytical|editorial, kind?: steps|records|ranking }",
+              "type": "object"
+            }
+          },
+          "required": ["spec"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "datapointClick": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
     "Avatar": {
       "type": "object",
       "description": "Compose AvatarFallback (initials) inside.",
@@ -1017,6 +1107,109 @@
       "required": ["type"],
       "additionalProperties": false
     },
+    "BulletChart": {
+      "type": "object",
+      "description": "Actual vs target inside qualitative bands — the honest 'am I on target?' mark.",
+      "properties": {
+        "type": {
+          "const": "BulletChart"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "accessibleLabel": {
+              "type": "string"
+            },
+            "bands": {
+              "description": "[{ to: number, label?: string }] ascending.",
+              "type": "array"
+            },
+            "comparative": {
+              "description": "A second reference, e.g. last year.",
+              "type": "number"
+            },
+            "higherIsBetter": {
+              "description": "Whether ASCENDING band values read better (default `true`). Bands are always drawn low→high by position (`to` is ascending), but which END is \"worst\" depends…",
+              "type": "boolean"
+            },
+            "max": {
+              "description": "Scale ceiling. Default: the largest of `value`/`target`/`comparative`/the last band's `to`, \"nice\"-rounded with 5% headroom.",
+              "type": "number"
+            },
+            "min": {
+              "description": "Scale floor. Default `0` — bars are zero-based; a caller-supplied negative floor is only honored when `value` itself is negative.",
+              "type": "number"
+            },
+            "orientation": {
+              "description": "Bar direction. Default `\"horizontal\"`.",
+              "enum": ["horizontal", "vertical"]
+            },
+            "showAxis": {
+              "description": "Show the hairline tick axis. Default `size === \"md\"`.",
+              "type": "boolean"
+            },
+            "size": {
+              "description": "`\"sm\"` (default) is word-sized with no axis; `\"md\"` adds a hairline tick axis.",
+              "enum": ["sm", "md"]
+            },
+            "target": {
+              "description": "The target — drawn as a tick, taller and darker than the bar.",
+              "type": "number"
+            },
+            "value": {
+              "description": "The actual value — drawn as the bar.",
+              "type": "number"
+            },
+            "valueFormat": {
+              "description": "How the value/target/comparative numbers are formatted. Default `\"compact\"`, one notation shared across the whole scale.",
+              "enum": ["number", "compact", "currency", "percent"]
+            }
+          },
+          "required": ["value"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
     "Button": {
       "type": "object",
       "description": "An action. Bind `on.click`; one `variant: \"default\"` per group.",
@@ -1235,14 +1428,6 @@
             "detailPlacement": {
               "description": "Which edge the detail panel sits on. @default \"side\"",
               "enum": ["side", "bottom"]
-            },
-            "detailReveal": {
-              "description": "`fixed` (default, accessible) → panel always visible. `hover` → hidden at rest, revealed on hover **and** keyboard `focus-within` at a FIXED outer footprint …",
-              "enum": ["fixed", "hover"]
-            },
-            "detailSize": {
-              "description": "Detail track size (any CSS length). @default \"16rem\" (side) / \"auto\" (bottom)",
-              "type": "string"
             },
             "interactive": {
               "default": "false",
@@ -1629,6 +1814,153 @@
         }
       },
       "required": ["type"],
+      "additionalProperties": false
+    },
+    "ChartCard": {
+      "type": "object",
+      "description": "A titled card around a chart: title, description, source line; put an AutoChart inside.",
+      "properties": {
+        "type": {
+          "const": "ChartCard"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "description": "Write the title as the CONCLUSION, not the chart type — \"Revenue is up 8% QoQ\", not \"Revenue chart\". Put what each series means in prose in `description` (li…",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "actions": {
+              "description": "Header actions (range picker, menu).",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "description": {
+              "description": "Prose that IS the legend — what a reader needs to read the chart correctly (series, units, scope), written as a sentence, not a caption.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            },
+            "height": {
+              "description": "Fixed body height so charts have a sizing context. Defaults to 260.",
+              "type": "number"
+            },
+            "loading": {
+              "description": "Loading vs ready — the body becomes a layout-shaped skeleton at the same height; title/description keep rendering. Default: `false`.",
+              "type": "boolean"
+            },
+            "source": {
+              "description": "Where the numbers come from — always state it.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/$defs/element"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/node"
+                  }
+                }
+              ]
+            }
+          },
+          "required": ["title"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type", "props"],
       "additionalProperties": false
     },
     "Checkbox": {
@@ -2171,6 +2503,154 @@
       "required": ["type", "props"],
       "additionalProperties": false
     },
+    "Gauge": {
+      "type": "object",
+      "description": "A notched gauge for one value against a scale, with optional target and milestones.",
+      "properties": {
+        "type": {
+          "const": "Gauge"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "accessibleLabel": {
+              "type": "string"
+            },
+            "activeFill": {
+              "description": "Active notch fill — CSS color or `url(#patternId)`. When set, overrides solid / gradient active fills for that layer.",
+              "type": "string"
+            },
+            "activeFillOpacity": {
+              "description": "SVG `fill-opacity` for active notches (0–1). Default **1**.",
+              "type": "number"
+            },
+            "centerValue": {
+              "description": "The figure shown in the middle.",
+              "type": "number"
+            },
+            "defaultLabel": {
+              "type": "string"
+            },
+            "endAngle": {
+              "type": "number"
+            },
+            "enterStaggerScale": {
+              "description": "Scales notch stagger delays relative to default timing (1 = reference).",
+              "type": "number"
+            },
+            "height": {
+              "type": "number"
+            },
+            "inactiveFill": {
+              "description": "Inactive / track notch fill — CSS color or `url(#patternId)` (define patterns in `children`).",
+              "type": "string"
+            },
+            "inactiveFillOpacity": {
+              "description": "SVG `fill-opacity` for inactive / track notches (0–1). Default **1** — the track rung is already tuned lighter than the hairline ink.",
+              "type": "number"
+            },
+            "milestones": {
+              "description": "Milestone values (0–100) marked with a small dot on the dial and a halo-text number just **outside** the notch band, joined by a short dotted leader — e.g. `…",
+              "type": "array"
+            },
+            "minWidth": {
+              "description": "Minimum width (px) when using the built-in responsive wrapper. Default 300",
+              "type": "number"
+            },
+            "notchCornerRadius": {
+              "description": "Corner fillet radius for each notch corner (pixels). **0** = sharp corners; higher values read more rounded; geometry clamps so large values approach a capsu…",
+              "type": "number"
+            },
+            "notchLengthPercent": {
+              "description": "Radial depth of notches as a **%** of the built-in default (outer 42% / inner 28% of `size`). **100** = full length; lower values pull the inner edge toward …",
+              "type": "number"
+            },
+            "prefix": {
+              "type": "string"
+            },
+            "spacing": {
+              "description": "Percentage of the arc reserved for gaps between notches",
+              "type": "number"
+            },
+            "startAngle": {
+              "type": "number"
+            },
+            "suffix": {
+              "type": "string"
+            },
+            "target": {
+              "description": "A radial tick crossing the notch band at this value (0–100) — e.g. a quarterly target. Reuses the same value→angle mapping as notches/ milestones. Unset (def…",
+              "type": "number"
+            },
+            "thresholds": {
+              "description": "Short outer-rim ticks (furniture — `--chart-grid`, `CHART_HAIRLINE_WIDTH`) marking named bands (e.g. `{ value: 75, label: \"Good\" }`). No colour zones — colou…",
+              "type": "array"
+            },
+            "totalNotches": {
+              "description": "Number of arc notches",
+              "type": "number"
+            },
+            "uniformWidth": {
+              "description": "`true` = rectangular notches; `false` = tapered toward the center",
+              "type": "boolean"
+            },
+            "useGradient": {
+              "type": "boolean"
+            },
+            "value": {
+              "description": "0–100 share of the scale.",
+              "type": "number"
+            },
+            "width": {
+              "description": "Explicit pixel size. When omitted, the gauge fills its parent; give the parent a size (e.g. `min-w-[300px]` + aspect box) for responsive layouts.",
+              "type": "number"
+            }
+          },
+          "required": ["centerValue", "value"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
     "Grid": {
       "type": "object",
       "description": "Responsive CSS grid, 1–4 equal columns (collapses to one column on narrow screens).",
@@ -2520,14 +3000,6 @@
             "aria-hidden": {
               "type": "boolean"
             },
-            "announceLoading": {
-              "description": "Whether this tile announces its own `loading` state via a live region. Set to `false` when several tiles are composed inside a container that already announc…",
-              "type": "boolean"
-            },
-            "copyExactValue": {
-              "description": "Offer the exact figure on click when a numeric `value` was shortened. Default: `true`. Turning it off leaves a compacted number with no way back to its digit…",
-              "type": "boolean"
-            },
             "currency": {
               "description": "ISO 4217 code for `valueFormat: \"currency\"`. Default: `\"USD\"`.",
               "type": "string"
@@ -2561,25 +3033,6 @@
             },
             "evidence": {
               "description": "Optional grounding footer (research 11 §B.5 KPI-3) — connects a cited figure to its source (e.g. an `EvidenceChip` from `@elabs-ai/components-ai`). Rendered …",
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/$defs/element"
-                },
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/$defs/node"
-                  }
-                }
-              ]
-            },
-            "icon": {
               "anyOf": [
                 {
                   "type": "string"
@@ -2667,26 +3120,6 @@
             "valueFormat": {
               "description": "How to render a NUMERIC `value`. Default: `\"compact\"`. Ignored for every other `ReactNode` — a string you already formatted is rendered verbatim.",
               "enum": ["number", "compact", "currency", "percent"]
-            },
-            "visual": {
-              "description": "Optional inline visual shown under the value/description.",
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/$defs/element"
-                },
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/$defs/node"
-                  }
-                }
-              ]
             }
           },
           "required": ["label", "value"],
@@ -2699,6 +3132,87 @@
         }
       },
       "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "MetricGrid": {
+      "type": "object",
+      "description": "The KPI summary row: 2–4 MetricCards, optionally one featured (wider).",
+      "properties": {
+        "type": {
+          "const": "MetricGrid"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "columns": {
+              "description": "Target columns at the largest breakpoint. Defaults to 4.",
+              "enum": [2, 3, 4]
+            },
+            "featured": {
+              "description": "Index of the tile to feature (0-based).",
+              "type": "number"
+            },
+            "featuredSpan": {
+              "description": "Columns the featured tile spans at the larger breakpoints. Defaults to 2.",
+              "enum": [2, 3]
+            },
+            "loading": {
+              "description": "Loading vs ready — forwards `loading` to every child tile; when there are no children yet, renders `columns` placeholder `MetricCard`s so the grid reserves i…",
+              "type": "boolean"
+            },
+            "reveal": {
+              "description": "Stagger the tiles in on mount. Motion-gated. Defaults to false (dashboards opt in).",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "required": ["type"],
       "additionalProperties": false
     },
     "Progress": {
@@ -3486,6 +4000,113 @@
         }
       },
       "required": ["type"],
+      "additionalProperties": false
+    },
+    "Sparkline": {
+      "type": "object",
+      "description": "A tiny trend (bar or line) with an optional target line and normal band — inside a MetricCard or a table cell.",
+      "properties": {
+        "type": {
+          "const": "Sparkline"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "band": {
+              "description": "[low, high] — the normal range, shaded.",
+              "type": "array"
+            },
+            "baseline": {
+              "description": "A comparison series (e.g. last year), same index alignment as `values`. Drawn as a thin `--chart-foreground-muted` line behind the main series, in both varia…",
+              "type": "array"
+            },
+            "emphasizeLast": {
+              "description": "Emphasize the newest value with the `--chart-1` token. Default true for bars.",
+              "type": "boolean"
+            },
+            "fit": {
+              "description": "Sizing strategy. `\"fixed\"` (default) draws at exactly `width`×`height` — unchanged no matter what CSS box (`className=\"w-full\"`, a table cell, …) the caller …",
+              "enum": ["fixed", "fill"]
+            },
+            "fitDomain": {
+              "description": "For `variant=\"line\"` with no `target`/`baseline`/`band`: use the series' own min–max (padded) domain instead of the shared zero-based bar scale. A tight-rang…",
+              "type": "boolean"
+            },
+            "height": {
+              "type": "number"
+            },
+            "label": {
+              "description": "Accessible name — say what the series is.",
+              "type": "string"
+            },
+            "lastValueSuffix": {
+              "description": "Appended (with a leading space) to the `showLastValue` text and to the accessible name's \"latest …\" phrase — e.g. `\"this wk\"` when the plotted series is week…",
+              "type": "string"
+            },
+            "showLastValue": {
+              "description": "Render the formatted latest value as text to the right of the plot. Default false.",
+              "type": "boolean"
+            },
+            "target": {
+              "description": "A horizontal reference line (\"goal\", \"quota\") drawn across the plot in `--chart-foreground`, dashed — never recolours the series even when the latest value f…",
+              "type": "number"
+            },
+            "values": {
+              "description": "Numbers, oldest first.",
+              "type": "array"
+            },
+            "variant": {
+              "description": "Visual form. Default \"bar\".",
+              "enum": ["bar", "line"]
+            },
+            "width": {
+              "description": "Rendered size when `fit=\"fixed\"` (default) — the SVG's actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit=…",
+              "type": "number"
+            }
+          },
+          "required": ["values"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
       "additionalProperties": false
     },
     "Stack": {

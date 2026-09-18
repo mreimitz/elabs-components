@@ -18,7 +18,8 @@ test("a2ui catalog: every type, then one type in full; --json is structured", ()
   const all = run(["a2ui", "catalog"]);
   assert.equal(all.status, 0, all.stderr);
   assert.match(all.stdout, /A2UI catalog v1 — \d+ types/);
-  assert.match(all.stdout, /Stack\s+children\s+align, direction, gap, justify, wrap/);
+  assert.match(all.stdout, /Stack\s+builtin\s+children\s+align, direction, gap, justify, wrap/);
+  assert.match(all.stdout, /AutoChart\s+charts\s+on\.datapointClick\s+height, loading, spec/);
   const one = run(["a2ui", "catalog", "MetricCard"]);
   assert.equal(one.status, 0);
   assert.match(one.stdout, /label: node/);

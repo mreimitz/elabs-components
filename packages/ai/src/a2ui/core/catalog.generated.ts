@@ -192,17 +192,6 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
         enum: ["side", "bottom"],
         description: 'Which edge the detail panel sits on. @default "side"',
       },
-      detailReveal: {
-        type: "string",
-        enum: ["fixed", "hover"],
-        description:
-          "`fixed` (default, accessible) → panel always visible. `hover` → hidden at rest, revealed on hover **and** keyboard `focus-within` at a FIXED outer footprint …",
-      },
-      detailSize: {
-        type: "string",
-        description:
-          'Detail track size (any CSS length). @default "16rem" (side) / "auto" (bottom)',
-      },
       interactive: {
         type: "string",
         enum: ["true", "false"],
@@ -456,16 +445,6 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
   MetricCard: {
     children: false,
     props: {
-      announceLoading: {
-        type: "boolean",
-        description:
-          "Whether this tile announces its own `loading` state via a live region. Set to `false` when several tiles are composed inside a container that already announc…",
-      },
-      copyExactValue: {
-        type: "boolean",
-        description:
-          "Offer the exact figure on click when a numeric `value` was shortened. Default: `true`. Turning it off leaves a compacted number with no way back to its digit…",
-      },
       currency: {
         type: "string",
         description: 'ISO 4217 code for `valueFormat: "currency"`. Default: `"USD"`.',
@@ -486,9 +465,6 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
         type: "node",
         description:
           "Optional grounding footer (research 11 §B.5 KPI-3) — connects a cited figure to its source (e.g. an `EvidenceChip` from `@elabs-ai/components-ai`). Rendered …",
-      },
-      icon: {
-        type: "node",
       },
       label: {
         type: "node",
@@ -517,10 +493,6 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
         description:
           'How to render a NUMERIC `value`. Default: `"compact"`. Ignored for every other `ReactNode` — a string you already formatted is rendered verbatim.',
         enum: ["number", "compact", "currency", "percent"],
-      },
-      visual: {
-        type: "node",
-        description: "Optional inline visual shown under the value/description.",
       },
     },
     events: {},

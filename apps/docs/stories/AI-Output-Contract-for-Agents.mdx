@@ -218,7 +218,7 @@ const surface = {
 <A2uiSurface surface={surface} onAction={(action) => approve(action.payload)} />;
 ```
 
-> Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Apps add their own types with createA2uiCatalog (a chart, a domain card).
+> Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Charts: merge CHARTS_A2UI_BINDINGS + CHARTS_A2UI_CATALOG_SCHEMA from @elabs-ai/components-charts with createA2uiCatalog (AutoChart, ChartCard, MetricGrid, Sparkline, BulletChart, Gauge); apps add their own types the same way (a KPI block, a domain card).
 
 ### Wire it into YOUR runtime
 

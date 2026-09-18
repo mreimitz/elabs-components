@@ -127,7 +127,7 @@ test("tools/call search reaches whole-screen templates (screen-states, object-de
 test("a2ui tool: catalog lists types, validate reports problems with isError, example validates", () => {
   const catalog = call("tools/call", { name: "a2ui", arguments: { verb: "catalog" } });
   assert.match(catalog.result.content[0].text, /A2UI catalog v1 — \d+ types/);
-  assert.match(catalog.result.content[0].text, /Button\s+children, on\.click/);
+  assert.match(catalog.result.content[0].text, /Button\s+ui\s+children, on\.click/);
   const one = call("tools/call", { name: "a2ui", arguments: { verb: "catalog", type: "Button" } });
   assert.match(one.result.content[0].text, /variant\?: "default" \| "secondary"/);
   const unknown = call("tools/call", {

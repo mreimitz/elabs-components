@@ -106,6 +106,7 @@ export const STEPS = [
     check: node("packages/cli/scripts/gen-a2ui-catalog.mjs", "--check"),
     outputs: [
       "packages/ai/src/a2ui/core/catalog.generated.ts",
+      "packages/charts/src/a2ui/catalog.generated.ts",
       "packages/cli/lib/a2ui.generated.mjs",
       "packages/ai/schemas/a2ui-surface.v1.schema.json",
     ],

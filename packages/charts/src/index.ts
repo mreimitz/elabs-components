@@ -47,5 +47,8 @@ export * from "./auto-chart";
 // ── Sparkline — word-sized micro-chart (#L17) ────────────────────────────────
 export * from "./sparkline";
 
+// A2UI (D2): the charts half of the generative-UI catalog — bindings + generated schema.
+export * from "./a2ui";
+
 // ── Gantt — interactive, virtualized, accessible Gantt/timeline widget (#240) ─
 export * from "./gantt";

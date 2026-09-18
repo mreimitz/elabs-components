@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T08:24:15.115Z",
+  "generatedAt": "2026-09-18T09:01:41.843Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1070,7 +1070,7 @@
         "streaming": "Pass the JSON text as it arrives with isStreaming: the surface completes the partial document, draws every node that already validates and prunes the rest; nothing errors until the input settles.",
         "safety": "Only catalog types render; every prop is checked against the type's schema (unknown props, enum values, required props); className/style/code never pass. Actions are names the HOST resolves in onAction — a surface cannot call anything.",
         "example": "// The agent emits JSON naming catalog types (brand-ui a2ui catalog) and host actions.\nconst surface = {\n  a2ui: \"1\",\n  title: \"Order 4711\",\n  root: {\n    type: \"Card\",\n    children: [\n      { type: \"CardHeader\", children: [{ type: \"CardTitle\", children: [\"Order 4711\"] }] },\n      {\n        type: \"CardContent\",\n        children: [{\n          type: \"Grid\", props: { columns: 2 },\n          children: [\n            { type: \"MetricCard\", props: { label: \"Total\", value: 1240, valueFormat: \"currency\", currency: \"EUR\" } },\n            { type: \"StatusBadge\", props: { status: \"awaiting-approval\" } },\n          ],\n        }],\n      },\n      {\n        type: \"CardFooter\",\n        children: [{ type: \"Button\", on: { click: { name: \"approve\", payload: { id: 4711 } } }, children: [\"Approve\"] }],\n      },\n    ],\n  },\n};\n\n<A2uiSurface surface={surface} onAction={(action) => approve(action.payload)} />;",
-        "wiring": "Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Apps add their own types with createA2uiCatalog (a chart, a domain card)."
+        "wiring": "Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Charts: merge CHARTS_A2UI_BINDINGS + CHARTS_A2UI_CATALOG_SCHEMA from @elabs-ai/components-charts with createA2uiCatalog (AutoChart, ChartCard, MetricGrid, Sparkline, BulletChart, Gauge); apps add their own types the same way (a KPI block, a domain card)."
       }
     },
     "donts": [
@@ -13093,7 +13093,7 @@
         }
       },
       "stories": {
-        "A2uiSurface": "ai-a2ui-surface--docs",
+        "A2uiSurface": "ai-a2ui-analytics--docs",
         "AgentEvent": "ai-agentevent--docs",
         "AgentTimeline": "ai-agenttimeline--docs",
         "ApprovalCard": "ai-approvalcard--docs",
@@ -13356,6 +13356,16 @@
           "name": "ChartRevealClip",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-reveal-clip.tsx"
+        },
+        {
+          "name": "CHARTS_A2UI_BINDINGS",
+          "kind": "value",
+          "module": "packages/charts/src/a2ui/charts-catalog.ts"
+        },
+        {
+          "name": "CHARTS_A2UI_CATALOG_SCHEMA",
+          "kind": "value",
+          "module": "packages/charts/src/a2ui/catalog.generated.ts"
         },
         {
           "name": "ChartStatFlow",
@@ -14591,6 +14601,18 @@
         {
           "name": "ChartRevealOn",
           "module": "packages/charts/src/charts/chart-reveal-clip.tsx"
+        },
+        {
+          "name": "ChartsA2uiCatalogSchema",
+          "module": "packages/charts/src/a2ui/types.ts"
+        },
+        {
+          "name": "ChartsA2uiPropSchema",
+          "module": "packages/charts/src/a2ui/types.ts"
+        },
+        {
+          "name": "ChartsA2uiTypeSchema",
+          "module": "packages/charts/src/a2ui/types.ts"
         },
         {
           "name": "ChartScales",

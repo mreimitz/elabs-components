@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 198 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 200 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1106,6 +1106,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ChartMarkers | component |  | `@elabs-ai/components-charts` |  |
 | ChartProvider | component |  | `@elabs-ai/components-charts` |  |
 | ChartRevealClip | component |  | `@elabs-ai/components-charts` |  |
+| CHARTS_A2UI_BINDINGS | component |  | `@elabs-ai/components-charts` |  |
+| CHARTS_A2UI_CATALOG_SCHEMA | component |  | `@elabs-ai/components-charts` |  |
 | ChartStatFlow | component |  | `@elabs-ai/components-charts` |  |
 | ChartTooltip | component |  | `@elabs-ai/components-charts` | Hover readout for the point/series under the pointer. |
 | ChartTooltipBox | component |  | `@elabs-ai/components-charts` |  |

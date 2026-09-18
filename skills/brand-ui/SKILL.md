@@ -40,7 +40,7 @@ stale-gated — never hand-edit between the markers.
 
 **Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 255 · **Registry blocks:** 52
 
-**Exported surface:** 1257 components · 89 hooks across 13 packages.
+**Exported surface:** 1259 components · 89 hooks across 13 packages.
 
 | Package                          | Components | Hooks | Use it for                                                                                                    |
 | -------------------------------- | ---------: | ----: | ------------------------------------------------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ stale-gated — never hand-edit between the markers.
 | `@elabs-ai/components-ai`        |        449 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
 | `@elabs-ai/components-flow`      |         34 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                                                 |
 | `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                      |
-| `@elabs-ai/components-charts`    |        198 |    36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
+| `@elabs-ai/components-charts`    |        200 |    36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
 | `@elabs-ai/components-marketing` |          6 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                                             |
 | `@elabs-ai/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                            |
 | `@elabs-ai/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.                              |
@@ -397,7 +397,7 @@ const surface = {
 <A2uiSurface surface={surface} onAction={(action) => approve(action.payload)} />;
 ```
 
-> Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Apps add their own types with createA2uiCatalog (a chart, a domain card).
+> Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Charts: merge CHARTS_A2UI_BINDINGS + CHARTS_A2UI_CATALOG_SCHEMA from @elabs-ai/components-charts with createA2uiCatalog (AutoChart, ChartCard, MetricGrid, Sparkline, BulletChart, Gauge); apps add their own types the same way (a KPI block, a domain card).
 
 ### Wire it into YOUR runtime
 
@@ -424,6 +424,15 @@ catalog first, emit `{ "a2ui": "1", "root": … }` using only catalog types and 
 interaction as `on.<event>` → `{ name, payload }`, validate, and let `<A2uiSurface>`
 (`@elabs-ai/components-ai`) render it. The host app receives every action in `onAction`
 and decides what it means (D5). Never put `className`, `style` or code in a surface.
+
+For an **analytics** surface — a question answered with numbers — compose from the charts
+half of the catalog (`brand-ui a2ui catalog AutoChart` … `Gauge`; the app merges
+`CHARTS_A2UI_BINDINGS` from `@elabs-ai/components-charts`): run `chart-for "<data shape>"`
+before choosing an `AutoChart` `type`, put every chart in a `ChartCard` and state its
+`source`, lead with ONE hero (a `MetricCard`/`MetricGrid` row or the app's KPI block) and
+let the charts explain it, give KPI blocks facts (actual, target, prior year, weekly) and
+never a delta you computed yourself, and end with the follow-up questions as `Button`s
+(`on.click` → the host asks the next question). Storybook: _AI / A2UI Analytics_.
 
 <!-- brand-ui:gen:a2ui:start -->
 

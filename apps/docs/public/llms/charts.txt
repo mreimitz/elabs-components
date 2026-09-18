@@ -83,6 +83,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - ChartMarkers
 - ChartProvider
 - ChartRevealClip
+- CHARTS_A2UI_BINDINGS
+- CHARTS_A2UI_CATALOG_SCHEMA
 - ChartStatFlow
 - ChartTooltip — Hover readout for the point/series under the pointer.
   - avoid: Putting information ONLY in the tooltip — hover content is unreachable by keyboard and on touch.

@@ -1,5 +1,5 @@
 {
-  "$comment": "A2UI catalog SOURCE (D2 — the generative-UI path). Hand-authored: which @elabs-ai/components-ui components an agent may name in a surface, which may hold children, and which events a node's `on` map can bind. `pnpm gen` (packages/cli/scripts/gen-a2ui-catalog.mjs) merges each entry with the manifest's prop table + cva variants into core/catalog.generated.ts. Two entries are `builtin` layout nodes the renderer draws itself. Keep the list small and real: a type here is a promise an agent will rely on.",
+  "$comment": "A2UI catalog SOURCE (D2 — the generative-UI path). Hand-authored: which @elabs-ai/components-ui components an agent may name in a surface, which may hold children, and which events a node's `on` map can bind. `pnpm gen` (packages/cli/scripts/gen-a2ui-catalog.mjs) merges each entry with the manifest's prop table + cva variants into core/catalog.generated.ts. Two entries are `builtin` layout nodes the renderer draws itself. A type with `\"package\": \"@elabs-ai/components-charts\"` is generated into that package's own `src/a2ui/catalog.generated.ts` and bound there (`CHARTS_A2UI_BINDINGS`); an app merges it with `createA2uiCatalog`, because `ai` may not import `charts`. Keep the list small and real: a type here is a promise an agent will rely on.",
   "version": "1",
   "types": {
     "Stack": {
@@ -60,7 +60,8 @@
     },
     "Card": {
       "children": true,
-      "summary": "The one generic surface — compose CardHeader / CardContent / CardFooter inside."
+      "summary": "The one generic surface — compose CardHeader / CardContent / CardFooter inside.",
+      "omit": ["detailReveal", "detailSize", "interactive"]
     },
     "CardHeader": {
       "children": true
@@ -177,7 +178,8 @@
         "currency": {
           "type": "string"
         }
-      }
+      },
+      "omit": ["announceLoading", "copyExactValue", "icon", "visual"]
     },
     "Descriptions": {
       "children": true,
@@ -562,6 +564,207 @@
       "props": {
         "size": {
           "enum": ["sm", "md", "lg", "hero"]
+        }
+      }
+    },
+    "AutoChart": {
+      "package": "@elabs-ai/components-charts",
+      "summary": "ONE chart from a serializable ChartSpec — AutoChart picks the mark when `type` is omitted. The chart the agent should reach for.",
+      "props": {
+        "spec": {
+          "type": "object",
+          "required": true,
+          "description": "{ data: row[], x: string, series: string[] | { key, label? }[], type?: line|area|bar|pie|scatter|radar|funnel|candlestick|heatmap|calendar|waterfall|dumbbell|unit|treemap|histogram|box|strip|bump|stream|diverging-bar, xType?: time|category|number, y2?, group?, title?, description?, stacked?, orientation?: vertical|horizontal, donut?, legend?, valueFormat?: number|compact|currency|percent, currency?, palette?: mono|sequential|categorical, emphasis?: analytical|editorial, kind?: steps|records|ranking }"
+        },
+        "height": {
+          "type": "number",
+          "description": "Pixels; omit for the default."
+        },
+        "loading": {
+          "type": "boolean"
+        }
+      },
+      "events": {
+        "datapointClick": "onDatapointClick"
+      },
+      "omit": ["copyValueOnActivate", "dimExcluded"]
+    },
+    "ChartCard": {
+      "package": "@elabs-ai/components-charts",
+      "children": true,
+      "summary": "A titled card around a chart: title, description, source line; put an AutoChart inside.",
+      "props": {
+        "title": {
+          "type": "node",
+          "required": true
+        },
+        "description": {
+          "type": "node"
+        },
+        "actions": {
+          "type": "node"
+        },
+        "source": {
+          "type": "node",
+          "description": "Where the numbers come from — always state it."
+        },
+        "height": {
+          "type": "number"
+        },
+        "loading": {
+          "type": "boolean"
+        }
+      },
+      "omit": ["titleAs"]
+    },
+    "MetricGrid": {
+      "package": "@elabs-ai/components-charts",
+      "children": true,
+      "summary": "The KPI summary row: 2–4 MetricCards, optionally one featured (wider).",
+      "props": {
+        "columns": {
+          "enum": [2, 3, 4]
+        },
+        "featured": {
+          "type": "number",
+          "description": "Index of the tile to feature (0-based)."
+        },
+        "featuredSpan": {
+          "enum": [2, 3]
+        },
+        "reveal": {
+          "type": "boolean"
+        },
+        "loading": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Sparkline": {
+      "package": "@elabs-ai/components-charts",
+      "summary": "A tiny trend (bar or line) with an optional target line and normal band — inside a MetricCard or a table cell.",
+      "props": {
+        "values": {
+          "type": "array",
+          "required": true,
+          "description": "Numbers, oldest first."
+        },
+        "variant": {
+          "enum": ["bar", "line"]
+        },
+        "label": {
+          "type": "string",
+          "description": "Accessible name — say what the series is."
+        },
+        "target": {
+          "type": "number"
+        },
+        "band": {
+          "type": "array",
+          "description": "[low, high] — the normal range, shaded."
+        },
+        "showLastValue": {
+          "type": "boolean"
+        },
+        "emphasizeLast": {
+          "type": "boolean"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "fit": {
+          "enum": ["fixed", "fill"]
+        },
+        "lastValueSuffix": {
+          "type": "string"
+        }
+      }
+    },
+    "BulletChart": {
+      "package": "@elabs-ai/components-charts",
+      "summary": "Actual vs target inside qualitative bands — the honest 'am I on target?' mark.",
+      "props": {
+        "value": {
+          "type": "number",
+          "required": true
+        },
+        "target": {
+          "type": "number"
+        },
+        "comparative": {
+          "type": "number",
+          "description": "A second reference, e.g. last year."
+        },
+        "bands": {
+          "type": "array",
+          "description": "[{ to: number, label?: string }] ascending."
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "orientation": {
+          "enum": ["horizontal", "vertical"]
+        },
+        "size": {
+          "enum": ["sm", "md"]
+        },
+        "showAxis": {
+          "type": "boolean"
+        },
+        "valueFormat": {
+          "enum": ["number", "compact", "currency", "percent"]
+        },
+        "higherIsBetter": {
+          "type": "boolean"
+        },
+        "accessibleLabel": {
+          "type": "string"
+        }
+      }
+    },
+    "Gauge": {
+      "package": "@elabs-ai/components-charts",
+      "summary": "A notched gauge for one value against a scale, with optional target and milestones.",
+      "props": {
+        "value": {
+          "type": "number",
+          "required": true,
+          "description": "0–100 share of the scale."
+        },
+        "centerValue": {
+          "type": "number",
+          "required": true,
+          "description": "The figure shown in the middle."
+        },
+        "defaultLabel": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "target": {
+          "type": "number"
+        },
+        "milestones": {
+          "type": "array"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "accessibleLabel": {
+          "type": "string"
         }
       }
     }
