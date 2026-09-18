@@ -125,7 +125,8 @@ export const heroCopy = {
     title: "Overview",
     kpiSince: (week: string) => `Change since ${week}`,
     pointsUnit: "pts",
-    chartTitle: (metric: string, quarter: string) => `${metric} — ${quarter}`,
+    /** The title carries the unit: the chart plots the fixture's percentages as plain numbers. */
+    chartTitle: (metric: string, quarter: string) => `${metric} (%) — ${quarter}`,
     columns: {
       account: "Account",
       region: "Region",

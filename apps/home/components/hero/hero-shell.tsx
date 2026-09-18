@@ -46,9 +46,8 @@ const CHART: ChartSpec = {
   title: HERO_SEED.churn.title,
   data: HERO_SEED.churn.points.map((d) => ({ ...d })),
   x: "week",
-  xType: "category",
+  xType: "time",
   series: [{ key: "churn", label: HERO_SEED.churn.label }],
-  valueFormat: "percent",
 };
 
 const COLUMNS: ColumnDef<HeroMover>[] = [
@@ -117,7 +116,7 @@ export function HeroShell() {
             </Card>
             <Card className="col-span-2 flex h-64 flex-col gap-0 p-0">
               <Conversation className="min-h-0" aria-label={scene.chatLabel}>
-                <ConversationContent className="gap-3 p-3">
+                <ConversationContent className="gap-2 p-3">
                   <Message from="user">
                     <MessageContent>{chat.question}</MessageContent>
                   </Message>
@@ -133,7 +132,10 @@ export function HeroShell() {
                         <p className="text-meta text-muted-foreground">{chat.tool.result}</p>
                       </ToolContent>
                     </Tool>
-                    <MessageContent className={STREAMED} data-stream-text="">
+                    {/* Clamped so the question and the tool call stay in view: the panel
+                        sticks to the bottom, and the fixture's full answer would scroll both
+                        out. The whole answer stays in the DOM for assistive tech. */}
+                    <MessageContent className={`${STREAMED} line-clamp-2`} data-stream-text="">
                       {assistant}
                     </MessageContent>
                   </Message>

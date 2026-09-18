@@ -135,10 +135,15 @@ export const HERO_SEED = {
   churn: {
     title: scene.chartTitle(CHURN_SERIES.label, FISCAL_QUARTER),
     label: CHURN_SERIES.label,
-    /** Fractions, because the chart's `"percent"` format follows `Intl` percent semantics. */
+    /**
+     * The fixture's own values (4.66, not 0.0466), so the chart's last point reads the same
+     * number as the churn KPI in its tooltip and accessible name. The week is a LOCAL-midnight
+     * ISO timestamp: the line chart coerces x to a `Date`, and a date-only ISO string would be
+     * UTC midnight — the previous day west of Greenwich.
+     */
     points: CHURN_SERIES.points.map((p) => ({
-      week: WEEK.format(utc(p.week)),
-      churn: p.value / 100,
+      week: `${p.week}T00:00:00`,
+      churn: p.value,
     })),
   },
   movers: CHURN_MOVERS.map((m) => ({ ...m })),
