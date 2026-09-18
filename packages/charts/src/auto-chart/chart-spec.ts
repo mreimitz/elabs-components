@@ -225,4 +225,47 @@ export interface ChartSpec {
    * selection field to any chart without knowing the chart type.
    */
   fields?: { category?: string; series?: string };
+
+  // Axes — RM-108
+  /** Per-axis range, ticks, scale, title, grid and position (RM-108) — see {@link AxisSpec}. */
+  axes?: { x?: AxisSpec; y?: AxisSpec; y2?: AxisSpec };
+}
+
+// Axes — RM-108
+
+/**
+ * One axis of a cartesian `ChartSpec` (RM-108) — the serialisable subset of
+ * the `XAxis`/`YAxis`/`Grid` props. Honoured by the line, area, bar,
+ * scatter, candlestick and composed families; ignored elsewhere.
+ *
+ * `y2` is the right-hand value axis of a dual-axis chart. No spec series can
+ * target it yet, so `AutoChart` ignores it today.
+ */
+export interface AxisSpec {
+  /**
+   * `[lower, upper]` in data units; `"auto"` keeps the data-derived end. A
+   * bar axis always includes 0 (a lower bound above 0 is ignored). On `x`,
+   * only a numeric x (`xType: "number"`) honours it.
+   */
+  domain?: [number | "auto", number | "auto"];
+  /** Exact tick values: numbers, or ISO date strings on a time `x`. */
+  ticks?: Array<number | string>;
+  /**
+   * `"linear"` (default), `"log"` or `"sqrt"`. Value axes and a numeric x
+   * only; bars are always linear, and `"log"` falls back to linear when the
+   * data touches 0.
+   */
+  scale?: "linear" | "log" | "sqrt";
+  /** Axis title — names the unit of every tick. */
+  title?: string;
+  /** `"outside"` (default, in the margin) or `"inside"` (in the plot). */
+  titlePlacement?: "inside" | "outside";
+  /**
+   * The grid drawn from this axis' ticks: `"lines"` (default), `"ticks"`
+   * (short marks at the axis only) or `"off"`. On `y` for vertical charts, on
+   * `x` for horizontal bars.
+   */
+  gridMode?: "lines" | "ticks" | "off";
+  /** `x`: `"bottom"` (default) or `"top"`. `y`: `"left"` (default) or `"right"`. */
+  position?: "top" | "bottom" | "left" | "right";
 }

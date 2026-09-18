@@ -72,8 +72,11 @@ import {
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
+import type { GridMode } from "../charts/grid";
+import type { XAxisProps } from "../charts/x-axis";
+import type { YAxisProps } from "../charts/y-axis";
 
-import type { ChartSpec, ChartSeriesSpec, ChartType } from "./chart-spec";
+import type { AxisSpec, ChartSpec, ChartSeriesSpec, ChartType } from "./chart-spec";
 import {
   inferChartType,
   isChartSpecPalette,
@@ -261,6 +264,43 @@ function dumbbellKeys(spec: ChartSpec, series: NormalizedSeries[]): [string, str
 // renderChart switch
 // ---------------------------------------------------------------------------
 
+/**
+ * `ChartSpec.axes` (RM-108) → the `XAxis`/`YAxis`/`Grid` props every
+ * cartesian family spreads. Unset fields stay unset, so a spec without `axes`
+ * renders exactly as before.
+ */
+function resolveAxisSpecProps(
+  axes: ChartSpec["axes"],
+  isHorizontal: boolean,
+): { x: XAxisProps; y: YAxisProps; gridMode: GridMode | undefined } {
+  const x: AxisSpec = axes?.x ?? {};
+  const y: AxisSpec = axes?.y ?? {};
+  const numericTicks = (ticks: AxisSpec["ticks"]) =>
+    ticks?.filter((tick): tick is number => typeof tick === "number");
+  const xTicks = x.ticks?.every((tick) => typeof tick === "number")
+    ? numericTicks(x.ticks)
+    : x.ticks?.map((tick) => new Date(tick)).filter((date) => !Number.isNaN(date.getTime()));
+  return {
+    x: {
+      domain: x.domain,
+      scale: x.scale,
+      ticks: xTicks && xTicks.length > 0 ? xTicks : undefined,
+      title: x.title,
+      titlePlacement: x.titlePlacement,
+      orientation: x.position === "top" ? "top" : x.position === "bottom" ? "bottom" : undefined,
+    },
+    y: {
+      domain: y.domain,
+      scale: y.scale,
+      ticks: numericTicks(y.ticks),
+      title: y.title,
+      titlePlacement: y.titlePlacement,
+      orientation: y.position === "right" ? "right" : y.position === "left" ? "left" : undefined,
+    },
+    gridMode: (isHorizontal ? x.gridMode : y.gridMode) ?? undefined,
+  };
+}
+
 function renderChart(
   type: ChartType,
   spec: ChartSpec,
@@ -284,6 +324,7 @@ function renderChart(
   links: AutoChartLinkProps = {},
 ): ReactNode {
   const { x, stacked, orientation, donut } = spec;
+  const axisProps = resolveAxisSpecProps(spec.axes, orientation === "horizontal");
 
   switch (type) {
     // ── Line ─────────────────────────────────────────────────────────────────
@@ -305,12 +346,12 @@ function renderChart(
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
         >
-          <Grid horizontal />
+          <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
             <Line key={s.key} dataKey={s.key} stroke={s.color} />
           ))}
-          <XAxis />
-          <YAxis formatValue={yFormat} />
+          <XAxis {...axisProps.x} />
+          <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip />
         </LineChart>
       );
@@ -340,12 +381,12 @@ function renderChart(
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
         >
-          <Grid horizontal />
+          <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
             <Area key={s.key} dataKey={s.key} stroke={s.color} fill={s.color} />
           ))}
-          <XAxis />
-          <YAxis formatValue={yFormat} />
+          <XAxis {...axisProps.x} />
+          <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip />
         </AreaChart>
       );
@@ -372,7 +413,7 @@ function renderChart(
             copyValueOnActivate={copyValueOnActivate}
           >
             {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
-            <Grid horizontal={!isHorizontal} vertical={isHorizontal} />
+            <Grid horizontal={!isHorizontal} mode={axisProps.gridMode} vertical={isHorizontal} />
             {series.map((s) => (
               <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="round" />
             ))}
@@ -387,7 +428,7 @@ function renderChart(
               plot x-pixels vertically. The bottom value axis a horizontal bar
               chart wants is its own component; tracked separately.
             */}
-            {isHorizontal ? null : <YAxis formatValue={yFormat} />}
+            {isHorizontal ? null : <YAxis formatValue={yFormat} {...axisProps.y} />}
             <ChartTooltip />
           </BarChart>
         </div>
@@ -449,12 +490,12 @@ function renderChart(
             accessibleLabel={spec.title}
             accessibleDescription={spec.description}
           >
-            <Grid horizontal />
+            <Grid horizontal mode={axisProps.gridMode} />
             {series.map((s) => (
               <Scatter key={s.key} dataKey={s.key} fill={s.color} />
             ))}
-            <XAxis />
-            <YAxis formatValue={yFormat} />
+            <XAxis {...axisProps.x} />
+            <YAxis formatValue={yFormat} {...axisProps.y} />
             <ChartTooltip />
           </ScatterChart>
         </div>
@@ -566,10 +607,10 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
         >
-          <Grid horizontal />
+          <Grid horizontal mode={axisProps.gridMode} />
           <Candlestick />
-          <XAxis />
-          <YAxis formatValue={yFormat} />
+          <XAxis {...axisProps.x} />
+          <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip />
         </CandlestickChart>
       );
@@ -784,10 +825,10 @@ function renderChart(
             accessibleDescription={spec.description}
             copyValueOnActivate={copyValueOnActivate}
           >
-            <Grid horizontal />
+            <Grid horizontal mode={axisProps.gridMode} />
             <Bar dataKey={valueKey} fill={color} lineCap="round" showValues zeroLine />
             <BarXAxis />
-            <YAxis formatValue={yFormat} />
+            <YAxis formatValue={yFormat} {...axisProps.y} />
             <ChartTooltip />
           </BarChart>
         </div>

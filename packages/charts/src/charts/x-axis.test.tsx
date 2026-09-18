@@ -8,7 +8,7 @@
  */
 
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // RM-108: the width is mutable so the width-derived tick target can be driven.
 const parentSize = vi.hoisted(() => ({ width: 560, height: 288 }));
@@ -36,6 +36,18 @@ vi.mock("@visx/responsive", () => {
   };
 });
 
+import { AutoChart } from "../auto-chart/auto-chart";
+import {
+  assertAxisSpecContract,
+  BarChart as BarChartDouble,
+  LineChart as LineChartDouble,
+} from "../test/doubles";
+import {
+  BarXAxis as BarXAxisPart,
+  Grid as GridPart,
+  XAxis as XAxisPart,
+  YAxis as YAxisPart,
+} from "../test/primitives";
 import { LineChart } from "./line-chart";
 import { ScatterChart } from "./scatter-chart";
 import { generatePeriodTicks, isLongPeriodTick, XAxis } from "./x-axis";
@@ -402,5 +414,98 @@ describe("XAxis — numeric x domain / scale on ScatterChart (RM-108)", () => {
     );
     expect(warn.mock.calls.some(([message]) => String(message).startsWith("[XAxis x]"))).toBe(true);
     warn.mockRestore();
+  });
+});
+
+describe("ChartSpec.axes → AutoChart (RM-108)", () => {
+  // AutoChart mounts `Line`, whose stroke metrics call getTotalLength() —
+  // jsdom lacks it. Stubbed for this block only, removed afterwards.
+  beforeAll(() => {
+    (Element.prototype as unknown as { getTotalLength: () => number }).getTotalLength = () => 0;
+  });
+  afterAll(() => {
+    delete (Element.prototype as unknown as { getTotalLength?: () => number }).getTotalLength;
+  });
+
+  const spec = {
+    type: "line" as const,
+    data: Array.from({ length: 12 }, (_, i) => ({
+      month: `2024-${String(i + 1).padStart(2, "0")}-01`,
+      riders: 100 + i * 10,
+    })),
+    x: "month",
+    series: ["riders"],
+  };
+
+  it("forwards title, domain, ticks, grid mode and position to the real axes", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          ...spec,
+          axes: {
+            x: { position: "top", title: "Month" },
+            y: { domain: [0, 400], ticks: [0, 200, 400], title: "Riders", gridMode: "ticks" },
+          },
+        }}
+      />,
+    );
+    expect(container.querySelector('[data-slot="x-axis"]')?.getAttribute("data-orientation")).toBe(
+      "top",
+    );
+    const yLabels = [...container.querySelectorAll('[data-slot="y-axis"] span')].map(
+      (node) => node.textContent,
+    );
+    expect(yLabels.slice(0, 3)).toEqual(["0", "200", "400"]);
+    expect(container.textContent).toContain("Riders");
+    expect(container.textContent).toContain("Month");
+    expect(container.querySelector(".chart-grid")?.getAttribute("data-grid-mode")).toBe("ticks");
+  });
+
+  it("renders exactly as before without axes", () => {
+    const { container } = render(<AutoChart spec={spec} />);
+    expect(container.querySelector(".chart-grid")?.getAttribute("data-grid-mode")).toBe("lines");
+    expect(container.querySelector('[data-slot="axis-title"]')).toBeNull();
+  });
+});
+
+describe("test double — axis contract (RM-108)", () => {
+  const rows = [{ date: new Date("2024-01-01"), value: 1 }];
+
+  it("accepts every well-formed axis prop", () => {
+    expect(() =>
+      render(
+        <LineChartDouble data={rows}>
+          <GridPart mode="ticks" />
+          <XAxisPart orientation="top" tickCount="auto" titlePlacement="inside" />
+          <YAxisPart domain={[0, "auto"]} scale="log" ticks={[1, 10]} labelPlacement="inside" />
+        </LineChartDouble>,
+      ),
+    ).not.toThrow();
+  });
+
+  it("names a malformed domain, scale, grid mode or bar fit", () => {
+    const bad = [
+      <YAxisPart domain={["50", 100]} key="d" />,
+      <YAxisPart domain={[100, 50]} key="i" />,
+      <YAxisPart scale="logarithmic" key="s" />,
+      <GridPart mode="dashed" key="g" />,
+      <XAxisPart orientation="left" key="o" />,
+    ];
+    for (const part of bad) {
+      expect(() => render(<LineChartDouble data={rows}>{part}</LineChartDouble>)).toThrow(
+        /violates the real component/,
+      );
+      cleanup();
+    }
+    expect(() => assertAxisSpecContract({ y: { gridMode: "dotted" } })).toThrow(/gridMode/);
+    expect(() => assertAxisSpecContract({ x: { position: "left" } })).toThrow(/position/);
+    expect(() => assertAxisSpecContract({ y: { domain: [0, 10], scale: "log" } })).not.toThrow();
+    expect(() =>
+      render(
+        <BarChartDouble data={[{ region: "North", value: 1 }]} xDataKey="region">
+          <BarXAxisPart fit="squash" />
+        </BarChartDouble>,
+      ),
+    ).toThrow(/"fit" must be one of/);
   });
 });
