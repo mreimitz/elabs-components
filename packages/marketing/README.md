@@ -38,7 +38,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-6 exported components — including `CTASection`, `FeatureGrid`, `Hero`, `LogoStrip`, `StatsBand`.
+7 exported components — including `CTASection`, `FeatureGrid`, `Hero`, `LogoStrip`, `StatsBand`.
 
 Don't guess the API — ask the CLI:
 

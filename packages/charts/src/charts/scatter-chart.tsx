@@ -12,6 +12,12 @@ import { Scatter, type ScatterProps } from "./scatter";
 import { ScatterChartInner, type ScatterXScaleType } from "./scatter-chart-shell";
 import { useStableValue } from "./use-stable-value";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+} from "./chart-breakpoint";
 
 export interface ScatterChartProps extends ChartSelectionProps {
   /** Data array — each item should have a date field and numeric values */
@@ -36,6 +42,11 @@ export interface ScatterChartProps extends ChartSelectionProps {
   revealSignature?: string;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
   /** Child components (Scatter, Grid, ChartTooltip, XAxis, etc.) */
@@ -155,7 +166,8 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
     animationEasing,
     enterTransition = DEFAULT_CHART_ENTER_TRANSITION,
     revealSignature,
-    aspectRatio = "2 / 1",
+    aspectRatio,
+    plotHeight,
     className = "",
     children,
     onPhaseChange,
@@ -192,13 +204,14 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
   const height = bounds.height ?? 0;
 
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full", className)}
       ref={setContainerRef}
       role={role}
-      style={{ aspectRatio, touchAction: "none" }}
+      style={{ touchAction: "none" }}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -220,7 +233,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
           {children}
         </ChartInner>
       ) : null}
-    </div>
+    </ChartPlotRoot>
   );
 });
 

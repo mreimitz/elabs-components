@@ -8,7 +8,15 @@
  */
 
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+
+// RM-108: the width is mutable so the width-derived tick target can be driven.
+const parentSize = vi.hoisted(() => ({ width: 560, height: 288 }));
+
+// ScatterChart measures with react-use-measure (ResizeObserver) — fixed size here.
+vi.mock("react-use-measure", () => ({
+  default: () => [() => undefined, { width: 560, height: 288 }],
+}));
 
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
 vi.mock("@visx/responsive", () => {
@@ -23,12 +31,26 @@ vi.mock("@visx/responsive", () => {
       React.createElement(
         "div",
         { "data-testid": "parent-size" },
-        children({ width: 560, height: 288 }),
+        children({ width: parentSize.width, height: parentSize.height }),
       ),
   };
 });
 
+import { AutoChart } from "../auto-chart/auto-chart";
+import {
+  assertAxisSpecContract,
+  BarChart as BarChartDouble,
+  LineChart as LineChartDouble,
+} from "../test/doubles";
+import {
+  BarXAxis as BarXAxisPart,
+  Grid as GridPart,
+  XAxis as XAxisPart,
+  YAxis as YAxisPart,
+} from "../test/primitives";
+import { ChartConfigProvider } from "./chart-config-context";
 import { LineChart } from "./line-chart";
+import { ScatterChart } from "./scatter-chart";
 import { generatePeriodTicks, isLongPeriodTick, XAxis } from "./x-axis";
 import { YAxis } from "./y-axis";
 
@@ -103,6 +125,13 @@ describe("XAxis — tickFormat / tickValues (#357)", () => {
       // All three points fall within the same day (default formatter is
       // {month:"short", day:"numeric"} — no time component), so every
       // domain-interpolated tick collapses to the same "Jan 1" label.
+      //
+      // RM-109: the default formatter is now the span/width ladder
+      // (`dateFormatForSpan`), which resolves a ten-minute span to the
+      // "minute" rung on its own and would no longer collapse — that's the
+      // bug this RM fixes. `dateFormat="day"` pins the OLD coarse shape
+      // explicitly so this test still exercises the collapse-warning
+      // mechanism itself, independent of which rung is in play.
       const denseData = [
         { date: new Date("2024-01-01T00:00:00"), value: 1 },
         { date: new Date("2024-01-01T00:05:00"), value: 2 },
@@ -110,7 +139,7 @@ describe("XAxis — tickFormat / tickValues (#357)", () => {
       ];
       render(
         <LineChart data={denseData}>
-          <XAxis />
+          <XAxis dateFormat="day" />
         </LineChart>,
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -271,5 +300,305 @@ describe("XAxis — periodTicks long-tick calendar anchor (#253)", () => {
       expect(isLongPeriodTick("month", d)).toBe(d.getMonth() === 0);
     });
     expect(ticks.filter((d) => isLongPeriodTick("month", d))).toHaveLength(2); // Jan 2024, Jan 2025
+  });
+});
+
+describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", () => {
+  // Two years of monthly rows: enough distinct labels for any target.
+  const monthly = Array.from({ length: 24 }, (_, i) => ({
+    date: new Date(2023, i, 1),
+    value: 10 + i,
+  }));
+
+  function paintedXTicks(width: number, axis = <XAxis />, data = monthly): number {
+    parentSize.width = width;
+    const { container } = render(<LineChart data={data}>{axis}</LineChart>);
+    const layer = container.querySelector('[data-slot="x-axis"]');
+    const count = Number(layer?.getAttribute("data-tick-count"));
+    cleanup();
+    parentSize.width = 560;
+    return count;
+  }
+
+  it("paints 8–10 x ticks at 900 px and 3–5 at 380 px", () => {
+    // Tick-step round (#478): the AUTO count path picks a calendar STEP from
+    // `CALENDAR_STEP_LADDER` (x-axis.tsx) directly, banded around the
+    // width-derived target, rather than asking `xScale.ticks(count)` to
+    // infer one from a bare count — d3's own per-unit step list is coarser
+    // (months only offer a 1- or 3-month step) and can jump straight past
+    // this band. `monthly`'s domain spans under 2 calendar years, so a
+    // narrow width's ~3-tick target lands on the 6-month step (4 ticks) —
+    // in-band, real calendar boundaries, still inside RM-108's own bound.
+    const wide = paintedXTicks(900);
+    const narrow = paintedXTicks(380);
+    expect(wide).toBeGreaterThanOrEqual(8);
+    expect(wide).toBeLessThanOrEqual(10);
+    expect(narrow).toBeGreaterThanOrEqual(3);
+    expect(narrow).toBeLessThanOrEqual(5);
+  });
+
+  // A real ten-year DAILY series (2016-01-01..2025-12-31, 3,653 points —
+  // matches `DateLadderLongSpan`'s own fixture, formatting.stories.tsx) and a
+  // 36-hour hourly series (matches `DateLadderShortSpan`'s fixture) — the two
+  // targets the tick-step round (#478) fixes: a calendar-step-chosen STEP's
+  // format rung now reads off the STEP's own unit (`presetForCalendarStep`),
+  // not the raw width-derived target or the resulting tick COUNT, either of
+  // which can pick the wrong rung (see `chooseCalendarStep`'s doc comment in
+  // x-axis.tsx).
+  const daily10y = Array.from({ length: 3653 }, (_, i) => ({
+    date: new Date(2016, 0, 1 + i),
+    value: i,
+  }));
+  const hourly36 = Array.from({ length: 36 }, (_, i) => ({
+    date: new Date(2024, 0, 1, i),
+    value: i,
+  }));
+
+  function paintedXLabels(width: number, data: typeof daily10y, narrow = false): string[] {
+    parentSize.width = width;
+    const chart = (
+      <LineChart data={data}>
+        <XAxis />
+      </LineChart>
+    );
+    const { container } = render(
+      narrow ? (
+        <ChartConfigProvider value={{ breakpoint: "narrow" }}>{chart}</ChartConfigProvider>
+      ) : (
+        chart
+      ),
+    );
+    const labels = [...container.querySelectorAll('[data-slot="x-axis"] span')].map(
+      (n) => n.textContent ?? "",
+    );
+    cleanup();
+    parentSize.width = 560;
+    return labels;
+  }
+
+  it("ten-year daily series: ’16 ’18 ’20 ’22 ’24 at 380 px (narrow), full years 2016…2025 at 900 px", () => {
+    // 380 px forces RM-107's narrow breakpoint (`density="sm"`) explicitly —
+    // jsdom never measures a real layout width, so `ChartConfigProvider`'s
+    // `breakpoint` override stands in for a real narrow container here.
+    expect(paintedXLabels(380, daily10y, true)).toEqual(["’16", "’18", "’20", "’22", "’24"]);
+    expect(paintedXLabels(900, daily10y)).toEqual([
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+      "2024",
+      "2025",
+    ]);
+  });
+
+  it("36-hour series paints times of day at every width, never a weekday fallback", () => {
+    for (const width of [380, 600, 900]) {
+      const labels = paintedXLabels(width, hourly36);
+      expect(labels.length).toBeGreaterThan(0);
+      for (const label of labels) {
+        expect(label).toMatch(/^\d{2}:\d{2}$/);
+      }
+    }
+    // The 380 px case names an exact shape in the Acceptance: a midnight tick
+    // recurring across the day boundary is a legitimate repeat, not a
+    // de-duped collision (see `buildDomainTicks`'s `usingCalendarTicks` guard).
+    expect(paintedXLabels(380, hourly36)).toEqual(["00:00", "12:00", "00:00"]);
+  });
+
+  it("never paints more auto x ticks than data rows", () => {
+    expect(paintedXTicks(900, <XAxis />, monthly.slice(0, 6))).toBeLessThanOrEqual(6);
+    expect(paintedXTicks(900, <XAxis tickCount={8} />, monthly.slice(0, 6))).toBe(8);
+  });
+
+  it("numTicks={5} pins the count at both widths", () => {
+    expect(paintedXTicks(900, <XAxis numTicks={5} />)).toBe(5);
+    expect(paintedXTicks(380, <XAxis numTicks={5} />)).toBe(5);
+  });
+
+  it('orientation="top" and a title render on the x axis', () => {
+    const { container } = render(
+      <LineChart data={monthly}>
+        <XAxis orientation="top" title="Month" titlePlacement="inside" />
+      </LineChart>,
+    );
+    expect(container.querySelector('[data-slot="x-axis"]')?.getAttribute("data-orientation")).toBe(
+      "top",
+    );
+    const title = container.querySelector('[data-slot="axis-title"]');
+    expect(title?.getAttribute("data-placement")).toBe("inside");
+    expect(container.textContent).toContain("Month");
+  });
+
+  it("YAxis paints 3 ticks on a short plot and honours explicit ticks", () => {
+    parentSize.height = 180;
+    const { container } = render(
+      <LineChart data={monthly}>
+        <YAxis title="Riders" />
+      </LineChart>,
+    );
+    const short = Number(
+      container.querySelector('[data-slot="y-axis"]')?.getAttribute("data-tick-count"),
+    );
+    cleanup();
+    parentSize.height = 288;
+    expect(short).toBeLessThanOrEqual(4);
+    const { container: pinned } = render(
+      <LineChart data={monthly}>
+        <YAxis ticks={[0, 20, 40]} />
+      </LineChart>,
+    );
+    expect(pinned.querySelector('[data-slot="y-axis"]')?.getAttribute("data-tick-count")).toBe("3");
+  });
+});
+
+describe("XAxis — numeric x domain / scale on ScatterChart (RM-108)", () => {
+  const points = [
+    { dose: 2, response: 5 },
+    { dose: 15, response: 9 },
+    { dose: 40, response: 14 },
+    { dose: 310, response: 20 },
+  ];
+
+  function xLabels(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('[data-slot="x-axis"] span')].map(
+      (node) => node.textContent ?? "",
+    );
+  }
+
+  it("paints a numeric ruler across a pinned domain", () => {
+    const { container } = render(
+      <ScatterChart data={points} xDataKey="dose">
+        <XAxis domain={[0, 400]} numTicks={5} />
+      </ScatterChart>,
+    );
+    const labels = xLabels(container);
+    expect(labels[0]).toBe("0");
+    expect(labels.at(-1)).toBe("400");
+  });
+
+  it("spaces a log x axis by decade", () => {
+    const { container } = render(
+      <ScatterChart data={points} xDataKey="dose">
+        <XAxis scale="log" numTicks={5} />
+      </ScatterChart>,
+    );
+    const layer = container.querySelector('[data-slot="x-axis"]');
+    const positions = [...(layer?.children ?? [])]
+      .map((node) => Number.parseFloat((node as HTMLElement).style.left))
+      .filter(Number.isFinite);
+    const labels = xLabels(container);
+    const at = (label: string) => positions[labels.indexOf(label)] ?? Number.NaN;
+    // Data 2–310 → domain 2–500, thinned to the 1-5 tier: 5 · 10 · 50 · 100 · 500.
+    expect(labels).toEqual(["5", "10", "50", "100", "500"]);
+    // 5 → 50 and 10 → 100 are both one decade: the same width on a log ruler.
+    expect(at("50") - at("5")).toBeCloseTo(at("100") - at("10"), 0);
+  });
+
+  it("refuses log on x values touching 0 and warns once", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <ScatterChart data={[...points, { dose: 0, response: 1 }]} xDataKey="dose">
+        <XAxis scale="log" />
+      </ScatterChart>,
+    );
+    expect(warn.mock.calls.some(([message]) => String(message).startsWith("[XAxis x]"))).toBe(true);
+    warn.mockRestore();
+  });
+});
+
+describe("ChartSpec.axes → AutoChart (RM-108)", () => {
+  // AutoChart mounts `Line`, whose stroke metrics call getTotalLength() —
+  // jsdom lacks it. Stubbed for this block only, removed afterwards.
+  beforeAll(() => {
+    (Element.prototype as unknown as { getTotalLength: () => number }).getTotalLength = () => 0;
+  });
+  afterAll(() => {
+    delete (Element.prototype as unknown as { getTotalLength?: () => number }).getTotalLength;
+  });
+
+  const spec = {
+    type: "line" as const,
+    data: Array.from({ length: 12 }, (_, i) => ({
+      month: `2024-${String(i + 1).padStart(2, "0")}-01`,
+      riders: 100 + i * 10,
+    })),
+    x: "month",
+    series: ["riders"],
+  };
+
+  it("forwards title, domain, ticks, grid mode and position to the real axes", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          ...spec,
+          axes: {
+            x: { position: "top", title: "Month" },
+            y: { domain: [0, 400], ticks: [0, 200, 400], title: "Riders", gridMode: "ticks" },
+          },
+        }}
+      />,
+    );
+    expect(container.querySelector('[data-slot="x-axis"]')?.getAttribute("data-orientation")).toBe(
+      "top",
+    );
+    const yLabels = [...container.querySelectorAll('[data-slot="y-axis"] span')].map(
+      (node) => node.textContent,
+    );
+    expect(yLabels.slice(0, 3)).toEqual(["0", "200", "400"]);
+    expect(container.textContent).toContain("Riders");
+    expect(container.textContent).toContain("Month");
+    expect(container.querySelector(".chart-grid")?.getAttribute("data-grid-mode")).toBe("ticks");
+  });
+
+  it("renders exactly as before without axes", () => {
+    const { container } = render(<AutoChart spec={spec} />);
+    expect(container.querySelector(".chart-grid")?.getAttribute("data-grid-mode")).toBe("lines");
+    expect(container.querySelector('[data-slot="axis-title"]')).toBeNull();
+  });
+});
+
+describe("test double — axis contract (RM-108)", () => {
+  const rows = [{ date: new Date("2024-01-01"), value: 1 }];
+
+  it("accepts every well-formed axis prop", () => {
+    expect(() =>
+      render(
+        <LineChartDouble data={rows}>
+          <GridPart mode="ticks" />
+          <XAxisPart orientation="top" tickCount="auto" titlePlacement="inside" />
+          <YAxisPart domain={[0, "auto"]} scale="log" ticks={[1, 10]} labelPlacement="inside" />
+        </LineChartDouble>,
+      ),
+    ).not.toThrow();
+  });
+
+  it("names a malformed domain, scale, grid mode or bar fit", () => {
+    const bad = [
+      <YAxisPart domain={["50", 100]} key="d" />,
+      <YAxisPart domain={[100, 50]} key="i" />,
+      <YAxisPart scale="logarithmic" key="s" />,
+      <GridPart mode="dashed" key="g" />,
+      <XAxisPart orientation="left" key="o" />,
+    ];
+    for (const part of bad) {
+      expect(() => render(<LineChartDouble data={rows}>{part}</LineChartDouble>)).toThrow(
+        /violates the real component/,
+      );
+      cleanup();
+    }
+    expect(() => assertAxisSpecContract({ y: { gridMode: "dotted" } })).toThrow(/gridMode/);
+    expect(() => assertAxisSpecContract({ x: { position: "left" } })).toThrow(/position/);
+    expect(() => assertAxisSpecContract({ y: { domain: [0, 10], scale: "log" } })).not.toThrow();
+    expect(() =>
+      render(
+        <BarChartDouble data={[{ region: "North", value: 1 }]} xDataKey="region">
+          <BarXAxisPart fit="squash" />
+        </BarChartDouble>,
+      ),
+    ).toThrow(/"fit" must be one of/);
   });
 });

@@ -44,6 +44,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Hardcoding a colour in draw (a hex, an rgb()) instead of canvasTokenColor — the layer redraws on a theme flip, which repaints exactly the same wrong colours.
   - avoid: Registering one ChartDatapointLayer target per point to 'get keyboard for free' — that is the DOM cost the canvas exists to avoid; the virtual cursor is the contract here.
 - CATEGORICAL_SOFT_CAP
+- CHART_BREAKPOINT_THRESHOLDS
+- CHART_BREAKPOINTS
 - CHART_CLIP_PASSTHROUGH
 - CHART_DENSITY_SM_MAX_TICKS
 - CHART_HAIRLINE_WIDTH
@@ -111,6 +113,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_CHART_CONFIG
 - DEFAULT_CHART_INTERACTIONS
 - DEFAULT_CHART_LIFECYCLE
+- DEFAULT_CHART_PLOT_HEIGHT
 - DEFAULT_CHART_STATUS
 - DEFAULT_CIRCULAR_CURVENESS
 - DEFAULT_FORCE_SEED
@@ -365,6 +368,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useAnimatedYDomains
 - useCanvasDraw
 - useChart
+- useChartBreakpoint
 - useChartConfig
 - useChartDatapointsEnabled
 - useChartHover
@@ -390,6 +394,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useRegisterDatapointTargets
 - useResolvedRadius
 - useResolvedRadiusOf
+- useResponsiveValue
 - useRing
 - useRingHover
 - useRingStable

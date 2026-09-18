@@ -196,6 +196,32 @@ describe("MetricCard", () => {
     });
   });
 
+  // RM-109: `valueFormat` also accepts the object form (`NumberFormatSpec`).
+  describe("value formatting — object spec form (RM-109)", () => {
+    it("applies decimals + suffix from a spec object", () => {
+      render(
+        <MetricCard label="Conversion" value={12.844} valueFormat={{ decimals: 1, suffix: "%" }} />,
+      );
+      expect(screen.getByText("12.8%")).toBeInTheDocument();
+    });
+
+    it("applies a prefix and forced sign", () => {
+      render(
+        <MetricCard
+          label="Delta"
+          value={1284}
+          valueFormat={{ abbreviate: true, decimals: 1, prefix: "Δ ", sign: "always" }}
+        />,
+      );
+      expect(screen.getByText("Δ +1.3K")).toBeInTheDocument();
+    });
+
+    it("renders string presets byte-identically after the type widened", () => {
+      render(<MetricCard currency="EUR" label="Revenue" value={1234} valueFormat="currency" />);
+      expect(screen.getByRole("button")).toHaveTextContent("€");
+    });
+  });
+
   describe("size tiers (RM-072)", () => {
     it("size=sm renders label + value only — no delta row, description or slots", () => {
       render(

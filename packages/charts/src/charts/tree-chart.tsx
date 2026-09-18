@@ -82,6 +82,7 @@ import {
 import { ChartTooltipBox } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
 import { estimateTextWidth } from "./use-text-measurer";
+import { ChartPlotRoot } from "./chart-breakpoint";
 
 // ── Public data shape ────────────────────────────────────────────────────────
 
@@ -651,7 +652,7 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
   useRegisterDatapointTargets("nodes", nodeTargets);
 
   return (
-    <div
+    <ChartPlotRoot
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative h-full w-full select-none overflow-auto", className)}
@@ -813,7 +814,7 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
 
         <ChartDatapointLayer />
       </div>
-    </div>
+    </ChartPlotRoot>
   );
 });
 

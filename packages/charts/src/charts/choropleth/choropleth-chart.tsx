@@ -32,6 +32,7 @@ import { ChoroplethFeature as ChoroplethFeatureLayer } from "./choropleth-featur
 import { ChoroplethGraticule as ChoroplethGraticuleLayer } from "./choropleth-graticule";
 import { ChoroplethKeyboardNav, type ChoroplethKeyboardNavProps } from "./choropleth-keyboard-nav";
 import { ChoroplethTooltip as ChoroplethTooltipLayer } from "./choropleth-tooltip";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
 
 /** Messages already logged, so a re-rendering chart does not re-log every frame. */
 const warnedMessages = new Set<string>();
@@ -64,6 +65,11 @@ export interface ChoroplethChartProps {
   revealSignature?: string;
   /** Aspect ratio as "width / height". Default: "16 / 9" */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Projection scale. If not provided, auto-calculated based on width */
   scale?: number;
   /** Center coordinates [longitude, latitude]. Default: [0, 20] */
@@ -520,7 +526,8 @@ export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
       animationDuration = 800,
       enterTransition,
       revealSignature,
-      aspectRatio = "16 / 9",
+      aspectRatio,
+      plotHeight,
       scale,
       center = [0, 20],
       translate,
@@ -547,13 +554,13 @@ export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
     } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
     return (
-      <div
+      <ChartPlotRoot
+        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: "16 / 9" }}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative w-full", className)}
         ref={ref}
         role={role}
-        style={{ aspectRatio }}
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -582,7 +589,7 @@ export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
             ) : null
           }
         </ParentSize>
-      </div>
+      </ChartPlotRoot>
     );
   },
 );

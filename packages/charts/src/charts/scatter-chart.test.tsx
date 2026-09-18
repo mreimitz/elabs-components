@@ -15,10 +15,18 @@ import { XAxis } from "./x-axis";
 
 afterEach(cleanup);
 
+// Local calendar-day constructors (not `new Date("2024-01-01")`, which parses
+// as UTC midnight): `buildDomainTicks` now prefers d3's calendar-aligned
+// `.ticks()` (date-ladder round, #478), and d3 operates in LOCAL time — a
+// UTC-midnight instant is not a local calendar boundary in any timezone
+// ahead of UTC, so d3 correctly ceils past it, dropping the naive "first
+// tick at domain start" a test author might expect. Constructing at local
+// midnight sidesteps that (real, disclosed) footgun instead of pinning this
+// suite's result to whatever timezone happens to run it.
 const chartData = [
-  { date: new Date("2024-01-01"), sessions: 420, conversions: 28 },
-  { date: new Date("2024-02-01"), sessions: 510, conversions: 34 },
-  { date: new Date("2024-03-01"), sessions: 390, conversions: 22 },
+  { date: new Date(2024, 0, 1), sessions: 420, conversions: 28 },
+  { date: new Date(2024, 1, 1), sessions: 510, conversions: 34 },
+  { date: new Date(2024, 2, 1), sessions: 390, conversions: 22 },
 ];
 
 // A categorical x dimension — single letters are genuinely non-Date-coercible
@@ -479,7 +487,7 @@ describe("ScatterChart — non-temporal (linear) x-scale (#302)", () => {
     });
   });
 
-  it("existing date-x stories are byte-for-byte unchanged (xScale unset, Date x data)", () => {
+  it("still paints calendar month labels with xScale unset and Date x data (date-ladder round, #478: exact ticks now d3-calendar-aligned, not byte-for-byte)", () => {
     const { container } = render(
       <ScatterChart data={chartData}>
         <Scatter dataKey="sessions" />

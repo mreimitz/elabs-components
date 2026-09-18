@@ -28,6 +28,7 @@ import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-patt
 import { useHighDecoration } from "./use-high-decoration";
 import { useResolvedRadius } from "./use-resolved-radius";
 import type { ChartValueFormat } from "./value-format";
+import { type ChartPlotHeight, type Responsive, warnChartOnce } from "./chart-breakpoint";
 
 /**
  * WaterfallChart — RM-022.
@@ -572,8 +573,15 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
   /** The one or two steps that actually explain the bridge, named directly on
    * the chart (see {@link WaterfallCallout}). Default: none. */
   callouts?: WaterfallCallout[];
-  /** Fixed pixel height. Omit to size by `aspectRatio` (2 / 1), like the rest
-   * of the bar family. */
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Default: 2 : 1, and 1.25 : 1 when narrow.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
+  /**
+   * @deprecated Use `plotHeight` (`height={n}` is an alias for
+   * `plotHeight={n}`); removed in 5.0.0.
+   */
   height?: number;
   /** Chart margins. */
   margin?: Partial<Margin>;
@@ -601,6 +609,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
       data,
       datapointLabel,
       grid = true,
+      plotHeight,
       height,
       margin,
       maxInteractiveDatapoints,
@@ -615,22 +624,23 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
     },
     ref,
   ) {
+    if (height !== undefined) {
+      warnChartOnce(
+        "WaterfallChart.height",
+        '[WaterfallChart] "height" is deprecated and will be removed in 5.0.0. Use "plotHeight".',
+      );
+    }
     const rows = useMemo(() => computeWaterfallRows(data), [data]);
     const format = useChartValueFormatter(valueFormat);
     const isHorizontal = orientation === "horizontal";
 
     return (
-      <div
-        className={cn("w-full", className)}
-        data-slot="waterfall-chart"
-        ref={ref}
-        style={height ? { height } : undefined}
-      >
+      <div className={cn("w-full", className)} data-slot="waterfall-chart" ref={ref}>
         <BarChart
           accessibleDescription={accessibleDescription}
           accessibleLabel={accessibleLabel}
-          aspectRatio={height ? undefined : "2 / 1"}
-          className={cn("w-full", height ? "h-full" : undefined)}
+          className="w-full"
+          plotHeight={plotHeight ?? height}
           copyValueOnActivate={copyValueOnActivate}
           data={rows as unknown as Record<string, unknown>[]}
           datapointLabel={datapointLabel as ChartDatapointLabel | undefined}
