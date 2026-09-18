@@ -39,13 +39,14 @@
  */
 "use client";
 
-import { forwardRef, type CSSProperties, type ReactNode } from "react";
+import { Children, forwardRef, isValidElement, type CSSProperties, type ReactNode } from "react";
 import { ChartA11yLabel, useChartA11yContainerProps } from "../charts/chart-a11y";
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import {
   assertChartContract,
   assertChartSpecContract,
   buildChartDoublePayload,
+  ChartContractError,
   type ChartContractSpec,
 } from "./contract";
 
@@ -346,6 +347,8 @@ function createChartContainerDouble<P extends DoubleOwnProps>(
   const Double = forwardRef<HTMLDivElement, P>(function ChartTestDouble(props, ref) {
     const record = props as unknown as Record<string, unknown>;
     assertChartContract(name, record, spec);
+    // Axes — RM-108
+    assertAxisChildrenContract(props.children);
     const a11y = useChartA11yContainerProps(props.accessibleLabel, props.accessibleDescription);
     const payload = buildChartDoublePayload(name, record, spec);
     return (
@@ -544,6 +547,8 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     // columns, and the per-family requirements the real component silently
     // falls back on. Lives in `contract.ts` beside the other value rules.
     assertChartSpecContract(props.spec);
+    // Axes — RM-108
+    assertAxisSpecContract((props.spec as { axes?: unknown } | undefined)?.axes);
     return (
       <div
         ref={ref}
@@ -561,3 +566,160 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
   },
 );
 AutoChart.displayName = "AutoChart";
+
+// Axes — RM-108
+//
+// The axis props (`domain`, `scale`, `ticks`, `tickCount`, placements,
+// `orientation`, `Grid mode`, `BarXAxis fit`) and `ChartSpec.axes`. The REAL
+// axis silently ignores a malformed value — a `domain` of `["50", 100]` pins
+// nothing, a `scale` of `"logarithmic"` draws linear — so the double names it.
+// A request the real axis refuses ON PURPOSE (log on data containing 0, a
+// non-zero lower bound on bars) is data-dependent and only warns there, so it
+// is NOT a violation here.
+//
+// These throw `ChartContractError` directly: `contract.ts`'s reporter (which
+// honours `configureChartTestDouble({ onViolation: "warn" })`) is not exported.
+
+const AXIS_SCALES = ["linear", "log", "sqrt"] as const;
+const AXIS_PLACEMENTS = ["inside", "outside"] as const;
+const GRID_MODES = ["lines", "ticks", "off"] as const;
+const BAR_X_AXIS_FITS = ["auto", "wrap", "tilt", "off"] as const;
+const AXIS_COMPONENT_NAMES = ["XAxis", "YAxis", "Grid", "BarXAxis"] as const;
+
+function axisViolation(component: string, prop: string, received: unknown, reason: string): never {
+  throw new ChartContractError(component, prop, received, reason);
+}
+
+function checkOneOf(
+  component: string,
+  prop: string,
+  value: unknown,
+  allowed: readonly string[],
+): void {
+  if (value !== undefined && !allowed.includes(value as string)) {
+    axisViolation(component, prop, value, `"${prop}" must be one of ${allowed.join(" | ")}`);
+  }
+}
+
+function checkDomain(component: string, prop: string, value: unknown): void {
+  if (value === undefined) return;
+  const isBound = (bound: unknown) =>
+    bound === "auto" || (typeof bound === "number" && Number.isFinite(bound));
+  if (!(Array.isArray(value) && value.length === 2 && value.every(isBound))) {
+    axisViolation(
+      component,
+      prop,
+      value,
+      `"${prop}" must be [lower, upper], each a finite number or "auto"`,
+    );
+  }
+  const [lo, hi] = value as [unknown, unknown];
+  if (typeof lo === "number" && typeof hi === "number" && !(lo < hi)) {
+    axisViolation(component, prop, value, `"${prop}" lower bound must be below the upper bound`);
+  }
+}
+
+function checkTicks(
+  component: string,
+  prop: string,
+  value: unknown,
+  accept: (tick: unknown) => boolean,
+  what: string,
+): void {
+  if (value === undefined) return;
+  if (!(Array.isArray(value) && value.every(accept))) {
+    axisViolation(component, prop, value, `"${prop}" must be an array of ${what}`);
+  }
+}
+
+const isFiniteNumber = (tick: unknown) => typeof tick === "number" && Number.isFinite(tick);
+const isValidDate = (tick: unknown) => tick instanceof Date && !Number.isNaN(tick.getTime());
+
+/** Validate one axis part's props (RM-108). Exported for the contract test. */
+export function assertAxisPropsContract(name: string, props: Record<string, unknown>): void {
+  if (name === "Grid") {
+    checkOneOf(name, "mode", props.mode, GRID_MODES);
+    return;
+  }
+  if (name === "BarXAxis") {
+    checkOneOf(name, "fit", props.fit, BAR_X_AXIS_FITS);
+    return;
+  }
+  checkDomain(name, "domain", props.domain);
+  checkOneOf(name, "scale", props.scale, AXIS_SCALES);
+  checkOneOf(name, "titlePlacement", props.titlePlacement, AXIS_PLACEMENTS);
+  const tickCount = props.tickCount;
+  if (
+    tickCount !== undefined &&
+    tickCount !== "auto" &&
+    !(isFiniteNumber(tickCount) && (tickCount as number) >= 1)
+  ) {
+    axisViolation(name, "tickCount", tickCount, `"tickCount" must be "auto" or a number ≥ 1`);
+  }
+  if (name === "YAxis") {
+    checkOneOf(name, "labelPlacement", props.labelPlacement, AXIS_PLACEMENTS);
+    checkOneOf(name, "orientation", props.orientation, ["left", "right"]);
+    checkTicks(name, "ticks", props.ticks, isFiniteNumber, "finite numbers");
+  } else {
+    checkOneOf(name, "orientation", props.orientation, ["top", "bottom"]);
+    checkTicks(
+      name,
+      "ticks",
+      props.ticks,
+      (tick) => isValidDate(tick) || isFiniteNumber(tick),
+      "valid Dates (time x) or finite numbers (numeric x)",
+    );
+  }
+}
+
+function assertAxisChildrenContract(children: ReactNode): void {
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child) || typeof child.type !== "function") return;
+    const type = child.type as { displayName?: string; name?: string };
+    const name = type.displayName || type.name || "";
+    if ((AXIS_COMPONENT_NAMES as readonly string[]).includes(name)) {
+      assertAxisPropsContract(name, child.props as Record<string, unknown>);
+    }
+  });
+}
+
+/** Validate `ChartSpec.axes` (RM-108). Exported for the contract test. */
+export function assertAxisSpecContract(axes: unknown): void {
+  if (axes === undefined) return;
+  if (typeof axes !== "object" || axes === null) {
+    axisViolation("AutoChart", "spec.axes", axes, `"axes" must be { x?, y?, y2? }`);
+  }
+  for (const [key, axis] of Object.entries(axes as Record<string, unknown>)) {
+    const prop = `spec.axes.${key}`;
+    if (!["x", "y", "y2"].includes(key)) {
+      axisViolation("AutoChart", prop, axis, `"axes" only has x, y and y2`);
+    }
+    if (axis === undefined) continue;
+    if (typeof axis !== "object" || axis === null) {
+      axisViolation("AutoChart", prop, axis, `"${prop}" must be an AxisSpec object`);
+    }
+    const a = axis as Record<string, unknown>;
+    checkDomain("AutoChart", `${prop}.domain`, a.domain);
+    checkOneOf("AutoChart", `${prop}.scale`, a.scale, AXIS_SCALES);
+    checkOneOf("AutoChart", `${prop}.titlePlacement`, a.titlePlacement, AXIS_PLACEMENTS);
+    checkOneOf("AutoChart", `${prop}.gridMode`, a.gridMode, GRID_MODES);
+    checkOneOf(
+      "AutoChart",
+      `${prop}.position`,
+      a.position,
+      key === "x" ? ["top", "bottom"] : ["left", "right"],
+    );
+    if (a.title !== undefined && typeof a.title !== "string") {
+      axisViolation("AutoChart", `${prop}.title`, a.title, `"title" must be a string`);
+    }
+    checkTicks(
+      "AutoChart",
+      `${prop}.ticks`,
+      a.ticks,
+      (tick) =>
+        isFiniteNumber(tick) ||
+        (typeof tick === "string" && !Number.isNaN(new Date(tick).getTime())),
+      "finite numbers or ISO date strings",
+    );
+  }
+}
