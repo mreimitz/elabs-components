@@ -9,6 +9,7 @@
 import type { Responsive } from "../charts/chart-breakpoint";
 import type { ChartValueLabels, SeriesLabelMode } from "../charts/labels/use-chart-labels";
 import type { ChartValueFormat } from "../charts/value-format";
+import type { ChartSpecAnnotation } from "../charts/annotations/annotation-types";
 import type { CurveAlias } from "../charts/curve-types";
 import type { DateFormatPreset } from "../charts/date-format";
 import type { SeriesSymbolsSpec } from "../charts/series-markers";
@@ -271,6 +272,9 @@ export interface ChartSpec {
   // Labels — RM-110
   /** Series end labels / key fallback, automatic value labels and scatter point labels (RM-110) — see {@link ChartLabelsSpec}. */
   labels?: ChartLabelsSpec;
+  // Annotations — RM-111
+  /** Text notes, ranges, reference lines and row notes in data units (RM-111) — see {@link ChartSpecAnnotation}. */
+  annotations?: ChartSpecAnnotation[];
 }
 
 // Labels — RM-110

@@ -105,6 +105,9 @@ export {
   TreeChart,
   // Network — RM-036
   NetworkChart,
+  // Annotations — RM-111
+  AnnotationKey,
+  ChartAnnotations,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─

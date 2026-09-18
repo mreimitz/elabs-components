@@ -44,6 +44,10 @@ import {
 import useMeasure from "react-use-measure";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
+// Annotations — RM-111
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { categoryValueScales } from "./annotations/resolve-annotation-position";
+import { useAnnotatedChart, useChartAnnotationLayers } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ellipsize } from "./category-axis-plan";
 import { type ChartPalette, type Margin, resolvePalette } from "./chart-context";
@@ -707,6 +711,24 @@ function DumbbellPlot({
     [domain, innerHeight, innerWidth, isVertical],
   );
 
+  // Annotations — RM-111: rows resolve in DRAWN order, so a row note follows
+  // its category through any sort. The slope variant has no category axis.
+  const annotationLayers = useChartAnnotationLayers(
+    useMemo(
+      () =>
+        variant === "slope"
+          ? null
+          : categoryValueScales({
+              categories: rows.map((row) => row.category),
+              categoryAxis: isVertical ? "x" : "y",
+              valueScale,
+              innerWidth,
+              innerHeight,
+            }),
+      [innerHeight, innerWidth, isVertical, rows, valueScale, variant],
+    ),
+  );
+
   // ── Slope-specific geometry ────────────────────────────────────────────
   const isSlope = variant === "slope";
   if (isSlope && rows.length > SLOPE_ROW_SOFT_CAP) {
@@ -816,6 +838,7 @@ function DumbbellPlot({
         )}
         <rect fill="transparent" height={height} width={width} x={0} y={0} />
         <g transform={`translate(${margin.left},${margin.top})`}>
+          {annotationLayers.back /* Annotations — RM-111 */}
           {!isSlope && orientation === "horizontal" && referenceLine ? (
             <g data-slot="dumbbell-chart-reference-line">
               <line
@@ -1172,6 +1195,7 @@ function DumbbellPlot({
                     : { x1: startPos, x2: endPos, y1: crossCenter, y2: crossCenter },
                 );
               })}
+          {annotationLayers.front /* Annotations — RM-111 */}
         </g>
       </svg>
       {datapointsEnabled ? <ChartDatapointLayer /> : null}
@@ -1396,6 +1420,17 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
 
 DumbbellChartBase.displayName = "DumbbellChartBase";
 
+// Annotations — RM-111
+export interface DumbbellChartProps {
+  /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
+  annotations?: readonly ChartAnnotation[];
+}
+const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartProps>(
+  function DumbbellChartAnnotated(props, ref) {
+    return useAnnotatedChart(DumbbellChartBase, props, ref, "context");
+  },
+);
+
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
 /**
@@ -1409,7 +1444,7 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(
         dimExcluded={props.dimExcluded}
         selectionStates={props.selectionStates}
       >
-        <DumbbellChartBase {...props} ref={ref} />
+        <DumbbellChartAnnotated {...props} ref={ref} />
       </ChartSelectionProvider>
     );
   },

@@ -35,6 +35,33 @@ export interface LeaderProps extends Omit<SVGProps<SVGPathElement>, "from" | "to
   kind?: LeaderKind;
   /** Dash rhythm (default `1 3`). */
   dash?: LeaderDash;
+  /**
+   * Draw a solid arrow head at `from`, pointing at the mark (RM-111). Default
+   * `false` — a leader is a quiet trail unless the callout must be followed.
+   */
+  arrow?: boolean;
+}
+
+/** Arrow-head length and half-width in px — sized to the 0.6px leader, not to a series stroke. */
+const ARROW_LENGTH = 5;
+const ARROW_HALF_WIDTH = 2.5;
+
+/**
+ * The `d` of a closed arrow head whose tip is `from`, aligned with the leader's
+ * first segment. Both leader shapes leave `from` horizontally (the elbow's
+ * first run, the curve's horizontal handle), so the head points along x; a
+ * leader with no horizontal run (anchor and note share an x) points along y.
+ */
+export function leaderArrowPath(from: LeaderPoint, to: LeaderPoint): string {
+  const [x1, y1] = from;
+  const [x2, y2] = to;
+  const dx = Math.sign(x2 - x1);
+  const dy = dx === 0 ? Math.sign(y2 - y1) || 1 : 0;
+  const bx = x1 + dx * ARROW_LENGTH;
+  const by = y1 + dy * ARROW_LENGTH;
+  const px = dy * ARROW_HALF_WIDTH;
+  const py = dx * ARROW_HALF_WIDTH;
+  return `M ${x1} ${y1} L ${bx + px} ${by + py} L ${bx - px} ${by - py} Z`;
 }
 
 /**
@@ -68,19 +95,27 @@ export function leaderPath(from: LeaderPoint, to: LeaderPoint, kind: LeaderKind 
  * open path paints a triangle between its endpoints.
  */
 export const Leader = forwardRef<SVGPathElement, LeaderProps>(function Leader(
-  { from, to, kind = "elbow", dash = "1 3", stroke, strokeWidth, ...props },
+  { from, to, kind = "elbow", dash = "1 3", arrow = false, stroke, strokeWidth, ...props },
   ref,
 ) {
-  return (
+  const ink = stroke ?? "var(--chart-foreground-muted)";
+  const path = (
     <path
       d={leaderPath(from, to, kind)}
       data-slot="leader"
       fill="none"
       ref={ref}
-      stroke={stroke ?? "var(--chart-foreground-muted)"}
+      stroke={ink}
       strokeDasharray={dash}
       strokeWidth={strokeWidth ?? 0.6}
       {...props}
     />
+  );
+  if (!arrow) return path;
+  return (
+    <>
+      {path}
+      <path d={leaderArrowPath(from, to)} data-slot="leader-arrow" fill={ink} stroke="none" />
+    </>
   );
 });

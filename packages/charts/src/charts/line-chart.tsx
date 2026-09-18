@@ -16,6 +16,8 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
@@ -354,11 +356,7 @@ function ChartInner({
   );
 }
 
-/**
- * @dataShape one or more measures over continuous time, where the trend itself is the point
- * @avoidWhen more than about 8 series — use a stream area chart or a composed chart
- */
-export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(
+const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(
   {
     data,
     xDataKey = "date",
@@ -508,6 +506,19 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
       ) : null}
     </ChartPlotRoot>
   );
+});
+
+// Annotations — RM-111
+export interface LineChartProps {
+  /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
+  annotations?: readonly ChartAnnotation[];
+}
+/**
+ * @dataShape one or more measures over continuous time, where the trend itself is the point
+ * @avoidWhen more than about 8 series — use a stream area chart or a composed chart
+ */
+export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(props, ref) {
+  return useAnnotatedChart(LineChartPlot, props, ref);
 });
 
 export { Line, type LineProps } from "./line";
