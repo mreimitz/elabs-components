@@ -638,9 +638,270 @@ function buildDataAlignedTicks({
   return ticks;
 }
 
+/**
+ * Date-ladder round (#478), tick-STEP pass.
+ *
+ * `xScale.ticks(count)` — d3-time's own "nice" algorithm — only offers a
+ * COARSE candidate list per calendar unit (months jump straight from a
+ * 1-month step to a 3-month step, with nothing in between; years jump 1 → 2
+ * → 5 → 10). RM-108's width-derived tick TARGET moves in much finer
+ * increments (roughly one more tick per 90 px), so asking d3 for a count
+ * that falls between two of its own steps either undershoots badly (a
+ * request of 3 can return 2) or, worse, overshoots straight past the target
+ * band in the other direction. {@link chooseCalendarTicks} below picks a
+ * STEP directly from a denser ladder instead of asking d3 to infer one from
+ * a bare count.
+ */
+type CalendarStepUnit = "hour" | "day" | "week" | "month" | "year";
+
+interface CalendarStep {
+  unit: CalendarStepUnit;
+  step: number;
+}
+
+/**
+ * Finest → coarsest. {@link chooseCalendarTicks} walks this once, scoring
+ * every step's resulting tick count against the target band — the ladder
+ * itself does not need to be searched in a particular direction.
+ */
+const CALENDAR_STEP_LADDER: readonly CalendarStep[] = [
+  { unit: "hour", step: 1 },
+  { unit: "hour", step: 2 },
+  { unit: "hour", step: 3 },
+  { unit: "hour", step: 6 },
+  { unit: "hour", step: 12 },
+  { unit: "day", step: 1 },
+  { unit: "day", step: 2 },
+  { unit: "week", step: 1 },
+  { unit: "month", step: 1 },
+  { unit: "month", step: 3 },
+  { unit: "month", step: 6 },
+  { unit: "year", step: 1 },
+  { unit: "year", step: 2 },
+  { unit: "year", step: 5 },
+  { unit: "year", step: 10 },
+  { unit: "year", step: 20 },
+];
+
+/** A degenerate domain (e.g. a huge span at a 1-hour step) can never spin past this. */
+const CALENDAR_STEP_TICK_CAP = 500;
+
+/** Every `step`-hour boundary in `[start, end]`, starting from the first one `>= start`. */
+function alignedHourTicks(start: Date, end: Date, step: number): Date[] {
+  const dayStart = atLocalMidnight(start);
+  let hour = Math.floor(start.getHours() / step) * step;
+  let cursor = new Date(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate(), hour);
+  while (cursor.getTime() < start.getTime()) {
+    hour += step;
+    cursor = new Date(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate(), hour);
+  }
+  const endTime = end.getTime();
+  const ticks: Date[] = [];
+  while (cursor.getTime() <= endTime && ticks.length < CALENDAR_STEP_TICK_CAP) {
+    ticks.push(new Date(cursor));
+    hour += step;
+    cursor = new Date(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate(), hour);
+  }
+  return ticks;
+}
+
+/** Every `stepDays`-day boundary in `[start, end]`, rooted at `start`'s own local midnight. */
+function alignedDayTicks(start: Date, end: Date, stepDays: number): Date[] {
+  let cursor = atLocalMidnight(start);
+  while (cursor.getTime() < start.getTime()) {
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + stepDays);
+  }
+  const endTime = end.getTime();
+  const ticks: Date[] = [];
+  while (cursor.getTime() <= endTime && ticks.length < CALENDAR_STEP_TICK_CAP) {
+    ticks.push(new Date(cursor));
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + stepDays);
+  }
+  return ticks;
+}
+
+/**
+ * Every `step`-month boundary in `[start, end]`, aligned WITHIN each year
+ * (step 3 → Jan/Apr/Jul/Oct, step 6 → Jan/Jul) — the same alignment d3-time's
+ * own month interval uses, so a 3- or 6-month step reads as a familiar
+ * quarter/half-year cadence rather than an arbitrary offset from `start`.
+ */
+function alignedMonthTicks(start: Date, end: Date, step: number): Date[] {
+  const year = start.getFullYear();
+  let month = Math.floor(start.getMonth() / step) * step;
+  let cursor = new Date(year, month, 1);
+  while (cursor.getTime() < start.getTime()) {
+    month += step;
+    cursor = new Date(year, month, 1);
+  }
+  const endTime = end.getTime();
+  const ticks: Date[] = [];
+  while (cursor.getTime() <= endTime && ticks.length < CALENDAR_STEP_TICK_CAP) {
+    ticks.push(new Date(cursor));
+    month += step;
+    cursor = new Date(year, month, 1);
+  }
+  return ticks;
+}
+
+/**
+ * Every `step`-year boundary in `[start, end]`, aligned to a multiple of
+ * `step` (step 5 → …2010, 2015, 2020…) — matches d3-time's own year interval
+ * alignment (confirmed against `d3-scale`'s `scaleTime().ticks()` output for
+ * the same domain).
+ */
+function alignedYearTicks(start: Date, end: Date, step: number): Date[] {
+  let year = Math.floor(start.getFullYear() / step) * step;
+  while (new Date(year, 0, 1).getTime() < start.getTime()) {
+    year += step;
+  }
+  const endTime = end.getTime();
+  const ticks: Date[] = [];
+  while (new Date(year, 0, 1).getTime() <= endTime && ticks.length < CALENDAR_STEP_TICK_CAP) {
+    ticks.push(new Date(year, 0, 1));
+    year += step;
+  }
+  return ticks;
+}
+
+function calendarStepTicks(start: Date, end: Date, { unit, step }: CalendarStep): Date[] {
+  switch (unit) {
+    case "hour":
+      return alignedHourTicks(start, end, step);
+    case "day":
+      return alignedDayTicks(start, end, step);
+    case "week":
+      return alignedDayTicks(start, end, step * 7);
+    case "month":
+      return alignedMonthTicks(start, end, step);
+    case "year":
+      return alignedYearTicks(start, end, step);
+    default:
+      return [];
+  }
+}
+
+// A deliberately rough per-character width estimate — no canvas metrics are
+// available in this pure layout function, and none are needed: the estimate
+// only has to tell "obviously too many characters for this plot" from
+// "obviously fits", for the label-fit tie-break in `chooseCalendarTicks`.
+const CALENDAR_TICK_CHAR_PX = 7;
+const CALENDAR_TICK_GAP_PX = 8;
+
+function estimateTickSetWidthPx(count: number, sampleLabel: string): number {
+  return count * (sampleLabel.length * CALENDAR_TICK_CHAR_PX + CALENDAR_TICK_GAP_PX);
+}
+
+/**
+ * Picks a calendar STEP (from {@link CALENDAR_STEP_LADDER}) whose resulting
+ * tick count lands in a band around `targetCount` — `[targetCount − 1,
+ * targetCount + 2]`, clamped to 2–10 (RM-108's own tick-target clamp) —
+ * instead of asking d3's `.ticks(count)` to infer one, whose own per-unit
+ * step list is coarser and can jump straight past the band. When more than
+ * one step's count lands in the band, the DENSER one wins if its labels
+ * still fit the plot width (`estimateTickSetWidthPx` — label width × count,
+ * plus a gap, under `plotWidthPx`); otherwise the sparser one does. When NO
+ * step's count lands in the band (an unusual domain), the step whose count
+ * is numerically closest to `targetCount` wins, fewer ticks breaking a tie.
+ *
+ * Returns the chosen {@link CalendarStep} alongside its ticks — the caller
+ * (`XAxisInner`'s ladder-rung resolution, tick-step round #478) reads the
+ * STEP's own UNIT directly for the format rung, rather than re-deriving one
+ * from the resulting tick count: the two are not interchangeable. A 12-hour
+ * step, for example, has the same average gap as `dateFormatForSpan`'s
+ * `"weekday"` bucket (6–24 h) by raw arithmetic, but it is still a clock-time
+ * cadence, not a multi-day one — `presetForCalendarStep` maps it to `"hour"`
+ * directly from its unit instead.
+ */
+function chooseCalendarStep(
+  start: Date,
+  end: Date,
+  targetCount: number,
+  plotWidthPx: number,
+  resolveDateLabel: (date: Date) => string,
+): { step: CalendarStep; ticks: Date[] } | null {
+  const lowerBound = Math.max(2, targetCount - 1);
+  const upperBound = Math.min(10, targetCount + 2);
+  const candidates = CALENDAR_STEP_LADDER.map((candidateStep) => ({
+    step: candidateStep,
+    ticks: calendarStepTicks(start, end, candidateStep),
+  })).filter((candidate) => candidate.ticks.length > 0);
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  const inBand = candidates.filter(
+    (candidate) => candidate.ticks.length >= lowerBound && candidate.ticks.length <= upperBound,
+  );
+
+  if (inBand.length === 0) {
+    let closest = candidates[0]!;
+    let closestDiff = Math.abs(closest.ticks.length - targetCount);
+    for (const candidate of candidates) {
+      const diff = Math.abs(candidate.ticks.length - targetCount);
+      if (
+        diff < closestDiff ||
+        (diff === closestDiff && candidate.ticks.length < closest.ticks.length)
+      ) {
+        closest = candidate;
+        closestDiff = diff;
+      }
+    }
+    return closest;
+  }
+
+  const densestFirst = [...inBand].sort((a, b) => b.ticks.length - a.ticks.length);
+  for (const candidate of densestFirst) {
+    const sampleLabel = resolveDateLabel(candidate.ticks[0] ?? start);
+    if (estimateTickSetWidthPx(candidate.ticks.length, sampleLabel) <= plotWidthPx) {
+      return candidate;
+    }
+  }
+  return densestFirst[densestFirst.length - 1]!;
+}
+
+/** `chooseCalendarStep`'s ticks only — `buildDomainTicks`'s own entry point. */
+function chooseCalendarTicks(
+  start: Date,
+  end: Date,
+  targetCount: number,
+  plotWidthPx: number,
+  resolveDateLabel: (date: Date) => string,
+): Date[] {
+  return chooseCalendarStep(start, end, targetCount, plotWidthPx, resolveDateLabel)?.ticks ?? [];
+}
+
+/**
+ * The {@link DateFormatPreset} rung for a calendar-step UNIT directly (tick-
+ * step round, #478) — bypasses `dateFormatForSpan`'s gap-based thresholds on
+ * this path, which were built for the old linear-interpolation tick scheme
+ * and do not line up with the discrete `CALENDAR_STEP_LADDER` units (see
+ * {@link chooseCalendarStep}'s doc comment). `"week"` reads as `"weekday"` —
+ * the one rung that names which day of the week a tick lands on, matching a
+ * 7-day cadence; every other unit maps to its like-named preset one-to-one.
+ */
+function presetForCalendarStep(unit: CalendarStepUnit, cramped: boolean): DateFormatPreset {
+  switch (unit) {
+    case "hour":
+      return "hour";
+    case "day":
+      return "day";
+    case "week":
+      return "weekday";
+    case "month":
+      return "month";
+    case "year":
+      return cramped ? "yearShort" : "year";
+    default:
+      return "day";
+  }
+}
+
 function buildDomainTicks({
   marginLeft,
   numTicks,
+  plotWidthPx = Number.POSITIVE_INFINITY,
   preferCalendarAlignment = true,
   tickFormat,
   dateFormatFn,
@@ -649,12 +910,19 @@ function buildDomainTicks({
   marginLeft: number;
   numTicks: number;
   /**
-   * Date-ladder round (#478): prefer d3's calendar-aligned `.ticks()` over
-   * the plain interpolation below. `true` (the AUTO count path) by default;
-   * an EXPLICIT `numTicks`/`tickCount` pin passes `false` to keep the exact
-   * count it asked for — d3's own tick algorithm only promises a "nice"
-   * count near the target, never an exact one, and pinning an exact count is
-   * the whole point of the explicit prop.
+   * The plot's own inner width (RM-108's `innerWidth`) — the label-fit
+   * tie-break in `chooseCalendarTicks` needs it. Unset (e.g. a test that
+   * builds a bare `xScale` stub) never rejects a denser candidate on
+   * width grounds.
+   */
+  plotWidthPx?: number;
+  /**
+   * Date-ladder round (#478): prefer a calendar-aligned STEP (see
+   * `chooseCalendarTicks`) over the plain interpolation below. `true` (the
+   * AUTO count path) by default; an EXPLICIT `numTicks`/`tickCount` pin
+   * passes `false` to keep the exact count it asked for — no calendar-step
+   * algorithm promises an exact count, only a "nice" one near it, and
+   * pinning an exact count is the whole point of the explicit prop.
    */
   preferCalendarAlignment?: boolean;
   tickFormat?: (value: Date) => string;
@@ -693,21 +961,20 @@ function buildDomainTicks({
   const ticks: AxisTick[] = [];
   const resolveDateLabel = dateFormatFn ?? ((value: Date) => shortDateFmt.format(value));
 
-  // RM-109 date-ladder round: `xScale` is a d3 time scale — `.ticks(count)`
-  // is d3-time's OWN "nice" algorithm (a `timeYear`/`timeMonth`/`timeDay`/…
-  // interval at a step of 1, 2, 5 or 10 for years, 1/2/3/6 for months, etc.),
-  // exactly what a calendar-aligned axis needs: every tick lands on a real
-  // period boundary with a UNIFORM step, never the arbitrary instants a
-  // straight `startTime + i/(tickCount-1) * timeRange` interpolation
-  // produces (which is what this loop did before — it does not know what a
-  // "year" is, so it happily lands on `2019-04-22` and skips `2021`). Only
-  // taken on the AUTO count path (see `preferCalendarAlignment`); falls back
-  // to the old interpolation otherwise, or if `xScale` is a stub without
-  // `.ticks` (some tests build a bare function).
-  const dateTicksFromScale =
-    preferCalendarAlignment && typeof xScale.ticks === "function"
-      ? xScale.ticks(tickCount)
-      : undefined;
+  // RM-109 date-ladder round, tick-STEP pass (#478): a calendar-aligned STEP
+  // from `chooseCalendarTicks` — never the arbitrary instants a straight
+  // `startTime + i/(tickCount-1) * timeRange` interpolation produces (which
+  // is what this loop did originally — it does not know what a "year" is,
+  // so it happily lands on `2019-04-22` and skips `2021`), and denser than
+  // `xScale.ticks(count)`'s own coarse per-unit step list (months only offer
+  // a 1- or 3-month step; years only 1, 2, 5, 10 — both can jump straight
+  // past the width-derived target band). Only taken on the AUTO count path
+  // (see `preferCalendarAlignment`); falls back to the old interpolation
+  // otherwise, or if the domain is degenerate (`chooseCalendarTicks` found
+  // no candidate at all).
+  const dateTicksFromScale = preferCalendarAlignment
+    ? chooseCalendarTicks(startDate, endDate, tickCount, plotWidthPx, resolveDateLabel)
+    : undefined;
   const timeRange = endTime - startTime;
   const candidateDates =
     dateTicksFromScale && dateTicksFromScale.length > 0
@@ -717,12 +984,24 @@ function buildDomainTicks({
           (_, i) => new Date(startTime + (i / (tickCount - 1)) * timeRange),
         );
 
+  // Tick-step round (#478): the label-collision de-dupe below exists for the
+  // FALLBACK interpolation path, whose arbitrary instants can format to an
+  // accidentally-identical string (two nearby-but-distinct dates both
+  // rounding to the same day, say). Calendar-step ticks are already
+  // guaranteed DISTINCT dates by construction (`chooseCalendarStep`/
+  // `calendarStepTicks` never repeats a timestamp) — an identical rendered
+  // string on that path (two midnights, a day apart, both reading "00:00" on
+  // the hour rung) is a legitimate periodic repeat, not a collision, so it
+  // is never de-duped away.
+  const usingCalendarTicks = dateTicksFromScale != null && dateTicksFromScale.length > 0;
   for (const date of candidateDates) {
     const label = tickFormat ? tickFormat(date) : resolveDateLabel(date);
-    if (seenLabels.has(label)) {
-      continue;
+    if (!usingCalendarTicks) {
+      if (seenLabels.has(label)) {
+        continue;
+      }
+      seenLabels.add(label);
     }
-    seenLabels.add(label);
     ticks.push({
       date,
       label,
@@ -839,11 +1118,32 @@ const XAxisInner = memo(function XAxisInner({
   // promises an exact count, only a "nice" one near it).
   const isAutoTickTarget = numTicksProp == null && (tickCount == null || tickCount === "auto");
 
-  // RM-109 date-ladder round (#478): the ladder rung this axis paints,
-  // resolved once per render — `dateFormat` as an explicit preset wins
-  // outright; a function is honoured as-is (same escape hatch as
-  // `tickFormat`); unset, `dateFormatForSpan` picks a rung from the time
-  // domain's span and `numTicks`. `cramped` (RM-107's narrow breakpoint,
+  // #352: a band/linear axis' domain holds SYNTHETIC instants (see the full
+  // comment where this fed `effectiveTickFormat` etc. below) — read early so
+  // the tick-STEP preview right after it can gate on it too.
+  const isNonTimeScale = xScaleType != null && xScaleType !== "time";
+
+  // Tick-step round (#478): `buildDomainTicks` picks a calendar STEP
+  // (`chooseCalendarStep`/`chooseCalendarTicks`) only on the fully-auto,
+  // time-scale, non-data-aligned path — the same gate `labelsToShow` below
+  // uses to choose between `buildDomainTicks` and `buildDataAlignedTicks`.
+  const usesCalendarStepSelection =
+    isAutoTickTarget && !isNonTimeScale && tickMode !== "data" && xDomain == null;
+
+  // RM-109 date-ladder round (#478), tick-step round: the ladder rung this
+  // axis paints, resolved once per render — `dateFormat` as an explicit
+  // preset wins outright; a function is honoured as-is (same escape hatch as
+  // `tickFormat`). Otherwise, on the calendar-step path this reads the rung
+  // straight off the STEP `chooseCalendarStep` actually picked
+  // (`presetForCalendarStep`) rather than re-deriving one from the raw
+  // width-derived target (which can pick a coarser rung than the step
+  // actually painted — see `chooseCalendarStep`'s doc comment) or from the
+  // resulting tick COUNT (whose average gap can cross `dateFormatForSpan`'s
+  // thresholds by a hair on a real, non-uniform calendar span — a 3652-day,
+  // 10-tick span is a shade under `dateFormatForSpan`'s idealised 365.25-day
+  // year, for example). Every other path (`tickMode="data"`, a pinned
+  // `xDomain`, a non-time scale) keeps the original span/target-based
+  // `dateFormatForSpan` call. `cramped` (RM-107's narrow breakpoint,
   // `density === "sm"`) is what actually swings the year rung between
   // `"year"` and `"yearShort"` — a ten-year series reads `’16 ’18 …` at
   // narrow (density forces `sm`) and `2016 … 2025` at medium/wide.
@@ -855,8 +1155,16 @@ const XAxisInner = memo(function XAxisInner({
     if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
       return "day";
     }
+    if (usesCalendarStepSelection) {
+      const resolved = chooseCalendarStep(start, end, Math.max(2, numTicks), innerWidth, (value) =>
+        shortDateFmt.format(value),
+      );
+      if (resolved) {
+        return presetForCalendarStep(resolved.step.unit, cramped);
+      }
+    }
     return dateFormatForSpan([start, end], numTicks, locale, { cramped });
-  }, [dateFormat, xScale, numTicks, locale, cramped]);
+  }, [dateFormat, xScale, usesCalendarStepSelection, numTicks, innerWidth, cramped, locale]);
 
   // The axis' own tick formatter for the resolved rung.
   const ladderDateFormat = useMemo(
@@ -879,8 +1187,8 @@ const XAxisInner = memo(function XAxisInner({
   // interpolating dates across it (the `"domain"` tick path) would invent
   // positions that belong to no data row and have no label. Categorical and
   // numeric axes therefore always take the data-aligned path, which reads its
-  // labels from `dateLabels` — i.e. the caller's own x values.
-  const isNonTimeScale = xScaleType != null && xScaleType !== "time";
+  // labels from `dateLabels` — i.e. the caller's own x values. (`isNonTimeScale`
+  // itself is resolved above, alongside `ladderTickCount`, which needs it too.)
 
   // #352: `tickFormat` (`(value: Date) => string`) and `tickValues` (`Date[]`)
   // are Date-shaped APIs. On a band/linear axis `xAccessor` returns a SYNTHETIC
@@ -972,6 +1280,7 @@ const XAxisInner = memo(function XAxisInner({
       dateFormatFn: effectiveDateFormat,
       marginLeft: margin.left,
       numTicks,
+      plotWidthPx: innerWidth,
       preferCalendarAlignment: isAutoTickTarget,
       tickFormat: effectiveTickFormat,
       xScale,
@@ -993,6 +1302,7 @@ const XAxisInner = memo(function XAxisInner({
     margin.left,
     numTicks,
     isAutoTickTarget,
+    innerWidth,
   ]);
 
   const warnedNonTimeTickPropsRef = useRef(false);
