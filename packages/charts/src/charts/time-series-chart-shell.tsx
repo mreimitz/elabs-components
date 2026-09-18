@@ -6,14 +6,17 @@ import type { Transition } from "motion/react";
 import {
   Children,
   cloneElement,
+  createContext,
   isValidElement,
   memo,
   type ReactElement,
   type ReactNode,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { useLocale } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
@@ -47,6 +50,11 @@ import {
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
 import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
+import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
+import {
+  placementRects,
+  usePublishAnnotationObstacles,
+} from "./annotations/annotation-layout-context"; // Annotations — RM-111
 import { ChartFallback } from "./chart-fallback";
 import {
   type ChartPhase,
@@ -291,6 +299,86 @@ export interface TimeSeriesChartInnerProps {
   revealOn?: ChartRevealOn;
   /** Clicking the chart body replays the enter reveal (#175). Default `false`. */
   replayOnClick?: boolean;
+}
+
+// ── Series mode context (RM-112: `nulls` default + `focusOnHover`) ─────────
+
+/**
+ * How a `Line`/`Area` draws a non-numeric (`null`/`undefined`/`NaN`) sample.
+ * `"gap"` (default) breaks the path there — the honest "we have no data
+ * here" reading (Datawrapper's "connect all points" toggle, inverted: this
+ * is the toggle OFF). `"connect"` skips the missing sample so the path draws
+ * straight across it — Datawrapper's "connect all points" ON. `"zero"` is
+ * this package's pre-RM-112 behaviour (a silent honesty failure — a missing
+ * value drew as if it were the pixel origin) kept only for callers that
+ * relied on it.
+ */
+export type NullsMode = "gap" | "zero" | "connect";
+
+interface ChartSeriesModeValue {
+  /** Container-level `nulls` default; a `Line`/`Area`'s own `nulls` prop wins. */
+  nulls: NullsMode | undefined;
+  /** `LineChart`/`AreaChart` `focusOnHover` — dim every series but the hovered one. */
+  focusOnHover: boolean;
+  /** `dataKey` of the series currently hovered/tapped, or `null`. */
+  hoveredKey: string | null;
+  setHoveredKey: (key: string | null) => void;
+}
+
+const ChartSeriesModeContext = createContext<ChartSeriesModeValue | undefined>(undefined);
+
+export interface ChartSeriesModeProviderProps {
+  /** Container-level `nulls` default. Unset — every series keeps its own default. */
+  nulls?: NullsMode;
+  /**
+   * Hovering (or, on touch, tapping) one series dims every other series to
+   * the shared selection-excluded opacity (`SELECTION_EXCLUDED_OPACITY`,
+   * `chart-selection.ts`) — Datawrapper's line-chart hover fade
+   * (`dw-river.md` §2.3). Default false — today's behaviour (only the
+   * chart-wide tooltip dim and legend hover apply).
+   */
+  focusOnHover?: boolean;
+  children: ReactNode;
+}
+
+/**
+ * Wraps the chart body — mounted OUTSIDE `TimeSeriesChartInner` by
+ * `LineChart`/`AreaChart`, mirroring `AreaStackProvider` (`./area`), so a
+ * `hoveredKey` change re-renders only this provider and its consumers, never
+ * the memoised `TimeSeriesChartCore` tree.
+ */
+export function ChartSeriesModeProvider({
+  nulls,
+  focusOnHover = false,
+  children,
+}: ChartSeriesModeProviderProps) {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const value = useMemo<ChartSeriesModeValue>(
+    () => ({
+      nulls,
+      focusOnHover,
+      hoveredKey: focusOnHover ? hoveredKey : null,
+      setHoveredKey,
+    }),
+    [nulls, focusOnHover, hoveredKey],
+  );
+  return (
+    <ChartSeriesModeContext.Provider value={value}>{children}</ChartSeriesModeContext.Provider>
+  );
+}
+
+const DEFAULT_SERIES_MODE: ChartSeriesModeValue = {
+  nulls: undefined,
+  focusOnHover: false,
+  hoveredKey: null,
+  setHoveredKey: () => {
+    /* noop outside ChartSeriesModeProvider */
+  },
+};
+
+/** Reads {@link ChartSeriesModeProvider}'s value; safe defaults outside one. */
+export function useChartSeriesMode(): ChartSeriesModeValue {
+  return useContext(ChartSeriesModeContext) ?? DEFAULT_SERIES_MODE;
 }
 
 export function TimeSeriesChartInner(props: TimeSeriesChartInnerProps) {
@@ -773,10 +861,21 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   const clipExcludedChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  // RM-111: a `ChartAnnotations` child paints twice — ranges under everything,
+  // notes and lines over the series (outside the reveal clip, so they never wipe in).
+  const annotationBackChildren: ReactElement[] = [];
+  const annotationFrontChildren: ReactElement[] = [];
   const yAxisTooltipHint = findYAxisTooltipHint(children);
 
   Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
+      return;
+    }
+
+    const annotationLayers = splitChartAnnotationsChild(child, index);
+    if (annotationLayers) {
+      annotationBackChildren.push(annotationLayers[0]);
+      annotationFrontChildren.push(annotationLayers[1]);
       return;
     }
 
@@ -985,6 +1084,9 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   ]);
   const unpaintedLabels =
     labelPlan?.dropped.map((d) => (d.kind === "end" ? d.text : `${d.dataKey}: ${d.text}`)) ?? [];
+  // Annotations — RM-111: the labels placed above are obstacles for annotation text.
+  const annotationObstacles = useMemo(() => placementRects(labelPlan?.placed), [labelPlan]);
+  usePublishAnnotationObstacles("series-labels", annotationObstacles);
 
   // #352: the x values are neither Date-coercible NOR labellable (all null /
   // undefined / empty), so there is no time scale to draw with AND no category
@@ -1034,12 +1136,14 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       >
         <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
 
+        {annotationBackChildren}
         {clipExcludedChildren}
         {useClipReveal ? (
           <g clipPath={`url(#${clipPathId})`}>{preOverlayChildren}</g>
         ) : (
           preOverlayChildren
         )}
+        {annotationFrontChildren}
         {postOverlayChildren}
         {labelPlan ? (
           <>

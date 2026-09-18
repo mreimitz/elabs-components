@@ -626,6 +626,201 @@ export const WithReferenceBand: Story = {
   ),
 };
 
+// nulls / curve / outline / symbols / focus-hover — a null at index 3 (not an
+// edge), matching the Acceptance fixture in `line-chart.test.tsx`.
+const nullsData = [
+  { date: new Date(2024, 0, 1), value: 10 },
+  { date: new Date(2024, 0, 2), value: 18 },
+  { date: new Date(2024, 0, 3), value: 14 },
+  { date: new Date(2024, 0, 4), value: null },
+  { date: new Date(2024, 0, 5), value: 22 },
+  { date: new Date(2024, 0, 6), value: 19 },
+];
+
+/**
+ * `nulls="gap"` (the default) breaks the line at a non-numeric sample — a
+ * visible hole, never a silent zero or a straight bridge over missing data.
+ */
+export const NullsGap: Story = {
+  name: "Nulls — gap",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={nullsData}>
+        <Grid horizontal />
+        <Line dataKey="value" nulls="gap" stroke="var(--chart-1)" />
+        <XAxis />
+      </LineChart>
+    </div>
+  ),
+};
+
+/** `nulls="connect"` draws one continuous line straight across the missing sample. */
+export const NullsConnect: Story = {
+  name: "Nulls — connect",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={nullsData}>
+        <Grid horizontal />
+        <Line dataKey="value" nulls="connect" stroke="var(--chart-1)" />
+        <XAxis />
+      </LineChart>
+    </div>
+  ),
+};
+
+/** `nulls="zero"` — the pre-RM-112 default — reads a missing sample as 0. */
+export const NullsZero: Story = {
+  name: "Nulls — zero",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={nullsData}>
+        <Grid horizontal />
+        <Line dataKey="value" nulls="zero" stroke="var(--chart-1)" />
+        <XAxis />
+      </LineChart>
+    </div>
+  ),
+};
+
+/**
+ * `curve` (RM-112) — a named alias over `@visx/curve`. The default changed
+ * from `"natural"` to `"monotone"`: `curveNatural` can overshoot past a flat
+ * plateau's own value (visible on the middle two, equal-height points below),
+ * which reads as a false peak; `curveMonotoneX` is built to never do that.
+ * `"step-after"` is shown as a third, structurally distinct alias.
+ */
+export const CurveComparison: Story = {
+  name: "Curve comparison",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Same flat-top data, three `curve` aliases. `natural` (bottom) visibly bows " +
+          "above its own plateau; `monotone` (top, the default) does not — the " +
+          "no-overshoot guarantee this RM's default change buys.",
+      },
+    },
+  },
+  render: () => {
+    const flatData = [
+      { date: new Date(2024, 0, 1), value: 10 },
+      { date: new Date(2024, 0, 2), value: 30 },
+      { date: new Date(2024, 0, 3), value: 30 },
+      { date: new Date(2024, 0, 4), value: 10 },
+    ];
+    return (
+      <div className="h-72 w-full max-w-[560px]">
+        <LineChart aspectRatio={undefined} data={flatData}>
+          <Grid horizontal />
+          <Line dataKey="value" stroke="var(--chart-1)" />
+          <Line curve="step-after" dataKey="value" stroke="var(--chart-2)" />
+          <Line curve="natural" dataKey="value" stroke="var(--chart-3)" />
+          <XAxis />
+        </LineChart>
+      </div>
+    );
+  },
+};
+
+const crossingData = [
+  { date: new Date(2024, 0, 1), a: 10, b: 32 },
+  { date: new Date(2024, 0, 2), a: 24, b: 24 },
+  { date: new Date(2024, 0, 3), a: 30, b: 18 },
+  { date: new Date(2024, 0, 4), a: 16, b: 26 },
+  { date: new Date(2024, 0, 5), a: 28, b: 12 },
+];
+
+/**
+ * `outline` (RM-112) paints a `--chart-background` halo under the coloured
+ * stroke, so a line keeps reading as one continuous path through a crossing
+ * with another series or a busy grid — Datawrapper's line-outline idiom.
+ */
+export const Outline: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={crossingData}>
+        <Grid horizontal />
+        <Line dataKey="a" outline stroke="var(--chart-1)" />
+        <Line dataKey="b" outline stroke="var(--chart-2)" />
+        <XAxis />
+      </LineChart>
+    </div>
+  ),
+};
+
+export const OutlineDark: Story = {
+  tags: ["!dev"],
+  name: "Outline — dark",
+  decorators: [
+    (Story) => (
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+  render: Outline.render,
+};
+
+/**
+ * `symbols` (RM-112) — Datawrapper's line-symbols vocabulary. Unset placement
+ * on a ≤12-point series defaults to hollow markers at the first/last point
+ * only; a dense series (>12 points) stays unmarked unless `placement` is set
+ * explicitly. Same resolution rule, one shared helper, on `Area` too.
+ */
+export const Symbols: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={chartData}>
+        <Grid horizontal />
+        <Line dataKey="users" stroke="var(--chart-1)" symbols={{ style: "hollow" }} />
+        <XAxis />
+      </LineChart>
+    </div>
+  ),
+};
+
+const focusHoverData = [
+  { date: new Date(2024, 0, 1), a: 10, b: 30, c: 20 },
+  { date: new Date(2024, 0, 2), a: 20, b: 25, c: 15 },
+  { date: new Date(2024, 0, 3), a: 15, b: 28, c: 24 },
+  { date: new Date(2024, 0, 4), a: 26, b: 18, c: 12 },
+];
+
+/**
+ * `focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY`
+ * while the pointer (or the legend) is over one — a spotlight for a busy
+ * multi-series chart. A wide, invisible hit-stroke keeps the hover target
+ * reliable even at the default, thin 2.5px stroke.
+ */
+export const FocusHover: Story = {
+  name: "Focus on hover",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={focusHoverData} focusOnHover>
+        <Grid horizontal />
+        <Line dataKey="a" stroke="var(--chart-1)" />
+        <Line dataKey="b" stroke="var(--chart-2)" />
+        <Line dataKey="c" stroke="var(--chart-3)" />
+        <XAxis />
+        <ChartTooltip />
+      </LineChart>
+    </div>
+  ),
+};
+
+export const FocusHoverDark: Story = {
+  tags: ["!dev"],
+  name: "Focus on hover — dark",
+  decorators: [
+    (Story) => (
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+  render: FocusHover.render,
+};
+
 // Selection states — RM-073
 type SelectionStateName = "selected" | "associated" | "excluded";
 const SELECTION_BY_REGION: Record<string, SelectionStateName> = {

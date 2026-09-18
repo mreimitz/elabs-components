@@ -16,8 +16,8 @@
  * test-storybook`.
  */
 
-import { act, cleanup, fireEvent, render } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // One mutable reduced-motion switch (the `chart-reveal-clip.test.tsx` pattern).
 // Defaults to `false`, so every other test here runs on the animating path.
@@ -48,8 +48,9 @@ vi.mock("@visx/responsive", () => {
 });
 
 import type { ChartPhase } from "./chart-phase";
+import { SELECTION_EXCLUDED_OPACITY } from "./chart-selection";
 import { LineChart } from "./line-chart";
-import { spacedTopK } from "./line";
+import { Line, spacedTopK } from "./line";
 import { resolveMarkerVariantFill } from "./series-point-marker";
 import { generatePeriodTicks, PERIOD_TICKS_EVERY } from "./x-axis";
 
@@ -372,5 +373,377 @@ describe("generatePeriodTicks", () => {
   it("a single-day domain still produces one tick, not zero", () => {
     const day = new Date(2024, 0, 1);
     expect(generatePeriodTicks("day", day, day)).toHaveLength(1);
+  });
+});
+
+// ── RM-112: nulls / curve / outline / symbols / focusOnHover ───────────────
+//
+// Unlike the smoke tests above, these mount a real `<Line>` — its
+// `usePathStrokeMetrics` calls `getTotalLength()` on the underlying SVG path,
+// an API jsdom does not implement, so this block polyfills it (the same
+// pattern `chart-selection.test.tsx` uses to mount real `<Bar>` marks).
+describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () => {
+  beforeAll(() => {
+    if (typeof globalThis.ResizeObserver === "undefined") {
+      globalThis.ResizeObserver = class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      } as unknown as typeof ResizeObserver;
+    }
+    globalThis.IntersectionObserver ??= class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    } as unknown as typeof IntersectionObserver;
+    // jsdom has no SVG geometry; `<Line>` measures its path length.
+    Object.defineProperty(SVGElement.prototype, "getTotalLength", {
+      configurable: true,
+      value: () => 100,
+    });
+  });
+
+  // A null at index 2 (not an edge) — the RM-112 Acceptance fixture.
+  const rmData: Record<string, unknown>[] = [
+    { date: new Date(2024, 0, 1), value: 10 },
+    { date: new Date(2024, 0, 2), value: 20 },
+    { date: new Date(2024, 0, 3), value: null },
+    { date: new Date(2024, 0, 4), value: 15 },
+    { date: new Date(2024, 0, 5), value: 25 },
+  ];
+
+  function renderLine(lineProps: Partial<React.ComponentProps<typeof Line>> = {}) {
+    return render(
+      <LineChart animationDuration={0} data={rmData} xDataKey="date">
+        <Line animate={false} dataKey="value" fadeEdges={false} {...lineProps} />
+      </LineChart>,
+    );
+  }
+
+  function mainPathD(container: HTMLElement): string {
+    const path = container.querySelector("path.visx-linepath");
+    expect(path).not.toBeNull();
+    return path?.getAttribute("d") ?? "";
+  }
+
+  describe("nulls", () => {
+    it('"gap" (the new default) breaks the path at the null sample', () => {
+      const { container } = renderLine();
+      const d = mainPathD(container);
+      expect((d.match(/M/g) ?? []).length).toBe(2);
+    });
+
+    it('"connect" draws one continuous path straight across the null', () => {
+      const { container } = renderLine({ nulls: "connect" });
+      const d = mainPathD(container);
+      expect((d.match(/M/g) ?? []).length).toBe(1);
+    });
+
+    it('"zero" (the pre-RM-112 default) draws one continuous path through pixel 0', () => {
+      const { container } = renderLine({ nulls: "zero" });
+      const d = mainPathD(container);
+      expect((d.match(/M/g) ?? []).length).toBe(1);
+    });
+  });
+
+  describe("curve", () => {
+    it('"step-after" and "natural" render distinct paths', () => {
+      const a = renderLine({ curve: "step-after" });
+      const dA = mainPathD(a.container);
+      a.unmount();
+      const b = renderLine({ curve: "natural" });
+      const dB = mainPathD(b.container);
+      b.unmount();
+      expect(dA).not.toBe(dB);
+    });
+
+    it("default (monotone) never draws above a flat top; natural does (no-overshoot Acceptance)", () => {
+      // Two equal neighbours at the series max — curveNatural's classic
+      // overshoot shape (Datawrapper's own "avoid natural, it overshoots").
+      const flatData = [
+        { date: new Date(2024, 0, 1), value: 5 },
+        { date: new Date(2024, 0, 2), value: 20 },
+        { date: new Date(2024, 0, 3), value: 20 },
+        { date: new Date(2024, 0, 4), value: 5 },
+      ];
+      function renderFlat(curve?: React.ComponentProps<typeof Line>["curve"]) {
+        return render(
+          <LineChart animationDuration={0} data={flatData} xDataKey="date">
+            <Line animate={false} curve={curve} dataKey="value" fadeEdges={false} />
+          </LineChart>,
+        );
+      }
+      function pathPairs(d: string): Array<[number, number]> {
+        const numbers = (d.match(/-?\d+\.?\d*/g) ?? []).map(Number);
+        const pairs: Array<[number, number]> = [];
+        for (let i = 0; i < numbers.length; i += 2) {
+          pairs.push([numbers[i] as number, numbers[i + 1] as number]);
+        }
+        return pairs;
+      }
+
+      const monotoneResult = renderFlat(undefined);
+      const monotoneD = mainPathD(monotoneResult.container);
+      monotoneResult.unmount();
+      const naturalResult = renderFlat("natural");
+      const naturalD = mainPathD(naturalResult.container);
+      naturalResult.unmount();
+
+      const monotonePairs = pathPairs(monotoneD);
+      const naturalPairs = pathPairs(naturalD);
+      // pairs[3] is the anchor for data point index 1 (the first value=20
+      // sample) — `M x,y C.. C.. C..` for 4 points is 1 M + 3 C (3 pairs each).
+      const monotoneAnchorY = monotonePairs[3]?.[1] as number;
+      const naturalAnchorY = naturalPairs[3]?.[1] as number;
+      const monotoneMinY = Math.min(...monotonePairs.map((p) => p[1]));
+      const naturalMinY = Math.min(...naturalPairs.map((p) => p[1]));
+
+      // Smaller pixel y == higher on screen == a larger value. "No overshoot"
+      // means no point on the path goes higher than the flat top itself
+      // (the series max — nothing should read as exceeding it).
+      expect(monotoneMinY).toBeGreaterThanOrEqual(monotoneAnchorY - 0.5);
+      // `curveNatural` DOES overshoot past the flat plateau — the exact
+      // failure this RM's default-curve change fixes; kept here as contrast.
+      expect(naturalMinY).toBeLessThan(naturalAnchorY - 0.5);
+    });
+  });
+
+  describe("outline", () => {
+    it("paints a --chart-background halo path under the coloured stroke", async () => {
+      const { container } = renderLine({ outline: true, stroke: "var(--chart-1)" });
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath"));
+      await waitFor(() => {
+        expect(paths[0]?.getAttribute("stroke")).toBe("var(--chart-background)");
+        expect(paths[1]?.getAttribute("stroke")).toBe("var(--chart-1)");
+      });
+      const haloWidth = Number(paths[0]?.getAttribute("stroke-width"));
+      const mainWidth = Number(paths[1]?.getAttribute("stroke-width"));
+      expect(haloWidth).toBeGreaterThan(mainWidth);
+    });
+
+    it("outline is off by default — a single path, no halo", () => {
+      const { container } = renderLine();
+      expect(container.querySelectorAll("path.visx-linepath")).toHaveLength(1);
+    });
+  });
+
+  describe("symbols", () => {
+    it("renders no markers when unset (today's behaviour)", () => {
+      const { container } = renderLine();
+      expect(container.querySelectorAll("circle").length).toBe(0);
+    });
+
+    it("a ≤12-point series with no explicit placement defaults to hollow markers at the ends", () => {
+      const { container } = renderLine({ symbols: { style: "hollow" } });
+      // rmData has 5 points, ≤ 12 — symbols with no placement default to
+      // "ends" (2 markers). Each `StaticSeriesPointMarker` at the default
+      // `strokeWidth=2` renders 2 circles (an inner fill circle + a ring
+      // stroke circle, `series-point-marker.tsx` `MarkerCircles`).
+      expect(container.querySelectorAll("circle").length).toBe(4);
+    });
+
+    it("a >12-point series with no explicit placement stays off (avoid dense-interval symbols)", () => {
+      const denseData = Array.from({ length: 20 }, (_, i) => ({
+        date: new Date(2024, 0, i + 1),
+        value: i,
+      }));
+      const { container } = render(
+        <LineChart animationDuration={0} data={denseData} xDataKey="date">
+          <Line animate={false} dataKey="value" fadeEdges={false} symbols={{ style: "hollow" }} />
+        </LineChart>,
+      );
+      expect(container.querySelectorAll("circle").length).toBe(0);
+    });
+
+    it('an explicit placement="all" always renders, regardless of point count', () => {
+      const denseData = Array.from({ length: 20 }, (_, i) => ({
+        date: new Date(2024, 0, i + 1),
+        value: i,
+      }));
+      const { container } = render(
+        <LineChart animationDuration={0} data={denseData} xDataKey="date">
+          <Line
+            animate={false}
+            dataKey="value"
+            fadeEdges={false}
+            symbols={{ placement: "all", style: "hollow" }}
+          />
+        </LineChart>,
+      );
+      // 20 markers × 2 circles each (inner fill + ring stroke, see above).
+      expect(container.querySelectorAll("circle").length).toBe(40);
+    });
+  });
+
+  describe("existing marker-bearing features are unaffected by the symbols refactor", () => {
+    it("labelPeaks still labels exactly 2 peaks with no symbols/showMarkers set", () => {
+      // minGap override so both requested peaks clear spacing on this small
+      // 5-point fixture (default minGap=6 would keep only the taller one).
+      const { container } = renderLine({ labelPeaks: { count: 2, minGap: 1 } });
+      const peakGroup = container.querySelector('[data-slot="line-peak-labels"]');
+      expect(peakGroup).not.toBeNull();
+      // Peak markers pass strokeWidth=0 (`line.tsx`), so each is a single
+      // circle — no ring stroke — unlike the `symbols` markers above.
+      expect(peakGroup?.querySelectorAll("circle").length).toBe(2);
+      // The ordinary SeriesMarkers grid (showMarkers/symbols) stays off, so
+      // every circle on the page belongs to the peak labels above.
+      expect(container.querySelectorAll("circle").length).toBe(2);
+    });
+
+    it("dashFromIndex and fadeEdges render zero markers, same as before (neither sets showMarkers/symbols)", () => {
+      const { container } = renderLine({ dashFromIndex: 2, fadeEdges: "left" });
+      expect(container.querySelectorAll("circle").length).toBe(0);
+    });
+  });
+
+  describe("focusOnHover", () => {
+    const twoSeriesData = [
+      { date: new Date(2024, 0, 1), a: 10, b: 30 },
+      { date: new Date(2024, 0, 2), a: 20, b: 25 },
+      { date: new Date(2024, 0, 3), a: 15, b: 28 },
+    ];
+
+    it("hovering series 2 leaves it at opacity 1 and dims series 1 to SELECTION_EXCLUDED_OPACITY", async () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} focusOnHover xDataKey="date">
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      // `focusOnHover` also renders a wide, invisible `aria-hidden` hit-stroke
+      // path per series (same "visx-linepath" class) — exclude it here so
+      // only the two real, coloured strokes are counted/selected.
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+      const seriesAGroup = paths[0]?.closest("g");
+      const seriesBGroup = paths[1]?.closest("g");
+      expect(seriesAGroup).toBeTruthy();
+      expect(seriesBGroup).toBeTruthy();
+
+      // Direct pointer hover on series 2's own rendered shape.
+      fireEvent.mouseOver(seriesBGroup as Element);
+
+      await waitFor(() => {
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      });
+
+      fireEvent.mouseOut(seriesBGroup as Element);
+
+      await waitFor(() => {
+        expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+      });
+    });
+
+    it("focusOnHover off (default) never sets the excluded opacity from a plain hover", async () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} xDataKey="date">
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath"));
+      const seriesAGroup = paths[0]?.closest("g");
+      fireEvent.mouseOver(seriesAGroup as Element);
+      // No focusOnHover handler is attached at all — opacity stays at 1.
+      expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+    });
+
+    // Wave-1 integration: RM-110's end labels must dim in lockstep with
+    // RM-112's `focusOnHover` line dimming — a dimmed line with a
+    // full-strength floating label would read as a rendering bug.
+    it("dims a series' end label to the same opacity as its line", async () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} focusOnHover xDataKey="date">
+          <Line
+            animate={false}
+            dataKey="a"
+            fadeEdges={false}
+            name="Alpha"
+            stroke="var(--chart-1)"
+          />
+          <Line animate={false} dataKey="b" fadeEdges={false} name="Beta" stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+      const seriesBGroup = paths[1]?.closest("g");
+      fireEvent.mouseOver(seriesBGroup as Element);
+
+      const endLabelA = () => container.querySelector('g[data-series="a"]');
+      const endLabelB = () => container.querySelector('g[data-series="b"]');
+
+      await waitFor(() => {
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+        expect(endLabelB()?.getAttribute("opacity")).toBe("1");
+        expect(endLabelA()?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      });
+    });
+  });
+
+  // Wave-1 integration (RM-110 end labels + RM-112 nulls="gap"): the end
+  // label's anchor comes from `placeChartLabels` scanning a series' RAW data
+  // backward for the last finite value — it never reads the rendered/gapped
+  // path, so a trailing null cannot put the label at a phantom position.
+  // This locks that contract in from the RM-112 side of the integration.
+  describe('end labels (RM-110) anchor on the last painted point under nulls="gap"', () => {
+    it("a trailing null does not move the end label off the last real sample", async () => {
+      const trailingNullData: Record<string, unknown>[] = [
+        { date: new Date(2024, 0, 1), a: 10, b: 5 },
+        { date: new Date(2024, 0, 2), a: 20, b: 15 },
+        { date: new Date(2024, 0, 3), a: null, b: 25 },
+      ];
+      const { container } = render(
+        <LineChart animationDuration={0} data={trailingNullData} xDataKey="date">
+          <Line
+            animate={false}
+            dataKey="a"
+            fadeEdges={false}
+            name="Alpha"
+            stroke="var(--chart-1)"
+          />
+          <Line animate={false} dataKey="b" fadeEdges={false} name="Beta" stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+
+      // Series "a" is first in JSX order — under the default nulls="gap" its
+      // visible path breaks before the trailing null, so the LAST drawn
+      // point on its `d` is index 1 (value 20), not index 2 (the null).
+      const pathA =
+        container.querySelectorAll("path.visx-linepath:not([aria-hidden])")[0]?.getAttribute("d") ??
+        "";
+      const numbers = (pathA.match(/-?\d+\.?\d*/g) ?? []).map(Number);
+      const lastPaintedY = numbers.at(-1) as number;
+
+      const connector = container.querySelector('g[data-series="a"] line');
+      expect(connector).not.toBeNull();
+      const anchorY = Number(connector?.getAttribute("y1"));
+      // The Acceptance case: with a null last row, the label anchors to the
+      // last PAINTED point — not pixel 0, not NaN, not a phantom position for
+      // the null itself. `d` rounds to 3 decimal places (visx), `anchorY`
+      // does not — 1 decimal clears that rounding gap while still catching
+      // any real (multi-pixel) mismatch.
+      expect(anchorY).toBeCloseTo(lastPaintedY, 1);
+    });
   });
 });
