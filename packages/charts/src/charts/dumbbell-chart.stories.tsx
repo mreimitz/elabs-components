@@ -585,3 +585,117 @@ export const SelectionStates: Story = {
     await expectSelectionStates(canvasElement);
   },
 };
+
+// ── RM-116: arrow / dots plots — Datawrapper parity §2.14–2.16 ─────────────
+
+// 12 rows, 3 channels (4 metrics each) — a marketing-funnel move per channel,
+// mixed positive/negative, deliberately not already sorted by anything.
+const funnelChangeByChannel = [
+  { metric: "Signups", channel: "Paid", before: 120, after: 180 },
+  { metric: "Trials", channel: "Paid", before: 300, after: 210 },
+  { metric: "Conversions", channel: "Paid", before: 40, after: 52 },
+  { metric: "Churn", channel: "Paid", before: 18, after: 9 },
+  { metric: "Signups", channel: "Organic", before: 220, after: 260 },
+  { metric: "Trials", channel: "Organic", before: 410, after: 380 },
+  { metric: "Conversions", channel: "Organic", before: 70, after: 95 },
+  { metric: "Churn", channel: "Organic", before: 25, after: 30 },
+  { metric: "Signups", channel: "Referral", before: 60, after: 45 },
+  { metric: "Trials", channel: "Referral", before: 90, after: 130 },
+  { metric: "Conversions", channel: "Referral", before: 15, after: 22 },
+  { metric: "Churn", channel: "Referral", before: 8, after: 5 },
+];
+
+/**
+ * `variant="arrow"` — an arrow head at `endKey`, coloured by sign (the
+ * diverging positive/negative pair), grouped by channel with a header +
+ * separator per group, sorted by `%` change. Head direction is the
+ * second (non-hue) channel a signed reading needs (conventions.md, WCAG
+ * 1.4.1) — a decrease still reads in greyscale as an arrow pointing left.
+ */
+export const ArrowPlot: Story = {
+  name: "Arrow plot",
+  args: {
+    data: funnelChangeByChannel,
+    category: "metric",
+    startKey: "before",
+    endKey: "after",
+    variant: "arrow",
+    groupBy: "channel",
+    sortBy: "deltaPercent",
+    delta: { show: true, mode: "percent" },
+  },
+  render: (args) => (
+    <div className="h-[420px] w-full max-w-[640px]">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const svgEl = canvasElement.querySelector("svg");
+      expect(svgEl).not.toBeNull();
+      // Every row still draws its own head — grouping only adds bands.
+      const heads = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-arrow-head"]');
+      expect(heads).toHaveLength(funnelChangeByChannel.length);
+      const headFills = new Set(Array.from(heads).map((h) => h.getAttribute("fill")));
+      expect(headFills.has("var(--chart-div-pos-2)")).toBe(true);
+      expect(headFills.has("var(--chart-div-neg-2)")).toBe(true);
+      // Three groups, one header each — group order is first-seen in the
+      // resolved SORT order (deltaPercent here), not the input order, so
+      // only the set of names (not their sequence) is asserted.
+      const headers = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-group-header"]');
+      expect(new Set(Array.from(headers).map((h) => h.textContent))).toEqual(
+        new Set(["Paid", "Organic", "Referral"]),
+      );
+      const deltaLabels = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-delta-label"]');
+      expect(deltaLabels).toHaveLength(funnelChangeByChannel.length);
+      for (const label of Array.from(deltaLabels)) {
+        expect(label.textContent).toMatch(/^[+-]\d+(\.\d+)?%$/);
+      }
+    });
+  },
+};
+
+// Three competing scores per product on a shared axis — a spread reading, not
+// a before/after — plus the extremes bridged by a range bar.
+const productScores = [
+  { product: "Alpha", us: 42, rivalA: 58, rivalB: 71 },
+  { product: "Beta", us: 66, rivalA: 49, rivalB: 55 },
+  { product: "Gamma", us: 30, rivalA: 35, rivalB: 28 },
+  { product: "Delta", us: 80, rivalA: 62, rivalB: 74 },
+];
+
+/**
+ * `variant="dots"` — N `valueKeys` per row as dots on the shared axis
+ * (Datawrapper's dot plot), `range` drawing a bar between each row's
+ * extremes; the colour key outside the plot lists the three keys.
+ */
+export const DotsPlot: Story = {
+  name: "Dot plot with range",
+  args: {
+    data: productScores,
+    category: "product",
+    startKey: "us",
+    endKey: "rivalB",
+    variant: "dots",
+    valueKeys: ["us", "rivalA", "rivalB"],
+    range: true,
+  },
+  render: (args) => (
+    <div className="h-80 w-full max-w-[640px]">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const svgEl = canvasElement.querySelector("svg");
+      expect(svgEl).not.toBeNull();
+      const dots = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-dot"]');
+      expect(dots).toHaveLength(productScores.length * 3);
+      const bars = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-range-bar"]');
+      expect(bars).toHaveLength(productScores.length);
+    });
+    for (const key of ["us", "rivalA", "rivalB"]) {
+      expect(canvasElement.textContent).toContain(key);
+    }
+  },
+};
