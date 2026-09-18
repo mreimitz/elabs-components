@@ -145,10 +145,12 @@ describe("BarChart", () => {
     });
 
     it("tilts and ellipsizes long labels, keeping the full name for AT", () => {
+      // `fit="tilt"` pins the tilt + ellipsis rung: under `"auto"` these
+      // labels now take the two-line wrap rung first (RM-108).
       const { container } = render(
         <BarChart data={longLabels} xDataKey="month">
           <Bar dataKey="value" fill="var(--chart-1)" />
-          <BarXAxis />
+          <BarXAxis fit="tilt" />
         </BarChart>,
       );
 
