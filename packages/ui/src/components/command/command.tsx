@@ -23,6 +23,68 @@ import { Dialog, DialogContent, DialogTitle } from "../dialog";
 /** cmdk's own marker attribute on an item row — the scope for the id lookup. */
 const CMDK_ITEM_SELECTOR = '[cmdk-item=""][aria-selected="true"]';
 
+/**
+ * Brings `element` fully into view within its nearest `CommandList` ancestor
+ * — and ONLY that ancestor — by writing `scrollTop` directly. Replicates the
+ * minimal-movement edge math `Element.scrollIntoView({ block: "nearest" })`
+ * itself uses, without ever calling the native method (which walks every
+ * further scrollable ancestor, the window included — see
+ * `overrideItemScrollIntoView` below for why that matters). A no-op when
+ * `element` has no `CommandList` ancestor: never falls back to the native
+ * call, which would reopen #541.
+ */
+function scrollElementIntoCommandList(element: HTMLElement) {
+  const list = element.closest<HTMLElement>('[data-slot="command-list"]');
+  if (!list) return;
+  const elementRect = element.getBoundingClientRect();
+  const listRect = list.getBoundingClientRect();
+  if (elementRect.top < listRect.top) {
+    list.scrollTop -= listRect.top - elementRect.top;
+  } else if (elementRect.bottom > listRect.bottom) {
+    list.scrollTop += elementRect.bottom - listRect.bottom;
+  }
+}
+
+/**
+ * cmdk auto-highlights the first item on mount, on every filter keystroke
+ * and on every keyboard navigation (ArrowDown/ArrowUp/Home/End), then calls
+ * the highlighted item's — and, when it is the first item in a group, that
+ * group's heading's — native `Element.prototype.scrollIntoView({ block:
+ * "nearest" })` to keep it visible. See `cmdk@1.1.1`'s
+ * `node_modules/cmdk/dist/index.mjs:1` (and the CJS twin
+ * `dist/index.js:1` — esbuild minifies each entire module onto a single
+ * line), function `ne` (`ce` in the CJS build): every `setState("value", …)`
+ * call that does not pass the internal "don't scroll" flag (pointer hover
+ * selection is the one call site that does) schedules it, and the root
+ * component's own mount effect schedules it unconditionally too.
+ *
+ * `{ block: "nearest" }` walks EVERY scrollable ancestor, the window
+ * included — so mounting a `Command` whose list sits below the fold scrolls
+ * the whole page (#541), for every consumer of an inline list, not only a
+ * modal `CommandDialog`. cmdk has no prop to opt out (checked its public
+ * API — no `scrollBehavior`/`disableScroll`/similar).
+ *
+ * The fix shadows `scrollIntoView` as an OWN property on the specific
+ * item/heading element cmdk will call it on — never `Element.prototype`,
+ * which would silently change the behaviour of every OTHER element on the
+ * page, not just cmdk's — with `scrollElementIntoCommandList` above. A ref
+ * callback runs during React's DOM-mutation commit phase, which always
+ * completes (for the whole tree) before any layout effect fires — including
+ * cmdk's own scheduled scroll — so the override is guaranteed to be in place
+ * before cmdk can ever reach the native method.
+ */
+function overrideItemScrollIntoView(node: HTMLElement | null) {
+  if (node) node.scrollIntoView = () => scrollElementIntoCommandList(node);
+}
+
+/** Same override as `overrideItemScrollIntoView`, for a group's heading —
+ * the DOM node cmdk creates internally for `CommandGroup`'s `heading` prop,
+ * so unlike an item it isn't a ref target we're handed directly. */
+function overrideGroupHeadingScrollIntoView(node: HTMLElement | null) {
+  const heading = node?.querySelector<HTMLElement>("[cmdk-group-heading]");
+  if (heading) heading.scrollIntoView = () => scrollElementIntoCommandList(heading);
+}
+
 /** Distinguishes "no `<Command>` ancestor" from "nothing is highlighted". */
 const NO_COMMAND_PROVIDER = Symbol("no-command-provider");
 
@@ -242,9 +304,13 @@ export const CommandGroup = forwardRef<
   ElementRef<typeof CommandPrimitive.Group>,
   ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
 >(function CommandGroup({ className, ...props }, ref) {
+  const mergedRef = useMemo(
+    () => mergeRefs<HTMLDivElement>(ref, overrideGroupHeadingScrollIntoView),
+    [ref],
+  );
   return (
     <CommandPrimitive.Group
-      ref={ref}
+      ref={mergedRef}
       data-slot="command-group"
       className={cn(
         "overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-meta [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground",
@@ -287,6 +353,11 @@ export const CommandItem = forwardRef<
   ElementRef<typeof CommandPrimitive.Item>,
   ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
 >(function CommandItem({ className, ...props }, ref) {
+  const mergedRef = useMemo(
+    () => mergeRefs<HTMLDivElement>(ref, overrideItemScrollIntoView),
+    [ref],
+  );
+
   if (process.env.NODE_ENV !== "production") {
     for (const key of CMDK_OVERRIDDEN_ITEM_PROPS) {
       if (key in props && !warnedAboutOverriddenItemProps.has(key)) {
@@ -304,7 +375,7 @@ export const CommandItem = forwardRef<
 
   return (
     <CommandPrimitive.Item
-      ref={ref}
+      ref={mergedRef}
       data-slot="command-item"
       className={cn(
         "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-body outline-none transition-colors duration-fast data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:size-4",
