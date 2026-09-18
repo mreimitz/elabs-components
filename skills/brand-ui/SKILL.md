@@ -40,13 +40,13 @@ stale-gated — never hand-edit between the markers.
 
 **Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 255 · **Registry blocks:** 65
 
-**Exported surface:** 1261 components · 89 hooks across 13 packages.
+**Exported surface:** 1271 components · 90 hooks across 13 packages.
 
 | Package                          | Components | Hooks | Use it for                                                                                                    |
 | -------------------------------- | ---------: | ----: | ------------------------------------------------------------------------------------------------------------- |
 | `@elabs-ai/components-tokens`    |         19 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                                        |
 | `@elabs-ai/components-icons`     |         32 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).                                 |
-| `@elabs-ai/components-ui`        |        380 |    14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                |
+| `@elabs-ai/components-ui`        |        390 |    15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                |
 | `@elabs-ai/components-data`      |          6 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                                        |
 | `@elabs-ai/components-ai`        |        449 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
 | `@elabs-ai/components-flow`      |         34 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                                                 |

@@ -1,0 +1,42 @@
+{
+  "packages": {
+    "value": 13,
+    "source": "brand-ui.manifest.json#packages"
+  },
+  "componentExports": {
+    "value": 1402,
+    "source": "brand-ui.manifest.json#packages[].components"
+  },
+  "registryBlocks": {
+    "value": 65,
+    "source": "registry/registry.json#items"
+  },
+  "templates": {
+    "value": 10,
+    "source": "brand-ui.manifest.json#templates"
+  },
+  "playbooks": {
+    "value": 7,
+    "source": "brand-ui.manifest.json#playbooks"
+  },
+  "themeFamilies": {
+    "value": 8,
+    "source": "themes/*/theme.ts"
+  },
+  "tokens": {
+    "value": 255,
+    "source": "brand-ui.manifest.json#tokenCount"
+  },
+  "skills": {
+    "value": 11,
+    "source": "skills/*/"
+  },
+  "hostedMcpTools": {
+    "value": 6,
+    "source": "packages/cli/lib/mcp.mjs#TOOLS"
+  },
+  "gates": {
+    "value": 87,
+    "source": "scripts/check/rules/*.mjs + scripts/check/commands.mjs"
+  }
+}

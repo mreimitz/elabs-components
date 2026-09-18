@@ -11,7 +11,7 @@ export const RAW_PALETTE_RE =
 
 const IGNORE = [
   "**/*.{test,stories}.{ts,tsx}",
-  "**/{node_modules,dist,storybook-static,.turbo,coverage,__output}/**",
+  "**/{node_modules,dist,storybook-static,.next,.turbo,coverage,__output}/**",
 ];
 
 function scan(ctx, patterns, warn) {
@@ -35,11 +35,13 @@ const src = (body) => ({ files: { "packages/ai/src/x.tsx": body } });
 export default {
   id: "raw-palette",
   scope: "components",
-  doc: "Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source.",
+  doc: "Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source and the website (`apps/home`).",
   baseline: "per-file",
   run(ctx) {
     return [
       ...scan(ctx, "packages/*/src/**/*.{ts,tsx}", false),
+      // The website is held to the same palette discipline as the packages (ADR 0038).
+      ...scan(ctx, "apps/home/**/*.{ts,tsx}", false),
       ...scan(ctx, "registry/**/*.{ts,tsx}", true),
     ];
   },
@@ -58,6 +60,7 @@ export default {
     ],
     fail: [
       src('className="text-blue-600"'),
+      { files: { "apps/home/app/page.tsx": 'className="bg-red-500"' } },
       src('className="size-4 text-yellow-600"'),
       src('cn("bg-red-500", "border-blue-300", "fill-green-400")'),
       src('className="ring-emerald-50 shadow-slate-900"'),

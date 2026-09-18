@@ -1,0 +1,119 @@
+[
+  {
+    "name": "@elabs-ai/components-ai",
+    "shortName": "ai",
+    "description": "Chat: ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, Sources, CodeBlock, Artifact.",
+    "path": "packages/ai",
+    "layer": 2,
+    "exportCount": 449,
+    "engines": ["React Flow"]
+  },
+  {
+    "name": "@elabs-ai/components-charts",
+    "shortName": "charts",
+    "description": "MetricCard, MetricGrid, ChartCard, ChartFrame, AutoChart (spec-driven via a serializable ChartSpec).",
+    "path": "packages/charts",
+    "layer": 2,
+    "exportCount": 260,
+    "engines": []
+  },
+  {
+    "name": "@elabs-ai/components-data",
+    "shortName": "data",
+    "description": "TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.",
+    "path": "packages/data",
+    "layer": 2,
+    "exportCount": 6,
+    "engines": []
+  },
+  {
+    "name": "@elabs-ai/components-editor",
+    "shortName": "editor",
+    "description": "Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace (file tabs).",
+    "path": "packages/editor",
+    "layer": 2,
+    "exportCount": 53,
+    "engines": ["Monaco"]
+  },
+  {
+    "name": "@elabs-ai/components-flow",
+    "shortName": "flow",
+    "description": "Branded React Flow canvas, nodes, edges, controls, inspector.",
+    "path": "packages/flow",
+    "layer": 2,
+    "exportCount": 34,
+    "engines": ["React Flow"]
+  },
+  {
+    "name": "@elabs-ai/components-icons",
+    "shortName": "icons",
+    "description": "Brand/product-vocabulary icons + BrandLogo; generic glyphs come from Lucide.",
+    "path": "packages/icons",
+    "layer": 0,
+    "exportCount": 32,
+    "engines": []
+  },
+  {
+    "name": "@elabs-ai/components-maps",
+    "shortName": "maps",
+    "description": "Token-driven MapLibre GL maps: MapCanvas, MapMarker, MapPopup, MapControls, MapRoute, MapArc, MapGeoJSON, MapClusterLayer.",
+    "path": "packages/maps",
+    "layer": 2,
+    "exportCount": 12,
+    "engines": ["MapLibre"]
+  },
+  {
+    "name": "@elabs-ai/components-marketing",
+    "shortName": "marketing",
+    "description": "Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.",
+    "path": "packages/marketing",
+    "layer": 2,
+    "exportCount": 6,
+    "engines": []
+  },
+  {
+    "name": "@elabs-ai/components-process",
+    "shortName": "process",
+    "description": "Process mining / event-log analysis.",
+    "path": "packages/process",
+    "layer": 3,
+    "exportCount": 84,
+    "engines": ["React Flow"]
+  },
+  {
+    "name": "@elabs-ai/components-terminal",
+    "shortName": "terminal",
+    "description": "Terminal surfaces (shell/agent output, coding-agent CLI look-alikes).",
+    "path": "packages/terminal",
+    "layer": 2,
+    "exportCount": 31,
+    "engines": []
+  },
+  {
+    "name": "@elabs-ai/components-tokens",
+    "shortName": "tokens",
+    "description": "Semantic CSS-variable themes + ThemeProvider/useTheme.",
+    "path": "packages/tokens",
+    "layer": 0,
+    "exportCount": 19,
+    "engines": []
+  },
+  {
+    "name": "@elabs-ai/components-ui",
+    "shortName": "ui",
+    "description": "Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).",
+    "path": "packages/ui",
+    "layer": 1,
+    "exportCount": 397,
+    "engines": []
+  },
+  {
+    "name": "@elabs-ai/components-viewer",
+    "shortName": "viewer",
+    "description": "FileViewer: a file the app did not write, via a pluggable adapter registry.",
+    "path": "packages/viewer",
+    "layer": 2,
+    "exportCount": 19,
+    "engines": []
+  }
+]

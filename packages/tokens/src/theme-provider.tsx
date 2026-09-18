@@ -190,6 +190,17 @@ export interface ThemeProviderProps {
    */
   attributeTarget?: HTMLElement | null;
   /**
+   * Wraps every theme CHANGE — `setTheme`, and so `setFamily`/`setColorScheme`
+   * — around the DOM write, so a host can animate it without re-implementing
+   * the provider. `apply` updates the provider state and writes `data-theme`;
+   * call it exactly once, synchronously or later (e.g. inside
+   * `document.startViewTransition(apply)`). Persisting the choice does not wait
+   * for it. The mount-time hydration is never wrapped: the first paint must not
+   * animate. Pass a stable function (`useCallback`). Omitted: `apply()` runs
+   * directly, exactly as before.
+   */
+  transition?: (apply: () => void) => void;
+  /**
    * Runtime CSS custom-property overrides (#17,
    * `docs/ADR/0031-runtime-token-overrides.md`), layered OVER the active
    * `[data-theme]` block as inline properties on `attributeTarget` — for a
@@ -616,6 +627,7 @@ export function ThemeProvider({
   registerStorageKey = "brand-ui-taste-register",
   attributeTarget = null,
   tokenOverrides,
+  transition,
 }: ThemeProviderProps) {
   // The themes THIS provider exposes: its registry (ADR 0029), narrowed by
   // `allowedThemes` (#355). BOTH are keyed by VALUE, not identity, so an inline
@@ -832,13 +844,20 @@ export function ThemeProvider({
       }
       const definition = themesByName.get(next);
       if (definition) intendedSchemeRef.current = themeSchemeOf(definition);
-      setThemeState(next);
-      applyTheme(next, attributeTarget);
+      // The state update and the `data-theme` write happen together, inside the
+      // host's `transition` when one is given (a view transition snapshots the
+      // page before `apply` and animates to the result after it).
+      const apply = () => {
+        setThemeState(next);
+        applyTheme(next, attributeTarget);
+      };
+      if (transition) transition(apply);
+      else apply();
       if (storageKey && typeof window !== "undefined") {
         window.localStorage.setItem(storageKey, next);
       }
     },
-    [storageKey, attributeTarget, themes, themesByName],
+    [storageKey, attributeTarget, themes, themesByName, transition],
   );
 
   const activeDefinition = themesByName.get(theme);

@@ -15,6 +15,7 @@ no token required. See `docs/CONSUMING.md`.
 ```bash
 pnpm add @elabs-ai/components-tokens @elabs-ai/components-ui
 pnpm add @hookform/resolvers@"^3.9.1"  # optional peer
+pnpm add motion@"^12.26.2"  # optional peer
 pnpm add react-hook-form@"^7.54.2"  # optional peer
 ```
 
@@ -45,7 +46,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-380 exported components — including `Accordion`, `AccordionContent`, `AccordionItem`, `AccordionTrigger`, `AdvancedGroup`.
+390 exported components — including `Accordion`, `AccordionContent`, `AccordionItem`, `AccordionTrigger`, `AdvancedGroup`.
 
 Don't guess the API — ask the CLI:
 

@@ -37,6 +37,8 @@
  *   attributions      package deps, fonts, sources.json → ATTRIBUTION.md + generated .ts
  *   dashboard-spec    charts dashboard/core → cli bundle + charts/schemas JSON Schema (RM-086)
  *   manifest          package source + registry + templates → brand-ui.manifest.json
+ *   home              manifest + registry + check rules + themes/ + stories →
+ *                      apps/home/content/generated/*.json (RM-090)
  *   intent-json       manifest + story titles → apps/docs/.storybook/intent.generated.json
  *   inventory / llms / context / doc-regions / readmes   manifest → docs
  *   community-themes  themes/ → Storybook generated css/ts
@@ -110,6 +112,16 @@ export const STEPS = [
       "packages/cli/lib/a2ui.generated.mjs",
       "packages/ai/schemas/a2ui-surface.v1.schema.json",
     ],
+  },
+  {
+    // The website's content (apps/home, ADR 0038, RM-090): packages/counts/themes/
+    // gates/CLI verbs/blocks/playbooks/story ids/install snippets, all derived from
+    // the manifest, the registry, the check-rule registry and the theme families —
+    // never typed by hand (`.claude/rules/home.md` "Generated, not typed").
+    id: "home",
+    run: node("scripts/gen-home.mjs"),
+    check: node("scripts/gen-home.mjs", "--check"),
+    outputs: ["apps/home/content/generated/*.json"],
   },
   {
     // The Storybook Intent block's data file — a small projection of the manifest

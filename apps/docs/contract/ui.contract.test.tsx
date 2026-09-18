@@ -52,6 +52,65 @@ function contractIt(
   return it(name, fn);
 }
 
+// ── AmbientField (packages/ui/src/components/ambient-field/ambient-field.tsx) ────────────────────────────────────────
+import * as stories_ambient_field from "../../../packages/ui/src/components/ambient-field/ambient-field.stories";
+describe("AmbientField contract (browser)", () => {
+  const meta = stories_ambient_field.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_ambient_field as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "display-ambientfield--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "display-ambientfield--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
 // ── AttributionPanel (packages/ui/src/components/attribution-panel/attribution-panel.tsx) ────────────────────────────────────────
 import * as stories_attribution_panel from "../../../packages/ui/src/components/attribution-panel/attribution-panel.stories";
 describe("AttributionPanel contract (browser)", () => {
@@ -1324,6 +1383,65 @@ describe("NumberInput contract (browser)", () => {
   }
 });
 
+// ── ParallaxPlane (packages/ui/src/components/parallax-plane/parallax-plane.tsx) ────────────────────────────────────────
+import * as stories_parallax_plane from "../../../packages/ui/src/components/parallax-plane/parallax-plane.stories";
+describe("ParallaxPlane contract (browser)", () => {
+  const meta = stories_parallax_plane.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_parallax_plane as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "ground-plane--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "ground-plane--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
 // ── Rating (packages/ui/src/components/rating/rating.tsx) ────────────────────────────────────────
 import * as stories_rating from "../../../packages/ui/src/components/rating/rating.stories";
 describe("Rating contract (browser)", () => {
@@ -1361,6 +1479,58 @@ describe("Rating contract (browser)", () => {
 
         contractIt(
           "forms-rating--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
+// ── RevealOnEnter (packages/ui/src/components/reveal-on-enter/reveal-on-enter.tsx) ────────────────────────────────────────
+import * as stories_reveal_on_enter from "../../../packages/ui/src/components/reveal-on-enter/reveal-on-enter.stories";
+describe("RevealOnEnter contract (browser)", () => {
+  const meta = stories_reveal_on_enter.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_reveal_on_enter as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt("once--default", theme, width, "axe", "has no axe violations", async () => {
+          const { container, unmount } = await mount();
+          try {
+            const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+            expect(results.violations.map((v) => v.id)).toEqual([]);
+          } finally {
+            unmount();
+          }
+        });
+
+        contractIt(
+          "once--default",
           theme,
           width,
           "overflow",
@@ -1820,6 +1990,65 @@ describe("Textarea contract (browser)", () => {
 
         contractIt(
           "core-textarea--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
+// ── ThemeFamilySwitch (packages/ui/src/components/theme-family-switch/theme-family-switch.tsx) ────────────────────────────────────────
+import * as stories_theme_family_switch from "../../../packages/ui/src/components/theme-family-switch/theme-family-switch.stories";
+describe("ThemeFamilySwitch contract (browser)", () => {
+  const meta = stories_theme_family_switch.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_theme_family_switch as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "core-themefamilyswitch--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "core-themefamilyswitch--default",
           theme,
           width,
           "overflow",

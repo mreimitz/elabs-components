@@ -26,6 +26,9 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - AlertDialogTitle
 - AlertDialogTrigger
 - AlertTitle
+- AMBIENT_DEFAULT_STOPS
+- AMBIENT_MAX_ALPHA
+- AmbientField
 - APPROVAL_SCOPE_DESCRIPTION_KEYS
 - AppShell — Top-level application frame — sidebar + header + content region.
   - avoid: Deep wrapper nesting inside the shell — keep the DOM shallow; one element, one job.
@@ -127,6 +130,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DatePicker
 - DateRangePicker
 - DEFAULT_MESSAGES
+- DEFAULT_THEME_FAMILY_SWITCH_LABELS
 - Descriptions
 - DescriptionsItem
 - Dialog — Modal overlay for focused tasks/flows that block the page until dismissed.
@@ -252,6 +256,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Encoding up/down by color alone — pair with an arrow/sign.
   - avoid: Re-declaring a KPI tile in another package — MetricCard is owned by @elabs-ai/components-ui; charts and editor re-export it (ADR 0012).
 - ModelPicker
+- MOTION_FACTOR_FLOOR
 - NavigationMenu
 - NavigationMenuContent
 - NavigationMenuItem
@@ -274,6 +279,9 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - PaginationLink
 - PaginationNext
 - PaginationPrevious
+- PARALLAX_MAX_TRAVEL
+- PARALLAX_PLANE_RATES
+- ParallaxPlane
 - Popover — Anchored, dismissible floating panel for lightweight contextual content.
   - avoid: Reimplementing dismissal/positioning by hand — let the Radix Popover own focus + outside-click.
   - avoid: Expecting PopoverContent to render its own focus ring — it is outline-none by design; the trigger carries the ring.
@@ -302,6 +310,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - ResultCount
 - Reveal (appear=fade|up*|down|left|right|zoom · speed=fast|base|slow*)
 - RevealGroup
+- RevealOnEnter
 - RevisionTimeline (density=comfortable*|compact)
 - SchemaForm
 - SchemaFormDescription
@@ -407,6 +416,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - Text (variant=lead|body*|caption|meta|kpi|kpi-sm|eyebrow|code · tone=default*|muted|primary)
 - TEXT_ROLE_REM
 - Textarea
+- ThemeFamilySwitch
 - ThemeSwitcher
 - Timeline
 - TimelineItem
@@ -463,6 +473,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - useIsMobile
 - useLocale
 - useMentionInput
+- useScrollProgress
 - useSidebar
 - useStreamdownTranslations
 - useThemeTransition

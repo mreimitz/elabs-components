@@ -869,3 +869,76 @@ describe("ThemeProvider — theme families and colour schemes (ADR 0036)", () =>
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('"ocean-dark-2" and "ocean-dark"'));
   });
 });
+
+describe("ThemeProvider transition hook (RM-091)", () => {
+  function Switch({ onReady }: { onReady: (api: ReturnType<typeof useTheme>) => void }) {
+    const api = useTheme();
+    useEffect(() => {
+      onReady(api);
+    }, [api, onReady]);
+    return null;
+  }
+
+  it("wraps the DOM write of every change, never the mount-time hydration", async () => {
+    const calls: Array<{ before: string | null; after: string | null }> = [];
+    const transition = vi.fn((apply: () => void) => {
+      const before = document.documentElement.getAttribute("data-theme");
+      apply();
+      calls.push({ before, after: document.documentElement.getAttribute("data-theme") });
+    });
+    let api!: ReturnType<typeof useTheme>;
+    await act(async () => {
+      root.render(
+        <ThemeProvider transition={transition}>
+          <Switch onReady={(a) => (api = a)} />
+        </ThemeProvider>,
+      );
+    });
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(transition).not.toHaveBeenCalled();
+
+    await act(async () => api.setTheme("dark"));
+    expect(transition).toHaveBeenCalledTimes(1);
+    expect(calls[0]).toEqual({ before: "light", after: "dark" });
+    expect(api.theme).toBe("dark");
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe("dark");
+
+    await act(async () => api.setColorScheme("light"));
+    expect(transition).toHaveBeenCalledTimes(2);
+    expect(calls[1]).toEqual({ before: "dark", after: "light" });
+  });
+
+  it("applies later when the host defers `apply` (a view transition's callback)", async () => {
+    let pending: (() => void) | undefined;
+    let api!: ReturnType<typeof useTheme>;
+    await act(async () => {
+      root.render(
+        <ThemeProvider
+          transition={(apply) => {
+            pending = apply;
+          }}
+        >
+          <Switch onReady={(a) => (api = a)} />
+        </ThemeProvider>,
+      );
+    });
+    await act(async () => api.setTheme("dark"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await act(async () => pending?.());
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(api.theme).toBe("dark");
+  });
+
+  it("without `transition`, setTheme writes synchronously as before", async () => {
+    let api!: ReturnType<typeof useTheme>;
+    await act(async () => {
+      root.render(
+        <ThemeProvider>
+          <Switch onReady={(a) => (api = a)} />
+        </ThemeProvider>,
+      );
+    });
+    act(() => api.setTheme("dark"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+});
