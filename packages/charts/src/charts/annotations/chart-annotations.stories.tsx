@@ -10,7 +10,6 @@ import { Line } from "../line";
 import { LineChart } from "../line-chart";
 import { XAxis } from "../x-axis";
 import { YAxis } from "../y-axis";
-import { AnnotationKey } from "./annotation-key";
 import { type ChartAnnotation, withAnnotationDescription } from "./annotation-types";
 import {
   BIKES_ANNOTATIONS,
@@ -43,23 +42,20 @@ const BIKES_DESCRIPTION =
 
 function BikesChart({ annotations }: { annotations: ChartAnnotation[] }) {
   return (
-    <div className="flex w-full flex-col">
-      <LineChart
-        accessibleDescription={withAnnotationDescription(BIKES_DESCRIPTION, annotations)}
-        accessibleLabel="Cycle traffic against 2019"
-        data={BIKES_DATA}
-        xDataKey="date"
-      >
-        <Grid horizontal />
-        {BIKES_SERIES.map((s) => (
-          <Line dataKey={s.key} key={s.key} stroke={s.color} />
-        ))}
-        <XAxis />
-        <YAxis valueFormat={{ sign: true, suffix: "%" }} />
-        <ChartAnnotations annotations={annotations} />
-      </LineChart>
-      <AnnotationKey annotations={annotations} />
-    </div>
+    <LineChart
+      accessibleDescription={BIKES_DESCRIPTION}
+      accessibleLabel="Cycle traffic against 2019"
+      annotations={annotations}
+      data={BIKES_DATA}
+      xDataKey="date"
+    >
+      <Grid horizontal />
+      {BIKES_SERIES.map((s) => (
+        <Line dataKey={s.key} key={s.key} stroke={s.color} />
+      ))}
+      <XAxis />
+      <YAxis valueFormat={{ sign: true, suffix: "%" }} />
+    </LineChart>
   );
 }
 
@@ -83,6 +79,9 @@ export const BikesRecipe: Story = {
   },
 };
 
+const localIsoDay = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
 const BIKES_SPEC: ChartSpec = {
   type: "line",
   title: "Cycle traffic against 2019",
@@ -90,7 +89,8 @@ const BIKES_SPEC: ChartSpec = {
   x: "date",
   data: BIKES_DATA.map((row) => ({
     ...row,
-    date: (row.date as Date).toISOString().slice(0, 10),
+    // The local calendar day, not `toISOString()` (UTC), so no row shifts a day east of UTC.
+    date: localIsoDay(row.date as Date),
   })),
   series: BIKES_SERIES.map((s) => ({ key: s.key, label: s.label, color: s.color })),
   annotations: BIKES_SPEC_ANNOTATIONS,
