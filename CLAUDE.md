@@ -26,7 +26,7 @@ pnpm workspaces + Turborepo · TypeScript · React 19 · Tailwind CSS v4 (CSS va
 - `@elabs-ai/components-viewer` — FileViewer: a file the app did not write, via a pluggable adapter registry (ADR 0024).
 - `@elabs-ai/components-terminal` — terminal surfaces (shell/agent output, coding-agent CLI look-alikes); a layer-2 leaf — `@elabs-ai/components-ai` must never import it.
 - `@elabs-ai/components-process` — process mining / event-log analysis; the one layer-3 package (ADR 0034).
-- Apps: `apps/docs` (Storybook); `fixtures/consumer-smoke` (install-shape smoke test).
+- Apps: `apps/docs` (Storybook); `apps/home` (the website, ADR 0038); `fixtures/consumer-smoke` (install-shape smoke test).
 
 Dependencies flow one way: `tokens` → `ui`/`icons` → `data`/`ai`/`flow`/`maps`/`charts`/`marketing`/`editor`/`viewer`/`terminal` → `process` (the one layer-3 composite, ADR 0034). Import across packages via `@elabs-ai/components-*`, never relative paths.
 

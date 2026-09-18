@@ -1,0 +1,200 @@
+[
+  {
+    "slug": "default",
+    "displayName": "Default",
+    "isDefault": true,
+    "hasTypeface": false,
+    "modes": [
+      {
+        "mode": "light",
+        "value": "light",
+        "label": "Light",
+        "primary": "oklch(0.875 0.148 116.5)",
+        "background": "oklch(0.985 0.002 257)"
+      },
+      {
+        "mode": "dark",
+        "value": "dark",
+        "label": "Dark",
+        "primary": "oklch(0.875 0.148 116.5)",
+        "background": "oklch(0.21 0.012 257)"
+      }
+    ]
+  },
+  {
+    "slug": "claude",
+    "displayName": "Claude",
+    "isDefault": false,
+    "hasTypeface": false,
+    "modes": [
+      {
+        "mode": "dark",
+        "value": "claude-dark",
+        "label": "Claude Dark",
+        "primary": "oklch(0.68 0.118 39.1)",
+        "background": "oklch(0.205 0.004 84.6)"
+      },
+      {
+        "mode": "light",
+        "value": "claude-light",
+        "label": "Claude Light",
+        "primary": "oklch(0.57 0.118 38.8)",
+        "background": "oklch(0.982 0.005 95.1)"
+      }
+    ]
+  },
+  {
+    "slug": "clickhouse",
+    "displayName": "ClickHouse",
+    "isDefault": false,
+    "hasTypeface": false,
+    "modes": [
+      {
+        "mode": "dark",
+        "value": "clickhouse-dark",
+        "label": "ClickHouse Dark",
+        "primary": "oklch(0.969 0.17 111)",
+        "background": "oklch(0.145 0 0)"
+      },
+      {
+        "mode": "light",
+        "value": "clickhouse-light",
+        "label": "ClickHouse Light",
+        "primary": "oklch(0.33 0.01 312.1)",
+        "background": "oklch(1 0 0)"
+      }
+    ]
+  },
+  {
+    "slug": "graphite",
+    "displayName": "Graphite",
+    "isDefault": false,
+    "hasTypeface": false,
+    "modes": [
+      {
+        "mode": "dark",
+        "value": "graphite-dark",
+        "label": "Graphite Dark",
+        "primary": "oklch(0.74 0.012 260)",
+        "background": "oklch(0.2 0.006 260)"
+      },
+      {
+        "mode": "light",
+        "value": "graphite-light",
+        "label": "Graphite Light",
+        "primary": "oklch(0.55 0.01 260)",
+        "background": "oklch(0.985 0.002 260)"
+      }
+    ]
+  },
+  {
+    "slug": "heap",
+    "displayName": "Heap",
+    "isDefault": false,
+    "hasTypeface": false,
+    "modes": [
+      {
+        "mode": "dark",
+        "value": "heap-dark",
+        "label": "Heap Dark",
+        "primary": "oklch(0.783 0.167 159.3)",
+        "background": "oklch(0.18 0.05 280)"
+      },
+      {
+        "mode": "light",
+        "value": "heap-light",
+        "label": "Heap Light",
+        "primary": "oklch(0.783 0.167 159.3)",
+        "background": "oklch(0.985 0.004 286)"
+      }
+    ]
+  },
+  {
+    "slug": "ocean",
+    "displayName": "Ocean",
+    "isDefault": false,
+    "hasTypeface": false,
+    "modes": [
+      {
+        "mode": "dark",
+        "value": "ocean-dark",
+        "label": "Ocean Dark",
+        "primary": "oklch(0.875 0.148 235)",
+        "background": "oklch(0.21 0.012 235)"
+      },
+      {
+        "mode": "light",
+        "value": "ocean-light",
+        "label": "Ocean Light",
+        "primary": "oklch(0.875 0.148 235)",
+        "background": "oklch(0.985 0.002 235)"
+      }
+    ]
+  },
+  {
+    "slug": "qlik",
+    "displayName": "Qlik",
+    "isDefault": false,
+    "hasTypeface": true,
+    "modes": [
+      {
+        "mode": "dark",
+        "value": "qlik-dark",
+        "label": "Qlik Dark",
+        "primary": "oklch(0.736 0.158 151)",
+        "background": "oklch(0.269 0 0)"
+      },
+      {
+        "mode": "light",
+        "value": "qlik-light",
+        "label": "Qlik Bright",
+        "primary": "oklch(0.545 0.149 150.2)",
+        "background": "oklch(0.985 0 0)"
+      }
+    ]
+  },
+  {
+    "slug": "salesforce",
+    "displayName": "Salesforce",
+    "isDefault": false,
+    "hasTypeface": false,
+    "modes": [
+      {
+        "mode": "dark",
+        "value": "salesforce-dark",
+        "label": "Salesforce Dark",
+        "primary": "oklch(0.571 0.235 260.4)",
+        "background": "oklch(0.209 0 0)"
+      },
+      {
+        "mode": "light",
+        "value": "salesforce-light",
+        "label": "Salesforce Light",
+        "primary": "oklch(0.571 0.235 260.4)",
+        "background": "oklch(0.964 0 0)"
+      }
+    ]
+  },
+  {
+    "slug": "snowflake",
+    "displayName": "Snowflake",
+    "isDefault": false,
+    "hasTypeface": false,
+    "modes": [
+      {
+        "mode": "dark",
+        "value": "snowflake-dark",
+        "label": "Snowflake Dark",
+        "primary": "oklch(0.725 0.133 228.8)",
+        "background": "oklch(0.2 0.02 235)"
+      },
+      {
+        "mode": "light",
+        "value": "snowflake-light",
+        "label": "Snowflake Light",
+        "primary": "oklch(0.725 0.133 228.8)",
+        "background": "oklch(0.985 0.004 235)"
+      }
+    ]
+  }
+]

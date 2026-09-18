@@ -1,0 +1,149 @@
+[
+  {
+    "archetype": "ai-assistant",
+    "intent": "Chat-first surface rendering rich agent output (markdown, reasoning, tools, sources)",
+    "keywords": [
+      "agent",
+      "ai assistant",
+      "chat",
+      "chatbot",
+      "conversation",
+      "copilot",
+      "reasoning",
+      "sources",
+      "streaming",
+      "tool calls"
+    ],
+    "packages": ["@elabs-ai/components-ai", "@elabs-ai/components-ui"],
+    "file": "docs/playbooks/ai-assistant.md",
+    "template": "templates/ai-assistant.tsx"
+  },
+  {
+    "archetype": "dashboard",
+    "intent": "KPI overview screen (static) or a drag-and-drop, user-editable grid of tiles (sheet) — metrics, charts and records in one screen",
+    "keywords": [
+      "BI",
+      "analytics",
+      "charts",
+      "dashboard",
+      "drill-down",
+      "editable dashboard",
+      "kpi",
+      "metrics",
+      "overview",
+      "reporting",
+      "sheet",
+      "summary",
+      "tiles"
+    ],
+    "packages": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-ui"
+    ],
+    "file": "docs/playbooks/dashboard.md",
+    "template": "templates/dashboard.tsx"
+  },
+  {
+    "archetype": "data-app",
+    "intent": "Tool-first table surface for browsing and operating on records",
+    "keywords": [
+      "admin console",
+      "back-office",
+      "bulk actions",
+      "crud",
+      "data app",
+      "facets",
+      "filter",
+      "grid",
+      "records",
+      "search",
+      "table"
+    ],
+    "packages": ["@elabs-ai/components-data", "@elabs-ai/components-ui"],
+    "file": "docs/playbooks/data-app.md",
+    "template": "templates/data-app.tsx"
+  },
+  {
+    "archetype": "flow-workspace",
+    "intent": "Node-and-edge canvas for editing a pipeline or workflow, with a selection inspector",
+    "keywords": [
+      "canvas",
+      "diagram",
+      "edges",
+      "flow",
+      "graph",
+      "inspector",
+      "nodes",
+      "pipeline",
+      "react flow",
+      "workflow",
+      "workspace"
+    ],
+    "packages": ["@elabs-ai/components-ai", "@elabs-ai/components-flow", "@elabs-ai/components-ui"],
+    "file": "docs/playbooks/flow-workspace.md",
+    "template": "templates/flow-workspace.tsx"
+  },
+  {
+    "archetype": "marketing",
+    "intent": "Standalone pitch page — nav → hero → proof → capability → relevance → trust → ask",
+    "keywords": [
+      "call to action",
+      "features",
+      "hero",
+      "landing page",
+      "logos",
+      "marketing",
+      "pitch",
+      "presales",
+      "testimonial",
+      "website"
+    ],
+    "packages": [
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-marketing",
+      "@elabs-ai/components-ui"
+    ],
+    "file": "docs/playbooks/marketing.md",
+    "template": "templates/marketing.tsx"
+  },
+  {
+    "archetype": "process-explorer",
+    "intent": "Explore a discovered process: map, variants, filters, event log, conformance and case drill-down in one screen",
+    "keywords": [
+      "conformance",
+      "dfg",
+      "event log",
+      "process map",
+      "process mining",
+      "variant explorer"
+    ],
+    "packages": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-process",
+      "@elabs-ai/components-ui"
+    ],
+    "file": "docs/playbooks/process-explorer.md",
+    "template": "templates/process-explorer.tsx"
+  },
+  {
+    "archetype": "settings",
+    "intent": "Multi-section settings portal — sectioned nav, a form per section, guarded destructive actions",
+    "keywords": [
+      "account",
+      "admin portal",
+      "configuration",
+      "danger zone",
+      "forms",
+      "preferences",
+      "profile",
+      "settings",
+      "team management"
+    ],
+    "packages": ["@elabs-ai/components-data", "@elabs-ai/components-ui"],
+    "file": "docs/playbooks/settings.md",
+    "template": "templates/settings.tsx"
+  }
+]

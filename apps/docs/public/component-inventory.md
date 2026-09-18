@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 379 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 389 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -122,6 +122,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AlertDialogTitle | component |  | `@elabs-ai/components-ui` |  |
 | AlertDialogTrigger | component |  | `@elabs-ai/components-ui` |  |
 | AlertTitle | component |  | `@elabs-ai/components-ui` |  |
+| AMBIENT_DEFAULT_STOPS | component |  | `@elabs-ai/components-ui` |  |
+| AMBIENT_MAX_ALPHA | component |  | `@elabs-ai/components-ui` |  |
+| AmbientField | component |  | `@elabs-ai/components-ui` |  |
 | APPROVAL_SCOPE_DESCRIPTION_KEYS | component |  | `@elabs-ai/components-ui` |  |
 | AppShell | component |  | `@elabs-ai/components-ui` | Top-level application frame — sidebar + header + content region. |
 | AppSidebar | component |  | `@elabs-ai/components-ui` | The opinionated application sidebar: the Sidebar skeleton behind typed header and footer slots, with the navigation as children. |
@@ -204,6 +207,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DatePicker | component |  | `@elabs-ai/components-ui` |  |
 | DateRangePicker | component |  | `@elabs-ai/components-ui` |  |
 | DEFAULT_MESSAGES | component |  | `@elabs-ai/components-ui` |  |
+| DEFAULT_THEME_FAMILY_SWITCH_LABELS | component |  | `@elabs-ai/components-ui` |  |
 | Descriptions | component |  | `@elabs-ai/components-ui` |  |
 | DescriptionsItem | component |  | `@elabs-ai/components-ui` |  |
 | Dialog | component |  | `@elabs-ai/components-ui` | Modal overlay for focused tasks/flows that block the page until dismissed. |
@@ -314,6 +318,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MenubarTrigger | component |  | `@elabs-ai/components-ui` |  |
 | MetricCard | component |  | `@elabs-ai/components-ui` | Single KPI tile — label, value, delta/trend. |
 | ModelPicker | component |  | `@elabs-ai/components-ui` |  |
+| MOTION_FACTOR_FLOOR | component |  | `@elabs-ai/components-ui` |  |
 | NavigationMenu | component |  | `@elabs-ai/components-ui` |  |
 | NavigationMenuContent | component |  | `@elabs-ai/components-ui` |  |
 | NavigationMenuItem | component |  | `@elabs-ai/components-ui` |  |
@@ -336,6 +341,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PaginationLink | component |  | `@elabs-ai/components-ui` |  |
 | PaginationNext | component |  | `@elabs-ai/components-ui` |  |
 | PaginationPrevious | component |  | `@elabs-ai/components-ui` |  |
+| PARALLAX_MAX_TRAVEL | component |  | `@elabs-ai/components-ui` |  |
+| PARALLAX_PLANE_RATES | component |  | `@elabs-ai/components-ui` |  |
+| ParallaxPlane | component |  | `@elabs-ai/components-ui` |  |
 | Popover | component |  | `@elabs-ai/components-ui` | Anchored, dismissible floating panel for lightweight contextual content. |
 | PopoverAnchor | component |  | `@elabs-ai/components-ui` |  |
 | PopoverContent | component |  | `@elabs-ai/components-ui` |  |
@@ -360,6 +368,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ResultCount | component |  | `@elabs-ai/components-ui` |  |
 | Reveal | component | appear=fade\|up*\|down\|left\|right\|zoom · speed=fast\|base\|slow* | `@elabs-ai/components-ui` |  |
 | RevealGroup | component |  | `@elabs-ai/components-ui` |  |
+| RevealOnEnter | component |  | `@elabs-ai/components-ui` |  |
 | RevisionTimeline | component | density=comfortable*\|compact | `@elabs-ai/components-ui` |  |
 | SchemaForm | component |  | `@elabs-ai/components-ui` |  |
 | SchemaFormDescription | component |  | `@elabs-ai/components-ui` |  |
@@ -452,6 +461,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Text | component | variant=lead\|body*\|caption\|meta\|kpi\|code · tone=default*\|muted\|primary | `@elabs-ai/components-ui` |  |
 | TEXT_ROLE_REM | component |  | `@elabs-ai/components-ui` |  |
 | Textarea | component |  | `@elabs-ai/components-ui` |  |
+| ThemeFamilySwitch | component |  | `@elabs-ai/components-ui` |  |
 | ThemeSwitcher | component |  | `@elabs-ai/components-ui` |  |
 | Timeline | component |  | `@elabs-ai/components-ui` |  |
 | TimelineItem | component |  | `@elabs-ai/components-ui` |  |
@@ -484,6 +494,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useIsMobile | hook |  | `@elabs-ai/components-ui` |  |
 | useLocale | hook |  | `@elabs-ai/components-ui` |  |
 | useMentionInput | hook |  | `@elabs-ai/components-ui` |  |
+| useScrollProgress | hook |  | `@elabs-ai/components-ui` |  |
 | useSidebar | hook |  | `@elabs-ai/components-ui` |  |
 | useStreamdownTranslations | hook |  | `@elabs-ai/components-ui` |  |
 | useThemeTransition | hook |  | `@elabs-ai/components-ui` |  |

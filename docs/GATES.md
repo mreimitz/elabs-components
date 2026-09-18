@@ -35,3 +35,13 @@ Job `storybook` (blocking, `light` and `dark`): every story as an interaction + 
 
 The pre-commit hook (`.githooks/pre-commit`) adds commit-time teeth: staged conflict
 markers, dependency-field moves, registry validity, and Prettier on staged files.
+
+## Website rules (`apps/home`, ADR 0038)
+
+- `home-imports` — the site imports only react, react-dom, next, motion, `@vercel/analytics`,
+  `@elabs-ai/*`, relative paths and provenance-headed registry block copies. The homepage is the
+  proof that the library is enough on its own, so an outside UI dependency fails.
+- `home-tokens` — no raw hex, `rgb()`/`hsl()`/`oklch()` colour and no arbitrary
+  `duration-[…]`/`ease-[…]` in `apps/home`; `app/globals.css` may only reference `var(--…)`. The
+  site is a consumer, so its colours and motion come from the themes like everyone else’s.
+  `raw-palette` and `motion-tokens` scan `apps/home` too.

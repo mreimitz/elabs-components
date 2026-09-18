@@ -1,0 +1,45 @@
+{
+  "cli": "pnpm add -D @elabs-ai/components-cli",
+  "hostedMcp": {
+    "command": "claude mcp add --transport http brand-ui https://elabs-ai.com/mcp",
+    "url": "https://elabs-ai.com/mcp"
+  },
+  "localMcp": {
+    "command": "npx -y @elabs-ai/components-cli mcp"
+  },
+  "plugin": {
+    "marketplaceAdd": "/plugin marketplace add <path-to-this-repo>",
+    "install": "/plugin install brand-ui"
+  },
+  "registryHomepage": "https://mreimitz.github.io/elabs-components/r",
+  "perArchetype": [
+    {
+      "archetype": "ai-assistant",
+      "command": "pnpm add @elabs-ai/components-ai @elabs-ai/components-ui"
+    },
+    {
+      "archetype": "dashboard",
+      "command": "pnpm add @elabs-ai/components-charts @elabs-ai/components-data @elabs-ai/components-ui"
+    },
+    {
+      "archetype": "data-app",
+      "command": "pnpm add @elabs-ai/components-data @elabs-ai/components-ui"
+    },
+    {
+      "archetype": "flow-workspace",
+      "command": "pnpm add @elabs-ai/components-ai @elabs-ai/components-flow @elabs-ai/components-ui"
+    },
+    {
+      "archetype": "marketing",
+      "command": "pnpm add @elabs-ai/components-icons @elabs-ai/components-marketing @elabs-ai/components-ui"
+    },
+    {
+      "archetype": "process-explorer",
+      "command": "pnpm add @elabs-ai/components-charts @elabs-ai/components-data @elabs-ai/components-flow @elabs-ai/components-process @elabs-ai/components-ui"
+    },
+    {
+      "archetype": "settings",
+      "command": "pnpm add @elabs-ai/components-data @elabs-ai/components-ui"
+    }
+  ]
+}
