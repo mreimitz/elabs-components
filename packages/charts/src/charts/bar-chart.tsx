@@ -61,11 +61,18 @@ import { useScheduledTooltip } from "./use-scheduled-tooltip";
 import { useStableValue } from "./use-stable-value";
 import { useTextMeasurerOf } from "./use-text-measurer";
 import {
+  applyValueAxisConfigs,
   buildYScalesForLines,
+  buildYScalesFromDomains,
+  collectValueAxisConfigs,
+  DEFAULT_Y_AXIS_ID,
   getPrimaryYScale,
   normalizeYAxisId,
+  resolveValueAxis,
+  warnValueAxisOnce,
   wrapSingleYScale,
 } from "./y-axis-scales";
+import { computeYDomainsByAxis, niceYDomain } from "./y-domain-utils";
 
 export type BarOrientation = "vertical" | "horizontal";
 
@@ -313,6 +320,29 @@ function resolveBarValueDomain(max: number, min: number): [number, number] {
   }
   const domainMax = max > 0 ? max * 1.1 : 0;
   return [min * 1.1, domainMax];
+}
+
+/** One value axis' bar domain: the signed extent of `dataKeys`, zero-based (RM-027). */
+function resolveBarAxisDomain(
+  data: Record<string, unknown>[],
+  dataKeys: string[],
+): [number, number] {
+  let max = 0;
+  let min = 0;
+  for (const d of data) {
+    for (const key of dataKeys) {
+      const value = d[key];
+      if (typeof value === "number") {
+        if (value > max) {
+          max = value;
+        }
+        if (value < min) {
+          min = value;
+        }
+      }
+    }
+  }
+  return resolveBarValueDomain(max, min);
 }
 
 interface CategoryAxisChildConfig {
@@ -698,44 +728,88 @@ const ChartCore = memo(function ChartCore({
   // Any negative value anywhere drives the zero-line auto-on default below.
   const hasNegativeValues = minValue < 0;
 
+  // RM-108: a `YAxis domain`/`scale` request, read off the direct children.
+  // Bars are a LENGTH encoding, so it goes through `resolveValueAxis` with
+  // `lengthEncoding: true`: the upper bound is honoured, a lower bound above 0
+  // is widened back to 0, and any non-linear scale falls back to linear — each
+  // with a dev warning (charts-honesty). No request → the pre-RM-108 path.
+  const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
+  const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
+  const primaryValueAxis = useMemo(() => {
+    const config = valueAxisConfigs[DEFAULT_Y_AXIS_ID];
+    if (!config) {
+      return null;
+    }
+    return resolveValueAxis({
+      autoDomain: niceYDomain(resolveBarValueDomain(maxValue, minValue)),
+      dataExtent: [minValue, maxValue],
+      domain: config.domain,
+      scale: config.scale,
+      lengthEncoding: true,
+    });
+  }, [maxValue, minValue, valueAxisConfigs]);
+
   // Value scale (linear) - for the value axis
   const valueScale = useMemo(() => {
     const range = isHorizontal ? [0, innerWidth] : [innerHeight, 0];
+    if (primaryValueAxis) {
+      return scaleLinear({ range, domain: primaryValueAxis.domain });
+    }
     return scaleLinear({
       range,
       domain: resolveBarValueDomain(maxValue, minValue),
       nice: true,
     });
-  }, [innerWidth, innerHeight, maxValue, minValue, isHorizontal]);
+  }, [innerWidth, innerHeight, maxValue, minValue, isHorizontal, primaryValueAxis]);
+
+  const verticalValueAxes = useMemo(() => {
+    if (isHorizontal || !hasValueAxisConfigs) {
+      return null;
+    }
+    return applyValueAxisConfigs({
+      autoDomainsByAxis: computeYDomainsByAxis({
+        lines,
+        resolveDomain: (dataKeys) => resolveBarAxisDomain(data, dataKeys),
+      }),
+      configs: valueAxisConfigs,
+      data,
+      lines,
+      lengthEncoding: true,
+    });
+  }, [data, hasValueAxisConfigs, isHorizontal, lines, valueAxisConfigs]);
+
+  useEffect(() => {
+    if (data.length === 0) {
+      return;
+    }
+    // Horizontal bars have one value scale (the `left` request); vertical
+    // bars resolve per axis id.
+    const warnings = isHorizontal
+      ? { [DEFAULT_Y_AXIS_ID]: primaryValueAxis?.warnings ?? [] }
+      : (verticalValueAxes?.warningsByAxis ?? {});
+    for (const [axisId, messages] of Object.entries(warnings)) {
+      warnValueAxisOnce(axisId, messages);
+    }
+  }, [data.length, isHorizontal, primaryValueAxis, verticalValueAxes]);
 
   const yScales = useMemo(() => {
     if (isHorizontal) {
       return wrapSingleYScale(valueScale);
     }
+    if (verticalValueAxes) {
+      return buildYScalesFromDomains({
+        lines,
+        innerHeight,
+        domainsByAxis: verticalValueAxes.domainsByAxis,
+      });
+    }
     return buildYScalesForLines({
       lines,
       data,
       innerHeight,
-      resolveDomain: (dataKeys) => {
-        let max = 0;
-        let min = 0;
-        for (const d of data) {
-          for (const key of dataKeys) {
-            const value = d[key];
-            if (typeof value === "number") {
-              if (value > max) {
-                max = value;
-              }
-              if (value < min) {
-                min = value;
-              }
-            }
-          }
-        }
-        return resolveBarValueDomain(max, min);
-      },
+      resolveDomain: (dataKeys) => resolveBarAxisDomain(data, dataKeys),
     });
-  }, [data, innerHeight, isHorizontal, lines, valueScale]);
+  }, [data, innerHeight, isHorizontal, lines, valueScale, verticalValueAxes]);
 
   const primaryYScale = getPrimaryYScale(yScales, valueScale);
 

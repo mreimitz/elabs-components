@@ -28,6 +28,7 @@ import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
 import { resolvePalette } from "./chart-context";
 import { Grid } from "./grid";
+import { YAxis } from "./y-axis";
 
 const minimalData = [
   { month: "Jan", value: 100 },
@@ -659,6 +660,52 @@ describe("BarChart", () => {
       );
       const fills = rects.map((r) => r.getAttribute("fill"));
       expect(fills).toContain("var(--chart-5)");
+    });
+  });
+
+  describe("value-axis domain (RM-108)", () => {
+    const sales = [
+      { month: "Jan", value: 80 },
+      { month: "Feb", value: 120 },
+      { month: "Mar", value: 150 },
+    ];
+
+    function yLabels(container: HTMLElement): string[] {
+      return [...container.querySelectorAll('[data-slot="y-axis"] span')].map(
+        (node) => node.textContent ?? "",
+      );
+    }
+
+    it("honours the upper bound but keeps bars zero-based, with a dev warning", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { container } = render(
+        <BarChart data={sales} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" />
+          <YAxis domain={[50, 300]} numTicks={3} />
+        </BarChart>,
+      );
+      const labels = yLabels(container);
+      expect(labels[0]).toBe("0");
+      expect(labels.at(-1)).toBe("300");
+      expect(warn.mock.calls.some(([message]) => String(message).includes("excludes 0"))).toBe(
+        true,
+      );
+      warn.mockRestore();
+    });
+
+    it("draws bars linear even when a log scale is asked for", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { container } = render(
+        <BarChart data={sales} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" />
+          <YAxis scale="log" />
+        </BarChart>,
+      );
+      expect(yLabels(container)[0]).toBe("0");
+      expect(warn.mock.calls.some(([message]) => String(message).includes("linear only"))).toBe(
+        true,
+      );
+      warn.mockRestore();
     });
   });
 });
