@@ -12,6 +12,9 @@
  * Writes nine files under `apps/home/content/generated/`:
  *   packages.json, counts.json, themes.json, gates.json, cli.json, blocks.json,
  *   playbooks.json, story-ids.json, install.json
+ * …plus one static asset outside that directory (RM-093): `apps/home/public/.well-known/
+ * mcp.json`, MCP discovery metadata — served byte-for-byte, so it cannot go through
+ * `apps/home/lib/content.ts` the way the nine files above do.
  *
  * Every builder below is a PURE function over already-loaded repo data (the
  * manifest, the registry, the check-rule registry, the theme families) so
@@ -39,11 +42,16 @@ import {
   themeBlocks,
 } from "./lib/community-themes.mjs";
 import { indexStoryDocsPages } from "../packages/cli/lib/story-ids.mjs";
-import { handleMessage, LOCAL_ONLY_TOOLS, TOOLS } from "../packages/cli/lib/mcp.mjs";
+import { handleMessage, LOCAL_ONLY_TOOLS, SERVER_INFO, TOOLS } from "../packages/cli/lib/mcp.mjs";
 import { HOSTED_MCP_URL } from "../packages/cli/lib/render-docs.mjs";
 
 export const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 export const OUT_DIR = join(REPO_ROOT, "apps/home/content/generated");
+// RM-093 — MCP discovery (2026-09-17 review §4.2 (6), §6 B4): a public well-known file, so an
+// agent finds the hosted server without already knowing `llms.txt` exists. Lives under
+// `apps/home/public/` (a static asset, not `content/generated/`) because it must be served
+// byte-for-byte at `/.well-known/mcp.json`, not read through `apps/home/lib/content.ts`.
+export const WELL_KNOWN_MCP_PATH = join(REPO_ROOT, "apps/home/public/.well-known/mcp.json");
 
 const read = (rel) => readFileSync(join(REPO_ROOT, rel), "utf8");
 const json = (rel) => JSON.parse(read(rel));
@@ -341,6 +349,24 @@ export function buildInstall(manifest, registry, cli) {
   };
 }
 
+// ───────────────────────────── .well-known/mcp.json ────────────────────────────
+
+/**
+ * `apps/home/public/.well-known/mcp.json` — discovery metadata for the hosted MCP server
+ * (2026-09-17 review §4.2 (6)). `tools` is every tool a REMOTE caller can actually reach
+ * (`cli.hostedMcpTools`, i.e. `TOOLS` minus `LOCAL_ONLY_TOOLS` — `audit` needs the caller's own
+ * files and stays local-only), never a hand-typed list.
+ */
+export function buildWellKnownMcp(cli) {
+  return {
+    name: SERVER_INFO.name,
+    version: SERVER_INFO.version,
+    url: cli.hostedMcpUrl,
+    transport: "streamable-http",
+    tools: cli.hostedMcpTools,
+  };
+}
+
 // ────────────────────────────────────── main ──────────────────────────────────
 
 async function buildAll() {
@@ -385,6 +411,24 @@ async function buildAll() {
   };
 }
 
+/** Write `data` as pretty JSON to `outPath` when it differs from what's on disk; `--check`
+ * never writes. Returns `true` when `outPath` was (or would be) stale. Shared by the
+ * `content/generated/*.json` loop and the `.well-known/mcp.json` write below it. */
+async function writeJsonIfStale(outPath, data, { check, prettier }) {
+  const next = JSON.stringify(data, null, 2) + "\n";
+  const existing = existsSync(outPath) ? readFileSync(outPath, "utf8") : "";
+  const same =
+    existing !== "" &&
+    JSON.stringify(JSON.parse(existing || "null")) === JSON.stringify(JSON.parse(next));
+  if (same) return false;
+  if (!check) {
+    mkdirSync(dirname(outPath), { recursive: true });
+    const options = (await prettier.resolveConfig(outPath)) ?? {};
+    writeFileSync(outPath, await prettier.format(next, { ...options, filepath: outPath }));
+  }
+  return true;
+}
+
 async function main() {
   const check = process.argv.includes("--check");
   const files = await buildAll();
@@ -392,21 +436,14 @@ async function main() {
   const prettier = await import("prettier");
   const stale = [];
   for (const [name, data] of Object.entries(files)) {
-    const outPath = join(OUT_DIR, name);
-    const next = JSON.stringify(data, null, 2) + "\n";
-    const existing = existsSync(outPath) ? readFileSync(outPath, "utf8") : "";
-    const same =
-      existing !== "" &&
-      JSON.stringify(JSON.parse(existing || "null")) === JSON.stringify(JSON.parse(next));
-    if (!same) {
-      stale.push(name);
-      if (!check) {
-        mkdirSync(OUT_DIR, { recursive: true });
-        const options = (await prettier.resolveConfig(outPath)) ?? {};
-        writeFileSync(outPath, await prettier.format(next, { ...options, filepath: outPath }));
-      }
-    }
+    if (await writeJsonIfStale(join(OUT_DIR, name), data, { check, prettier })) stale.push(name);
   }
+  const wellKnownStale = await writeJsonIfStale(
+    WELL_KNOWN_MCP_PATH,
+    buildWellKnownMcp(files["cli.json"]),
+    { check, prettier },
+  );
+  if (wellKnownStale) stale.push("public/.well-known/mcp.json");
 
   if (check) {
     if (stale.length > 0) {
@@ -417,7 +454,7 @@ async function main() {
       process.exit(1);
     }
     console.log(
-      `✔ apps/home/content/generated/*.json is fresh (${Object.keys(files).length} files).`,
+      `✔ apps/home/content/generated/*.json is fresh (${Object.keys(files).length + 1} files).`,
     );
     return;
   }

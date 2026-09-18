@@ -1,0 +1,7 @@
+{
+  "name": "brand-ui",
+  "version": "4.2.0",
+  "url": "https://elabs-ai.com/mcp",
+  "transport": "streamable-http",
+  "tools": ["a2ui", "chart_for", "docs", "info", "search", "tokens"]
+}
