@@ -129,6 +129,7 @@ export const ChartTooltipIndicator = createInertPart("ChartTooltipIndicator");
 export const ChoroplethFeatureComponent = createInertPart("ChoroplethFeatureComponent");
 export const ChoroplethGraticule = createInertPart("ChoroplethGraticule");
 export const ChoroplethTooltip = createInertPart("ChoroplethTooltip");
+export const CustomShapes = createInertPart("CustomShapes");
 export const DateTicker = createInertPart("DateTicker");
 // ── Editorial marks (RM-017) — inert like every other part. A mark is a bare SVG
 //    element, so a stand-in that rendered one would put an <svg> outside any
@@ -200,6 +201,7 @@ export const SegmentLineTo = createInertPart("SegmentLineTo");
 export const SeriesBar = createInertPart("SeriesBar");
 export const SeriesMarkers = createInertPart("SeriesMarkers");
 export const SeriesPointMarker = createInertPart("SeriesPointMarker");
+export const TrendLine = createInertPart("TrendLine");
 export const UnitStack = createInertPart("UnitStack");
 export const XAxis = createInertPart("XAxis");
 export const YAxis = createInertPart("YAxis");
