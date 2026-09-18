@@ -7,6 +7,7 @@
  */
 
 import type { ChartValueFormat } from "../charts/value-format";
+import type { ChartSpecAnnotation } from "../charts/annotations/annotation-types";
 import type { DateFormatPreset } from "../charts/date-format";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
 
@@ -240,6 +241,9 @@ export interface ChartSpec {
    * selection field to any chart without knowing the chart type.
    */
   fields?: { category?: string; series?: string };
+  // Annotations — RM-111
+  /** Text notes, ranges, reference lines and row notes in data units (RM-111) — see {@link ChartSpecAnnotation}. */
+  annotations?: ChartSpecAnnotation[];
 }
 
 // Axes — RM-108

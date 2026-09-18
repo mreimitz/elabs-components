@@ -23,6 +23,9 @@
 
 import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
+import { AnnotationKey } from "../charts/annotations/annotation-key";
+import { withAnnotationDescription } from "../charts/annotations/annotation-types";
+import { ChartAnnotations } from "../charts/annotations/chart-annotations";
 import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
 import type { ChartHoverCategory } from "../charts/chart-hover-link";
 import type { ChartSelectionStatesResolver } from "../charts/chart-selection";
@@ -309,6 +312,15 @@ function resolveAxisSpecProps(
   };
 }
 
+// Annotations — RM-111
+/** The spec's annotation layer, for a container that publishes cartesian scales. */
+function annotationLayer(spec: ChartSpec): ReactNode {
+  return spec.annotations?.length ? <ChartAnnotations annotations={spec.annotations} /> : null;
+}
+
+/** Families whose container paints `ChartSpec.annotations` (the cartesian chart context). */
+const ANNOTATED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "stream", "bar"]);
+
 function renderChart(
   type: ChartType,
   spec: ChartSpec,
@@ -348,7 +360,7 @@ function renderChart(
           xDataKey={x}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -362,6 +374,7 @@ function renderChart(
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
+          {annotationLayer(spec)}
           <ChartTooltip />
         </LineChart>
       );
@@ -381,7 +394,7 @@ function renderChart(
           offset={type === "stream" ? "wiggle" : stacked ? "none" : undefined}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -395,6 +408,7 @@ function renderChart(
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
+          {annotationLayer(spec)}
           <ChartTooltip />
         </AreaChart>
       );
@@ -415,7 +429,7 @@ function renderChart(
           stacked={stacked ?? false}
           orientation={orientation ?? "vertical"}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
         >
           {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
@@ -435,6 +449,7 @@ function renderChart(
             chart wants is its own component; tracked separately.
           */}
           {isHorizontal ? null : <YAxis formatValue={yFormat} {...axisProps.y} />}
+          {annotationLayer(spec)}
           <ChartTooltip />
         </BarChart>
       );
@@ -1202,6 +1217,9 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       >
         {fillsFrame ? <div className="min-h-0 flex-1">{chartNode}</div> : chartNode}
       </AutoChartErrorBoundary>
+      {spec.annotations?.length && ANNOTATED_CHART_TYPES.has(type) ? (
+        <AnnotationKey annotations={spec.annotations} />
+      ) : null}
       {showLegend ? <AutoLegend series={legendItems} /> : null}
     </div>
   );

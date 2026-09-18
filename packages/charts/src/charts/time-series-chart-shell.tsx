@@ -28,6 +28,7 @@ import {
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
 import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
+import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
 import { ChartFallback } from "./chart-fallback";
 import {
   type ChartPhase,
@@ -717,10 +718,21 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   const clipExcludedChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  // RM-111: a `ChartAnnotations` child paints twice — ranges under everything,
+  // notes and lines over the series (outside the reveal clip, so they never wipe in).
+  const annotationBackChildren: ReactElement[] = [];
+  const annotationFrontChildren: ReactElement[] = [];
   const yAxisTooltipHint = findYAxisTooltipHint(children);
 
   Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
+      return;
+    }
+
+    const annotationLayers = splitChartAnnotationsChild(child, index);
+    if (annotationLayers) {
+      annotationBackChildren.push(annotationLayers[0]);
+      annotationFrontChildren.push(annotationLayers[1]);
       return;
     }
 
@@ -929,12 +941,14 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       >
         <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
 
+        {annotationBackChildren}
         {clipExcludedChildren}
         {useClipReveal ? (
           <g clipPath={`url(#${clipPathId})`}>{preOverlayChildren}</g>
         ) : (
           preOverlayChildren
         )}
+        {annotationFrontChildren}
         {postOverlayChildren}
       </g>
     </svg>

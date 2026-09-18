@@ -28,6 +28,7 @@ import {
   type CategoryAxisPlan,
   planCategoryAxis,
 } from "./category-axis-plan";
+import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import {
   chartCssVars,
@@ -1055,13 +1056,20 @@ const ChartCore = memo(function ChartCore({
   const defsChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  // RM-111: a `ChartAnnotations` child paints ranges under the bars, the rest over them.
+  const annotationBackChildren: ReactElement[] = [];
+  const annotationFrontChildren: ReactElement[] = [];
 
-  Children.forEach(children, (child) => {
+  Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
       return;
     }
 
-    if (isGradientDefComponent(child)) {
+    const annotationLayers = splitChartAnnotationsChild(child, index);
+    if (annotationLayers) {
+      annotationBackChildren.push(annotationLayers[0]);
+      annotationFrontChildren.push(annotationLayers[1]);
+    } else if (isGradientDefComponent(child)) {
       defsChildren.push(child);
     } else if (isPatternDefComponent(child)) {
       preOverlayChildren.push(child);
@@ -1145,8 +1153,10 @@ const ChartCore = memo(function ChartCore({
           />
         )}
 
+        {annotationBackChildren}
         {/* SVG children rendered before markers */}
         {preOverlayChildren}
+        {annotationFrontChildren}
 
         {/* Markers rendered last so they're on top for interaction */}
         {postOverlayChildren}

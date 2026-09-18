@@ -29,16 +29,18 @@ interface NoteLine {
  * word. A single word longer than the line gets a line of its own rather than
  * being split mid-word.
  */
-function wrapNote(text: string, maxWidth: number, fontSize: number): NoteLine[] {
+export function wrapNote(text: string, maxWidth: number, fontSize: number): NoteLine[] {
   const maxChars = Math.max(1, Math.floor(maxWidth / (fontSize * GLYPH_ADVANCE_EM)));
   const lines: NoteLine[] = [];
   let line: NoteLine | null = null;
+  // `**` bold markers take no room on the line, so they never count.
+  const visible = (s: string) => s.replace(/\*\*/g, "").length;
   for (const match of text.matchAll(/\S+/g)) {
     const word = match[0];
     const offset = match.index ?? 0;
     if (line === null) {
       line = { text: word, offset };
-    } else if (line.text.length + 1 + word.length > maxChars) {
+    } else if (visible(line.text) + 1 + visible(word) > maxChars) {
       lines.push(line);
       line = { text: word, offset };
     } else {
@@ -49,9 +51,79 @@ function wrapNote(text: string, maxWidth: number, fontSize: number): NoteLine[] 
   return lines;
 }
 
+/** How many lines `wrapNote` breaks a note into — for callers that place the block. */
+export function estimateNoteLines(text: string, maxWidth: number, fontSize: number): number {
+  return Math.max(1, wrapNote(text, maxWidth, fontSize).length);
+}
+
+/** The line pitch of a wrapped note, in px, at `fontSize`. */
+export function noteLineHeight(fontSize: number): number {
+  return fontSize * LINE_HEIGHT_EM;
+}
+
+/**
+ * Render one wrapped line, turning the inline `**bold**` subset into bold
+ * `<tspan>`s. `boldOpen` carries a bold run across a line break; returns the
+ * nodes and whether bold is still open after this line.
+ */
+function renderInlineBold(text: string, boldOpen: boolean): [ReactNode[], boolean] {
+  if (!text.includes("**")) {
+    return [
+      [
+        boldOpen ? (
+          <tspan fontWeight="bold" key="0">
+            {text}
+          </tspan>
+        ) : (
+          text
+        ),
+      ],
+      boldOpen,
+    ];
+  }
+  const nodes: ReactNode[] = [];
+  let bold = boldOpen;
+  text.split("**").forEach((part, i) => {
+    if (i > 0) bold = !bold;
+    if (!part) return;
+    nodes.push(
+      bold ? (
+        <tspan fontWeight="bold" key={i}>
+          {part}
+        </tspan>
+      ) : (
+        <tspan key={i}>{part}</tspan>
+      ),
+    );
+  });
+  return [nodes, bold];
+}
+
+/** The wrapped lines as `<tspan>`s, with a bold run carried across breaks. */
+function renderLines(lines: NoteLine[], x: number, fontSize: number): ReactNode[] {
+  let bold = false;
+  return lines.map((line, i) => {
+    const [nodes, open] = renderInlineBold(line.text, bold);
+    bold = open;
+    return (
+      <tspan
+        data-slot="marginalia-line"
+        dy={i === 0 ? 0 : fontSize * LINE_HEIGHT_EM}
+        key={line.offset}
+        x={x}
+      >
+        {nodes}
+      </tspan>
+    );
+  });
+}
+
 export interface MarginaliaProps extends Omit<SVGProps<SVGGElement>, "x" | "y"> {
-  /** The mark the note is about — where the leader starts. */
-  anchor: LeaderPoint;
+  /**
+   * The mark the note is about — where the leader starts. Omit it for a free
+   * note with no leader (a declarative `text` annotation without a connector).
+   */
+  anchor?: LeaderPoint;
   /** Where the note itself sits — where the leader ends and the text begins. */
   x: number;
   /** Note y — the vertical middle of its first line. */
@@ -78,6 +150,13 @@ export interface MarginaliaProps extends Omit<SVGProps<SVGGElement>, "x" | "y"> 
   leaderKind?: LeaderKind;
   /** Leader dash rhythm (default `1 3`). */
   dash?: LeaderDash;
+  /** Solid arrow head at `anchor`, pointing at the mark (RM-111). Default `false`. */
+  arrow?: boolean;
+  /**
+   * Note ink (default `var(--chart-foreground-muted)`). A declarative annotation
+   * passes the resolved series stroke here to tie the note to its series.
+   */
+  noteFill?: string;
   /** Note font size in px (default 10). */
   fontSize?: number;
   /** Text anchor for the note (default `start`). */
@@ -129,6 +208,8 @@ export const Marginalia = forwardRef<SVGGElement, MarginaliaProps>(function Marg
     halo,
     leaderKind = "curve",
     dash = "1 3",
+    arrow = false,
+    noteFill = "var(--chart-foreground-muted)",
     fontSize = 10,
     textAnchor = "start",
     ...props
@@ -145,11 +226,13 @@ export const Marginalia = forwardRef<SVGGElement, MarginaliaProps>(function Marg
 
   return (
     <g aria-hidden="true" data-slot="marginalia" ref={ref} {...props}>
-      <Leader dash={dash} from={anchor} kind={leaderKind} to={[tipX, y]} />
+      {anchor ? (
+        <Leader arrow={arrow} dash={dash} from={anchor} kind={leaderKind} to={[tipX, y]} />
+      ) : null}
       <HaloText
         data-slot="marginalia-note"
         dominantBaseline="middle"
-        fill="var(--chart-foreground-muted)"
+        fill={noteFill}
         fontSize={fontSize}
         fontStyle="italic"
         halo={halo}
@@ -157,18 +240,7 @@ export const Marginalia = forwardRef<SVGGElement, MarginaliaProps>(function Marg
         x={x}
         y={y}
       >
-        {lines
-          ? lines.map((line, i) => (
-              <tspan
-                data-slot="marginalia-line"
-                dy={i === 0 ? 0 : fontSize * LINE_HEIGHT_EM}
-                key={line.offset}
-                x={x}
-              >
-                {line.text}
-              </tspan>
-            ))
-          : children}
+        {lines ? renderLines(lines, x, fontSize) : children}
       </HaloText>
     </g>
   );

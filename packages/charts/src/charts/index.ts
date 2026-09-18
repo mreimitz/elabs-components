@@ -796,3 +796,35 @@ export { type AxisTickCount } from "./tick-targets";
 export { type XAxisOrientation } from "./x-axis";
 export { type AxisLabelPlacement } from "./y-axis";
 export { type AxisDomain, type AxisDomainBound, type ValueScaleType } from "./y-axis-scales";
+// Annotations — RM-111
+export {
+  ANNOTATION_ANCHORS,
+  type AnnotationAnchor,
+  type AnnotationAxis,
+  type AnnotationColor,
+  type AnnotationConnector,
+  type AnnotationDisplay,
+  AnnotationKey,
+  type AnnotationKeyProps,
+  type AnnotationPlanEntry,
+  type AnnotationScales,
+  type AnnotationValue,
+  annotationValueToDate,
+  type ChartAnnotation,
+  type ChartAnnotationOf,
+  ChartAnnotations,
+  type ChartAnnotationsLayer,
+  type ChartAnnotationsProps,
+  type ChartLineAnnotation,
+  type ChartRangeAnnotation,
+  type ChartRowAnnotation,
+  type ChartSpecAnnotation,
+  type ChartTextAnnotation,
+  circledNumber,
+  describeAnnotations,
+  planAnnotations,
+  resolveAnnotationInk,
+  resolveAnnotationPosition,
+  useChartAnnotationsA11y,
+  withAnnotationDescription,
+} from "./annotations";
