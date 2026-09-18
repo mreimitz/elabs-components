@@ -969,4 +969,37 @@ describe("BarChart richness (RM-113)", () => {
     );
     expect(container.querySelectorAll(".text-chart-value")).toHaveLength(0);
   });
+
+  // Integration with RM-111: the annotations prop wraps the plot that carries
+  // the RM-113 props, and a row note follows its category through a sort.
+  it("keeps the comparison layer and moves an annotation row note with sort", () => {
+    const data = [
+      { name: "Alpha", v: 30, prev: 25 },
+      { name: "Beta", v: 80, prev: 60 },
+    ];
+    const noteY = (sort: "none" | "desc") => {
+      const { container } = render(
+        <BarChart
+          animationDuration={0}
+          annotations={[{ kind: "row", category: "Alpha", text: "Start" }]}
+          comparison={{ key: "prev" }}
+          data={data}
+          orientation="horizontal"
+          sort={sort}
+        >
+          <Bar animate={false} dataKey="v" fill="var(--chart-1)" />
+        </BarChart>,
+      );
+      expect(container.querySelectorAll('[data-slot="bar-chart-comparison"] rect')).toHaveLength(2);
+      const note = container.querySelector('[data-slot="chart-annotations-row"]');
+      expect(note?.textContent).toBe("Start");
+      const y = Number(note?.getAttribute("y"));
+      cleanup();
+      return y;
+    };
+    const unsorted = noteY("none");
+    const sorted = noteY("desc");
+    expect(Number.isFinite(unsorted) && Number.isFinite(sorted)).toBe(true);
+    expect(sorted).toBeGreaterThan(unsorted);
+  });
 });
