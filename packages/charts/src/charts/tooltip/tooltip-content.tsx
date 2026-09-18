@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useChartValueFormatter } from "../chart-formatters";
+import { resolveChartValueFormatSpec, type ChartValueFormat } from "../value-format";
 
 export interface TooltipRow {
   color: string;
@@ -22,9 +23,26 @@ export interface ChartTooltipContentProps {
   rows: TooltipRow[];
   /** Optional additional content (e.g., markers) */
   children?: ReactNode;
+  /**
+   * STYLE to borrow from the chart's own `valueFormat` (RM-109) — a currency
+   * symbol, a percent sign, an explicit sign, a prefix/suffix. `abbreviate`
+   * is always forced `false` regardless of what this spec asks for: the
+   * tooltip is the detail-on-demand surface (see the module doc below), so
+   * it never compacts. Default: plain grouped digits (`"number"`), byte-
+   * identical to every call site from before this prop existed.
+   */
+  valueFormat?: ChartValueFormat;
+  /** ISO 4217 code for `valueFormat`'s `style: "currency"`. */
+  currency?: string;
 }
 
-export function ChartTooltipContent({ title, rows, children }: ChartTooltipContentProps) {
+export function ChartTooltipContent({
+  title,
+  rows,
+  children,
+  valueFormat,
+  currency,
+}: ChartTooltipContentProps) {
   /*
    * Locale-aware number formatting (ADR-0014): honors a `LocaleProvider`
    * locale, falling back to the host default when no provider is mounted.
@@ -35,7 +53,14 @@ export function ChartTooltipContent({ title, rows, children }: ChartTooltipConte
    * affordance: the tooltip is `pointer-events-none` so it never swallows the
    * `mousemove` that drives the crosshair.
    */
-  const format = useChartValueFormatter("number");
+  const tooltipFormat = useMemo(
+    () =>
+      valueFormat != null
+        ? { ...resolveChartValueFormatSpec(valueFormat), abbreviate: false as const }
+        : ("number" as const),
+    [valueFormat],
+  );
+  const format = useChartValueFormatter(tooltipFormat, currency);
   return (
     <div className="overflow-hidden">
       <div className="px-3 py-2.5">

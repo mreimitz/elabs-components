@@ -131,7 +131,11 @@ const YAxisInner = memo(function YAxisInner({
                 : { left: 0, justifyContent: "flex-start", paddingLeft: 8 }),
             }}
           >
-            <span className="text-chart-label text-meta">{tick.label}</span>
+            {/* RM-109: a unit-bearing tick ("700 km") is the widest label the
+                axis paints — without `whitespace-nowrap` it wraps onto a
+                second line at narrow widths and crowds the tick below it
+                (same fix x-axis.tsx already has for its own tick labels). */}
+            <span className="whitespace-nowrap text-chart-label text-meta">{tick.label}</span>
           </div>
         ))}
       </div>
