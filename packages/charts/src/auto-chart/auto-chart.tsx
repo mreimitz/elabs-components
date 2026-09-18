@@ -21,8 +21,14 @@
  * - `"use client"` — uses hooks and relies on ResizeObserver internally.
  */
 
+import type { ScatterLabels } from "../charts/labels/point-labels";
+import { hasDisplayName, resolveSeriesLabelMode } from "../charts/labels/use-chart-labels";
 import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
+import { AnnotationKey } from "../charts/annotations/annotation-key";
+import { AnnotationLayoutProvider } from "../charts/annotations/annotation-layout-context";
+import { withAnnotationDescription } from "../charts/annotations/annotation-types";
+import { ChartAnnotations } from "../charts/annotations/chart-annotations";
 import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
 import type { ChartHoverCategory } from "../charts/chart-hover-link";
 import type { ChartSelectionStatesResolver } from "../charts/chart-selection";
@@ -41,6 +47,7 @@ import {
   ChartTooltip,
   DistributionChart,
   DumbbellChart,
+  type DumbbellSortBy,
   FunnelChart,
   type FunnelStage,
   Grid,
@@ -72,6 +79,7 @@ import {
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
+import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
 import type { XAxisProps } from "../charts/x-axis";
 import type { YAxisProps } from "../charts/y-axis";
@@ -84,7 +92,13 @@ import {
   type Responsive,
 } from "../charts/chart-breakpoint";
 
-import type { AxisSpec, ChartSpec, ChartSeriesSpec, ChartType } from "./chart-spec";
+import type {
+  AxisSpec,
+  ChartLabelsSpec,
+  ChartSpec,
+  ChartSeriesSpec,
+  ChartType,
+} from "./chart-spec";
 import {
   inferChartType,
   isChartSpecPalette,
@@ -209,6 +223,47 @@ function warnUnsupportedChartType(type: unknown): void {
   );
 }
 
+// Labels — RM-110
+/** `ChartSpec.labels.points` → `Scatter labels` (a `priorityKey` field becomes the priority reader). */
+function scatterPointLabels(points: ChartLabelsSpec["points"]): ScatterLabels | undefined {
+  if (!points) return undefined;
+  const { key, mode, priorityKey } = points;
+  return {
+    key,
+    mode,
+    priority: priorityKey
+      ? (d) => {
+          const v = Number(d[priorityKey]);
+          return Number.isFinite(v) ? v : 0;
+        }
+      : undefined,
+  };
+}
+
+/**
+ * True when every Line/Area series the spec draws paints an end label at the
+ * wide tier (maintainer decision 7: two or more series, each with a real
+ * display name, or an explicit `labels.series`). Only then is the AutoLegend
+ * redundant. Stacked areas name their bands themselves, never with end labels.
+ */
+function everySeriesEndLabelled(
+  spec: ChartSpec,
+  type: ChartType,
+  series: NormalizedSeries[],
+): boolean {
+  const drawsLines = type === "line" || (type === "area" && !spec.stacked);
+  if (!drawsLines || series.length === 0) return false;
+  const context = { hasLegend: false, seriesCount: series.length };
+  return series.every(
+    (s) =>
+      resolveSeriesLabelMode(
+        { seriesLabel: spec.labels?.series, hasDisplayName: hasDisplayName(s.label, s.key) },
+        context,
+        "wide",
+      ) === "end",
+  );
+}
+
 // ---------------------------------------------------------------------------
 // AutoLegend
 // ---------------------------------------------------------------------------
@@ -309,6 +364,15 @@ function resolveAxisSpecProps(
   };
 }
 
+// Annotations — RM-111
+/** The spec's annotation layer, for a container that publishes cartesian scales. */
+function annotationLayer(spec: ChartSpec): ReactNode {
+  return spec.annotations?.length ? <ChartAnnotations annotations={spec.annotations} /> : null;
+}
+
+/** Families whose container paints `ChartSpec.annotations` (the cartesian chart context). */
+const ANNOTATED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "stream", "bar"]);
+
 function renderChart(
   type: ChartType,
   spec: ChartSpec,
@@ -331,7 +395,7 @@ function renderChart(
   copyValueOnActivate: boolean,
   links: AutoChartLinkProps = {},
 ): ReactNode {
-  const { x, stacked, orientation, donut } = spec;
+  const { x, stacked, orientation, donut, nulls, curve, symbols } = spec;
   const axisProps = resolveAxisSpecProps(spec.axes, orientation === "horizontal");
   // Unit and distribution charts size themselves from their data; a numeric
   // plot height still fixes their box, as the deprecated `height` did.
@@ -346,9 +410,10 @@ function renderChart(
         <LineChart
           data={timeData}
           xDataKey={x}
+          nulls={nulls}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -358,10 +423,21 @@ function renderChart(
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
-            <Line key={s.key} dataKey={s.key} stroke={s.color} />
+            <Line
+              curve={curve}
+              dataKey={s.key}
+              key={s.key}
+              stroke={s.color}
+              symbols={symbols}
+              // Labels — RM-110
+              name={s.label}
+              seriesLabel={spec.labels?.series}
+              valueLabels={spec.labels?.values}
+            />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
+          {annotationLayer(spec)}
           <ChartTooltip />
         </LineChart>
       );
@@ -378,10 +454,11 @@ function renderChart(
         <AreaChart
           data={timeData}
           xDataKey={x}
+          nulls={nulls}
           offset={type === "stream" ? "wiggle" : stacked ? "none" : undefined}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -391,10 +468,22 @@ function renderChart(
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
-            <Area key={s.key} dataKey={s.key} stroke={s.color} fill={s.color} />
+            <Area
+              curve={curve}
+              dataKey={s.key}
+              fill={s.color}
+              key={s.key}
+              stroke={s.color}
+              symbols={symbols}
+              // Labels — RM-110
+              name={s.label}
+              seriesLabel={spec.labels?.series}
+              valueLabels={spec.labels?.values}
+            />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
+          {annotationLayer(spec)}
           <ChartTooltip />
         </AreaChart>
       );
@@ -415,8 +504,10 @@ function renderChart(
           stacked={stacked ?? false}
           orientation={orientation ?? "vertical"}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
+          // BarChart — RM-113
+          {...barRichnessProps(spec)}
         >
           {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
           <Grid horizontal={!isHorizontal} mode={axisProps.gridMode} vertical={isHorizontal} />
@@ -434,7 +525,11 @@ function renderChart(
             plot x-pixels vertically. The bottom value axis a horizontal bar
             chart wants is its own component; tracked separately.
           */}
-          {isHorizontal ? null : <YAxis formatValue={yFormat} {...axisProps.y} />}
+          {isHorizontal ? null : (
+            // A percent stack's axis is in fraction space: let BarChart format it.
+            <YAxis formatValue={stacked === "percent" ? undefined : yFormat} {...axisProps.y} />
+          )}
+          {annotationLayer(spec)}
           <ChartTooltip />
         </BarChart>
       );
@@ -493,7 +588,13 @@ function renderChart(
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
-            <Scatter key={s.key} dataKey={s.key} fill={s.color} />
+            <Scatter
+              key={s.key}
+              dataKey={s.key}
+              fill={s.color}
+              // Labels — RM-110
+              labels={scatterPointLabels(spec.labels?.points)}
+            />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
@@ -661,6 +762,7 @@ function renderChart(
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
+          annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
           // WaterfallChart types its handler on its own `WaterfallStep` datum; the spec-driven
           // link is family-agnostic, so it is cast the same way `WaterfallChart` itself casts
@@ -695,9 +797,13 @@ function renderChart(
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
+          annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
           variant={variant}
-          sortBy={spec.sort}
+          // `spec.sort` is `BarSort | DumbbellSortBy` (see chart-spec.ts) — in
+          // the dumbbell branch it is only ever authored as a
+          // `DumbbellSortBy` literal.
+          sortBy={spec.sort as DumbbellSortBy | undefined}
           groupBy={spec.groupBy}
           delta={spec.delta}
         />
@@ -811,6 +917,33 @@ function renderChart(
     //    value labels are what separates it from `bar`: the crossing is the
     //    story, so each bar states which side of zero it landed on.
     case "diverging-bar": {
+      // RM-113: a named middle series makes this a Likert stack, every
+      // series centred on the neutral one.
+      if (stacked === "diverging" && series.length >= 2) {
+        return (
+          <BarChart
+            plotHeight={plotHeight}
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
+            onDatapointClick={links.onDatapointClick}
+            data={resolvedData}
+            xDataKey={x}
+            orientation="horizontal"
+            accessibleLabel={spec.title}
+            accessibleDescription={spec.description}
+            copyValueOnActivate={copyValueOnActivate}
+            {...barRichnessProps(spec)}
+            stacked="diverging"
+          >
+            <Grid mode={axisProps.gridMode} vertical />
+            {series.map((s) => (
+              <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="butt" />
+            ))}
+            <BarYAxis />
+            <ChartTooltip />
+          </BarChart>
+        );
+      }
       const valueKey = series[0]?.key ?? "";
       const color = series[0]?.color ?? "var(--chart-1)";
       return (
@@ -1140,7 +1273,10 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       : series;
 
   // ── Legend visibility ──────────────────────────────────────────────────────
-  const showLegend = spec.legend ?? legendItems.length > 1;
+  // Labels — RM-110: a line/area chart whose every series paints an end label
+  // does not repeat those names in a legend below it, unless the spec asks.
+  const showLegend =
+    spec.legend ?? (legendItems.length > 1 && !everySeriesEndLabelled(spec, type, series));
 
   // ── Chart title ───────────────────────────────────────────────────────────
   const title = spec.title;
@@ -1192,6 +1328,18 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     );
   }
 
+  // The `try/catch` above only covers errors thrown while BUILDING this
+  // element tree; an error thrown once React actually renders/commits one
+  // of these chart containers only a class boundary can catch (see
+  // `AutoChartErrorBoundary`'s doc comment) — without it, that error would
+  // escape AutoChart's documented "never throws" contract.
+  const chartBody = (
+    <AutoChartErrorBoundary
+      fallback={<ChartFallback message="Unable to display this chart" style={fallbackStyle} />}
+    >
+      {fillsFrame ? <div className="min-h-0 flex-1">{chartNode}</div> : chartNode}
+    </AutoChartErrorBoundary>
+  );
   return (
     <div
       ref={ref}
@@ -1199,19 +1347,35 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       {...props}
     >
       {title ? <p className="mb-1 text-subtitle text-foreground">{title}</p> : null}
-      {/*
-       * The `try/catch` above only covers errors thrown while BUILDING this
-       * element tree; an error thrown once React actually renders/commits one
-       * of these chart containers only a class boundary can catch (see
-       * `AutoChartErrorBoundary`'s doc comment) — without it, that error would
-       * escape AutoChart's documented "never throws" contract.
-       */}
-      <AutoChartErrorBoundary
-        fallback={<ChartFallback message="Unable to display this chart" style={fallbackStyle} />}
-      >
-        {fillsFrame ? <div className="min-h-0 flex-1">{chartNode}</div> : chartNode}
-      </AutoChartErrorBoundary>
+      {spec.annotations?.length && ANNOTATED_CHART_TYPES.has(type) ? (
+        // Annotations — RM-111: one layout scope for the plot and its key, so
+        // the key lists the notes the layer had to demote to a marker.
+        <AnnotationLayoutProvider>
+          {chartBody}
+          <AnnotationKey annotations={spec.annotations} />
+        </AnnotationLayoutProvider>
+      ) : (
+        chartBody
+      )}
       {showLegend ? <AutoLegend series={legendItems} /> : null}
     </div>
   );
 });
+
+// BarChart — RM-113
+/** The `ChartSpec` bar-richness fields, as `BarChart` props (unset stays unset). */
+function barRichnessProps(spec: ChartSpec) {
+  return {
+    divergingCenter: spec.divergingCenter,
+    // `spec.sort` is `BarSort | DumbbellSortBy` (see chart-spec.ts) — in the
+    // bar branch it is only ever authored as a `BarSort` literal.
+    sort: spec.sort as BarSort | undefined,
+    groupBy: spec.groupBy,
+    colorBy: spec.colorBy,
+    overlays: spec.overlays,
+    comparison: spec.comparison
+      ? { key: spec.comparison.key, label: spec.comparison.label }
+      : undefined,
+    comparisonLabel: spec.labels?.comparison,
+  };
+}

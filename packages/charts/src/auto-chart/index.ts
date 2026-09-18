@@ -18,6 +18,8 @@ export type {
 } from "./chart-spec";
 // Axes — RM-108
 export type { AxisSpec } from "./chart-spec";
+// Labels — RM-110
+export type { ChartLabelsSpec } from "./chart-spec";
 
 // Inference utilities (useful for pre-validation, debug panels or testing)
 export {

@@ -450,6 +450,38 @@ const FIXTURES: Fixture[] = [
     rule: "signed",
   },
 
+  // 10a — diverging-bar, Likert reading (RM-113): a named middle series.
+  {
+    name: "Likert answers with a named neutral series",
+    spec: {
+      data: [
+        { q: "Q1", Disagree: 20, Neutral: 30, Agree: 50 },
+        { q: "Q2", Disagree: 40, Neutral: 20, Agree: 40 },
+      ],
+      x: "q",
+      series: ["Disagree", "Neutral", "Agree"],
+      stacked: "diverging",
+      divergingCenter: "Neutral",
+    },
+    type: "diverging-bar",
+    rule: "likert",
+  },
+  // pair: the same rows as a percent stack stay a bar (and never a stream).
+  {
+    name: "Likert answers as a percent stack",
+    spec: {
+      data: [
+        { q: "Q1", Disagree: 20, Neutral: 30, Agree: 50 },
+        { q: "Q2", Disagree: 40, Neutral: 20, Agree: 40 },
+      ],
+      x: "q",
+      series: ["Disagree", "Neutral", "Agree"],
+      stacked: "percent",
+    },
+    type: "bar",
+    rule: "default",
+  },
+
   // 11 — unit (waffle), editorial register only.
   {
     name: "four shares summing to 100 in the editorial register",

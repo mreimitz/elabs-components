@@ -51,6 +51,13 @@ export function HighlightSegment({
         exit={{ opacity: 0 }}
         fill="none"
         initial={{ opacity: 0 }}
+        // Decorative re-stroke, not a hit target — a real stroke is
+        // pointer-hit-testable by default, and this one repaints ON TOP of
+        // the base stroke exactly where the cursor already is (that's the
+        // point of the band). Left hit-testable, it steals the hover from
+        // whatever put it there (RM-112 `focusOnHover`'s hit-stroke
+        // included), flickering enter/leave every frame it re-renders.
+        pointerEvents="none"
         stroke={stroke}
         strokeLinecap="round"
         strokeWidth={strokeWidth}

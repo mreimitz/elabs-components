@@ -393,7 +393,7 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
   // ── 5. Stacked temporal bands → stream ─────────────────────────────────────
   //    Outranks `line` (rule 13) on the same temporal x; the `stacked` flag and
   //    a second series are what make a streamgraph legible at all.
-  if (temporalX && stacked && seriesKeys.length >= 2) {
+  if (temporalX && stacked === true && seriesKeys.length >= 2) {
     return pick(
       "stream",
       "stream",
@@ -503,6 +503,22 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
           : "chose waterfall: a total/net/gross checkpoint row makes these deltas, not categories",
       );
     }
+  }
+
+  // ── 10a. Likert rows → diverging-bar (RM-113) ─────────────────────────────
+  //     A named middle series centres the stack on zero: the diverging-bar
+  //     reading with `stacked: "diverging"`, not a grouped or plain stack.
+  if (
+    categoricalX &&
+    stacked === "diverging" &&
+    spec.divergingCenter !== undefined &&
+    seriesKeys.includes(spec.divergingCenter)
+  ) {
+    return pick(
+      "diverging-bar",
+      "likert",
+      `chose diverging-bar: ${spec.divergingCenter} is the middle answer, so the stack centres on it`,
+    );
   }
 
   // ── 10. A signed single measure → diverging-bar ────────────────────────────
