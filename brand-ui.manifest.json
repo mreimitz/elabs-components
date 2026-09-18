@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T19:44:44.989Z",
+  "generatedAt": "2026-09-18T21:25:11.802Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13577,6 +13577,11 @@
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
         {
+          "name": "DEFAULT_PIE_LABEL_MIN_ANGLE",
+          "kind": "value",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
           "name": "DEFAULT_WHISKER_MULTIPLIER",
           "kind": "value",
           "module": "packages/charts/src/charts/distribution/index.ts"
@@ -13940,6 +13945,11 @@
           "name": "PieChart",
           "kind": "value",
           "module": "packages/charts/src/charts/pie-chart.tsx"
+        },
+        {
+          "name": "PieLabels",
+          "kind": "value",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
         },
         {
           "name": "PieProvider",
@@ -15440,6 +15450,10 @@
           "module": "packages/charts/src/charts/pie-center-shell.tsx"
         },
         {
+          "name": "PieChartLabelsConfig",
+          "module": "packages/charts/src/charts/pie-chart.tsx"
+        },
+        {
           "name": "PieChartProps",
           "module": "packages/charts/src/charts/pie-chart.tsx"
         },
@@ -15450,6 +15464,50 @@
         {
           "name": "PieData",
           "module": "packages/charts/src/charts/pie-context.tsx"
+        },
+        {
+          "name": "PieGroupResult",
+          "module": "packages/charts/src/charts/pie-grouping.ts"
+        },
+        {
+          "name": "PieGroupSmallOptions",
+          "module": "packages/charts/src/charts/pie-grouping.ts"
+        },
+        {
+          "name": "PieLabelField",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
+          "name": "PieLabelPlacement",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
+          "name": "PieLabelRect",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
+          "name": "PieLabelsConfig",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
+          "name": "PieLabelsProps",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
+          "name": "PieLabelTextParts",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
+          "name": "PieLegendItem",
+          "module": "packages/charts/src/charts/pie-grouping.ts"
+        },
+        {
+          "name": "PieLegendItemsOptions",
+          "module": "packages/charts/src/charts/pie-grouping.ts"
+        },
+        {
+          "name": "PieOutsideLabelLayout",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
         },
         {
           "name": "PieSliceHoverEffect",
@@ -15850,6 +15908,10 @@
       ],
       "otherExports": [
         {
+          "name": "anyPieLabelRectsOverlap",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
           "name": "arcLinkPath",
           "module": "packages/charts/src/charts/network/index.ts"
         },
@@ -16110,6 +16172,10 @@
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
+          "name": "formatPieLabelText",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
           "name": "ganttVariants",
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
@@ -16132,6 +16198,10 @@
         {
           "name": "groupRecords",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "groupSmallSlices",
+          "module": "packages/charts/src/charts/pie-grouping.ts"
         },
         {
           "name": "heatmapDomain",
@@ -16218,6 +16288,10 @@
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
+          "name": "layoutOutsideLabels",
+          "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
           "name": "layoutRows",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -16296,6 +16370,10 @@
         {
           "name": "pieCssVars",
           "module": "packages/charts/src/charts/pie-context.tsx"
+        },
+        {
+          "name": "pieLegendItems",
+          "module": "packages/charts/src/charts/pie-grouping.ts"
         },
         {
           "name": "profitLossColor",
@@ -20606,6 +20684,71 @@
               "optional": true,
               "type": "number",
               "description": "Paper-seam stroke (px) drawn between slices — the lieflat \"3px paper seam\" cut-paper look. Default: `0` (no seam — today's behavior)."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "PieChartLabelsConfig",
+              "description": "Slice labels (RM-114, Datawrapper parity) — inside/outside placement, `label`/`value`/`percent` facts, leaders on the outside ring. Unset renders nothing extra (today's behavior)."
+            },
+            {
+              "name": "groupSmall",
+              "optional": true,
+              "type": "PieGroupSmallOptions",
+              "description": "Fold the smallest slices into one trailing \"Other\" slice (RM-114, `pie-grouping.ts`). **Setting this hands slice rendering to `PieChart` itself** — any `PieSlice` elements in `children` are ignored (their indices would no longer match the folded result); keep `PieCenter` and defs/gradient children, they are unaffected. Unset: today's behavior, `children` renders verbatim."
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "\"desc\" | \"none\"",
+              "description": "Wedge order. `\"desc\"` — `startAngle` gets the LARGEST slice, then clockwise by descending size (d3-shape's own pie default). `\"none\"` (the default here) keeps `data`'s own order — pre-RM-114 behavior, kept as the default so an existing chart's wedge ANGLES never move under it (see the docblock on `effectiveSort` in `PieChartBase` for why the RM's stated `\"desc\"` default was not adopted). Slice INDEX identity never changes either way — a `<PieSlice index={i}>` always targets `data[i]`; only the angular position can move."
+            },
+            {
+              "name": "half",
+              "optional": true,
+              "type": "boolean",
+              "description": "The \"election donut\" preset (RM-114): `startAngle: -π/2, endAngle: π/2` — a dome across the top half, seated in data order by default (`sort` unset here behaves exactly as elsewhere: `\"none\"`). The centre slot (a `PieCenter` child) is positioned BELOW the arc instead of in the chart's geometric middle. Overrides any `startAngle`/`endAngle` props. Default `false`."
+            }
+          ]
+        },
+        "PieLabels": {
+          "extends": [],
+          "props": [
+            {
+              "name": "config",
+              "optional": false,
+              "type": "PieLabelsConfig"
+            },
+            {
+              "name": "arcs",
+              "optional": false,
+              "type": "readonly PieArcData[]"
+            },
+            {
+              "name": "center",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "innerRadius",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "outerRadius",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "getColor",
+              "optional": false,
+              "type": "(index: number) => string"
+            },
+            {
+              "name": "textFor",
+              "optional": false,
+              "type": "(index: number) => PieLabelTextParts",
+              "description": "`(index) => label/value/percent text` for the fields `config.show` asks for."
             }
           ]
         },
@@ -21204,8 +21347,8 @@
             {
               "name": "labels",
               "optional": true,
-              "type": "\"outside\"",
-              "description": "Outside-label mode for the high-decoration tick ring (lieflat F4 \"Tick Donut\", #RM-030). `\"outside\"` draws a dotted leader line from each segment's ticks to its label, placed outside the ring, and reserves layout room for it. Only takes visible effect at `--decoration` ≥ 8 (the smooth-arc rendering below that threshold has no leader/label treatment); unset renders exactly as before."
+              "type": "\"outside\" | { placement?: \"outside\" | \"none\" }",
+              "description": "Outside-label mode for the high-decoration tick ring (lieflat F4 \"Tick Donut\", #RM-030). `\"outside\"` draws a dotted leader line from each segment's ticks to its label, placed outside the ring, and reserves layout room for it. Only takes visible effect at `--decoration` ≥ 8 (the smooth-arc rendering below that threshold has no leader/label treatment); unset renders exactly as before. Also accepts `PieChart`'s `labels` OBJECT shape (RM-114 API parity only — `{ placement: \"outside\" }` maps to this same tick-ring mode; every other `placement`/`show`/`matchColor`/`minAngle` field is a no-op here, `RingChart` has no inside-label or leader-collision treatment of its own). `{ placement: \"none\" }` and every other object shape behave as unset."
             }
           ]
         },

@@ -120,6 +120,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_HEATMAP_STEPS
 - DEFAULT_HOVER_OFFSET
 - DEFAULT_MAX_INTERACTIVE_DATAPOINTS
+- DEFAULT_PIE_LABEL_MIN_ANGLE
 - DEFAULT_WHISKER_MULTIPLIER
 - DEFAULT_Y_AXIS_ID
 - DEFAULT_Y_DOMAIN_TWEEN_MS
@@ -260,6 +261,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: More than ~5 slices — a bar chart compares better; a pie is not a ranking.
   - avoid: A pie for values that don't sum to a meaningful whole.
   - avoid: Identifying slices by color alone — put the label and value on or beside the slice.
+- PieLabels
 - PieProvider
 - PieSlice
 - PROFIT_LOSS_LEGEND_ITEMS
