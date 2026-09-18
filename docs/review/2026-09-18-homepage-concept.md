@@ -214,7 +214,7 @@ apps/
 - **Dogfooding is a rule, checked:** the site imports only `@elabs-ai/*` packages and registry blocks; `pnpm check` gets a rule that fails on raw colours or non-token classes in `apps/home`. `audit --strict` runs on the site in CI. The marketing package grows what the homepage needs (theme switch band, surface tabs, agent-loop trace, install tabs, gates band) so the homepage is also the marketing archetype's flagship template.
 - **Generated, not typed:** counts, package list, theme list, gates list, CLI verbs, routine — all from `brand-ui.manifest.json` / `docs/GATES.md` at build time (`scripts/gen.mjs` gains a `site` target). Stale numbers are how front pages lose credibility (see the 09-17 review §10).
 - **Agent surface on the site:** `/llms.txt` (fixed generator, hosted MCP first), `/.well-known/mcp.json`, `<link rel="alternate">`, OG image rendered from the hero composition per theme (9 OG variants, generated), `robots.txt`, sitemap.
-- **Prompt map for §4.3:** `content/agent-loop.json` (in the site app) — example prompt → MCP calls to show → block ids to render. Small, reviewable, no model.
+- **Prompt map for §4.3:** `apps/home/content/agent-loop.json` — example prompt → MCP calls to show → block ids to render. Small, reviewable, no model.
 
 ## 7. Phasing
 
