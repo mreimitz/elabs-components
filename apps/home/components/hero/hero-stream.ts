@@ -9,6 +9,16 @@
  *
  * Server-safe: no React import, so the server-rendered hero can read the seed and the gate
  * script. The client hook that drives the stream lives in `use-hero-stream.ts`.
+ *
+ * Wave-1 fixture audit (Refs #455 #456): checked every fact here — the 3 KPIs, the
+ * runs-per-day series, the 8-row run table, the tile row and the chat/tool exchange — against
+ * `apps/home/content/fixtures/**` (RM-095). None match: this scene narrates "Atlas Ops", a
+ * generic AI agent-ops console for "Acme" watching agent runs (invoice triage, support
+ * routing, …), while the fixtures narrate Ashgrove Systems, Inc., a fictional B2B billing
+ * platform, with its own KPIs (ARR, NRR, churn, …), orders/accounts table and an EMEA-churn
+ * chat. No value below has a same-fact counterpart in the fixture set, so every one stays
+ * local. Reconciling the two narratives (or keeping them deliberately distinct) is a
+ * maintainer call, not a mechanical swap.
  */
 export const STREAM_SESSION_KEY = "brand-ui-hero-streamed";
 /** Set on the scene host by the inline gate script while a stream-in is about to play. */
