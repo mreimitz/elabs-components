@@ -209,10 +209,12 @@ const textContent = (text) => ({ content: [{ type: "text", text }] });
 
 /**
  * The manifest for a request: an injected one (the hosted server bundles it)
- * wins, otherwise it is read from the repo root.
+ * wins, otherwise `loadManifest` reads the repo root's copy or, with no repo
+ * root, the one packed alongside the CLI. Short-circuiting on a missing root
+ * made `npx … mcp` answer "No manifest." in every app outside this monorepo.
  * @param {{ root?: string|null, manifest?: object|null }} ctx
  */
-const manifestOf = (ctx) => ctx.manifest ?? (ctx.root ? loadManifest(ctx.root) : null);
+const manifestOf = (ctx) => ctx.manifest ?? loadManifest(ctx.root);
 
 // ── tool implementations (reuse the engine; render compact text) ─────────────
 
