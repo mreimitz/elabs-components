@@ -1,0 +1,98 @@
+/*
+ * AmbientField — a soft radial mesh of two or three token colours behind a page or region.
+ * Decoration policy (packages/tokens/src/decoration.css): the mesh paints on a masked `::before`
+ * LAYER, never on the host (a mask on the host would fade its children), and never inside a
+ * control. Colours are token references passed in by the component (`--ambient-a|b|c`), mixed
+ * to `--ambient-alpha` (clamped ≤ 0.18 in the component) — no literal colour lives here.
+ *
+ * Motion gate: the drift is a transform loop whose duration is divided by `--motion-factor`, and
+ * it is paused whenever the gate is at its floor — the same two selectors the tokens use for
+ * `--motion-factor` itself (OS reduce unless the reader chose "full", or an explicit "reduced").
+ */
+
+/* Registered so the tint crossfades: an unregistered custom property cannot interpolate. */
+@property --ambient-lead {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@layer base {
+  [data-slot="ambient-field"] {
+    --ambient-lead: var(--ambient-a, transparent);
+    transition: --ambient-lead var(--t-base) var(--ease-standard);
+  }
+
+  /* Tint API: `data-ambient-tint="<token>"` + `--ambient-tint` shift the first stop. */
+  [data-slot="ambient-field"][data-ambient-tint] {
+    --ambient-lead: var(--ambient-tint, var(--ambient-a, transparent));
+  }
+
+  [data-slot="ambient-field"]::before {
+    content: "";
+    position: absolute;
+    /* Headroom for the drift so the layer's edge never enters the host. */
+    inset: -40px;
+    pointer-events: none;
+    background-image:
+      radial-gradient(
+        at 18% 22%,
+        color-mix(in oklab, var(--ambient-lead) calc(var(--ambient-alpha) * 100%), transparent) 0,
+        transparent 55%
+      ),
+      radial-gradient(
+        at 82% 18%,
+        color-mix(
+            in oklab,
+            var(--ambient-b, transparent) calc(var(--ambient-alpha) * 100%),
+            transparent
+          )
+          0,
+        transparent 50%
+      ),
+      radial-gradient(
+        at 55% 88%,
+        color-mix(
+            in oklab,
+            var(--ambient-c, transparent) calc(var(--ambient-alpha) * 100%),
+            transparent
+          )
+          0,
+        transparent 55%
+      );
+    filter: blur(48px);
+    -webkit-mask-image: var(--deco-fade-edges);
+    mask-image: var(--deco-fade-edges);
+  }
+
+  [data-slot="ambient-field"][data-drift]::before {
+    will-change: transform;
+    animation: brand-ui-ambient-drift calc(20s / max(var(--motion-factor), 0.01)) linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root:not([data-motion-pref="full"]) [data-slot="ambient-field"][data-drift]::before {
+      animation-play-state: paused;
+      will-change: auto;
+    }
+  }
+
+  [data-motion-pref="reduced"] [data-slot="ambient-field"][data-drift]::before {
+    animation-play-state: paused;
+    will-change: auto;
+  }
+
+  /* ≤ 40px from rest on either axis; starts and ends at rest so the loop has no seam. */
+  @keyframes brand-ui-ambient-drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    33% {
+      transform: translate3d(28px, -16px, 0);
+    }
+    66% {
+      transform: translate3d(-20px, 24px, 0);
+    }
+  }
+}
