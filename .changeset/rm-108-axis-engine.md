@@ -1,0 +1,7 @@
+---
+"@elabs-ai/components-charts": minor
+---
+
+Axis engine. `YAxis` takes `domain` (`[lower, upper]`, either end `"auto"`), `scale` (`"linear" | "log" | "sqrt"`), `ticks`, `tickCount`, `title`, `titlePlacement` and `labelPlacement` (`"inside" | "outside"`). `XAxis` takes `tickCount`, `ticks`, `title`, `titlePlacement`, `orientation="top"`, and on a numeric x (`ScatterChart`) `domain` and `scale`. `Grid` takes `mode="lines" | "ticks" | "off"`, and `BarXAxis` takes `fit="wrap"`. `ChartSpec` gains `axes: { x?, y?, y2? }`, which `AutoChart` forwards to those props (`y2` is accepted but not used yet). Honesty rules still win: bars (and a `ComposedChart` with bars) keep a zero-based linear value axis, so a raised lower bound or a log scale on bars falls back with a dev warning, and a log scale falls back to linear when the data touches 0.
+
+Visible default changes, with no props set: the x axis paints about one tick per 90 px of plot width (2 to 10) instead of a fixed 5, so a 900 px chart shows about 9 ticks and a 380 px chart about 3; the y axis paints 3 ticks when the plot is under 200 px tall (5 otherwise); y tick labels share one notation across the whole set (no `900` beside `1K`); and long bar category labels wrap onto two lines before they tilt. Pass `numTicks` to pin the old counts, or `BarXAxis fit="tilt"` for the old bar cascade.
