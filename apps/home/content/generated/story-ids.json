@@ -300,5 +300,6 @@
   "WaterfallChart": "charts-waterfallchart--docs",
   "Wizard": "navigation-wizard--docs",
   "WorkspacePicker": "core-workspacepicker--docs",
+  "YAxis": "charts-axes--docs",
   "ZoomControls": "flow-zoomcontrols--docs"
 }

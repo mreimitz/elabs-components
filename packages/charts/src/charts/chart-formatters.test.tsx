@@ -4,6 +4,7 @@ import { LocaleProvider } from "@elabs-ai/components-ui";
 import {
   getNumberFormat,
   intFmt,
+  makeDateFmtForPreset,
   makeIntFmt,
   makeShortDateFmt,
   makeValueSetFmt,
@@ -39,6 +40,15 @@ describe("chart-formatters — locale-aware factories (#181)", () => {
     // Same value the host-default factory produces — proves it is bound to
     // `undefined` (host locale), not a frozen "en-US".
     expect(intFmt(1234)).toBe(makeIntFmt()(1234));
+  });
+
+  it("makeDateFmtForPreset prepends the elision mark (U+2019) to yearShort only (date-ladder round, #478)", () => {
+    const date = new Date("2016-03-03T00:00:00Z");
+    expect(makeDateFmtForPreset("en-US", "yearShort")(date)).toBe("’16");
+    // Never a straight apostrophe (repo micro-typography rule).
+    expect(makeDateFmtForPreset("en-US", "yearShort")(date)).not.toContain("'");
+    // Every other rung is unaffected.
+    expect(makeDateFmtForPreset("en-US", "year")(date)).toBe("2016");
   });
 });
 

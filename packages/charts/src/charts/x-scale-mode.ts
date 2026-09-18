@@ -36,6 +36,7 @@
  * and the caller's label is the one thing that reaches the screen.
  */
 
+import { createContext } from "react";
 import { shortDateFmt } from "./chart-formatters";
 import { fallbackXLabel, isInvalidDate } from "./chart-x-value-utils";
 
@@ -52,6 +53,38 @@ export type ChartXScaleType = "time" | "band" | "linear";
 
 /** Synthetic domain width (ms) used by the `linear` projection. See the file header. */
 const SYNTHETIC_SPAN_MS = 1_000_000;
+
+/** How a numeric x value maps to position (RM-108) — mirrors `ValueScaleType`. */
+export type NumericXScaleKind = "linear" | "log" | "sqrt";
+
+/** A caller-shaped numeric x axis: raw-unit `[lo, hi]` and how it is spaced (RM-108). */
+export interface NumericXAxis {
+  domain: [number, number];
+  scale: NumericXScaleKind;
+}
+
+/**
+ * The raw-unit ruler of a numeric x axis whose domain or scale the caller set
+ * with `XAxis domain`/`scale` (RM-108). `XAxis` reads it to paint real numeric
+ * ticks instead of one label per data row; `null` (default) keeps the
+ * data-aligned labels.
+ */
+export interface NumericXRuler extends NumericXAxis {
+  /** Raw x value → the synthetic instant the x scale positions. */
+  toPosition: (value: number) => Date;
+}
+
+export const NumericXRulerContext = createContext<NumericXRuler | null>(null);
+
+function numericTransform(kind: NumericXScaleKind): (value: number) => number {
+  if (kind === "log") {
+    return Math.log10;
+  }
+  if (kind === "sqrt") {
+    return (value) => Math.sign(value) * Math.sqrt(Math.abs(value));
+  }
+  return (value) => value;
+}
 
 /** Stable key for a categorical x value. `null`/`undefined` collapse to `""`. */
 function categoryKey(rawValue: unknown): string {
@@ -185,10 +218,17 @@ export function buildXValueEncoder({
   data,
   type,
   xDataKey,
+  numericAxis,
 }: {
   data: Record<string, unknown>[];
   type: ChartXScaleType;
   xDataKey: string;
+  /**
+   * `linear` mode only (RM-108): project onto this raw-unit domain with this
+   * spacing instead of the data's own min/max, linearly. Values outside the
+   * domain land outside the synthetic span (the plot clips them).
+   */
+  numericAxis?: NumericXAxis;
 }): XValueEncoder {
   if (type === "band") {
     const ordinals = new Map<string, number>();
@@ -219,12 +259,17 @@ export function buildXValueEncoder({
     // Normalising into a fixed synthetic span (instead of using the raw number
     // as an epoch) keeps the projection inside the representable Date range for
     // ANY magnitude of x — a run id of 1e18 would otherwise be an Invalid Date.
-    const span = Number.isFinite(min) && max > min ? max - min : 0;
+    // RM-108: a caller-set `numericAxis` replaces the data extent and spacing.
+    const transform = numericTransform(numericAxis?.scale ?? "linear");
+    const lo = transform(numericAxis ? numericAxis.domain[0] : min);
+    const hi = transform(numericAxis ? numericAxis.domain[1] : max);
+    const span = Number.isFinite(lo) && Number.isFinite(hi) && hi > lo ? hi - lo : 0;
     const positionOf = (value: number) => {
-      if (!(Number.isFinite(value) && span > 0)) {
+      const t = transform(value);
+      if (!(Number.isFinite(t) && span > 0)) {
         return new Date(0);
       }
-      return new Date(((value - min) / span) * SYNTHETIC_SPAN_MS);
+      return new Date(((t - lo) / span) * SYNTHETIC_SPAN_MS);
     };
     return {
       xAccessor: (d) => positionOf(toNumber(d[xDataKey])),

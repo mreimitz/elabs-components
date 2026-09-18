@@ -4,7 +4,7 @@
     "source": "brand-ui.manifest.json#packages"
   },
   "componentExports": {
-    "value": 1409,
+    "value": 1412,
     "source": "brand-ui.manifest.json#packages[].components"
   },
   "registryBlocks": {
@@ -36,7 +36,7 @@
     "source": "packages/cli/lib/mcp.mjs#TOOLS"
   },
   "gates": {
-    "value": 87,
+    "value": 88,
     "source": "scripts/check/rules/*.mjs + scripts/check/commands.mjs"
   }
 }

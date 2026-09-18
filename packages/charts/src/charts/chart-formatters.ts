@@ -27,9 +27,10 @@ import { useChartConfig } from "./chart-config-context";
 import {
   type ChartValueFormat,
   DEFAULT_CHART_VALUE_FORMAT,
-  valueFormatOptions,
+  resolveChartValueFormat,
   valueFormatOptionsForSet,
 } from "./value-format";
+import { dateFormatOptionsForPreset, type DateFormatPreset } from "./date-format";
 
 // ── Cached Intl factories (keyed by locale + serialized options) ──────────────
 
@@ -100,6 +101,22 @@ export const makeIntFmt =
     getNumberFormat(locale).format(n);
 
 /**
+ * Applies the two things `Intl.NumberFormat` cannot express on its own —
+ * literal `prefix`/`suffix` text and `sign: "parens"` — around an already-
+ * resolved `Intl.NumberFormat` instance. Shared by `makeValueFmt` and
+ * `makeValueSetFmt` so a spec's text wrapping never drifts between the two.
+ */
+function formatResolvedChartValue(
+  resolved: Pick<ReturnType<typeof resolveChartValueFormat>, "prefix" | "suffix" | "parens">,
+  fmt: Intl.NumberFormat,
+  value: number,
+): string {
+  const numeric = fmt.format(resolved.parens ? Math.abs(value) : value);
+  const signed = resolved.parens && value < 0 ? `(${numeric})` : numeric;
+  return `${resolved.prefix}${signed}${resolved.suffix}`;
+}
+
+/**
  * VALUE formatter — the one every axis, tick, tooltip, table cell and detail
  * stat goes through (see `value-format.ts` for the contract). Non-hook,
  * explicit-locale path, per ADR-0014.
@@ -126,10 +143,8 @@ export function makeValueFmt(
     if (Number.isNaN(value)) {
       return "";
     }
-    return getNumberFormat(
-      locale,
-      valueFormatOptions(format, value, currency, maxFractionDigits),
-    ).format(value);
+    const resolved = resolveChartValueFormat(format, value, currency, maxFractionDigits);
+    return formatResolvedChartValue(resolved, getNumberFormat(locale, resolved.options), value);
   };
 }
 
@@ -151,13 +166,39 @@ export function makeValueSetFmt(
 ): (value: number) => string {
   const options = valueFormatOptionsForSet(format, values, currency, maxFractionDigits);
   const fmt = getNumberFormat(locale, options);
+  // `prefix`/`suffix`/`parens` are format-level, never magnitude-dependent
+  // (unlike compaction), so resolving them once at `0` is the whole set's
+  // shared answer — every member gets the same wrapping.
+  const { prefix, suffix, parens } = resolveChartValueFormat(
+    format,
+    0,
+    currency,
+    maxFractionDigits,
+  );
   return (value: number): string => {
     if (Number.isNaN(value)) {
       return "";
     }
-    return fmt.format(value);
+    return formatResolvedChartValue({ prefix, suffix, parens }, fmt, value);
   };
 }
+
+/**
+ * DATE formatter for one {@link DateFormatPreset} rung (RM-109) — the same
+ * non-hook, explicit-locale path as `makeValueFmt`/`makeShortDateFmt`, siblings
+ * for the ladder in `date-format.ts` instead of the fixed `"Mon d"` shape.
+ *
+ * `"yearShort"` gets the elision mark (`’16`, U+2019, per the repo's
+ * micro-typography rule — never a straight `'`) prepended here: `Intl`'s
+ * 2-digit-year option has no elision-mark equivalent of its own, and a bare
+ * `"16"` reads as a small plain number, not a year (date-ladder round, #478).
+ */
+export const makeDateFmtForPreset =
+  (locale: string | undefined, preset: DateFormatPreset) =>
+  (date: Date): string => {
+    const formatted = getDateFormat(locale, dateFormatOptionsForPreset(preset)).format(date);
+    return preset === "yearShort" ? `’${formatted}` : formatted;
+  };
 
 // ── Backward-compatible host-default bindings (no more hardcoded en-US) ───────
 // These honor the runtime host locale instead of forcing "en-US". They do NOT

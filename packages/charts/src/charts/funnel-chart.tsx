@@ -62,6 +62,11 @@ export interface FunnelChartProps {
   layers?: number;
   className?: string;
   style?: CSSProperties;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   showPercentage?: boolean;
   showValues?: boolean;
   showLabels?: boolean;
@@ -170,6 +175,7 @@ export interface FunnelChartProps {
 
 import { intFmt } from "./chart-formatters";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 
 const fmtPct = (p: number) => `${Math.round(p)}%`;
 const fmtVal = intFmt;
@@ -785,6 +791,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     layers = 3,
     className,
     style,
+    plotHeight,
     showPercentage = true,
     showValues = true,
     showLabels = true,
@@ -949,16 +956,14 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
   });
 
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ plotHeight, defaultPlotHeight: horiz ? "2.2 / 1" : "1 / 1.8" }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full select-none overflow-visible", className)}
       ref={ref}
       role={role}
-      style={{
-        aspectRatio: horiz ? "2.2 / 1" : "1 / 1.8",
-        ...style,
-      }}
+      style={style}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -1245,7 +1250,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
           <ChartDatapointLayer />
         </>
       )}
-    </div>
+    </ChartPlotRoot>
   );
 });
 

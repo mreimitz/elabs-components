@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 201 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 204 | 38 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 7 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1101,6 +1101,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CANVAS_LAYER_HIT_RADIUS | component |  | `@elabs-ai/components-charts` |  |
 | CanvasLayer | component |  | `@elabs-ai/components-charts` | The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor. |
 | CATEGORICAL_SOFT_CAP | component |  | `@elabs-ai/components-charts` |  |
+| CHART_BREAKPOINT_THRESHOLDS | component |  | `@elabs-ai/components-charts` |  |
+| CHART_BREAKPOINTS | component |  | `@elabs-ai/components-charts` |  |
 | CHART_CLIP_PASSTHROUGH | component |  | `@elabs-ai/components-charts` |  |
 | CHART_DENSITY_SM_MAX_TICKS | component |  | `@elabs-ai/components-charts` |  |
 | CHART_HAIRLINE_WIDTH | component |  | `@elabs-ai/components-charts` |  |
@@ -1143,6 +1145,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_CHART_CONFIG | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_INTERACTIONS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_LIFECYCLE | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_CHART_PLOT_HEIGHT | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_STATUS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CIRCULAR_CURVENESS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_FORCE_SEED | component |  | `@elabs-ai/components-charts` |  |
@@ -1281,6 +1284,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useAnimatedYDomains | hook |  | `@elabs-ai/components-charts` |  |
 | useCanvasDraw | hook |  | `@elabs-ai/components-charts` |  |
 | useChart | hook |  | `@elabs-ai/components-charts` |  |
+| useChartBreakpoint | hook |  | `@elabs-ai/components-charts` |  |
 | useChartConfig | hook |  | `@elabs-ai/components-charts` |  |
 | useChartDatapointsEnabled | hook |  | `@elabs-ai/components-charts` |  |
 | useChartHover | hook |  | `@elabs-ai/components-charts` |  |
@@ -1306,6 +1310,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useRegisterDatapointTargets | hook |  | `@elabs-ai/components-charts` |  |
 | useResolvedRadius | hook |  | `@elabs-ai/components-charts` |  |
 | useResolvedRadiusOf | hook |  | `@elabs-ai/components-charts` |  |
+| useResponsiveValue | hook |  | `@elabs-ai/components-charts` |  |
 | useRing | hook |  | `@elabs-ai/components-charts` |  |
 | useRingHover | hook |  | `@elabs-ai/components-charts` |  |
 | useRingStable | hook |  | `@elabs-ai/components-charts` |  |

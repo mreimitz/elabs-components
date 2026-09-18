@@ -49,6 +49,7 @@ import {
   resolveMarkPaint,
   useChartSelection,
 } from "../chart-selection";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
 
 export type { TreemapNode, TreemapPalette } from "./treemap-layout";
 
@@ -138,6 +139,11 @@ export interface TreemapChartProps extends ChartSelectionProps, ChartInteraction
   style?: CSSProperties;
   /** Aspect ratio as "width / height". Default `"16 / 9"`. */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Accessible name for the chart region (announces to AT on focus). */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT. */
@@ -187,7 +193,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     valueFormat = "compact",
     className,
     style,
-    aspectRatio = "16 / 9",
+    aspectRatio,
+    plotHeight,
     accessibleLabel,
     accessibleDescription,
     onDatapointClick: _onDatapointClick,
@@ -431,14 +438,15 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   const rootLabel = data.name;
 
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: "16 / 9" }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full select-none", className)}
       data-slot="treemap-chart"
       ref={ref}
       role={role}
-      style={{ aspectRatio, ...style }}
+      style={{ ...style }}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel description={accessibleDescription} descId={descId} />
@@ -676,7 +684,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
           <ChartDatapointLayer />
         </>
       )}
-    </div>
+    </ChartPlotRoot>
   );
 });
 

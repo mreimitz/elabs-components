@@ -74,6 +74,7 @@ import {
   resolveMarkPaint,
   useChartSelection,
 } from "./chart-selection";
+import { ChartPlotRoot } from "./chart-breakpoint";
 
 export type { UnitChartDatum } from "./unit-layouts";
 
@@ -387,7 +388,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
   });
 
   return (
-    <div
+    <ChartPlotRoot
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
@@ -595,7 +596,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
       )}
 
       {layout === "waffle" && <ChartLegend className="mt-3 shrink-0" items={legendItems} />}
-    </div>
+    </ChartPlotRoot>
   );
 });
 UnitChartBody.displayName = "UnitChartBody";
