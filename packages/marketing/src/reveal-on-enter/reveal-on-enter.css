@@ -1,0 +1,32 @@
+/*
+ * RevealOnEnter — once-only entrance. The server HTML never carries the hidden state: the
+ * component sets `data-reveal="hidden"` only after hydration, only when the motion gate is open,
+ * only for content still outside the viewport, and flips it to "shown" the first time it
+ * intersects (never back). Timing and easing are the gated tokens (`--t-base`,
+ * `--ease-entrance`); the stagger step scales with `--motion-factor`. `opacity`/`transform` only.
+ */
+@layer base {
+  [data-slot="reveal-on-enter"] {
+    /* Per-child delay step for `stagger`; multiplied by --motion-factor below. */
+    --reveal-stagger-step: 60ms;
+  }
+
+  [data-slot="reveal-on-enter"][data-reveal]:not([data-stagger]),
+  [data-slot="reveal-on-enter"][data-reveal][data-stagger] > * {
+    transition-property: opacity, transform;
+    transition-duration: var(--t-base);
+    transition-timing-function: var(--ease-entrance);
+  }
+
+  [data-slot="reveal-on-enter"][data-reveal][data-stagger] > * {
+    transition-delay: calc(
+      var(--reveal-index, 0) * var(--reveal-stagger-step) * var(--motion-factor)
+    );
+  }
+
+  [data-slot="reveal-on-enter"][data-reveal="hidden"]:not([data-stagger]),
+  [data-slot="reveal-on-enter"][data-reveal="hidden"][data-stagger] > * {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}

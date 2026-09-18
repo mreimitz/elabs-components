@@ -1,0 +1,26 @@
+/*
+ * ParallaxPlane — the scroll-driven path (`animation-timeline: scroll(root)`).
+ * The component sets `data-parallax="timeline"` only after hydration, only when the motion gate
+ * is open and the browser supports scroll timelines, and passes the geometry in:
+ *   --parallax-travel  signed end offset (never more than 60px from the content plane)
+ *   --parallax-range   scroll distance over which that offset is reached (travel / |1 − rate|)
+ * Past the range the plane holds its offset (`both` fill), so the total travel stays clamped at
+ * every scroll position. Under reduced motion the attribute is never set: no animation, no
+ * transform. `transform` only — nothing here triggers layout.
+ */
+@layer base {
+  [data-slot="parallax-plane"][data-parallax="timeline"] {
+    animation: brand-ui-parallax-plane linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px var(--parallax-range);
+  }
+
+  @keyframes brand-ui-parallax-plane {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(var(--parallax-travel));
+    }
+  }
+}
