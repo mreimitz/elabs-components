@@ -321,6 +321,69 @@ function ExternalInputComboboxDemo() {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Below the fold — mount-time auto-select must never scroll the page (#541) */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Reproduces #541: cmdk auto-selects the first item on mount and calls its
+ * native `scrollIntoView({ block: "nearest" })` — unpatched, that walks every
+ * scrollable ancestor including the window. A tall spacer pushes the list
+ * below the fold so a regression here scrolls `window.scrollY` away from 0.
+ */
+export const BelowTheFold: Story = {
+  name: "Inline list below the fold never scrolls the page",
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <div>
+      <div className="flex h-[150vh] items-end justify-center p-6 text-body text-muted-foreground">
+        Scroll spacer — the command list below starts off-screen.
+      </div>
+      <div className="flex justify-center pb-24">
+        <Command className="w-80 rounded-lg shadow-ring-md">
+          <CommandInput placeholder="Search framework…" />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup heading="Frameworks">
+              {FRAMEWORKS.map((framework) => (
+                <CommandItem key={framework}>{framework}</CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement, userEvent }) => {
+    const canvas = within(canvasElement);
+
+    // Mount-time auto-select must never move the page — even though the list
+    // starts entirely below the fold.
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[aria-selected="true"]')).not.toBeNull();
+    });
+    expect(window.scrollY).toBe(0);
+
+    // Bring the list into view the way a real visitor would — by scrolling
+    // the page themselves. `scrollIntoView` on the INPUT (an element this
+    // fix never touches) is an ordinary, expected page scroll, not the bug
+    // under test.
+    const list = canvasElement.querySelector('[data-slot="command-list"]') as HTMLElement;
+    const input = canvas.getByPlaceholderText("Search framework…");
+    input.scrollIntoView();
+    const scrollYOnceVisible = window.scrollY;
+    expect(scrollYOnceVisible).toBeGreaterThan(0);
+
+    // Keyboard navigation in the now-visible, overflowing list must keep the
+    // active item visible by scrolling the LIST itself — never nudging the
+    // page any further.
+    await userEvent.type(input, "{ArrowDown}".repeat(12));
+
+    await waitFor(() => expect(list.scrollTop).toBeGreaterThan(0));
+    expect(window.scrollY).toBe(scrollYOnceVisible);
+  },
+};
+
 export const ExternalInputCombobox: Story = {
   name: "External input combobox (aria-activedescendant)",
   parameters: {
