@@ -6,6 +6,8 @@
  * with explicit field names for x, series, and optional display hints.
  */
 
+import type { Responsive } from "../charts/chart-breakpoint";
+import type { ChartValueLabels, SeriesLabelMode } from "../charts/labels/use-chart-labels";
 import type { ChartValueFormat } from "../charts/value-format";
 import type { DateFormatPreset } from "../charts/date-format";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
@@ -240,6 +242,24 @@ export interface ChartSpec {
    * selection field to any chart without knowing the chart type.
    */
   fields?: { category?: string; series?: string };
+
+  // Labels — RM-110
+  /** Series end labels / key fallback, automatic value labels and scatter point labels (RM-110) — see {@link ChartLabelsSpec}. */
+  labels?: ChartLabelsSpec;
+}
+
+// Labels — RM-110
+/**
+ * The serialisable label-engine subset (RM-110). Every field is optional and
+ * off by default, so a spec without `labels` renders exactly as before.
+ */
+export interface ChartLabelsSpec {
+  /** line / area: where each series names itself — `"end"` | `"key"` | `"none"`, or `{ base, medium?, narrow? }`. */
+  series?: Responsive<SeriesLabelMode>;
+  /** line / area: automatic value labels on every series — `{ placement: "first" | "last" | "all" | "peaks", count?, minGap?, outline?, matchColor?, format? }`. */
+  values?: ChartValueLabels;
+  /** scatter: point labels — `key` is the row field holding the text; `mode` `"auto"` (default) | `"all"`; `priorityKey` a numeric row field (higher survives). */
+  points?: { key: string; mode?: "auto" | "all"; priorityKey?: string };
 }
 
 // Axes — RM-108

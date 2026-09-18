@@ -349,6 +349,8 @@ function createChartContainerDouble<P extends DoubleOwnProps>(
     assertChartContract(name, record, spec);
     // Axes — RM-108
     assertAxisChildrenContract(props.children);
+    // Labels — RM-110
+    assertLabelChildrenContract(props.children);
     const a11y = useChartA11yContainerProps(props.accessibleLabel, props.accessibleDescription);
     const payload = buildChartDoublePayload(name, record, spec);
     return (
@@ -549,6 +551,8 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     assertChartSpecContract(props.spec);
     // Axes — RM-108
     assertAxisSpecContract((props.spec as { axes?: unknown } | undefined)?.axes);
+    // Labels — RM-110
+    assertLabelsSpecContract((props.spec as { labels?: unknown } | undefined)?.labels);
     return (
       <div
         ref={ref}
@@ -722,4 +726,93 @@ export function assertAxisSpecContract(axes: unknown): void {
       "finite numbers or ISO date strings",
     );
   }
+}
+
+// Labels — RM-110
+//
+// `seriesLabel`, `valueLabels`, Scatter `labels`, Bar `showValues` objects and
+// `ChartSpec.labels`. The REAL engine silently paints nothing for an unknown
+// mode or placement, so the double names it.
+
+const SERIES_LABEL_MODES = ["end", "key", "none"] as const;
+const SERIES_LABEL_TIERS = ["base", "medium", "narrow"] as const;
+const VALUE_LABEL_PLACEMENTS = ["first", "last", "all", "peaks"] as const;
+const POINT_LABEL_MODES = ["auto", "all"] as const;
+
+function checkSeriesLabel(component: string, prop: string, value: unknown): void {
+  if (value === undefined) return;
+  if (typeof value === "object" && value !== null && "base" in value) {
+    for (const [tier, mode] of Object.entries(value as Record<string, unknown>)) {
+      checkOneOf(component, `${prop} tier`, tier, SERIES_LABEL_TIERS);
+      checkOneOf(component, `${prop}.${tier}`, mode, SERIES_LABEL_MODES);
+    }
+    return;
+  }
+  checkOneOf(component, prop, value, SERIES_LABEL_MODES);
+}
+
+function checkValueLabels(component: string, prop: string, value: unknown): void {
+  if (value === undefined) return;
+  if (typeof value !== "object" || value === null) {
+    axisViolation(component, prop, value, `"${prop}" must be { placement, count?, … }`);
+  }
+  const v = value as Record<string, unknown>;
+  if (v.placement === undefined) {
+    axisViolation(component, `${prop}.placement`, v.placement, `"placement" is required`);
+  }
+  checkOneOf(component, `${prop}.placement`, v.placement, VALUE_LABEL_PLACEMENTS);
+  if (v.count !== undefined && !(isFiniteNumber(v.count) && (v.count as number) >= 0)) {
+    axisViolation(component, `${prop}.count`, v.count, `"count" must be a number ≥ 0`);
+  }
+}
+
+function checkPointLabels(component: string, prop: string, value: unknown, field: string): void {
+  if (value === undefined) return;
+  const p = value as Record<string, unknown> | null;
+  if (typeof p !== "object" || p === null || typeof p[field] !== "string") {
+    axisViolation(component, prop, value, `"${prop}" must be { ${field}: string, mode?, … }`);
+  }
+  if (typeof p.mode === "string") checkOneOf(component, `${prop}.mode`, p.mode, POINT_LABEL_MODES);
+}
+
+/** Validate the label props of `Line` / `Area` / `Scatter` / `Bar` children (RM-110). */
+export function assertLabelChildrenContract(children: ReactNode): void {
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child)) return;
+    const type = child.type as { displayName?: string; name?: string };
+    const name = typeof child.type === "string" ? "" : (type.displayName ?? type.name ?? "");
+    const props = child.props as Record<string, unknown>;
+    if (name === "Line" || name === "Area") {
+      checkSeriesLabel(name, "seriesLabel", props.seriesLabel);
+      checkValueLabels(name, "valueLabels", props.valueLabels);
+    } else if (name === "Scatter") {
+      checkPointLabels(name, "labels", props.labels, "key");
+    } else if (name === "Bar" && typeof props.showValues === "object" && props.showValues) {
+      const sv = props.showValues as Record<string, unknown>;
+      checkOneOf(name, "showValues.placement", sv.placement, ["inside", "outside", "auto"]);
+      checkOneOf(name, "showValues.visibility", sv.visibility, ["always", "hover"]);
+    }
+    const nested = props.children as ReactNode;
+    if (nested) assertLabelChildrenContract(nested);
+  });
+}
+
+/** Validate `ChartSpec.labels` (RM-110). Exported for the contract test. */
+export function assertLabelsSpecContract(labels: unknown): void {
+  if (labels === undefined) return;
+  if (typeof labels !== "object" || labels === null) {
+    axisViolation(
+      "AutoChart",
+      "spec.labels",
+      labels,
+      `"labels" must be { series?, values?, points? }`,
+    );
+  }
+  const l = labels as Record<string, unknown>;
+  for (const field of Object.keys(l)) {
+    checkOneOf("AutoChart", "spec.labels field", field, ["series", "values", "points"]);
+  }
+  checkSeriesLabel("AutoChart", "spec.labels.series", l.series);
+  checkValueLabels("AutoChart", "spec.labels.values", l.values);
+  checkPointLabels("AutoChart", "spec.labels.points", l.points, "key");
 }
