@@ -267,3 +267,4 @@ export * from "./components/view-toolbar";
 export * from "./components/virtual-select";
 export * from "./components/workspace-picker";
 export * from "./components/wizard";
+export * from "./components/command-chip";

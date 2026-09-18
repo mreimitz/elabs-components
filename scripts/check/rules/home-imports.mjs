@@ -91,3 +91,13 @@ export default {
     ],
   },
 };
+
+// RM-095: `ai` (Vercel AI SDK) is a types-only import for `UIMessage` in the fixtures
+// (`content/fixtures/conversation.ts`) — D6/ADR 0008 keeps it types-only, but this rule does
+// not distinguish type-only from value imports, so only the bare `ai` specifier is allowed,
+// never an `ai/*` subpath.
+HOME_ALLOWED_IMPORTS.push(/^ai$/);
+// RM-095: a `*.test.{ts,tsx}` and the root `vitest.config.ts` never ship in the Next.js build
+// — same reasoning `charts-honesty` already applies to `packages/charts/src` test files — so
+// they may reach `vitest`/`node:*` the production site itself never bundles.
+IGNORE.push("**/*.test.{ts,tsx}", "**/vitest.config.ts");

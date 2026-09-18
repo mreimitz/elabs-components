@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T18:50:18.030Z",
+  "generatedAt": "2026-09-18T19:44:44.989Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -28534,6 +28534,11 @@
           "module": "packages/marketing/src/stats-band/stats-band.tsx"
         },
         {
+          "name": "TrustStrip",
+          "kind": "value",
+          "module": "packages/marketing/src/trust-strip/trust-strip.tsx"
+        },
+        {
           "name": "UseCaseCard",
           "kind": "value",
           "module": "packages/marketing/src/use-case-card/use-case-card.tsx"
@@ -28568,6 +28573,14 @@
         {
           "name": "StatsBandProps",
           "module": "packages/marketing/src/stats-band/stats-band.tsx"
+        },
+        {
+          "name": "TrustFact",
+          "module": "packages/marketing/src/trust-strip/trust-strip.tsx"
+        },
+        {
+          "name": "TrustStripProps",
+          "module": "packages/marketing/src/trust-strip/trust-strip.tsx"
         },
         {
           "name": "UseCaseCardProps",
@@ -28725,6 +28738,25 @@
             }
           ]
         },
+        "TrustStrip": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "facts",
+              "optional": false,
+              "type": "TrustFact[]",
+              "description": "The facts, in reading order."
+            },
+            {
+              "name": "counters",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Optional live counters (stars, downloads). Rendered only when passed, so a page can keep them off until someone decides to show them; the host owns fetching and formatting."
+            }
+          ]
+        },
         "UseCaseCard": {
           "extends": [],
           "props": [
@@ -28822,6 +28854,7 @@
         "Hero": "marketing-hero--docs",
         "LogoStrip": "marketing-logostrip--docs",
         "StatsBand": "marketing-statsband--docs",
+        "TrustStrip": "marketing-truststrip--docs",
         "UseCaseCard": "marketing-usecasecard--docs"
       }
     },
@@ -34101,6 +34134,11 @@
           "module": "packages/ui/src/components/command/command.tsx"
         },
         {
+          "name": "CommandChip",
+          "kind": "value",
+          "module": "packages/ui/src/components/command-chip/command-chip.tsx"
+        },
+        {
           "name": "CommandDialog",
           "kind": "value",
           "module": "packages/ui/src/components/command/command.tsx"
@@ -34244,6 +34282,11 @@
           "name": "DateRangePicker",
           "kind": "value",
           "module": "packages/ui/src/components/date-range-picker/date-range-picker.tsx"
+        },
+        {
+          "name": "DEFAULT_COMMAND_CHIP_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/command-chip/command-chip.tsx"
         },
         {
           "name": "DEFAULT_MESSAGES",
@@ -35955,6 +35998,18 @@
         {
           "name": "ComboboxProps",
           "module": "packages/ui/src/components/combobox/combobox.tsx"
+        },
+        {
+          "name": "CommandChipHost",
+          "module": "packages/ui/src/components/command-chip/command-chip.tsx"
+        },
+        {
+          "name": "CommandChipLabels",
+          "module": "packages/ui/src/components/command-chip/command-chip.tsx"
+        },
+        {
+          "name": "CommandChipProps",
+          "module": "packages/ui/src/components/command-chip/command-chip.tsx"
         },
         {
           "name": "CommandDialogProps",
@@ -38342,6 +38397,49 @@
               "optional": true,
               "type": "(id: string | undefined) => void",
               "description": "Reports the DOM `id` cmdk assigned to the currently highlighted item, so an input rendered OUTSIDE this `Command` tree (a composer textarea, a combobox trigger) can set `aria-activedescendant` without querying `[role=\"option\"]` positionally. Fires with `undefined` when nothing is highlighted. cmdk owns each item's `id`/`role`/`aria-selected` and applies them AFTER the consumer spread, so a consumer-supplied `id` on `CommandItem` is silently dropped (`CommandItem` warns about this in development) — this callback is the supported way to obtain it. See also the `useCommandActiveItemId` hook for reading the same value from a descendant already inside the `<Command>` tree. It fires for EVERY highlight change, including the item cmdk auto-highlights on mount and the one it re-highlights after each filter keystroke — the two states cmdk's own `state.selectedItemId` misses."
+            }
+          ]
+        },
+        "CommandChip": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onCopy\">"
+          ],
+          "props": [
+            {
+              "name": "hosts",
+              "optional": false,
+              "type": "CommandChipHost[]",
+              "description": "The hosts to choose between; the first is the default selection."
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "Selected host id (controlled)."
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string",
+              "description": "Initially selected host id (uncontrolled). Default: the first host."
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void",
+              "description": "Fires when the visitor picks another host."
+            },
+            {
+              "name": "onCopyCommand",
+              "optional": true,
+              "type": "(command: string, copied: boolean) => void",
+              "description": "Fires after a copy attempt with the command and whether the clipboard accepted it."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<CommandChipLabels>",
+              "description": "Override any rendered string."
             }
           ]
         },
@@ -42405,6 +42503,7 @@
         "ColorPicker": "forms-colorpicker--docs",
         "Combobox": "forms-combobox--docs",
         "Command": "overlays-command--docs",
+        "CommandChip": "display-commandchip--docs",
         "CommandTrigger": "navigation-commandtrigger--docs",
         "ConfirmDialog": "overlays-confirmdialog--docs",
         "ContextMenu": "overlays-contextmenu--docs",
