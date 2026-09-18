@@ -2,16 +2,20 @@
 
 import {
   type ComponentType,
+  createContext,
   type ForwardedRef,
   type ReactElement,
   type ReactNode,
   type RefAttributes,
+  useContext,
+  useMemo,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { useChartFramePlotHeight } from "../chart-breakpoint";
 import { AnnotationKey } from "./annotation-key";
 import { type ChartAnnotation, withAnnotationDescription } from "./annotation-types";
-import { ChartAnnotations } from "./chart-annotations";
+import { AnnotationScalesContext, ChartAnnotations } from "./chart-annotations";
+import type { AnnotationScales } from "./resolve-annotation-position";
 
 /** The props a container needs to host annotations. */
 export interface ChartAnnotationsHostProps {
@@ -43,21 +47,29 @@ export function useAnnotatedChart<P extends ChartAnnotationsHostProps>(
   Plot: ComponentType<P & RefAttributes<HTMLDivElement>>,
   props: P,
   ref: ForwardedRef<HTMLDivElement>,
+  /**
+   * `children` (default): append a `ChartAnnotations` child for the shell to
+   * paint. `context`: publish the annotations for a container that draws its
+   * own plot and mounts the layers with `useChartAnnotationLayers`.
+   */
+  mount: "children" | "context" = "children",
 ): ReactElement {
   const fill = useChartFramePlotHeight() === "fill";
   const { annotations, ...rest } = props;
   const plotProps = rest as unknown as P;
   if (!annotations?.length) return <Plot {...plotProps} ref={ref} />;
-  const plot = (
-    <Plot
-      {...plotProps}
-      accessibleDescription={withAnnotationDescription(props.accessibleDescription, annotations)}
-      ref={ref}
-    >
-      {props.children}
-      <ChartAnnotations annotations={annotations} />
-    </Plot>
-  );
+  const accessibleDescription = withAnnotationDescription(props.accessibleDescription, annotations);
+  const plot =
+    mount === "context" ? (
+      <ChartAnnotationsSlotContext.Provider value={annotations}>
+        <Plot {...plotProps} accessibleDescription={accessibleDescription} ref={ref} />
+      </ChartAnnotationsSlotContext.Provider>
+    ) : (
+      <Plot {...plotProps} accessibleDescription={accessibleDescription} ref={ref}>
+        {props.children}
+        <ChartAnnotations annotations={annotations} />
+      </Plot>
+    );
   return (
     <div
       className={cn("flex w-full flex-col", fill && "h-full min-h-0")}
@@ -67,4 +79,30 @@ export function useAnnotatedChart<P extends ChartAnnotationsHostProps>(
       <AnnotationKey annotations={annotations} />
     </div>
   );
+}
+
+/** The annotations a `context`-mounted container paints (see `useAnnotatedChart`). */
+const ChartAnnotationsSlotContext = createContext<readonly ChartAnnotation[] | null>(null);
+
+/**
+ * The two annotation passes for a container that draws its own plot without a
+ * `ChartProvider` (RM-111): render `back` before the marks and `front` after
+ * them, inside the plot's translated group. `scales` maps data units onto the
+ * plot; pass `null` when the current layout cannot place annotations. Both
+ * passes are `null` when the container was given no annotations.
+ */
+export function useChartAnnotationLayers(scales: AnnotationScales | null): {
+  back: ReactElement | null;
+  front: ReactElement | null;
+} {
+  const annotations = useContext(ChartAnnotationsSlotContext);
+  return useMemo(() => {
+    if (!annotations?.length || !scales) return { back: null, front: null };
+    const pass = (layer: "back" | "front") => (
+      <AnnotationScalesContext.Provider value={scales}>
+        <ChartAnnotations annotations={annotations} layer={layer} />
+      </AnnotationScalesContext.Provider>
+    );
+    return { back: pass("back"), front: pass("front") };
+  }, [annotations, scales]);
 }

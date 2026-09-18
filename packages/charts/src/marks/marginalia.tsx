@@ -157,6 +157,8 @@ export interface MarginaliaProps extends Omit<SVGProps<SVGGElement>, "x" | "y"> 
    * passes the resolved series stroke here to tie the note to its series.
    */
   noteFill?: string;
+  /** Leader ink (default: the `Leader` default, `var(--chart-foreground-muted)`). */
+  leaderStroke?: string;
   /** Note font size in px (default 10). */
   fontSize?: number;
   /** Text anchor for the note (default `start`). */
@@ -210,6 +212,7 @@ export const Marginalia = forwardRef<SVGGElement, MarginaliaProps>(function Marg
     dash = "1 3",
     arrow = false,
     noteFill = "var(--chart-foreground-muted)",
+    leaderStroke,
     fontSize = 10,
     textAnchor = "start",
     ...props
@@ -227,7 +230,14 @@ export const Marginalia = forwardRef<SVGGElement, MarginaliaProps>(function Marg
   return (
     <g aria-hidden="true" data-slot="marginalia" ref={ref} {...props}>
       {anchor ? (
-        <Leader arrow={arrow} dash={dash} from={anchor} kind={leaderKind} to={[tipX, y]} />
+        <Leader
+          arrow={arrow}
+          dash={dash}
+          from={anchor}
+          kind={leaderKind}
+          stroke={leaderStroke}
+          to={[tipX, y]}
+        />
       ) : null}
       <HaloText
         data-slot="marginalia-note"

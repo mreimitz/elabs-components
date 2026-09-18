@@ -5,6 +5,7 @@ import { cn } from "@elabs-ai/components-ui";
 import { HaloText, Leader, type LeaderPoint, UNIT_STACK_EMPHASIS, UnitStack } from "../marks";
 import type { BarOrientation } from "./bar-chart";
 import { BarChart } from "./bar-chart";
+import type { ChartAnnotation } from "./annotations/annotation-types"; // Annotations — RM-111
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
 import type { ChartA11yProps } from "./chart-a11y";
@@ -602,6 +603,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
     {
       accessibleDescription,
       accessibleLabel,
+      annotations, // Annotations — RM-111
       callouts,
       className,
       connectors = true,
@@ -639,6 +641,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
         <BarChart
           accessibleDescription={accessibleDescription}
           accessibleLabel={accessibleLabel}
+          annotations={annotations} // Annotations — RM-111: BarChart paints, keys and describes them.
           className="w-full"
           plotHeight={plotHeight ?? height}
           copyValueOnActivate={copyValueOnActivate}
@@ -694,3 +697,12 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
 );
 
 WaterfallChart.displayName = "WaterfallChart";
+
+// Annotations — RM-111
+export interface WaterfallChartProps {
+  /**
+   * Declarative annotations in data units: text notes, ranges, reference lines,
+   * row notes (a step's `label` is its category). Painted by the inner `BarChart`.
+   */
+  annotations?: readonly ChartAnnotation[];
+}

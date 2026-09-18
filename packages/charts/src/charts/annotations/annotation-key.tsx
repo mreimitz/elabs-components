@@ -8,11 +8,17 @@ import { type ChartAnnotation, circledNumber, planAnnotations } from "./annotati
 /** A note's inline `**bold**` subset as HTML; any non-string node is rendered as given. */
 function renderKeyText(text: ReactNode): ReactNode {
   if (typeof text !== "string" || !text.includes("**")) return text;
-  return text.split("**").map((part, i) =>
-    // Odd segments sit between a pair of markers. The split is positional and
-    // never reorders, so the segment index is a stable key.
-    i % 2 === 1 ? <strong key={`b${i}`}>{part}</strong> : part,
-  );
+  const out: ReactNode[] = [];
+  let offset = 0;
+  let bold = false;
+  // Segments alternate plain / bold between `**` pairs; each is keyed by its
+  // character offset in the note plus its text, which is unique per segment.
+  for (const part of text.split("**")) {
+    out.push(bold ? <strong key={`${offset}:${part}`}>{part}</strong> : part);
+    offset += part.length + 2;
+    bold = !bold;
+  }
+  return out;
 }
 
 export interface AnnotationKeyProps extends HTMLAttributes<HTMLOListElement> {

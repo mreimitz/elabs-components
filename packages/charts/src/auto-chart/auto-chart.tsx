@@ -676,6 +676,7 @@ function renderChart(
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
+          annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
           // WaterfallChart types its handler on its own `WaterfallStep` datum; the spec-driven
           // link is family-agnostic, so it is cast the same way `WaterfallChart` itself casts
@@ -705,6 +706,7 @@ function renderChart(
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
+          annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
         />
       );

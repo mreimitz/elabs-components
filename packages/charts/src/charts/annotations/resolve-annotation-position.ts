@@ -128,3 +128,64 @@ export function resolveAnnotationPosition(
   const y = scales.y.point(point.y);
   return x === undefined || y === undefined ? undefined : { x, y };
 }
+
+/**
+ * A category axis of equal, gap-free rows (or columns) in DRAWN order — the
+ * layout of a container that splits its extent evenly per category
+ * (`DumbbellChart`). A category resolves to its row's centre wherever the
+ * row sorts, so a `row` note follows its category through a re-sort.
+ */
+export function rowBandAxis(categories: readonly string[], extent: number): AnnotationAxis {
+  const step = extent / Math.max(categories.length, 1);
+  const start = (value: AnnotationValue) => {
+    const i = categories.indexOf(value instanceof Date ? value.toISOString() : String(value));
+    return i < 0 ? undefined : i * step;
+  };
+  return {
+    point: (value) => {
+      const s = start(value);
+      return s === undefined ? undefined : s + step / 2;
+    },
+    span: (from, to) => {
+      const a = start(from);
+      const b = start(to);
+      if (a === undefined || b === undefined) return undefined;
+      return [Math.min(a, b), Math.max(a, b) + step];
+    },
+  };
+}
+
+/**
+ * The scales of a category × value plot that draws its own rows (no
+ * `ChartProvider`): `categoryAxis` names the axis the categories run along.
+ */
+export function categoryValueScales({
+  categories,
+  categoryAxis,
+  valueScale,
+  innerWidth,
+  innerHeight,
+}: {
+  categories: readonly string[];
+  categoryAxis: "x" | "y";
+  valueScale: ContinuousScale;
+  innerWidth: number;
+  innerHeight: number;
+}): AnnotationScales {
+  const value = valueAxis(valueScale);
+  return categoryAxis === "y"
+    ? {
+        x: value,
+        y: rowBandAxis(categories, innerHeight),
+        innerWidth,
+        innerHeight,
+        category: "y",
+      }
+    : {
+        x: rowBandAxis(categories, innerWidth),
+        y: value,
+        innerWidth,
+        innerHeight,
+        category: "x",
+      };
+}

@@ -22,8 +22,10 @@ import { Bar } from "../bar";
 import { BarChart } from "../bar-chart";
 import type { ChartBreakpoint } from "../chart-breakpoint";
 import { ChartConfigProvider } from "../chart-config-context";
+import { DumbbellChart } from "../dumbbell-chart";
 import { Line } from "../line";
 import { Scatter, ScatterChart } from "../scatter-chart";
+import { WaterfallChart } from "../waterfall-chart";
 import { LineChart } from "../line-chart";
 import { AnnotationKey } from "./annotation-key";
 import {
@@ -165,22 +167,38 @@ describe("ChartAnnotations in a LineChart", () => {
     );
   });
 
-  it("uses the furniture ink, undimmed, for the range fill and the reference line", () => {
+  it("fills a range with the pale band ink and strokes the line in furniture ink, undimmed", () => {
     const { container } = render(<Bikes breakpoint="wide" />);
     const range = container.querySelector('[data-slot="chart-annotations-range"] rect');
-    expect(range?.getAttribute("fill")).toBe("var(--chart-grid)");
+    expect(range?.getAttribute("fill")).toBe("var(--chart-ring-background)");
+    expect(range?.getAttribute("opacity")).toBeNull();
+    expect(range?.getAttribute("fill-opacity")).toBeNull();
     const line = container.querySelector('[data-slot="chart-annotations-line"] line');
     expect(line?.getAttribute("stroke")).toBe("var(--chart-grid)");
     expect(line?.getAttribute("stroke-opacity")).toBeNull();
     expect(line?.getAttribute("stroke-width")).toBe("2");
   });
 
-  it("inks a series note with that series' stroke", () => {
+  it("inks a series note's text with the legible mix and its connector with the pure stroke", () => {
     const { container } = render(<Bikes breakpoint="wide" />);
-    const note = container.querySelector(
-      '[data-slot="chart-annotations-text"] [data-slot="marginalia-note"]',
+    const paris = container.querySelector('[data-slot="chart-annotations-text"]');
+    const note = paris?.querySelector('[data-slot="marginalia-note"]');
+    expect(note?.getAttribute("fill")).toBe(
+      "color-mix(in oklch, var(--chart-1) 45%, var(--chart-label))",
     );
-    expect(note?.getAttribute("fill")).toBe("var(--chart-1)");
+    expect(paris?.querySelector('[data-slot="leader-arrow"]')?.getAttribute("fill")).toBe(
+      "var(--chart-1)",
+    );
+  });
+
+  it("keeps the marker ring pure and mixes only the marker number at narrow", () => {
+    const { container } = render(<Bikes breakpoint="narrow" />);
+    const marker = container.querySelector('[data-slot="chart-annotations-marker"]');
+    const texts = marker?.querySelectorAll("text");
+    expect(texts?.[texts.length - 1]?.getAttribute("fill")).toBe(
+      "color-mix(in oklch, var(--chart-1) 45%, var(--chart-label))",
+    );
+    expect(marker?.innerHTML).toContain('stroke="var(--chart-1)"');
   });
 
   it("swaps the notes for numbered markers and a four-row key at narrow", () => {
@@ -317,5 +335,90 @@ describe("ChartAnnotations in a ScatterChart", () => {
     expect(layers.map((l) => l.getAttribute("data-layer"))).toEqual(["back", "front"]);
     expect(layers[0]?.textContent).toContain("Target band");
     expect(slot(layers[1] as Element, "chart-annotations-line")).toHaveLength(1);
+  });
+});
+
+describe("the annotations prop on DumbbellChart", () => {
+  const data = [
+    { team: "Alpha", before: 10, after: 30 },
+    { team: "Beta", before: 20, after: 80 },
+    { team: "Gamma", before: 5, after: 15 },
+  ];
+  const annotations: ChartAnnotation[] = [
+    { kind: "range", x1: 40, x2: 50, label: "Target band" },
+    { kind: "line", x: 25, label: "Median" },
+    { kind: "row", category: "Beta", text: "Record" },
+  ];
+  const renderDumbbell = (sortBy: "none" | "delta") =>
+    render(
+      <ChartConfigProvider value={{ breakpoint: "wide" }}>
+        <DumbbellChart
+          accessibleDescription="Before and after."
+          accessibleLabel="Teams"
+          annotations={annotations}
+          category="team"
+          data={data}
+          endKey="after"
+          sortBy={sortBy}
+          startKey="before"
+        />
+      </ChartConfigProvider>,
+    );
+
+  it("paints the range behind the rows, the line and the row note over them", () => {
+    const { container } = renderDumbbell("none");
+    const layers = [...slot(container, "chart-annotations")];
+    expect(layers.map((l) => l.getAttribute("data-layer"))).toEqual(["back", "front"]);
+    expect(layers[0]?.textContent).toContain("Target band");
+    expect(slot(layers[1] as Element, "chart-annotations-line")).toHaveLength(1);
+    expect(slot(layers[1] as Element, "chart-annotations-row")[0]?.textContent).toBe("Record");
+  });
+
+  it("keeps the row note on its category through a re-sort", () => {
+    const rowY = (sortBy: "none" | "delta") => {
+      const { container } = renderDumbbell(sortBy);
+      const y = Number(
+        container.querySelector('[data-slot="chart-annotations-row"]')?.getAttribute("y"),
+      );
+      cleanup();
+      return y;
+    };
+    // Beta is the middle row in data order and the top row by |delta|.
+    const unsorted = rowY("none");
+    const sorted = rowY("delta");
+    expect(Number.isFinite(unsorted) && Number.isFinite(sorted)).toBe(true);
+    expect(sorted).toBeLessThan(unsorted);
+  });
+
+  it("restates the annotations in the description", () => {
+    const { getByRole } = renderDumbbell("none");
+    const figure = getByRole("figure", { name: "Teams" });
+    const description = document.getElementById(figure.getAttribute("aria-describedby") ?? "");
+    expect(description?.textContent).toBe("Before and after. Target band. Median. Beta: Record.");
+  });
+});
+
+describe("the annotations prop on WaterfallChart", () => {
+  it("hands the annotations to its bar chart: row note on its step, key under the plot at narrow", () => {
+    const { container } = render(
+      <ChartConfigProvider value={{ breakpoint: "narrow" }}>
+        <WaterfallChart
+          accessibleLabel="Bridge"
+          annotations={[
+            { kind: "row", category: "Churn", text: "Worst quarter" },
+            { kind: "text", x: "Upsell", y: 150, text: "Upsell carried the year" },
+          ]}
+          data={[
+            { label: "Start", value: 100, kind: "total" },
+            { label: "Upsell", value: 60 },
+            { label: "Churn", value: -30 },
+            { label: "End", value: 130, kind: "total" },
+          ]}
+        />
+      </ChartConfigProvider>,
+    );
+    expect(slot(container, "chart-annotations-row")[0]?.textContent).toBe("Worst quarter");
+    expect(slot(container, "chart-annotations-marker")).toHaveLength(1);
+    expect(slot(container, "annotation-key-item")[0]?.textContent).toBe("①Upsell carried the year");
   });
 });

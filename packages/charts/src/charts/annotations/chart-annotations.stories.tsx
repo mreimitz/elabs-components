@@ -5,9 +5,11 @@ import type { ChartSpec } from "../../auto-chart/chart-spec";
 import { Bar } from "../bar";
 import { BarChart } from "../bar-chart";
 import { BarYAxis } from "../bar-y-axis";
+import { DumbbellChart } from "../dumbbell-chart";
 import { Grid } from "../grid";
 import { Line } from "../line";
 import { LineChart } from "../line-chart";
+import { WaterfallChart } from "../waterfall-chart";
 import { XAxis } from "../x-axis";
 import { YAxis } from "../y-axis";
 import { type ChartAnnotation, withAnnotationDescription } from "./annotation-types";
@@ -173,4 +175,122 @@ export const RowNotes: Story = {
       <ChartAnnotations annotations={args.annotations} />
     </BarChart>
   ),
+};
+
+const COMMUTE = [
+  { city: "Lisbon", y2019: 14, y2024: 22 },
+  { city: "Porto", y2019: 9, y2024: 31 },
+  { city: "Braga", y2019: 6, y2024: 11 },
+  { city: "Faro", y2019: 12, y2024: 15 },
+  { city: "Coimbra", y2019: 8, y2024: 19 },
+];
+
+const COMMUTE_ANNOTATIONS: ChartAnnotation[] = [
+  { kind: "range", x1: 20, x2: 25, label: "EU target" },
+  { kind: "line", x: 15, label: "National average", style: "dashed" },
+  { kind: "row", category: "Porto", text: "**Tripled** since 2019" },
+  {
+    kind: "text",
+    x: 27,
+    y: "Faro",
+    text: "Faro barely moved",
+    anchor: "w",
+    width: 20,
+  },
+];
+
+/**
+ * Row notes on a `DumbbellChart`: the Porto note follows its row through the
+ * `delta` sort (Porto sorts to the top), the target band sits behind the
+ * tracks and the dashed average line over them.
+ */
+export const DumbbellRowNotes: Story = {
+  args: { annotations: COMMUTE_ANNOTATIONS },
+  render: (args) => (
+    <DumbbellChart
+      accessibleDescription="Share of commutes by bike, 2019 and 2024, per city."
+      accessibleLabel="Cycling share of commutes"
+      annotations={args.annotations}
+      category="city"
+      data={COMMUTE}
+      endKey="y2024"
+      sortBy="delta"
+      startKey="y2019"
+      valueFormat={{ suffix: "%" }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-slot="chart-annotations-row"]')).not.toBeNull(),
+    );
+  },
+};
+
+/** The same dumbbell from `ChartSpec.annotations`, rendered by `AutoChart`. */
+export const DumbbellFromSpec: Story = {
+  args: { annotations: COMMUTE_ANNOTATIONS },
+  render: () => (
+    <AutoChart
+      spec={{
+        type: "dumbbell",
+        title: "Cycling share of commutes",
+        description: "Share of commutes by bike, 2019 and 2024, per city.",
+        x: "city",
+        data: COMMUTE,
+        series: [
+          { key: "y2019", label: "2019" },
+          { key: "y2024", label: "2024" },
+        ],
+        annotations: [
+          { kind: "range", x1: 20, x2: 25, label: "EU target" },
+          { kind: "line", x: 15, label: "National average", style: "dashed" },
+          { kind: "row", category: "Porto", text: "**Tripled** since 2019" },
+          { kind: "text", x: 27, y: "Faro", text: "Faro barely moved", anchor: "w", width: 20 },
+        ],
+      }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-slot="chart-annotations-range"]')).not.toBeNull(),
+    );
+  },
+};
+
+/** A `WaterfallChart` hands its annotations to the inner bar chart: a row note, a note, a line. */
+export const WaterfallNotes: Story = {
+  args: {
+    annotations: [
+      { kind: "row", category: "Churn", text: "Worst quarter" },
+      { kind: "line", y: 100, label: "Opening ARR", style: "dotted" },
+      {
+        kind: "text",
+        x: "Upsell",
+        y: 175,
+        text: "Upsell carried the year",
+        anchor: "sw",
+        width: 30,
+      },
+    ],
+  },
+  render: (args) => (
+    <WaterfallChart
+      accessibleDescription="Annual recurring revenue from opening to closing, in € millions."
+      accessibleLabel="ARR bridge"
+      annotations={args.annotations}
+      data={[
+        { label: "Opening", value: 100, kind: "total" },
+        { label: "New", value: 45 },
+        { label: "Upsell", value: 30 },
+        { label: "Churn", value: -38 },
+        { label: "FX", value: -7 },
+        { label: "Closing", value: 130, kind: "total" },
+      ]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-slot="chart-annotations-row"]')).not.toBeNull(),
+    );
+  },
 };

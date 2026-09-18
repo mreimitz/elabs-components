@@ -2,10 +2,12 @@
 
 import {
   cloneElement,
+  createContext,
   forwardRef,
   type ReactElement,
   type ReactNode,
   type SVGProps,
+  useContext,
   useId,
   useMemo,
 } from "react";
@@ -15,8 +17,9 @@ import { estimateNoteLines, Marginalia, noteLineHeight } from "../../marks/margi
 import { PeakRing } from "../../marks/peak-ring";
 import { useChartA11yContainerProps } from "../chart-a11y";
 import { useChartBreakpoint } from "../chart-breakpoint";
-import { chartCssVars, type LineConfig, useChartStable, useYScale } from "../chart-context";
+import ChartStableContext, { chartCssVars, type LineConfig } from "../chart-context";
 import { PatternLines } from "../visx-pattern";
+import { DEFAULT_Y_AXIS_ID } from "../y-axis-scales";
 import {
   type AnnotationAnchor,
   type AnnotationColor,
@@ -37,6 +40,7 @@ import {
   timeAxis,
   valueAxis,
 } from "./resolve-annotation-position";
+import { legibleSeriesInk } from "./legible-series-ink";
 
 /** Note font size in px — one step above the `Marginalia` default: an annotation explains the chart. */
 const NOTE_FONT_SIZE = 11;
@@ -54,11 +58,19 @@ const STRIPE_PITCH = 6;
  */
 const STRIPE_WIDTH = CHART_HAIRLINE_WIDTH * 2;
 
+/**
+ * A solid range is a pale band behind the series (the `AreaBand` fill), at
+ * full opacity; its stripes and every reference line keep the furniture ink.
+ */
+const RANGE_FILL = "var(--chart-ring-background)";
+
 const LINE_DASH: Record<NonNullable<ChartLineAnnotation["style"]>, string | undefined> = {
   solid: undefined,
   dashed: "4 3",
   dotted: "1 3",
 };
+
+const NO_LINES: readonly LineConfig[] = [];
 
 /** Which of the two stacking passes to paint. */
 export type ChartAnnotationsLayer = "back" | "front" | "all";
@@ -90,6 +102,19 @@ export function resolveAnnotationInk(
   return color;
 }
 
+/**
+ * The TEXT ink of an annotation: a series or ramp colour pulled toward the
+ * label ink by `legibleSeriesInk` so 11px text stays ≥ 4.5:1; the muted ink
+ * as is. Connectors and marker rings use `resolveAnnotationInk` (pure stroke).
+ */
+export function resolveAnnotationTextInk(
+  color: AnnotationColor | undefined,
+  lines: readonly LineConfig[] = [],
+): string {
+  const ink = resolveAnnotationInk(color, lines);
+  return ink === chartCssVars.foregroundMuted ? ink : legibleSeriesInk(ink);
+}
+
 /** The anchor's horizontal text alignment and vertical block edge. */
 function anchorParts(anchor: AnnotationAnchor): {
   textAnchor: "start" | "middle" | "end";
@@ -105,11 +130,27 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /** The plot's annotation scales, read from the enclosing chart container. */
+/**
+ * The scales of a container that draws its own plot without a `ChartProvider`
+ * (`DumbbellChart`). `ChartAnnotations` prefers these over the chart context.
+ */
+export const AnnotationScalesContext = createContext<AnnotationScales | null>(null);
+
 function useAnnotationScales(yAxisId: string | number | undefined): AnnotationScales {
-  const { xScale, innerWidth, innerHeight, orientation, barScale, xValueToPosition, xScaleType } =
-    useChartStable();
-  const yScale = useYScale(yAxisId);
+  const provided = useContext(AnnotationScalesContext);
+  const stable = useContext(ChartStableContext);
   return useMemo<AnnotationScales>(() => {
+    if (provided) return provided;
+    if (!stable) {
+      throw new Error(
+        "ChartAnnotations must be a child of a cartesian chart (LineChart, AreaChart, BarChart, " +
+          "ComposedChart, ScatterChart), or be passed as that container's `annotations` prop.",
+      );
+    }
+    const { xScale, innerWidth, innerHeight, orientation, barScale, xValueToPosition, xScaleType } =
+      stable;
+    const axisId = yAxisId == null || yAxisId === "" ? DEFAULT_Y_AXIS_ID : String(yAxisId);
+    const yScale = stable.yScales[axisId] ?? stable.yScale;
     if (barScale) {
       const band = bandAxis(barScale);
       const value = valueAxis(yScale);
@@ -126,16 +167,7 @@ function useAnnotationScales(yAxisId: string | number | undefined): AnnotationSc
       return xValueToPosition ? xValueToPosition(raw) : annotationValueToDate(raw);
     };
     return { x: timeAxis(xScale, project), y: valueAxis(yScale), innerWidth, innerHeight };
-  }, [
-    barScale,
-    innerHeight,
-    innerWidth,
-    orientation,
-    xScale,
-    xScaleType,
-    xValueToPosition,
-    yScale,
-  ]);
+  }, [provided, stable, yAxisId]);
 }
 
 export interface AnnotationLineMarkProps {
@@ -213,7 +245,7 @@ function renderRange(
   const start = clamp(span[0], 0, limit);
   const end = clamp(span[1], 0, limit);
   if (end <= start) return null;
-  const fill = annotation.pattern === "stripes" ? `url(#${patternId})` : chartCssVars.grid;
+  const fill = annotation.pattern === "stripes" ? `url(#${patternId})` : RANGE_FILL;
   return (
     <g data-annotation-index={index} data-slot="chart-annotations-range" key={`range-${index}`}>
       <rect
@@ -296,7 +328,7 @@ function renderNote(
   annotation: ChartTextAnnotation,
   index: number,
   scales: AnnotationScales,
-  ink: string,
+  lines: readonly LineConfig[],
 ): ReactNode {
   const point = resolveAnnotationPosition(annotation, scales);
   if (!point) return null;
@@ -330,8 +362,9 @@ function renderNote(
         arrow={annotation.connector?.arrow}
         fontSize={NOTE_FONT_SIZE}
         leaderKind={annotation.connector?.kind}
+        leaderStroke={annotation.color ? resolveAnnotationInk(annotation.color, lines) : undefined}
         maxWidth={plain === null ? undefined : maxWidth}
-        noteFill={ink}
+        noteFill={resolveAnnotationTextInk(annotation.color, lines)}
         textAnchor={textAnchor}
         x={clamp(point.x, 0, scales.innerWidth)}
         y={top + pitch / 2}
@@ -347,7 +380,7 @@ function renderMarker(
   index: number,
   number: number,
   scales: AnnotationScales,
-  ink: string,
+  lines: readonly LineConfig[],
 ): ReactNode {
   const point = resolveAnnotationPosition(annotation, scales);
   if (!point) return null;
@@ -361,10 +394,15 @@ function renderMarker(
       key={`marker-${index}`}
     >
       <circle cx={cx} cy={cy} fill={chartCssVars.background} r={MARKER_RADIUS} />
-      <PeakRing cx={cx} cy={cy} r={MARKER_RADIUS} stroke={ink} />
+      <PeakRing
+        cx={cx}
+        cy={cy}
+        r={MARKER_RADIUS}
+        stroke={resolveAnnotationInk(annotation.color, lines)}
+      />
       <text
         dominantBaseline="central"
-        fill={ink}
+        fill={resolveAnnotationTextInk(annotation.color, lines)}
         fontSize={NOTE_FONT_SIZE - 1}
         fontWeight="bold"
         textAnchor="middle"
@@ -390,15 +428,17 @@ function renderMarker(
  * description with `withAnnotationDescription` (`AutoChart` does all three
  * for `ChartSpec.annotations`).
  *
- * Every range fill and reference line paints the furniture ink
- * (`--chart-grid`) at full opacity. The layer is `aria-hidden`, like every
- * mark: the notes reach assistive tech through the figure description.
+ * A solid range fills the pale band ink (`--chart-ring-background`); stripes
+ * and reference lines paint the furniture ink (`--chart-grid`); all at full
+ * opacity. Series-coloured text is mixed toward the label ink for contrast
+ * (`legibleSeriesInk`). The layer is `aria-hidden`, like every mark: the
+ * notes reach assistive tech through the figure description.
  */
 export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
   function ChartAnnotations({ annotations, layer = "all", yAxisId, ...props }, ref) {
     const scales = useAnnotationScales(yAxisId);
     const breakpoint = useChartBreakpoint();
-    const { lines } = useChartStable();
+    const lines = useContext(ChartStableContext)?.lines ?? NO_LINES;
     const patternId = `chart-annotations-stripes-${useId().replace(/:/g, "")}`;
     const plan = useMemo(() => planAnnotations(annotations, breakpoint), [annotations, breakpoint]);
     const back = layer !== "front";
@@ -419,28 +459,15 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
         overlays.push(renderLine(annotation, index, scales));
       } else if (annotation.kind === "row") {
         overlays.push(
-          renderRow(annotation, index, scales, resolveAnnotationInk(annotation.color, lines)),
+          renderRow(annotation, index, scales, resolveAnnotationTextInk(annotation.color, lines)),
         );
       } else if (entry.display === "painted") {
         notes.push({
           priority: annotation.priority ?? 0,
-          node: renderNote(
-            annotation,
-            index,
-            scales,
-            resolveAnnotationInk(annotation.color, lines),
-          ),
+          node: renderNote(annotation, index, scales, lines),
         });
       } else if (entry.display === "keyed" && entry.number !== undefined) {
-        overlays.push(
-          renderMarker(
-            annotation,
-            index,
-            entry.number,
-            scales,
-            resolveAnnotationInk(annotation.color, lines),
-          ),
-        );
+        overlays.push(renderMarker(annotation, index, entry.number, scales, lines));
       }
     }
     // A stable sort: equal priorities keep reading order, a higher one paints on top.
