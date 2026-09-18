@@ -9,6 +9,7 @@ import {
   type SVGProps,
   useCallback,
   useContext,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -18,7 +19,7 @@ import { HaloText } from "../../marks/halo-text";
 import { Marginalia, noteLineHeight, wrapNote } from "../../marks/marginalia";
 import { PeakRing } from "../../marks/peak-ring";
 import { useChartA11yContainerProps } from "../chart-a11y";
-import { useChartBreakpoint } from "../chart-breakpoint";
+import { useChartBreakpoint, warnChartOnce } from "../chart-breakpoint";
 import ChartStableContext, { chartCssVars, type LineConfig } from "../chart-context";
 import { PatternLines } from "../visx-pattern";
 import { DEFAULT_Y_AXIS_ID } from "../y-axis-scales";
@@ -555,6 +556,86 @@ function renderMarker(
   );
 }
 
+const formatAnchorValue = (value: AnnotationValue): string =>
+  value instanceof Date ? value.toISOString() : JSON.stringify(value);
+
+/** `annotations[1] (line "Goal")` — how a dev warning names an annotation. */
+function annotationName(annotation: ChartAnnotation, index: number): string {
+  const name =
+    annotation.kind === "row"
+      ? annotation.category
+      : annotation.kind === "text"
+        ? typeof annotation.text === "string"
+          ? annotation.text
+          : undefined
+        : annotation.label;
+  return `annotations[${index}] (${annotation.kind}${name ? ` "${name}"` : ""})`;
+}
+
+/**
+ * Dev warnings for the anchors of `annotation` its axes cannot place. The
+ * layer skips such an annotation (or its connector); this says why, naming
+ * the annotation and the axis, instead of letting it vanish silently.
+ */
+function unresolvedAnchorWarnings(
+  annotation: ChartAnnotation,
+  index: number,
+  scales: AnnotationScales,
+): string[] {
+  const warnings: string[] = [];
+  const name = annotationName(annotation, index);
+  const check = (field: string, axis: "x" | "y", value: AnnotationValue, connector = false) => {
+    if (scales[axis].point(value) !== undefined) return;
+    // A number or date looked up among the categories is almost always a value
+    // given on the wrong axis (a `y` line on a horizontal bar chart).
+    const hint =
+      scales.category === axis && typeof value !== "string"
+        ? ` The ${axis} axis is this chart's category axis; its value axis is ${axis === "x" ? "y" : "x"}.`
+        : "";
+    warnings.push(
+      `[ChartAnnotations] ${name} ${connector ? "draws no connector" : "is not drawn"}: ` +
+        `${field} ${formatAnchorValue(value)} does not resolve on the ${axis} axis.${hint}`,
+    );
+  };
+  switch (annotation.kind) {
+    case "range":
+      if (annotation.x1 !== undefined) {
+        check("x1", "x", annotation.x1);
+        check("x2", "x", annotation.x2 as AnnotationValue);
+      } else {
+        check("y1", "y", annotation.y1 as AnnotationValue);
+        check("y2", "y", annotation.y2 as AnnotationValue);
+      }
+      break;
+    case "line":
+      if (annotation.y !== undefined) check("y", "y", annotation.y);
+      else check("x", "x", annotation.x as AnnotationValue);
+      break;
+    case "text":
+      check("x", "x", annotation.x);
+      check("y", "y", annotation.y);
+      if (annotation.connector) {
+        check("connector.to.x", "x", annotation.connector.to.x, true);
+        check("connector.to.y", "y", annotation.connector.to.y, true);
+      }
+      break;
+    case "row":
+      if (!scales.category) {
+        warnings.push(
+          `[ChartAnnotations] ${name} is not drawn: a row note needs a category axis ` +
+            "(a bar, dumbbell or waterfall chart), and this chart has none.",
+        );
+      } else if (scales[scales.category].point(annotation.category) === undefined) {
+        warnings.push(
+          `[ChartAnnotations] ${name} is not drawn: category ` +
+            `${formatAnchorValue(annotation.category)} is not on the ${scales.category} axis.`,
+        );
+      }
+      break;
+  }
+  return warnings;
+}
+
 /**
  * ChartAnnotations — the declarative annotation layer of a cartesian chart
  * (RM-111): ranges behind the marks, reference lines, row notes and text notes
@@ -614,6 +695,20 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
     );
     const scoped = useAnnotationLayoutScope();
     const obstacles = useAnnotationObstacles();
+
+    // Dev only: an annotation this pass skips because an anchor misses its
+    // axis is named in a warning, never dropped silently. Not before the plot
+    // is measured: an unsized chart has nothing to place yet.
+    useEffect(() => {
+      if (process.env.NODE_ENV === "production") return;
+      if (scales.innerWidth <= 0 || scales.innerHeight <= 0) return;
+      annotations.forEach((annotation, index) => {
+        if (!(annotation.kind === "range" ? back : front)) return;
+        for (const message of unresolvedAnchorWarnings(annotation, index, scales)) {
+          warnChartOnce(message, message);
+        }
+      });
+    }, [annotations, back, front, scales]);
 
     const basePlan = useMemo(
       () => planAnnotations(annotations, breakpoint),

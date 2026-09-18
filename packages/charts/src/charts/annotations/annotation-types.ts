@@ -106,7 +106,11 @@ interface ChartLineAnnotationBase {
   width?: 1 | 2 | 3;
 }
 
-/** A reference line at one value of one axis. */
+/**
+ * A reference line at one value of one axis. `x` and `y` are the DRAWN axes:
+ * on a horizontal bar, dumbbell or waterfall chart the value axis is `x`, so
+ * a value line there takes `x` (a `y` would be looked up among the categories).
+ */
 export type ChartLineAnnotationOf<V> = ChartLineAnnotationBase &
   ({ x: V; y?: never } | { y: V; x?: never });
 
