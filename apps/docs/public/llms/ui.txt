@@ -100,6 +100,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Using Combobox for a tiny fixed option set — a plain Select is simpler and lighter.
   - avoid: Restyling the trigger/panel by hand — Combobox is a Popover + Command assembly; style through those parts.
 - Command
+- CommandChip
 - CommandDialog
 - CommandEmpty
 - CommandGroup
@@ -129,6 +130,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - CopyableValue
 - DatePicker
 - DateRangePicker
+- DEFAULT_COMMAND_CHIP_LABELS
 - DEFAULT_MESSAGES
 - DEFAULT_THEME_FAMILY_SWITCH_LABELS
 - Descriptions
