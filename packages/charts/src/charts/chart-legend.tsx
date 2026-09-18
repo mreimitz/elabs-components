@@ -269,10 +269,17 @@ export function ChartLegend({
   // (RM-109, preset or object spec) resolves as a SET across every item's
   // `value` (#250) so the legend never mixes "1K" beside "400"; a
   // caller-supplied `formatValue` still wins outright.
+  //
+  // An unset `valueFormat` explicitly resolves to `"number"`, NOT
+  // `useChartValueSetFormatter`'s own `"compact"` default: this prop replaced
+  // a plain `intFmt` call (grouped digits, never abbreviated), and the legend
+  // is a small, fixed set of category totals, not a scale that benefits from
+  // compaction the way an axis does. Pass `valueFormat="compact"` explicitly
+  // to opt in.
   const { locale } = useLocale();
   const setFormatValue = useChartValueSetFormatter(
     items.map((item) => item.value),
-    valueFormat,
+    valueFormat ?? "number",
     currency,
   );
   const resolvedFormatValue = formatValue ?? setFormatValue;

@@ -42,6 +42,20 @@ describe("ChartLegend — locale-aware formatting (review: was host-locale-blind
     expect(screen.getByText("21.200")).toBeInTheDocument();
   });
 
+  // RM-109 regression: `valueFormat` unset must still print plain grouped
+  // digits, never compact notation — `ChartLegend` briefly regressed to
+  // `useChartValueSetFormatter`'s own `"compact"` default ("21.2K"), caught
+  // live by a validator, not by the de-DE test above (Intl's de-DE compact
+  // and plain-grouped output for 21200 are textually identical — "21.200"
+  // either way — so that test could not have caught this). en-US's compact
+  // and plain forms visibly diverge ("21.2K" vs "21,200"), which is why this
+  // is the regression test, not a duplicate of the de-DE one.
+  it("formats an unset valueFormat as plain grouped digits, never compact (en-US)", () => {
+    render(<ChartLegend items={[{ color: "var(--chart-1)", label: "Revenue", value: 21200 }]} />);
+    expect(screen.getByText("21,200")).toBeInTheDocument();
+    expect(screen.queryByText("21.2K")).not.toBeInTheDocument();
+  });
+
   it("still honors an explicit caller-supplied formatValue over the locale default", () => {
     render(
       <ChartLegend
