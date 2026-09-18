@@ -36,6 +36,7 @@ import {
   matchTemplates,
   matchCliVerbs,
 } from "../lib/core.mjs";
+import { renderDocsBrief } from "../lib/docs-brief.mjs";
 import { searchExports, renderComponentArm, NO_MATCH_GUIDANCE } from "../lib/search.mjs";
 import { writeContext, checkContext } from "../lib/context.mjs";
 import { resolveAllProps } from "../lib/docgen.mjs";
@@ -592,6 +593,11 @@ function cmdDocs() {
       records.push(docsJsonRecord(hit, extractProps(hit.module, hit.name)));
       continue;
     }
+    // --brief: the smaller first read (lib/docs-brief.mjs); DataTable 29 KB → 6 KB.
+    if (flags.has("--brief")) {
+      console.log(`${renderDocsBrief(hit)}\n`);
+      continue;
+    }
     console.log(`# ${hit.name}  (${hit.pkg})`);
     if (hit.importPath) console.log(`import from: ${hit.importPath}`);
     console.log(`source: ${hit.module}`);
@@ -1115,6 +1121,8 @@ const GENERAL_HELP = `brand-ui <command>
                          (a whole-screen intent like "dashboard" routes to its playbook)
   docs <Component...>    Locate a component and print its real props from source
       [--json]           …or emit the same data as structured JSON
+      [--brief]          …or a smaller first read: import, purpose, anti-patterns,
+                         variants, own props with one-line descriptions
   chart-for "<shape>"    Rank @elabs-ai/components-charts chart containers for a data shape
       [--json]           ("weekday by hour ticket volume") — judge the shape first;
                          see skills/brand-ui/reference/chart-selection.md

@@ -27,6 +27,7 @@ import {
   resolveTasteProfile,
   tasteSearchDirs,
 } from "./core.mjs";
+import { renderDocsBrief } from "./docs-brief.mjs";
 import { searchExports, renderComponentArm } from "./search.mjs";
 import { scanText } from "./audit.mjs";
 import { matchChartFor, renderChartForText } from "./chart-for.mjs";
@@ -131,6 +132,12 @@ export const TOOLS = [
       type: "object",
       properties: {
         component: { type: "string", description: "Exact component name, e.g. Button." },
+        detail: {
+          type: "string",
+          enum: ["brief", "full"],
+          description:
+            'Start with "brief" (about a tenth of the tokens: import line, purpose, anti-patterns, variants, own props with one-line descriptions). Ask for "full" (the default) only when you need inherited props, the state→token map or a prop\'s whole description.',
+        },
       },
       required: ["component"],
       additionalProperties: false,
@@ -362,13 +369,14 @@ function renderDocsEntry(hit) {
   return lines.join("\n");
 }
 
-function toolDocs(ctx, component) {
+function toolDocs(ctx, component, detail = "full") {
   const name = String(component || "");
   if (!name) return { ...textContent("usage: docs { component }"), isError: true };
   const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
   const hit = flat(manifest).find((r) => r.name.toLowerCase() === name.toLowerCase());
   if (!hit) return textContent(`${name} not found. Try the search tool with "${name}".`);
+  if (detail === "brief") return textContent(renderDocsBrief(hit, { storyUrl }));
   return textContent(renderDocsEntry(hit));
 }
 
@@ -488,7 +496,7 @@ function callTool(ctx, name, argsObj = {}) {
     case "search":
       return toolSearch(ctx, argsObj.query);
     case "docs":
-      return toolDocs(ctx, argsObj.component);
+      return toolDocs(ctx, argsObj.component, argsObj.detail);
     case "tokens":
       return toolTokens(ctx);
     case "audit":
