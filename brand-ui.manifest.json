@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T16:39:14.738Z",
+  "generatedAt": "2026-09-18T18:50:18.030Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -14460,6 +14460,30 @@
           "module": "packages/charts/src/auto-chart/auto-chart.tsx"
         },
         {
+          "name": "AxisDomain",
+          "module": "packages/charts/src/charts/y-axis-scales.ts"
+        },
+        {
+          "name": "AxisDomainBound",
+          "module": "packages/charts/src/charts/y-axis-scales.ts"
+        },
+        {
+          "name": "AxisLabelPlacement",
+          "module": "packages/charts/src/charts/y-axis.tsx"
+        },
+        {
+          "name": "AxisSpec",
+          "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
+          "name": "AxisTickCount",
+          "module": "packages/charts/src/charts/tick-targets.ts"
+        },
+        {
+          "name": "AxisTitlePlacement",
+          "module": "packages/charts/src/charts/axis-title.tsx"
+        },
+        {
           "name": "BarAnimationType",
           "module": "packages/charts/src/charts/bar.tsx"
         },
@@ -14562,6 +14586,10 @@
         {
           "name": "CanvasLayerRect",
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "CategoryAxisFit",
+          "module": "packages/charts/src/charts/category-axis-plan.ts"
         },
         {
           "name": "ChartBreakpoint",
@@ -15082,6 +15110,10 @@
         {
           "name": "GenerateChartSkeletonDataOptions",
           "module": "packages/charts/src/charts/generate-chart-skeleton-data.ts"
+        },
+        {
+          "name": "GridMode",
+          "module": "packages/charts/src/charts/grid.tsx"
         },
         {
           "name": "GridProps",
@@ -15768,6 +15800,10 @@
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
         {
+          "name": "ValueScaleType",
+          "module": "packages/charts/src/charts/y-axis-scales.ts"
+        },
+        {
           "name": "WaffleLayout",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -15790,6 +15826,10 @@
         {
           "name": "WaterfallStep",
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "XAxisOrientation",
+          "module": "packages/charts/src/charts/x-axis.tsx"
         },
         {
           "name": "XAxisProps",
@@ -17277,7 +17317,7 @@
               "name": "fit",
               "optional": true,
               "type": "CategoryAxisFit",
-              "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch. Default: `\"auto\"`."
+              "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
             }
           ]
         },
@@ -18118,7 +18158,19 @@
               "name": "formatValue",
               "optional": true,
               "type": "(value: number) => string",
-              "description": "Format function for displaying values. Default: locale-aware (LocaleProvider)."
+              "description": "Format function for displaying values. Overrides `valueFormat` entirely when set."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How to format `value`/`maxValue` (RM-109) — a preset or the object form (`{ decimals, abbreviate, sign, prefix, suffix, … }`, `value-format.ts`). Resolved as a SET across every item (#250, `useChartValueSetFormatter`) so the legend never mixes \"1K\" beside \"400\". Default: locale-aware plain grouping (`intFmt`), unchanged from before this prop existed."
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
             },
             {
               "name": "title",
@@ -19313,6 +19365,12 @@
           "extends": [],
           "props": [
             {
+              "name": "mode",
+              "optional": true,
+              "type": "GridMode",
+              "description": "Grid painting mode (RM-108). Default: `\"lines\"`."
+            },
+            {
               "name": "horizontal",
               "optional": true,
               "type": "boolean",
@@ -19328,7 +19386,7 @@
               "name": "numTicksRows",
               "optional": true,
               "type": "number",
-              "description": "Number of horizontal grid lines. Default: 5"
+              "description": "Number of horizontal grid lines. Default: the height-derived target shared with `YAxis` (`tickTargetForHeight(innerHeight)` — 3 under 200 px, else 5), so rows and labels stay aligned (RM-108)."
             },
             {
               "name": "numTicksColumns",
@@ -21771,7 +21829,49 @@
               "name": "numTicks",
               "optional": true,
               "type": "number",
-              "description": "Number of ticks to show (including first and last). Default: 5. Used when `tickMode` is `\"domain\"`."
+              "description": "Explicit tick count (including first and last) — the long-standing override; wins over `tickCount`. Default: unset (→ `tickCount`)."
+            },
+            {
+              "name": "tickCount",
+              "optional": true,
+              "type": "AxisTickCount",
+              "description": "Tick target (RM-108). `\"auto\"` (default) derives it from the plot width — `tickTargetForWidth(innerWidth)`, about one tick per 90 px, clamped 2–10, and never more than the number of data rows on a time axis (6 monthly rows get at most 6 ticks, not 9 labels between them)."
+            },
+            {
+              "name": "ticks",
+              "optional": true,
+              "type": "Date[] | number[]",
+              "description": "RM-108 naming, shared with `YAxis`. On a time axis: an alias of `tickValues` (`tickValues` wins). On a numeric x with `domain`/`scale` (ScatterChart): exactly these raw x values."
+            },
+            {
+              "name": "domain",
+              "optional": true,
+              "type": "AxisDomain",
+              "description": "Numeric x only (ScatterChart with numeric `xDataKey`, RM-108): pin either end of the x domain in raw units; `\"auto\"` keeps the data-derived end. Read by the chart container, so place `XAxis` as a direct child. Setting `domain` or `scale` also switches the labels from one per data row to a numeric ruler. Ignored on a time axis."
+            },
+            {
+              "name": "scale",
+              "optional": true,
+              "type": "ValueScaleType",
+              "description": "Numeric x only (RM-108): `\"linear\"` (default), `\"log\"` (refuses data or a domain touching 0 — dev warning, renders linear) or `\"sqrt\"`."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "XAxisOrientation",
+              "description": "Which edge the labels sit on (RM-108). Default: `\"bottom\"`."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Axis title (RM-108)."
+            },
+            {
+              "name": "titlePlacement",
+              "optional": true,
+              "type": "AxisTitlePlacement",
+              "description": "`\"outside\"` (default) — in the margin beyond the tick labels, at the far end; `\"inside\"` — `HaloText` at the far end inside the plot."
             },
             {
               "name": "tickerHalfWidth",
@@ -21790,6 +21890,12 @@
               "optional": true,
               "type": "(value: Date) => string",
               "description": "Override the default `Intl`-based tick label formatter. Applied to every tick this axis renders (generated or `tickValues`). #357. **Time scale only.** Ignored (with a dev warning) when the chart runs `xScale=\"band\" | \"linear\"` — those modes project onto a synthetic instant, so a `Date` formatter would print a fabricated calendar date instead of your x value. Format categorical/numeric x values in your data. #352."
+            },
+            {
+              "name": "dateFormat",
+              "optional": true,
+              "type": "DateFormatPreset | ((value: Date) => string)",
+              "description": "The date-format LADDER (RM-109): a preset from `date-format.ts` (`\"year\"` → `\"yearShort\"` → `\"month\"` → `\"day\"` → `\"weekday\"` → `\"hour\"` → `\"minute\"`), or a formatter function for full control. Unset (default) — the axis picks a rung itself via `dateFormatForSpan`, from the time domain's span and how many ticks are on screen, instead of the old fixed `\"Mon d\"` shape whatever the span. A ten-year series reads years; a 36-hour series reads hours. `tickFormat` still wins outright when both are set — it is the raw escape hatch this package has always had; `dateFormat` is the smart default underneath it. Same time-scale-only caveat as `tickFormat` (#352)."
             },
             {
               "name": "tickValues",
@@ -21824,7 +21930,49 @@
               "name": "numTicks",
               "optional": true,
               "type": "number",
-              "description": "Approximate tick count hint for `scale.ticks()` (d3). Actual label count may differ. Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: 5."
+              "description": "Explicit tick count hint for `scale.ticks()` (d3) — the long-standing override; wins over `tickCount`. Actual label count may differ. Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: unset (→ `tickCount`)."
+            },
+            {
+              "name": "tickCount",
+              "optional": true,
+              "type": "AxisTickCount",
+              "description": "Tick target (RM-108). `\"auto\"` (default) derives it from the plot height — `tickTargetForHeight(innerHeight)`: 3 under 200 px, else 5."
+            },
+            {
+              "name": "ticks",
+              "optional": true,
+              "type": "number[]",
+              "description": "Render exactly these tick values (RM-108), bypassing generation."
+            },
+            {
+              "name": "domain",
+              "optional": true,
+              "type": "AxisDomain",
+              "description": "Pin either end of the value domain (RM-108); `\"auto\"` keeps the data-derived end. Read by the chart container, so place `YAxis` as a direct child. On a length encoding (bars) the domain always includes 0 — a non-zero lower bound is ignored with a dev warning (`charts-honesty`)."
+            },
+            {
+              "name": "scale",
+              "optional": true,
+              "type": "ValueScaleType",
+              "description": "How values map to pixels (RM-108). `\"log\"` refuses data or a domain that touches 0 (dev warning, renders linear); bars are linear only. Default: `\"linear\"`."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Axis title — names the unit of every tick (RM-108)."
+            },
+            {
+              "name": "titlePlacement",
+              "optional": true,
+              "type": "AxisTitlePlacement",
+              "description": "`\"outside\"` (default) — above the top tick label in the margin; `\"inside\"` — `HaloText` at the top of the axis inside the plot."
+            },
+            {
+              "name": "labelPlacement",
+              "optional": true,
+              "type": "AxisLabelPlacement",
+              "description": "`\"outside\"` (default) — tick labels in the margin beside the plot; `\"inside\"` — labels sit just above their grid line inside the plot."
             },
             {
               "name": "formatLargeNumbers",
@@ -21849,6 +21997,18 @@
               "optional": true,
               "type": "(value: number) => string",
               "description": "Custom formatter for tick labels. Overrides `valueFormat` entirely when set."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "string",
+              "description": "Unit text appended to {@link unitOn} tick(s) — `<YAxis unit=\"%\" />` paints `\"80 %\"` on that tick, not every tick (RM-109). The tooltip is the place a unit repeats on every value (the blog's \"3.4 % unemployed\", not a bare \"3.4 %\"); see `TooltipRow.unit`."
+            },
+            {
+              "name": "unitOn",
+              "optional": true,
+              "type": "\"last\" | \"first\" | \"all\"",
+              "description": "Which tick(s) {@link unit} paints on. Default: `\"last\"`."
             }
           ]
         }
@@ -23013,7 +23173,8 @@
         "TreeChart": "charts-treechart--docs",
         "TreemapChart": "charts-treemapchart--docs",
         "UnitChart": "charts-unitchart--docs",
-        "WaterfallChart": "charts-waterfallchart--docs"
+        "WaterfallChart": "charts-waterfallchart--docs",
+        "YAxis": "charts-axes--docs"
       },
       "subpaths": {
         "@elabs-ai/components-charts/dashboard": {

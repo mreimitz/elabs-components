@@ -48,6 +48,7 @@ import {
   XAxis as XAxisPart,
   YAxis as YAxisPart,
 } from "../test/primitives";
+import { ChartConfigProvider } from "./chart-config-context";
 import { LineChart } from "./line-chart";
 import { ScatterChart } from "./scatter-chart";
 import { generatePeriodTicks, isLongPeriodTick, XAxis } from "./x-axis";
@@ -124,6 +125,13 @@ describe("XAxis — tickFormat / tickValues (#357)", () => {
       // All three points fall within the same day (default formatter is
       // {month:"short", day:"numeric"} — no time component), so every
       // domain-interpolated tick collapses to the same "Jan 1" label.
+      //
+      // RM-109: the default formatter is now the span/width ladder
+      // (`dateFormatForSpan`), which resolves a ten-minute span to the
+      // "minute" rung on its own and would no longer collapse — that's the
+      // bug this RM fixes. `dateFormat="day"` pins the OLD coarse shape
+      // explicitly so this test still exercises the collapse-warning
+      // mechanism itself, independent of which rung is in play.
       const denseData = [
         { date: new Date("2024-01-01T00:00:00"), value: 1 },
         { date: new Date("2024-01-01T00:05:00"), value: 2 },
@@ -131,7 +139,7 @@ describe("XAxis — tickFormat / tickValues (#357)", () => {
       ];
       render(
         <LineChart data={denseData}>
-          <XAxis />
+          <XAxis dateFormat="day" />
         </LineChart>,
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -313,12 +321,92 @@ describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", ()
   }
 
   it("paints 8–10 x ticks at 900 px and 3–5 at 380 px", () => {
+    // Tick-step round (#478): the AUTO count path picks a calendar STEP from
+    // `CALENDAR_STEP_LADDER` (x-axis.tsx) directly, banded around the
+    // width-derived target, rather than asking `xScale.ticks(count)` to
+    // infer one from a bare count — d3's own per-unit step list is coarser
+    // (months only offer a 1- or 3-month step) and can jump straight past
+    // this band. `monthly`'s domain spans under 2 calendar years, so a
+    // narrow width's ~3-tick target lands on the 6-month step (4 ticks) —
+    // in-band, real calendar boundaries, still inside RM-108's own bound.
     const wide = paintedXTicks(900);
     const narrow = paintedXTicks(380);
     expect(wide).toBeGreaterThanOrEqual(8);
     expect(wide).toBeLessThanOrEqual(10);
     expect(narrow).toBeGreaterThanOrEqual(3);
     expect(narrow).toBeLessThanOrEqual(5);
+  });
+
+  // A real ten-year DAILY series (2016-01-01..2025-12-31, 3,653 points —
+  // matches `DateLadderLongSpan`'s own fixture, formatting.stories.tsx) and a
+  // 36-hour hourly series (matches `DateLadderShortSpan`'s fixture) — the two
+  // targets the tick-step round (#478) fixes: a calendar-step-chosen STEP's
+  // format rung now reads off the STEP's own unit (`presetForCalendarStep`),
+  // not the raw width-derived target or the resulting tick COUNT, either of
+  // which can pick the wrong rung (see `chooseCalendarStep`'s doc comment in
+  // x-axis.tsx).
+  const daily10y = Array.from({ length: 3653 }, (_, i) => ({
+    date: new Date(2016, 0, 1 + i),
+    value: i,
+  }));
+  const hourly36 = Array.from({ length: 36 }, (_, i) => ({
+    date: new Date(2024, 0, 1, i),
+    value: i,
+  }));
+
+  function paintedXLabels(width: number, data: typeof daily10y, narrow = false): string[] {
+    parentSize.width = width;
+    const chart = (
+      <LineChart data={data}>
+        <XAxis />
+      </LineChart>
+    );
+    const { container } = render(
+      narrow ? (
+        <ChartConfigProvider value={{ breakpoint: "narrow" }}>{chart}</ChartConfigProvider>
+      ) : (
+        chart
+      ),
+    );
+    const labels = [...container.querySelectorAll('[data-slot="x-axis"] span')].map(
+      (n) => n.textContent ?? "",
+    );
+    cleanup();
+    parentSize.width = 560;
+    return labels;
+  }
+
+  it("ten-year daily series: ’16 ’18 ’20 ’22 ’24 at 380 px (narrow), full years 2016…2025 at 900 px", () => {
+    // 380 px forces RM-107's narrow breakpoint (`density="sm"`) explicitly —
+    // jsdom never measures a real layout width, so `ChartConfigProvider`'s
+    // `breakpoint` override stands in for a real narrow container here.
+    expect(paintedXLabels(380, daily10y, true)).toEqual(["’16", "’18", "’20", "’22", "’24"]);
+    expect(paintedXLabels(900, daily10y)).toEqual([
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+      "2024",
+      "2025",
+    ]);
+  });
+
+  it("36-hour series paints times of day at every width, never a weekday fallback", () => {
+    for (const width of [380, 600, 900]) {
+      const labels = paintedXLabels(width, hourly36);
+      expect(labels.length).toBeGreaterThan(0);
+      for (const label of labels) {
+        expect(label).toMatch(/^\d{2}:\d{2}$/);
+      }
+    }
+    // The 380 px case names an exact shape in the Acceptance: a midnight tick
+    // recurring across the day boundary is a legitimate repeat, not a
+    // de-duped collision (see `buildDomainTicks`'s `usingCalendarTicks` guard).
+    expect(paintedXLabels(380, hourly36)).toEqual(["00:00", "12:00", "00:00"]);
   });
 
   it("never paints more auto x ticks than data rows", () => {

@@ -61,6 +61,7 @@ import {
   warnValueAxisOnce,
 } from "./y-axis-scales";
 import { computeYDomainsByAxis } from "./y-domain-utils";
+import type { ChartValueFormat } from "./value-format";
 
 /** Stable empty array so a non-interactive chart never re-registers targets. */
 const EMPTY_DATAPOINT_TARGETS: ChartDatapointTarget[] = [];
@@ -149,6 +150,64 @@ export function isClipExcludedComponent(child: ReactElement): boolean {
   const componentName =
     typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
   return CLIP_EXCLUDED_COMPONENT_NAMES.has(componentName);
+}
+
+/** `<YAxis>`'s `unit`/`valueFormat`/`currency`, carried to the default `ChartTooltip` row builder (RM-109). */
+export interface YAxisTooltipHint {
+  unit?: string;
+  valueFormat?: ChartValueFormat;
+  currency?: string;
+}
+
+function componentNameOf(child: ReactElement): string {
+  const childType = child.type as { displayName?: string; name?: string };
+  return typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+}
+
+/**
+ * Reads the first `<YAxis unit|valueFormat>` found in `children` (RM-109) so
+ * the default `ChartTooltip` row builder can carry the SAME unit/format the
+ * axis painted, without the caller re-stating it on `<ChartTooltip>` too.
+ * Only the FIRST `<YAxis>` is used — a multi-axis chart (more than one
+ * `<YAxis yAxisId>`) needs an explicit `<ChartTooltip unit>` (or its own
+ * `rows` renderer) to disambiguate per series.
+ */
+export function findYAxisTooltipHint(children: ReactNode): YAxisTooltipHint | undefined {
+  let hint: YAxisTooltipHint | undefined;
+  Children.forEach(children, (child) => {
+    if (hint || !isValidElement(child) || componentNameOf(child) !== "YAxis") {
+      return;
+    }
+    const { unit, valueFormat, currency } = child.props as YAxisTooltipHint;
+    if (unit == null && valueFormat == null) {
+      return;
+    }
+    hint = { unit, valueFormat, currency };
+  });
+  return hint;
+}
+
+/**
+ * Injects `hint` onto a `<ChartTooltip>` child that did not already set its
+ * own `unit`/`valueFormat` (RM-109) — an explicit prop on `<ChartTooltip>`
+ * always wins outright. A no-op for every other child.
+ */
+export function withYAxisTooltipHint(
+  child: ReactElement,
+  hint: YAxisTooltipHint | undefined,
+): ReactElement {
+  if (!hint || componentNameOf(child) !== "ChartTooltip") {
+    return child;
+  }
+  const props = child.props as YAxisTooltipHint;
+  if (props.unit != null || props.valueFormat != null) {
+    return child;
+  }
+  return cloneElement(child as ReactElement<YAxisTooltipHint>, {
+    unit: hint.unit,
+    valueFormat: hint.valueFormat,
+    currency: hint.currency,
+  });
 }
 
 function ensureChildKey(child: ReactElement, index: number): ReactElement {
@@ -658,6 +717,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   const clipExcludedChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  const yAxisTooltipHint = findYAxisTooltipHint(children);
 
   Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
@@ -665,7 +725,10 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     }
 
     const keyedChild = ensureChildKey(child, index);
-    const resolvedChild = resolveChartChildElement(keyedChild);
+    const resolvedChild = withYAxisTooltipHint(
+      resolveChartChildElement(keyedChild),
+      yAxisTooltipHint,
+    );
 
     if (isGradientDefComponent(resolvedChild)) {
       defsChildren.push(resolvedChild);

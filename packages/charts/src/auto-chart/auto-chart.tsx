@@ -360,7 +360,7 @@ function renderChart(
           {series.map((s) => (
             <Line key={s.key} dataKey={s.key} stroke={s.color} />
           ))}
-          <XAxis {...axisProps.x} />
+          <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip />
         </LineChart>
@@ -393,7 +393,7 @@ function renderChart(
           {series.map((s) => (
             <Area key={s.key} dataKey={s.key} stroke={s.color} fill={s.color} />
           ))}
-          <XAxis {...axisProps.x} />
+          <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip />
         </AreaChart>
@@ -495,7 +495,7 @@ function renderChart(
           {series.map((s) => (
             <Scatter key={s.key} dataKey={s.key} fill={s.color} />
           ))}
-          <XAxis {...axisProps.x} />
+          <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip />
         </ScatterChart>
@@ -605,7 +605,7 @@ function renderChart(
         >
           <Grid horizontal mode={axisProps.gridMode} />
           <Candlestick />
-          <XAxis {...axisProps.x} />
+          <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip />
         </CandlestickChart>

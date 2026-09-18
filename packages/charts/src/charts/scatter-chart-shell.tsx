@@ -25,7 +25,11 @@ import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
 import { shortDateFmt } from "./chart-formatters";
 import { type ChartPhase, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { fallbackXLabel, isInvalidDate } from "./chart-x-value-utils";
-import { isPostOverlayComponent } from "./time-series-chart-shell";
+import {
+  findYAxisTooltipHint,
+  isPostOverlayComponent,
+  withYAxisTooltipHint,
+} from "./time-series-chart-shell";
 import { useScatterChartInteraction } from "./use-scatter-chart-interaction";
 import { buildXValueEncoder, type NumericXRuler, NumericXRulerContext } from "./x-scale-mode";
 import {
@@ -368,11 +372,15 @@ export function ScatterChartInner({
   const defsChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  const yAxisTooltipHint = findYAxisTooltipHint(children);
 
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child)) {
+  Children.forEach(children, (rawChild) => {
+    if (!isValidElement(rawChild)) {
       return;
     }
+    // RM-109: threads `<YAxis unit|valueFormat>` into a bare `<ChartTooltip>`
+    // that did not already set its own — see time-series-chart-shell.tsx.
+    const child = withYAxisTooltipHint(rawChild, yAxisTooltipHint);
 
     if (isGradientDefComponent(child)) {
       defsChildren.push(child);

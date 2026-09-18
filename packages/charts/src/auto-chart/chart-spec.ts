@@ -7,6 +7,7 @@
  */
 
 import type { ChartValueFormat } from "../charts/value-format";
+import type { DateFormatPreset } from "../charts/date-format";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
 
 /**
@@ -219,16 +220,26 @@ export interface ChartSpec {
    */
   currency?: string;
 
+  // Axes — RM-108
+  /** Per-axis range, ticks, scale, title, grid and position (RM-108) — see {@link AxisSpec}. */
+  axes?: { x?: AxisSpec; y?: AxisSpec; y2?: AxisSpec };
+
+  /**
+   * How to format an x-axis Date tick (RM-109) — one rung of the
+   * `date-format.ts` ladder (`"year"|"yearShort"|"month"|"day"|"weekday"|
+   * "hour"|"minute"`). Default: the ladder picks a rung from the series'
+   * own span and tick count (`dateFormatForSpan`) — a 36-hour series reads
+   * hours, a decade-long one reads years. Ignored on a non-time x-scale
+   * (category/linear), same as every other Date-shaped axis input.
+   */
+  dateFormat?: DateFormatPreset;
+
   /**
    * Which spec fields a host's selection resolves against (RM-073). Defaults:
    * `category` → `x`, `series` → the series keys. Lets a dashboard map its
    * selection field to any chart without knowing the chart type.
    */
   fields?: { category?: string; series?: string };
-
-  // Axes — RM-108
-  /** Per-axis range, ticks, scale, title, grid and position (RM-108) — see {@link AxisSpec}. */
-  axes?: { x?: AxisSpec; y?: AxisSpec; y2?: AxisSpec };
 }
 
 // Axes — RM-108

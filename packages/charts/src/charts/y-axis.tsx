@@ -79,6 +79,15 @@ export interface YAxisProps {
   currency?: string;
   /** Custom formatter for tick labels. Overrides `valueFormat` entirely when set. */
   formatValue?: (value: number) => string;
+  /**
+   * Unit text appended to {@link unitOn} tick(s) — `<YAxis unit="%" />` paints
+   * `"80 %"` on that tick, not every tick (RM-109). The tooltip is the place a
+   * unit repeats on every value (the blog's "3.4 % unemployed", not a bare
+   * "3.4 %"); see `TooltipRow.unit`.
+   */
+  unit?: string;
+  /** Which tick(s) {@link unit} paints on. Default: `"last"`. */
+  unitOn?: "last" | "first" | "all";
 }
 
 export function YAxis(props: YAxisProps) {
@@ -113,6 +122,8 @@ const YAxisInner = memo(function YAxisInner({
   valueFormat,
   currency,
   formatValue,
+  unit,
+  unitOn = "last",
   container,
 }: YAxisProps & { container: HTMLDivElement }) {
   const { margin, innerWidth, innerHeight, width, height } = useChartStable();
@@ -143,14 +154,29 @@ const YAxisInner = memo(function YAxisInner({
   const defaultFormat = useChartValueSetFormatter(tickValues, resolvedFormat, currency);
   const format = formatValue ?? defaultFormat;
 
+  // `tickValues` (above) is RM-108's already-resolved set — honoring
+  // `numTicks`/`tickCount`/`domain`/`scale`/an explicit `ticks` prop — so the
+  // RM-109 unit logic below decorates THAT set rather than re-deriving a
+  // second, independent one straight off `yScale` (which would silently drop
+  // every one of those RM-108 behaviours).
   const ticks = useMemo(
     () =>
-      tickValues.map((value) => ({
-        value,
-        y: (yScale(value) ?? 0) + margin.top,
-        label: format(value),
-      })),
-    [tickValues, yScale, margin.top, format],
+      tickValues.map((value, index) => {
+        // A unit repeated on every tick is visual noise the reader already
+        // filtered out by the second tick — Datawrapper's River charts paint it
+        // once (RM-109). `unitOn` names WHICH tick carries it.
+        const paintsUnit =
+          unit != null &&
+          (unitOn === "all" ||
+            (unitOn === "first" && index === 0) ||
+            (unitOn === "last" && index === tickValues.length - 1));
+        return {
+          value,
+          y: (yScale(value) ?? 0) + margin.top,
+          label: paintsUnit ? `${format(value)} ${unit}` : format(value),
+        };
+      }),
+    [tickValues, yScale, margin.top, format, unit, unitOn],
   );
 
   // Inside labels + inside title would stack two texts in the same top-left
@@ -193,7 +219,11 @@ const YAxisInner = memo(function YAxisInner({
                   : { left: 0, justifyContent: "flex-start", paddingLeft: 8 }),
             }}
           >
-            <span className="text-chart-label text-meta">
+            {/* RM-109: a unit-bearing tick ("700 km") is the widest label the
+                axis paints — without `whitespace-nowrap` it wraps onto a
+                second line at narrow widths and crowds the tick below it
+                (same fix x-axis.tsx already has for its own tick labels). */}
+            <span className="whitespace-nowrap text-chart-label text-meta">
               {tick.label}
               {titleJoinsTopLabel && tick.value === topTickValue ? (
                 <>
