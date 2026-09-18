@@ -22,6 +22,7 @@
  */
 
 import type { ScatterLabels } from "../charts/labels/point-labels";
+import { hasDisplayName, resolveSeriesLabelMode } from "../charts/labels/use-chart-labels";
 import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
 import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
@@ -231,6 +232,30 @@ function scatterPointLabels(points: ChartLabelsSpec["points"]): ScatterLabels | 
         }
       : undefined,
   };
+}
+
+/**
+ * True when every Line/Area series the spec draws paints an end label at the
+ * wide tier (maintainer decision 7: two or more series, each with a real
+ * display name, or an explicit `labels.series`). Only then is the AutoLegend
+ * redundant. Stacked areas name their bands themselves, never with end labels.
+ */
+function everySeriesEndLabelled(
+  spec: ChartSpec,
+  type: ChartType,
+  series: NormalizedSeries[],
+): boolean {
+  const drawsLines = type === "line" || (type === "area" && !spec.stacked);
+  if (!drawsLines || series.length === 0) return false;
+  const context = { hasLegend: false, seriesCount: series.length };
+  return series.every(
+    (s) =>
+      resolveSeriesLabelMode(
+        { seriesLabel: spec.labels?.series, hasDisplayName: hasDisplayName(s.label, s.key) },
+        context,
+        "wide",
+      ) === "end",
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1178,10 +1203,10 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       : series;
 
   // ── Legend visibility ──────────────────────────────────────────────────────
-  // Labels — RM-110: a chart that names its own series (end labels or the
-  // key row) does not also get the legend below it, unless the spec asks.
-  const namesSeriesItself = spec.labels?.series !== undefined && spec.labels.series !== "none";
-  const showLegend = spec.legend ?? (legendItems.length > 1 && !namesSeriesItself);
+  // Labels — RM-110: a line/area chart whose every series paints an end label
+  // does not repeat those names in a legend below it, unless the spec asks.
+  const showLegend =
+    spec.legend ?? (legendItems.length > 1 && !everySeriesEndLabelled(spec, type, series));
 
   // ── Chart title ───────────────────────────────────────────────────────────
   const title = spec.title;
