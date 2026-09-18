@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
-import { Card, CardDescription, CardHeader, CardTitle } from "@elabs-ai/components-ui";
+import { Card, CardDescription, CardHeader, CardTitle } from "../card";
 import { RevealOnEnter } from "./reveal-on-enter";
 
 const ITEMS = [
@@ -36,7 +36,7 @@ function Reveals({ stagger = false }: { stagger?: boolean }) {
 }
 
 const meta = {
-  title: "Marketing/RevealOnEnter",
+  title: "Display/RevealOnEnter",
   component: RevealOnEnter,
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],

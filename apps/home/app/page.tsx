@@ -5,9 +5,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  ParallaxPlane,
+  RevealOnEnter,
 } from "@elabs-ai/components-ui";
 import { SiteThemeSwitch } from "../lib/use-theme-transition";
-import { ParallaxPlane, RevealOnEnter } from "@elabs-ai/components-marketing";
 import { SiteGround } from "../components/site-ground";
 
 // RM-092: a preview of the three depth planes until the real sections (RM-094) replace it.

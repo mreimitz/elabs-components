@@ -55,7 +55,7 @@ function Controlled(props: Partial<ThemeFamilySwitchProps>) {
 }
 
 const meta = {
-  title: "Marketing/ThemeFamilySwitch",
+  title: "Core/ThemeFamilySwitch",
   component: ThemeFamilySwitch,
   parameters: { layout: "padded" },
   tags: ["autodocs"],

@@ -3,7 +3,7 @@ import { expect, waitFor } from "storybook/test";
 import { AmbientField } from "./ambient-field";
 
 const meta = {
-  title: "Marketing/AmbientField",
+  title: "Display/AmbientField",
   component: AmbientField,
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useScrollProgress } from "../motion/use-scroll-progress";
+import { useScrollProgress } from "../../lib/use-scroll-progress";
 import "./parallax-plane.css";
 
 /** The three depth planes of a page: the ground, the content, and floating accents. */

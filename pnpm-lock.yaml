@@ -1002,9 +1002,6 @@ importers:
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
-      motion:
-        specifier: ^12.26.2
-        version: 12.40.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react:
         specifier: ^19.0.0
         version: 19.2.7
@@ -1374,6 +1371,9 @@ importers:
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
+      motion:
+        specifier: ^12.26.2
+        version: 12.40.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react:
         specifier: ^19.0.0
         version: 19.2.7

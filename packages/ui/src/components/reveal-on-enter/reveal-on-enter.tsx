@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { isMotionAtFloor, readMotionFactor } from "../motion/use-scroll-progress";
+import { isMotionAtFloor, readMotionFactor } from "../../lib/use-scroll-progress";
 import "./reveal-on-enter.css";
 
 /** Elements RevealOnEnter may render as. */

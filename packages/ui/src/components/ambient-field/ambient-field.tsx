@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn } from "../../lib/cn";
 import "./ambient-field.css";
 
 /** Colour-role tokens an ambient stop or tint may reference (always `var(--<token>)`). */
