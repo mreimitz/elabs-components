@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useMemo } from "react";
+import type { ChartBreakpoint, Responsive } from "./chart-breakpoint";
 
 export interface SpringConfig {
   stiffness: number;
@@ -33,6 +34,9 @@ export interface ChartInteractions {
  * - `sm` — the category axis only, at most 4 ticks; legend hidden.
  * - `md` — today's furniture (default).
  * - `lg` — today's furniture, plus value labels where a family draws them.
+ *
+ * ADR 0039: inside a `narrow` chart container a host `md`/`lg` becomes `sm`,
+ * unless the host density is a `Responsive` value with an explicit `narrow`.
  */
 export type ChartDensity = "xs" | "sm" | "md" | "lg";
 
@@ -69,6 +73,16 @@ export interface ChartConfigValue {
   interactions: Required<ChartInteractions>;
   /** Furniture tier (RM-072). Default `"md"` — today's charts. */
   density: ChartDensity;
+  /**
+   * Forces the container breakpoint (ADR 0039) for every chart inside —
+   * stories, fixed-width export, thumbnails, tests. Unset: each chart measures.
+   */
+  breakpoint?: ChartBreakpoint;
+  /**
+   * The host's density as given, possibly per breakpoint (ADR 0039); `density`
+   * is its resolution for the current scope. Set by `ChartConfigProvider`.
+   */
+  densityByBreakpoint?: Responsive<ChartDensity>;
 }
 
 export const DEFAULT_CHART_INTERACTIONS: Required<ChartInteractions> = {
@@ -93,7 +107,15 @@ export interface ChartConfigProviderProps {
    * Partial overrides. `interactions` may itself be partial — missing keys
    * keep their defaults (`edit: false`, the rest `true`).
    */
-  value?: Partial<Omit<ChartConfigValue, "interactions">> & { interactions?: ChartInteractions };
+  value?: Partial<Omit<ChartConfigValue, "interactions" | "density" | "densityByBreakpoint">> & {
+    interactions?: ChartInteractions;
+    /**
+     * Furniture tier, optionally per breakpoint. An explicit `narrow` entry
+     * (`{ base: "md", narrow: "md" }`) keeps the legend and value axis on a
+     * narrow chart — the per-chart escape hatch from the narrow → `sm` coupling.
+     */
+    density?: Responsive<ChartDensity>;
+  };
   children: ReactNode;
 }
 
@@ -103,12 +125,33 @@ export function ChartConfigProvider({ value, children }: ChartConfigProviderProp
       ...DEFAULT_CHART_CONFIG,
       ...value,
       interactions: { ...DEFAULT_CHART_INTERACTIONS, ...value?.interactions },
-      density: value?.density ?? DEFAULT_CHART_CONFIG.density,
+      // A per-breakpoint density resolves to its `base` (wide) outside a
+      // container; the container's breakpoint scope re-resolves it.
+      density: densityBase(value?.density ?? DEFAULT_CHART_CONFIG.density),
+      densityByBreakpoint: value?.density ?? DEFAULT_CHART_CONFIG.density,
     }),
     [value],
   );
 
   return <ChartConfigContext.Provider value={merged}>{children}</ChartConfigContext.Provider>;
+}
+
+function densityBase(density: Responsive<ChartDensity>): ChartDensity {
+  return typeof density === "object" ? density.base : density;
+}
+
+/**
+ * Internal: provides an already-resolved config (a breakpoint scope) without
+ * re-merging, so the host's per-breakpoint density survives nested scopes.
+ */
+export function ChartConfigValueProvider({
+  value,
+  children,
+}: {
+  value: ChartConfigValue;
+  children?: ReactNode;
+}) {
+  return <ChartConfigContext.Provider value={value}>{children}</ChartConfigContext.Provider>;
 }
 
 export function useChartConfig(): ChartConfigValue {
