@@ -234,6 +234,9 @@ export const Streamgraph: Story = {
 /**
  * `seams={2}` — a `--chart-background` stroke drawn between bands, the F16
  * "paper seam" that visually separates each ribbon from its neighbour.
+ * `seams` IS this package's separator-lines feature for stacked areas
+ * (Datawrapper's "separator lines" option) — there is no additional
+ * `separatorLines` prop.
  */
 export const StreamWithSeams: Story = {
   render: () => (
