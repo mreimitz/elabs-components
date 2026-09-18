@@ -85,6 +85,8 @@ export const KEY_SWATCH_WIDTH = 16;
 export const KEY_ITEM_GAP = 12;
 /** Largest vertical move of an end label, px — beyond it the label is dropped (and restated `sr-only`). */
 export const END_LABEL_MAX_NUDGE = 28;
+/** Largest share of the plot width end labels may take before they move to the key. */
+export const END_LABEL_MAX_SHARE = 1 / 3;
 /** Largest sideways move of a value label, px. */
 export const VALUE_LABEL_MAX_NUDGE = 24;
 
@@ -173,8 +175,15 @@ export function resolveValueLabels(
   };
 }
 
-/** Walk the shell's children for `Line` / `Area` label requests and a `ChartLegend`. */
-export function collectLabelRequests(children: ReactNode): ChartLabelRequests {
+/**
+ * Walk the shell's children for `Line` / `Area` label requests and a
+ * `ChartLegend`. `skipAreas`: a stacked `AreaChart` — its bands name
+ * themselves (`labelBands`), and raw values would misplace the labels.
+ */
+export function collectLabelRequests(
+  children: ReactNode,
+  { skipAreas = false }: { skipAreas?: boolean } = {},
+): ChartLabelRequests {
   const series: SeriesLabelRequest[] = [];
   let hasLegend = false;
   const visit = (node: ReactNode) => {
@@ -186,6 +195,7 @@ export function collectLabelRequests(children: ReactNode): ChartLabelRequests {
         hasLegend = true;
         return;
       }
+      if (name === "Area" && skipAreas) return;
       if ((name === "Line" || name === "Area") && typeof props.dataKey === "string") {
         series.push({
           dataKey: props.dataKey,
@@ -209,17 +219,12 @@ export function collectLabelRequests(children: ReactNode): ChartLabelRequests {
 }
 
 /**
- * Default `seriesLabel` when a series sets none: `"none"` — every chart that
- * does not ask for series labels renders exactly as before RM-110.
- *
- * RM-110 proposes `{ base: "end", narrow: "key" }` beside a `ChartLegend`
- * and `"end"` otherwise; that default adds an end label to every existing
- * line / area / composed chart and breaks the pre-RM-073 DOM baselines in
- * `chart-selection.test.tsx`, so it waits for a maintainer decision. The one
- * place to flip it is here — `hasLegend` is already threaded through.
+ * Default `seriesLabel` (RM-110, maintainer decision 2026-09-18): end labels,
+ * falling back to the key row at `narrow` when a `ChartLegend` is composed;
+ * plain end labels otherwise. `seriesLabel="none"` opts a series out.
  */
-export function defaultSeriesLabel(_hasLegend: boolean): Responsive<SeriesLabelMode> {
-  return "none";
+export function defaultSeriesLabel(hasLegend: boolean): Responsive<SeriesLabelMode> {
+  return hasLegend ? { base: "end", narrow: "key" } : "end";
 }
 
 export function resolveSeriesLabelMode(
@@ -269,16 +274,25 @@ export function reserveChartLabels(
   baseRightMargin: number,
   availableWidth: number,
 ): ChartLabelReserve {
+  const modes = requests.series.map((request) => ({
+    request,
+    mode: resolveSeriesLabelMode(request, requests.hasLegend, breakpoint),
+  }));
+  const endWidest = modes.reduce(
+    (max, m) => (m.mode === "end" ? Math.max(max, measure(m.request.name)) : max),
+    0,
+  );
+  // Key fallback by width: end labels that would take more than
+  // END_LABEL_MAX_SHARE of the plot move into the key row instead.
+  const endToKey = END_LABEL_GAP + endWidest > availableWidth * END_LABEL_MAX_SHARE;
   const endSeries: SeriesLabelRequest[] = [];
   const keyItems: ChartSeriesKeyItem[] = [];
-  for (const request of requests.series) {
-    const mode = resolveSeriesLabelMode(request, requests.hasLegend, breakpoint);
-    if (mode === "end") endSeries.push(request);
-    else if (mode === "key")
+  for (const { request, mode } of modes) {
+    if (mode === "end" && !endToKey) endSeries.push(request);
+    else if (mode === "key" || mode === "end")
       keyItems.push({ dataKey: request.dataKey, name: request.name, stroke: request.stroke });
   }
-
-  const widest = endSeries.reduce((max, s) => Math.max(max, measure(s.name)), 0);
+  const widest = endSeries.length > 0 ? endWidest : 0;
   const endNeed = endSeries.length > 0 ? END_LABEL_GAP + widest + END_LABEL_TRAILING : 0;
   const right = Math.max(0, Math.ceil(endNeed - baseRightMargin));
 

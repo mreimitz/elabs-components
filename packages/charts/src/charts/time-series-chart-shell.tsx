@@ -20,6 +20,7 @@ import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./anim
 import { useChartBreakpoint } from "./chart-breakpoint";
 import { useChartConfig } from "./chart-config-context";
 import { makeValueSetFmt } from "./chart-formatters";
+import { useAreaStacked } from "./area";
 import { SeriesEndLabels, SeriesKeyRow } from "./labels/series-end-labels";
 import {
   ChartSeriesKeyProvider,
@@ -27,6 +28,11 @@ import {
   placeChartLabels,
   reserveChartLabels,
 } from "./labels/use-chart-labels";
+import {
+  UnpaintedLabels,
+  UnpaintedLabelsProvider,
+  useUnpaintedLabelsStore,
+} from "./labels/unpainted-labels";
 import { ValueLabels } from "./labels/value-labels";
 import { useTextMeasurerOf } from "./use-text-measurer";
 import { resolveChartChildElement } from "./chart-child-passthrough";
@@ -336,10 +342,15 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   // before any scale exists (the bar category-axis pattern — the reserve
   // depends on label TEXT widths only, never on positions, so it is acyclic).
   const breakpoint = useChartBreakpoint();
+  const unpaintedStore = useUnpaintedLabelsStore();
   const { locale } = useLocale();
   const { currency: configCurrency } = useChartConfig();
   const { measure: measureLabel } = useTextMeasurerOf(containerRef);
-  const labelRequests = useMemo(() => collectLabelRequests(children), [children]);
+  const areaStacked = useAreaStacked();
+  const labelRequests = useMemo(
+    () => collectLabelRequests(children, { skipAreas: areaStacked }),
+    [children, areaStacked],
+  );
   const labelReserve = useMemo(
     () =>
       reserveChartLabels(
@@ -1040,31 +1051,26 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       </g>
     </svg>
   );
-  // Labels the solver dropped are restated for AT (the category-axis precedent).
-  const unpainted =
-    unpaintedLabels.length > 0 ? (
-      <span className="sr-only" data-slot="chart-labels-unpainted">
-        {unpaintedLabels.join(", ")}
-      </span>
-    ) : null;
-
   return (
     <ChartSeriesKeyProvider value={labelReserve.keyItems}>
-      <ChartProvider value={contextValue}>
-        {datapointsEnabled ? (
-          // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
-          // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
-          // exists on the interactive path, so a chart without `onDatapointClick`
-          // keeps byte-identical DOM.
-          <div className="relative" style={{ width, height }}>
-            {svg}
-            <ChartDatapointLayer />
-          </div>
-        ) : (
-          svg
-        )}
-        {unpainted}
-      </ChartProvider>
+      <UnpaintedLabelsProvider store={unpaintedStore}>
+        <ChartProvider value={contextValue}>
+          {datapointsEnabled ? (
+            // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
+            // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
+            // exists on the interactive path, so a chart without `onDatapointClick`
+            // keeps byte-identical DOM.
+            <div className="relative" style={{ width, height }}>
+              {svg}
+              <ChartDatapointLayer />
+            </div>
+          ) : (
+            svg
+          )}
+          {/* Labels the solver (or a mark) dropped, restated for AT — the category-axis precedent. */}
+          <UnpaintedLabels extra={unpaintedLabels} store={unpaintedStore} />
+        </ChartProvider>
+      </UnpaintedLabelsProvider>
     </ChartSeriesKeyProvider>
   );
 });

@@ -144,8 +144,8 @@ export interface LineProps {
    * Where the series names itself (RM-110): `"end"` — a label at its last
    * point (the chart reserves right margin for it); `"key"` — a swatch + name
    * in a key row above the plot; `"none"`. Takes a `Responsive` value, e.g.
-   * `{ base: "end", narrow: "key" }`. Default: `"none"` (unchanged
-   * charts). Colliding end labels are nudged apart, or dropped and restated
+   * `{ base: "end", narrow: "key" }`. Default: `{ base: "end", narrow: "key" }`
+   * when a `ChartLegend` is composed, else `"end"`; `"none"` opts out. Colliding end labels are nudged apart, or dropped and restated
    * `sr-only`.
    */
   seriesLabel?: Responsive<SeriesLabelMode>;

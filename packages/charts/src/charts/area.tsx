@@ -273,7 +273,7 @@ export interface AreaProps {
   name?: string;
   /**
    * Where the series names itself (RM-110): `"end"` | `"key"` | `"none"`, or a
-   * `Responsive` value. Default: `"none"` (unchanged charts). Read by the chart
+   * `Responsive` value. Default: `{ base: "end", narrow: "key" }` when a `ChartLegend` is composed, else `"end"`; `"none"` opts out. Read by the chart
    * shell, which reserves the margin and places every label in one pass.
    */
   seriesLabel?: Responsive<SeriesLabelMode>;
@@ -657,5 +657,15 @@ export function Area({
 }
 
 Area.displayName = "Area";
+
+// Labels — RM-110
+/**
+ * True inside a stacked `AreaChart` (`offset` set). Stacked bands name
+ * themselves through `labelBands`; the label engine positions end/value labels
+ * from RAW values, so it leaves stacked areas alone.
+ */
+export function useAreaStacked(): boolean {
+  return useAreaStackConfig() !== undefined;
+}
 
 export default Area;
