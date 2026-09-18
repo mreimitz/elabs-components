@@ -64,7 +64,7 @@ export type ScatterXScaleType = "time" | "linear";
  * `xScale` unset/`"time"` stays byte-for-byte unchanged). Explicit
  * `xScaleType` always wins.
  */
-function resolveScatterXScaleType({
+export function resolveScatterXScaleType({
   data,
   xDataKey,
   xScaleType,

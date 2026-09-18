@@ -607,3 +607,95 @@ export const WithCustomShapes: Story = {
     expect(group.querySelector("polyline")).not.toBeNull();
   },
 };
+
+// 40 points, `population` strictly increasing and unique ((i + 1) × 997) so
+// "highest priority" always names exactly one row: "P40".
+const bubbleLabelData = Array.from({ length: 40 }, (_, i) => ({
+  id: `P${i + 1}`,
+  x: i,
+  y: 10 + ((i * 37) % 50),
+  population: (i + 1) * 997,
+}));
+const HIGHEST_PRIORITY_LABEL = "P40";
+
+function BubbleLabelsChart({ maxWidth }: { maxWidth: number }) {
+  return (
+    <div className="h-80 w-full" style={{ maxWidth }}>
+      <ScatterChart
+        accessibleLabel="Bubble label priority, 40 points"
+        animationDuration={0}
+        data={bubbleLabelData}
+        xDataKey="x"
+        xScale="linear"
+      >
+        <Grid horizontal />
+        <Scatter
+          dataKey="y"
+          fill="var(--chart-1)"
+          labels={{ key: "id", mode: "auto" }}
+          sizeKey="population"
+          sizeRange={[3, 20]}
+        />
+        <XAxis />
+        <YAxis />
+      </ScatterChart>
+    </div>
+  );
+}
+
+function assertBubbleLabelsIntegrity(canvasElement: HTMLElement) {
+  const painted = Array.from(
+    canvasElement.querySelectorAll('[data-slot="scatter-point-label"]'),
+  ).map((el) => el.textContent);
+  const dropped = Number(
+    canvasElement
+      .querySelector('[data-slot="chart-labels-unpainted"]')
+      ?.getAttribute("data-count") ?? 0,
+  );
+  expect(painted.length + dropped).toBe(bubbleLabelData.length);
+  // `sizeKey` becomes the label priority reader by default (no explicit
+  // `labels.priority`): the single largest bubble's label always survives.
+  expect(painted).toContain(HIGHEST_PRIORITY_LABEL);
+  return { painted: painted.length, dropped };
+}
+
+/**
+ * `sizeKey` doubles as the label priority by default (RM-115 × RM-110): with
+ * no explicit `labels.priority`, the biggest bubble's own `population` value
+ * decides who keeps a name when the plot cannot fit every one. Wide: most of
+ * the 40 names fit.
+ */
+export const BubbleLabelsWide: Story = {
+  render: () => <BubbleLabelsChart maxWidth={900} />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      assertBubbleLabelsIntegrity(canvasElement);
+    });
+  },
+};
+
+/** The same 40 bubbles at 600px — fewer names fit than at 900px, more than at 380px. */
+export const BubbleLabelsMedium: Story = {
+  render: () => <BubbleLabelsChart maxWidth={600} />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      assertBubbleLabelsIntegrity(canvasElement);
+    });
+  },
+};
+
+/**
+ * The same 40 bubbles at 380px: fewer names paint, but every dropped one
+ * stays reachable through the `sr-only` restatement beside the plot.
+ */
+export const BubbleLabelsNarrow: Story = {
+  render: () => <BubbleLabelsChart maxWidth={380} />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const { dropped } = assertBubbleLabelsIntegrity(canvasElement);
+      expect(dropped).toBeGreaterThan(0);
+    });
+    const restated = canvasElement.querySelector('[data-slot="chart-labels-unpainted"]');
+    expect(restated).toHaveClass("sr-only");
+  },
+};

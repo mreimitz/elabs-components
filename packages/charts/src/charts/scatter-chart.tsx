@@ -11,7 +11,12 @@ import { useChartAutoSummary } from "./chart-a11y";
 import { defaultScatterColors, type LineConfig, type Margin } from "./chart-context";
 import type { ChartPhase } from "./chart-phase";
 import { Scatter, type ScatterProps } from "./scatter";
-import { ScatterChartInner, type ScatterXScaleType } from "./scatter-chart-shell";
+import {
+  resolveScatterXScaleType,
+  ScatterChartInner,
+  type ScatterXScaleType,
+} from "./scatter-chart-shell";
+import { fitTrend, trendDirection, type TrendPoint } from "./trend-line";
 import { useStableValue } from "./use-stable-value";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import {
@@ -108,6 +113,58 @@ function extractScatterConfigs(children: ReactNode): LineConfig[] {
   return configs;
 }
 
+/**
+ * RM-115 × RM-110: each `Scatter trend` child's least-squares fit (direction,
+ * r²) folded into the chart's AUTO summary sentence — never appended to a
+ * caller-supplied `accessibleDescription`, only the generated one.
+ *
+ * Fits on the RAW `xDataKey` column rather than the resolved `xAccessor`
+ * (only available deeper in the render tree, past `ChartProvider`) — per
+ * `trend-line.tsx`'s own docblock, ordinary least squares is invariant under
+ * an affine reparametrisation of x, so a `"linear"`-mode fit here is
+ * identical to `TrendLine`'s; a `"time"`-mode fit uses the real timestamp
+ * directly, same as `TrendLine`'s `.getTime()`.
+ */
+function describeScatterTrends(
+  data: readonly Record<string, unknown>[],
+  children: ReactNode,
+  xDataKey: string,
+  xScaleType: ScatterXScaleType,
+): string[] {
+  const sentences: string[] = [];
+
+  const visit = (node: ReactNode) => {
+    Children.forEach(node, (child) => {
+      if (!isValidElement(child)) return;
+      const props = child.props as ScatterProps;
+      if (props?.trend && typeof props.dataKey === "string") {
+        const dataKey = props.dataKey;
+        const points: TrendPoint[] = [];
+        for (const row of data) {
+          const yValue = row[dataKey];
+          if (typeof yValue !== "number" || !Number.isFinite(yValue)) continue;
+          const rawX = row[xDataKey];
+          const x =
+            xScaleType === "time"
+              ? new Date(rawX as string | number | Date).getTime()
+              : Number(rawX);
+          if (!Number.isFinite(x)) continue;
+          points.push({ x, y: yValue });
+        }
+        const fit = fitTrend(points, props.trend === "log" ? "log" : "linear");
+        if (fit) {
+          sentences.push(`trend ${trendDirection(fit)} (r² ${fit.r2.toFixed(2)})`);
+        }
+      }
+      const kids = (child.props as { children?: ReactNode } | undefined)?.children;
+      if (kids) visit(kids);
+    });
+  };
+  visit(children);
+
+  return sentences;
+}
+
 interface ChartInnerProps {
   width: number;
   height: number;
@@ -197,13 +254,30 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
     data,
     xDataKey,
   });
+  // RM-115 × RM-110: fold each `Scatter trend`'s fit into the AUTO summary
+  // only — a caller-supplied `accessibleDescription` short-circuits
+  // `useChartAutoSummary` above and must stay exactly what the caller wrote.
+  const isAutoSummary = Boolean(accessibleLabel) && !accessibleDescription;
+  const resolvedXScaleType = useMemo(
+    () => resolveScatterXScaleType({ data, xDataKey, xScaleType }),
+    [data, xDataKey, xScaleType],
+  );
+  const trendSentences = useMemo(
+    () =>
+      isAutoSummary ? describeScatterTrends(data, children, xDataKey, resolvedXScaleType) : [],
+    [isAutoSummary, data, children, xDataKey, resolvedXScaleType],
+  );
+  const fullDescription =
+    trendSentences.length > 0 && description
+      ? `${description}; ${trendSentences.join("; ")}`
+      : description;
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
+  } = useChartA11yContainerProps(accessibleLabel, fullDescription); // Labels — RM-110
 
   const setContainerRef = (node: HTMLDivElement | null) => {
     // Keep the internal ref (anchors tooltips) in sync.
@@ -232,7 +306,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
       style={{ touchAction: "none" }}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={description} />
+      <ChartA11yLabel descId={descId} description={fullDescription} />
       {width > 0 && height > 0 ? (
         <ChartInner
           animationDuration={animationDuration}

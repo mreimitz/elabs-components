@@ -5,8 +5,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // does not implement. Mock it to return a fixed size so the chart's inner
 // render gate (width > 0 && height > 0) is satisfied.
 // Real render + a11y are covered by the Storybook interaction tests.
+// `box` is mutable (same technique as `labels.test.tsx`) so the RM-115 ×
+// RM-110 bubble-label-priority suite below can re-render at several widths.
+const box = vi.hoisted(() => ({ width: 560, height: 288 }));
 vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 560, height: 288 }],
+  default: () => [() => undefined, { ...box }],
 }));
 
 import { resolveExtremeLabelY } from "./scatter";
@@ -607,6 +610,46 @@ describe("Scatter — RM-115 sizeKey / colorBy / shapeBy / trend", () => {
     );
     expect(container.querySelector('[data-slot="scatter-trend-line"]')).toBeNull();
   });
+
+  it("folds trend direction and r² into the auto summary (RM-115 × RM-110)", () => {
+    // y = 2x + 1 exactly → r² = 1, "increasing" — same fixture as the
+    // data-attribute test above, this time read through the accessible
+    // description rather than `TrendLine`'s own `data-r2`/`data-trend`.
+    const linearData = [0, 1, 2, 3, 4].map((x) => ({ x, y: 2 * x + 1 }));
+    const { container } = render(
+      <ScatterChart
+        accessibleLabel="Revenue vs. spend"
+        data={linearData}
+        xDataKey="x"
+        xScale="linear"
+      >
+        <Scatter animate={false} dataKey="y" trend="linear" />
+      </ScatterChart>,
+    );
+    const figure = container.querySelector('[role="figure"]');
+    const descId = figure?.getAttribute("aria-describedby");
+    const description = container.querySelector(`#${descId}`)?.textContent;
+    expect(description).toContain("trend increasing (r² 1.00)");
+  });
+
+  it("never appends trend facts to a caller-supplied accessibleDescription", () => {
+    const linearData = [0, 1, 2, 3, 4].map((x) => ({ x, y: 2 * x + 1 }));
+    const { container } = render(
+      <ScatterChart
+        accessibleDescription="Custom description, written by the caller."
+        accessibleLabel="Revenue vs. spend"
+        data={linearData}
+        xDataKey="x"
+        xScale="linear"
+      >
+        <Scatter animate={false} dataKey="y" trend="linear" />
+      </ScatterChart>,
+    );
+    const figure = container.querySelector('[role="figure"]');
+    const descId = figure?.getAttribute("aria-describedby");
+    const description = container.querySelector(`#${descId}`)?.textContent;
+    expect(description).toBe("Custom description, written by the caller.");
+  });
 });
 
 describe("CustomShapes — RM-115 lines / paths in data space", () => {
@@ -680,5 +723,102 @@ describe("CustomShapes — RM-115 lines / paths in data space", () => {
     const group = container.querySelector('[data-slot="scatter-custom-shapes"]');
     expect(group?.querySelector("polygon")).not.toBeNull();
     expect(group?.querySelector("polyline")).toBeNull();
+  });
+});
+
+// RM-115 × RM-110 wave-1 integration: `sizeKey` becomes the default label
+// `priority` when `labels` sets none of its own — the biggest bubbles keep
+// their names first, and every dropped name stays reachable `sr-only`.
+describe("Scatter — sizeKey defaults label priority (RM-115 × RM-110)", () => {
+  // 40 points, `population` strictly increasing and unique (`(i + 1) * 997`)
+  // so "highest priority" always names exactly one row: "P40".
+  const bubbleLabelData = Array.from({ length: 40 }, (_, i) => ({
+    id: `P${i + 1}`,
+    x: i,
+    y: 10 + ((i * 37) % 50),
+    population: (i + 1) * 997,
+  }));
+  const highestPriorityLabel = "P40"; // the largest `population`
+
+  function renderAtWidth(width: number, height = 320) {
+    box.width = width;
+    box.height = height;
+    return render(
+      <ScatterChart
+        accessibleLabel="Bubble label priority fixture"
+        data={bubbleLabelData}
+        xDataKey="x"
+        xScale="linear"
+      >
+        <Scatter
+          dataKey="y"
+          fill="var(--chart-1)"
+          labels={{ key: "id", mode: "auto" }}
+          sizeKey="population"
+          sizeRange={[3, 20]}
+        />
+      </ScatterChart>,
+    );
+  }
+
+  function paintedAndDropped(container: HTMLElement) {
+    const painted = Array.from(container.querySelectorAll('[data-slot="scatter-point-label"]')).map(
+      (el) => el.textContent,
+    );
+    const dropped = Number(
+      container.querySelector('[data-slot="chart-labels-unpainted"]')?.getAttribute("data-count") ??
+        0,
+    );
+    return { painted, dropped };
+  }
+
+  it("paints more labels as the plot widens — 380px < 600px < 900px — and accounts for every point at each width", () => {
+    // Measured (jsdom's deterministic per-character text-width fallback,
+    // `use-text-measurer.ts`): 12 painted / 28 sr-only at 380px, 20 / 20 at
+    // 600px, 32 / 8 at 900px — real-browser widths differ slightly by font
+    // metrics, but the width-driven monotonic ordering below is what the
+    // budget formula (`AUTO_LABEL_AREA_PX`) guarantees regardless.
+    const narrow = renderAtWidth(380);
+    const { painted: paintedNarrow, dropped: droppedNarrow } = paintedAndDropped(narrow.container);
+    expect(paintedNarrow.length + droppedNarrow).toBe(bubbleLabelData.length);
+    narrow.unmount();
+
+    const mid = renderAtWidth(600);
+    const { painted: paintedMid, dropped: droppedMid } = paintedAndDropped(mid.container);
+    expect(paintedMid.length + droppedMid).toBe(bubbleLabelData.length);
+    mid.unmount();
+
+    const wide = renderAtWidth(900);
+    const { painted: paintedWide, dropped: droppedWide } = paintedAndDropped(wide.container);
+    expect(paintedWide.length + droppedWide).toBe(bubbleLabelData.length);
+    wide.unmount();
+
+    expect(paintedNarrow.length).toBeLessThan(paintedMid.length);
+    expect(paintedMid.length).toBeLessThan(paintedWide.length);
+  });
+
+  it("keeps the highest-population bubble's label painted at every width", () => {
+    for (const width of [380, 600, 900]) {
+      const { container, unmount } = renderAtWidth(width);
+      const { painted } = paintedAndDropped(container);
+      expect(painted).toContain(highestPriorityLabel);
+      unmount();
+    }
+  });
+
+  it("restates every dropped label sr-only, reachable even though the mark itself is aria-hidden", () => {
+    const { container } = renderAtWidth(380);
+    const { painted, dropped } = paintedAndDropped(container);
+    expect(dropped).toBeGreaterThan(0); // 40 points into a 380px column WILL drop some
+    const restated = container.querySelector('[data-slot="chart-labels-unpainted"]');
+    expect(restated).toHaveClass("sr-only");
+    const restatedNames = restated?.textContent?.split(", ") ?? [];
+    expect(restatedNames).toHaveLength(dropped);
+    // Every restated name is a real row's `id`, and none of them is also painted.
+    const allIds = bubbleLabelData.map((d) => d.id);
+    for (const name of restatedNames) {
+      expect(allIds).toContain(name);
+      expect(painted).not.toContain(name);
+    }
   });
 });
