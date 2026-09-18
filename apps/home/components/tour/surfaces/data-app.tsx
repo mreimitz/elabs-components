@@ -26,7 +26,7 @@ import {
   type OrderStatus,
 } from "../../../content/fixtures/orders";
 import { REGIONS } from "../../../content/fixtures/company";
-import { tourCopy } from "../../../content/copy";
+import { dataAppSurfaceCopy, tourCopy } from "../../../content/copy";
 
 const LOCALE = "en-US";
 const currency = new Intl.NumberFormat(LOCALE, { style: "currency", currency: "USD" });
@@ -132,7 +132,7 @@ export function DataAppSurface() {
               actions={
                 <>
                   <span className="text-caption text-muted-foreground tabular-nums">
-                    {wholeNumber.format(filtered.length)} orders
+                    {dataAppSurfaceCopy.orderCount(wholeNumber.format(filtered.length))}
                   </span>
                   <ColumnPicker table={table} />
                 </>
@@ -140,13 +140,13 @@ export function DataAppSurface() {
             >
               <SearchInput value={search} onValueChange={setSearch} />
               <FacetFilter
-                title="Region"
+                title={dataAppSurfaceCopy.regionFacetTitle}
                 options={REGION_OPTIONS}
                 selected={regionFilter}
                 onSelectedChange={setRegionFilter}
               />
               <FacetFilter
-                title="Status"
+                title={dataAppSurfaceCopy.statusFacetTitle}
                 options={STATUS_OPTIONS}
                 selected={statusFilter}
                 onSelectedChange={setStatusFilter}
@@ -159,14 +159,16 @@ export function DataAppSurface() {
                 )}
                 role="status"
               >
-                <span className="text-body">{wholeNumber.format(selectedCount)} selected</span>
+                <span className="text-body">
+                  {dataAppSurfaceCopy.selectedCount(wholeNumber.format(selectedCount))}
+                </span>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => table.toggleAllRowsSelected(false)}
                   >
-                    Clear selection
+                    {dataAppSurfaceCopy.clearSelection}
                   </Button>
                 </div>
               </div>

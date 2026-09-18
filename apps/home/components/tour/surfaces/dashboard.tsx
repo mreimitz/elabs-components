@@ -34,7 +34,7 @@ import {
   headlineValue,
 } from "../../../content/fixtures/kpis";
 import { CHURN_MOVERS } from "../../../content/fixtures/churn";
-import { tourCopy } from "../../../content/copy";
+import { dashboardSurfaceCopy, tourCopy } from "../../../content/copy";
 
 declare global {
   interface Window {
@@ -91,9 +91,13 @@ function buildSpec(): DashboardSpec {
     title: tourCopy.tabs.dashboard.label,
     grid: { mode: "fit", columns: 24, rows: 16, gap: 8 },
     tiles: [
-      metricTile("arr", { x: 0, y: 0, w: 8, h: 4 }),
-      metricTile("active-accounts", { x: 8, y: 0, w: 8, h: 4 }),
-      metricTile("nrr", { x: 16, y: 0, w: 8, h: 4 }),
+      // `w: 5` with a 4-column gap between tiles, not the original edge-to-edge `w: 8` — a
+      // `fit`-grid drop that would overlap a neighbour is rejected, and the edit layer's own
+      // Shift+Arrow resize step is 4 cells (`DASHBOARD_EDIT_SHIFT_STEP`), so the row needs at
+      // least 4 free columns after a tile for the acceptance check's drag/resize to land.
+      metricTile("arr", { x: 0, y: 0, w: 5, h: 4 }),
+      metricTile("active-accounts", { x: 9, y: 0, w: 5, h: 4 }),
+      metricTile("nrr", { x: 18, y: 0, w: 5, h: 4 }),
       {
         id: "chart-churn-trend",
         kind: "chart",
@@ -172,10 +176,13 @@ function DashboardChrome({ initialSpec }: { initialSpec: DashboardSpec }) {
       <div className="flex items-center justify-between gap-2 border-b px-1">
         <DashboardToolbar className="border-b-0 px-1" />
         <Button variant="ghost" size="sm" onClick={() => actions.setSpec(initialSpec)}>
-          Reset
+          {dashboardSurfaceCopy.reset}
         </Button>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto p-2">
+      {/* `tabIndex={0}`: a scrollable region needs its own keyboard stop (axe
+       * `scrollable-region-focusable`) — the sheet itself already has a `region` role/name via
+       * `DashboardSheet`, so this wrapper takes no `aria-label` of its own. */}
+      <div className="min-h-0 flex-1 overflow-auto p-2" tabIndex={0}>
         <DashboardSheet renderAll />
       </div>
     </div>

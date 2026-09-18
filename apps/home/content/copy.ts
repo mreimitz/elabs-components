@@ -213,3 +213,59 @@ export const tourCopy = {
     copyCommand: "Copy scaffold command",
   },
 } as const;
+
+// RM-097 — the three tour surfaces (Dashboard, Data app, Settings): every literal the surfaces
+// render, so `conventions/i18n-strings` has nothing left to flag in `tour/surfaces/**`. Data
+// itself (KPI labels, order rows, member names) stays in `content/fixtures/**`; this is UI chrome
+// only.
+export const dashboardSurfaceCopy = {
+  reset: "Reset",
+} as const;
+
+export const dataAppSurfaceCopy = {
+  /** `"{count} orders"`, `count` already `Intl.NumberFormat`-formatted by the caller. */
+  orderCount: (count: string) => `${count} orders`,
+  regionFacetTitle: "Region",
+  statusFacetTitle: "Status",
+  /** `"{count} selected"` in the bulk-action bar, `count` already locale-formatted. */
+  selectedCount: (count: string) => `${count} selected`,
+  clearSelection: "Clear selection",
+} as const;
+
+export const settingsSurfaceCopy = {
+  sectionsNavLabel: "Settings sections",
+  sections: {
+    workspace: "Workspace",
+    members: "Members",
+    notifications: "Notifications",
+    apiKeys: "API keys",
+    danger: "Danger zone",
+  },
+  workspace: {
+    description: (workspaceName: string) => `Details every member of ${workspaceName} can see.`,
+    nameLabel: "Workspace name",
+  },
+  members: {
+    description: "Everyone with access to this workspace.",
+    name: "Name",
+    email: "Email",
+    role: "Role",
+  },
+  notifications: {
+    description: "Control which alerts reach the team.",
+  },
+  apiKeys: {
+    description: "Keys used by services connecting to this workspace.",
+    label: "Label",
+    key: "Key",
+    createdBy: "Created by",
+    created: "Created",
+  },
+  danger: {
+    transferDescription: "Hand the owner role to another member.",
+    deleteDescription: "This cannot be undone.",
+    /** The `AlertDialogDescription`'s second sentence: `Type “{name}” to confirm.` */
+    typeToConfirm: (workspaceName: string) => `Type “${workspaceName}” to confirm.`,
+    cancel: "Cancel",
+  },
+} as const;
