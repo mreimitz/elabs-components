@@ -77,20 +77,25 @@ const STICKY_TOP = "calc(var(--spacing) * var(--header-size))";
 export function Tour({ meta: tabMeta }: { meta: TourTabMeta[] }) {
   const ref = useRef<HTMLElement>(null);
 
-  // Scroll choreography (§5a 2): once the tour enters, `<html data-past-hero>` lets the hero
-  // scene dim. Set/cleared by an IntersectionObserver, never a scroll listener.
+  // Scroll choreography (§5a 2): once the tour HEADER has entered (its top in the upper three
+  // quarters of the viewport, or scrolled past), `<html data-past-hero>` lets the hero scene dim.
+  // Observing the header, not the section: at 1440×900 the section's top edge is already on
+  // screen at load, which would dim the hero before anyone scrolled.
   useEffect(() => {
-    const el = ref.current;
+    const header = ref.current?.querySelector('[data-slot="surface-tour-header"]');
     const root = document.documentElement;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry) return;
-      root.toggleAttribute(
-        "data-past-hero",
-        entry.isIntersecting || entry.boundingClientRect.top < 0,
-      );
-    });
-    observer.observe(el);
+    if (!header || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        root.toggleAttribute(
+          "data-past-hero",
+          entry.isIntersecting || entry.boundingClientRect.top < 0,
+        );
+      },
+      { rootMargin: "0px 0px -25% 0px" },
+    );
+    observer.observe(header);
     return () => {
       observer.disconnect();
       root.removeAttribute("data-past-hero");
