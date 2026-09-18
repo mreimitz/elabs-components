@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T21:44:20.114Z",
+  "generatedAt": "2026-09-18T22:00:14.700Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -14739,6 +14739,10 @@
           "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
         {
+          "name": "ChartLabelsSpec",
+          "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
           "name": "ChartLegendProps",
           "module": "packages/charts/src/charts/chart-legend.tsx"
         },
@@ -16737,7 +16741,7 @@
               "name": "seriesLabel",
               "optional": true,
               "type": "Responsive<SeriesLabelMode>",
-              "description": "Where the series names itself (RM-110): `\"end\"` | `\"key\"` | `\"none\"`, or a `Responsive` value. Default: `{ base: \"end\", narrow: \"key\" }` when a `ChartLegend` is composed, else `\"end\"`; `\"none\"` opts out. Read by the chart shell, which reserves the margin and places every label in one pass."
+              "description": "Where the series names itself (RM-110): `\"end\"` | `\"key\"` | `\"none\"`, or a `Responsive` value. Default: as `LineProps.seriesLabel` (two or more series, and only for a series with a real `name`). Read by the chart shell, which reserves the margin and places every label in one pass."
             },
             {
               "name": "valueLabels",
@@ -19758,7 +19762,7 @@
               "name": "seriesLabel",
               "optional": true,
               "type": "Responsive<SeriesLabelMode>",
-              "description": "Where the series names itself (RM-110): `\"end\"` — a label at its last point (the chart reserves right margin for it); `\"key\"` — a swatch + name in a key row above the plot; `\"none\"`. Takes a `Responsive` value, e.g. `{ base: \"end\", narrow: \"key\" }`. Default: `{ base: \"end\", narrow: \"key\" }` when a `ChartLegend` is composed, else `\"end\"`; `\"none\"` opts out. Colliding end labels are nudged apart, or dropped and restated `sr-only`."
+              "description": "Where the series names itself (RM-110): `\"end\"` — a label at its last point (the chart reserves right margin for it); `\"key\"` — a swatch + name in a key row above the plot; `\"none\"`. Takes a `Responsive` value, e.g. `{ base: \"end\", narrow: \"key\" }`. Default: in a chart with two or more `Line`/`Area` series, a series whose `name` is set and differs from its `dataKey` gets `{ base: \"end\", narrow: \"key\" }` when a `ChartLegend` is composed, else `\"end\"`; every other series gets `\"none\"`. An explicit value always wins. Colliding end labels are nudged apart, or dropped and restated `sr-only`."
             },
             {
               "name": "valueLabels",
