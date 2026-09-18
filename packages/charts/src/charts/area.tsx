@@ -1,5 +1,7 @@
 "use client";
 
+import type { Responsive } from "./chart-breakpoint";
+import type { ChartValueLabels, SeriesLabelMode } from "./labels/use-chart-labels";
 import { curveMonotoneX } from "@visx/curve";
 import { scaleLinear } from "@visx/scale";
 import { Area as VisxArea, AreaClosed, LinePath } from "@visx/shape";
@@ -267,6 +269,16 @@ export interface AreaProps {
    * chart under high decoration (`data-decoration` ≥ 8). Default: false.
    */
   labelPeaks?: boolean;
+  /** Series display name — the text of its end label, key item and auto summary (RM-110). Default: `dataKey`. */
+  name?: string;
+  /**
+   * Where the series names itself (RM-110): `"end"` | `"key"` | `"none"`, or a
+   * `Responsive` value. Default: `"none"` (unchanged charts). Read by the chart
+   * shell, which reserves the margin and places every label in one pass.
+   */
+  seriesLabel?: Responsive<SeriesLabelMode>;
+  /** Automatic value labels (RM-110) — see `LineProps.valueLabels`. */
+  valueLabels?: ChartValueLabels;
 }
 
 function useAreaLoadingPulseState(

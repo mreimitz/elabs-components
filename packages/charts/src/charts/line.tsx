@@ -3,9 +3,8 @@
 import { curveNatural } from "@visx/curve";
 import { LinePath } from "@visx/shape";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
-import { HaloText } from "../marks/halo-text";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
-import { intFmt } from "./chart-formatters";
+import type { Responsive } from "./chart-breakpoint";
 import type { CurveFactory } from "./curve-types";
 import {
   type FadeEdges,
@@ -31,6 +30,7 @@ import {
   StaticSeriesPointMarker,
 } from "./series-point-marker";
 import { isPaletteFill, seriesDashArray, seriesMarkerShape } from "./series-pattern";
+import type { ChartValueLabels, SeriesLabelMode } from "./labels/use-chart-labels";
 import { useHighDecoration } from "./use-high-decoration";
 
 /**
@@ -85,24 +85,6 @@ export function spacedTopK(
   return accepted.sort((a, b) => a - b);
 }
 
-function resolveLabelPeaksSpec(
-  labelPeaks: number | { count: number; minGap?: number } | undefined,
-): { count: number; minGap: number } | null {
-  if (labelPeaks == null) {
-    return null;
-  }
-  if (typeof labelPeaks === "number") {
-    return { count: labelPeaks, minGap: DEFAULT_PEAK_MIN_GAP };
-  }
-  return { count: labelPeaks.count, minGap: labelPeaks.minGap ?? DEFAULT_PEAK_MIN_GAP };
-}
-
-/** Enlarged marker radius for a labelled peak — bigger than the default (5px)
- * marker so "the one mark that matters" reads as emphasised, not just annotated. */
-const PEAK_MARKER_RADIUS = 6;
-/** Vertical offset (px) of a peak's `HaloText` value label above its marker. */
-const PEAK_LABEL_OFFSET = 12;
-
 export interface LineProps {
   /** Key in data to use for y values */
   dataKey: string;
@@ -154,6 +136,28 @@ export interface LineProps {
    */
   labelPeaks?: number | { count: number; minGap?: number };
   /**
+   * Series display name — the text of its end label, key item and auto
+   * summary (RM-110). Default: `dataKey`.
+   */
+  name?: string;
+  /**
+   * Where the series names itself (RM-110): `"end"` — a label at its last
+   * point (the chart reserves right margin for it); `"key"` — a swatch + name
+   * in a key row above the plot; `"none"`. Takes a `Responsive` value, e.g.
+   * `{ base: "end", narrow: "key" }`. Default: `"none"` (unchanged
+   * charts). Colliding end labels are nudged apart, or dropped and restated
+   * `sr-only`.
+   */
+  seriesLabel?: Responsive<SeriesLabelMode>;
+  /**
+   * Automatic value labels (RM-110): `{ placement: "first" | "last" | "all" |
+   * "peaks", count?, outline?, matchColor?, format? }`. Placed with every
+   * other label through one collision pass — a label that cannot be placed is
+   * dropped and restated `sr-only`. `labelPeaks={n}` is the alias
+   * `{ placement: "peaks", count: n }` (exact, uncompacted numbers).
+   */
+  valueLabels?: ChartValueLabels;
+  /**
    * Data index from which the line stroke becomes dashed (inclusive).
    * Useful for projecting incomplete periods, e.g. dashed from yesterday through today.
    */
@@ -200,7 +204,6 @@ export function Line({
   showMarkers = false,
   markers,
   markerStyle,
-  labelPeaks,
   dashFromIndex,
   dashArray = "6,4",
   dashStroke,
@@ -315,30 +318,6 @@ export function Line({
     });
   }, [markerStyle, data, dataKey, xScale, xAccessor, yScale]);
 
-  // Peak labels (RM-028): top-k points by value, spaced apart via spacedTopK.
-  // `null` (labelPeaks unset) renders nothing extra — today's behaviour is
-  // unchanged.
-  const peakSpec = useMemo(() => resolveLabelPeaksSpec(labelPeaks), [labelPeaks]);
-  const peakPoints = useMemo(() => {
-    if (!peakSpec) {
-      return null;
-    }
-    const values = data.map((d) => {
-      const value = d[dataKey];
-      return typeof value === "number" ? value : Number.NaN;
-    });
-    return spacedTopK(values, peakSpec.count, peakSpec.minGap).map((index) => {
-      const d = data[index] as Record<string, unknown>;
-      const value = values[index] as number;
-      return {
-        index,
-        value,
-        cx: xScale(xAccessor(d)) ?? 0,
-        cy: yScale(value) ?? 0,
-      };
-    });
-  }, [peakSpec, data, dataKey, xScale, xAccessor, yScale]);
-
   return (
     <>
       {fadeStops ? (
@@ -415,32 +394,6 @@ export function Line({
               />
             );
           })}
-        </g>
-      ) : null}
-
-      {peakPoints && peakPoints.length > 0 && showSeriesStroke ? (
-        <g aria-hidden="true" data-slot="line-peak-labels">
-          {peakPoints.map((point) => (
-            <g key={`${dataKey}-peak-${point.index}`}>
-              <StaticSeriesPointMarker
-                cx={point.cx}
-                cy={point.cy}
-                fill={stroke}
-                radius={PEAK_MARKER_RADIUS}
-                ringGap={0}
-                stroke={stroke}
-                strokeWidth={0}
-              />
-              <HaloText
-                fontSize={11}
-                textAnchor="middle"
-                x={point.cx}
-                y={point.cy - PEAK_LABEL_OFFSET}
-              >
-                {intFmt(point.value)}
-              </HaloText>
-            </g>
-          ))}
         </g>
       ) : null}
 
