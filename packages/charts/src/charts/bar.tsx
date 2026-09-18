@@ -1,5 +1,6 @@
 "use client";
 
+import { estimateTextWidth } from "./use-text-measurer";
 import type { scaleBand } from "@visx/scale";
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
@@ -156,41 +157,32 @@ export type BarLineCap = "round" | "butt" | number;
 export type BarAnimationType = "grow" | "fade";
 
 /**
- * `true`/`"outside"` place the value label just past the bar's far end;
- * `"inside"` places it just inside. See {@link BarProps.showValues}.
+ * Value-label spec (RM-110): `placement` `"inside"` | `"outside"` | `"auto"`
+ * (inside when the label fits within the bar's length, else outside —
+ * default); `visibility` `"always"` (default) | `"hover"` (only the hovered
+ * bar prints its value).
  */
-export type BarShowValues =
-  | boolean
-  | "outside"
-  | "inside"
-  // BarChart — RM-113: the object form adds WHEN the label shows.
-  | {
-      position?: "outside" | "inside";
-      /** `"always"` (default) or `"hover"` — only the hovered category's label. */
-      visibility?: "always" | "hover";
-    };
-
-/** The placement a `showValues` value asks for, and whether it waits for hover. */
-function resolveShowValues(showValues: BarShowValues | undefined): {
-  mode: "outside" | "inside" | undefined;
-  hoverOnly: boolean;
-} {
-  if (showValues === undefined || showValues === false) {
-    return { mode: undefined, hoverOnly: false };
-  }
-  if (showValues === true) {
-    return { mode: "outside", hoverOnly: false };
-  }
-  if (typeof showValues === "string") {
-    return { mode: showValues, hoverOnly: false };
-  }
-  return {
-    mode: showValues.position ?? "outside",
-    hoverOnly: showValues.visibility === "hover",
-  };
+export interface BarShowValuesSpec {
+  placement?: "inside" | "outside" | "auto";
+  visibility?: "always" | "hover";
 }
 
-/** A stacked segment's label hides when the segment is shorter than this along the value axis. */
+/**
+ * `true`/`"outside"` place the value label just past the bar's far end;
+ * `"inside"` places it just inside; a {@link BarShowValuesSpec} adds `"auto"`
+ * placement and hover-only visibility. See {@link BarProps.showValues}.
+ */
+export type BarShowValues = boolean | "outside" | "inside" | BarShowValuesSpec;
+
+/** Label box along the value axis for `"auto"` placement: font px × this ≈ line box. */
+const AUTO_LABEL_LINE_FACTOR = 1.3;
+/** `text-chart-value` resolves to the `meta` size (≈ 12 px) — the `"auto"` fit estimate. */
+const AUTO_VALUE_FONT_PX = 12;
+
+// BarChart — RM-113: a stack segment (percent / diverging / ordered /
+// totalled stacks) centres its label whatever the placement, shows its share
+// in a percent stack, and hides it when the segment is shorter than this
+// along the value axis.
 const MIN_SEGMENT_LABEL_LENGTH = 24;
 
 /**
@@ -233,6 +225,12 @@ export interface BarProps {
    * negative bar's label is signed with a "−" (U+2212, not a hyphen) glyph.
    * A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than
    * shrinking below `text-meta`. Default: off.
+   *
+   * A {@link BarShowValuesSpec} (RM-110) adds `"auto"` placement and
+   * hover-only visibility. In a stack drawn from a layout (percent, diverging,
+   * ordered or totalled — RM-113) each segment centres its label whatever the
+   * placement, a percent segment prints its share, and a segment shorter than
+   * 24 px along the value axis stays unlabelled.
    */
   showValues?: BarShowValues;
   /**
@@ -744,29 +742,51 @@ const BarInner = memo(function BarInner({
     // MIN_LABEL_BAR_WIDTH hides its label rather than shrinking the
     // `text-chart-value` role below `text-meta`.
     const useUnitMode = Boolean(unit && unit > 0) && !isLoadingPhase;
-    const shown = resolveShowValues(useUnitMode ? "outside" : showValues);
-    const labelMode = shown.mode;
+    const labelMode: BarShowValues | undefined = useUnitMode ? "outside" : showValues;
+    const labelSpec = typeof labelMode === "object" && labelMode !== null ? labelMode : null;
     const thickness = isHorizontal ? barHeight : barW;
     const settled = useUnitMode || !animate || isLoaded;
-    const segmentLength = isHorizontal ? barW : barHeight;
+    // RM-110: a hover-only spec prints only the hovered bar's value.
+    const hoverGate = labelSpec?.visibility !== "hover" || hoveredBarIndex === i;
+    // BarChart — RM-113: a stack segment shorter than MIN_SEGMENT_LABEL_LENGTH
+    // along the value axis stays unlabelled.
+    const segmentFits =
+      !bar.extent || (isHorizontal ? barW : barHeight) >= MIN_SEGMENT_LABEL_LENGTH;
     const showLabel =
-      Boolean(labelMode) &&
-      thickness >= MIN_LABEL_BAR_WIDTH &&
-      settled &&
-      (!shown.hoverOnly || hoveredBarIndex === i) &&
-      (!bar.extent || segmentLength >= MIN_SEGMENT_LABEL_LENGTH);
+      Boolean(labelMode) && thickness >= MIN_LABEL_BAR_WIDTH && settled && hoverGate && segmentFits;
 
     let labelX = 0;
     let labelY = 0;
     let labelAnchor: "start" | "middle" | "end" = "middle";
+    // BarChart — RM-113: a percent-stack segment prints its share.
+    const labelText =
+      bar.extent && stackMode === "percent"
+        ? formatShare(bar.extent[1] - bar.extent[0])
+        : isNegative
+          ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
+          : formatValue(bar.value);
     if (showLabel && bar.extent) {
-      // A stacked segment's label sits in its middle — "outside" would land
-      // on the neighbouring segment.
+      // BarChart — RM-113: a stack segment's label sits in its middle, whatever
+      // the placement — "outside" would land on the neighbouring segment.
       labelX = x + barW / 2;
       labelY = y + barHeight / 2;
       labelAnchor = "middle";
     } else if (showLabel) {
-      const outside = labelMode !== "inside";
+      // RM-110 `"auto"`: inside when the label fits within the bar's length.
+      const length = isHorizontal ? barW : barHeight;
+      const need =
+        (isHorizontal
+          ? estimateTextWidth(labelText, AUTO_VALUE_FONT_PX)
+          : AUTO_VALUE_FONT_PX * AUTO_LABEL_LINE_FACTOR) +
+        VALUE_LABEL_INSET * 2;
+      const placement = labelSpec
+        ? (labelSpec.placement ?? "auto") === "auto"
+          ? length >= need
+            ? "inside"
+            : "outside"
+          : labelSpec.placement
+        : labelMode;
+      const outside = placement !== "inside";
       if (isHorizontal) {
         const crossCenter = y + barHeight / 2;
         labelY = crossCenter;
@@ -789,12 +809,6 @@ const BarInner = memo(function BarInner({
             : valuePos + VALUE_LABEL_INSET;
       }
     }
-    const labelText =
-      bar.extent && stackMode === "percent"
-        ? formatShare(bar.extent[1] - bar.extent[0])
-        : isNegative
-          ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
-          : formatValue(bar.value);
     const valueLabel = showLabel && (
       <HaloText
         className="text-chart-value tabular-nums"
