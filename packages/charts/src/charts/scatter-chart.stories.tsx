@@ -489,9 +489,12 @@ export const BubbleSize: Story = {
         bubbleSizeData.length,
       );
     });
-    const radii = Array.from(
-      canvasElement.querySelectorAll('[data-slot="scatter-point"] circle'),
-    ).map((el) => Number(el.getAttribute("r")));
+    // Each marker draws an inner filled circle plus a stroke-only ring
+    // circle (`fill="none"`) — keep only the filled one so the index lines
+    // up with `bubbleSizeData` one-to-one.
+    const radii = Array.from(canvasElement.querySelectorAll('[data-slot="scatter-point"] circle'))
+      .filter((el) => el.getAttribute("fill") !== "none")
+      .map((el) => Number(el.getAttribute("r")));
     // rank 4 (25M, the domain max) draws at sizeRange[1]=24; rank 3 (1M, 1/25th) at sqrt(1/25)*24.
     expect(radii[3]).toBeCloseTo(24, 1);
     expect(radii[3] / radii[2]).toBeCloseTo(5, 0); // sqrt(25) = 5
