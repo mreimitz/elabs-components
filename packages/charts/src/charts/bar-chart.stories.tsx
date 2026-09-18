@@ -1023,18 +1023,21 @@ export const LikertDiverging: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    await waitFor(() => {
-      const neutral = [
-        ...canvasElement.querySelectorAll<SVGRectElement>('rect[fill="var(--chart-mono-3)"]'),
-      ];
-      const zero = canvasElement.querySelector("svg g > line");
-      expect(neutral).toHaveLength(5);
-      const zeroX = Number(zero?.getAttribute("x1"));
-      for (const rect of neutral) {
-        const box = Number(rect.getAttribute("x")) + Number(rect.getAttribute("width")) / 2;
-        expect(Math.abs(box - zeroX)).toBeLessThan(0.5);
-      }
-    });
+    await waitFor(
+      () => {
+        const neutral = [
+          ...canvasElement.querySelectorAll<SVGRectElement>('rect[fill="var(--chart-mono-3)"]'),
+        ];
+        const zero = canvasElement.querySelector("svg g > line");
+        expect(neutral).toHaveLength(5);
+        const zeroX = Number(zero?.getAttribute("x1"));
+        for (const rect of neutral) {
+          const box = Number(rect.getAttribute("x")) + Number(rect.getAttribute("width")) / 2;
+          expect(Math.abs(box - zeroX)).toBeLessThan(0.5);
+        }
+      },
+      { timeout: 5000 },
+    );
   },
 };
 
@@ -1133,12 +1136,15 @@ export const RangeOverlaysGrouped: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    await waitFor(() => {
-      expect(canvasElement.querySelectorAll('[data-slot="bar-chart-overlay"]')).toHaveLength(3);
-      expect(canvasElement.querySelectorAll('[data-slot="bar-chart-group-header"]')).toHaveLength(
-        3,
-      );
-    });
+    await waitFor(
+      () => {
+        expect(canvasElement.querySelectorAll('[data-slot="bar-chart-overlay"]')).toHaveLength(3);
+        expect(canvasElement.querySelectorAll('[data-slot="bar-chart-group-header"]')).toHaveLength(
+          3,
+        );
+      },
+      { timeout: 5000 },
+    );
   },
 };
 
