@@ -8,6 +8,11 @@ import {
   PieLabels,
 } from "./pie-labels";
 import type { PieArcData } from "./pie-context";
+import {
+  UnpaintedLabels,
+  UnpaintedLabelsProvider,
+  useUnpaintedLabelsStore,
+} from "./labels/unpainted-labels";
 
 function makeArcs(values: number[]): PieArcData[] {
   const total = values.reduce((s, v) => s + v, 0);
@@ -53,24 +58,24 @@ describe("layoutOutsideLabels", () => {
   it("splits slices onto left/right sides by their midpoint's x sign", () => {
     // A slice at 90° (3 o'clock) is on the right; one at 270° (9 o'clock) is on the left.
     const arcs = makeArcs([25, 25, 25, 25]); // quarters, starting at -90° (12 o'clock)
-    const layout = layoutOutsideLabels(
+    const { placements } = layoutOutsideLabels(
       arcs,
       arcs.map((a) => a.data.label),
       100,
     );
-    const sides = new Set(layout.map((l) => l.side));
+    const sides = new Set(placements.map((l) => l.side));
     expect(sides.has("left")).toBe(true);
     expect(sides.has("right")).toBe(true);
   });
 
   it("anchors right-side labels with textAnchor start and left-side with end", () => {
     const arcs = makeArcs([50, 50]); // one right half, one left half
-    const layout = layoutOutsideLabels(
+    const { placements } = layoutOutsideLabels(
       arcs,
       arcs.map((a) => a.data.label),
       100,
     );
-    for (const item of layout) {
+    for (const item of placements) {
       expect(item.textAnchor).toBe(item.side === "right" ? "start" : "end");
     }
   });
@@ -82,15 +87,36 @@ describe("layoutOutsideLabels", () => {
     const values = Array.from({ length: 8 }, () => 1);
     const arcs = makeArcs(values);
     const texts = arcs.map((a) => `Category ${a.index}`);
-    const layout = layoutOutsideLabels(arcs, texts, 80);
-    expect(anyPieLabelRectsOverlap(layout.map((l) => l.rect))).toBe(false);
+    const { placements } = layoutOutsideLabels(arcs, texts, 80);
+    expect(anyPieLabelRectsOverlap(placements.map((l) => l.rect))).toBe(false);
+  });
+
+  it("drops a label RM-110's layoutLabels cannot place within the nudge budget, and restates it via placements/dropped", () => {
+    // One near-full-circle slice, then twenty razor-thin slices crammed into
+    // the sliver left over — all twenty land on the same side at nearly the
+    // same natural position, so the same-side stack overflows the bounded
+    // nudge budget: a real collision-drop, restated `sr-only` by `PieLabels`
+    // (see the render test below), not silently stacked off-canvas the way
+    // the old unbounded declutter would have.
+    const values = [970, ...Array.from({ length: 20 }, () => 1)];
+    const arcs = makeArcs(values);
+    const texts = arcs.map((a) => `Category ${a.index}`);
+    const { placements, dropped } = layoutOutsideLabels(arcs, texts, 80);
+    expect(dropped.length).toBeGreaterThan(0);
+    // Every dropped label still carries its text (for the sr-only restatement)…
+    for (const d of dropped) {
+      expect(d.text).not.toBe("");
+    }
+    // …and every placed + dropped label accounts for every input arc exactly once.
+    expect(placements.length + dropped.length).toBe(arcs.length);
+    expect(anyPieLabelRectsOverlap(placements.map((l) => l.rect))).toBe(false);
   });
 
   it("keeps arc index → label correspondence regardless of layout order", () => {
     const arcs = makeArcs([10, 20, 30, 40]);
     const texts = ["A", "B", "C", "D"];
-    const layout = layoutOutsideLabels(arcs, texts, 100);
-    for (const item of layout) {
+    const { placements } = layoutOutsideLabels(arcs, texts, 100);
+    for (const item of placements) {
       expect(item.text).toBe(texts[item.index]);
     }
   });
@@ -215,5 +241,40 @@ describe("PieLabels", () => {
     expect(container.querySelector('[data-slot="pie-labels"]')?.getAttribute("aria-hidden")).toBe(
       "true",
     );
+  });
+
+  it("restates a collision-dropped outside label sr-only via RM-110's UnpaintedLabels seam", () => {
+    // Same over-dense scenario as `layoutOutsideLabels`'s drop test — enough
+    // that at least one outside label cannot be placed. `PieLabels` reports
+    // it to the nearest `UnpaintedLabelsProvider` (mounted by `PieChart`
+    // itself in real use; this test mounts one directly, the way
+    // `pie-chart.tsx` does) instead of silently omitting it.
+    const values = [970, ...Array.from({ length: 20 }, () => 1)];
+    const arcs = makeArcs(values);
+
+    function Harness() {
+      const store = useUnpaintedLabelsStore();
+      return (
+        <UnpaintedLabelsProvider store={store}>
+          <svg>
+            <PieLabels
+              arcs={arcs}
+              center={100}
+              config={{ placement: "outside", show: ["label"] }}
+              getColor={getColor}
+              innerRadius={0}
+              outerRadius={80}
+              textFor={(i) => ({ label: arcs[i]?.data.label })}
+            />
+          </svg>
+          <UnpaintedLabels store={store} />
+        </UnpaintedLabelsProvider>
+      );
+    }
+
+    const { container } = render(<Harness />);
+    const unpainted = container.querySelector('[data-slot="chart-labels-unpainted"]');
+    expect(unpainted).not.toBeNull();
+    expect(Number(unpainted?.getAttribute("data-count"))).toBeGreaterThan(0);
   });
 });

@@ -22,6 +22,13 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+// Labels — RM-110
+import { useChartAutoSummary } from "./chart-a11y";
+import {
+  UnpaintedLabels,
+  UnpaintedLabelsProvider,
+  useUnpaintedLabelsStore,
+} from "./labels/unpainted-labels";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -407,6 +414,11 @@ const PieChartCore = memo(function PieChartCore({
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  // Labels — RM-110/RM-114 integration: the sr-only seam `PieLabels` reports
+  // an outside label it could not place into (see `pie-labels.tsx`). Always
+  // created (cheap, no DOM) so the provider below is stable across renders;
+  // the `<UnpaintedLabels>` sibling that actually paints is gated on `labels`.
+  const unpaintedStore = useUnpaintedLabelsStore();
 
   // Use controlled or uncontrolled hover state
   const isControlled = hoveredIndexProp !== undefined;
@@ -725,143 +737,150 @@ const PieChartCore = memo(function PieChartCore({
   // This avoids Safari's foreignObject rendering bugs
   return (
     <PieProvider value={contextValue}>
-      <div
-        className="grid"
-        style={{
-          gridTemplateColumns: "1fr",
-          gridTemplateRows: "1fr",
-          width: size,
-          height: size,
-        }}
-      >
-        {/* SVG layer with pie slices */}
-        <svg
-          aria-hidden="true"
-          height={size}
-          style={{ gridArea: "1 / 1", contain: "layout style paint" }}
-          width={size}
+      <UnpaintedLabelsProvider store={unpaintedStore}>
+        <div
+          className="grid"
+          style={{
+            gridTemplateColumns: "1fr",
+            gridTemplateRows: "1fr",
+            width: size,
+            height: size,
+          }}
         >
-          {/* Defs for patterns and gradients */}
-          {(defsChildren.length > 0 || bpPatternIndices.length > 0) && (
-            <defs>
-              {defsChildren}
-              {bpPatternIndices.map((i) =>
-                makeSeriesPattern(i, seriesPatternId(i, patternScope), getColor(i)),
-              )}
-            </defs>
-          )}
+          {/* SVG layer with pie slices */}
+          <svg
+            aria-hidden="true"
+            height={size}
+            style={{ gridArea: "1 / 1", contain: "layout style paint" }}
+            width={size}
+          >
+            {/* Defs for patterns and gradients */}
+            {(defsChildren.length > 0 || bpPatternIndices.length > 0) && (
+              <defs>
+                {defsChildren}
+                {bpPatternIndices.map((i) =>
+                  makeSeriesPattern(i, seriesPatternId(i, patternScope), getColor(i)),
+                )}
+              </defs>
+            )}
 
-          <Group left={center} top={center}>
-            {/* radiusKey reference rings (#RM-030) — dashed value gridlines
+            <Group left={center} top={center}>
+              {/* radiusKey reference rings (#RM-030) — dashed value gridlines
                 behind the slices, on the same sqrt(v / max) radius scale.
                 Labels sit OUTSIDE outerRadius on a fixed-spacing leader
                 column (#246) — never on the rings' own compressible radii,
                 and never inside the plot where a slice could cover them. */}
-            {radiusKey && referenceRings && referenceRings.length > 0 && radiusKeyMax > 0 ? (
-              <g aria-hidden="true">
-                {referenceRingLabels.map((ring) => (
-                  <circle
-                    cx={0}
-                    cy={0}
-                    fill="none"
-                    key={`pie-reference-ring-circle-${ring.value}`}
-                    r={ring.ringRadius}
-                    stroke={pieCssVars.foregroundMuted}
-                    strokeDasharray="4 3"
-                    strokeWidth={1}
-                  />
-                ))}
-                {referenceRingLabels.map((ring) => (
-                  <g data-reference-ring-leader="" key={`pie-reference-ring-label-${ring.value}`}>
-                    <line
+              {radiusKey && referenceRings && referenceRings.length > 0 && radiusKeyMax > 0 ? (
+                <g aria-hidden="true">
+                  {referenceRingLabels.map((ring) => (
+                    <circle
+                      cx={0}
+                      cy={0}
+                      fill="none"
+                      key={`pie-reference-ring-circle-${ring.value}`}
+                      r={ring.ringRadius}
                       stroke={pieCssVars.foregroundMuted}
-                      strokeDasharray="1.5 2.5"
+                      strokeDasharray="4 3"
                       strokeWidth={1}
-                      x1={0}
-                      x2={0}
-                      y1={-ring.ringRadius}
-                      y2={-ring.leaderEndRadius}
                     />
-                    <text
-                      fill={pieCssVars.foregroundMuted}
-                      fontSize={9}
-                      textAnchor="middle"
-                      x={0}
-                      y={-ring.labelRadius}
-                    >
-                      {ring.value}
-                    </text>
-                  </g>
-                ))}
-              </g>
-            ) : null}
-            {scrubSlicePaths && scrubSliceFills
-              ? scrubSlicePaths.map((d, index) =>
-                  d ? (
-                    <path
-                      d={d}
-                      fill={scrubSliceFills[index]}
-                      key={data[index]?.label ?? index}
-                      pointerEvents="none"
-                    />
-                  ) : null,
-                )
-              : null}
-            {svgChildren}
-            {/* Slice labels (RM-114) — painted OVER the slices, under nothing:
+                  ))}
+                  {referenceRingLabels.map((ring) => (
+                    <g data-reference-ring-leader="" key={`pie-reference-ring-label-${ring.value}`}>
+                      <line
+                        stroke={pieCssVars.foregroundMuted}
+                        strokeDasharray="1.5 2.5"
+                        strokeWidth={1}
+                        x1={0}
+                        x2={0}
+                        y1={-ring.ringRadius}
+                        y2={-ring.leaderEndRadius}
+                      />
+                      <text
+                        fill={pieCssVars.foregroundMuted}
+                        fontSize={9}
+                        textAnchor="middle"
+                        x={0}
+                        y={-ring.labelRadius}
+                      >
+                        {ring.value}
+                      </text>
+                    </g>
+                  ))}
+                </g>
+              ) : null}
+              {scrubSlicePaths && scrubSliceFills
+                ? scrubSlicePaths.map((d, index) =>
+                    d ? (
+                      <path
+                        d={d}
+                        fill={scrubSliceFills[index]}
+                        key={data[index]?.label ?? index}
+                        pointerEvents="none"
+                      />
+                    ) : null,
+                  )
+                : null}
+              {svgChildren}
+              {/* Slice labels (RM-114) — painted OVER the slices, under nothing:
                 inside labels sit on the wedge itself, outside labels + leaders
                 sit past `outerRadius` in the gutter `labelGutter` reserved
                 above. No-op (`null`) whenever `labels` is unset. */}
-            {labels ? (
-              <PieLabels
-                arcs={arcs}
-                center={center}
-                config={{ ...labels, placement: labelPlacement }}
-                getColor={getColor}
-                innerRadius={innerRadius}
-                outerRadius={outerRadius}
-                textFor={(index) => {
-                  const datum = data[index];
-                  return {
-                    label: datum?.label,
-                    value: pieLabelValueFmt(datum?.value ?? 0),
-                    percent: pieLabelPercentFmt(
-                      totalValue > 0 ? (datum?.value ?? 0) / totalValue : 0,
-                    ),
-                  };
-                }}
-              />
-            ) : null}
-          </Group>
-        </svg>
+              {labels ? (
+                <PieLabels
+                  arcs={arcs}
+                  center={center}
+                  config={{ ...labels, placement: labelPlacement }}
+                  getColor={getColor}
+                  innerRadius={innerRadius}
+                  outerRadius={outerRadius}
+                  textFor={(index) => {
+                    const datum = data[index];
+                    return {
+                      label: datum?.label,
+                      value: pieLabelValueFmt(datum?.value ?? 0),
+                      percent: pieLabelPercentFmt(
+                        totalValue > 0 ? (datum?.value ?? 0) / totalValue : 0,
+                      ),
+                    };
+                  }}
+                />
+              ) : null}
+            </Group>
+          </svg>
 
-        {/* Keyboard drill-down targets — a positioned SIBLING of the
+          {/* Keyboard drill-down targets — a positioned SIBLING of the
             aria-hidden <svg>, stacked in the same grid cell so the layer's
             coordinate space is the SVG's own (#349). */}
-        {datapointsEnabled ? (
-          <div className="relative" style={{ gridArea: "1 / 1" }}>
-            <ChartDatapointLayer />
-          </div>
-        ) : null}
+          {datapointsEnabled ? (
+            <div className="relative" style={{ gridArea: "1 / 1" }}>
+              <ChartDatapointLayer />
+            </div>
+          ) : null}
 
-        {/* HTML layer with center content - stacked on top via grid.
+          {/* HTML layer with center content - stacked on top via grid.
             `half` (RM-114, the "election donut" preset) seats the arc across
             the top half only, so the centre slot is anchored to the flat
             base line and grows DOWN into the otherwise-empty bottom half,
             instead of sitting in the box's geometric middle. */}
-        {centerChildren.length > 0 && (
-          <div
-            className="pointer-events-none flex justify-center"
-            style={
-              half
-                ? { gridArea: "1 / 1", alignItems: "flex-start", paddingTop: center }
-                : { gridArea: "1 / 1", alignItems: "center" }
-            }
-          >
-            {centerChildren}
-          </div>
-        )}
-      </div>
+          {centerChildren.length > 0 && (
+            <div
+              className="pointer-events-none flex justify-center"
+              style={
+                half
+                  ? { gridArea: "1 / 1", alignItems: "flex-start", paddingTop: center }
+                  : { gridArea: "1 / 1", alignItems: "center" }
+              }
+            >
+              {centerChildren}
+            </div>
+          )}
+        </div>
+        {/* Labels — RM-110/RM-114 integration: restates any outside label
+          `layoutOutsideLabels` dropped for collision (`pie-labels.tsx`).
+          Renders nothing when `labels` is unset OR nothing was dropped —
+          byte-identical DOM either way. */}
+        {labels ? <UnpaintedLabels store={unpaintedStore} /> : null}
+      </UnpaintedLabelsProvider>
     </PieProvider>
   );
 }, pieChartCorePropsEqual);
@@ -985,13 +1004,19 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     [ref],
   );
 
+  // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
+  const description = useChartAutoSummary("pie", {
+    accessibleLabel,
+    accessibleDescription,
+    data,
+  });
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+  } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
 
   // If fixed size is provided, use it directly
   // The provider sits ABOVE the chart body so `PieSlice` can read the
@@ -1021,7 +1046,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
         style={{ width: fixedSize, height: fixedSize }}
         tabIndex={tabIndex}
       >
-        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        <ChartA11yLabel descId={descId} description={description} />
         {withInteraction(
           <PieChartInner
             containerRef={containerRef}
@@ -1064,7 +1089,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
       role={role}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      <ChartA11yLabel descId={descId} description={description} />
       <ParentSize debounceTime={10}>
         {({ width, height }) =>
           withInteraction(

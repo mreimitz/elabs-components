@@ -824,3 +824,33 @@ export { type AxisTickCount } from "./tick-targets";
 export { type XAxisOrientation } from "./x-axis";
 export { type AxisLabelPlacement } from "./y-axis";
 export { type AxisDomain, type AxisDomainBound, type ValueScaleType } from "./y-axis-scales";
+// Labels — RM-110
+export {
+  type LabelAnchorSide,
+  type LabelBox,
+  type LabelLayoutOptions,
+  type LabelLayoutResult,
+  type LabelPlacement,
+  type LabelPlacementStatus,
+  type LabelRect,
+  layoutLabels,
+} from "./labels/label-layout";
+export {
+  type ChartSeriesKeyItem,
+  type ChartValueLabels,
+  type SeriesLabelMode,
+  useChartSeriesKey,
+  type ValueLabelPlacement,
+} from "./labels/use-chart-labels";
+export { type ScatterLabels } from "./labels/point-labels";
+export { SERIES_LABEL_INK_MIX, seriesLabelInk } from "./labels/series-label-ink";
+export {
+  type AutoSummaryKind,
+  DEFAULT_DESCRIBE_SERIES_PHRASES,
+  describeSeries,
+  type DescribeSeriesItem,
+  type DescribeSeriesNotable,
+  type DescribeSeriesOptions,
+  type DescribeSeriesPhrases,
+} from "./chart-a11y";
+export { type BarShowValues, type BarShowValuesSpec } from "./bar";

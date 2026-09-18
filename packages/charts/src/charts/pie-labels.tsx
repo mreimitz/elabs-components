@@ -8,11 +8,15 @@
  * - `"inside"` — `HaloText` centred on each wedge's centroid, hidden under
  *   `minAngle` (the wedge is too thin to hold text without spilling out).
  * - `"outside"` — a label on a fixed ring outside `outerRadius`, tied back to
- *   its wedge with a `Leader`. Labels on the same side (left/right of the
- *   vertical axis) that would collide are nudged apart along that ring — the
- *   local declutter pass RM-110's shared solver will eventually replace
- *   (`pie-chart.stories.tsx`'s "Orchestrator notes"); until then this is the
- *   whole story for pie/donut.
+ *   its wedge with a `Leader`. The ANGLE → ring-position math (a polar
+ *   problem: `midAngle`, `sin`/`cos` around the pie's centre, which side of
+ *   the vertical axis) stays pie-specific — RM-110's solver only ever sees
+ *   already-positioned pixel rects. Once each label has a preferred rect,
+ *   same-side collision avoidance is RM-110's shared `layoutLabels`
+ *   (`./labels/label-layout`): real 2D overlap avoidance (not just same-side
+ *   vertical stacking), a bounded nudge, and a `dropped` list restated
+ *   `sr-only` via RM-110's `UnpaintedLabels` — a real gap this item's earlier
+ *   unbounded, never-drops declutter left open.
  *
  * Pure layout math lives in exported functions so `pie-labels.test.tsx` can
  * assert exact positions/rects with no SVG measurement (jsdom returns `0` for
@@ -20,9 +24,16 @@
  * `pie-chart.tsx`.
  */
 
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { HaloText } from "../marks/halo-text";
 import { Leader } from "../marks/leader";
+import {
+  DEFAULT_LABEL_PADDING,
+  type LabelAnchorSide,
+  type LabelBox,
+  layoutLabels,
+} from "./labels/label-layout";
+import { useReportUnpaintedLabels } from "./labels/unpainted-labels";
 import { pieCssVars, type PieArcData } from "./pie-context";
 
 /** Where a pie/donut's slice labels sit. `"none"` renders nothing (today's behavior). */
@@ -56,6 +67,15 @@ const OUTSIDE_TEXT_GAP = 4;
 const OUTSIDE_LINE_HEIGHT = 14;
 /** Rough px-per-character used ONLY to keep stacked labels from colliding in x — not real text measurement. */
 const APPROX_CHAR_WIDTH = 6;
+/**
+ * Largest same-side vertical nudge (px) before `layoutLabels` drops a label
+ * instead of stacking it further — room for ~8 stacked labels. This item's
+ * earlier declutter had no ceiling at all (an unbounded same-side push that
+ * could, at extreme density, stack labels off the visible canvas with no
+ * fallback); a bounded nudge plus a `dropped` list restated `sr-only` is
+ * strictly better, and is why this switches to RM-110's `layoutLabels`.
+ */
+const OUTSIDE_LABEL_MAX_NUDGE = 8 * OUTSIDE_LINE_HEIGHT;
 
 export interface PieLabelRect {
   x: number;
@@ -79,30 +99,85 @@ export interface PieOutsideLabelLayout {
   rect: PieLabelRect;
 }
 
-function declutter(ys: number[], minGap: number): number[] {
-  const out = [...ys];
-  for (let i = 1; i < out.length; i++) {
-    const prev = out[i - 1]!;
-    if (out[i]! - prev < minGap) {
-      out[i] = prev + minGap;
-    }
-  }
-  return out;
+/** Result of {@link layoutOutsideLabels}: paint `placements`, restate `dropped` `sr-only`. */
+export interface PieOutsideLabelsResult {
+  /** Placed or nudged — paint these. In arc-index order. */
+  placements: PieOutsideLabelLayout[];
+  /** Collision-dropped by `layoutLabels` — restate these via `UnpaintedLabels`. In arc-index order. */
+  dropped: PieOutsideLabelLayout[];
+}
+
+interface RawOutsideLabel {
+  index: number;
+  text: string;
+  side: "left" | "right";
+  anchorX: number;
+  naturalY: number;
+  leaderFrom: readonly [number, number];
+}
+
+/** One side's boxes through `layoutLabels`, mapped back to `PieOutsideLabelLayout`. */
+function layoutOutsideLabelsForSide(
+  group: readonly RawOutsideLabel[],
+  side: LabelAnchorSide & ("left" | "right"),
+): { placed: PieOutsideLabelLayout[]; dropped: PieOutsideLabelLayout[] } {
+  const textAnchor: "start" | "end" = side === "right" ? "start" : "end";
+  const textGap = side === "right" ? OUTSIDE_TEXT_GAP : -OUTSIDE_TEXT_GAP;
+  const boxes: LabelBox[] = group.map((g) => {
+    const anchorX = g.anchorX + textGap;
+    const textWidth = Math.max(g.text.length * APPROX_CHAR_WIDTH, APPROX_CHAR_WIDTH);
+    return {
+      id: `pie-outside-${g.index}`,
+      x: textAnchor === "start" ? anchorX : anchorX - textWidth,
+      y: g.naturalY - OUTSIDE_LINE_HEIGHT / 2,
+      width: textWidth,
+      height: OUTSIDE_LINE_HEIGHT,
+      anchorSide: side,
+    };
+  });
+
+  const result = layoutLabels(boxes, {
+    maxNudge: OUTSIDE_LABEL_MAX_NUDGE,
+    padding: DEFAULT_LABEL_PADDING,
+  });
+
+  const placed: PieOutsideLabelLayout[] = [];
+  const dropped: PieOutsideLabelLayout[] = [];
+  result.placements.forEach((placement, i) => {
+    const g = group[i]!;
+    const box = boxes[i]!;
+    const anchorX = g.anchorX + textGap;
+    const centerY = placement.y + box.height / 2;
+    const item: PieOutsideLabelLayout = {
+      index: g.index,
+      text: g.text,
+      x: anchorX,
+      y: centerY,
+      textAnchor,
+      side,
+      leaderFrom: g.leaderFrom,
+      leaderTo: [g.anchorX, centerY],
+      rect: { x: box.x, y: placement.y, width: box.width, height: box.height },
+    };
+    (placement.status === "dropped" ? dropped : placed).push(item);
+  });
+  return { placed, dropped };
 }
 
 /**
  * Lay out one label per arc on the outside ring, grouped by side (left/right
- * of the vertical axis through the pie's centre) and decluttered vertically
- * within each side so no two labels on the same side overlap. Order within a
- * side follows each wedge's natural vertical position (top to bottom), never
- * the data/arc order — that is what keeps a leader from crossing a neighbour.
+ * of the vertical axis through the pie's centre). The angle → ring-position
+ * math (this function) stays pie-specific; same-side collision avoidance is
+ * RM-110's shared `layoutLabels` (`./labels/label-layout`) — see this file's
+ * top docblock. A label `layoutLabels` cannot place within
+ * `OUTSIDE_LABEL_MAX_NUDGE` comes back in `dropped`, never `placements`.
  */
 export function layoutOutsideLabels(
   arcs: readonly PieArcData[],
   texts: readonly string[],
   outerRadius: number,
-): PieOutsideLabelLayout[] {
-  const raw = arcs.map((arc, i) => {
+): PieOutsideLabelsResult {
+  const raw: RawOutsideLabel[] = arcs.map((arc, i) => {
     const midAngle = (arc.startAngle + arc.endAngle) / 2;
     const side: "left" | "right" = Math.sin(midAngle) >= 0 ? "right" : "left";
     const ringRadius = outerRadius + OUTSIDE_LEADER_GAP;
@@ -122,39 +197,18 @@ export function layoutOutsideLabels(
     };
   });
 
-  const out: PieOutsideLabelLayout[] = [];
+  const placements: PieOutsideLabelLayout[] = [];
+  const dropped: PieOutsideLabelLayout[] = [];
   for (const side of ["left", "right"] as const) {
     const group = raw.filter((r) => r.side === side).sort((a, b) => a.naturalY - b.naturalY);
-    const adjustedYs = declutter(
-      group.map((g) => g.naturalY),
-      OUTSIDE_LINE_HEIGHT,
-    );
-    group.forEach((g, i) => {
-      const y = adjustedYs[i]!;
-      const textAnchor: "start" | "end" = side === "right" ? "start" : "end";
-      const textGap = side === "right" ? OUTSIDE_TEXT_GAP : -OUTSIDE_TEXT_GAP;
-      const x = g.anchorX + textGap;
-      const textWidth = Math.max(g.text.length * APPROX_CHAR_WIDTH, APPROX_CHAR_WIDTH);
-      const rect: PieLabelRect = {
-        x: textAnchor === "start" ? x : x - textWidth,
-        y: y - OUTSIDE_LINE_HEIGHT / 2,
-        width: textWidth,
-        height: OUTSIDE_LINE_HEIGHT,
-      };
-      out.push({
-        index: g.index,
-        text: g.text,
-        x,
-        y,
-        textAnchor,
-        side,
-        leaderFrom: g.leaderFrom,
-        leaderTo: [g.anchorX, y],
-        rect,
-      });
-    });
+    const sideResult = layoutOutsideLabelsForSide(group, side);
+    placements.push(...sideResult.placed);
+    dropped.push(...sideResult.dropped);
   }
-  return out.sort((a, b) => a.index - b.index);
+  return {
+    placements: placements.sort((a, b) => a.index - b.index),
+    dropped: dropped.sort((a, b) => a.index - b.index),
+  };
 }
 
 /** Do any two rects in `rects` overlap? Exported so a story/test can assert the Acceptance bullet directly. */
@@ -202,10 +256,20 @@ export interface PieLabelsProps {
   textFor: (index: number) => PieLabelTextParts;
 }
 
+/** Stable empty array so an inactive/inside `PieLabels` reports no dropped texts without a new array every render. */
+const EMPTY_OUTSIDE_TEXTS: readonly string[] = [];
+
 /**
  * The label layer itself — an `aria-hidden` SVG group (RM-017: every mark is
  * ink; the reader-facing copy of these facts is the accessible name each
  * slice's drill-down target already carries, or the caller's table flip).
+ *
+ * An `"outside"` label `layoutOutsideLabels` drops reports its text to the
+ * nearest `UnpaintedLabelsProvider` (RM-110, `PieChart`'s own — see
+ * `pie-chart.tsx`) via `useReportUnpaintedLabels`, so it is still readable
+ * `sr-only` even though it never painted. `"inside"`'s `minAngle` omission is
+ * a different, deliberate choice (the wedge is too thin for ANY text to
+ * spill from) — it reports nothing, unchanged from before this switch.
  */
 export function PieLabels({
   config,
@@ -217,11 +281,37 @@ export function PieLabels({
   textFor,
 }: PieLabelsProps) {
   const placement = config.placement ?? "outside";
-  if (placement === "none" || arcs.length === 0) {
+  const active = placement !== "none" && arcs.length > 0;
+
+  const texts = useMemo(
+    () =>
+      active
+        ? arcs.map((arc) => formatPieLabelText(config.show, textFor(arc.index)))
+        : EMPTY_OUTSIDE_TEXTS,
+    [active, arcs, config.show, textFor],
+  );
+
+  const outsideResult = useMemo(
+    () =>
+      active && placement === "outside" ? layoutOutsideLabels(arcs, texts, outerRadius) : null,
+    [active, placement, arcs, texts, outerRadius],
+  );
+
+  const droppedTexts = useMemo(
+    () =>
+      outsideResult
+        ? outsideResult.dropped.map((d) => d.text).filter((t) => t !== "")
+        : EMPTY_OUTSIDE_TEXTS,
+    [outsideResult],
+  );
+  // Unconditional (rules of hooks): a no-op when there is no ancestor
+  // `UnpaintedLabelsProvider` (`labels` unset — `PieLabels` never mounts
+  // then anyway) or when `droppedTexts` is empty.
+  useReportUnpaintedLabels("pie-outside-labels", droppedTexts);
+
+  if (!active) {
     return null;
   }
-
-  const texts = arcs.map((arc) => formatPieLabelText(config.show, textFor(arc.index)));
 
   if (placement === "inside") {
     const minAngle = config.minAngle ?? DEFAULT_PIE_LABEL_MIN_ANGLE;
@@ -253,8 +343,8 @@ export function PieLabels({
     );
   }
 
-  // "outside"
-  const layout = layoutOutsideLabels(arcs, texts, outerRadius);
+  // "outside" — `outsideResult` is non-null here: `active && placement === "outside"`.
+  const layout = outsideResult!.placements;
   return (
     <g aria-hidden="true" data-slot="pie-labels" data-placement="outside">
       {layout.map((item) => {

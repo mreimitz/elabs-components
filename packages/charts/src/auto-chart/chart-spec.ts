@@ -6,6 +6,8 @@
  * with explicit field names for x, series, and optional display hints.
  */
 
+import type { Responsive } from "../charts/chart-breakpoint";
+import type { ChartValueLabels, SeriesLabelMode } from "../charts/labels/use-chart-labels";
 import type { ChartValueFormat } from "../charts/value-format";
 import type { DateFormatPreset } from "../charts/date-format";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
@@ -242,8 +244,15 @@ export interface ChartSpec {
   fields?: { category?: string; series?: string };
 
   // Pie/donut labels, grouping, sort, half preset — RM-114
-  /** Slice labels for `type: "pie"`. See {@link ChartSpecPieLabels}. Ignored elsewhere. */
-  labels?: ChartSpecPieLabels;
+  /**
+   * Slice labels for `type: "pie"`. Named `pieLabels`, not `labels` — RM-110
+   * claimed `labels` for the shared label engine below (`ChartLabelsSpec`)
+   * first; a pie/donut spec field is pie-only serialisable state
+   * (`ChartSpecPieLabels`) with an incompatible shape, so it keeps its own
+   * name rather than overloading one property with two unrelated types. See
+   * {@link ChartSpecPieLabels}. Ignored elsewhere.
+   */
+  pieLabels?: ChartSpecPieLabels;
   /** Fold small `type: "pie"` slices into an "Other" slice. See {@link ChartSpecPieGroupSmall}. Ignored elsewhere. */
   groupSmall?: ChartSpecPieGroupSmall;
   /**
@@ -258,6 +267,10 @@ export interface ChartSpec {
    * false. Ignored elsewhere.
    */
   half?: boolean;
+
+  // Labels — RM-110
+  /** Series end labels / key fallback, automatic value labels and scatter point labels (RM-110) — see {@link ChartLabelsSpec}. */
+  labels?: ChartLabelsSpec;
 }
 
 // Pie/donut labels, grouping, sort, half preset — RM-114
@@ -267,7 +280,8 @@ export type ChartSpecPieLabelField = "label" | "value" | "percent";
 
 /**
  * Slice labels for `type: "pie"` (RM-114) — the serialisable subset of
- * `PieChartLabelsConfig` (`../charts/pie-chart.tsx`).
+ * `PieChartLabelsConfig` (`../charts/pie-chart.tsx`). Field name on
+ * `ChartSpec` is `pieLabels` — see the docblock there for why.
  */
 export interface ChartSpecPieLabels {
   /** `"inside"`, `"outside"`, or `"none"`. Default: `"outside"` (`"none"` under 480px). */
@@ -291,6 +305,20 @@ export interface ChartSpecPieGroupSmall {
   max?: number;
   /** The folded slice's label. Default: "Other". */
   label?: string;
+}
+
+// Labels — RM-110
+/**
+ * The serialisable label-engine subset (RM-110). Every field is optional and
+ * off by default, so a spec without `labels` renders exactly as before.
+ */
+export interface ChartLabelsSpec {
+  /** line / area: where each series names itself — `"end"` | `"key"` | `"none"`, or `{ base, medium?, narrow? }`. */
+  series?: Responsive<SeriesLabelMode>;
+  /** line / area: automatic value labels on every series — `{ placement: "first" | "last" | "all" | "peaks", count?, minGap?, outline?, matchColor?, format? }`. */
+  values?: ChartValueLabels;
+  /** scatter: point labels — `key` is the row field holding the text; `mode` `"auto"` (default) | `"all"`; `priorityKey` a numeric row field (higher survives). */
+  points?: { key: string; mode?: "auto" | "all"; priorityKey?: string };
 }
 
 // Axes — RM-108
