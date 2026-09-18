@@ -5,7 +5,7 @@
  * wired (`@import` + one `@source` per rendered package + ThemeProvider), the
  * agent context files present, and the "Next:" steps printed.
  */
-import { test } from "node:test";
+import { before, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -15,11 +15,21 @@ import { fileURLToPath } from "node:url";
 import { findRepoRoot } from "../lib/core.mjs";
 
 const BIN = fileURLToPath(new URL("../bin/brand-ui.mjs", import.meta.url));
+const BUNDLE_ASSETS = fileURLToPath(new URL("../scripts/bundle-assets.mjs", import.meta.url));
 const repoRoot = findRepoRoot(fileURLToPath(import.meta.url));
 
 function run(args, cwd) {
   return spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: "utf8" });
 }
+
+// `create` runs in a temp dir outside the checkout, so it reads the templates
+// bundled INTO the CLI — gitignored copies that only `prepack` writes. Bundle
+// them here, or the test passes only on a machine that once packed the CLI.
+before(() => {
+  if (!repoRoot) return;
+  const r = spawnSync(process.execPath, [BUNDLE_ASSETS], { encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr || r.stdout);
+});
 
 test("create: writes a runnable app on the dashboard template and prints next steps", (t) => {
   if (!repoRoot) return t.skip("not inside the monorepo — templates unavailable");
