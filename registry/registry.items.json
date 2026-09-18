@@ -409,6 +409,86 @@
       "title": "Dashboard sheet app",
       "description": "The installable canonical full-screen, user-editable dashboard: app nav + DashboardToolbar + DashboardSelectionBar + asset/properties panels + DashboardSheet, with the table/chat/process-map tile blocks registered alongside the built-in kinds.",
       "categories": ["dashboard"]
+    },
+    {
+      "name": "agent-ops-parts",
+      "type": "registry:block",
+      "root": "registry/blocks/agent-ops-parts",
+      "title": "Agent Ops — shared parts",
+      "description": "The pieces every agent-ops block shares: a provenance line (source · freshness) for any figure, a word-sized confidence meter, an evidence chip (the kind of document a derivation read), a countable evidence-strength meter (\"|||| 4 of 5\"), an actor avatar that tells copilot / agent / person apart by glyph, Intl.* money/count/relative-time formatters, and the shared fictional \"Atlas\" AI-ops dataset (Acme Logistics) every block reads from. Installed once and reused by the agent-ops blocks rather than copied into each.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "kpi-provenance-strip-01",
+      "type": "registry:block",
+      "root": "registry/blocks/kpi-provenance-strip-01",
+      "title": "KPI Cards — Where does this number come from?",
+      "description": "\"Where the business stands\" — four headline figures on ONE surface, each with an inline signed delta and the line that earns the number its place: source and freshness (\"ERP · 2 min ago\", \"Derived from 61 open orders · 06:02\"). Peers separated by hairlines, no value without provenance; the delta is secondary (arrow + sign, never colour alone).",
+      "categories": ["agent-ops", "kpi-card"]
+    },
+    {
+      "name": "insight-feed-01",
+      "type": "registry:block",
+      "root": "registry/blocks/insight-feed-01",
+      "title": "Insight Feed — What changed while you were away?",
+      "description": "The AI-ops briefing pattern: a numbered feed of things the copilot did or noticed — a one-sentence fact, a paragraph of why, the evidence it read, its confidence and two actions — with a conflict item that carries no confidence (\"No verdict — a person decides\"). Beside it, a \"Needs a person\" rail of what stopped and a \"Derivation load\" split of applied / sent to you / pinned by people.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "provenance-record-01",
+      "type": "registry:block",
+      "root": "registry/blocks/provenance-record-01",
+      "title": "Provenance Record — Where did each field come from?",
+      "description": "A record whose every field says where its value came from: derived (confidence meter + evidence kind), pinned (who and when — a pin out-ranks any derivation), conflict (two permitted sources disagree; nothing chosen) or empty (\"No signal yet\" — never a guess). Each state has its own glyph + text, and the footer counts the four so the reader knows how much of the record is machine-derived.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "score-explanation-01",
+      "type": "registry:block",
+      "root": "registry/blocks/score-explanation-01",
+      "title": "Score Explanation — Why is the score 91?",
+      "description": "A scored decision decomposed into its signals: one row per signal, a signed bar whose length is the contribution in points and whose direction is the sign — ink for positive, the warning rung for negative, each with a signed number so the sign never rides on colour. One shared zero-based scale; the footer states how many weaker signals were considered but not shown.",
+      "categories": ["agent-ops", "kpi-card"]
+    },
+    {
+      "name": "spend-against-limit-01",
+      "type": "registry:block",
+      "root": "registry/blocks/spend-against-limit-01",
+      "title": "Spend Against Limit — How close is each agent to its ceiling?",
+      "description": "Every non-human spender on the card programme, sorted by share of ceiling: monospace agent id, autonomy band as a status badge (Auto / Review / Hold), a bar with the ceiling drawn as a vertical mark, the literal \"$612 of $500\", and Revoke. Over the ceiling paints the destructive rung and says so. Above it, three autonomy-band tiles total the envelopes per band.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "escalation-boundary-01",
+      "type": "registry:block",
+      "root": "registry/blocks/escalation-boundary-01",
+      "title": "Escalation Boundary — Where does autonomy end?",
+      "description": "The one dial an AI-ops product must put on screen: a stacked distribution bar of every decision by how well it was corroborated, with the evidence threshold drawn as a mark; the evidence ladder (countable tick meter, meaning, decisions, share, side); and three \"If you move it\" scenario cards that state the trade in the reader’s units (cleared share, queue delta, catches, reviews per catch) and MOVE the boundary when clicked.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "decision-record-01",
+      "type": "registry:block",
+      "root": "registry/blocks/decision-record-01",
+      "title": "Decision Record — Why did the AI do that?",
+      "description": "Every AI action expanded into the reason it happened: what it did, what it looked at (named, openable evidence), what rule applied (the clause, monospace), how confident (or an honest \"not applicable\"), and how to reverse it. Below: the check list (confirmed / not confirmed) and what the copilot proposes — numbered, editable, nothing actioned until a person approves.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "audit-log-01",
+      "type": "registry:block",
+      "root": "registry/blocks/audit-log-01",
+      "title": "Audit Log — Who did what, and did it apply?",
+      "description": "An append-only audit table whose actor column tells three authors apart by glyph — copilot, delegated agent, person — and whose result column is a status badge with an icon (Applied / Held / Stopped / Reverted), so a row still reads in greyscale. Monospace tabular timestamps; the action is one plain sentence with the number it wrote in it.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "agent-trace-waterfall-01",
+      "type": "registry:block",
+      "root": "registry/blocks/agent-trace-waterfall-01",
+      "title": "Agent Trace — Where did the run spend its time, and where did it fail?",
+      "description": "An execution waterfall for one multi-agent run: a stat strip where every number carries its comparison (duration vs p95, retries, tokens in/out, cost vs workflow average, failed at), the charts package’s Gantt at sub-second granularity with one row per agent span nested under its caller, and a context-flow chain that shows the hop where a required field was dropped.",
+      "categories": ["agent-ops"]
     }
   ]
 }
