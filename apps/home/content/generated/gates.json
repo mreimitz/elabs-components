@@ -48,6 +48,12 @@
     "source": "scripts/check/rules/charts-honesty.mjs"
   },
   {
+    "id": "charts-responsive",
+    "doc": "Every `@elabs-ai/components-charts` container publishes its breakpoint tier (renders `ChartPlotRoot`, sets `data-chart-breakpoint`, or wraps a container that does), and a `Responsive<…>` prop is read only through `resolveResponsive` / `useResponsiveValue` or handed on whole — never branched on directly (ADR 0039); opt out with `// charts-responsive-exempt: <reason>`.",
+    "category": "components",
+    "source": "scripts/check/rules/charts-responsive.mjs"
+  },
+  {
     "id": "charts-reuse",
     "doc": "In `@elabs-ai/components-charts`, never declare a runtime export named like a `@elabs-ai/components-ui` component (use a chart-scoped name such as `ChartTooltipContent`) and never import `@base-ui/*`.",
     "category": "packages",

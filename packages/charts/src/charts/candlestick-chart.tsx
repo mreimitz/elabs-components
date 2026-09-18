@@ -26,6 +26,12 @@ import { DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { decimateOhlcData, maxRenderPointsForWidth } from "./decimate-time-series";
 import { useChartInteraction } from "./use-chart-interaction";
 import { wrapSingleYScale } from "./y-axis-scales";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+} from "./chart-breakpoint";
 
 export interface OHLCDataPoint {
   date: Date;
@@ -50,6 +56,11 @@ export interface CandlestickChartProps {
   revealSignature?: string;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
   /** Inline styles for the container (e.g. { height: 320 }) */
@@ -321,7 +332,8 @@ export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps
       animationDuration = 1100,
       enterTransition,
       revealSignature,
-      aspectRatio = "2 / 1",
+      aspectRatio,
+      plotHeight,
       className = "",
       style,
       candleGap = 0.2,
@@ -359,13 +371,14 @@ export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps
     } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
     return (
-      <div
+      <ChartPlotRoot
+        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative w-full", className)}
         ref={callbackRef}
         role={role}
-        style={{ aspectRatio, touchAction: "none", ...style }}
+        style={{ touchAction: "none", ...style }}
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -390,7 +403,7 @@ export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps
             </ChartInner>
           )}
         </ParentSize>
-      </div>
+      </ChartPlotRoot>
     );
   },
 );

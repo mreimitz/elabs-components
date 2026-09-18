@@ -13,6 +13,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -42,6 +43,12 @@ import { Line, type LineProps } from "./line";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import { TimeSeriesChartInner } from "./time-series-chart-shell";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+} from "./chart-breakpoint";
 
 export interface LineChartProps extends ChartSelectionProps, ChartHoverLinkProps {
   /** Data array - each item should have a date field and numeric values */
@@ -80,6 +87,11 @@ export interface LineChartProps extends ChartSelectionProps, ChartHoverLinkProps
   replayOnClick?: boolean;
   /** Aspect ratio as "width / height". Default: "2 / 1". Omit to fill a sized parent. */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
   /** Loading vs ready — drives chart phase and loading chrome. Default: `"ready"`. */
@@ -260,12 +272,15 @@ function ChartInner({
   // fresh identity from React on every parent render.
   const lines = useStableValue(useMemo(() => extractLineConfigs(children), [children]));
 
+  // One clip per chart instance: a fixed id makes every chart on a page
+  // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
+  const clipPathId = `chart-grow-clip-${useId().replace(/:/g, "")}`;
   const chart = (
     <TimeSeriesChartInner
       animationDuration={animationDuration}
       animationEasing={animationEasing}
       chartStatus={chartStatus}
-      clipPathId="chart-grow-clip"
+      clipPathId={clipPathId}
       containerRef={containerRef}
       data={data}
       enterTransition={enterTransition}
@@ -325,7 +340,8 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
     revealSignature,
     revealOn,
     replayOnClick,
-    aspectRatio = "2 / 1",
+    aspectRatio,
+    plotHeight,
     className = "",
     status = DEFAULT_CHART_STATUS,
     loadingLabel,
@@ -392,14 +408,14 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
   );
 
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
       style={{
-        ...(aspectRatio ? { aspectRatio } : undefined),
         touchAction: "none",
         ...style,
       }}
@@ -448,7 +464,7 @@ export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function Lin
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}
-    </div>
+    </ChartPlotRoot>
   );
 });
 

@@ -772,3 +772,19 @@ export {
   findChartCategoryIndex,
   sameChartCategory,
 } from "./chart-hover-link";
+// Responsive contract — RM-107
+export {
+  breakpointForWidth,
+  CHART_BREAKPOINT_THRESHOLDS,
+  CHART_BREAKPOINTS,
+  type ChartBreakpoint,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  isResponsiveByBreakpoint,
+  resolveDensityForBreakpoint,
+  resolveResponsive,
+  type Responsive,
+  type ResponsiveByBreakpoint,
+  useChartBreakpoint,
+  useResponsiveValue,
+} from "./chart-breakpoint";

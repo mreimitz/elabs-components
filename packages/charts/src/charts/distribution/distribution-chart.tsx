@@ -98,6 +98,7 @@ import { BOX_BODY_OPACITY, DistributionBox } from "./kinds/box";
 import { DistributionHistogram } from "./kinds/histogram";
 import { DistributionStrip } from "./kinds/strip";
 import { DistributionViolin, VIOLIN_BODY_OPACITY } from "./kinds/violin";
+import { ChartPlotRoot } from "../chart-breakpoint";
 
 /** Room for the group labels, which sit on the cross axis. */
 const HORIZONTAL_MARGIN: DistributionMargin = { top: 10, right: 20, bottom: 28, left: 96 };
@@ -321,7 +322,7 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
     );
 
     const body = (
-      <div
+      <ChartPlotRoot
         aria-describedby={a11y["aria-describedby"]}
         aria-label={a11y["aria-label"]}
         className={cn("relative flex h-full w-full flex-col", className)}
@@ -364,7 +365,7 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
         ) : null}
         {/* The keyboard targets: real buttons, OUTSIDE the aria-hidden svg. */}
         <ChartDatapointLayer />
-      </div>
+      </ChartPlotRoot>
     );
 
     // The provider is mounted only when the caller asked for interaction, so an
