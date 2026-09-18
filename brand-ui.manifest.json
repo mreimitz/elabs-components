@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T17:36:51.923Z",
+  "generatedAt": "2026-09-18T18:26:22.536Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -33480,6 +33480,11 @@
           "module": "packages/ui/src/components/advanced-group/advanced-group.tsx"
         },
         {
+          "name": "AffordanceHint",
+          "kind": "value",
+          "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
+        },
+        {
           "name": "Alert",
           "kind": "value",
           "module": "packages/ui/src/components/alert/alert.tsx"
@@ -33978,6 +33983,11 @@
           "name": "DEFAULT_MESSAGES",
           "kind": "value",
           "module": "packages/ui/src/components/locale-provider/messages.ts"
+        },
+        {
+          "name": "DEFAULT_SURFACE_TOUR_ACTIONS_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
         },
         {
           "name": "DEFAULT_THEME_FAMILY_SWITCH_LABELS",
@@ -35165,6 +35175,16 @@
           "module": "packages/ui/src/illustrations/success-illustration.tsx"
         },
         {
+          "name": "SurfaceTour",
+          "kind": "value",
+          "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
+        },
+        {
+          "name": "SurfaceTourActions",
+          "kind": "value",
+          "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
+        },
+        {
           "name": "Switch",
           "kind": "value",
           "module": "packages/ui/src/components/switch/switch.tsx"
@@ -35496,6 +35516,10 @@
         {
           "name": "AdvancedGroupProps",
           "module": "packages/ui/src/components/advanced-group/advanced-group.tsx"
+        },
+        {
+          "name": "AffordanceHintProps",
+          "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
         },
         {
           "name": "AgentEventOutcome",
@@ -36440,6 +36464,22 @@
         {
           "name": "StringFieldSpec",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "SurfaceTourActionsLabels",
+          "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
+        },
+        {
+          "name": "SurfaceTourActionsProps",
+          "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
+        },
+        {
+          "name": "SurfaceTourProps",
+          "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
+        },
+        {
+          "name": "SurfaceTourTab",
+          "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
         },
         {
           "name": "TabsListProps",
@@ -37531,6 +37571,25 @@
               "optional": true,
               "type": "(open: boolean) => void",
               "description": "Fires on every open/close, controlled or not."
+            }
+          ]
+        },
+        "AffordanceHint": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": [
+            {
+              "name": "storageKey",
+              "optional": false,
+              "type": "string",
+              "description": "`sessionStorage` key: once the hint has shown (or the visitor interacted), it never returns this session."
+            },
+            {
+              "name": "delay",
+              "optional": true,
+              "type": "number",
+              "description": "ms after mount before the hint appears; skipped entirely when the motion gate is closed. Default 800."
             }
           ]
         },
@@ -40815,6 +40874,85 @@
             }
           ]
         },
+        "SurfaceTour": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLElement>, \"title\">"
+          ],
+          "props": [
+            {
+              "name": "tabs",
+              "optional": false,
+              "type": "SurfaceTourTab[]"
+            },
+            {
+              "name": "defaultTab",
+              "optional": true,
+              "type": "string",
+              "description": "The tab shown first. Default: the first tab."
+            },
+            {
+              "name": "onTabChange",
+              "optional": true,
+              "type": "(id: string) => void",
+              "description": "Fires when the visitor picks another tab."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Section heading."
+            },
+            {
+              "name": "description",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "One sentence under the heading."
+            },
+            {
+              "name": "hashKey",
+              "optional": true,
+              "type": "string",
+              "description": "When set, the active tab is read from and written to `#<hashKey>=<id>` (no history entries)."
+            },
+            {
+              "name": "frameClassName",
+              "optional": true,
+              "type": "string",
+              "description": "Classes for the frame — give it a height so every surface fills the same box."
+            }
+          ]
+        },
+        "SurfaceTourActions": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "storybookHref",
+              "optional": true,
+              "type": "string",
+              "description": "Where \"Open in Storybook\" goes. Omit to hide the link."
+            },
+            {
+              "name": "prompt",
+              "optional": true,
+              "type": "string",
+              "description": "The (multi-line) prompt \"Copy prompt\" writes to the clipboard. Omit to hide the button."
+            },
+            {
+              "name": "command",
+              "optional": true,
+              "type": "string",
+              "description": "The scaffold command shown in a copyable chip. Omit to hide the chip."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<SurfaceTourActionsLabels>",
+              "description": "Override any rendered string."
+            }
+          ]
+        },
         "TabsList": {
           "extends": [
             "ComponentPropsWithoutRef<typeof TabsPrimitive.List>",
@@ -42256,6 +42394,7 @@
         "SplitPanel": "layout-splitpanel--docs",
         "StatePanel": "states-statepanel--docs",
         "StatusBadge": "core-statusbadge--docs",
+        "SurfaceTour": "layout-surfacetour--docs",
         "Switch": "forms-switch--docs",
         "Table": "data-table--docs",
         "Tabs": "core-tabs--docs",
