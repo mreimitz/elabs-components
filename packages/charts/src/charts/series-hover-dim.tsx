@@ -36,11 +36,14 @@ interface SeriesHoverDimProps {
  * wrapper re-renders. That keeps expensive subtrees (`SeriesDashTailOverlay`
  * and its `getPointAtLength` binary search) quiescent on cursor motion.
  *
- * `focusOnHover` (RM-112) is a distinct dim source from the chart-wide
- * tooltip dim / legend dim above: hovering (or tapping) THIS series' own
- * rendered shape leaves it at opacity 1 and dims every other series in the
- * chart to `SELECTION_EXCLUDED_OPACITY` — the same rung `chart-selection.ts`
- * uses for an excluded mark, reused rather than re-declared per family. It
+ * `focusOnHover` (RM-112) reuses `SELECTION_EXCLUDED_OPACITY` — the same rung
+ * `chart-selection.ts` uses for an excluded mark — but drives it from TWO
+ * pointer sources, both counted as "this series is focused": hovering (or
+ * tapping) this series' own rendered shape directly (`hoveredKey`, via
+ * `ChartSeriesModeProvider`), or hovering its entry in the `Legend`
+ * (`legendHoveredIndex`, via the pre-existing `ChartLegendHoverProvider` —
+ * the same signal that already drives the plain legend dim below). Either
+ * source leaves the matched series at opacity 1 and dims every other one. It
  * is a pointer-only VIEW affordance that reveals no fact the datapoint layer
  * doesn't already carry (same carve-out as `NetworkChart`'s drag-to-peek,
  * `.claude/rules/charts.md` "Drill-down"), so it needs no keyboard
@@ -62,8 +65,11 @@ export function SeriesHoverDim({
   const isLegendDimmed =
     legendHoveredIndex !== null && seriesIndex !== undefined && legendHoveredIndex !== seriesIndex;
 
-  const focusActive = focusOnHover && hoveredKey !== null;
-  const isFocused = focusActive && dataKey !== undefined && hoveredKey === dataKey;
+  const isDirectlyHovered = hoveredKey !== null && dataKey !== undefined && hoveredKey === dataKey;
+  const isLegendHovered =
+    legendHoveredIndex !== null && seriesIndex !== undefined && legendHoveredIndex === seriesIndex;
+  const focusActive = focusOnHover && (hoveredKey !== null || legendHoveredIndex !== null);
+  const isFocused = focusActive && (isDirectlyHovered || isLegendHovered);
   const isFocusDimmed = focusActive && !isFocused;
 
   let opacity = 1;

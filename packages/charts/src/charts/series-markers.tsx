@@ -42,6 +42,50 @@ function filterByPlacement<T>(points: T[], placement: SeriesMarkersProps["placem
   return first === last ? [first] : [first, last];
 }
 
+/** `Line`/`Area` `symbols` prop shape (RM-112) — one definition, shared by both. */
+export interface SeriesSymbolsSpec {
+  placement?: "all" | "ends" | "first" | "last";
+  shape?: SeriesPointMarkerStyle["shape"];
+  style?: "filled" | "hollow";
+  size?: number;
+}
+
+export interface ResolvedSeriesSymbols {
+  placement: "all" | "ends" | "first" | "last";
+  style: "filled" | "hollow";
+  shape?: SeriesPointMarkerStyle["shape"];
+  size?: number;
+}
+
+/**
+ * Shared `Line`/`Area` `symbols` resolution (RM-112, Datawrapper's line
+ * symbols vocabulary). `symbols` unset → `null`, no symbols — today's
+ * behaviour, driven by `showMarkers`/`markers` alone; no existing story that
+ * doesn't set `symbols` renders a single extra marker. `symbols` set without
+ * an explicit `placement`, on a series with MORE than 12 points → also
+ * `null` — the blog's "avoid symbols on regular, dense intervals": the
+ * ambient default backs off, but an explicit `placement` always wins
+ * regardless of point count. Otherwise: `placement` defaults `"ends"`,
+ * `style` defaults `"hollow"`.
+ */
+export function resolveSeriesSymbols(
+  symbols: SeriesSymbolsSpec | undefined,
+  pointCount: number,
+): ResolvedSeriesSymbols | null {
+  if (symbols === undefined) {
+    return null;
+  }
+  if (symbols.placement === undefined && pointCount > 12) {
+    return null;
+  }
+  return {
+    placement: symbols.placement ?? "ends",
+    style: symbols.style ?? "hollow",
+    shape: symbols.shape,
+    size: symbols.size,
+  };
+}
+
 interface PointAt {
   index: number;
   cx: number;
