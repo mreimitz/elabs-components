@@ -52,7 +52,9 @@ import {
   arrowHeadPath,
   arrowHeadPoints,
   buildDumbbellBands,
+  computeDumbbellBandExtents,
   type DumbbellBand,
+  type DumbbellBandExtent,
   type DumbbellSortBy,
   sortDumbbellRowsBy,
 } from "./dumbbell-layout";
@@ -314,9 +316,37 @@ const ARROW_HEAD_LENGTH = 9;
  *  at the same weight as a dumbbell row's markers. */
 const DOT_RADIUS = MARKER_RADIUS;
 const DOTS_RANGE_BAR_WIDTH = CONNECTOR_STROKE_WIDTH;
-/** `groupBy` header band — the label sits above a separator rule at the
- *  band's bottom edge, matching a `BarChart` group header's placement. */
+/** `groupBy` header band — the separator rule sits this far above the band's
+ *  bottom edge (the boundary with the group's first row). */
 const GROUP_HEADER_SEPARATOR_INSET = 6;
+
+/**
+ * Validator fix-round-1 (#4811) tried BOTH remedies the validator offered —
+ * a fixed, grown-past-a-row header band AND a top-anchored header label —
+ * together. That combination regressed: at the ArrowPlot's real geometry
+ * (12 rows + 3 headers over a fixed 272px inner height, ~18.1px/band
+ * uniform), reserving a header band several rows' worth of extra height
+ * left the remaining 12 rows only ~10.7px each — too little for a single
+ * row's own OWN category label (a ~15-16px glyph box) to clear the row
+ * above or below it, trading the header/first-row collision the validator
+ * found for a plain row/row one it hadn't. Per the validator's "pick one,
+ * keep it simple": the header band keeps the SAME uniform share every band
+ * always had (`computeDumbbellBandExtents` called with `headerSize` equal
+ * to that share is a lookup, not a resize — see `groupHeaderSize` below);
+ * `GROUP_HEADER_LABEL_TOP_OFFSET` is the whole fix.
+ */
+
+/**
+ * A header's own label paints at this FIXED offset from its band's own top
+ * edge — never `rect.height`-dependent. That is what actually clears the
+ * validator's defect: the OLD bottom-anchored label (`rect.y + rect.height -
+ * GROUP_HEADER_SEPARATOR_INSET - 4`) sits right against the boundary with
+ * the next row's band by construction, however tall the band is; anchoring
+ * from the TOP instead leaves the label in the band's own upper portion,
+ * clear of that boundary, with no band-growth required. Matches the
+ * vertical-orientation header's pre-existing offset.
+ */
+const GROUP_HEADER_LABEL_TOP_OFFSET = 12;
 
 /** Px between a label's near edge and the track/plot edge it sits beside — the
  *  offset already baked into every label's `x` (`slopeStartX - 10`, `x={-10}`,
@@ -660,19 +690,27 @@ interface PlotProps {
   lineHeightPx: number;
 }
 
+/**
+ * Looks up band `index`'s rect from precomputed `extents` (one per band,
+ * from `computeDumbbellBandExtents` — validator fix-round-1, #4811): the row
+ * axis (y for horizontal, x for vertical) comes from the band's own
+ * `offset`/`size`, the cross axis always spans the full plot. `extents` built
+ * with every band the SAME `headerSize` as `size` (i.e. no `groupBy`, or a
+ * `headerSize` of 0) reproduces the old uniform `innerHeight / rowCount`
+ * split exactly — this is a lookup, not a behaviour change, for that case.
+ */
 function rowRect(
   orientation: DumbbellOrientation,
   index: number,
-  rowCount: number,
+  extents: DumbbellBandExtent[],
   innerWidth: number,
   innerHeight: number,
 ) {
+  const extent = extents[index] ?? { offset: 0, size: 0 };
   if (orientation === "vertical") {
-    const colWidth = innerWidth / Math.max(rowCount, 1);
-    return { x: index * colWidth, y: 0, width: colWidth, height: innerHeight };
+    return { x: extent.offset, y: 0, width: extent.size, height: innerHeight };
   }
-  const rowHeight = innerHeight / Math.max(rowCount, 1);
-  return { x: 0, y: index * rowHeight, width: innerWidth, height: rowHeight };
+  return { x: 0, y: extent.offset, width: innerWidth, height: extent.size };
 }
 
 function buildTooltipRows(
@@ -829,6 +867,25 @@ function DumbbellPlot({
     return map;
   }, [bands]);
 
+  // Band extents (validator fix-round-1, #4811): every band — header or row
+  // — keeps the SAME uniform share of the row axis (see the constant block
+  // above for why growing the header band past that share regressed row/row
+  // spacing instead). Passing that share as `computeDumbbellBandExtents`'s
+  // `headerSize` makes this call a lookup of the pre-existing uniform split,
+  // not a resize; `bandExtents` exists so `rowRect` has one indexable source
+  // for both band kinds instead of two divergent index formulas.
+  const innerAxisSize = orientation === "vertical" ? innerWidth : innerHeight;
+  const groupHeaderSize = innerAxisSize / Math.max(bands.length, 1);
+  const bandExtents = useMemo(
+    () =>
+      computeDumbbellBandExtents(
+        bands.map((band) => band.kind),
+        innerAxisSize,
+        groupHeaderSize,
+      ),
+    [bands, innerAxisSize, groupHeaderSize],
+  );
+
   const isVertical = orientation === "vertical" && variant === "dumbbell";
   const valueScale = useMemo(
     () =>
@@ -883,7 +940,7 @@ function DumbbellPlot({
         : rowRect(
             orientation,
             bandIndexByRowIndex.get(row.index) ?? i,
-            bands.length,
+            bandExtents,
             innerWidth,
             innerHeight,
           );
@@ -903,8 +960,8 @@ function DumbbellPlot({
       };
     });
   }, [
+    bandExtents,
     bandIndexByRowIndex,
-    bands.length,
     datapointsEnabled,
     innerHeight,
     innerWidth,
@@ -935,11 +992,11 @@ function DumbbellPlot({
         margin.top +
         ((rawStartYs[hoveredRowPosition] as number) + (rawEndYs[hoveredRowPosition] as number)) / 2;
     } else if (isVertical) {
-      const rect = rowRect(orientation, hoveredBandIndex, bands.length, innerWidth, innerHeight);
+      const rect = rowRect(orientation, hoveredBandIndex, bandExtents, innerWidth, innerHeight);
       tooltipX = margin.left + rect.x + rect.width / 2;
       tooltipY = margin.top + (valueScale(hoveredRow.start) + valueScale(hoveredRow.end)) / 2;
     } else {
-      const rect = rowRect(orientation, hoveredBandIndex, bands.length, innerWidth, innerHeight);
+      const rect = rowRect(orientation, hoveredBandIndex, bandExtents, innerWidth, innerHeight);
       tooltipX = margin.left + (valueScale(hoveredRow.start) + valueScale(hoveredRow.end)) / 2;
       tooltipY = margin.top + rect.y + rect.height / 2;
     }
@@ -1030,12 +1087,13 @@ function DumbbellPlot({
                 if (band.kind !== "header") {
                   return null;
                 }
-                const rect = rowRect(orientation, bandIndex, bands.length, innerWidth, innerHeight);
+                const rect = rowRect(orientation, bandIndex, bandExtents, innerWidth, innerHeight);
                 const labelX = orientation === "vertical" ? rect.x + rect.width / 2 : 0;
-                const labelY =
-                  orientation === "vertical"
-                    ? rect.y + 12
-                    : rect.y + rect.height - GROUP_HEADER_SEPARATOR_INSET - 4;
+                // Fixed offset from the band's OWN top (validator
+                // fix-round-1, #4811) — never `rect.height`-dependent, so the
+                // label sits in the band's own upper portion, clear of the
+                // boundary with the next row, instead of riding down against it.
+                const labelY = rect.y + GROUP_HEADER_LABEL_TOP_OFFSET;
                 const sepY = rect.y + rect.height - GROUP_HEADER_SEPARATOR_INSET;
                 return (
                   <g data-slot="dumbbell-chart-group-header" key={`group:${band.label}`}>
@@ -1152,9 +1210,8 @@ function DumbbellPlot({
                 }
                 const row = band.row;
                 const i = bandIndex;
-                const rowCount = bands.length;
                 const color = rowColor?.(row, i) ?? (rowColors[i % rowColors.length] as string);
-                const rect = rowRect(orientation, i, rowCount, innerWidth, innerHeight);
+                const rect = rowRect(orientation, i, bandExtents, innerWidth, innerHeight);
                 const isFaded = hoveredIndex != null && hoveredIndex !== row.index;
                 const startPos = valueScale(row.start);
                 const endPos = valueScale(row.end);

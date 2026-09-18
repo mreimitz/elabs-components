@@ -4,6 +4,7 @@ import {
   arrowHeadPath,
   arrowHeadPoints,
   buildDumbbellBands,
+  computeDumbbellBandExtents,
   dumbbellDeltaPercent,
   sortDumbbellRowsBy,
 } from "./dumbbell-layout";
@@ -154,5 +155,83 @@ describe("arrowHeadPoints / arrowHeadPath", () => {
   it("renders a closed 3-point triangle path", () => {
     const path = arrowHeadPath(arrowHeadPoints(0, 0, 10, 0, 6, 4));
     expect(path).toBe("M 10,0 L 4,2 L 4,-2 Z");
+  });
+});
+
+// `computeDumbbellBandExtents` can give a header band a FIXED size
+// independent of the row share — these tests pin down that general
+// behaviour with arbitrary `headerSize` values. `dumbbell-chart.tsx` itself
+// does NOT use that growth: validator fix-round-1 (#4811) tried it (paired
+// with a top-anchored header label) and found it regressed row/row spacing
+// instead — at the ArrowPlot's real 12-row/3-header/272px geometry, growing
+// the header band past its uniform share left too little of the remaining
+// height for 12 rows' own category labels to clear each other. The shipped
+// fix is top-anchoring alone (`GROUP_HEADER_LABEL_TOP_OFFSET` in
+// `dumbbell-chart.tsx`); `DumbbellChart` calls this function with
+// `headerSize` equal to the uniform share, which is a lookup of the
+// pre-existing split, not a resize (see the third test below).
+describe("computeDumbbellBandExtents", () => {
+  it("splits evenly when there are no header bands (byte-identical to the pre-fix uniform split)", () => {
+    const extents = computeDumbbellBandExtents(["row", "row", "row", "row"], 100, 24);
+    expect(extents).toEqual([
+      { offset: 0, size: 25 },
+      { offset: 25, size: 25 },
+      { offset: 50, size: 25 },
+      { offset: 75, size: 25 },
+    ]);
+  });
+
+  it("gives every header band the FIXED headerSize, not a share of the uniform split", () => {
+    // 1 header + 4 rows over 180px: a uniform 5-way split would give every
+    // band 36px. A fixed headerSize of 60 must survive that pull.
+    const extents = computeDumbbellBandExtents(["header", "row", "row", "row", "row"], 180, 60);
+    expect(extents[0]).toEqual({ offset: 0, size: 60 });
+    // Remaining 120px split evenly across the 4 row bands.
+    for (let i = 1; i < extents.length; i += 1) {
+      expect(extents[i]!.size).toBeCloseTo(30);
+    }
+  });
+
+  it("given an explicit headerSize larger than the uniform share, still holds it exactly (generic capability, not what DumbbellChart calls it with — see the file header comment)", () => {
+    // 12 rows + 3 headers, matching the ArrowPlot story's band count. A
+    // caller COULD grow headers past the uniform share this way; the
+    // ArrowPlot regression (fix-round-1, #4811) is why `dumbbell-chart.tsx`
+    // does not — see `dumbbell-chart.stories.tsx`'s ArrowPlot/DotsPlot
+    // `assertNoTextOverlapAtWidths` play assertions for the shipped fix's
+    // own regression coverage, at the real geometry this function alone
+    // can't reproduce (real font metrics, real `<text>` boxes).
+    const bandKinds: Array<"row" | "header"> = [
+      "header",
+      "row",
+      "row",
+      "row",
+      "row",
+      "header",
+      "row",
+      "row",
+      "row",
+      "row",
+      "header",
+      "row",
+      "row",
+      "row",
+      "row",
+    ];
+    const uniformShare = 380 / bandKinds.length;
+    const headerSize = 32;
+    const extents = computeDumbbellBandExtents(bandKinds, 380, headerSize);
+    const headerExtents = extents.filter((_, i) => bandKinds[i] === "header");
+    for (const extent of headerExtents) {
+      expect(extent.size).toBeGreaterThan(uniformShare);
+      expect(extent.size).toBeCloseTo(headerSize);
+    }
+  });
+
+  it("falls back to an even split when headers alone would exceed totalSize (degenerate)", () => {
+    const extents = computeDumbbellBandExtents(["header", "header", "header"], 30, 20);
+    // 3 headers * 20 = 60 > totalSize (30) — no room for anything, even split.
+    for (const extent of extents) {
+      expect(extent.size).toBeCloseTo(10);
+    }
   });
 });

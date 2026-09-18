@@ -586,6 +586,80 @@ export const SelectionStates: Story = {
   },
 };
 
+// ── RM-116 validator fix-round-1 (#4811): no painted text may intersect ────
+
+/** Minimum clear px between any two painted text boxes — the validator's bar. */
+const TEXT_OVERLAP_MIN_GAP_PX = 2;
+
+/**
+ * True nearest-edge Euclidean distance between two axis-aligned rects: 0 when
+ * they intersect/touch, else the straight-line gap between their closest
+ * corners/edges. `min(gapX, gapY)` — the first version of this helper —
+ * UNDER-reports a diagonal pair: two boxes offset by a large `gapY` and a
+ * small `gapX` (e.g. a group header's own label and an unrelated row's delta
+ * label two bands below it) are nowhere near touching, but the min-of-axes
+ * read flags the small `gapX` alone. `Math.hypot(dx, dy)` is the honest
+ * distance a reader would actually perceive between the two boxes.
+ */
+function rectGapPx(a: DOMRect, b: DOMRect): number {
+  const dx = Math.max(0, b.left - a.right, a.left - b.right);
+  const dy = Math.max(0, b.top - a.bottom, a.top - b.bottom);
+  return Math.hypot(dx, dy);
+}
+
+/**
+ * Fails on the pre-fix geometry (validator fix-round-1, #4811): at 380px a
+ * `groupBy` header band got no more room than a single row, so a group
+ * header's own `HaloText` painted on top of the first row's delta label in
+ * its group ("Referral" intersecting "+46.7%"). Every SVG `<text>` in the
+ * chart PLUS the dot-plot's HTML colour-key legend (the requirement's fourth
+ * text kind) must clear every other by `TEXT_OVERLAP_MIN_GAP_PX` — measured
+ * with `getBoundingClientRect`, the way the validator measured it, never
+ * against a margin/offset constant (that re-encodes the bug as the spec).
+ */
+async function assertNoPaintedTextOverlap(canvasElement: HTMLElement): Promise<void> {
+  await waitFor(() => {
+    const svgTexts = Array.from(canvasElement.querySelectorAll("svg text"));
+    const legendItems = Array.from(
+      canvasElement.querySelectorAll('[data-slot="dumbbell-chart-dot-legend"] > span'),
+    );
+    const elements = [...svgTexts, ...legendItems];
+    expect(elements.length).toBeGreaterThan(0);
+    const boxes = elements.map((el) => el.getBoundingClientRect());
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i] as DOMRect;
+        const b = boxes[j] as DOMRect;
+        const gap = rectGapPx(a, b);
+        expect(rectsIntersect(a, b)).toBe(false);
+        expect(gap).toBeGreaterThanOrEqual(TEXT_OVERLAP_MIN_GAP_PX);
+      }
+    }
+  });
+}
+
+/**
+ * Resizes the story's own wrapper (not the browser viewport — the vitest
+ * browser project runs one fixed viewport) to each width in turn and asserts
+ * no painted text overlaps at any of them. `ChartPlotRoot`'s `ResizeObserver`
+ * reflows the chart on the width change; `waitFor` inside the assertion
+ * absorbs that latency.
+ */
+async function assertNoTextOverlapAtWidths(
+  canvasElement: HTMLElement,
+  widths: number[],
+): Promise<void> {
+  const wrapper = canvasElement.querySelector<HTMLElement>(
+    '[data-testid="dumbbell-story-wrapper"]',
+  );
+  expect(wrapper).not.toBeNull();
+  for (const width of widths) {
+    wrapper!.style.width = `${width}px`;
+    wrapper!.style.maxWidth = `${width}px`;
+    await assertNoPaintedTextOverlap(canvasElement);
+  }
+}
+
 // ── RM-116: arrow / dots plots — Datawrapper parity §2.14–2.16 ─────────────
 
 // 12 rows, 3 channels (4 metrics each) — a marketing-funnel move per channel,
@@ -625,7 +699,7 @@ export const ArrowPlot: Story = {
     delta: { show: true, mode: "percent" },
   },
   render: (args) => (
-    <div className="h-[420px] w-full max-w-[640px]">
+    <div className="h-[420px] w-full max-w-[640px]" data-testid="dumbbell-story-wrapper">
       <DumbbellChart {...args} />
     </div>
   ),
@@ -652,6 +726,9 @@ export const ArrowPlot: Story = {
         expect(label.textContent).toMatch(/^[+-]\d+(\.\d+)?%$/);
       }
     });
+    // Validator fix-round-1 (#4811): grouped bands are the densest geometry
+    // this component draws — sweep the widths the acceptance bar names.
+    await assertNoTextOverlapAtWidths(canvasElement, [380, 600, 900]);
   },
 };
 
@@ -681,7 +758,7 @@ export const DotsPlot: Story = {
     range: true,
   },
   render: (args) => (
-    <div className="h-80 w-full max-w-[640px]">
+    <div className="h-80 w-full max-w-[640px]" data-testid="dumbbell-story-wrapper">
       <DumbbellChart {...args} />
     </div>
   ),
@@ -697,5 +774,9 @@ export const DotsPlot: Story = {
     for (const key of ["us", "rivalA", "rivalB"]) {
       expect(canvasElement.textContent).toContain(key);
     }
+    // Validator fix-round-1 (#4811): the colour-key legend is the fourth
+    // painted-text kind the acceptance bar names alongside category/delta/
+    // group-header labels.
+    await assertNoTextOverlapAtWidths(canvasElement, [380, 600, 900]);
   },
 };

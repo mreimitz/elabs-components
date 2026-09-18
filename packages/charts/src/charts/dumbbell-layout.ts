@@ -123,6 +123,67 @@ export function buildDumbbellBands(rows: DumbbellRow[], groupBy?: string): Dumbb
   return bands;
 }
 
+// ─── Band extents (validator fix-round-1, #4811) ──────────────────────────
+
+export interface DumbbellBandExtent {
+  /** Px offset of this band's near edge along the row axis (y for
+   *  horizontal, x for vertical). */
+  offset: number;
+  /** Px extent of this band along the row axis. */
+  size: number;
+}
+
+/**
+ * Divides `totalSize` px along the row axis across `bandKinds`, giving every
+ * `"header"` band the given `headerSize` — independent of how many bands
+ * share the axis, so a caller CAN grow a header band past the row bands'
+ * uniform share — and splitting whatever remains evenly across the `"row"`
+ * bands.
+ *
+ * `DumbbellChart` itself calls this with `headerSize` equal to that uniform
+ * share, i.e. a lookup of the pre-existing split, not a resize: validator
+ * fix-round-1 (RM-116, #4811 — "Referral" intersected "+46.7%" at 380px)
+ * tried growing the header band, paired with top-anchoring the header's own
+ * label, and found growth regressed a DIFFERENT pair instead — at the
+ * ArrowPlot's real 12-row/3-header/272px geometry, a grown header band left
+ * too little of the remaining height for 12 rows' own category labels to
+ * clear each other. Top-anchoring the header label alone (a FIXED offset
+ * from the band's own top, never `rect.height`-dependent — see
+ * `GROUP_HEADER_LABEL_TOP_OFFSET` in `dumbbell-chart.tsx`) already clears
+ * the original defect without touching row size, so that is the whole fix;
+ * this function's `headerSize` growth stays available as a general
+ * capability (exercised by `dumbbell-layout.test.ts`) for a future caller
+ * whose row budget can afford it.
+ *
+ * Degenerate case (more groups than pixels, `headerSize * headerCount >=
+ * totalSize`): every band falls back to an even split — a header still draws
+ * something, rather than a negative-size row band.
+ */
+export function computeDumbbellBandExtents(
+  bandKinds: ReadonlyArray<"row" | "header">,
+  totalSize: number,
+  headerSize: number,
+): DumbbellBandExtent[] {
+  const headerCount = bandKinds.filter((kind) => kind === "header").length;
+  const rowCount = bandKinds.length - headerCount;
+  const reserved = headerCount * headerSize;
+  const fitsHeaders = headerCount === 0 || (reserved < totalSize && rowCount > 0);
+  const evenShare = totalSize / Math.max(bandKinds.length, 1);
+  const resolvedHeaderSize = fitsHeaders ? headerSize : evenShare;
+  const resolvedRowSize = fitsHeaders
+    ? rowCount > 0
+      ? (totalSize - reserved) / rowCount
+      : 0
+    : evenShare;
+  let offset = 0;
+  return bandKinds.map((kind) => {
+    const size = kind === "header" ? resolvedHeaderSize : resolvedRowSize;
+    const extent = { offset, size };
+    offset += size;
+    return extent;
+  });
+}
+
 // ─── Arrow-head geometry ────────────────────────────────────────────────────
 
 export interface ArrowHeadPoints {
