@@ -309,3 +309,39 @@ export const tourSurfaceCopy = {
       "You’re looking at it — this page is the marketing archetype, from the same components.",
   },
 } as const;
+
+// RM-099 — the "Ask your agent" live loop (concept §4.3, §5a choreography 4, §8 decision 4).
+// The honesty line is D5 (`docs/DECISIONS.md`): the site renders, it never owns a model call.
+export const agentLoopCopy = {
+  eyebrow: "For agents",
+  heading: "Ask your agent — and watch the calls",
+  lede: "Pick a prompt and run it. The page calls the same hosted MCP server your coding agent would, shows each call as a tool card, then renders the block the answer points to — in the theme you have on.",
+  promptLabel: "Example prompt",
+  promptPlaceholder: "Pick an example prompt above",
+  selectLabel: "Choose an example prompt",
+  onlyListedHint:
+    "Only the listed prompts run — you can edit the text, but the calls come from the prompt you picked.",
+  onlyListedTrigger: "Why only the listed prompts?",
+  run: "Run",
+  reset: "Reset",
+  traceHeading: "Tool calls",
+  traceIdle: "Run a prompt to see the MCP calls it makes.",
+  renderHeading: (title: string) => `Rendered: ${title}`,
+  renderIdle: "The rendered block appears here.",
+  recorded: "recorded",
+  recordedHint: "The live server was unreachable, so this card shows the recorded response.",
+  elapsed: (ms: number) => `${ms} ms`,
+  pending: "Calling…",
+  running: (prompt: string) => `Running “${prompt}”…`,
+  done: "Done — block rendered.",
+  loadingBlock: "Loading the block…",
+  surfaceTitles: {
+    "region-map": "Revenue by region",
+    "dashboard-sheet": "A four-tile dashboard sheet",
+  } as Record<string, string>,
+  regionMapLabel: "Revenue by region map",
+  honestyLine:
+    "brand-ui never owns model calls. This demo calls the same hosted MCP your agent would; the picking was done ahead of time.",
+  honestyLinkLabel: "Why: decision D5",
+  honestyLinkHref: `${shellCopy.links.github}/blob/main/docs/DECISIONS.md`,
+} as const;

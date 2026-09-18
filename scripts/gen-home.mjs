@@ -12,6 +12,8 @@
  * Writes nine files under `apps/home/content/generated/`:
  *   packages.json, counts.json, themes.json, gates.json, cli.json, blocks.json,
  *   playbooks.json, story-ids.json, install.json
+ * …plus `agent-loop-recorded.json` (RM-099): the hosted MCP's answers to every call in the
+ * hand-authored `apps/home/content/agent-loop.json`, the agent loop's offline fallback.
  * …plus one static asset outside that directory (RM-093): `apps/home/public/.well-known/
  * mcp.json`, MCP discovery metadata — served byte-for-byte, so it cannot go through
  * `apps/home/lib/content.ts` the way the nine files above do.
@@ -369,6 +371,40 @@ export function buildWellKnownMcp(cli) {
 
 // ────────────────────────────────────── main ──────────────────────────────────
 
+// ─────────────────────── agent-loop-recorded.json (RM-099) ────────────────────
+/**
+ * The "Ask your agent" loop's offline fallback (RM-099, wave-3 ruling 12): for every call in
+ * the hand-authored prompt map `apps/home/content/agent-loop.json`, the answer a local
+ * `brand-ui mcp` gives — produced in-process through the SAME `handleMessage` the hosted
+ * `/mcp` route wraps, with `hosted: true` so the tool set matches the site's. Regenerated
+ * with the manifest, so the recorded responses never drift from what the live server says.
+ * Output: `{ [promptId]: [{ tool, args, result }] }`, calls in map order.
+ */
+export function buildAgentLoopRecorded(manifest, map = json("apps/home/content/agent-loop.json")) {
+  return Object.fromEntries(
+    map.prompts.map((prompt) => [
+      prompt.id,
+      prompt.calls.map(({ tool, args }, index) => {
+        const res = handleMessage(
+          {
+            jsonrpc: "2.0",
+            id: index + 1,
+            method: "tools/call",
+            params: { name: tool, arguments: args },
+          },
+          { manifest, hosted: true },
+        );
+        if (!res || res.error) {
+          throw new Error(
+            `agent-loop.json: ${prompt.id} → ${tool} failed: ${res?.error?.message ?? "no response"}`,
+          );
+        }
+        return { tool, args, result: res.result };
+      }),
+    ]),
+  );
+}
+
 async function buildAll() {
   const manifest = json("brand-ui.manifest.json");
   const registry = json("registry/registry.json");
@@ -408,6 +444,8 @@ async function buildAll() {
     "playbooks.json": buildPlaybooks(manifest),
     "story-ids.json": buildStoryIds(),
     "install.json": buildInstall(manifest, registry, cli),
+    // RM-099
+    "agent-loop-recorded.json": buildAgentLoopRecorded(manifest),
   };
 }
 

@@ -1,0 +1,152 @@
+{
+  "kpi-overview": [
+    {
+      "tool": "search",
+      "args": {
+        "query": "kpi overview churn trend movers"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Components/hooks matching \"kpi overview churn trend movers\":\n  (none)\n\nPlaybooks matching \"kpi overview churn trend movers\" (start a WHOLE screen here):\n  dashboard  — KPI overview screen (static) or a drag-and-drop, user-editable grid of tiles (sheet) — metrics, charts and records in one screen\n    https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/dashboard.md\n    template https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/templates/dashboard.tsx\n\nTemplates matching \"kpi overview churn trend movers\":\n  object-detail-hub  (template)\n    https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/templates/object-detail-hub.tsx\n  process-explorer  (template)\n    https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/templates/process-explorer.tsx"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "docs",
+      "args": {
+        "component": "Sparkline"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# Sparkline  (@elabs-ai/components-charts)\nimport: import { Sparkline } from \"@elabs-ai/components-charts\";\nstory: https://elabs-ai.com/?path=/docs/charts-sparkline--docs\nsource: packages/charts/src/sparkline/sparkline.tsx\npurpose: Tiny, axis-less trend that lives inside a KPI tile or a table cell.  [chart]\n  used inside: MetricCard, DataTable\nanti-patterns (avoid):\n  x Adding axes and tooltips to a Sparkline — if it needs them it is a LineChart.\n  x A Sparkline as the only carrier of a number — pair it with the value (MetricCard).\n  x Fixing its width in pixels — let the tile or cell own the box so it reflows.\nextends: Omit<\n  SVGAttributes<SVGSVGElement>,\n  \"children\" | \"values\" | \"target\"\n>\nprops (own-declared):\n  values: number[]  — The series, oldest → newest.\n  variant?: \"bar\" | \"line\"  — Visual form. Default \"bar\".\n  emphasizeLast?: boolean  — Emphasize the newest value with the `--chart-1` token. Default true for bars.\n  label?: string  — Accessible name. Default describes the series (and any references below).\n  width?: number  — Rendered size when `fit=\"fixed\"` (default) — the SVG's actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit=\"fill\"` before the first real measurement lands.\n  height?: number\n  fit?: \"fixed\" | \"fill\"  — Sizing strategy. `\"fixed\"` (default) draws at exactly `width`×`height` — unchanged no matter what CSS box (`className=\"w-full\"`, a table cell, …) the caller puts it in, exactly as before this prop existed. `\"fill\"` measures the real rendered width of that CSS box (a tiny, cleaned-up `ResizeObserver`, falling back to `width` before the first measurement or where `ResizeObserver` isn't available, e.g. jsdom) and draws the plot at that real pixel width instead — no CSS stretching, so line strokes, the emphasized dot and the last-value label never distort. Opt in per usage (a trend card, a scorecard cell) rather than globally, since most Sparkline call sites size it explicitly and shouldn't pay for a measurement round-trip.\n  target?: number  — A horizontal reference line (\"goal\", \"quota\") drawn across the plot in `--chart-foreground`, dashed — never recolours the series even when the latest value falls short; status is the card's job, not the sparkline's.\n  baseline?: number[]  — A comparison series (e.g. last year), same index alignment as `values`. Drawn as a thin `--chart-foreground-muted` line behind the main series, in both variants.\n  band?: readonly [number, number]  — A \"normal range\" `[lo, hi]` drawn as a quiet filled zone behind everything.\n  fitDomain?: boolean  — For `variant=\"line\"` with no `target`/`baseline`/`band`: use the series' own min–max (padded) domain instead of the shared zero-based bar scale. A tight-range series (a weekly count moving ±5% around its own mean) reads as a flat line on a zero-based scale — decoration with no information (WCAG 1.4.1's \"a channel that carries nothing\" failure mode, not a colour one). Default false — byte-identical to today's shared scale when unset.\n  showLastValue?: boolean  — Render the formatted latest value as text to the right of the plot. Default false.\n  formatValue?: (value: number) => string  — Formats every value this component surfaces as text (the last-value label and the accessible name's numbers). Default: locale number formatting.\n  lastValueSuffix?: string  — Appended (with a leading space) to the `showLastValue` text and to the accessible name's \"latest …\" phrase — e.g. `\"this wk\"` when the plotted series is weekly but a nearby headline figure is a different period (a quarter total), so the last-value label cannot be misread as the same fact at a different scale. Default: none (today's behaviour).\n  labels?: SparklineLabels  — Words for the reference facts in the default accessible name."
+          }
+        ]
+      }
+    }
+  ],
+  "status-card": [
+    {
+      "tool": "chart_for",
+      "args": {
+        "shape": "single value against a target threshold"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "chart-for \"single value against a target threshold\" — 5 candidate(s), ranked:\n  1. Gauge  (@elabs-ai/components-charts, score 5)\n     shape: a single value against a target or threshold bands\n     avoid when: the trend over time matters more than the instant — use a line chart\n  2. BulletChart  (@elabs-ai/components-charts, score 4)\n     shape: a single value against a target and 2–3 qualitative bands\n     avoid when: more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`\n  3. RingChart  (@elabs-ai/components-charts, score 2)\n     shape: one proportion against its maximum, read as a single ring\n     avoid when: several categories matter — use a pie or unit chart\n  4. BarChart  (@elabs-ai/components-charts, score 1)\n     shape: a single signed measure around a meaningful zero, as diverging bars with a zero line\n     avoid when: a time axis with many points — use a line or area chart\n  5. ComposedChart  (@elabs-ai/components-charts, score 1)\n     shape: mixed marks on one shared axis — bars with a line target, for example\n     avoid when: a single mark type would do — reach for that container directly\n\nPer the chart-selection rules: compare at least 3 candidates and write down why the\nothers lost — see skills/brand-ui/reference/chart-selection.md."
+          }
+        ]
+      }
+    },
+    {
+      "tool": "docs",
+      "args": {
+        "component": "StatusBadge"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# StatusBadge  (@elabs-ai/components-ui)\nimport: import { StatusBadge } from \"@elabs-ai/components-ui\";\nstory: https://elabs-ai.com/?path=/docs/core-statusbadge--docs\nsource: packages/ui/src/components/status-badge/status-badge.tsx\npurpose: The closed seven-state execution-status vocabulary, each state carrying its own icon as well as its own tone.  [display]\n  pairs with: Badge, AgentTimeline, Tool\n  avoid next to: Badge\nanti-patterns (avoid):\n  x Using it for a neutral label or a count — that is Badge; this one asserts an execution state.\n  x Inventing an eighth status by passing a custom label into the canonical enum — map an out-of-vocabulary state ONCE, near your domain, through the {label, tone, icon} form.\n  x Relying on the tone alone to distinguish two states — the glyph is the second channel that keeps them apart in greyscale.\nextends: HTMLAttributes<HTMLSpanElement>, Omit<VariantProps<typeof statusBadgeVariants>, \"status\" | \"tone\">\nprops (own-declared):\n  status: Status | CustomStatus  — The canonical execution status, or a mapped out-of-vocabulary one (#363).\n  hideIcon?: boolean  — Render label-only (no status icon).\nvariants (expanded from cva — the real values):\n  status: pending | running | complete | awaiting-approval | denied | failed | skipped\n  tone: neutral | info | success | warning | destructive\n  size: sm | md (default)"
+          }
+        ]
+      }
+    }
+  ],
+  "region-map": [
+    {
+      "tool": "search",
+      "args": {
+        "query": "map revenue by region"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Components/hooks matching \"map revenue by region\":\n  (none)\n\nPlaybooks matching \"map revenue by region\" (start a WHOLE screen here):\n  process-explorer  — Explore a discovered process: map, variants, filters, event log, conformance and case drill-down in one screen\n    https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/process-explorer.md\n    template https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/templates/process-explorer.tsx\n\nTemplates matching \"map revenue by region\":\n  process-explorer  (template)\n    https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/templates/process-explorer.tsx"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "docs",
+      "args": {
+        "component": "MapCanvas"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# MapCanvas  (@elabs-ai/components-maps)\nimport: import { MapCanvas } from \"@elabs-ai/components-maps\";\nstory: https://elabs-ai.com/?path=/docs/maps-mapcanvas--docs\nsource: packages/maps/src/map-canvas/map-canvas.tsx\npurpose: Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.  [data]\n  contains: MapMarker, MapControls, MapClusterLayer, MapGeoJSON, MapRoute\nanti-patterns (avoid):\n  x Hiding MapLibre's attribution control — the default Carto basemap styles/tiles require it.\n  x Importing maplibre-gl CSS in the app — MapCanvas imports its own CSS plus the brand popup overrides.\n  x Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL.\nextends: Omit<MapLibreGL.MapOptions, \"container\" | \"style\">\nprops (own-declared):\n  children?: ReactNode\n  className?: string  — Additional CSS classes for the map container.\n  theme?: BasemapTheme  — Basemap flavor. If not provided, it is derived from the active brand theme (`data-theme` + that theme's own `color-scheme`), then a `dark`/`light` root class, then the OS preference.\n  styles?: { light?: MapStyleOption; dark?: MapStyleOption; }  — Custom map styles for light and dark themes. Overrides the default Carto styles.\n  blank?: boolean  — Use a transparent, tile-less basemap instead of the default Carto street basemap — a blank canvas. Used alone it renders nothing; add your own layers on top (`<MapGeoJSON>`, `<MapArc>`, markers, …). Ideal for data visualizations. Ignored when an explicit `styles` prop is provided.\n  projection?: MapLibreGL.ProjectionSpecification  — Map projection type. Use `{ type: \"globe\" }` for a 3D globe view.\n  viewport?: Partial<MapViewport>  — Controlled viewport. When provided together with `onViewportChange`, the map becomes controlled and the viewport is driven by this prop.\n  onViewportChange?: (viewport: MapViewport) => void  — Callback fired continuously as the viewport changes (pan, zoom, rotate, pitch). Use standalone to observe changes, or with `viewport` for controlled mode.\n  loading?: boolean  — Show a loading overlay on the map (e.g. while the app fetches map data)."
+          }
+        ]
+      }
+    }
+  ],
+  "dashboard": [
+    {
+      "tool": "search",
+      "args": {
+        "query": "dashboard rearrange tiles"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Components/hooks matching \"dashboard rearrange tiles\":\n  (none)\n\nPlaybooks matching \"dashboard rearrange tiles\" (start a WHOLE screen here):\n  dashboard  — KPI overview screen (static) or a drag-and-drop, user-editable grid of tiles (sheet) — metrics, charts and records in one screen\n    https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/dashboard.md\n    template https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/templates/dashboard.tsx\n\nTemplates matching \"dashboard rearrange tiles\":\n  dashboard  (template)\n    https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/templates/dashboard.tsx\n  dashboard-sheet  (template)\n    https://raw.githubusercontent.com/mreimitz/elabs-components/@elabs-ai/components-cli@4.2.0/docs/playbooks/templates/dashboard-sheet.tsx"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "docs",
+      "args": {
+        "component": "AutoChart"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# AutoChart  (@elabs-ai/components-charts)\nimport: import { AutoChart } from \"@elabs-ai/components-charts\";\nstory: https://elabs-ai.com/?path=/docs/charts-autochart--docs\nsource: packages/charts/src/auto-chart/auto-chart.tsx\npurpose: Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.  [chart]\n  used inside: ChartFrame, ChartCard\n  pairs with: MetricGrid\nanti-patterns (avoid):\n  x Hand-picking a chart type when the spec already encodes the intent — AutoChart is the agent-facing entry point.\n  x Putting raw colors in a spec's series — the chart-1…chart-5 tokens are the palette in every theme.\n  x Passing an empty dataset with no not-ready signal — render the loading state instead of an empty frame.\nextends: Omit<HTMLAttributes<HTMLDivElement>, \"title\">\nprops (own-declared):\n  spec: ChartSpec  — The serializable chart specification produced by an LLM tool-call. `spec.type` is optional; omit it and the data shape decides (see `explainChartType`). The full `ChartType` union AutoChart renders is: `line` | `area` | `bar` | `pie` | `scatter` | `radar` | `funnel` | `candlestick` | `heatmap` | `calendar` | `waterfall` | `dumbbell` | `unit` | `treemap` | `histogram` | `box` | `strip` | `bump` | `stream` | `diverging-bar`. Anything else — including `network`, `parallel`, `tree` and `sankey`, which stay explicit-container-only — renders `ChartFallback` instead. That list is not hand-kept prose: `auto-chart.test.tsx` parses it back out of this comment and asserts it equals `CHART_TYPES`, so a type added to the union without being documented here fails the suite.\n  plotHeight?: Responsive<ChartPlotHeight>  — Height of the drawing area only; the title and legend stack around it. A number of pixels, `{ aspect }` (width / height), or a per-breakpoint `{ base, medium?, narrow? }`. Default: the chart family's own default (`{ aspect: 2 }` wide, `{ aspect: 1.25 }` narrow for the 2:1 families).\n  height?: number  — @deprecated Use `plotHeight`. Removed in 5.0.0. Until then it is read as `plotHeight` and logs one development warning per page.\n  loading?: boolean  — Loading vs ready — renders a layout-shaped skeleton at the normal chart height instead of resolving `spec`. Default: `false`.\n  copyValueOnActivate?: boolean  — Copy a datapoint's EXACT value to the clipboard when it is activated by pointer or keyboard. Default **`true`** here, unlike the raw chart containers, which default it to `false`. The asymmetry is deliberate. `AutoChart` renders compact axis labels (`1.5M`) from a spec its caller never sees the axis config for, so without this there is no way to recover the exact figure. A raw container's caller owns the axis and can format it themselves, and turning this on mounts the datapoint interaction layer — which would break the documented guarantee that a chart with no interaction props renders byte-identical DOM. Set `false` to keep `AutoChart`'s pre-existing DOM (no interaction layer, no keyboard targets).\n  selectionStates?: ChartSelectionStatesResolver  — Selection input (RM-073), forwarded to the chosen container. The resolver's `category` is read from `spec.fields.category` (default `spec.x`), so a host maps selection without knowing the chart type.\n  dimExcluded?: boolean  — Dim `excluded` marks. Default `true`. Forwarded with `selectionStates`.\n  hoverCategory?: ChartHoverCategory  — Shared-crosshair category from a sibling chart (RM-073).\n  onHoverCategory?: (category: ChartHoverCategory) => void  — Fires with the hovered category on pointer move, `null` on leave (RM-073).\n  onDatapointClick?: ChartDatapointClickHandler  — Forwarded to the chosen container's own `onDatapointClick` (RM-075), when that family accepts one (bar, line, area/stream, pie, waterfall, heatmap/calendar, dumbbell, unit, treemap, histogram/box/strip, bump, funnel, diverging-bar). Absent on scatter/radar/candlestick — those containers don't accept it yet. Unset by default, so the default render stays byte-identical (#349's own rule: \"with it unset the chart renders exactly as before\")."
+          }
+        ]
+      }
+    }
+  ],
+  "cohort-retention": [
+    {
+      "tool": "chart_for",
+      "args": {
+        "shape": "cohort by month, two categorical axes"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "chart-for \"cohort by month, two categorical axes\" — 4 candidate(s), ranked:\n  1. HeatmapChart  (@elabs-ai/components-charts, score 3)\n     shape: two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill\n     avoid when: more than about 10 columns of continuous data, or exact cell values matter more than the pattern\n  2. BarChart  (@elabs-ai/components-charts, score 1)\n     shape: categorical comparison of one or more measures across a small set of named categories\n     avoid when: a time axis with many points — use a line or area chart\n  3. DumbbellChart  (@elabs-ai/components-charts, score 1)\n     shape: two time points per category — a before and after, or a range with two ends\n     avoid when: more than 2 points per category — use small-multiple lines\n  4. ScatterChart  (@elabs-ai/components-charts, score 1)\n     shape: two continuous measures per row — correlation, or the shape of a distribution\n     avoid when: one axis is categorical — use a bar or dumbbell chart\n\nPer the chart-selection rules: compare at least 3 candidates and write down why the\nothers lost — see skills/brand-ui/reference/chart-selection.md."
+          }
+        ]
+      }
+    },
+    {
+      "tool": "docs",
+      "args": {
+        "component": "HeatmapChart"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "# HeatmapChart  (@elabs-ai/components-charts)\nimport: import { HeatmapChart } from \"@elabs-ai/components-charts\";\nstory: https://elabs-ai.com/?path=/docs/charts-heatmapchart--docs\nsource: packages/charts/src/charts/heatmap/index.ts\npurpose: Two discrete dimensions × one value — weekday × hour, product × region, or a year of days.  [chart]\n  used inside: ChartFrame, ChartCard\n  pairs with: ChartTooltip\nanti-patterns (avoid):\n  x steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn showValues on.\n  x emptyValue=\"blank\" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.\n  x Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.\n  x Leaning on the darkest ramp step to say \"this is the peak\" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign."
+          }
+        ]
+      }
+    }
+  ]
+}
