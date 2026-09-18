@@ -15,6 +15,9 @@ import type { DateFormatPreset } from "../charts/date-format";
 import type { SeriesSymbolsSpec } from "../charts/series-markers";
 import type { NullsMode } from "../charts/time-series-chart-shell";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
+import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/bar-overlays";
+import type { BarSort } from "../charts/bar-stacking";
+import type { ChartColorBy } from "../charts/chart-context";
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -196,8 +199,12 @@ export interface ChartSpec {
   /** Supplemental description for screen readers (e.g. "Revenue 2024, 3 series"). */
   description?: string;
 
-  /** Stack bars/areas instead of grouping them. Default: false */
-  stacked?: boolean;
+  /**
+   * Stack bars/areas instead of grouping them. Bars also take `"percent"`
+   * (each category normalised to 100 %) and `"diverging"` (Likert rows
+   * centred on `divergingCenter`) — RM-113. Default: false
+   */
+  stacked?: boolean | "percent" | "diverging";
 
   /**
    * How a `"line"`/`"area"`/`"stream"` chart draws a non-numeric sample
@@ -275,6 +282,20 @@ export interface ChartSpec {
   // Annotations — RM-111
   /** Text notes, ranges, reference lines and row notes in data units (RM-111) — see {@link ChartSpecAnnotation}. */
   annotations?: ChartSpecAnnotation[];
+
+  // BarChart — RM-113
+  /** `stacked: "diverging"`: the series centred on the zero line (a Likert "Neutral"). */
+  divergingCenter?: string;
+  /** Bar row order: `"asc"`/`"desc"` by value (stack total when stacked) or `{ by, dir }`. */
+  sort?: BarSort;
+  /** Gather bar rows by this column, with a header per group. */
+  groupBy?: string;
+  /** Colour bars by another column (categorical ≤ 6 hues, or a sequential / diverging ramp). */
+  colorBy?: ChartColorBy;
+  /** Per-bar value markers and range spans (confidence intervals, targets). */
+  overlays?: BarOverlay[];
+  /** A muted prior-period column behind each bar; `labels.comparison` picks its grey label. */
+  comparison?: BarComparison;
 }
 
 // Labels — RM-110
@@ -289,6 +310,10 @@ export interface ChartLabelsSpec {
   values?: ChartValueLabels;
   /** scatter: point labels — `key` is the row field holding the text; `mode` `"auto"` (default) | `"all"`; `priorityKey` a numeric row field (higher survives). */
   points?: { key: string; mode?: "auto" | "all"; priorityKey?: string };
+
+  // BarChart — RM-113
+  /** bar: the grey label on each `comparison` column — `"value"` | `"difference"` | `"none"` (default). */
+  comparison?: BarComparisonLabel;
 }
 
 // Axes — RM-108

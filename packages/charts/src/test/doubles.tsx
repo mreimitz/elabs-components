@@ -413,10 +413,18 @@ export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
   CHART_CONTRACT_SPECS.AreaChart,
 );
-export const BarChart = createChartContainerDouble<BarChartProps>(
+const BarChartBaseDouble = createChartContainerDouble<BarChartProps>(
   "BarChart",
   CHART_CONTRACT_SPECS.BarChart,
 );
+// BarChart — RM-113: the richness props are validated before the base contract.
+export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(
+  function BarChartTestDouble(props, ref) {
+    assertBarRichnessContract("BarChart", props as unknown as Record<string, unknown>);
+    return <BarChartBaseDouble {...props} ref={ref} />;
+  },
+);
+BarChart.displayName = "BarChart";
 export const LineChart = createChartContainerDouble<LineChartProps>(
   "LineChart",
   CHART_CONTRACT_SPECS.LineChart,
@@ -809,16 +817,120 @@ export function assertLabelsSpecContract(labels: unknown): void {
       "AutoChart",
       "spec.labels",
       labels,
-      `"labels" must be { series?, values?, points? }`,
+      `"labels" must be { series?, values?, points?, comparison? }`,
     );
   }
   const l = labels as Record<string, unknown>;
   for (const field of Object.keys(l)) {
-    checkOneOf("AutoChart", "spec.labels field", field, ["series", "values", "points"]);
+    checkOneOf("AutoChart", "spec.labels field", field, [
+      "series",
+      "values",
+      "points",
+      // BarChart — RM-113
+      "comparison",
+    ]);
   }
   checkSeriesLabel("AutoChart", "spec.labels.series", l.series);
   checkValueLabels("AutoChart", "spec.labels.values", l.values);
   checkPointLabels("AutoChart", "spec.labels.points", l.points, "key");
+  // BarChart — RM-113
+  checkOneOf("AutoChart", "spec.labels.comparison", l.comparison, BAR_COMPARISON_LABELS);
+}
+
+// BarChart — RM-113
+const BAR_STACKED_VALUES: readonly unknown[] = [true, false, "percent", "diverging"];
+const BAR_SORT_DIRECTIONS: readonly unknown[] = ["asc", "desc"];
+const BAR_COLOR_BY_SCALES: readonly unknown[] = ["categorical", "sequential", "diverging"];
+const BAR_COMPARISON_LABELS = ["value", "difference", "none"] as const;
+
+/**
+ * `stacked` / `divergingCenter` / `sort` / `groupBy` / `colorBy` / `overlays` /
+ * `comparison` (RM-113) must be well-formed, and a named `divergingCenter` must
+ * be one of the chart's own `Bar` series — the real chart silently falls back
+ * to a half split otherwise, which the double makes loud.
+ */
+export function assertBarRichnessContract(component: string, props: Record<string, unknown>): void {
+  const { stacked, divergingCenter, sort, groupBy, colorBy, overlays, comparison } = props;
+  if (stacked !== undefined && !BAR_STACKED_VALUES.includes(stacked)) {
+    axisViolation(component, "stacked", stacked, 'must be a boolean, "percent" or "diverging"');
+  }
+  if (divergingCenter !== undefined) {
+    if (typeof divergingCenter !== "string") {
+      axisViolation(component, "divergingCenter", divergingCenter, "must be a series key");
+    }
+    const keys: string[] = [];
+    Children.forEach(props.children as ReactNode, (child) => {
+      if (isValidElement(child)) {
+        const key = (child.props as { dataKey?: unknown }).dataKey;
+        if (typeof key === "string") keys.push(key);
+      }
+    });
+    if (keys.length > 0 && !keys.includes(divergingCenter)) {
+      axisViolation(
+        component,
+        "divergingCenter",
+        divergingCenter,
+        `must name a Bar series (${keys.join(", ")})`,
+      );
+    }
+  }
+  if (
+    sort !== undefined &&
+    sort !== "none" &&
+    !BAR_SORT_DIRECTIONS.includes(sort) &&
+    !(
+      typeof sort === "object" &&
+      sort !== null &&
+      typeof (sort as { by?: unknown }).by === "string" &&
+      BAR_SORT_DIRECTIONS.includes((sort as { dir?: unknown }).dir)
+    )
+  ) {
+    axisViolation(component, "sort", sort, 'must be "none", "asc", "desc" or { by, dir }');
+  }
+  if (groupBy !== undefined && typeof groupBy !== "string") {
+    axisViolation(component, "groupBy", groupBy, "must be a column key");
+  }
+  if (colorBy !== undefined) {
+    const c = colorBy as { key?: unknown; scale?: unknown; steps?: unknown } | null;
+    if (
+      typeof c !== "object" ||
+      c === null ||
+      typeof c.key !== "string" ||
+      (c.scale !== undefined && !BAR_COLOR_BY_SCALES.includes(c.scale)) ||
+      (c.steps !== undefined && !isFiniteNumber(c.steps))
+    ) {
+      axisViolation(component, "colorBy", colorBy, "must be { key, scale?, steps? }");
+    }
+  }
+  if (overlays !== undefined) {
+    if (!Array.isArray(overlays)) {
+      axisViolation(component, "overlays", overlays, "must be an array");
+    }
+    overlays.forEach((overlay: unknown, i: number) => {
+      const o = overlay as Record<string, unknown> | null;
+      const ok =
+        o !== null &&
+        typeof o === "object" &&
+        ((o.kind === "value" && typeof o.key === "string") ||
+          (o.kind === "range" && typeof o.lowKey === "string" && typeof o.highKey === "string"));
+      if (!ok) {
+        axisViolation(
+          component,
+          `overlays[${i}]`,
+          overlay,
+          'must be { kind: "value", key } or { kind: "range", lowKey, highKey }',
+        );
+      }
+    });
+  }
+  if (
+    comparison !== undefined &&
+    (typeof comparison !== "object" ||
+      comparison === null ||
+      typeof (comparison as { key?: unknown }).key !== "string")
+  ) {
+    axisViolation(component, "comparison", comparison, "must be { key, label? }");
+  }
 }
 
 // Annotations — RM-111

@@ -22,11 +22,11 @@ vi.mock("@visx/responsive", () => {
 });
 
 import { UNIT_STACK_EMPHASIS } from "../marks";
-import { Bar } from "./bar";
+import { Bar, type BarShowValues } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
-import { resolvePalette } from "./chart-context";
+import { resolvePalette, useChart } from "./chart-context";
 import { Grid } from "./grid";
 import { YAxis } from "./y-axis";
 
@@ -707,5 +707,299 @@ describe("BarChart", () => {
       );
       warn.mockRestore();
     });
+  });
+});
+
+// BarChart — RM-113: percent + diverging stacks, sort, groupBy, colorBy,
+// track, overlays and comparison. jsdom renders at the mocked 560×288.
+describe("BarChart richness (RM-113)", () => {
+  const LIKERT = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
+  const INKS = [
+    "var(--chart-1)",
+    "var(--chart-2)",
+    "var(--chart-mono-3)",
+    "var(--chart-4)",
+    "var(--chart-5)",
+  ];
+  const likertData = ["Q1", "Q2", "Q3", "Q4", "Q5"].map((q, i) => ({
+    q,
+    "Strongly disagree": 5 + i,
+    Disagree: 15 + i * 2,
+    Neutral: 20 + i,
+    Agree: 35 - i * 2,
+    "Strongly agree": 25 - i,
+  }));
+
+  function likertBars() {
+    return LIKERT.map((key, i) => (
+      <Bar animate={false} dataKey={key} fill={INKS[i]} key={key} lineCap="butt" />
+    ));
+  }
+
+  function rectsByFill(container: HTMLElement, fill: string) {
+    return [...container.querySelectorAll(`rect[fill="${fill}"]`)] as SVGRectElement[];
+  }
+
+  const num = (el: Element | undefined, attr: string) => Number(el?.getAttribute(attr));
+
+  it('stacked="diverging" centres the named series on the zero line', () => {
+    const { container } = render(
+      <BarChart
+        data={likertData}
+        divergingCenter="Neutral"
+        orientation="horizontal"
+        stacked="diverging"
+        xDataKey="q"
+      >
+        {likertBars()}
+      </BarChart>,
+    );
+    const zero = container.querySelector("svg g > line");
+    const zeroX = num(zero ?? undefined, "x1");
+    const neutral = rectsByFill(container, "var(--chart-mono-3)");
+    expect(neutral).toHaveLength(5);
+    for (const rect of neutral) {
+      expect(num(rect, "x") + num(rect, "width") / 2).toBeCloseTo(zeroX, 6);
+    }
+    // Disagree sits left of the neutral block, Agree right of it.
+    const disagree = rectsByFill(container, "var(--chart-2)")[0];
+    const agree = rectsByFill(container, "var(--chart-4)")[0];
+    expect(num(disagree, "x") + num(disagree, "width")).toBeCloseTo(num(neutral[0], "x"), 6);
+    expect(num(agree, "x")).toBeCloseTo(num(neutral[0], "x") + num(neutral[0], "width"), 6);
+  });
+
+  it('stacked="percent" ends every stack at the same pixel on a 0–100 % axis', () => {
+    const { container } = render(
+      <BarChart data={likertData} stacked="percent" xDataKey="q">
+        {likertBars()}
+        <YAxis />
+      </BarChart>,
+    );
+    const top = rectsByFill(container, "var(--chart-5)");
+    expect(top).toHaveLength(5);
+    const tops = top.map((rect) => num(rect, "y"));
+    for (const y of tops) {
+      expect(y).toBeCloseTo(tops[0] as number, 6);
+    }
+    const bottom = rectsByFill(container, "var(--chart-1)");
+    const bottoms = bottom.map((rect) => num(rect, "y") + num(rect, "height"));
+    for (const b of bottoms) {
+      expect(b).toBeCloseTo(bottoms[0] as number, 6);
+    }
+    expect(container.textContent).toContain("100%");
+    expect(container.textContent).toContain("0%");
+  });
+
+  it('sort="desc" orders rows by value and colorBy colours them with a key', () => {
+    const data = [
+      { name: "a", v: 10, region: "North" },
+      { name: "b", v: 40, region: "South" },
+      { name: "c", v: 25, region: "North" },
+      { name: "d", v: 5, region: "East" },
+    ];
+    const { container } = render(
+      <BarChart colorBy={{ key: "region" }} data={data} orientation="horizontal" sort="desc">
+        <Bar animate={false} dataKey="v" />
+      </BarChart>,
+    );
+    const rects = [...container.querySelectorAll("svg rect[width]")].filter(
+      (rect) => rect.getAttribute("fill")?.startsWith("var(--chart-") && num(rect, "height") > 0,
+    );
+    const byY = [...rects].sort((a, b) => num(a, "y") - num(b, "y"));
+    const widths = byY.map((rect) => num(rect, "width"));
+    expect([...widths].sort((a, b) => b - a)).toEqual(widths);
+    const fills = new Set(byY.map((rect) => rect.getAttribute("fill")));
+    expect(fills.size).toBe(3);
+    const key = container.querySelector('[data-slot="bar-chart-color-key"]');
+    expect(key?.querySelectorAll("li")).toHaveLength(3);
+    expect(key?.textContent).toContain("South");
+  });
+
+  it("colorBy past six categories falls to the neutral ladder with one warning", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const data = Array.from({ length: 7 }, (_, i) => ({ name: `n${i}`, v: i + 1, cat: `c${i}` }));
+    const { container } = render(
+      <BarChart colorBy={{ key: "cat" }} data={data}>
+        <Bar animate={false} dataKey="v" />
+      </BarChart>,
+    );
+    const fills = [...container.querySelectorAll("svg rect")]
+      .map((rect) => rect.getAttribute("fill") ?? "")
+      .filter((fill) => fill.startsWith("var(--chart-"));
+    expect(fills.length).toBe(7);
+    expect(fills.every((fill) => fill.startsWith("var(--chart-mono-"))).toBe(true);
+    const capWarnings = warn.mock.calls.filter((call) => String(call[0]).includes("cap"));
+    expect(capWarnings).toHaveLength(1);
+    warn.mockRestore();
+  });
+
+  it("groupBy + overlays paints headers, three overlay layers and exposes their legend items", () => {
+    const cars = [
+      { model: "A1", cls: "Small", lo90: 900, hi90: 1300, lo50: 1000, hi50: 1200, avg: 1100 },
+      { model: "B2", cls: "Large", lo90: 1500, hi90: 2300, lo50: 1700, hi50: 2100, avg: 1900 },
+      { model: "A2", cls: "Small", lo90: 950, hi90: 1400, lo50: 1050, hi50: 1250, avg: 1150 },
+    ];
+    let exposed: readonly { kind: string; label: string }[] | undefined;
+    function LegendProbe() {
+      exposed = useChart().legendItems;
+      return null;
+    }
+    const { container } = render(
+      <BarChart
+        data={cars}
+        groupBy="cls"
+        orientation="horizontal"
+        overlays={[
+          { kind: "range", lowKey: "lo90", highKey: "hi90", label: "90 %" },
+          { kind: "range", lowKey: "lo50", highKey: "hi50", label: "50 %" },
+          { kind: "value", key: "avg", label: "Average" },
+        ]}
+        xDataKey="model"
+      >
+        <BarYAxis />
+        <LegendProbe />
+      </BarChart>,
+    );
+    const headers = [...container.querySelectorAll('[data-slot="bar-chart-group-header"]')];
+    expect(headers.map((h) => h.textContent)).toEqual(["Small", "Large"]);
+    expect(container.querySelectorAll('[data-slot="bar-chart-group-separator"]')).toHaveLength(1);
+    const layers = container.querySelectorAll('[data-slot="bar-chart-overlay"]');
+    expect(layers).toHaveLength(3);
+    for (const layer of layers) {
+      expect(layer.querySelectorAll("rect")).toHaveLength(3);
+    }
+    expect(exposed?.filter((item) => item.kind === "overlay").map((item) => item.label)).toEqual([
+      "90 %",
+      "50 %",
+      "Average",
+    ]);
+    // The header rows are never category labels.
+    expect(container.textContent).not.toContain("group:");
+  });
+
+  it("comparison paints a muted column behind each main column with difference labels", () => {
+    const data = [
+      { name: "Jan", v: 120, prev: 100 },
+      { name: "Feb", v: 80, prev: 95 },
+    ];
+    const { container } = render(
+      <BarChart
+        animationDuration={0}
+        comparison={{ key: "prev", label: "2024" }}
+        comparisonLabel="difference"
+        data={data}
+      >
+        <Bar animate={false} dataKey="v" fill="var(--chart-1)" />
+      </BarChart>,
+    );
+    const behind = [...container.querySelectorAll('[data-slot="bar-chart-comparison"] rect')];
+    expect(behind).toHaveLength(2);
+    const main = rectsByFill(container, "var(--chart-1)");
+    expect(main).toHaveLength(2);
+    // The main column is narrower and centred inside the comparison column.
+    const [c0, m0] = [behind[0], main[0]];
+    expect(num(m0, "width")).toBeLessThan(num(c0, "width"));
+    expect(num(m0, "x") + num(m0, "width") / 2).toBeCloseTo(num(c0, "x") + num(c0, "width") / 2, 6);
+  });
+
+  it("track paints one background bar per row to the axis maximum", () => {
+    const { container } = render(
+      <BarChart data={minimalData} orientation="horizontal" track xDataKey="month">
+        <Bar animate={false} dataKey="value" fill="var(--chart-1)" />
+      </BarChart>,
+    );
+    const tracks = [...container.querySelectorAll('[data-slot="bar-chart-track"] rect')];
+    expect(tracks).toHaveLength(3);
+    const widths = new Set(tracks.map((rect) => rect.getAttribute("width")));
+    expect(widths.size).toBe(1);
+  });
+
+  it("leaves a plain stacked chart on the cumulative path (no extents published)", () => {
+    let extents: unknown = "unset";
+    function Probe() {
+      extents = useChart().stackExtents;
+      return null;
+    }
+    render(
+      <BarChart data={minimalData} stacked xDataKey="month">
+        <Bar animate={false} dataKey="value" />
+        <Probe />
+      </BarChart>,
+    );
+    expect(extents).toBeUndefined();
+  });
+
+  // Integration with RM-110: one showValues type and one label path.
+  it("labels percent segments through the shared showValues spec: centred shares, hover waits", () => {
+    const labelled = (showValues: BarShowValues) =>
+      LIKERT.map((key, i) => (
+        <Bar
+          animate={false}
+          dataKey={key}
+          fill={INKS[i]}
+          key={key}
+          lineCap="butt"
+          showValues={showValues}
+        />
+      ));
+    const { container, rerender } = render(
+      <BarChart data={likertData} stacked="percent" xDataKey="q">
+        {labelled({ placement: "outside" })}
+      </BarChart>,
+    );
+    const labels = [...container.querySelectorAll(".text-chart-value")];
+    expect(labels.length).toBeGreaterThan(0);
+    for (const label of labels) {
+      expect(label.textContent).toMatch(/%$/);
+    }
+    // Q1's "Strongly agree" segment (25 of 100) centres its "25%" share
+    // label, even though the spec asks for "outside".
+    const segment = rectsByFill(container, "var(--chart-5)")[0];
+    const share = labels.find(
+      (label) =>
+        label.textContent === "25%" &&
+        Math.abs(num(label, "y") - (num(segment, "y") + num(segment, "height") / 2)) < 1e-6,
+    );
+    expect(share).toBeDefined();
+    expect(num(share, "x")).toBeCloseTo(num(segment, "x") + num(segment, "width") / 2, 6);
+    rerender(
+      <BarChart data={likertData} stacked="percent" xDataKey="q">
+        {labelled({ visibility: "hover" })}
+      </BarChart>,
+    );
+    expect(container.querySelectorAll(".text-chart-value")).toHaveLength(0);
+  });
+
+  // Integration with RM-111: the annotations prop wraps the plot that carries
+  // the RM-113 props, and a row note follows its category through a sort.
+  it("keeps the comparison layer and moves an annotation row note with sort", () => {
+    const data = [
+      { name: "Alpha", v: 30, prev: 25 },
+      { name: "Beta", v: 80, prev: 60 },
+    ];
+    const noteY = (sort: "none" | "desc") => {
+      const { container } = render(
+        <BarChart
+          animationDuration={0}
+          annotations={[{ kind: "row", category: "Alpha", text: "Start" }]}
+          comparison={{ key: "prev" }}
+          data={data}
+          orientation="horizontal"
+          sort={sort}
+        >
+          <Bar animate={false} dataKey="v" fill="var(--chart-1)" />
+        </BarChart>,
+      );
+      expect(container.querySelectorAll('[data-slot="bar-chart-comparison"] rect')).toHaveLength(2);
+      const note = container.querySelector('[data-slot="chart-annotations-row"]');
+      expect(note?.textContent).toBe("Start");
+      const y = Number(note?.getAttribute("y"));
+      cleanup();
+      return y;
+    };
+    const unsorted = noteY("none");
+    const sorted = noteY("desc");
+    expect(Number.isFinite(unsorted) && Number.isFinite(sorted)).toBe(true);
+    expect(sorted).toBeGreaterThan(unsorted);
   });
 });

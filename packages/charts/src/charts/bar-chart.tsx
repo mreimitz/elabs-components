@@ -36,13 +36,39 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import { useChartAutoSummary } from "./chart-a11y";
 import {
   chartCssVars,
+  type ChartColorBy,
   type ChartPalette,
   ChartProvider,
   type LineConfig,
   type Margin,
+  resolveColorBy,
   resolvePalette,
   type TooltipData,
 } from "./chart-context";
+import { arrangeBarGroups, BarGroupLayer, isBarGroupHeaderRow } from "./bar-groups";
+import {
+  type BarComparison,
+  type BarComparisonLabel,
+  BarColorKey,
+  BarComparisonLabels,
+  BarComparisonLayer,
+  type BarLayerGeometry,
+  type BarOverlay,
+  BarOverlayLayer,
+  BarTotalsLayer,
+  BarTrackLayer,
+  buildBarLegendItems,
+  collectOverlayExtent,
+} from "./bar-overlays";
+import {
+  type BarSort,
+  type BarStacked,
+  type BarStackOrder,
+  computeBarStackLayout,
+  orderBarRows,
+  resolveStackDomain,
+  resolveStackMode,
+} from "./bar-stacking";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -87,6 +113,18 @@ import {
 
 export type BarOrientation = "vertical" | "horizontal";
 
+// BarChart — RM-113: the richness vocabulary's public types, re-exported so
+// the charts barrel's `bar-chart` line carries them to consumers.
+export type {
+  BarComparison,
+  BarComparisonLabel,
+  BarOverlay,
+  BarRangeOverlay,
+  BarValueOverlay,
+} from "./bar-overlays";
+export type { BarSort, BarSortDirection, BarStacked, BarStackOrder } from "./bar-stacking";
+export type { ChartColorBy, ChartLegendEntry } from "./chart-context";
+
 export interface BarChartProps extends ChartSelectionProps {
   /** Data array - each item should have an x-axis key and numeric values */
   data: Record<string, unknown>[];
@@ -130,10 +168,46 @@ export interface BarChartProps extends ChartSelectionProps {
   barWidth?: number;
   /** Bar chart orientation. Default: "vertical" */
   orientation?: BarOrientation;
-  /** Whether to stack bars instead of grouping them. Default: false */
-  stacked?: boolean;
+  /**
+   * Stack bars instead of grouping them. `true` stacks raw values;
+   * `"percent"` normalises each category to 100 % (value axis 0–100 %, a
+   * `YAxis` without its own format prints percent, `showValues` prints
+   * shares); `"diverging"` centres `divergingCenter` on the zero line with the
+   * series declared before it growing left/down and those after it right/up
+   * (Likert rows). Default: false
+   */
+  stacked?: BarStacked;
   /** Gap between stacked bar segments in pixels. Default: 0 */
   stackGap?: number;
+  /** `stacked="diverging"`: the series straddling zero (e.g. `"Neutral"`). Unset: the series split in half. */
+  divergingCenter?: string;
+  /** Segment order inside each stack (`stacked`/`"percent"`). Default: `"data"` (declaration order). */
+  stackOrder?: BarStackOrder;
+  /** Print each stack's total just past its end. Default: false */
+  showTotals?: boolean;
+  /** Row order: by value (`"asc"`/`"desc"`, the stack total when stacked) or `{ by, dir }`. Default: `"none"`. */
+  sort?: BarSort;
+  /** Reverse the (sorted) row order. Default: false */
+  reverse?: boolean;
+  /**
+   * Gather rows by this column: horizontal bars get a bold header row per
+   * group, vertical columns a header above each group; groups are separated
+   * by a hairline and keep their own (sorted) order.
+   */
+  groupBy?: string;
+  /**
+   * Colour each bar by another column through `resolvePalette` (six hues,
+   * then the neutral ladder with a dev warning) and show a colour key.
+   */
+  colorBy?: ChartColorBy;
+  /** Paint a `--chart-mono-2` track behind each bar to the axis maximum ("to 100 %"). Default: false */
+  track?: boolean;
+  /** Value markers and range spans drawn per bar on top of the series; listed in `legendItems`. */
+  overlays?: BarOverlay[];
+  /** A muted prior-period column behind each main column (the main column narrows to make room). */
+  comparison?: BarComparison;
+  /** Grey label beside each comparison pair. Default: `"none"`. */
+  comparisonLabel?: BarComparisonLabel;
   /** Child components (Bar, Grid, ChartTooltip, etc.) */
   children: ReactNode;
   /** Reports reveal lifecycle for OG screenshots and loading orchestration. */
@@ -241,6 +315,37 @@ function applyBarPalette(children: ReactNode, palette: ChartPalette | undefined)
     const color = colors[colorIndex];
     colorIndex += 1;
     return cloneElement(child, { fill: color });
+  });
+}
+
+/** Each side of the band a main column gives up to its `comparison` column (RM-113). */
+const COMPARISON_CROSS_INSET = 0.2;
+
+/**
+ * `stacked="percent"` (RM-113): a direct `YAxis` child that set no format of
+ * its own prints percent — the scale is in fraction space, so "0.4" would be
+ * a lie of omission. An explicit `valueFormat`/`formatValue` always wins.
+ */
+function applyPercentAxisFormat(children: ReactNode, percent: boolean): ReactNode {
+  if (!percent) {
+    return children;
+  }
+  return Children.map(children, (child) => {
+    if (!isValidElement(child) || typeof child.type !== "function") {
+      return child;
+    }
+    const childType = child.type as { displayName?: string; name?: string };
+    const props = child.props as { valueFormat?: unknown; formatValue?: unknown };
+    if (
+      (childType.displayName || childType.name) !== "YAxis" ||
+      props.valueFormat !== undefined ||
+      props.formatValue !== undefined
+    ) {
+      return child;
+    }
+    return cloneElement(child as ReactElement<{ valueFormat?: string }>, {
+      valueFormat: "percent",
+    });
   });
 }
 
@@ -457,8 +562,19 @@ interface ChartInnerProps {
   barGap: number;
   barWidthProp?: number;
   orientation: BarOrientation;
-  stacked: boolean;
+  stacked: BarStacked;
   stackGap: number;
+  divergingCenter?: string;
+  stackOrder: BarStackOrder;
+  showTotals: boolean;
+  sort: BarSort;
+  reverse: boolean;
+  groupBy?: string;
+  colorBy?: ChartColorBy;
+  track: boolean;
+  overlays?: BarOverlay[];
+  comparison?: BarComparison;
+  comparisonLabel: BarComparisonLabel;
   children: ReactNode;
   containerRef: React.RefObject<HTMLDivElement | null>;
   chartStatus: ChartStatus;
@@ -524,6 +640,17 @@ const ChartCore = memo(function ChartCore({
   orientation,
   stacked,
   stackGap,
+  divergingCenter,
+  stackOrder,
+  showTotals,
+  sort,
+  reverse,
+  groupBy,
+  colorBy,
+  track,
+  overlays,
+  comparison,
+  comparisonLabel,
   children: childrenProp,
   containerRef,
   chartStatus,
@@ -545,7 +672,19 @@ const ChartCore = memo(function ChartCore({
   // default colour. Every other extraction below reads FROM this, so a
   // resolved default reaches the tooltip dot colour, the axis and the plot
   // alike.
-  const children = useMemo(() => applyBarPalette(childrenProp, palette), [childrenProp, palette]);
+  // RM-113: the stack layout mode, and whether this chart draws from the
+  // extents layout at all. A plain `stacked` (no order, totals, overlays,
+  // comparison or track) keeps the pre-RM-113 cumulative path byte-identical.
+  const stackMode = resolveStackMode(stacked);
+  const richLayout =
+    Boolean(stackMode && (stackMode !== "stacked" || stackOrder !== "data" || showTotals)) ||
+    Boolean(overlays && overlays.length > 0) ||
+    Boolean(comparison) ||
+    track;
+  const children = useMemo(
+    () => applyPercentAxisFormat(applyBarPalette(childrenProp, palette), stackMode === "percent"),
+    [childrenProp, palette, stackMode],
+  );
 
   // Extract bar configs synchronously from children. `children` gets a new
   // identity from React on every parent render even when nothing relevant
@@ -560,7 +699,7 @@ const ChartCore = memo(function ChartCore({
   // While loading, render layout-shaped placeholder categories/bars instead of
   // the (likely empty) real data — mirrors the chart dataKeys so the
   // user-supplied Bar/Grid/BarXAxis children keep rendering unmodified.
-  const data = useMemo(() => {
+  const baseData = useMemo(() => {
     if (!isLoadingStatus) {
       return dataProp;
     }
@@ -571,6 +710,57 @@ const ChartCore = memo(function ChartCore({
       dataKeys: dataKeys.length > 0 ? dataKeys : undefined,
     });
   }, [dataProp, isLoadingStatus, lines, xDataKey]);
+
+  // RM-113: `sort` / `reverse`, then `groupBy` (horizontal bars get one
+  // header row per group). Neither set returns `baseData` itself.
+  const data = useMemo(() => {
+    if (isLoadingStatus) {
+      return baseData;
+    }
+    const ordered = orderBarRows(baseData, {
+      sort,
+      reverse,
+      keys: lines.map((line) => line.dataKey),
+      stacked: Boolean(stackMode),
+    }) as Record<string, unknown>[];
+    return groupBy ? arrangeBarGroups(ordered, groupBy, xDataKey, isHorizontal) : ordered;
+  }, [baseData, groupBy, isHorizontal, isLoadingStatus, lines, reverse, sort, stackMode, xDataKey]);
+
+  const stackLayout = useMemo(
+    () =>
+      stackMode
+        ? computeBarStackLayout({
+            data,
+            keys: lines.map((line) => line.dataKey),
+            mode: stackMode,
+            stackOrder,
+            divergingCenter,
+          })
+        : null,
+    [data, divergingCenter, lines, stackMode, stackOrder],
+  );
+
+  const colorResolution = useMemo(
+    () =>
+      colorBy && !isLoadingStatus
+        ? resolveColorBy(
+            data.filter((row) => !isBarGroupHeaderRow(row)),
+            colorBy,
+          )
+        : null,
+    [colorBy, data, isLoadingStatus],
+  );
+
+  const legendItems = useMemo(
+    () =>
+      buildBarLegendItems({
+        lines,
+        colorKey: colorResolution?.items,
+        comparison,
+        overlays,
+      }),
+    [colorResolution, comparison, lines, overlays],
+  );
 
   // The margins the caller asked for, squeezed to whatever box the chart was
   // actually given. Below ~110px of height the fixed 40/40 pair alone exceeds
@@ -639,7 +829,11 @@ const ChartCore = memo(function ChartCore({
   const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
 
   const categoryEntries = useMemo(
-    () => data.map((d, index) => ({ label: categoryAccessor(d), index })),
+    () =>
+      data
+        .map((d, index) => ({ label: categoryAccessor(d), index, header: isBarGroupHeaderRow(d) }))
+        .filter((entry) => !entry.header)
+        .map(({ label, index }) => ({ label, index })),
     [data, categoryAccessor],
   );
 
@@ -694,6 +888,29 @@ const ChartCore = memo(function ChartCore({
   // `resolveBarValueDomain` reproduces the pre-RM-027 domain exactly for
   // every all-positive chart (see its own doc comment).
   const { maxValue, minValue } = useMemo(() => {
+    // RM-113: the extents layout (and every overlay / comparison column)
+    // decides the extent; both stay zero-including, so the domain below is
+    // still `resolveBarValueDomain`'s.
+    if (richLayout) {
+      const extra = collectOverlayExtent(data, overlays, comparison);
+      let max = extra.max;
+      let min = extra.min;
+      if (stackLayout) {
+        max = Math.max(max, stackLayout.max);
+        min = Math.min(min, stackLayout.min);
+      } else {
+        for (const line of lines) {
+          for (const d of data) {
+            const value = d[line.dataKey];
+            if (typeof value === "number") {
+              max = Math.max(max, value);
+              min = Math.min(min, value);
+            }
+          }
+        }
+      }
+      return { maxValue: max, minValue: min };
+    }
     if (stacked) {
       // For stacked bars, sum the POSITIVE and NEGATIVE segments at each
       // category SEPARATELY — a diverging stack has an independent positive
@@ -739,7 +956,7 @@ const ChartCore = memo(function ChartCore({
       }
     }
     return { maxValue: max, minValue: min };
-  }, [data, lines, stacked]);
+  }, [comparison, data, lines, overlays, richLayout, stackLayout, stacked]);
 
   // Any negative value anywhere drives the zero-line auto-on default below.
   const hasNegativeValues = minValue < 0;
@@ -766,8 +983,14 @@ const ChartCore = memo(function ChartCore({
   }, [maxValue, minValue, valueAxisConfigs]);
 
   // Value scale (linear) - for the value axis
+  // Percent mode draws in fraction space on EXACTLY [0, 1] — zero-based, and
+  // every stack ends at the same pixel.
+  const stackDomain = resolveStackDomain(stackLayout);
   const valueScale = useMemo(() => {
     const range = isHorizontal ? [0, innerWidth] : [innerHeight, 0];
+    if (stackDomain && !primaryValueAxis) {
+      return scaleLinear({ range, domain: stackDomain });
+    }
     if (primaryValueAxis) {
       return scaleLinear({ range, domain: primaryValueAxis.domain });
     }
@@ -776,7 +999,7 @@ const ChartCore = memo(function ChartCore({
       domain: resolveBarValueDomain(maxValue, minValue),
       nice: true,
     });
-  }, [innerWidth, innerHeight, maxValue, minValue, isHorizontal, primaryValueAxis]);
+  }, [innerWidth, innerHeight, maxValue, minValue, isHorizontal, primaryValueAxis, stackDomain]);
 
   const verticalValueAxes = useMemo(() => {
     if (isHorizontal || !hasValueAxisConfigs) {
@@ -809,7 +1032,9 @@ const ChartCore = memo(function ChartCore({
   }, [data.length, isHorizontal, primaryValueAxis, verticalValueAxes]);
 
   const yScales = useMemo(() => {
-    if (isHorizontal) {
+    // A rich layout (RM-113) is one value scale: stacks, overlays and the
+    // comparison column all read the same axis.
+    if (isHorizontal || richLayout) {
       return wrapSingleYScale(valueScale);
     }
     if (verticalValueAxes) {
@@ -825,7 +1050,7 @@ const ChartCore = memo(function ChartCore({
       innerHeight,
       resolveDomain: (dataKeys) => resolveBarAxisDomain(data, dataKeys),
     });
-  }, [data, innerHeight, isHorizontal, lines, valueScale, verticalValueAxes]);
+  }, [data, innerHeight, isHorizontal, lines, richLayout, valueScale, verticalValueAxes]);
 
   const primaryYScale = getPrimaryYScale(yScales, valueScale);
 
@@ -943,6 +1168,12 @@ const ChartCore = memo(function ChartCore({
       if (!d) {
         return;
       }
+      if (isBarGroupHeaderRow(d)) {
+        clearTooltip();
+        return;
+      }
+      // RM-113: a rich stack reads its segment ends straight off the layout.
+      const extentsAt = richLayout ? stackLayout?.extents.get(clampedIndex) : undefined;
 
       // Calculate positions for each bar
       const yPositions: Record<string, number> = {};
@@ -964,7 +1195,8 @@ const ChartCore = memo(function ChartCore({
             if (typeof value === "number") {
               cumulative += value;
               const axisScale = yScales[normalizeYAxisId(line.yAxisId)] ?? valueScale;
-              xPositions[line.dataKey] = axisScale(cumulative) ?? 0;
+              const end = extentsAt?.get(line.dataKey)?.[1] ?? cumulative;
+              xPositions[line.dataKey] = axisScale(end) ?? 0;
               yPositions[line.dataKey] = barPos + bandWidth / 2;
             }
           }
@@ -989,8 +1221,9 @@ const ChartCore = memo(function ChartCore({
           if (typeof value === "number") {
             cumulative += value;
             const axisScale = yScales[normalizeYAxisId(line.yAxisId)] ?? primaryYScale;
-            const gapOffset = seriesIdx * stackGap;
-            yPositions[line.dataKey] = (axisScale(cumulative) ?? 0) - gapOffset;
+            const gapOffset = extentsAt ? 0 : seriesIdx * stackGap;
+            const end = extentsAt?.get(line.dataKey)?.[1] ?? cumulative;
+            yPositions[line.dataKey] = (axisScale(end) ?? 0) - gapOffset;
             seriesIdx++;
           }
         }
@@ -1044,8 +1277,11 @@ const ChartCore = memo(function ChartCore({
       stacked,
       stackGap,
       scheduleTooltip,
+      clearTooltip,
       yScales,
       primaryYScale,
+      richLayout,
+      stackLayout,
     ],
   );
 
@@ -1120,13 +1356,34 @@ const ChartCore = memo(function ChartCore({
     // from — reserved space and painted labels can never disagree.
     categoryAxisPlan,
     orientation,
-    stacked,
+    stacked: Boolean(stackMode),
     stackOffsets,
+    // BarChart — RM-113
+    stackMode: stackMode ?? undefined,
+    stackExtents: richLayout && stackLayout ? stackLayout.extents : undefined,
+    barColorOf: colorResolution?.colorOf,
+    barCrossInset: comparison ? COMPARISON_CROSS_INSET : undefined,
+    legendItems,
     // Loading chrome (Grid shimmer/loadingStroke) reads chartPhase off context.
     chartPhase: (isLoadingStatus ? "loading" : isLoaded ? "ready" : "revealing") as ChartPhase,
     chartStatus,
     loadingLabel,
   };
+
+  const layerGeometry: BarLayerGeometry = {
+    rows: data,
+    bandOf: (row) => categoryScale(categoryAccessor(row)),
+    rowKey: categoryAccessor,
+    bandWidth,
+    valueScale: isHorizontal ? valueScale : primaryYScale,
+    isHorizontal,
+  };
+  // The track runs to the value axis' own maximum — 100 % in percent mode.
+  const valueAxisMax = (isHorizontal ? valueScale : primaryYScale).domain()[1] ?? 0;
+  const colorKey =
+    colorResolution && colorResolution.items.length > 0 ? (
+      <BarColorKey items={colorResolution.items} />
+    ) : null;
 
   const svg = (
     <svg aria-hidden="true" height={height} width={width}>
@@ -1158,8 +1415,44 @@ const ChartCore = memo(function ChartCore({
         )}
 
         {annotationBackChildren}
+        {/* RM-113 background layers: the track to the axis max, then the
+            muted comparison column — both under the series. */}
+        {track && !isLoadingStatus && <BarTrackLayer {...layerGeometry} max={valueAxisMax} />}
+        {comparison && !isLoadingStatus && (
+          <BarComparisonLayer {...layerGeometry} comparison={comparison} />
+        )}
+        {groupBy && !isLoadingStatus && (
+          <BarGroupLayer
+            bandOf={layerGeometry.bandOf}
+            bandWidth={bandWidth}
+            groupBy={groupBy}
+            innerHeight={innerHeight}
+            innerWidth={innerWidth}
+            isHorizontal={isHorizontal}
+            marginLeft={margin.left}
+            rows={data}
+            step={categoryScale.step()}
+          />
+        )}
+
         {/* SVG children rendered before markers */}
         {preOverlayChildren}
+        {/* RM-113 foreground layers: overlays, totals and comparison labels. */}
+        {overlays && overlays.length > 0 && !isLoadingStatus && (
+          <BarOverlayLayer {...layerGeometry} overlays={overlays} />
+        )}
+        {showTotals && stackLayout && !isLoadingStatus && isLoaded && (
+          <BarTotalsLayer {...layerGeometry} layout={stackLayout} />
+        )}
+        {comparison && comparisonLabel !== "none" && lines[0] && !isLoadingStatus && isLoaded && (
+          <BarComparisonLabels
+            {...layerGeometry}
+            comparison={comparison}
+            mainKey={lines[0].dataKey}
+            mode={comparisonLabel}
+          />
+        )}
+
         {annotationFrontChildren}
 
         {/* Markers rendered last so they're on top for interaction */}
@@ -1170,12 +1463,13 @@ const ChartCore = memo(function ChartCore({
 
   return (
     <ChartProvider value={contextValue}>
-      {datapointsEnabled ? (
+      {datapointsEnabled || colorKey ? (
         // Positioned SIBLING of the aria-hidden <svg>, never a child of it —
         // a focusable inside aria-hidden is the axe `aria-hidden-focus` failure.
         <div className="relative" style={{ width, height }}>
           {svg}
-          <ChartDatapointLayer />
+          {colorKey}
+          {datapointsEnabled ? <ChartDatapointLayer /> : null}
         </div>
       ) : (
         svg
@@ -1205,6 +1499,17 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     orientation = "vertical",
     stacked = false,
     stackGap = 0,
+    divergingCenter,
+    stackOrder = "data",
+    showTotals = false,
+    sort = "none",
+    reverse = false,
+    groupBy,
+    colorBy,
+    track = false,
+    overlays,
+    comparison,
+    comparisonLabel = "none",
     children,
     onPhaseChange,
     copyValueOnActivate,
@@ -1301,6 +1606,17 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
               revealSignature={revealSignature}
               stacked={stacked}
               stackGap={stackGap}
+              divergingCenter={divergingCenter}
+              stackOrder={stackOrder}
+              showTotals={showTotals}
+              sort={sort}
+              reverse={reverse}
+              groupBy={groupBy}
+              colorBy={colorBy}
+              track={track}
+              overlays={overlays}
+              comparison={comparison}
+              comparisonLabel={comparisonLabel}
               width={width}
               xDataKey={xDataKey}
             >

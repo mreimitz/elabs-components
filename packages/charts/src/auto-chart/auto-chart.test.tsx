@@ -11,7 +11,7 @@
  *
  * Real render/interaction/a11y is covered by the Storybook stories.
  */
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ── @visx/responsive → fixed 560×288 ─────────────────────────────────────────
@@ -1182,5 +1182,41 @@ describe("AutoChart legend vs series end labels", () => {
     expect(legendOf({ ...base, labels: { series: "none" } })).not.toBeNull();
     cleanup();
     expect(legendOf({ ...base, labels: { series: "end" } })).toBeNull();
+  });
+});
+
+// BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.
+describe("AutoChart bar comparison labels", () => {
+  const sales = [
+    { region: "North", now: 40, prev: 22 },
+    { region: "South", now: 18, prev: 27 },
+  ];
+
+  it("paints grey difference labels from labels.comparison and none without it", async () => {
+    const spec: ChartSpec = {
+      type: "bar",
+      data: sales,
+      x: "region",
+      series: ["now"],
+      comparison: { key: "prev" },
+    };
+    const { container } = render(
+      <AutoChart spec={{ ...spec, labels: { comparison: "difference" } }} />,
+    );
+    // The labels wait for the bars' enter animation to settle.
+    await waitFor(
+      () => {
+        const labels = [
+          ...container.querySelectorAll('[data-slot="bar-chart-comparison-label"]'),
+        ].map((label) => label.textContent);
+        expect(labels).toEqual(["+18", "−9"]);
+      },
+      { timeout: 3000 },
+    );
+    cleanup();
+    const plain = render(<AutoChart spec={spec} />);
+    expect(
+      plain.container.querySelectorAll('[data-slot="bar-chart-comparison-label"]'),
+    ).toHaveLength(0);
   });
 });

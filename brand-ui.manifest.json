@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T23:01:05.502Z",
+  "generatedAt": "2026-09-18T23:19:35.579Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17374,7 +17374,7 @@
               "name": "showValues",
               "optional": true,
               "type": "BarShowValues",
-              "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off."
+              "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled."
             },
             {
               "name": "unit",
@@ -17512,14 +17512,80 @@
             {
               "name": "stacked",
               "optional": true,
-              "type": "boolean",
-              "description": "Whether to stack bars instead of grouping them. Default: false"
+              "type": "BarStacked",
+              "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `showValues` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false"
             },
             {
               "name": "stackGap",
               "optional": true,
               "type": "number",
               "description": "Gap between stacked bar segments in pixels. Default: 0"
+            },
+            {
+              "name": "divergingCenter",
+              "optional": true,
+              "type": "string",
+              "description": "`stacked=\"diverging\"`: the series straddling zero (e.g. `\"Neutral\"`). Unset: the series split in half."
+            },
+            {
+              "name": "stackOrder",
+              "optional": true,
+              "type": "BarStackOrder",
+              "description": "Segment order inside each stack (`stacked`/`\"percent\"`). Default: `\"data\"` (declaration order)."
+            },
+            {
+              "name": "showTotals",
+              "optional": true,
+              "type": "boolean",
+              "description": "Print each stack's total just past its end. Default: false"
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "BarSort",
+              "description": "Row order: by value (`\"asc\"`/`\"desc\"`, the stack total when stacked) or `{ by, dir }`. Default: `\"none\"`."
+            },
+            {
+              "name": "reverse",
+              "optional": true,
+              "type": "boolean",
+              "description": "Reverse the (sorted) row order. Default: false"
+            },
+            {
+              "name": "groupBy",
+              "optional": true,
+              "type": "string",
+              "description": "Gather rows by this column: horizontal bars get a bold header row per group, vertical columns a header above each group; groups are separated by a hairline and keep their own (sorted) order."
+            },
+            {
+              "name": "colorBy",
+              "optional": true,
+              "type": "ChartColorBy",
+              "description": "Colour each bar by another column through `resolvePalette` (six hues, then the neutral ladder with a dev warning) and show a colour key."
+            },
+            {
+              "name": "track",
+              "optional": true,
+              "type": "boolean",
+              "description": "Paint a `--chart-mono-2` track behind each bar to the axis maximum (\"to 100 %\"). Default: false"
+            },
+            {
+              "name": "overlays",
+              "optional": true,
+              "type": "BarOverlay[]",
+              "description": "Value markers and range spans drawn per bar on top of the series; listed in `legendItems`."
+            },
+            {
+              "name": "comparison",
+              "optional": true,
+              "type": "BarComparison",
+              "description": "A muted prior-period column behind each main column (the main column narrows to make room)."
+            },
+            {
+              "name": "comparisonLabel",
+              "optional": true,
+              "type": "BarComparisonLabel",
+              "description": "Grey label beside each comparison pair. Default: `\"none\"`."
             },
             {
               "name": "children",

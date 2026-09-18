@@ -504,6 +504,8 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
+          // BarChart — RM-113
+          {...barRichnessProps(spec)}
         >
           {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
           <Grid horizontal={!isHorizontal} mode={axisProps.gridMode} vertical={isHorizontal} />
@@ -521,7 +523,10 @@ function renderChart(
             plot x-pixels vertically. The bottom value axis a horizontal bar
             chart wants is its own component; tracked separately.
           */}
-          {isHorizontal ? null : <YAxis formatValue={yFormat} {...axisProps.y} />}
+          {isHorizontal ? null : (
+            // A percent stack's axis is in fraction space: let BarChart format it.
+            <YAxis formatValue={stacked === "percent" ? undefined : yFormat} {...axisProps.y} />
+          )}
           {annotationLayer(spec)}
           <ChartTooltip />
         </BarChart>
@@ -898,6 +903,33 @@ function renderChart(
     //    value labels are what separates it from `bar`: the crossing is the
     //    story, so each bar states which side of zero it landed on.
     case "diverging-bar": {
+      // RM-113: a named middle series makes this a Likert stack, every
+      // series centred on the neutral one.
+      if (stacked === "diverging" && series.length >= 2) {
+        return (
+          <BarChart
+            plotHeight={plotHeight}
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
+            onDatapointClick={links.onDatapointClick}
+            data={resolvedData}
+            xDataKey={x}
+            orientation="horizontal"
+            accessibleLabel={spec.title}
+            accessibleDescription={spec.description}
+            copyValueOnActivate={copyValueOnActivate}
+            {...barRichnessProps(spec)}
+            stacked="diverging"
+          >
+            <Grid mode={axisProps.gridMode} vertical />
+            {series.map((s) => (
+              <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="butt" />
+            ))}
+            <BarYAxis />
+            <ChartTooltip />
+          </BarChart>
+        );
+      }
       const valueKey = series[0]?.key ?? "";
       const color = series[0]?.color ?? "var(--chart-1)";
       return (
@@ -1315,3 +1347,19 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     </div>
   );
 });
+
+// BarChart — RM-113
+/** The `ChartSpec` bar-richness fields, as `BarChart` props (unset stays unset). */
+function barRichnessProps(spec: ChartSpec) {
+  return {
+    divergingCenter: spec.divergingCenter,
+    sort: spec.sort,
+    groupBy: spec.groupBy,
+    colorBy: spec.colorBy,
+    overlays: spec.overlays,
+    comparison: spec.comparison
+      ? { key: spec.comparison.key, label: spec.comparison.label }
+      : undefined,
+    comparisonLabel: spec.labels?.comparison,
+  };
+}
