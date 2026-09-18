@@ -27,6 +27,7 @@ import {
   resolveTasteProfile,
   tasteSearchDirs,
 } from "./core.mjs";
+import { searchExports, renderComponentArm } from "./search.mjs";
 import { scanText } from "./audit.mjs";
 import { matchChartFor, renderChartForText } from "./chart-for.mjs";
 import {
@@ -245,14 +246,11 @@ function toolSearch(ctx, q) {
   if (!query) return { ...textContent("usage: search { query }"), isError: true };
   const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
-  const matches = flat(manifest).filter(
-    (r) => r.name.toLowerCase().includes(query) || r.pkg.toLowerCase().includes(query),
-  );
-  // Same fix as the CLI's cmdSearch() (fix round 1 for #86/#89): keep
-  // component/hook rows in their own independently-truncated bucket so a
-  // type/otherExport match can never crowd a real component out of the list.
-  const rows = matches.filter((r) => r.kind === "component" || r.kind === "hook");
-  const typeRows = matches.filter((r) => r.kind === "type" || r.kind === "export");
+  // Same ranked search as the CLI's cmdSearch() (lib/search.mjs); components/hooks
+  // and types/exports stay independently-truncated buckets (#86/#89).
+  const result = searchExports(manifest, String(q || ""));
+  const rows = result.rows;
+  const typeRows = result.typeRows;
   const reg = (manifest.registry || []).filter((r) =>
     `${r.name} ${r.title} ${r.description}`.toLowerCase().includes(query),
   );
@@ -265,9 +263,7 @@ function toolSearch(ctx, q) {
   // (RM-088 follow-up 1, validator FAIL #1: `search dashboard` must surface the
   // `dashboard-spec` verbs over MCP too, not just the CLI).
   const verbs = matchCliVerbs(manifest, query);
-  const lines = [`Components/hooks matching "${query}":`];
-  for (const r of rows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
-  if (!rows.length) lines.push("  (none)");
+  const lines = renderComponentArm(query, result, 40);
   if (typeRows.length) {
     lines.push("", `Types/other exports matching "${query}":`);
     for (const r of typeRows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);

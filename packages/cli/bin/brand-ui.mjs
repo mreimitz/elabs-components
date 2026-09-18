@@ -36,6 +36,7 @@ import {
   matchTemplates,
   matchCliVerbs,
 } from "../lib/core.mjs";
+import { searchExports, renderComponentArm, NO_MATCH_GUIDANCE } from "../lib/search.mjs";
 import { writeContext, checkContext } from "../lib/context.mjs";
 import { resolveAllProps } from "../lib/docgen.mjs";
 import { scanText } from "../lib/audit.mjs";
@@ -296,19 +297,13 @@ function cmdSearch() {
       "search: no manifest (run inside the monorepo or install @elabs-ai/components-cli).",
     );
   if (!q) return console.error("usage: brand-ui search <query>");
-  const matches = flat(manifest).filter(
-    (r) => r.name.toLowerCase().includes(q) || r.pkg.toLowerCase().includes(q),
-  );
-  // #86 added `type`/`export` rows to flat() alongside `component`/`hook` rows.
-  // Keeping them in ONE list meant a type-heavy package (e.g. @elabs-ai/components-ai's
-  // many `*Props` types) could fill the truncation cap below and crowd real
-  // components out of the output entirely (a real regression: `search Button`
-  // stopped returning `Button` itself). Split into two independently-truncated
-  // buckets so a type/otherExport match can never displace a component/hook
-  // match — this keeps the component/hook arm byte-for-byte what it was before
-  // #86 (the brief's "purely additive" acceptance criterion).
-  const rows = matches.filter((r) => r.kind === "component" || r.kind === "hook");
-  const typeRows = matches.filter((r) => r.kind === "type" || r.kind === "export");
+  // Ranked, word-aware, vocabulary-bridged (lib/search.mjs) — a plain substring
+  // filter answered "date range picker" with "(none)" while DateRangePicker shipped.
+  // Components/hooks and types/exports/constants stay two independently-truncated
+  // buckets (#86) so a type-heavy package can never crowd a component out.
+  const result = searchExports(manifest, args.join(" "));
+  const rows = result.rows;
+  const typeRows = result.typeRows;
   const reg = manifest.registry.filter((r) =>
     (r.name + " " + r.title + " " + r.description).toLowerCase().includes(q),
   );
@@ -328,15 +323,15 @@ function cmdSearch() {
   if (json)
     return out({
       components: rows,
+      nearest: result.nearest,
+      ...(rows.length ? {} : { guidance: NO_MATCH_GUIDANCE }),
       types: typeRows,
       registry: reg,
       playbooks: books,
       templates,
       cliVerbs: verbs,
     });
-  console.log(`Components/hooks matching "${q}":`);
-  for (const r of rows.slice(0, 30)) console.log(`  ${r.name}  (${r.pkg} · ${r.kind})`);
-  if (!rows.length) console.log("  (none)");
+  for (const line of renderComponentArm(q, result, 30)) console.log(line);
   if (typeRows.length) {
     console.log(`\nTypes/other exports matching "${q}":`);
     for (const r of typeRows.slice(0, 30)) console.log(`  ${r.name}  (${r.pkg} · ${r.kind})`);
