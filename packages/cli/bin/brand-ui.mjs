@@ -364,6 +364,21 @@ function cmdSearch() {
   }
 }
 
+/**
+ * The "Next:" commands, in the package manager the caller is actually using.
+ * `npx … create` sets npm_config_user_agent to npm — printing only pnpm commands
+ * there stops a first-time user who has never installed pnpm. With no agent to
+ * read (a direct `node` run), pnpm leads and the npm line follows.
+ */
+function nextStepLines(dir, installed) {
+  const ua = process.env.npm_config_user_agent || "";
+  const pm = /^(pnpm|yarn|bun|npm)\b/.exec(ua)?.[1];
+  const line = (m) =>
+    `    cd ${dir}${installed ? "" : ` && ${m} install`} && ${m === "npm" ? "npm run dev" : `${m} dev`}`;
+  if (pm) return [line(pm)];
+  return [line("pnpm"), "    (no pnpm? the same with npm:)", line("npm")];
+}
+
 /** The first sentence of a description (up to the first `.`/`!`/`?`), for a
  * terse one-line summary in `search` output. Falls back to the full string
  * when no sentence terminator is found. */
@@ -976,7 +991,7 @@ function cmdCreate() {
   lines.push(
     "",
     "  Next:",
-    `    cd ${dir}${flags.has("--install") ? "" : " && pnpm install"} && pnpm dev`,
+    ...nextStepLines(dir, flags.has("--install")),
     "  Then tell your agent: `brand-ui info` (or the hosted MCP) before touching the UI —",
     "  the app ships a CLAUDE.md / AGENTS.md that already say so.",
   );
@@ -1150,7 +1165,8 @@ const GENERAL_HELP = `brand-ui <command>
       [--write <dir>]    …and EMIT a RUNNABLE app: index.html, src/{App,main}.tsx,
       [--dry-run]        src/styles.css, vite.config.ts, tsconfig.json, app-spec.md,
       [--force]          CLAUDE.md, AGENTS.md, brand-ui-context.md, eslint.config.js,
-                         a CI workflow and package.json. Without --write nothing is
+                         a CI workflow and package.json (standalone: plus
+                         pnpm-workspace.yaml + .npmrc). Without --write nothing is
                          written; a target that already has some of these is
                          reported "partial" (exit 1), never a silent success.
   scan [path]            Read-only repo profile: framework, UI lib, styling, components (VP-03)

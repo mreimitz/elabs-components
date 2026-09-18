@@ -111,7 +111,7 @@ function DataAppTemplate({ loading = false }: { loading?: boolean }) {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
+          <NavUser user={{ name: "Avery Rao", email: "avery@example.com" }} />
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>

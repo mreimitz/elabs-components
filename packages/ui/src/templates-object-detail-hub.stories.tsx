@@ -251,8 +251,8 @@ function RunPipelineDialog({ pipeline }: { pipeline: Pipeline }) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <div className="space-y-1.5">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="run-window">Backfill window (optional)</Label>
             <Input id="run-window" placeholder="e.g. last 24 hours" autoComplete="off" />
           </div>
@@ -323,7 +323,7 @@ function PipelineHub({ pipeline }: { pipeline: Pipeline }) {
           </TabsList>
 
           {/* Overview — summary first: KPIs, then attributes, then children */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="flex flex-col gap-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <MetricCard
                 label="Rows (24h)"
@@ -357,17 +357,17 @@ function PipelineHub({ pipeline }: { pipeline: Pipeline }) {
           </TabsContent>
 
           {/* Activity — the related child list in full */}
-          <TabsContent value="activity" className="space-y-4">
+          <TabsContent value="activity" className="flex flex-col gap-4">
             <RunList runs={pipeline.runs} />
           </TabsContent>
 
           {/* Settings — a couple of editable fields */}
-          <TabsContent value="settings" className="max-w-lg space-y-5">
-            <div className="space-y-1.5">
+          <TabsContent value="settings" className="max-w-lg flex flex-col gap-5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="hub-name">Pipeline name</Label>
               <Input id="hub-name" defaultValue={pipeline.name} autoComplete="off" />
             </div>
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="hub-schedule">Schedule</Label>
               <Input id="hub-schedule" defaultValue={pipeline.schedule} autoComplete="off" />
             </div>
