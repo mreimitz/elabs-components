@@ -14,8 +14,8 @@ Vendored **Vercel AI Elements**. Presentational + runtime-agnostic: renders the 
 ## Core surfaces
 
 - `Composer` FIRST — every `PromptInput` control is a prop (`modelPicker`, `mode`, `effort`,
-  `slashCommands`, `tools`, `sendStatus`, `onStop`); drop to `PromptInput` only when the field
-  must be wrapped. `PromptInput` is a form; `PromptInputSubmit status="ready|submitted|
+  `slashCommands` | `mentions` (one or the other), `tools`, `sendStatus`, `onStop`); drop to
+  `PromptInput` only for a truly bespoke shell. `PromptInput` is a form; `PromptInputSubmit status="ready|submitted|
 streaming|error"`; empty (no text/attachments) never submits. ADR 0022: running AND empty →
   Stop; typed/attached mid-turn → Send. Two buttons: mount `PromptInputStop`, never a `mode` prop.
 - `ReasoningContent`: string → markdown, other nodes as-is. `Tool` parts type to `ToolUIPart`.

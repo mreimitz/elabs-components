@@ -48,7 +48,19 @@ export const ConversationContent = ({
     // can't resolve against a block-level parent whose own height is
     // `min-height`-only (the #72 empty-state-pinned-to-the-top bug).
     scrollClassName={cn("flex flex-col", scrollClassName)}
-    className={cn("flex flex-1 min-h-0 flex-col gap-8 p-4", className)}
+    // Inside a `ChatShell variant="bare"` the composer floats over the
+    // transcript: the shell publishes `--chat-composer-inset` (its measured
+    // height) so the last turn scrolls clear of it, and `--chat-column` so
+    // turns share the composer's reading column. Outside such a shell both
+    // variables are unset: the inset falls back to 0 and `max-width` to none.
+    // `shrink-0`, never `min-h-0`: the content div must grow with its turns.
+    // Clamped to the viewport height, the turns overflow it and its bottom
+    // padding stays behind at the viewport's edge, so the last turn ends up
+    // under the floating composer instead of above it.
+    className={cn(
+      "mx-auto flex w-full max-w-(--chat-column) flex-1 shrink-0 flex-col gap-8 p-4 pb-[calc(var(--chat-composer-inset,0px)+--spacing(4))]",
+      className,
+    )}
     {...props}
   />
 );
@@ -113,7 +125,9 @@ export const ConversationScrollButton = ({
           // the quieter `hover:bg-muted` (in place of `outline`'s default
           // `hover:bg-accent`) now applies in every theme, not only the two
           // shipped ones.
-          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full bg-background hover:bg-muted",
+          // `--chat-composer-inset`: lift the button clear of a floating
+          // `ChatShell variant="bare"` composer (0 anywhere else).
+          "absolute bottom-[calc(var(--chat-composer-inset,0px)+--spacing(4))] left-[50%] z-30 translate-x-[-50%] rounded-full bg-background hover:bg-muted",
           className,
         )}
         aria-label={t("ai.turnStatus.scrollToBottom")}

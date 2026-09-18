@@ -11,7 +11,6 @@
   ],
   "component-registration": ["collapsible-panel", "nav-main", "nav-user", "team-switcher"],
   "contract-known-failures": [
-    "ai-chatshell--default|jsdom|jsdom|data-slot",
     "ai-groupedparts--default|jsdom|jsdom|data-slot",
     "ai-image--default|jsdom|jsdom|data-slot",
     "ai-markdownview--default|jsdom|jsdom|data-slot",

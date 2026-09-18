@@ -60,9 +60,9 @@
   --surface-3: var(--card);
   --surface-4: var(--surface-elevated);
   --sidebar: oklch(0.922 0 0);
-  --sidebar-foreground: oklch(0.95 0.004 257);
-  --sidebar-muted-foreground: oklch(0.72 0.008 257);
-  --sidebar-border: oklch(0.38 0.018 257);
+  --sidebar-foreground: oklch(0.301 0 0);
+  --sidebar-muted-foreground: oklch(0.45 0 0);
+  --sidebar-border: oklch(0.836 0 0);
   --sidebar-accent: oklch(0.921 0.038 259.3);
   --sidebar-accent-foreground: oklch(0.262 0.086 256.9);
   --sidebar-primary: var(--primary);

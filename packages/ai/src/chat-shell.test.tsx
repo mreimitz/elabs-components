@@ -91,16 +91,46 @@ describe("ChatShell — variants", () => {
     expect(container.querySelector(".border-t")).toBeNull();
   });
 
-  it("makes the bare variant's edge scrims inert (aria-hidden AND pointer-events-none)", () => {
-    const { container } = render(<ChatShell variant="bare">t</ChatShell>);
-    const scrims = container.querySelectorAll("[aria-hidden='true']");
-    expect(scrims).toHaveLength(2);
-    for (const scrim of scrims) expect(scrim).toHaveClass("pointer-events-none");
+  it("makes the edge scrims inert (aria-hidden AND pointer-events-none) in both variants", () => {
+    for (const variant of ["card", "bare"] as const) {
+      const { container, unmount } = render(<ChatShell variant={variant}>t</ChatShell>);
+      const scrims = container.querySelectorAll("[aria-hidden='true']");
+      expect(scrims).toHaveLength(2);
+      for (const scrim of scrims) expect(scrim).toHaveClass("pointer-events-none");
+      unmount();
+    }
+  });
+});
+
+describe("ChatShell — floating composer", () => {
+  it("floats the composer over the transcript instead of stacking a footer bar", () => {
+    const { container } = render(
+      <ChatShell composer={<textarea aria-label="Message" />}>
+        <p>transcript</p>
+      </ChatShell>,
+    );
+    const layer = container.querySelector("[data-slot='chat-shell-composer']");
+    expect(layer).toHaveClass("absolute", "bottom-0", "pb-4");
+    // The layer passes pointer events through to the transcript; only the
+    // composer column takes input.
+    expect(layer).toHaveClass("pointer-events-none");
+    expect(screen.getByRole("textbox", { name: "Message" }).parentElement).toHaveClass(
+      "pointer-events-auto",
+      "max-w-(--chat-composer-column)",
+    );
+    expect(container.querySelector(".border-t")).toBeNull();
   });
 
-  it("renders no scrims in the card variant (there is a real divider instead)", () => {
-    const { container } = render(<ChatShell>t</ChatShell>);
-    expect(container.querySelectorAll("[aria-hidden='true']")).toHaveLength(0);
+  it("publishes the composer height so the transcript can scroll clear of it", () => {
+    const { container, rerender } = render(
+      <ChatShell composer={<textarea aria-label="Message" />}>t</ChatShell>,
+    );
+    const root = container.firstChild as HTMLElement;
+    // jsdom has no layout, so the measured height is 0 — the contract is that
+    // the variable is written at all.
+    expect(root.style.getPropertyValue("--chat-composer-inset")).toBe("0px");
+    rerender(<ChatShell>t</ChatShell>);
+    expect(root.style.getPropertyValue("--chat-composer-inset")).toBe("");
   });
 });
 

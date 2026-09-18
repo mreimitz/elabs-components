@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
+import { ChatShell } from "./chat-shell";
 import { Conversation, ConversationContent, ConversationScrollButton } from "./conversation";
 import { Message, MessageContent, MessageResponse } from "./message";
 import { Composer } from "./composer";
@@ -45,45 +46,49 @@ function ChatExample() {
   };
 
   return (
-    <div className="mx-auto flex h-[640px] max-w-2xl flex-col overflow-hidden rounded-xl border">
-      <Conversation className="flex-1">
-        <ConversationContent>
-          {messages.map((m) => (
-            <Message from={m.role} key={m.id}>
-              <MessageContent>
-                {m.reasoning ? (
-                  <Reasoning>
-                    <ReasoningTrigger />
-                    <ReasoningContent>{m.reasoning}</ReasoningContent>
-                  </Reasoning>
-                ) : null}
-                <MessageResponse>{m.text}</MessageResponse>
-                {m.role === "assistant" ? (
-                  <Sources>
-                    <SourcesTrigger count={2} />
-                    <SourcesContent>
-                      <Source href="https://example.com" title="Deploy log — wk 23" />
-                      <Source href="https://example.com" title="Billing runbook" />
-                    </SourcesContent>
-                  </Sources>
-                ) : null}
-              </MessageContent>
-            </Message>
-          ))}
-        </ConversationContent>
-        <ConversationScrollButton />
-      </Conversation>
-
-      <Composer
-        className="m-3 mt-0"
-        placeholder="Ask about deploys…"
-        status={status === "submitted" ? "Generating…" : "Awaiting your input"}
-        sendStatus={status}
-        onSubmit={(message) => {
-          const text = message.text?.trim();
-          if (text) send(text);
-        }}
-      />
+    <div className="mx-auto h-[640px] max-w-4xl overflow-hidden rounded-xl border bg-background">
+      <ChatShell
+        variant="bare"
+        composer={
+          <Composer
+            placeholder="Ask about deploys…"
+            status={status === "submitted" ? "Generating…" : "Awaiting your input"}
+            sendStatus={status}
+            onSubmit={(message) => {
+              const text = message.text?.trim();
+              if (text) send(text);
+            }}
+          />
+        }
+      >
+        <Conversation className="flex-1">
+          <ConversationContent>
+            {messages.map((m) => (
+              <Message from={m.role} key={m.id}>
+                <MessageContent>
+                  {m.reasoning ? (
+                    <Reasoning>
+                      <ReasoningTrigger />
+                      <ReasoningContent>{m.reasoning}</ReasoningContent>
+                    </Reasoning>
+                  ) : null}
+                  <MessageResponse>{m.text}</MessageResponse>
+                  {m.role === "assistant" ? (
+                    <Sources>
+                      <SourcesTrigger count={2} />
+                      <SourcesContent>
+                        <Source href="https://example.com" title="Deploy log — wk 23" />
+                        <Source href="https://example.com" title="Billing runbook" />
+                      </SourcesContent>
+                    </Sources>
+                  ) : null}
+                </MessageContent>
+              </Message>
+            ))}
+          </ConversationContent>
+          <ConversationScrollButton />
+        </Conversation>
+      </ChatShell>
     </div>
   );
 }
@@ -100,9 +105,9 @@ const meta = {
           "composed from the @elabs-ai/components-ai grammar: a scrolling " +
           "[Conversation](?path=/story/ai-conversation--default) of " +
           "[Messages](?path=/story/ai-message--presets) with reasoning and sources, plus a " +
-          "[Composer](?path=/story/ai-composer--default). Reach for " +
-          "[ChatShell](?path=/story/ai-chatshell--default) when you want that header + " +
-          "transcript + composer layout as one component instead of assembling it yourself.",
+          "[Composer](?path=/story/ai-composer--default), laid out by " +
+          "[ChatShell](?path=/story/ai-chatshell--default): the transcript scrolls behind the " +
+          "floating composer and both sit in centred reading columns.",
       },
     },
   },

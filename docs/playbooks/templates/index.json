@@ -2,7 +2,7 @@
   {
     "name": "ai-assistant",
     "title": "Patterns/Templates/AI Assistant",
-    "description": "AI assistant template — the canonical full-screen AI assistant composition (app-shell + chat shell: Conversation + PromptInput). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/ai-assistant.tsx`) from it. Verify across both themes with globals=theme:<slug>.",
+    "description": "AI assistant template — the canonical full-screen AI assistant composition: app-shell nav, an immersive `ChatShell` (transcript scrolls behind a floating `Composer`, one centred reading column) and the `ContextPanel` right rail. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/ai-assistant.tsx`) from it. Verify across both themes with globals=theme:<slug>.",
     "packages": [
       "@elabs-ai/components-ai",
       "@elabs-ai/components-icons",

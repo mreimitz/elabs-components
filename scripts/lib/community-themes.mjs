@@ -35,8 +35,10 @@ const SLUG_RE = /^[a-z][a-z0-9-]*[a-z0-9]$/;
 
 /**
  * Ink pairs every community theme must clear at WCAG AA (4.5:1) — body text on
- * each everyday surface plus ink on the primary plate. Deliberately NOT the full
- * built-in battery (`themes-contrast.test.ts`).
+ * each everyday surface plus ink on the primary plate, and the sidebar family
+ * (a light-sidebar theme copied from the dark-sidebar default kept its near-white
+ * inks and shipped invisible nav text). Deliberately NOT the full built-in
+ * battery (`themes-contrast.test.ts`).
  */
 export const INK_PAIRS = [
   ["--foreground", "--background"],
@@ -47,6 +49,11 @@ export const INK_PAIRS = [
   ["--primary-foreground", "--primary"],
   ["--secondary-foreground", "--secondary"],
   ["--accent-foreground", "--accent"],
+  ["--sidebar-foreground", "--sidebar"],
+  ["--sidebar-muted-foreground", "--sidebar"],
+  ["--sidebar-accent-foreground", "--sidebar-accent"],
+  // A hovered nav row keeps its muted meta line (NavUser email) on the accent.
+  ["--sidebar-muted-foreground", "--sidebar-accent"],
 ];
 export const AA = 4.5;
 

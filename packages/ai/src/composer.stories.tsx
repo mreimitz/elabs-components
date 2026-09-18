@@ -24,9 +24,8 @@
  *   the three controls the `mode`, `effort` and `slashCommands` slots render.
  *   The fourth slot, `modelPicker`, takes a `ModelPicker` from
  *   `@elabs-ai/components-ui`, which is why it has no page of its own here.
- * - **`WithMentionInput`** — the one documented bespoke shell: a mention
- *   roster has to WRAP the textarea, which is the seam `Composer` owns, so
- *   that page drops to `PromptInput` on purpose.
+ * - **`WithMentionInput`** — the `mentions` slot: an `@`-mention roster
+ *   (`MentionInput` from `@elabs-ai/components-ui`) on the composer's field.
  *
  * `Terminal/TerminalComposer` is the console skin of this same family — same
  * footer order, different surface.
@@ -147,7 +146,7 @@ const meta = {
           "[PromptInputMode](?path=/docs/ai-composer-promptinputmode--docs), " +
           "[PromptInputEffort](?path=/docs/ai-composer-promptinputeffort--docs) and " +
           "[PromptInputSlash](?path=/docs/ai-composer-promptinputslash--docs) are the three controls the `mode`, `effort` and `slashCommands` slots render (the fourth slot, `modelPicker`, takes a `ModelPicker` from @elabs-ai/components-ui, which is why it has no page of its own); and " +
-          "[WithMentionInput](?path=/docs/ai-composer-withmentioninput--docs) is the one documented bespoke shell — a mention roster has to WRAP the textarea, the seam Composer owns, so that page drops to PromptInput on purpose. " +
+          "[WithMentionInput](?path=/docs/ai-composer-withmentioninput--docs) shows the `mentions` slot — an @-mention roster on the composer's own field. " +
           "The scaffold that puts this composer under a transcript is [Patterns/Blocks/AI Chat Shell](?path=/docs/patterns-blocks-ai-chat-shell--docs); the console skin of the same family is [Terminal/TerminalComposer](?path=/docs/terminal-terminalcomposer--docs).",
       },
     },

@@ -1,101 +1,35 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { useState } from "react";
-import {
-  MentionInput,
-  MentionInputContent,
-  MentionInputEmpty,
-  MentionInputItem,
-  MentionInputList,
-  MentionInputTextarea,
-  serializeMentions,
-  type MentionOption,
-  type MentionValue,
-} from "@elabs-ai/components-ui";
-import {
-  PromptInput,
-  PromptInputBody,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputTools,
-} from "@elabs-ai/components-ai";
+import { serializeMentions, type MentionOption, type MentionValue } from "@elabs-ai/components-ui";
+import { Composer } from "@elabs-ai/components-ai";
 
 /**
- * `MentionInput` (`@elabs-ai/components-ui`) wrapped around
- * `PromptInputTextarea` (`@elabs-ai/components-ai`) — the composer keeps its own
- * submit contract while the field gains an `@`-mention roster.
+ * `Composer` — the standard brand-ui chat input — with an `@`-mention roster on
+ * its field: pass `mentions={{ options, value, onValueChange }}`. Typing `@`
+ * opens a filtered list of `MentionInput` (`@elabs-ai/components-ui`) options;
+ * the composer keeps its own look and submit contract.
  *
- * It lives under [AI/Composer](?path=/docs/ai-composer--docs) rather than in
- * `Patterns/Blocks` because it is not a separate pattern: it is a composer,
- * and specifically the family's one documented bespoke shell. The rest of this
- * page is the reasoning for that.
+ * ### Reading the mentions
  *
- * ### Why this page drops to `PromptInput` instead of using `Composer`
+ * `onSubmit` receives the plain text like any composer. The mentions live in
+ * the `MentionValue`: keep it controlled (as here) and resolve it with
+ * `serializeMentions(value)` → `{ text, mentionedIds }` when the message is
+ * sent. `Composer` resets the value to empty after an accepted submit, through
+ * `onValueChange`, so the controlled draft clears too.
  *
- * `Composer` is the canonical chat input, and everything else that renders a
- * chat footer in this repo uses it — the `ai-chat-shell` registry block
- * included. **This page is the documented exception**, and the reason is the
- * one `Composer` names in its own docstring: *drop to `PromptInput` only for a
- * bespoke shell.* A mention roster is a bespoke shell.
+ * ### Why it composes
  *
- * Concretely: `MentionInput` has to **wrap** the textarea, and `Composer` owns
- * that seam. `Composer` renders its own `PromptInputTextarea` (or, with
- * `slashCommands`, a `PromptInputSlashTextarea`) inside `PromptInputBody`; the
- * only way to put a wrapper around it would be a `textarea?: ReactNode` prop
- * handing the whole field slot to the caller. That was considered and
- * rejected:
+ * Internally `MentionInputTextarea asChild` lends the mention behaviour to the
+ * composer's own `PromptInputTextarea` instead of replacing it, so
+ * `name="message"` survives and `PromptInput`'s submit still reads the text.
+ * The mention handler binds `onKeyDownCapture`, so Enter with the roster open
+ * inserts the highlighted mention instead of sending (locked by the play
+ * function below, and by "T8 Slot handler-order contract" in
+ * `mention-input.test.tsx`).
  *
- * - It is **configuration where composition already works**
- *   (`.claude/rules/conventions.md` § Component API). `Composer` is a
- *   single function, not a compound `Composer.Root` / `Composer.Field` pair, so
- *   the slot could not be a real composition seam — just an opaque node.
- * - Its correctness would rest on an **invariant the type cannot express**: the
- *   node must contain a real `<textarea name="message">`, because
- *   `PromptInput`'s submit reads `new FormData(form).get("message")`. Pass
- *   anything else and the composer silently submits an empty string.
- * - It would **collide with `slashCommands`**, which already owns the same
- *   slot, creating a prop pair with no defined precedence — the "impossible
- *   combination" the composition rule exists to prevent.
- *
- * So the field stays hand-assembled here, and only here. If you are building an
- * ordinary chat input, use `Composer`.
- *
- * ### Why this composes at all
- *
- * `MentionInputTextarea asChild` lends the mention behaviour to the composer's
- * own textarea instead of replacing it, so `name="message"` survives and
- * `PromptInput`'s `new FormData(form).get("message")` still reads the text.
- * That is the whole reason the surface has to stay a real `<textarea>`.
- *
- * ### The one subtlety worth knowing — and its real scope
- *
- * Radix `Slot` merges **child** props over **slot** props and runs the child's
- * handler **first**. `MentionInputTextarea` therefore binds its interception as
- * `onKeyDownCapture`: React runs an element's capture pass before its bubble
- * pass and shares one `SyntheticEvent` between them, so `preventDefault()`
- * there is already visible as `event.defaultPrevented` to whatever runs later.
- *
- * **That hazard does not actually apply to THIS composition**, and saying it
- * did was an overclaim in an earlier version of this page.
- * `PromptInputTextarea` is a *component*, not a host element: it destructures
- * `onKeyDown` out of its own props, calls it first and bails on
- * `defaultPrevented` (`packages/ai/src/prompt-input.tsx`), so only its own
- * handler ever reaches the DOM node and the composition works with either
- * binding. The capture binding matters for a child that binds `onKeyDown`
- * **directly on a host element** — that case is locked by the unit test
- * "T8 Slot handler-order contract" in `mention-input.test.tsx`, which fails if
- * the binding is ever moved to `onKeyDown`.
- *
- * What the play function below locks is the behaviour a consumer cares about:
- * **Enter with the roster open inserts and does not submit; Enter with it
- * closed submits.** It is not a discriminator for capture-vs-bubble.
- *
- * ### Integration note
- *
- * Because `MentionInput` controls the textarea's `value`, `PromptInput`'s
- * uncontrolled `form.reset()` does **not** clear the mention state — the app's
- * `onSubmit` resets the `MentionValue` itself, as it does here.
+ * `mentions` and `slashCommands` both take over the field, so `Composer`'s
+ * props type accepts one or the other, never both.
  */
 const meta = {
   title: "AI/Composer/WithMentionInput",
@@ -122,36 +56,18 @@ function MentionComposer({ onSend }: { onSend?: (payload: string) => void }) {
   const [sent, setSent] = useState<Array<{ text: string; mentionedIds: string[] }>>([]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      {/* brand-ui-audit-allow: ai/prefer-composer — this page IS the documented
-          bespoke-shell exception; the reasoning is in the docblock above. */}
-      <PromptInput
+    <div className="mx-auto max-w-3xl space-y-4">
+      <Composer
+        placeholder="Type @ to mention a teammate…"
+        showAttach={false}
+        showVoice={false}
+        mentions={{ options: ROSTER, value: draft, onValueChange: setDraft }}
         onSubmit={() => {
           const payload = serializeMentions(draft);
           setSent((previous) => [...previous, payload]);
           onSend?.(payload.text);
-          // `form.reset()` cannot clear a value MentionInput controls.
-          setDraft(EMPTY);
         }}
-      >
-        <PromptInputBody>
-          <MentionInput options={ROSTER} value={draft} onValueChange={setDraft}>
-            <MentionInputTextarea asChild>
-              <PromptInputTextarea name="message" placeholder="Type @ to mention a teammate…" />
-            </MentionInputTextarea>
-            <MentionInputContent>
-              <MentionInputList>
-                {(option) => <MentionInputItem key={option.id} option={option} />}
-              </MentionInputList>
-              <MentionInputEmpty />
-            </MentionInputContent>
-          </MentionInput>
-        </PromptInputBody>
-        <PromptInputFooter>
-          <PromptInputTools />
-          <PromptInputSubmit />
-        </PromptInputFooter>
-      </PromptInput>
+      />
 
       <div data-testid="sent-log" className="space-y-1">
         <p className="text-meta text-muted-foreground">Submitted messages ({sent.length})</p>

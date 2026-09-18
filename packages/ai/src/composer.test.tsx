@@ -531,3 +531,48 @@ describe("Composer — shortcut hints change with a busy state (#107)", () => {
     expect(shortcutRow).not.toContainElement(stopButton);
   });
 });
+
+describe("Composer — mentions slot", () => {
+  const ROSTER = [
+    { id: "u-ada", label: "Ada Lovelace" },
+    { id: "u-grace", label: "Grace Hopper" },
+  ];
+
+  it("opens the roster on @, inserts on Enter without submitting, then submits and resets", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    const onValueChange = vi.fn();
+    render(
+      <Composer
+        onSubmit={onSubmit}
+        showAttach={false}
+        showVoice={false}
+        mentions={{ options: ROSTER, onValueChange }}
+      />,
+    );
+    const field = screen.getByRole("textbox") as HTMLTextAreaElement;
+    // The composer's own field — what PromptInput's submit reads.
+    expect(field).toHaveAttribute("name", "message");
+
+    await user.click(field);
+    await user.keyboard("hi @ada");
+    expect(field).toHaveAttribute("data-state", "open");
+    await user.keyboard("{Enter}");
+    expect(field.value).toBe("hi @Ada Lovelace ");
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(onValueChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ mentions: [expect.objectContaining({ id: "u-ada" })] }),
+    );
+
+    await user.keyboard("{Enter}");
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]![0].text.trim()).toBe("hi @Ada Lovelace");
+    expect(field.value).toBe("");
+    expect(onValueChange).toHaveBeenLastCalledWith({ text: "", mentions: [] });
+  });
+
+  it("refuses slashCommands and mentions together at the type level", () => {
+    // @ts-expect-error — the field takes a slash palette OR a mention roster.
+    render(<Composer slashCommands={[]} mentions={{ options: ROSTER }} />);
+  });
+});

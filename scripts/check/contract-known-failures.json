@@ -1,5 +1,4 @@
 {
-  "ai-chatshell--default|jsdom|jsdom|data-slot": "no data-slot=\"chat-shell\" on root (pre-existing gap, component-api.md)",
   "ai-groupedparts--default|jsdom|jsdom|data-slot": "no data-slot=\"grouped-parts\" on root (pre-existing gap, component-api.md)",
   "ai-image--default|jsdom|jsdom|data-slot": "no data-slot=\"image\" on root (pre-existing gap, component-api.md)",
   "ai-markdownview--default|jsdom|jsdom|data-slot": "no data-slot=\"markdown-view\" on root (pre-existing gap, component-api.md)",

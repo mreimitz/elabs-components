@@ -57,7 +57,7 @@
   --surface-4: var(--surface-elevated);
   --sidebar: oklch(0.3 0.021 235);
   --sidebar-foreground: oklch(0.95 0.004 235);
-  --sidebar-muted-foreground: oklch(0.72 0.008 235);
+  --sidebar-muted-foreground: oklch(0.745 0.008 235);
   --sidebar-border: oklch(0.38 0.018 235);
   --sidebar-accent: oklch(0.36 0.02 235);
   --sidebar-accent-foreground: oklch(0.95 0.004 235);

@@ -9,11 +9,17 @@
  * ships is reachable from a `Composer` prop (`modelPicker`, `mode`, `effort`,
  * `slashCommands`, `tools`), so a scaffold has no reason to drop a rung; reach
  * for `PromptInput` directly only when you are building a bespoke shell.
+ *
+ * Laid out by `<ChatShell variant="bare">`: the transcript runs full height and
+ * scrolls behind the floating, padded composer, and both sit in centred reading
+ * columns. The block is frameless and fills its host — put it inside an app
+ * pane (a `SidebarInset`) or give it a bordered, sized wrapper.
  */
 "use client";
 
 import { useState } from "react";
 import {
+  ChatShell,
   Composer,
   Conversation,
   ConversationContent,
@@ -44,7 +50,30 @@ export function AiChat() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <ChatShell
+      variant="bare"
+      composer={
+        <Composer
+          onSubmit={(message) => {
+            const text = message.text?.trim();
+            if (text) {
+              void send(text);
+            }
+          }}
+          placeholder="Send a message…"
+          // The status strip is display-only; drive it from whatever your runtime
+          // knows. Pass `null` to hide the strip entirely.
+          status={status === "submitted" ? "Thinking…" : "Awaiting your input"}
+          sendStatus={status}
+          // This scaffold wires neither attachments nor dictation, so it does not
+          // show affordances that would do nothing. Drop these two props (they
+          // default to `true`) once you have wired the handlers, or pass your own
+          // controls through `tools`.
+          showAttach={false}
+          showVoice={false}
+        />
+      }
+    >
       <Conversation className="flex-1">
         <ConversationContent>
           {messages.length === 0 ? (
@@ -64,26 +93,6 @@ export function AiChat() {
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
-
-      <Composer
-        onSubmit={(message) => {
-          const text = message.text?.trim();
-          if (text) {
-            void send(text);
-          }
-        }}
-        placeholder="Send a message…"
-        // The status strip is display-only; drive it from whatever your runtime
-        // knows. Pass `null` to hide the strip entirely.
-        status={status === "submitted" ? "Thinking…" : "Awaiting your input"}
-        sendStatus={status}
-        // This scaffold wires neither attachments nor dictation, so it does not
-        // show affordances that would do nothing. Drop these two props (they
-        // default to `true`) once you have wired the handlers, or pass your own
-        // controls through `tools`.
-        showAttach={false}
-        showVoice={false}
-      />
-    </div>
+    </ChatShell>
   );
 }

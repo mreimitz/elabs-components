@@ -290,7 +290,7 @@
      one part of a light theme that is not a light surface. */
   --sidebar: oklch(0.3 0.021 257);
   --sidebar-foreground: oklch(0.95 0.004 257);
-  --sidebar-muted-foreground: oklch(0.72 0.008 257);
+  --sidebar-muted-foreground: oklch(0.745 0.008 257);
   /* Lifted (not deepened) a step: on dark chrome a divider reads by going
      LIGHTER than its ground. */
   --sidebar-border: oklch(0.38 0.018 257);

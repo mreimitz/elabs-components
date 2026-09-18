@@ -25,7 +25,7 @@ const meta = {
   // height here or the transcript collapses and the story proves nothing.
   decorators: [
     (Story) => (
-      <div className="h-96">
+      <div className="h-[560px]">
         <Story />
       </div>
     ),

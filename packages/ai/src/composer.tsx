@@ -2,7 +2,20 @@
 
 import { useCallback, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { ArrowUp, Mic, Paperclip, Sparkles } from "lucide-react";
-import { cn, Kbd, useLocale } from "@elabs-ai/components-ui";
+import { useControllableState } from "@radix-ui/react-use-controllable-state";
+import {
+  cn,
+  Kbd,
+  MentionInput,
+  MentionInputContent,
+  MentionInputEmpty,
+  MentionInputItem,
+  MentionInputList,
+  MentionInputTextarea,
+  useLocale,
+  type MentionOption,
+  type MentionValue,
+} from "@elabs-ai/components-ui";
 
 import {
   PromptInput,
@@ -62,7 +75,29 @@ export interface ComposerShortcut {
   label: string;
 }
 
-export interface ComposerProps {
+/**
+ * An `@`-mention roster for the composer field (`MentionInput` from
+ * `@elabs-ai/components-ui`). The field keeps its own submit contract; the
+ * mentions ride alongside the text in a `MentionValue`.
+ *
+ * Read the mentions on submit from `value` (controlled) or from
+ * `onValueChange`, and resolve them with `serializeMentions(value)`
+ * (`{ text, mentionedIds }`). `Composer` resets the value to empty after a
+ * submit it accepts — through `onValueChange`, so a controlled caller's state
+ * clears too.
+ */
+export interface ComposerMentions {
+  /** Who (or what) can be mentioned. */
+  options: MentionOption[];
+  /** Controlled value. Omit for an uncontrolled roster. */
+  value?: MentionValue;
+  /** Fires on every edit, pick and post-submit reset. */
+  onValueChange?: (value: MentionValue) => void;
+}
+
+const EMPTY_MENTION_VALUE: MentionValue = { text: "", mentions: [] };
+
+export interface ComposerBaseProps {
   /** Submit handler — receives the assembled message (text + attachments). */
   onSubmit?: PromptInputProps["onSubmit"];
   /** Textarea placeholder. Default `"Ask me anything…"`. */
@@ -96,20 +131,6 @@ export interface ComposerProps {
    * and is entirely yours; `aria-label` names the scale.
    */
   effort?: ComposerEffortProps;
-  /**
-   * Slash-command palette. When set (and non-empty) the textarea becomes a
-   * `PromptInputSlashTextarea` wrapped in a `PromptInputSlash`, so typing `/`
-   * at the start of a line opens a filtered command list — nothing else about
-   * the composer changes.
-   *
-   * Note this makes the textarea REACT-CONTROLLED (the palette needs to read
-   * and splice the text), which is why `Composer` clears its own copy of the
-   * text on submit: `PromptInput`'s `form.reset()` reaches the DOM node, not
-   * React state.
-   */
-  slashCommands?: PromptInputSlashProps["commands"];
-  /** Fires with the chosen slash command (alongside the text splice). */
-  onSlashCommand?: PromptInputSlashProps["onSelect"];
   /**
    * Override the DEFAULT tool buttons (today: the attach button) — e.g. to add
    * a web-search or connect-data control. Render `PromptInputButton`s /
@@ -186,6 +207,38 @@ export interface ComposerProps {
 }
 
 /**
+ * The field enhancements that each take over the textarea — a slash palette OR
+ * a mention roster, never both. The union makes the impossible combination a
+ * type error instead of a silent precedence rule.
+ */
+export type ComposerFieldProps =
+  | {
+      /**
+       * Slash-command palette. When set (and non-empty) the textarea becomes a
+       * `PromptInputSlashTextarea` wrapped in a `PromptInputSlash`, so typing `/`
+       * at the start of a line opens a filtered command list — nothing else about
+       * the composer changes.
+       *
+       * Note this makes the textarea REACT-CONTROLLED (the palette needs to read
+       * and splice the text), which is why `Composer` clears its own copy of the
+       * text on submit: `PromptInput`'s `form.reset()` reaches the DOM node, not
+       * React state.
+       */
+      slashCommands?: PromptInputSlashProps["commands"];
+      /** Fires with the chosen slash command (alongside the text splice). */
+      onSlashCommand?: PromptInputSlashProps["onSelect"];
+      mentions?: never;
+    }
+  | {
+      /** `@`-mention roster on the field — see `ComposerMentions`. */
+      mentions?: ComposerMentions;
+      slashCommands?: never;
+      onSlashCommand?: never;
+    };
+
+export type ComposerProps = ComposerBaseProps & ComposerFieldProps;
+
+/**
  * Composer — the standard brand-ui AI chat input.
  *
  * A rounded two-tone "double card": a status strip wrapping a recessed
@@ -202,9 +255,10 @@ export interface ComposerProps {
  *
  * **Composer is the chat input. Every control the `PromptInput` family ships
  * is reachable from a `Composer` prop; drop to `PromptInput` only for a
- * bespoke shell.** `modelPicker`, `mode`, `effort` and `slashCommands` are the
- * four slots that make that true — they render `ModelPicker`,
- * `PromptInputMode`, `PromptInputEffort` and `PromptInputSlash` respectively,
+ * bespoke shell.** `modelPicker`, `mode`, `effort`, `slashCommands` and
+ * `mentions` are the slots that make that true — they render `ModelPicker`,
+ * `PromptInputMode`, `PromptInputEffort`, `PromptInputSlash` and
+ * `MentionInput` respectively,
  * in the footer order `attach · modelPicker · mode · effort │ voice · send`
  * (the same left-to-right arrangement `TerminalComposer` uses, so the chat and
  * console skins agree).
@@ -218,6 +272,7 @@ export function Composer({
   effort,
   slashCommands,
   onSlashCommand,
+  mentions,
   tools,
   sendStatus,
   onStop,
@@ -239,6 +294,12 @@ export function Composer({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState("");
   const hasSlash = slashCommands !== undefined && slashCommands.length > 0;
+  // Always called (hook order); only read when `mentions` is set.
+  const [mentionValue, setMentionValue] = useControllableState<MentionValue>({
+    prop: mentions?.value,
+    defaultProp: EMPTY_MENTION_VALUE,
+    onChange: mentions?.onValueChange,
+  });
 
   // #107: "Composer shortcut hints change with a busy state" — derived from
   // the existing canonical `sendStatus`, never a second boolean prop. The
@@ -258,9 +319,12 @@ export function Composer({
       // keep rendering the sent text straight back. Clearing here is a no-op in
       // the uncontrolled (non-slash) arrangement.
       setText("");
-      return onSubmit?.(message, event);
+      const result = onSubmit?.(message, event);
+      // `form.reset()` cannot clear a value MentionInput controls either.
+      if (mentions) setMentionValue(EMPTY_MENTION_VALUE);
+      return result;
     },
-    [onSubmit],
+    [onSubmit, mentions, setMentionValue],
   );
 
   const resolvedPlaceholder = placeholder ?? t("ai.composer.placeholder");
@@ -305,6 +369,25 @@ export function Composer({
                   placeholder={resolvedPlaceholder}
                 />
               </PromptInputSlash>
+            ) : mentions ? (
+              <MentionInput
+                options={mentions.options}
+                value={mentionValue}
+                onValueChange={setMentionValue}
+              >
+                {/* `asChild` lends the mention behaviour to the composer's own
+                    textarea, so `name="message"` — what PromptInput's submit
+                    reads — survives. */}
+                <MentionInputTextarea asChild>
+                  <PromptInputTextarea placeholder={resolvedPlaceholder} />
+                </MentionInputTextarea>
+                <MentionInputContent>
+                  <MentionInputList>
+                    {(option) => <MentionInputItem key={option.id} option={option} />}
+                  </MentionInputList>
+                  <MentionInputEmpty />
+                </MentionInputContent>
+              </MentionInput>
             ) : (
               <PromptInputTextarea placeholder={resolvedPlaceholder} />
             )}

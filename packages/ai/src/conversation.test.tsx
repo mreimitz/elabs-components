@@ -45,6 +45,22 @@ describe("Conversation — transcript region", () => {
     expect(screen.getByRole("log")).toBeInTheDocument();
   });
 
+  it("lets the content grow past the viewport so its composer inset stays scrollable", () => {
+    render(
+      <Conversation>
+        <ConversationContent>
+          <p>turn</p>
+        </ConversationContent>
+      </Conversation>,
+    );
+    const content = screen.getByText("turn").parentElement!;
+    // `min-h-0` clamps the content to the viewport height: the turns then
+    // overflow it and the bottom padding (the floating-composer inset) is
+    // left behind, so the last turn scrolls under the composer.
+    expect(content).not.toHaveClass("min-h-0");
+    expect(content).toHaveClass("shrink-0", "flex-1");
+  });
+
   it("renders its children inside the log, in order", () => {
     render(
       <Conversation>

@@ -369,6 +369,19 @@ export const ProducedAssetTree = forwardRef<HTMLDivElement, ProducedAssetTreePro
       },
       [assetsById, onSelect],
     );
+    // Empty: a plain note, not an empty `role="tree"` — a tree with no
+    // `treeitem` fails `aria-required-children` and announces nothing useful.
+    if (assets.length === 0) {
+      return (
+        <div
+          ref={ref}
+          data-slot="file-tree-empty"
+          className={cn("px-2 py-1 text-body text-muted-foreground", props.className)}
+        >
+          {t("ai.fileTree.noAssetsProduced")}
+        </div>
+      );
+    }
     return (
       <FileTree
         ref={ref}
@@ -377,23 +390,17 @@ export const ProducedAssetTree = forwardRef<HTMLDivElement, ProducedAssetTreePro
         onSelect={handleSelect}
         {...props}
       >
-        {assets.length === 0 ? (
-          <p className="px-2 py-1 text-body text-muted-foreground">
-            {t("ai.fileTree.noAssetsProduced")}
-          </p>
-        ) : (
-          assets.map((asset) => {
-            const Icon = assetIcon(asset);
-            return (
-              <FileTreeFile key={asset.id} path={asset.id} name={asset.name}>
-                <FileTreeIcon>
-                  <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
-                </FileTreeIcon>
-                <FileTreeName>{asset.name}</FileTreeName>
-              </FileTreeFile>
-            );
-          })
-        )}
+        {assets.map((asset) => {
+          const Icon = assetIcon(asset);
+          return (
+            <FileTreeFile key={asset.id} path={asset.id} name={asset.name}>
+              <FileTreeIcon>
+                <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
+              </FileTreeIcon>
+              <FileTreeName>{asset.name}</FileTreeName>
+            </FileTreeFile>
+          );
+        })}
       </FileTree>
     );
   },

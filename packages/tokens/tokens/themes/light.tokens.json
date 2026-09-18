@@ -149,7 +149,7 @@
   },
   "sidebar-muted-foreground": {
     "$type": "color",
-    "$value": "oklch(0.72 0.008 257)"
+    "$value": "oklch(0.745 0.008 257)"
   },
   "sidebar-border": {
     "$type": "color",

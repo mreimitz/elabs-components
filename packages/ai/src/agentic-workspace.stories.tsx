@@ -335,7 +335,7 @@ function WorkspaceSidebar({
                 <SidebarMenuButton
                   tooltip="New chat"
                   onClick={onNewChat}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                  className="bg-primary text-primary-foreground hover:bg-primary-hover hover:text-primary-foreground active:bg-primary-active active:text-primary-foreground"
                 >
                   <MessageSquarePlus />
                   <span>New chat</span>

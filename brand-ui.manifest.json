@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T19:21:20.078Z",
+  "generatedAt": "2026-09-18T07:37:30.926Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -613,7 +613,7 @@
     {
       "name": "ai-assistant",
       "title": "Patterns/Templates/AI Assistant",
-      "description": "AI assistant template — the canonical full-screen AI assistant composition (app-shell + chat shell: Conversation + PromptInput). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/ai-assistant.tsx`) from it. Verify across both themes with globals=theme:<slug>.",
+      "description": "AI assistant template — the canonical full-screen AI assistant composition: app-shell nav, an immersive `ChatShell` (transcript scrolls behind a floating `Composer`, one centred reading column) and the `ContextPanel` right rail. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/ai-assistant.tsx`) from it. Verify across both themes with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-ai",
         "@elabs-ai/components-icons",
@@ -3783,7 +3783,19 @@
           "module": "packages/ai/src/commit.tsx"
         },
         {
+          "name": "ComposerBaseProps",
+          "module": "packages/ai/src/composer.tsx"
+        },
+        {
           "name": "ComposerEffortProps",
+          "module": "packages/ai/src/composer.tsx"
+        },
+        {
+          "name": "ComposerFieldProps",
+          "module": "packages/ai/src/composer.tsx"
+        },
+        {
+          "name": "ComposerMentions",
           "module": "packages/ai/src/composer.tsx"
         },
         {
@@ -6530,7 +6542,7 @@
               "name": "composer",
               "optional": true,
               "type": "ReactNode",
-              "description": "Sticky composer — typically a <Composer> (the standard chat input)."
+              "description": "Floating composer — typically a <Composer> (the standard chat input). It floats, padded, over the bottom of the transcript, centred at `--chat-composer-column` (default `--container-3xl`) under a transcript column of `--chat-column` (default `--container-4xl`, read by `ConversationContent`); turns scroll up behind it and fade out."
             },
             {
               "name": "header",
@@ -6548,7 +6560,7 @@
               "name": "variant",
               "optional": true,
               "type": "\"card\" | \"bare\"",
-              "description": "Layout treatment: - `\"card\"` (default) — a self-contained rounded, bordered chat card. Use when the shell sits on a page among other content and needs its own frame. - `\"bare\"` — an immersive pane that fills its container with NO frame: the transcript fades under the header and above the composer (a token-driven top/bottom scrim) and the composer floats on the pane background instead of a hard bordered bar. Use when the shell already lives inside a bounded region (an AppShell `SidebarInset`, a full-page workspace) so it doesn't draw a redundant second frame."
+              "description": "Frame treatment (the transcript/composer layout is the same in both): - `\"card\"` (default) — a self-contained rounded, bordered chat card with a divider under the header. Use when the shell sits on a page among other content and needs its own frame. - `\"bare\"` — an immersive pane that fills its container with NO frame and no header divider. Use when the shell already lives inside a bounded region (an AppShell `SidebarInset`, a full-page workspace) so it doesn't draw a redundant second frame."
             },
             {
               "name": "className",
@@ -6851,129 +6863,11 @@
           ]
         },
         "Composer": {
-          "extends": [],
-          "props": [
-            {
-              "name": "onSubmit",
-              "optional": true,
-              "type": "PromptInputProps[\"onSubmit\"]",
-              "description": "Submit handler — receives the assembled message (text + attachments)."
-            },
-            {
-              "name": "placeholder",
-              "optional": true,
-              "type": "string",
-              "description": "Textarea placeholder. Default `\"Ask me anything…\"`."
-            },
-            {
-              "name": "status",
-              "optional": true,
-              "type": "ReactNode",
-              "description": "Muted status line shown above the input well. Default `\"Awaiting your input\"`. Drive it from chat state (\"Thinking…\", \"Generating…\") or pass `null` to hide the strip entirely."
-            },
-            {
-              "name": "modelPicker",
-              "optional": true,
-              "type": "ReactNode",
-              "description": "The model control, rendered first in the tools cluster after `attach`. Pass a `<ModelPicker>` from `@elabs-ai/components-ui` (it is sized to sit in a composer footer) — or anything else. Default: nothing renders. This replaces the old `model` prop, which rendered a static, non-interactive pill defaulted to a hard-coded model name. A composer that shows a model name it cannot change is a lie about what the control does; the slot now takes the real picker instead."
-            },
-            {
-              "name": "mode",
-              "optional": true,
-              "type": "ComposerModeProps",
-              "description": "App-defined operating mode control — renders a `PromptInputMode` in the tools cluster. Omitted, nothing renders. `brand-ui` ships no mode vocabulary: `modes` is entirely yours."
-            },
-            {
-              "name": "effort",
-              "optional": true,
-              "type": "ComposerEffortProps",
-              "description": "Ordered reasoning-effort control — renders a `PromptInputEffort` in the tools cluster. Omitted, nothing renders. `levels` is ordered low → high and is entirely yours; `aria-label` names the scale."
-            },
-            {
-              "name": "slashCommands",
-              "optional": true,
-              "type": "PromptInputSlashProps[\"commands\"]",
-              "description": "Slash-command palette. When set (and non-empty) the textarea becomes a `PromptInputSlashTextarea` wrapped in a `PromptInputSlash`, so typing `/` at the start of a line opens a filtered command list — nothing else about the composer changes. Note this makes the textarea REACT-CONTROLLED (the palette needs to read and splice the text), which is why `Composer` clears its own copy of the text on submit: `PromptInput`'s `form.reset()` reaches the DOM node, not React state."
-            },
-            {
-              "name": "onSlashCommand",
-              "optional": true,
-              "type": "PromptInputSlashProps[\"onSelect\"]",
-              "description": "Fires with the chosen slash command (alongside the text splice)."
-            },
-            {
-              "name": "tools",
-              "optional": true,
-              "type": "ReactNode",
-              "description": "Override the DEFAULT tool buttons (today: the attach button) — e.g. to add a web-search or connect-data control. Render `PromptInputButton`s / `PromptInputActionMenu` here; when set, `showAttach` is ignored. The explicit `modelPicker` / `mode` / `effort` slots are NOT part of this override — they render after whatever this puts in the cluster, so passing `tools` can never silently swallow a control you asked for by name."
-            },
-            {
-              "name": "sendStatus",
-              "optional": true,
-              "type": "ComponentProps<typeof PromptInputSubmit>[\"status\"]",
-              "description": "Send-button state, forwarded to `PromptInputSubmit` (ready/submitted/streaming/error)."
-            },
-            {
-              "name": "onStop",
-              "optional": true,
-              "type": "ComponentProps<typeof PromptInputSubmit>[\"onStop\"]",
-              "description": "Stop handler used while the send button shows the generating state."
-            },
-            {
-              "name": "shortcuts",
-              "optional": true,
-              "type": "ComposerShortcut[]",
-              "description": "Keyboard-shortcut hints shown as a row beneath the input well — plain `Kbd` + label pairs, e.g. `[{ keys: \"Enter\", label: \"send\" }]`. Omitted, nothing renders (opt-in, like every other Composer slot); the row is never invented, since the real bindings are the host app's."
-            },
-            {
-              "name": "cancelShortcut",
-              "optional": true,
-              "type": "ComposerShortcut",
-              "description": "A second, busy-only hint appended to `shortcuts` (#107) — shown ONLY once the composer is actually generating (`sendStatus` is `\"submitted\"` or `\"streaming\"`) AND a real `onStop` handler is set, so the hint never describes an affordance that isn't there. Mirrors `TerminalComposer`'s `canCancel = busy && Boolean(onStop)` shape."
-            },
-            {
-              "name": "submitProps",
-              "optional": true,
-              "type": "Omit<ComponentProps<typeof PromptInputSubmit>, \"status\" | \"onStop\">",
-              "description": "Extra props spread onto the send button — `disabled`, `aria-label`, `variant`, `id`, `className`. `status` and `onStop` are excluded because `Composer` owns them via `sendStatus` / `onStop` above. (A `data-*` key is not assignable through this object: TypeScript only permits arbitrary `data-*` on a JSX element directly, not on a typed props object. Reach for `id` or `aria-label` as the test hook.) **`disabled` is the one that matters for correctness.** `PromptInput`'s submit handler calls `form.reset()` as soon as it ACCEPTS a submit, so a consumer that refuses the send inside `onSubmit` — an app doing async setup on the first message, say — has already had the textarea cleared and the user's text destroyed, with nothing to restore from. Disabling the control is what actually prevents it: `PromptInputTextarea`'s Enter handler checks `submitControl?.disabled` and bails before `requestSubmit()`, so the Enter path is closed too, not just the click. It holds with a slash palette open as well — the palette's own Enter handling only ever inserts a command. Leave it UNSET rather than passing `false` when you have no opinion — `PromptInputSubmit` resolves `disabled ?? autoDisabled`, so a literal `false` opts out of the library's own empty-composer guard."
-            },
-            {
-              "name": "tone",
-              "optional": true,
-              "type": "PromptInputProps[\"tone\"]",
-              "description": "The two-tone arrangement, forwarded to the `tone` prop of `PromptInput`. `\"surface\"` (default, unchanged) is the original Composer look — an outer `bg-card` frame around the standard muted `PromptInput` well — so every existing usage is unaffected. `\"card\"` swaps to the tinted-outer/ distinct-inner \"double card\" (#254): an outer `bg-surface-muted` frame around a `tone=\"card\"` well. The well fill relative to the frame is theme-driven, not universally \"white\" — raised on light themes, recessed on dark; see the `tone` prop doc on `PromptInput`."
-            },
-            {
-              "name": "suggestions",
-              "optional": true,
-              "type": "string[]",
-              "description": "Optional suggestion chips rendered beneath the composer."
-            },
-            {
-              "name": "onSuggestionClick",
-              "optional": true,
-              "type": "(suggestion: string) => void",
-              "description": "Click handler for a suggestion chip."
-            },
-            {
-              "name": "showVoice",
-              "optional": true,
-              "type": "boolean",
-              "description": "Show the voice button. Default `true`."
-            },
-            {
-              "name": "showAttach",
-              "optional": true,
-              "type": "boolean",
-              "description": "Show the attach button. Default `true`."
-            },
-            {
-              "name": "className",
-              "optional": true,
-              "type": "string",
-              "description": "Extra classes for the outer card frame."
-            }
-          ]
+          "extends": [
+            "ComposerBaseProps",
+            "ComposerFieldProps"
+          ],
+          "props": []
         },
         "Confirmation": {
           "extends": [

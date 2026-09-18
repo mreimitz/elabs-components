@@ -57,10 +57,10 @@
   --surface-4: var(--surface-elevated);
   --sidebar: oklch(0.956 0.008 241.7);
   --sidebar-foreground: oklch(0.309 0.027 242.4);
-  --sidebar-muted-foreground: oklch(0.72 0.008 257);
-  --sidebar-border: oklch(0.38 0.018 257);
-  --sidebar-accent: oklch(0.36 0.02 257);
-  --sidebar-accent-foreground: oklch(0.95 0.004 257);
+  --sidebar-muted-foreground: oklch(0.46 0.017 264.4);
+  --sidebar-border: oklch(0.9 0.008 235);
+  --sidebar-accent: oklch(0.905 0.018 238);
+  --sidebar-accent-foreground: oklch(0.3 0.021 257);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-ring: var(--ring);
