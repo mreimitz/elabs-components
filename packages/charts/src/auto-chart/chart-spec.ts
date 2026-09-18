@@ -9,6 +9,8 @@
 import type { ChartValueFormat } from "../charts/value-format";
 import type { DateFormatPreset } from "../charts/date-format";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
+import type { SeriesMarkerShape } from "../charts/series-pattern";
+import type { ScatterShapeSpec } from "../charts/custom-shapes";
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -240,6 +242,27 @@ export interface ChartSpec {
    * selection field to any chart without knowing the chart type.
    */
   fields?: { category?: string; series?: string };
+
+  // Scatter depth — RM-115. Honoured by `"scatter"` only; ignored elsewhere.
+
+  /** Bubble size by a numeric column — `Scatter sizeKey`/`sizeRange`. */
+  size?: { key: string; range?: [number, number] };
+
+  /** Colour points by a fixed/categorical/numeric column — `Scatter colorBy`. */
+  colorBy?: {
+    key: string;
+    scale?: "categorical" | "sequential" | "diverging";
+    steps?: number;
+  };
+
+  /** Shape points by a categorical column — `Scatter shapeBy`. */
+  shapeBy?: { key: string; shapes?: SeriesMarkerShape[] };
+
+  /** A least-squares trend line across every series — `Scatter trend`. */
+  trend?: "linear" | "log";
+
+  /** Custom lines/areas drawn in data space behind the marks — `CustomShapes shapes`. */
+  shapes?: ScatterShapeSpec[];
 }
 
 // Axes — RM-108

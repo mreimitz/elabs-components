@@ -61,6 +61,7 @@ import {
   type RadarMetric,
   ScatterChart,
   Scatter,
+  CustomShapes,
   TreemapChart,
   type TreemapNode,
   UnitChart,
@@ -492,8 +493,18 @@ function renderChart(
           accessibleDescription={spec.description}
         >
           <Grid horizontal mode={axisProps.gridMode} />
+          {spec.shapes && spec.shapes.length > 0 ? <CustomShapes shapes={spec.shapes} /> : null}
           {series.map((s) => (
-            <Scatter key={s.key} dataKey={s.key} fill={s.color} />
+            <Scatter
+              key={s.key}
+              colorBy={spec.colorBy}
+              dataKey={s.key}
+              fill={s.color}
+              shapeBy={spec.shapeBy}
+              sizeKey={spec.size?.key}
+              sizeRange={spec.size?.range}
+              trend={spec.trend ?? false}
+            />
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
