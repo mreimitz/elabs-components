@@ -10,7 +10,10 @@ import type { Responsive } from "../charts/chart-breakpoint";
 import type { ChartValueLabels, SeriesLabelMode } from "../charts/labels/use-chart-labels";
 import type { ChartValueFormat } from "../charts/value-format";
 import type { ChartSpecAnnotation } from "../charts/annotations/annotation-types";
+import type { CurveAlias } from "../charts/curve-types";
 import type { DateFormatPreset } from "../charts/date-format";
+import type { SeriesSymbolsSpec } from "../charts/series-markers";
+import type { NullsMode } from "../charts/time-series-chart-shell";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
 
 /**
@@ -195,6 +198,28 @@ export interface ChartSpec {
 
   /** Stack bars/areas instead of grouping them. Default: false */
   stacked?: boolean;
+
+  /**
+   * How a `"line"`/`"area"`/`"stream"` chart draws a non-numeric sample
+   * (RM-112). Applies to every series — the same container-level default
+   * `LineChart`/`AreaChart nulls` read. Default: `"gap"` (a visible break,
+   * never a silent zero).
+   */
+  nulls?: NullsMode;
+
+  /**
+   * Curve interpolation for every series of a `"line"`/`"area"`/`"stream"`
+   * chart (RM-112) — a named `@visx/curve` alias. Default: `"monotone"` —
+   * unlike `"natural"`, it never overshoots past a flat run of equal values.
+   */
+  curve?: CurveAlias;
+
+  /**
+   * Point markers for every series of a `"line"`/`"area"`/`"stream"` chart
+   * (RM-112) — same shape and resolution rule as `Line`/`Area`'s own
+   * `symbols` prop. Unset (default): no markers.
+   */
+  symbols?: SeriesSymbolsSpec;
 
   /** Bar/funnel orientation. Default: "vertical" for bars. */
   orientation?: "vertical" | "horizontal";

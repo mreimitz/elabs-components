@@ -29,6 +29,9 @@ vi.mock("@visx/responsive", () => ({
 // Mock the time-series shell to avoid pulling in the full chart context tree.
 vi.mock("./time-series-chart-shell", () => ({
   TimeSeriesChartInner: () => <svg data-testid="chart-svg" />,
+  // RM-112 — AreaChart wraps TimeSeriesChartInner in this provider; a
+  // passthrough keeps the container-lifecycle tests above unaffected.
+  ChartSeriesModeProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock Area so it doesn't call useChartStable (which requires ChartProvider).

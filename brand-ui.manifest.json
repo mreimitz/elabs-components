@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T22:28:51.736Z",
+  "generatedAt": "2026-09-18T23:01:05.502Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16762,8 +16762,8 @@
             {
               "name": "curve",
               "optional": true,
-              "type": "CurveFactory",
-              "description": "Curve function. Default: curveMonotoneX"
+              "type": "CurveFactory | CurveAlias",
+              "description": "Curve interpolation — a named alias (`\"linear\"` | `\"monotone\"` | `\"natural\"` | `\"step\"` | `\"step-before\"` | `\"step-after\"`, RM-112) or a raw `@visx/curve` factory. Default: `\"monotone\"` (unchanged)."
             },
             {
               "name": "animate",
@@ -16814,6 +16814,12 @@
               "description": "Marker styling (same options as Scatter)."
             },
             {
+              "name": "symbols",
+              "optional": true,
+              "type": "SeriesSymbolsSpec",
+              "description": "Placement/style wrapper over `showMarkers`/`markers` (RM-112) — same shape and resolution rule as `Line symbols` (shared helper, `resolveSeriesSymbols`): unset → no symbols; set without a `placement` on a series with more than 12 points → also no symbols (avoid symbols on a dense, regularly-sampled series); otherwise `placement` defaults `\"ends\"`, `style` defaults `\"hollow\"`. Setting this turns markers on regardless of `showMarkers`."
+            },
+            {
               "name": "dashFromIndex",
               "optional": true,
               "type": "number",
@@ -16824,6 +16830,12 @@
               "optional": true,
               "type": "string",
               "description": "Dash pattern for the tail segment when `dashFromIndex` is set. Default: \"6,4\""
+            },
+            {
+              "name": "nulls",
+              "optional": true,
+              "type": "NullsMode",
+              "description": "How this area draws a non-numeric sample (RM-112). Overrides the container-level `AreaChart nulls` default. Unset — read the container default, or `\"gap\"` with no container default (a visible break in the fill/crest at that sample, never a silent zero)."
             },
             {
               "name": "loadingStroke",
@@ -16880,15 +16892,21 @@
           "props": [
             {
               "name": "lowKey",
-              "optional": false,
+              "optional": true,
               "type": "string",
-              "description": "Key in data for the band's lower edge."
+              "description": "Key in data for the band's lower edge. Ignored (and optional) when `from=\"zero\"` — the low edge is the value-axis zero line instead."
             },
             {
               "name": "highKey",
               "optional": false,
               "type": "string",
               "description": "Key in data for the band's upper edge."
+            },
+            {
+              "name": "from",
+              "optional": true,
+              "type": "\"zero\"",
+              "description": "Bracket the band between `highKey` and the value-axis zero line instead of a second series (Datawrapper: area fill \"between a line and zero\"). `lowKey` is ignored when set."
             },
             {
               "name": "fill",
@@ -16903,9 +16921,15 @@
               "description": "Fill opacity. Default 1 — the token itself already carries the wash."
             },
             {
+              "name": "negativeFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill colour for any segment where the high edge dips BELOW the low edge (`highKey < lowKey`, or `highKey < 0` under `from=\"zero\"`) — Datawrapper's negative-difference fill (River bar-line combination recipe). Unset: the whole band paints `fill` regardless of sign — today's behaviour."
+            },
+            {
               "name": "curve",
               "optional": true,
-              "type": "CurveFactory",
+              "type": "CurveFactory | CurveAlias",
               "description": "Curve function, matching the series it brackets. Default `curveMonotoneX`."
             },
             {
@@ -17118,6 +17142,18 @@
               "optional": true,
               "type": "boolean",
               "description": "Label each stacked band with its series name at the band's widest x (`HaloText`, clamped inside the plot). Only takes effect when `offset` is set. Default: false."
+            },
+            {
+              "name": "nulls",
+              "optional": true,
+              "type": "NullsMode",
+              "description": "Container-level default for an `Area`'s own `nulls` prop (RM-112). Unset — every `Area` keeps its own default (`\"gap\"`)."
+            },
+            {
+              "name": "focusOnHover",
+              "optional": true,
+              "type": "boolean",
+              "description": "Hovering (or, on touch, tapping) one series dims every other series to the shared selection-excluded opacity (RM-112, `dw-river.md` §2.3). Default false — today's behaviour."
             }
           ]
         },
@@ -19831,8 +19867,8 @@
             {
               "name": "curve",
               "optional": true,
-              "type": "CurveFactory",
-              "description": "Curve function. Default: curveNatural"
+              "type": "CurveFactory | CurveAlias",
+              "description": "Curve interpolation — a named alias (`\"linear\"` | `\"monotone\"` | `\"natural\"` | `\"step\"` | `\"step-before\"` | `\"step-after\"`, RM-112) or a raw `@visx/curve` factory. Default: `\"monotone\"`. `\"natural\"` (`curveNatural`, this package's pre-RM-112 default) is offered for parity only — Datawrapper's own guidance is to avoid natural/cardinal interpolation because it overshoots between two equal neighbours (`.claude/rules/charts.md` \"Honesty\")."
             },
             {
               "name": "animate",
@@ -19869,6 +19905,24 @@
               "optional": true,
               "type": "(d: Record<string, unknown>, index: number) => MarkerVariant",
               "description": "Per-point marker style — `\"filled\"` | `\"hollow\"` | `\"none\"`, decided per data point (RM-028). E.g. `(d) => (isWeekend(d.date) ? \"hollow\" : \"filled\")` — the lieflat \"hollow dot = weekend, filled = weekday\" idiom. Setting this renders a marker at every non-`\"none\"` point regardless of `showMarkers` — the per-point fill/stroke decision takes over from the shared marker style, while `markers.radius`/`ringGap`/`strokeWidth` still apply as the shared geometry. A hollow marker fills with `--chart-background` (the plot ground) so it stays theme-safe with no `dark:` override. Default: unset — no per-point styling, today's behaviour."
+            },
+            {
+              "name": "symbols",
+              "optional": true,
+              "type": "SeriesSymbolsSpec",
+              "description": "Placement/style wrapper over `showMarkers`/`markers` (RM-112, Datawrapper's line symbols: 8 shapes, first-and-last/all placement, filled/hollow style). Setting this turns markers on regardless of `showMarkers`. `placement` — `\"all\"` | `\"ends\"` | `\"first\"` | `\"last\"`, default `\"ends\"`. `style` — `\"filled\"` | `\"hollow\"`, default `\"hollow\"`. `shape`/`size` map onto `markers.shape`/`markers.radius`. Default unset: no symbols — today's behaviour, driven by `showMarkers`/`markers` alone."
+            },
+            {
+              "name": "nulls",
+              "optional": true,
+              "type": "NullsMode",
+              "description": "How this line draws a non-numeric sample (RM-112). Overrides the container-level `LineChart nulls` default. Unset — read the container default, or `\"gap\"` with no container default (a visible break, never a silent zero — the pre-RM-112 default was the \"zero\" behaviour, kept as `nulls=\"zero\"`)."
+            },
+            {
+              "name": "outline",
+              "optional": true,
+              "type": "boolean | number",
+              "description": "Paint a `--chart-background` halo stroke under the series stroke (Datawrapper's line outline, May 2024) so two crossing lines still read apart. `true` uses a 2px halo on each side; a number sets the halo width in px. Default `false` — no halo, today's behaviour."
             },
             {
               "name": "labelPeaks",
@@ -20127,6 +20181,18 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
+            },
+            {
+              "name": "nulls",
+              "optional": true,
+              "type": "NullsMode",
+              "description": "Container-level default for a `Line`'s own `nulls` prop (RM-112). Unset — every `Line` keeps its own default (`\"gap\"`)."
+            },
+            {
+              "name": "focusOnHover",
+              "optional": true,
+              "type": "boolean",
+              "description": "Hovering (or, on touch, tapping) one series dims every other series to the shared selection-excluded opacity (RM-112, `dw-river.md` §2.3). Default false — today's behaviour."
             }
           ]
         },
@@ -21710,6 +21776,12 @@
               "optional": true,
               "type": "boolean",
               "description": "Whether to animate markers with clip reveal. Default: true"
+            },
+            {
+              "name": "placement",
+              "optional": true,
+              "type": "\"all\" | \"ends\" | \"first\" | \"last\"",
+              "description": "Which points get a marker (RM-112, `Line`/`Area` `symbols`). `\"all\"` (today's behaviour, and the default when unset) renders one per point; `\"ends\"` only the first and last defined point; `\"first\"`/`\"last\"` only that one."
             }
           ]
         },

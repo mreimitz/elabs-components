@@ -46,7 +46,11 @@ import type { ChartRevealOn } from "./chart-reveal-clip";
 import { PatternArea } from "./pattern-area";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
-import { TimeSeriesChartInner } from "./time-series-chart-shell";
+import {
+  ChartSeriesModeProvider,
+  type NullsMode,
+  TimeSeriesChartInner,
+} from "./time-series-chart-shell";
 import {
   ChartPlotRoot,
   type ChartPlotHeight,
@@ -165,6 +169,17 @@ export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps
    * set. Default: false.
    */
   labelBands?: boolean;
+  /**
+   * Container-level default for an `Area`'s own `nulls` prop (RM-112). Unset
+   * — every `Area` keeps its own default (`"gap"`).
+   */
+  nulls?: NullsMode;
+  /**
+   * Hovering (or, on touch, tapping) one series dims every other series to
+   * the shared selection-excluded opacity (RM-112, `dw-river.md` §2.3).
+   * Default false — today's behaviour.
+   */
+  focusOnHover?: boolean;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -243,6 +258,10 @@ interface ChartInnerProps {
   seams?: number;
   /** Band name labels — see `AreaChartProps.labelBands`. */
   labelBands?: boolean;
+  /** Container-level `nulls` default — see `AreaChartProps.nulls`. */
+  nulls?: NullsMode;
+  /** Dim non-hovered series — see `AreaChartProps.focusOnHover`. */
+  focusOnHover?: boolean;
 }
 
 function ChartInner({
@@ -275,6 +294,8 @@ function ChartInner({
   offset,
   seams,
   labelBands,
+  nulls,
+  focusOnHover,
 }: ChartInnerProps) {
   // `children` gets a fresh identity every parent render; `useStableValue`
   // collapses back to the previous reference when the series content hasn't
@@ -290,35 +311,37 @@ function ChartInner({
     // — so `Children.forEach`'s series/def/axis classification inside the
     // shell still walks the caller's original `children` untouched. See
     // `AreaStackProvider`'s own docblock in `./area`.
-    <AreaStackProvider labelBands={labelBands} offset={offset} seams={seams}>
-      <TimeSeriesChartInner
-        animationDuration={animationDuration}
-        animationEasing={animationEasing}
-        chartStatus={chartStatus}
-        clipPathId={clipPathId}
-        containerRef={containerRef}
-        data={data}
-        enterTransition={enterTransition}
-        height={height}
-        lines={lines}
-        loadingLabel={loadingLabel}
-        margin={margin}
-        onPhaseChange={onPhaseChange}
-        replayOnClick={replayOnClick}
-        revealOn={revealOn}
-        revealSignature={revealSignature}
-        tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
-        width={width}
-        xDataKey={xDataKey}
-        xDomain={xDomain}
-        xDomainSlotCount={xDomainSlotCount}
-        xScaleType={xScaleType}
-        yDomainTween={yDomainTween}
-        yDomainTweenDuration={yDomainTweenDuration}
-      >
-        {children}
-      </TimeSeriesChartInner>
-    </AreaStackProvider>
+    <ChartSeriesModeProvider focusOnHover={focusOnHover} nulls={nulls}>
+      <AreaStackProvider labelBands={labelBands} offset={offset} seams={seams}>
+        <TimeSeriesChartInner
+          animationDuration={animationDuration}
+          animationEasing={animationEasing}
+          chartStatus={chartStatus}
+          clipPathId={clipPathId}
+          containerRef={containerRef}
+          data={data}
+          enterTransition={enterTransition}
+          height={height}
+          lines={lines}
+          loadingLabel={loadingLabel}
+          margin={margin}
+          onPhaseChange={onPhaseChange}
+          replayOnClick={replayOnClick}
+          revealOn={revealOn}
+          revealSignature={revealSignature}
+          tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
+          width={width}
+          xDataKey={xDataKey}
+          xDomain={xDomain}
+          xDomainSlotCount={xDomainSlotCount}
+          xScaleType={xScaleType}
+          yDomainTween={yDomainTween}
+          yDomainTweenDuration={yDomainTweenDuration}
+        >
+          {children}
+        </TimeSeriesChartInner>
+      </AreaStackProvider>
+    </ChartSeriesModeProvider>
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
@@ -378,6 +401,8 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     offset,
     seams,
     labelBands,
+    nulls,
+    focusOnHover,
   },
   ref,
 ) {
@@ -461,7 +486,9 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
                 margin={margin}
                 copyValueOnActivate={copyValueOnActivate}
+                focusOnHover={focusOnHover}
                 labelBands={labelBands}
+                nulls={nulls}
                 offset={offset}
                 onDatapointClick={onDatapointClick}
                 onPhaseChange={handlePhaseChange}
