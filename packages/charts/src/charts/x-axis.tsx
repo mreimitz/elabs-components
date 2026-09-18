@@ -132,7 +132,9 @@ export interface XAxisProps {
   numTicks?: number;
   /**
    * Tick target (RM-108). `"auto"` (default) derives it from the plot width —
-   * `tickTargetForWidth(innerWidth)`, about one tick per 90 px, clamped 2–10.
+   * `tickTargetForWidth(innerWidth)`, about one tick per 90 px, clamped 2–10,
+   * and never more than the number of data rows on a time axis (6 monthly
+   * rows get at most 6 ticks, not 9 labels between them).
    */
   tickCount?: AxisTickCount;
   /**
@@ -744,10 +746,11 @@ const XAxisInner = memo(function XAxisInner({
   const numericRuler = useContext(NumericXRulerContext);
   // RM-108: explicit `numTicks` > numeric `tickCount` > the width-derived
   // target; a density cap (`sm`) still bounds whichever wins.
+  const widthTarget = tickTargetForWidth(innerWidth);
   const resolvedTickTarget = resolveAxisTickTarget({
     numTicks: numTicksProp,
     tickCount,
-    autoTarget: tickTargetForWidth(innerWidth),
+    autoTarget: numericRuler ? widthTarget : Math.min(widthTarget, Math.max(2, data.length)),
   });
   const numTicks =
     maxTickTarget != null ? Math.min(resolvedTickTarget, maxTickTarget) : resolvedTickTarget;

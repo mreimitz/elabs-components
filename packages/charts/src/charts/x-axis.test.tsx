@@ -302,9 +302,9 @@ describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", ()
     value: 10 + i,
   }));
 
-  function paintedXTicks(width: number, axis = <XAxis />): number {
+  function paintedXTicks(width: number, axis = <XAxis />, data = monthly): number {
     parentSize.width = width;
-    const { container } = render(<LineChart data={monthly}>{axis}</LineChart>);
+    const { container } = render(<LineChart data={data}>{axis}</LineChart>);
     const layer = container.querySelector('[data-slot="x-axis"]');
     const count = Number(layer?.getAttribute("data-tick-count"));
     cleanup();
@@ -319,6 +319,11 @@ describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", ()
     expect(wide).toBeLessThanOrEqual(10);
     expect(narrow).toBeGreaterThanOrEqual(3);
     expect(narrow).toBeLessThanOrEqual(5);
+  });
+
+  it("never paints more auto x ticks than data rows", () => {
+    expect(paintedXTicks(900, <XAxis />, monthly.slice(0, 6))).toBeLessThanOrEqual(6);
+    expect(paintedXTicks(900, <XAxis tickCount={8} />, monthly.slice(0, 6))).toBe(8);
   });
 
   it("numTicks={5} pins the count at both widths", () => {
