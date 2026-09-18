@@ -563,6 +563,91 @@ export const WithTrendLine: Story = {
   },
 };
 
+// revenue = 3x + 5 exactly, so the fit is r² = 1.00, "increasing" — a value
+// the summary sentence can assert byte-for-byte, in the browser, without
+// floating-point wiggle room.
+const trendSummaryData = [
+  { week: 1, revenue: 8 },
+  { week: 2, revenue: 11 },
+  { week: 3, revenue: 14 },
+  { week: 4, revenue: 17 },
+  { week: 5, revenue: 20 },
+];
+
+/**
+ * With an `accessibleLabel` and no caller `accessibleDescription`, the trend's
+ * direction and r² fold into the auto summary — the text behind
+ * `aria-describedby`, read by AT, never drawn on screen.
+ */
+export const TrendSummary: Story = {
+  name: "Trend line with auto summary",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ScatterChart
+        accessibleLabel="Weekly revenue, with trend"
+        data={trendSummaryData}
+        xDataKey="week"
+        xScale="linear"
+      >
+        <Grid horizontal />
+        <Scatter dataKey="revenue" trend="linear" />
+        <XAxis />
+        <YAxis />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const figure = await waitFor(() => {
+      const el = canvasElement.querySelector('[role="figure"]');
+      expect(el).not.toBeNull();
+      return el as HTMLElement;
+    });
+    const descId = figure.getAttribute("aria-describedby");
+    expect(descId).toBeTruthy();
+    await waitFor(() => {
+      const description = canvasElement.querySelector(`#${descId}`);
+      expect(description?.textContent).toContain("trend increasing (r² 1.00)");
+    });
+  },
+};
+
+/**
+ * The same trend, but the caller writes its own `accessibleDescription` — the
+ * auto summary (and any trend fragment) never overrides a caller's own text.
+ */
+export const TrendSummaryCustomDescription: Story = {
+  name: "Trend line with a caller-written description",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ScatterChart
+        accessibleDescription="Weekly revenue, hand-written note: steady growth."
+        accessibleLabel="Weekly revenue, with trend"
+        data={trendSummaryData}
+        xDataKey="week"
+        xScale="linear"
+      >
+        <Grid horizontal />
+        <Scatter dataKey="revenue" trend="linear" />
+        <XAxis />
+        <YAxis />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const figure = await waitFor(() => {
+      const el = canvasElement.querySelector('[role="figure"]');
+      expect(el).not.toBeNull();
+      return el as HTMLElement;
+    });
+    const descId = figure.getAttribute("aria-describedby");
+    expect(descId).toBeTruthy();
+    await waitFor(() => {
+      const description = canvasElement.querySelector(`#${descId}`);
+      expect(description?.textContent).toBe("Weekly revenue, hand-written note: steady growth.");
+    });
+  },
+};
+
 const customShapeData = [
   { x: 0, y: 4 },
   { x: 5, y: 9 },
