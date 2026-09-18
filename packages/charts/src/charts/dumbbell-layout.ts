@@ -123,7 +123,7 @@ export function buildDumbbellBands(rows: DumbbellRow[], groupBy?: string): Dumbb
   return bands;
 }
 
-// ─── Band extents (validator fix-round-1, #4811) ──────────────────────────
+// ─── Band extents (validator fix-round-1, #491) ──────────────────────────
 
 export interface DumbbellBandExtent {
   /** Px offset of this band's near edge along the row axis (y for
@@ -142,7 +142,7 @@ export interface DumbbellBandExtent {
  *
  * `DumbbellChart` itself calls this with `headerSize` equal to that uniform
  * share, i.e. a lookup of the pre-existing split, not a resize: validator
- * fix-round-1 (RM-116, #4811 — "Referral" intersected "+46.7%" at 380px)
+ * fix-round-1 (RM-116, #491 — "Referral" intersected "+46.7%" at 380px)
  * tried growing the header band, paired with top-anchoring the header's own
  * label, and found growth regressed a DIFFERENT pair instead — at the
  * ArrowPlot's real 12-row/3-header/272px geometry, a grown header band left

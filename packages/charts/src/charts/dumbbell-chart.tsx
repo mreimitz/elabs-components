@@ -87,9 +87,11 @@ import {
   useChartSelection,
 } from "./chart-selection";
 import {
+  breakpointForWidth,
   ChartPlotRoot,
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
+  resolveResponsive,
   type Responsive,
 } from "./chart-breakpoint";
 
@@ -321,7 +323,7 @@ const DOTS_RANGE_BAR_WIDTH = CONNECTOR_STROKE_WIDTH;
 const GROUP_HEADER_SEPARATOR_INSET = 6;
 
 /**
- * Validator fix-round-1 (#4811) tried BOTH remedies the validator offered —
+ * Validator fix-round-1 (#491) tried BOTH remedies the validator offered —
  * a fixed, grown-past-a-row header band AND a top-anchored header label —
  * together. That combination regressed: at the ArrowPlot's real geometry
  * (12 rows + 3 headers over a fixed 272px inner height, ~18.1px/band
@@ -334,6 +336,21 @@ const GROUP_HEADER_SEPARATOR_INSET = 6;
  * always had (`computeDumbbellBandExtents` called with `headerSize` equal
  * to that share is a lookup, not a resize — see `groupHeaderSize` below);
  * `GROUP_HEADER_LABEL_TOP_OFFSET` is the whole fix.
+ *
+ * Round-2 (#491) found that conclusion incomplete: round-1's own regression
+ * test resized only the story's inner wrapper `div`, never the real page
+ * viewport, so "380/600/900" there was never the ~348/568/640px a real
+ * viewport of that width actually hands the container (Storybook's centered
+ * layout pads ~32px, and the story wrapper itself caps at 640px) — at the
+ * real 348px width the uniform per-band share (~15px) leaves the header
+ * label and the first row's delta label baseline-adjacent (~1px apart),
+ * which their own text boxes (~15px tall) turn into a near-total overlap.
+ * The fix stays "don't reallocate the uniform row share" (that is still
+ * what regressed row/row spacing); instead the PLOT ITSELF grows just
+ * enough to give header bands `groupHeaderBandFloorPx` while every row band
+ * keeps the exact share an ungrouped chart of the same row count would get
+ * — see the height-floor block in `DumbbellChartBase` and `groupHeaderSize`
+ * below.
  */
 
 /**
@@ -347,6 +364,25 @@ const GROUP_HEADER_SEPARATOR_INSET = 6;
  * vertical-orientation header's pre-existing offset.
  */
 const GROUP_HEADER_LABEL_TOP_OFFSET = 12;
+
+/**
+ * The row-axis space a `groupBy` header band needs so its own label, and the
+ * first row's delta label reaching up from below, never share vertical
+ * space at any width (validator round-2, #491: "Referral" still intersected
+ * "+46.7%" at a real 380px/600px viewport after round-1's top-anchoring —
+ * round-1's regression test resized only an inner wrapper `div`, never the
+ * real page viewport, so it missed that a real narrow container is
+ * NARROWER than the 380/600/900 it tested, and the header/row bands that
+ * narrow width produces are tight enough for the two labels to land almost
+ * exactly on top of each other). `GROUP_HEADER_LABEL_TOP_OFFSET` down for
+ * the label's own baseline, one more full line as the label's own box, sized
+ * from the MEASURED line height at the resolved density (`lineHeightPx`),
+ * never a bare pixel constant — the same reasoning `SLOPE_LABEL_GAP_RATIO`
+ * documents above.
+ */
+function groupHeaderBandFloorPx(lineHeightPx: number): number {
+  return GROUP_HEADER_LABEL_TOP_OFFSET + lineHeightPx * 2;
+}
 
 /** Px between a label's near edge and the track/plot edge it sits beside — the
  *  offset already baked into every label's `x` (`slopeStartX - 10`, `x={-10}`,
@@ -692,7 +728,7 @@ interface PlotProps {
 
 /**
  * Looks up band `index`'s rect from precomputed `extents` (one per band,
- * from `computeDumbbellBandExtents` — validator fix-round-1, #4811): the row
+ * from `computeDumbbellBandExtents` — validator fix-round-1, #491): the row
  * axis (y for horizontal, x for vertical) comes from the band's own
  * `offset`/`size`, the cross axis always spans the full plot. `extents` built
  * with every band the SAME `headerSize` as `size` (i.e. no `groupBy`, or a
@@ -867,15 +903,29 @@ function DumbbellPlot({
     return map;
   }, [bands]);
 
-  // Band extents (validator fix-round-1, #4811): every band — header or row
-  // — keeps the SAME uniform share of the row axis (see the constant block
-  // above for why growing the header band past that share regressed row/row
-  // spacing instead). Passing that share as `computeDumbbellBandExtents`'s
-  // `headerSize` makes this call a lookup of the pre-existing uniform split,
-  // not a resize; `bandExtents` exists so `rowRect` has one indexable source
-  // for both band kinds instead of two divergent index formulas.
+  // Band extents (validator fix-round-1, #491): every ROW band keeps the SAME
+  // uniform share of the row axis (see the constant block above for why
+  // growing the header band past that share — by reallocating within a FIXED
+  // total — regressed row/row spacing instead). Header bands are different as
+  // of round-2 (#491): a horizontal `groupBy` header gets `groupHeaderSize` =
+  // `groupHeaderBandFloorPx(lineHeightPx)`, sized to hold its own label clear
+  // of the first row's delta label reaching up from below — the EXTRA room
+  // that takes comes from `DumbbellChartBase` growing the plot's own height
+  // (see its height-floor block), never from shrinking the row share, so
+  // `computeDumbbellBandExtents` still resolves every row band to the exact
+  // pitch an ungrouped chart of the same row count would draw. Vertical
+  // `orientation` (dumbbell only) keeps the pre-existing uniform share on
+  // BOTH kinds — that axis is the plot's measured CONTAINER width, which this
+  // fix deliberately never forces (ADR 0039: a chart measures its own width,
+  // it does not grow past what its container gives it).
   const innerAxisSize = orientation === "vertical" ? innerWidth : innerHeight;
-  const groupHeaderSize = innerAxisSize / Math.max(bands.length, 1);
+  const hasHorizontalGroupHeaders =
+    Boolean(groupBy) &&
+    !(orientation === "vertical" && variant === "dumbbell") &&
+    bands.some((band) => band.kind === "header");
+  const groupHeaderSize = hasHorizontalGroupHeaders
+    ? groupHeaderBandFloorPx(lineHeightPx)
+    : innerAxisSize / Math.max(bands.length, 1);
   const bandExtents = useMemo(
     () =>
       computeDumbbellBandExtents(
@@ -1090,7 +1140,7 @@ function DumbbellPlot({
                 const rect = rowRect(orientation, bandIndex, bandExtents, innerWidth, innerHeight);
                 const labelX = orientation === "vertical" ? rect.x + rect.width / 2 : 0;
                 // Fixed offset from the band's OWN top (validator
-                // fix-round-1, #4811) — never `rect.height`-dependent, so the
+                // fix-round-1, #491) — never `rect.height`-dependent, so the
                 // label sits in the band's own upper portion, clear of the
                 // boundary with the next row, instead of riding down against it.
                 const labelY = rect.y + GROUP_HEADER_LABEL_TOP_OFFSET;
@@ -1709,6 +1759,47 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     ...marginProp,
   };
 
+  // groupBy header-band height floor (validator round-2, #491): a horizontal
+  // header band needs `groupHeaderBandFloorPx(lineHeightPx)`, not the uniform
+  // per-band share `computeDumbbellBandExtents` gives every OTHER band (see
+  // `groupHeaderSize` in `DumbbellPlot`) — reallocating within the aspect-
+  // ratio height to afford that (round-1's attempt) starves the row bands'
+  // own labels instead. So the EXTRA room comes from the plot's own height:
+  // computed from `width` and the family's default aspect (replicated here,
+  // never read back from `bounds.height` — that would already reflect our
+  // own last override and drift upward every render), never below what
+  // `aspectRatio`/`plotHeight` already resolves to. Vertical `orientation`
+  // (dumbbell only) is unaffected — see `hasHorizontalGroupHeaders` above.
+  let heightOverridePx: number | undefined;
+  if (groupBy && !(orientation === "vertical" && variant === "dumbbell") && width > 0) {
+    const groupHeaderCount = new Set(rows.map((row) => String(row.datum[groupBy] ?? ""))).size;
+    if (groupHeaderCount > 0 && rows.length > 0) {
+      const measuredBreakpoint = breakpointForWidth(width);
+      const resolvedPlotHeight =
+        plotHeight !== undefined
+          ? resolveResponsive(plotHeight, measuredBreakpoint)
+          : aspectRatio === undefined
+            ? resolveResponsive(DEFAULT_CHART_PLOT_HEIGHT, measuredBreakpoint)
+            : undefined;
+      const naturalHeightPx =
+        resolvedPlotHeight === undefined
+          ? height
+          : typeof resolvedPlotHeight === "number"
+            ? resolvedPlotHeight
+            : width / resolvedPlotHeight.aspect;
+      const naturalRowShare = Math.max(
+        (naturalHeightPx - margin.top - margin.bottom) / rows.length,
+        0,
+      );
+      const requiredInnerAxisSize =
+        groupHeaderCount * groupHeaderBandFloorPx(lineHeightPx) + rows.length * naturalRowShare;
+      const requiredHeightPx = margin.top + margin.bottom + requiredInnerAxisSize;
+      if (requiredHeightPx > naturalHeightPx) {
+        heightOverridePx = requiredHeightPx;
+      }
+    }
+  }
+
   return (
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
@@ -1718,7 +1809,11 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
       data-slot="dumbbell-chart"
       ref={setContainerRef}
       role={role}
-      style={{ touchAction: "none" }}
+      style={
+        heightOverridePx !== undefined
+          ? { touchAction: "none", height: heightOverridePx }
+          : { touchAction: "none" }
+      }
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />

@@ -586,10 +586,50 @@ export const SelectionStates: Story = {
   },
 };
 
-// ── RM-116 validator fix-round-1 (#4811): no painted text may intersect ────
+// ── RM-116 validator fix-round-1/round-2 (#491): no painted text may ──────
+// ── intersect, at the width a real browser viewport actually gives it ─────
 
-/** Minimum clear px between any two painted text boxes — the validator's bar. */
-const TEXT_OVERLAP_MIN_GAP_PX = 2;
+/** Minimum clear px between any two painted text boxes — the validator's bar
+ *  (round-2: ≥ 1px, down from round-1's 2px — the acceptance bar itself, not
+ *  a margin this test re-encodes as the spec). */
+const TEXT_OVERLAP_MIN_GAP_PX = 1;
+
+/**
+ * Storybook's `layout: "centered"` parameter (this story's `meta.parameters`)
+ * pads the preview ~16px each side (`sb-main-centered`, applied inside the
+ * SAME iframe a real browser viewport renders — not manager-UI chrome, so it
+ * is not an artifact of running headless) — 32px total. A real page viewport
+ * of `W` px therefore hands `[data-testid="dumbbell-story-wrapper"]`
+ * `W - SB_CENTERED_PADDING_PX` px, capped at the wrapper's own
+ * `max-w-[640px]`.
+ */
+const SB_CENTERED_PADDING_PX = 32;
+/** The wrapper's own `max-w-[640px]` (every render below in this file). */
+const STORY_MAX_WIDTH_PX = 640;
+/**
+ * The validator's real browser viewport widths (Playwright
+ * `page.setViewportSize`, `iframe.html?id=…` at 380/600/900px) — kept here so
+ * `REAL_VIEWPORT_CONTENT_WIDTHS_PX` documents its own derivation instead of
+ * three bare content-width constants.
+ */
+const VALIDATOR_VIEWPORT_WIDTHS_PX = [380, 600, 900];
+/**
+ * Round-2 (#491) fix for round-1's actual bug: `assertNoTextOverlapAtWidths`
+ * resized only this wrapper — directly to 380/600/900 — while the vitest
+ * browser project's OWN viewport stayed fixed and wide, so the chart got
+ * MORE width than a real 380/600/900px page viewport ever would (Storybook's
+ * centered-layout padding + this wrapper's own width cap both still apply at
+ * a real viewport, never inside this test). That let round-1's fix pass here
+ * while a real narrow viewport still overlapped. These are the PROVEN
+ * equivalent widths instead — a real Playwright page at 380/600/900px reads
+ * the exact same `[data-chart-breakpoint]` container `clientWidth` (348,
+ * 568, 640) that resizing this wrapper to these numbers produces; both
+ * readings are quoted side by side in the round-2 result file
+ * (`RM-116-result.md`).
+ */
+const REAL_VIEWPORT_CONTENT_WIDTHS_PX = VALIDATOR_VIEWPORT_WIDTHS_PX.map((width) =>
+  Math.min(width - SB_CENTERED_PADDING_PX, STORY_MAX_WIDTH_PX),
+);
 
 /**
  * True nearest-edge Euclidean distance between two axis-aligned rects: 0 when
@@ -608,7 +648,7 @@ function rectGapPx(a: DOMRect, b: DOMRect): number {
 }
 
 /**
- * Fails on the pre-fix geometry (validator fix-round-1, #4811): at 380px a
+ * Fails on the pre-fix geometry (validator fix-round-1, #491): at 380px a
  * `groupBy` header band got no more room than a single row, so a group
  * header's own `HaloText` painted on top of the first row's delta label in
  * its group ("Referral" intersecting "+46.7%"). Every SVG `<text>` in the
@@ -643,7 +683,16 @@ async function assertNoPaintedTextOverlap(canvasElement: HTMLElement): Promise<v
  * browser project runs one fixed viewport) to each width in turn and asserts
  * no painted text overlaps at any of them. `ChartPlotRoot`'s `ResizeObserver`
  * reflows the chart on the width change; `waitFor` inside the assertion
- * absorbs that latency.
+ * absorbs that latency. Pass `REAL_VIEWPORT_CONTENT_WIDTHS_PX`, never the raw
+ * validator viewport widths — see its docblock (round-2, #491).
+ *
+ * Always restores the wrapper's ORIGINAL inline `width`/`maxWidth` in a
+ * `finally`, success or failure (round-2, #491): a `play` function's own DOM
+ * mutations survive after it returns — CSF3 runs `play` on every preview
+ * load, including a bare `iframe.html` visit with no interactions-addon
+ * channel — so a resize left dangling here is exactly what made round-1's
+ * validator read a real 600px viewport as `narrow`: the story's own play
+ * function had stuck the wrapper at its FIRST swept width and never let go.
  */
 async function assertNoTextOverlapAtWidths(
   canvasElement: HTMLElement,
@@ -653,10 +702,17 @@ async function assertNoTextOverlapAtWidths(
     '[data-testid="dumbbell-story-wrapper"]',
   );
   expect(wrapper).not.toBeNull();
-  for (const width of widths) {
-    wrapper!.style.width = `${width}px`;
-    wrapper!.style.maxWidth = `${width}px`;
-    await assertNoPaintedTextOverlap(canvasElement);
+  const originalWidth = wrapper!.style.width;
+  const originalMaxWidth = wrapper!.style.maxWidth;
+  try {
+    for (const width of widths) {
+      wrapper!.style.width = `${width}px`;
+      wrapper!.style.maxWidth = `${width}px`;
+      await assertNoPaintedTextOverlap(canvasElement);
+    }
+  } finally {
+    wrapper!.style.width = originalWidth;
+    wrapper!.style.maxWidth = originalMaxWidth;
   }
 }
 
@@ -699,7 +755,11 @@ export const ArrowPlot: Story = {
     delta: { show: true, mode: "percent" },
   },
   render: (args) => (
-    <div className="h-[420px] w-full max-w-[640px]" data-testid="dumbbell-story-wrapper">
+    // No fixed height (validator round-2, #491): a grouped chart's own height
+    // floor (`groupHeaderBandFloorPx`, `dumbbell-chart.tsx`) can now grow past
+    // any height this story pins, so the wrapper only bounds width — the
+    // chart sizes itself.
+    <div className="w-full max-w-[640px]" data-testid="dumbbell-story-wrapper">
       <DumbbellChart {...args} />
     </div>
   ),
@@ -726,9 +786,10 @@ export const ArrowPlot: Story = {
         expect(label.textContent).toMatch(/^[+-]\d+(\.\d+)?%$/);
       }
     });
-    // Validator fix-round-1 (#4811): grouped bands are the densest geometry
-    // this component draws — sweep the widths the acceptance bar names.
-    await assertNoTextOverlapAtWidths(canvasElement, [380, 600, 900]);
+    // Validator fix-round-1/round-2 (#491): grouped bands are the densest
+    // geometry this component draws — sweep the widths a real narrowed
+    // browser viewport actually gives the chart.
+    await assertNoTextOverlapAtWidths(canvasElement, REAL_VIEWPORT_CONTENT_WIDTHS_PX);
   },
 };
 
@@ -774,9 +835,10 @@ export const DotsPlot: Story = {
     for (const key of ["us", "rivalA", "rivalB"]) {
       expect(canvasElement.textContent).toContain(key);
     }
-    // Validator fix-round-1 (#4811): the colour-key legend is the fourth
-    // painted-text kind the acceptance bar names alongside category/delta/
-    // group-header labels.
-    await assertNoTextOverlapAtWidths(canvasElement, [380, 600, 900]);
+    // Validator fix-round-1/round-2 (#491): the colour-key legend is the
+    // fourth painted-text kind the acceptance bar names alongside category/
+    // delta/group-header labels; sweep the widths a real narrowed browser
+    // viewport actually gives the chart.
+    await assertNoTextOverlapAtWidths(canvasElement, REAL_VIEWPORT_CONTENT_WIDTHS_PX);
   },
 };

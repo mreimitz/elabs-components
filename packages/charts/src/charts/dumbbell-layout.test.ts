@@ -161,7 +161,7 @@ describe("arrowHeadPoints / arrowHeadPath", () => {
 // `computeDumbbellBandExtents` can give a header band a FIXED size
 // independent of the row share — these tests pin down that general
 // behaviour with arbitrary `headerSize` values. `dumbbell-chart.tsx` itself
-// does NOT use that growth: validator fix-round-1 (#4811) tried it (paired
+// does NOT use that growth: validator fix-round-1 (#491) tried it (paired
 // with a top-anchored header label) and found it regressed row/row spacing
 // instead — at the ArrowPlot's real 12-row/3-header/272px geometry, growing
 // the header band past its uniform share left too little of the remaining
@@ -195,7 +195,7 @@ describe("computeDumbbellBandExtents", () => {
   it("given an explicit headerSize larger than the uniform share, still holds it exactly (generic capability, not what DumbbellChart calls it with — see the file header comment)", () => {
     // 12 rows + 3 headers, matching the ArrowPlot story's band count. A
     // caller COULD grow headers past the uniform share this way; the
-    // ArrowPlot regression (fix-round-1, #4811) is why `dumbbell-chart.tsx`
+    // ArrowPlot regression (fix-round-1, #491) is why `dumbbell-chart.tsx`
     // does not — see `dumbbell-chart.stories.tsx`'s ArrowPlot/DotsPlot
     // `assertNoTextOverlapAtWidths` play assertions for the shipped fix's
     // own regression coverage, at the real geometry this function alone
