@@ -72,6 +72,7 @@ import type {
   NetworkNodeLayout,
   NetworkPoint,
 } from "./network-types";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
 
 export type {
   NetworkLayout,
@@ -142,6 +143,11 @@ export interface NetworkChartProps extends ChartInteractionProps<NetworkDatapoin
   /** Aspect ratio as "width / height". Default `"16 / 9"`. */
   aspectRatio?: string;
   /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
+  /**
    * Accessible name for the chart region. Defaults to the auto summary —
    * `"Network, 60 nodes, 140 links, 5 groups"` — because the counts are exactly
    * what an `aria-hidden` SVG withholds.
@@ -201,7 +207,8 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
     valueFormat = "compact",
     className,
     style,
-    aspectRatio = "16 / 9",
+    aspectRatio,
+    plotHeight,
     accessibleLabel,
     accessibleDescription,
     onDatapointClick: _onDatapointClick,
@@ -468,7 +475,8 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
     : [];
 
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: "16 / 9" }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full select-none", className)}
@@ -477,7 +485,7 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
       onFocus={handleFocus}
       ref={ref}
       role={role}
-      style={{ aspectRatio, ...style }}
+      style={{ ...style }}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -519,7 +527,7 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
           <ChartDatapointLayer />
         </NetworkChartProvider>
       )}
-    </div>
+    </ChartPlotRoot>
   );
 });
 

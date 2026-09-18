@@ -42,6 +42,12 @@ import { PatternArea } from "./pattern-area";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import { TimeSeriesChartInner } from "./time-series-chart-shell";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+} from "./chart-breakpoint";
 
 export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps {
   /** Data array - each item should have a date field and numeric values */
@@ -82,6 +88,11 @@ export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps
   replayOnClick?: boolean;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
   /** Loading vs ready — drives chart phase and loading chrome. Default: `"ready"`. */
@@ -338,7 +349,8 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
     revealSignature,
     revealOn,
     replayOnClick,
-    aspectRatio = "2 / 1",
+    aspectRatio,
+    plotHeight,
     className = "",
     status = DEFAULT_CHART_STATUS,
     loadingLabel,
@@ -410,13 +422,14 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
   );
 
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
-      style={{ aspectRatio, touchAction: "none", ...style }}
+      style={{ touchAction: "none", ...style }}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -465,7 +478,7 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}
-    </div>
+    </ChartPlotRoot>
   );
 });
 
