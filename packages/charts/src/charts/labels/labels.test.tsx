@@ -313,6 +313,29 @@ describe("label engine — value labels", () => {
     expect((group as Element).querySelectorAll("circle").length).toBeGreaterThan(0);
   });
 
+  it('paints labelPeaks={3} into the published "line-peak-labels" group', () => {
+    box.width = 900;
+    box.height = 450;
+    // Three peaks seven samples apart, so the default six-sample gap keeps all three.
+    const peaks: Record<number, number> = { 2: 50, 9: 60, 16: 70 };
+    const spaced = Array.from({ length: 20 }, (_, i) => ({
+      date: new Date(2020, i, 1),
+      v: peaks[i] ?? 10,
+    }));
+    const { container } = render(
+      <LineChart animationDuration={0} data={spaced}>
+        <Line dataKey="v" labelPeaks={3} />
+      </LineChart>,
+    );
+    const groups = container.querySelectorAll('[data-slot="line-peak-labels"]');
+    expect(groups).toHaveLength(1);
+    const group = groups[0] as Element;
+    expect(group.getAttribute("aria-hidden")).toBe("true");
+    const texts = [...group.querySelectorAll("text")].map((t) => t.textContent);
+    expect(texts.sort()).toEqual(["50", "60", "70"]);
+    expect(container.querySelector('[data-slot="line-value-labels"]')).toBeNull();
+  });
+
   it("picks first / last / all / peaks", () => {
     const values = [3, Number.NaN, 9, 1, 7, 9];
     expect(pickNotableIndices(values, { placement: "first", count: 1, minGap: 1 })).toEqual([0]);
