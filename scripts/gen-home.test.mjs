@@ -247,31 +247,26 @@ test("story-ids.json: every id matches Storybook's own docs-id shape", () => {
   }
 });
 
-test("story-ids.json: every RESOLVABLE seed link component has an id (#460 Acceptance)", () => {
-  // The seed list named in the RM: Button, DataTable, Conversation, DashboardSheet,
-  // FlowCanvas, ProcessMap, MapCanvas, CodeEditor, Terminal. Two do not resolve
-  // today, for reasons outside this item's touches (neither is a gen-home bug):
-  //   - "Conversation" (packages/ai/src/conversation.stories.tsx) has no
-  //     `tags: ["autodocs"]`, so it has no docs page yet.
-  //   - "FlowCanvas" is not an exported component name — @elabs-ai/components-flow
-  //     exports "CanvasShell" for this role. The seed list needs updating by
-  //     whichever RM item creates apps/home/content/links.ts.
-  // Both are asserted here as KNOWN GAPS (not silently dropped) rather than
-  // patched by renaming/editing a file outside packages/cli or scripts/gen-home.
-  const resolvable = [
+test("story-ids.json: every seed link component has an id (#460 Acceptance)", () => {
+  // The seed list named in the RM, with the orchestrator's two rulings applied
+  // (RM-089-decisions.md): "FlowCanvas" (not a real export) is seeded as
+  // "CanvasShell" (the real @elabs-ai/components-flow export for that role), and
+  // packages/ai/src/conversation.stories.tsx now carries `tags: ["autodocs"]` so
+  // "Conversation" gets a docs page.
+  const seeds = [
     "Button",
     "DataTable",
+    "Conversation",
     "DashboardSheet",
+    "CanvasShell",
     "ProcessMap",
     "MapCanvas",
     "CodeEditor",
     "Terminal",
   ];
-  for (const name of resolvable) {
+  for (const name of seeds) {
     assert.ok(committedStoryIds[name], `${name} should resolve to a docs id`);
   }
-  assert.equal(committedStoryIds.Conversation, undefined, "known gap — see comment above");
-  assert.equal(committedStoryIds.FlowCanvas, undefined, "known gap — see comment above");
 });
 
 test("gates.json: every entry has a real source file and a category from the real rule/command scopes", () => {

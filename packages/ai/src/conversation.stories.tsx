@@ -5,6 +5,7 @@ import { Message, MessageContent } from "./message";
 const meta = {
   title: "AI/Conversation",
   component: Conversation,
+  tags: ["autodocs"],
   parameters: {
     layout: "padded",
     docs: {
