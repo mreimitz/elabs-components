@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { extractChartDataShapes } from "../lib/core.mjs";
-import { matchChartFor, renderChartForText } from "../lib/chart-for.mjs";
+import { matchChartFor, queryRoles, renderChartForText } from "../lib/chart-for.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -90,6 +90,8 @@ test("matchChartFor ranks by whole-token overlap, best-matching shape wins", () 
     [
       ["HeatmapChart", 4],
       ["UnitChart", 3],
+      // a ROLE point each for time ("hour") and measure ("volume") — no literal word shared
+      ["LineChart", 2],
     ],
   );
   // the quoted reason is the container's OWN best-matching tag, not an average
@@ -137,6 +139,23 @@ test("renderChartForText names every candidate and says so when there are none",
   assert.match(text, /1\. HeatmapChart/);
   assert.match(text, /avoid when:/);
   assert.match(renderChartForText("zzz", []), /no chart container declared a matching @dataShape/);
+});
+
+test("a DATA description reaches SHAPE vocabulary through roles (measure × time × category)", () => {
+  assert.deepEqual(queryRoles("revenue by month by region").sort(), [
+    "category",
+    "geography",
+    "measure",
+    "time",
+  ]);
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "brand-ui.manifest.json"), "utf8"));
+  const got = matchChartFor(manifest, "revenue by month by region");
+  assert.ok(got.length >= 3, "the selection rules need at least three candidates to compare");
+  const names = got.map((c) => c.name);
+  assert.ok(names.includes("LineChart"), names.join(","));
+  // a map cannot show the month dimension — it must not lead
+  assert.notEqual(names[0], "ChoroplethChart");
+  assert.match(renderChartForText("revenue by month by region", got), /read as: /);
 });
 
 // ── the shipped manifest (the acceptance example, end to end) ────────────────
