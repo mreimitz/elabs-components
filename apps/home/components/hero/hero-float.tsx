@@ -10,6 +10,11 @@
  * DataTable cells and the chat panel at 1024/1280/1440): the tool card straddles the top edge
  * over the header band's empty middle, the KPI and flow-node cards straddle the start edge
  * over the nav rail below its four items (rail 11rem; content starts 1rem past it).
+ *
+ * RM-096-fx: this (aria-hidden, non-text-perceivable) plane carries the "hero recedes as the
+ * tour enters" dim (`in-data-past-hero:opacity-90`, RM-096 ruling 7) instead of the scene
+ * wrapper — dimming the real app-shell scene dropped its DataTable sort-header buttons below
+ * AA contrast (#454). The scene itself (`hero.tsx`) stays at opacity 1.
  */
 import { Card, ParallaxPlane, StatusBadge } from "@elabs-ai/components-ui";
 import { MetricCard } from "@elabs-ai/components-charts";
@@ -20,7 +25,11 @@ const KPI = HERO_SEED.churnKpi;
 
 export function HeroFloat() {
   return (
-    <div aria-hidden="true" inert className="pointer-events-none absolute inset-0 hidden lg:block">
+    <div
+      aria-hidden="true"
+      inert
+      className="pointer-events-none absolute inset-0 hidden transition-opacity duration-base ease-standard in-data-past-hero:opacity-90 lg:block"
+    >
       <ParallaxPlane plane="float" className="absolute start-72 -top-6 w-52">
         <Card className="gap-2 p-3 shadow-lg">
           <div className="flex items-center justify-between gap-2">

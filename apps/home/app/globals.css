@@ -5,6 +5,15 @@
 @import "@elabs-ai/components-tokens/styles.css";
 @import "@elabs-ai/components-tokens/themes/light.css";
 @import "@elabs-ai/components-tokens/themes/dark.css";
+/* RM-098 (beyond the RM's touches list — see the result file): `@elabs-ai/components-flow`'s
+   `CanvasShell` (used by the flow-workspace and process-explorer tour surfaces) is documented
+   as requiring the CONSUMER to load React Flow's own structural stylesheet — the same import
+   Storybook's preview.tsx already carries. Without it, `.react-flow__node` loses `position:
+   absolute` and `.react-flow__background` loses `pointer-events: none`, so nodes stack in
+   normal document flow instead of the canvas coordinate system and the background layer
+   swallows pointer/wheel events meant for the pane. No prior apps/home surface rendered real
+   React Flow output, so this gap was previously latent. */
+@import "@xyflow/react/dist/style.css";
 /* RM-091 — the downloadable theme families (`themes/<slug>/`), copied into ../themes/ by
    scripts/gen-home-themes.mjs on install (git-ignored, never hand-edited): fonts first, then
    every <slug>-{light,dark}.css, then the `@custom-variant dark` line (themes/README.md). */

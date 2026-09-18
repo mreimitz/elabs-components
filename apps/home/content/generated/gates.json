@@ -187,7 +187,7 @@
   },
   {
     "id": "home-imports",
-    "doc": "Build the website (`apps/home`, ADR 0038) only from the library: import react, react-dom, next, motion, @vercel/analytics, `@elabs-ai/*` or a relative path; a registry block copied under `apps/home/components/blocks/` keeps its `// registry: <name> — copied <YYYY-MM-DD>` header.",
+    "doc": "Build the website (`apps/home`, ADR 0038) only from the library: import react, react-dom, next, motion, @vercel/analytics, lucide-react, `@elabs-ai/*` or a relative path; a registry block copied under `apps/home/components/blocks/` keeps its `// registry: <name> — copied <YYYY-MM-DD>` header.",
     "category": "packages",
     "source": "scripts/check/rules/home-imports.mjs"
   },

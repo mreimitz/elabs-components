@@ -11,6 +11,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - AccordionItem
 - AccordionTrigger
 - AdvancedGroup
+- AffordanceHint
 - Alert (variant=default*|info|success|warning|destructive)
 - AlertDescription
 - AlertDialog — Confirmation overlay for destructive / irreversible actions — friction proportional to consequence.
@@ -132,6 +133,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DateRangePicker
 - DEFAULT_COMMAND_CHIP_LABELS
 - DEFAULT_MESSAGES
+- DEFAULT_SURFACE_TOUR_ACTIONS_LABELS
 - DEFAULT_THEME_FAMILY_SWITCH_LABELS
 - Descriptions
 - DescriptionsItem
@@ -397,6 +399,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - StatusIcon
 - STREAMDOWN_TRANSLATION_KEYS
 - SuccessIllustration
+- SurfaceTour
+- SurfaceTourActions
 - Switch — Immediate on/off setting toggle (applies on change, not on submit).
   - avoid: Switch that needs a separate Save to apply — use a Checkbox in a form instead; a Switch should apply immediately.
 - Table

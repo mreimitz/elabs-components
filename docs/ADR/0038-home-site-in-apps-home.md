@@ -80,9 +80,10 @@ the exact shape a Next.js App Router route handler exports. The transport moves 
   `tailwindcss` and `@elabs-ai/components-tokens/styles.css` plus the `@source` lines copied from
   `docs/CONSUMING.md` — the site wires the library the way the docs tell a consumer to.
 - **Library only, checked.** The site imports React, Next, `motion`, `@vercel/analytics`,
-  `@elabs-ai/*` and copy-own registry blocks, nothing else. Two new check rules (`home-imports`,
-  `home-tokens`) and the existing `raw-palette` and `motion-tokens` rules extended to `apps/home`
-  enforce it; `.claude/rules/home.md` carries the standing rules.
+  `lucide-react`, `@elabs-ai/*` and copy-own registry blocks, nothing else. Two new check rules
+  (`home-imports`, `home-tokens`) and the existing `raw-palette` and `motion-tokens` rules extended
+  to `apps/home` enforce it; `.claude/rules/home.md` carries the standing rules.
+  2026-09-19: `lucide-react` allowed (maintainer decision).
 - **Version.** The roadmap text names Next.js 15.x. To the drafter's knowledge a 16.x line has
   been stable since late 2025; this was not checked against the npm registry while drafting (no
   network). Proposal: the scaffold uses the current stable major, read from the registry at
