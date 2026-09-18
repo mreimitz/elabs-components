@@ -264,7 +264,10 @@ function SpanName({ span }: { span: TraceSpan }) {
           ? "not reached"
           : "ok";
   return (
-    <span className="inline-flex min-w-0 items-center gap-2">
+    // `flex` (not `inline-flex`): an inline-flex box sizes to its full text and
+    // spills past the Gantt label pill, so the name never truncates and axe reads
+    // it against the bar fill instead of the pill.
+    <span className="flex min-w-0 items-center gap-2">
       <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full bg-current", tone)} />
       <span className="truncate">{span.agent}</span>
       <span className="sr-only">, {word}</span>
