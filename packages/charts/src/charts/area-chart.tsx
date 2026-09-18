@@ -16,6 +16,8 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
@@ -336,12 +338,7 @@ function ChartInner({
   );
 }
 
-/**
- * @dataShape measures over time where magnitude matters — stacked, or as a stream with
- *   offset="wiggle"
- * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
- */
-export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
+const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
   {
     data,
     xDataKey = "date",
@@ -484,6 +481,20 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
       ) : null}
     </ChartPlotRoot>
   );
+});
+
+// Annotations — RM-111
+export interface AreaChartProps {
+  /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
+  annotations?: readonly ChartAnnotation[];
+}
+/**
+ * @dataShape measures over time where magnitude matters — stacked, or as a stream with
+ *   offset="wiggle"
+ * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
+ */
+export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(props, ref) {
+  return useAnnotatedChart(AreaChartPlot, props, ref);
 });
 
 AreaChart.displayName = "AreaChart";

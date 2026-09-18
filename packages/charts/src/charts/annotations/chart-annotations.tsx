@@ -169,8 +169,10 @@ export function AnnotationLineMark({
   strokeDasharray,
 }: AnnotationLineMarkProps) {
   const horizontal = axis === "y";
+  // No attributes on the group: `Grid`'s highlight rows/columns render through
+  // this mark and must keep their exact DOM.
   return (
-    <g data-slot="chart-annotations-line">
+    <g>
       <line
         stroke={stroke}
         strokeDasharray={strokeDasharray}
@@ -248,7 +250,7 @@ function renderLine(
       : scales.x.point(annotation.x as AnnotationValue);
   if (position === undefined) return null;
   return (
-    <g data-annotation-index={index} key={`line-${index}`}>
+    <g data-annotation-index={index} data-slot="chart-annotations-line" key={`line-${index}`}>
       <AnnotationLineMark
         axis={axis}
         innerHeight={scales.innerHeight}

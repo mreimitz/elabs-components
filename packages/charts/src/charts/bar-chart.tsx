@@ -29,6 +29,8 @@ import {
   planCategoryAxis,
 } from "./category-axis-plan";
 import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import {
   chartCssVars,
@@ -1180,14 +1182,7 @@ const ChartCore = memo(function ChartCore({
   );
 });
 
-/**
- * @dataShape categorical comparison of one or more measures across a small set of named
- *   categories
- * @dataShape a single signed measure around a meaningful zero, as diverging bars with a
- *   zero line
- * @avoidWhen a time axis with many points — use a line or area chart
- */
-export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
+const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
   {
     data,
     xDataKey = "name",
@@ -1307,6 +1302,22 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}
     </ChartPlotRoot>
   );
+});
+
+// Annotations — RM-111
+export interface BarChartProps {
+  /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
+  annotations?: readonly ChartAnnotation[];
+}
+/**
+ * @dataShape categorical comparison of one or more measures across a small set of named
+ *   categories
+ * @dataShape a single signed measure around a meaningful zero, as diverging bars with a
+ *   zero line
+ * @avoidWhen a time axis with many points — use a line or area chart
+ */
+export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(props, ref) {
+  return useAnnotatedChart(BarChartPlot, props, ref);
 });
 
 BarChart.displayName = "BarChart";

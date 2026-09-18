@@ -218,6 +218,51 @@ describe("ChartAnnotations in a LineChart", () => {
   });
 });
 
+describe("the annotations prop on LineChart", () => {
+  const PropBikes = ({ breakpoint }: { breakpoint: ChartBreakpoint }) => (
+    <ChartConfigProvider value={{ breakpoint }}>
+      <LineChart
+        accessibleDescription="Cycle traffic."
+        accessibleLabel="Bikes"
+        annotations={BIKES_ANNOTATIONS}
+        data={BIKES_DATA}
+        xDataKey="date"
+      >
+        {BIKES_SERIES.map((s) => (
+          <Line dataKey={s.key} key={s.key} stroke={s.color} />
+        ))}
+      </LineChart>
+    </ChartConfigProvider>
+  );
+
+  it("paints the notes at wide and stacks no key rows", () => {
+    const { container } = render(<PropBikes breakpoint="wide" />);
+    expect(slot(container, "chart-annotations-text")).toHaveLength(4);
+    expect(slot(container, "annotation-key-item")).toHaveLength(0);
+  });
+
+  it("keys the notes under the plot at narrow and merges them into the description", () => {
+    const { container, getByRole } = render(<PropBikes breakpoint="narrow" />);
+    const host = container.querySelector('[data-slot="chart-annotations-host"]');
+    expect(host?.lastElementChild?.getAttribute("data-slot")).toBe("annotation-key");
+    expect(slot(container, "annotation-key-item")).toHaveLength(4);
+    const figure = getByRole("figure", { name: "Bikes" });
+    const description = document.getElementById(figure.getAttribute("aria-describedby") ?? "");
+    expect(description?.textContent).toContain("Cycle traffic.");
+    expect(description?.textContent).toContain("Covid-19.");
+  });
+
+  it("renders the bare chart, with no host wrapper, when there are no annotations", () => {
+    const { container } = render(
+      <LineChart accessibleLabel="Bikes" data={BIKES_DATA} xDataKey="date">
+        <Line dataKey="paris" />
+      </LineChart>,
+    );
+    expect(slot(container, "chart-annotations-host")).toHaveLength(0);
+    expect(slot(container, "annotation-key")).toHaveLength(0);
+  });
+});
+
 describe("ChartAnnotations in a horizontal BarChart", () => {
   it("pins a row note to its category, wherever the row sorts", () => {
     const data = [
