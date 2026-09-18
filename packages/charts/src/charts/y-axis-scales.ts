@@ -54,13 +54,29 @@ export interface ResolvedValueAxis {
   warnings: string[];
 }
 
+/**
+ * Round a positive log-axis end outward to the next 1-2-5 × 10^k step
+ * (`1900` → `2000`, `60` → `50`). d3's own log `nice()` jumps to whole powers
+ * of ten, which can leave the top 40 % of a plot empty.
+ */
+export function niceLogEnd(value: number, direction: "floor" | "ceil"): number {
+  const base = 10 ** Math.floor(Math.log10(value));
+  const steps = [1, 2, 5, 10].map((m) => m * base);
+  const eps = base * 1e-9;
+  if (direction === "ceil") {
+    return steps.find((step) => step >= value - eps) ?? value;
+  }
+  return [...steps].reverse().find((step) => step <= value + eps) ?? value;
+}
+
 function niceDomainFor(scale: ValueScaleType, domain: [number, number]): [number, number] {
+  if (scale === "log") {
+    return [niceLogEnd(domain[0], "floor"), niceLogEnd(domain[1], "ceil")];
+  }
   const base =
-    scale === "log"
-      ? scaleLog<number>({ domain, range: [0, 1], nice: true })
-      : scale === "sqrt"
-        ? scaleSqrt<number>({ domain, range: [0, 1], nice: true })
-        : scaleLinear<number>({ domain, range: [0, 1], nice: true });
+    scale === "sqrt"
+      ? scaleSqrt<number>({ domain, range: [0, 1], nice: true })
+      : scaleLinear<number>({ domain, range: [0, 1], nice: true });
   const [lo, hi] = base.domain();
   return [lo ?? domain[0], hi ?? domain[1]];
 }

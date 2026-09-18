@@ -7,6 +7,7 @@ import { HaloText } from "../marks/halo-text";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import { tickTargetForHeight } from "./tick-targets";
 import { useGridShimmer } from "./use-grid-shimmer";
+import { valueAxisTicks } from "./y-axis-ticks";
 import { isLoadingChromePhase, isLoadingGridChromePhase } from "./y-domain-utils";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 
@@ -148,6 +149,8 @@ export function Grid({
     useChartStable();
   const yScale = useYScale(yAxisId);
   const numTicksRows = numTicksRowsProp ?? tickTargetForHeight(innerHeight);
+  // The same generator `YAxis` uses, so a log axis' rows match its labels.
+  const rowTicks = rowTickValues ?? valueAxisTicks(yScale, numTicksRows);
   // RM-108: `ticks` swaps full rules for short edge hairlines; `off` paints no furniture.
   const horizontal = mode === "lines" && horizontalProp;
   const vertical = mode === "lines" && verticalProp;
@@ -193,7 +196,7 @@ export function Grid({
           stroke={gridStroke}
           strokeOpacity={strokeOpacity}
           strokeWidth={strokeWidth}
-          tickValues={rowTickValues}
+          tickValues={rowTicks}
           width={GRID_TICK_LENGTH_PX}
         />
       ) : null}
@@ -280,7 +283,7 @@ export function Grid({
             strokeDasharray={strokeDasharray}
             strokeOpacity={strokeOpacity}
             strokeWidth={strokeWidth}
-            tickValues={rowTickValues}
+            tickValues={rowTicks}
             width={innerWidth}
           />
           {shimmerEnabled ? (
@@ -291,7 +294,7 @@ export function Grid({
               strokeDasharray={strokeDasharray}
               strokeOpacity={1}
               strokeWidth={strokeWidth}
-              tickValues={rowTickValues}
+              tickValues={rowTicks}
               width={innerWidth}
             />
           ) : null}

@@ -4,9 +4,11 @@ import {
   applyValueAxisConfigs,
   buildValueScale,
   collectValueAxisConfigs,
+  niceLogEnd,
   resolveValueAxis,
   valueExtent,
 } from "./y-axis-scales";
+import { valueAxisTicks } from "./y-axis-ticks";
 
 function YAxis(_props: Record<string, unknown>) {
   return null;
@@ -62,7 +64,8 @@ describe("resolveValueAxis — scale (RM-108)", () => {
     });
     expect(out.scale).toBe("log");
     expect(out.domain[0]).toBe(50);
-    expect(out.domain[1]).toBe(10000);
+    // 1900 rounds out to the next 1-2-5 step, not to a whole decade.
+    expect(out.domain[1]).toBe(2000);
     expect(out.warnings).toEqual([]);
   });
 
@@ -102,6 +105,26 @@ describe("resolveValueAxis — scale (RM-108)", () => {
     expect(log.ticks(5).length).toBeGreaterThan(1);
     const sqrt = buildValueScale("sqrt", [0, 100], [100, 0]);
     expect(sqrt(25)).toBeCloseTo(50);
+  });
+});
+
+describe("log ticks (RM-108)", () => {
+  it("thins d3's 1–9 multiples to a 1-2-5 tier within the target", () => {
+    const log = buildValueScale("log", [50, 2000], [300, 0]);
+    expect(log.ticks(5).length).toBeGreaterThan(10);
+    const ticks = valueAxisTicks(log, 5);
+    expect(ticks).toEqual([50, 100, 200, 500, 1000, 2000]);
+  });
+
+  it("leaves linear ticks exactly as d3 returns them", () => {
+    const linear = buildValueScale("linear", [0, 100], [300, 0]);
+    expect(valueAxisTicks(linear, 5)).toEqual(linear.ticks(5));
+  });
+
+  it("rounds log ends to 1-2-5 steps", () => {
+    expect(niceLogEnd(1900, "ceil")).toBe(2000);
+    expect(niceLogEnd(60, "floor")).toBe(50);
+    expect(niceLogEnd(100, "ceil")).toBe(100);
   });
 });
 

@@ -11,7 +11,7 @@ import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
 import { type AxisTickCount, resolveAxisTickTarget, tickTargetForHeight } from "./tick-targets";
 import type { AxisDomain, ValueScaleType, YAxisOrientation } from "./y-axis-scales";
-import { resolveYAxisTickCount } from "./y-axis-ticks";
+import { resolveYAxisTickCount, valueAxisTicks } from "./y-axis-ticks";
 
 /** Where tick labels sit relative to the plot (RM-108). */
 export type AxisLabelPlacement = "inside" | "outside";
@@ -136,7 +136,7 @@ const YAxisInner = memo(function YAxisInner({
     () =>
       tickValuesProp && tickValuesProp.length > 0
         ? tickValuesProp.filter((value) => Number.isFinite(yScale(value)))
-        : yScale.ticks(tickTarget),
+        : valueAxisTicks(yScale, tickTarget),
     [yScale, tickTarget, tickValuesProp],
   );
   // #250: one unit for the whole tick set, whatever the count.
@@ -152,6 +152,13 @@ const YAxisInner = memo(function YAxisInner({
       })),
     [tickValues, yScale, margin.top, format],
   );
+
+  // Inside labels + inside title would stack two texts in the same top-left
+  // corner; the River convention instead appends the title to the TOP tick
+  // label ("2K riders"), so the unit reads with the number it qualifies.
+  const titleJoinsTopLabel = isInside && titlePlacement === "inside" && title != null;
+  const topTickValue =
+    ticks.length > 0 ? ticks.reduce((top, tick) => (tick.y < top.y ? tick : top)).value : undefined;
 
   // Inside labels sit in the plot, just above their grid line, flush with the
   // axis' plot edge; outside labels keep their shipped margin column.
@@ -186,21 +193,31 @@ const YAxisInner = memo(function YAxisInner({
                   : { left: 0, justifyContent: "flex-start", paddingLeft: 8 }),
             }}
           >
-            <span className="text-chart-label text-meta">{tick.label}</span>
+            <span className="text-chart-label text-meta">
+              {tick.label}
+              {titleJoinsTopLabel && tick.value === topTickValue ? (
+                <>
+                  {" "}
+                  <span className="font-medium">{title}</span>
+                </>
+              ) : null}
+            </span>
           </div>
         ))}
       </div>
-      <AxisTitle
-        height={height}
-        innerHeight={innerHeight}
-        innerWidth={innerWidth}
-        margin={margin}
-        placement={titlePlacement}
-        side={orientation}
-        width={width}
-      >
-        {title}
-      </AxisTitle>
+      {titleJoinsTopLabel ? null : (
+        <AxisTitle
+          height={height}
+          innerHeight={innerHeight}
+          innerWidth={innerWidth}
+          margin={margin}
+          placement={titlePlacement}
+          side={orientation}
+          width={width}
+        >
+          {title}
+        </AxisTitle>
+      )}
     </div>,
     container,
   );
