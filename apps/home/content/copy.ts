@@ -213,3 +213,43 @@ export const tourCopy = {
     copyCommand: "Copy scaffold command",
   },
 } as const;
+
+// RM-098 — copy specific to the AI assistant, flow workspace, process explorer and marketing
+// tabs (`tourCopy.tabs` above already carries the shared per-tab label/useCase/hint, RM-096).
+export const tourSurfaceCopy = {
+  aiAssistant: {
+    /** D5 (`decisions.md`): the composer never calls a model — it only renders one. */
+    composerPlaceholder: "This demo doesn’t call a model — it renders one.",
+    composerSubmitLabel: "Send is disabled — this demo renders a fixed transcript",
+    toolSummary: "2 regions returned",
+  },
+  flowWorkspace: {
+    demoLabel: "Flow workspace demo",
+    inspectorTitle: "Inspector",
+    inspectorEmpty: "Select a node to see its details.",
+    narrow: "This canvas is best on a wider screen — try 1024px or up.",
+  },
+  processExplorer: {
+    demoLabel: "Process explorer demo",
+    viewToggleLabel: "View",
+    mapView: "Map",
+    conformanceView: "Conformance",
+    narrow: "This map is best on a wider screen — try 1024px or up.",
+    /** `share` is a formatted percent read from the fixture, never typed (RM-098 acceptance). */
+    slowVariantNote: (share: string) =>
+      `${share} of cases take a manual-review detour and run about twice as long.`,
+    /* `casesButton`/`casesTitle`/`casesDescription`: `CaseTable` moved into a bottom `Sheet`
+       (docs/playbooks/templates/process-explorer.tsx's own drill-down pattern) instead of
+       always-inline — the tour's shared `h-128 md:h-160` frame (`tour.tsx`, every tab) has no
+       room left for map + variant rail + case table all at once once the 6-metric KPI strip
+       claims its two rows, so the table is a drill-down, not a fourth always-visible region. */
+    casesButton: "Case table",
+    casesTitle: "Cases",
+    casesDescription: "The filtered case list — export or scan alongside the map.",
+  },
+  marketing: {
+    demoLabel: "Marketing demo",
+    caption:
+      "You’re looking at it — this page is the marketing archetype, from the same components.",
+  },
+} as const;
