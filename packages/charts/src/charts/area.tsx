@@ -273,7 +273,8 @@ export interface AreaProps {
   name?: string;
   /**
    * Where the series names itself (RM-110): `"end"` | `"key"` | `"none"`, or a
-   * `Responsive` value. Default: `{ base: "end", narrow: "key" }` when a `ChartLegend` is composed, else `"end"`; `"none"` opts out. Read by the chart
+   * `Responsive` value. Default: as `LineProps.seriesLabel` (two or more
+   * series, and only for a series with a real `name`). Read by the chart
    * shell, which reserves the margin and places every label in one pass.
    */
   seriesLabel?: Responsive<SeriesLabelMode>;

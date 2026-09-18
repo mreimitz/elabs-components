@@ -115,8 +115,9 @@ const revenue = [
 ];
 
 /**
- * No label props at all: series name themselves at the line end by default.
- * The second chart opts out with `seriesLabel="none"`.
+ * No label props at all: with two or more named series, each series names
+ * itself at the line end by default. The second chart opts out with
+ * `seriesLabel="none"`.
  */
 export const DefaultAndOptOut: Story = {
   render: () => (
@@ -141,6 +142,35 @@ export const DefaultAndOptOut: Story = {
     await waitFor(() => {
       const labels = [...canvasElement.querySelectorAll('[data-slot="series-end-label"]')];
       expect(labels.map((l) => l.textContent)).toEqual(["Revenue", "Costs"]);
+    });
+  },
+};
+
+/**
+ * One series, no label props: the chart title already names it, so the default
+ * paints no end label. `seriesLabel="end"` on the Line would paint one.
+ */
+export const SingleSeriesNoEndLabel: Story = {
+  render: () => (
+    <div className="w-full max-w-[900px]">
+      <LineChart
+        accessibleLabel="Monthly revenue"
+        animationDuration={0}
+        data={revenue}
+        xDataKey="month"
+      >
+        <Grid horizontal />
+        <Line dataKey="revenue" name="Revenue" stroke="var(--chart-1)" />
+        <XAxis />
+        <YAxis />
+      </LineChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector("svg path")).not.toBeNull();
+      expect(canvasElement.querySelectorAll('[data-slot="series-end-label"]')).toHaveLength(0);
+      expect(canvasElement.querySelector('[data-slot="series-key"]')).toBeNull();
     });
   },
 };

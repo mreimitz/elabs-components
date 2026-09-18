@@ -115,6 +115,8 @@ export interface SeriesLabelRequest {
   stroke: string;
   yAxisId: string | number | undefined;
   seriesLabel: Responsive<SeriesLabelMode> | undefined;
+  /** `name` is set and differs from the raw `dataKey` (maintainer decision 7). */
+  hasDisplayName: boolean;
   valueLabels: ResolvedValueLabels | null;
 }
 
@@ -203,6 +205,7 @@ export function collectLabelRequests(
           stroke: props.stroke ?? "var(--chart-line-primary)",
           yAxisId: props.yAxisId,
           seriesLabel: props.seriesLabel,
+          hasDisplayName: hasDisplayName(props.name, props.dataKey),
           // `Area` keeps its own `labelPeaks` rendering; only `valueLabels` routes here.
           valueLabels: resolveValueLabels(
             props.valueLabels,
@@ -218,22 +221,51 @@ export function collectLabelRequests(
   return { series, hasLegend };
 }
 
+/** A real display name: set, non-blank and not just the raw `dataKey`. */
+export function hasDisplayName(name: string | undefined, dataKey: string): boolean {
+  return typeof name === "string" && name.trim() !== "" && name !== dataKey;
+}
+
 /**
- * Default `seriesLabel` (RM-110, maintainer decision 2026-09-18): end labels,
- * falling back to the key row at `narrow` when a `ChartLegend` is composed;
- * plain end labels otherwise. `seriesLabel="none"` opts a series out.
+ * The default label mode, once it applies: end labels, falling back to the key
+ * row at `narrow` when a `ChartLegend` is composed; plain end labels otherwise.
  */
 export function defaultSeriesLabel(hasLegend: boolean): Responsive<SeriesLabelMode> {
   return hasLegend ? { base: "end", narrow: "key" } : "end";
 }
 
+/** What the chart knows when it decides a series' default. */
+export interface SeriesLabelContext {
+  /** A `ChartLegend` is composed into the chart. */
+  hasLegend: boolean;
+  /** Number of `Line` / `Area` series the chart labels. */
+  seriesCount: number;
+}
+
+/**
+ * A series' `seriesLabel`, explicit or defaulted (maintainer decisions 5 and
+ * 7, 2026-09-18). An explicit `seriesLabel` always wins. Otherwise the default
+ * ({@link defaultSeriesLabel}) applies only in a chart with two or more
+ * `Line` / `Area` series, and only to a series with a real display name
+ * ({@link hasDisplayName}); a single series, or one known only by its column
+ * name, gets `"none"`.
+ */
+export function effectiveSeriesLabel(
+  request: Pick<SeriesLabelRequest, "seriesLabel" | "hasDisplayName">,
+  context: SeriesLabelContext,
+): Responsive<SeriesLabelMode> {
+  if (request.seriesLabel !== undefined) return request.seriesLabel;
+  return context.seriesCount >= 2 && request.hasDisplayName
+    ? defaultSeriesLabel(context.hasLegend)
+    : "none";
+}
+
 export function resolveSeriesLabelMode(
-  request: Pick<SeriesLabelRequest, "seriesLabel">,
-  hasLegend: boolean,
+  request: Pick<SeriesLabelRequest, "seriesLabel" | "hasDisplayName">,
+  context: SeriesLabelContext,
   breakpoint: ChartBreakpoint,
 ): SeriesLabelMode {
-  const value = request.seriesLabel ?? defaultSeriesLabel(hasLegend);
-  return resolveResponsive(value, breakpoint);
+  return resolveResponsive(effectiveSeriesLabel(request, context), breakpoint);
 }
 
 /** True when a `seriesLabel` value asks for a different mode at some tier. */
@@ -274,9 +306,10 @@ export function reserveChartLabels(
   baseRightMargin: number,
   availableWidth: number,
 ): ChartLabelReserve {
+  const context = { hasLegend: requests.hasLegend, seriesCount: requests.series.length };
   const modes = requests.series.map((request) => ({
     request,
-    mode: resolveSeriesLabelMode(request, requests.hasLegend, breakpoint),
+    mode: resolveSeriesLabelMode(request, context, breakpoint),
   }));
   const endWidest = modes.reduce(
     (max, m) => (m.mode === "end" ? Math.max(max, measure(m.request.name)) : max),

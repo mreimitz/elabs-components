@@ -17,6 +17,7 @@ import { ScatterChart } from "../scatter-chart";
 import {
   collectLabelRequests,
   defaultSeriesLabel,
+  hasDisplayName,
   pickNotableIndices,
   reserveChartLabels,
   resolveSeriesLabelMode,
@@ -133,17 +134,61 @@ describe("label engine — series end labels", () => {
     expect(seriesLabelInk("url(#g)")).toBe("var(--chart-label)");
   });
 
-  it("labels each series at its end by default (seriesLabel unset)", () => {
+  // Maintainer decision 7: the default applies only with two or more Line/Area
+  // series, and only to a series whose name is set and differs from its dataKey.
+  it("paints no end label by default for a single series, named or not", () => {
+    for (const line of [
+      <Line key="named" dataKey="ebikes" name="E-bikes" />,
+      <Line key="bare" dataKey="ebikes" />,
+    ]) {
+      const { container, unmount } = at("wide", line);
+      expect(container.querySelector('[data-slot="series-end-labels"]')).toBeNull();
+      expect(container.querySelector('[data-slot="series-key"]')).toBeNull();
+      expect(container.querySelector('[data-slot="chart-labels-unpainted"]')).toBeNull();
+      unmount();
+    }
+  });
+
+  it("labels every series by default when two or more have real names", () => {
+    const { container } = at(
+      "wide",
+      <>
+        <Line dataKey="ebikes" name="E-bikes" />
+        <Line dataKey="cargo" name="Cargo bikes" />
+      </>,
+    );
+    const labels = [...container.querySelectorAll('[data-slot="series-end-label"]')];
+    expect(labels.map((l) => l.textContent)).toEqual(["E-bikes", "Cargo bikes"]);
+    expect(container.querySelector('[data-slot="series-key"]')).toBeNull();
+  });
+
+  it("skips a series known only by its column name", () => {
     const { container } = at(
       "wide",
       <>
         <Line dataKey="ebikes" name="E-bikes" />
         <Line dataKey="cargo" />
+        <Line dataKey="city" name="city" />
       </>,
     );
     const labels = [...container.querySelectorAll('[data-slot="series-end-label"]')];
-    expect(labels.map((l) => l.textContent)).toEqual(["E-bikes", "cargo"]);
-    expect(container.querySelector('[data-slot="series-key"]')).toBeNull();
+    expect(labels.map((l) => l.textContent)).toEqual(["E-bikes"]);
+  });
+
+  it("lets an explicit seriesLabel win over the default", () => {
+    const single = at("wide", <Line dataKey="ebikes" seriesLabel="end" />);
+    const labels = [...single.container.querySelectorAll('[data-slot="series-end-label"]')];
+    expect(labels.map((l) => l.textContent)).toEqual(["ebikes"]);
+    single.unmount();
+    const optOut = at(
+      "wide",
+      <>
+        <Line dataKey="ebikes" name="E-bikes" seriesLabel="none" />
+        <Line dataKey="cargo" name="Cargo bikes" />
+      </>,
+    );
+    const kept = [...optOut.container.querySelectorAll('[data-slot="series-end-label"]')];
+    expect(kept.map((l) => l.textContent)).toEqual(["Cargo bikes"]);
   });
 
   it('renders no labels with seriesLabel="none" (the opt-out)', () => {
@@ -156,17 +201,33 @@ describe("label engine — series end labels", () => {
   it("defaults to the key at narrow only when a ChartLegend is composed", () => {
     expect(defaultSeriesLabel(true)).toEqual({ base: "end", narrow: "key" });
     expect(defaultSeriesLabel(false)).toBe("end");
-    const request = { seriesLabel: undefined };
-    expect(resolveSeriesLabelMode(request, true, "narrow")).toBe("key");
-    expect(resolveSeriesLabelMode(request, true, "wide")).toBe("end");
-    expect(resolveSeriesLabelMode(request, false, "narrow")).toBe("end");
+    const request = { seriesLabel: undefined, hasDisplayName: true };
+    const legend = { hasLegend: true, seriesCount: 2 };
+    const bare = { hasLegend: false, seriesCount: 2 };
+    expect(resolveSeriesLabelMode(request, legend, "narrow")).toBe("key");
+    expect(resolveSeriesLabelMode(request, legend, "wide")).toBe("end");
+    expect(resolveSeriesLabelMode(request, bare, "narrow")).toBe("end");
+    expect(resolveSeriesLabelMode(request, { ...bare, seriesCount: 1 }, "wide")).toBe("none");
+    expect(resolveSeriesLabelMode({ ...request, hasDisplayName: false }, bare, "wide")).toBe(
+      "none",
+    );
+    expect(hasDisplayName("E-bikes", "ebikes")).toBe(true);
+    expect(hasDisplayName("ebikes", "ebikes")).toBe(false);
+    expect(hasDisplayName(undefined, "ebikes")).toBe(false);
+    expect(hasDisplayName("  ", "ebikes")).toBe(false);
   });
 
   it("moves end labels into the key when they would take over a third of the plot", () => {
     const series = [
       { dataKey: "a", name: "A very long series name", stroke: "x" },
       { dataKey: "b", name: "B", stroke: "y" },
-    ].map((s) => ({ ...s, yAxisId: undefined, seriesLabel: undefined, valueLabels: null }));
+    ].map((s) => ({
+      ...s,
+      yAxisId: undefined,
+      seriesLabel: undefined,
+      hasDisplayName: true,
+      valueLabels: null,
+    }));
     const measure = (text: string) => text.length * 6;
     const roomy = reserveChartLabels({ series, hasLegend: false }, "wide", measure, 40, 820);
     expect(roomy.endSeries.map((s) => s.dataKey)).toEqual(["a", "b"]);
