@@ -2,9 +2,11 @@
 
 ## What this is
 
-`brand-ui` is an **internal, branded React component system** — source-owned,
-token-driven, and reusable across many internal applications. It is built to make
-internal product work fast: prototypes, POCs, AI/chat apps, data-heavy dashboards
+`brand-ui` is an **open-source React component system built for agentic development** —
+source-owned, token-driven, free for everyone, and reusable across many applications.
+Most of the time in an AI-coded app still goes into UI design and into keeping views,
+pages and menus consistent; brand-ui exists to take that work away. It is built to make
+product work fast: prototypes, POCs, AI/chat apps, data-heavy dashboards
 and grids, React Flow design surfaces, presales/customer demos, and general
 "vibecoding".
 
@@ -20,7 +22,7 @@ patterns, so a brand can be swapped via themes rather than hardcoded anywhere.
 
 ## Goals
 
-- One system reused across many internal apps, themeable per brand.
+- One system reused across many apps, themeable per brand — public, shadcn-style, free.
 - Fast to use for prototypes and demos; fast for coding agents to extend safely.
 - First-class support for AI/chat UIs and React Flow canvases, plus data grids
   and dashboards.
@@ -32,7 +34,8 @@ patterns, so a brand can be swapped via themes rather than hardcoded anywhere.
 ## Non-goals
 
 - Not a finished, single-brand visual identity.
-- Not a public, versioned, locked component library (source ownership is a goal).
+- Not a locked, opaque component library: it is public and versioned on npm, but every
+  component stays source you are meant to read and edit (source ownership is a goal).
 - Not an application — it's a system. The playground/docs are demos, not products.
 - **Not an SDK or runtime** — brand-ui is a presentation layer that renders agent/data models,
   not an owner of model calls, streaming, transport, or protocol engines. Full statement +
@@ -79,7 +82,7 @@ reasoning behind each major choice.
   `Command`, `Toast` to `@elabs-ai/components-ui`.
 - **Next:** DataTable saved views + server-side data; React Flow minimap +
   grouping; chat streaming helpers; more registry blocks/templates.
-- **Shipped:** internal package releases — every distributable package publishes
+- **Shipped:** public npm releases — every distributable package publishes
   in lockstep via Changesets (`pnpm changeset`, `docs/RELEASING.md`); the
   `fixed` group in `.changeset/config.json` keeps versions lockstep;
   deprecation and support policy is `docs/DEPRECATION.md`.
