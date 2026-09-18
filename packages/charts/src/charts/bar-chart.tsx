@@ -28,6 +28,9 @@ import {
   type CategoryAxisPlan,
   planCategoryAxis,
 } from "./category-axis-plan";
+import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
@@ -1293,13 +1296,20 @@ const ChartCore = memo(function ChartCore({
   const defsChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  // RM-111: a `ChartAnnotations` child paints ranges under the bars, the rest over them.
+  const annotationBackChildren: ReactElement[] = [];
+  const annotationFrontChildren: ReactElement[] = [];
 
-  Children.forEach(children, (child) => {
+  Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
       return;
     }
 
-    if (isGradientDefComponent(child)) {
+    const annotationLayers = splitChartAnnotationsChild(child, index);
+    if (annotationLayers) {
+      annotationBackChildren.push(annotationLayers[0]);
+      annotationFrontChildren.push(annotationLayers[1]);
+    } else if (isGradientDefComponent(child)) {
       defsChildren.push(child);
     } else if (isPatternDefComponent(child)) {
       preOverlayChildren.push(child);
@@ -1404,6 +1414,7 @@ const ChartCore = memo(function ChartCore({
           />
         )}
 
+        {annotationBackChildren}
         {/* RM-113 background layers: the track to the axis max, then the
             muted comparison column — both under the series. */}
         {track && !isLoadingStatus && <BarTrackLayer {...layerGeometry} max={valueAxisMax} />}
@@ -1426,7 +1437,6 @@ const ChartCore = memo(function ChartCore({
 
         {/* SVG children rendered before markers */}
         {preOverlayChildren}
-
         {/* RM-113 foreground layers: overlays, totals and comparison labels. */}
         {overlays && overlays.length > 0 && !isLoadingStatus && (
           <BarOverlayLayer {...layerGeometry} overlays={overlays} />
@@ -1442,6 +1452,8 @@ const ChartCore = memo(function ChartCore({
             mode={comparisonLabel}
           />
         )}
+
+        {annotationFrontChildren}
 
         {/* Markers rendered last so they're on top for interaction */}
         {postOverlayChildren}
@@ -1466,14 +1478,7 @@ const ChartCore = memo(function ChartCore({
   );
 });
 
-/**
- * @dataShape categorical comparison of one or more measures across a small set of named
- *   categories
- * @dataShape a single signed measure around a meaningful zero, as diverging bars with a
- *   zero line
- * @avoidWhen a time axis with many points — use a line or area chart
- */
-export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
+const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
   {
     data,
     xDataKey = "name",
@@ -1623,6 +1628,22 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}
     </ChartPlotRoot>
   );
+});
+
+// Annotations — RM-111
+export interface BarChartProps {
+  /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
+  annotations?: readonly ChartAnnotation[];
+}
+/**
+ * @dataShape categorical comparison of one or more measures across a small set of named
+ *   categories
+ * @dataShape a single signed measure around a meaningful zero, as diverging bars with a
+ *   zero line
+ * @avoidWhen a time axis with many points — use a line or area chart
+ */
+export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(props, ref) {
+  return useAnnotatedChart(BarChartPlot, props, ref);
 });
 
 BarChart.displayName = "BarChart";

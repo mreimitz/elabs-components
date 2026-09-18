@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T22:28:56.587Z",
+  "generatedAt": "2026-09-18T23:01:43.929Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13222,6 +13222,16 @@
       },
       "components": [
         {
+          "name": "ANNOTATION_ANCHORS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "AnnotationKey",
+          "kind": "value",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "Area",
           "kind": "value",
           "module": "packages/charts/src/charts/area.tsx"
@@ -13365,6 +13375,11 @@
           "name": "CHART_TYPES",
           "kind": "value",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "ChartAnnotations",
+          "kind": "value",
+          "module": "packages/charts/src/charts/annotations/index.ts"
         },
         {
           "name": "ChartBrush",
@@ -14279,6 +14294,11 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "useChartAnnotationsA11y",
+          "kind": "value",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "useChartBreakpoint",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-breakpoint.ts"
@@ -14451,6 +14471,42 @@
       ],
       "types": [
         {
+          "name": "AnnotationAnchor",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "AnnotationAxis",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "AnnotationColor",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "AnnotationConnector",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "AnnotationDisplay",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "AnnotationKeyProps",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "AnnotationPlanEntry",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "AnnotationScales",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "AnnotationValue",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "ArcLayoutOptions",
           "module": "packages/charts/src/charts/network/index.ts"
         },
@@ -14619,6 +14675,22 @@
           "module": "packages/charts/src/charts/category-axis-plan.ts"
         },
         {
+          "name": "ChartAnnotation",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "ChartAnnotationOf",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "ChartAnnotationsLayer",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "ChartAnnotationsProps",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "ChartBreakpoint",
           "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
@@ -14747,6 +14819,10 @@
           "module": "packages/charts/src/charts/chart-legend.tsx"
         },
         {
+          "name": "ChartLineAnnotation",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "ChartLoadingLabelProps",
           "module": "packages/charts/src/charts/chart-loading-label.tsx"
         },
@@ -14771,12 +14847,20 @@
           "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
+          "name": "ChartRangeAnnotation",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "ChartRevealClipProps",
           "module": "packages/charts/src/charts/chart-reveal-clip.tsx"
         },
         {
           "name": "ChartRevealOn",
           "module": "packages/charts/src/charts/chart-reveal-clip.tsx"
+        },
+        {
+          "name": "ChartRowAnnotation",
+          "module": "packages/charts/src/charts/annotations/index.ts"
         },
         {
           "name": "ChartsA2uiCatalogSchema",
@@ -14827,6 +14911,10 @@
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
         {
+          "name": "ChartSpecAnnotation",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "ChartSpecEmphasis",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
@@ -14853,6 +14941,10 @@
         {
           "name": "ChartStatus",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "ChartTextAnnotation",
+          "module": "packages/charts/src/charts/annotations/index.ts"
         },
         {
           "name": "ChartTooltipBoxProps",
@@ -15945,6 +16037,10 @@
       ],
       "otherExports": [
         {
+          "name": "annotationValueToDate",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "arcLinkPath",
           "module": "packages/charts/src/charts/network/index.ts"
         },
@@ -16039,6 +16135,10 @@
         {
           "name": "choroplethCssVars",
           "module": "packages/charts/src/charts/choropleth/index.ts"
+        },
+        {
+          "name": "circledNumber",
+          "module": "packages/charts/src/charts/annotations/index.ts"
         },
         {
           "name": "circularLinkPath",
@@ -16159,6 +16259,10 @@
         {
           "name": "deriveStripMaxPeriods",
           "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "describeAnnotations",
+          "module": "packages/charts/src/charts/annotations/index.ts"
         },
         {
           "name": "describeBulletChart",
@@ -16401,6 +16505,10 @@
           "module": "packages/charts/src/charts/pie-context.tsx"
         },
         {
+          "name": "planAnnotations",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "profitLossColor",
           "module": "packages/charts/src/charts/profit-loss-line.tsx"
         },
@@ -16415,6 +16523,18 @@
         {
           "name": "readsAsBeforeAfterPair",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "resolveAnnotationInk",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "resolveAnnotationPosition",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "resolveAnnotationTextInk",
+          "module": "packages/charts/src/charts/annotations/index.ts"
         },
         {
           "name": "resolveBulletDomain",
@@ -16579,6 +16699,10 @@
         {
           "name": "viewModeToScales",
           "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
+          "name": "withAnnotationDescription",
+          "module": "packages/charts/src/charts/annotations/index.ts"
         }
       ],
       "variants": {
@@ -23356,6 +23480,7 @@
         "BumpChart": "charts-bumpchart--docs",
         "CandlestickChart": "charts-candlestickchart--docs",
         "CanvasLayer": "charts-canvaslayer--docs",
+        "ChartAnnotations": "charts-annotations--docs",
         "ChartCard": "charts-chartcard--docs",
         "ChartFrame": "charts-chartframe--docs",
         "ChartLegend": "charts-chartlegend--docs",

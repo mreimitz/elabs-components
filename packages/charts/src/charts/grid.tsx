@@ -3,7 +3,7 @@
 import { GridColumns, GridRows } from "@visx/grid";
 import { motion } from "motion/react";
 import { useId } from "react";
-import { HaloText } from "../marks/halo-text";
+import { AnnotationLineMark } from "./annotations/chart-annotations";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import { tickTargetForHeight } from "./tick-targets";
 import { useGridShimmer } from "./use-grid-shimmer";
@@ -309,24 +309,20 @@ export function Grid({
             }
             const label = highlightRowLabel?.(value);
 
+            // RM-111: a highlight row is a `y` line annotation, drawn by that kind's renderer.
             return (
-              <g key={value}>
-                <line
-                  stroke={highlightRowStroke}
-                  strokeDasharray={highlightRowStrokeDasharray}
-                  strokeOpacity={highlightRowStrokeOpacity}
-                  strokeWidth={highlightRowStrokeWidth}
-                  x1={0}
-                  x2={innerWidth}
-                  y1={y}
-                  y2={y}
-                />
-                {label ? (
-                  <HaloText dy={-4} fontSize={11} textAnchor="end" x={innerWidth} y={y}>
-                    {label}
-                  </HaloText>
-                ) : null}
-              </g>
+              <AnnotationLineMark
+                axis="y"
+                innerHeight={innerHeight}
+                innerWidth={innerWidth}
+                key={value}
+                label={label}
+                position={y}
+                stroke={highlightRowStroke}
+                strokeDasharray={highlightRowStrokeDasharray}
+                strokeOpacity={highlightRowStrokeOpacity}
+                strokeWidth={highlightRowStrokeWidth}
+              />
             );
           })}
         </g>
@@ -365,27 +361,23 @@ export function Grid({
             const label = highlightColumnLabel?.(value);
             const key = value instanceof Date ? value.getTime() : value;
 
+            // RM-111: a highlight column is an `x` line annotation. Its label sits
+            // bottom-inside, left of the line: the top strip belongs to
+            // `highlightRowLabel` (end-anchored), so a column label up there
+            // collides with a target label on a narrow chart.
             return (
-              <g key={key}>
-                <line
-                  stroke={highlightColumnStroke}
-                  strokeDasharray={highlightColumnStrokeDasharray}
-                  strokeOpacity={highlightColumnStrokeOpacity}
-                  strokeWidth={highlightColumnStrokeWidth}
-                  x1={x}
-                  x2={x}
-                  y1={0}
-                  y2={innerHeight}
-                />
-                {label ? (
-                  // Bottom-inside, left of the line: the top strip belongs to
-                  // `highlightRowLabel` (end-anchored), so a column label up
-                  // there collides with a target label on a narrow chart.
-                  <HaloText dy={-4} fontSize={11} textAnchor="end" x={x - 4} y={innerHeight}>
-                    {label}
-                  </HaloText>
-                ) : null}
-              </g>
+              <AnnotationLineMark
+                axis="x"
+                innerHeight={innerHeight}
+                innerWidth={innerWidth}
+                key={key}
+                label={label}
+                position={x}
+                stroke={highlightColumnStroke}
+                strokeDasharray={highlightColumnStrokeDasharray}
+                strokeOpacity={highlightColumnStrokeOpacity}
+                strokeWidth={highlightColumnStrokeWidth}
+              />
             );
           })}
         </g>

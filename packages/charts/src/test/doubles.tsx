@@ -561,6 +561,10 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     assertAxisSpecContract((props.spec as { axes?: unknown } | undefined)?.axes);
     // Labels — RM-110
     assertLabelsSpecContract((props.spec as { labels?: unknown } | undefined)?.labels);
+    // Annotations — RM-111
+    assertAnnotationSpecContract(
+      (props.spec as { annotations?: unknown } | undefined)?.annotations,
+    );
     return (
       <div
         ref={ref}
@@ -928,3 +932,91 @@ export function assertBarRichnessContract(component: string, props: Record<strin
     axisViolation(component, "comparison", comparison, "must be { key, label? }");
   }
 }
+
+// Annotations — RM-111
+const ANNOTATION_KINDS = ["text", "range", "line", "row"] as const;
+const ANNOTATION_ANCHOR_VALUES = ["n", "ne", "e", "se", "s", "sw", "w", "nw", "center"];
+
+function isAnnotationPosition(value: unknown): boolean {
+  return isFiniteNumber(value) || (typeof value === "string" && value.length > 0);
+}
+
+/**
+ * Validate `ChartSpec.annotations` (RM-111): the kind union, and the fields each
+ * kind cannot render without — the real layer silently skips an annotation it
+ * cannot place, which would hide the mistake. Exported for the contract test.
+ */
+export function assertAnnotationSpecContract(annotations: unknown): void {
+  if (annotations === undefined) return;
+  if (!Array.isArray(annotations)) {
+    axisViolation("AutoChart", "spec.annotations", annotations, `"annotations" must be an array`);
+    return;
+  }
+  annotations.forEach((item, i) => {
+    const prop = `spec.annotations[${i}]`;
+    if (typeof item !== "object" || item === null) {
+      axisViolation("AutoChart", prop, item, `"${prop}" must be an annotation object`);
+      return;
+    }
+    const a = item as Record<string, unknown>;
+    checkOneOf("AutoChart", `${prop}.kind`, a.kind, ANNOTATION_KINDS);
+    const requirePosition = (key: string) => {
+      if (!isAnnotationPosition(a[key])) {
+        axisViolation(
+          "AutoChart",
+          `${prop}.${key}`,
+          a[key],
+          `"${key}" must be a number or a string (an ISO date or a category)`,
+        );
+      }
+    };
+    const requireText = (key: string) => {
+      if (typeof a[key] !== "string" || (a[key] as string).trim() === "") {
+        axisViolation("AutoChart", `${prop}.${key}`, a[key], `"${key}" must be a non-empty string`);
+      }
+    };
+    if (a.kind === "text") {
+      requirePosition("x");
+      requirePosition("y");
+      requireText("text");
+      checkOneOf("AutoChart", `${prop}.anchor`, a.anchor, ANNOTATION_ANCHOR_VALUES);
+    } else if (a.kind === "range") {
+      if (a.x1 !== undefined || a.x2 !== undefined) {
+        requirePosition("x1");
+        requirePosition("x2");
+      } else {
+        requirePosition("y1");
+        requirePosition("y2");
+      }
+      checkOneOf("AutoChart", `${prop}.pattern`, a.pattern, ["solid", "stripes"]);
+    } else if (a.kind === "line") {
+      requirePosition(a.x !== undefined ? "x" : "y");
+      checkOneOf("AutoChart", `${prop}.style`, a.style, ["solid", "dashed", "dotted"]);
+      if (a.width !== undefined && ![1, 2, 3].includes(a.width as number)) {
+        axisViolation("AutoChart", `${prop}.width`, a.width, `"width" must be 1, 2 or 3`);
+      }
+    } else if (a.kind === "row") {
+      requireText("category");
+      requireText("text");
+    }
+  });
+}
+
+/**
+ * `ChartAnnotations` stand-in: inert like every composition primitive (it paints
+ * nothing a test can assert on), but it still validates the annotation union.
+ */
+export function ChartAnnotations(props: { annotations: readonly unknown[] }): null {
+  assertAnnotationSpecContract(props.annotations);
+  return null;
+}
+ChartAnnotations.displayName = "ChartAnnotations";
+
+/** `AnnotationKey` stand-in: the empty, `aria-hidden` list the real key renders at wide. */
+export const AnnotationKey = forwardRef<HTMLOListElement, { annotations: readonly unknown[] }>(
+  function AnnotationKeyTestDouble({ annotations }, ref) {
+    assertAnnotationSpecContract(annotations);
+    return <ol aria-hidden="true" data-count={0} data-slot="annotation-key" ref={ref} />;
+  },
+);
+AnnotationKey.displayName = "AnnotationKey";
