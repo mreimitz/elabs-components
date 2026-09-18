@@ -1,0 +1,48 @@
+{
+  "name": "@elabs-ai/home",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The elabs-ai.com website (ADR 0038). Built only from @elabs-ai/* packages and registry blocks.",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "e2e": "node -e \"console.log('@elabs-ai/home: no e2e suite yet')\"",
+    "clean": "rm -rf .next .turbo next-env.d.ts"
+  },
+  "dependencies": {
+    "@elabs-ai/components-ai": "workspace:*",
+    "@elabs-ai/components-charts": "workspace:*",
+    "@elabs-ai/components-cli": "workspace:*",
+    "@elabs-ai/components-data": "workspace:*",
+    "@elabs-ai/components-editor": "workspace:*",
+    "@elabs-ai/components-flow": "workspace:*",
+    "@elabs-ai/components-icons": "workspace:*",
+    "@elabs-ai/components-maps": "workspace:*",
+    "@elabs-ai/components-marketing": "workspace:*",
+    "@elabs-ai/components-process": "workspace:*",
+    "@elabs-ai/components-terminal": "workspace:*",
+    "@elabs-ai/components-tokens": "workspace:*",
+    "@elabs-ai/components-ui": "workspace:*",
+    "@elabs-ai/components-viewer": "workspace:*",
+    "@vercel/analytics": "^2.0.1",
+    "motion": "^12.26.2",
+    "next": "^16.3.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@elabs-ai/components-eslint-config": "workspace:*",
+    "@elabs-ai/components-typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.19.19",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "eslint": "^9.17.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.3"
+  }
+}

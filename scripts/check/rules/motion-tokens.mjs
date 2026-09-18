@@ -6,7 +6,8 @@
  * (`duration-fast|base|slow|slower`, `ease-standard|entrance|exit`, `ease-linear`),
  * specific transitions (`transition-colors`, `transition-[…]`), framer-motion
  * camelCase values (`ease: "easeOut"`) and CSS vars are fine. Comments are ignored.
- * Scope: packages/{charts,ai}/src, excluding tests and stories.
+ * Scope: packages/{charts,ai}/src and the website (apps/home, ADR 0038), excluding tests and
+ * stories.
  */
 import { lineOf } from "../context.mjs";
 import { blankJsComments } from "../lib/css.mjs";
@@ -34,20 +35,20 @@ const src = (text) => ({ files: { "packages/ai/src/x.tsx": text } });
 export default {
   id: "motion-tokens",
   scope: "components",
-  doc: "Use motion tokens in charts/ai source: `duration-fast|base|slow|slower` and `ease-standard|entrance|exit`, never `duration-<N>`, `ease-in`/`ease-out`/`ease-in-out` or `transition-all` (docs/MOTION_GUIDELINES.md).",
+  doc: "Use motion tokens in charts/ai source and the website (`apps/home`): `duration-fast|base|slow|slower` and `ease-standard|entrance|exit`, never `duration-<N>`, `ease-in`/`ease-out`/`ease-in-out` or `transition-all` (docs/MOTION_GUIDELINES.md).",
   baseline: "none",
   run(ctx) {
-    return ctx
-      .glob("packages/{charts,ai}/src/**/*.{ts,tsx}", {
-        ignore: ["**/*.test.{ts,tsx}", "**/*.stories.tsx", "**/{node_modules,dist}/**"],
-      })
-      .flatMap((file) =>
-        findMotionViolations(ctx.readFile(file)).map(({ line, match, fix }) => ({
-          file,
-          line,
-          msg: `raw motion utility \`${match}\` — use ${fix}; add motion-reduce:transition-none`,
-        })),
-      );
+    const ignore = ["**/*.test.{ts,tsx}", "**/*.stories.tsx", "**/{node_modules,dist,.next}/**"];
+    return [
+      ...ctx.glob("packages/{charts,ai}/src/**/*.{ts,tsx}", { ignore }),
+      ...ctx.glob("apps/home/**/*.{ts,tsx}", { ignore }),
+    ].flatMap((file) =>
+      findMotionViolations(ctx.readFile(file)).map(({ line, match, fix }) => ({
+        file,
+        line,
+        msg: `raw motion utility \`${match}\` — use ${fix}; add motion-reduce:transition-none`,
+      })),
+    );
   },
   fixtures: {
     pass: [
@@ -69,6 +70,7 @@ export default {
       { files: { "packages/ui/src/x.tsx": 'className="transition-all"' } },
     ],
     fail: [
+      { files: { "apps/home/app/page.tsx": 'className="transition-all duration-300"' } },
       src('className="rounded transition-all hover:bg-accent"'),
       src('cn("transition-all", "rounded")'),
       src('className="transition-colors duration-150"'),
