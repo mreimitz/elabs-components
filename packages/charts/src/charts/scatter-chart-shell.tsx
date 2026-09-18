@@ -28,7 +28,14 @@ import { fallbackXLabel, isInvalidDate } from "./chart-x-value-utils";
 import { isPostOverlayComponent } from "./time-series-chart-shell";
 import { useScatterChartInteraction } from "./use-scatter-chart-interaction";
 import { buildXValueEncoder } from "./x-scale-mode";
-import { buildYScalesForLines, getPrimaryYScale } from "./y-axis-scales";
+import {
+  applyValueAxisConfigs,
+  buildYScalesFromDomains,
+  collectValueAxisConfigs,
+  getPrimaryYScale,
+  warnValueAxisOnce,
+} from "./y-axis-scales";
+import { computeYDomainsByAxis } from "./y-domain-utils";
 
 /**
  * How `ScatterChart` interprets `xDataKey` values (#302 — the non-temporal
@@ -165,27 +172,53 @@ export function ScatterChartInner({
     return innerWidth / (data.length - 1);
   }, [innerWidth, data.length]);
 
-  const yScales = useMemo(
+  // RM-108: the data-derived domains first (niced, exactly what
+  // `buildYScalesForLines` used to build), then any `YAxis domain`/`scale`
+  // request read off the direct children on top.
+  const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
+  const valueAxes = useMemo(
     () =>
-      buildYScalesForLines({
-        lines,
-        data,
-        innerHeight,
-        resolveDomain: (dataKeys) => {
-          let maxValue = 0;
-          for (const d of data) {
-            for (const key of dataKeys) {
-              const value = d[key];
-              if (typeof value === "number" && value > maxValue) {
-                maxValue = value;
+      applyValueAxisConfigs({
+        autoDomainsByAxis: computeYDomainsByAxis({
+          lines,
+          resolveDomain: (dataKeys) => {
+            let maxValue = 0;
+            for (const d of data) {
+              for (const key of dataKeys) {
+                const value = d[key];
+                if (typeof value === "number" && value > maxValue) {
+                  maxValue = value;
+                }
               }
             }
-          }
-          const top = maxValue <= 0 ? 100 : maxValue * 1.1;
-          return [0, top];
-        },
+            const top = maxValue <= 0 ? 100 : maxValue * 1.1;
+            return [0, top];
+          },
+        }),
+        configs: valueAxisConfigs,
+        data,
+        lines,
       }),
-    [innerHeight, data, lines],
+    [data, lines, valueAxisConfigs],
+  );
+  useEffect(() => {
+    if (data.length === 0) {
+      return;
+    }
+    for (const [axisId, warnings] of Object.entries(valueAxes.warningsByAxis)) {
+      warnValueAxisOnce(axisId, warnings);
+    }
+  }, [valueAxes, data.length]);
+
+  const yScales = useMemo(
+    () =>
+      buildYScalesFromDomains({
+        lines,
+        innerHeight,
+        domainsByAxis: valueAxes.domainsByAxis,
+        scaleKindsByAxis: valueAxes.scaleKindsByAxis,
+      }),
+    [innerHeight, lines, valueAxes],
   );
 
   const yScale = getPrimaryYScale(

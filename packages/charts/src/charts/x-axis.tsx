@@ -1,14 +1,16 @@
 "use client";
 
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@elabs-ai/components-ui";
 import { HairlineFloor } from "../marks/hairline-floor";
+import { AxisTitle, type AxisTitlePlacement } from "./axis-title";
 import { CHART_DENSITY_SM_MAX_TICKS, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
 import { shortDateFmt } from "./chart-formatters";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
+import { type AxisTickCount, resolveAxisTickTarget, tickTargetForWidth } from "./tick-targets";
 
 const X_AXIS_POSITION_TWEEN_MS = DEFAULT_Y_DOMAIN_TWEEN_MS;
 
@@ -115,9 +117,31 @@ export function generatePeriodTicks(kind: XAxisPeriodTicks, start: Date, end: Da
   }
 }
 
+/** Which edge of the plot the x axis labels sit on (RM-108). */
+export type XAxisOrientation = "top" | "bottom";
+
 export interface XAxisProps {
-  /** Number of ticks to show (including first and last). Default: 5. Used when `tickMode` is `"domain"`. */
+  /**
+   * Explicit tick count (including first and last) — the long-standing
+   * override; wins over `tickCount`. Default: unset (→ `tickCount`).
+   */
   numTicks?: number;
+  /**
+   * Tick target (RM-108). `"auto"` (default) derives it from the plot width —
+   * `tickTargetForWidth(innerWidth)`, about one tick per 90 px, clamped 2–10.
+   */
+  tickCount?: AxisTickCount;
+  /** Alias of `tickValues` (RM-108 naming, shared with `YAxis`). `tickValues` wins. */
+  ticks?: Date[];
+  /** Which edge the labels sit on (RM-108). Default: `"bottom"`. */
+  orientation?: XAxisOrientation;
+  /** Axis title (RM-108). */
+  title?: ReactNode;
+  /**
+   * `"outside"` (default) — in the margin beyond the tick labels, at the far
+   * end; `"inside"` — `HaloText` at the far end inside the plot.
+   */
+  titlePlacement?: AxisTitlePlacement;
   /** Width of the date ticker box for fade calculation. Default: 50 */
   tickerHalfWidth?: number;
   /**
@@ -172,6 +196,7 @@ interface XAxisLabelProps {
   isHovering: boolean;
   tickerHalfWidth: number;
   animatePosition: boolean;
+  orientation: XAxisOrientation;
 }
 
 function XAxisLabel({
@@ -182,6 +207,7 @@ function XAxisLabel({
   isHovering,
   tickerHalfWidth,
   animatePosition,
+  orientation,
 }: XAxisLabelProps) {
   const fadeBuffer = 20;
   const fadeRadius = tickerHalfWidth + fadeBuffer;
@@ -203,7 +229,7 @@ function XAxisLabel({
       className="absolute"
       style={{
         left: x,
-        bottom: 12,
+        ...(orientation === "top" ? { top: 12 } : { bottom: 12 }),
         width: 0,
         display: "flex",
         justifyContent: "center",
@@ -640,8 +666,8 @@ export function XAxis(props: XAxisProps) {
       <XAxisInner
         {...props}
         container={container}
-        numTicks={Math.min(props.numTicks ?? 5, CHART_DENSITY_SM_MAX_TICKS)}
-        tickValues={props.tickValues?.slice(0, CHART_DENSITY_SM_MAX_TICKS)}
+        maxTickTarget={CHART_DENSITY_SM_MAX_TICKS}
+        tickValues={(props.tickValues ?? props.ticks)?.slice(0, CHART_DENSITY_SM_MAX_TICKS)}
       />
     );
   }
@@ -650,14 +676,20 @@ export function XAxis(props: XAxisProps) {
 }
 
 const XAxisInner = memo(function XAxisInner({
-  numTicks = 5,
+  numTicks: numTicksProp,
+  tickCount,
+  ticks,
+  orientation = "bottom",
+  title,
+  titlePlacement = "outside",
+  maxTickTarget,
   tickerHalfWidth = 50,
   tickMode = "domain",
   tickFormat,
-  tickValues,
+  tickValues: tickValuesProp,
   periodTicks = false,
   container,
-}: XAxisProps & { container: HTMLDivElement }) {
+}: XAxisProps & { container: HTMLDivElement; maxTickTarget?: number }) {
   const {
     xScale,
     margin,
@@ -669,8 +701,20 @@ const XAxisInner = memo(function XAxisInner({
     xScaleType,
     width,
     height,
+    innerWidth,
     innerHeight,
   } = useChart();
+
+  const tickValues = tickValuesProp ?? ticks;
+  // RM-108: explicit `numTicks` > numeric `tickCount` > the width-derived
+  // target; a density cap (`sm`) still bounds whichever wins.
+  const resolvedTickTarget = resolveAxisTickTarget({
+    numTicks: numTicksProp,
+    tickCount,
+    autoTarget: tickTargetForWidth(innerWidth),
+  });
+  const numTicks =
+    maxTickTarget != null ? Math.min(resolvedTickTarget, maxTickTarget) : resolvedTickTarget;
 
   // #352: on a band/linear axis the scale's domain holds SYNTHETIC instants, so
   // interpolating dates across it (the `"domain"` tick path) would invent
@@ -849,7 +893,12 @@ const XAxisInner = memo(function XAxisInner({
           />
         </svg>
       ) : null}
-      <div className="pointer-events-none absolute inset-0">
+      <div
+        className="pointer-events-none absolute inset-0"
+        data-orientation={orientation}
+        data-slot="x-axis"
+        data-tick-count={labelsToShow.length}
+      >
         {labelsToShow.map((item) => (
           <XAxisLabel
             animatePosition={xDomain == null}
@@ -862,10 +911,22 @@ const XAxisInner = memo(function XAxisInner({
             // across ticks (React "duplicate key" warning). The label disambiguates.
             key={`${item.label}-${item.date.getTime()}-${item.x}`}
             label={item.label}
+            orientation={orientation}
             tickerHalfWidth={tickerHalfWidth}
             x={item.x}
           />
         ))}
+        <AxisTitle
+          height={height}
+          innerHeight={innerHeight}
+          innerWidth={innerWidth}
+          margin={margin}
+          placement={titlePlacement}
+          side={orientation}
+          width={width}
+        >
+          {title}
+        </AxisTitle>
       </div>
     </>,
     container,

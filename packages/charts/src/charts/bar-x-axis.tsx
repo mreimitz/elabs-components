@@ -28,9 +28,13 @@ export interface BarXAxisProps {
   /** Maximum number of labels to show. Default: 12 */
   maxLabels?: number;
   /**
-   * `"off"` pins the pre-fit behaviour — full labels, count-capped stride, no
-   * measurement and no reserved axis space. The regression escape hatch.
-   * Default: `"auto"`.
+   * How labels that do not fit their band are rescued (RM-108):
+   * - `"auto"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis →
+   *   stride → hidden;
+   * - `"wrap"` — the same cascade without the tilt rung (never rotates);
+   * - `"tilt"` — the pre-RM-108 cascade (skips `wrap`);
+   * - `"off"` — pins the pre-fit behaviour: full labels, count-capped stride,
+   *   no measurement and no reserved axis space. The regression escape hatch.
    */
   fit?: CategoryAxisFit;
 }
@@ -39,6 +43,8 @@ interface BarXAxisLabelProps {
   label: string;
   display: string;
   truncated: boolean;
+  /** Painted lines on the `wrapped` rung (RM-108); unset otherwise. */
+  lines?: string[];
   x: number;
   top: number | undefined;
   angleDeg: number;
@@ -51,6 +57,7 @@ function BarXAxisLabel({
   label,
   display,
   truncated,
+  lines,
   x,
   top,
   angleDeg,
@@ -72,6 +79,7 @@ function BarXAxisLabel({
   }
 
   const tilted = angleDeg !== 0;
+  const wrapped = lines != null && lines.length > 1;
 
   // Zero-width container approach for perfect centering. The rotation lives on
   // THIS wrapper, never on the `motion.span`: motion writes an inline
@@ -84,7 +92,9 @@ function BarXAxisLabel({
         "absolute flex",
         tilted
           ? "-rotate-45 origin-top-right justify-end rtl:origin-top-left rtl:rotate-45 rtl:justify-start"
-          : "justify-center",
+          : wrapped
+            ? "justify-center text-center"
+            : "justify-center",
       )}
       style={{
         left: x,
@@ -101,7 +111,18 @@ function BarXAxisLabel({
         initial={{ opacity: 1 }}
         transition={{ duration: 0.4, ease: "easeInOut" }}
       >
-        {truncated ? (
+        {wrapped ? (
+          <>
+            {/* RM-108 wrap rung: one visual line per span; AT reads the
+                unbroken name once from the sr-only copy. */}
+            <span aria-hidden="true" className="flex flex-col items-center">
+              {lines.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+            </span>
+            <span className="sr-only">{label}</span>
+          </>
+        ) : truncated ? (
           <>
             <span aria-hidden="true">{display}</span>
             {/* The portal lives OUTSIDE the aria-hidden <svg>, so an ellipsised
@@ -229,9 +250,11 @@ const BarXAxisInner = memo(function BarXAxisInner({
   const isHovering = tooltipData !== null;
   const crosshairX = tooltipData ? tooltipData.x + margin.left : null;
   const angleDeg = plan?.angleDeg ?? 0;
-  // Tilted runs anchor to the plot's bottom edge and grow into the band the
-  // chart reserved for them; horizontal ones keep their shipped placement.
-  const top = angleDeg === 0 ? undefined : height - margin.bottom + CATEGORY_AXIS_PADDING;
+  // Tilted and wrapped (RM-108) runs anchor to the plot's bottom edge and grow
+  // into the band the chart reserved for them; horizontal ones keep their
+  // shipped placement.
+  const anchorsToPlotEdge = angleDeg !== 0 || plan?.mode === "wrapped";
+  const top = anchorsToPlotEdge ? height - margin.bottom + CATEGORY_AXIS_PADDING : undefined;
 
   return createPortal(
     <div className="pointer-events-none absolute inset-0">
@@ -243,6 +266,7 @@ const BarXAxisInner = memo(function BarXAxisInner({
           isHovering={isHovering}
           key={`${item.label}-${item.index}`}
           label={item.label}
+          lines={plan?.mode === "wrapped" ? item.lines : undefined}
           tickerHalfWidth={tickerHalfWidth}
           top={top}
           truncated={item.truncated}

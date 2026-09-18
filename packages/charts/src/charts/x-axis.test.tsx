@@ -10,6 +10,9 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// RM-108: the width is mutable so the width-derived tick target can be driven.
+const parentSize = vi.hoisted(() => ({ width: 560, height: 288 }));
+
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
 vi.mock("@visx/responsive", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
@@ -23,7 +26,7 @@ vi.mock("@visx/responsive", () => {
       React.createElement(
         "div",
         { "data-testid": "parent-size" },
-        children({ width: 560, height: 288 }),
+        children({ width: parentSize.width, height: parentSize.height }),
       ),
   };
 });
@@ -271,5 +274,72 @@ describe("XAxis — periodTicks long-tick calendar anchor (#253)", () => {
       expect(isLongPeriodTick("month", d)).toBe(d.getMonth() === 0);
     });
     expect(ticks.filter((d) => isLongPeriodTick("month", d))).toHaveLength(2); // Jan 2024, Jan 2025
+  });
+});
+
+describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", () => {
+  // Two years of monthly rows: enough distinct labels for any target.
+  const monthly = Array.from({ length: 24 }, (_, i) => ({
+    date: new Date(2023, i, 1),
+    value: 10 + i,
+  }));
+
+  function paintedXTicks(width: number, axis = <XAxis />): number {
+    parentSize.width = width;
+    const { container } = render(<LineChart data={monthly}>{axis}</LineChart>);
+    const layer = container.querySelector('[data-slot="x-axis"]');
+    const count = Number(layer?.getAttribute("data-tick-count"));
+    cleanup();
+    parentSize.width = 560;
+    return count;
+  }
+
+  it("paints 8–10 x ticks at 900 px and 3–5 at 380 px", () => {
+    const wide = paintedXTicks(900);
+    const narrow = paintedXTicks(380);
+    expect(wide).toBeGreaterThanOrEqual(8);
+    expect(wide).toBeLessThanOrEqual(10);
+    expect(narrow).toBeGreaterThanOrEqual(3);
+    expect(narrow).toBeLessThanOrEqual(5);
+  });
+
+  it("numTicks={5} pins the count at both widths", () => {
+    expect(paintedXTicks(900, <XAxis numTicks={5} />)).toBe(5);
+    expect(paintedXTicks(380, <XAxis numTicks={5} />)).toBe(5);
+  });
+
+  it('orientation="top" and a title render on the x axis', () => {
+    const { container } = render(
+      <LineChart data={monthly}>
+        <XAxis orientation="top" title="Month" titlePlacement="inside" />
+      </LineChart>,
+    );
+    expect(container.querySelector('[data-slot="x-axis"]')?.getAttribute("data-orientation")).toBe(
+      "top",
+    );
+    const title = container.querySelector('[data-slot="axis-title"]');
+    expect(title?.getAttribute("data-placement")).toBe("inside");
+    expect(container.textContent).toContain("Month");
+  });
+
+  it("YAxis paints 3 ticks on a short plot and honours explicit ticks", () => {
+    parentSize.height = 180;
+    const { container } = render(
+      <LineChart data={monthly}>
+        <YAxis title="Riders" />
+      </LineChart>,
+    );
+    const short = Number(
+      container.querySelector('[data-slot="y-axis"]')?.getAttribute("data-tick-count"),
+    );
+    cleanup();
+    parentSize.height = 288;
+    expect(short).toBeLessThanOrEqual(4);
+    const { container: pinned } = render(
+      <LineChart data={monthly}>
+        <YAxis ticks={[0, 20, 40]} />
+      </LineChart>,
+    );
+    expect(pinned.querySelector('[data-slot="y-axis"]')?.getAttribute("data-tick-count")).toBe("3");
   });
 });
