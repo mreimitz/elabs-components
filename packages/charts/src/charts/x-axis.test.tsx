@@ -13,6 +13,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // RM-108: the width is mutable so the width-derived tick target can be driven.
 const parentSize = vi.hoisted(() => ({ width: 560, height: 288 }));
 
+// ScatterChart measures with react-use-measure (ResizeObserver) — fixed size here.
+vi.mock("react-use-measure", () => ({
+  default: () => [() => undefined, { width: 560, height: 288 }],
+}));
+
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
 vi.mock("@visx/responsive", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
@@ -32,6 +37,7 @@ vi.mock("@visx/responsive", () => {
 });
 
 import { LineChart } from "./line-chart";
+import { ScatterChart } from "./scatter-chart";
 import { generatePeriodTicks, isLongPeriodTick, XAxis } from "./x-axis";
 import { YAxis } from "./y-axis";
 
@@ -341,5 +347,60 @@ describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", ()
       </LineChart>,
     );
     expect(pinned.querySelector('[data-slot="y-axis"]')?.getAttribute("data-tick-count")).toBe("3");
+  });
+});
+
+describe("XAxis — numeric x domain / scale on ScatterChart (RM-108)", () => {
+  const points = [
+    { dose: 2, response: 5 },
+    { dose: 15, response: 9 },
+    { dose: 40, response: 14 },
+    { dose: 310, response: 20 },
+  ];
+
+  function xLabels(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('[data-slot="x-axis"] span')].map(
+      (node) => node.textContent ?? "",
+    );
+  }
+
+  it("paints a numeric ruler across a pinned domain", () => {
+    const { container } = render(
+      <ScatterChart data={points} xDataKey="dose">
+        <XAxis domain={[0, 400]} numTicks={5} />
+      </ScatterChart>,
+    );
+    const labels = xLabels(container);
+    expect(labels[0]).toBe("0");
+    expect(labels.at(-1)).toBe("400");
+  });
+
+  it("spaces a log x axis by decade", () => {
+    const { container } = render(
+      <ScatterChart data={points} xDataKey="dose">
+        <XAxis scale="log" numTicks={5} />
+      </ScatterChart>,
+    );
+    const layer = container.querySelector('[data-slot="x-axis"]');
+    const positions = [...(layer?.children ?? [])]
+      .map((node) => Number.parseFloat((node as HTMLElement).style.left))
+      .filter(Number.isFinite);
+    const labels = xLabels(container);
+    const at = (label: string) => positions[labels.indexOf(label)] ?? Number.NaN;
+    // Data 2–310 → domain 2–500, thinned to the 1-5 tier: 5 · 10 · 50 · 100 · 500.
+    expect(labels).toEqual(["5", "10", "50", "100", "500"]);
+    // 5 → 50 and 10 → 100 are both one decade: the same width on a log ruler.
+    expect(at("50") - at("5")).toBeCloseTo(at("100") - at("10"), 0);
+  });
+
+  it("refuses log on x values touching 0 and warns once", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <ScatterChart data={[...points, { dose: 0, response: 1 }]} xDataKey="dose">
+        <XAxis scale="log" />
+      </ScatterChart>,
+    );
+    expect(warn.mock.calls.some(([message]) => String(message).startsWith("[XAxis x]"))).toBe(true);
+    warn.mockRestore();
   });
 });

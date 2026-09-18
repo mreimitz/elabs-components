@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { memo, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@elabs-ai/components-ui";
 import { HairlineFloor } from "../marks/hairline-floor";
@@ -10,7 +10,11 @@ import { useChart, useChartStable } from "./chart-context";
 import { shortDateFmt } from "./chart-formatters";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
+import { useChartValueSetFormatter } from "./chart-formatters";
 import { type AxisTickCount, resolveAxisTickTarget, tickTargetForWidth } from "./tick-targets";
+import { NumericXRulerContext } from "./x-scale-mode";
+import { type AxisDomain, buildValueScale, type ValueScaleType } from "./y-axis-scales";
+import { valueAxisTicks } from "./y-axis-ticks";
 
 const X_AXIS_POSITION_TWEEN_MS = DEFAULT_Y_DOMAIN_TWEEN_MS;
 
@@ -131,8 +135,25 @@ export interface XAxisProps {
    * `tickTargetForWidth(innerWidth)`, about one tick per 90 px, clamped 2–10.
    */
   tickCount?: AxisTickCount;
-  /** Alias of `tickValues` (RM-108 naming, shared with `YAxis`). `tickValues` wins. */
-  ticks?: Date[];
+  /**
+   * RM-108 naming, shared with `YAxis`. On a time axis: an alias of
+   * `tickValues` (`tickValues` wins). On a numeric x with `domain`/`scale`
+   * (ScatterChart): exactly these raw x values.
+   */
+  ticks?: Date[] | number[];
+  /**
+   * Numeric x only (ScatterChart with numeric `xDataKey`, RM-108): pin either
+   * end of the x domain in raw units; `"auto"` keeps the data-derived end.
+   * Read by the chart container, so place `XAxis` as a direct child. Setting
+   * `domain` or `scale` also switches the labels from one per data row to a
+   * numeric ruler. Ignored on a time axis.
+   */
+  domain?: AxisDomain;
+  /**
+   * Numeric x only (RM-108): `"linear"` (default), `"log"` (refuses data or a
+   * domain touching 0 — dev warning, renders linear) or `"sqrt"`.
+   */
+  scale?: ValueScaleType;
   /** Which edge the labels sit on (RM-108). Default: `"bottom"`. */
   orientation?: XAxisOrientation;
   /** Axis title (RM-108). */
@@ -645,6 +666,17 @@ function buildDomainTicks({
   return ticks;
 }
 
+/** The `Date` entries of a mixed `ticks` prop (the time-axis alias of `tickValues`). */
+function dateTicks(ticks: XAxisProps["ticks"]): Date[] | undefined {
+  if (!ticks) {
+    return undefined;
+  }
+  const dates = (ticks as Array<Date | number>).filter(
+    (value): value is Date => value instanceof Date,
+  );
+  return dates.length > 0 ? dates : undefined;
+}
+
 export function XAxis(props: XAxisProps) {
   const { containerRef } = useChartStable();
   const { density } = useChartConfig();
@@ -667,7 +699,10 @@ export function XAxis(props: XAxisProps) {
         {...props}
         container={container}
         maxTickTarget={CHART_DENSITY_SM_MAX_TICKS}
-        tickValues={(props.tickValues ?? props.ticks)?.slice(0, CHART_DENSITY_SM_MAX_TICKS)}
+        tickValues={(props.tickValues ?? dateTicks(props.ticks))?.slice(
+          0,
+          CHART_DENSITY_SM_MAX_TICKS,
+        )}
       />
     );
   }
@@ -705,7 +740,8 @@ const XAxisInner = memo(function XAxisInner({
     innerHeight,
   } = useChart();
 
-  const tickValues = tickValuesProp ?? ticks;
+  const tickValues = tickValuesProp ?? dateTicks(ticks);
+  const numericRuler = useContext(NumericXRulerContext);
   // RM-108: explicit `numTicks` > numeric `tickCount` > the width-derived
   // target; a density cap (`sm`) still bounds whichever wins.
   const resolvedTickTarget = resolveAxisTickTarget({
@@ -753,7 +789,31 @@ const XAxisInner = memo(function XAxisInner({
     return generatePeriodTicks(effectivePeriodTicks, start, end);
   }, [effectivePeriodTicks, xScale]);
 
+  // RM-108: a numeric ruler (ScatterChart numeric x with `domain`/`scale`) —
+  // real raw-unit ticks, formatted as ONE set (#250), positioned through the
+  // same projection the marks use.
+  const rulerTickValues = useMemo(() => {
+    if (!(numericRuler && xScaleType === "linear")) {
+      return [];
+    }
+    const explicit = ticks?.filter((value): value is number => typeof value === "number");
+    if (explicit && explicit.length > 0) {
+      return explicit;
+    }
+    return valueAxisTicks(
+      buildValueScale(numericRuler.scale, numericRuler.domain, [0, 1]),
+      numTicks,
+    );
+  }, [numericRuler, xScaleType, ticks, numTicks]);
+  const formatRulerValue = useChartValueSetFormatter(rulerTickValues);
+
   const labelsToShow = useMemo(() => {
+    if (numericRuler && rulerTickValues.length > 0) {
+      return rulerTickValues.map((value) => {
+        const date = numericRuler.toPosition(value);
+        return { date, label: formatRulerValue(value), x: (xScale(date) ?? 0) + margin.left };
+      });
+    }
     // Explicit tick positions bypass generation AND the label-collision de-dupe
     // entirely — the caller owns exactly which ticks render (#357).
     if (effectiveTickValues != null) {
@@ -784,6 +844,9 @@ const XAxisInner = memo(function XAxisInner({
       xScale,
     });
   }, [
+    numericRuler,
+    rulerTickValues,
+    formatRulerValue,
     effectiveTickValues,
     effectiveTickFormat,
     tickMode,

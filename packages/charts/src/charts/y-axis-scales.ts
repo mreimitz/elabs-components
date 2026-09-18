@@ -191,17 +191,21 @@ export function buildValueScale(
 const warnedValueAxisMessages = new Set<string>();
 
 /** Print each distinct value-axis warning once per session, in development only. */
-export function warnValueAxisOnce(axisId: string, warnings: string[]): void {
+export function warnValueAxisOnce(
+  axisId: string,
+  warnings: string[],
+  component: "YAxis" | "XAxis" = "YAxis",
+): void {
   if (process.env.NODE_ENV === "production") {
     return;
   }
   for (const message of warnings) {
-    const key = `${axisId}:${message}`;
+    const key = `${component}:${axisId}:${message}`;
     if (warnedValueAxisMessages.has(key)) {
       continue;
     }
     warnedValueAxisMessages.add(key);
-    console.warn(`[YAxis ${axisId}] ${message}`);
+    console.warn(`[${component} ${axisId}] ${message}`);
   }
 }
 
