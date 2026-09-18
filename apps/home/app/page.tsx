@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@elabs-ai/components-ui";
+import { SiteThemeSwitch } from "../lib/use-theme-transition";
 import { ParallaxPlane, RevealOnEnter } from "@elabs-ai/components-marketing";
 import { SiteGround } from "../components/site-ground";
 
@@ -23,6 +24,8 @@ const PLANES = [
 export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col justify-center gap-6 p-6">
+      {/* RM-091 */}
+      <SiteThemeSwitch className="self-center" />
       <Card>
         <CardHeader>
           <CardTitle>brand-ui</CardTitle>

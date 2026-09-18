@@ -5,6 +5,10 @@
 @import "@elabs-ai/components-tokens/styles.css";
 @import "@elabs-ai/components-tokens/themes/light.css";
 @import "@elabs-ai/components-tokens/themes/dark.css";
+/* RM-091 — the downloadable theme families (`themes/<slug>/`), copied into ../themes/ by
+   scripts/gen-home-themes.mjs on install (git-ignored, never hand-edited): fonts first, then
+   every <slug>-{light,dark}.css, then the `@custom-variant dark` line (themes/README.md). */
+@import "../themes/themes.css";
 
 /* Workspace packages are consumed as TypeScript source (next.config.ts `transpilePackages`), so
    Tailwind scans each package's src. Add new packages here (`pnpm check --rule tailwind-sources`). */
@@ -21,6 +25,55 @@
 @source "../../../packages/process/src/**/*.{ts,tsx}";
 @source "../../../packages/icons/src/**/*.{ts,tsx}";
 @source "../../../packages/tokens/src/**/*.{ts,tsx}";
+
+/* RM-091 — the view-transition crossfade (the family imports sit with the other imports above).
+   The switch is one crossfade of the whole page (lib/use-theme-transition.ts wraps the theme
+   write in document.startViewTransition). The engine's ThemeSwitcher wipe freezes the OLD frame
+   (`animation: none`), which a plain fade cannot use — fade both frames instead. Durations ride
+   the motion gate (--t-slow), so reduced motion collapses them to the floor. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--t-slow);
+  animation-timing-function: var(--ease-standard);
+  animation-fill-mode: both;
+}
+::view-transition-old(root) {
+  animation-name: home-vt-fade-out;
+}
+::view-transition-new(root) {
+  animation-name: home-vt-fade-in;
+}
+/* The ambient ground (RM-092 names it `view-transition-name: ground`) lands after the content. */
+::view-transition-group(ground),
+::view-transition-old(ground),
+::view-transition-new(ground) {
+  animation-duration: var(--t-slow);
+  animation-timing-function: var(--ease-standard);
+  animation-delay: calc(120ms * var(--motion-factor));
+  animation-fill-mode: both;
+}
+@keyframes home-vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes home-vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Fallback where there are no view transitions: colours ease for ONE switch only — the
+   attribute is set around the theme write and removed after --t-slow, never left on (it would
+   slow every hover). */
+html[data-theme-transition],
+html[data-theme-transition] *,
+html[data-theme-transition] *::before,
+html[data-theme-transition] *::after {
+  transition-property: color, background-color, border-color, fill, stroke;
+  transition-duration: var(--t-slow);
+  transition-timing-function: var(--ease-standard);
+}
 
 /* RM-092 — the site ground. The page's one AmbientField is the `ground` view-transition group, so
    a section transition (RM-091) can hold the ground still while content changes. The drift and

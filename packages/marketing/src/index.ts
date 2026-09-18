@@ -8,6 +8,9 @@ export * from "./use-case-card";
 export * from "./stats-band";
 export * from "./cta-section";
 export * from "./logo-strip";
+
+// ThemeFamilySwitch — RM-091
+export * from "./theme-family-switch";
 // AmbientField, ParallaxPlane, RevealOnEnter — RM-092
 export * from "./ambient-field";
 export * from "./parallax-plane";

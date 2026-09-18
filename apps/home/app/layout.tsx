@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
-import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { siteThemeInitScript } from "../lib/theme-state";
+import { SiteThemeProvider } from "../lib/use-theme-transition";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,18 +11,19 @@ export const metadata: Metadata = {
     "brand-ui — a source-owned, token-driven React component system, legible to coding agents through a CLI and a hosted MCP server.",
 };
 
-// Runs before first paint: applies the persisted theme (ThemeProvider's default storage key) so
-// a returning dark-theme visitor never sees a light flash. ThemeProvider owns it after hydration.
-const THEME_INIT = `try{var t=localStorage.getItem("brand-ui-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
+// Runs before first paint (RM-091): applies `?theme=`/`?mode=`, else the persisted theme, else the
+// OS colour scheme, so no visitor sees a flash of the default. A plain <script> in <head> runs
+// while the HTML parses; `next/script` beforeInteractive would run only once Next's runtime loads.
+const THEME_INIT = siteThemeInitScript();
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script id="theme-init">{THEME_INIT}</script>
+      </head>
       <body className="bg-background text-foreground">
-        <Script id="theme-init" strategy="beforeInteractive">
-          {THEME_INIT}
-        </Script>
-        <ThemeProvider>{children}</ThemeProvider>
+        <SiteThemeProvider>{children}</SiteThemeProvider>
         <Analytics />
       </body>
     </html>
