@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T23:19:35.579Z",
+  "generatedAt": "2026-09-18T23:26:39.626Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13537,6 +13537,11 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "CustomShapes",
+          "kind": "value",
+          "module": "packages/charts/src/charts/custom-shapes.tsx"
+        },
+        {
           "name": "DateTicker",
           "kind": "value",
           "module": "packages/charts/src/charts/tooltip/index.ts"
@@ -13595,6 +13600,11 @@
           "name": "DEFAULT_MAX_INTERACTIVE_DATAPOINTS",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
+        },
+        {
+          "name": "DEFAULT_SCATTER_SIZE_RANGE",
+          "kind": "value",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
         },
         {
           "name": "DEFAULT_WHISKER_MULTIPLIER",
@@ -14112,6 +14122,11 @@
           "module": "packages/charts/src/charts/scatter.tsx"
         },
         {
+          "name": "SCATTER_SHAPE_SOFT_CAP",
+          "kind": "value",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
           "name": "ScatterChart",
           "kind": "value",
           "module": "packages/charts/src/charts/scatter-chart.tsx"
@@ -14210,6 +14225,11 @@
           "name": "TreemapChart",
           "kind": "value",
           "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TrendLine",
+          "kind": "value",
+          "module": "packages/charts/src/charts/trend-line.tsx"
         },
         {
           "name": "UNIT_CHART_GROUP_STAGGER_MS",
@@ -15031,6 +15051,10 @@
           "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
         {
+          "name": "CustomShapesProps",
+          "module": "packages/charts/src/charts/custom-shapes.tsx"
+        },
+        {
           "name": "DateTickerProps",
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
@@ -15791,12 +15815,40 @@
           "module": "packages/charts/src/charts/scatter-chart.tsx"
         },
         {
+          "name": "ScatterColorByConfig",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
+          "name": "ScatterColorByResolution",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
+          "name": "ScatterEncodingLegendItem",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
           "name": "ScatterLabels",
           "module": "packages/charts/src/charts/labels/point-labels.tsx"
         },
         {
           "name": "ScatterProps",
           "module": "packages/charts/src/charts/scatter.tsx"
+        },
+        {
+          "name": "ScatterShapeByConfig",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
+          "name": "ScatterShapeByResolution",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
+          "name": "ScatterShapeSpec",
+          "module": "packages/charts/src/charts/custom-shapes.tsx"
+        },
+        {
+          "name": "ScatterShapeStyle",
+          "module": "packages/charts/src/charts/custom-shapes.tsx"
         },
         {
           "name": "SegmentBackgroundProps",
@@ -15929,6 +15981,18 @@
         {
           "name": "TreePalette",
           "module": "packages/charts/src/charts/tree-chart.tsx"
+        },
+        {
+          "name": "TrendFit",
+          "module": "packages/charts/src/charts/trend-line.tsx"
+        },
+        {
+          "name": "TrendLineProps",
+          "module": "packages/charts/src/charts/trend-line.tsx"
+        },
+        {
+          "name": "TrendPoint",
+          "module": "packages/charts/src/charts/trend-line.tsx"
         },
         {
           "name": "UnitArithmetic",
@@ -16309,6 +16373,10 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "fitTrend",
+          "module": "packages/charts/src/charts/trend-line.tsx"
+        },
+        {
           "name": "fiveNumberSummary",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -16541,6 +16609,10 @@
           "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
+          "name": "resolveColorBy",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
           "name": "resolveDensityForBreakpoint",
           "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
@@ -16597,6 +16669,14 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
+          "name": "resolveScatterSizeRadius",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
+          "name": "resolveShapeBy",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
           "name": "resolveYAxisTickCount",
           "module": "packages/charts/src/charts/y-axis-ticks.ts"
         },
@@ -16615,6 +16695,10 @@
         {
           "name": "sankeyCssVars",
           "module": "packages/charts/src/charts/sankey/index.ts"
+        },
+        {
+          "name": "scatterSizeDomainMax",
+          "module": "packages/charts/src/charts/scatter-encodings.ts"
         },
         {
           "name": "seededRandomSource",
@@ -16683,6 +16767,10 @@
         {
           "name": "thinToDensity",
           "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
+          "name": "trendDirection",
+          "module": "packages/charts/src/charts/trend-line.tsx"
         },
         {
           "name": "unitMarkDelayMs",
@@ -18878,6 +18966,22 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
+            }
+          ]
+        },
+        "CustomShapes": {
+          "extends": [],
+          "props": [
+            {
+              "name": "shapes",
+              "optional": false,
+              "type": "ScatterShapeSpec[]"
+            },
+            {
+              "name": "yAxisId",
+              "optional": true,
+              "type": "string | number",
+              "description": "The y-axis these shapes' `y` values belong to when a chart has several."
             }
           ]
         },
@@ -21668,10 +21772,40 @@
               "description": "Highlight matching points with a non-color ring (`PeakRing` — shape, not hue, carries the emphasis; see `.claude/rules/accessibility.md`). A string names a data field read as a truthy flag (`d[highlightKey]`); a function is called with the row and returns whether it is highlighted."
             },
             {
+              "name": "sizeKey",
+              "optional": true,
+              "type": "string",
+              "description": "Bubble size by a numeric column (RM-115) — `d[sizeKey]` scales the marker's radius by `sqrt(value / max)` (honesty gate: AREA, not radius, carries the value — see `areaRadius`). Rows missing `sizeKey` (or the whole series, when `sizeKey` is set but every value is non-numeric) draw at `sizeRange[0]`. Unset (default): every marker draws at `radius`."
+            },
+            {
+              "name": "sizeRange",
+              "optional": true,
+              "type": "[number, number]",
+              "description": "`[minRadius, maxRadius]` in px for `sizeKey`. Default: `[4, 22]`."
+            },
+            {
+              "name": "colorBy",
+              "optional": true,
+              "type": "ScatterColorByConfig",
+              "description": "Colour each point by a fixed/categorical/numeric column (RM-115) instead of the series' own colour. A row whose `colorBy.key` is missing/unusable keeps drawing in the series' own `fill`. See `scatter-encodings.ts`' `resolveColorBy` — a consumer building a legend (RM-118) calls it with the same `data`/`colorBy` to get the identical colour stops."
+            },
+            {
+              "name": "shapeBy",
+              "optional": true,
+              "type": "ScatterShapeByConfig",
+              "description": "Shape each point by a categorical column (RM-115), cycling through the series-marker ramp (≤ 6 shapes; a 7th+ distinct value repeats the last shape). See `resolveShapeBy` for the legend a consumer (RM-118) reads."
+            },
+            {
+              "name": "trend",
+              "optional": true,
+              "type": "\"linear\" | \"log\" | false",
+              "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart."
+            },
+            {
               "name": "labels",
               "optional": true,
               "type": "ScatterLabels",
-              "description": "Point labels with collision avoidance (RM-110): `{ key, mode?, priority? }` — `key` is the row field holding the label text; `mode` `\"auto\"` (default: thinned by plot area, fewer at narrow widths) | `\"all\"` | a predicate; `priority` decides who survives (default: the y value). Every label that is not painted is restated `sr-only` by the chart. Unlike `labelExtremes` it never fades the unlabelled points."
+              "description": "Point labels with collision avoidance (RM-110): `{ key, mode?, priority? }` — `key` is the row field holding the label text; `mode` `\"auto\"` (default: thinned by plot area, fewer at narrow widths) | `\"all\"` | a predicate; `priority` decides who survives (default: the y value). Wave-1 integration (RM-115 × RM-110): when `sizeKey` is set and `labels` does not supply its own `priority`, the bubble's OWN `sizeKey` value becomes the priority reader — the biggest bubbles keep their labels first, matching what the eye already reads as \"important\" on a bubble chart. Every label that is not painted is restated `sr-only` by the chart. Unlike `labelExtremes` it never fades the unlabelled points."
             }
           ]
         },
@@ -22040,6 +22174,34 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT."
+            }
+          ]
+        },
+        "TrendLine": {
+          "extends": [],
+          "props": [
+            {
+              "name": "dataKey",
+              "optional": false,
+              "type": "string",
+              "description": "The series' value field — same `dataKey` the sibling `Scatter` reads."
+            },
+            {
+              "name": "kind",
+              "optional": true,
+              "type": "\"linear\" | \"log\"",
+              "description": "Least-squares model. Default: `\"linear\"`."
+            },
+            {
+              "name": "yAxisId",
+              "optional": true,
+              "type": "string | number",
+              "description": "The y-axis this series belongs to when a chart has several."
+            },
+            {
+              "name": "strokeWidth",
+              "optional": true,
+              "type": "number"
             }
           ]
         },
