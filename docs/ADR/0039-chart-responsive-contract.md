@@ -1,6 +1,8 @@
 # ADR 0039 — Responsive chart contract: container breakpoints, `Responsive<T>`, plot height
 
-- **Status:** Proposed
+- **Status:** Accepted — confirmed by the maintainer on 2026-09-18 with three changes (the middle
+  tier is named `medium`; `narrow` applies the full `sm` density; framed charts drop the 260 px
+  body in this minor). See "Maintainer confirmation" below.
 - **Date:** 2026-09-18
 - **Deciders:** maintainer (drafted by `brand-ui-component-builder` for RM-107)
 - **Context:** `docs/review/2026-09-18-datawrapper-gap-analysis.md` §4 (Datawrapper's responsive
@@ -51,26 +53,29 @@ collapse, and "show on desktop / mobile" overrides appear wherever an option is 
 ### 1. Breakpoints: three container tiers at 480 and 768 px
 
 ```ts
-export type ChartBreakpoint = "narrow" | "compact" | "wide";
+export type ChartBreakpoint = "narrow" | "medium" | "wide";
 
-/** A width below `narrow` is narrow; below `compact` is compact; anything else is wide. */
-export const CHART_BREAKPOINT_THRESHOLDS = { narrow: 480, compact: 768 } as const;
+/** A width below `narrow` is narrow; below `medium` is medium; anything else is wide. */
+export const CHART_BREAKPOINT_THRESHOLDS = { narrow: 480, medium: 768 } as const;
 
 export function breakpointForWidth(width: number): ChartBreakpoint;
 ```
 
-| Tier      | Container width     | Typical host                                                       |
-| --------- | ------------------- | ------------------------------------------------------------------ |
-| `narrow`  | `< 480` px          | a phone in portrait, a sidebar, a third of a desktop dashboard row |
-| `compact` | `480 ≤ width < 768` | a tablet in portrait, half of a desktop dashboard row              |
-| `wide`    | `≥ 768` px          | a desktop content column, a full-width dashboard row               |
+| Tier     | Container width     | Typical host                                                       |
+| -------- | ------------------- | ------------------------------------------------------------------ |
+| `narrow` | `< 480` px          | a phone in portrait, a sidebar, a third of a desktop dashboard row |
+| `medium` | `480 ≤ width < 768` | a tablet in portrait, half of a desktop dashboard row              |
+| `wide`   | `≥ 768` px          | a desktop content column, a full-width dashboard row               |
 
-**Boundaries** belong to the wider tier: 480 is `compact`, 768 is `wide`. Widths are compared
+**Boundaries** belong to the wider tier: 480 is `medium`, 768 is `wide`. Widths are compared
 unrounded.
 
-**Measured** as the container root's content-box width in CSS px, taken from the measurement the
-family already has (`ParentSize`, `useMeasure`, or its own `ResizeObserver`) at that family's
-debounce — no second observer where one exists. Because browser zoom shrinks the box in CSS px,
+**Measured** as the container root's width in CSS px by one shared hook
+(`useMeasuredChartBreakpoint`, a `ResizeObserver` on the root). It is deliberately separate from
+the family's drawing measurement (`ParentSize`, `useMeasure`): that width lives inside a render
+prop below the root, where it can reach neither the root's attribute nor the root's own height
+style without restructuring every family. The observer only re-renders when the _tier_ changes,
+not on every pixel. Because browser zoom shrinks the box in CSS px,
 a 1280 px desktop at 400 % zoom (320 CSS px) is `narrow`: WCAG 1.4.10 Reflow runs through the same
 path as a phone.
 
@@ -83,42 +88,51 @@ changes the tier only — widths, decimation and the fit cascade still use the r
 
 **Exposed** in two places, both always present:
 
-- `data-chart-breakpoint="narrow" | "compact" | "wide"` on every container's root element (the one
+- `data-chart-breakpoint="narrow" | "medium" | "wide"` on every container's root element (the one
   that carries its `ref`, `className` and root `data-slot`). It is the styling hook
   (`[data-chart-breakpoint="narrow"] …`) and the testing hook.
 - `useChartBreakpoint()` for parts rendered inside a container (axes, labels, an in-chart legend),
-  reading a new `breakpoint` field on the chart context. Outside any container it returns the
-  forced tier or `wide`. The chart context's existing `width` / `height` are already the measured
-  plot box (§3); no duplicate `plotSize` field is added.
+  reading a breakpoint scope the container root provides around its whole interior. Outside any
+  container it returns the enclosing `ChartFrame`'s tier, else the forced tier, else `wide`. The
+  chart context's existing `width` / `height` are already the measured plot box (§3); no
+  duplicate `plotSize` field is added.
 
-Frame-level parts that sit **outside** the container (a legend composed beside the chart, the
-annotation key) are deferred to the item that first needs them (RM-111, RM-118): `ChartFrame` will
-measure its own body with the same `breakpointForWidth`, never with a second threshold table.
+`ChartFrame` measures its own body with the same hook and provides the same scope, so frame-level
+parts that sit **outside** the container (a legend composed beside the chart, later the
+annotation key) follow the frame's tier; the frame root carries `data-chart-breakpoint` too. There
+is never a second threshold table.
 
 **Invariants that come with the tiers:**
 
 - **Fonts never scale.** Type roles and `--type-factor` stay the only size knobs; a tier changes how
   much is drawn, never how big the text is. A `Responsive` font size is a violation.
-- **`density` stays host-driven** (RM-072), with one coupling: at `narrow`, a family applies the
-  `sm` **tick ceiling** (`CHART_DENSITY_SM_MAX_TICKS`, 4 per axis) even when the host density is
-  `md` or `lg`. It does **not** apply `sm`'s other behaviours — hiding the value axis and the
-  legend — because a phone must keep its value axis and its colour key; legend reflow is RM-118.
-  The coupling is one-way: a wider tier never raises a host `xs` / `sm`. It is resolved once, in
-  `chart-config-context.tsx`, and is superseded by width-derived tick targets when RM-108 lands.
+- **`density` stays host-driven** (RM-072), with one coupling: at `narrow`, a host density of `md`
+  or `lg` becomes **`sm`** inside that scope — the full `sm` behaviour: the value axis and the
+  legend are hidden, and the one remaining axis keeps at most `CHART_DENSITY_SM_MAX_TICKS` (4)
+  ticks. The coupling is one-way: a wider tier never raises a host `xs` / `sm`. It is resolved
+  once (`resolveDensityForBreakpoint`) and applied by the breakpoint scope, so the existing density
+  readers (axes, legends) need no change.
+- **Per-chart escape hatch.** The host density may itself be a `Responsive<ChartDensity>`; a value
+  with an explicit `narrow` entry wins over the coupling —
+  `<ChartFrame density={{ base: "md", narrow: "md" }}>` or
+  `<ChartConfigProvider value={{ density: { base: "md", narrow: "md" } }}>` keeps the legend and
+  the value axis on a narrow chart. Forcing the tier (`breakpoint: "medium"`) is the blunter
+  alternative; it also changes the plot height.
 - **No viewport media queries** in chart containers.
 
 **Rejected alternatives**
 
-| Option                                                              | Verdict                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Viewport media queries (Tailwind `sm:` / `md:`)                     | rejected — the wrong axis: a chart in a sidebar, a tile or a third of a dashboard row on a desktop is narrow while the viewport is wide                                                                                                                                                                                                                                     |
-| CSS container queries (`@container`) as the source of truth         | rejected — families need the tier in JS (tick targets RM-108, label placement RM-110, annotation keys RM-111); an element cannot query its own size without a wrapper; a CSS-only tier cannot be forced by a host. May later help the first paint of the plot aspect, never as a second source                                                                              |
-| Continuous functions of width only, no tiers                        | rejected — tick targets can and will be continuous (RM-108), but an authored per-device override needs a name to hang on; nobody writes a value per pixel                                                                                                                                                                                                                   |
-| Two tiers (Datawrapper's desktop / mobile)                          | rejected — no answer for the half-row dashboard cell or a tablet, where a desktop layout crowds; three is the fewest that separates phone, half row and full row                                                                                                                                                                                                            |
-| Thresholds 450 / 700 (Datawrapper's table switch / "desktop ≈ 700") | rejected — the widest phones in portrait are about 430–440 CSS px, so 450 sits on the edge of a full-bleed phone chart; 480 clears every phone with room. 768 matches Tailwind's `md` viewport rung and its `@3xl` container rung (48 rem), so an app whose layout switches at `md` hands its charts a consistent tier                                                      |
-| A hysteresis band around each threshold                             | rejected — with the default plot heights (§3) a narrower chart is never shorter, so a page scrollbar that appears because the chart grew cannot flip it back; a flip-flop needs a narrower state that is also shorter (see Watch for)                                                                                                                                       |
-| A fourth `unmeasured` value, or no attribute until measured         | rejected — every consumer would handle a fourth case, and the contract test and check rule want the attribute on every render; `wide` reproduces today's first paint                                                                                                                                                                                                        |
-| Names `narrow \| medium \| wide`                                    | not chosen, **raised with the maintainer** — `compact` already means a number notation (`valueFormat="compact"`) and a taste-profile density (`data-density="compact"`, ADR 0020), and in Apple's size classes "compact" is the phone. `compact` is kept because RM-108 and RM-109 are being built against it in parallel; renaming is cheap only until RM-107's code lands |
+| Option                                                                    | Verdict                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Viewport media queries (Tailwind `sm:` / `md:`)                           | rejected — the wrong axis: a chart in a sidebar, a tile or a third of a dashboard row on a desktop is narrow while the viewport is wide                                                                                                                                                                                |
+| CSS container queries (`@container`) as the source of truth               | rejected — families need the tier in JS (tick targets RM-108, label placement RM-110, annotation keys RM-111); an element cannot query its own size without a wrapper; a CSS-only tier cannot be forced by a host. May later help the first paint of the plot aspect, never as a second source                         |
+| Continuous functions of width only, no tiers                              | rejected — tick targets can and will be continuous (RM-108), but an authored per-device override needs a name to hang on; nobody writes a value per pixel                                                                                                                                                              |
+| Two tiers (Datawrapper's desktop / mobile)                                | rejected — no answer for the half-row dashboard cell or a tablet, where a desktop layout crowds; three is the fewest that separates phone, half row and full row                                                                                                                                                       |
+| Thresholds 450 / 700 (Datawrapper's table switch / "desktop ≈ 700")       | rejected — the widest phones in portrait are about 430–440 CSS px, so 450 sits on the edge of a full-bleed phone chart; 480 clears every phone with room. 768 matches Tailwind's `md` viewport rung and its `@3xl` container rung (48 rem), so an app whose layout switches at `md` hands its charts a consistent tier |
+| A hysteresis band around each threshold                                   | rejected — with the default plot heights (§3) a narrower chart is never shorter, so a page scrollbar that appears because the chart grew cannot flip it back; a flip-flop needs a narrower state that is also shorter (see Watch for)                                                                                  |
+| A fourth `unmeasured` value, or no attribute until measured               | rejected — every consumer would handle a fourth case, and the contract test and check rule want the attribute on every render; `wide` reproduces today's first paint                                                                                                                                                   |
+| Middle tier named `compact` (RM-107's wording)                            | rejected by the maintainer — `compact` already means a number notation (`valueFormat="compact"`, `1.2k`) and an app density (`data-density="compact"`, ADR 0020), and in Apple's size classes "compact" is the phone. The tier is `medium`                                                                             |
+| At `narrow`, apply only the `sm` tick ceiling; keep legend and value axis | rejected by the maintainer — the draft's choice; the RM's literal wording (the full `sm` behaviour) stands, with the `Responsive` density escape hatch above for a chart that must keep its key                                                                                                                        |
 
 ### 2. `Responsive<T>`: desktop-first overrides with a cascade
 
@@ -126,8 +140,8 @@ measure its own body with the same `breakpointForWidth`, never with a second thr
 export interface ResponsiveByBreakpoint<T> {
   /** The value at `wide`, and the fallback for every tier that sets nothing. */
   base: T;
-  /** At `compact` — and at `narrow` too, unless `narrow` is set. */
-  compact?: T;
+  /** At `medium` — and at `narrow` too, unless `narrow` is set. */
+  medium?: T;
   /** At `narrow` only. */
   narrow?: T;
 }
@@ -144,8 +158,8 @@ export function useResponsiveValue<T>(value: Responsive<T>): T;
 | Breakpoint | Result                                |
 | ---------- | ------------------------------------- |
 | `wide`     | `base`                                |
-| `compact`  | `compact ?? base`                     |
-| `narrow`   | `narrow ?? compact ?? base`           |
+| `medium`   | `medium ?? base`                      |
+| `narrow`   | `narrow ?? medium ?? base`            |
 | any        | a plain `T` is returned at every tier |
 
 An override applies at its own tier and at every narrower tier that does not set its own
@@ -171,14 +185,14 @@ the thresholds), exported from the `@elabs-ai/components-charts` barrel with `Ch
 
 **Rejected alternatives**
 
-| Option                                                         | Verdict                                                                                                                                                                                                                                                               |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mobile-first `{ base (= narrow); compact?; wide? }` (Tailwind) | rejected — every existing default was authored for a desktop-width chart; mobile-first would force each existing scalar to be restated as the phone value the day it becomes responsive. Desktop-first turns `3` into `{ base: 3, narrow: 1 }` without rethinking `3` |
-| No cascade (`narrow` falls straight back to `base`)            | rejected — `{ base: 3, compact: 2 }` would give three facet columns on a phone and two on a tablet                                                                                                                                                                    |
-| All-optional `{ narrow?; compact?; wide? }`                    | rejected — needs a separate default and an answer for `{}`                                                                                                                                                                                                            |
-| Tuple `[wide, compact?, narrow?]`                              | rejected — unreadable in JSX and in an agent-emitted spec; position is a trap                                                                                                                                                                                         |
-| Sibling props (`plotHeight` + `plotHeightNarrow`, `mobile*`)   | rejected — props × tiers; the API shape of Datawrapper's duplicated "show on desktop / mobile" switches                                                                                                                                                               |
-| A function `(breakpoint) => T`                                 | rejected — not serializable, so it can never enter `ChartSpec` or the A2UI catalog                                                                                                                                                                                    |
+| Option                                                        | Verdict                                                                                                                                                                                                                                                               |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mobile-first `{ base (= narrow); medium?; wide? }` (Tailwind) | rejected — every existing default was authored for a desktop-width chart; mobile-first would force each existing scalar to be restated as the phone value the day it becomes responsive. Desktop-first turns `3` into `{ base: 3, narrow: 1 }` without rethinking `3` |
+| No cascade (`narrow` falls straight back to `base`)           | rejected — `{ base: 3, medium: 2 }` would give three facet columns on a phone and two on a tablet                                                                                                                                                                     |
+| All-optional `{ narrow?; medium?; wide? }`                    | rejected — needs a separate default and an answer for `{}`                                                                                                                                                                                                            |
+| Tuple `[wide, medium?, narrow?]`                              | rejected — unreadable in JSX and in an agent-emitted spec; position is a trap                                                                                                                                                                                         |
+| Sibling props (`plotHeight` + `plotHeightNarrow`, `mobile*`)  | rejected — props × tiers; the API shape of Datawrapper's duplicated "show on desktop / mobile" switches                                                                                                                                                               |
+| A function `(breakpoint) => T`                                | rejected — not serializable, so it can never enter `ChartSpec` or the A2UI catalog                                                                                                                                                                                    |
 
 ### 3. `plotHeight`: the height of the drawing, not of the box around it
 
@@ -278,8 +292,10 @@ who wants a ceiling writes px, per tier if needed.
 - **What changes with no consumer edit** (the visible part, shipping in a minor, called out in the
   changeset): a card `ChartFrame` without `height` no longer boxes its chart at 260 px. The frame
   is as tall as its content, so a default 2 : 1 chart 800 px wide is 400 px tall instead of
-  scrolling inside a 260 px body, and a 380 px chart is 304 px tall. A tile without `height` fills
-  its host as before, and the chart inside now fills with it.
+  scrolling inside a 260 px body, and a 380 px chart is 304 px tall. `plotHeight={260}` keeps the
+  old look; the changeset and the 5.0.0 migration note say so. Dashboard tiles (`chrome="tile"`)
+  are unaffected: a tile without `height` fills its host as before, and the chart inside fills
+  with it.
 
 **Rejected alternatives**
 
@@ -302,7 +318,7 @@ RM-125 map height.
 ### 6. Gate
 
 - **Contract test** `packages/charts/src/__contract__/responsive.contract.test.tsx`: every exported
-  container rendered in a 380 / 600 / 900 px box reports `narrow` / `compact` / `wide`; a new
+  container rendered in a 380 / 600 / 900 px box reports `narrow` / `medium` / `wide`; a new
   container that forgets the attribute fails it.
 - **Check rule** `pnpm check --rule charts-responsive`: every file exporting a container under
   `packages/charts/src/charts/**` renders `data-chart-breakpoint`, and a `Responsive<…>` prop is
@@ -319,8 +335,9 @@ RM-125 map height.
 
 - Every container gains one root attribute and one plot-height resolution; each edit stays inside
   the family's measured-size block.
-- The charts barrel gains the names listed in §2 plus `ChartPlotHeight`; `ChartConfigValue` gains
-  an optional `breakpoint`; the chart context gains `breakpoint`.
+- The charts barrel gains the names listed in §2 plus `ChartPlotHeight`. `ChartConfigValue` gains
+  an optional `breakpoint` (the forced tier), and its `density` input accepts a
+  `Responsive<ChartDensity>`; `ChartFrame` gains `plotHeight` and a `Responsive` `density`.
 - One visible change ships in a minor: framed charts take their plot's height instead of 260 px
   (§4), disclosed in the changeset with the one-line opt-out.
 - One new check rule, `charts-responsive`.
@@ -342,18 +359,21 @@ RM-125 map height.
 - **Unclamped aspect at very wide widths** (§3). Revisit if full-bleed dashboards complain.
 - **A `Responsive` font size or font-bearing prop** — a breach of the fonts-never-scale invariant.
 
-## Maintainer confirmation
+## Maintainer confirmation (2026-09-18)
 
-Pending. The proposals awaiting confirmation:
+The maintainer answered in chat on 2026-09-18:
 
-1. Tiers `narrow < 480`, `compact < 768`, `wide`; boundaries to the wider tier; unmeasured →
-   `wide`; the name `compact` kept over `medium` (§1).
-2. At `narrow`, only the `sm` tick ceiling applies — not `sm`'s hiding of the value axis and legend
-   (§1; narrower than RM-107's "`sm` tick / legend behaviours" wording).
-3. `Responsive<T> = T | { base; compact?; narrow? }`, desktop-first with the cascade
-   `narrow → compact → base` (§2).
-4. `plotHeight` sets the `<svg>` box, excludes title, legend, annotation key and notes; defaults
-   2 : 1, and 1.25 : 1 at `narrow`, for the 2 : 1 families only (§3).
-5. `ChartFrame` / `AutoChart` / `WaterfallChart` `height` → deprecated alias for `plotHeight`, one
-   dev warning per prop, removal in 5.0.0; framed charts stop defaulting to a 260 px body in the
-   same minor (§4).
+1. Container-measured tiers `narrow < 480`, `< 768`, `wide`, exposed as `data-chart-breakpoint`
+   and on the chart scope, forceable by the host (§1) — accepted.
+2. The middle tier is renamed **`compact` → `medium`** everywhere: the `ChartBreakpoint` union,
+   the `Responsive<T>` key, the attribute value, stories, tests and docs (§1, §2) — changed.
+   `compact` number notation and `compact` app density are unchanged.
+3. `narrow` applies the **full `sm` density** — legend and value axis hidden, 4-tick ceiling — with
+   a per-chart override kept (§1) — changed from the draft.
+4. `Responsive<T> = T | { base; medium?; narrow? }` with the cascade `narrow → medium → base`
+   (§2) — accepted.
+5. `plotHeight` is the drawing only; defaults `{ aspect: 2 }`, and `{ aspect: 1.25 }` at `narrow`
+   (§3) — accepted.
+6. `ChartFrame` / `AutoChart` / `WaterfallChart` `height` → deprecated alias with one dev warning,
+   removed in 5.0.0 (§4) — accepted. Framed charts drop the 260 px body **in this minor**;
+   `plotHeight={260}` is the documented way back; tiles are unaffected — accepted.
