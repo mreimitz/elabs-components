@@ -188,7 +188,7 @@ const COMMUTE = [
 const COMMUTE_ANNOTATIONS: ChartAnnotation[] = [
   { kind: "range", x1: 20, x2: 25, label: "EU target" },
   { kind: "line", x: 15, label: "National average", style: "dashed" },
-  { kind: "row", category: "Porto", text: "**Tripled** since 2019" },
+  { kind: "row", category: "Coimbra", text: "**More than doubled**" },
   {
     kind: "text",
     x: 27,
@@ -200,8 +200,8 @@ const COMMUTE_ANNOTATIONS: ChartAnnotation[] = [
 ];
 
 /**
- * Row notes on a `DumbbellChart`: the Porto note follows its row through the
- * `delta` sort (Porto sorts to the top), the target band sits behind the
+ * Row notes on a `DumbbellChart`: the Coimbra note follows its row through the
+ * `delta` sort (Coimbra sorts second), the target band sits behind the
  * tracks and the dashed average line over them.
  */
 export const DumbbellRowNotes: Story = {
@@ -244,7 +244,7 @@ export const DumbbellFromSpec: Story = {
         annotations: [
           { kind: "range", x1: 20, x2: 25, label: "EU target" },
           { kind: "line", x: 15, label: "National average", style: "dashed" },
-          { kind: "row", category: "Porto", text: "**Tripled** since 2019" },
+          { kind: "row", category: "Coimbra", text: "**More than doubled**" },
           { kind: "text", x: 27, y: "Faro", text: "Faro barely moved", anchor: "w", width: 20 },
         ],
       }}
@@ -262,14 +262,14 @@ export const WaterfallNotes: Story = {
   args: {
     annotations: [
       { kind: "row", category: "Churn", text: "Worst quarter" },
-      { kind: "line", y: 100, label: "Opening ARR", style: "dotted" },
+      { kind: "line", y: 150, label: "Target", style: "dotted" },
       {
         kind: "text",
-        x: "Upsell",
-        y: 175,
-        text: "Upsell carried the year",
-        anchor: "sw",
-        width: 30,
+        x: "New",
+        y: 190,
+        text: "New logos led the year",
+        anchor: "s",
+        width: 25,
       },
     ],
   },

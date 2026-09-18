@@ -319,9 +319,29 @@ function renderRow(
       x={onY ? scales.innerWidth : at}
       y={onY ? at : LABEL_INSET}
     >
-      {annotation.text}
+      {renderRowText(annotation.text)}
     </HaloText>
   );
+}
+
+/** A one-line row note with its inline `**bold**` subset as bold `<tspan>`s. */
+function renderRowText(text: ReactNode): ReactNode {
+  if (typeof text !== "string" || !text.includes("**")) return text;
+  const out: ReactNode[] = [];
+  let offset = 0;
+  let bold = false;
+  for (const part of text.split("**")) {
+    if (part) {
+      out.push(
+        <tspan fontWeight={bold ? "bold" : undefined} key={`${offset}:${part}`}>
+          {part}
+        </tspan>,
+      );
+    }
+    offset += part.length + 2;
+    bold = !bold;
+  }
+  return out;
 }
 
 function renderNote(

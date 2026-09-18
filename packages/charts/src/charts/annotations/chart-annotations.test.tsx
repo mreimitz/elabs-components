@@ -184,7 +184,7 @@ describe("ChartAnnotations in a LineChart", () => {
     const paris = container.querySelector('[data-slot="chart-annotations-text"]');
     const note = paris?.querySelector('[data-slot="marginalia-note"]');
     expect(note?.getAttribute("fill")).toBe(
-      "color-mix(in oklch, var(--chart-1) 45%, var(--chart-label))",
+      "color-mix(in oklab, var(--chart-1) 41%, var(--chart-label))",
     );
     expect(paris?.querySelector('[data-slot="leader-arrow"]')?.getAttribute("fill")).toBe(
       "var(--chart-1)",
@@ -196,7 +196,7 @@ describe("ChartAnnotations in a LineChart", () => {
     const marker = container.querySelector('[data-slot="chart-annotations-marker"]');
     const texts = marker?.querySelectorAll("text");
     expect(texts?.[texts.length - 1]?.getAttribute("fill")).toBe(
-      "color-mix(in oklch, var(--chart-1) 45%, var(--chart-label))",
+      "color-mix(in oklab, var(--chart-1) 41%, var(--chart-label))",
     );
     expect(marker?.innerHTML).toContain('stroke="var(--chart-1)"');
   });
@@ -305,6 +305,18 @@ describe("ChartAnnotations in a horizontal BarChart", () => {
       cleanup();
       return y;
     };
+    const { container: boldContainer } = render(
+      <BarChart data={data} orientation="horizontal" xDataKey="team">
+        <Bar dataKey="score" />
+        <ChartAnnotations
+          annotations={[{ kind: "row", category: "Beta", text: "**Record** year" }]}
+        />
+      </BarChart>,
+    );
+    const boldRow = boldContainer.querySelector('[data-slot="chart-annotations-row"]');
+    expect(boldRow?.textContent).toBe("Record year");
+    expect(boldRow?.querySelector('tspan[font-weight="bold"]')?.textContent).toBe("Record");
+    cleanup();
     const before = rowY(data);
     const after = rowY([...data].reverse());
     expect(Number.isFinite(before) && Number.isFinite(after)).toBe(true);
