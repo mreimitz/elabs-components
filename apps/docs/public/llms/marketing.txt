@@ -18,4 +18,5 @@ Import from `@elabs-ai/components-marketing`. Part of brand-ui — see the root 
   - avoid: Version/beta eyebrows in the hero — a marketing-surface tell; drop it unless the brief is about the launch.
 - LogoStrip
 - StatsBand
+- TrustStrip
 - UseCaseCard

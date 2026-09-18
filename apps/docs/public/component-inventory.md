@@ -15,13 +15,13 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 390 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 392 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 201 | 36 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
-| `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
+| `@elabs-ai/components-marketing` | packages/marketing | 7 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
 | `@elabs-ai/components-terminal` | packages/terminal | 31 | 1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
@@ -177,6 +177,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ColorPicker | component |  | `@elabs-ai/components-ui` |  |
 | Combobox | component |  | `@elabs-ai/components-ui` | Searchable single/multi select — Select with typeahead over a large or async option set. |
 | Command | component |  | `@elabs-ai/components-ui` |  |
+| CommandChip | component |  | `@elabs-ai/components-ui` |  |
 | CommandDialog | component |  | `@elabs-ai/components-ui` |  |
 | CommandEmpty | component |  | `@elabs-ai/components-ui` |  |
 | CommandGroup | component |  | `@elabs-ai/components-ui` |  |
@@ -206,6 +207,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CopyableValue | component |  | `@elabs-ai/components-ui` |  |
 | DatePicker | component |  | `@elabs-ai/components-ui` |  |
 | DateRangePicker | component |  | `@elabs-ai/components-ui` |  |
+| DEFAULT_COMMAND_CHIP_LABELS | component |  | `@elabs-ai/components-ui` |  |
 | DEFAULT_MESSAGES | component |  | `@elabs-ai/components-ui` |  |
 | DEFAULT_THEME_FAMILY_SWITCH_LABELS | component |  | `@elabs-ai/components-ui` |  |
 | Descriptions | component |  | `@elabs-ai/components-ui` |  |
@@ -1400,6 +1402,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Hero | component |  | `@elabs-ai/components-marketing` | Above-the-fold marketing headline, subcopy and the primary call to action. |
 | LogoStrip | component |  | `@elabs-ai/components-marketing` |  |
 | StatsBand | component |  | `@elabs-ai/components-marketing` |  |
+| TrustStrip | component |  | `@elabs-ai/components-marketing` |  |
 | UseCaseCard | component |  | `@elabs-ai/components-marketing` |  |
 
 ## @elabs-ai/components-editor
