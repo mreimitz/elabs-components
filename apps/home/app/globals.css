@@ -1,0 +1,23 @@
+/* The website consumes brand-ui exactly as docs/CONSUMING.md tells a consumer to: the token
+   stylesheet (Tailwind v4 engine + token bridge + dials), the reference themes, and one
+   @source per package. This file may only REFERENCE tokens (var(--…)); raw colour, duration or
+   easing values fail `pnpm check --rule home-tokens`. */
+@import "@elabs-ai/components-tokens/styles.css";
+@import "@elabs-ai/components-tokens/themes/light.css";
+@import "@elabs-ai/components-tokens/themes/dark.css";
+
+/* Workspace packages are consumed as TypeScript source (next.config.ts `transpilePackages`), so
+   Tailwind scans each package's src. Add new packages here (`pnpm check --rule tailwind-sources`). */
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../packages/data/src/**/*.{ts,tsx}";
+@source "../../../packages/ai/src/**/*.{ts,tsx}";
+@source "../../../packages/flow/src/**/*.{ts,tsx}";
+@source "../../../packages/maps/src/**/*.{ts,tsx}";
+@source "../../../packages/charts/src/**/*.{ts,tsx}";
+@source "../../../packages/marketing/src/**/*.{ts,tsx}";
+@source "../../../packages/editor/src/**/*.{ts,tsx}";
+@source "../../../packages/viewer/src/**/*.{ts,tsx}";
+@source "../../../packages/terminal/src/**/*.{ts,tsx}";
+@source "../../../packages/process/src/**/*.{ts,tsx}";
+@source "../../../packages/icons/src/**/*.{ts,tsx}";
+@source "../../../packages/tokens/src/**/*.{ts,tsx}";

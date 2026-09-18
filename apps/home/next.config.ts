@@ -1,0 +1,73 @@
+import type { NextConfig } from "next";
+
+/**
+ * The website (ADR 0038). Storybook is its own Vercel project, reached at /storybook/ through a
+ * rewrite; set STORYBOOK_ORIGIN=http://localhost:6006 to point it at a local Storybook.
+ */
+const STORYBOOK_ORIGIN = (
+  process.env.STORYBOOK_ORIGIN ?? "https://elabs-components.vercel.app"
+).replace(/\/+$/, "");
+
+// Workspace packages export their TypeScript source, so Next compiles them.
+const WORKSPACE_PACKAGES = [
+  "@elabs-ai/components-ai",
+  "@elabs-ai/components-charts",
+  "@elabs-ai/components-data",
+  "@elabs-ai/components-editor",
+  "@elabs-ai/components-flow",
+  "@elabs-ai/components-icons",
+  "@elabs-ai/components-maps",
+  "@elabs-ai/components-marketing",
+  "@elabs-ai/components-process",
+  "@elabs-ai/components-terminal",
+  "@elabs-ai/components-tokens",
+  "@elabs-ai/components-ui",
+  "@elabs-ai/components-viewer",
+];
+
+// Files Storybook's `staticDirs` served at the domain root before the site existed. They stay
+// reachable through the Storybook project until the site generates its own; a `fallback`
+// rewrite applies only when no site page or public file matches (ADR 0038 §2).
+const STORYBOOK_ROOT_FILES = [
+  "/llms.txt",
+  "/llms/:path*",
+  "/robots.txt",
+  "/.well-known/mcp.json",
+  "/brand-ui-context.md",
+  "/component-inventory.md",
+];
+
+const config: NextConfig = {
+  transpilePackages: WORKSPACE_PACKAGES,
+  images: { unoptimized: true },
+  // Storybook loads every asset by a RELATIVE url (./sb-manager/…, ./assets/…), which resolves
+  // under /storybook/ only WITH the trailing slash. Next's default 308s /storybook/ to
+  // /storybook, the wrong way, so that normalisation is off and the redirect below adds the
+  // slash instead (ADR 0038 §2).
+  skipTrailingSlashRedirect: true,
+  async redirects() {
+    return [
+      { source: "/storybook", destination: "/storybook/", permanent: true },
+      // Every Storybook deep link ever shared is elabs-ai.com/?path=…; the query passes through.
+      {
+        source: "/",
+        has: [{ type: "query", key: "path" }],
+        destination: "/storybook/",
+        permanent: true,
+      },
+      { source: "/iframe.html", destination: "/storybook/iframe.html", permanent: true },
+    ];
+  },
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: "/storybook/:path*", destination: `${STORYBOOK_ORIGIN}/:path*` }],
+      afterFiles: [],
+      fallback: STORYBOOK_ROOT_FILES.map((source) => ({
+        source,
+        destination: `${STORYBOOK_ORIGIN}${source}`,
+      })),
+    };
+  },
+};
+
+export default config;
