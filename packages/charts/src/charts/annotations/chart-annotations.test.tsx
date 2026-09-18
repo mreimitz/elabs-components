@@ -13,12 +13,17 @@ vi.mock("@visx/responsive", () => {
     }) => React.createElement("div", null, children({ width: 900, height: 400 })),
   };
 });
+// ScatterChart measures with react-use-measure (ResizeObserver, absent in jsdom).
+vi.mock("react-use-measure", () => ({
+  default: () => [() => undefined, { width: 900, height: 400 }],
+}));
 
 import { Bar } from "../bar";
 import { BarChart } from "../bar-chart";
 import type { ChartBreakpoint } from "../chart-breakpoint";
 import { ChartConfigProvider } from "../chart-config-context";
 import { Line } from "../line";
+import { Scatter, ScatterChart } from "../scatter-chart";
 import { LineChart } from "../line-chart";
 import { AnnotationKey } from "./annotation-key";
 import {
@@ -286,5 +291,31 @@ describe("ChartAnnotations in a horizontal BarChart", () => {
     const after = rowY([...data].reverse());
     expect(Number.isFinite(before) && Number.isFinite(after)).toBe(true);
     expect(before).not.toBe(after);
+  });
+});
+
+describe("ChartAnnotations in a ScatterChart", () => {
+  it("paints a range under the points and a reference line over them", () => {
+    const { container } = render(
+      <ScatterChart
+        data={[
+          { date: new Date(2024, 0, 1), sessions: 420 },
+          { date: new Date(2024, 1, 1), sessions: 510 },
+          { date: new Date(2024, 2, 1), sessions: 390 },
+        ]}
+      >
+        <Scatter dataKey="sessions" />
+        <ChartAnnotations
+          annotations={[
+            { kind: "range", y1: 400, y2: 500, label: "Target band" },
+            { kind: "line", y: 450, label: "Goal" },
+          ]}
+        />
+      </ScatterChart>,
+    );
+    const layers = [...slot(container, "chart-annotations")];
+    expect(layers.map((l) => l.getAttribute("data-layer"))).toEqual(["back", "front"]);
+    expect(layers[0]?.textContent).toContain("Target band");
+    expect(slot(layers[1] as Element, "chart-annotations-line")).toHaveLength(1);
   });
 });
