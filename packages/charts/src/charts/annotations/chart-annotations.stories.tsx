@@ -153,13 +153,39 @@ const TEAMS = [
   { team: "Faro", trips: 51 },
 ];
 
-/** Row notes on a horizontal bar chart follow their category through a re-sort. */
+const GOAL_TRIPS = 50;
+const MOST_TRIPS = Math.max(...TEAMS.map((t) => t.trips));
+
+/**
+ * Row notes on a horizontal bar chart follow their category through a re-sort.
+ * The value axis of a horizontal chart is `x`, so the Goal line takes `x`.
+ */
 export const RowNotes: Story = {
   args: {
     annotations: [
       { kind: "row", category: "Porto", text: "Record year" },
-      { kind: "line", y: 50, label: "Goal", style: "dashed" },
+      { kind: "line", x: GOAL_TRIPS, label: "Goal", style: "dashed" },
     ],
+  },
+  play: async ({ canvasElement }) => {
+    // The longest bar runs from x(0) to x(MOST_TRIPS) on the same linear
+    // scale, so the Goal line belongs at left + width × GOAL / MOST. Retried
+    // until the bars have finished growing in.
+    await waitFor(
+      () => {
+        const line = canvasElement.querySelector('[data-slot="chart-annotations-line"] line');
+        expect(line).not.toBeNull();
+        const bars = [...canvasElement.querySelectorAll('g[class^="bar-series-"] rect')].map(
+          (bar) => bar.getBoundingClientRect(),
+        );
+        expect(bars).toHaveLength(TEAMS.length);
+        const longest = bars.reduce((a, b) => (b.width > a.width ? b : a));
+        const goalX = longest.left + (longest.width * GOAL_TRIPS) / MOST_TRIPS;
+        const lineX = line?.getBoundingClientRect().left ?? Number.NaN;
+        expect(Math.abs(lineX - goalX)).toBeLessThanOrEqual(1);
+      },
+      { timeout: 5000 },
+    );
   },
   render: (args) => (
     <BarChart

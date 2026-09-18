@@ -328,6 +328,95 @@ describe("ChartAnnotations in a horizontal BarChart", () => {
   });
 });
 
+describe("an annotation whose anchor cannot resolve", () => {
+  const teams = [
+    { team: "Alpha", score: 30 },
+    { team: "Beta", score: 80 },
+  ];
+  // `warnChartOnce` warns once per message per page load: every case below
+  // uses its own label, so no case is swallowed by an earlier one.
+  const annotationWarnings = (spy: { mock: { calls: unknown[][] } }) =>
+    spy.mock.calls
+      .map((call) => String(call[0]))
+      .filter((message) => message.startsWith("[ChartAnnotations]"));
+
+  const horizontalBars = (annotations: ChartAnnotation[]) =>
+    render(
+      <BarChart data={teams} orientation="horizontal" xDataKey="team">
+        <Bar dataKey="score" />
+        <ChartAnnotations annotations={annotations} />
+      </BarChart>,
+    );
+
+  it("warns in dev, naming the annotation and the axis, when a value line lands on the category axis", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container } = horizontalBars([
+      { kind: "row", category: "Beta", text: "Record" },
+      { kind: "line", y: 50, label: "Goal on y" },
+    ]);
+    expect(slot(container, "chart-annotations-line")).toHaveLength(0);
+    expect(annotationWarnings(warn)).toEqual([
+      '[ChartAnnotations] annotations[1] (line "Goal on y") is not drawn: y 50 does not resolve ' +
+        "on the y axis. The y axis is this chart's category axis; its value axis is x.",
+    ]);
+    warn.mockRestore();
+  });
+
+  it("draws the same line on the value axis (x) without a warning", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container } = horizontalBars([{ kind: "line", x: 50, label: "Goal on x" }]);
+    const line = container.querySelector('[data-slot="chart-annotations-line"] line');
+    expect(line).not.toBeNull();
+    expect(line?.getAttribute("x1")).toBe(line?.getAttribute("x2"));
+    expect(Number.isFinite(Number(line?.getAttribute("x1")))).toBe(true);
+    expect(annotationWarnings(warn)).toEqual([]);
+    warn.mockRestore();
+  });
+
+  it("names a row note on a missing category, and one on a chart with no category axis", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    horizontalBars([{ kind: "row", category: "Gamma", text: "Not a team" }]);
+    cleanup();
+    render(
+      <LineChart data={BIKES_DATA} xDataKey="date">
+        <Line dataKey="paris" />
+        <ChartAnnotations
+          annotations={[{ kind: "row", category: "Paris", text: "No rows here" }]}
+        />
+      </LineChart>,
+    );
+    expect(annotationWarnings(warn)).toEqual([
+      '[ChartAnnotations] annotations[0] (row "Gamma") is not drawn: category "Gamma" is not on the y axis.',
+      '[ChartAnnotations] annotations[0] (row "Paris") is not drawn: a row note needs a category ' +
+        "axis (a bar, dumbbell or waterfall chart), and this chart has none.",
+    ]);
+    warn.mockRestore();
+  });
+
+  it("names the axis of a range, a note and a connector that miss it", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container } = horizontalBars([
+      { kind: "range", x1: 20, x2: "lots", label: "Band" },
+      {
+        kind: "text",
+        x: 40,
+        y: "Beta",
+        text: "Beta leads",
+        connector: { to: { x: 80, y: "Omega" } },
+      },
+    ]);
+    expect(slot(container, "chart-annotations-range")).toHaveLength(0);
+    expect(slot(container, "chart-annotations-text")).toHaveLength(1);
+    expect(annotationWarnings(warn)).toEqual([
+      '[ChartAnnotations] annotations[0] (range "Band") is not drawn: x2 "lots" does not resolve on the x axis.',
+      // A category string that misses its axis gets no wrong-axis hint.
+      '[ChartAnnotations] annotations[1] (text "Beta leads") draws no connector: connector.to.y "Omega" ' +
+        "does not resolve on the y axis.",
+    ]);
+    warn.mockRestore();
+  });
+});
+
 describe("ChartAnnotations in a ScatterChart", () => {
   it("paints a range under the points and a reference line over them", () => {
     const { container } = render(
