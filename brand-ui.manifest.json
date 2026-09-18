@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T19:44:44.989Z",
+  "generatedAt": "2026-09-18T21:20:31.193Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18699,16 +18699,46 @@
               "description": "Extra numeric keys (e.g. competitor values) drawn as small dots on the same track. Ignored by `variant=\"slope\"`."
             },
             {
+              "name": "valueKeys",
+              "optional": true,
+              "type": "string[]",
+              "description": "`variant=\"dots\"` only: N numeric keys drawn as one dot per key on the shared value axis, instead of the two-marker `start`/`end` read — `startKey`/`endKey` still name the first/last of them (for the domain and the optional `range` bar), and any keys between are the \"extra\" dots."
+            },
+            {
+              "name": "range",
+              "optional": true,
+              "type": "boolean",
+              "description": "`variant=\"dots\"` only: draws a bar between the row's lowest and highest dot. Default `false`."
+            },
+            {
+              "name": "arrowWidth",
+              "optional": true,
+              "type": "number",
+              "description": "`variant=\"arrow\"` only: the arrow head's base width in px. Default `8`."
+            },
+            {
+              "name": "groupBy",
+              "optional": true,
+              "type": "string",
+              "description": "Buckets rows by this column, rendering a header + separator before each group (same shape as `BarChart`'s `groupBy`, RM-113/RM-116). Groups keep each row's resolved sort order; group order is first-seen in that same order. Unset (default) draws no headers — byte-identical to today."
+            },
+            {
               "name": "showDelta",
               "optional": true,
               "type": "boolean",
-              "description": "Show a signed delta label (`HaloText`) at the end marker. Default `false`."
+              "description": "Show a signed delta label (`HaloText`) at the end marker. Default `false`. Superseded by `delta` when set."
             },
             {
               "name": "deltaLabelFormat",
               "optional": true,
               "type": "(delta: number, row: DumbbellRow) => string",
-              "description": "Custom formatter for the `showDelta` label — receives the signed delta and its row, returns the full string (including sign/unit). Unset (default) keeps today's rendering: a bare `\"+\"` prefix on non-negative deltas ahead of `formatValue(delta)`. Use this when a delta needs a unit suffix (e.g. `\"pp\"`) or a true minus sign the active `valueFormat`/locale doesn't give."
+              "description": "Custom formatter for the `showDelta` label — receives the signed delta and its row, returns the full string (including sign/unit). Unset (default) keeps today's rendering: a bare `\"+\"` prefix on non-negative deltas ahead of `formatValue(delta)`. Use this when a delta needs a unit suffix (e.g. `\"pp\"`) or a true minus sign the active `valueFormat`/locale doesn't give. Superseded by `delta.format` when `delta` is set."
+            },
+            {
+              "name": "delta",
+              "optional": true,
+              "type": "DumbbellDeltaConfig",
+              "description": "Replaces/aliases `showDelta` + `deltaLabelFormat` (RM-116): one object, `mode` picking an absolute or a `%` delta. Wins over both when set."
             },
             {
               "name": "bothEndsLabeled",
@@ -18732,13 +18762,25 @@
               "name": "showValueAxis",
               "optional": true,
               "type": "boolean",
-              "description": "`orientation=\"horizontal\"` (dumbbell variant) only: draws light tick marks + value labels along the bottom of the plot, from the same value scale. Default `false` (byte-identical: no axis)."
+              "description": "`orientation=\"horizontal\"` (dumbbell variant) only: draws light tick marks + value labels along the bottom of the plot, from the same value scale. Default `false` (byte-identical: no axis). Superseded by `valueAxis` when set."
+            },
+            {
+              "name": "valueAxis",
+              "optional": true,
+              "type": "DumbbellValueAxisConfig",
+              "description": "A richer value axis than `showValueAxis` — position (top/bottom) and domain rounding. Setting this also turns the axis on. See {@link DumbbellValueAxisConfig}."
             },
             {
               "name": "sortBy",
               "optional": true,
               "type": "DumbbellSortBy",
-              "description": "Sort rows before rendering. `\"delta\"` sorts **descending by `|delta|`** (magnitude, sign ignored — the biggest mover first, whether it's an increase or a decrease); `\"start\"`/`\"end\"` sort **ascending** on the (signed) value axis. Default `\"none\"` (data order)."
+              "description": "Sort rows before rendering. `\"delta\"` sorts **descending by `|delta|`** (magnitude, sign ignored — the biggest mover first, whether it's an increase or a decrease); `\"deltaPercent\"` is the same magnitude-first read for `delta / start`; `\"start\"`/`\"end\"`/`\"label\"` sort **ascending**; `\"data\"` is an explicit spelling of `\"none\"` (spreadsheet order). Default `\"none\"`."
+            },
+            {
+              "name": "reverse",
+              "optional": true,
+              "type": "boolean",
+              "description": "Reverses the order `sortBy` resolves to. Default `false`."
             },
             {
               "name": "palette",
