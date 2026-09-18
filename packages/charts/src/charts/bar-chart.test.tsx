@@ -22,7 +22,7 @@ vi.mock("@visx/responsive", () => {
 });
 
 import { UNIT_STACK_EMPHASIS } from "../marks";
-import { Bar } from "./bar";
+import { Bar, type BarShowValues } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
@@ -927,5 +927,46 @@ describe("BarChart richness (RM-113)", () => {
       </BarChart>,
     );
     expect(extents).toBeUndefined();
+  });
+
+  // Integration with RM-110: one showValues type and one label path.
+  it("labels percent segments through the shared showValues spec: centred shares, hover waits", () => {
+    const labelled = (showValues: BarShowValues) =>
+      LIKERT.map((key, i) => (
+        <Bar
+          animate={false}
+          dataKey={key}
+          fill={INKS[i]}
+          key={key}
+          lineCap="butt"
+          showValues={showValues}
+        />
+      ));
+    const { container, rerender } = render(
+      <BarChart data={likertData} stacked="percent" xDataKey="q">
+        {labelled({ placement: "outside" })}
+      </BarChart>,
+    );
+    const labels = [...container.querySelectorAll(".text-chart-value")];
+    expect(labels.length).toBeGreaterThan(0);
+    for (const label of labels) {
+      expect(label.textContent).toMatch(/%$/);
+    }
+    // Q1's "Strongly agree" segment (25 of 100) centres its "25%" share
+    // label, even though the spec asks for "outside".
+    const segment = rectsByFill(container, "var(--chart-5)")[0];
+    const share = labels.find(
+      (label) =>
+        label.textContent === "25%" &&
+        Math.abs(num(label, "y") - (num(segment, "y") + num(segment, "height") / 2)) < 1e-6,
+    );
+    expect(share).toBeDefined();
+    expect(num(share, "x")).toBeCloseTo(num(segment, "x") + num(segment, "width") / 2, 6);
+    rerender(
+      <BarChart data={likertData} stacked="percent" xDataKey="q">
+        {labelled({ visibility: "hover" })}
+      </BarChart>,
+    );
+    expect(container.querySelectorAll(".text-chart-value")).toHaveLength(0);
   });
 });

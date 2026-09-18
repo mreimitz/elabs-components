@@ -4,7 +4,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChartContractError } from "./contract";
-import { BarChart } from "./doubles";
+import { assertLabelsSpecContract, BarChart } from "./doubles";
 
 afterEach(cleanup);
 
@@ -49,5 +49,15 @@ describe("BarChart double — richness props (RM-113)", () => {
         </BarChart>,
       ),
     ).toThrow(ChartContractError);
+  });
+});
+
+// BarChart — RM-113: the comparison label mode lives in the shared ChartLabelsSpec (RM-110).
+describe("ChartSpec.labels.comparison (RM-113)", () => {
+  it("accepts value / difference / none and names anything else", () => {
+    for (const comparison of ["value", "difference", "none"]) {
+      expect(() => assertLabelsSpecContract({ series: "end", comparison })).not.toThrow();
+    }
+    expect(() => assertLabelsSpecContract({ comparison: "delta" })).toThrow(ChartContractError);
   });
 });
