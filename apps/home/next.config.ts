@@ -42,12 +42,11 @@ const config: NextConfig = {
   images: { unoptimized: true },
   // Storybook loads every asset by a RELATIVE url (./sb-manager/…, ./assets/…), which resolves
   // under /storybook/ only WITH the trailing slash. Next's default 308s /storybook/ to
-  // /storybook, the wrong way, so that normalisation is off and the redirect below adds the
-  // slash instead (ADR 0038 §2).
+  // /storybook, the wrong way, so that normalisation is off and `proxy.ts` adds the slash
+  // instead: a redirect here would also match /storybook/ and loop (ADR 0038 §2).
   skipTrailingSlashRedirect: true,
   async redirects() {
     return [
-      { source: "/storybook", destination: "/storybook/", permanent: true },
       // Every Storybook deep link ever shared is elabs-ai.com/?path=…; the query passes through.
       {
         source: "/",

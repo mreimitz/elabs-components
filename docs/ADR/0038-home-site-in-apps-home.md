@@ -126,7 +126,9 @@ which 404s, and the manager renders blank. Next.js by default (`trailingSlash: f
 `/storybook/` with a 308 to `/storybook`, which is exactly the wrong direction. So the site:
 
 1. sets `skipTrailingSlashRedirect: true` in `next.config.ts`;
-2. redirects `/storybook` → `/storybook/` (308);
+2. redirects `/storybook` → `/storybook/` (308) in `apps/home/proxy.ts`, not in `next.config.ts`:
+   Next compiles every config redirect source with an optional trailing slash, so a config
+   redirect `/storybook` → `/storybook/` also matches `/storybook/` and loops;
 3. rewrites only `/storybook/:path*` (the roadmap text also rewrites bare `/storybook`; that rewrite
    would serve the manager at a slash-less URL and break every asset, so it is dropped).
 
@@ -207,7 +209,7 @@ the old behaviour if the Storybook project's live deployment still carries `/mcp
   a second non-secret `VERCEL_PROJECT_ID` in `release.yml`. Both deploys use the existing
   `secrets.VERCEL_TOKEN`, which the current job already refuses to run without.
 - **The site carries two non-default settings for Storybook** (`skipTrailingSlashRedirect` and the
-  `/storybook` → `/storybook/` redirect). They are load-bearing; the site's end-to-end test opens a
+  `/storybook` → `/storybook/` redirect in `proxy.ts`). They are load-bearing; the site's end-to-end test opens a
   story under `/storybook/` so a regression shows up there, not in production.
 - **`apps/docs` changes little.** It keeps `outputDirectory` and `git`; its `api/` function stays
   until the cut-over (per §4) and then goes. Its `managerHead` metadata (`og:url`
