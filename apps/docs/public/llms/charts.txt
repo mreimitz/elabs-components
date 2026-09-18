@@ -199,6 +199,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - LegendMarker
 - LegendProgress
 - LegendValue
+- LEGIBLE_SERIES_INK_PERCENT
 - Line
 - LinearGradient
 - LineChart — Trend over a continuous (usually time) axis.

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T21:22:18.804Z",
+  "generatedAt": "2026-09-18T21:46:01.871Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13782,6 +13782,11 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "LEGIBLE_SERIES_INK_PERCENT",
+          "kind": "value",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "Line",
           "kind": "value",
           "module": "packages/charts/src/charts/line.tsx"
@@ -16338,6 +16343,10 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "legibleSeriesInk",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
           "name": "limitBumpPeriods",
           "module": "packages/charts/src/charts/bump-chart.tsx"
         },
@@ -16427,6 +16436,10 @@
         },
         {
           "name": "resolveAnnotationPosition",
+          "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "resolveAnnotationTextInk",
           "module": "packages/charts/src/charts/annotations/index.ts"
         },
         {

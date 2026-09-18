@@ -823,8 +823,11 @@ export {
   circledNumber,
   describeAnnotations,
   planAnnotations,
+  LEGIBLE_SERIES_INK_PERCENT,
+  legibleSeriesInk,
   resolveAnnotationInk,
   resolveAnnotationPosition,
+  resolveAnnotationTextInk,
   useChartAnnotationsA11y,
   withAnnotationDescription,
 } from "./annotations";

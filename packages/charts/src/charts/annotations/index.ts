@@ -24,8 +24,10 @@ export {
   type ChartAnnotationsLayer,
   type ChartAnnotationsProps,
   resolveAnnotationInk,
+  resolveAnnotationTextInk,
   useChartAnnotationsA11y,
 } from "./chart-annotations";
+export { LEGIBLE_SERIES_INK_PERCENT, legibleSeriesInk } from "./legible-series-ink";
 export {
   annotationValueToDate,
   type AnnotationAxis,
