@@ -12,9 +12,9 @@ changing routing, the rewrite or the deploy.
 
 ## Standing rules
 
-- **Library only.** Import React, Next, `motion`, `@vercel/analytics`, `@elabs-ai/*` and copy-own
-  registry blocks (copied into `apps/home/components/blocks/` with their
-  `// registry: <name> — copied <YYYY-MM-DD>` provenance header). No other UI dependency.
+- **Library only.** Import React, Next, `motion`, `@vercel/analytics`, `lucide-react`,
+  `@elabs-ai/*` and copy-own registry blocks (copied into `apps/home/components/blocks/` with
+  their `// registry: <name> — copied <YYYY-MM-DD>` provenance header). No other UI dependency.
   `pnpm check --rule home-imports` enforces it.
 - **Tokens only.** No raw colour, no non-token duration/easing, no arbitrary Tailwind values
   outside `app/globals.css`, which may only reference `var(--…)`. `pnpm check --rule home-tokens`,
