@@ -1,9 +1,10 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
 import { AutoChart } from "../auto-chart/auto-chart";
 import { Bar } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
+import { ChartConfigProvider } from "./chart-config-context";
 import { ComposedChart } from "./composed-chart";
 import { Grid } from "./grid";
 import { Line } from "./line";
@@ -59,6 +60,19 @@ const regions = [
   { region: "Australian Capital", visitors: 18 },
 ];
 
+/**
+ * Below 480 px a chart is `narrow` and takes the `sm` density, which hides the
+ * value axis and caps the x axis at 4 ticks by default (ADR 0039). A story
+ * whose point IS a value-axis feature or a pinned tick count opts back in
+ * through the documented escape hatch — a density with an explicit `narrow`
+ * entry — so it still shows that feature on a phone.
+ */
+const keepMdDensityAtNarrow: Decorator = (Story) => (
+  <ChartConfigProvider value={{ density: { base: "md", narrow: "md" } }}>
+    <Story />
+  </ChartConfigProvider>
+);
+
 function tickCount(canvasElement: HTMLElement, slot: "x-axis" | "y-axis"): number {
   return Number(
     canvasElement.querySelector(`[data-slot="${slot}"]`)?.getAttribute("data-tick-count") ?? 0,
@@ -82,8 +96,9 @@ export const WidthDerivedTicks: Story = {
   },
 };
 
-/** `numTicks` pins the count at every width. */
+/** `numTicks` pins the count at every width (the `sm` density would still cap it at 4). */
 export const PinnedTickCount: Story = {
+  decorators: [keepMdDensityAtNarrow],
   render: () => (
     <div className="h-72 w-full">
       <LineChart data={riders}>
@@ -101,6 +116,7 @@ export const PinnedTickCount: Story = {
 
 /** A log ruler from a pinned lower bound, titled inside the plot. */
 export const LogScale: Story = {
+  decorators: [keepMdDensityAtNarrow],
   render: () => (
     <div className="h-72 w-full">
       <ScatterChart data={loans}>
@@ -122,6 +138,7 @@ export const LogScale: Story = {
 
 /** Data containing 0: `scale="log"` warns once in development and draws linear. */
 export const LogRefusedOnZero: Story = {
+  decorators: [keepMdDensityAtNarrow],
   render: () => (
     <div className="h-72 w-full">
       <ScatterChart data={loansWithZero}>
@@ -177,6 +194,7 @@ export const GridOff: Story = {
 
 /** Labels inside the plot, a pinned domain, and the x axis on top. */
 export const InsideLabelsTopAxis: Story = {
+  decorators: [keepMdDensityAtNarrow],
   render: () => (
     <div className="h-72 w-full">
       <LineChart data={riders}>
@@ -197,6 +215,7 @@ function yLabels(canvasElement: HTMLElement): string[] {
 
 /** A pinned bar range: the value axis ends at exactly 100, not the data-derived 80. */
 export const BarValueDomain: Story = {
+  decorators: [keepMdDensityAtNarrow],
   render: () => (
     <div className="h-80 w-full">
       <BarChart data={regions} xDataKey="region">
@@ -217,6 +236,7 @@ export const BarValueDomain: Story = {
  * the upper bound and draws from 0 (with a dev warning).
  */
 export const BarDomainKeepsZero: Story = {
+  decorators: [keepMdDensityAtNarrow],
   render: () => (
     <div className="h-80 w-full">
       <BarChart data={regions} xDataKey="region">
@@ -240,6 +260,7 @@ const revenue = Array.from({ length: 6 }, (_, i) => ({
 
 /** A composed chart with bars shares the bar rule: the floor stays at 0. */
 export const ComposedDomainKeepsZero: Story = {
+  decorators: [keepMdDensityAtNarrow],
   render: () => (
     <div className="h-72 w-full">
       <ComposedChart data={revenue}>
@@ -258,6 +279,7 @@ export const ComposedDomainKeepsZero: Story = {
 
 /** The same axis controls from a serialisable `ChartSpec.axes`. */
 export const AutoChartAxes: Story = {
+  decorators: [keepMdDensityAtNarrow],
   render: () => (
     <div className="h-72 w-full">
       <AutoChart
