@@ -50,6 +50,14 @@ export interface PieData {
   color?: string;
   /** Optional fill override for patterns/gradients (e.g., "url(#patternId)") */
   fill?: string;
+  /**
+   * The original category labels folded into this slice by `groupSmall`
+   * (RM-114, `pie-grouping.ts`) — set ONLY on a synthesized "Other" slice.
+   * Carried through to the DOM (`PieSlice`'s `data-folded-categories`) so the
+   * fold stays inspectable/testable; unset on every ordinary slice, today's
+   * behavior.
+   */
+  categories?: string[];
 }
 
 /** Arc data computed by visx Pie */

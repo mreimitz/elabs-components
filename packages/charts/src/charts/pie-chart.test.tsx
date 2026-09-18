@@ -12,6 +12,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { DEFAULT_HOVER_OFFSET, PieChart } from "./pie-chart";
+import { PieCenter } from "./pie-center";
 import { PieSlice } from "./pie-slice";
 
 // Provide a fixed 300×300 viewport so PieChartInner renders (size >= 10)
@@ -387,5 +388,131 @@ describe("PieChart seams (paper-seam stroke)", () => {
       expect(path.getAttribute("stroke")).toBeNull();
       expect(path.getAttribute("stroke-width")).toBeNull();
     }
+  });
+
+  // ── RM-114: labels, groupSmall, sort, half ───────────────────────────────
+
+  const eightSlices = [
+    { label: "Direct", value: 320 },
+    { label: "Organic", value: 280 },
+    { label: "Referral", value: 190 },
+    { label: "Social", value: 140 },
+    { label: "Email", value: 70 },
+    { label: "Affiliate", value: 20 },
+    { label: "Paid", value: 12 },
+    { label: "Other channel", value: 8 },
+  ];
+
+  it("groupSmall folds the smallest slices and auto-renders PieSlice for the result", () => {
+    const { container } = render(
+      <PieChart data={eightSlices} groupSmall={{ max: 5 }} size={300}>
+        {/* Manual PieSlice children are ignored once `groupSmall` is set — see the prop doc. */}
+        {eightSlices.map((_d, i) => (
+          <PieSlice index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    // 5 kept + 1 "Other" = 6 slice groups.
+    const sliceGroups = container.querySelectorAll("svg > g > g");
+    expect(sliceGroups).toHaveLength(6);
+  });
+
+  it("groupSmall's folded slice carries data-folded-categories", () => {
+    const { container } = render(
+      <PieChart data={eightSlices} groupSmall={{ max: 5 }} size={300}>
+        <div />
+      </PieChart>,
+    );
+    const folded = container.querySelector("[data-folded-categories]");
+    expect(folded).toBeTruthy();
+    expect(folded?.getAttribute("data-folded-categories")).toBe("Affiliate,Paid,Other channel");
+  });
+
+  it("groupSmall unset renders `children` verbatim (today's behavior)", () => {
+    const { container } = render(
+      <PieChart data={sampleData} size={300}>
+        <PieSlice animate={false} index={0} key="a" />
+      </PieChart>,
+    );
+    const sliceGroups = container.querySelectorAll("svg > g > g");
+    expect(sliceGroups).toHaveLength(1);
+  });
+
+  it("labels='outside' paints a leader + label per slice", () => {
+    const { container } = render(
+      <PieChart data={sampleData} labels={{ placement: "outside", show: ["label"] }} size={400}>
+        {sampleData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelectorAll('[data-slot="leader"]')).toHaveLength(sampleData.length);
+    expect(container.querySelectorAll('[data-slot="pie-labels-item"]')).toHaveLength(
+      sampleData.length,
+    );
+  });
+
+  it("labels='inside' paints percentages without leaders", () => {
+    const { container } = render(
+      <PieChart data={sampleData} labels={{ placement: "inside", show: ["percent"] }} size={400}>
+        {sampleData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelectorAll('[data-slot="leader"]')).toHaveLength(0);
+    const items = container.querySelectorAll('[data-slot="pie-labels-item"]');
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
+      expect(item.textContent).toMatch(/%$/);
+    }
+  });
+
+  it("labels unset renders no label layer (unchanged)", () => {
+    const { container } = render(
+      <PieChart data={sampleData} size={300}>
+        {sampleData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelector('[data-slot="pie-labels"]')).toBeNull();
+  });
+
+  it("half renders without crashing and sizes the centre slot below the arc", () => {
+    const { container } = render(
+      <PieChart data={sampleData} half innerRadius={60} size={300}>
+        {sampleData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+        <PieCenter />
+      </PieChart>,
+    );
+    // The centre wrapper anchors to the flat base line (`paddingTop: center`)
+    // instead of the box's geometric middle.
+    const centerWrapper = container.querySelector(".pointer-events-none.flex.justify-center");
+    expect(centerWrapper).toBeTruthy();
+    expect((centerWrapper as HTMLElement | null)?.style.paddingTop).toBe("150px");
+  });
+
+  it("sort defaults to desc but keeps PieSlice index → datum correspondence", () => {
+    // Out-of-order values: AMER is largest but listed last. Regardless of
+    // sort, `<PieSlice index={2}>` (AMER's position in `data`) must still be
+    // the 3rd rendered slice group — sort only changes ANGULAR position
+    // (d3-shape's `pie()` always returns arcs in input order).
+    const regions = [
+      { label: "EMEA", value: 42 },
+      { label: "APAC", value: 31 },
+      { label: "AMER", value: 55 },
+    ];
+    const { container } = render(
+      <PieChart data={regions} size={300}>
+        {regions.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    const sliceGroups = container.querySelectorAll("svg > g > g");
+    expect(sliceGroups).toHaveLength(3);
   });
 });

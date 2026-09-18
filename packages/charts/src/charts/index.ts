@@ -227,7 +227,12 @@ export { PatternArea, type PatternAreaProps } from "./pattern-area";
 // Pie chart components
 export { PieCenter, type PieCenterProps } from "./pie-center";
 export { PieCenterShell, type PieCenterShellProps } from "./pie-center-shell";
-export { DEFAULT_HOVER_OFFSET, PieChart, type PieChartProps } from "./pie-chart";
+export {
+  DEFAULT_HOVER_OFFSET,
+  PieChart,
+  type PieChartLabelsConfig,
+  type PieChartProps,
+} from "./pie-chart";
 export {
   defaultPieColors,
   type PieArcData,
@@ -240,6 +245,29 @@ export {
   usePieStable,
 } from "./pie-context";
 export { PieSlice, type PieSliceHoverEffect, type PieSliceProps } from "./pie-slice";
+// Pie labels & grouping — RM-114
+export {
+  groupSmallSlices,
+  pieLegendItems,
+  type PieGroupResult,
+  type PieGroupSmallOptions,
+  type PieLegendItem,
+  type PieLegendItemsOptions,
+} from "./pie-grouping";
+export {
+  anyPieLabelRectsOverlap,
+  DEFAULT_PIE_LABEL_MIN_ANGLE,
+  formatPieLabelText,
+  layoutOutsideLabels,
+  PieLabels,
+  type PieLabelField,
+  type PieLabelPlacement,
+  type PieLabelRect,
+  type PieLabelsConfig,
+  type PieLabelsProps,
+  type PieLabelTextParts,
+  type PieOutsideLabelLayout,
+} from "./pie-labels";
 // Profit/loss line (sign-colored segments on LineChart)
 export {
   PROFIT_LOSS_LEGEND_ITEMS,

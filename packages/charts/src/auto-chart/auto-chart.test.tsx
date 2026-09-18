@@ -292,6 +292,59 @@ describe("AutoChart", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
+  // Post-merge fix (orchestrator ruling): `ChartSpec` has one `sort` field,
+  // shared with BarChart's row order (`BarSort`), narrowed per chart family
+  // in `auto-chart.tsx` rather than a separate `pieSort`.
+  it("pie: sort 'desc' orders slices largest-first; sort 'asc' is ignored, keeping data order", () => {
+    // AMER is the largest value but listed last in `data` — its position in
+    // `data` never changes (PieSlice is index-based), only its ANGULAR
+    // placement does. Read that placement off each slice's hitbox path's
+    // starting point (the `M` command's x). Every slice shares the same
+    // outer radius, so two slices placed at the same angular POSITION start
+    // at the same x, regardless of the chart's own start-angle convention —
+    // no need to assume where "angle 0" is.
+    const regions = [
+      { label: "EMEA", value: 42 },
+      { label: "APAC", value: 31 },
+      { label: "AMER", value: 55 },
+    ];
+    const startX = (d: string | null): number => {
+      const match = d?.match(/^M(-?[\d.]+),/);
+      if (!match?.[1]) {
+        throw new Error(`no M command found in path: ${d}`);
+      }
+      return Number(match[1]);
+    };
+    const sliceStartXs = (sort: "none" | "asc" | "desc" | undefined): number[] => {
+      const { container, unmount } = render(
+        <AutoChart
+          spec={{ type: "pie", data: regions, x: "label", series: ["value"], sort }}
+          height={280}
+        />,
+      );
+      const hitboxes = container.querySelectorAll('path[fill="transparent"]');
+      expect(hitboxes.length).toBe(3);
+      const xs = Array.from(hitboxes).map((h) => startX(h.getAttribute("d")));
+      unmount();
+      return xs;
+    };
+
+    // Default (`sort` unset → "none"): data order kept, so EMEA (index 0)
+    // is placed FIRST and AMER (index 2) is placed LAST.
+    const [firstSliceStartX, , amerStartXNone] = sliceStartXs(undefined);
+
+    // sort: "desc" — AMER (largest) is placed FIRST, so it starts at the
+    // same angular position EMEA occupied above.
+    const [, , amerStartXDesc] = sliceStartXs("desc");
+    expect(amerStartXDesc).toBeCloseTo(firstSliceStartX!, 5);
+
+    // sort: "asc" is not a pie value (only "desc"/"none" are honoured) — the
+    // pie narrowing in auto-chart.tsx drops it, so AMER stays LAST, exactly
+    // as under the unset default.
+    const [, , amerStartXAsc] = sliceStartXs("asc");
+    expect(amerStartXAsc).toBeCloseTo(amerStartXNone!, 5);
+  });
+
   it("renders without throwing for 'scatter' type", () => {
     const { container } = render(
       <AutoChart
