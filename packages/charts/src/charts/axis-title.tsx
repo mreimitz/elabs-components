@@ -97,7 +97,14 @@ export function AxisTitle({
   const isVertical = side === "left" || side === "right";
   return (
     <div
-      className="absolute flex text-chart-label text-meta leading-none font-medium"
+      className={
+        isVertical
+          ? // Sits right above the top tick label — unless a TOP x axis shares
+            // that margin band (its tick labels would collide at the corner):
+            // then it moves up to the band's first row, beside the x title.
+            "absolute flex items-end text-chart-label text-meta leading-none font-medium [*:has(>[data-slot=x-axis][data-orientation=top])>[data-slot=y-axis]>&]:items-start"
+          : "absolute flex text-chart-label text-meta leading-none font-medium"
+      }
       data-placement="outside"
       data-side={side}
       data-slot="axis-title"
@@ -107,7 +114,6 @@ export function AxisTitle({
               // Above the top tick label, aligned with the tick column's outer edge.
               top: 0,
               height: Math.max(margin.top - INSIDE_INSET_PX, 0),
-              alignItems: "flex-end",
               ...(side === "left" ? { left: 0 } : { right: 0, justifyContent: "flex-end" }),
             }
           : {
