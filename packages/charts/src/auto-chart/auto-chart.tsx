@@ -395,7 +395,17 @@ function renderChart(
   copyValueOnActivate: boolean,
   links: AutoChartLinkProps = {},
 ): ReactNode {
-  const { x, stacked, orientation, donut, nulls, curve, symbols } = spec;
+  // `groupSmall`/`half` (RM-114) — pie/donut only, ignored elsewhere. Slice
+  // labels live under the shared label engine's `labels.slices` (RM-110's
+  // `ChartLabelsSpec`, `chart-spec.ts`), not a top-level field.
+  const { x, stacked, orientation, donut, groupSmall, half, nulls, curve, symbols } = spec;
+  const pieLabels = spec.labels?.slices;
+  // Slice order shares `ChartSpec.sort` with BarChart's row order
+  // (orchestrator ruling — one `sort` field, narrowed per family here, not
+  // a `pieSort`). Pie only honours the two string literals; anything else
+  // (an object `{ by, dir }`, `"asc"`) is ignored and the default `"none"`
+  // (data order) applies, so an existing spec renders byte-identical wedges.
+  const pieSort = spec.sort === "desc" || spec.sort === "none" ? spec.sort : undefined;
   const axisProps = resolveAxisSpecProps(spec.axes, orientation === "horizontal");
   // Unit and distribution charts size themselves from their data; a numeric
   // plot height still fixes their box, as the deprecated `height` did.
@@ -558,6 +568,11 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
+          // pieLabels/groupSmall/pieSort/half — RM-114
+          labels={pieLabels}
+          groupSmall={groupSmall}
+          sort={pieSort}
+          half={half}
         >
           {pieData.map((_d, i) => (
             // pie slices are position-indexed, so the index is a stable key

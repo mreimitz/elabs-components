@@ -540,7 +540,13 @@ export const PieSlice = memo(function PieSlice({
   };
 
   return paintSelection(
-    <g style={{ cursor: "pointer" }}>
+    <g
+      // Folded "Other" slice (RM-114 `groupSmall`, `pie-grouping.ts`) —
+      // records which original categories this slice stands in for, so the
+      // fold stays inspectable/testable. Unset on every ordinary slice.
+      data-folded-categories={arcData.data.categories?.join(",") || undefined}
+      style={{ cursor: "pointer" }}
+    >
       {/* Invisible hitbox - stays in place, handles hover events */}
       {/* SVG path used as hover hitbox for visualization; not keyboard-operable
           (hover-only affordance layered under the visible, non-interactive slice) */}

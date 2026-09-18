@@ -20,6 +20,12 @@ export type {
 export type { AxisSpec } from "./chart-spec";
 // Labels — RM-110
 export type { ChartLabelsSpec } from "./chart-spec";
+// Pie/donut labels, grouping, sort, half preset — RM-114
+export type {
+  ChartSpecPieGroupSmall,
+  ChartSpecPieLabelField,
+  ChartSpecPieLabels,
+} from "./chart-spec";
 
 // Inference utilities (useful for pre-validation, debug panels or testing)
 export {
