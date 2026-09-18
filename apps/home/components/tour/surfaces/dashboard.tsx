@@ -102,14 +102,14 @@ function buildSpec(): DashboardSpec {
         id: "chart-churn-trend",
         kind: "chart",
         title: "Logo churn, weekly",
-        layout: { x: 0, y: 4, w: 14, h: 7 },
+        layout: { x: 0, y: 4, w: 11, h: 7 },
         content: { type: "line", x: "week", series: ["value"], data: CHURN_SERIES.points },
       },
       {
         id: "chart-churn-region",
         kind: "chart",
         title: "Logo churn by region",
-        layout: { x: 14, y: 4, w: 10, h: 7 },
+        layout: { x: 11, y: 4, w: 7, h: 7 },
         content: {
           type: "bar",
           x: "region",
@@ -123,8 +123,18 @@ function buildSpec(): DashboardSpec {
       {
         id: "filter-region",
         kind: "filter",
+        // `x: 18, w: 6, h: 12` — a full-height sidebar column (spans the chart AND table row
+        // bands, `y: 4` to `y: 16`), not a `w: 6, h: 5` row slice. `fit`'s row height is
+        // `sheetHeight / grid.rows` — a fixed, viewport-independent quantum — so this tile's
+        // OWN pixel height only grows with its `h`, never with a narrower row slice; `h: 5`
+        // left its `CommandList` (~136px of content, 4 regions) taller than the space left
+        // after the tile's header/search chrome at both 1440 and 390, overflowing with no
+        // keyboard-reachable scroll container (axe `scrollable-region-focusable`). `h: 12`
+        // clears that at both widths (see `dashboard.tsx`'s measured comment at the bottom of
+        // this file's history — verified: 1440 tile height ~430px, 390 ~248px, both above the
+        // ~237.5px the chrome + list need).
         title: "Region",
-        layout: { x: 0, y: 11, w: 6, h: 5 },
+        layout: { x: 18, y: 4, w: 6, h: 12 },
         content: {
           field: "region",
           label: "Region",
@@ -135,7 +145,7 @@ function buildSpec(): DashboardSpec {
         id: "table-movers",
         kind: "table",
         title: "Accounts with the largest MRR change",
-        layout: { x: 6, y: 11, w: 18, h: 5 },
+        layout: { x: 0, y: 11, w: 18, h: 5 },
         // Visible only once a region is selected in the filter tile above — the sheet's
         // interaction graph made visible (RM-097's Change).
         visibleWhen: "selection.count('region') > 0",
