@@ -1,5 +1,6 @@
 "use client";
 
+import { estimateTextWidth } from "./use-text-measurer";
 import type { scaleBand } from "@visx/scale";
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
@@ -154,10 +155,27 @@ export type BarLineCap = "round" | "butt" | number;
 export type BarAnimationType = "grow" | "fade";
 
 /**
- * `true`/`"outside"` place the value label just past the bar's far end;
- * `"inside"` places it just inside. See {@link BarProps.showValues}.
+ * Value-label spec (RM-110): `placement` `"inside"` | `"outside"` | `"auto"`
+ * (inside when the label fits within the bar's length, else outside —
+ * default); `visibility` `"always"` (default) | `"hover"` (only the hovered
+ * bar prints its value).
  */
-export type BarShowValues = boolean | "outside" | "inside";
+export interface BarShowValuesSpec {
+  placement?: "inside" | "outside" | "auto";
+  visibility?: "always" | "hover";
+}
+
+/**
+ * `true`/`"outside"` place the value label just past the bar's far end;
+ * `"inside"` places it just inside; a {@link BarShowValuesSpec} adds `"auto"`
+ * placement and hover-only visibility. See {@link BarProps.showValues}.
+ */
+export type BarShowValues = boolean | "outside" | "inside" | BarShowValuesSpec;
+
+/** Label box along the value axis for `"auto"` placement: font px × this ≈ line box. */
+const AUTO_LABEL_LINE_FACTOR = 1.3;
+/** `text-chart-value` resolves to the `meta` size (≈ 12 px) — the `"auto"` fit estimate. */
+const AUTO_VALUE_FONT_PX = 12;
 
 /**
  * Identifies the one "hero" bar `highlightKey` picks out. A string/number is
@@ -670,15 +688,36 @@ const BarInner = memo(function BarInner({
     // `text-chart-value` role below `text-meta`.
     const useUnitMode = Boolean(unit && unit > 0) && !isLoadingPhase;
     const labelMode: BarShowValues | undefined = useUnitMode ? "outside" : showValues;
+    const labelSpec = typeof labelMode === "object" && labelMode !== null ? labelMode : null;
     const thickness = isHorizontal ? barHeight : barW;
     const settled = useUnitMode || !animate || isLoaded;
-    const showLabel = Boolean(labelMode) && thickness >= MIN_LABEL_BAR_WIDTH && settled;
+    // RM-110: a hover-only spec prints only the hovered bar's value.
+    const hoverGate = labelSpec?.visibility !== "hover" || hoveredBarIndex === i;
+    const showLabel =
+      Boolean(labelMode) && thickness >= MIN_LABEL_BAR_WIDTH && settled && hoverGate;
 
     let labelX = 0;
     let labelY = 0;
     let labelAnchor: "start" | "middle" | "end" = "middle";
+    const labelText = isNegative
+      ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
+      : formatValue(bar.value);
     if (showLabel) {
-      const outside = labelMode !== "inside";
+      // RM-110 `"auto"`: inside when the label fits within the bar's length.
+      const length = isHorizontal ? barW : barHeight;
+      const need =
+        (isHorizontal
+          ? estimateTextWidth(labelText, AUTO_VALUE_FONT_PX)
+          : AUTO_VALUE_FONT_PX * AUTO_LABEL_LINE_FACTOR) +
+        VALUE_LABEL_INSET * 2;
+      const placement = labelSpec
+        ? (labelSpec.placement ?? "auto") === "auto"
+          ? length >= need
+            ? "inside"
+            : "outside"
+          : labelSpec.placement
+        : labelMode;
+      const outside = placement !== "inside";
       if (isHorizontal) {
         const crossCenter = y + barHeight / 2;
         labelY = crossCenter;
@@ -701,9 +740,6 @@ const BarInner = memo(function BarInner({
             : valuePos + VALUE_LABEL_INSET;
       }
     }
-    const labelText = isNegative
-      ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
-      : formatValue(bar.value);
     const valueLabel = showLabel && (
       <HaloText
         className="text-chart-value tabular-nums"
