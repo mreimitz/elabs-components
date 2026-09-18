@@ -64,8 +64,10 @@ export type ChartType =
  *   series.
  * - `"ranking"` — long rows of `(period, entity, value)` whose interest is the
  *   ORDER of the entities per period, not the magnitudes.
+ * - `"change"` — a two-measure category spec reads as a before/after MOVE
+ *   (an arrow), not an independent pair of values — DumbbellChart — RM-116.
  */
-export type ChartSpecKind = "steps" | "records" | "ranking";
+export type ChartSpecKind = "steps" | "records" | "ranking" | "change";
 
 /**
  * How loud the picture should be. `"analytical"` (the default) keeps the
@@ -240,6 +242,16 @@ export interface ChartSpec {
    * selection field to any chart without knowing the chart type.
    */
   fields?: { category?: string; series?: string };
+
+  // DumbbellChart — RM-116
+  /** `type: "dumbbell"` only: `"dumbbell"` (default) | `"slope"` | `"arrow"` | `"dots"`, mirroring `DumbbellVariant`. */
+  variant?: "dumbbell" | "slope" | "arrow" | "dots";
+  /** `type: "dumbbell"` only: sort key, mirroring `DumbbellSortBy`. Default `"none"` (spreadsheet order). */
+  sort?: "start" | "end" | "delta" | "deltaPercent" | "data" | "label" | "none";
+  /** `type: "dumbbell"` only: buckets rows by this column, one header + separator per group. */
+  groupBy?: string;
+  /** `type: "dumbbell"` only: the delta label — absolute value or `%` change. Unset draws no delta label. */
+  delta?: { show: boolean; mode: "absolute" | "percent" };
 }
 
 // Axes — RM-108

@@ -676,6 +676,11 @@ function renderChart(
     // ── Dumbbell ──────────────────────────────────────────────────────────────
     case "dumbbell": {
       const [startKey, endKey] = dumbbellKeys(spec, series);
+      // RM-116: an explicit `spec.variant` always wins; a declared
+      // `kind: "change"` with no explicit variant reads as "arrow" — the
+      // same reading `infer-chart-type.ts`'s rule 7 records (as `rule:
+      // "arrow"`) when it picked "dumbbell" for a spec with no explicit type.
+      const variant = spec.variant ?? (spec.kind === "change" ? "arrow" : undefined);
       return (
         <DumbbellChart
           plotHeight={plotHeight}
@@ -691,6 +696,10 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
+          variant={variant}
+          sortBy={spec.sort}
+          groupBy={spec.groupBy}
+          delta={spec.delta}
         />
       );
     }
