@@ -544,6 +544,18 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
         );
       }
       // 12 — the pre-RM-038 pie rule, unchanged.
+      //
+      // RM-114 asks this rule to also fire above 8 raw categories when
+      // automatic grouping would fold them to <= 5 slices + "Other". NOT
+      // implemented: `explainChartType` only picks a TYPE — it has no way to
+      // tell `AutoChart`'s render step "and apply groupSmall({max:5}) too",
+      // so a spec without an explicit `groupSmall` would render an UNGROUPED
+      // 9+-slice pie, exactly the illegible chart the RM rule exists to
+      // avoid, and less honest than the current bar fallback. It also
+      // flipped the accepted "ten single-series categories -> bar (default)"
+      // fixture in `infer-chart-type.test.ts`, a previously-accepted test
+      // (wave-0 lesson: don't silently break one). Recorded as an open
+      // question in the result file rather than guessed at further.
       if (data.length <= 8) {
         return pick(
           "pie",

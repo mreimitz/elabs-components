@@ -276,6 +276,26 @@ export interface ChartSpec {
    */
   fields?: { category?: string; series?: string };
 
+  // Pie/donut grouping, sort, half preset — RM-114. Slice labels moved to
+  // `labels.slices` (see `ChartLabelsSpec` below) so `ChartSpec` keeps one
+  // `labels` object with a sub-key per mark family.
+  /** Fold small `type: "pie"` slices into an "Other" slice. See {@link ChartSpecPieGroupSmall}. Ignored elsewhere. */
+  groupSmall?: ChartSpecPieGroupSmall;
+  /**
+   * Slice order for `type: "pie"`: `"desc"` (largest first) or `"none"`
+   * (data order). Default: `"none"` — matches `PieChart`'s own default, kept
+   * so an existing spec renders byte-identical wedges. Ignored elsewhere.
+   * Named `pieSort`, not `sort` — RM-113's bar row `sort` (`BarSort`, below)
+   * claimed that name first, with an incompatible shape.
+   */
+  pieSort?: "desc" | "none";
+  /**
+   * Render `type: "pie"` as a half-donut: a 180° arc (top half) with the
+   * centre value slot under the arc instead of in the middle. Default:
+   * false. Ignored elsewhere.
+   */
+  half?: boolean;
+
   // Labels — RM-110
   /** Series end labels / key fallback, automatic value labels and scatter point labels (RM-110) — see {@link ChartLabelsSpec}. */
   labels?: ChartLabelsSpec;
@@ -298,6 +318,40 @@ export interface ChartSpec {
   comparison?: BarComparison;
 }
 
+// Pie/donut grouping, sort, half preset — RM-114
+
+/** Which facts a pie/donut slice label states, in `label → value → percent` reading order. */
+export type ChartSpecPieLabelField = "label" | "value" | "percent";
+
+/**
+ * Slice labels for `type: "pie"` (RM-114) — the serialisable subset of
+ * `PieChartLabelsConfig` (`../charts/pie-chart.tsx`). Reached via
+ * `ChartLabelsSpec.slices` below.
+ */
+export interface ChartSpecPieLabels {
+  /** `"inside"`, `"outside"`, or `"none"`. Default: `"outside"` (`"none"` under 480px). */
+  placement?: "inside" | "outside" | "none";
+  /** Which facts to show. Required — no default reading. */
+  show: ChartSpecPieLabelField[];
+  /** Paint the label in the slice's own color instead of the neutral ink. Default: false. */
+  matchColor?: boolean;
+  /** Hide an inside label whose wedge sweeps under this angle (radians). Default: 0.2. */
+  minAngle?: number;
+}
+
+/**
+ * Fold small `type: "pie"` slices into one "Other" slice (RM-114) — the
+ * serialisable subset of `PieGroupSmallOptions` (`../charts/pie-grouping.ts`).
+ */
+export interface ChartSpecPieGroupSmall {
+  /** Fold a slice under this fraction (0–1) of the total. */
+  threshold?: number;
+  /** Cap the slice count, folding the smallest first. */
+  max?: number;
+  /** The folded slice's label. Default: "Other". */
+  label?: string;
+}
+
 // Labels — RM-110
 /**
  * The serialisable label-engine subset (RM-110). Every field is optional and
@@ -310,6 +364,10 @@ export interface ChartLabelsSpec {
   values?: ChartValueLabels;
   /** scatter: point labels — `key` is the row field holding the text; `mode` `"auto"` (default) | `"all"`; `priorityKey` a numeric row field (higher survives). */
   points?: { key: string; mode?: "auto" | "all"; priorityKey?: string };
+
+  // Pie slices — RM-114
+  /** pie/donut: slice labels — see {@link ChartSpecPieLabels}. Ignored elsewhere. */
+  slices?: ChartSpecPieLabels;
 
   // BarChart — RM-113
   /** bar: the grey label on each `comparison` column — `"value"` | `"difference"` | `"none"` (default). */
