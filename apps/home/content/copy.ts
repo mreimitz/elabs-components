@@ -117,33 +117,24 @@ export const heroCopy = {
     axe: "axe on every story",
     themes: (n: number) => `${n} brand themes`,
   },
+  // Labels and sentence frames only — every name, number and message the scene shows is read
+  // from the fixture set (`content/fixtures/**`, RM-095) in `components/hero/hero-stream.ts`.
   scene: {
-    label: "Live example: an operations console built from the library",
-    product: "Atlas Ops",
-    org: "Acme",
-    nav: { overview: "Overview", runs: "Runs", agents: "Agents", settings: "Settings" },
+    label: "Live example: a revenue analytics console built from the library",
+    nav: { overview: "Overview", accounts: "Accounts", orders: "Orders", settings: "Settings" },
     title: "Overview",
-    kpis: {
-      runs: { label: "Agent runs", description: "Last 7 days" },
-      success: { label: "Success rate", description: "Completed without retry" },
-      spend: { label: "Model spend", description: "Against a $5,000 limit" },
+    kpiSince: (week: string) => `Change since ${week}`,
+    pointsUnit: "pts",
+    chartTitle: (metric: string, quarter: string) => `${metric} — ${quarter}`,
+    columns: {
+      account: "Account",
+      region: "Region",
+      monthMrr: (month: string) => `${month} MRR`,
+      change: "MRR change",
     },
-    chartTitle: "Runs per day",
-    chartSeries: "Runs",
-    tableCaption: "Recent runs",
-    columns: { id: "Run", agent: "Agent", status: "Status", duration: "Duration" },
     chatLabel: "Assistant",
-    userMessage: "Why did the invoice agent slow down on Thursday?",
-    assistantMessage:
-      "Thursday’s invoice runs waited on the ERP export: median queue time rose from 40 s to 3 min between 09:00 and 11:00. Runs after 11:00 are back to normal.",
-    toolTitle: "query_runs",
-    toolSummary: "agent = invoice · Thursday",
-    toolResult: "112 runs · median queue 3 min 04 s · 0 failures",
-    tiles: {
-      queue: "Queue depth",
-      model: "Default model",
-      budget: "Budget used",
-    },
-    flowNode: { title: "Classify invoice", meta: "Step 2 of 4" },
+    toolResult: (points: number, regions: number) => `${points} weekly points · ${regions} regions`,
+    tiles: { pipeline: "Pipeline run" },
+    flowStep: (step: number, steps: number) => `Step ${step} of ${steps}`,
   },
 } as const;

@@ -2,7 +2,8 @@
 /**
  * The hero scene (RM-094): the flagship app shell at real product size — nav rail, KPI row,
  * one AutoChart line, a chat panel with a tool call, an 8-row DataTable and a tile row. Real
- * components with real semantics; the stream-in plays once (see hero-stream.ts).
+ * components with real semantics; every fact is a fixture value read in hero-stream.ts, and the
+ * stream-in plays once (see there).
  */
 import { useRef } from "react";
 import { Card, Progress, StatusBadge } from "@elabs-ai/components-ui";
@@ -19,37 +20,52 @@ import {
 } from "@elabs-ai/components-ai";
 import { HeroNavRail } from "../blocks/app-shell/hero-nav-rail";
 import { heroCopy } from "../../content/copy";
-import { HERO_SEED, formatKpi, kpiValueAt, textAt, toolOpenAt } from "./hero-stream";
+import {
+  HERO_SEED,
+  formatKpi,
+  formatUsd,
+  kpiValueAt,
+  textAt,
+  toolOpenAt,
+  type HeroMover,
+} from "./hero-stream";
 import { useHeroStream } from "./use-hero-stream";
 
 const scene = heroCopy.scene;
-type Run = (typeof HERO_SEED.runs)[number];
+const { chat, pipeline } = HERO_SEED;
 
 const NAV = [
   { id: "overview", label: scene.nav.overview },
-  { id: "runs", label: scene.nav.runs },
-  { id: "agents", label: scene.nav.agents },
+  { id: "accounts", label: scene.nav.accounts },
+  { id: "orders", label: scene.nav.orders },
   { id: "settings", label: scene.nav.settings },
 ];
 
 const CHART: ChartSpec = {
   type: "line",
-  title: scene.chartTitle,
-  data: HERO_SEED.runsPerDay.map((d) => ({ ...d })),
-  x: "day",
+  title: HERO_SEED.churn.title,
+  data: HERO_SEED.churn.points.map((d) => ({ ...d })),
+  x: "week",
   xType: "category",
-  series: [{ key: "runs", label: scene.chartSeries }],
+  series: [{ key: "churn", label: HERO_SEED.churn.label }],
+  valueFormat: "percent",
 };
 
-const COLUMNS: ColumnDef<Run>[] = [
-  { accessorKey: "id", header: scene.columns.id },
-  { accessorKey: "agent", header: scene.columns.agent },
+const COLUMNS: ColumnDef<HeroMover>[] = [
+  { accessorKey: "account", header: scene.columns.account },
+  { accessorKey: "region", header: scene.columns.region },
   {
-    accessorKey: "status",
-    header: scene.columns.status,
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    accessorKey: "lastMonth",
+    header: scene.columns.monthMrr(HERO_SEED.moversMonth),
+    meta: { numeric: true },
+    cell: ({ row }) => formatUsd(row.original.lastMonth),
   },
-  { accessorKey: "duration", header: scene.columns.duration },
+  {
+    accessorKey: "mrrChange",
+    header: scene.columns.change,
+    meta: { numeric: true },
+    cell: ({ row }) => formatUsd(row.original.mrrChange, true),
+  },
 ];
 
 /** Hidden (opacity only) while the inline gate marks a stream-in as about to play. */
@@ -59,14 +75,14 @@ const STREAMED =
 export function HeroShell() {
   const ref = useRef<HTMLDivElement>(null);
   const stream = useHeroStream(ref);
-  const assistant = textAt(scene.assistantMessage, stream);
+  const assistant = textAt(chat.answer, stream);
   const toolOpen = toolOpenAt(stream);
 
   return (
     <div ref={ref} data-slot="hero-scene" className="flex h-full min-w-175">
       <HeroNavRail
-        productName={scene.product}
-        orgName={scene.org}
+        productName={HERO_SEED.product}
+        orgName={HERO_SEED.org}
         items={NAV}
         activeId="overview"
       />
@@ -82,8 +98,8 @@ export function HeroShell() {
                 key={kpi.id}
                 data-kpi={kpi.id}
                 data-final={formatKpi(kpi, kpi.value)}
-                label={scene.kpis[kpi.id].label}
-                description={scene.kpis[kpi.id].description}
+                label={kpi.label}
+                description={HERO_SEED.kpiSince}
                 value={
                   <span className={STREAMED} data-kpi-value="">
                     {formatKpi(kpi, kpiValueAt(kpi, stream))}
@@ -91,6 +107,7 @@ export function HeroShell() {
                 }
                 delta={kpi.delta}
                 deltaDirection={kpi.direction}
+                positiveIsGood={kpi.positiveIsGood}
               />
             ))}
           </div>
@@ -102,18 +119,18 @@ export function HeroShell() {
               <Conversation className="min-h-0" aria-label={scene.chatLabel}>
                 <ConversationContent className="gap-3 p-3">
                   <Message from="user">
-                    <MessageContent>{scene.userMessage}</MessageContent>
+                    <MessageContent>{chat.question}</MessageContent>
                   </Message>
                   <Message from="assistant">
                     <Tool open={toolOpen} className="mb-0">
                       <ToolHeader
-                        type={`tool-${scene.toolTitle}`}
-                        title={scene.toolTitle}
-                        summary={scene.toolSummary}
-                        state={toolOpen ? "output-available" : "input-available"}
+                        type={`tool-${chat.tool.name}`}
+                        title={chat.tool.name}
+                        summary={chat.tool.summary}
+                        state={toolOpen ? chat.tool.state : "input-available"}
                       />
                       <ToolContent className="p-3">
-                        <p className="text-meta text-muted-foreground">{scene.toolResult}</p>
+                        <p className="text-meta text-muted-foreground">{chat.tool.result}</p>
                       </ToolContent>
                     </Tool>
                     <MessageContent className={STREAMED} data-stream-text="">
@@ -124,19 +141,20 @@ export function HeroShell() {
               </Conversation>
             </Card>
           </div>
-          <DataTable columns={COLUMNS} data={[...HERO_SEED.runs]} />
+          <DataTable columns={COLUMNS} data={HERO_SEED.movers} />
           <div className="grid grid-cols-3 gap-3">
-            <Card className="gap-1 p-3">
-              <span className="text-meta text-muted-foreground">{scene.tiles.queue}</span>
-              <span className="text-kpi tabular-nums">{HERO_SEED.tiles.queue}</span>
-            </Card>
-            <Card className="gap-1 p-3">
-              <span className="text-meta text-muted-foreground">{scene.tiles.model}</span>
-              <span className="font-mono text-code">{HERO_SEED.tiles.model}</span>
-            </Card>
+            {HERO_SEED.tiles.map((kpi) => (
+              <Card key={kpi.id} className="gap-1 p-3">
+                <span className="text-meta text-muted-foreground">{kpi.label}</span>
+                <span className="text-kpi tabular-nums">{formatKpi(kpi, kpi.value)}</span>
+              </Card>
+            ))}
             <Card className="gap-2 p-3">
-              <span className="text-meta text-muted-foreground">{scene.tiles.budget}</span>
-              <Progress value={HERO_SEED.tiles.budget} aria-label={scene.tiles.budget} />
+              <span className="text-meta text-muted-foreground">{scene.tiles.pipeline}</span>
+              <Progress value={pipeline.progress} aria-label={scene.tiles.pipeline} />
+              <span className="text-meta text-muted-foreground">
+                {pipeline.node} · {pipeline.step}
+              </span>
             </Card>
           </div>
         </div>
