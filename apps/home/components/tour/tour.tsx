@@ -3,9 +3,9 @@
 /**
  * The surface tour (RM-096, movement 2): seven tabs over one frame. Surfaces are registered in
  * `SURFACES` below — each a `next/dynamic` import so its engine enters the page only when its
- * tab is hovered, focused or opened (never on scroll). Until RM-097 / RM-098 register the real
- * surfaces, a tab renders a labelled Skeleton; the flow tab already loads a small React Flow
- * canvas so the lazy path (prefetch on hover, chunk on click) is exercised end to end.
+ * tab is hovered, focused or opened (never on scroll). A tab with no entry renders a labelled
+ * Skeleton. `ai-assistant` and `marketing` (RM-098) are `ssr: true` in `tabs.ts`, so they render
+ * with a plain static import — no dynamic() — and land in the server HTML.
  */
 import dynamic from "next/dynamic";
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
@@ -16,6 +16,8 @@ import {
   type SurfaceTourTab,
 } from "@elabs-ai/components-ui";
 import { tourCopy } from "../../content/copy";
+import { AiAssistantSurface } from "./surfaces/ai-assistant";
+import { MarketingSurface } from "./surfaces/marketing";
 import type { TourTabId, TourTabMeta } from "./tabs";
 
 /** A frame-filling Skeleton in the rough shape of a screen, named for screen readers. */
@@ -35,40 +37,29 @@ function TabSkeleton({ label }: { label: string }) {
 }
 
 const FLOW_LABEL = tourCopy.tabs["flow-workspace"].label;
-const loadFlow = () => import("@elabs-ai/components-flow");
-const FlowPreview = dynamic(
-  () =>
-    loadFlow().then(({ CanvasShell }) => {
-      function FlowPreview() {
-        return (
-          <div className="size-full min-h-96">
-            <CanvasShell
-              aria-label={FLOW_LABEL}
-              fitView
-              nodes={[
-                { id: "a", position: { x: 0, y: 0 }, data: { label: "Source" } },
-                { id: "b", position: { x: 220, y: 80 }, data: { label: "Transform" } },
-                { id: "c", position: { x: 440, y: 0 }, data: { label: "Sink" } },
-              ]}
-              edges={[
-                { id: "a-b", source: "a", target: "b" },
-                { id: "b-c", source: "b", target: "c" },
-              ]}
-            />
-          </div>
-        );
-      }
-      return FlowPreview;
-    }),
-  { ssr: false, loading: () => <TabSkeleton label={FLOW_LABEL} /> },
-);
+const loadFlow = () => import("./surfaces/flow-workspace");
+const FlowWorkspaceLazy = dynamic(() => loadFlow().then((m) => m.FlowWorkspaceSurface), {
+  ssr: false,
+  loading: () => <TabSkeleton label={FLOW_LABEL} />,
+});
+
+const PROCESS_LABEL = tourCopy.tabs["process-explorer"].label;
+const loadProcess = () => import("./surfaces/process-explorer");
+const ProcessExplorerLazy = dynamic(() => loadProcess().then((m) => m.ProcessExplorerSurface), {
+  ssr: false,
+  loading: () => <TabSkeleton label={PROCESS_LABEL} />,
+});
 
 /** Registered surfaces, by tab id. A tab without an entry renders its labelled Skeleton. */
 const SURFACES: Partial<Record<TourTabId, { render: () => ReactNode; prefetch?: () => void }>> = {
-  "flow-workspace": { render: () => <FlowPreview />, prefetch: () => void loadFlow() },
+  "flow-workspace": { render: () => <FlowWorkspaceLazy />, prefetch: () => void loadFlow() },
   // RM-097
 
-  // RM-098
+  // RM-098 — flow/process load React Flow only once opened (dynamic import above); ai-assistant
+  // and marketing are `ssr: true` (tabs.ts), so they render through a plain static import.
+  "ai-assistant": { render: () => <AiAssistantSurface /> },
+  "process-explorer": { render: () => <ProcessExplorerLazy />, prefetch: () => void loadProcess() },
+  marketing: { render: () => <MarketingSurface /> },
 };
 
 const STICKY_TOP = "calc(var(--spacing) * var(--header-size))";
