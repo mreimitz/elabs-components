@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { AmbientField, type AmbientToken } from "@elabs-ai/components-marketing";
+import { AmbientField, type AmbientToken } from "@elabs-ai/components-ui";
 
 /*
  * The page ground (concept §5a "Ground"): three layers behind every section.

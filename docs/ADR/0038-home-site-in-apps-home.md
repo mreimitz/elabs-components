@@ -221,6 +221,13 @@ the old behaviour if the Storybook project's live deployment still carries `/mcp
 - **What does NOT change.** No package gains a dependency or an export; the one-way package graph
   is untouched (`apps/home` is a consumer, not a package); the hosted MCP's behaviour, tools and
   transport are unchanged; ADR 0007's boundary holds.
+- **Browser-only site primitives live in `@elabs-ai/components-ui`, not in marketing** (maintainer
+  decision, 2026-09-18). `ThemeFamilySwitch`, `AmbientField`, `ParallaxPlane`, `RevealOnEnter` and
+  `useScrollProgress` need hooks or the DOM, so they ship from ui (already a `"use client"`
+  package) with their co-located CSS and `motion` as an optional peer reached only by dynamic
+  `import()`. `@elabs-ai/components-marketing` stays fully server-safe — no `"use client"`, no
+  banner, no `motion` peer — as `pnpm consumer:check` enforces through its `mustNotHave` list. This
+  amends the bullet above: ui gains these exports and one optional peer.
 
 ## Alternatives considered
 

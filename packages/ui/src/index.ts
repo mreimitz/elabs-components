@@ -18,6 +18,18 @@ export { cn } from "./lib/cn";
 // The canonical mobile-breakpoint check (Sidebar / ContextPanel Sheet fallback
 // pattern, research 09 §B.4) — exported so siblings don't fork a matchMedia hook.
 export { useIsMobile } from "./lib/use-mobile";
+// Scroll progress for site motion (ParallaxPlane): a native scroll timeline, a lazy
+// `motion` fallback (optional peer, dynamic import only), or static under reduced motion.
+export {
+  MOTION_FACTOR_FLOOR,
+  isMotionAtFloor,
+  readMotionFactor,
+  supportsScrollTimeline,
+  useScrollProgress,
+  type ScrollProgress,
+  type ScrollProgressMode,
+  type ScrollProgressOptions,
+} from "./lib/use-scroll-progress";
 // Browser file-download mechanics — one home for the Blob/URL → <a download> dance
 // (shared by ConversationDownload, downloadCsv, and Gallery). SSR-guarded.
 export { downloadBlob, downloadUrl } from "./lib/download";
@@ -134,6 +146,7 @@ export * from "./components/advanced-group";
 export * from "./components/app-sidebar";
 export * from "./components/alert";
 export * from "./components/alert-dialog";
+export * from "./components/ambient-field";
 export * from "./components/app-shell";
 export * from "./components/aspect-ratio";
 export * from "./components/attribution-panel";
@@ -204,12 +217,14 @@ export * from "./components/navigation-menu";
 export * from "./components/number-input";
 export * from "./components/page-shell";
 export * from "./components/pagination";
+export * from "./components/parallax-plane";
 export * from "./components/popover";
 export * from "./components/progress";
 export * from "./components/radio-group";
 export * from "./components/rating";
 export * from "./components/resizable";
 export * from "./components/reveal";
+export * from "./components/reveal-on-enter";
 export * from "./components/schema-form";
 export * from "./components/scroll-area";
 export * from "./components/section-header";
@@ -235,6 +250,7 @@ export * from "./components/tag-input";
 export * from "./components/team-switcher";
 export * from "./components/textarea";
 export * from "./components/theme-switcher";
+export * from "./components/theme-family-switch";
 export * from "./components/revision-timeline";
 export * from "./components/timeline";
 export * from "./components/toggle";

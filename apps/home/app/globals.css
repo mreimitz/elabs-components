@@ -77,7 +77,7 @@ html[data-theme-transition] *::after {
 
 /* RM-092 — the site ground. The page's one AmbientField is the `ground` view-transition group, so
    a section transition (RM-091) can hold the ground still while content changes. The drift and
-   parallax keyframes ship with the primitives themselves (@elabs-ai/components-marketing), so
+   parallax keyframes ship with the primitives themselves (@elabs-ai/components-ui), so
    Storybook and the site run the same CSS. */
 [data-slot="site-ground"] > [data-slot="ambient-field"] {
   view-transition-name: ground;

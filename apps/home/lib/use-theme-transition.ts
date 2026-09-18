@@ -5,7 +5,7 @@
 import { createElement, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
-import { ThemeFamilySwitch } from "@elabs-ai/components-marketing";
+import { ThemeFamilySwitch } from "@elabs-ai/components-ui";
 import { SITE_THEMES } from "../themes";
 import { THEME_STORAGE_KEY, useSiteTheme } from "./theme-state";
 

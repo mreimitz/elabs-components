@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
-import { Card, CardDescription, CardHeader, CardTitle } from "@elabs-ai/components-ui";
+import { Card, CardDescription, CardHeader, CardTitle } from "../card";
 import { ParallaxPlane, type ParallaxPlaneKind } from "./parallax-plane";
 
 const PLANES: { plane: ParallaxPlaneKind; title: string; description: string }[] = [
@@ -33,7 +33,7 @@ function Planes() {
 }
 
 const meta = {
-  title: "Marketing/ParallaxPlane",
+  title: "Display/ParallaxPlane",
   component: ParallaxPlane,
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],

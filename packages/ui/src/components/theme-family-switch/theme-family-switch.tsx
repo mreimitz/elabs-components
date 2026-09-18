@@ -1,15 +1,9 @@
 "use client";
 
 import { forwardRef, type HTMLAttributes } from "react";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@elabs-ai/components-ui";
-import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { cn } from "../../lib/cn";
+import { ToggleGroup, ToggleGroupItem } from "../toggle-group";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../tooltip";
 
 export type ThemeFamilySwitchMode = "light" | "dark";
 export type ThemeFamilySwitchSize = "sm" | "md" | "lg";

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { isMotionAtFloor, readMotionFactor } from "../motion/use-scroll-progress";
+import { isMotionAtFloor, readMotionFactor } from "../../lib/use-scroll-progress";
 import "./reveal-on-enter.css";
 
 /** Elements RevealOnEnter may render as. */
@@ -58,13 +58,18 @@ export const RevealOnEnter = React.forwardRef<HTMLElement, RevealOnEnterProps>(
       return () => observer.disconnect();
     }, [stagger]);
 
-    return React.createElement(Comp, {
-      ref: innerRef,
-      "data-slot": "reveal-on-enter",
-      "data-reveal": phase === "idle" ? undefined : phase,
-      "data-stagger": stagger ? "" : undefined,
-      ...props,
-    });
+    // Every `as` option is a block element with the same attribute surface; typing the tag as
+    // `div` keeps JSX (and its `data-slot` declaration) without a per-tag ref union.
+    const Tag = Comp as "div";
+    return (
+      <Tag
+        ref={innerRef as React.Ref<HTMLDivElement>}
+        data-slot="reveal-on-enter"
+        data-reveal={phase === "idle" ? undefined : phase}
+        data-stagger={stagger ? "" : undefined}
+        {...props}
+      />
+    );
   },
 );
 RevealOnEnter.displayName = "RevealOnEnter";
