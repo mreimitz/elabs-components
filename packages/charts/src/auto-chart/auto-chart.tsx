@@ -331,7 +331,8 @@ function renderChart(
   copyValueOnActivate: boolean,
   links: AutoChartLinkProps = {},
 ): ReactNode {
-  const { x, stacked, orientation, donut } = spec;
+  // `labels`/`groupSmall`/`sort`/`half` (RM-114) — pie/donut only, ignored elsewhere.
+  const { x, stacked, orientation, donut, labels, groupSmall, sort, half } = spec;
   const axisProps = resolveAxisSpecProps(spec.axes, orientation === "horizontal");
   // Unit and distribution charts size themselves from their data; a numeric
   // plot height still fixes their box, as the deprecated `height` did.
@@ -463,6 +464,11 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
+          // labels/groupSmall/sort/half — RM-114
+          labels={labels}
+          groupSmall={groupSmall}
+          sort={sort}
+          half={half}
         >
           {pieData.map((_d, i) => (
             // pie slices are position-indexed, so the index is a stable key

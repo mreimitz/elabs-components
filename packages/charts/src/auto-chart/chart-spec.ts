@@ -240,6 +240,57 @@ export interface ChartSpec {
    * selection field to any chart without knowing the chart type.
    */
   fields?: { category?: string; series?: string };
+
+  // Pie/donut labels, grouping, sort, half preset — RM-114
+  /** Slice labels for `type: "pie"`. See {@link ChartSpecPieLabels}. Ignored elsewhere. */
+  labels?: ChartSpecPieLabels;
+  /** Fold small `type: "pie"` slices into an "Other" slice. See {@link ChartSpecPieGroupSmall}. Ignored elsewhere. */
+  groupSmall?: ChartSpecPieGroupSmall;
+  /**
+   * Slice order for `type: "pie"`: `"desc"` (largest first) or `"none"`
+   * (data order). Default: `"none"` — matches `PieChart`'s own default, kept
+   * so an existing spec renders byte-identical wedges. Ignored elsewhere.
+   */
+  sort?: "desc" | "none";
+  /**
+   * Render `type: "pie"` as a half-donut: a 180° arc (top half) with the
+   * centre value slot under the arc instead of in the middle. Default:
+   * false. Ignored elsewhere.
+   */
+  half?: boolean;
+}
+
+// Pie/donut labels, grouping, sort, half preset — RM-114
+
+/** Which facts a pie/donut slice label states, in `label → value → percent` reading order. */
+export type ChartSpecPieLabelField = "label" | "value" | "percent";
+
+/**
+ * Slice labels for `type: "pie"` (RM-114) — the serialisable subset of
+ * `PieChartLabelsConfig` (`../charts/pie-chart.tsx`).
+ */
+export interface ChartSpecPieLabels {
+  /** `"inside"`, `"outside"`, or `"none"`. Default: `"outside"` (`"none"` under 480px). */
+  placement?: "inside" | "outside" | "none";
+  /** Which facts to show. Required — no default reading. */
+  show: ChartSpecPieLabelField[];
+  /** Paint the label in the slice's own color instead of the neutral ink. Default: false. */
+  matchColor?: boolean;
+  /** Hide an inside label whose wedge sweeps under this angle (radians). Default: 0.2. */
+  minAngle?: number;
+}
+
+/**
+ * Fold small `type: "pie"` slices into one "Other" slice (RM-114) — the
+ * serialisable subset of `PieGroupSmallOptions` (`../charts/pie-grouping.ts`).
+ */
+export interface ChartSpecPieGroupSmall {
+  /** Fold a slice under this fraction (0–1) of the total. */
+  threshold?: number;
+  /** Cap the slice count, folding the smallest first. */
+  max?: number;
+  /** The folded slice's label. Default: "Other". */
+  label?: string;
 }
 
 // Axes — RM-108
