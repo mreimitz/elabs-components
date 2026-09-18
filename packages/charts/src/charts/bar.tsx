@@ -60,6 +60,8 @@ type ScaleBand<Domain extends { toString(): string }> = ReturnType<typeof scaleB
 const EMPTY_BAR_TARGETS: ChartDatapointTarget[] = [];
 
 interface BarGeometry {
+  /** RM-113: the segment's `[lo, hi]` value extent when drawn from a stack layout. */
+  extent?: readonly [number, number];
   index: number;
   value: number;
   categoryValue: string;
@@ -177,6 +179,12 @@ const AUTO_LABEL_LINE_FACTOR = 1.3;
 /** `text-chart-value` resolves to the `meta` size (≈ 12 px) — the `"auto"` fit estimate. */
 const AUTO_VALUE_FONT_PX = 12;
 
+// BarChart — RM-113: a stack segment (percent / diverging / ordered /
+// totalled stacks) centres its label whatever the placement, shows its share
+// in a percent stack, and hides it when the segment is shorter than this
+// along the value axis.
+const MIN_SEGMENT_LABEL_LENGTH = 24;
+
 /**
  * Identifies the one "hero" bar `highlightKey` picks out. A string/number is
  * matched against the bar's category value (`==`-free, via `String(…)`); a
@@ -217,6 +225,12 @@ export interface BarProps {
    * negative bar's label is signed with a "−" (U+2212, not a hyphen) glyph.
    * A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than
    * shrinking below `text-meta`. Default: off.
+   *
+   * A {@link BarShowValuesSpec} (RM-110) adds `"auto"` placement and
+   * hover-only visibility. In a stack drawn from a layout (percent, diverging,
+   * ordered or totalled — RM-113) each segment centres its label whatever the
+   * placement, a percent segment prints its share, and a segment shorter than
+   * 24 px along the value axis stays unlabelled.
    */
   showValues?: BarShowValues;
   /**
@@ -400,6 +414,10 @@ const BarInner = memo(function BarInner({
     orientation,
     stacked,
     stackOffsets,
+    stackMode,
+    stackExtents,
+    barColorOf,
+    barCrossInset = 0,
     animationDuration,
     enterTransition,
     revealEpoch = 0,
@@ -457,6 +475,8 @@ const BarInner = memo(function BarInner({
     [data, dataKey],
   );
   const formatValue = useChartValueSetFormatter(seriesValues);
+  // Percent stacks (RM-113) label each segment with its SHARE, one notation.
+  const formatShare = useChartValueSetFormatter(seriesValues, "percent");
 
   const isLegendDimmed = legendHoveredIndex !== null && legendHoveredIndex !== seriesIndex;
 
@@ -469,13 +489,14 @@ const BarInner = memo(function BarInner({
       return 0;
     }
     if (stacked) {
-      // Stacked bars use full band width
-      return bandWidth;
+      // Stacked bars use full band width (less a comparison column's inset).
+      return bandWidth * (1 - 2 * barCrossInset);
     }
     // Leave a gap between grouped bars (controlled by groupGap prop)
     const effectiveGroupGap = seriesCount > 1 ? groupGap : 0;
-    return (bandWidth - effectiveGroupGap * (seriesCount - 1)) / seriesCount;
-  }, [bandWidth, seriesCount, stacked, groupGap]);
+    const usable = bandWidth * (1 - 2 * barCrossInset);
+    return (usable - effectiveGroupGap * (seriesCount - 1)) / seriesCount;
+  }, [bandWidth, barCrossInset, seriesCount, stacked, groupGap]);
 
   // Calculate corner radius based on lineCap. `round` follows the theme's --radius
   // token (resolved to px) so bars square in high decoration and scale
@@ -516,8 +537,33 @@ const BarInner = memo(function BarInner({
       }
 
       const categoryValue = barXAccessor(d);
-      const bandPos = barScale(categoryValue) ?? 0;
+      // A comparison column (RM-113) keeps the band's outer edges; the main
+      // column steps in by `barCrossInset` of the band on each side.
+      const bandPos = (barScale(categoryValue) ?? 0) + bandWidth * barCrossInset;
       const valuePos = scale(value) ?? 0;
+
+      // RM-113 extents layout: the segment IS `[lo, hi]` in value space
+      // (fraction space for percent), mapped through the one value scale.
+      const extent = stackExtents?.get(i)?.get(dataKey);
+      if (extent) {
+        const a = scale(extent[0]) ?? 0;
+        const b = scale(extent[1]) ?? 0;
+        const start = Math.min(a, b);
+        const length = Math.abs(b - a);
+        layout.push({
+          index: i,
+          value,
+          categoryValue,
+          datum: d,
+          x: isHorizontal ? start : bandPos,
+          y: isHorizontal ? bandPos : start,
+          width: isHorizontal ? length : barWidth,
+          height: isHorizontal ? barWidth : length,
+          valuePos: b,
+          extent,
+        });
+        return;
+      }
 
       let x: number;
       let y: number;
@@ -588,6 +634,7 @@ const BarInner = memo(function BarInner({
 
     return layout;
   }, [
+    bandWidth,
     barScale,
     barWidth,
     barXAccessor,
@@ -603,6 +650,8 @@ const BarInner = memo(function BarInner({
     seriesIndex,
     stackGap,
     stackOffsets,
+    stackExtents,
+    barCrossInset,
     stacked,
     valueScale,
   ]);
@@ -665,6 +714,11 @@ const BarInner = memo(function BarInner({
     // Highlight (RM-027): the hero bar draws in --chart-foreground ink;
     // every other bar draws from `restColors` instead of the series fill.
     let barFill = resolvedFill;
+    // colorBy (RM-113): the row's own colour wins over the series fill.
+    const rowColor = isLoadingPhase ? undefined : barColorOf?.(bar.datum);
+    if (rowColor) {
+      barFill = rowColor;
+    }
     if (highlightKey !== undefined && !isLoadingPhase) {
       if (isHeroBar(bar)) {
         barFill = "var(--chart-foreground)";
@@ -678,7 +732,8 @@ const BarInner = memo(function BarInner({
     // - For non-stacked: always apply
     // - For stacked with gap: apply to all bars
     // - For stacked without gap: only apply to the last series
-    const applyRounding = !stacked || stackGap > 0 || isLastSeries;
+    // An extents segment (RM-113) is square: its neighbours butt against it.
+    const applyRounding = !bar.extent && (!stacked || stackGap > 0 || isLastSeries);
     const effectiveRx = applyRounding ? cornerRadius : 0;
     const effectiveRy = applyRounding ? cornerRadius : 0;
 
@@ -693,16 +748,30 @@ const BarInner = memo(function BarInner({
     const settled = useUnitMode || !animate || isLoaded;
     // RM-110: a hover-only spec prints only the hovered bar's value.
     const hoverGate = labelSpec?.visibility !== "hover" || hoveredBarIndex === i;
+    // BarChart — RM-113: a stack segment shorter than MIN_SEGMENT_LABEL_LENGTH
+    // along the value axis stays unlabelled.
+    const segmentFits =
+      !bar.extent || (isHorizontal ? barW : barHeight) >= MIN_SEGMENT_LABEL_LENGTH;
     const showLabel =
-      Boolean(labelMode) && thickness >= MIN_LABEL_BAR_WIDTH && settled && hoverGate;
+      Boolean(labelMode) && thickness >= MIN_LABEL_BAR_WIDTH && settled && hoverGate && segmentFits;
 
     let labelX = 0;
     let labelY = 0;
     let labelAnchor: "start" | "middle" | "end" = "middle";
-    const labelText = isNegative
-      ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
-      : formatValue(bar.value);
-    if (showLabel) {
+    // BarChart — RM-113: a percent-stack segment prints its share.
+    const labelText =
+      bar.extent && stackMode === "percent"
+        ? formatShare(bar.extent[1] - bar.extent[0])
+        : isNegative
+          ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
+          : formatValue(bar.value);
+    if (showLabel && bar.extent) {
+      // BarChart — RM-113: a stack segment's label sits in its middle, whatever
+      // the placement — "outside" would land on the neighbouring segment.
+      labelX = x + barW / 2;
+      labelY = y + barHeight / 2;
+      labelAnchor = "middle";
+    } else if (showLabel) {
       // RM-110 `"auto"`: inside when the label fits within the bar's length.
       const length = isHorizontal ? barW : barHeight;
       const need =

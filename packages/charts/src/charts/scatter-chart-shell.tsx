@@ -20,6 +20,7 @@ import {
   useState,
 } from "react";
 import { DEFAULT_ANIMATION_EASING } from "./animation";
+import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
 import {
   type ChartContextValue,
   ChartProvider,
@@ -378,10 +379,19 @@ export function ScatterChartInner({
   const defsChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  // RM-111: a `ChartAnnotations` child paints ranges under the points, the rest over them.
+  const annotationBackChildren: ReactElement[] = [];
+  const annotationFrontChildren: ReactElement[] = [];
   const yAxisTooltipHint = findYAxisTooltipHint(children);
 
-  Children.forEach(children, (rawChild) => {
+  Children.forEach(children, (rawChild, index) => {
     if (!isValidElement(rawChild)) {
+      return;
+    }
+    const annotationLayers = splitChartAnnotationsChild(rawChild, index);
+    if (annotationLayers) {
+      annotationBackChildren.push(annotationLayers[0]);
+      annotationFrontChildren.push(annotationLayers[1]);
       return;
     }
     // RM-109: threads `<YAxis unit|valueFormat>` into a bare `<ChartTooltip>`
@@ -444,7 +454,9 @@ export function ScatterChartInner({
             >
               <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
 
+              {annotationBackChildren}
               {preOverlayChildren}
+              {annotationFrontChildren}
               {postOverlayChildren}
             </g>
           </svg>

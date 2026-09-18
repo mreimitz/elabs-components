@@ -11,7 +11,7 @@
  *
  * Real render/interaction/a11y is covered by the Storybook stories.
  */
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ── @visx/responsive → fixed 560×288 ─────────────────────────────────────────
@@ -1016,6 +1016,93 @@ describe("AutoChart selection pass-through (RM-073)", () => {
   });
 });
 
+// nulls / curve / symbols — RM-112
+describe("AutoChart nulls/curve/symbols pass-through (RM-112)", () => {
+  const nullsData = [
+    { date: "2024-01-01", revenue: 12000 },
+    { date: "2024-01-02", revenue: 15200 },
+    { date: "2024-01-03", revenue: null },
+    { date: "2024-01-04", revenue: 14100 },
+  ];
+
+  it("spec.nulls reaches the 'line' family and breaks the path at the gap", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{ type: "line", data: nullsData, x: "date", series: ["revenue"], nulls: "gap" }}
+        height={280}
+      />,
+    );
+    const d = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect((d.match(/M/g) ?? []).length).toBe(2);
+  });
+
+  it("spec.nulls reaches the 'area' family and breaks the crest at the gap", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{ type: "area", data: nullsData, x: "date", series: ["revenue"], nulls: "gap" }}
+        height={280}
+      />,
+    );
+    const d = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect((d.match(/M/g) ?? []).length).toBe(2);
+  });
+
+  it("spec.curve reaches every 'line' series", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          curve: "step-after",
+        }}
+        height={280}
+      />,
+    );
+    const stepD = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    const { container: monotoneContainer } = render(
+      <AutoChart
+        spec={{ type: "line", data: temporalData, x: "date", series: ["revenue"] }}
+        height={280}
+      />,
+    );
+    const monotoneD =
+      monotoneContainer.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect(stepD).not.toBe(monotoneD);
+  });
+
+  it("spec.symbols reaches every 'line'/'area' series as hollow markers", () => {
+    const { container: lineContainer } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          symbols: { style: "hollow" },
+        }}
+        height={280}
+      />,
+    );
+    expect(lineContainer.querySelectorAll("circle").length).toBeGreaterThan(0);
+
+    const { container: areaContainer } = render(
+      <AutoChart
+        spec={{
+          type: "area",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          symbols: { style: "hollow" },
+        }}
+        height={280}
+      />,
+    );
+    expect(areaContainer.querySelectorAll("circle").length).toBeGreaterThan(0);
+  });
+});
+
 // A dashboard chart tile is `ChartFrame chrome="tile"` with no plot height: the
 // frame hands its chart "fill", i.e. `height: 100%`. That only resolves when
 // EVERY box from the frame body down to the plot is definite — an auto-height
@@ -1095,5 +1182,41 @@ describe("AutoChart legend vs series end labels", () => {
     expect(legendOf({ ...base, labels: { series: "none" } })).not.toBeNull();
     cleanup();
     expect(legendOf({ ...base, labels: { series: "end" } })).toBeNull();
+  });
+});
+
+// BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.
+describe("AutoChart bar comparison labels", () => {
+  const sales = [
+    { region: "North", now: 40, prev: 22 },
+    { region: "South", now: 18, prev: 27 },
+  ];
+
+  it("paints grey difference labels from labels.comparison and none without it", async () => {
+    const spec: ChartSpec = {
+      type: "bar",
+      data: sales,
+      x: "region",
+      series: ["now"],
+      comparison: { key: "prev" },
+    };
+    const { container } = render(
+      <AutoChart spec={{ ...spec, labels: { comparison: "difference" } }} />,
+    );
+    // The labels wait for the bars' enter animation to settle.
+    await waitFor(
+      () => {
+        const labels = [
+          ...container.querySelectorAll('[data-slot="bar-chart-comparison-label"]'),
+        ].map((label) => label.textContent);
+        expect(labels).toEqual(["+18", "−9"]);
+      },
+      { timeout: 3000 },
+    );
+    cleanup();
+    const plain = render(<AutoChart spec={spec} />);
+    expect(
+      plain.container.querySelectorAll('[data-slot="bar-chart-comparison-label"]'),
+    ).toHaveLength(0);
   });
 });

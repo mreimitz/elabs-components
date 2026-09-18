@@ -25,6 +25,10 @@ import type { ScatterLabels } from "../charts/labels/point-labels";
 import { hasDisplayName, resolveSeriesLabelMode } from "../charts/labels/use-chart-labels";
 import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
+import { AnnotationKey } from "../charts/annotations/annotation-key";
+import { AnnotationLayoutProvider } from "../charts/annotations/annotation-layout-context";
+import { withAnnotationDescription } from "../charts/annotations/annotation-types";
+import { ChartAnnotations } from "../charts/annotations/chart-annotations";
 import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
 import type { ChartHoverCategory } from "../charts/chart-hover-link";
 import type { ChartSelectionStatesResolver } from "../charts/chart-selection";
@@ -359,6 +363,15 @@ function resolveAxisSpecProps(
   };
 }
 
+// Annotations — RM-111
+/** The spec's annotation layer, for a container that publishes cartesian scales. */
+function annotationLayer(spec: ChartSpec): ReactNode {
+  return spec.annotations?.length ? <ChartAnnotations annotations={spec.annotations} /> : null;
+}
+
+/** Families whose container paints `ChartSpec.annotations` (the cartesian chart context). */
+const ANNOTATED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "stream", "bar"]);
+
 function renderChart(
   type: ChartType,
   spec: ChartSpec,
@@ -381,7 +394,7 @@ function renderChart(
   copyValueOnActivate: boolean,
   links: AutoChartLinkProps = {},
 ): ReactNode {
-  const { x, stacked, orientation, donut } = spec;
+  const { x, stacked, orientation, donut, nulls, curve, symbols } = spec;
   const axisProps = resolveAxisSpecProps(spec.axes, orientation === "horizontal");
   // Unit and distribution charts size themselves from their data; a numeric
   // plot height still fixes their box, as the deprecated `height` did.
@@ -396,9 +409,10 @@ function renderChart(
         <LineChart
           data={timeData}
           xDataKey={x}
+          nulls={nulls}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -409,9 +423,11 @@ function renderChart(
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
             <Line
-              key={s.key}
+              curve={curve}
               dataKey={s.key}
+              key={s.key}
               stroke={s.color}
+              symbols={symbols}
               // Labels — RM-110
               name={s.label}
               seriesLabel={spec.labels?.series}
@@ -420,6 +436,7 @@ function renderChart(
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
+          {annotationLayer(spec)}
           <ChartTooltip />
         </LineChart>
       );
@@ -436,10 +453,11 @@ function renderChart(
         <AreaChart
           data={timeData}
           xDataKey={x}
+          nulls={nulls}
           offset={type === "stream" ? "wiggle" : stacked ? "none" : undefined}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -450,10 +468,12 @@ function renderChart(
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
             <Area
-              key={s.key}
+              curve={curve}
               dataKey={s.key}
-              stroke={s.color}
               fill={s.color}
+              key={s.key}
+              stroke={s.color}
+              symbols={symbols}
               // Labels — RM-110
               name={s.label}
               seriesLabel={spec.labels?.series}
@@ -462,6 +482,7 @@ function renderChart(
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
+          {annotationLayer(spec)}
           <ChartTooltip />
         </AreaChart>
       );
@@ -482,8 +503,10 @@ function renderChart(
           stacked={stacked ?? false}
           orientation={orientation ?? "vertical"}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
+          // BarChart — RM-113
+          {...barRichnessProps(spec)}
         >
           {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
           <Grid horizontal={!isHorizontal} mode={axisProps.gridMode} vertical={isHorizontal} />
@@ -501,7 +524,11 @@ function renderChart(
             plot x-pixels vertically. The bottom value axis a horizontal bar
             chart wants is its own component; tracked separately.
           */}
-          {isHorizontal ? null : <YAxis formatValue={yFormat} {...axisProps.y} />}
+          {isHorizontal ? null : (
+            // A percent stack's axis is in fraction space: let BarChart format it.
+            <YAxis formatValue={stacked === "percent" ? undefined : yFormat} {...axisProps.y} />
+          )}
+          {annotationLayer(spec)}
           <ChartTooltip />
         </BarChart>
       );
@@ -742,6 +769,7 @@ function renderChart(
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
+          annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
           // WaterfallChart types its handler on its own `WaterfallStep` datum; the spec-driven
           // link is family-agnostic, so it is cast the same way `WaterfallChart` itself casts
@@ -771,6 +799,7 @@ function renderChart(
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
+          annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
         />
       );
@@ -883,6 +912,33 @@ function renderChart(
     //    value labels are what separates it from `bar`: the crossing is the
     //    story, so each bar states which side of zero it landed on.
     case "diverging-bar": {
+      // RM-113: a named middle series makes this a Likert stack, every
+      // series centred on the neutral one.
+      if (stacked === "diverging" && series.length >= 2) {
+        return (
+          <BarChart
+            plotHeight={plotHeight}
+            dimExcluded={links.dimExcluded}
+            selectionStates={links.selectionStates}
+            onDatapointClick={links.onDatapointClick}
+            data={resolvedData}
+            xDataKey={x}
+            orientation="horizontal"
+            accessibleLabel={spec.title}
+            accessibleDescription={spec.description}
+            copyValueOnActivate={copyValueOnActivate}
+            {...barRichnessProps(spec)}
+            stacked="diverging"
+          >
+            <Grid mode={axisProps.gridMode} vertical />
+            {series.map((s) => (
+              <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="butt" />
+            ))}
+            <BarYAxis />
+            <ChartTooltip />
+          </BarChart>
+        );
+      }
       const valueKey = series[0]?.key ?? "";
       const color = series[0]?.color ?? "var(--chart-1)";
       return (
@@ -1267,6 +1323,18 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     );
   }
 
+  // The `try/catch` above only covers errors thrown while BUILDING this
+  // element tree; an error thrown once React actually renders/commits one
+  // of these chart containers only a class boundary can catch (see
+  // `AutoChartErrorBoundary`'s doc comment) — without it, that error would
+  // escape AutoChart's documented "never throws" contract.
+  const chartBody = (
+    <AutoChartErrorBoundary
+      fallback={<ChartFallback message="Unable to display this chart" style={fallbackStyle} />}
+    >
+      {fillsFrame ? <div className="min-h-0 flex-1">{chartNode}</div> : chartNode}
+    </AutoChartErrorBoundary>
+  );
   return (
     <div
       ref={ref}
@@ -1274,19 +1342,33 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       {...props}
     >
       {title ? <p className="mb-1 text-subtitle text-foreground">{title}</p> : null}
-      {/*
-       * The `try/catch` above only covers errors thrown while BUILDING this
-       * element tree; an error thrown once React actually renders/commits one
-       * of these chart containers only a class boundary can catch (see
-       * `AutoChartErrorBoundary`'s doc comment) — without it, that error would
-       * escape AutoChart's documented "never throws" contract.
-       */}
-      <AutoChartErrorBoundary
-        fallback={<ChartFallback message="Unable to display this chart" style={fallbackStyle} />}
-      >
-        {fillsFrame ? <div className="min-h-0 flex-1">{chartNode}</div> : chartNode}
-      </AutoChartErrorBoundary>
+      {spec.annotations?.length && ANNOTATED_CHART_TYPES.has(type) ? (
+        // Annotations — RM-111: one layout scope for the plot and its key, so
+        // the key lists the notes the layer had to demote to a marker.
+        <AnnotationLayoutProvider>
+          {chartBody}
+          <AnnotationKey annotations={spec.annotations} />
+        </AnnotationLayoutProvider>
+      ) : (
+        chartBody
+      )}
       {showLegend ? <AutoLegend series={legendItems} /> : null}
     </div>
   );
 });
+
+// BarChart — RM-113
+/** The `ChartSpec` bar-richness fields, as `BarChart` props (unset stays unset). */
+function barRichnessProps(spec: ChartSpec) {
+  return {
+    divergingCenter: spec.divergingCenter,
+    sort: spec.sort,
+    groupBy: spec.groupBy,
+    colorBy: spec.colorBy,
+    overlays: spec.overlays,
+    comparison: spec.comparison
+      ? { key: spec.comparison.key, label: spec.comparison.label }
+      : undefined,
+    comparisonLabel: spec.labels?.comparison,
+  };
+}

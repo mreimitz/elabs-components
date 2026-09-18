@@ -9,10 +9,17 @@
 import type { Responsive } from "../charts/chart-breakpoint";
 import type { ChartValueLabels, SeriesLabelMode } from "../charts/labels/use-chart-labels";
 import type { ChartValueFormat } from "../charts/value-format";
+import type { ChartSpecAnnotation } from "../charts/annotations/annotation-types";
+import type { CurveAlias } from "../charts/curve-types";
 import type { DateFormatPreset } from "../charts/date-format";
+import type { SeriesSymbolsSpec } from "../charts/series-markers";
+import type { NullsMode } from "../charts/time-series-chart-shell";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
 import type { SeriesMarkerShape } from "../charts/series-pattern";
 import type { ScatterShapeSpec } from "../charts/custom-shapes";
+import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/bar-overlays";
+import type { BarSort } from "../charts/bar-stacking";
+import type { ChartColorBy } from "../charts/chart-context";
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -194,8 +201,34 @@ export interface ChartSpec {
   /** Supplemental description for screen readers (e.g. "Revenue 2024, 3 series"). */
   description?: string;
 
-  /** Stack bars/areas instead of grouping them. Default: false */
-  stacked?: boolean;
+  /**
+   * Stack bars/areas instead of grouping them. Bars also take `"percent"`
+   * (each category normalised to 100 %) and `"diverging"` (Likert rows
+   * centred on `divergingCenter`) — RM-113. Default: false
+   */
+  stacked?: boolean | "percent" | "diverging";
+
+  /**
+   * How a `"line"`/`"area"`/`"stream"` chart draws a non-numeric sample
+   * (RM-112). Applies to every series — the same container-level default
+   * `LineChart`/`AreaChart nulls` read. Default: `"gap"` (a visible break,
+   * never a silent zero).
+   */
+  nulls?: NullsMode;
+
+  /**
+   * Curve interpolation for every series of a `"line"`/`"area"`/`"stream"`
+   * chart (RM-112) — a named `@visx/curve` alias. Default: `"monotone"` —
+   * unlike `"natural"`, it never overshoots past a flat run of equal values.
+   */
+  curve?: CurveAlias;
+
+  /**
+   * Point markers for every series of a `"line"`/`"area"`/`"stream"` chart
+   * (RM-112) — same shape and resolution rule as `Line`/`Area`'s own
+   * `symbols` prop. Unset (default): no markers.
+   */
+  symbols?: SeriesSymbolsSpec;
 
   /** Bar/funnel orientation. Default: "vertical" for bars. */
   orientation?: "vertical" | "horizontal";
@@ -269,6 +302,23 @@ export interface ChartSpec {
   // Labels — RM-110
   /** Series end labels / key fallback, automatic value labels and scatter point labels (RM-110) — see {@link ChartLabelsSpec}. */
   labels?: ChartLabelsSpec;
+  // Annotations — RM-111
+  /** Text notes, ranges, reference lines and row notes in data units (RM-111) — see {@link ChartSpecAnnotation}. */
+  annotations?: ChartSpecAnnotation[];
+
+  // BarChart — RM-113
+  /** `stacked: "diverging"`: the series centred on the zero line (a Likert "Neutral"). */
+  divergingCenter?: string;
+  /** Bar row order: `"asc"`/`"desc"` by value (stack total when stacked) or `{ by, dir }`. */
+  sort?: BarSort;
+  /** Gather bar rows by this column, with a header per group. */
+  groupBy?: string;
+  /** Colour bars by another column (categorical ≤ 6 hues, or a sequential / diverging ramp). */
+  colorBy?: ChartColorBy;
+  /** Per-bar value markers and range spans (confidence intervals, targets). */
+  overlays?: BarOverlay[];
+  /** A muted prior-period column behind each bar; `labels.comparison` picks its grey label. */
+  comparison?: BarComparison;
 }
 
 // Labels — RM-110
@@ -283,6 +333,10 @@ export interface ChartLabelsSpec {
   values?: ChartValueLabels;
   /** scatter: point labels — `key` is the row field holding the text; `mode` `"auto"` (default) | `"all"`; `priorityKey` a numeric row field (higher survives). */
   points?: { key: string; mode?: "auto" | "all"; priorityKey?: string };
+
+  // BarChart — RM-113
+  /** bar: the grey label on each `comparison` column — `"value"` | `"difference"` | `"none"` (default). */
+  comparison?: BarComparisonLabel;
 }
 
 // Axes — RM-108
