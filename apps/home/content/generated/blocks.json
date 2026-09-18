@@ -1,5 +1,24 @@
 [
   {
+    "name": "agent-ops-parts",
+    "title": "Agent Ops — shared parts",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "agent-trace-waterfall-01",
+    "title": "Agent Trace — Where did the run spend its time, and where did it fail?",
+    "categories": ["agent-ops"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "ai-chart",
     "title": "AI chart in conversation",
     "categories": [],
@@ -36,6 +55,13 @@
       "lucide-react"
     ],
     "archetype": "dashboard"
+  },
+  {
+    "name": "audit-log-01",
+    "title": "Audit Log — Who did what, and did it apply?",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
   },
   {
     "name": "chart-card-kpi-01",
@@ -174,6 +200,27 @@
     "archetype": "dashboard"
   },
   {
+    "name": "decision-record-01",
+    "title": "Decision Record — Why did the AI do that?",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "escalation-boundary-01",
+    "title": "Escalation Boundary — Where does autonomy end?",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "finding-cards-01",
+    "title": "Finding Cards — What did the copilot find?",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "flow-builder",
     "title": "Flow builder",
     "categories": [],
@@ -203,6 +250,13 @@
     "title": "Form Wizard — checkout flow",
     "categories": [],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "handoff-inspector-01",
+    "title": "Handoff Inspector — Where was the context dropped?",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
   },
   {
@@ -297,6 +351,13 @@
     "archetype": "dashboard"
   },
   {
+    "name": "insight-feed-01",
+    "title": "Insight Feed — What changed while you were away?",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "integration-grid-01",
     "title": "Integration Grid",
     "categories": [],
@@ -388,6 +449,13 @@
     "archetype": "dashboard"
   },
   {
+    "name": "kpi-provenance-strip-01",
+    "title": "KPI Cards — Where does this number come from?",
+    "categories": ["agent-ops", "kpi-card"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "kpi-ratio-unit-01",
     "title": "KPI Cards — How big is it?",
     "categories": ["kpi-card"],
@@ -463,6 +531,20 @@
     "archetype": "process-explorer"
   },
   {
+    "name": "provenance-record-01",
+    "title": "Provenance Record — Where did each field come from?",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "score-explanation-01",
+    "title": "Score Explanation — Why is the score 91?",
+    "categories": ["agent-ops", "kpi-card"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "sidebar-02",
     "title": "App shell — dashboard inset",
     "categories": ["sidebar", "app-shell"],
@@ -500,6 +582,13 @@
       "lucide-react"
     ],
     "archetype": "marketing"
+  },
+  {
+    "name": "spend-against-limit-01",
+    "title": "Spend Against Limit — How close is each agent to its ceiling?",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
   },
   {
     "name": "stat-card-area-01",
@@ -589,6 +678,13 @@
       "@elabs-ai/components-tokens",
       "@elabs-ai/components-ui"
     ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "verdict-side-by-side-01",
+    "title": "Verdict — Keep this, cancel that?",
+    "categories": ["agent-ops"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
     "archetype": "ai-assistant"
   }
 ]

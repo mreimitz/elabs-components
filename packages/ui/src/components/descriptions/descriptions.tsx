@@ -18,11 +18,29 @@ const descriptionsVariants = cva("grid gap-x-6 gap-y-3 text-body", {
 
 type DescriptionsLayout = "horizontal" | "vertical";
 
+/**
+ * The label column's share of a `horizontal` item. Static class names, never
+ * a computed `w-[…]`, so Tailwind can see them. `"1/3"` is the default and
+ * the historical render; `"1/4"`/`"1/5"` suit a record whose labels are
+ * short ("What it did", "Owner") and whose values are sentences.
+ */
+export type DescriptionsLabelWidth = "1/3" | "1/4" | "1/5";
+
+const LABEL_WIDTH_CLASS: Record<DescriptionsLabelWidth, string> = {
+  "1/3": "w-1/3",
+  "1/4": "w-1/4",
+  "1/5": "w-1/5",
+};
+
 interface DescriptionsContextValue {
   layout: DescriptionsLayout;
+  labelWidth: DescriptionsLabelWidth;
 }
 
-const DescriptionsContext = createContext<DescriptionsContextValue>({ layout: "horizontal" });
+const DescriptionsContext = createContext<DescriptionsContextValue>({
+  layout: "horizontal",
+  labelWidth: "1/3",
+});
 
 export interface DescriptionsProps
   extends HTMLAttributes<HTMLDListElement>, VariantProps<typeof descriptionsVariants> {
@@ -36,6 +54,11 @@ export interface DescriptionsProps
    * label above the value. Default `horizontal`.
    */
   layout?: DescriptionsLayout;
+  /**
+   * Width of the label column in the `horizontal` layout, as a share of the
+   * item. Default `"1/3"`. Ignored by `vertical`.
+   */
+  labelWidth?: DescriptionsLabelWidth;
 }
 
 /**
@@ -45,11 +68,11 @@ export interface DescriptionsProps
  * `columns` controls the grid; `layout` controls label placement per item.
  */
 export const Descriptions = forwardRef<HTMLDListElement, DescriptionsProps>(function Descriptions(
-  { columns = 1, layout = "horizontal", className, children, ...props },
+  { columns = 1, layout = "horizontal", labelWidth = "1/3", className, children, ...props },
   ref,
 ) {
   return (
-    <DescriptionsContext value={{ layout }}>
+    <DescriptionsContext value={{ layout, labelWidth }}>
       <dl ref={ref} className={cn(descriptionsVariants({ columns }), className)} {...props}>
         {children}
       </dl>
@@ -72,7 +95,7 @@ export interface DescriptionsItemProps extends HTMLAttributes<HTMLDivElement> {
  */
 export const DescriptionsItem = forwardRef<HTMLDivElement, DescriptionsItemProps>(
   function DescriptionsItem({ label, numeric, className, children, ...props }, ref) {
-    const { layout } = use(DescriptionsContext);
+    const { layout, labelWidth } = use(DescriptionsContext);
     return (
       <div
         ref={ref}
@@ -83,7 +106,12 @@ export const DescriptionsItem = forwardRef<HTMLDivElement, DescriptionsItemProps
         )}
         {...props}
       >
-        <dt className={cn("text-muted-foreground", layout === "horizontal" && "w-1/3 shrink-0")}>
+        <dt
+          className={cn(
+            "text-muted-foreground",
+            layout === "horizontal" && cn(LABEL_WIDTH_CLASS[labelWidth], "shrink-0"),
+          )}
+        >
           {label}
         </dt>
         <dd className={cn("min-w-0 break-words text-foreground", numeric && "tabular-nums")}>

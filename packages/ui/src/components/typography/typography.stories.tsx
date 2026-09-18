@@ -51,8 +51,10 @@ export const TextVariants: Story = {
       <Text variant="lead">Lead — a lead paragraph: the subtitle rung at body weight.</Text>
       <Text variant="body">Body — default reading text for app surfaces.</Text>
       <Text variant="caption">Caption — secondary / supporting body.</Text>
-      <Text variant="meta">Meta — metadata, eyebrows, timestamps.</Text>
+      <Text variant="meta">Meta — metadata, timestamps.</Text>
+      <Text variant="eyebrow">Eyebrow — an uppercase tracked label</Text>
       <Text variant="kpi">12,480</Text>
+      <Text variant="kpi-sm">1,284 — kpi-sm, a tile or satellite value</Text>
       <Text variant="code">pnpm --filter @elabs-ai/components-ui test</Text>
     </div>
   ),
@@ -84,6 +86,9 @@ export const Headings: Story = {
 export const HeadingSizeOverride: Story = {
   render: () => (
     <div className="space-y-3">
+      <Heading level={1} size="display-lg">
+        An h1 that reads as display-lg — a hero or deck headline
+      </Heading>
       <Heading level={2} size="display">
         An h2 that reads as display
       </Heading>

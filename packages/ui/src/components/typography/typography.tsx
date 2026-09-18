@@ -27,6 +27,8 @@ export const TEXT_ROLE_REM = {
   meta: 0.75,
   kpi: 2,
   code: 0.8125,
+  "kpi-sm": 1.5,
+  "display-lg": 3,
 } as const;
 
 export type TextRole = keyof typeof TEXT_ROLE_REM;
@@ -41,6 +43,10 @@ export const textVariants = cva("", {
       meta: "text-meta",
       /** KPI values pair with tabular figures (interaction-guidelines). */
       kpi: "text-kpi tabular-nums",
+      /** A tile/satellite value — the rung between title and kpi. */
+      "kpi-sm": "text-kpi-sm tabular-nums",
+      /** An uppercase tracked label above a title or a column header. */
+      eyebrow: "text-eyebrow uppercase",
       /** Inline/block code pairs with the `--font-mono` seam. */
       code: "text-code font-mono",
     },
@@ -79,6 +85,8 @@ export const headingVariants = cva("text-balance text-foreground", {
   variants: {
     size: {
       /** display + title carry the `--font-display` brand seam (research 07 §E.5). */
+      /** A hero/deck headline — the rung above display. */
+      "display-lg": "font-display text-display-lg",
       display: "font-display text-display",
       title: "font-display text-title",
       subtitle: "text-subtitle",

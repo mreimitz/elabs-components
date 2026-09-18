@@ -2740,7 +2740,7 @@
             },
             "size": {
               "default": "title",
-              "enum": ["display", "title", "subtitle"]
+              "enum": ["display-lg", "display", "title", "subtitle"]
             }
           },
           "additionalProperties": false
@@ -5263,7 +5263,7 @@
             },
             "variant": {
               "default": "body",
-              "enum": ["lead", "body", "caption", "meta", "kpi", "code"]
+              "enum": ["lead", "body", "caption", "meta", "kpi", "kpi-sm", "eyebrow", "code"]
             }
           },
           "additionalProperties": false

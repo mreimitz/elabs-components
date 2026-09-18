@@ -196,7 +196,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - FileUploadList
 - FilterChip
 - FirstRunIllustration
-- Heading (size=display|title*|subtitle)
+- Heading (size=display-lg|display|title*|subtitle)
 - HoverCard
 - HoverCardContent
 - HoverCardTrigger
@@ -252,6 +252,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - MenubarSubContent
 - MenubarSubTrigger
 - MenubarTrigger
+- Meter (size=xs|sm*|md)
 - MetricCard — Single KPI tile — label, value, delta/trend.
   - avoid: Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.
   - avoid: Encoding up/down by color alone — pair with an arrow/sign.
@@ -414,7 +415,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - TabsTrigger (variant=segmented*|underline)
 - TagInput
 - TeamSwitcher
-- Text (variant=lead|body*|caption|meta|kpi|code · tone=default*|muted|primary)
+- Text (variant=lead|body*|caption|meta|kpi|kpi-sm|eyebrow|code · tone=default*|muted|primary)
 - TEXT_ROLE_REM
 - Textarea
 - ThemeFamilySwitch

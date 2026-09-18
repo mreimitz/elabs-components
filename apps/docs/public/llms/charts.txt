@@ -282,6 +282,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - RadarLabels
 - RadarProvider
 - RadialGradient
+- ReferenceLine
 - Ring
 - RingCenter
 - RingChart

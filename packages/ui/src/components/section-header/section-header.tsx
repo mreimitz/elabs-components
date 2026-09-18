@@ -34,9 +34,7 @@ export function SectionHeader({
     <div className={cn("flex flex-wrap items-end justify-between gap-4", className)}>
       <div className="space-y-1">
         {eyebrow ? (
-          <div className="text-meta font-medium uppercase tracking-wide text-muted-foreground">
-            {eyebrow}
-          </div>
+          <div className="text-eyebrow uppercase text-muted-foreground">{eyebrow}</div>
         ) : null}
         <TitleTag className="text-title text-foreground">{title}</TitleTag>
         {description ? <p className="text-body text-muted-foreground">{description}</p> : null}

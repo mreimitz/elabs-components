@@ -169,6 +169,7 @@ export {
 } from "./generate-chart-skeleton-data";
 // Shared chart elements
 export { Grid, type GridProps } from "./grid";
+export { ReferenceLine, type ReferenceLineProps } from "./reference-line";
 // Composable legend components
 export {
   Legend,

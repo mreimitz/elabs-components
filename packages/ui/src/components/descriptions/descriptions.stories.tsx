@@ -32,6 +32,12 @@ export const Default: Story = {
   render: (args) => <Descriptions {...args}>{items}</Descriptions>,
 };
 
+/** Short labels beside sentence-long values earn a narrower label column. */
+export const NarrowLabels: Story = {
+  args: { columns: 1, layout: "horizontal", labelWidth: "1/5" },
+  render: (args) => <Descriptions {...args}>{items}</Descriptions>,
+};
+
 export const TwoColumns: Story = {
   args: { columns: 2, layout: "horizontal" },
   render: (args) => <Descriptions {...args}>{items}</Descriptions>,
