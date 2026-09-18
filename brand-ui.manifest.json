@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T15:29:56.099Z",
+  "generatedAt": "2026-09-18T16:39:14.738Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13322,6 +13322,16 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "CHART_BREAKPOINT_THRESHOLDS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
+          "name": "CHART_BREAKPOINTS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "CHART_CLIP_PASSTHROUGH",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-child-passthrough.ts"
@@ -13530,6 +13540,11 @@
           "name": "DEFAULT_CHART_LIFECYCLE",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "DEFAULT_CHART_PLOT_HEIGHT",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "DEFAULT_CHART_STATUS",
@@ -14254,6 +14269,11 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "useChartBreakpoint",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "useChartConfig",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-config-context.tsx"
@@ -14377,6 +14397,11 @@
           "name": "useResolvedRadiusOf",
           "kind": "value",
           "module": "packages/charts/src/charts/use-resolved-radius.ts"
+        },
+        {
+          "name": "useResponsiveValue",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "useRing",
@@ -14539,6 +14564,10 @@
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
         },
         {
+          "name": "ChartBreakpoint",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "ChartBrushLayoutProps",
           "module": "packages/charts/src/charts/chart-brush-layout.tsx"
         },
@@ -14677,6 +14706,10 @@
         {
           "name": "ChartPhase",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "ChartPlotHeight",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "ChartRevealClipProps",
@@ -15459,6 +15492,14 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "Responsive",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
+          "name": "ResponsiveByBreakpoint",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "RingCenterProps",
           "module": "packages/charts/src/charts/ring-center.tsx"
         },
@@ -15785,6 +15826,10 @@
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
+          "name": "breakpointForWidth",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "bucketIndexOf",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
@@ -16109,6 +16154,10 @@
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
+          "name": "isResponsiveByBreakpoint",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "isTemporalField",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
@@ -16229,6 +16278,10 @@
           "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
+          "name": "resolveDensityForBreakpoint",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "resolveEntityLineStyle",
           "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
@@ -16271,6 +16324,10 @@
         {
           "name": "resolveProfitLossTooltipLabel",
           "module": "packages/charts/src/charts/profit-loss-line.tsx"
+        },
+        {
+          "name": "resolveResponsive",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "resolveRestingChartPhase",
@@ -16648,6 +16705,12 @@
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string",
@@ -16858,10 +16921,16 @@
               "description": "The serializable chart specification produced by an LLM tool-call. `spec.type` is optional; omit it and the data shape decides (see `explainChartType`). The full `ChartType` union AutoChart renders is: `line` | `area` | `bar` | `pie` | `scatter` | `radar` | `funnel` | `candlestick` | `heatmap` | `calendar` | `waterfall` | `dumbbell` | `unit` | `treemap` | `histogram` | `box` | `strip` | `bump` | `stream` | `diverging-bar`. Anything else — including `network`, `parallel`, `tree` and `sankey`, which stay explicit-container-only — renders `ChartFallback` instead. That list is not hand-kept prose: `auto-chart.test.tsx` parses it back out of this comment and asserts it equals `CHART_TYPES`, so a type added to the union without being documented here fails the suite."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "Height of the drawing area only; the title and legend stack around it. A number of pixels, `{ aspect }` (width / height), or a per-breakpoint `{ base, medium?, narrow? }`. Default: the chart family's own default (`{ aspect: 2 }` wide, `{ aspect: 1.25 }` narrow for the 2:1 families)."
+            },
+            {
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "Chart body height in pixels. Default: 280"
+              "description": "@deprecated Use `plotHeight`. Removed in 5.0.0. Until then it is read as `plotHeight` and logs one development warning per page."
             },
             {
               "name": "loading",
@@ -17072,6 +17141,12 @@
               "optional": true,
               "type": "string",
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
             },
             {
               "name": "className",
@@ -17399,6 +17474,12 @@
               "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string"
@@ -17514,6 +17595,12 @@
               "optional": true,
               "type": "string",
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
             },
             {
               "name": "className",
@@ -17794,7 +17881,7 @@
             {
               "name": "value",
               "optional": true,
-              "type": "Partial<Omit<ChartConfigValue, \"interactions\">> & { interactions?: ChartInteractions }",
+              "type": "Partial<Omit<ChartConfigValue, \"interactions\" | \"density\" | \"densityByBreakpoint\">> & { interactions?: ChartInteractions; /** * Furniture tier, optionally per breakpoint. An explicit `narrow` entry * (`{ base: \"md\", narrow: \"md\" }`) keeps the legend and value axis on a * narrow chart — the per-chart escape hatch from the narrow → `sm` coupling. */ density?: Responsive<ChartDensity>; }",
               "description": "Partial overrides. `interactions` may itself be partial — missing keys keep their defaults (`edit: false`, the rest `true`)."
             },
             {
@@ -17891,10 +17978,16 @@
               "description": "Which toolbar controls to show. Defaults to all five. `table` and `download` are automatically hidden when `data` is absent/empty; `export-svg`/`export-png` are automatically hidden when the chart body has no `<svg>` (a non-chart placeholder, or the flipped-to-table view)."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The chart's own drawing height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. The title, legend, notes and source row are added AROUND it, so the frame is as tall as its content. Unset: the chart's family default (2 : 1, and 1.25 : 1 when narrow, for line/bar/…). With `chrome=\"tile\"` and neither `plotHeight` nor `height`, the chart fills the tile's remaining height instead (#444). `plotHeight={260}` keeps the pre-ADR-0039 look of a card."
+            },
+            {
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "Inline body height in px. Defaults to 260 for `chrome=\"card\"`/`\"bare\"`. With `chrome=\"tile\"` and no `height`, the frame fills its host instead (`h-full` flex column, chart body takes the space left after header and source row) — the host tile sets the height (#444)."
+              "description": "@deprecated Use `plotHeight` — it sets the chart's own height, and the title, legend and notes are added around it. `height={n}` is now an alias for `plotHeight={n}` (it no longer fixes the body); removed in 5.0.0."
             },
             {
               "name": "loading",
@@ -17959,8 +18052,8 @@
             {
               "name": "density",
               "optional": true,
-              "type": "ChartDensity",
-              "description": "Furniture tier (`\"xs\" | \"sm\" | \"md\" | \"lg\"`, default `\"md\"`). Forwarded to every chart family through `useChartConfig()`; the frame itself drops `description` and the source row at `xs` and clamps the title to one line at `xs`/`sm`."
+              "type": "Responsive<ChartDensity>",
+              "description": "Furniture tier (`\"xs\" | \"sm\" | \"md\" | \"lg\"`, default `\"md\"`). Forwarded to every chart family through `useChartConfig()`; the frame itself drops `description` and the source row at `xs` and clamps the title to one line at `xs`/`sm`. Optionally per breakpoint (ADR 0039): inside a `narrow` chart `md`/`lg` become `sm` unless an explicit `narrow` entry says otherwise (`{ base: \"md\", narrow: \"md\" }` keeps the legend and value axis)."
             },
             {
               "name": "children",
@@ -18283,6 +18376,12 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
             },
             {
               "name": "className",
@@ -18620,6 +18719,12 @@
               "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string"
@@ -18670,6 +18775,12 @@
               "name": "style",
               "optional": true,
               "type": "CSSProperties"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint."
             },
             {
               "name": "showPercentage",
@@ -19585,6 +19696,12 @@
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\". Omit to fill a sized parent."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string",
@@ -20145,6 +20262,12 @@
               "description": "Aspect ratio as \"width / height\". Default `\"16 / 9\"`."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "accessibleLabel",
               "optional": true,
               "type": "ChartA11yProps[\"accessibleLabel\"]",
@@ -20287,6 +20410,12 @@
               "optional": true,
               "type": "number",
               "description": "Chart size in pixels. If not provided, uses parent container size"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint."
             },
             {
               "name": "innerRadius",
@@ -20628,6 +20757,12 @@
               "description": "Chart size in pixels. If not provided, uses parent container size"
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint."
+            },
+            {
               "name": "levels",
               "optional": true,
               "type": "number",
@@ -20889,6 +21024,12 @@
               "description": "Chart size in pixels. If not provided, uses parent container size"
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint."
+            },
+            {
               "name": "strokeWidth",
               "optional": true,
               "type": "number",
@@ -21127,6 +21268,12 @@
               "optional": true,
               "type": "string",
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
             },
             {
               "name": "className",
@@ -21580,10 +21727,16 @@
               "description": "The one or two steps that actually explain the bridge, named directly on the chart (see {@link WaterfallCallout}). Default: none."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Default: 2 : 1, and 1.25 : 1 when narrow."
+            },
+            {
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "Fixed pixel height. Omit to size by `aspectRatio` (2 / 1), like the rest of the bar family."
+              "description": "@deprecated Use `plotHeight` (`height={n}` is an alias for `plotHeight={n}`); removed in 5.0.0."
             },
             {
               "name": "margin",

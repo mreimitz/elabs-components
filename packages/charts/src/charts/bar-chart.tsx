@@ -66,6 +66,12 @@ import {
   normalizeYAxisId,
   wrapSingleYScale,
 } from "./y-axis-scales";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+} from "./chart-breakpoint";
 
 export type BarOrientation = "vertical" | "horizontal";
 
@@ -95,6 +101,11 @@ export interface BarChartProps extends ChartSelectionProps {
   replayOnClick?: boolean;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
   /** Loading vs ready — shows skeleton chrome + placeholder bars while `"loading"`. Default: `"ready"`. */
@@ -1103,7 +1114,8 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
     revealSignature,
     revealOn,
     replayOnClick,
-    aspectRatio = "2 / 1",
+    aspectRatio,
+    plotHeight,
     className = "",
     status = DEFAULT_CHART_STATUS,
     loadingLabel,
@@ -1163,13 +1175,13 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
   const showLoadingLabel = Boolean(loadingLabel?.trim() && chartPhase === "loading");
 
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
-      style={{ aspectRatio }}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -1209,7 +1221,7 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
         </ParentSize>
       </ChartSelectionProvider>
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}
-    </div>
+    </ChartPlotRoot>
   );
 });
 

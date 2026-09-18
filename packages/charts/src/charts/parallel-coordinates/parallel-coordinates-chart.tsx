@@ -86,6 +86,12 @@ import {
 import { ChartTooltipBox } from "../tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content";
 import type { ChartValueFormat } from "../value-format";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+} from "../chart-breakpoint";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -134,6 +140,11 @@ export interface ParallelCoordinatesChartProps extends ChartInteractionProps {
   margin?: Partial<Margin>;
   /** Aspect ratio as `"width / height"`. Default `"2 / 1"`. */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   className?: string;
   /** Accessible name for the chart region (announces to AT on focus). */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
@@ -802,7 +813,8 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
       showExtremes = false,
       palette,
       margin: marginProp,
-      aspectRatio = "2 / 1",
+      aspectRatio,
+      plotHeight,
       className,
       accessibleLabel,
       accessibleDescription,
@@ -849,14 +861,15 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
     const height = bounds.height ?? 0;
 
     return (
-      <div
+      <ChartPlotRoot
+        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative w-full", className)}
         data-slot="parallel-coordinates-chart"
         ref={setContainerRef}
         role={role}
-        style={{ aspectRatio, touchAction: "none" }}
+        style={{ touchAction: "none" }}
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -878,7 +891,7 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
             width={width}
           />
         ) : null}
-      </div>
+      </ChartPlotRoot>
     );
   },
 );

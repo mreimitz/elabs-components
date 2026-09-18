@@ -98,6 +98,12 @@ import {
 } from "./heatmap-scale";
 import { HeatmapTooltip } from "./heatmap-tooltip";
 import { type ChartSelectionProps, ChartSelectionProvider } from "../chart-selection";
+import {
+  ChartPlotBox,
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  type Responsive,
+} from "../chart-breakpoint";
 
 /** Plot-area insets. */
 export interface HeatmapMargin {
@@ -227,6 +233,11 @@ export interface HeatmapChartProps extends ChartSelectionProps, ChartInteraction
   margin?: Partial<HeatmapMargin>;
   /** Aspect ratio of the plot body. Default `"16 / 9"` (`"6 / 1"` for calendar). */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /**
    * When the enter stagger plays (RM-020). `"mount"` (default) plays as soon as
    * the chart renders; `"inView"` holds every cell hidden until the plot
@@ -1002,6 +1013,8 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     accessibleDescription,
     accessibleLabel,
     aspectRatio,
+
+    plotHeight,
     cellRadius = 4,
     className,
     data,
@@ -1110,7 +1123,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     variant === "calendar" ? grid.columns * MIN_CALENDAR_COLUMN_PX + margin.left + margin.right : 0;
 
   return (
-    <div
+    <ChartPlotRoot
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("flex w-full flex-col gap-2", className)}
@@ -1121,9 +1134,13 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <div
+      <ChartPlotBox
+        plotBox={{
+          aspectRatio,
+          plotHeight,
+          defaultPlotHeight: variant === "calendar" ? "6 / 1" : "16 / 9",
+        }}
         className="relative w-full overflow-x-auto"
-        style={{ aspectRatio: aspectRatio ?? (variant === "calendar" ? "6 / 1" : "16 / 9") }}
       >
         {isEmpty ? (
           // The one live region of the empty state. `StatePanel kind="empty"`
@@ -1171,7 +1188,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
             </ParentSize>
           </div>
         )}
-      </div>
+      </ChartPlotBox>
       {xAxisLabel && !isEmpty ? (
         <p
           className="text-center text-caption text-muted-foreground"
@@ -1192,7 +1209,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
           zeroCount={scale.zeroCount}
         />
       ) : null}
-    </div>
+    </ChartPlotRoot>
   );
 });
 

@@ -31,6 +31,12 @@ import {
   type SankeyTooltipData,
 } from "./sankey-context";
 import { deriveAggregateLinksForThreads } from "./sankey-threads";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+} from "../chart-breakpoint";
 
 export interface SankeyData {
   nodes: SankeyNodeDatum[];
@@ -50,6 +56,11 @@ export interface SankeyChartProps {
   revealSignature?: string;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Node width in pixels. Default: 16 */
   nodeWidth?: number;
   /** Node padding in pixels. Default: 24 */
@@ -493,7 +504,8 @@ export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(function
     animationDuration = 1100,
     enterTransition,
     revealSignature,
-    aspectRatio = "2 / 1",
+    aspectRatio,
+    plotHeight,
     nodeWidth = 16,
     nodePadding = 24,
     className = "",
@@ -507,7 +519,11 @@ export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(function
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
 
   return (
-    <div ref={ref} className={cn("relative w-full", className)} style={{ aspectRatio }}>
+    <ChartPlotRoot
+      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+      ref={ref}
+      className={cn("relative w-full", className)}
+    >
       <ParentSize>
         {({ width, height }) => (
           <SankeyChartInner
@@ -528,7 +544,7 @@ export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(function
           </SankeyChartInner>
         )}
       </ParentSize>
-    </div>
+    </ChartPlotRoot>
   );
 });
 

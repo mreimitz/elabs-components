@@ -72,6 +72,13 @@ import {
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
+import {
+  DEFAULT_CHART_PLOT_HEIGHT,
+  resolvePlotBoxStyle,
+  warnChartOnce,
+  type ChartPlotHeight,
+  type Responsive,
+} from "../charts/chart-breakpoint";
 
 import type { ChartSpec, ChartSeriesSpec, ChartType } from "./chart-spec";
 import {
@@ -273,7 +280,7 @@ function renderChart(
    * don't each re-walk + re-allocate the whole dataset on every render.
    */
   timeCoercedData: Record<string, unknown>[],
-  height: number,
+  plotHeight: Responsive<ChartPlotHeight> | undefined,
   /**
    * Resolved in the component body, not here: `renderChart` is a plain function
    * and cannot call the hook that reads the active locale and currency.
@@ -284,18 +291,20 @@ function renderChart(
   links: AutoChartLinkProps = {},
 ): ReactNode {
   const { x, stacked, orientation, donut } = spec;
+  // Unit and distribution charts size themselves from their data; a numeric
+  // plot height still fixes their box, as the deprecated `height` did.
+  // charts-responsive-exempt: a pixel number is the documented fixed-box form for the families that take no plotHeight
+  const fixedHeight = typeof plotHeight === "number" ? plotHeight : undefined;
 
   switch (type) {
     // ── Line ─────────────────────────────────────────────────────────────────
     case "line": {
       const timeData = timeCoercedData;
       return (
-        // LineChart accepts style prop — pass height directly to suppress aspectRatio
         <LineChart
           data={timeData}
           xDataKey={x}
-          aspectRatio={undefined}
-          style={{ height }}
+          plotHeight={plotHeight}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
@@ -324,13 +333,11 @@ function renderChart(
     case "stream": {
       const timeData = timeCoercedData;
       return (
-        // AreaChart accepts style prop — pass height directly to suppress aspectRatio
         <AreaChart
           data={timeData}
           xDataKey={x}
-          aspectRatio={undefined}
           offset={type === "stream" ? "wiggle" : stacked ? "none" : undefined}
-          style={{ height }}
+          plotHeight={plotHeight}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
@@ -356,41 +363,38 @@ function renderChart(
       const isHorizontal = (orientation ?? "vertical") === "horizontal";
       // BarChart does not accept a style prop; wrap in a sized div instead.
       return (
-        <div style={{ height }}>
-          <BarChart
-            dimExcluded={links.dimExcluded}
-            selectionStates={links.selectionStates}
-            onDatapointClick={links.onDatapointClick}
-            data={resolvedData}
-            xDataKey={x}
-            stacked={stacked ?? false}
-            orientation={orientation ?? "vertical"}
-            aspectRatio={undefined}
-            className="h-full"
-            accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
-            copyValueOnActivate={copyValueOnActivate}
-          >
-            {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
-            <Grid horizontal={!isHorizontal} vertical={isHorizontal} />
-            {series.map((s) => (
-              <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="round" />
-            ))}
-            {isHorizontal ? <BarYAxis /> : <BarXAxis />}
-            {/*
-              A value scale, at last — bars used to render with categories and no
-              way to read a magnitude off the chart.
+        <BarChart
+          plotHeight={plotHeight}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
+          onDatapointClick={links.onDatapointClick}
+          data={resolvedData}
+          xDataKey={x}
+          stacked={stacked ?? false}
+          orientation={orientation ?? "vertical"}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+        >
+          {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
+          <Grid horizontal={!isHorizontal} vertical={isHorizontal} />
+          {series.map((s) => (
+            <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="round" />
+          ))}
+          {isHorizontal ? <BarYAxis /> : <BarXAxis />}
+          {/*
+            A value scale, at last — bars used to render with categories and no
+            way to read a magnitude off the chart.
 
-              Vertical only, deliberately: with `orientation="horizontal"` the
-              chart sets `yScale = valueScale` over a range of `[0, innerWidth]`,
-              and `YAxis` paints scale OUTPUT as a `top` coordinate — so it would
-              plot x-pixels vertically. The bottom value axis a horizontal bar
-              chart wants is its own component; tracked separately.
-            */}
-            {isHorizontal ? null : <YAxis formatValue={yFormat} />}
-            <ChartTooltip />
-          </BarChart>
-        </div>
+            Vertical only, deliberately: with `orientation="horizontal"` the
+            chart sets `yScale = valueScale` over a range of `[0, innerWidth]`,
+            and `YAxis` paints scale OUTPUT as a `top` coordinate — so it would
+            plot x-pixels vertically. The bottom value axis a horizontal bar
+            chart wants is its own component; tracked separately.
+          */}
+          {isHorizontal ? null : <YAxis formatValue={yFormat} />}
+          <ChartTooltip />
+        </BarChart>
       );
     }
 
@@ -407,25 +411,23 @@ function renderChart(
 
       // PieChart uses aspect-square by default; size it via a wrapper div
       return (
-        <div style={{ height }}>
-          <PieChart
-            dimExcluded={links.dimExcluded}
-            selectionStates={links.selectionStates}
-            onDatapointClick={links.onDatapointClick}
-            data={pieData}
-            innerRadius={innerRadius}
-            className="h-full"
-            accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
-            copyValueOnActivate={copyValueOnActivate}
-          >
-            {pieData.map((_d, i) => (
-              // pie slices are position-indexed, so the index is a stable key
-              <PieSlice key={i} index={i} />
-            ))}
-            {donut ? <PieCenter /> : null}
-          </PieChart>
-        </div>
+        <PieChart
+          plotHeight={plotHeight}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
+          onDatapointClick={links.onDatapointClick}
+          data={pieData}
+          innerRadius={innerRadius}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+        >
+          {pieData.map((_d, i) => (
+            // pie slices are position-indexed, so the index is a stable key
+            <PieSlice key={i} index={i} />
+          ))}
+          {donut ? <PieCenter /> : null}
+        </PieChart>
       );
     }
 
@@ -437,27 +439,24 @@ function renderChart(
       // #302: a numeric x (`xType: "number"`) needs ScatterChart's non-temporal
       // scale, or the axis prints epoch dates — see `scatter-chart-shell.tsx`.
       return (
-        <div style={{ height }}>
-          <ScatterChart
-            dimExcluded={links.dimExcluded}
-            selectionStates={links.selectionStates}
-            data={scatterData}
-            xDataKey={x}
-            xScale={spec.xType === "number" ? "linear" : "time"}
-            aspectRatio={undefined}
-            className="h-full"
-            accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
-          >
-            <Grid horizontal />
-            {series.map((s) => (
-              <Scatter key={s.key} dataKey={s.key} fill={s.color} />
-            ))}
-            <XAxis />
-            <YAxis formatValue={yFormat} />
-            <ChartTooltip />
-          </ScatterChart>
-        </div>
+        <ScatterChart
+          plotHeight={plotHeight}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
+          data={scatterData}
+          xDataKey={x}
+          xScale={spec.xType === "number" ? "linear" : "time"}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+        >
+          <Grid horizontal />
+          {series.map((s) => (
+            <Scatter key={s.key} dataKey={s.key} fill={s.color} />
+          ))}
+          <XAxis />
+          <YAxis formatValue={yFormat} />
+          <ChartTooltip />
+        </ScatterChart>
       );
     }
 
@@ -494,22 +493,20 @@ function renderChart(
 
       // RadarChart defaults to aspect-square; size via wrapper div
       return (
-        <div style={{ height }}>
-          <RadarChart
-            data={radarData}
-            metrics={metrics}
-            className="h-full"
-            accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
-          >
-            <RadarGrid />
-            <RadarAxis />
-            <RadarLabels />
-            {radarData.map((d, i) => (
-              <RadarArea key={d.label} index={i} />
-            ))}
-          </RadarChart>
-        </div>
+        <RadarChart
+          plotHeight={plotHeight}
+          data={radarData}
+          metrics={metrics}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+        >
+          <RadarGrid />
+          <RadarAxis />
+          <RadarLabels />
+          {radarData.map((d, i) => (
+            <RadarArea key={d.label} index={i} />
+          ))}
+        </RadarChart>
       );
     }
 
@@ -523,12 +520,11 @@ function renderChart(
       }));
 
       return (
-        // FunnelChart accepts style prop — pass height directly
         <FunnelChart
           data={funnelData}
           color={series[0]?.color ?? "var(--chart-1)"}
           orientation={(orientation as "horizontal" | "vertical" | undefined) ?? "horizontal"}
-          style={{ height }}
+          plotHeight={plotHeight}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
@@ -561,8 +557,7 @@ function renderChart(
         <CandlestickChart
           data={ohlc}
           xDataKey="date"
-          aspectRatio={undefined}
-          style={{ height }}
+          plotHeight={plotHeight}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
         >
@@ -584,25 +579,23 @@ function renderChart(
       const valueKey = series[0]?.key ?? "";
       const yKey = secondCategoricalField(spec) ?? "";
       return (
-        // Sized by aspect ratio internally, so `height` is a FLOOR here rather
-        // than a cap — a clipped heatmap loses cells, which is worse than a
-        // taller box.
-        <div style={{ minHeight: height }}>
-          <HeatmapChart
-            dimExcluded={links.dimExcluded}
-            selectionStates={links.selectionStates}
-            onDatapointClick={links.onDatapointClick}
-            data={resolvedData}
-            x={x}
-            y={yKey}
-            valueKey={valueKey}
-            variant={type === "calendar" ? "calendar" : "matrix"}
-            valueFormat={spec.valueFormat}
-            accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
-            copyValueOnActivate={copyValueOnActivate}
-          />
-        </div>
+        // The heatmap draws its cells into its own plot box, so a plot height
+        // resizes the cells rather than clipping them.
+        <HeatmapChart
+          plotHeight={plotHeight}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
+          onDatapointClick={links.onDatapointClick}
+          data={resolvedData}
+          x={x}
+          y={yKey}
+          valueKey={valueKey}
+          variant={type === "calendar" ? "calendar" : "matrix"}
+          valueFormat={spec.valueFormat}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+        />
       );
     }
 
@@ -621,7 +614,7 @@ function renderChart(
       return (
         <WaterfallChart
           data={steps}
-          height={height}
+          plotHeight={plotHeight}
           orientation={orientation ?? "vertical"}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
@@ -642,22 +635,21 @@ function renderChart(
     case "dumbbell": {
       const [startKey, endKey] = dumbbellKeys(spec, series);
       return (
-        <div style={{ minHeight: height }}>
-          <DumbbellChart
-            dimExcluded={links.dimExcluded}
-            selectionStates={links.selectionStates}
-            onDatapointClick={links.onDatapointClick}
-            data={resolvedData}
-            category={x}
-            startKey={startKey}
-            endKey={endKey}
-            orientation={orientation ?? "horizontal"}
-            valueFormat={spec.valueFormat}
-            accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
-            copyValueOnActivate={copyValueOnActivate}
-          />
-        </div>
+        <DumbbellChart
+          plotHeight={plotHeight}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
+          onDatapointClick={links.onDatapointClick}
+          data={resolvedData}
+          category={x}
+          startKey={startKey}
+          endKey={endKey}
+          orientation={orientation ?? "horizontal"}
+          valueFormat={spec.valueFormat}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+        />
       );
     }
 
@@ -675,7 +667,7 @@ function renderChart(
           onDatapointClick={links.onDatapointClick}
           data={unitData}
           layout="waffle"
-          style={{ height }}
+          style={fixedHeight === undefined ? undefined : { height: fixedHeight }}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
@@ -693,9 +685,9 @@ function renderChart(
       }
       return (
         // A treemap is shape-sensitive — its whole quality depends on tile
-        // aspect ratios — so `height` is a FLOOR here, matching the heatmap/
-        // dumbbell convention above, rather than a fixed box that can force a
-        // wide container into a degenerate row of slivers (#306).
+        // aspect ratios — so a pixel height is a FLOOR here rather than a fixed
+        // box that can force a wide container into a degenerate row of
+        // slivers (#306).
         <TreemapChart
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -704,7 +696,10 @@ function renderChart(
           // A spec is model output: an invented palette falls back to the
           // documented mono default rather than reaching the layout (#306).
           palette={isChartSpecPalette(spec.palette) ? spec.palette : "mono"}
-          style={{ minHeight: height }}
+          // A pixel height stays a floor over the treemap's own 16:9 box (#306);
+          // an aspect or per-breakpoint value is passed through as-is.
+          plotHeight={fixedHeight === undefined ? plotHeight : undefined}
+          style={fixedHeight === undefined ? undefined : { minHeight: fixedHeight }}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
@@ -721,20 +716,19 @@ function renderChart(
     case "strip": {
       const valueKey = series[0]?.key ?? "";
       return (
-        <div style={{ height }}>
-          <DistributionChart
-            data={resolvedData}
-            valueKey={valueKey}
-            groupKey={spec.group}
-            kind={type}
-            valueFormat={spec.valueFormat}
-            currency={spec.currency}
-            accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
-            copyValueOnActivate={copyValueOnActivate}
-            onDatapointClick={links.onDatapointClick}
-          />
-        </div>
+        <DistributionChart
+          style={fixedHeight === undefined ? undefined : { height: fixedHeight }}
+          data={resolvedData}
+          valueKey={valueKey}
+          groupKey={spec.group}
+          kind={type}
+          valueFormat={spec.valueFormat}
+          currency={spec.currency}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+          onDatapointClick={links.onDatapointClick}
+        />
       );
     }
 
@@ -743,22 +737,21 @@ function renderChart(
       const measure = series[0]?.key ?? "";
       const isRank = /^(rank|position|place)$/i.test(measure.trim());
       return (
-        <div style={{ minHeight: height }}>
-          <BumpChart
-            data={resolvedData}
-            period={x}
-            entity={secondCategoricalField(spec) ?? ""}
-            // A column literally called "rank" IS the rank; anything else is a
-            // magnitude the container ranks for us.
-            rankKey={isRank ? measure : undefined}
-            valueKey={isRank ? undefined : measure}
-            valueFormat={spec.valueFormat}
-            accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
-            copyValueOnActivate={copyValueOnActivate}
-            onDatapointClick={links.onDatapointClick}
-          />
-        </div>
+        <BumpChart
+          plotHeight={plotHeight}
+          data={resolvedData}
+          period={x}
+          entity={secondCategoricalField(spec) ?? ""}
+          // A column literally called "rank" IS the rank; anything else is a
+          // magnitude the container ranks for us.
+          rankKey={isRank ? measure : undefined}
+          valueKey={isRank ? undefined : measure}
+          valueFormat={spec.valueFormat}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+          onDatapointClick={links.onDatapointClick}
+        />
       );
     }
 
@@ -770,27 +763,24 @@ function renderChart(
       const valueKey = series[0]?.key ?? "";
       const color = series[0]?.color ?? "var(--chart-1)";
       return (
-        <div style={{ height }}>
-          <BarChart
-            dimExcluded={links.dimExcluded}
-            selectionStates={links.selectionStates}
-            onDatapointClick={links.onDatapointClick}
-            data={resolvedData}
-            xDataKey={x}
-            orientation={orientation ?? "vertical"}
-            aspectRatio={undefined}
-            className="h-full"
-            accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
-            copyValueOnActivate={copyValueOnActivate}
-          >
-            <Grid horizontal />
-            <Bar dataKey={valueKey} fill={color} lineCap="round" showValues zeroLine />
-            <BarXAxis />
-            <YAxis formatValue={yFormat} />
-            <ChartTooltip />
-          </BarChart>
-        </div>
+        <BarChart
+          plotHeight={plotHeight}
+          dimExcluded={links.dimExcluded}
+          selectionStates={links.selectionStates}
+          onDatapointClick={links.onDatapointClick}
+          data={resolvedData}
+          xDataKey={x}
+          orientation={orientation ?? "vertical"}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+        >
+          <Grid horizontal />
+          <Bar dataKey={valueKey} fill={color} lineCap="round" showValues zeroLine />
+          <BarXAxis />
+          <YAxis formatValue={yFormat} />
+          <ChartTooltip />
+        </BarChart>
       );
     }
 
@@ -861,7 +851,17 @@ export interface AutoChartProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    * union without being documented here fails the suite.
    */
   spec: ChartSpec;
-  /** Chart body height in pixels. Default: 280 */
+  /**
+   * Height of the drawing area only; the title and legend stack around it.
+   * A number of pixels, `{ aspect }` (width / height), or a per-breakpoint
+   * `{ base, medium?, narrow? }`. Default: the chart family's own default
+   * (`{ aspect: 2 }` wide, `{ aspect: 1.25 }` narrow for the 2:1 families).
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
+  /**
+   * @deprecated Use `plotHeight`. Removed in 5.0.0. Until then it is read as
+   * `plotHeight` and logs one development warning per page.
+   */
   height?: number;
   /**
    * Loading vs ready — renders a layout-shaped skeleton at the normal chart
@@ -947,7 +947,8 @@ function resolveSpecSelection(
 export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function AutoChart(
   {
     spec,
-    height = 280,
+    plotHeight,
+    height,
     loading = false,
     copyValueOnActivate = true,
     className,
@@ -961,6 +962,20 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   ref,
 ) {
   const { t } = useLocale();
+  // `height` is the deprecated alias; `plotHeight` wins when both are set.
+  if (height !== undefined) {
+    warnChartOnce(
+      "AutoChart.height",
+      '[AutoChart] "height" is deprecated and will be removed in 5.0.0. Use "plotHeight": it sets the chart\'s own height, and the title and legend are added around it.',
+    );
+  }
+  const effectivePlotHeight = plotHeight ?? height;
+  // Loading and fallback boxes reserve the box the chart will draw, at the
+  // wide tier (they render before any chart measures its container).
+  const fallbackStyle = resolvePlotBoxStyle(
+    { plotHeight: effectivePlotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT },
+    "wide",
+  );
   // Resolved here, above every early return, because it is a hook. `renderChart`
   // is a plain function and receives the result.
   const yFormat = useChartValueFormatter(spec.valueFormat, spec.currency);
@@ -979,7 +994,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       <div
         ref={ref}
         className={cn("w-full rounded-md", className)}
-        style={{ height }}
+        style={fallbackStyle}
         role="status"
         aria-live="polite"
         {...props}
@@ -1001,7 +1016,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
         ref={ref}
         kind="empty"
         className={cn("w-full", className)}
-        style={{ height }}
+        style={fallbackStyle}
         {...props}
       />
     );
@@ -1013,7 +1028,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
         ref={ref}
         kind="empty"
         className={cn("w-full", className)}
-        style={{ height }}
+        style={fallbackStyle}
         {...props}
       />
     );
@@ -1044,7 +1059,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
         ref={ref}
         kind="unsupported"
         className={cn("w-full", className)}
-        style={{ height }}
+        style={fallbackStyle}
         {...props}
       />
     );
@@ -1085,7 +1100,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       series,
       spec.data,
       timeCoercedData,
-      height,
+      effectivePlotHeight,
       yFormat,
       copyValueOnActivate,
       links,
@@ -1096,7 +1111,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
         ref={ref}
         kind="empty"
         className={cn("w-full", className)}
-        style={{ height }}
+        style={fallbackStyle}
         {...props}
       />
     );
@@ -1110,7 +1125,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
         ref={ref}
         kind="unsupported"
         className={cn("w-full", className)}
-        style={{ height }}
+        style={fallbackStyle}
         {...props}
       />
     );
@@ -1127,7 +1142,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
        * escape AutoChart's documented "never throws" contract.
        */}
       <AutoChartErrorBoundary
-        fallback={<ChartFallback message="Unable to display this chart" style={{ height }} />}
+        fallback={<ChartFallback message="Unable to display this chart" style={fallbackStyle} />}
       >
         {chartNode}
       </AutoChartErrorBoundary>
