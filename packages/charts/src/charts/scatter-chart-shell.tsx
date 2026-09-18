@@ -31,8 +31,18 @@ import {
   withYAxisTooltipHint,
 } from "./time-series-chart-shell";
 import { useScatterChartInteraction } from "./use-scatter-chart-interaction";
-import { buildXValueEncoder } from "./x-scale-mode";
-import { buildYScalesForLines, getPrimaryYScale } from "./y-axis-scales";
+import { buildXValueEncoder, type NumericXRuler, NumericXRulerContext } from "./x-scale-mode";
+import {
+  applyValueAxisConfigs,
+  buildYScalesFromDomains,
+  collectValueAxisConfigs,
+  DEFAULT_Y_AXIS_ID,
+  getPrimaryYScale,
+  resolveValueAxis,
+  valueExtent,
+  warnValueAxisOnce,
+} from "./y-axis-scales";
+import { computeYDomainsByAxis, niceYDomain } from "./y-domain-utils";
 
 /**
  * How `ScatterChart` interprets `xDataKey` values (#302 — the non-temporal
@@ -120,12 +130,56 @@ export function ScatterChartInner({
   // so every downstream consumer — `xScale`, `Grid`, `XAxis`, `ChartTooltip`,
   // the drop lines / extremes in `scatter.tsx` — keeps treating x as a Date
   // and needs no change; only the position math and the label differ.
+  // RM-108: `XAxis domain`/`scale` on a numeric x — resolved in raw units the
+  // same way a value axis is (pinned ends exact, auto ends niced, log refuses
+  // data touching 0), then handed to the encoder as the projection domain.
+  const xAxisRequest = useMemo(
+    () => collectValueAxisConfigs(children, ["XAxis"])[DEFAULT_Y_AXIS_ID] ?? null,
+    [children],
+  );
+  const numericXAxis = useMemo(() => {
+    if (resolvedXScaleType !== "linear" || !xAxisRequest) {
+      return null;
+    }
+    const extent = valueExtent(data, [xDataKey]);
+    return resolveValueAxis({
+      autoDomain: niceYDomain(extent),
+      dataExtent: extent,
+      domain: xAxisRequest.domain,
+      scale: xAxisRequest.scale,
+    });
+  }, [data, resolvedXScaleType, xAxisRequest, xDataKey]);
+  useEffect(() => {
+    if (numericXAxis && data.length > 0) {
+      warnValueAxisOnce("x", numericXAxis.warnings, "XAxis");
+    }
+  }, [numericXAxis, data.length]);
+
   const linearEncoder = useMemo(
     () =>
       resolvedXScaleType === "linear"
-        ? buildXValueEncoder({ data, type: "linear", xDataKey })
+        ? buildXValueEncoder({
+            data,
+            type: "linear",
+            xDataKey,
+            numericAxis: numericXAxis
+              ? { domain: numericXAxis.domain, scale: numericXAxis.scale }
+              : undefined,
+          })
         : null,
-    [resolvedXScaleType, data, xDataKey],
+    [resolvedXScaleType, data, xDataKey, numericXAxis],
+  );
+
+  const numericXRuler = useMemo<NumericXRuler | null>(
+    () =>
+      numericXAxis && linearEncoder
+        ? {
+            domain: numericXAxis.domain,
+            scale: numericXAxis.scale,
+            toPosition: (value: number) => linearEncoder.xValueToPosition(value),
+          }
+        : null,
+    [linearEncoder, numericXAxis],
   );
 
   const xAccessor = useCallback(
@@ -153,14 +207,16 @@ export function ScatterChartInner({
   }, [lines]);
 
   const xScale = useMemo(() => {
-    const dates = data.map((d) => xAccessor(d));
+    const dates = numericXRuler
+      ? numericXRuler.domain.map((value) => numericXRuler.toPosition(value))
+      : data.map((d) => xAccessor(d));
     const minTime = Math.min(...dates.map((d) => d.getTime()));
     const maxTime = Math.max(...dates.map((d) => d.getTime()));
 
     return scaleTime<number>()
       .range([xRangePadding, Math.max(xRangePadding, innerWidth - xRangePadding)])
       .domain([minTime, maxTime]);
-  }, [innerWidth, data, xAccessor, xRangePadding]);
+  }, [innerWidth, data, xAccessor, xRangePadding, numericXRuler]);
 
   const columnWidth = useMemo(() => {
     if (data.length < 2) {
@@ -169,27 +225,53 @@ export function ScatterChartInner({
     return innerWidth / (data.length - 1);
   }, [innerWidth, data.length]);
 
-  const yScales = useMemo(
+  // RM-108: the data-derived domains first (niced, exactly what
+  // `buildYScalesForLines` used to build), then any `YAxis domain`/`scale`
+  // request read off the direct children on top.
+  const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
+  const valueAxes = useMemo(
     () =>
-      buildYScalesForLines({
-        lines,
-        data,
-        innerHeight,
-        resolveDomain: (dataKeys) => {
-          let maxValue = 0;
-          for (const d of data) {
-            for (const key of dataKeys) {
-              const value = d[key];
-              if (typeof value === "number" && value > maxValue) {
-                maxValue = value;
+      applyValueAxisConfigs({
+        autoDomainsByAxis: computeYDomainsByAxis({
+          lines,
+          resolveDomain: (dataKeys) => {
+            let maxValue = 0;
+            for (const d of data) {
+              for (const key of dataKeys) {
+                const value = d[key];
+                if (typeof value === "number" && value > maxValue) {
+                  maxValue = value;
+                }
               }
             }
-          }
-          const top = maxValue <= 0 ? 100 : maxValue * 1.1;
-          return [0, top];
-        },
+            const top = maxValue <= 0 ? 100 : maxValue * 1.1;
+            return [0, top];
+          },
+        }),
+        configs: valueAxisConfigs,
+        data,
+        lines,
       }),
-    [innerHeight, data, lines],
+    [data, lines, valueAxisConfigs],
+  );
+  useEffect(() => {
+    if (data.length === 0) {
+      return;
+    }
+    for (const [axisId, warnings] of Object.entries(valueAxes.warningsByAxis)) {
+      warnValueAxisOnce(axisId, warnings);
+    }
+  }, [valueAxes, data.length]);
+
+  const yScales = useMemo(
+    () =>
+      buildYScalesFromDomains({
+        lines,
+        innerHeight,
+        domainsByAxis: valueAxes.domainsByAxis,
+        scaleKindsByAxis: valueAxes.scaleKindsByAxis,
+      }),
+    [innerHeight, lines, valueAxes],
   );
 
   const yScale = getPrimaryYScale(
@@ -341,23 +423,25 @@ export function ScatterChartInner({
   };
 
   return (
-    <ChartProvider value={contextValue}>
-      <svg aria-hidden="true" className="overflow-visible" height={height} width={width}>
-        {defsChildren.length > 0 && <defs>{defsChildren}</defs>}
+    <NumericXRulerContext.Provider value={numericXRuler}>
+      <ChartProvider value={contextValue}>
+        <svg aria-hidden="true" className="overflow-visible" height={height} width={width}>
+          {defsChildren.length > 0 && <defs>{defsChildren}</defs>}
 
-        <rect fill="transparent" height={height} width={width} x={0} y={0} />
+          <rect fill="transparent" height={height} width={width} x={0} y={0} />
 
-        <g
-          {...interactionHandlers}
-          style={interactionStyle}
-          transform={`translate(${margin.left},${margin.top})`}
-        >
-          <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
+          <g
+            {...interactionHandlers}
+            style={interactionStyle}
+            transform={`translate(${margin.left},${margin.top})`}
+          >
+            <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
 
-          {preOverlayChildren}
-          {postOverlayChildren}
-        </g>
-      </svg>
-    </ChartProvider>
+            {preOverlayChildren}
+            {postOverlayChildren}
+          </g>
+        </svg>
+      </ChartProvider>
+    </NumericXRulerContext.Provider>
   );
 }

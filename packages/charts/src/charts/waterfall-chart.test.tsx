@@ -181,10 +181,15 @@ describe("WaterfallChart", () => {
     expect(screen.queryByRole("group", { name: /chart data points/i })).toBeNull();
   });
 
-  it("applies a fixed pixel height when height is set", () => {
-    const { container } = render(<WaterfallChart data={grossToNet} height={320} />);
-    const root = container.firstElementChild as HTMLElement;
-    expect(root.style.height).toBe("320px");
+  it("sizes the plot box by plotHeight, and by the deprecated height alias", () => {
+    // ADR 0039: the px height lands on the chart's plot box (the BarChart
+    // root inside the waterfall wrapper), not on the wrapper.
+    for (const props of [{ plotHeight: 320 }, { height: 320 }]) {
+      const { container, unmount } = render(<WaterfallChart data={grossToNet} {...props} />);
+      const plot = container.querySelector("[data-chart-breakpoint]") as HTMLElement;
+      expect(plot.style.height).toBe("320px");
+      unmount();
+    }
   });
 
   it("wires accessibleLabel through to the chart region", () => {

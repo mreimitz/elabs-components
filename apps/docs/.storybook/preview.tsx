@@ -359,6 +359,27 @@ const preview: Preview = {
     },
   },
   parameters: {
+    // Chart responsive tiers (ADR 0039): one width inside each tier, so a chart
+    // story can be checked narrow / medium / wide from the toolbar.
+    viewport: {
+      options: {
+        chartNarrow: {
+          name: "Chart narrow (380)",
+          styles: { width: "380px", height: "800px" },
+          type: "mobile",
+        },
+        chartMedium: {
+          name: "Chart medium (600)",
+          styles: { width: "600px", height: "800px" },
+          type: "tablet",
+        },
+        chartWide: {
+          name: "Chart wide (900)",
+          styles: { width: "900px", height: "800px" },
+          type: "desktop",
+        },
+      },
+    },
     docs: {
       container: ThemedDocsContainer,
       page: BrandDocsPage,

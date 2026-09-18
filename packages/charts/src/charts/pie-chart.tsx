@@ -43,6 +43,7 @@ import type { PieSliceProps } from "./pie-slice";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 
 /** Default hover offset in pixels */
 export const DEFAULT_HOVER_OFFSET = 10;
@@ -132,6 +133,11 @@ export interface PieChartProps extends ChartSelectionProps {
   data: PieData[];
   /** Chart size in pixels. If not provided, uses parent container size */
   size?: number;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Inner radius for donut charts. Default: 0 (solid pie) */
   innerRadius?: number;
   /** Padding angle between slices in radians. Default: 0 */
@@ -744,6 +750,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
   {
     data,
     size: fixedSize,
+    plotHeight,
     innerRadius = 0,
     padAngle = 0,
     cornerRadius = 0,
@@ -812,7 +819,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
 
   if (fixedSize) {
     return (
-      <div
+      <ChartPlotRoot
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative flex items-center justify-center", className)}
@@ -846,16 +853,17 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
             {children}
           </PieChartInner>,
         )}
-      </div>
+      </ChartPlotRoot>
     );
   }
 
   // Otherwise use ParentSize for responsive sizing
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
-      className={cn("relative aspect-square w-full", className)}
+      className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
       tabIndex={tabIndex}
@@ -889,7 +897,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
           )
         }
       </ParentSize>
-    </div>
+    </ChartPlotRoot>
   );
 });
 

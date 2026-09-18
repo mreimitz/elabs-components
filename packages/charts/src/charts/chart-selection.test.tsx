@@ -40,6 +40,10 @@ import {
 import { seriesPatternFills, stubHighDecoration } from "./high-decoration-fixture";
 import { compositeOver, contrastOf, resolveCssColor, type Rgba } from "./on-mark-ink";
 
+// ADR 0039 (RM-107) adds exactly one attribute to every chart root and frame;
+// the rest of the pre-change DOM must stay byte-identical.
+const stripChartBreakpoint = (html: string) => html.replace(/ data-chart-breakpoint="[a-z]+"/g, "");
+
 beforeAll(() => {
   if (typeof globalThis.ResizeObserver === "undefined") {
     globalThis.ResizeObserver = class {
@@ -304,7 +308,7 @@ describe.each(SELECTION_FIXTURES)(
     });
 
     it("renders the pre-RM-073 DOM (baseline generated at 9d119df6) without selectionStates", () => {
-      const html = render(element({})).container.innerHTML;
+      const html = stripChartBreakpoint(render(element({})).container.innerHTML);
       expect(normaliseIds(`${html}\n`)).toBe(normaliseIds(baseline(name)));
       expect(html).not.toContain("data-selection");
     });

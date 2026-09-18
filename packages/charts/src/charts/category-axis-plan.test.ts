@@ -5,6 +5,7 @@ import {
   type CategoryAxisPlanInput,
   planCategoryAxis,
   unpaintedCategoryLabels,
+  wrapCategoryLabel,
 } from "./category-axis-plan";
 
 /**
@@ -320,5 +321,78 @@ describe("planCategoryAxis", () => {
       const dupes = categories(["North", "North", "South"]);
       expect(unpaintedCategoryLabels(dupes, [dupes[0]!])).toEqual(["North", "South"]);
     });
+  });
+});
+
+describe("planCategoryAxis — wrap rung (RM-108)", () => {
+  // 18-character labels (126 px at 7 px/char) at a 96 px band step: too wide
+  // for one line, and each word fits inside the band on its own.
+  const eighteen = categories([
+    "Northern Territory",
+    "Western Australias",
+    "South Australia 18",
+    "New South Wales 18",
+  ]);
+
+  it("wraps onto two lines instead of tilting when the band step allows", () => {
+    const result = plan({ categories: eighteen, slotSize: 96, maxExtent: 60 });
+    expect(result.mode).toBe("wrapped");
+    expect(result.angleDeg).toBe(0);
+    expect(result.labels).toHaveLength(4);
+    for (const label of result.labels) {
+      expect(label.lines).toHaveLength(2);
+      expect(label.truncated).toBe(false);
+      for (const line of label.lines ?? []) {
+        expect(measure(line)).toBeLessThanOrEqual(96 - 6);
+      }
+    }
+    expect(result.labels[0]?.lines).toEqual(["Northern", "Territory"]);
+    expect(result.requiredExtentPx).toBe(LINE_HEIGHT * 2 + 8);
+  });
+
+  it("is not viable when one label is a single unbreakable word — falls to tilt", () => {
+    const result = plan({
+      categories: categories(["Northern Territory", "Mississippiriver"]),
+      slotSize: 96,
+      maxExtent: 120,
+    });
+    expect(result.mode).toBe("tilted");
+  });
+
+  it("is not viable when two line heights do not fit the reserve", () => {
+    const result = plan({ categories: eighteen, slotSize: 96, maxExtent: LINE_HEIGHT * 2 + 7 });
+    expect(result.mode).not.toBe("wrapped");
+  });
+
+  it('fit="tilt" skips the rung (the pre-wrap cascade)', () => {
+    const result = plan({ categories: eighteen, slotSize: 96, maxExtent: 120, fit: "tilt" });
+    expect(result.mode).toBe("tilted");
+  });
+
+  it('fit="wrap" never tilts', () => {
+    const result = plan({
+      categories: categories(["Northern Territory", "Mississippiriver"]),
+      slotSize: 96,
+      maxExtent: 120,
+      fit: "wrap",
+    });
+    expect(result.mode).not.toBe("tilted");
+    expect(result.angleDeg).toBe(0);
+  });
+
+  it("keeps horizontal when every label already fits one line", () => {
+    const result = plan({ categories: seq(4), slotSize: 96, maxExtent: 60 });
+    expect(result.mode).toBe("horizontal");
+  });
+});
+
+describe("wrapCategoryLabel (RM-108)", () => {
+  it("picks the split that minimises the widest line", () => {
+    expect(wrapCategoryLabel("New South Wales", 70, measure)).toEqual(["New South", "Wales"]);
+  });
+
+  it("returns null for a label with no word boundary or no fitting split", () => {
+    expect(wrapCategoryLabel("Mississippiriver", 60, measure)).toBeNull();
+    expect(wrapCategoryLabel("Aaaaaaaaaaaa Bbbbbbbbbbbbb", 60, measure)).toBeNull();
   });
 });

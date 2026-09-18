@@ -99,10 +99,13 @@ const shortSpanData = Array.from({ length: 36 }, (_, i) => ({
 /**
  * A 36-hour series: the date ladder resolves to the "hour" rung on its own
  * (no `dateFormat` override) — every tick reads a time of day, not a date.
+ * Fluid (`w-full`, no max-width) like `Charts/Axes`' `WidthDerivedTicks` —
+ * resize the canvas to watch the tick count (and, on a longer span, the
+ * ladder rung) track the plot's own pixel width, not the viewport.
  */
 export const DateLadderShortSpan: Story = {
   render: () => (
-    <div className="h-72 w-full max-w-[560px]">
+    <div className="h-72 w-full">
       <LineChart aspectRatio={undefined} data={shortSpanData} xDataKey="time">
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="temp" stroke="var(--chart-3)" />
@@ -114,19 +117,28 @@ export const DateLadderShortSpan: Story = {
   ),
 };
 
-// 10 yearly points — the date ladder's "year" rung.
-const longSpanData = Array.from({ length: 10 }, (_, i) => ({
-  year: new Date(2015 + i, 0, 1),
+// 11 yearly points, 2016–2026 — the same ten-year span `date-format.test.ts`
+// pins ("abbreviates the year rung once the tick set is dense"): few ticks
+// spell the year out in full, many abbreviate it.
+const longSpanData = Array.from({ length: 11 }, (_, i) => ({
+  year: new Date(2016 + i, 0, 1),
   users: 40_000 + i * i * 8_000,
 }));
 
 /**
- * A 10-year series: the date ladder resolves to the "year" rung on its own
- * — every tick reads a full year, not a month/day.
+ * A ten-year series, fluid width like `Charts/Axes`' `WidthDerivedTicks` —
+ * resize the canvas to watch RM-108's width-derived tick target carry the
+ * RM-109 date ladder with it: few ticks fit at 380 px (`X_TICK_TARGET_MIN`
+ * up to ~4), so the year rung has room to spell itself out in full
+ * (`"2016"`); ~9–10 fit at 900 px, dense enough that the ladder abbreviates
+ * to `"yearShort"` (`"'16"`) rather than crowd ten full years side by side
+ * (`date-format.ts`'s `DENSE_TICK_COUNT_THRESHOLD`). The x axis itself stays
+ * visible at narrow — RM-107's `sm` density drops the value axis and legend
+ * only, never the category axis.
  */
 export const DateLadderLongSpan: Story = {
   render: () => (
-    <div className="h-72 w-full max-w-[560px]">
+    <div className="h-72 w-full">
       <LineChart aspectRatio={undefined} data={longSpanData} xDataKey="year">
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" stroke="var(--chart-4)" />

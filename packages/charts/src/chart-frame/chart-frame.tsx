@@ -78,6 +78,17 @@ import {
   type ChartDensity,
   type ChartInteractions,
 } from "../charts/chart-config-context";
+import {
+  ChartBreakpointScope,
+  ChartFramePlotHeightProvider,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+  resolvePlotBoxStyle,
+  useMeasuredChartBreakpoint,
+  warnChartOnce,
+  resolveResponsive,
+} from "../charts/chart-breakpoint";
 
 // ── Minimal local CSV serializer (RFC 4180 + injection guard) ─────────────────
 // The canonical reusable version lives in @elabs-ai/components-data (`toCsv`). This local
@@ -481,7 +492,13 @@ function ChartFrameModal({
  * layered over any outer provider (springs, currency) rather than resetting it.
  * Renders no DOM, so a frame with neither prop keeps its exact markup.
  */
-function ChartConfigBridge({ density, children }: { density?: ChartDensity; children: ReactNode }) {
+function ChartConfigBridge({
+  density,
+  children,
+}: {
+  density?: Responsive<ChartDensity>;
+  children: ReactNode;
+}) {
   const outer = useChartConfig();
   const { meta } = useChartFrame();
   const value = useMemo(
@@ -546,10 +563,19 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    */
   features?: ChartFrameFeature[];
   /**
-   * Inline body height in px. Defaults to 260 for `chrome="card"`/`"bare"`.
-   * With `chrome="tile"` and no `height`, the frame fills its host instead
-   * (`h-full` flex column, chart body takes the space left after header and
-   * source row) — the host tile sets the height (#444).
+   * The chart's own drawing height (ADR 0039): px, or `{ aspect }` (width ÷
+   * height), optionally per breakpoint. The title, legend, notes and source
+   * row are added AROUND it, so the frame is as tall as its content. Unset: the
+   * chart's family default (2 : 1, and 1.25 : 1 when narrow, for line/bar/…).
+   * With `chrome="tile"` and neither `plotHeight` nor `height`, the chart fills
+   * the tile's remaining height instead (#444). `plotHeight={260}` keeps the
+   * pre-ADR-0039 look of a card.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
+  /**
+   * @deprecated Use `plotHeight` — it sets the chart's own height, and the
+   * title, legend and notes are added around it. `height={n}` is now an alias
+   * for `plotHeight={n}` (it no longer fixes the body); removed in 5.0.0.
    */
   height?: number;
   /**
@@ -617,9 +643,11 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * Furniture tier (`"xs" | "sm" | "md" | "lg"`, default `"md"`). Forwarded to
    * every chart family through `useChartConfig()`; the frame itself drops
    * `description` and the source row at `xs` and clamps the title to one line
-   * at `xs`/`sm`.
+   * at `xs`/`sm`. Optionally per breakpoint (ADR 0039): inside a `narrow`
+   * chart `md`/`lg` become `sm` unless an explicit `narrow` entry says
+   * otherwise (`{ base: "md", narrow: "md" }` keeps the legend and value axis).
    */
-  density?: ChartDensity;
+  density?: Responsive<ChartDensity>;
   /** The chart content. Rendered in both inline and expanded modal positions. */
   children: ReactNode;
 }
@@ -632,6 +660,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     columns: columnsProp,
     detail,
     features: featuresProp,
+    plotHeight,
     height,
     renderTable,
     onDownload,
@@ -651,6 +680,12 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
   ref,
 ) {
   const hasData = Array.isArray(data) && data.length > 0;
+  if (height !== undefined) {
+    warnChartOnce(
+      "ChartFrame.height",
+      '[ChartFrame] "height" is deprecated and will be removed in 5.0.0. Use "plotHeight": it sets the chart\'s own height, and the title, legend and notes are added around it.',
+    );
+  }
 
   // Derive resolved columns from data keys when not specified.
   const firstRow = hasData ? data![0] : undefined;
@@ -696,7 +731,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
       onDownload={resolvedDownload}
       onExport={onExport}
       loading={loading}
-      density={density}
+      density={resolveResponsive(density, "wide")}
       interactions={interactions}
       onExpandChange={onExpandChange}
     >
@@ -706,7 +741,8 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
         headerSlot={headerSlot}
         menuSlot={menuSlot}
         className={className}
-        height={height}
+        plotHeight={plotHeight ?? height}
+        densityInput={density}
         detail={detail}
         renderTable={resolvedRenderTable}
         title={title}
@@ -723,7 +759,8 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
 // Inner component that consumes the context (avoids provider/consumer in the
 // same render function).
 interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
-  height?: number;
+  plotHeight?: Responsive<ChartPlotHeight>;
+  densityInput: Responsive<ChartDensity>;
   detail?: ReactNode;
   renderTable: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
   title?: ReactNode;
@@ -737,7 +774,8 @@ interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "tit
 
 const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(function ChartFrameInner(
   {
-    height,
+    plotHeight,
+    densityInput,
     detail,
     renderTable,
     title,
@@ -797,9 +835,9 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
     return () => observer.disconnect();
   }, [actions, refs.chartBody, state.view, loading, children]);
 
-  // A tile without an explicit `height` fills its host (#444); every other
-  // chrome keeps the fixed 260px default.
-  const fillHost = chrome === "tile" && height === undefined;
+  // A tile without a plot height fills its host (#444). Every other frame is
+  // as tall as its content: the chart sizes its own plot (ADR 0039 §3).
+  const fillHost = chrome === "tile" && plotHeight === undefined;
   const titleText = typeof title === "string" ? title : undefined;
 
   // WCAG 2.1.1 (axe `scrollable-region-focusable`, #432 round 3): this box is
@@ -815,6 +853,19 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   // non-overflowing case, so no existing chart snapshot/story changes.
   const bodyScrollRef = useRef<HTMLDivElement>(null);
   const [overflowing, setOverflowing] = useState(false);
+  // ADR 0039: the frame's own tier (measured on the body) scopes frame-level
+  // parts outside the chart container, e.g. a legend composed beside it.
+  const { ref: bodyRef, breakpoint } = useMeasuredChartBreakpoint(bodyScrollRef);
+  // Not-ready: no chart to size the body yet, so the skeleton takes the plot
+  // box the chart will take (no layout shift on arrival).
+  const loadingBoxStyle = loading
+    ? fillHost
+      ? undefined
+      : resolvePlotBoxStyle(
+          { plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT },
+          breakpoint,
+        )
+    : undefined;
 
   useEffect(() => {
     const el = bodyScrollRef.current;
@@ -832,8 +883,8 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
 
   const body = (
     <div
-      ref={bodyScrollRef}
-      style={fillHost ? undefined : { height: height ?? 260 }}
+      ref={bodyRef}
+      style={loadingBoxStyle}
       className={cn(
         "w-full overflow-auto",
         fillHost && "h-full",
@@ -872,7 +923,11 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           {state.view === "table" ? (
             renderTable(rows, columns)
           ) : (
-            <ChartConfigBridge>{children}</ChartConfigBridge>
+            <ChartConfigBridge density={densityInput}>
+              <ChartFramePlotHeightProvider value={fillHost ? "fill" : plotHeight}>
+                <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
+              </ChartFramePlotHeightProvider>
+            </ChartConfigBridge>
           )}
         </div>
       )}
@@ -892,6 +947,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           ref={mergedCardRef}
           data-slot="chart-frame"
           data-chrome="bare"
+          data-chart-breakpoint={breakpoint}
           className={cn("flex min-h-0 flex-col", className)}
           {...props}
         >
@@ -923,6 +979,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           ref={mergedCardRef}
           data-slot="chart-frame"
           data-chrome="tile"
+          data-chart-breakpoint={breakpoint}
           className={cn("flex min-h-0 min-w-0 flex-col gap-2", fillHost && "h-full", className)}
           {...props}
         >
@@ -958,7 +1015,12 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
 
   return (
     <>
-      <Card ref={mergedCardRef} className={cn("flex flex-col", className)} {...props}>
+      <Card
+        ref={mergedCardRef}
+        data-chart-breakpoint={breakpoint}
+        className={cn("flex flex-col", className)}
+        {...props}
+      >
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
           <div className={compact ? "min-w-0 space-y-1" : "space-y-1"}>
             {title && (

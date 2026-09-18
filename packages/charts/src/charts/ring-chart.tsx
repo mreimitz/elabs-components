@@ -37,6 +37,7 @@ import {
 } from "./ring-context";
 import { useHighDecorationOf } from "./use-high-decoration";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 
 function generateRingArcPath(
   innerRadius: number,
@@ -61,6 +62,11 @@ export interface RingChartProps extends ChartSelectionProps {
   data: RingData[];
   /** Chart size in pixels. If not provided, uses parent container size */
   size?: number;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Stroke width of each ring. Default: 12 */
   strokeWidth?: number;
   /** Gap between rings. Default: 6 */
@@ -486,6 +492,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
   {
     data,
     size: fixedSize,
+    plotHeight,
     strokeWidth = 12,
     ringGap = 6,
     baseInnerRadius = 60,
@@ -551,7 +558,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
   // If fixed size is provided, use it directly
   if (fixedSize) {
     return (
-      <div
+      <ChartPlotRoot
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative flex items-center justify-center", className)}
@@ -582,16 +589,17 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
             {children}
           </RingChartInner>,
         )}
-      </div>
+      </ChartPlotRoot>
     );
   }
 
   // Otherwise use ParentSize for responsive sizing
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
-      className={cn("relative aspect-square w-full", className)}
+      className={cn("relative w-full", className)}
       ref={callbackRef}
       role={role}
       tabIndex={tabIndex}
@@ -622,7 +630,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
           )
         }
       </ParentSize>
-    </div>
+    </ChartPlotRoot>
   );
 });
 

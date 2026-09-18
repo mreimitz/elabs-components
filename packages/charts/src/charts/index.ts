@@ -772,3 +772,27 @@ export {
   findChartCategoryIndex,
   sameChartCategory,
 } from "./chart-hover-link";
+// Responsive contract — RM-107
+export {
+  breakpointForWidth,
+  CHART_BREAKPOINT_THRESHOLDS,
+  CHART_BREAKPOINTS,
+  type ChartBreakpoint,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  isResponsiveByBreakpoint,
+  resolveDensityForBreakpoint,
+  resolveResponsive,
+  type Responsive,
+  type ResponsiveByBreakpoint,
+  useChartBreakpoint,
+  useResponsiveValue,
+} from "./chart-breakpoint";
+// Axes — RM-108
+export { type AxisTitlePlacement } from "./axis-title";
+export { type CategoryAxisFit } from "./category-axis-plan";
+export { type GridMode } from "./grid";
+export { type AxisTickCount } from "./tick-targets";
+export { type XAxisOrientation } from "./x-axis";
+export { type AxisLabelPlacement } from "./y-axis";
+export { type AxisDomain, type AxisDomainBound, type ValueScaleType } from "./y-axis-scales";
