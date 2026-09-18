@@ -1,7 +1,7 @@
 "use client";
 
 import { LinePath } from "@visx/shape";
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useId, useMemo, useRef, useState } from "react";
 import type { Responsive } from "./chart-breakpoint";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import { type CurveAlias, type CurveFactory, resolveCurve } from "./curve-types";
@@ -557,5 +557,24 @@ export function Line({
 }
 
 Line.displayName = "Line";
+
+export interface LinePeakLabelsProps {
+  /** The series whose peaks the group holds. */
+  series: string;
+  children: ReactNode;
+}
+
+/**
+ * The group a `labelPeaks` Line paints its peak labels into. The label engine
+ * places the peaks (RM-110), but the group keeps the `line-peak-labels` slot
+ * Line has published since RM-028, so consumers and tests still find it.
+ */
+export function LinePeakLabels({ series, children }: LinePeakLabelsProps) {
+  return (
+    <g aria-hidden="true" data-series={series} data-slot="line-peak-labels">
+      {children}
+    </g>
+  );
+}
 
 export default Line;
