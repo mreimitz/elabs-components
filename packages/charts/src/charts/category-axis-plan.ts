@@ -13,6 +13,12 @@
  *                         honest way to show category text at all → `hidden`.
  *   2. horizontal       — every label fits inside its own band slot → render as
  *                         today.
+ *   2b. wrapped (bottom, RM-108) — every label breaks at ONE word boundary into
+ *                         two lines that each fit the band slot, and two line
+ *                         heights fit `maxExtent`. Never mid-word. Tried before
+ *                         tilt because a rotated label is the last resort
+ *                         (Datawrapper: never rotate first). `fit: "tilt"`
+ *                         skips it; `fit: "wrap"` never tilts.
  *   3. tilted (bottom)  — labels rotate 45°. Viability is PERPENDICULAR spacing,
  *                         not slot width: two parallel 45° baselines separated
  *                         by `slotSize` along the axis are `slotSize / √2` apart
@@ -32,7 +38,7 @@
  */
 
 /** How the axis ended up rendering. */
-export type CategoryAxisMode = "horizontal" | "tilted" | "hidden";
+export type CategoryAxisMode = "horizontal" | "wrapped" | "tilted" | "hidden";
 
 /** Which side of the plot the category axis sits on. */
 export type CategoryAxisPlacement = "bottom" | "left";
@@ -42,7 +48,10 @@ export type CategoryAxisPlacement = "bottom" | "left";
  * byte-for-byte (count-capped stride, full labels, no reserved extent) and is
  * the pinned regression escape hatch.
  */
-export type CategoryAxisFit = "auto" | "off";
+export type CategoryAxisFit = "auto" | "wrap" | "tilt" | "off";
+
+/** Most lines the `wrap` rung breaks a label into (RM-108). */
+export const CATEGORY_AXIS_WRAP_MAX_LINES = 2;
 
 /** Below this container width, category text is not worth the pixels. */
 export const CATEGORY_AXIS_MIN_CONTAINER_WIDTH = 160;
@@ -104,6 +113,12 @@ export interface CategoryAxisPlannedLabel extends CategoryAxisEntry {
   /** What is painted — may be an ellipsised prefix of `label`. */
   display: string;
   truncated: boolean;
+  /**
+   * The painted lines when `mode === "wrapped"` (RM-108) — `display` split at
+   * a word boundary into at most {@link CATEGORY_AXIS_WRAP_MAX_LINES} lines,
+   * each narrower than the band. Unset on every other rung.
+   */
+  lines?: string[];
 }
 
 export interface CategoryAxisPlan {
@@ -270,6 +285,39 @@ function tiltedTextBudget(extentPx: number, lineHeightPx: number): number {
   return extentPx * SQRT2 - lineHeightPx;
 }
 
+/**
+ * Break `label` at the ONE word boundary that minimises its widest line
+ * (RM-108 `wrap` rung). Returns `null` when the label has no word boundary or
+ * even the best split leaves a line wider than `maxLineWidth` — the rung
+ * never breaks a word and never ellipsises (that is the tilt/trim rungs' job).
+ * A label that already fits on one line comes back as a single line.
+ */
+export function wrapCategoryLabel(
+  label: string,
+  maxLineWidth: number,
+  measure: (text: string) => number,
+): string[] | null {
+  if (measure(label) <= maxLineWidth) {
+    return [label];
+  }
+  const words = label.trim().split(/\s+/);
+  if (words.length < CATEGORY_AXIS_WRAP_MAX_LINES) {
+    return null;
+  }
+  let best: string[] | null = null;
+  let bestWidest = Number.POSITIVE_INFINITY;
+  for (let split = 1; split < words.length; split += 1) {
+    const first = words.slice(0, split).join(" ");
+    const second = words.slice(split).join(" ");
+    const widest = Math.max(measure(first), measure(second));
+    if (widest < bestWidest) {
+      bestWidest = widest;
+      best = [first, second];
+    }
+  }
+  return best && bestWidest <= maxLineWidth ? best : null;
+}
+
 export function planCategoryAxis(input: CategoryAxisPlanInput): CategoryAxisPlan {
   const {
     categories,
@@ -362,8 +410,37 @@ export function planCategoryAxis(input: CategoryAxisPlanInput): CategoryAxisPlan
       }
     }
 
+    // --- wrap (RM-108): two lines at a word boundary, before any rotation. ---
+    // Viable when EVERY kept label wraps into lines that each leave the
+    // horizontal rung's gap inside the band, and two line heights fit the
+    // reserve. One label that cannot wrap (a single long word) fails the rung
+    // for the whole axis — a mixed horizontal/wrapped axis still reads as one.
+    if (fit !== "tilt") {
+      const wrapExtent =
+        Math.ceil(lineHeightPx * CATEGORY_AXIS_WRAP_MAX_LINES) + CATEGORY_AXIS_PADDING;
+      if (wrapExtent <= maxExtent) {
+        const lineBudget = effectiveSlot - CATEGORY_AXIS_LABEL_GAP;
+        const wrapped = kept.map((entry) => wrapCategoryLabel(entry.label, lineBudget, measure));
+        if (wrapped.every((lines) => lines !== null)) {
+          return {
+            mode: "wrapped",
+            labels: kept.map((entry, i) => ({
+              ...entry,
+              display: entry.label,
+              truncated: false,
+              lines: wrapped[i] ?? [entry.label],
+            })),
+            stride,
+            requiredExtentPx: wrapExtent,
+            angleDeg: 0,
+            maxTextWidthPx,
+          };
+        }
+      }
+    }
+
     // --- tilt, when the perpendicular spacing between baselines allows it. ---
-    const tiltViable = effectiveSlot >= lineHeightPx * SQRT2;
+    const tiltViable = fit !== "wrap" && effectiveSlot >= lineHeightPx * SQRT2;
     if (tiltViable) {
       const textBudget = tiltedTextBudget(budget, lineHeightPx);
       if (textBudget >= CATEGORY_AXIS_MIN_TEXT_PX) {

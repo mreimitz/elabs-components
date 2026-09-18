@@ -54,8 +54,11 @@ import {
   buildYScalesFromDomains,
   DEFAULT_Y_AXIS_ID,
   getPrimaryYScale,
+  applyValueAxisConfigs,
+  collectValueAxisConfigs,
   groupLinesByYAxisId,
   normalizeYAxisId,
+  warnValueAxisOnce,
 } from "./y-axis-scales";
 import { computeYDomainsByAxis } from "./y-domain-utils";
 
@@ -414,7 +417,50 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     tweenOnTargetChange: tweenYDomainOnXDomainChange && xDomain != null,
   });
 
-  const yDomainsForScales = animatedYDomainsByAxis;
+  // RM-108: `YAxis domain` / `scale` requests, read off the direct children.
+  // Applied AFTER the domain tween so pinned ends stay put while `"auto"` ends
+  // keep animating; a log axis resolves from the data extent and never tweens
+  // through zero.
+  const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
+  const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
+  const hasComposedBars = (composedBarDataKeys?.length ?? 0) > 0;
+  const valueAxisData = xDomain ? visiblePlotData : data;
+  const valueAxes = useMemo(
+    () =>
+      hasValueAxisConfigs
+        ? applyValueAxisConfigs({
+            autoDomainsByAxis: animatedYDomainsByAxis,
+            configs: valueAxisConfigs,
+            data: valueAxisData,
+            lines,
+            // A ComposedChart with bars draws LENGTHS: every axis stays
+            // zero-based and linear under any `domain`/`scale` request
+            // (charts-honesty). Conservative — it also covers a line-only axis
+            // beside the bars.
+            lengthEncoding: hasComposedBars,
+          })
+        : null,
+    [
+      animatedYDomainsByAxis,
+      hasComposedBars,
+      hasValueAxisConfigs,
+      lines,
+      valueAxisConfigs,
+      valueAxisData,
+    ],
+  );
+  const valueAxisWarnings = valueAxes?.warningsByAxis;
+  useEffect(() => {
+    if (!valueAxisWarnings || data.length === 0) {
+      return;
+    }
+    for (const [axisId, warnings] of Object.entries(valueAxisWarnings)) {
+      warnValueAxisOnce(axisId, warnings);
+    }
+  }, [valueAxisWarnings, data.length]);
+
+  const yDomainsForScales = valueAxes?.domainsByAxis ?? animatedYDomainsByAxis;
+  const scaleKindsByAxis = valueAxes?.scaleKindsByAxis;
 
   const yScales = useMemo(
     () =>
@@ -422,8 +468,9 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
         domainsByAxis: yDomainsForScales,
         innerHeight,
         lines,
+        scaleKindsByAxis,
       }),
-    [yDomainsForScales, innerHeight, lines],
+    [yDomainsForScales, innerHeight, lines, scaleKindsByAxis],
   );
 
   const yScale = getPrimaryYScale(
