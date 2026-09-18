@@ -49,13 +49,25 @@ describe("dateFormatForSpan — the ladder", () => {
     expect(dateFormatForSpan(oneHour, 6)).toBe("minute");
   });
 
-  it("abbreviates the year rung once the tick set is dense, spells it out when it is not", () => {
+  it("abbreviates the year rung when the caller says the axis is cramped, spells it out by default", () => {
     const tenYears: [Date, Date] = [new Date("2016-01-01"), new Date("2026-01-01")];
-    // Few ticks over ten years: plenty of room, spell the year out.
+    // Default (no `options`, or `cramped: false`): spell the year out —
+    // matches every pre-existing caller that does not pass the option.
     expect(dateFormatForSpan(tenYears, 3)).toBe("year");
-    // Many ticks over the same span: the label repeats often enough to
-    // abbreviate rather than crowd ten full years side by side.
-    expect(dateFormatForSpan(tenYears, 10)).toBe("yearShort");
+    expect(dateFormatForSpan(tenYears, 10)).toBe("year");
+    expect(dateFormatForSpan(tenYears, 3, undefined, { cramped: false })).toBe("year");
+    // `cramped: true` abbreviates regardless of tick count — the fix for the
+    // date-ladder round (#478): tick count alone used to decide this and got
+    // it backwards, since RM-108 targets a roughly constant ~90px per tick at
+    // every width, so "many ticks" never actually meant "less room per tick".
+    expect(dateFormatForSpan(tenYears, 3, undefined, { cramped: true })).toBe("yearShort");
+    expect(dateFormatForSpan(tenYears, 10, undefined, { cramped: true })).toBe("yearShort");
+  });
+
+  it("cramped only swings the year rung — a finer rung is unaffected", () => {
+    const sixMonths: [Date, Date] = [new Date("2024-01-01"), new Date("2024-07-01")];
+    expect(dateFormatForSpan(sixMonths, 3, undefined, { cramped: true })).toBe("month");
+    expect(dateFormatForSpan(sixMonths, 3, undefined, { cramped: false })).toBe("month");
   });
 
   it("is a pure function of span + tick count — same inputs, same rung, regardless of call order", () => {

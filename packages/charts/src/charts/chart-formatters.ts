@@ -187,11 +187,18 @@ export function makeValueSetFmt(
  * DATE formatter for one {@link DateFormatPreset} rung (RM-109) — the same
  * non-hook, explicit-locale path as `makeValueFmt`/`makeShortDateFmt`, siblings
  * for the ladder in `date-format.ts` instead of the fixed `"Mon d"` shape.
+ *
+ * `"yearShort"` gets the elision mark (`’16`, U+2019, per the repo's
+ * micro-typography rule — never a straight `'`) prepended here: `Intl`'s
+ * 2-digit-year option has no elision-mark equivalent of its own, and a bare
+ * `"16"` reads as a small plain number, not a year (date-ladder round, #478).
  */
 export const makeDateFmtForPreset =
   (locale: string | undefined, preset: DateFormatPreset) =>
-  (date: Date): string =>
-    getDateFormat(locale, dateFormatOptionsForPreset(preset)).format(date);
+  (date: Date): string => {
+    const formatted = getDateFormat(locale, dateFormatOptionsForPreset(preset)).format(date);
+    return preset === "yearShort" ? `’${formatted}` : formatted;
+  };
 
 // ── Backward-compatible host-default bindings (no more hardcoded en-US) ───────
 // These honor the runtime host locale instead of forcing "en-US". They do NOT

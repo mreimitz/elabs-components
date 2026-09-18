@@ -641,17 +641,28 @@ function buildDataAlignedTicks({
 function buildDomainTicks({
   marginLeft,
   numTicks,
+  preferCalendarAlignment = true,
   tickFormat,
   dateFormatFn,
   xScale,
 }: {
   marginLeft: number;
   numTicks: number;
+  /**
+   * Date-ladder round (#478): prefer d3's calendar-aligned `.ticks()` over
+   * the plain interpolation below. `true` (the AUTO count path) by default;
+   * an EXPLICIT `numTicks`/`tickCount` pin passes `false` to keep the exact
+   * count it asked for — d3's own tick algorithm only promises a "nice"
+   * count near the target, never an exact one, and pinning an exact count is
+   * the whole point of the explicit prop.
+   */
+  preferCalendarAlignment?: boolean;
   tickFormat?: (value: Date) => string;
   /** RM-109: the date-ladder fallback — replaces the old fixed `"Mon d"` shape. */
   dateFormatFn?: (value: Date) => string;
   xScale: {
     domain: () => Date[];
+    ticks?: (count?: number) => Date[];
     (date: Date): number | undefined;
   };
 }): AxisTick[] {
@@ -677,15 +688,36 @@ function buildDomainTicks({
     return [];
   }
 
-  const timeRange = endTime - startTime;
   const tickCount = Math.max(2, numTicks);
   const seenLabels = new Set<string>();
   const ticks: AxisTick[] = [];
   const resolveDateLabel = dateFormatFn ?? ((value: Date) => shortDateFmt.format(value));
 
-  for (let i = 0; i < tickCount; i++) {
-    const t = i / (tickCount - 1);
-    const date = new Date(startTime + t * timeRange);
+  // RM-109 date-ladder round: `xScale` is a d3 time scale — `.ticks(count)`
+  // is d3-time's OWN "nice" algorithm (a `timeYear`/`timeMonth`/`timeDay`/…
+  // interval at a step of 1, 2, 5 or 10 for years, 1/2/3/6 for months, etc.),
+  // exactly what a calendar-aligned axis needs: every tick lands on a real
+  // period boundary with a UNIFORM step, never the arbitrary instants a
+  // straight `startTime + i/(tickCount-1) * timeRange` interpolation
+  // produces (which is what this loop did before — it does not know what a
+  // "year" is, so it happily lands on `2019-04-22` and skips `2021`). Only
+  // taken on the AUTO count path (see `preferCalendarAlignment`); falls back
+  // to the old interpolation otherwise, or if `xScale` is a stub without
+  // `.ticks` (some tests build a bare function).
+  const dateTicksFromScale =
+    preferCalendarAlignment && typeof xScale.ticks === "function"
+      ? xScale.ticks(tickCount)
+      : undefined;
+  const timeRange = endTime - startTime;
+  const candidateDates =
+    dateTicksFromScale && dateTicksFromScale.length > 0
+      ? dateTicksFromScale
+      : Array.from(
+          { length: tickCount },
+          (_, i) => new Date(startTime + (i / (tickCount - 1)) * timeRange),
+        );
+
+  for (const date of candidateDates) {
     const label = tickFormat ? tickFormat(date) : resolveDateLabel(date);
     if (seenLabels.has(label)) {
       continue;
@@ -733,6 +765,11 @@ export function XAxis(props: XAxisProps) {
       <XAxisInner
         {...props}
         container={container}
+        // RM-107's narrow breakpoint forces `sm` by default (ADR 0039) — the
+        // one signal this axis already trusts for "no room" (it is why the
+        // value axis and legend disappear here too), so the date-ladder's
+        // year rung reads it the same way (date-ladder round, #478).
+        cramped
         maxTickTarget={CHART_DENSITY_SM_MAX_TICKS}
         tickValues={(props.tickValues ?? dateTicks(props.ticks))?.slice(
           0,
@@ -753,6 +790,7 @@ const XAxisInner = memo(function XAxisInner({
   title,
   titlePlacement = "outside",
   maxTickTarget,
+  cramped = false,
   tickerHalfWidth = 50,
   tickMode = "domain",
   tickFormat,
@@ -760,7 +798,7 @@ const XAxisInner = memo(function XAxisInner({
   tickValues: tickValuesProp,
   periodTicks = false,
   container,
-}: XAxisProps & { container: HTMLDivElement; maxTickTarget?: number }) {
+}: XAxisProps & { container: HTMLDivElement; maxTickTarget?: number; cramped?: boolean }) {
   const {
     xScale,
     margin,
@@ -781,10 +819,10 @@ const XAxisInner = memo(function XAxisInner({
   const numericRuler = useContext(NumericXRulerContext);
   // RM-108: explicit `numTicks` > numeric `tickCount` > the width-derived
   // target; a density cap (`sm`) still bounds whichever wins. Resolved BEFORE
-  // the RM-109 date ladder below, which needs this same number — a ten-year
-  // series paints short year labels at a narrow width (few ticks fit) and
-  // full years at a wide one (more ticks fit), driven by this one value, not
-  // a second, independent width read.
+  // the RM-109 date ladder below, which needs this same number for its
+  // finer rungs (month/day/weekday/hour/minute) — the year rung's own
+  // `"year"`/`"yearShort"` choice reads `cramped` (RM-107's narrow
+  // breakpoint) instead; see `dateFormatForSpan`'s doc comment.
   const widthTarget = tickTargetForWidth(innerWidth);
   const resolvedTickTarget = resolveAxisTickTarget({
     numTicks: numTicksProp,
@@ -793,15 +831,22 @@ const XAxisInner = memo(function XAxisInner({
   });
   const numTicks =
     maxTickTarget != null ? Math.min(resolvedTickTarget, maxTickTarget) : resolvedTickTarget;
+  // Date-ladder round (#478): a fully AUTO count (neither `numTicks` nor a
+  // numeric `tickCount` pinned — `resolveAxisTickTarget`'s own precedence,
+  // re-read here) prefers d3's calendar-aligned `.ticks()` in
+  // `buildDomainTicks` below; an EXPLICIT pin keeps the exact count it asks
+  // for (that IS the point of pinning it — d3's own tick algorithm never
+  // promises an exact count, only a "nice" one near it).
+  const isAutoTickTarget = numTicksProp == null && (tickCount == null || tickCount === "auto");
 
-  // RM-109: the ladder rung this axis paints, resolved once per render —
-  // `dateFormat` as an explicit preset wins outright; a function is honoured
-  // as-is (same escape hatch as `tickFormat`); unset, `dateFormatForSpan`
-  // picks a rung from the time domain's span and `numTicks` — RM-108's
-  // RESOLVED, width-derived tick target above, not a fixed default — so a
-  // narrow plot (fewer ticks fit) and a wide one (more ticks fit) can land on
-  // different rungs for the identical data (the RM's own bullet: a ten-year
-  // series reads `'16 '18 …` narrow, `2016 … 2025` wide).
+  // RM-109 date-ladder round (#478): the ladder rung this axis paints,
+  // resolved once per render — `dateFormat` as an explicit preset wins
+  // outright; a function is honoured as-is (same escape hatch as
+  // `tickFormat`); unset, `dateFormatForSpan` picks a rung from the time
+  // domain's span and `numTicks`. `cramped` (RM-107's narrow breakpoint,
+  // `density === "sm"`) is what actually swings the year rung between
+  // `"year"` and `"yearShort"` — a ten-year series reads `’16 ’18 …` at
+  // narrow (density forces `sm`) and `2016 … 2025` at medium/wide.
   const ladderPreset = useMemo<DateFormatPreset>(() => {
     if (dateFormat != null && typeof dateFormat !== "function") {
       return dateFormat;
@@ -810,8 +855,8 @@ const XAxisInner = memo(function XAxisInner({
     if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
       return "day";
     }
-    return dateFormatForSpan([start, end], numTicks, locale);
-  }, [dateFormat, xScale, numTicks, locale]);
+    return dateFormatForSpan([start, end], numTicks, locale, { cramped });
+  }, [dateFormat, xScale, numTicks, locale, cramped]);
 
   // The axis' own tick formatter for the resolved rung.
   const ladderDateFormat = useMemo(
@@ -927,6 +972,7 @@ const XAxisInner = memo(function XAxisInner({
       dateFormatFn: effectiveDateFormat,
       marginLeft: margin.left,
       numTicks,
+      preferCalendarAlignment: isAutoTickTarget,
       tickFormat: effectiveTickFormat,
       xScale,
     });
@@ -946,6 +992,7 @@ const XAxisInner = memo(function XAxisInner({
     xScale,
     margin.left,
     numTicks,
+    isAutoTickTarget,
   ]);
 
   const warnedNonTimeTickPropsRef = useRef(false);

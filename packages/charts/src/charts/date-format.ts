@@ -7,7 +7,10 @@
  * label. Datawrapper's River charts instead pick a granularity from how much
  * TIME a tick has to cover and how many ticks there are to fit: a wide
  * domain with few ticks reads years, a narrow domain with many reads hours
- * or minutes.
+ * or minutes. The year rung additionally abbreviates when the axis is
+ * CRAMPED for room (an `XAxis` caller's own width signal — see the
+ * `cramped` option on {@link dateFormatForSpan}), not when the tick set
+ * happens to be large.
  *
  * Pure by design, the same split as `value-format.ts`: types, a ladder and an
  * `Intl.DateTimeFormatOptions` builder, no React and no `Intl` instances
@@ -19,9 +22,11 @@
  * One rung of the date-format ladder, coarsest first.
  *
  * - `"year"` — `2015`.
- * - `"yearShort"` — `'15`. Same annual cadence as `"year"`, a narrower
- *   string for when the tick SET is dense (many ticks want the same rung —
- *   see {@link dateFormatForSpan}).
+ * - `"yearShort"` — `’15` (elision mark, U+2019 — added by
+ *   `chart-formatters.ts`'s `makeDateFmtForPreset`, since `Intl`'s 2-digit
+ *   year option has no elision-mark equivalent of its own). Same annual
+ *   cadence as `"year"`, a narrower string for a CRAMPED axis — see
+ *   {@link dateFormatForSpan}.
  * - `"month"` — `Jan '24`.
  * - `"day"` — `3 Mar`.
  * - `"weekday"` — `Mon, 3 Mar`.
@@ -54,24 +59,32 @@ const MS_PER_MONTH = 30.44 * MS_PER_DAY;
 const MS_PER_YEAR = 365.25 * MS_PER_DAY;
 
 /**
- * Ticks at or above this count share one rung's label with their neighbours
- * close enough together that the coarse tier's SHORT form (`"yearShort"`)
- * reads better than repeating the full one (`"year"`) `tickCount` times —
- * "dense", in the ladder's own vocabulary. Below it, the domain has room to
- * spell the rung out.
- */
-const DENSE_TICK_COUNT_THRESHOLD = 8;
-
-/**
  * Picks the coarsest {@link DateFormatPreset} whose natural cadence still
  * gives `tickCount` ticks across `domain` distinguishable labels — the
- * "date ladder": `year` → `yearShort` (dense) → `month` → `day` → `weekday`
- * → `hour` → `minute`.
+ * "date ladder": `year`/`yearShort` → `month` → `day` → `weekday` → `hour`
+ * → `minute`.
  *
  * Pure function of the SPAN and the tick count already decided elsewhere
- * (today: the caller's `numTicks`/`tickValues`; once RM-108 lands, a
- * width-derived count) — this module never measures a container itself, so
- * it has nothing to wait on RM-107/RM-108 for.
+ * (RM-108's width-derived target) — this module never measures a container
+ * itself, so it has nothing to wait on RM-107/RM-108 for.
+ *
+ * **The year rung's `"year"`/`"yearShort"` choice (date-ladder round, #478)**
+ * is the one place this function is not purely a function of span + tick
+ * count: it also takes `cramped`, the caller's own read of ROOM, not of TICK
+ * COUNT. An earlier version keyed this off `tickCount` alone ("many ticks
+ * sharing the year tier ⇒ abbreviate") — backwards from what a reader
+ * actually needs: MORE ticks on a WIDE axis does not mean less room per
+ * label (RM-108 targets a roughly constant ~90px per tick at every width, by
+ * construction), so that rule never abbreviated at the width that is
+ * actually cramped and never spelled the year out at the width that has
+ * room. `cramped` is instead the caller's OWN width signal — in practice
+ * `XAxis` passes RM-107's narrow breakpoint (`density === "sm"`, ADR 0039),
+ * since that is the one signal the chart already publishes for "this plot
+ * does not have room" and every other narrow-only decision (hiding the
+ * value axis, capping the y tick count) already keys off it too. A caller
+ * with a genuine per-tick pixel budget (plot width ÷ resolved tick count vs.
+ * a measured/estimated four-digit-year width) may pass that instead — this
+ * function only asks for a boolean, not for how it was decided.
  *
  * `locale` is accepted for callers that resolve rungs per-locale in the
  * future (e.g. a calendar system where "year" is not the coarsest natural
@@ -84,6 +97,15 @@ export function dateFormatForSpan(
   // signature (RM-109) even though the current rungs do not vary by locale.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- see above.
   _locale?: string,
+  options?: {
+    /**
+     * The axis does not have room to spell a 4-digit year out — abbreviate
+     * to `"yearShort"` instead of `"year"` when the span/tick-count gap
+     * would otherwise pick the year tier. Default `false` (spell it out),
+     * matching every pre-existing caller that does not pass it.
+     */
+    cramped?: boolean;
+  },
 ): DateFormatPreset {
   const [start, end] = domain;
   const startMs = start.getTime();
@@ -100,9 +122,7 @@ export function dateFormatForSpan(
   const gapMs = spanMs / safeTickCount;
 
   if (gapMs >= MS_PER_YEAR) {
-    // Dense = many ticks sharing the year tier — abbreviate so `tickCount`
-    // repeats of the label stay legible side by side.
-    return safeTickCount >= DENSE_TICK_COUNT_THRESHOLD ? "yearShort" : "year";
+    return options?.cramped ? "yearShort" : "year";
   }
   if (gapMs >= MS_PER_MONTH) {
     return "month";

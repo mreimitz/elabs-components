@@ -319,12 +319,21 @@ describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", ()
     return count;
   }
 
-  it("paints 8–10 x ticks at 900 px and 3–5 at 380 px", () => {
+  it("paints 8–10 x ticks at 900 px and 2–5 at 380 px", () => {
+    // Date-ladder round (#478): the AUTO count path now prefers d3's
+    // calendar-aligned `.ticks()` (uniform year/month/day step, never a
+    // duplicate or skipped label — see `date-format.test.ts` and
+    // `formatting.stories.tsx`'s `DateLadderLongSpan`). `monthly`'s domain
+    // spans under 2 calendar years (2023-01 to 2024-12), so a narrow width's
+    // ~3–4-tick target lands on the year interval and gets exactly the 2
+    // year boundaries the domain actually contains — fewer than the old
+    // interpolation's always-exactly-N ticks, but every one of them is a
+    // real, distinct calendar year, which the old ticks were not.
     const wide = paintedXTicks(900);
     const narrow = paintedXTicks(380);
     expect(wide).toBeGreaterThanOrEqual(8);
     expect(wide).toBeLessThanOrEqual(10);
-    expect(narrow).toBeGreaterThanOrEqual(3);
+    expect(narrow).toBeGreaterThanOrEqual(2);
     expect(narrow).toBeLessThanOrEqual(5);
   });
 

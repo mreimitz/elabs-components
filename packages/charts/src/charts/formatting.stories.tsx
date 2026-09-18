@@ -117,29 +117,34 @@ export const DateLadderShortSpan: Story = {
   ),
 };
 
-// 11 yearly points, 2016–2026 — the same ten-year span `date-format.test.ts`
-// pins ("abbreviates the year rung once the tick set is dense"): few ticks
-// spell the year out in full, many abbreviate it.
-const longSpanData = Array.from({ length: 11 }, (_, i) => ({
-  year: new Date(2016 + i, 0, 1),
-  users: 40_000 + i * i * 8_000,
+// A real ten-year DAILY series, 2016-01-01 to 2025-12-31 (3,653 points, the
+// Acceptance's own span — date-ladder round, #478). Local calendar-day
+// constructors (`new Date(2016, 0, 1 + i)`), not ms-offset arithmetic off a
+// single base Date — that would drift across DST transitions in a non-UTC
+// timezone and land off local midnight on some days. Deterministic trend +
+// seasonal wave (`Math.sin`, never `Math.random` — `charts-honesty`).
+const longSpanData = Array.from({ length: 3653 }, (_, i) => ({
+  date: new Date(2016, 0, 1 + i),
+  users: 40_000 + i * 15 + 8_000 * Math.sin(i / 91.31),
 }));
 
 /**
- * A ten-year series, fluid width like `Charts/Axes`' `WidthDerivedTicks` —
- * resize the canvas to watch RM-108's width-derived tick target carry the
- * RM-109 date ladder with it: few ticks fit at 380 px (`X_TICK_TARGET_MIN`
- * up to ~4), so the year rung has room to spell itself out in full
- * (`"2016"`); ~9–10 fit at 900 px, dense enough that the ladder abbreviates
- * to `"yearShort"` (`"'16"`) rather than crowd ten full years side by side
- * (`date-format.ts`'s `DENSE_TICK_COUNT_THRESHOLD`). The x axis itself stays
- * visible at narrow — RM-107's `sm` density drops the value axis and legend
- * only, never the category axis.
+ * A ten-year DAILY series, fluid width like `Charts/Axes`' `WidthDerivedTicks`
+ * — resize the canvas to watch RM-108's width-derived tick target carry the
+ * RM-109 date ladder with it. The year rung's abbreviation follows the
+ * axis's own room, not the tick count: at 380 px `XAxis` is RM-107's `sm`
+ * (narrow, `cramped`) density, so `dateFormatForSpan` abbreviates —
+ * `’16 ’18 ’20 ’22 ’24`, a d3-"nice" 2-year calendar step; at 900 px there is
+ * room to spell the year out — `2016 2017 … 2025`, a 1-year step. Every
+ * label lands on a real calendar-year boundary (d3's own `.ticks()`, via
+ * `buildDomainTicks`'s `preferCalendarAlignment`) — no duplicate or skipped
+ * year within the step. The x axis itself stays visible at narrow — RM-107's
+ * `sm` density drops the value axis and legend only, never the category axis.
  */
 export const DateLadderLongSpan: Story = {
   render: () => (
     <div className="h-72 w-full">
-      <LineChart aspectRatio={undefined} data={longSpanData} xDataKey="year">
+      <LineChart aspectRatio={undefined} data={longSpanData} xDataKey="date">
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" stroke="var(--chart-4)" />
         <XAxis />
@@ -152,13 +157,13 @@ export const DateLadderLongSpan: Story = {
 
 /**
  * A caller-supplied `dateFormat` preset pins one rung regardless of span —
- * here "weekday" on the same 10-year series `DateLadderLongSpan` shows as
- * "year", to demonstrate the override winning outright.
+ * here "month" on the same ten-year daily series `DateLadderLongSpan` shows
+ * as "month", to demonstrate the override winning outright.
  */
 export const DateFormatOverride: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <LineChart aspectRatio={undefined} data={longSpanData} xDataKey="year">
+      <LineChart aspectRatio={undefined} data={longSpanData} xDataKey="date">
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" stroke="var(--chart-4)" />
         <XAxis dateFormat="month" />
