@@ -34,6 +34,7 @@ import { HaloText } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import type { ChartValueFormat } from "./value-format";
+import { ChartPlotRoot } from "./chart-breakpoint";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -585,7 +586,7 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
   const mainSize = isVertical ? bounds.height : bounds.width;
 
   return (
-    <div
+    <ChartPlotRoot
       aria-describedby={accessibleDescription ? descId : undefined}
       aria-label={ariaLabel}
       className={cn("relative", className)}
@@ -611,7 +612,7 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
           value={value}
         />
       ) : null}
-    </div>
+    </ChartPlotRoot>
   );
 });
 

@@ -71,6 +71,24 @@ pair go through `valueFormatOptionsForSet`/`useChartValueSetFormatter` instead, 
 the WHOLE set only when every finite, non-zero member would compact on its own. Escape hatch:
 `valueFormat="number"` (never compacted, per-value or per-set).
 
+## Responsive (ADR 0039)
+
+- A chart measures its OWN container, never the viewport: `narrow < 480 ≤ medium < 768 ≤
+wide`, published as `data-chart-breakpoint` and read with `useChartBreakpoint()`. A host
+  forces a tier with `ChartConfigProvider value={{ breakpoint }}`. Every container root is
+  `ChartPlotRoot` (or wraps a container that is) — `pnpm check --rule charts-responsive`.
+- Per-tier props are `Responsive<T>` = `T | { base, medium?, narrow? }` (desktop-first,
+  cascading narrow → medium → base). Never a `mobile*` prop; read one only through
+  `resolveResponsive` / `useResponsiveValue`, or hand it on whole.
+- `plotHeight` is the drawing area only — title, legend, notes and source stack around it.
+  Default for the 2:1 families: `{ base: { aspect: 2 }, narrow: { aspect: 1.25 } }`.
+  `height` on ChartFrame / AutoChart / WaterfallChart is a deprecated alias (removed in
+  5.0.0); `plotHeight={260}` restores the old fixed framed body.
+- Narrow implies the `sm` density: legend and value axis hidden, at most four ticks. The
+  host keeps the say per chart: a `density` given as `{ base, narrow }`, or an explicit
+  legend / axis, wins over the tier default.
+- Fonts never scale with the tier; only layout decisions do.
+
 ## Gantt
 
 `pixelsPerDay` = pixels per 86,400,000 ms at EVERY granularity, never "per current unit";

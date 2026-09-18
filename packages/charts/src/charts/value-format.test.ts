@@ -14,12 +14,13 @@ import {
   DEFAULT_CHART_VALUE_FORMAT,
   DEFAULT_MAX_FRACTION_DIGITS,
   exactValueString,
+  resolveChartValueFormatSpec,
   shouldCompact,
   valueFormatOptions,
   valueFormatOptionsForSet,
   type ChartValueFormat,
 } from "./value-format";
-import { makeValueFmt } from "./chart-formatters";
+import { makeValueFmt, makeValueSetFmt } from "./chart-formatters";
 
 const fmt = (
   value: number,
@@ -184,5 +185,68 @@ describe("exactValueString — what lands on the clipboard", () => {
   it("is the unrounded, un-localised value", () => {
     expect(exactValueString(50012102.632741)).toBe("50012102.632741");
     expect(exactValueString(-0.5)).toBe("-0.5");
+  });
+});
+
+describe("ChartValueFormatSpec — the object form (RM-109)", () => {
+  it("every preset string resolves to the same options its spec twin would", () => {
+    const presets: ChartValueFormat[] = ["number", "compact", "currency", "percent"];
+    for (const preset of presets) {
+      expect(valueFormatOptions(preset, 1234)).toEqual(
+        valueFormatOptions(resolveChartValueFormatSpec(preset), 1234),
+      );
+    }
+  });
+
+  it("decimals + abbreviate + sign + suffix compose — the acceptance shape", () => {
+    const spec: ChartValueFormat = { decimals: 1, abbreviate: true, sign: "always", suffix: "%" };
+    expect(fmt(12_800, spec)).toBe("+12.8K%");
+    // Forced abbreviate applies even below the magnitude threshold.
+    expect(fmt(5, spec)).toBe("+5%");
+    expect(fmt(-12_800, spec)).toBe("-12.8K%");
+  });
+
+  it("prefix glues literal text before the number", () => {
+    expect(fmt(180, { prefix: "$" })).toBe("$180");
+  });
+
+  it("sign: always marks positives and negatives, sign: auto marks only negatives", () => {
+    expect(fmt(42, { sign: "always" })).toBe("+42");
+    expect(fmt(42, { sign: "auto" })).toBe("42");
+    expect(fmt(-42, { sign: "auto" })).toBe("-42");
+  });
+
+  it("sign: parens wraps a negative in parens with no minus sign, leaves positives alone", () => {
+    expect(fmt(-1234, { sign: "parens", abbreviate: false })).toBe("(1,234)");
+    expect(fmt(1234, { sign: "parens", abbreviate: false })).toBe("1,234");
+  });
+
+  it("abbreviate: false never compacts, even far above the threshold", () => {
+    expect(fmt(5_000_000, { abbreviate: false })).toBe("5,000,000");
+  });
+
+  it("optionalDecimals: false pads to the fixed decimal count", () => {
+    expect(fmt(12, { decimals: 2, optionalDecimals: false })).toBe("12.00");
+    // Default (optionalDecimals unset) drops trailing zeros.
+    expect(fmt(12, { decimals: 2 })).toBe("12");
+  });
+
+  it("grouping: false drops the thousands separator", () => {
+    expect(fmt(12345, { grouping: false, abbreviate: false })).toBe("12345");
+  });
+
+  it("style: percent still honours the fraction-is-input contract", () => {
+    expect(fmt(0.5, { style: "percent" })).toBe("50%");
+  });
+
+  it("style: currency with an explicit currency code wins over the formatter's own", () => {
+    expect(fmt(10, { style: "currency", currency: "EUR" }, "en-US")).toContain("€");
+  });
+
+  it("the set formatter keeps #250 set-consistency for an object spec, and shares its text wrapping", () => {
+    const spec: ChartValueFormat = { suffix: "%" };
+    const values = [1000, -100, -300, -200, 400];
+    const strings = values.map(makeValueSetFmt(undefined, values, spec));
+    expect(strings).toEqual(["1,000%", "-100%", "-300%", "-200%", "400%"]);
   });
 });

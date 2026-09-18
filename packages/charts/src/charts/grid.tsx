@@ -5,7 +5,9 @@ import { motion } from "motion/react";
 import { useId } from "react";
 import { HaloText } from "../marks/halo-text";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
+import { tickTargetForHeight } from "./tick-targets";
 import { useGridShimmer } from "./use-grid-shimmer";
+import { valueAxisTicks } from "./y-axis-ticks";
 import { isLoadingChromePhase, isLoadingGridChromePhase } from "./y-domain-utils";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 
@@ -13,12 +15,31 @@ const DEFAULT_SHIMMER_LENGTH_PX = 140;
 const DEFAULT_SHIMMER_SPEED = 1;
 const DEFAULT_SHIMMER_STROKE = "color-mix(in oklch, var(--foreground) 68%, transparent)";
 
+/**
+ * How the grid paints (RM-108).
+ * - `"lines"` (default) — full-width/height hairlines, today's grid;
+ * - `"ticks"` — only short hairlines at the axis edge ({@link GRID_TICK_LENGTH_PX}),
+ *   no rule crosses the plot;
+ * - `"off"` — no rows or columns (highlight rows/columns still paint: they are
+ *   annotations, not furniture).
+ */
+export type GridMode = "lines" | "ticks" | "off";
+
+/** Length of a `mode="ticks"` hairline, in px. */
+export const GRID_TICK_LENGTH_PX = 6;
+
 export interface GridProps {
+  /** Grid painting mode (RM-108). Default: `"lines"`. */
+  mode?: GridMode;
   /** Show horizontal grid lines. Default: true */
   horizontal?: boolean;
   /** Show vertical grid lines. Default: false */
   vertical?: boolean;
-  /** Number of horizontal grid lines. Default: 5 */
+  /**
+   * Number of horizontal grid lines. Default: the height-derived target shared
+   * with `YAxis` (`tickTargetForHeight(innerHeight)` — 3 under 200 px, else 5),
+   * so rows and labels stay aligned (RM-108).
+   */
   numTicksRows?: number;
   /** Number of vertical grid lines. Default: 10 */
   numTicksColumns?: number;
@@ -92,9 +113,10 @@ export interface GridProps {
 
 // Grid fade masks and shimmer share one layer tree.
 export function Grid({
-  horizontal = true,
-  vertical = false,
-  numTicksRows = 5,
+  mode = "lines",
+  horizontal: horizontalProp = true,
+  vertical: verticalProp = false,
+  numTicksRows: numTicksRowsProp,
   numTicksColumns = 10,
   rowTickValues,
   stroke = chartCssVars.grid,
@@ -126,6 +148,14 @@ export function Grid({
   const { xScale, innerWidth, innerHeight, orientation, barScale, chartPhase, xValueToPosition } =
     useChartStable();
   const yScale = useYScale(yAxisId);
+  const numTicksRows = numTicksRowsProp ?? tickTargetForHeight(innerHeight);
+  // The same generator `YAxis` uses, so a log axis' rows match its labels.
+  const rowTicks = rowTickValues ?? valueAxisTicks(yScale, numTicksRows);
+  // RM-108: `ticks` swaps full rules for short edge hairlines; `off` paints no furniture.
+  const horizontal = mode === "lines" && horizontalProp;
+  const vertical = mode === "lines" && verticalProp;
+  const tickRows = mode === "ticks" && horizontalProp;
+  const tickColumns = mode === "ticks" && verticalProp;
   const shimmerActive = shimmer && isLoadingChromePhase(chartPhase);
   const gridStroke =
     isLoadingGridChromePhase(chartPhase) && loadingStroke != null ? loadingStroke : stroke;
@@ -158,7 +188,30 @@ export function Grid({
   const vGradientId = `${vMaskId}-gradient`;
 
   return (
-    <g className="chart-grid">
+    <g className="chart-grid" data-grid-mode={mode}>
+      {tickRows ? (
+        <GridRows
+          numTicks={rowTickValues ? undefined : numTicksRows}
+          scale={yScale}
+          stroke={gridStroke}
+          strokeOpacity={strokeOpacity}
+          strokeWidth={strokeWidth}
+          tickValues={rowTicks}
+          width={GRID_TICK_LENGTH_PX}
+        />
+      ) : null}
+      {tickColumns && columnScale && typeof columnScale === "function" ? (
+        <GridColumns
+          height={GRID_TICK_LENGTH_PX}
+          left={0}
+          numTicks={numTicksColumns}
+          scale={columnScale}
+          stroke={stroke}
+          strokeOpacity={strokeOpacity}
+          strokeWidth={strokeWidth}
+          top={innerHeight - GRID_TICK_LENGTH_PX}
+        />
+      ) : null}
       {/* Gradient mask for horizontal grid lines - fades at left/right */}
       {horizontal && (fadeHorizontal || shimmer) && (
         <defs>
@@ -230,7 +283,7 @@ export function Grid({
             strokeDasharray={strokeDasharray}
             strokeOpacity={strokeOpacity}
             strokeWidth={strokeWidth}
-            tickValues={rowTickValues}
+            tickValues={rowTicks}
             width={innerWidth}
           />
           {shimmerEnabled ? (
@@ -241,7 +294,7 @@ export function Grid({
               strokeDasharray={strokeDasharray}
               strokeOpacity={1}
               strokeWidth={strokeWidth}
-              tickValues={rowTickValues}
+              tickValues={rowTicks}
               width={innerWidth}
             />
           ) : null}

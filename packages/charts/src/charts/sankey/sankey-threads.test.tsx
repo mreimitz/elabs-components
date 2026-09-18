@@ -38,6 +38,10 @@ import {
   threadStrokeWidth,
 } from "./sankey-threads";
 
+// ADR 0039 (RM-107) adds exactly one attribute to every chart root and frame;
+// the rest of the pre-change DOM must stay byte-identical.
+const stripChartBreakpoint = (html: string) => html.replace(/ data-chart-breakpoint="[a-z]+"/g, "");
+
 afterEach(cleanup);
 
 // `SankeyLink`'s `AnimatedLink` measures its rendered path with
@@ -405,12 +409,12 @@ describe("SankeyChart aggregate mode — unaffected by RM-037 (byte-identical)",
 
   it("omitting `mode` renders byte-identical DOM to `main` (pre-RM-037)", () => {
     const { container } = renderAggregate(undefined);
-    expect(container.innerHTML).toBe(EXPECTED_AGGREGATE_DOM);
+    expect(stripChartBreakpoint(container.innerHTML)).toBe(EXPECTED_AGGREGATE_DOM);
   });
 
   it('passing mode="aggregate" explicitly renders the same DOM as omitting `mode`', () => {
     const { container } = renderAggregate("aggregate");
-    expect(container.innerHTML).toBe(EXPECTED_AGGREGATE_DOM);
+    expect(stripChartBreakpoint(container.innerHTML)).toBe(EXPECTED_AGGREGATE_DOM);
   });
 
   it("never renders threads markup or a datapoint layer", () => {

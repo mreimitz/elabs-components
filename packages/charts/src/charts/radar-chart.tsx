@@ -21,6 +21,7 @@ import {
   type RadarMetric,
   RadarProvider,
 } from "./radar-context";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 
 export interface RadarChartProps {
   /** Data array - each item represents a data series (polygon) */
@@ -29,6 +30,11 @@ export interface RadarChartProps {
   metrics: RadarMetric[];
   /** Chart size in pixels. If not provided, uses parent container size */
   size?: number;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Number of concentric grid circles. Default: 5 */
   levels?: number;
   /** Margin around the chart. Default: 60 */
@@ -206,6 +212,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
     data,
     metrics,
     size: fixedSize,
+    plotHeight,
     levels = 5,
     margin = 60,
     animate = true,
@@ -247,7 +254,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
   // If fixed size is provided, use it directly
   if (fixedSize) {
     return (
-      <div
+      <ChartPlotRoot
         ref={mergedRef}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
@@ -275,17 +282,18 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
         >
           {children}
         </RadarChartInner>
-      </div>
+      </ChartPlotRoot>
     );
   }
 
   // Otherwise use ParentSize for responsive sizing
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
       ref={mergedRef}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
-      className={cn("relative aspect-square w-full", className)}
+      className={cn("relative w-full", className)}
       role={role}
       tabIndex={tabIndex}
     >
@@ -312,7 +320,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
           </RadarChartInner>
         )}
       </ParentSize>
-    </div>
+    </ChartPlotRoot>
   );
 });
 

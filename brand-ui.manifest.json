@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T17:36:51.923Z",
+  "generatedAt": "2026-09-18T19:44:44.989Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13322,6 +13322,16 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "CHART_BREAKPOINT_THRESHOLDS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
+          "name": "CHART_BREAKPOINTS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "CHART_CLIP_PASSTHROUGH",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-child-passthrough.ts"
@@ -13530,6 +13540,11 @@
           "name": "DEFAULT_CHART_LIFECYCLE",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "DEFAULT_CHART_PLOT_HEIGHT",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "DEFAULT_CHART_STATUS",
@@ -14254,6 +14269,11 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "useChartBreakpoint",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "useChartConfig",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-config-context.tsx"
@@ -14379,6 +14399,11 @@
           "module": "packages/charts/src/charts/use-resolved-radius.ts"
         },
         {
+          "name": "useResponsiveValue",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "useRing",
           "kind": "value",
           "module": "packages/charts/src/charts/ring-context.tsx"
@@ -14433,6 +14458,30 @@
         {
           "name": "AutoChartProps",
           "module": "packages/charts/src/auto-chart/auto-chart.tsx"
+        },
+        {
+          "name": "AxisDomain",
+          "module": "packages/charts/src/charts/y-axis-scales.ts"
+        },
+        {
+          "name": "AxisDomainBound",
+          "module": "packages/charts/src/charts/y-axis-scales.ts"
+        },
+        {
+          "name": "AxisLabelPlacement",
+          "module": "packages/charts/src/charts/y-axis.tsx"
+        },
+        {
+          "name": "AxisSpec",
+          "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
+          "name": "AxisTickCount",
+          "module": "packages/charts/src/charts/tick-targets.ts"
+        },
+        {
+          "name": "AxisTitlePlacement",
+          "module": "packages/charts/src/charts/axis-title.tsx"
         },
         {
           "name": "BarAnimationType",
@@ -14537,6 +14586,14 @@
         {
           "name": "CanvasLayerRect",
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "CategoryAxisFit",
+          "module": "packages/charts/src/charts/category-axis-plan.ts"
+        },
+        {
+          "name": "ChartBreakpoint",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "ChartBrushLayoutProps",
@@ -14677,6 +14734,10 @@
         {
           "name": "ChartPhase",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "ChartPlotHeight",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "ChartRevealClipProps",
@@ -15049,6 +15110,10 @@
         {
           "name": "GenerateChartSkeletonDataOptions",
           "module": "packages/charts/src/charts/generate-chart-skeleton-data.ts"
+        },
+        {
+          "name": "GridMode",
+          "module": "packages/charts/src/charts/grid.tsx"
         },
         {
           "name": "GridProps",
@@ -15459,6 +15524,14 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "Responsive",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
+          "name": "ResponsiveByBreakpoint",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "RingCenterProps",
           "module": "packages/charts/src/charts/ring-center.tsx"
         },
@@ -15727,6 +15800,10 @@
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
         {
+          "name": "ValueScaleType",
+          "module": "packages/charts/src/charts/y-axis-scales.ts"
+        },
+        {
           "name": "WaffleLayout",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -15749,6 +15826,10 @@
         {
           "name": "WaterfallStep",
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "XAxisOrientation",
+          "module": "packages/charts/src/charts/x-axis.tsx"
         },
         {
           "name": "XAxisProps",
@@ -15783,6 +15864,10 @@
         {
           "name": "blobPath",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "breakpointForWidth",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "bucketIndexOf",
@@ -16109,6 +16194,10 @@
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
+          "name": "isResponsiveByBreakpoint",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "isTemporalField",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
@@ -16229,6 +16318,10 @@
           "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
+          "name": "resolveDensityForBreakpoint",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
+        },
+        {
           "name": "resolveEntityLineStyle",
           "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
@@ -16271,6 +16364,10 @@
         {
           "name": "resolveProfitLossTooltipLabel",
           "module": "packages/charts/src/charts/profit-loss-line.tsx"
+        },
+        {
+          "name": "resolveResponsive",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "resolveRestingChartPhase",
@@ -16648,6 +16745,12 @@
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string",
@@ -16858,10 +16961,16 @@
               "description": "The serializable chart specification produced by an LLM tool-call. `spec.type` is optional; omit it and the data shape decides (see `explainChartType`). The full `ChartType` union AutoChart renders is: `line` | `area` | `bar` | `pie` | `scatter` | `radar` | `funnel` | `candlestick` | `heatmap` | `calendar` | `waterfall` | `dumbbell` | `unit` | `treemap` | `histogram` | `box` | `strip` | `bump` | `stream` | `diverging-bar`. Anything else — including `network`, `parallel`, `tree` and `sankey`, which stay explicit-container-only — renders `ChartFallback` instead. That list is not hand-kept prose: `auto-chart.test.tsx` parses it back out of this comment and asserts it equals `CHART_TYPES`, so a type added to the union without being documented here fails the suite."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "Height of the drawing area only; the title and legend stack around it. A number of pixels, `{ aspect }` (width / height), or a per-breakpoint `{ base, medium?, narrow? }`. Default: the chart family's own default (`{ aspect: 2 }` wide, `{ aspect: 1.25 }` narrow for the 2:1 families)."
+            },
+            {
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "Chart body height in pixels. Default: 280"
+              "description": "@deprecated Use `plotHeight`. Removed in 5.0.0. Until then it is read as `plotHeight` and logs one development warning per page."
             },
             {
               "name": "loading",
@@ -17074,6 +17183,12 @@
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string",
@@ -17202,7 +17317,7 @@
               "name": "fit",
               "optional": true,
               "type": "CategoryAxisFit",
-              "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch. Default: `\"auto\"`."
+              "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
             }
           ]
         },
@@ -17399,6 +17514,12 @@
               "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string"
@@ -17514,6 +17635,12 @@
               "optional": true,
               "type": "string",
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
             },
             {
               "name": "className",
@@ -17794,7 +17921,7 @@
             {
               "name": "value",
               "optional": true,
-              "type": "Partial<Omit<ChartConfigValue, \"interactions\">> & { interactions?: ChartInteractions }",
+              "type": "Partial<Omit<ChartConfigValue, \"interactions\" | \"density\" | \"densityByBreakpoint\">> & { interactions?: ChartInteractions; /** * Furniture tier, optionally per breakpoint. An explicit `narrow` entry * (`{ base: \"md\", narrow: \"md\" }`) keeps the legend and value axis on a * narrow chart — the per-chart escape hatch from the narrow → `sm` coupling. */ density?: Responsive<ChartDensity>; }",
               "description": "Partial overrides. `interactions` may itself be partial — missing keys keep their defaults (`edit: false`, the rest `true`)."
             },
             {
@@ -17891,10 +18018,16 @@
               "description": "Which toolbar controls to show. Defaults to all five. `table` and `download` are automatically hidden when `data` is absent/empty; `export-svg`/`export-png` are automatically hidden when the chart body has no `<svg>` (a non-chart placeholder, or the flipped-to-table view)."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The chart's own drawing height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. The title, legend, notes and source row are added AROUND it, so the frame is as tall as its content. Unset: the chart's family default (2 : 1, and 1.25 : 1 when narrow, for line/bar/…). With `chrome=\"tile\"` and neither `plotHeight` nor `height`, the chart fills the tile's remaining height instead (#444). `plotHeight={260}` keeps the pre-ADR-0039 look of a card."
+            },
+            {
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "Inline body height in px. Defaults to 260 for `chrome=\"card\"`/`\"bare\"`. With `chrome=\"tile\"` and no `height`, the frame fills its host instead (`h-full` flex column, chart body takes the space left after header and source row) — the host tile sets the height (#444)."
+              "description": "@deprecated Use `plotHeight` — it sets the chart's own height, and the title, legend and notes are added around it. `height={n}` is now an alias for `plotHeight={n}` (it no longer fixes the body); removed in 5.0.0."
             },
             {
               "name": "loading",
@@ -17959,8 +18092,8 @@
             {
               "name": "density",
               "optional": true,
-              "type": "ChartDensity",
-              "description": "Furniture tier (`\"xs\" | \"sm\" | \"md\" | \"lg\"`, default `\"md\"`). Forwarded to every chart family through `useChartConfig()`; the frame itself drops `description` and the source row at `xs` and clamps the title to one line at `xs`/`sm`."
+              "type": "Responsive<ChartDensity>",
+              "description": "Furniture tier (`\"xs\" | \"sm\" | \"md\" | \"lg\"`, default `\"md\"`). Forwarded to every chart family through `useChartConfig()`; the frame itself drops `description` and the source row at `xs` and clamps the title to one line at `xs`/`sm`. Optionally per breakpoint (ADR 0039): inside a `narrow` chart `md`/`lg` become `sm` unless an explicit `narrow` entry says otherwise (`{ base: \"md\", narrow: \"md\" }` keeps the legend and value axis)."
             },
             {
               "name": "children",
@@ -18025,7 +18158,19 @@
               "name": "formatValue",
               "optional": true,
               "type": "(value: number) => string",
-              "description": "Format function for displaying values. Default: locale-aware (LocaleProvider)."
+              "description": "Format function for displaying values. Overrides `valueFormat` entirely when set."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How to format `value`/`maxValue` (RM-109) — a preset or the object form (`{ decimals, abbreviate, sign, prefix, suffix, … }`, `value-format.ts`). Resolved as a SET across every item (#250, `useChartValueSetFormatter`) so the legend never mixes \"1K\" beside \"400\". Default: locale-aware plain grouping (`intFmt`), unchanged from before this prop existed."
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
             },
             {
               "name": "title",
@@ -18283,6 +18428,12 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
             },
             {
               "name": "className",
@@ -18620,6 +18771,12 @@
               "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string"
@@ -18670,6 +18827,12 @@
               "name": "style",
               "optional": true,
               "type": "CSSProperties"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint."
             },
             {
               "name": "showPercentage",
@@ -19202,6 +19365,12 @@
           "extends": [],
           "props": [
             {
+              "name": "mode",
+              "optional": true,
+              "type": "GridMode",
+              "description": "Grid painting mode (RM-108). Default: `\"lines\"`."
+            },
+            {
               "name": "horizontal",
               "optional": true,
               "type": "boolean",
@@ -19217,7 +19386,7 @@
               "name": "numTicksRows",
               "optional": true,
               "type": "number",
-              "description": "Number of horizontal grid lines. Default: 5"
+              "description": "Number of horizontal grid lines. Default: the height-derived target shared with `YAxis` (`tickTargetForHeight(innerHeight)` — 3 under 200 px, else 5), so rows and labels stay aligned (RM-108)."
             },
             {
               "name": "numTicksColumns",
@@ -19583,6 +19752,12 @@
               "optional": true,
               "type": "string",
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\". Omit to fill a sized parent."
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
             },
             {
               "name": "className",
@@ -20145,6 +20320,12 @@
               "description": "Aspect ratio as \"width / height\". Default `\"16 / 9\"`."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+            },
+            {
               "name": "accessibleLabel",
               "optional": true,
               "type": "ChartA11yProps[\"accessibleLabel\"]",
@@ -20287,6 +20468,12 @@
               "optional": true,
               "type": "number",
               "description": "Chart size in pixels. If not provided, uses parent container size"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint."
             },
             {
               "name": "innerRadius",
@@ -20628,6 +20815,12 @@
               "description": "Chart size in pixels. If not provided, uses parent container size"
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint."
+            },
+            {
               "name": "levels",
               "optional": true,
               "type": "number",
@@ -20889,6 +21082,12 @@
               "description": "Chart size in pixels. If not provided, uses parent container size"
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint."
+            },
+            {
               "name": "strokeWidth",
               "optional": true,
               "type": "number",
@@ -21127,6 +21326,12 @@
               "optional": true,
               "type": "string",
               "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
             },
             {
               "name": "className",
@@ -21580,10 +21785,16 @@
               "description": "The one or two steps that actually explain the bridge, named directly on the chart (see {@link WaterfallCallout}). Default: none."
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Default: 2 : 1, and 1.25 : 1 when narrow."
+            },
+            {
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "Fixed pixel height. Omit to size by `aspectRatio` (2 / 1), like the rest of the bar family."
+              "description": "@deprecated Use `plotHeight` (`height={n}` is an alias for `plotHeight={n}`); removed in 5.0.0."
             },
             {
               "name": "margin",
@@ -21618,7 +21829,49 @@
               "name": "numTicks",
               "optional": true,
               "type": "number",
-              "description": "Number of ticks to show (including first and last). Default: 5. Used when `tickMode` is `\"domain\"`."
+              "description": "Explicit tick count (including first and last) — the long-standing override; wins over `tickCount`. Default: unset (→ `tickCount`)."
+            },
+            {
+              "name": "tickCount",
+              "optional": true,
+              "type": "AxisTickCount",
+              "description": "Tick target (RM-108). `\"auto\"` (default) derives it from the plot width — `tickTargetForWidth(innerWidth)`, about one tick per 90 px, clamped 2–10, and never more than the number of data rows on a time axis (6 monthly rows get at most 6 ticks, not 9 labels between them)."
+            },
+            {
+              "name": "ticks",
+              "optional": true,
+              "type": "Date[] | number[]",
+              "description": "RM-108 naming, shared with `YAxis`. On a time axis: an alias of `tickValues` (`tickValues` wins). On a numeric x with `domain`/`scale` (ScatterChart): exactly these raw x values."
+            },
+            {
+              "name": "domain",
+              "optional": true,
+              "type": "AxisDomain",
+              "description": "Numeric x only (ScatterChart with numeric `xDataKey`, RM-108): pin either end of the x domain in raw units; `\"auto\"` keeps the data-derived end. Read by the chart container, so place `XAxis` as a direct child. Setting `domain` or `scale` also switches the labels from one per data row to a numeric ruler. Ignored on a time axis."
+            },
+            {
+              "name": "scale",
+              "optional": true,
+              "type": "ValueScaleType",
+              "description": "Numeric x only (RM-108): `\"linear\"` (default), `\"log\"` (refuses data or a domain touching 0 — dev warning, renders linear) or `\"sqrt\"`."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "XAxisOrientation",
+              "description": "Which edge the labels sit on (RM-108). Default: `\"bottom\"`."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Axis title (RM-108)."
+            },
+            {
+              "name": "titlePlacement",
+              "optional": true,
+              "type": "AxisTitlePlacement",
+              "description": "`\"outside\"` (default) — in the margin beyond the tick labels, at the far end; `\"inside\"` — `HaloText` at the far end inside the plot."
             },
             {
               "name": "tickerHalfWidth",
@@ -21637,6 +21890,12 @@
               "optional": true,
               "type": "(value: Date) => string",
               "description": "Override the default `Intl`-based tick label formatter. Applied to every tick this axis renders (generated or `tickValues`). #357. **Time scale only.** Ignored (with a dev warning) when the chart runs `xScale=\"band\" | \"linear\"` — those modes project onto a synthetic instant, so a `Date` formatter would print a fabricated calendar date instead of your x value. Format categorical/numeric x values in your data. #352."
+            },
+            {
+              "name": "dateFormat",
+              "optional": true,
+              "type": "DateFormatPreset | ((value: Date) => string)",
+              "description": "The date-format LADDER (RM-109): a preset from `date-format.ts` (`\"year\"` → `\"yearShort\"` → `\"month\"` → `\"day\"` → `\"weekday\"` → `\"hour\"` → `\"minute\"`), or a formatter function for full control. Unset (default) — the axis picks a rung itself via `dateFormatForSpan`, from the time domain's span and how many ticks are on screen, instead of the old fixed `\"Mon d\"` shape whatever the span. A ten-year series reads years; a 36-hour series reads hours. `tickFormat` still wins outright when both are set — it is the raw escape hatch this package has always had; `dateFormat` is the smart default underneath it. Same time-scale-only caveat as `tickFormat` (#352)."
             },
             {
               "name": "tickValues",
@@ -21671,7 +21930,49 @@
               "name": "numTicks",
               "optional": true,
               "type": "number",
-              "description": "Approximate tick count hint for `scale.ticks()` (d3). Actual label count may differ. Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: 5."
+              "description": "Explicit tick count hint for `scale.ticks()` (d3) — the long-standing override; wins over `tickCount`. Actual label count may differ. Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: unset (→ `tickCount`)."
+            },
+            {
+              "name": "tickCount",
+              "optional": true,
+              "type": "AxisTickCount",
+              "description": "Tick target (RM-108). `\"auto\"` (default) derives it from the plot height — `tickTargetForHeight(innerHeight)`: 3 under 200 px, else 5."
+            },
+            {
+              "name": "ticks",
+              "optional": true,
+              "type": "number[]",
+              "description": "Render exactly these tick values (RM-108), bypassing generation."
+            },
+            {
+              "name": "domain",
+              "optional": true,
+              "type": "AxisDomain",
+              "description": "Pin either end of the value domain (RM-108); `\"auto\"` keeps the data-derived end. Read by the chart container, so place `YAxis` as a direct child. On a length encoding (bars) the domain always includes 0 — a non-zero lower bound is ignored with a dev warning (`charts-honesty`)."
+            },
+            {
+              "name": "scale",
+              "optional": true,
+              "type": "ValueScaleType",
+              "description": "How values map to pixels (RM-108). `\"log\"` refuses data or a domain that touches 0 (dev warning, renders linear); bars are linear only. Default: `\"linear\"`."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Axis title — names the unit of every tick (RM-108)."
+            },
+            {
+              "name": "titlePlacement",
+              "optional": true,
+              "type": "AxisTitlePlacement",
+              "description": "`\"outside\"` (default) — above the top tick label in the margin; `\"inside\"` — `HaloText` at the top of the axis inside the plot."
+            },
+            {
+              "name": "labelPlacement",
+              "optional": true,
+              "type": "AxisLabelPlacement",
+              "description": "`\"outside\"` (default) — tick labels in the margin beside the plot; `\"inside\"` — labels sit just above their grid line inside the plot."
             },
             {
               "name": "formatLargeNumbers",
@@ -21696,6 +21997,18 @@
               "optional": true,
               "type": "(value: number) => string",
               "description": "Custom formatter for tick labels. Overrides `valueFormat` entirely when set."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "string",
+              "description": "Unit text appended to {@link unitOn} tick(s) — `<YAxis unit=\"%\" />` paints `\"80 %\"` on that tick, not every tick (RM-109). The tooltip is the place a unit repeats on every value (the blog's \"3.4 % unemployed\", not a bare \"3.4 %\"); see `TooltipRow.unit`."
+            },
+            {
+              "name": "unitOn",
+              "optional": true,
+              "type": "\"last\" | \"first\" | \"all\"",
+              "description": "Which tick(s) {@link unit} paints on. Default: `\"last\"`."
             }
           ]
         }
@@ -22860,7 +23173,8 @@
         "TreeChart": "charts-treechart--docs",
         "TreemapChart": "charts-treemapchart--docs",
         "UnitChart": "charts-unitchart--docs",
-        "WaterfallChart": "charts-waterfallchart--docs"
+        "WaterfallChart": "charts-waterfallchart--docs",
+        "YAxis": "charts-axes--docs"
       },
       "subpaths": {
         "@elabs-ai/components-charts/dashboard": {

@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
 import { chartCssVars, type LineConfig, useChart, useChartStable } from "../chart-context";
 import { weekdayDateFmt } from "../chart-formatters";
+import type { ChartValueFormat } from "../value-format";
 import { DateTicker } from "./date-ticker";
 import { ChartTooltipBox } from "./tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip-content";
@@ -43,6 +44,23 @@ export interface ChartTooltipProps {
   boxSpringConfig?: SpringConfig;
   /** Inline styles for the tooltip panel (background, blur, etc.). */
   panelStyle?: React.CSSProperties;
+  /**
+   * Unit text appended to every DEFAULT row's value (RM-109) — the same
+   * `unit` `<YAxis>` paints on one tick. Set automatically from the chart's
+   * own `<YAxis unit>` when unset (the shell threads it through); pass it
+   * explicitly only to override. Ignored when `rows` is set — a custom row
+   * builder owns its own `TooltipRow.unit` per row.
+   */
+  unit?: string;
+  /**
+   * STYLE to borrow from the chart's own `<YAxis valueFormat>` for DEFAULT
+   * rows (RM-109) — a currency symbol, a percent sign — never abbreviation
+   * (`ChartTooltipContent`'s doc). Set automatically from `<YAxis
+   * valueFormat>` when unset; ignored when `rows` is set.
+   */
+  valueFormat?: ChartValueFormat;
+  /** ISO 4217 code for `valueFormat`'s `style: "currency"`. */
+  currency?: string;
 }
 
 interface ChartTooltipInnerProps extends ChartTooltipProps {
@@ -63,6 +81,9 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
   springConfig,
   boxSpringConfig,
   panelStyle,
+  unit,
+  valueFormat,
+  currency,
 }: ChartTooltipInnerProps) {
   const {
     tooltipData,
@@ -101,13 +122,16 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
       return rowsRenderer(tooltipData.point);
     }
 
-    // Default: generate rows from registered lines
+    // Default: generate rows from registered lines. `unit` (RM-109) is
+    // threaded from the chart's own `<YAxis unit>` by the shell, so a
+    // series' tooltip value carries the SAME unit its axis tick does.
     return lines.map((line) => ({
       color: line.stroke,
       label: line.dataKey,
       value: (tooltipData.point[line.dataKey] as number) ?? 0,
+      unit,
     }));
-  }, [tooltipData, lines, rowsRenderer]);
+  }, [tooltipData, lines, rowsRenderer, unit]);
 
   const resolveDotColor = useMemo(() => {
     return (line: LineConfig, index: number): string => {
@@ -226,7 +250,12 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
               index: tooltipData.index,
             })
           : !content && (
-              <ChartTooltipContent rows={tooltipRows} title={title}>
+              <ChartTooltipContent
+                currency={currency}
+                rows={tooltipRows}
+                title={title}
+                valueFormat={valueFormat}
+              >
                 {children}
               </ChartTooltipContent>
             )}
