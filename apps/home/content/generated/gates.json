@@ -1,0 +1,524 @@
+[
+  {
+    "id": "a11y-baseline",
+    "doc": "Axe stays blocking: preview.tsx keeps `a11y: { test: \"error\" }` and applies `scripts/a11y-baseline.json`, whose generated per-story exemptions never exceed `ratchet.maxStories`; fix a new violation, never exempt it.",
+    "category": "stories",
+    "source": "scripts/check/rules/a11y-baseline.mjs"
+  },
+  {
+    "id": "agent-output-contract",
+    "doc": "The manifest's `agentOutput` contract matches `statusFromToolState` (ai `tool.tsx`) and `STATUSES` (`status-badge.tsx`), names only real `@elabs-ai/components-ai` exports, and its example never calls `useChat(`.",
+    "category": "packages",
+    "source": "scripts/check/rules/agent-output-contract.mjs"
+  },
+  {
+    "id": "ai-microcopy-a11y",
+    "doc": "Every literal `aria-label` and `placeholder` in `@elabs-ai/components-ai` goes through `t()` — no baseline, no exceptions beyond `// i18n-exempt: <reason>`.",
+    "category": "components",
+    "source": "scripts/check/rules/ai-microcopy-a11y.mjs"
+  },
+  {
+    "id": "ai-sdk-types-only",
+    "doc": "`@elabs-ai/components-ai` imports `ai` / `@ai-sdk/*` as types only (`import type`, inline `type` specifiers); runtime values like `useChat` belong in the consuming app (ADR 0008, D6).",
+    "category": "packages",
+    "source": "scripts/check/rules/ai-sdk-types-only.mjs"
+  },
+  {
+    "id": "attribution-provenance",
+    "doc": "When shipped source says code was adapted/vendored/borrowed/forked/copied/ported from somewhere, credit that upstream in `scripts/attributions.sources.json` (then `pnpm gen`) in the same change.",
+    "category": "packages",
+    "source": "scripts/check/rules/attribution-provenance.mjs"
+  },
+  {
+    "id": "chart-hairline",
+    "doc": "Draw chart furniture with `--chart-grid` at full opacity and `CHART_HAIRLINE_WIDTH` (never a dimming `opacity`/`strokeOpacity` or another numeric `strokeWidth`), and never alias `--chart-grid` to `var(--border)`; one element may opt out with `// chart-hairline-exempt: <reason>`.",
+    "category": "components",
+    "source": "scripts/check/rules/chart-hairline.mjs"
+  },
+  {
+    "id": "chart-unit-caption",
+    "doc": "Every unit-decomposed chart (waffle/field UnitChart, dot heatmap, `unit`-ed Bar/WaterfallChart, beaded DumbbellChart, raw `UnitStack`) in a chart story, a `registry/blocks/**` block or a block story states its unit (\"one X = N\") in `unitLabel`, `description` or `accessibleDescription`.",
+    "category": "stories",
+    "source": "scripts/check/rules/chart-unit-caption.mjs"
+  },
+  {
+    "id": "charts-honesty",
+    "doc": "In `@elabs-ai/components-charts`, draw bars from a zero-including domain (`resolveBarValueDomain` / `resolveYDomain(…, { includeZero: true })`), scale area radii by `sqrt(value / max)`, and never call `Math.random` (use `seededRnd`); a reasoned exception carries `// honesty:allow <reason>`.",
+    "category": "components",
+    "source": "scripts/check/rules/charts-honesty.mjs"
+  },
+  {
+    "id": "charts-reuse",
+    "doc": "In `@elabs-ai/components-charts`, never declare a runtime export named like a `@elabs-ai/components-ui` component (use a chart-scoped name such as `ChartTooltipContent`) and never import `@base-ui/*`.",
+    "category": "packages",
+    "source": "scripts/check/rules/charts-reuse.mjs"
+  },
+  {
+    "id": "charts-test-double",
+    "doc": "Keep `@elabs-ai/components-charts/test` a faithful, engine-free double: export every real component from `src/test/index.ts`, never import @visx/d3/motion or a chart barrel at runtime from `src/test/**`, keep `./test` in exports + publishConfig.exports + tsup, and keep `/test` subpaths out of the manifest.",
+    "category": "packages",
+    "source": "scripts/check/rules/charts-test-double.mjs"
+  },
+  {
+    "id": "collapse-fork",
+    "doc": "Build a collapsing side panel on `useCollapsiblePanel` (`@elabs-ai/components-ui`); never hand-roll a `transition-[…width…]` tween plus an off-screen `[calc(var(--x)*-1)]` slide outside `packages/ui/src/components/collapsible-panel`.",
+    "category": "components",
+    "source": "scripts/check/rules/collapse-fork.mjs"
+  },
+  {
+    "id": "community-themes",
+    "doc": "Ship each downloadable theme family in `themes/<slug>/` complete and readable: one `[data-theme]` block per `<slug>-<scheme>.css` with a matching `color-scheme`, every contract token and nothing else, AA ink pairs, and a `theme.ts` + README that agree.",
+    "category": "themes",
+    "source": "scripts/check/rules/community-themes.mjs"
+  },
+  {
+    "id": "component-registration",
+    "doc": "Every `@elabs-ai/components-ui` component folder is re-exported from `src/index.ts` (or its own subpath export) and ships a `*.stories.tsx`.",
+    "category": "components",
+    "source": "scripts/check/rules/component-registration.mjs"
+  },
+  {
+    "id": "conflict-markers",
+    "doc": "Resolve every Git merge conflict before committing: no line may start with a `<<<<<<<` / `=======` / `>>>>>>>` marker.",
+    "category": "repo",
+    "source": "scripts/check/rules/conflict-markers.mjs"
+  },
+  {
+    "id": "contract-known-failures",
+    "doc": "Every scripts/check/contract-known-failures.json entry is a well-formed, ratcheted contract-test gap; the shared baseline makes the count visible so growing it is a reviewed move, not a silent mute.",
+    "category": "components",
+    "source": "scripts/check/rules/contract-known-failures.mjs"
+  },
+  {
+    "id": "csp-policy",
+    "doc": "Keep `docs/csp-policy.json` and the `csp:published`/`csp:dev` blocks in `docs/CSP-AND-NETWORK.md` §2.7 identical, and justify every non-`'self'` relaxation with a carve-out whose `why` names the reason.",
+    "category": "repo",
+    "source": "scripts/check/rules/csp-policy.mjs"
+  },
+  {
+    "id": "dashboard-reuse",
+    "doc": "In `@elabs-ai/components-charts/dashboard` (`packages/charts/src/dashboard/`, ADR 0037), compose charts/ui: no local component named like a ui/charts export, no raw SVG primitives, no data/ai/flow/maps/process/viewer/terminal/editor/marketing imports (host-registered tile kinds instead), and no React/dnd-kit/zustand-React/`@elabs-ai/components-*` import under `dashboard/core/`; exempt one line with `// dashboard-reuse-exempt: <reason>`.",
+    "category": "packages",
+    "source": "scripts/check/rules/dashboard-reuse.mjs"
+  },
+  {
+    "id": "dashboard-test-double",
+    "doc": "Keep `@elabs-ai/components-charts/dashboard/test` a faithful, engine-free double: re-export `DashboardSheet` and the contract helpers from `dashboard/test/index.ts`, never import @dnd-kit/visx/d3/motion or a dashboard/charts barrel at runtime from `dashboard/test/**`, keep `./dashboard/test` in exports + publishConfig.exports + tsup, and keep `/test` subpaths out of the manifest.",
+    "category": "packages",
+    "source": "scripts/check/rules/dashboard-test-double.mjs"
+  },
+  {
+    "id": "data-slot",
+    "doc": "Give every exported component's root `data-slot=\"<kebab-name>\"` and each sub-part `data-slot=\"<kebab-name>-<part>\"`; a module never gains a component without a slot or drops a slot without its part.",
+    "category": "components",
+    "source": "scripts/check/rules/data-slot.mjs"
+  },
+  {
+    "id": "decoration-collapse",
+    "doc": "Never let a high-decoration rule in decoration.css collapse two or more role fills (`.bg-primary`, `.bg-success`, …) to one appearance without a compensating `[data-status]` channel (≥2 values, same scope).",
+    "category": "themes",
+    "source": "scripts/check/rules/decoration-collapse.mjs"
+  },
+  {
+    "id": "decoration-css",
+    "doc": "Keep `background-attachment: fixed` inside `@media (hover: hover) and (pointer: fine)`; mask the `[data-decoration-fade]` fade on an inert `::before` layer, never the host; give `oklch(from …)` inks an `@supports not` fallback.",
+    "category": "themes",
+    "source": "scripts/check/rules/decoration-css.mjs"
+  },
+  {
+    "id": "dep-direction",
+    "doc": "`@elabs-ai/components-*` runtime deps (`dependencies`/`peerDependencies`) follow the one-way DAG `tokens → ui/icons → layer-2 leaves → process`; every package is registered in `ALLOWED`, and a shared piece moves down, never sideways.",
+    "category": "packages",
+    "source": "scripts/check/rules/dep-direction.mjs"
+  },
+  {
+    "id": "disabled-recipe",
+    "doc": "A dimmed disabled state follows the house recipe: `disabled:opacity-50` plus `disabled:pointer-events-none` (Button) or `disabled:cursor-not-allowed` (Input) in the same class list.",
+    "category": "components",
+    "source": "scripts/check/rules/disabled-recipe.mjs"
+  },
+  {
+    "id": "duplicate-theme-blocks",
+    "doc": "Declare each theme selector's color tokens in exactly ONE block; a second color block wins the cascade but is invisible to every first-match tool (machinery-only blocks with no color token are fine).",
+    "category": "themes",
+    "source": "scripts/check/rules/duplicate-theme-blocks.mjs"
+  },
+  {
+    "id": "eager-heavy-deps",
+    "doc": "Reach heavy engines (mermaid, Rive, xterm, React Flow, media-chrome, viewer parsers) and a package's own optional peers only via dynamic `import()` or a `@lazy-boundary` module in `ai`/`terminal`/`viewer` src; never import a `@lazy-boundary` module statically.",
+    "category": "packages",
+    "source": "scripts/check/rules/eager-heavy-deps.mjs"
+  },
+  {
+    "id": "effect-cleanup",
+    "doc": "A `useEffect`/`useLayoutEffect` that adds a listener, starts a timer/interval, creates an observer or subscribes returns a cleanup that removes/clears/disconnects/unsubscribes it.",
+    "category": "components",
+    "source": "scripts/check/rules/effect-cleanup.mjs"
+  },
+  {
+    "id": "elevation",
+    "doc": "Use the one elevation ramp: `shadow-*` for resting surfaces, `shadow-ring-*` (no border) for floating ones, `shadow-hairline` for a bare edge — never a raw `box-shadow`, an arbitrary `shadow-[…]`, or `border` + `shadow-md`+ in one class string.",
+    "category": "themes",
+    "source": "scripts/check/rules/elevation.mjs"
+  },
+  {
+    "id": "focus-ring-only",
+    "doc": "Focus indicators use `focus-ring`/`focus-ring-within`/`focus-ring-inset`/`focus-ring-static`, never a hand-rolled `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring` stack.",
+    "category": "components",
+    "source": "scripts/check/rules/focus-ring-only.mjs"
+  },
+  {
+    "id": "forward-ref-required",
+    "doc": "An exported component that spreads `...props` onto a DOM element is wrapped in `forwardRef`.",
+    "category": "components",
+    "source": "scripts/check/rules/forward-ref-required.mjs"
+  },
+  {
+    "id": "header-band",
+    "doc": "Size every header band (`<header>`, or a `data-slot` ending `-header`/`top-bar`, with a `border-b`) with `h-header`, never `h-14`/`h-12` or padding, so side-by-side shell headers share one bottom line in every theme; opt out with `// header-band-exempt: <reason>`.",
+    "category": "components",
+    "source": "scripts/check/rules/header-band.mjs"
+  },
+  {
+    "id": "home-imports",
+    "doc": "Build the website (`apps/home`, ADR 0038) only from the library: import react, react-dom, next, motion, @vercel/analytics, `@elabs-ai/*` or a relative path; a registry block copied under `apps/home/components/blocks/` keeps its `// registry: <name> — copied <YYYY-MM-DD>` header.",
+    "category": "packages",
+    "source": "scripts/check/rules/home-imports.mjs"
+  },
+  {
+    "id": "home-tokens",
+    "doc": "Paint the website (`apps/home`, ADR 0038) with tokens only: no raw hex, `rgb()`/`hsl()`/`oklch()` colour or arbitrary `duration-[…]`/`ease-[…]` in `apps/home/**/*.{ts,tsx,css}`; `app/globals.css` may only reference `var(--…)`.",
+    "category": "components",
+    "source": "scripts/check/rules/home-tokens.mjs"
+  },
+  {
+    "id": "i18n-strings",
+    "doc": "UI text in package source (JSX text, `aria-label`/`title`/`placeholder` literals) comes from props or a labels object so apps can localize it; stories, tests, templates and registry are exempt.",
+    "category": "components",
+    "source": "scripts/check/rules/i18n-strings.mjs"
+  },
+  {
+    "id": "loading-states",
+    "doc": "A component with a `loading`/`isStreaming` (or chart `status: ChartStatus`) prop ships a story that shows it: a `*Loading`/`*Streaming` export or a not-ready arg (`loading: true`, `status=\"loading\"`).",
+    "category": "stories",
+    "source": "scripts/check/rules/loading-states.mjs"
+  },
+  {
+    "id": "locale-formatting",
+    "doc": "Format numbers and dates with `Intl.*` and a locale prop: no `toLocaleString()`/`toLocaleDateString()`/`toLocaleTimeString()` without a locale, no `new Date(…).toString()` in JSX.",
+    "category": "components",
+    "source": "scripts/check/rules/locale-formatting.mjs"
+  },
+  {
+    "id": "lockfile-dup-keys",
+    "doc": "`pnpm-lock.yaml` never repeats a sibling mapping key (a bad merge breaks `--frozen-lockfile` and silently stops CI); dedupe or regenerate with `pnpm install --lockfile-only`.",
+    "category": "repo",
+    "source": "scripts/check/rules/lockfile-dup-keys.mjs"
+  },
+  {
+    "id": "logical-props",
+    "doc": "Use logical direction utilities (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`border-s`/`rounded-s`/`text-start`), never physical `ml-`/`pr-`/`left-`/`border-l`/`text-right`, so layouts mirror in RTL.",
+    "category": "components",
+    "source": "scripts/check/rules/logical-props.mjs"
+  },
+  {
+    "id": "lucide-version",
+    "doc": "Declare ONE `lucide-react` version specifier across every workspace manifest (deps, peers, dev deps, `pnpm.overrides`, `resolutions`).",
+    "category": "packages",
+    "source": "scripts/check/rules/lucide-version.mjs"
+  },
+  {
+    "id": "machine-paths",
+    "doc": "Never commit a machine-specific absolute home path (`/Users/<name>/…`, `/home/<name>/…`); write it relative to the repo root.",
+    "category": "repo",
+    "source": "scripts/check/rules/machine-paths.mjs"
+  },
+  {
+    "id": "memo-on-children",
+    "doc": "Never wrap a component whose props include `children` in `memo`/`React.memo` — inline children defeat the shallow compare; memoise the children-free part instead.",
+    "category": "components",
+    "source": "scripts/check/rules/memo-on-children.mjs"
+  },
+  {
+    "id": "microcopy",
+    "doc": "Route user-visible strings (`aria-label`, `placeholder`, `title`, JSX text) through the locale seam `t()` (ADR 0017); a genuinely untranslatable string carries `// i18n-exempt: <reason>`.",
+    "category": "components",
+    "source": "scripts/check/rules/microcopy.mjs"
+  },
+  {
+    "id": "microtypography-apostrophe",
+    "doc": "Write the curly apostrophe ’ (never a straight `'` between letters) in JSX text and `aria-label`/`placeholder`/`title`/`description` values, stories included; opt out with `// microtypography-exempt: <reason>`.",
+    "category": "components",
+    "source": "scripts/check/rules/microtypography-apostrophe.mjs"
+  },
+  {
+    "id": "microtypography-ellipsis",
+    "doc": "Write \"…\" (U+2026), never \"...\", in JSX text and `aria-label`/`placeholder`/`title`/`description` values, stories included; a genuine code sample carries `// microtypography-exempt: <reason>`.",
+    "category": "components",
+    "source": "scripts/check/rules/microtypography-ellipsis.mjs"
+  },
+  {
+    "id": "motion-tokens",
+    "doc": "Use motion tokens in charts/ai source and the website (`apps/home`): `duration-fast|base|slow|slower` and `ease-standard|entrance|exit`, never `duration-<N>`, `ease-in`/`ease-out`/`ease-in-out` or `transition-all` (docs/MOTION_GUIDELINES.md).",
+    "category": "components",
+    "source": "scripts/check/rules/motion-tokens.mjs"
+  },
+  {
+    "id": "no-biome-ignore",
+    "doc": "Suppress lint findings with `// eslint-disable-next-line <rule> -- <reason>`, never a `biome-ignore` comment (this repo has no Biome, so it is inert).",
+    "category": "repo",
+    "source": "scripts/check/rules/no-biome-ignore.mjs"
+  },
+  {
+    "id": "no-fixed-story-wrapper",
+    "doc": "Story decorators and render wrappers never pin a fixed width above 320px (`w-[800px]`, `style={{ width: 800 }}`) without a max — use `w-full max-w-*` or `parameters.layout`.",
+    "category": "stories",
+    "source": "scripts/check/rules/no-fixed-story-wrapper.mjs"
+  },
+  {
+    "id": "no-fixed-trigger-width",
+    "doc": "Triggers (`*Trigger` components, `data-slot=\"*-trigger\"`) size with `min-w-*`/`w-full`, never a fixed `w-40`/`w-[180px]`.",
+    "category": "components",
+    "source": "scripts/check/rules/no-fixed-trigger-width.mjs"
+  },
+  {
+    "id": "no-index-key-reorderable",
+    "doc": "List keys are stable ids from the item, never the `.map` index (`key={i}`); placeholder lists (`Array.from({ length })`, `(_, i)`) are exempt.",
+    "category": "components",
+    "source": "scripts/check/rules/no-index-key-reorderable.mjs"
+  },
+  {
+    "id": "optional-peer-transitives",
+    "doc": "An optional peer is not also installed through a plain transitive dependency (resolved from `pnpm-lock.yaml`); the known, disclosed exceptions in the rule's `KNOWN_DEFEATS` are exact — remove one the day it goes clean.",
+    "category": "packages",
+    "source": "scripts/check/rules/optional-peer-transitives.mjs"
+  },
+  {
+    "id": "plugin-consumer-clean",
+    "doc": "Shipped plugin skills and agents reference no repo-internal plumbing (`/file-issue`, `.claude/`, `packages/`, `apps/`, maintainer agents); end users install them without this monorepo.",
+    "category": "repo",
+    "source": "scripts/check/rules/plugin-consumer-clean.mjs"
+  },
+  {
+    "id": "plugin-manifest",
+    "doc": "The Claude plugin installs whole: `plugin.json` and `marketplace.json` agree on version, every declared skill/agent path starts `./` and resolves, the `brand-ui-start` router is user-invocable, MCP servers are http or stdio, and shared skill docs exist exactly once.",
+    "category": "repo",
+    "source": "scripts/check/rules/plugin-manifest.mjs"
+  },
+  {
+    "id": "pnpm-script-refs",
+    "doc": "A `pnpm <script>` named in code, config or docs must be a real script (root or workspace package); dated records are exempt.",
+    "category": "repo",
+    "source": "scripts/check/rules/pnpm-script-refs.mjs"
+  },
+  {
+    "id": "process-reuse",
+    "doc": "In `@elabs-ai/components-process` (layer 3), compose base packages: no local component named like a ui/flow/charts/data export, no raw SVG primitives, no `@xyflow/react` primitive flow wraps, no ai/maps/marketing/editor/viewer/terminal imports, and no engine or React import under `src/core/`; exempt one line with `// process-reuse-exempt: <reason>`.",
+    "category": "packages",
+    "source": "scripts/check/rules/process-reuse.mjs"
+  },
+  {
+    "id": "process-test-double",
+    "doc": "Keep `@elabs-ai/components-process/test` complete and engine-free: re-export every double from `src/test/index.ts`, never import React Flow/visx/d3/motion or flow/charts/data/process barrels at runtime from `src/test/**`, keep `./test` in exports + publishConfig.exports + tsup, and keep `/test` subpaths out of the manifest.",
+    "category": "packages",
+    "source": "scripts/check/rules/process-test-double.mjs"
+  },
+  {
+    "id": "radius-rungs",
+    "doc": "Radius comes from the `rounded-*` scale (backed by `--radius`), never an arbitrary `rounded-[6px]`.",
+    "category": "components",
+    "source": "scripts/check/rules/radius-rungs.mjs"
+  },
+  {
+    "id": "raw-palette",
+    "doc": "Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source and the website (`apps/home`).",
+    "category": "components",
+    "source": "scripts/check/rules/raw-palette.mjs"
+  },
+  {
+    "id": "registry-resolve",
+    "doc": "Every relative import in a registry item resolves both at its repo `path` and at its install `target` layout; keep `target` folders mirroring the repo tree.",
+    "category": "registry",
+    "source": "scripts/check/rules/registry-resolve.mjs"
+  },
+  {
+    "id": "registry-validate",
+    "doc": "Keep `registry/registry.json` a valid shadcn registry: unique named items, valid types, real https homepage, every listed file on disk.",
+    "category": "external",
+    "source": "scripts/check/commands.mjs"
+  },
+  {
+    "id": "remote-origins",
+    "doc": "Declare every `https://` origin shipped source can reach (including upstream URLs in `attributions.generated.ts`) in `scripts/remote-origins-allowlist.json` with its kind, CSP directive and escape hatch, and name it in `docs/CSP-AND-NETWORK.md`.",
+    "category": "packages",
+    "source": "scripts/check/rules/remote-origins.mjs"
+  },
+  {
+    "id": "role-distinctness",
+    "doc": "Keep co-occurring roles (focus ring vs success/accent ink, current match vs destructive, every categorical chart series, adjacent sequential/mono steps, diverging steps, accent vs mono) ≥ 0.05 ΔE(OKLab) apart in every theme, after resolving `var()` aliases.",
+    "category": "themes",
+    "source": "scripts/check/rules/role-distinctness.mjs"
+  },
+  {
+    "id": "sanitizer-passthrough",
+    "doc": "Wrap a safe-by-default renderer (Streamdown) only with `Omit<…, \"rehypePlugins\">` on every props type and `stripSanitizerOverrides(props)` before spreading props onto it; never set `rehypePlugins` outside the reviewed allowlist.",
+    "category": "packages",
+    "source": "scripts/check/rules/sanitizer-passthrough.mjs"
+  },
+  {
+    "id": "sidebar-drift",
+    "doc": "Import or re-export `TeamSwitcher`, `NavMain`, `NavUser` and `NavNotifications` from `@elabs-ai/components-ui` in registry sidebar blocks; never re-declare a local copy.",
+    "category": "registry",
+    "source": "scripts/check/rules/sidebar-drift.mjs"
+  },
+  {
+    "id": "source-theme-count",
+    "doc": "Say \"every theme\" (or \"both themes\"), never a hardcoded theme count that disagrees with `BUILT_IN_THEMES`, in package source comments and stories.",
+    "category": "components",
+    "source": "scripts/check/rules/source-theme-count.mjs"
+  },
+  {
+    "id": "state-coverage",
+    "doc": "Every allowlisted stateful component (`STATEFUL_COMPONENTS` in the rule) exports a story named for a non-happy state (`Loading`, `Empty`, `Error`, `Disabled`, `Skeleton`, `FirstRun`, `Awaiting`).",
+    "category": "stories",
+    "source": "scripts/check/rules/state-coverage.mjs"
+  },
+  {
+    "id": "status-rung",
+    "doc": "Paint running status text with the ink rung `text-<tone>-text`; a bare `text-<tone>` (the 3:1 fill rung) is for marks only and never shares a class string with a text tell (`text-xs`, a type role, `font-*`, `truncate`).",
+    "category": "components",
+    "source": "scripts/check/rules/status-rung.mjs"
+  },
+  {
+    "id": "story-name-hygiene",
+    "doc": "A story's visible name says what the story shows — never an issue number (`#123`), an `ADR`, an `RM-` roadmap item, `harness` or `regression`; that reference belongs in a comment or `parameters.docs.description.story`.",
+    "category": "stories",
+    "source": "scripts/check/rules/story-name-hygiene.mjs"
+  },
+  {
+    "id": "story-viewport-guard",
+    "doc": "A story meta for a layout-level surface (`Layout/*`, `Patterns/Templates/*`, `Patterns/Scenarios/*`, AppShell, Sidebar, DataTable, ChatShell, Hero, …) sets `parameters.layout` (`\"fullscreen\"`/`\"padded\"`) or a viewport — never the centered default.",
+    "category": "stories",
+    "source": "scripts/check/rules/story-viewport-guard.mjs"
+  },
+  {
+    "id": "surface-elevation",
+    "doc": "Keep app chrome recessed below the canvas in every theme: `L(--background) − L(--sidebar) ≥ 0.02` and `--card` never below `--background` — fix flatness in the theme's `--sidebar`, never in components.",
+    "category": "themes",
+    "source": "scripts/check/rules/surface-elevation.mjs"
+  },
+  {
+    "id": "surface-separation",
+    "doc": "Give each region ONE separation gesture: never a bare `border` in the same class string as a non-default fill (`bg-surface-muted`, `bg-surface-elevated`, `bg-chat-user`, `bg-<status>/N`); rails (`border-s-*`), axis dividers and `border bg-card` are fine.",
+    "category": "components",
+    "source": "scripts/check/rules/surface-separation.mjs"
+  },
+  {
+    "id": "tailwind-sources",
+    "doc": "Name every package that ships Tailwind classes in each `@source`-bearing app CSS file with a pattern that resolves to `packages/<name>/src` (or `node_modules/<pkg>/dist`); an unlisted package renders unstyled.",
+    "category": "packages",
+    "source": "scripts/check/rules/tailwind-sources.mjs"
+  },
+  {
+    "id": "test-concurrency",
+    "doc": "The root `test` script runs `turbo run test --concurrency=<int>`; never raise a vitest `testTimeout` to absorb CPU oversubscription (#80).",
+    "category": "repo",
+    "source": "scripts/check/rules/test-concurrency.mjs"
+  },
+  {
+    "id": "text-scale",
+    "doc": "Set type with a role (`text-display|title|subtitle|body|caption|meta|kpi|code` or `<Heading>`/`<Text>`), never a raw size utility (`text-sm`, `text-xl`, `text-[17px]`) in package source or stories.",
+    "category": "components",
+    "source": "scripts/check/rules/text-scale.mjs"
+  },
+  {
+    "id": "theme-parity",
+    "doc": "Every theme block (`:root` and each `[data-theme]`) defines every semantic token; only `:root` machinery (`--decoration*`, `--deco-*`, `--paper-*`, `--duration-*`, `--t-*`, `--motion-*`, `--radius*`, `--font-*`) is exempt.",
+    "category": "themes",
+    "source": "scripts/check/rules/theme-parity.mjs"
+  },
+  {
+    "id": "timeline-fork",
+    "doc": "Compose `TimelineRoot`/`TimelineItem`/`Timeline` from `@elabs-ai/components-ui`; never declare a local `Timeline*` component or hand-roll an `absolute w-px` connector with a status-keyed style map outside `packages/ui/src/components/timeline`.",
+    "category": "components",
+    "source": "scripts/check/rules/timeline-fork.mjs"
+  },
+  {
+    "id": "token-contract",
+    "doc": "Keep the shipped theme token contract (`THEME_TOKEN_NAMES`) in sync with the theme stylesheets.",
+    "category": "external",
+    "source": "scripts/check/commands.mjs"
+  },
+  {
+    "id": "tokens-fresh",
+    "doc": "Author token values in the DTCG source (`packages/tokens/tokens/`); the generated theme stylesheets must match a fresh `tokens:build`.",
+    "category": "external",
+    "source": "scripts/check/commands.mjs"
+  },
+  {
+    "id": "trusted-types-patches",
+    "doc": "Keep `@radix-ui/react-scroll-area` and `@radix-ui/react-select` patched (registered in `pnpm.patchedDependencies`, installed dist free of HTML sinks); after a version bump re-apply the patch with `pnpm patch`.",
+    "category": "packages",
+    "source": "scripts/check/rules/trusted-types-patches.mjs"
+  },
+  {
+    "id": "trusted-types-sinks",
+    "doc": "Never assign HTML (`dangerouslySetInnerHTML`, `.innerHTML =`, `insertAdjacentHTML`, `document.write`) in package source or add a dependency that does — it blanks a Trusted-Types app; static markup belongs in CSS or JSX, and an unavoidable engine sink is baselined and documented in `docs/CSP-AND-NETWORK.md`.",
+    "category": "packages",
+    "source": "scripts/check/rules/trusted-types-sinks.mjs"
+  },
+  {
+    "id": "tt-aliases",
+    "doc": "Every app aliases `decode-named-character-reference` and `hast-util-from-html-isomorphic` via `require.resolve(…)`, declares both as direct devDependencies, and `docs/CSP-AND-NETWORK.md` still documents both.",
+    "category": "repo",
+    "source": "scripts/check/rules/tt-aliases.mjs"
+  },
+  {
+    "id": "tt-aliases-resolve",
+    "doc": "The Trusted-Types alias snippet in docs/CSP-AND-NETWORK.md must resolve (in node_modules) to each package's DOM-free build.",
+    "category": "external",
+    "source": "scripts/check/commands.mjs"
+  },
+  {
+    "id": "type-roles",
+    "doc": "Type is a role: use `text-display|title|subtitle|body|caption|meta|kpi|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by the `text-scale` rule).",
+    "category": "components",
+    "source": "scripts/check/rules/type-roles.mjs"
+  },
+  {
+    "id": "unsafe-html-justified",
+    "doc": "Every `dangerouslySetInnerHTML` has a same-line or directly-preceding comment saying why it is sanitized/trusted/escaped, and its `__html` is a sanitiser call or a `sanitized*`/`safe*` value.",
+    "category": "components",
+    "source": "scripts/check/rules/unsafe-html-justified.mjs"
+  },
+  {
+    "id": "use-client-source",
+    "doc": "A client package (`ui`, `data`, `ai`, `flow`, `maps`, `charts`, `editor`, `viewer`, `terminal`) whose source uses React hooks carries `\"use client\"` in its source modules, not only in the build banner.",
+    "category": "packages",
+    "source": "scripts/check/rules/use-client-source.mjs"
+  },
+  {
+    "id": "use-controllable",
+    "doc": "A component with both controlled and uncontrolled modes (`value`/`defaultValue`, `open`/`defaultOpen`, …) uses `useControllableState` (ui `lib/use-controllable-state.ts` or Radix), never a hand-rolled `useState` + `x !== undefined` pair.",
+    "category": "components",
+    "source": "scripts/check/rules/use-controllable.mjs"
+  },
+  {
+    "id": "variant-coverage",
+    "doc": "Render every `cva` variant value in a story (`variant=\"success\"` or `args: { variant: \"success\" }`); `argTypes.options` does not count, a default is met by a story that leaves the axis unset.",
+    "category": "stories",
+    "source": "scripts/check/rules/variant-coverage.mjs"
+  },
+  {
+    "id": "version-sync",
+    "doc": "Keep the root, plugin manifests and MCP `SERVER_INFO` versions equal to the fixed package group's version.",
+    "category": "external",
+    "source": "scripts/check/commands.mjs"
+  },
+  {
+    "id": "viewer-highlight",
+    "doc": "A viewer adapter's `capabilities.highlight` lists only real address kinds, its renderer reads `highlights` (and `rects` for `rect`), and its `*-adapter.test.tsx` builds and paints each declared kind.",
+    "category": "packages",
+    "source": "scripts/check/rules/viewer-highlight.mjs"
+  }
+]
