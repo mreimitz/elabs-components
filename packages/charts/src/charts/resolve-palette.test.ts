@@ -17,6 +17,7 @@ import {
   chartMonoRamp,
   chartSequentialRamp,
   defaultScatterColors,
+  resolveColorBy,
   resolvePalette,
 } from "./chart-context";
 
@@ -102,5 +103,41 @@ describe("resolvePalette", () => {
 
   it("defaults to categorical", () => {
     expect(resolvePalette(undefined, 3)).toEqual(defaultScatterColors.slice(0, 3));
+  });
+});
+
+// resolveColorBy — RM-113: `BarChart colorBy` resolves through resolvePalette.
+describe("resolveColorBy", () => {
+  it("categorical: one hue per distinct value, in first-appearance order", () => {
+    const { colorOf, items } = resolveColorBy([{ r: "N" }, { r: "S" }, { r: "N" }, { r: null }], {
+      key: "r",
+    });
+    expect(items.map((i) => i.label)).toEqual(["N", "S"]);
+    expect(colorOf({ r: "N" })).toBe(items[0]?.color);
+    expect(colorOf({ r: "S" })).toBe(items[1]?.color);
+    expect(colorOf({ r: null })).toBeUndefined();
+    for (const item of items) expect(item.color).toMatch(/^var\(--chart-\d+\)$/);
+  });
+
+  it("sequential: buckets a numeric column onto `steps` ramp steps", () => {
+    const rows = [{ v: 0 }, { v: 50 }, { v: 100 }];
+    const { colorOf, items } = resolveColorBy(rows, { key: "v", scale: "sequential", steps: 3 });
+    expect(items).toHaveLength(3);
+    expect(colorOf({ v: 0 })).toBe(items[0]?.color);
+    expect(colorOf({ v: 100 })).toBe(items[2]?.color);
+    expect(items[0]?.from).toBe(0);
+    expect(items[2]?.to).toBe(100);
+  });
+
+  it("diverging: symmetric about zero, the middle step is no change", () => {
+    const { colorOf, items } = resolveColorBy([{ v: -10 }, { v: 0 }, { v: 4 }], {
+      key: "v",
+      scale: "diverging",
+      steps: 5,
+    });
+    expect(colorOf({ v: 0 })).toBe("var(--chart-div-mid)");
+    expect(colorOf({ v: -10 })).toBe(items[0]?.color);
+    expect(items[0]?.from).toBe(-10);
+    expect(items[4]?.to).toBe(10);
   });
 });

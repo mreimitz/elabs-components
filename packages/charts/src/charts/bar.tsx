@@ -59,6 +59,8 @@ type ScaleBand<Domain extends { toString(): string }> = ReturnType<typeof scaleB
 const EMPTY_BAR_TARGETS: ChartDatapointTarget[] = [];
 
 interface BarGeometry {
+  /** RM-113: the segment's `[lo, hi]` value extent when drawn from a stack layout. */
+  extent?: readonly [number, number];
   index: number;
   value: number;
   categoryValue: string;
@@ -157,7 +159,39 @@ export type BarAnimationType = "grow" | "fade";
  * `true`/`"outside"` place the value label just past the bar's far end;
  * `"inside"` places it just inside. See {@link BarProps.showValues}.
  */
-export type BarShowValues = boolean | "outside" | "inside";
+export type BarShowValues =
+  | boolean
+  | "outside"
+  | "inside"
+  // BarChart — RM-113: the object form adds WHEN the label shows.
+  | {
+      position?: "outside" | "inside";
+      /** `"always"` (default) or `"hover"` — only the hovered category's label. */
+      visibility?: "always" | "hover";
+    };
+
+/** The placement a `showValues` value asks for, and whether it waits for hover. */
+function resolveShowValues(showValues: BarShowValues | undefined): {
+  mode: "outside" | "inside" | undefined;
+  hoverOnly: boolean;
+} {
+  if (showValues === undefined || showValues === false) {
+    return { mode: undefined, hoverOnly: false };
+  }
+  if (showValues === true) {
+    return { mode: "outside", hoverOnly: false };
+  }
+  if (typeof showValues === "string") {
+    return { mode: showValues, hoverOnly: false };
+  }
+  return {
+    mode: showValues.position ?? "outside",
+    hoverOnly: showValues.visibility === "hover",
+  };
+}
+
+/** A stacked segment's label hides when the segment is shorter than this along the value axis. */
+const MIN_SEGMENT_LABEL_LENGTH = 24;
 
 /**
  * Identifies the one "hero" bar `highlightKey` picks out. A string/number is
@@ -382,6 +416,10 @@ const BarInner = memo(function BarInner({
     orientation,
     stacked,
     stackOffsets,
+    stackMode,
+    stackExtents,
+    barColorOf,
+    barCrossInset = 0,
     animationDuration,
     enterTransition,
     revealEpoch = 0,
@@ -439,6 +477,8 @@ const BarInner = memo(function BarInner({
     [data, dataKey],
   );
   const formatValue = useChartValueSetFormatter(seriesValues);
+  // Percent stacks (RM-113) label each segment with its SHARE, one notation.
+  const formatShare = useChartValueSetFormatter(seriesValues, "percent");
 
   const isLegendDimmed = legendHoveredIndex !== null && legendHoveredIndex !== seriesIndex;
 
@@ -451,13 +491,14 @@ const BarInner = memo(function BarInner({
       return 0;
     }
     if (stacked) {
-      // Stacked bars use full band width
-      return bandWidth;
+      // Stacked bars use full band width (less a comparison column's inset).
+      return bandWidth * (1 - 2 * barCrossInset);
     }
     // Leave a gap between grouped bars (controlled by groupGap prop)
     const effectiveGroupGap = seriesCount > 1 ? groupGap : 0;
-    return (bandWidth - effectiveGroupGap * (seriesCount - 1)) / seriesCount;
-  }, [bandWidth, seriesCount, stacked, groupGap]);
+    const usable = bandWidth * (1 - 2 * barCrossInset);
+    return (usable - effectiveGroupGap * (seriesCount - 1)) / seriesCount;
+  }, [bandWidth, barCrossInset, seriesCount, stacked, groupGap]);
 
   // Calculate corner radius based on lineCap. `round` follows the theme's --radius
   // token (resolved to px) so bars square in high decoration and scale
@@ -498,8 +539,33 @@ const BarInner = memo(function BarInner({
       }
 
       const categoryValue = barXAccessor(d);
-      const bandPos = barScale(categoryValue) ?? 0;
+      // A comparison column (RM-113) keeps the band's outer edges; the main
+      // column steps in by `barCrossInset` of the band on each side.
+      const bandPos = (barScale(categoryValue) ?? 0) + bandWidth * barCrossInset;
       const valuePos = scale(value) ?? 0;
+
+      // RM-113 extents layout: the segment IS `[lo, hi]` in value space
+      // (fraction space for percent), mapped through the one value scale.
+      const extent = stackExtents?.get(i)?.get(dataKey);
+      if (extent) {
+        const a = scale(extent[0]) ?? 0;
+        const b = scale(extent[1]) ?? 0;
+        const start = Math.min(a, b);
+        const length = Math.abs(b - a);
+        layout.push({
+          index: i,
+          value,
+          categoryValue,
+          datum: d,
+          x: isHorizontal ? start : bandPos,
+          y: isHorizontal ? bandPos : start,
+          width: isHorizontal ? length : barWidth,
+          height: isHorizontal ? barWidth : length,
+          valuePos: b,
+          extent,
+        });
+        return;
+      }
 
       let x: number;
       let y: number;
@@ -570,6 +636,7 @@ const BarInner = memo(function BarInner({
 
     return layout;
   }, [
+    bandWidth,
     barScale,
     barWidth,
     barXAccessor,
@@ -585,6 +652,8 @@ const BarInner = memo(function BarInner({
     seriesIndex,
     stackGap,
     stackOffsets,
+    stackExtents,
+    barCrossInset,
     stacked,
     valueScale,
   ]);
@@ -647,6 +716,11 @@ const BarInner = memo(function BarInner({
     // Highlight (RM-027): the hero bar draws in --chart-foreground ink;
     // every other bar draws from `restColors` instead of the series fill.
     let barFill = resolvedFill;
+    // colorBy (RM-113): the row's own colour wins over the series fill.
+    const rowColor = isLoadingPhase ? undefined : barColorOf?.(bar.datum);
+    if (rowColor) {
+      barFill = rowColor;
+    }
     if (highlightKey !== undefined && !isLoadingPhase) {
       if (isHeroBar(bar)) {
         barFill = "var(--chart-foreground)";
@@ -660,7 +734,8 @@ const BarInner = memo(function BarInner({
     // - For non-stacked: always apply
     // - For stacked with gap: apply to all bars
     // - For stacked without gap: only apply to the last series
-    const applyRounding = !stacked || stackGap > 0 || isLastSeries;
+    // An extents segment (RM-113) is square: its neighbours butt against it.
+    const applyRounding = !bar.extent && (!stacked || stackGap > 0 || isLastSeries);
     const effectiveRx = applyRounding ? cornerRadius : 0;
     const effectiveRy = applyRounding ? cornerRadius : 0;
 
@@ -669,15 +744,28 @@ const BarInner = memo(function BarInner({
     // MIN_LABEL_BAR_WIDTH hides its label rather than shrinking the
     // `text-chart-value` role below `text-meta`.
     const useUnitMode = Boolean(unit && unit > 0) && !isLoadingPhase;
-    const labelMode: BarShowValues | undefined = useUnitMode ? "outside" : showValues;
+    const shown = resolveShowValues(useUnitMode ? "outside" : showValues);
+    const labelMode = shown.mode;
     const thickness = isHorizontal ? barHeight : barW;
     const settled = useUnitMode || !animate || isLoaded;
-    const showLabel = Boolean(labelMode) && thickness >= MIN_LABEL_BAR_WIDTH && settled;
+    const segmentLength = isHorizontal ? barW : barHeight;
+    const showLabel =
+      Boolean(labelMode) &&
+      thickness >= MIN_LABEL_BAR_WIDTH &&
+      settled &&
+      (!shown.hoverOnly || hoveredBarIndex === i) &&
+      (!bar.extent || segmentLength >= MIN_SEGMENT_LABEL_LENGTH);
 
     let labelX = 0;
     let labelY = 0;
     let labelAnchor: "start" | "middle" | "end" = "middle";
-    if (showLabel) {
+    if (showLabel && bar.extent) {
+      // A stacked segment's label sits in its middle — "outside" would land
+      // on the neighbouring segment.
+      labelX = x + barW / 2;
+      labelY = y + barHeight / 2;
+      labelAnchor = "middle";
+    } else if (showLabel) {
       const outside = labelMode !== "inside";
       if (isHorizontal) {
         const crossCenter = y + barHeight / 2;
@@ -701,9 +789,12 @@ const BarInner = memo(function BarInner({
             : valuePos + VALUE_LABEL_INSET;
       }
     }
-    const labelText = isNegative
-      ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
-      : formatValue(bar.value);
+    const labelText =
+      bar.extent && stackMode === "percent"
+        ? formatShare(bar.extent[1] - bar.extent[0])
+        : isNegative
+          ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
+          : formatValue(bar.value);
     const valueLabel = showLabel && (
       <HaloText
         className="text-chart-value tabular-nums"
