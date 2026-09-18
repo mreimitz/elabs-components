@@ -217,7 +217,9 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     itemRequiredKeys: ["id", "name", "start", "end"],
     dateItemKeys: ["start", "end"],
   },
-  // Dumbbell — RM-023
+  // Dumbbell — RM-023. `groupBy` — RM-116: optional, so a caller who never
+  // groups their rows checks nothing extra; a caller who does gets the same
+  // "does this column exist" floor every other nominated column gets.
   DumbbellChart: {
     dataKind: "array",
     requiredProps: ["data", "category", "startKey", "endKey"],
@@ -227,6 +229,7 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
       { prop: "startKey", numeric: true },
       { prop: "endKey", numeric: true },
     ],
+    keyProps: [{ prop: "groupBy", numeric: false }],
   },
   // Bullet — RM-061. A single scalar KPI value, not a data array — `dataKind:
   // "none"` skips every array/row check, so the one thing a mocked test can

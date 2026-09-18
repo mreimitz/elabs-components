@@ -47,6 +47,7 @@ import {
   ChartTooltip,
   DistributionChart,
   DumbbellChart,
+  type DumbbellSortBy,
   FunnelChart,
   type FunnelStage,
   Grid,
@@ -79,6 +80,7 @@ import {
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
+import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
 import type { XAxisProps } from "../charts/x-axis";
 import type { YAxisProps } from "../charts/y-axis";
@@ -800,6 +802,11 @@ function renderChart(
     // ── Dumbbell ──────────────────────────────────────────────────────────────
     case "dumbbell": {
       const [startKey, endKey] = dumbbellKeys(spec, series);
+      // RM-116: an explicit `spec.variant` always wins; a declared
+      // `kind: "change"` with no explicit variant reads as "arrow" — the
+      // same reading `infer-chart-type.ts`'s rule 7 records (as `rule:
+      // "arrow"`) when it picked "dumbbell" for a spec with no explicit type.
+      const variant = spec.variant ?? (spec.kind === "change" ? "arrow" : undefined);
       return (
         <DumbbellChart
           plotHeight={plotHeight}
@@ -816,6 +823,13 @@ function renderChart(
           accessibleDescription={spec.description}
           annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
+          variant={variant}
+          // `spec.sort` is `BarSort | DumbbellSortBy` (see chart-spec.ts) — in
+          // the dumbbell branch it is only ever authored as a
+          // `DumbbellSortBy` literal.
+          sortBy={spec.sort as DumbbellSortBy | undefined}
+          groupBy={spec.groupBy}
+          delta={spec.delta}
         />
       );
     }
@@ -1377,7 +1391,9 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
 function barRichnessProps(spec: ChartSpec) {
   return {
     divergingCenter: spec.divergingCenter,
-    sort: spec.sort,
+    // `spec.sort` is `BarSort | DumbbellSortBy` (see chart-spec.ts) — in the
+    // bar branch it is only ever authored as a `BarSort` literal.
+    sort: spec.sort as BarSort | undefined,
     groupBy: spec.groupBy,
     colorBy: spec.colorBy,
     overlays: spec.overlays,

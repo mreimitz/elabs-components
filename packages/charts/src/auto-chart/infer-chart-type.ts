@@ -418,8 +418,9 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
 
   // ── 7. Two measures that read as before/after → dumbbell ───────────────────
   //    Outranks `bar` (rule 15), which every two-series categorical spec
-  //    satisfies. Only the NAMED pair (or an explicit `y2`) fires it, so an
-  //    ordinary two-region comparison still draws as grouped bars.
+  //    satisfies. Only the NAMED pair, an explicit `y2`, or a declared
+  //    `kind: "change"` fires it, so an ordinary two-region comparison still
+  //    draws as grouped bars.
   if (categoricalX) {
     const explicitPair =
       spec.y2 && numericKeys.length === 1 && isNumericField(data, spec.y2)
@@ -429,12 +430,25 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
       !explicitPair && numericKeys.length === 2
         ? readsAsBeforeAfterPair(seriesNames[0] as string, seriesNames[1] as string)
         : null;
-    const pair = explicitPair ?? namedPair;
+    // RM-116: a declared "change" reading needs no NAME match — the spec
+    // author already said these two measures are one value at two moments.
+    const declaredChange = kind === "change";
+    const changePair =
+      !explicitPair && !namedPair && declaredChange && numericKeys.length === 2
+        ? ([numericKeys[0] as string, numericKeys[1] as string] as [string, string])
+        : null;
+    const pair = explicitPair ?? namedPair ?? changePair;
     if (pair) {
+      // "arrow" (RM-116): the rule string is the ONE place this decision is
+      // recorded — `auto-chart.tsx`'s dumbbell case reads `spec.kind` itself
+      // (not this string) to pick `variant`, since `inferChartType` below
+      // returns only the bare `ChartType`.
       return pick(
         "dumbbell",
-        "before-after",
-        `chose dumbbell: ${pair[0]} → ${pair[1]} is one measure at two moments, not two series`,
+        declaredChange ? "arrow" : "before-after",
+        declaredChange
+          ? `chose dumbbell (arrow): ${pair[0]} → ${pair[1]} is a declared change, not two series`
+          : `chose dumbbell: ${pair[0]} → ${pair[1]} is one measure at two moments, not two series`,
       );
     }
   }

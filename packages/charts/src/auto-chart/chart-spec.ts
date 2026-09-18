@@ -20,6 +20,7 @@ import type { ScatterShapeSpec } from "../charts/custom-shapes";
 import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/bar-overlays";
 import type { BarSort } from "../charts/bar-stacking";
 import type { ChartColorBy } from "../charts/chart-context";
+import type { DumbbellSortBy } from "../charts/dumbbell-layout";
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -75,8 +76,10 @@ export type ChartType =
  *   series.
  * - `"ranking"` — long rows of `(period, entity, value)` whose interest is the
  *   ORDER of the entities per period, not the magnitudes.
+ * - `"change"` — a two-measure category spec reads as a before/after MOVE
+ *   (an arrow), not an independent pair of values — DumbbellChart — RM-116.
  */
-export type ChartSpecKind = "steps" | "records" | "ranking";
+export type ChartSpecKind = "steps" | "records" | "ranking" | "change";
 
 /**
  * How loud the picture should be. `"analytical"` (the default) keeps the
@@ -292,6 +295,12 @@ export interface ChartSpec {
   /** Custom lines/areas drawn in data space behind the marks — `CustomShapes shapes`. */
   shapes?: ScatterShapeSpec[];
 
+  // DumbbellChart — RM-116
+  /** `type: "dumbbell"` only: `"dumbbell"` (default) | `"slope"` | `"arrow"` | `"dots"`, mirroring `DumbbellVariant`. */
+  variant?: "dumbbell" | "slope" | "arrow" | "dots";
+  /** `type: "dumbbell"` only: the delta label — absolute value or `%` change. Unset draws no delta label. */
+  delta?: { show: boolean; mode: "absolute" | "percent" };
+
   // Pie/donut grouping, half preset — RM-114. Slice labels moved to
   // `labels.slices` (see `ChartLabelsSpec` below) so `ChartSpec` keeps one
   // `labels` object with a sub-key per mark family. Slice order shares the
@@ -317,18 +326,21 @@ export interface ChartSpec {
   divergingCenter?: string;
   /**
    * One row/slice order field, narrowed per chart family in `auto-chart.tsx`
-   * (orchestrator ruling — one `sort` on `ChartSpec`, not a `pieSort`/
+   * (orchestrator ruling — one `sort` on `ChartSpec`, never a `pieSort`/
    * `barSort` per family). Bar (RM-113): `"asc"`/`"desc"` by value (stack
-   * total when stacked) or `{ by, dir }` — see {@link BarSort}. Pie/donut
-   * (RM-114): only the string literals `"desc"` (largest first) or `"none"`
-   * (data order, the default — matches `PieChart`'s own default, kept so an
-   * existing spec renders byte-identical wedges) are honoured; any other
-   * value (an object form, `"asc"`) is ignored for pie. Type stays
-   * `BarSort` for now — RM-116 widens it to `BarSort | DumbbellSortBy` when
-   * it merges; pie's two string literals already sit inside that union.
+   * total when stacked) or `{ by, dir }` — see {@link BarSort}. Dumbbell
+   * (`type: "dumbbell"`, RM-116): its own `DumbbellSortBy` (`"start"|"end"|
+   * "delta"|"deltaPercent"|"data"|"label"|"none"`, default `"none"` —
+   * spreadsheet order). Pie/donut (RM-114): only the string literals
+   * `"desc"` (largest first) or `"none"` (data order, the default — matches
+   * `PieChart`'s own default, kept so an existing spec renders
+   * byte-identical wedges) are honoured; any other value (an object form,
+   * `"asc"`, a dumbbell literal) is ignored for pie. The union covers every
+   * family; `auto-chart.tsx` narrows before handing it to a component's own
+   * `sort`/`sortBy` prop.
    */
-  sort?: BarSort;
-  /** Gather bar rows by this column, with a header per group. */
+  sort?: BarSort | DumbbellSortBy;
+  /** Gather rows by this column, with a header per group — `BarChart` (RM-113) and `DumbbellChart` (RM-116) both read this. */
   groupBy?: string;
   /**
    * Colour marks by another column (categorical ≤ 6 hues, or a sequential /
