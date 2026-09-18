@@ -307,7 +307,10 @@ describe.each(SELECTION_FIXTURES)(
       vi.restoreAllMocks();
     });
 
-    it("renders the pre-RM-073 DOM (baseline generated at 9d119df6) without selectionStates", () => {
+    // Baselines generated at 9d119df6. RM-110 (#485) regenerated line/area/composed
+    // once: series end labels became the default (maintainer decision, 2026-09-18),
+    // which adds the end label and reserves its right margin.
+    it("renders the committed opt-out baseline DOM without selectionStates", () => {
       const html = stripChartBreakpoint(render(element({})).container.innerHTML);
       expect(normaliseIds(`${html}\n`)).toBe(normaliseIds(baseline(name)));
       expect(html).not.toContain("data-selection");

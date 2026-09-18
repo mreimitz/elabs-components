@@ -5,6 +5,8 @@
  * baselines were generated — and on today's branch, where
  * `chart-selection.test.tsx` compares against them byte-for-byte. Extra props
  * (`selectionStates`, …) are spread last by the tests that paint states.
+ * The line/area/composed baselines were regenerated once by RM-110 (#485), when
+ * series end labels became the default (maintainer decision, 2026-09-18).
  *
  * Test-only: imported by `chart-selection.test.tsx`, never by package source.
  */
