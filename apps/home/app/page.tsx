@@ -6,6 +6,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@elabs-ai/components-ui";
+import { ParallaxPlane, RevealOnEnter } from "@elabs-ai/components-marketing";
+import { SiteGround } from "../components/site-ground";
+
+// RM-092: a preview of the three depth planes until the real sections (RM-094) replace it.
+const PLANES = [
+  { plane: "ground", title: "Ground", description: "Scrolls at 0.15× the page." },
+  { plane: "content", title: "Content", description: "Scrolls with the page." },
+  { plane: "float", title: "Float", description: "Scrolls at 1.2× the page." },
+] as const;
 
 // Placeholder: proves the pipeline (workspace source → Tailwind @source → tokens → theme) end to
 // end. The real sections replace it.
@@ -25,6 +34,25 @@ export default function HomePage() {
           </Button>
         </CardContent>
       </Card>
+      {/* RM-092 */}
+      <SiteGround />
+      <section aria-label="Depth planes" className="flex min-h-screen flex-col justify-end">
+        <RevealOnEnter as="ul" stagger className="grid gap-6 sm:grid-cols-3">
+          {PLANES.map(({ plane, title, description }) => (
+            <li key={plane}>
+              <ParallaxPlane plane={plane}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </ParallaxPlane>
+            </li>
+          ))}
+        </RevealOnEnter>
+      </section>
+      <div aria-hidden="true" className="min-h-screen" />
     </main>
   );
 }
