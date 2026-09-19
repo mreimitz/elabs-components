@@ -86,6 +86,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - ChartLegendHoverProvider
 - ChartLoadingLabel
 - ChartMarkers
+- ChartMultiples
 - ChartProvider
 - ChartRevealClip
 - CHARTS_A2UI_BINDINGS
@@ -149,6 +150,9 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.
   - avoid: Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels.
 - END_LABEL_MIN_GAP
+- FACET_BASELINE_KEY
+- FACET_DEFAULT_COLUMNS
+- FACET_DEFAULT_PANEL_HEIGHT
 - FORCE_ALPHA_MIN
 - FORCE_GRAVITY
 - FORCE_TICK_BUDGET

@@ -110,6 +110,8 @@ export {
   ChartAnnotations,
   // InlineChip — RM-117
   InlineChip,
+  // ChartMultiples — RM-120
+  ChartMultiples,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
