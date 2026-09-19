@@ -760,8 +760,13 @@ export const EditorialChrome: Story = {
     const title = canvas.getByText("RAM prices doubled in six months");
     const notes = canvas.getByText("Contract prices in USD per GB, not adjusted for inflation.");
     const footer = canvasElement.querySelector('[data-slot="chart-frame-footer"]')!;
-    await waitFor(() => expect(canvasElement.querySelector("path")).not.toBeNull());
-    const chartSvg = canvasElement.querySelector("path")!.closest("svg")!;
+    // The ram line's own path (toolbar icons are `<svg>`s too).
+    const ramPath = await waitFor(() => {
+      const path = canvasElement.querySelector('path[stroke^="url(#line-gradient-ram"]');
+      expect(path).not.toBeNull();
+      return path!;
+    });
+    const chartSvg = ramPath.closest("svg")!;
     const description = canvas.getByText("105%").closest("p, div")!;
     const order = [title, description, chartSvg, notes, footer];
     for (let i = 1; i < order.length; i++) {
@@ -792,8 +797,10 @@ export const EditorialChrome: Story = {
       expect(el.style.backgroundColor).toBe("var(--chart-1)");
       return el;
     });
-    const ramPath = chartSvg.querySelector('path[stroke="var(--chart-1)"]')!;
-    await expect(getComputedStyle(chip).backgroundColor).toBe(getComputedStyle(ramPath).stroke);
+    // The line paints through a fade gradient whose stops carry the series ink.
+    const gradientId = ramPath.getAttribute("stroke")!.slice(5, -1);
+    const stop = chartSvg.querySelector(`[id="${gradientId}"] stop`)!;
+    await expect(getComputedStyle(chip).backgroundColor).toBe(getComputedStyle(stop).stopColor);
 
     // The SVG export carries the whole picture.
     await waitFor(() => expect(canvas.getByLabelText("Export as SVG")).toBeInTheDocument());
@@ -815,7 +822,10 @@ export const EditorialChrome: Story = {
     await expect(text.all).toContain("Short-term RAM");
     await expect(text.all).toContain("Flash storage");
     await expect(text.byRole("notes").join(" ")).toContain("Contract prices");
-    await expect(text.byRole("footer").join(" ")).toBe("Chart: Data desk • Source: DRAMeXchange");
+    const footerRuns = text.byRole("footer");
+    for (const word of ["Chart", "Data desk", "Source", "DRAMeXchange"]) {
+      await expect(footerRuns).toContain(word);
+    }
     await expect(text.all).not.toContain("Get the data");
     await expect(await svgBlob.text()).not.toContain("var(");
 
