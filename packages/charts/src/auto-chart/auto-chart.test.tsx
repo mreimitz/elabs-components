@@ -1387,6 +1387,51 @@ describe("AutoChart legend vs series end labels", () => {
     const legend = getByRole("group", { name: "Chart legend" });
     expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
   });
+
+  it("keeps the 'Chart legend' name and item-count parity for 'treemap' (RM-118 Part B)", () => {
+    // `palette: "categorical"` is required here: AutoChart's treemap branch
+    // falls back to the documented "mono" default otherwise (#306), and a
+    // mono treemap has nothing to key — no legend at all, by design. jsdom
+    // never sizes the plot (`getBoundingClientRect` is 0 unmocked), so the
+    // layout — and with it every legend item — mock the same way the
+    // existing "AutoChart treemap palette" describe block above does.
+    // `legend: true` is explicit: AutoChart's own default-visibility
+    // heuristic (`showLegend`) keys off the normalized SERIES count, which
+    // is 0 for a hierarchy-shaped treemap spec — unlike bar/pie/scatter,
+    // treemap never defaults to a visible legend, so this proves the
+    // forwarded prop actually reaches `TreemapChart`, not the default.
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    const spec: ChartSpec = {
+      type: "treemap",
+      data: [],
+      x: "name",
+      series: [],
+      palette: "categorical",
+      legend: true,
+      hierarchy: {
+        name: "Work",
+        children: [
+          { name: "Platform", children: [{ name: "CI", value: 40 }] },
+          { name: "Product", children: [{ name: "Onboarding", value: 25 }] },
+        ],
+      },
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    // One legend row per top-level GROUP ("Platform", "Product"), not per leaf.
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    spy.mockRestore();
+  });
 });
 
 // BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.

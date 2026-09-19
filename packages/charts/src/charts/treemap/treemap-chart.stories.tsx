@@ -106,6 +106,65 @@ export const Sequential: Story = {
   ),
 };
 
+// Legend engine (RM-118): placement + hover only, no toggle (Treemap has no
+// per-group hide).
+/** One row per top-level group, colour-keyed to the same hue each group's
+ * leaves/title band paint. Hovering a row dims every OTHER group's tiles. */
+export const LegendCategorical: Story = {
+  name: "Legend, categorical groups",
+  args: {
+    data: whereTheWorkWent,
+    palette: "categorical",
+    legend: true,
+  },
+  render: (args) => (
+    <div className="h-[420px] w-full max-w-[720px]">
+      <TreemapChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    });
+    const legend = canvasElement.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("Platform");
+    expect(legend?.textContent).toContain("Product");
+    // No toggle affordance (R3) — plain rows, not buttons.
+    expect(canvasElement.querySelectorAll(".legend-container button")).toHaveLength(0);
+
+    const rows = canvasElement.querySelectorAll(".legend-container > div");
+    await userEvent.hover(rows[0] as Element);
+    await waitFor(() => {
+      const groups = canvasElement.querySelectorAll('[data-slot="treemap-group"]');
+      // Hovering the FIRST row (Platform) dims the SECOND group's (Product) tiles.
+      expect(groups[0]?.getAttribute("opacity")).toBe("1");
+      expect(groups[1]?.getAttribute("opacity")).toBe("0.35");
+    });
+  },
+};
+
+/** `palette="sequential"` has no discrete key — it renders the shared `RampLegend` instead. */
+export const LegendSequential: Story = {
+  name: "Legend, sequential ramp",
+  args: {
+    data: whereTheWorkWent,
+    palette: "sequential",
+    legend: true,
+  },
+  render: (args) => (
+    <div className="h-[420px] w-full max-w-[720px]">
+      <TreemapChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-slot="ramp-legend"]')).not.toBeNull();
+    });
+    // The discrete container legend never ALSO shows for this palette.
+    expect(canvasElement.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+  },
+};
+
 /** Flat, single-level rendering — root's children only, no title bands. */
 export const FlatDepthOne: Story = {
   name: "Depth: 1 (flat)",

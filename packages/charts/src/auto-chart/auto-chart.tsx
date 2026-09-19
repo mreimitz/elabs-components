@@ -284,6 +284,7 @@ const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "bar",
   "pie",
   "scatter",
+  "treemap",
 ]);
 
 interface AutoLegendProps {
@@ -915,6 +916,10 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}
+          // RM-118 Part B: forwarded as-is — TreemapChart itself decides what
+          // it means per `palette` (categorical group key, sequential ramp,
+          // or nothing for mono).
+          legend={containerLegend}
         />
       );
     }
