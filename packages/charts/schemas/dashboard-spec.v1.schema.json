@@ -272,7 +272,8 @@
             "bump",
             "stream",
             "diverging-bar",
-            "dual-axis"
+            "dual-axis",
+            "choropleth"
           ],
           "description": "Chart type; inferred from the data when omitted."
         },

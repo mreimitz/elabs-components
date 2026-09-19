@@ -118,3 +118,79 @@ describe("AutoChart double: dual-axis rules (RM-121)", () => {
     ).toThrow(ChartContractError);
   });
 });
+
+// Choropleth — RM-124
+describe("AutoChart double: choropleth rules (RM-124)", () => {
+  const geo = {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        id: "A",
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [0, 0],
+              [0, 1],
+              [1, 1],
+              [1, 0],
+              [0, 0],
+            ],
+          ],
+        },
+        properties: { id: "A", name: "Alpha" },
+      },
+    ],
+  } as unknown as ChartSpec["geo"];
+  const spec = (extra: Partial<ChartSpec> = {}): ChartSpec => ({
+    type: "choropleth",
+    geo,
+    match: { row: "code", feature: "id" },
+    data: [{ code: "A", cooling: 12 }],
+    x: "code",
+    series: ["cooling"],
+    ...extra,
+  });
+
+  it("accepts an inline map, a bundled name and a stepped quantile scale", () => {
+    expect(() =>
+      render(
+        <AutoChartDouble
+          spec={spec({ scale: { type: "stepped", method: "quantile", steps: 5 } })}
+        />,
+      ),
+    ).not.toThrow();
+    expect(() => render(<AutoChartDouble spec={spec({ geo: "world" })} />)).not.toThrow();
+  });
+
+  it("rejects a spec with no map, or one naming a fixture that does not exist", () => {
+    expect(() => render(<AutoChartDouble spec={spec({ geo: undefined })} />)).toThrow(
+      ChartContractError,
+    );
+    expect(() =>
+      render(<AutoChartDouble spec={spec({ geo: "atlantis" as unknown as ChartSpec["geo"] })} />),
+    ).toThrow(ChartContractError);
+  });
+
+  it("rejects a method that belongs to the other scale family", () => {
+    expect(() =>
+      render(
+        <AutoChartDouble
+          spec={spec({
+            scale: { type: "continuous", method: "jenks" } as unknown as ChartSpec["scale"],
+          })}
+        />,
+      ),
+    ).toThrow(ChartContractError);
+  });
+
+  it("rejects more place labels than the map paints", () => {
+    expect(() =>
+      render(<AutoChartDouble spec={spec({ labels: { places: { key: "name", max: 40 } } })} />),
+    ).toThrow(ChartContractError);
+    expect(() =>
+      render(<AutoChartDouble spec={spec({ labels: { places: { key: "name", max: 12 } } })} />),
+    ).not.toThrow();
+  });
+});

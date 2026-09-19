@@ -91,6 +91,8 @@ export const CHART_TYPES = [
   "diverging-bar",
   // Dual-axis — RM-121: explicit only, never inferred.
   "dual-axis",
+  // Choropleth — RM-124: explicit only, never inferred.
+  "choropleth",
 ] as const satisfies readonly ChartType[];
 
 /** True when `value` is a member of {@link CHART_TYPES}. */

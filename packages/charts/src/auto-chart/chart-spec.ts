@@ -27,6 +27,12 @@ import type { DualAxisOptions } from "../charts/y-axis-scales"; // Dual-axis —
 import type { FacetSort } from "../multiples/facet-sort"; // Facet — RM-120
 import type { WaterfallDataFormat, WaterfallSort } from "../charts/waterfall-steps"; // RM-122
 import type { ContainerLegendConfig } from "../charts/legend/use-container-legend";
+// Choropleth — RM-124
+import type { FeatureCollection, Geometry } from "geojson";
+import type { ChoroplethScaleSpec } from "../charts/choropleth/choropleth-chart";
+import type { ChoroplethFeatureProperties } from "../charts/choropleth/choropleth-context";
+import type { ChoroplethPlaceLabelsConfig } from "../charts/choropleth/place-labels";
+import type { ChoroplethSymbolsConfig } from "../charts/choropleth/symbol-layer";
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -71,7 +77,9 @@ export type ChartType =
   | "stream"
   | "diverging-bar"
   // Dual-axis — RM-121: explicit only, never inferred.
-  | "dual-axis";
+  | "dual-axis"
+  // Choropleth — RM-124: explicit only, never inferred.
+  | "choropleth";
 
 /**
  * A declared hint about what the rows MEAN, for the shapes structure alone
@@ -245,9 +253,10 @@ export interface ChartSpec {
   /**
    * Point markers for every series of a `"line"`/`"area"`/`"stream"` chart
    * (RM-112) — same shape and resolution rule as `Line`/`Area`'s own
-   * `symbols` prop. Unset (default): no markers.
+   * `symbols` prop. Unset (default): no markers. `"choropleth"` (RM-124):
+   * proportional symbols at region centroids — see {@link ChoroplethSymbolsConfig}.
    */
-  symbols?: SeriesSymbolsSpec;
+  symbols?: SeriesSymbolsSpec | ChoroplethSymbolsConfig;
 
   /** Bar/funnel orientation. Default: "vertical" for bars. */
   orientation?: "vertical" | "horizontal";
@@ -415,6 +424,27 @@ export interface ChartSpec {
    * sits far above the steps' own swing, drawing totals as points instead of
    * bars. See `WaterfallChart zoomToDifferences`. Default `false`. */
   zoomToDifferences?: boolean;
+
+  // Choropleth — RM-124
+  /** Colour scale (`type: "choropleth"` only): `{ key?, type: "continuous" | "stepped", method?, steps?, domain?, palette? }` — see `colorScaleFor`. `key` defaults to the first series key. */
+  scale?: ChoroplethScaleSpec;
+  /** `type: "choropleth"` only: the map — a GeoJSON FeatureCollection, or a bundled `"world"` (Natural Earth 1:110m) / `"us-states"` fixture. */
+  geo?: ChartSpecGeo;
+  /** `type: "choropleth"` only: joins a data row to a region — `row` names the row field, `feature` the feature property (`"id"`, `"name"`, …). */
+  match?: ChartSpecGeoMatch;
+}
+
+// Choropleth — RM-124
+/** A choropleth's regions: inline GeoJSON or a bundled fixture name. */
+export type ChartSpecGeo =
+  | FeatureCollection<Geometry, ChoroplethFeatureProperties>
+  | "world"
+  | "us-states";
+
+/** How a choropleth row finds its region: `row[row] === feature.properties[feature]`. */
+export interface ChartSpecGeoMatch {
+  row: string;
+  feature: string;
 }
 
 /**
@@ -489,6 +519,10 @@ export interface ChartLabelsSpec {
   // BarChart — RM-113
   /** bar: the grey label on each `comparison` column — `"value"` | `"difference"` | `"none"` (default). */
   comparison?: BarComparisonLabel;
+
+  // Choropleth — RM-124
+  /** choropleth: region names — `{ key?, max? (≤ 30), priority?, collision? }`, laid out through the label solver and dropped at `narrow`. */
+  places?: ChoroplethPlaceLabelsConfig;
 }
 
 // Axes — RM-108

@@ -20,6 +20,19 @@ type Story = StoryObj<typeof meta>;
 
 // ── Shared data fixtures ──────────────────────────────────────────────────────
 
+// Choropleth — RM-124: eight states, each row joined to the bundled map by its
+// postal code. Cooling degree days, a normal-year figure per state.
+const choroplethSpecData = [
+  { state: "CA", cooling: 1_290 },
+  { state: "TX", cooling: 2_980 },
+  { state: "FL", cooling: 3_520 },
+  { state: "NY", cooling: 780 },
+  { state: "IL", cooling: 1_040 },
+  { state: "GA", cooling: 2_210 },
+  { state: "AZ", cooling: 4_130 },
+  { state: "WA", cooling: 310 },
+];
+
 const temporalData = [
   { date: "2024-01-01", revenue: 12000, expenses: 8500 },
   { date: "2024-02-01", revenue: 15200, expenses: 9100 },
@@ -998,6 +1011,73 @@ export const DualAxisSpecWithoutLine: Story = {
         { key: "conversion", label: "Conversion", mark: "area", axis: "right" },
       ],
       title: "Orders and conversion rate",
+    } satisfies ChartSpec,
+    plotHeight: 280,
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+  },
+};
+
+/**
+ * `type: "choropleth"`: the rows join the bundled US-states map on their
+ * postal code, and a stepped quantile scale gives every class the same number
+ * of states. The map is fetched only when a spec names one, so a bar-chart
+ * spec never pays for it. At the narrow tier the colour key moves below the
+ * map and the place names step aside.
+ */
+export const ChoroplethSpec: Story = {
+  args: {
+    spec: {
+      type: "choropleth",
+      geo: "us-states",
+      match: { row: "state", feature: "id" },
+      data: choroplethSpecData,
+      x: "state",
+      series: [{ key: "cooling", label: "Cooling degree days" }],
+      scale: { type: "stepped", method: "quantile", steps: 4 },
+      labels: { places: { key: "name", max: 8 } },
+      title: "Cooling demand by state",
+      description: "Cooling degree days in a normal year, eight states, four quantile classes.",
+    } satisfies ChartSpec,
+    plotHeight: 280,
+  },
+  play: async ({ canvasElement }) => {
+    // The fixture is a dynamic import: the first paint is the status region.
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll(".choropleth-features path").length).toBeGreaterThan(
+        10,
+      ),
+    );
+    const plot = canvasElement.querySelector("[data-chart-breakpoint]");
+    const tier = plot?.getAttribute("data-chart-breakpoint");
+    const legend = canvasElement.querySelector("[data-legend-position]");
+    await expect(legend).not.toBeNull();
+    if (tier === "narrow") {
+      // Narrow: the key sits below the map, and no name is painted over it.
+      await expect(legend).toHaveAttribute("data-legend-position", "below");
+      await expect(
+        canvasElement.querySelectorAll('[data-slot="choropleth-place-label"]'),
+      ).toHaveLength(0);
+    } else {
+      await expect(legend?.getAttribute("data-legend-position")).not.toBe("below");
+      await expect(
+        canvasElement.querySelectorAll('[data-slot="choropleth-place-label"]').length,
+      ).toBeGreaterThan(0);
+    }
+  },
+};
+
+/** A choropleth spec with no map cannot be drawn: `ChartFallback` says so. */
+export const ChoroplethSpecWithoutMap: Story = {
+  args: {
+    spec: {
+      type: "choropleth",
+      match: { row: "state", feature: "id" },
+      data: choroplethSpecData,
+      x: "state",
+      series: [{ key: "cooling", label: "Cooling degree days" }],
+      title: "Cooling demand by state",
     } satisfies ChartSpec,
     plotHeight: 280,
   },
