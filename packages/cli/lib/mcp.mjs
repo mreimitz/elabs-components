@@ -82,8 +82,24 @@ const templateRepoPath = (file) =>
 const openablePath = (ctx, repoPath) =>
   ctx.hosted ? `${RAW_BASE}/${String(repoPath).replace(/^\/+/, "")}` : String(repoPath);
 
-/** The live Storybook docs page for a component, from the manifest's storyId. */
-const storyUrl = (storyId) => `${DOCS_SITE_URL}/?path=/docs/${storyId}`;
+/**
+ * The live Storybook docs page for a component, from the manifest's storyId.
+ *
+ * Hosted (a remote caller, review §4.4/wave-3): the SITE's own `/storybook/`
+ * route, so a plain `curl -sI` on the URL this tool just returned answers 200
+ * directly — no redirect to follow. `siteOrigin` defaults to the production
+ * site and is overridable per request (`ctx.siteOrigin`, itself sourced from
+ * the `SITE_ORIGIN` env var in the hosted HTTP handler) so a preview reports
+ * its own origin.
+ *
+ * Local (stdio): unchanged — the public docs site's `/?path=` deep link,
+ * which the site 308-redirects into `/storybook/` (ADR 0038 §2). Left as-is
+ * on purpose; only the hosted branch changes (RM-100).
+ */
+const storyUrl = (storyId, ctx) =>
+  ctx?.hosted
+    ? `${ctx.siteOrigin || DOCS_SITE_URL}/storybook/?path=/docs/${storyId}`
+    : `${DOCS_SITE_URL}/?path=/docs/${storyId}`;
 
 /**
  * The routine from the Storybook "Getting Started" page. `info` is the first
@@ -222,10 +238,13 @@ function toolInfo(ctx) {
     `radius: ${manifest.radius ?? "—"} · tokens: ${manifest.tokenCount ?? 0} · registry items: ${(manifest.registry || []).length}`,
     `taste profile [${taste.source}]: register ${taste.register} · density ${taste.density} · motion ${taste.motion} · expressiveness ${taste.expressiveness} (the --decoration dial)`,
   ];
-  if (ctx.hosted)
+  if (ctx.hosted) {
+    const origin = ctx.siteOrigin || DOCS_SITE_URL;
     lines.push(
       "hosted server: the taste profile is the shipped default — it cannot read your project's brand-ui.config.json. Run `npx @elabs-ai/components-cli mcp` locally for your project's profile and the audit tool.",
+      `endpoints: mcp ${origin}/mcp · llms ${origin}/llms.txt · storybook ${origin}/storybook/ · registry ${origin}/r`,
     );
+  }
   lines.push("", ...ROUTINE);
   return textContent(lines.join("\n"));
 }
@@ -266,7 +285,13 @@ function toolSearch(ctx, q) {
   // `dashboard-spec` verbs over MCP too, not just the CLI).
   const verbs = matchCliVerbs(manifest, query);
   const lines = [`Components/hooks matching "${query}":`];
-  for (const r of rows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
+  for (const r of rows.slice(0, 40)) {
+    lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
+    // A remote caller has no repo to open `docs <Name>` against first — give it
+    // the live story straight from search when the hit is a component with one
+    // (review §4.4/wave-3). Local/stdio is unchanged: `docs` is the story-link call.
+    if (ctx.hosted && r.storyId) lines.push(`    story: ${storyUrl(r.storyId, ctx)}`);
+  }
   if (!rows.length) lines.push("  (none)");
   if (typeRows.length) {
     lines.push("", `Types/other exports matching "${query}":`);
@@ -303,7 +328,7 @@ function toolSearch(ctx, q) {
 }
 
 /** Compact docs rendering from the manifest entry (the same data `brand-ui docs` prints). */
-function renderDocsEntry(hit) {
+function renderDocsEntry(hit, ctx) {
   const lines = [`# ${hit.name}  (${hit.pkg})`];
   // The API without the usage was the gap: no import line, no link to the live
   // story (review §4.2.3). Both are printed for every caller — the loop only
@@ -311,7 +336,12 @@ function renderDocsEntry(hit) {
   if (hit.kind === "component" || hit.kind === "hook")
     lines.push(`import: import { ${hit.name} } from "${hit.importPath || hit.pkg}";`);
   else if (hit.importPath) lines.push(`import from: ${hit.importPath}`);
-  if (hit.storyId) lines.push(`story: ${storyUrl(hit.storyId)}`);
+  if (hit.storyId) lines.push(`story: ${storyUrl(hit.storyId, ctx)}`);
+  // A one-line usage snippet, ONLY when the manifest already carries one for
+  // this component (never fabricated — review §4.4/wave-3 "do not invent").
+  // No current manifest source populates `usage` yet; this is the read side
+  // of that future field.
+  if (hit.usage) lines.push(`usage: ${hit.usage}`);
   lines.push(`source: ${hit.module}`);
   const intent = hit.intent;
   if (intent) {
@@ -373,7 +403,7 @@ function toolDocs(ctx, component) {
   if (!manifest) return { ...textContent("No manifest."), isError: true };
   const hit = flat(manifest).find((r) => r.name.toLowerCase() === name.toLowerCase());
   if (!hit) return textContent(`${name} not found. Try the search tool with "${name}".`);
-  return textContent(renderDocsEntry(hit));
+  return textContent(renderDocsEntry(hit, ctx));
 }
 
 function toolTokens(ctx) {
@@ -512,14 +542,19 @@ function callTool(ctx, name, argsObj = {}) {
  * exercise this — the stdio loop (`runMcpServer`) is a thin wrapper that only does
  * line framing + I/O. `root` is the repo root (the engine's data source);
  * `manifest` injects the manifest instead of reading it from `root`; `hosted`
- * drops the tools that need the caller's disk (LOCAL_ONLY_TOOLS).
- * @param {{ root?: string|null, manifest?: object|null, hosted?: boolean }} [opts]
+ * drops the tools that need the caller's disk (LOCAL_ONLY_TOOLS). `siteOrigin`
+ * is where a HOSTED caller's URLs (story links, `info`'s endpoints) point —
+ * unused when `hosted` is false, so the stdio server's output is unchanged.
+ * @param {{ root?: string|null, manifest?: object|null, hosted?: boolean, siteOrigin?: string|null }} [opts]
  * @returns {object|null}
  */
-export function handleMessage(msg, { root = null, manifest = null, hosted = false } = {}) {
+export function handleMessage(
+  msg,
+  { root = null, manifest = null, hosted = false, siteOrigin = null } = {},
+) {
   if (!msg || typeof msg !== "object") return error(null, -32600, "Invalid Request");
   const { id, method, params } = msg;
-  const ctx = { root, manifest, hosted };
+  const ctx = { root, manifest, hosted, siteOrigin };
   const isNotification = id === undefined || id === null;
 
   switch (method) {

@@ -13,6 +13,11 @@
  * No `Mcp-Session-Id`: every request carries everything the tools need, and the
  * manifest is injected once at startup. `hosted` defaults to true, which drops the
  * tools that read the caller's disk (`audit`) — see LOCAL_ONLY_TOOLS in mcp.mjs.
+ *
+ * `siteOrigin` is where this instance's own URLs point (story links, `info`'s
+ * `endpoints`): the explicit option wins, then the `SITE_ORIGIN` env var, then
+ * mcp.mjs's production default — so a preview deployment (no fixed domain yet,
+ * ADR 0038 §3) reports itself instead of always naming production (RM-100).
  */
 import { handleMessage } from "./mcp.mjs";
 
@@ -32,11 +37,18 @@ const json = (body, status = 200) =>
 
 /**
  * Build a Fetch-API handler for the brand-ui MCP server.
- * @param {{ manifest?: object|null, root?: string|null, hosted?: boolean }} [opts]
+ * @param {{ manifest?: object|null, root?: string|null, hosted?: boolean, siteOrigin?: string }} [opts]
  * @returns {(request: Request) => Promise<Response>}
  */
-export function createMcpHttpHandler({ manifest = null, root = null, hosted = true } = {}) {
-  const opts = { manifest, root, hosted };
+export function createMcpHttpHandler({
+  manifest = null,
+  root = null,
+  hosted = true,
+  // `process` is absent on some Fetch-API runtimes (the module doc's Deno/Bun
+  // case) — never reference it unguarded at the top level.
+  siteOrigin = (typeof process !== "undefined" && process.env?.SITE_ORIGIN) || undefined,
+} = {}) {
+  const opts = { manifest, root, hosted, siteOrigin };
   return async function handleMcpHttp(request) {
     if (request.method === "OPTIONS")
       return new Response(null, { status: 204, headers: CORS_HEADERS });

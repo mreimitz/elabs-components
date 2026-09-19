@@ -129,14 +129,19 @@ test("hosted search returns release-pinned raw URLs, not repo paths", async (t) 
   assert.doesNotMatch(text, /^ {4}templates\//m);
 });
 
-test("hosted docs prints the import line and the live story URL", async (t) => {
+test("hosted docs prints the import line and the live /storybook/ story URL", async (t) => {
   if (!manifest) return t.skip("not inside the brand-ui monorepo");
   const body = await (
     await post(rpc("tools/call", { name: "docs", arguments: { component: "Button" } }))
   ).json();
   const text = body.result.content[0].text;
   assert.match(text, /^import: import \{ Button \} from "@elabs-ai\/components-ui";$/m);
-  assert.match(text, /^story: https:\/\/elabs-ai\.com\/\?path=\/docs\/core-button--docs$/m);
+  // Under the site's own /storybook/ route (RM-100, wave-3 ruling), not the old
+  // `/?path=` deep link — a hosted caller's `curl -sI` gets 200 directly.
+  assert.match(
+    text,
+    /^story: https:\/\/elabs-ai\.com\/storybook\/\?path=\/docs\/core-button--docs$/m,
+  );
 });
 
 test("hosted docs uses the SUBPATH a component is actually exported from", async (t) => {
@@ -149,14 +154,56 @@ test("hosted docs uses the SUBPATH a component is actually exported from", async
     text,
     /^import: import \{ DashboardSheet \} from "@elabs-ai\/components-charts\/dashboard";$/m,
   );
-  assert.match(text, /^story: https:\/\/elabs-ai\.com\/\?path=\/docs\/dashboard-sheet--docs$/m);
+  assert.match(
+    text,
+    /^story: https:\/\/elabs-ai\.com\/storybook\/\?path=\/docs\/dashboard-sheet--docs$/m,
+  );
 });
 
-test("info hands a fresh session the whole routine", async (t) => {
+test("hosted search hands back a /storybook/ story link for a component hit", async (t) => {
+  if (!manifest) return t.skip("not inside the brand-ui monorepo");
+  const body = await (
+    await post(rpc("tools/call", { name: "search", arguments: { query: "button" } }))
+  ).json();
+  const text = body.result.content[0].text;
+  assert.match(text, /^ {2}Button {2}\(@elabs-ai\/components-ui · component\)$/m);
+  assert.match(
+    text,
+    /^ {4}story: https:\/\/elabs-ai\.com\/storybook\/\?path=\/docs\/core-button--docs$/m,
+  );
+});
+
+test("info hands a fresh session the whole routine and the four hosted endpoints", async (t) => {
   if (!manifest) return t.skip("not inside the brand-ui monorepo");
   const body = await (await post(rpc("tools/call", { name: "info" }))).json();
   const text = body.result.content[0].text;
   assert.match(text, /the routine:/);
   for (const step of ["info", "search", "docs", "build", "audit"])
     assert.match(text, new RegExp(`^ {2}\\d\\. ${step}`, "m"), `routine names ${step}`);
+  assert.match(
+    text,
+    /^endpoints: mcp https:\/\/elabs-ai\.com\/mcp · llms https:\/\/elabs-ai\.com\/llms\.txt · storybook https:\/\/elabs-ai\.com\/storybook\/ · registry https:\/\/elabs-ai\.com\/r$/m,
+  );
+});
+
+test("SITE_ORIGIN overrides every hosted URL a preview reports about itself", async (t) => {
+  if (!manifest) return t.skip("not inside the brand-ui monorepo");
+  const preview = createMcpHttpHandler({ manifest, siteOrigin: "https://rm-100.vercel.app" });
+  const postPreview = (body) =>
+    preview(
+      new Request("http://localhost/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
+  const docs = await (
+    await postPreview(rpc("tools/call", { name: "docs", arguments: { component: "Button" } }))
+  ).json();
+  assert.match(
+    docs.result.content[0].text,
+    /^story: https:\/\/rm-100\.vercel\.app\/storybook\/\?path=\/docs\/core-button--docs$/m,
+  );
+  const info = await (await postPreview(rpc("tools/call", { name: "info" }))).json();
+  assert.match(info.result.content[0].text, /^endpoints: mcp https:\/\/rm-100\.vercel\.app\/mcp/m);
 });
