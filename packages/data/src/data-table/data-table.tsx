@@ -4,6 +4,7 @@ import {
   forwardRef,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -19,12 +20,13 @@ import {
   type Column,
   type ColumnDef,
   type ColumnFiltersState,
+  type Cell,
   type ColumnPinningState,
   type ColumnSizingState,
+  type Header,
   type OnChangeFn,
   type PaginationState,
   type Row,
-  type RowData,
   type RowSelectionState,
   type SortingState,
   type Table as TanstackTable,
@@ -66,6 +68,24 @@ import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, ArrowUpDown, GripVertical } from "lucide-react";
 import { Button, Checkbox, Skeleton, Spinner, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import {
+  columnSizeStyle,
+  formatCellValue,
+  resolveShowAt,
+  type DataTableColumnMeta,
+} from "./column-meta";
+import { computeColumnScales, extentOf, seriesValues } from "./cell-scales";
+import { BarCell } from "./cells/bar-cell";
+import { ColumnsCell } from "./cells/columns-cell";
+import { HeatmapCell, HeatmapLegend, heatmapCellStyle } from "./cells/heatmap-cell";
+import { MarkdownCell } from "./cells/markdown-cell";
+import { SparklineCell } from "./cells/sparkline-cell";
+import { DataTableCard, DataTableCardList, type DataTableCardField } from "./card-layout";
+import { DataTableRankCell, DataTableRankHeader, computeRowRanks } from "./ranks-column";
+import { stickyRowPinning, type DataTableStickyRows } from "./sticky-rows";
+import { useTableBreakpoint } from "./use-table-breakpoint";
+
+export type { DataTableColumnMeta } from "./column-meta";
 
 // ─── Column meta seam (#69) ─────────────────────────────────────────────────────
 // `columnDef.meta` is where TanStack lets a caller attach column-specific,
@@ -76,32 +96,9 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 // site. Exported (not just declared) so a consumer's own `ColumnDef` literal
 // type-checks against a NAMED type, per component-api.md § Types.
 
-/**
- * `DataTable`'s `columnDef.meta` contract, read by the header/body/skeleton
- * cell renderers. Set `numeric: true` on a column to get `tabular-nums` +
- * end-alignment on both the `<th>` and every `<td>` (including the loading
- * skeleton) for free.
- */
-export interface DataTableColumnMeta {
-  /** Numeric column: tabular figures + end alignment on header and cells. */
-  numeric?: boolean;
-  /**
-   * Explicit alignment override for when `numeric` isn't the right cue (or
-   * to align a non-numeric column). Independent of `numeric` — `numeric`
-   * alone still drives `tabular-nums` even when `align` overrides the
-   * alignment away from `"end"`.
-   */
-  align?: "start" | "center" | "end";
-}
-
-declare module "@tanstack/react-table" {
-  // `TData`/`TValue` must stay in the signature to match the interface being
-  // augmented, even though `DataTableColumnMeta` (deliberately) doesn't use
-  // them; the empty extends-body is how TanStack's own module-augmentation
-  // pattern for `ColumnMeta` is documented.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
-  interface ColumnMeta<TData extends RowData, TValue> extends DataTableColumnMeta {}
-}
+// `DataTableColumnMeta` and its TanStack `ColumnMeta` augmentation live in
+// `./column-meta` (RM-123 grew the contract: visuals, format, colorBy, showAt,
+// sizing, markdown); they are re-exported above under the same name.
 
 /**
  * `<th>`/`<td>`/skeleton-`<td>` className for a column's `meta.numeric`/`meta.align`
@@ -421,6 +418,42 @@ export interface DataTableProps<TData, TValue> extends Omit<
    */
   columnDividers?: boolean;
 
+  // ── Presentation (RM-123) ──────────────────────────────────────────────────
+  /**
+   * `"table"` (default): always a `<table>`. `"cards"`: always one card per
+   * row (a `<dl>` of header → cell). `"auto"`: cards while the table's own
+   * container is narrower than 450 px, a `<table>` above. Only the markup
+   * changes; sorting, filtering, paging and selection use the same table.
+   */
+  layout?: "auto" | "table" | "cards";
+  /**
+   * Rows that stay at the top or bottom of every page and after every sort
+   * (an "average" or "total" row). Receives each record and its `data` index.
+   */
+  stickyRows?: DataTableStickyRows<TData>;
+  /**
+   * Prepend a rank column: each row's 1-based position in `data` (sticky rows
+   * excluded). The rank travels with its row — sorting never renumbers it.
+   */
+  showRanks?: boolean;
+  /** `"compact"` tightens row and header height. Default `"default"`. */
+  density?: "default" | "compact";
+  /**
+   * Grouped headers: merge a column's empty placeholder cells above it into
+   * one header cell that spans the header rows (Datawrapper's double header).
+   */
+  mergeEmptyHeaders?: boolean;
+  /**
+   * Global search: `"contains"` (default, TanStack's own) or `"exact"` — a row
+   * matches only when a cell equals the query (case-insensitive).
+   */
+  searchMode?: "contains" | "exact";
+  /**
+   * Hide the header row visually (a pixel heatmap). The headers stay for
+   * screen readers, and a focused sort button still shows itself.
+   */
+  hideHeader?: boolean;
+
   // ── Row drag-reorder (#13) ───────────────────────────────────────────────
   /**
    * Opt-in row drag-reorder. Off by default — an existing table renders
@@ -504,6 +537,48 @@ export interface DataTableProps<TData, TValue> extends Omit<
   /** Message shown when there are no rows and not loading. */
   emptyMessage?: ReactNode;
   className?: string;
+}
+
+// ─── Presentation (RM-123, module-level) ────────────────────────────────────
+
+/** The category a `colorBy` key names on a record (a string or a finite number). */
+function rowKeyValue(original: unknown, key: string): string | number | null {
+  const v = ((original ?? {}) as Record<string, unknown>)[key];
+  return typeof v === "string" || (typeof v === "number" && Number.isFinite(v)) ? v : null;
+}
+
+/**
+ * `colorBy` paint: a background wash (22 % of the category colour over the
+ * row's own ground), or text ink pulled 55 % toward `--foreground` so a
+ * categorical hue still clears text contrast in every theme.
+ */
+function colorByStyle(
+  target: "background" | "text",
+  color: string | null,
+): React.CSSProperties | undefined {
+  if (!color) return undefined;
+  return target === "background"
+    ? { backgroundColor: `color-mix(in oklab, ${color} 22%, transparent)` }
+    : { color: `color-mix(in oklab, ${color} 45%, var(--foreground))` };
+}
+
+/**
+ * The row's hidden activation button (#337): `sr-only` removes the box from the
+ * visual layout but not the browser's own focus ring — the ROW (or card)
+ * paints the deliberate compound indicator via a `has-[…]` selector, so the
+ * proxy's own native ring must be suppressed or it leaks as a stray dot.
+ */
+const ROW_ACTION_CLASS = "sr-only focus-visible:outline-none";
+
+// ─── Exact search (RM-123) ─────────────────────────────────────────────────
+
+/** `searchMode="exact"`: the cell equals the query, trimmed and case-insensitive. */
+function exactSearchMatch(value: unknown, query: unknown): boolean {
+  const q = String(query ?? "")
+    .trim()
+    .toLowerCase();
+  if (q === "") return true;
+  return value !== null && value !== undefined && String(value).trim().toLowerCase() === q;
 }
 
 // ─── Row-click guards (module-level — shared by every renderRow call) ────────
@@ -851,6 +926,15 @@ function DataTableInner<TData, TValue>(
     zebra = true,
     columnDividers = false,
 
+    // Presentation (RM-123)
+    layout = "table",
+    stickyRows,
+    showRanks = false,
+    density = "default",
+    mergeEmptyHeaders = false,
+    searchMode = "contains",
+    hideHeader = false,
+
     // Row drag-reorder (#13)
     enableRowReorder = false,
     onRowReorder,
@@ -1147,6 +1231,15 @@ function DataTableInner<TData, TValue>(
   const paginationRowModel =
     enablePagination && !manualPagination ? { getPaginationRowModel: getPaginationRowModel() } : {};
 
+  // ── Sticky rows (RM-123) ──────────────────────────────────────────────────
+  // TanStack row pinning with `keepPinnedRows`: a sticky row renders on every
+  // page and outside the sort, while keeping its id, selection and data index.
+  const rowPinning = useMemo(
+    () => stickyRowPinning(data, stickyRows, getRowId),
+    [data, stickyRows, getRowId],
+  );
+  const stickyActive = (rowPinning.top?.length ?? 0) + (rowPinning.bottom?.length ?? 0) > 0;
+
   // ── Table instance ────────────────────────────────────────────────────────
   const table = useReactTable({
     data,
@@ -1160,7 +1253,16 @@ function DataTableInner<TData, TValue>(
       columnPinning,
       columnSizing,
       rowSelection,
+      ...(stickyActive ? { rowPinning } : {}),
     },
+    ...(stickyActive ? { enableRowPinning: true, keepPinnedRows: true } : {}),
+    // RM-123 `searchMode="exact"`: a row matches when one cell EQUALS the query.
+    ...(searchMode === "exact"
+      ? {
+          globalFilterFn: (row: Row<TData>, columnId: string, filterValue: unknown) =>
+            exactSearchMatch(row.getValue(columnId), filterValue),
+        }
+      : {}),
 
     // Sorting
     onSortingChange: (updater) => {
@@ -1273,12 +1375,66 @@ function DataTableInner<TData, TValue>(
     // TanStack `initialState` would be dead/misleading.
   });
 
-  const rows = table.getRowModel().rows;
+  // Sticky rows (RM-123) render outside the centre rows, above and below them.
+  const rows = stickyActive ? table.getCenterRows() : table.getRowModel().rows;
+  const topRows = stickyActive ? table.getTopRows() : [];
+  const bottomRows = stickyActive ? table.getBottomRows() : [];
+
+  // ── Presentation layer (RM-123) ──────────────────────────────────────────
+  // Every piece below is gated on the column meta / prop that asks for it, so a
+  // table that uses none of it renders exactly as before.
+  const leafColumns = table.getAllLeafColumns();
+  const coreRows = table.getCoreRowModel().rows;
+  const needsScales = leafColumns.some(
+    (c) => c.columnDef.meta?.visual !== undefined || c.columnDef.meta?.colorBy !== undefined,
+  );
+  // One scale per visual / colorBy column over ALL rows (never the page), so a
+  // bar or a heatmap colour means the same thing on every page and sort.
+  const columnScales = useMemo(
+    () =>
+      needsScales
+        ? computeColumnScales(
+            leafColumns.map((c) => ({ id: c.id, meta: c.columnDef.meta })),
+            coreRows,
+          )
+        : null,
+    [needsScales, leafColumns, coreRows],
+  );
+  const rowRanks = useMemo(
+    () =>
+      showRanks
+        ? computeRowRanks(
+            coreRows.map((r) => r.id),
+            new Set([...(rowPinning.top ?? []), ...(rowPinning.bottom ?? [])]),
+          )
+        : null,
+    [showRanks, coreRows, rowPinning],
+  );
+  const hasShowAt = leafColumns.some((c) => c.columnDef.meta?.showAt !== undefined);
+  const { ref: breakpointRef, breakpoint } = useTableBreakpoint<HTMLDivElement>(
+    layout === "auto" || hasShowAt,
+  );
+  const cardsActive = layout === "cards" || (layout === "auto" && breakpoint === "narrow");
+  const isColumnShown = (column: Column<TData, unknown>) =>
+    resolveShowAt(column.columnDef.meta?.showAt, breakpoint);
+  const rootRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      breakpointRef(node);
+      if (typeof ref === "function") ref(node);
+      else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    },
+    [breakpointRef, ref],
+  );
+  const captionId = useId();
+  const headerGroupsForCards = table.getHeaderGroups();
+  // Leading columns DataTable adds beside the TanStack ones (grip, rank).
+  const leadingColCount = (hasGripColumn ? 1 : 0) + (showRanks ? 1 : 0);
+
   // colSpan for spacer / empty / skeleton cells must match the number of cells a
   // real data row renders (`row.getVisibleCells()`) — use VISIBLE leaf columns so a
   // hidden column (a first-class slice here via columnVisibility + ColumnPicker)
-  // doesn't make those rows over-span.
-  const colCount = table.getVisibleLeafColumns().length;
+  // doesn't make those rows over-span. `showAt` (RM-123) hides at render only.
+  const colCount = table.getVisibleLeafColumns().filter(isColumnShown).length;
   // Virtualized-table ARIA: only a window of rows is mounted, so assistive tech
   // can't infer the true size from the DOM. aria-rowcount counts the header row(s)
   // plus every data row; rendered data rows carry an absolute 1-based aria-rowindex
@@ -1707,7 +1863,8 @@ function DataTableInner<TData, TValue>(
     if (el.firstElementChild) observer.observe(el.firstElementChild);
     return () => observer.disconnect();
     // Column/row-count changes can also change the table's intrinsic width.
-  }, [updateScrollAffordance, colCount, rows.length]);
+    // `cardsActive` (RM-123): switching back from cards mounts a new scroll box.
+  }, [updateScrollAffordance, colCount, rows.length, cardsActive]);
 
   // ─── Empty / loading state ───────────────────────────────────────────────
   const showEmpty = !loading && rows.length === 0;
@@ -1718,6 +1875,187 @@ function DataTableInner<TData, TValue>(
 
   // ─── Render helpers ───────────────────────────────────────────────────────
 
+  // ─── Presentation helpers (RM-123) ─────────────────────────────────────────
+  const headerHeightClass = density === "compact" ? "h-8" : "h-10";
+  const cellPadYClass = density === "compact" ? "py-1" : "py-2";
+  // TanStack's own default `cell` renderer: a column still using it gets its
+  // `meta.format` applied; a column with its own `cell` renders that instead.
+  const defaultCellRenderer = table._getDefaultColumnDef().cell;
+  const rowColorColumns = leafColumns.filter((c) => c.columnDef.meta?.colorBy?.scope === "row");
+
+  function cellLabel(value: unknown, meta: DataTableColumnMeta | undefined): string {
+    return formatCellValue(value, meta?.format, formatNumber);
+  }
+
+  /** A cell's content: its visual, its markdown, its formatted value, or its `cell` renderer. */
+  function renderCellContent(cell: Cell<TData, unknown>): ReactNode {
+    const meta = cell.column.columnDef.meta;
+    const visual = meta?.visual;
+    const value = cell.getValue();
+    const scale = columnScales?.get(cell.column.id);
+    if (visual?.kind === "bar") {
+      return (
+        <BarCell
+          value={typeof value === "number" ? value : null}
+          label={cellLabel(value, meta)}
+          domain={scale?.barDomain ?? [0, 0]}
+          variant={visual.style}
+          track={visual.track}
+          fillColor={
+            visual.colorBy
+              ? scale?.barCategory?.colorOf(rowKeyValue(cell.row.original, visual.colorBy))
+              : undefined
+          }
+          negativeColor={visual.negative !== false}
+        />
+      );
+    }
+    if (visual?.kind === "sparkline" || visual?.kind === "columns") {
+      const values = seriesValues(cell.row.original, visual.keys);
+      const label = values.map((v) => (v === null ? "–" : cellLabel(v, meta))).join(", ");
+      const domain = visual.range === "column" ? (scale?.seriesExtent ?? null) : extentOf(values);
+      if (visual.kind === "columns") {
+        return (
+          <ColumnsCell
+            values={visual.keys.map((key, i) => ({ key, value: values[i] ?? null }))}
+            domain={domain}
+            label={label}
+            height={visual.height}
+          />
+        );
+      }
+      const present = values.filter((v): v is number => v !== null);
+      const first = present[0];
+      const last = present[present.length - 1];
+      return (
+        <SparklineCell
+          values={values}
+          domain={domain}
+          label={label}
+          fill={visual.fill}
+          height={visual.height}
+          ends={
+            visual.labels === "ends" && first !== undefined && last !== undefined
+              ? [cellLabel(first, meta), cellLabel(last, meta)]
+              : undefined
+          }
+        />
+      );
+    }
+    if (visual?.kind === "heatmap") {
+      return <HeatmapCell label={cellLabel(value, meta)} hideValue={visual.hideValue} />;
+    }
+    if (meta?.markdown && typeof value === "string") {
+      const images = typeof meta.markdown === "object" && meta.markdown.images === true;
+      return <MarkdownCell text={value} images={images} />;
+    }
+    if (meta?.format && cell.column.columnDef.cell === defaultCellRenderer) {
+      return cellLabel(value, meta);
+    }
+    return flexRender(cell.column.columnDef.cell, cell.getContext());
+  }
+
+  /** Extra `<td>` classes / style from the column meta (sizing, heatmap fill, colorBy). */
+  function cellPresentation(
+    cell: Cell<TData, unknown>,
+    includeSizing = true,
+  ): {
+    className?: string;
+    style?: React.CSSProperties;
+  } {
+    const meta = cell.column.columnDef.meta;
+    if (!meta) return {};
+    const scale = columnScales?.get(cell.column.id);
+    let style = includeSizing ? columnSizeStyle(meta) : undefined;
+    let className: string | undefined;
+    if (meta.visual?.kind === "heatmap") {
+      const value = cell.getValue();
+      const color = scale?.heatmap?.colorOf(typeof value === "number" ? value : null) ?? null;
+      style = { ...style, ...heatmapCellStyle(color) };
+      className = meta.visual.hideValue ? "px-0 text-center" : "text-center";
+    }
+    if (meta.colorBy && (meta.colorBy.scope ?? "cell") === "cell") {
+      const color =
+        scale?.category?.colorOf(rowKeyValue(cell.row.original, meta.colorBy.key)) ?? null;
+      const colorStyle = colorByStyle(meta.colorBy.target, color);
+      if (colorStyle) style = { ...style, ...colorStyle };
+    }
+    return { className, style };
+  }
+
+  /** A row's `colorBy` (`scope: "row"`) style — the first such column that paints. */
+  function rowColorStyle(row: Row<TData>): React.CSSProperties | undefined {
+    for (const column of rowColorColumns) {
+      const colorBy = column.columnDef.meta?.colorBy;
+      if (!colorBy) continue;
+      const color =
+        columnScales?.get(column.id)?.category?.colorOf(rowKeyValue(row.original, colorBy.key)) ??
+        null;
+      const style = colorByStyle(colorBy.target, color);
+      if (style) return style;
+    }
+    return undefined;
+  }
+
+  /** The printed rank for a row (`showRanks`); `undefined` for a sticky row. */
+  function rankOf(row: Row<TData>): string | undefined {
+    const rank = rowRanks?.get(row.id);
+    return rank === undefined ? undefined : formatNumber(rank);
+  }
+
+  /**
+   * A header's sort button — shared by the table header and the card layout's
+   * sort bar (RM-123), so both name the column and its sort state identically.
+   */
+  function renderSortButton(header: Header<TData, unknown>) {
+    const sorted = header.column.getIsSorted();
+    const headerLabel =
+      typeof header.column.columnDef.header === "string"
+        ? header.column.columnDef.header
+        : header.column.id;
+    const sortStateLabel =
+      sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "not sorted";
+    const SortIcon = sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ArrowUpDown;
+    return (
+      <button
+        type="button"
+        onClick={header.column.getToggleSortingHandler()}
+        aria-label={`Sort by ${headerLabel}, ${sortStateLabel}`}
+        // `relative z-10` (round-2 fix, #82 follow-up — replaces
+        // round-1's padding-based clearance, see the note on
+        // `numericColumnClasses`): on a resizable column the
+        // resize handle below is `absolute`, and CSS painting
+        // order always puts a positioned descendant above
+        // non-positioned in-flow content in the SAME stacking
+        // context, regardless of DOM order — so without this,
+        // the handle's 24px hit box would win every hit-test
+        // where it overlaps this button's own trailing edge
+        // (measured: a 12px overlap on an end-aligned
+        // sortable+resizable column) no matter which element
+        // renders first in markup. Giving the button its own
+        // explicit positive z-index (not just `relative`, which
+        // alone would still lose — see the code comment on
+        // `numericColumnClasses` above) promotes it into a
+        // later, higher-stacked paint step than the handle's
+        // implicit `z-index: auto`, so the button wins the
+        // overlap purely at the hit-test/paint layer — the
+        // header's padding, and therefore its alignment with
+        // the body `<td>`, never has to move. The handle's own
+        // visible drag affordance (the `after:` seam, 0-8px
+        // from the cell's trailing edge) sits entirely outside
+        // this button's box (which ends at the same 12px inset
+        // as the body), so dragging is unaffected.
+        className="relative z-10 inline-flex items-center gap-1 rounded-sm transition-colors duration-fast ease-standard hover:text-foreground focus-ring"
+      >
+        {flexRender(header.column.columnDef.header, header.getContext())}
+        <SortIcon
+          aria-hidden="true"
+          className="size-3 shrink-0 transition-colors duration-fast ease-standard"
+        />
+      </button>
+    );
+  }
+
   /**
    * thead — sticky in virtualized mode, normal otherwise.
    * `withRowIndex` (virtualized only) sets the header row's `aria-rowindex` so the
@@ -1725,20 +2063,25 @@ function DataTableInner<TData, TValue>(
    * absolute indices on the data rows.
    */
   function renderThead(sticky: boolean, withRowIndex = false) {
+    const headerGroups = table.getHeaderGroups();
+    // Columns whose merged header already rendered in a higher row (RM-123).
+    const mergedHeaderColumns = new Set<string>();
     return (
       <thead
         className={cn(
           // #173: header bottom is the only cue between header and first data row → border-strong
-          "border-b border-border-strong",
+          // RM-123 `hideHeader`: the header row collapses to zero height (its
+          // labels stay for screen readers), so it draws no rule and no wash.
+          hideHeader ? "[&_th]:h-0 [&_th]:py-0" : "border-b border-border-strong",
           // A sticky header scrolls OVER the body, so its fill must be opaque or data
           // rows bleed through the labels; the non-sticky header keeps the /60 wash.
           // z-20 (raised from z-10 for #333) puts the header row above the pinned
           // body cells (z-10) and below the pinned header corner (z-30). No visual
           // delta: nothing else in the table sits between those rungs.
-          sticky ? "sticky top-0 z-20 bg-surface-muted" : "bg-surface-muted/60",
+          !hideHeader && (sticky ? "sticky top-0 z-20 bg-surface-muted" : "bg-surface-muted/60"),
         )}
       >
-        {table.getHeaderGroups().map((headerGroup, groupIndex) => (
+        {headerGroups.map((headerGroup, groupIndex) => (
           <tr key={headerGroup.id} aria-rowindex={withRowIndex ? groupIndex + 1 : undefined}>
             {hasGripColumn && (
               <th
@@ -1749,7 +2092,33 @@ function DataTableInner<TData, TValue>(
                 <span className="sr-only">{t("data.table.reorderColumnHeader")}</span>
               </th>
             )}
+            {showRanks && groupIndex === 0 && (
+              <DataTableRankHeader
+                key="__rank"
+                rowSpan={headerGroups.length > 1 ? headerGroups.length : undefined}
+                className={cn(
+                  headerHeightClass,
+                  "font-table-header bg-table-header-background text-table-header-foreground text-table-header",
+                )}
+              />
+            )}
             {headerGroup.headers.map((header) => {
+              // RM-123: `showAt` hides leaf columns at render time, so a group
+              // header spans only its SHOWN leaves and vanishes with none.
+              const shownLeaves = header
+                .getLeafHeaders()
+                .filter((h) => h.subHeaders.length === 0 && isColumnShown(h.column)).length;
+              if (shownLeaves === 0) return null;
+              // RM-123 `mergeEmptyHeaders`: a leaf column's topmost empty
+              // placeholder renders the column's own header, spanning down to
+              // the leaf row; the placeholders and the leaf below it are skipped.
+              let mergedRowSpan: number | undefined;
+              if (mergeEmptyHeaders && mergedHeaderColumns.has(header.column.id)) return null;
+              if (mergeEmptyHeaders && header.isPlaceholder) {
+                mergedHeaderColumns.add(header.column.id);
+                mergedRowSpan = headerGroups.length - groupIndex;
+              }
+              const merged = mergedRowSpan !== undefined;
               const geometry = pinnedCellGeometry(header.column);
               const canSort = header.column.getCanSort();
               const sorted = header.column.getIsSorted();
@@ -1759,10 +2128,6 @@ function DataTableInner<TData, TValue>(
                 typeof header.column.columnDef.header === "string"
                   ? header.column.columnDef.header
                   : header.column.id;
-              const sortStateLabel =
-                sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "not sorted";
-              const SortIcon =
-                sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ArrowUpDown;
               // #12: every column gets the same explicit width triad a pinned
               // column already has, gated behind `enableColumnResizing` so a
               // table that doesn't opt in stays byte-identical to before.
@@ -1772,10 +2137,20 @@ function DataTableInner<TData, TValue>(
               const canResize =
                 enableColumnResizing && !header.isPlaceholder && header.column.getCanResize();
               const resizeMax = header.column.columnDef.maxSize;
+              const content =
+                header.isPlaceholder && !merged
+                  ? null
+                  : canSort
+                    ? renderSortButton(header)
+                    : flexRender(header.column.columnDef.header, header.getContext());
               return (
                 <th
                   key={header.id}
                   scope="col"
+                  colSpan={shownLeaves > 1 ? shownLeaves : undefined}
+                  rowSpan={
+                    mergedRowSpan !== undefined && mergedRowSpan > 1 ? mergedRowSpan : undefined
+                  }
                   aria-sort={
                     canSort
                       ? sorted === "asc"
@@ -1786,7 +2161,9 @@ function DataTableInner<TData, TValue>(
                       : undefined
                   }
                   data-pinned={geometry?.pinned ?? undefined}
-                  style={geometry?.style ?? resizeStyle}
+                  style={
+                    geometry?.style ?? resizeStyle ?? columnSizeStyle(header.column.columnDef.meta)
+                  }
                   className={cn(
                     // Same `px-3` the body `<td>` uses (below) — deliberately
                     // NOT split into `ps-3`/`pe-3` for a resize-handle
@@ -1801,7 +2178,8 @@ function DataTableInner<TData, TValue>(
                     // today's byte-identical rendering (transparent bg,
                     // `--muted-foreground` ink, 1em size = the table's own
                     // body size, no transform, body tracking).
-                    "h-10 px-3 text-start align-middle font-table-header bg-table-header-background text-table-header-foreground text-table-header tracking-(--table-header-tracking) [text-transform:var(--table-header-transform)]",
+                    headerHeightClass,
+                    "px-3 text-start align-middle font-table-header bg-table-header-background text-table-header-foreground text-table-header tracking-(--table-header-tracking) [text-transform:var(--table-header-transform)]",
                     // #69: a numeric column's `meta` overrides the default
                     // `text-start` — placed right after the base string so
                     // tailwind-merge lets it win over that default.
@@ -1850,45 +2228,11 @@ function DataTableInner<TData, TValue>(
                     columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
                   )}
                 >
-                  {header.isPlaceholder ? null : canSort ? (
-                    <button
-                      type="button"
-                      onClick={header.column.getToggleSortingHandler()}
-                      aria-label={`Sort by ${headerLabel}, ${sortStateLabel}`}
-                      // `relative z-10` (round-2 fix, #82 follow-up — replaces
-                      // round-1's padding-based clearance, see the note on
-                      // `numericColumnClasses`): on a resizable column the
-                      // resize handle below is `absolute`, and CSS painting
-                      // order always puts a positioned descendant above
-                      // non-positioned in-flow content in the SAME stacking
-                      // context, regardless of DOM order — so without this,
-                      // the handle's 24px hit box would win every hit-test
-                      // where it overlaps this button's own trailing edge
-                      // (measured: a 12px overlap on an end-aligned
-                      // sortable+resizable column) no matter which element
-                      // renders first in markup. Giving the button its own
-                      // explicit positive z-index (not just `relative`, which
-                      // alone would still lose — see the code comment on
-                      // `numericColumnClasses` above) promotes it into a
-                      // later, higher-stacked paint step than the handle's
-                      // implicit `z-index: auto`, so the button wins the
-                      // overlap purely at the hit-test/paint layer — the
-                      // header's padding, and therefore its alignment with
-                      // the body `<td>`, never has to move. The handle's own
-                      // visible drag affordance (the `after:` seam, 0-8px
-                      // from the cell's trailing edge) sits entirely outside
-                      // this button's box (which ends at the same 12px inset
-                      // as the body), so dragging is unaffected.
-                      className="relative z-10 inline-flex items-center gap-1 rounded-sm transition-colors duration-fast ease-standard hover:text-foreground focus-ring"
-                    >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                      <SortIcon
-                        aria-hidden="true"
-                        className="size-3 shrink-0 transition-colors duration-fast ease-standard"
-                      />
-                    </button>
+                  {hideHeader && content !== null ? (
+                    // A focused sort button un-hides its label (skip-link idiom).
+                    <span className="sr-only focus-within:not-sr-only">{content}</span>
                   ) : (
-                    flexRender(header.column.columnDef.header, header.getContext())
+                    content
                   )}
                   {canResize && (
                     <div
@@ -2115,10 +2459,13 @@ function DataTableInner<TData, TValue>(
       onRowClick?.(row, event);
     }
 
+    const sticky = stickyActive ? row.getIsPinned() || undefined : undefined;
+    const rowStyle = rowColorStyle(row);
     return (
       <tr
         key={row.id}
         data-state={row.getIsSelected() ? "selected" : undefined}
+        data-sticky={sticky}
         onClick={clickable ? handleRowClick : undefined}
         // Hover/selected are foreground-tint washes so they read more prominent than
         // the zebra stripe in the SAME direction across light/dark themes (the old
@@ -2146,6 +2493,10 @@ function DataTableInner<TData, TValue>(
           // emits no style of its own.
           "group/row",
           rowSeparationClass(rowIndex),
+          // RM-123 sticky rows: a quiet header-tone wash + medium weight mark
+          // the "average" / "total" rows that repeat on every page.
+          sticky && "font-medium",
+          sticky && "bg-surface-muted/60",
           // `<tr>` isn't in the global auto-cursor-pointer role list (button/
           // menuitem/tab/…), so a clickable row needs its own cursor. The focus
           // ring is driven off the hidden button's `:focus-visible` (same
@@ -2157,6 +2508,7 @@ function DataTableInner<TData, TValue>(
           rowClassName?.(row),
         )}
         {...extras}
+        style={rowStyle || extras?.style ? { ...rowStyle, ...extras?.style } : undefined}
       >
         {dragHandle?.activator && (
           <td className="w-10 px-3 py-2 align-middle">
@@ -2176,50 +2528,58 @@ function DataTableInner<TData, TValue>(
             </button>
           </td>
         )}
-        {row.getVisibleCells().map((cell, cellIndex) => {
-          const geometry = pinnedCellGeometry(cell.column);
-          // #12: same width triad as the header cell — see `resizeWidthStyle`.
-          const resizeStyle = enableColumnResizing
-            ? resizeWidthStyle(cell.column.getSize())
-            : undefined;
-          return (
-            <td
-              key={cell.id}
-              data-pinned={geometry?.pinned ?? undefined}
-              style={geometry?.style ?? resizeStyle}
-              className={cn(
-                "px-3 py-2 align-middle",
-                // #69: same numeric-column seam as the header — see
-                // `numericColumnClasses`.
-                numericColumnClasses(cell.column.columnDef.meta),
-                // z-10: above the normal (unpositioned) cells it scrolls over,
-                // below the sticky header row (z-20) and the pinned corner (z-30).
-                geometry && "sticky z-10",
-                geometry && pinnedCellFillClass(rowIndex),
-                // Separate cn() argument — see pinnedCellGeometry's edgeClass.
-                geometry?.edgeClass,
-                columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
-              )}
-            >
-              {clickable && cellIndex === 0 && (
-                <button
-                  type="button"
-                  data-slot="data-table-row-action"
-                  // #311: `sr-only` removes the box from the visual layout but
-                  // not the browser's own focus ring — the ROW paints the
-                  // deliberate compound indicator (via the `has-[…]` selector
-                  // above), so the proxy's own native ring must be suppressed
-                  // or it leaks as a stray dot at the row's edge.
-                  className="sr-only focus-visible:outline-none"
-                  onClick={(event) => onRowClick?.(row, event)}
-                >
-                  {rowActionName(row)}
-                </button>
-              )}
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </td>
-          );
-        })}
+        {showRanks && <DataTableRankCell rank={rankOf(row)} className={cellPadYClass} />}
+        {row
+          .getVisibleCells()
+          .filter((cell) => isColumnShown(cell.column))
+          .map((cell, cellIndex) => {
+            const geometry = pinnedCellGeometry(cell.column);
+            // #12: same width triad as the header cell — see `resizeWidthStyle`.
+            const resizeStyle = enableColumnResizing
+              ? resizeWidthStyle(cell.column.getSize())
+              : undefined;
+            const presentation = cellPresentation(cell);
+            const baseStyle = geometry?.style ?? resizeStyle;
+            return (
+              <td
+                key={cell.id}
+                data-pinned={geometry?.pinned ?? undefined}
+                style={presentation.style ? { ...baseStyle, ...presentation.style } : baseStyle}
+                className={cn(
+                  "px-3 align-middle",
+                  cellPadYClass,
+                  // #69: same numeric-column seam as the header — see
+                  // `numericColumnClasses`.
+                  numericColumnClasses(cell.column.columnDef.meta),
+                  // z-10: above the normal (unpositioned) cells it scrolls over,
+                  // below the sticky header row (z-20) and the pinned corner (z-30).
+                  geometry && "sticky z-10",
+                  geometry && pinnedCellFillClass(rowIndex),
+                  // Separate cn() argument — see pinnedCellGeometry's edgeClass.
+                  geometry?.edgeClass,
+                  columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
+                  presentation.className,
+                )}
+              >
+                {clickable && cellIndex === 0 && (
+                  <button
+                    type="button"
+                    data-slot="data-table-row-action"
+                    // #311: `sr-only` removes the box from the visual layout but
+                    // not the browser's own focus ring — the ROW paints the
+                    // deliberate compound indicator (via the `has-[…]` selector
+                    // above), so the proxy's own native ring must be suppressed
+                    // or it leaks as a stray dot at the row's edge.
+                    className={ROW_ACTION_CLASS}
+                    onClick={(event) => onRowClick?.(row, event)}
+                  >
+                    {rowActionName(row)}
+                  </button>
+                )}
+                {renderCellContent(cell)}
+              </td>
+            );
+          })}
       </tr>
     );
   }
@@ -2234,7 +2594,7 @@ function DataTableInner<TData, TValue>(
     // header/body cells — a loading table whose skeleton didn't mirror the
     // real alignment is exactly the column-shift-on-load bug
     // loading-states.md § "CLS / space reservation" warns about.
-    const visibleColumns = table.getVisibleLeafColumns();
+    const visibleColumns = table.getVisibleLeafColumns().filter(isColumnShown);
     return Array.from({ length: count }).map((_, i) => (
       <tr key={`skeleton-${i}`} aria-hidden="true" className={rowSeparationClass(i)}>
         {hasGripColumn && (
@@ -2242,11 +2602,17 @@ function DataTableInner<TData, TValue>(
             <Skeleton className="size-4" />
           </td>
         )}
+        {showRanks && (
+          <td className={cn("w-10 px-3 align-middle", cellPadYClass)}>
+            <Skeleton className="h-4 w-full" />
+          </td>
+        )}
         {visibleColumns.map((column) => (
           <td
             key={column.id}
             className={cn(
-              "px-3 py-2 align-middle",
+              "px-3 align-middle",
+              cellPadYClass,
               numericColumnClasses(column.columnDef.meta),
               columnDividers && COLUMN_DIVIDER_CLASS,
             )}
@@ -2266,7 +2632,7 @@ function DataTableInner<TData, TValue>(
     return (
       <tr>
         <td
-          colSpan={colCount + (hasGripColumn ? 1 : 0)}
+          colSpan={colCount + leadingColCount}
           className="h-24 px-3 text-center text-muted-foreground"
         >
           {emptyMessage}
@@ -2284,7 +2650,13 @@ function DataTableInner<TData, TValue>(
       return <tbody>{renderEmptyBody()}</tbody>;
     }
     if (!rowReorderActive) {
-      return <tbody>{rows.map((row, i) => renderRow(row, i))}</tbody>;
+      return (
+        <tbody>
+          {topRows.map((row, i) => renderRow(row, i))}
+          {rows.map((row, i) => renderRow(row, i))}
+          {bottomRows.map((row, i) => renderRow(row, i))}
+        </tbody>
+      );
     }
 
     // #13: `SortableContext` renders no DOM element of its own (a plain
@@ -2296,6 +2668,7 @@ function DataTableInner<TData, TValue>(
         strategy={verticalListSortingStrategy}
       >
         <tbody>
+          {topRows.map((row, i) => renderRow(row, i))}
           {rows.map((row, i) => (
             <SortableDataRow
               key={getReorderRowId(row)}
@@ -2339,6 +2712,7 @@ function DataTableInner<TData, TValue>(
               }
             </SortableDataRow>
           ))}
+          {bottomRows.map((row, i) => renderRow(row, i))}
         </tbody>
       </SortableContext>
     );
@@ -2359,10 +2733,11 @@ function DataTableInner<TData, TValue>(
           renderEmptyBody()
         ) : (
           <>
+            {topRows.map((row, i) => renderRow(row, i))}
             {/* Top spacer — real <tr> so table layout is preserved */}
             {paddingTop > 0 && (
               <tr aria-hidden="true">
-                <td style={{ height: paddingTop }} colSpan={colCount} />
+                <td style={{ height: paddingTop }} colSpan={colCount + leadingColCount} />
               </tr>
             )}
             {virtualItems.map((virtualRow) => {
@@ -2380,12 +2755,207 @@ function DataTableInner<TData, TValue>(
             {/* Bottom spacer */}
             {paddingBottom > 0 && (
               <tr aria-hidden="true">
-                <td style={{ height: paddingBottom }} colSpan={colCount} />
+                <td style={{ height: paddingBottom }} colSpan={colCount + leadingColCount} />
               </tr>
             )}
+            {bottomRows.map((row, i) => renderRow(row, i))}
           </>
         )}
       </tbody>
+    );
+  }
+
+  // ─── Card layout (RM-123) ─────────────────────────────────────────────────
+  // One `<dl>` card per row under `layout="cards"` / narrow `"auto"`. Same
+  // table instance: the toolbar, the pager and the sort bar below drive it.
+
+  /** Leaf headers by column id — a card's terms. */
+  function leafHeadersById(): Map<string, Header<TData, unknown>> {
+    const bottom = headerGroupsForCards[headerGroupsForCards.length - 1];
+    return new Map((bottom?.headers ?? []).map((h) => [h.column.id, h]));
+  }
+
+  function renderCardSortBar() {
+    const sortable = [...leafHeadersById().values()].filter(
+      (h) => !h.isPlaceholder && isColumnShown(h.column) && h.column.getCanSort(),
+    );
+    if (sortable.length === 0) return null;
+    return (
+      <div
+        data-slot="data-table-card-sort"
+        className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border-strong px-3 py-2 text-meta text-muted-foreground"
+      >
+        {sortable.map((header) => (
+          <span key={header.id} className="inline-flex">
+            {renderSortButton(header)}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  function renderCard(
+    row: Row<TData>,
+    headers: Map<string, Header<TData, unknown>>,
+    extras?: { ref?: React.Ref<HTMLLIElement>; "data-index"?: number },
+  ) {
+    const cells = row.getVisibleCells().filter((cell) => isColumnShown(cell.column));
+    const selectCell = cells.find((cell) => cell.column.id === "select");
+    const clickable = Boolean(onRowClick);
+    const sticky = stickyActive ? row.getIsPinned() || undefined : undefined;
+    const fields: DataTableCardField[] = [];
+    const rank = rankOf(row);
+    if (showRanks && rank !== undefined) {
+      fields.push({ id: "__rank", term: "#", value: rank, className: "tabular-nums" });
+    }
+    for (const cell of cells) {
+      if (cell === selectCell) continue;
+      const def = cell.column.columnDef.header;
+      const header = headers.get(cell.column.id);
+      const presentation = cellPresentation(cell, false);
+      fields.push({
+        id: cell.column.id,
+        term:
+          typeof def === "string"
+            ? def
+            : header
+              ? flexRender(def, header.getContext())
+              : cell.column.id,
+        value: renderCellContent(cell),
+        className: cn(
+          cell.column.columnDef.meta?.numeric && "tabular-nums",
+          presentation.style?.backgroundColor !== undefined && "min-h-5 rounded-sm px-1",
+        ),
+        style: presentation.style,
+      });
+    }
+    return (
+      <DataTableCard
+        key={row.id}
+        ref={extras?.ref}
+        data-index={extras?.["data-index"]}
+        fields={fields}
+        density={density}
+        data-state={row.getIsSelected() ? "selected" : undefined}
+        data-sticky={sticky}
+        onClick={
+          clickable
+            ? (event) => {
+                if (isInteractiveEventTarget(event.target)) return;
+                if (isActiveTextSelection()) return;
+                onRowClick?.(row, event);
+              }
+            : undefined
+        }
+        style={rowColorStyle(row)}
+        className={cn(
+          "transition-colors duration-fast ease-standard data-[state=selected]:bg-selection",
+          clickable &&
+            "cursor-pointer hover:bg-table-row-hover has-[[data-slot=data-table-row-action]:focus-visible]:focus-ring-static-inset",
+          sticky && "font-medium",
+          sticky && "bg-surface-muted/60",
+        )}
+        lead={
+          selectCell || clickable ? (
+            <>
+              {selectCell && (
+                <div className="mb-1.5">
+                  {flexRender(selectCell.column.columnDef.cell, selectCell.getContext())}
+                </div>
+              )}
+              {clickable && (
+                <button
+                  type="button"
+                  data-slot="data-table-row-action"
+                  className={ROW_ACTION_CLASS}
+                  onClick={(event) => onRowClick?.(row, event)}
+                >
+                  {rowActionName(row)}
+                </button>
+              )}
+            </>
+          ) : undefined
+        }
+      />
+    );
+  }
+
+  function renderCardList(virtualized: boolean) {
+    if (showSkeletons) {
+      const count = virtualized ? (loadingRows ?? Math.min(10, pageSize)) : skeletonRowCount;
+      return (
+        <DataTableCardList aria-hidden="true">
+          {Array.from({ length: count }).map((_, i) => (
+            <li key={`skeleton-${i}`} className="space-y-2 px-3 py-3">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </li>
+          ))}
+        </DataTableCardList>
+      );
+    }
+    if (showEmpty) {
+      return <p className="px-3 py-8 text-center text-muted-foreground">{emptyMessage}</p>;
+    }
+    const headers = leafHeadersById();
+    return (
+      <DataTableCardList aria-labelledby={caption != null ? captionId : undefined}>
+        {topRows.map((row) => renderCard(row, headers))}
+        {virtualized && paddingTop > 0 && <li aria-hidden="true" style={{ height: paddingTop }} />}
+        {virtualized
+          ? virtualItems.map((virtualRow) => {
+              const row = rows[virtualRow.index];
+              if (!row) return null;
+              return renderCard(row, headers, {
+                ref: virtualizer.measureElement as React.Ref<HTMLLIElement>,
+                "data-index": virtualRow.index,
+              });
+            })
+          : rows.map((row) => renderCard(row, headers))}
+        {virtualized && paddingBottom > 0 && (
+          <li aria-hidden="true" style={{ height: paddingBottom }} />
+        )}
+        {bottomRows.map((row) => renderCard(row, headers))}
+      </DataTableCardList>
+    );
+  }
+
+  /** The cards' own accessible name: `caption`, as a hidden paragraph the list points at. */
+  const cardsCaption =
+    caption != null ? (
+      <p id={captionId} className="sr-only">
+        {caption}
+      </p>
+    ) : null;
+
+  // ─── Heatmap legends (RM-123) ─────────────────────────────────────────────
+  // One key per heatmap scale (columns sharing a spec share one), above the table.
+  function renderLegends() {
+    const seen = new Set<string>();
+    const legends: ReactNode[] = [];
+    for (const column of table.getVisibleLeafColumns()) {
+      const visual = column.columnDef.meta?.visual;
+      if (visual?.kind !== "heatmap" || !visual.legend || !isColumnShown(column)) continue;
+      const scale = columnScales?.get(column.id);
+      if (!scale?.heatmap || scale.heatmapGroup === undefined || seen.has(scale.heatmapGroup)) {
+        continue;
+      }
+      seen.add(scale.heatmapGroup);
+      const header = column.columnDef.header;
+      legends.push(
+        <HeatmapLegend
+          key={column.id}
+          scale={scale.heatmap}
+          title={typeof header === "string" ? header : undefined}
+          formatValue={(v) => cellLabel(v, column.columnDef.meta)}
+        />,
+      );
+    }
+    if (legends.length === 0) return null;
+    return (
+      <div data-slot="data-table-legends" className="flex flex-wrap gap-x-6 gap-y-2">
+        {legends}
+      </div>
     );
   }
 
@@ -2444,8 +3014,9 @@ function DataTableInner<TData, TValue>(
     // If both enablePagination and enableRowVirtualization are set,
     // virtualization wins; pagination controls are silently suppressed.
     return (
-      <div ref={ref} className={cn("space-y-3", className)} {...rest}>
+      <div ref={rootRef} className={cn("space-y-3", className)} {...rest}>
         {toolbar ? toolbar(table) : null}
+        {renderLegends()}
         {/* Outer border is redundant (surface change) → plain border per #173 spec.
             tabIndex={0} makes the windowed scroll region keyboard-operable — the rows
             themselves aren't focusable, so without it the off-screen rows are
@@ -2480,15 +3051,23 @@ function DataTableInner<TData, TValue>(
               <span className="sr-only">{t("data.table.loading")}</span>
             </div>
           )}
-          <table
-            aria-busy={loading || undefined}
-            aria-rowcount={ariaRowCount}
-            className="w-full caption-bottom text-body"
-          >
-            {captionElement}
-            {renderThead(true, true)}
-            {renderTbodyVirtualized()}
-          </table>
+          {cardsActive ? (
+            <div data-slot="data-table-card-region" className="text-body">
+              {cardsCaption}
+              {renderCardSortBar()}
+              {renderCardList(true)}
+            </div>
+          ) : (
+            <table
+              aria-busy={loading || undefined}
+              aria-rowcount={ariaRowCount}
+              className="w-full caption-bottom text-body"
+            >
+              {captionElement}
+              {renderThead(true, true)}
+              {renderTbodyVirtualized()}
+            </table>
+          )}
         </div>
       </div>
     );
@@ -2504,8 +3083,9 @@ function DataTableInner<TData, TValue>(
   // region) so the edge-fade affordance can stay pinned to the visible edges
   // instead of scrolling away with the table content.
   const nonVirtualizedContent = (
-    <div ref={ref} className={cn("space-y-3", className)} {...rest}>
+    <div ref={rootRef} className={cn("space-y-3", className)} {...rest}>
       {toolbar ? toolbar(table) : null}
+      {renderLegends()}
       {/* Outer border is redundant (surface change) → plain border per #173 spec */}
       <div
         aria-busy={loading || undefined}
@@ -2538,22 +3118,30 @@ function DataTableInner<TData, TValue>(
             never the `region` landmark: that would be redundant over the real
             <table> and collide (axe `landmark-unique`) with every other
             overflowing table on the page. */}
-        <div
-          ref={plainScrollRef}
-          data-slot="data-table-scroll-region"
-          tabIndex={scrollOverflows ? 0 : undefined}
-          role={scrollOverflows ? "group" : undefined}
-          aria-label={scrollOverflows ? t("data.table.scrollRegion") : undefined}
-          onScroll={updateScrollAffordance}
-          className="overflow-auto rounded-lg focus-ring-inset"
-          style={hasLeftPinned || hasRightPinned ? pinnedScrollPadding : undefined}
-        >
-          <table aria-busy={loading || undefined} className="w-full caption-bottom text-body">
-            {captionElement}
-            {renderThead(false)}
-            {renderTbodyNormal()}
-          </table>
-        </div>
+        {cardsActive ? (
+          <div data-slot="data-table-card-region">
+            {cardsCaption}
+            {renderCardSortBar()}
+            {renderCardList(false)}
+          </div>
+        ) : (
+          <div
+            ref={plainScrollRef}
+            data-slot="data-table-scroll-region"
+            tabIndex={scrollOverflows ? 0 : undefined}
+            role={scrollOverflows ? "group" : undefined}
+            aria-label={scrollOverflows ? t("data.table.scrollRegion") : undefined}
+            onScroll={updateScrollAffordance}
+            className="overflow-auto rounded-lg focus-ring-inset"
+            style={hasLeftPinned || hasRightPinned ? pinnedScrollPadding : undefined}
+          >
+            <table aria-busy={loading || undefined} className="w-full caption-bottom text-body">
+              {captionElement}
+              {renderThead(false)}
+              {renderTbodyNormal()}
+            </table>
+          </div>
+        )}
         {/* Horizontal-scroll edge fade — a token-driven affordance that only
             appears once the table actually overflows its container in that
             direction, so a desktop/wide table renders neither (visual no-op).
@@ -2564,14 +3152,14 @@ function DataTableInner<TData, TValue>(
             there by the pinned block's `border-border-strong` seam, which is
             what a frozen column means ("content slides under this edge"). So
             the fade stays the cue for a FREE edge only. */}
-        {canScrollLeft && !hasLeftPinned && (
+        {!cardsActive && canScrollLeft && !hasLeftPinned && (
           <div
             aria-hidden="true"
             data-slot="data-table-scroll-fade-left"
             className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 rounded-lg bg-gradient-to-r from-card to-transparent"
           />
         )}
-        {canScrollRight && !hasRightPinned && (
+        {!cardsActive && canScrollRight && !hasRightPinned && (
           <div
             aria-hidden="true"
             data-slot="data-table-scroll-fade-right"
