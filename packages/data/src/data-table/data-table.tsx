@@ -459,6 +459,11 @@ export interface DataTableProps<TData, TValue> extends Omit<
   /**
    * Hide the header row visually (a pixel heatmap). The headers stay for
    * screen readers, and a focused sort button still shows itself.
+   *
+   * Sorting is then KEYBOARD-reachable, not clickable: the band has no height,
+   * so it offers no hit area — deliberately, since an invisible click target
+   * over the first data row would be worse than none. Tab to the column's sort
+   * button (it becomes visible on focus) and press Enter.
    */
   hideHeader?: boolean;
 

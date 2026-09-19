@@ -1400,6 +1400,8 @@ const heatmapColumns: ColumnDef<HourlyRides>[] = [
  * A 12 × 24 heatmap: one scale shared by every hour column, values hidden
  * visually (still read by screen readers, copy and sort), the header row hidden,
  * and one colour key. Cells have no minimum width, so they shrink with the table.
+ * With the header hidden there is no band to click: tab to a column's sort button
+ * (it shows itself on focus) and press Enter.
  */
 export const HeatmapCells: Story = {
   render: () => (
