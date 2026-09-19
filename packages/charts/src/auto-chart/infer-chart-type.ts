@@ -20,14 +20,15 @@
  *  2. treemap       — `spec.hierarchy` is present.
  *  3. bump          — long (period, entity, rank) rows, DECLARED as a ranking.
  *  4. calendar      — a year-plus of dated rows of one measure.
- *  5. stream        — temporal x, `stacked`, >= 2 series.
+ *  5. stream        — temporal x, `stacked`: true, >= 2 series.
+ *  5b. area        — temporal x, >= 2 series that compose one total.
  *  6. heatmap       — two categorical keys x one measure.
  *  7. dumbbell      — categorical x, two measures that read as before/after.
  *  8. distribution  — record-level rows of one measure (histogram/box/strip).
  *  9. waterfall     — categorical x, one measure, DECLARED as steps.
  * 10. diverging-bar — categorical x, one measure, at least one negative value.
  * 11. unit          — categorical x, <= 6 shares summing to ~100, editorial.
- * 12. pie           — categorical x, <= 8 non-negative rows (pre-RM-038 rule).
+ * 12. pie           — categorical x, <= 5 non-negative wedges after `groupSmall`.
  * 13. line          — temporal x (pre-RM-038 rule).
  * 14. scatter       — numeric x + one numeric series (pre-RM-038 rule).
  * 15. bar           — the default (pre-RM-038 rule).
@@ -55,6 +56,9 @@
  */
 
 import type { ChartSpec, ChartSpecPalette, ChartType } from "./chart-spec";
+// Pie slice cap — RM-126: the SAME fold `AutoChart` hands `PieChart`, so the rule
+// that chose the type and the wedges that get drawn can never disagree.
+import { groupSmallSlices } from "../charts/pie-grouping";
 
 // ---------------------------------------------------------------------------
 // The runtime companion of the `ChartType` union
@@ -305,6 +309,48 @@ export const STRIP_MAX_ROWS_PER_GROUP = 200;
 /** From this many dated rows up, a calendar reads better than a line. */
 export const CALENDAR_MIN_ROWS = 300;
 
+// Pie slice cap — RM-126
+/**
+ * The most wedges a pie may be INFERRED for — Datawrapper's editorial rule
+ * (`dw-charts.md` §2.17–2.21): past a handful of slices the eye stops
+ * comparing angles and starts reading a list, which a bar does better.
+ * Counted AFTER `spec.groupSmall` folds its "Other" wedge, so a long tail the
+ * spec asked to fold still reads as a pie. An EXPLICIT `type: "pie"` is never
+ * capped — the author looked at the picture.
+ */
+export const PIE_MAX_SLICES = 5;
+
+// Area composition — RM-126
+/**
+ * How far a row's series values may stray from 100 and still read as a
+ * breakdown of one whole (the same tolerance the waffle rule uses).
+ */
+const COMPOSITION_SUM_RANGE: readonly [number, number] = [95, 105];
+
+/**
+ * Do these series compose ONE total on every row — the only reading an area
+ * chart is honest for (Datawrapper: an area chart shows a breakdown of a
+ * total; anything else is a line)? `stacked: "percent"` declares it outright;
+ * otherwise every row's values must be non-negative and sum to ~100.
+ */
+function composesOneTotal(
+  data: Record<string, unknown>[],
+  seriesKeys: string[],
+  stacked: ChartSpec["stacked"],
+): boolean {
+  if (seriesKeys.length < 2 || data.length === 0) return false;
+  if (stacked === "percent") return true;
+  return data.every((row) => {
+    let sum = 0;
+    for (const k of seriesKeys) {
+      const v = row[k];
+      if (typeof v !== "number" || !Number.isFinite(v) || v < 0) return false;
+      sum += v;
+    }
+    return sum >= COMPOSITION_SUM_RANGE[0] && sum <= COMPOSITION_SUM_RANGE[1];
+  });
+}
+
 // ---------------------------------------------------------------------------
 // The explanation
 // ---------------------------------------------------------------------------
@@ -402,6 +448,20 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
       "stream",
       "stream",
       `chose stream: ${seriesKeys.length} stacked series over time read as bands, not lines`,
+    );
+  }
+
+  // ── 5b. Temporal series that compose one total → area (RM-126) ────────────
+  //    Outranks `line` (rule 13) and is the ONLY way inference reaches `area`:
+  //    an area chart is honest for a BREAKDOWN of a total and misleading for
+  //    anything else, so a single series — or several that do not add up —
+  //    stays a line. Loses to `stream` (rule 5), which is the same reading
+  //    with a declared `stacked: true` band offset.
+  if (temporalX && numericKeys.length >= 2 && composesOneTotal(data, numericKeys, stacked)) {
+    return pick(
+      "area",
+      "composition",
+      `chose area: ${numericKeys.length} series that add up to one total over time read as a breakdown, not separate trends`,
     );
   }
 
@@ -561,24 +621,24 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
           `chose unit: ${data.length} shares summing to ${Math.round(sum)} — countable marks beat a pie in an editorial register`,
         );
       }
-      // 12 — the pre-RM-038 pie rule, unchanged.
+      // 12 — pie, capped at PIE_MAX_SLICES wedges AFTER `groupSmall` (RM-126).
       //
-      // RM-114 asks this rule to also fire above 8 raw categories when
-      // automatic grouping would fold them to <= 5 slices + "Other". NOT
-      // implemented: `explainChartType` only picks a TYPE — it has no way to
-      // tell `AutoChart`'s render step "and apply groupSmall({max:5}) too",
-      // so a spec without an explicit `groupSmall` would render an UNGROUPED
-      // 9+-slice pie, exactly the illegible chart the RM rule exists to
-      // avoid, and less honest than the current bar fallback. It also
-      // flipped the accepted "ten single-series categories -> bar (default)"
-      // fixture in `infer-chart-type.test.ts`, a previously-accepted test
-      // (wave-0 lesson: don't silently break one). Recorded as an open
-      // question in the result file rather than guessed at further.
-      if (data.length <= 8) {
+      //      The count comes from `groupSmallSlices` — the very fold
+      //      `AutoChart` hands `PieChart` — not from `data.length`, so this
+      //      rule can never choose a pie the renderer then draws with more
+      //      wedges than the rule allowed. A long tail with NO `groupSmall`
+      //      therefore falls through to `bar`, which is what an editor does
+      //      with a nine-category share table; `groupSmall: { max: 4 }` folds
+      //      it to five wedges and it reads as a pie again.
+      const wedges = groupSmallSlices(
+        data.map((row) => ({ label: String(row[x] ?? ""), value: Number(row[soleNumericKey]) })),
+        spec.groupSmall,
+      ).data.length;
+      if (wedges <= PIE_MAX_SLICES) {
         return pick(
           "pie",
           "parts-of-whole",
-          `chose pie: ${data.length} non-negative parts of one whole`,
+          `chose pie: ${wedges} non-negative parts of one whole`,
         );
       }
     }
