@@ -9,6 +9,10 @@
 // - A server left over from another checkout (e.g. a deleted .claude/worktrees/*)
 //   still answers on the port and serves stale code. It is never reused or killed;
 //   the task fails with its PID so you can stop it yourself.
+// - A server from THIS checkout can be broken while its static files still answer:
+//   it outlived a branch switch or a `pnpm install` that regenerated apps/home/themes/,
+//   and Turbopack keeps serving the failed build (`/favicon.ico` 200, `/` 500). It is
+//   reused only if `/` renders; otherwise it is stopped and started fresh.
 // - `pnpm dev` goes through turbo, which drops env vars. This spawns `next dev`
 //   directly with an explicit port so Next never slides to 3001 behind Chrome's back.
 //
@@ -33,7 +37,40 @@ const isUp = async () => {
   }
 };
 
+// The page itself, not just a static file: a failed build answers 500 here.
+const renders = async () => {
+  try {
+    const response = await fetch(ORIGIN, { signal: AbortSignal.timeout(60_000) });
+    return response.status < 500;
+  } catch {
+    return false;
+  }
+};
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Stop a broken server of ours: next-server plus the `next dev` parent that would
+// otherwise respawn it. The task wrapper that started them exits with its child.
+const stopServer = async (pid) => {
+  const pids = [pid];
+  try {
+    const parent = execFileSync("ps", ["-o", "ppid=", "-p", pid], { encoding: "utf8" }).trim();
+    const command = execFileSync("ps", ["-o", "command=", "-p", parent], { encoding: "utf8" });
+    if (command.includes("next dev")) pids.unshift(parent);
+  } catch {
+    // No ps (Windows) or the parent is gone: stopping the server alone is enough.
+  }
+  for (const target of pids) {
+    try {
+      process.kill(Number(target), "SIGTERM");
+    } catch {
+      // Already gone.
+    }
+  }
+  const deadline = Date.now() + 10_000;
+  while (listener().pid && Date.now() < deadline) await sleep(POLL_MS);
+  if (listener().pid) process.kill(Number(pid), "SIGKILL");
+};
 
 // PID and folder of whatever listens on the port; `null` fields when it can't be told
 // (no lsof, e.g. Windows).
@@ -63,19 +100,23 @@ const held = listener();
 if (held.pid) {
   // Exact match only: worktrees live INSIDE this folder, so a prefix test would accept them.
   const ours = held.folder === root || held.folder === join(root, "apps", "home");
-  if (!ours || !(await isUp())) {
+  if (!ours) {
     console.error(
       `Port ${PORT} is held by another process (PID ${held.pid}${held.folder ? `, running from\n  ${held.folder}` : ""}).\n` +
         `It is not this checkout's website. Stop it (kill ${held.pid}), then Run again.`,
     );
     process.exit(1);
   }
-  console.log(`Reusing the website already serving ${ORIGIN}`);
-  console.log(`__HOME_READY__ ${ORIGIN}`);
-  // Stay alive like the cold path, so VS Code sees one consistent task shape.
-  while (await isUp()) await sleep(2000);
-  console.log(`The website on ${ORIGIN} went away.`);
-  process.exit(0);
+  if ((await isUp()) && (await renders())) {
+    console.log(`Reusing the website already serving ${ORIGIN}`);
+    console.log(`__HOME_READY__ ${ORIGIN}`);
+    // Stay alive like the cold path, so VS Code sees one consistent task shape.
+    while (await isUp()) await sleep(2000);
+    console.log(`The website on ${ORIGIN} went away.`);
+    process.exit(0);
+  }
+  console.log(`The website on ${ORIGIN} (PID ${held.pid}) is not rendering; restarting it.`);
+  await stopServer(held.pid);
 }
 
 const child = spawn("pnpm", ["--filter", "@elabs-ai/home", "exec", "next", "dev", "-p", PORT], {

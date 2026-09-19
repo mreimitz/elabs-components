@@ -7,11 +7,17 @@
   //   - Stop (Shift+F5) runs the `postDebugTask` (kills the dev server's port).
   // Chrome must be installed; swap "chrome" for "msedge" to use Edge instead.
   //
-  // "🏠 Home + 📕 Storybook" starts both, each in its own Chrome tab. Storybook gets
-  // its own tab because the website's /storybook/ links cannot show a local
+  // "🏠 Home + 📕 Storybook" starts both, each in its own Chrome window. Storybook gets
+  // its own window because the website's /storybook/ links cannot show a local
   // Storybook dev server: its story iframe loads absolute Vite URLs (/@vite/client,
   // …) that 404 under the /storybook/ prefix. Those links keep pointing at the
   // published Storybook.
+  //
+  // Each profile has its OWN `userDataDir`. js-debug's default profile folder is one
+  // per workspace, so a second Chrome launched on it hands its URL to the first
+  // window as an about:blank tab and exits, and the launch fails with "Unable to
+  // attach to browser". The folders live under .vscode/.chrome/ (git-ignored by
+  // .vscode/*, watcher-excluded in settings.json).
   "version": "0.2.0",
   "configurations": [
     {
@@ -22,6 +28,7 @@
       // Turbopack source maps use absolute file:// paths, so breakpoints bind
       // without sourceMapPathOverrides.
       "webRoot": "${workspaceFolder}/apps/home",
+      "userDataDir": "${workspaceFolder}/.vscode/.chrome/home",
       "preLaunchTask": "dev: home",
       "postDebugTask": "stop: home",
       "presentation": { "group": "1_apps", "order": 1 }
@@ -32,6 +39,7 @@
       "request": "launch",
       "url": "http://localhost:6006",
       "webRoot": "${workspaceFolder}",
+      "userDataDir": "${workspaceFolder}/.vscode/.chrome/storybook",
       // Diagnostics: js-debug writes why a launch failed here. Remove once the profile
       // is confirmed working (the file is gitignored via .vscode/* and *.log).
       "trace": { "logFile": "${workspaceFolder}/.vscode/js-debug.log" },

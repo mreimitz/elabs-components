@@ -22,8 +22,10 @@
   // ("No inputs were found in config file '….claude/worktrees/<unit>/packages/ui/
   // tsconfig.json'") until the window is reloaded. Excluding the directory outright
   // is what stops both: the copies are transient and are never the source of truth.
-  "files.exclude": { "**/.claude/worktrees": true },
-  "files.watcherExclude": { "**/.claude/worktrees/**": true },
+  "files.exclude": { "**/.claude/worktrees": true, ".vscode/.chrome": true },
+  // .vscode/.chrome/ holds the debug profiles' Chrome user-data folders (launch.json);
+  // Chrome rewrites them constantly, so the editor must not watch them.
+  "files.watcherExclude": { "**/.claude/worktrees/**": true, ".vscode/.chrome/**": true },
   "search.exclude": { "**/.claude/worktrees": true },
   "typescript.tsserver.watchOptions": { "excludeDirectories": ["**/.claude/worktrees"] },
 
