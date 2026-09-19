@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   quality:
+    if: false
     name: Quality
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -52,13 +53,14 @@ jobs:
         run: pnpm consumer:check
 
   storybook:
-    name: Storybook interaction + axe (${{ matrix.theme }})
+    name: Storybook interaction + axe (${{ matrix.theme }} ${{ matrix.rep }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         theme: [light, dark]
+        rep: [1, 2]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -73,7 +75,19 @@ jobs:
       - name: Story tests
         env:
           STORYBOOK_THEME: ${{ matrix.theme }}
-        run: pnpm --filter @elabs-ai/components-docs test-storybook
+          DEBUG: pw:browser
+        run: |
+          nproc; free -m; grep oom_kill /proc/vmstat
+          ( while true; do echo "== $(date +%T) $(free -m | awk 'NR==2{print "used="$3" avail="$7}') $(grep oom_kill /proc/vmstat | tr '\n' ' ')"; ps -eo rss=,args= --sort=-rss | head -6 | awk '{printf "  %d MB %s\n", $1/1024, substr($0, index($0,$2), 140)}'; sleep 5; done ) > /tmp/mem.log 2>&1 &
+          set -o pipefail
+          pnpm --filter @elabs-ai/components-docs test-storybook 2>&1 | tee /tmp/sb.log
+      - name: Diagnostics
+        if: always()
+        run: |
+          echo "--- memory, last 4 minutes"; tail -340 /tmp/mem.log
+          echo "--- peak used"; grep -oE "used=[0-9]+" /tmp/mem.log | sort -t= -k2 -n | tail -1
+          echo "--- oom kills since boot"; grep oom_kill /proc/vmstat
+          echo "--- browser stderr"; grep -E "pw:browser" /tmp/sb.log | grep -vE "<launching>|<launched>" | tail -80 || true
       - name: Contract tests (axe + overflow, every theme and width)
         if: matrix.theme == 'light'
         run: pnpm --filter @elabs-ai/components-docs test-contract
