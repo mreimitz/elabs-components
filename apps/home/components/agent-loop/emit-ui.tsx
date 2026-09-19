@@ -59,6 +59,7 @@ declare global {
 
 type Format = "a2ui" | "dashboardSpec";
 const EDITOR_HEIGHT = 320;
+const SHEET_BREAKPOINTS = { md: 1024, sm: 480 };
 const pretty = (value: unknown) => JSON.stringify(value, null, 2);
 
 // ── Examples ────────────────────────────────────────────────────────────────────
@@ -89,7 +90,7 @@ function buildKpiSheet(): DashboardSpec {
       id: `metric-${id}`,
       kind: "metric",
       title: kpi.label,
-      layout: { x, y: 0, w: 6, h: 3 },
+      layout: { x, y: 0, w: 6, h: 4 },
       content: {
         label: kpi.label,
         value: formatKpi(kpi.unit, kpi.value),
@@ -102,7 +103,7 @@ function buildKpiSheet(): DashboardSpec {
     version: 1,
     id: "ashgrove-kpis",
     title: copy.kpiSheet.title,
-    grid: { mode: "fit", columns: 24, rows: 10, gap: 8 },
+    grid: { mode: "fit", columns: 24, rows: 11, gap: 8 },
     tiles: [
       metric("arr", 0),
       metric("nrr", 6),
@@ -112,14 +113,14 @@ function buildKpiSheet(): DashboardSpec {
         id: "chart-arr",
         kind: "chart",
         title: copy.kpiSheet.arrTrend,
-        layout: { x: 0, y: 3, w: 12, h: 7 },
+        layout: { x: 0, y: 4, w: 12, h: 7 },
         content: { type: "line", x: "week", series: ["value"], data: ARR_SERIES.points },
       },
       {
         id: "chart-backlog",
         kind: "chart",
         title: copy.kpiSheet.backlogTrend,
-        layout: { x: 12, y: 3, w: 12, h: 7 },
+        layout: { x: 12, y: 4, w: 12, h: 7 },
         content: { type: "bar", x: "week", series: ["value"], data: SUPPORT_BACKLOG_SERIES.points },
       },
     ],
@@ -246,7 +247,10 @@ function FormatPlayground<TSpec>({
             height={EDITOR_HEIGHT}
             ariaLabel={copy.monacoLabel(copy.tabs[format].label)}
             contextMenu="none"
-            options={{ tabFocusMode: true }}
+            // Tab leaves the editor (keyboard path editor → errors → surface). No line-number
+            // gutter: the editor theme's gutter ink measures 2.33:1 (axe color-contrast); the
+            // error list names the line and moves the caret there instead.
+            options={{ tabFocusMode: true, lineNumbers: "off" }}
             onMount={(editor) => {
               editorRef.current = editor;
             }}
@@ -312,8 +316,10 @@ const DashboardSpecPlayground = dynamic(
         return (
           // `key` remounts the provider: its store reads `spec` once, on creation.
           <m.DashboardProvider key={JSON.stringify(spec)} spec={spec} tiles={tiles} mode="view">
-            <div className="h-112 min-w-0">
-              <m.DashboardSheet renderAll />
+            <div className="h-128 min-w-0">
+              {/* The preview pane is ~600 px at 1440: keep the authored layout down to 480 px and
+                  stack only on phones (the default `sm` threshold, 640, stacks the pane). */}
+              <m.DashboardSheet renderAll breakpoints={SHEET_BREAKPOINTS} />
             </div>
           </m.DashboardProvider>
         );
