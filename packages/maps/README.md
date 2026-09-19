@@ -43,7 +43,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-12 exported components — including `MapArc`, `MapCanvas`, `MapClusterLayer`, `MapControls`, `MapGeoJSON`.
+23 exported components — including `DEFAULT_MAP_HEIGHT`, `MAP_BREAKPOINT_THRESHOLDS`, `MAP_BREAKPOINTS`, `MAP_CORNERS`, `MAP_LABEL_ANCHORS`.
 
 Don't guess the API — ask the CLI:
 

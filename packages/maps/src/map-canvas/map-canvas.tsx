@@ -148,9 +148,9 @@ export type MapCanvasProps = {
   projection?: MapProjectionOption;
   /**
    * `false` makes the map STATIC — the editorial / locator default: no zoom,
-   * pan, rotate or keyboard handlers, the default cursor, no tab stop, and
-   * `<MapControls>` hidden. Hover and click still reach layers and markers, so
-   * tooltips keep working. The viewport can still be set in code
+   * pan, rotate or keyboard handlers, the default cursor and no tab stop
+   * (leave `<MapControls>` out of a static map). Hover and click still reach
+   * layers and markers, so tooltips keep working. The viewport can still be set in code
    * (`viewport`, the ref). Default `true`.
    */
   interactive?: boolean;

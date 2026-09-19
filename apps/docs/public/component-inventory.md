@@ -19,7 +19,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
-| `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
+| `@elabs-ai/components-maps` | packages/maps | 23 | 3 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 224 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 9 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
@@ -1070,19 +1070,32 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
+| DEFAULT_MAP_HEIGHT | component |  | `@elabs-ai/components-maps` |  |
+| MAP_BREAKPOINT_THRESHOLDS | component |  | `@elabs-ai/components-maps` |  |
+| MAP_BREAKPOINTS | component |  | `@elabs-ai/components-maps` |  |
+| MAP_CORNERS | component |  | `@elabs-ai/components-maps` |  |
+| MAP_LABEL_ANCHORS | component |  | `@elabs-ai/components-maps` |  |
+| MapAnnotation | component |  | `@elabs-ai/components-maps` |  |
+| MapAnnotationKey | component |  | `@elabs-ai/components-maps` |  |
 | MapArc | component |  | `@elabs-ai/components-maps` |  |
 | MapCanvas | component |  | `@elabs-ai/components-maps` | Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. |
 | MapClusterLayer | component |  | `@elabs-ai/components-maps` | Clusters dense point data into count bubbles that split apart as you zoom in. |
 | MapControls | component |  | `@elabs-ai/components-maps` |  |
 | MapGeoJSON | component |  | `@elabs-ai/components-maps` |  |
+| MapInset | component |  | `@elabs-ai/components-maps` |  |
+| MapLegend | component |  | `@elabs-ai/components-maps` |  |
 | MapMarker | component |  | `@elabs-ai/components-maps` | A point on the map, optionally carrying content, a label, a popup or a tooltip. |
 | MapMarkerContent | component |  | `@elabs-ai/components-maps` |  |
 | MapMarkerLabel | component |  | `@elabs-ai/components-maps` |  |
 | MapMarkerPopup | component |  | `@elabs-ai/components-maps` |  |
 | MapMarkerTooltip | component |  | `@elabs-ai/components-maps` |  |
+| MapNorthArrow | component |  | `@elabs-ai/components-maps` |  |
 | MapPopup | component |  | `@elabs-ai/components-maps` | Standalone anchored popup on the map (not bound to a marker). |
 | MapRoute | component |  | `@elabs-ai/components-maps` |  |
+| MapScaleBar | component |  | `@elabs-ai/components-maps` |  |
 | useMap | hook |  | `@elabs-ai/components-maps` |  |
+| useMapBreakpoint | hook |  | `@elabs-ai/components-maps` |  |
+| useMapResponsive | hook |  | `@elabs-ai/components-maps` |  |
 
 ## @elabs-ai/components-charts
 

@@ -199,8 +199,6 @@ function ViewportReadout() {
             <MapMarkerContent />
             <MapMarkerTooltip>Toronto</MapMarkerTooltip>
           </MapMarker>
-          {/* Hidden while the canvas is static: a static map has nothing to zoom. */}
-          <MapControls />
         </MapCanvas>
       </div>
       <p className="text-caption text-muted-foreground">

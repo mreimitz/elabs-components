@@ -6,6 +6,13 @@ Import from `@elabs-ai/components-maps`. Part of brand-ui — see the root `llms
 
 ## Components
 
+- DEFAULT_MAP_HEIGHT
+- MAP_BREAKPOINT_THRESHOLDS
+- MAP_BREAKPOINTS
+- MAP_CORNERS
+- MAP_LABEL_ANCHORS
+- MapAnnotation
+- MapAnnotationKey
 - MapArc
 - MapCanvas — Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.
   - avoid: Hiding MapLibre's attribution control — the default Carto basemap styles/tiles require it.
@@ -16,6 +23,8 @@ Import from `@elabs-ai/components-maps`. Part of brand-ui — see the root `llms
   - avoid: Clustering a handful of points — plain MapMarkers read better below roughly 50 points.
 - MapControls
 - MapGeoJSON
+- MapInset
+- MapLegend
 - MapMarker — A point on the map, optionally carrying content, a label, a popup or a tooltip.
   - avoid: Hardcoding a marker color — resolve a semantic token; WebGL can't read CSS variables directly.
   - avoid: Hundreds of individual markers — switch to MapClusterLayer above roughly 50 points.
@@ -23,11 +32,15 @@ Import from `@elabs-ai/components-maps`. Part of brand-ui — see the root `llms
 - MapMarkerLabel
 - MapMarkerPopup
 - MapMarkerTooltip
+- MapNorthArrow
 - MapPopup — Standalone anchored popup on the map (not bound to a marker).
   - avoid: Putting essential information only in a popup — it is transient; keep critical content on the page.
   - avoid: Styling the popup with raw colors — the brand popup overrides are token-driven (maps.css).
 - MapRoute
+- MapScaleBar
 
 ## Hooks
 
 - useMap
+- useMapBreakpoint
+- useMapResponsive
