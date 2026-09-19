@@ -90,8 +90,9 @@ test("matchChartFor ranks by whole-token overlap, best-matching shape wins", () 
     [
       ["HeatmapChart", 4],
       ["UnitChart", 3],
-      // a ROLE point each for time ("hour") and measure ("volume") — no literal word shared
-      ["LineChart", 2],
+      // a ROLE point each for time ("hour") and measure ("volume") — no literal word
+      // shared — plus 0.5: its shape names measure AND time (the general time series)
+      ["LineChart", 2.5],
     ],
   );
   // the quoted reason is the container's OWN best-matching tag, not an average
@@ -156,6 +157,24 @@ test("a DATA description reaches SHAPE vocabulary through roles (measure × time
   // a map cannot show the month dimension — it must not lead
   assert.notEqual(names[0], "ChoroplethChart");
   assert.match(renderChartForText("revenue by month by region", got), /read as: /);
+});
+
+test("measure × time puts the general time-series chart first; specialists and other shapes keep their place", () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "brand-ui.manifest.json"), "utf8"));
+  const first = (q) => matchChartFor(manifest, q)[0]?.name;
+  // Before the rule these led with a two-time-point dumbbell or a calendar heatmap.
+  for (const q of [
+    "revenue by month by region",
+    "revenue by month",
+    "monthly sales by product",
+    "quarterly revenue by team",
+  ])
+    assert.equal(first(q), "LineChart", q);
+  // Queries whose best answer is a specialist, or that have no time role, are untouched.
+  assert.equal(first("ticket volume by weekday by hour"), "HeatmapChart");
+  assert.equal(first("before and after revenue by team"), "DumbbellChart");
+  assert.equal(first("sales by country"), "ChoroplethChart");
+  assert.equal(first("market share by product"), "PieChart");
 });
 
 // ── the shipped manifest (the acceptance example, end to end) ────────────────
