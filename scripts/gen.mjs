@@ -162,6 +162,7 @@ export const STEPS = [
       "apps/docs/stories/Generative-UI-A2UI.mdx",
       "skills/brand-ui/SKILL.md",
       "docs/playbooks/README.md",
+      "README.md",
     ],
   },
   {

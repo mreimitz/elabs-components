@@ -7,7 +7,11 @@ import {
   renderContextBlock,
   packageRows,
   orderedPackages,
+  renderReadmeCounts,
 } from "../lib/render-docs.mjs";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { findRepoRoot, loadManifest } from "../lib/core.mjs";
 
 /** A tiny fixture manifest covering the shapes the renderers must handle. */
 const FIXTURE = {
@@ -153,4 +157,20 @@ test("renderers tolerate a manifest with empty/missing buckets", () => {
   assert.doesNotThrow(() => renderLlmsHub(empty));
   assert.doesNotThrow(() => renderContextBlock(empty));
   assert.doesNotThrow(() => renderLlmsSpoke(empty, "@elabs-ai/components-ui"));
+});
+
+test("README counts and llms.txt count components the same way (one definition)", (t) => {
+  const root = findRepoRoot(dirname(fileURLToPath(import.meta.url)));
+  if (!root) return t.skip("not inside the monorepo");
+  const manifest = loadManifest(root);
+  const readme = renderReadmeCounts(manifest, root);
+  const hub = renderLlmsHub(manifest);
+  for (const name of orderedPackages(manifest)) {
+    const short = name.replace(/^@elabs-ai\/components-/, "");
+    const inReadme = readme.match(new RegExp(`(?:— | · )${short} (\\d+)`))?.[1];
+    const inLlms = hub.match(new RegExp(`\\[${name}\\][^\\n]*\\((\\d+) components`))?.[1];
+    assert.ok(inReadme && inLlms, `${short}: README ${inReadme}, llms ${inLlms}`);
+    assert.equal(inReadme, inLlms, short);
+  }
+  assert.match(readme, /The theme token contract \(`THEME_TOKEN_NAMES`\) has \d+ tokens/);
 });
