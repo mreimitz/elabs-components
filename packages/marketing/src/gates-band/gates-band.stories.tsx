@@ -1,20 +1,21 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { GatesBand, type GatesBandGate } from "./gates-band";
 
 const GATES: GatesBandGate[] = [
   {
     id: "a11y-baseline",
-    doc: 'Axe stays blocking: preview.tsx keeps a11y: { test: "error" } and applies the ratchet.',
+    doc: 'Axe stays blocking: preview.tsx keeps `a11y: { test: "error" }` and applies the ratchet.',
     category: "stories",
   },
   {
     id: "component-registration",
-    doc: "Every component folder is re-exported from src/index.ts and ships a *.stories.tsx.",
+    doc: "Every component folder is re-exported from `src/index.ts` and ships a `*.stories.tsx`.",
     category: "components",
   },
   {
     id: "data-slot",
-    doc: "Every exported component's root carries data-slot, and each sub-part its own.",
+    doc: "Every exported component's root carries `data-slot`, and each sub-part its own.",
     category: "components",
   },
   {
@@ -65,5 +66,24 @@ export const UnknownCategory: Story = {
     gates: [{ id: "external-check", doc: "Runs an external command.", category: "external" }],
     count: 1,
     categoryLabels: {},
+  },
+};
+
+/**
+ * Every group is a native `<details>`/`<summary>` disclosure, closed by default (#587) — the
+ * category and its count are always visible; Enter/Space (or a click) reveals its rules, with no
+ * JavaScript involved. Backtick runs in a doc render as real `<code>`, never literal backticks.
+ */
+export const DisclosureOpens: Story = {
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const summary = canvas.getByText("Stories");
+    const details = summary.closest("details")!;
+    expect(details.open).toBe(false);
+    await userEvent.click(summary);
+    expect(details.open).toBe(true);
+    expect(canvas.getByText("a11y-baseline")).toBeVisible();
+    const codeRuns = canvasElement.querySelectorAll('[data-slot="gates-band-item"] code');
+    expect(codeRuns.length).toBeGreaterThan(1);
+    expect(details.textContent).not.toContain("`");
   },
 };

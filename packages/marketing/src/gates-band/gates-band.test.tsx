@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { GatesBand, type GatesBandGate } from "./gates-band";
 
 const GATES: GatesBandGate[] = [
@@ -30,10 +30,54 @@ describe("GatesBand", () => {
         categoryLabels={{ stories: "Stories", components: "Components", themes: "Themes" }}
       />,
     );
-    const groupHeadings = Array.from(
-      container.querySelectorAll('[data-slot="gates-band-group"] h4'),
+    const groupLabels = Array.from(
+      container.querySelectorAll('[data-slot="gates-band-summary"] span:first-child'),
     ).map((el) => el.textContent);
-    expect(groupHeadings).toEqual(["Stories", "Components", "Themes"]);
+    expect(groupLabels).toEqual(["Stories", "Components", "Themes"]);
+  });
+
+  it("each group is a disclosure, closed by default, showing its own rule count", () => {
+    const { container } = render(
+      <GatesBand
+        gates={GATES}
+        count={GATES.length}
+        categoryLabels={{ stories: "Stories", components: "Components", themes: "Themes" }}
+      />,
+    );
+    const groups = Array.from(container.querySelectorAll('[data-slot="gates-band-group"]'));
+    expect(groups.every((group) => (group as HTMLDetailsElement).open)).toBe(false);
+    expect(screen.getAllByText("1 rule")).toHaveLength(2); // stories + themes: one rule each
+    expect(screen.getByText("2 rules")).toBeInTheDocument(); // components: two rules
+  });
+
+  it("opens on click, closes again on a second click (keyboard-operable via native <summary>)", () => {
+    const { container } = render(<GatesBand gates={GATES} count={GATES.length} />);
+    const details = container.querySelector('[data-slot="gates-band-group"]') as HTMLDetailsElement;
+    const summary = details.querySelector('[data-slot="gates-band-summary"]')!;
+    expect(details.open).toBe(false);
+    fireEvent.click(summary);
+    expect(details.open).toBe(true);
+    fireEvent.click(summary);
+    expect(details.open).toBe(false);
+  });
+
+  it("splits a doc's backtick runs into real <code>, leaving no literal backtick in the text", () => {
+    const { container } = render(
+      <GatesBand
+        gates={[
+          {
+            id: "raw-palette",
+            doc: "Use `text-info-text`, never `text-yellow-600`.",
+            category: "components",
+          },
+        ]}
+        count={1}
+      />,
+    );
+    const item = container.querySelector('[data-slot="gates-band-item"]')!;
+    expect(item.textContent).not.toContain("`");
+    const codeRuns = Array.from(item.querySelectorAll("code")).map((el) => el.textContent);
+    expect(codeRuns).toEqual(["raw-palette", "text-info-text", "text-yellow-600"]);
   });
 
   it("an unlisted category falls back to its own slug, never a hand-typed label", () => {
