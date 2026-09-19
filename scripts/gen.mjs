@@ -161,6 +161,8 @@ export const STEPS = [
       "apps/docs/stories/AI-Output-Contract-for-Agents.mdx",
       "apps/docs/stories/Generative-UI-A2UI.mdx",
       "skills/brand-ui/SKILL.md",
+      "skills/brand-ui/reference/agent-output.md",
+      "skills/brand-ui/reference/sheet-for.md",
       "docs/playbooks/README.md",
       "README.md",
     ],

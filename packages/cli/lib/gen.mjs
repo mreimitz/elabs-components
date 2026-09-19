@@ -32,6 +32,7 @@ import {
   renderDecisionSummary,
   renderSelectionTable,
   renderSkillCatalogue,
+  renderSkillDecisions,
   renderAgentOutputGuidance,
   renderPlaybookIndex,
   renderReadmeCounts,
@@ -94,20 +95,31 @@ export function genTargets(root, manifest) {
       ],
     },
     {
-      // The `brand-ui` skill's factual catalogue (#87): themes/tokens + per-package
-      // component/hook counts. The skill's hand-written judgment prose (when to use
-      // what, composition patterns) lives OUTSIDE the markers and is preserved.
+      // The `brand-ui` skill is a short router an agent reads in full before any
+      // work (RM-129): the D1–D7 answers and the package catalogue (#87) are
+      // generated; the routine, rules and pointers are hand-written prose OUTSIDE
+      // the markers. Everything longer lives in reference files loaded on need.
       // Other skills carry routing PROSE, not list-of-things, so they have no region.
       file: join(root, "skills/brand-ui/SKILL.md"),
       regions: [
+        { name: "decisions", render: () => renderSkillDecisions(root) },
         { name: "catalogue", render: () => renderSkillCatalogue(manifest) },
-        // The agent-output contract (how an agent structures output for @elabs-ai/components-ai).
+      ],
+    },
+    {
+      // Loaded when a task renders agent output: the agent-output contract (how an
+      // agent structures output for @elabs-ai/components-ai) and the `brand-ui a2ui`
+      // verbs (D2) — agent tooling for A2UI surfaces v1.
+      file: join(root, "skills/brand-ui/reference/agent-output.md"),
+      regions: [
         { name: "agent-output", render: () => renderAgentOutputGuidance(manifest) },
-        // The `brand-ui dashboard-spec` verbs (RM-086) — agent tooling for DashboardSpec v1.
-        { name: "dashboard-spec", render: () => renderDashboardSpecSkillTable() },
-        // The `brand-ui a2ui` verbs (D2) — agent tooling for A2UI surfaces v1.
         { name: "a2ui", render: () => renderA2uiSkillTable() },
       ],
+    },
+    {
+      // The `brand-ui dashboard-spec` verbs (RM-086) — agent tooling for DashboardSpec v1.
+      file: join(root, "skills/brand-ui/reference/sheet-for.md"),
+      regions: [{ name: "dashboard-spec", render: () => renderDashboardSpecSkillTable() }],
     },
     {
       // The agent-facing "AI Output Contract" Storybook page carries the SAME

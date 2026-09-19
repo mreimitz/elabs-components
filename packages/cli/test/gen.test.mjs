@@ -152,7 +152,7 @@ function makeRoot({ decisionBody } = {}) {
   const root = mkdtempSync(join(tmpdir(), "brand-ui-gen-"));
   mkdirSync(join(root, "docs/playbooks"), { recursive: true });
   mkdirSync(join(root, "apps/docs/stories"), { recursive: true });
-  mkdirSync(join(root, "skills/brand-ui"), { recursive: true });
+  mkdirSync(join(root, "skills/brand-ui/reference"), { recursive: true });
   writeFileSync(join(root, "brand-ui.manifest.json"), JSON.stringify(MANIFEST));
   writeFileSync(join(root, "docs/DECISIONS.md"), decisionsMd(decisionBody));
   writeFileSync(join(root, "CLAUDE.md"), docWithRegion("decisions"));
@@ -183,9 +183,9 @@ function makeRoot({ decisionBody } = {}) {
     join(root, "apps/docs/stories/Introduction.mdx"),
     docWithRegion("packages", { mdx: true }),
   );
-  // The brand-ui skill carries TWO generated regions: the `catalogue` (#87) and
-  // the `agent-output` contract — wrapped by hand-written judgment prose (frontmatter
-  // above, references between/below) that the writer must preserve.
+  // The brand-ui skill router carries TWO generated regions: the D1–D7 answers and
+  // the `catalogue` (#87) — wrapped by hand-written prose (frontmatter above, the
+  // routine between, pointers below) that the writer must preserve.
   writeFileSync(
     join(root, "skills/brand-ui/SKILL.md"),
     [
@@ -197,23 +197,36 @@ function makeRoot({ decisionBody } = {}) {
       "",
       "Hand prose ABOVE the catalogue.",
       "",
+      "<!-- brand-ui:gen:decisions:start -->",
+      "<!-- brand-ui:gen:decisions:end -->",
+      "",
       "<!-- brand-ui:gen:catalogue:start -->",
       "<!-- brand-ui:gen:catalogue:end -->",
-      "",
-      "Hand prose BETWEEN the regions.",
-      "",
-      "<!-- brand-ui:gen:agent-output:start -->",
-      "<!-- brand-ui:gen:agent-output:end -->",
-      "",
-      "<!-- brand-ui:gen:dashboard-spec:start -->",
-      "<!-- brand-ui:gen:dashboard-spec:end -->",
-      "",
-      "<!-- brand-ui:gen:a2ui:start -->",
-      "<!-- brand-ui:gen:a2ui:end -->",
       "",
       "Hand prose BELOW the catalogue.",
       "",
     ].join("\n"),
+  );
+  // The reference file loaded for agent output: the `agent-output` contract and the
+  // A2UI verbs, with hand prose between them.
+  writeFileSync(
+    join(root, "skills/brand-ui/reference/agent-output.md"),
+    [
+      "# Rendering agent output",
+      "",
+      "<!-- brand-ui:gen:agent-output:start -->",
+      "<!-- brand-ui:gen:agent-output:end -->",
+      "",
+      "Hand prose BETWEEN the regions.",
+      "",
+      "<!-- brand-ui:gen:a2ui:start -->",
+      "<!-- brand-ui:gen:a2ui:end -->",
+      "",
+    ].join("\n"),
+  );
+  writeFileSync(
+    join(root, "skills/brand-ui/reference/sheet-for.md"),
+    docWithRegion("dashboard-spec"),
   );
   // The agent-facing "AI Output Contract" Storybook page carries the SAME
   // agent-output region (MDX markers — HTML comments break MDX).
@@ -393,10 +406,13 @@ test("SKILL CATALOGUE: generated from the manifest; hand prose survives; drift i
       md.includes("@elabs-ai/components-ui"),
       "the package catalogue must be generated into the skill",
     );
+    assert.ok(/\*\*Components:\*\* 2 in /.test(md), "exact component count from manifest");
     assert.ok(
-      /Exported surface:\*\*\s*2 components/.test(md),
-      "exact component count from manifest",
+      md.includes("- **D1** Build-with is the default."),
+      "the D1–D7 answers are generated into the router",
     );
+    assert.ok(!md.includes("undefined"), "a short summary row renders without a gap");
+    assert.ok(!md.includes(".claude/"), "without the repo-internal rule links");
     assert.ok(md.includes("**Themes (1):**"), "theme count comes from the manifest");
     assert.ok(md.includes("light (default)"), "the default theme is flagged");
     assert.ok(md.includes("**Tokens:** 42"), "token count comes from the manifest");
@@ -415,7 +431,7 @@ test("SKILL CATALOGUE: generated from the manifest; hand prose survives; drift i
     await writeGen(root);
     assert.equal((await checkGen(root)).length, 0, "regen clears the stale flag");
     const md2 = readFileSync(skill, "utf8");
-    assert.ok(/Exported surface:\*\*\s*3 components/.test(md2), "new count propagates");
+    assert.ok(/\*\*Components:\*\* 3 in /.test(md2), "new count propagates");
     assert.ok(md2.includes("Hand prose ABOVE the catalogue."), "prose still survives after regen");
   } finally {
     cleanup(root);
@@ -427,7 +443,7 @@ test("SKILL CATALOGUE: generated from the manifest; hand prose survives; drift i
 
 test("AGENT OUTPUT: generated into skill + MDX page; three paths; rename gates", async () => {
   const root = makeRoot();
-  const skill = join(root, "skills/brand-ui/SKILL.md");
+  const skill = join(root, "skills/brand-ui/reference/agent-output.md");
   const page = join(root, "apps/docs/stories/AI-Output-Contract-for-Agents.mdx");
   try {
     await writeGen(root);
@@ -459,7 +475,7 @@ test("AGENT OUTPUT: generated into skill + MDX page; three paths; rename gates",
     writeFileSync(join(root, "brand-ui.manifest.json"), JSON.stringify(m2));
     const stale = await checkGen(root);
     assert.ok(
-      stale.some((f) => f.endsWith("SKILL.md")),
+      stale.some((f) => f.endsWith("agent-output.md")),
       "a consumedBy rename makes the skill stale",
     );
     assert.ok(

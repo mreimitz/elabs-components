@@ -756,8 +756,6 @@
     "packages/flow/src/templates-flow-workspace.stories.tsx": 1,
     "packages/marketing/src/templates-marketing.stories.tsx": 1,
     "packages/process/src/abstraction-controls/abstraction-controls.tsx": 1,
-    "packages/process/src/core/types.ts": 1,
-    "packages/process/src/index.ts": 1,
     "packages/process/src/process-map/process-transition-edge.tsx": 1,
     "packages/terminal/src/_interactive-terminal-xterm.ts": 1,
     "packages/terminal/src/index.ts": 1,

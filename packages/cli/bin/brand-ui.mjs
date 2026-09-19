@@ -37,7 +37,12 @@ import {
   matchCliVerbs,
 } from "../lib/core.mjs";
 import { renderDocsBrief, smallerCard } from "../lib/docs-brief.mjs";
-import { searchExports, renderComponentArm, NO_MATCH_GUIDANCE } from "../lib/search.mjs";
+import {
+  searchExports,
+  renderComponentArm,
+  renderTypeArm,
+  NO_MATCH_GUIDANCE,
+} from "../lib/search.mjs";
 import { writeContext, checkContext } from "../lib/context.mjs";
 import { resolveAllProps } from "../lib/docgen.mjs";
 import { scanText } from "../lib/audit.mjs";
@@ -57,10 +62,13 @@ import {
 // graph is what lets `info`/`search`/`docs` run in a consuming project.
 
 const [cmd, ...argv] = process.argv.slice(2);
-// `--out <dir>` is the ONLY value-taking flag; pull it (and its value) out before
-// the plain flag/positional split so the directory isn't mistaken for an argument.
+// `--out <dir>` and `search`'s `--offset <n>` / `--limit <n>` take values; pull
+// them (and their values) out before the plain flag/positional split so the
+// directory or number isn't mistaken for an argument (`search dashboard --offset 30`
+// must search "dashboard", not "dashboard 30").
 const rest = [];
 let outDir = null;
+const paging = {};
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === "--out") {
@@ -69,6 +77,11 @@ for (let i = 0; i < argv.length; i++) {
   }
   if (a.startsWith("--out=")) {
     outDir = a.slice("--out=".length);
+    continue;
+  }
+  const page = /^--(offset|limit)(?:=(.*))?$/.exec(a);
+  if (page) {
+    paging[page[1]] = page[2] ?? argv[++i] ?? "";
     continue;
   }
   rest.push(a);
@@ -297,7 +310,26 @@ function cmdSearch() {
     return console.error(
       "search: no manifest (run inside the monorepo or install @elabs-ai/components-cli).",
     );
-  if (!q) return console.error("usage: brand-ui search <query>");
+  if (!q) return console.error("usage: brand-ui search <query> [--limit <n>] [--offset <n>]");
+  // Paging (RM-129): only a call that passes --limit or --offset is paged, so the
+  // default output stays exactly what it was.
+  const paged = "limit" in paging || "offset" in paging;
+  const whole = (v) => (/^\d+$/.test(v) ? Number(v) : NaN);
+  const limit = "limit" in paging ? whole(paging.limit) : 30;
+  const offset = "offset" in paging ? whole(paging.offset) : 0;
+  if (!Number.isInteger(limit) || limit < 1 || !Number.isInteger(offset) || offset < 0) {
+    console.error("search: --limit takes a whole number ≥ 1 and --offset a whole number ≥ 0.");
+    process.exitCode = 1;
+    return;
+  }
+  const quoted = args.join(" ").replace(/"/g, "");
+  const page = paged
+    ? {
+        offset,
+        next: (n) =>
+          `search "${quoted}" --offset ${n}${"limit" in paging ? ` --limit ${limit}` : ""}`,
+      }
+    : {};
   // Ranked, word-aware, vocabulary-bridged (lib/search.mjs) — a plain substring
   // filter answered "date range picker" with "(none)" while DateRangePicker shipped.
   // Components/hooks and types/exports/constants stay two independently-truncated
@@ -321,22 +353,33 @@ function cmdSearch() {
   // component/registry/playbook shape, so it needs its own arm (validator FAIL
   // #1, RM-088 follow-up 1 — `search dashboard` must surface `dashboard-spec`).
   const verbs = matchCliVerbs(manifest, q);
-  if (json)
+  if (json) {
+    const pageOf = (list) => (paged ? list.slice(offset, offset + limit) : list);
+    const nextOffset = (list) => (list.length > offset + limit ? offset + limit : null);
     return out({
-      components: rows,
+      components: pageOf(rows),
       nearest: result.nearest,
       ...(rows.length ? {} : { guidance: NO_MATCH_GUIDANCE }),
-      types: typeRows,
+      types: pageOf(typeRows),
       registry: reg,
       playbooks: books,
       templates,
       cliVerbs: verbs,
+      ...(paged
+        ? {
+            page: {
+              offset,
+              limit,
+              totalComponents: rows.length,
+              totalTypes: typeRows.length,
+              nextOffset: nextOffset(rows) ?? nextOffset(typeRows),
+            },
+          }
+        : {}),
     });
-  for (const line of renderComponentArm(q, result, 30)) console.log(line);
-  if (typeRows.length) {
-    console.log(`\nTypes/other exports matching "${q}":`);
-    for (const r of typeRows.slice(0, 30)) console.log(`  ${r.name}  (${r.pkg} · ${r.kind})`);
   }
+  for (const line of renderComponentArm(q, result, limit, page)) console.log(line);
+  for (const line of renderTypeArm(q, typeRows, limit, page)) console.log(line);
   if (reg.length) {
     console.log(`\nRegistry items matching "${q}":`);
     for (const r of reg) console.log(`  ${r.name}  [${r.type}] — ${r.title}`);
@@ -1102,9 +1145,10 @@ const MAP_SUMMARY_ORDER = ["direct", "props", "compose", "gap", "drop"];
  * the read commands stay free of the MCP code in consuming projects.
  */
 async function cmdMcp() {
-  const { runMcpServer } = await import("../lib/mcp.mjs");
+  const { runMcpServer, TOOLS } = await import("../lib/mcp.mjs");
+  // Named from the tool list itself, so the banner can't miss a tool again.
   process.stderr.write(
-    "brand-ui MCP server ready (stdio). Tools: info, search, docs, tokens, audit, chart_for.\n",
+    `brand-ui MCP server ready (stdio). Tools: ${TOOLS.map((t) => t.name).join(", ")}.\n`,
   );
   await runMcpServer({ root });
 }
@@ -1137,6 +1181,7 @@ const GENERAL_HELP = `brand-ui <command>
   mcp                    Persistent MCP server (stdio) over the engine — works with Storybook down
   search <query>         Find components / hooks / registry items / archetype playbooks
                          (a whole-screen intent like "dashboard" routes to its playbook)
+      [--limit <n>] [--offset <n>]  …one page of components and types (default 30 from 0)
   docs <Component...>    Locate a component and print its real props from source
       [--json]           …or emit the same data as structured JSON
       [--brief]          …or a smaller first read: import, purpose, anti-patterns,
@@ -1203,7 +1248,7 @@ const SUBCOMMAND_HELP = {
   gen: "usage: brand-ui gen [--check]\n  Generate doc regions (package tables, decision summary) in the hand docs",
   mcp: "usage: brand-ui mcp\n  Persistent MCP server (stdio) over the engine — works with Storybook down",
   search:
-    "usage: brand-ui search <query>\n  Find components / hooks / registry items / archetype playbooks",
+    "usage: brand-ui search <query> [--limit <n>] [--offset <n>]\n  Find components / hooks / registry items / archetype playbooks\n  --limit/--offset page the component and type lists (default: the first 30).",
   docs: "usage: brand-ui docs <Component...> [--json]\n  Locate a component and print its real props from source (or structured JSON with --json)",
   "chart-for":
     'usage: brand-ui chart-for "<data shape>" [--json]\n  Rank @elabs-ai/components-charts chart containers for a data shape — see skills/brand-ui/reference/chart-selection.md',

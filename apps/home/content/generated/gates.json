@@ -12,6 +12,12 @@
     "source": "scripts/check/rules/agent-output-contract.mjs"
   },
   {
+    "id": "agent-token-budget",
+    "doc": "Keep what an agent reads first under its byte ceiling: the brand-ui skill router (8 KiB), `llms.txt` and each `llms/<pkg>.txt`, a created app's `brand-ui-context.md` for every template, and every component's `docs --brief` card.",
+    "category": "repo",
+    "source": "scripts/check/rules/agent-token-budget.mjs"
+  },
+  {
     "id": "ai-microcopy-a11y",
     "doc": "Every literal `aria-label` and `placeholder` in `@elabs-ai/components-ai` goes through `t()` — no baseline, no exceptions beyond `// i18n-exempt: <reason>`.",
     "category": "components",
