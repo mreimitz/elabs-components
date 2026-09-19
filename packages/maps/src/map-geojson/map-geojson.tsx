@@ -16,6 +16,31 @@ export type MapGeoJSONData<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
 export type MapFillPaint = NonNullable<MapLibreGL.FillLayerSpecification["paint"]>;
 export type MapLinePaint = NonNullable<MapLibreGL.LineLayerSpecification["paint"]>;
 
+/**
+ * A hatch drawn over the fill — the locator-map "area marker" look. `width` is
+ * a stripe's thickness and `gap` the space between stripes, both in CSS px
+ * measured across the 45° stripes. Stripes take the fill colour (a plain
+ * `fill-color`; an expression falls back to the `--foreground` token).
+ */
+export interface MapGeoJSONPattern {
+  kind: "stripes";
+  /** Stripe thickness in px (default 2). */
+  width?: number;
+  /** Space between stripes in px (default 4). */
+  gap?: number;
+}
+
+/**
+ * A soft glow around the area's edge — a second, blurred line layer under the
+ * fill, in the fill colour. `width` is how far the glow reaches out, in px.
+ */
+export interface MapGeoJSONVignette {
+  /** Glow reach in px (default 12). */
+  width?: number;
+  /** Glow opacity, 0–1 (default 0.35). */
+  opacity?: number;
+}
+
 /** A rendered feature with strongly-typed `properties`. */
 export type MapGeoJSONFeature<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties> =
   Omit<MapLibreGL.MapGeoJSONFeature, "properties"> & { properties: P };
@@ -61,6 +86,16 @@ export type MapGeoJSONProps<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJso
    * as a `case` expression keyed on hover feature-state. Requires `promoteId`.
    */
   fillHoverPaint?: MapFillPaint;
+  /**
+   * The fill layer's opacity, 0–1 — shorthand for `fillPaint["fill-opacity"]`
+   * (which wins when both are set). Default 1, or 0.25 with a `pattern`, so
+   * the stripes read over a tint of the same colour.
+   */
+  fillOpacity?: number;
+  /** Hatch the areas with stripes (see {@link MapGeoJSONPattern}). */
+  pattern?: MapGeoJSONPattern;
+  /** Glow around the areas' edges (see {@link MapGeoJSONVignette}). */
+  vignette?: MapGeoJSONVignette;
   /** Callback when a feature is clicked. */
   onClick?: (e: MapGeoJSONEvent<P>) => void;
   /** Callback fired when the hovered feature changes; `null` when the cursor leaves. */
@@ -84,6 +119,9 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
   fillPaint,
   linePaint,
   fillHoverPaint,
+  fillOpacity,
+  pattern,
+  vignette,
   onClick,
   onHover,
   interactive = false,
@@ -95,19 +133,48 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
   const sourceId = `geojson-source-${id}`;
   const fillLayerId = `geojson-fill-${id}`;
   const lineLayerId = `geojson-line-${id}`;
+  const patternLayerId = `geojson-pattern-${id}`;
+  const vignetteLayerId = `geojson-vignette-${id}`;
+  const patternImageId = `geojson-pattern-image-${id}`;
 
   // Theme-driven neutral defaults: landmass = the mid-neutral `--border` rung,
   // separators = the page surface. Both re-resolve on theme change.
   const defaultFill = useTokenColor("--border");
   const defaultLine = useTokenColor("--background");
+  const defaultInk = useTokenColor("--foreground");
 
   const showFill = fillPaint !== false;
   const showLine = linePaint !== false;
 
+  const baseOpacity = fillOpacity ?? (pattern ? 0.25 : undefined);
   const mergedFillPaint = useMemo(
-    () => mergeHoverPaint({ "fill-color": defaultFill, ...(fillPaint || {}) }, fillHoverPaint),
-    [defaultFill, fillPaint, fillHoverPaint],
+    () =>
+      mergeHoverPaint(
+        {
+          "fill-color": defaultFill,
+          ...(baseOpacity !== undefined ? { "fill-opacity": baseOpacity } : {}),
+          ...(fillPaint || {}),
+        },
+        fillHoverPaint,
+      ),
+    [defaultFill, baseOpacity, fillPaint, fillHoverPaint],
   );
+  // The colour stripes and the glow take: the fill's own plain colour, or ink.
+  const configuredFill = fillPaint ? fillPaint["fill-color"] : undefined;
+  const areaColor =
+    configuredFill === undefined
+      ? defaultFill
+      : typeof configuredFill === "string"
+        ? configuredFill
+        : defaultInk;
+  const stripeWidth = Math.max(1, pattern?.width ?? 2);
+  const stripeGap = Math.max(0, pattern?.gap ?? 4);
+  const vignetteWidth = Math.max(0, vignette?.width ?? 12);
+  const vignetteOpacity = Math.min(1, Math.max(0, vignette?.opacity ?? 0.35));
+  const hasPattern = pattern !== undefined;
+  const hasVignette = vignette !== undefined;
+  // The tile drawn last; a new one is drawn only when colour or size change.
+  const patternDrawnRef = useRef<string | null>(null);
   const mergedLinePaint = useMemo(
     () => ({
       "line-color": defaultLine,
@@ -132,7 +199,10 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
     return () => {
       try {
         if (map.getLayer(lineLayerId)) map.removeLayer(lineLayerId);
+        if (map.getLayer(patternLayerId)) map.removeLayer(patternLayerId);
         if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId);
+        if (map.getLayer(vignetteLayerId)) map.removeLayer(vignetteLayerId);
+        if (map.hasImage(patternImageId)) map.removeImage(patternImageId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
       } catch {
         // style may be mid-reload
@@ -193,7 +263,73 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
         map.setPaintProperty(lineLayerId, key as keyof MapLinePaint, value as never);
       }
     }
+
+    // Vignette: a blurred line UNDER the fill, so the glow reads outside it.
+    const vignettePaint: MapLinePaint = {
+      "line-color": areaColor,
+      "line-width": vignetteWidth * 2,
+      "line-blur": vignetteWidth,
+      "line-opacity": vignetteOpacity,
+    };
+    if (hasVignette && !map.getLayer(vignetteLayerId)) {
+      const before = map.getLayer(fillLayerId)
+        ? fillLayerId
+        : map.getLayer(lineLayerId)
+          ? lineLayerId
+          : beforeId;
+      map.addLayer(
+        { id: vignetteLayerId, type: "line", source: sourceId, paint: vignettePaint },
+        before,
+      );
+    } else if (hasVignette) {
+      for (const [key, value] of Object.entries(vignettePaint)) {
+        map.setPaintProperty(vignetteLayerId, key as keyof MapLinePaint, value as never);
+      }
+    } else if (map.getLayer(vignetteLayerId)) {
+      map.removeLayer(vignetteLayerId);
+    }
+
+    // Pattern: a stripe tile drawn in the area colour, on its own fill layer
+    // between the fill and the outline. Re-drawn when the colour or size changes.
+    if (hasPattern) {
+      const drawKey = `${areaColor}|${stripeWidth}|${stripeGap}`;
+      if (patternDrawnRef.current !== drawKey || !map.hasImage(patternImageId)) {
+        const image = stripeImage(areaColor, stripeWidth, stripeGap);
+        if (image) {
+          if (map.hasImage(patternImageId)) map.removeImage(patternImageId);
+          map.addImage(patternImageId, image.data, { pixelRatio: image.pixelRatio });
+          patternDrawnRef.current = drawKey;
+        }
+      }
+      if (map.hasImage(patternImageId)) {
+        if (!map.getLayer(patternLayerId)) {
+          map.addLayer(
+            {
+              id: patternLayerId,
+              type: "fill",
+              source: sourceId,
+              paint: { "fill-pattern": patternImageId },
+            },
+            map.getLayer(lineLayerId) ? lineLayerId : beforeId,
+          );
+        }
+      }
+    } else {
+      if (map.getLayer(patternLayerId)) map.removeLayer(patternLayerId);
+      if (map.hasImage(patternImageId)) map.removeImage(patternImageId);
+      patternDrawnRef.current = null;
+    }
   }, [
+    areaColor,
+    hasPattern,
+    stripeWidth,
+    stripeGap,
+    hasVignette,
+    vignetteWidth,
+    vignetteOpacity,
+    patternLayerId,
+    vignetteLayerId,
+    patternImageId,
     isLoaded,
     map,
     sourceId,
@@ -271,4 +407,41 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
   }, [isLoaded, map, fillLayerId, sourceId, interactive, showFill]);
 
   return null;
+}
+
+/**
+ * One seamless tile of 45° stripes, `width` thick with `gap` between them
+ * (both measured across the stripes), in `color` — any CSS colour, so a
+ * resolved token works as-is. `null` where no 2D canvas exists (tests, SSR).
+ */
+function stripeImage(
+  color: string,
+  width: number,
+  gap: number,
+): { data: ImageData; pixelRatio: number } | null {
+  if (typeof document === "undefined") return null;
+  const pixelRatio = Math.max(1, Math.round(globalThis.devicePixelRatio || 1));
+  // A 45° stripe period of (width + gap) across the stripes is √2 × that along x.
+  const size = Math.max(2, Math.round((width + gap) * Math.SQRT2 * pixelRatio));
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  let context: CanvasRenderingContext2D | null = null;
+  try {
+    context = canvas.getContext("2d");
+  } catch {
+    context = null;
+  }
+  if (!context) return null;
+  context.strokeStyle = color;
+  context.lineWidth = width * pixelRatio;
+  context.lineCap = "square";
+  context.beginPath();
+  // x + y = k·size for k = 0, 1, 2 covers the tile, corners included.
+  for (const k of [0, 1, 2]) {
+    context.moveTo(k * size - size, size);
+    context.lineTo(k * size, 0);
+  }
+  context.stroke();
+  return { data: context.getImageData(0, 0, size, size), pixelRatio };
 }

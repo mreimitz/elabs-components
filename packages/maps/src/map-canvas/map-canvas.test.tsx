@@ -121,4 +121,128 @@ describe("MapCanvas", () => {
     expect(setProjectionSpy).toHaveBeenCalledWith(mercator);
     expect(setProjectionSpy).not.toHaveBeenCalledWith(globe);
   });
+
+  describe("static mode (interactive={false})", () => {
+    it("switches every gesture handler off but keeps MapLibre's own listeners", () => {
+      render(<MapCanvas interactive={false} />);
+      const options = MockMap.instances[0]!.options;
+      for (const key of [
+        "scrollZoom",
+        "boxZoom",
+        "dragRotate",
+        "dragPan",
+        "keyboard",
+        "doubleClickZoom",
+        "touchZoomRotate",
+        "touchPitch",
+      ]) {
+        expect(options[key]).toBe(false);
+      }
+      // MapLibre's `interactive: false` would detach hover / click too.
+      expect(options.interactive).toBeUndefined();
+    });
+
+    it("drops the grab cursor and the tab stop, and marks the container", async () => {
+      const { container } = render(<MapCanvas interactive={false} />);
+      const map = MockMap.instances[0]!;
+      await waitFor(() => {
+        expect(map.getCanvas().tabIndex).toBe(-1);
+      });
+      expect(map.canvasContainer).not.toHaveClass("maplibregl-interactive");
+      expect(container.querySelector('[data-slot="map-canvas"]')).toHaveAttribute(
+        "data-interactive",
+        "false",
+      );
+    });
+
+    it("turns the handlers back on when the map becomes interactive again", async () => {
+      const { rerender } = render(<MapCanvas interactive={false} />);
+      const map = MockMap.instances[0]!;
+      await waitFor(() => expect(map.dragPan.enabled).toBe(false));
+      rerender(<MapCanvas interactive scrollZoom={false} />);
+      await waitFor(() => expect(map.dragPan.enabled).toBe(true));
+      // An explicit `scrollZoom={false}` stays off.
+      expect(map.scrollZoom.enabled).toBe(false);
+      expect(map.getCanvas().tabIndex).toBe(0);
+    });
+
+    it("leaves an interactive map's handlers alone (no default change)", async () => {
+      render(<MapCanvas />);
+      const map = MockMap.instances[0]!;
+      const disable = vi.spyOn(map.dragPan, "disable");
+      const enable = vi.spyOn(map.dragPan, "enable");
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(disable).not.toHaveBeenCalled();
+      expect(enable).not.toHaveBeenCalled();
+      expect(map.options.dragPan).toBeUndefined();
+    });
+  });
+
+  it('accepts the "globe" shorthand and applies it as a projection spec', async () => {
+    render(<MapCanvas projection="globe" />);
+    const map = MockMap.instances[0]!;
+    const setProjection = vi.spyOn(map, "setProjection");
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+    expect(setProjection).toHaveBeenCalledWith({ type: "globe" });
+  });
+
+  it("ignores a projection when the MapLibre build cannot switch one", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<MapCanvas projection="globe" />);
+    const map = MockMap.instances[0]!;
+    (map as unknown as { setProjection: unknown }).setProjection = undefined;
+    await act(async () => {
+      map.emit("styledata");
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("cannot switch projections"));
+    warn.mockRestore();
+  });
+
+  describe("height and tiers", () => {
+    function atWidth(width: number) {
+      return vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+        width,
+        height: 0,
+        top: 0,
+        left: 0,
+        right: width,
+        bottom: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      });
+    }
+
+    it("publishes its tier and gives an unsized map the default aspect", () => {
+      const spy = atWidth(348);
+      const { container } = render(<MapCanvas />);
+      const root = container.querySelector<HTMLElement>('[data-slot="map-canvas"]')!;
+      expect(root).toHaveAttribute("data-map-breakpoint", "narrow");
+      expect(root.style.aspectRatio).toBe("1 / 1");
+      // `h-full` still sizes a map whose parent has a height of its own.
+      expect(root).toHaveClass("h-full");
+      spy.mockRestore();
+    });
+
+    it("resolves a responsive height at the measured tier", () => {
+      const spy = atWidth(868);
+      const { container } = render(<MapCanvas height={{ base: 420, narrow: { aspect: 1 } }} />);
+      const root = container.querySelector<HTMLElement>('[data-slot="map-canvas"]')!;
+      expect(root).toHaveAttribute("data-map-breakpoint", "wide");
+      expect(root.style.height).toBe("420px");
+      spy.mockRestore();
+    });
+
+    it("renders no strips above or below the map until furniture asks", () => {
+      const { container } = render(<MapCanvas className="my-map" />);
+      expect(container.firstChild).toHaveClass("my-map");
+      expect(container.querySelector('[data-slot="map-canvas-above"]')).toBeNull();
+      expect(container.querySelector('[data-slot="map-canvas-below"]')).toBeNull();
+    });
+  });
 });

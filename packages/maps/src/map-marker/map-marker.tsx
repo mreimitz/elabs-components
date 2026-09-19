@@ -8,6 +8,16 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useLocale } from "@elabs-ai/components-ui";
 
 import { useMap } from "../map-canvas/map-context";
+import {
+  type MapResponsive,
+  useMapBreakpoint,
+  resolveMapResponsive,
+} from "../lib/use-map-breakpoint";
+import {
+  type MapLabelAnchor,
+  mapAnchorGeometry,
+  mapAnchorTransform,
+} from "../map-annotation/anchor";
 
 type MarkerContextValue = {
   marker: MapLibreGL.Marker;
@@ -24,13 +34,41 @@ function useMarkerContext() {
   return context;
 }
 
+/**
+ * A marker's own text label — the locator-map label: one of eight positions,
+ * optionally on a box, optionally pushed out on a callout line.
+ */
+export interface MapMarkerLabelSpec {
+  /** The label text. */
+  text: string;
+  /** Where the label sits relative to the point (default `"top"`). */
+  position?: MapLabelAnchor;
+  /** Set the label on a background box so it reads over a busy basemap. */
+  box?: boolean;
+  /** Push the label further out and draw a callout line back to the point. */
+  callout?: boolean;
+}
+
 export type MapMarkerProps = {
   /** Longitude coordinate for the marker position. */
   longitude: number;
   /** Latitude coordinate for the marker position. */
   latitude: number;
-  /** Marker sub-components (MapMarkerContent, MapMarkerPopup, MapMarkerTooltip, MapMarkerLabel). */
-  children: ReactNode;
+  /**
+   * Marker sub-components (MapMarkerContent, MapMarkerPopup, MapMarkerTooltip,
+   * MapMarkerLabel). Optional when `label` alone marks the place — an inline
+   * area label, for example.
+   */
+  children?: ReactNode;
+  /**
+   * Whether the marker shows at a tier (default `true` everywhere):
+   * `{ base: true, narrow: false }` drops it from a phone-width map. The
+   * Datawrapper advice applies — duplicate a marker with a shorter label and
+   * the opposite `showAt` rather than cramming one label into both.
+   */
+  showAt?: MapResponsive<boolean>;
+  /** A text label drawn with the marker (see {@link MapMarkerLabelSpec}). */
+  label?: MapMarkerLabelSpec;
   /** Callback when the marker is clicked. */
   onClick?: (e: MouseEvent) => void;
   /** Callback when the mouse enters the marker. */
@@ -61,9 +99,12 @@ export function MapMarker({
   onDrag,
   onDragEnd,
   draggable = false,
+  showAt = true,
+  label,
   ...markerOptions
 }: MapMarkerProps) {
   const { map } = useMap();
+  const visible = resolveMapResponsive(showAt, useMapBreakpoint());
   const [marker, setMarker] = useState<MapLibreGL.Marker | null>(null);
 
   const callbacksRef = useRef({
@@ -142,15 +183,16 @@ export function MapMarker({
   // Attaches/detaches the CURRENT marker instance to the map — its own effect
   // so both a `map` change and an `anchor`/`className`-driven rebuild above
   // are handled the same way, without a double `remove()`.
+  // A marker hidden at this tier (`showAt`) is simply not on the map.
   useEffect(() => {
-    if (!map || !marker) return;
+    if (!map || !marker || !visible) return;
 
     marker.addTo(map);
 
     return () => {
       marker.remove();
     };
-  }, [map, marker]);
+  }, [map, marker, visible]);
 
   useEffect(() => {
     if (!marker) return;
@@ -192,7 +234,55 @@ export function MapMarker({
     return null;
   }
 
-  return <MarkerContext.Provider value={{ marker, map }}>{children}</MarkerContext.Provider>;
+  return (
+    <MarkerContext.Provider value={{ marker, map }}>
+      {children}
+      {label && <MarkerOwnLabel label={label} />}
+    </MarkerContext.Provider>
+  );
+}
+
+const LABEL_GAP = 10;
+const CALLOUT_DISTANCE = 28;
+
+/** The `label` prop, portaled into the marker element and centred on the point. */
+function MarkerOwnLabel({ label }: { label: MapMarkerLabelSpec }) {
+  const { marker } = useMarkerContext();
+  const { text, position = "top", box = false, callout = false } = label;
+  const distance = callout ? CALLOUT_DISTANCE : LABEL_GAP;
+  const { dx, dy } = mapAnchorGeometry(position, distance);
+
+  return createPortal(
+    <>
+      {callout && (
+        <svg
+          aria-hidden="true"
+          data-slot="map-marker-callout"
+          className="pointer-events-none absolute overflow-visible text-foreground"
+          // The marker element is centred on the point; draw from its centre.
+          style={{ left: "50%", top: "50%" }}
+          width={1}
+          height={1}
+        >
+          <line x1={0} y1={0} x2={dx} y2={dy} stroke="currentColor" strokeWidth={1} />
+        </svg>
+      )}
+      <div
+        data-slot="map-marker-label"
+        data-position={position}
+        className={cn(
+          "pointer-events-none absolute whitespace-nowrap text-meta font-medium text-foreground",
+          box && "rounded-sm bg-background/90 px-1 py-px",
+        )}
+        // Geographic placement: physical offsets from the point in every
+        // writing direction (east stays east), like MapLibre's own anchors.
+        style={{ left: "50%", top: "50%", transform: mapAnchorTransform(position, distance) }}
+      >
+        {text}
+      </div>
+    </>,
+    marker.getElement(),
+  );
 }
 
 export interface MapMarkerContentProps {

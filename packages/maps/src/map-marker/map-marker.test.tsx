@@ -133,4 +133,58 @@ describe("MapMarker", () => {
       globalThis.document = originalDocument;
     }
   });
+
+  it("keeps a marker hidden at the current tier off the map (showAt)", async () => {
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      width: 348,
+      height: 0,
+      top: 0,
+      left: 0,
+      right: 348,
+      bottom: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+    render(
+      <MapCanvas>
+        <MapMarker longitude={1} latitude={1} showAt={{ base: true, narrow: false }}>
+          <MapMarkerContent />
+        </MapMarker>
+        <MapMarker longitude={2} latitude={2}>
+          <MapMarkerContent />
+        </MapMarker>
+      </MapCanvas>,
+    );
+    await waitFor(() => {
+      expect(MockMarker.instances).toHaveLength(2);
+      expect(MockMarker.instances[1]!.addedTo).not.toBeNull();
+    });
+    expect(MockMarker.instances[0]!.addedTo).toBeNull();
+    spy.mockRestore();
+  });
+
+  it("draws its own label at one of eight positions, boxed, with a callout", async () => {
+    render(
+      <MapCanvas>
+        <MapMarker
+          longitude={0}
+          latitude={0}
+          label={{ text: "Hamilton", position: "bottom-left", box: true, callout: true }}
+        />
+      </MapCanvas>,
+    );
+    await waitFor(() => expect(MockMarker.instances).toHaveLength(1));
+    const el = MockMarker.instances[0]!.element;
+    const label = await waitFor(() => {
+      const found = el.querySelector<HTMLElement>('[data-slot="map-marker-label"]');
+      expect(found).not.toBeNull();
+      return found!;
+    });
+    expect(label).toHaveTextContent("Hamilton");
+    expect(label).toHaveAttribute("data-position", "bottom-left");
+    expect(label).toHaveClass("bg-background/90");
+    expect(label.style.transform).toContain("translate(calc(-100% +");
+    expect(el.querySelector('[data-slot="map-marker-callout"] line')).not.toBeNull();
+  });
 });
