@@ -1432,6 +1432,31 @@ describe("AutoChart legend vs series end labels", () => {
     expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
     spy.mockRestore();
   });
+
+  it("forwards spec.legend to 'dumbbell' without throwing — a documented no-op today (RM-118 Part B)", () => {
+    // `spec.legend` DOES reach `DumbbellChart` (see the `legend={containerLegend}`
+    // forward in `renderChart`'s "dumbbell" branch) — but `DumbbellChart` only
+    // ever renders a legend for `variant="dots"` with `valueKeys` set, and
+    // `ChartSpec` has no `valueKeys` field (`dumbbellKeys` always resolves
+    // exactly `[startKey, endKey]`, never a longer list). Until the spec
+    // surface grows one, this is an honest no-op, not a broken wire — this
+    // test only proves the prop reaches the chart without throwing and
+    // renders no legend, matching `DumbbellChart`'s own documented behaviour
+    // for every non-"dots" variant.
+    const spec: ChartSpec = {
+      type: "dumbbell",
+      data: [
+        { region: "North", before: 42, after: 61 },
+        { region: "South", before: 31, after: 46 },
+      ],
+      x: "region",
+      series: ["before", "after"],
+      legend: true,
+    };
+    const { container, queryByRole } = render(<AutoChart spec={spec} height={280} />);
+    expect(container.firstChild).toBeInTheDocument();
+    expect(queryByRole("group", { name: "Chart legend" })).not.toBeInTheDocument();
+  });
 });
 
 // BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.

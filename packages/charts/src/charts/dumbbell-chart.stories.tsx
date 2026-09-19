@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { DumbbellChart } from "./dumbbell-chart";
 
@@ -840,5 +840,57 @@ export const DotsPlot: Story = {
     // delta/group-header labels; sweep the widths a real narrowed browser
     // viewport actually gives the chart.
     await assertNoTextOverlapAtWidths(canvasElement, REAL_VIEWPORT_CONTENT_WIDTHS_PX);
+  },
+};
+
+// Legend engine (RM-118): placement + hover only, no toggle (a dumbbell row
+// is a category, not a series — there is nothing per-key to hide).
+/**
+ * `legend` replaces the always-on corner colour key above with the shared
+ * container-legend engine — same three rows, now placement-aware and with a
+ * real hover: pointing at a row dims every OTHER key's dots, on every row.
+ */
+export const LegendPlacement: Story = {
+  name: "Legend, placement and hover",
+  args: {
+    data: productScores,
+    category: "product",
+    startKey: "us",
+    endKey: "rivalB",
+    variant: "dots",
+    valueKeys: ["us", "rivalA", "rivalB"],
+    legend: true,
+  },
+  render: (args) => (
+    <div className="h-80 w-full max-w-[640px]" data-testid="dumbbell-story-wrapper">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    });
+    // The shared engine REPLACES RM-116's own corner badge — never both.
+    expect(
+      canvasElement.querySelector('[data-slot="dumbbell-chart-dot-legend"]'),
+    ).not.toBeInTheDocument();
+    const legend = canvasElement.querySelector(".legend-container");
+    for (const key of ["us", "rivalA", "rivalB"]) {
+      expect(legend?.textContent).toContain(key);
+    }
+    // No toggle affordance (R3) — plain rows, not buttons.
+    expect(canvasElement.querySelectorAll(".legend-container button")).toHaveLength(0);
+
+    const rows = canvasElement.querySelectorAll(".legend-container > div");
+    await userEvent.hover(rows[0] as Element);
+    await waitFor(() => {
+      const dots = canvasElement.querySelectorAll('[data-slot="dumbbell-chart-dot"]');
+      // "us" is the hovered (first) key — its own dots stay at full opacity,
+      // every other key's dots on every row dim.
+      for (const dot of dots) {
+        const isUs = dot.getAttribute("data-dot-key") === "us";
+        expect(dot.getAttribute("opacity")).toBe(isUs ? "1" : "0.35");
+      }
+    });
   },
 };

@@ -1041,3 +1041,106 @@ describe('DumbbellChart variant="dots" (RM-116)', () => {
     expect(getByText("themB")).toBeInTheDocument();
   });
 });
+
+describe("DumbbellChart legend (RM-118)", () => {
+  const scoresData = [
+    { product: "Alpha", us: 40, themA: 55, themB: 70 },
+    { product: "Beta", us: 60, themA: 45, themB: 50 },
+  ];
+
+  it("leaves RM-116's own corner dot-key badge exactly as it always rendered when legend is unset (R1)", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    expect(container.querySelector('[data-slot="dumbbell-chart-dot-legend"]')).toBeInTheDocument();
+    // The new shared engine adds nothing of its own unasked.
+    expect(container.querySelector(".legend-container")).not.toBeInTheDocument();
+  });
+
+  it("legend + variant='dots' replaces the corner badge with the container legend — one row per valueKey, no buttons (no toggle, R3)", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        legend
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    // Old badge is gone — never both at once.
+    expect(
+      container.querySelector('[data-slot="dumbbell-chart-dot-legend"]'),
+    ).not.toBeInTheDocument();
+    const rows = container.querySelectorAll(".legend-container > *");
+    expect(rows).toHaveLength(3);
+    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+  });
+
+  it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (no per-key hide)', () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        legend={{ interactive: "toggle" }}
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    expect(container.querySelectorAll(".legend-container [aria-pressed]")).toHaveLength(0);
+  });
+
+  it("hovering a legend row dims every OTHER dot key's dots, on every row, never the hovered key's own", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        legend
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(3);
+    fireEvent.mouseEnter(rows[0] as Element);
+    // "us" is dotIndex 0, drawn first on every row (2 rows x 3 keys).
+    const dots = container.querySelectorAll('[data-slot="dumbbell-chart-dot"]');
+    expect(dots).toHaveLength(6);
+    for (const dot of dots) {
+      const isUs = dot.getAttribute("data-dot-key") === "us";
+      expect(dot.getAttribute("opacity")).toBe(isUs ? "1" : "0.35");
+    }
+    fireEvent.mouseLeave(rows[0] as Element);
+    for (const dot of dots) {
+      expect(dot.getAttribute("opacity")).toBe("1");
+    }
+  });
+
+  it("a truthy legend on the default 'dumbbell' variant renders nothing — no discrete key to show", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="step"
+        data={[
+          { step: "Sign up", before: 100, after: 100 },
+          { step: "Verify email", before: 82, after: 94 },
+        ]}
+        endKey="after"
+        legend
+        startKey="before"
+      />,
+    );
+    expect(container.querySelector(".legend-container")).not.toBeInTheDocument();
+  });
+});

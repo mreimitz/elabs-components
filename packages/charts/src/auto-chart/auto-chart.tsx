@@ -285,6 +285,7 @@ const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "pie",
   "scatter",
   "treemap",
+  "dumbbell",
 ]);
 
 interface AutoLegendProps {
@@ -861,6 +862,13 @@ function renderChart(
           sortBy={spec.sort as DumbbellSortBy | undefined}
           groupBy={spec.groupBy}
           delta={spec.delta}
+          // RM-118 Part B: forwarded as-is. DumbbellChart only renders a
+          // legend for `variant="dots"` with `valueKeys` set — this spec
+          // surface has no `valueKeys` field yet (`dumbbellKeys` always
+          // resolves exactly `[startKey, endKey]`), so today this is a
+          // no-op for every AutoChart-driven dumbbell, same as an unset
+          // `legend` would be.
+          legend={containerLegend}
         />
       );
     }
