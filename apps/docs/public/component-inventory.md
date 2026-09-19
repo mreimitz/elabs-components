@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 216 | 40 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 218 | 42 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 7 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1137,6 +1137,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ChartTooltipContent | component |  | `@elabs-ai/components-charts` |  |
 | ChartTooltipDot | component |  | `@elabs-ai/components-charts` |  |
 | ChartTooltipIndicator | component |  | `@elabs-ai/components-charts` |  |
+| ChartTooltipInline | component |  | `@elabs-ai/components-charts` |  |
+| ChartTooltipTable | component |  | `@elabs-ai/components-charts` |  |
 | ChoroplethChart | component |  | `@elabs-ai/components-charts` | Region-shaded map for a measure that is defined per geographic area. |
 | ChoroplethFeatureComponent | component |  | `@elabs-ai/components-charts` |  |
 | ChoroplethGraticule | component |  | `@elabs-ai/components-charts` |  |
@@ -1305,6 +1307,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useChartLegendHover | hook |  | `@elabs-ai/components-charts` |  |
 | useChartSeriesKey | hook |  | `@elabs-ai/components-charts` |  |
 | useChartStable | hook |  | `@elabs-ai/components-charts` |  |
+| useChartTooltipValueFormat | hook |  | `@elabs-ai/components-charts` |  |
 | useChartValueSetFormatter | hook |  | `@elabs-ai/components-charts` |  |
 | useChoropleth | hook |  | `@elabs-ai/components-charts` |  |
 | useChoroplethZoom | hook |  | `@elabs-ai/components-charts` |  |
@@ -1330,6 +1333,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useRingStable | hook |  | `@elabs-ai/components-charts` |  |
 | useSankey | hook |  | `@elabs-ai/components-charts` |  |
 | useStaticChartPreview | hook |  | `@elabs-ai/components-charts` |  |
+| useTooltipPin | hook |  | `@elabs-ai/components-charts` |  |
 | useYScale | hook |  | `@elabs-ai/components-charts` |  |
 | WaterfallChart | component |  | `@elabs-ai/components-charts` | Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way. |
 | XAxis | component |  | `@elabs-ai/components-charts` |  |

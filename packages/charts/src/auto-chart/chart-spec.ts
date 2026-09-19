@@ -21,6 +21,7 @@ import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/ba
 import type { BarSort } from "../charts/bar-stacking";
 import type { ChartColorBy } from "../charts/chart-context";
 import type { DumbbellSortBy } from "../charts/dumbbell-layout";
+import type { ChartTooltipVariant } from "../charts/tooltip/chart-tooltip";
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -362,6 +363,32 @@ export interface ChartSpec {
   source?: string | { name: string; href?: string };
   /** Text alternative for the picture; the chart's description when `description` is unset (RM-117). */
   altText?: string;
+
+  // Tooltip presets — RM-119
+  /**
+   * `ChartTooltip`'s own preset, forwarded 1:1 to the `<ChartTooltip>`
+   * `AutoChart` already renders for every line/area/scatter/bar family — see
+   * {@link ChartSpecTooltip}. Unset keeps today's default box.
+   */
+  tooltip?: ChartSpecTooltip;
+}
+
+/**
+ * `ChartSpec.tooltip` (RM-119) — the serialisable subset of `ChartTooltip`'s
+ * `variant` / `focus` / `pin` props.
+ */
+export interface ChartSpecTooltip {
+  /** `ChartTooltip variant`. Default: `"rows"`. */
+  variant?: ChartTooltipVariant;
+  /**
+   * `ChartTooltip focus` — registers "focus requested" on the shared
+   * series-mode context standalone, so RM-112's per-series dim
+   * (`SeriesHoverDim`) fires with no `focusOnHover` needed on the rendered
+   * `LineChart`/`AreaChart` container.
+   */
+  focus?: boolean;
+  /** `ChartTooltip pin`. Unset keeps the coarse-pointer-only default. */
+  pin?: boolean;
 }
 
 // Pie/donut grouping, sort, half preset — RM-114

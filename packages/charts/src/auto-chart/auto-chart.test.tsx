@@ -11,7 +11,7 @@
  *
  * Real render/interaction/a11y is covered by the Storybook stories.
  */
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ── @visx/responsive → fixed 560×288 ─────────────────────────────────────────
@@ -83,6 +83,7 @@ import {
 } from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
 import { ChartFrame } from "../chart-frame/chart-frame";
+import { SELECTION_EXCLUDED_OPACITY } from "../charts/chart-selection";
 
 afterEach(cleanup);
 
@@ -1193,6 +1194,61 @@ describe("AutoChart nulls/curve/symbols pass-through (RM-112)", () => {
       />,
     );
     expect(areaContainer.querySelectorAll("circle").length).toBeGreaterThan(0);
+  });
+});
+
+// Tooltip presets — RM-119
+describe("AutoChart spec.tooltip.focus reaches the line family standalone (RM-119)", () => {
+  const twoSeriesData = [
+    { date: "2024-01-01", a: 10, b: 30 },
+    { date: "2024-01-02", a: 20, b: 25 },
+    { date: "2024-01-03", a: 15, b: 28 },
+  ];
+
+  it("dims the other series on hover with no focusOnHover on the rendered container", async () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: twoSeriesData,
+          x: "date",
+          series: ["a", "b"],
+          tooltip: { focus: true },
+        }}
+        height={280}
+      />,
+    );
+
+    // Same seam the `Focus` story (`tooltip.stories.tsx`) asserts in the
+    // browser: `<ChartTooltip focus />` alone — AutoChart never sets
+    // `focusOnHover` on the `LineChart` it renders — registers "focus
+    // requested" on `ChartSeriesModeProvider` (`time-series-chart-shell.tsx`),
+    // which `SeriesHoverDim` (`series-hover-dim.tsx`) reads to widen each
+    // series' invisible hit-stroke path (RM-112) and gate its dim. No real
+    // timer involved: the reveal animation only tweens the visible stroke's
+    // clip/opacity, never whether these path elements are mounted.
+    await waitFor(() => {
+      expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+    });
+    const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+    const seriesAGroup = paths[0]?.closest("g");
+    const seriesBGroup = paths[1]?.closest("g");
+    expect(seriesAGroup).toBeTruthy();
+    expect(seriesBGroup).toBeTruthy();
+
+    fireEvent.mouseOver(seriesBGroup as Element);
+
+    await waitFor(() => {
+      expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+      expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+    });
+
+    fireEvent.mouseOut(seriesBGroup as Element);
+
+    await waitFor(() => {
+      expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+      expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+    });
   });
 });
 
