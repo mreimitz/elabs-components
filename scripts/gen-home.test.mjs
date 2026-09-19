@@ -19,6 +19,7 @@ import {
   buildAgentLoopRecorded,
   buildBlocks,
   buildCli,
+  buildCreateThemeSkill,
   buildInstall,
   buildPackages,
   buildPlaybooks,
@@ -26,6 +27,7 @@ import {
   buildThemes,
   deriveRoutine,
   layerOf,
+  parseSkillFrontmatter,
 } from "./gen-home.mjs";
 import { HOME_MCP_OPTIONS } from "../apps/home/lib/mcp-site-options.mjs";
 
@@ -323,5 +325,67 @@ test("agent-loop-recorded.json: every recorded answer uses this site's /storyboo
     recorded,
     readOut("agent-loop-recorded.json"),
     "apps/home/content/generated/agent-loop-recorded.json is stale — run `pnpm gen`",
+  );
+});
+
+// ── create-theme.json (RM-103, wave-4 ruling 23: no invented "create-theme" CLI verb) ─────────
+
+test("parseSkillFrontmatter: reads name/description/argument-hint, strips quotes", () => {
+  const text = [
+    "---",
+    "name: brand-ui-create-theme",
+    'argument-hint: "<theme name> [links, file paths, brief]"',
+    'description: some text ending in "/create-theme".',
+    "---",
+    "# body",
+  ].join("\n");
+  assert.deepEqual(parseSkillFrontmatter(text), {
+    name: "brand-ui-create-theme",
+    "argument-hint": "<theme name> [links, file paths, brief]",
+    description: 'some text ending in "/create-theme".',
+  });
+});
+
+test("parseSkillFrontmatter: no frontmatter block is an empty object, never a throw", () => {
+  assert.deepEqual(parseSkillFrontmatter("# just a heading\n"), {});
+});
+
+test("buildCreateThemeSkill: derives the real skill name and its slash form from SKILL.md, never hand-typed", () => {
+  const derived = buildCreateThemeSkill();
+  assert.equal(derived.skill, "brand-ui-create-theme");
+  assert.equal(derived.slashCommand, "/create-theme");
+  assert.ok(
+    derived.argumentHint.length > 0,
+    "argumentHint should come from the skill's own frontmatter",
+  );
+  assert.equal(derived.invocation, `${derived.slashCommand} ${derived.argumentHint}`);
+
+  const skillMd = readFileSync(join(REPO_ROOT, "skills/brand-ui-create-theme/SKILL.md"), "utf8");
+  const fm = parseSkillFrontmatter(skillMd);
+  assert.equal(fm.name, derived.skill, "derived skill name must match SKILL.md's own frontmatter");
+  assert.equal(
+    fm["argument-hint"],
+    derived.argumentHint,
+    "derived argument hint must match SKILL.md's own frontmatter",
+  );
+});
+
+test("buildCreateThemeSkill: there is still no create-theme CLI verb to derive this from instead", () => {
+  const manifest = JSON.parse(readFileSync(join(REPO_ROOT, "brand-ui.manifest.json"), "utf8"));
+  const cli = buildCli(manifest);
+  const verbs = Object.values(cli.verbGroups)
+    .flat()
+    .map((v) => v.verb);
+  assert.ok(
+    !verbs.includes("create-theme"),
+    "a real create-theme CLI verb appeared — buildCreateThemeSkill should derive from cli.json instead of the skill",
+  );
+});
+
+test("FRESH: apps/home/content/generated/create-theme.json equals what the skill's SKILL.md derives", () => {
+  assert.deepEqual(
+    buildCreateThemeSkill(),
+    readOut("create-theme.json"),
+    "apps/home/content/generated/create-theme.json is stale — run `pnpm gen`",
   );
 });
