@@ -17,7 +17,6 @@ import {
   type ChartDensity,
   type ChartInteractions,
 } from "../charts/chart-config-context";
-import { useChartStable } from "../charts/chart-context";
 import {
   exportChartPng,
   exportChartSvg,
@@ -397,33 +396,6 @@ function mergeChrome(registry: Registry<ChartFrameChromeInput>): ChartFrameChrom
 /** The frame around this subtree, or `null` outside one (RM-117). */
 export function useOptionalChartFrame(): ChartFrameContextValue | null {
   return use(ChartFrameContext);
-}
-
-/**
- * Publishes the enclosing chart's series colours to its frame (RM-117), so an
- * `InlineChip` in the frame's description paints the same ink. Called by the
- * axes — every cartesian chart renders one. No-op outside a frame.
- */
-export function useChartFrameSeriesBridge(): void {
-  const frame = use(ChartFrameContext);
-  const { lines, legendItems } = useChartStable();
-  const id = useId();
-  const register = frame?.actions.registerSeries;
-  const entries = useMemo<ChartFrameSeriesEntry[]>(
-    () => [
-      ...lines.map((l) => ({ key: l.dataKey, color: l.stroke })),
-      ...(legendItems ?? []).map((e) => ({
-        key: e.key,
-        color: e.color,
-        label: e.label,
-      })),
-    ],
-    [lines, legendItems],
-  );
-  useEffect(() => {
-    if (!register) return undefined;
-    return register(id, entries);
-  }, [register, id, entries]);
 }
 
 /** Hands editorial chrome up to the enclosing frame (RM-117). No-op outside one. */

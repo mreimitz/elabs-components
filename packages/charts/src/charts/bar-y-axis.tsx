@@ -14,7 +14,7 @@ import {
 } from "./category-axis-plan";
 import { thinToDensity, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
-import { useChartFrameSeriesBridge } from "../chart-frame/chart-frame-context";
+import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
 import { useTextMeasurer } from "./use-text-measurer";
 
 export interface BarYAxisProps {

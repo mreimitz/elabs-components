@@ -7,7 +7,7 @@ import { HairlineFloor } from "../marks/hairline-floor";
 import { AxisTitle, type AxisTitlePlacement } from "./axis-title";
 import { CHART_DENSITY_SM_MAX_TICKS, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
-import { useChartFrameSeriesBridge } from "../chart-frame/chart-frame-context";
+import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
 import { makeDateFmtForPreset, shortDateFmt } from "./chart-formatters";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { dateFormatForSpan, finerDateFormatPreset, type DateFormatPreset } from "./date-format";

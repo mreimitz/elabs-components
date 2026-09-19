@@ -11,9 +11,41 @@
  * and the chip itself carries the series name as its accessible name.
  */
 
-import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
+import { forwardRef, type HTMLAttributes, type ReactNode, useEffect, useId, useMemo } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { useOptionalChartFrame } from "./chart-frame-context";
+import { useChartStable } from "../charts/chart-context";
+import { type ChartFrameSeriesEntry, useOptionalChartFrame } from "./chart-frame-context";
+
+/**
+ * Publishes the enclosing chart's series colours to its frame (RM-117), so an
+ * `InlineChip` in the frame's description paints the same ink. Called by the
+ * axes — every cartesian chart renders one. No-op outside a frame.
+ *
+ * It lives here, not in `chart-frame-context.tsx`, because it reads the chart
+ * context: the frame context stays free of the chart engine's import graph,
+ * which `@elabs-ai/components-charts/test` re-exports.
+ */
+export function useChartFrameSeriesBridge(): void {
+  const frame = useOptionalChartFrame();
+  const { lines, legendItems } = useChartStable();
+  const id = useId();
+  const register = frame?.actions.registerSeries;
+  const entries = useMemo<ChartFrameSeriesEntry[]>(
+    () => [
+      ...lines.map((l) => ({ key: l.dataKey, color: l.stroke })),
+      ...(legendItems ?? []).map((e) => ({
+        key: e.key,
+        color: e.color,
+        label: e.label,
+      })),
+    ],
+    [lines, legendItems],
+  );
+  useEffect(() => {
+    if (!register) return undefined;
+    return register(id, entries);
+  }, [register, id, entries]);
+}
 
 export interface InlineChipProps extends HTMLAttributes<HTMLSpanElement> {
   /** The series key (`dataKey`) whose colour the chip takes. */

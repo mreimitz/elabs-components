@@ -7,7 +7,7 @@ import { useChartValueSetFormatter } from "./chart-formatters";
 import type { ChartValueFormat } from "./value-format";
 import { useChartConfig } from "./chart-config-context";
 import { useChartStable, useYScale } from "./chart-context";
-import { useChartFrameSeriesBridge } from "../chart-frame/chart-frame-context";
+import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
 import { type AxisTickCount, resolveAxisTickTarget, tickTargetForHeight } from "./tick-targets";
