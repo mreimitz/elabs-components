@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T10:35:10.196Z",
+  "generatedAt": "2026-09-19T11:34:14.112Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18990,7 +18990,7 @@
             {
               "name": "layout",
               "optional": true,
-              "type": "\"row\" | \"stack\"",
+              "type": "\"row\" | \"stack\" | \"split\"",
               "description": "Item flow direction (RM-118, sitting 3). `\"stack\"` (default — every caller before this prop existed) is byte-identical to before: one item per line. `\"row\"` wraps items left-to-right (`flex-wrap`), matching the layout `AutoChart`'s old `AutoLegend` used, AND drops the `w-full` an interactive (`onItemClick`/toggle) item otherwise gets — `w-full` inside a row would force every item onto its own line regardless of this prop. `useContainerLegend` (the container legend engine) passes its own resolved `layout` (\"row\" at `base`/`medium`/`wide`, \"stack\" at `narrow` or density `sm`) through; a direct caller may set its own or leave it unset for the original stacked behaviour."
             },
             {
@@ -19409,8 +19409,8 @@
             {
               "name": "stacked",
               "optional": true,
-              "type": "boolean",
-              "description": "Stack `SeriesBar` segments in child order at each x (line/area are not stacked)."
+              "type": "boolean | \"percent\"",
+              "description": "Stack `SeriesBar` segments in child order at each x (line/area are not stacked). `\"percent\"` (RM-121) stacks each x to 100 % through `bar-stacking.ts`: the primary `YAxis` is pinned to 0–100 % and prints percent unless it sets its own format, and the tooltip keeps the raw values. Put line/area series on another `yAxisId` beside it."
             },
             {
               "name": "stackGap",
