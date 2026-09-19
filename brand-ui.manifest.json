@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T20:57:11.941Z",
+  "generatedAt": "2026-09-19T00:53:37.618Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -34299,6 +34299,11 @@
           "module": "packages/ui/src/components/locale-provider/messages.ts"
         },
         {
+          "name": "DEFAULT_SPEC_PLAYGROUND_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
           "name": "DEFAULT_SURFACE_TOUR_ACTIONS_LABELS",
           "kind": "value",
           "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
@@ -35427,6 +35432,11 @@
           "name": "SliderNumber",
           "kind": "value",
           "module": "packages/ui/src/components/slider-number/slider-number.tsx"
+        },
+        {
+          "name": "SpecPlayground",
+          "kind": "value",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
         },
         {
           "name": "Spinner",
@@ -36734,6 +36744,30 @@
         {
           "name": "SliderThumbProps",
           "module": "packages/ui/src/components/slider/slider.tsx"
+        },
+        {
+          "name": "SpecPlaygroundError",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundExample",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundLabels",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundProps",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundStatus",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundValidation",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
         },
         {
           "name": "SpinnerProps",
@@ -41016,6 +41050,72 @@
             }
           ]
         },
+        "SpecPlayground": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onChange\" | \"defaultValue\"\n>"
+          ],
+          "props": [
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "The JSON text (controlled)."
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string",
+              "description": "Initial JSON text (uncontrolled); also what `Reset` restores. Default: the first example."
+            },
+            {
+              "name": "onChange",
+              "optional": true,
+              "type": "(value: string) => void",
+              "description": "Called with the new text on every edit, example load and reset."
+            },
+            {
+              "name": "validate",
+              "optional": false,
+              "type": "(json: unknown) => SpecPlaygroundValidation<TSpec>",
+              "description": "Checks the parsed JSON; the errors shown are exactly the ones it returns."
+            },
+            {
+              "name": "render",
+              "optional": false,
+              "type": "(spec: TSpec) => ReactNode",
+              "description": "Renders a validated spec."
+            },
+            {
+              "name": "examples",
+              "optional": true,
+              "type": "readonly SpecPlaygroundExample[]",
+              "description": "Entries of the `Load example` menu (the menu is hidden without any)."
+            },
+            {
+              "name": "editor",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The editor. Bind it to `value`/`onChange` yourself. Default: a `Textarea`, so the playground works without a code editor."
+            },
+            {
+              "name": "onErrorSelect",
+              "optional": true,
+              "type": "(error: SpecPlaygroundError, line: number | undefined) => void",
+              "description": "Called when an error is chosen, with the editor line its path resolves to — move a custom editor's caret there. The default textarea handles this itself."
+            },
+            {
+              "name": "debounceMs",
+              "optional": true,
+              "type": "number",
+              "description": "Milliseconds between the last edit and validation. Default 250."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<SpecPlaygroundLabels>"
+            }
+          ]
+        },
         "Spinner": {
           "extends": [
             "React.SVGProps<SVGSVGElement>"
@@ -42704,6 +42804,7 @@
         "SkipLink": "navigation-skiplink--docs",
         "Slider": "forms-slider--docs",
         "SliderNumber": "forms-slidernumber--docs",
+        "SpecPlayground": "display-specplayground--docs",
         "Spinner": "display-spinner--docs",
         "SplitPanel": "layout-splitpanel--docs",
         "StatePanel": "states-statepanel--docs",

@@ -130,6 +130,7 @@
   "Display/RevealOnEnter": {"name":"RevealOnEnter","package":"@elabs-ai/components-ui","storyId":"display-revealonenter--docs"},
   "Display/ScrollArea": {"name":"ScrollArea","package":"@elabs-ai/components-ui","storyId":"display-scrollarea--docs"},
   "Display/Separator": {"name":"Separator","package":"@elabs-ai/components-ui","storyId":"display-separator--docs"},
+  "Display/SpecPlayground": {"name":"SpecPlayground","package":"@elabs-ai/components-ui","storyId":"display-specplayground--docs"},
   "Display/Spinner": {"name":"Spinner","package":"@elabs-ai/components-ui","storyId":"display-spinner--docs"},
   "Editor/AiObjects/DecisionCard": {"name":"DecisionCard","package":"@elabs-ai/components-editor/markdown","storyId":"editor-aiobjects-decisioncard--docs"},
   "Editor/CalcBlock": {"name":"CalcBlock","package":"@elabs-ai/components-editor/markdown","storyId":"editor-calcblock--docs"},

@@ -241,6 +241,7 @@
   "Slider": "forms-slider--docs",
   "SliderNumber": "forms-slidernumber--docs",
   "Sparkline": "charts-sparkline--docs",
+  "SpecPlayground": "display-specplayground--docs",
   "SpendAgainstLimit": "patterns-blocks-agent-ops-how-close-is-each-agent-to-its-ceiling-spend-against-limit--docs",
   "Spinner": "display-spinner--docs",
   "SplitPanel": "layout-splitpanel--docs",

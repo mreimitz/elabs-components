@@ -1,0 +1,349 @@
+{
+  "a2ui": [
+    {
+      "id": "cli-example",
+      "source": "brand-ui a2ui example",
+      "value": {
+        "a2ui": "1",
+        "title": "Order 4711",
+        "root": {
+          "type": "Card",
+          "children": [
+            {
+              "type": "CardHeader",
+              "children": [
+                {
+                  "type": "CardTitle",
+                  "children": ["Order 4711"]
+                },
+                {
+                  "type": "CardDescription",
+                  "children": ["Placed today · awaiting approval"]
+                },
+                {
+                  "type": "CardAction",
+                  "children": [
+                    {
+                      "type": "StatusBadge",
+                      "props": {
+                        "status": "awaiting-approval"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "CardContent",
+              "children": [
+                {
+                  "type": "Grid",
+                  "props": {
+                    "columns": 3
+                  },
+                  "children": [
+                    {
+                      "type": "MetricCard",
+                      "props": {
+                        "label": "Total",
+                        "value": 1240,
+                        "valueFormat": "currency",
+                        "currency": "EUR"
+                      }
+                    },
+                    {
+                      "type": "MetricCard",
+                      "props": {
+                        "label": "Lines",
+                        "value": 3
+                      }
+                    },
+                    {
+                      "type": "MetricCard",
+                      "props": {
+                        "label": "Margin",
+                        "value": 0.31,
+                        "valueFormat": "percent",
+                        "delta": "+2.1 pts",
+                        "deltaDirection": "up"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "CardFooter",
+              "children": [
+                {
+                  "type": "Stack",
+                  "props": {
+                    "direction": "row",
+                    "gap": "sm",
+                    "justify": "end"
+                  },
+                  "children": [
+                    {
+                      "type": "Button",
+                      "props": {
+                        "variant": "outline"
+                      },
+                      "on": {
+                        "click": {
+                          "name": "open-order",
+                          "payload": {
+                            "id": 4711
+                          }
+                        }
+                      },
+                      "children": ["Open"]
+                    },
+                    {
+                      "type": "Button",
+                      "on": {
+                        "click": {
+                          "name": "approve",
+                          "payload": {
+                            "id": 4711
+                          }
+                        }
+                      },
+                      "children": ["Approve"]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "form",
+      "source": "apps/home/content/examples/a2ui-form.json",
+      "value": {
+        "a2ui": "1",
+        "title": "Request access",
+        "root": {
+          "type": "Card",
+          "children": [
+            {
+              "type": "CardHeader",
+              "children": [
+                {
+                  "type": "CardTitle",
+                  "children": ["Request access"]
+                },
+                {
+                  "type": "CardDescription",
+                  "children": ["The agent needs one answer before it can continue"]
+                }
+              ]
+            },
+            {
+              "type": "CardContent",
+              "children": [
+                {
+                  "type": "Stack",
+                  "props": {
+                    "gap": "sm"
+                  },
+                  "children": [
+                    {
+                      "type": "Label",
+                      "props": {
+                        "htmlFor": "access-reason"
+                      },
+                      "children": ["Why do you need access?"]
+                    },
+                    {
+                      "type": "Input",
+                      "props": {
+                        "id": "access-reason",
+                        "placeholder": "Quarter-end reporting"
+                      },
+                      "on": {
+                        "change": {
+                          "name": "reason-changed"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Stack",
+                      "props": {
+                        "direction": "row",
+                        "gap": "sm",
+                        "align": "center"
+                      },
+                      "children": [
+                        {
+                          "type": "Switch",
+                          "props": {
+                            "id": "access-notify",
+                            "aria-label": "Notify my manager"
+                          }
+                        },
+                        {
+                          "type": "Label",
+                          "props": {
+                            "htmlFor": "access-notify"
+                          },
+                          "children": ["Notify my manager"]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "CardFooter",
+              "children": [
+                {
+                  "type": "Button",
+                  "on": {
+                    "click": {
+                      "name": "submit-request",
+                      "payload": {
+                        "form": "access"
+                      }
+                    }
+                  },
+                  "children": ["Send request"]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kpi-grid",
+      "source": "apps/home/content/examples/a2ui-kpi-grid.json",
+      "value": {
+        "a2ui": "1",
+        "title": "Support this week",
+        "root": {
+          "type": "Stack",
+          "props": {
+            "gap": "md"
+          },
+          "children": [
+            {
+              "type": "SectionHeader",
+              "props": {
+                "title": "Support this week",
+                "description": "Three numbers an agent pulled from the helpdesk"
+              }
+            },
+            {
+              "type": "Grid",
+              "props": {
+                "columns": 3
+              },
+              "children": [
+                {
+                  "type": "MetricCard",
+                  "props": {
+                    "label": "Open tickets",
+                    "value": 42,
+                    "delta": "-6",
+                    "deltaDirection": "down"
+                  }
+                },
+                {
+                  "type": "MetricCard",
+                  "props": {
+                    "label": "First response",
+                    "value": "1 h 12 min"
+                  }
+                },
+                {
+                  "type": "MetricCard",
+                  "props": {
+                    "label": "Solved on first reply",
+                    "value": 0.64,
+                    "valueFormat": "percent"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Stack",
+              "props": {
+                "direction": "row",
+                "justify": "end"
+              },
+              "children": [
+                {
+                  "type": "Button",
+                  "props": {
+                    "variant": "outline"
+                  },
+                  "on": {
+                    "click": {
+                      "name": "open-queue",
+                      "payload": {
+                        "queue": "tier-1"
+                      }
+                    }
+                  },
+                  "children": ["Open the queue"]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "dashboardSpec": [
+    {
+      "id": "minimal",
+      "source": "packages/charts/src/dashboard/core/__fixtures__/minimal.json",
+      "value": {
+        "version": 1,
+        "id": "minimal",
+        "grid": {
+          "mode": "fit",
+          "columns": 24,
+          "rows": 12
+        },
+        "tiles": [
+          {
+            "id": "revenue",
+            "kind": "chart",
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "w": 12,
+              "h": 6
+            },
+            "title": "Revenue grew 12 % year on year",
+            "content": {
+              "type": "bar",
+              "title": "Revenue",
+              "data": [
+                {
+                  "x": "Q1",
+                  "revenue": 10
+                },
+                {
+                  "x": "Q2",
+                  "revenue": 14
+                }
+              ],
+              "x": "x",
+              "series": [
+                {
+                  "key": "revenue",
+                  "label": "Revenue"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
