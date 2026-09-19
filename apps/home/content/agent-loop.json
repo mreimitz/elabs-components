@@ -1,0 +1,52 @@
+{
+  "$comment": "RM-099 — the curated prompt map behind the “Ask your agent” loop. Hand-authored: prompt text, the MCP tool calls to show, and what renders. `blocks` are registry block ids (copy-owned under components/blocks/); `surface` names a site composition for a prompt no library-only block covers. The recorded responses for the offline fallback are GENERATED into content/generated/agent-loop-recorded.json by `pnpm gen --only home` — never typed here.",
+  "prompts": [
+    {
+      "id": "kpi-overview",
+      "text": "Build me a KPI overview for churn with a trend and a movers list",
+      "calls": [
+        { "tool": "search", "args": { "query": "kpi overview churn trend movers" } },
+        { "tool": "docs", "args": { "component": "Sparkline" } }
+      ],
+      "blocks": ["kpi-movers-01", "kpi-trend-reference-01"]
+    },
+    {
+      "id": "status-card",
+      "text": "A status card that tells me if I should act",
+      "calls": [
+        { "tool": "chart_for", "args": { "shape": "single value against a target threshold" } },
+        { "tool": "docs", "args": { "component": "StatusBadge" } }
+      ],
+      "blocks": ["kpi-status-threshold-01"]
+    },
+    {
+      "id": "region-map",
+      "text": "Show revenue by region on a map",
+      "calls": [
+        { "tool": "search", "args": { "query": "map revenue by region" } },
+        { "tool": "docs", "args": { "component": "MapCanvas" } }
+      ],
+      "blocks": [],
+      "surface": "region-map"
+    },
+    {
+      "id": "dashboard",
+      "text": "A small dashboard I can rearrange",
+      "calls": [
+        { "tool": "search", "args": { "query": "dashboard rearrange tiles" } },
+        { "tool": "docs", "args": { "component": "AutoChart" } }
+      ],
+      "blocks": [],
+      "surface": "dashboard-sheet"
+    },
+    {
+      "id": "cohort-retention",
+      "text": "What chart fits monthly retention by cohort?",
+      "calls": [
+        { "tool": "chart_for", "args": { "shape": "cohort by month, two categorical axes" } },
+        { "tool": "docs", "args": { "component": "HeatmapChart" } }
+      ],
+      "blocks": ["infographic-cohort-retention-01"]
+    }
+  ]
+}
