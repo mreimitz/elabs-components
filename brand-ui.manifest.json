@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T06:17:33.637Z",
+  "generatedAt": "2026-09-19T10:08:05.851Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17808,7 +17808,7 @@
               "name": "colorBy",
               "optional": true,
               "type": "ChartColorBy",
-              "description": "Colour each bar by another column through `resolvePalette` (six hues, then the neutral ladder with a dev warning) and show a colour key."
+              "description": "Colour each bar by another column through `resolvePalette` (six hues, then the neutral ladder with a dev warning) and show a colour key. One key per chart (RM-118 R4): whenever this produces a non-empty colour key, the `legend` container legend below YIELDS and renders nothing — `colorBy`'s own key already covers the same job, and `interactive: \"toggle\"` has no effect in that mode (there is no container legend to press)."
             },
             {
               "name": "track",
@@ -17887,6 +17887,12 @@
               "optional": true,
               "type": "ChartPalette",
               "description": "Default fill for `Bar` children that don't set their own `fill`, via `resolvePalette` (RM-018) over the series count — so, for example, nine unfilled `Bar` series degrade to the neutral ladder with a dev warning instead of nine bars painted identically. A `Bar` with an explicit `fill` is never touched. Default: `\"categorical\"` (`resolvePalette`'s own default) — but see `applyBarPalette`: it only ever assigns colours to SERIES THAT WOULD OTHERWISE COLLIDE (2+ unfilled `Bar` children), so a chart with a single unfilled `Bar` keeps today's `--chart-line-primary`."
+            },
+            {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
             }
           ]
         },
@@ -19484,6 +19490,12 @@
               "optional": true,
               "type": "readonly ChartAnnotation[]",
               "description": "Declarative annotations in data units (RM-111): text notes, ranges, reference lines and row notes. Ranges paint under the series, the rest over them; at the `narrow` tier each text note becomes a numbered marker listed in a key under the plot, and every annotation is restated once in the figure description. A row note tracks its row by category, so it still lands on the right row after `sortBy`/`groupBy` reorders it."
+            },
+            {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Renders a legend (RM-118) for `variant=\"dots\"` only — one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. Every other variant (`\"dumbbell\"`, `\"slope\"`, `\"arrow\"`) has no discrete key shared across rows to legend — each row IS its own category, already labelled beside its own mark — so a truthy `legend` renders nothing there."
             }
           ]
         },
@@ -21360,6 +21372,12 @@
               "description": "Slice labels (RM-114, Datawrapper parity) — inside/outside placement, `label`/`value`/`percent` facts, leaders on the outside ring. Unset renders nothing extra (today's behavior)."
             },
             {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Container legend (RM-118): one swatch per slice, mounted outside the plot via `useContainerLegend`. Unset renders nothing (R1) — today's behavior. Pie has no competing on-chart key the way `colorBy` (Bar) or RM-115's colour/shape key (Scatter) do, so R4's \"one key per chart\" never applies here. Hover-only (R3): hovering or focusing a legend item reuses Pie's own existing single-slice hover state — the SAME one a pointer hovering a slice already writes into (`hoveredIndex`/`onHoverChange` above) — so a legend hover and a pointer hover dim every other slice identically. An `interactive: \"toggle\"` request downgrades to `\"hover\"`: Pie has no hide-a-slice wiring yet (a hidden slice would silently change every other slice's percentage, which needs its own design pass — tracked as a follow-up, not built here)."
+            },
+            {
               "name": "groupSmall",
               "optional": true,
               "type": "PieGroupSmallOptions",
@@ -22208,6 +22226,12 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
+            },
+            {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Renders a legend beside the plot via `useContainerLegend` (RM-118). Unset renders nothing (R1). `true` uses the default placement/layout; `{ position, layout, values, title }` refines it — `interactive` is capped at `\"hover\"` (a legend row highlights on hover/focus but never toggles a series' visibility — Scatter has no per-series hide, unlike `BarChart`). One key per chart (RM-118 R4): when any `<Scatter colorBy>` child resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts` — the same categorical/sequential/diverging stops the points themselves draw), the legend lists THAT key instead of the plain per-series (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are not represented here — the legend engine has no shape-swatch marker yet (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart keeps the plain per-series legend."
             }
           ]
         },
