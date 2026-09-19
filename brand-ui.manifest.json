@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T05:11:32.023Z",
+  "generatedAt": "2026-09-19T06:17:33.637Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17400,7 +17400,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a band and re-tweens the y-domain. Unset (default) renders NOTHING new — RM-110's end labels stay the default multi-series key for `AreaChart`, unlike `useContainerLegend`'s generic \"on when there's more than one item\" default."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a band and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `AreaChart`."
             }
           ]
         },
@@ -18795,6 +18795,12 @@
               "description": "Title shown above the legend"
             },
             {
+              "name": "layout",
+              "optional": true,
+              "type": "\"row\" | \"stack\"",
+              "description": "Item flow direction (RM-118, sitting 3). `\"stack\"` (default — every caller before this prop existed) is byte-identical to before: one item per line. `\"row\"` wraps items left-to-right (`flex-wrap`), matching the layout `AutoChart`'s old `AutoLegend` used, AND drops the `w-full` an interactive (`onItemClick`/toggle) item otherwise gets — `w-full` inside a row would force every item onto its own line regardless of this prop. `useContainerLegend` (the container legend engine) passes its own resolved `layout` (\"row\" at `base`/`medium`/`wide`, \"stack\" at `narrow` or density `sm`) through; a direct caller may set its own or leave it unset for the original stacked behaviour."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string",
@@ -19143,6 +19149,12 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
+            },
+            {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new — same R1 as `LineChart`/`AreaChart`."
             }
           ]
         },
@@ -20593,7 +20605,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new — RM-110's end labels stay the default multi-series key for `LineChart`, unlike `useContainerLegend`'s generic \"on when there's more than one item\" default."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `LineChart`."
             }
           ]
         },
