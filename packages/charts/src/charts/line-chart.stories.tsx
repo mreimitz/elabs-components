@@ -950,16 +950,23 @@ export const SelectionStates: Story = {
  * legend item (Refs #545). At `narrow` the legend moves above the plot and
  * stacks.
  */
-export const LegendToggle: Story = {
-  name: "Legend toggle, right of plot",
-  render: () => (
-    <div className="h-72 w-full max-w-[720px]">
+/**
+ * Mirrors the chart's own reported `chartPhase` onto a `data-phase`
+ * attribute so `play()` can tell "still revealing" from "entrance settled"
+ * in a real browser, same pattern as `bar-chart.stories.tsx`'s reveal
+ * demos.
+ */
+function LegendTogglePlot() {
+  const [phase, setPhase] = useState<string>("");
+  return (
+    <div className="h-72 w-full max-w-[720px]" data-phase={phase}>
       <LineChart
         aspectRatio={undefined}
         data={chartData}
         focusOnHover
         legend={{ position: "right", interactive: "toggle" }}
         onDatapointClick={() => {}}
+        onPhaseChange={setPhase}
       >
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" name="Users" stroke="var(--chart-1)" />
@@ -969,7 +976,12 @@ export const LegendToggle: Story = {
         <ChartTooltip />
       </LineChart>
     </div>
-  ),
+  );
+}
+
+export const LegendToggle: Story = {
+  name: "Legend toggle, right of plot",
+  render: () => <LegendTogglePlot />,
   play: async ({ canvasElement }) => {
     const yTicks = () =>
       [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
@@ -995,55 +1007,118 @@ export const LegendToggle: Story = {
       const n = Number(digits);
       return suffix === "K" ? n * 1_000 : suffix === "M" ? n * 1_000_000 : n;
     };
+    const topTick = () => parseTick(yTicks().at(-1) ?? "");
+
+    // Validator round 2: the old assertion snapshotted `yTicks()` as
+    // "before" right after the axis first painted — which can itself land
+    // mid-reveal, since the entrance animation morphs the domain over
+    // `animationDuration` (1100ms default). Comparing a later read against
+    // that mid-flight "before" races the reveal: in real Chromium at normal
+    // motion (`reducedMotion: 'no-preference'`), the storybook vitest gate's
+    // forced `reducedMotion: 'reduce'` never exercised. Fixed by dropping
+    // the "before" snapshot entirely — assert against thresholds computed
+    // from the story's own data instead, only once the chart has SETTLED.
+    const sessionsMax = Math.max(...chartData.map((d) => d.sessions));
+
+    /**
+     * Settling has two parts, neither of which is a fixed duration: the
+     * entrance reveal (`chartPhase` reaches `"ready"`) and, separately, the
+     * y-domain tween a legend toggle drives — which runs entirely WITHIN
+     * `chartPhase === "ready"` and so never itself shows up as a phase
+     * change (`use-animated-y-domains.ts`, the FAIL 1a comment). Polling the
+     * top tick until it stops moving across two animation frames catches
+     * that second part without assuming any duration — same real-time
+     * behaviour whether the tween runs its full default duration or snaps
+     * instantly under `prefers-reduced-motion`.
+     */
+    const waitForSettledTopTick = async (): Promise<number> => {
+      await waitFor(
+        () =>
+          expect(canvasElement.querySelector("[data-phase]")).toHaveAttribute(
+            "data-phase",
+            "ready",
+          ),
+        // The entrance reveal itself runs up to `animationDuration` (1100ms
+        // default) from mount, and the toggle lands mid-reveal on purpose —
+        // the default `waitFor` timeout (1000ms) can be shorter than what's
+        // left of the reveal at that point.
+        { timeout: 5000 },
+      );
+      return new Promise<number>((resolve, reject) => {
+        const start = performance.now();
+        let last = topTick();
+        let stableFrames = 0;
+        const tick = () => {
+          const current = topTick();
+          if (current === last) {
+            stableFrames++;
+          } else {
+            stableFrames = 0;
+            last = current;
+          }
+          if (stableFrames >= 2) {
+            resolve(current);
+            return;
+          }
+          if (performance.now() - start > 5000) {
+            reject(new Error(`top y-tick never settled (last read: ${current})`));
+            return;
+          }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+    };
 
     // "sessions" (3100–4300) is the max series here; "users" tops out at
-    // 1520 — hiding sessions must shrink the top tick toward ~1.5K, keyboard
-    // operated. This chart mounts at the DEFAULT `animationDuration`
-    // (1100ms) on purpose (RM-118, validator FAIL 1a round 2): toggling
-    // WHILE the chart is still revealing is exactly the case that used to
-    // stay frozen until the entrance animation happened to finish — see the
-    // fail-before/pass-after unit test in `time-series-chart-shell.test.tsx`
-    // ("recomputes even when toggled mid-reveal"). This story exercises the
-    // real, non-zero-duration path end to end.
+    // 1520 — hiding sessions must shrink the top tick below the full-data
+    // max, keyboard operated. This chart mounts at the DEFAULT
+    // `animationDuration` (1100ms) on purpose (RM-118, validator FAIL 1a
+    // round 2): toggling WHILE the chart is still revealing is exactly the
+    // case that used to stay frozen until the entrance animation happened to
+    // finish — see the fail-before/pass-after unit test in
+    // `time-series-chart-shell.test.tsx` ("recomputes even when toggled
+    // mid-reveal"). This story exercises the real, non-zero-duration path
+    // end to end; the toggle below still lands mid-reveal, only the
+    // ASSERTION no longer depends on when it happened to land.
     await waitFor(() => expect(yTicks().length).toBeGreaterThan(0));
-    const before = yTicks();
 
-    // Toggle within the first ~500ms after mount — still mid-reveal.
+    // Toggle within the first ~500ms after mount — still mid-reveal. There is
+    // no trustworthy "before" value yet (the reveal is still moving the
+    // domain on its own), so the hidden state is checked the only
+    // motion-independent way available: strictly below the full-data max.
     const sessionsToggle = legendToggle(/sessions/i) as HTMLButtonElement;
     sessionsToggle.focus();
     await userEvent.keyboard("{Enter}");
     await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "false"));
+    const hiddenMidReveal = await waitForSettledTopTick();
+    expect(hiddenMidReveal).toBeLessThan(sessionsMax);
 
-    // Give the reveal (1100ms) and the y-domain tween time to fully settle,
-    // then confirm the ticks actually shrank — not just eventually, but as
-    // the direct result of the toggle that landed mid-reveal.
-    await waitFor(() => expect(yTicks()).not.toEqual(before), { timeout: 5000 });
-    const afterMidRevealHide = yTicks();
-    await expect(parseTick(afterMidRevealHide.at(-1) ?? "")).toBeLessThan(
-      parseTick(before.at(-1) ?? ""),
-    );
-
+    // Toggle back on. By now the entrance reveal is long done (it only ever
+    // ran up to 1100ms from mount), so this settled read IS trustworthy —
+    // the first point in the interaction where comparing against it is safe.
     sessionsToggle.focus();
     await userEvent.keyboard("{Enter}");
     await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "true"));
-    await waitFor(() => expect(yTicks()).toEqual(before), { timeout: 5000 });
+    const shownAfterMidReveal = await waitForSettledTopTick();
+    expect(shownAfterMidReveal).toBeGreaterThan(hiddenMidReveal);
 
     // The normal case: toggling well AFTER the reveal has settled (chart is
-    // long "ready" by now) still hides and re-shows correctly — ticks
-    // shrink on hide, restore on re-show.
+    // long "ready" by now) still hides and re-shows correctly — every
+    // comparison below is settled-to-settled, never against a mid-reveal
+    // read.
     sessionsToggle.focus();
     await userEvent.keyboard("{Enter}");
     await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "false"));
-    await waitFor(() => expect(yTicks()).not.toEqual(before));
-    const afterSettledHide = yTicks();
-    await expect(parseTick(afterSettledHide.at(-1) ?? "")).toBeLessThan(
-      parseTick(before.at(-1) ?? ""),
-    );
+    const hiddenSettled = await waitForSettledTopTick();
+    expect(hiddenSettled).toBeLessThan(sessionsMax);
+    expect(hiddenSettled).toBeLessThan(shownAfterMidReveal);
 
     sessionsToggle.focus();
     await userEvent.keyboard("{Enter}");
     await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "true"));
-    await waitFor(() => expect(yTicks()).toEqual(before));
+    const shownSettled = await waitForSettledTopTick();
+    expect(shownSettled).toBeGreaterThan(hiddenSettled);
     // Settle focus back to the body — otherwise the interaction ends with the
     // legend's own hover/focus dim still applied to the neighbouring item,
     // which the a11y gate correctly flags on ITS OWN contrast (unrelated to
