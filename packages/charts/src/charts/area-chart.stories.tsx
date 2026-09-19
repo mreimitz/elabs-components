@@ -234,6 +234,9 @@ export const Streamgraph: Story = {
 /**
  * `seams={2}` — a `--chart-background` stroke drawn between bands, the F16
  * "paper seam" that visually separates each ribbon from its neighbour.
+ * `seams` IS this package's separator-lines feature for stacked areas
+ * (Datawrapper's "separator lines" option) — there is no additional
+ * `separatorLines` prop.
  */
 export const StreamWithSeams: Story = {
   render: () => (
@@ -453,6 +456,84 @@ function SelectionProof({ children, className }: { children: ReactNode; classNam
     </div>
   );
 }
+
+// nulls — a null at index 3 (not an edge), matching `Line`'s identical fixture.
+const nullsData = [
+  { date: new Date(2024, 0, 1), value: 10 },
+  { date: new Date(2024, 0, 2), value: 18 },
+  { date: new Date(2024, 0, 3), value: 14 },
+  { date: new Date(2024, 0, 4), value: null },
+  { date: new Date(2024, 0, 5), value: 22 },
+  { date: new Date(2024, 0, 6), value: 19 },
+];
+
+/**
+ * `nulls` (RM-112). `"gap"` (the default) breaks the fill/crest at a
+ * non-numeric sample; `"connect"` bridges straight across it; `"zero"` (the
+ * pre-RM-112 default) reads it as 0 — same three modes, same resolution, as
+ * `Line`'s `nulls`.
+ */
+export const Nulls: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <AreaChart animationDuration={0} aspectRatio={undefined} data={nullsData}>
+        <Grid horizontal />
+        <Area dataKey="value" fill="var(--chart-1)" nulls="gap" stroke="var(--chart-1)" />
+        <XAxis />
+      </AreaChart>
+    </div>
+  ),
+};
+
+/**
+ * `symbols` (RM-112) — the same shared `resolveSeriesSymbols` rule as
+ * `Line symbols`: unset placement on a ≤12-point series defaults to hollow
+ * markers at the first/last point only.
+ */
+export const Symbols: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <AreaChart animationDuration={0} aspectRatio={undefined} data={chartData}>
+        <Grid horizontal />
+        <Area
+          dataKey="desktop"
+          fill="var(--chart-1)"
+          stroke="var(--chart-1)"
+          symbols={{ style: "hollow" }}
+        />
+        <XAxis />
+      </AreaChart>
+    </div>
+  ),
+};
+
+const focusHoverData = [
+  { date: new Date(2024, 0, 1), a: 10, b: 30, c: 20 },
+  { date: new Date(2024, 0, 2), a: 20, b: 25, c: 15 },
+  { date: new Date(2024, 0, 3), a: 15, b: 28, c: 24 },
+  { date: new Date(2024, 0, 4), a: 26, b: 18, c: 12 },
+];
+
+/**
+ * `focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY`
+ * while the pointer (or the legend) is over one — same behaviour, same wide
+ * invisible hit-stroke, as `Line`'s `focusOnHover`.
+ */
+export const FocusHover: Story = {
+  name: "Focus on hover",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <AreaChart animationDuration={0} aspectRatio={undefined} data={focusHoverData} focusOnHover>
+        <Grid horizontal />
+        <Area dataKey="a" fill="var(--chart-1)" fillOpacity={0.2} stroke="var(--chart-1)" />
+        <Area dataKey="b" fill="var(--chart-2)" fillOpacity={0.2} stroke="var(--chart-2)" />
+        <Area dataKey="c" fill="var(--chart-3)" fillOpacity={0.2} stroke="var(--chart-3)" />
+        <XAxis />
+        <ChartTooltip />
+      </AreaChart>
+    </div>
+  ),
+};
 
 const selectionRegionData = [
   { region: "EMEA", step: 1, revenue: 42, target: 50 },

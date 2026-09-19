@@ -1,0 +1,5 @@
+---
+"@elabs-ai/components-charts": minor
+---
+
+Scatter depth (RM-115, Datawrapper parity #4810). `Scatter` gains `sizeKey`/`sizeRange` (bubble radius scaled by `sqrt(value / max)`, never linearly — the honesty gate), `colorBy` (fixed/categorical/sequential/diverging column colouring, capped at six categories with a neutral-ladder fallback) and `shapeBy` (a categorical column cycled through up to six marker shapes), plus a `trend` prop (`"linear"` or `"log"` least-squares fit, drawn as a dashed line, with its direction and r² exposed as `data-trend`/`data-r2`). A new `CustomShapes` component draws constant reference lines (`{ kind: "line", y }` / `{ kind: "line", x }`) or multi-point lines/areas (`{ kind: "path", points }`) in data space, behind the marks. `ChartSpec` (`AutoChart`) gains matching `size`, `colorBy`, `shapeBy`, `trend` and `shapes` fields for the `"scatter"` type. `resolveColorBy`/`resolveShapeBy` (`scatter-encodings.ts`) are exported so a consumer can build a size/colour/shape legend from the same config (RM-118).

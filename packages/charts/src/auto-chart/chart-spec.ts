@@ -6,9 +6,21 @@
  * with explicit field names for x, series, and optional display hints.
  */
 
+import type { Responsive } from "../charts/chart-breakpoint";
+import type { ChartValueLabels, SeriesLabelMode } from "../charts/labels/use-chart-labels";
 import type { ChartValueFormat } from "../charts/value-format";
+import type { ChartSpecAnnotation } from "../charts/annotations/annotation-types";
+import type { CurveAlias } from "../charts/curve-types";
 import type { DateFormatPreset } from "../charts/date-format";
+import type { SeriesSymbolsSpec } from "../charts/series-markers";
+import type { NullsMode } from "../charts/time-series-chart-shell";
 import type { TreemapNode } from "../charts/treemap/treemap-layout";
+import type { SeriesMarkerShape } from "../charts/series-pattern";
+import type { ScatterShapeSpec } from "../charts/custom-shapes";
+import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/bar-overlays";
+import type { BarSort } from "../charts/bar-stacking";
+import type { ChartColorBy } from "../charts/chart-context";
+import type { DumbbellSortBy } from "../charts/dumbbell-layout";
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -64,8 +76,10 @@ export type ChartType =
  *   series.
  * - `"ranking"` — long rows of `(period, entity, value)` whose interest is the
  *   ORDER of the entities per period, not the magnitudes.
+ * - `"change"` — a two-measure category spec reads as a before/after MOVE
+ *   (an arrow), not an independent pair of values — DumbbellChart — RM-116.
  */
-export type ChartSpecKind = "steps" | "records" | "ranking";
+export type ChartSpecKind = "steps" | "records" | "ranking" | "change";
 
 /**
  * How loud the picture should be. `"analytical"` (the default) keeps the
@@ -190,8 +204,34 @@ export interface ChartSpec {
   /** Supplemental description for screen readers (e.g. "Revenue 2024, 3 series"). */
   description?: string;
 
-  /** Stack bars/areas instead of grouping them. Default: false */
-  stacked?: boolean;
+  /**
+   * Stack bars/areas instead of grouping them. Bars also take `"percent"`
+   * (each category normalised to 100 %) and `"diverging"` (Likert rows
+   * centred on `divergingCenter`) — RM-113. Default: false
+   */
+  stacked?: boolean | "percent" | "diverging";
+
+  /**
+   * How a `"line"`/`"area"`/`"stream"` chart draws a non-numeric sample
+   * (RM-112). Applies to every series — the same container-level default
+   * `LineChart`/`AreaChart nulls` read. Default: `"gap"` (a visible break,
+   * never a silent zero).
+   */
+  nulls?: NullsMode;
+
+  /**
+   * Curve interpolation for every series of a `"line"`/`"area"`/`"stream"`
+   * chart (RM-112) — a named `@visx/curve` alias. Default: `"monotone"` —
+   * unlike `"natural"`, it never overshoots past a flat run of equal values.
+   */
+  curve?: CurveAlias;
+
+  /**
+   * Point markers for every series of a `"line"`/`"area"`/`"stream"` chart
+   * (RM-112) — same shape and resolution rule as `Line`/`Area`'s own
+   * `symbols` prop. Unset (default): no markers.
+   */
+  symbols?: SeriesSymbolsSpec;
 
   /** Bar/funnel orientation. Default: "vertical" for bars. */
   orientation?: "vertical" | "horizontal";
@@ -240,6 +280,135 @@ export interface ChartSpec {
    * selection field to any chart without knowing the chart type.
    */
   fields?: { category?: string; series?: string };
+
+  // Scatter depth — RM-115. Honoured by `"scatter"` only; ignored elsewhere.
+
+  /** Bubble size by a numeric column — `Scatter sizeKey`/`sizeRange`. */
+  size?: { key: string; range?: [number, number] };
+
+  /** Shape points by a categorical column — `Scatter shapeBy`. */
+  shapeBy?: { key: string; shapes?: SeriesMarkerShape[] };
+
+  /** A least-squares trend line across every series — `Scatter trend`. */
+  trend?: "linear" | "log";
+
+  /** Custom lines/areas drawn in data space behind the marks — `CustomShapes shapes`. */
+  shapes?: ScatterShapeSpec[];
+
+  // DumbbellChart — RM-116
+  /** `type: "dumbbell"` only: `"dumbbell"` (default) | `"slope"` | `"arrow"` | `"dots"`, mirroring `DumbbellVariant`. */
+  variant?: "dumbbell" | "slope" | "arrow" | "dots";
+  /** `type: "dumbbell"` only: the delta label — absolute value or `%` change. Unset draws no delta label. */
+  delta?: { show: boolean; mode: "absolute" | "percent" };
+
+  // Pie/donut grouping, half preset — RM-114. Slice labels moved to
+  // `labels.slices` (see `ChartLabelsSpec` below) so `ChartSpec` keeps one
+  // `labels` object with a sub-key per mark family. Slice order shares the
+  // one `sort` field below (see its docblock) rather than a `pieSort`.
+  /** Fold small `type: "pie"` slices into an "Other" slice. See {@link ChartSpecPieGroupSmall}. Ignored elsewhere. */
+  groupSmall?: ChartSpecPieGroupSmall;
+  /**
+   * Render `type: "pie"` as a half-donut: a 180° arc (top half) with the
+   * centre value slot under the arc instead of in the middle. Default:
+   * false. Ignored elsewhere.
+   */
+  half?: boolean;
+
+  // Labels — RM-110
+  /** Series end labels / key fallback, automatic value labels and scatter point labels (RM-110) — see {@link ChartLabelsSpec}. */
+  labels?: ChartLabelsSpec;
+  // Annotations — RM-111
+  /** Text notes, ranges, reference lines and row notes in data units (RM-111) — see {@link ChartSpecAnnotation}. */
+  annotations?: ChartSpecAnnotation[];
+
+  // BarChart — RM-113
+  /** `stacked: "diverging"`: the series centred on the zero line (a Likert "Neutral"). */
+  divergingCenter?: string;
+  /**
+   * One row/slice order field, narrowed per chart family in `auto-chart.tsx`
+   * (orchestrator ruling — one `sort` on `ChartSpec`, never a `pieSort`/
+   * `barSort` per family). Bar (RM-113): `"asc"`/`"desc"` by value (stack
+   * total when stacked) or `{ by, dir }` — see {@link BarSort}. Dumbbell
+   * (`type: "dumbbell"`, RM-116): its own `DumbbellSortBy` (`"start"|"end"|
+   * "delta"|"deltaPercent"|"data"|"label"|"none"`, default `"none"` —
+   * spreadsheet order). Pie/donut (RM-114): only the string literals
+   * `"desc"` (largest first) or `"none"` (data order, the default — matches
+   * `PieChart`'s own default, kept so an existing spec renders
+   * byte-identical wedges) are honoured; any other value (an object form,
+   * `"asc"`, a dumbbell literal) is ignored for pie. The union covers every
+   * family; `auto-chart.tsx` narrows before handing it to a component's own
+   * `sort`/`sortBy` prop.
+   */
+  sort?: BarSort | DumbbellSortBy;
+  /** Gather rows by this column, with a header per group — `BarChart` (RM-113) and `DumbbellChart` (RM-116) both read this. */
+  groupBy?: string;
+  /**
+   * Colour marks by another column (categorical ≤ 6 hues, or a sequential /
+   * diverging ramp) — `"bar"`'s per-bar colour (RM-113) AND `"scatter"`'s
+   * per-point colour (RM-115) both read this one field; the two families'
+   * `ChartColorBy` shape is identical, so there is no need for a second.
+   */
+  colorBy?: ChartColorBy;
+  /** Per-bar value markers and range spans (confidence intervals, targets). */
+  overlays?: BarOverlay[];
+  /** A muted prior-period column behind each bar; `labels.comparison` picks its grey label. */
+  comparison?: BarComparison;
+}
+
+// Pie/donut grouping, sort, half preset — RM-114
+
+/** Which facts a pie/donut slice label states, in `label → value → percent` reading order. */
+export type ChartSpecPieLabelField = "label" | "value" | "percent";
+
+/**
+ * Slice labels for `type: "pie"` (RM-114) — the serialisable subset of
+ * `PieChartLabelsConfig` (`../charts/pie-chart.tsx`). Reached via
+ * `ChartLabelsSpec.slices` below.
+ */
+export interface ChartSpecPieLabels {
+  /** `"inside"`, `"outside"`, or `"none"`. Default: `"outside"` (`"none"` under 480px). */
+  placement?: "inside" | "outside" | "none";
+  /** Which facts to show. Required — no default reading. */
+  show: ChartSpecPieLabelField[];
+  /** Paint the label in the slice's own color instead of the neutral ink. Default: false. */
+  matchColor?: boolean;
+  /** Hide an inside label whose wedge sweeps under this angle (radians). Default: 0.2. */
+  minAngle?: number;
+}
+
+/**
+ * Fold small `type: "pie"` slices into one "Other" slice (RM-114) — the
+ * serialisable subset of `PieGroupSmallOptions` (`../charts/pie-grouping.ts`).
+ */
+export interface ChartSpecPieGroupSmall {
+  /** Fold a slice under this fraction (0–1) of the total. */
+  threshold?: number;
+  /** Cap the slice count, folding the smallest first. */
+  max?: number;
+  /** The folded slice's label. Default: "Other". */
+  label?: string;
+}
+
+// Labels — RM-110
+/**
+ * The serialisable label-engine subset (RM-110). Every field is optional and
+ * off by default, so a spec without `labels` renders exactly as before.
+ */
+export interface ChartLabelsSpec {
+  /** line / area: where each series names itself — `"end"` | `"key"` | `"none"`, or `{ base, medium?, narrow? }`. */
+  series?: Responsive<SeriesLabelMode>;
+  /** line / area: automatic value labels on every series — `{ placement: "first" | "last" | "all" | "peaks", count?, minGap?, outline?, matchColor?, format? }`. */
+  values?: ChartValueLabels;
+  /** scatter: point labels — `key` is the row field holding the text; `mode` `"auto"` (default) | `"all"`; `priorityKey` a numeric row field (higher survives). */
+  points?: { key: string; mode?: "auto" | "all"; priorityKey?: string };
+
+  // Pie slices — RM-114
+  /** pie/donut: slice labels — see {@link ChartSpecPieLabels}. Ignored elsewhere. */
+  slices?: ChartSpecPieLabels;
+
+  // BarChart — RM-113
+  /** bar: the grey label on each `comparison` column — `"value"` | `"difference"` | `"none"` (default). */
+  comparison?: BarComparisonLabel;
 }
 
 // Axes — RM-108

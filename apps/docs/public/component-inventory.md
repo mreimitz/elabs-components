@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 204 | 38 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 215 | 40 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 7 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1087,6 +1087,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
+| ANNOTATION_ANCHORS | component |  | `@elabs-ai/components-charts` |  |
+| AnnotationKey | component |  | `@elabs-ai/components-charts` |  |
 | Area | component |  | `@elabs-ai/components-charts` |  |
 | AreaBand | component |  | `@elabs-ai/components-charts` |  |
 | AreaChart | component |  | `@elabs-ai/components-charts` | Cumulative or part-of-whole trend over time — a filled line. |
@@ -1116,6 +1118,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CHART_STAGGER_BAR_MS | component |  | `@elabs-ai/components-charts` |  |
 | CHART_STAGGER_DOT_MS | component |  | `@elabs-ai/components-charts` |  |
 | CHART_TYPES | component |  | `@elabs-ai/components-charts` |  |
+| ChartAnnotations | component |  | `@elabs-ai/components-charts` |  |
 | ChartBrush | component |  | `@elabs-ai/components-charts` |  |
 | ChartBrushLayout | component |  | `@elabs-ai/components-charts` |  |
 | ChartBrushSelectionOverlay | component |  | `@elabs-ai/components-charts` |  |
@@ -1147,6 +1150,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ChoroplethTooltip | component |  | `@elabs-ai/components-charts` |  |
 | ComposedChart | component |  | `@elabs-ai/components-charts` | One cartesian frame that layers several series types (bars + lines + areas) together. |
 | CONTINUOUS_MIN_OPACITY | component |  | `@elabs-ai/components-charts` |  |
+| CustomShapes | component |  | `@elabs-ai/components-charts` |  |
 | DateTicker | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_CONFIG | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_INTERACTIONS | component |  | `@elabs-ai/components-charts` |  |
@@ -1154,10 +1158,13 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_CHART_PLOT_HEIGHT | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_STATUS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CIRCULAR_CURVENESS | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_DESCRIBE_SERIES_PHRASES | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_FORCE_SEED | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_HEATMAP_STEPS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_HOVER_OFFSET | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_MAX_INTERACTIVE_DATAPOINTS | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_PIE_LABEL_MIN_ANGLE | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_SCATTER_SIZE_RANGE | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_WHISKER_MULTIPLIER | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_AXIS_ID | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_DOMAIN_TWEEN_MS | component |  | `@elabs-ai/components-charts` |  |
@@ -1231,6 +1238,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PieCenter | component |  | `@elabs-ai/components-charts` |  |
 | PieCenterShell | component |  | `@elabs-ai/components-charts` |  |
 | PieChart | component |  | `@elabs-ai/components-charts` | Part-of-whole split across a handful of categories. |
+| PieLabels | component |  | `@elabs-ai/components-charts` |  |
 | PieProvider | component |  | `@elabs-ai/components-charts` |  |
 | PieSlice | component |  | `@elabs-ai/components-charts` |  |
 | PROFIT_LOSS_LEGEND_ITEMS | component |  | `@elabs-ai/components-charts` |  |
@@ -1261,12 +1269,14 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SankeyThreadLinks | component |  | `@elabs-ai/components-charts` | SankeyChart mode="threads" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops. |
 | SankeyTooltip | component |  | `@elabs-ai/components-charts` |  |
 | Scatter | component |  | `@elabs-ai/components-charts` |  |
+| SCATTER_SHAPE_SOFT_CAP | component |  | `@elabs-ai/components-charts` |  |
 | ScatterChart | component |  | `@elabs-ai/components-charts` | Point cloud for correlation between two continuous measures. |
 | SegmentBackground | component |  | `@elabs-ai/components-charts` |  |
 | SegmentLineFrom | component |  | `@elabs-ai/components-charts` |  |
 | SegmentLineTo | component |  | `@elabs-ai/components-charts` |  |
 | SELECTED_OUTLINE_WIDTH | component |  | `@elabs-ai/components-charts` |  |
 | SELECTION_EXCLUDED_OPACITY | component |  | `@elabs-ai/components-charts` |  |
+| SERIES_LABEL_INK_MIX | component |  | `@elabs-ai/components-charts` |  |
 | SeriesBar | component |  | `@elabs-ai/components-charts` |  |
 | SeriesMarkers | component |  | `@elabs-ai/components-charts` |  |
 | SeriesPointMarker | component |  | `@elabs-ai/components-charts` |  |
@@ -1280,6 +1290,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TREEMAP_MONO_LEAF_COLOR | component |  | `@elabs-ai/components-charts` |  |
 | TREEMAP_TITLE_BAND_HEIGHT | component |  | `@elabs-ai/components-charts` |  |
 | TreemapChart | component |  | `@elabs-ai/components-charts` | Two-level squarified treemap — a hierarchy where area, not position, encodes value. |
+| TrendLine | component |  | `@elabs-ai/components-charts` |  |
 | UNIT_CHART_GROUP_STAGGER_MS | component |  | `@elabs-ai/components-charts` |  |
 | UNIT_CHART_POSITION_STAGGER_MS | component |  | `@elabs-ai/components-charts` |  |
 | UNIT_STACK_EMPHASIS | component |  | `@elabs-ai/components-charts` |  |
@@ -1290,12 +1301,14 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useAnimatedYDomains | hook |  | `@elabs-ai/components-charts` |  |
 | useCanvasDraw | hook |  | `@elabs-ai/components-charts` |  |
 | useChart | hook |  | `@elabs-ai/components-charts` |  |
+| useChartAnnotationsA11y | hook |  | `@elabs-ai/components-charts` |  |
 | useChartBreakpoint | hook |  | `@elabs-ai/components-charts` |  |
 | useChartConfig | hook |  | `@elabs-ai/components-charts` |  |
 | useChartDatapointsEnabled | hook |  | `@elabs-ai/components-charts` |  |
 | useChartHover | hook |  | `@elabs-ai/components-charts` |  |
 | useChartInteraction | hook |  | `@elabs-ai/components-charts` |  |
 | useChartLegendHover | hook |  | `@elabs-ai/components-charts` |  |
+| useChartSeriesKey | hook |  | `@elabs-ai/components-charts` |  |
 | useChartStable | hook |  | `@elabs-ai/components-charts` |  |
 | useChartValueSetFormatter | hook |  | `@elabs-ai/components-charts` |  |
 | useChoropleth | hook |  | `@elabs-ai/components-charts` |  |

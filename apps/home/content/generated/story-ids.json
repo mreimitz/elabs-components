@@ -43,6 +43,7 @@
   "CaseTable": "process-casetable--docs",
   "CaseTimeline": "process-casetimeline--docs",
   "ChangeReview": "ai-changereview--docs",
+  "ChartAnnotations": "charts-annotations--docs",
   "ChartCard": "charts-chartcard--docs",
   "ChartFrame": "charts-chartframe--docs",
   "ChartFrameDataBlock": "patterns-blocks-chartframe-datatable--docs",

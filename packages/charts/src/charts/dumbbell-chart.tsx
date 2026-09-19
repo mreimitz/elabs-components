@@ -44,10 +44,24 @@ import {
 import useMeasure from "react-use-measure";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
+// Annotations — RM-111
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { categoryValueScales } from "./annotations/resolve-annotation-position";
+import { useAnnotatedChart, useChartAnnotationLayers } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ellipsize } from "./category-axis-plan";
 import { type ChartPalette, type Margin, resolvePalette } from "./chart-context";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
+import {
+  arrowHeadPath,
+  arrowHeadPoints,
+  buildDumbbellBands,
+  computeDumbbellBandExtents,
+  type DumbbellBand,
+  type DumbbellBandExtent,
+  type DumbbellSortBy,
+  sortDumbbellRowsBy,
+} from "./dumbbell-layout";
 import type {
   ChartDatapointClickHandler,
   ChartDatapointLabel,
@@ -77,19 +91,27 @@ import {
   useChartSelection,
 } from "./chart-selection";
 import {
+  breakpointForWidth,
   ChartPlotRoot,
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
+  resolveResponsive,
   type Responsive,
 } from "./chart-breakpoint";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
 export type DumbbellOrientation = "horizontal" | "vertical";
-export type DumbbellVariant = "dumbbell" | "slope";
-/** `"delta"` sorts descending by `|delta|` (magnitude); `"start"`/`"end"` sort ascending
- *  (signed value); `"none"` leaves data order. See `sortDumbbellRows`. */
-export type DumbbellSortBy = "start" | "end" | "delta" | "none";
+/**
+ * `"dumbbell"` (default) and `"slope"` are RM-023. RM-116 adds two more:
+ * `"arrow"` (arrow head at `endKey`, coloured by sign) and `"dots"` (N
+ * `valueKeys` per row as dots on the shared axis, an optional range bar
+ * between the extremes).
+ */
+export type DumbbellVariant = "dumbbell" | "slope" | "arrow" | "dots";
+/** See `dumbbell-layout.ts`'s `DumbbellSortBy` — re-exported here so callers
+ *  keep importing it from `dumbbell-chart` alongside the component. */
+export type { DumbbellSortBy };
 
 export interface DumbbellMarkerStyle {
   start: "hollow" | "filled";
@@ -101,6 +123,29 @@ export interface DumbbellBeadsConfig {
   unit: number;
   /** Overrides the auto-generated "1 dot = N" caption. */
   label?: string;
+}
+
+/**
+ * `showDelta`/`deltaLabelFormat` as one object (RM-116) — set, it wins over
+ * both of those, which stay as deprecated aliases for a caller that has not
+ * migrated. `mode: "percent"` reads `delta / start` (see
+ * `dumbbellDeltaPercent`), suffixed `%`, formatted through `format` when set.
+ */
+export interface DumbbellDeltaConfig {
+  show: boolean;
+  mode: "absolute" | "percent";
+  format?: ChartValueFormat;
+}
+
+/**
+ * A richer value axis than the boolean `showValueAxis` (RM-116) — setting
+ * this also turns the axis on. `range: "round"` keeps today's padded-domain
+ * default; `"exact"` drops the padding; `[min, max]` pins custom bounds.
+ * `orientation="horizontal"` (dumbbell/arrow/dots) only.
+ */
+export interface DumbbellValueAxisConfig {
+  position?: "top" | "bottom";
+  range?: "round" | "exact" | [number, number];
 }
 
 export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractionProps {
@@ -126,7 +171,25 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
   markers?: DumbbellMarkerStyle;
   /** Extra numeric keys (e.g. competitor values) drawn as small dots on the same track. Ignored by `variant="slope"`. */
   extraKeys?: string[];
-  /** Show a signed delta label (`HaloText`) at the end marker. Default `false`. */
+  /**
+   * `variant="dots"` only: N numeric keys drawn as one dot per key on the
+   * shared value axis, instead of the two-marker `start`/`end` read —
+   * `startKey`/`endKey` still name the first/last of them (for the domain and
+   * the optional `range` bar), and any keys between are the "extra" dots.
+   */
+  valueKeys?: string[];
+  /** `variant="dots"` only: draws a bar between the row's lowest and highest dot. Default `false`. */
+  range?: boolean;
+  /** `variant="arrow"` only: the arrow head's base width in px. Default `8`. */
+  arrowWidth?: number;
+  /**
+   * Buckets rows by this column, rendering a header + separator before each
+   * group (same shape as `BarChart`'s `groupBy`, RM-113/RM-116). Groups keep
+   * each row's resolved sort order; group order is first-seen in that same
+   * order. Unset (default) draws no headers — byte-identical to today.
+   */
+  groupBy?: string;
+  /** Show a signed delta label (`HaloText`) at the end marker. Default `false`. Superseded by `delta` when set. */
   showDelta?: boolean;
   /**
    * Custom formatter for the `showDelta` label — receives the signed delta and
@@ -134,8 +197,14 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
    * keeps today's rendering: a bare `"+"` prefix on non-negative deltas ahead
    * of `formatValue(delta)`. Use this when a delta needs a unit suffix (e.g.
    * `"pp"`) or a true minus sign the active `valueFormat`/locale doesn't give.
+   * Superseded by `delta.format` when `delta` is set.
    */
   deltaLabelFormat?: (delta: number, row: DumbbellRow) => string;
+  /**
+   * Replaces/aliases `showDelta` + `deltaLabelFormat` (RM-116): one object,
+   * `mode` picking an absolute or a `%` delta. Wins over both when set.
+   */
+  delta?: DumbbellDeltaConfig;
   /**
    * `variant="slope"` only: label the END of each line with its category name
    * too (`"{category} {value}"`, matching the START label), not just the bare
@@ -160,16 +229,27 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
   /**
    * `orientation="horizontal"` (dumbbell variant) only: draws light tick
    * marks + value labels along the bottom of the plot, from the same value
-   * scale. Default `false` (byte-identical: no axis).
+   * scale. Default `false` (byte-identical: no axis). Superseded by
+   * `valueAxis` when set.
    */
   showValueAxis?: boolean;
   /**
+   * A richer value axis than `showValueAxis` — position (top/bottom) and
+   * domain rounding. Setting this also turns the axis on. See
+   * {@link DumbbellValueAxisConfig}.
+   */
+  valueAxis?: DumbbellValueAxisConfig;
+  /**
    * Sort rows before rendering. `"delta"` sorts **descending by `|delta|`**
    * (magnitude, sign ignored — the biggest mover first, whether it's an
-   * increase or a decrease); `"start"`/`"end"` sort **ascending** on the
-   * (signed) value axis. Default `"none"` (data order).
+   * increase or a decrease); `"deltaPercent"` is the same magnitude-first
+   * read for `delta / start`; `"start"`/`"end"`/`"label"` sort **ascending**;
+   * `"data"` is an explicit spelling of `"none"` (spreadsheet order).
+   * Default `"none"`.
    */
   sortBy?: DumbbellSortBy;
+  /** Reverses the order `sortBy` resolves to. Default `false`. */
+  reverse?: boolean;
   /** Which colour family rows draw from. Default `"categorical"`. */
   palette?: ChartPalette;
   /**
@@ -198,6 +278,15 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. category count + value range). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Declarative annotations in data units (RM-111): text notes, ranges,
+   * reference lines and row notes. Ranges paint under the series, the rest
+   * over them; at the `narrow` tier each text note becomes a numbered marker
+   * listed in a key under the plot, and every annotation is restated once in
+   * the figure description. A row note tracks its row by category, so it
+   * still lands on the right row after `sortBy`/`groupBy` reorders it.
+   */
+  annotations?: readonly ChartAnnotation[];
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -230,6 +319,83 @@ const BEAD_MARK_EVERY = 5;
 const EXTRA_DOT_RADIUS = 3;
 const DOMAIN_PADDING_RATIO = 0.08;
 const SLOPE_ROW_SOFT_CAP = 8;
+
+/** `variant="arrow"` head colours (RM-116) — the diverging ramp's strong arms;
+ *  head DIRECTION is the non-hue channel the greyscale test (`chart-hairline`
+ *  ADR / conventions.md 1.4.1) needs alongside them. */
+const ARROW_POSITIVE_COLOR = "var(--chart-div-pos-2)";
+const ARROW_NEGATIVE_COLOR = "var(--chart-div-neg-2)";
+const DEFAULT_ARROW_WIDTH = 8;
+const ARROW_HEAD_LENGTH = 9;
+/** `variant="dots"` dot radius — matches `MARKER_RADIUS` so a dots row reads
+ *  at the same weight as a dumbbell row's markers. */
+const DOT_RADIUS = MARKER_RADIUS;
+const DOTS_RANGE_BAR_WIDTH = CONNECTOR_STROKE_WIDTH;
+/** `groupBy` header band — the separator rule sits this far above the band's
+ *  bottom edge (the boundary with the group's first row). */
+const GROUP_HEADER_SEPARATOR_INSET = 6;
+
+/**
+ * Validator fix-round-1 (#491) tried BOTH remedies the validator offered —
+ * a fixed, grown-past-a-row header band AND a top-anchored header label —
+ * together. That combination regressed: at the ArrowPlot's real geometry
+ * (12 rows + 3 headers over a fixed 272px inner height, ~18.1px/band
+ * uniform), reserving a header band several rows' worth of extra height
+ * left the remaining 12 rows only ~10.7px each — too little for a single
+ * row's own OWN category label (a ~15-16px glyph box) to clear the row
+ * above or below it, trading the header/first-row collision the validator
+ * found for a plain row/row one it hadn't. Per the validator's "pick one,
+ * keep it simple": the header band keeps the SAME uniform share every band
+ * always had (`computeDumbbellBandExtents` called with `headerSize` equal
+ * to that share is a lookup, not a resize — see `groupHeaderSize` below);
+ * `GROUP_HEADER_LABEL_TOP_OFFSET` is the whole fix.
+ *
+ * Round-2 (#491) found that conclusion incomplete: round-1's own regression
+ * test resized only the story's inner wrapper `div`, never the real page
+ * viewport, so "380/600/900" there was never the ~348/568/640px a real
+ * viewport of that width actually hands the container (Storybook's centered
+ * layout pads ~32px, and the story wrapper itself caps at 640px) — at the
+ * real 348px width the uniform per-band share (~15px) leaves the header
+ * label and the first row's delta label baseline-adjacent (~1px apart),
+ * which their own text boxes (~15px tall) turn into a near-total overlap.
+ * The fix stays "don't reallocate the uniform row share" (that is still
+ * what regressed row/row spacing); instead the PLOT ITSELF grows just
+ * enough to give header bands `groupHeaderBandFloorPx` while every row band
+ * keeps the exact share an ungrouped chart of the same row count would get
+ * — see the height-floor block in `DumbbellChartBase` and `groupHeaderSize`
+ * below.
+ */
+
+/**
+ * A header's own label paints at this FIXED offset from its band's own top
+ * edge — never `rect.height`-dependent. That is what actually clears the
+ * validator's defect: the OLD bottom-anchored label (`rect.y + rect.height -
+ * GROUP_HEADER_SEPARATOR_INSET - 4`) sits right against the boundary with
+ * the next row's band by construction, however tall the band is; anchoring
+ * from the TOP instead leaves the label in the band's own upper portion,
+ * clear of that boundary, with no band-growth required. Matches the
+ * vertical-orientation header's pre-existing offset.
+ */
+const GROUP_HEADER_LABEL_TOP_OFFSET = 12;
+
+/**
+ * The row-axis space a `groupBy` header band needs so its own label, and the
+ * first row's delta label reaching up from below, never share vertical
+ * space at any width (validator round-2, #491: "Referral" still intersected
+ * "+46.7%" at a real 380px/600px viewport after round-1's top-anchoring —
+ * round-1's regression test resized only an inner wrapper `div`, never the
+ * real page viewport, so it missed that a real narrow container is
+ * NARROWER than the 380/600/900 it tested, and the header/row bands that
+ * narrow width produces are tight enough for the two labels to land almost
+ * exactly on top of each other). `GROUP_HEADER_LABEL_TOP_OFFSET` down for
+ * the label's own baseline, one more full line as the label's own box, sized
+ * from the MEASURED line height at the resolved density (`lineHeightPx`),
+ * never a bare pixel constant — the same reasoning `SLOPE_LABEL_GAP_RATIO`
+ * documents above.
+ */
+function groupHeaderBandFloorPx(lineHeightPx: number): number {
+  return GROUP_HEADER_LABEL_TOP_OFFSET + lineHeightPx * 2;
+}
 
 /** Px between a label's near edge and the track/plot edge it sits beside — the
  *  offset already baked into every label's `x` (`slopeStartX - 10`, `x={-10}`,
@@ -304,23 +470,27 @@ export function buildDumbbellRows(
  * Sorts a copy of `rows` by `sortBy`. `"delta"` sorts **descending by
  * `|delta|`** (magnitude, sign ignored) — the biggest mover surfaces first
  * regardless of whether it's an increase or a decrease, matching `sortBy`'s
- * prop doc and the `SortedByDelta` story. `"start"`/`"end"` sort
- * **ascending** on the (signed) value axis. `"none"` returns the rows
- * unchanged.
+ * prop doc and the `SortedByDelta` story. `"start"`/`"end"`/`"label"` sort
+ * **ascending**. `"none"`/`"data"` return the rows unchanged. Delegates to
+ * `dumbbell-layout.ts`'s `sortDumbbellRowsBy` (RM-116 extended `"deltaPercent"`
+ * and `reverse` there; this wrapper keeps its original 2-arg shape).
  */
 export function sortDumbbellRows(rows: DumbbellRow[], sortBy: DumbbellSortBy): DumbbellRow[] {
-  if (sortBy === "none") {
-    return rows;
-  }
-  if (sortBy === "delta") {
-    return [...rows].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
-  }
-  const key = sortBy;
-  return [...rows].sort((a, b) => a[key] - b[key]);
+  return sortDumbbellRowsBy(rows, sortBy);
 }
 
-/** The padded `[min, max]` value domain across every plotted value (start/end/extraKeys). */
-export function computeDumbbellDomain(rows: DumbbellRow[]): [number, number] {
+/**
+ * The `[min, max]` value domain across every plotted value (start/end/extraKeys).
+ * `range` (RM-116): `undefined`/`"round"` keep the padded default; `"exact"`
+ * drops the padding; a `[min, max]` tuple pins custom bounds outright.
+ */
+export function computeDumbbellDomain(
+  rows: DumbbellRow[],
+  range?: "round" | "exact" | [number, number],
+): [number, number] {
+  if (Array.isArray(range)) {
+    return range;
+  }
   const values = rows.flatMap((row) => [
     row.start,
     row.end,
@@ -334,6 +504,9 @@ export function computeDumbbellDomain(rows: DumbbellRow[]): [number, number] {
   if (min === max) {
     min -= 1;
     max += 1;
+  }
+  if (range === "exact") {
+    return [min, max];
   }
   const pad = (max - min) * DOMAIN_PADDING_RATIO;
   return [min - pad, max + pad];
@@ -544,12 +717,18 @@ interface PlotProps {
   beads?: DumbbellBeadsConfig;
   markers: DumbbellMarkerStyle;
   extraKeys?: string[];
+  valueKeys?: string[];
+  range?: boolean;
+  arrowWidth?: number;
+  groupBy?: string;
   showDelta: boolean;
   deltaLabelFormat?: (delta: number, row: DumbbellRow) => string;
+  delta?: DumbbellDeltaConfig;
   bothEndsLabeled?: boolean;
   valueLabelFormat?: (value: number, row: DumbbellRow) => string;
   referenceLine?: { value: number; label: string };
   showValueAxis?: boolean;
+  valueAxis?: DumbbellValueAxisConfig;
   palette?: ChartPalette;
   rowColor?: (row: DumbbellRow, index: number) => string | undefined;
   valueFormat?: ChartValueFormat;
@@ -560,19 +739,27 @@ interface PlotProps {
   lineHeightPx: number;
 }
 
+/**
+ * Looks up band `index`'s rect from precomputed `extents` (one per band,
+ * from `computeDumbbellBandExtents` — validator fix-round-1, #491): the row
+ * axis (y for horizontal, x for vertical) comes from the band's own
+ * `offset`/`size`, the cross axis always spans the full plot. `extents` built
+ * with every band the SAME `headerSize` as `size` (i.e. no `groupBy`, or a
+ * `headerSize` of 0) reproduces the old uniform `innerHeight / rowCount`
+ * split exactly — this is a lookup, not a behaviour change, for that case.
+ */
 function rowRect(
   orientation: DumbbellOrientation,
   index: number,
-  rowCount: number,
+  extents: DumbbellBandExtent[],
   innerWidth: number,
   innerHeight: number,
 ) {
+  const extent = extents[index] ?? { offset: 0, size: 0 };
   if (orientation === "vertical") {
-    const colWidth = innerWidth / Math.max(rowCount, 1);
-    return { x: index * colWidth, y: 0, width: colWidth, height: innerHeight };
+    return { x: extent.offset, y: 0, width: extent.size, height: innerHeight };
   }
-  const rowHeight = innerHeight / Math.max(rowCount, 1);
-  return { x: 0, y: index * rowHeight, width: innerWidth, height: rowHeight };
+  return { x: 0, y: extent.offset, width: innerWidth, height: extent.size };
 }
 
 function buildTooltipRows(
@@ -611,12 +798,18 @@ function DumbbellPlot({
   beads,
   markers,
   extraKeys,
+  valueKeys,
+  range = false,
+  arrowWidth = DEFAULT_ARROW_WIDTH,
+  groupBy,
   showDelta,
   deltaLabelFormat,
+  delta,
   bothEndsLabeled = false,
   valueLabelFormat,
   referenceLine,
   showValueAxis = false,
+  valueAxis,
   palette,
   rowColor,
   valueFormat,
@@ -659,6 +852,7 @@ function DumbbellPlot({
   const formatValue = useChartValueFormatter(valueFormat);
   const formatNumber = useChartValueFormatter("number");
   const formatPercent = useChartValueFormatter("percent");
+  const formatDelta = useChartValueFormatter(delta?.format ?? valueFormat);
 
   const rowColors = useMemo(
     () => resolvePalette(palette, Math.max(rows.length, 1), { explicit: palette !== undefined }),
@@ -667,6 +861,13 @@ function DumbbellPlot({
   const extraColors = useMemo(
     () => resolvePalette("mono", Math.max(extraKeys?.length ?? 0, 1)),
     [extraKeys?.length],
+  );
+  // Dots (RM-116): one colour PER KEY (not per row) — the same key draws the
+  // same colour on every row, which is what makes the "colour key" legend
+  // outside the plot mean anything.
+  const dotKeyColors = useMemo(
+    () => resolvePalette("categorical", Math.max(valueKeys?.length ?? 2, 1), { explicit: true }),
+    [valueKeys?.length],
   );
 
   // Decoration pattern (ADR 0011, #257): under high decoration a FILLED marker
@@ -696,7 +897,57 @@ function DumbbellPlot({
         };
   };
 
-  const domain = useMemo(() => computeDumbbellDomain(rows), [rows]);
+  const domain = useMemo(
+    () => computeDumbbellDomain(rows, valueAxis?.range),
+    [rows, valueAxis?.range],
+  );
+
+  // groupBy bands (RM-116): one header band per group, then its row bands —
+  // byte-identical to `rows.map(row => ({ kind: "row", row }))` when `groupBy`
+  // is unset, so every existing (ungrouped) layout stays pixel-unchanged.
+  const bands = useMemo<DumbbellBand[]>(() => buildDumbbellBands(rows, groupBy), [rows, groupBy]);
+  const bandIndexByRowIndex = useMemo(() => {
+    const map = new Map<number, number>();
+    bands.forEach((band, bandIndex) => {
+      if (band.kind === "row") {
+        map.set(band.row.index, bandIndex);
+      }
+    });
+    return map;
+  }, [bands]);
+
+  // Band extents (validator fix-round-1, #491): every ROW band keeps the SAME
+  // uniform share of the row axis (see the constant block above for why
+  // growing the header band past that share — by reallocating within a FIXED
+  // total — regressed row/row spacing instead). Header bands are different as
+  // of round-2 (#491): a horizontal `groupBy` header gets `groupHeaderSize` =
+  // `groupHeaderBandFloorPx(lineHeightPx)`, sized to hold its own label clear
+  // of the first row's delta label reaching up from below — the EXTRA room
+  // that takes comes from `DumbbellChartBase` growing the plot's own height
+  // (see its height-floor block), never from shrinking the row share, so
+  // `computeDumbbellBandExtents` still resolves every row band to the exact
+  // pitch an ungrouped chart of the same row count would draw. Vertical
+  // `orientation` (dumbbell only) keeps the pre-existing uniform share on
+  // BOTH kinds — that axis is the plot's measured CONTAINER width, which this
+  // fix deliberately never forces (ADR 0039: a chart measures its own width,
+  // it does not grow past what its container gives it).
+  const innerAxisSize = orientation === "vertical" ? innerWidth : innerHeight;
+  const hasHorizontalGroupHeaders =
+    Boolean(groupBy) &&
+    !(orientation === "vertical" && variant === "dumbbell") &&
+    bands.some((band) => band.kind === "header");
+  const groupHeaderSize = hasHorizontalGroupHeaders
+    ? groupHeaderBandFloorPx(lineHeightPx)
+    : innerAxisSize / Math.max(bands.length, 1);
+  const bandExtents = useMemo(
+    () =>
+      computeDumbbellBandExtents(
+        bands.map((band) => band.kind),
+        innerAxisSize,
+        groupHeaderSize,
+      ),
+    [bands, innerAxisSize, groupHeaderSize],
+  );
 
   const isVertical = orientation === "vertical" && variant === "dumbbell";
   const valueScale = useMemo(
@@ -705,6 +956,24 @@ function DumbbellPlot({
         ? scaleLinear({ domain, range: [innerHeight, 0] })
         : scaleLinear({ domain, range: [0, innerWidth] }),
     [domain, innerHeight, innerWidth, isVertical],
+  );
+
+  // Annotations — RM-111: rows resolve in DRAWN order, so a row note follows
+  // its category through any sort. The slope variant has no category axis.
+  const annotationLayers = useChartAnnotationLayers(
+    useMemo(
+      () =>
+        variant === "slope"
+          ? null
+          : categoryValueScales({
+              categories: rows.map((row) => row.category),
+              categoryAxis: isVertical ? "x" : "y",
+              valueScale,
+              innerWidth,
+              innerHeight,
+            }),
+      [innerHeight, innerWidth, isVertical, rows, valueScale, variant],
+    ),
   );
 
   // ── Slope-specific geometry ────────────────────────────────────────────
@@ -749,7 +1018,13 @@ function DumbbellPlot({
             width: slopeEndX - slopeStartX,
             height: Math.abs((rawEndYs[i] as number) - (rawStartYs[i] as number)),
           }
-        : rowRect(orientation, i, rows.length, innerWidth, innerHeight);
+        : rowRect(
+            orientation,
+            bandIndexByRowIndex.get(row.index) ?? i,
+            bandExtents,
+            innerWidth,
+            innerHeight,
+          );
       return {
         id: `dumbbell:${row.index}`,
         index: row.index,
@@ -766,6 +1041,8 @@ function DumbbellPlot({
       };
     });
   }, [
+    bandExtents,
+    bandIndexByRowIndex,
     datapointsEnabled,
     innerHeight,
     innerWidth,
@@ -784,6 +1061,8 @@ function DumbbellPlot({
   const hoveredRow = hoveredIndex != null ? rows.find((r) => r.index === hoveredIndex) : undefined;
   const hoveredRowPosition =
     hoveredIndex != null ? rows.findIndex((r) => r.index === hoveredIndex) : -1;
+  const hoveredBandIndex =
+    hoveredIndex != null ? (bandIndexByRowIndex.get(hoveredIndex) ?? -1) : -1;
 
   let tooltipX = 0;
   let tooltipY = 0;
@@ -794,11 +1073,11 @@ function DumbbellPlot({
         margin.top +
         ((rawStartYs[hoveredRowPosition] as number) + (rawEndYs[hoveredRowPosition] as number)) / 2;
     } else if (isVertical) {
-      const rect = rowRect(orientation, hoveredRowPosition, rows.length, innerWidth, innerHeight);
+      const rect = rowRect(orientation, hoveredBandIndex, bandExtents, innerWidth, innerHeight);
       tooltipX = margin.left + rect.x + rect.width / 2;
       tooltipY = margin.top + (valueScale(hoveredRow.start) + valueScale(hoveredRow.end)) / 2;
     } else {
-      const rect = rowRect(orientation, hoveredRowPosition, rows.length, innerWidth, innerHeight);
+      const rect = rowRect(orientation, hoveredBandIndex, bandExtents, innerWidth, innerHeight);
       tooltipX = margin.left + (valueScale(hoveredRow.start) + valueScale(hoveredRow.end)) / 2;
       tooltipY = margin.top + rect.y + rect.height / 2;
     }
@@ -816,6 +1095,7 @@ function DumbbellPlot({
         )}
         <rect fill="transparent" height={height} width={width} x={0} y={0} />
         <g transform={`translate(${margin.left},${margin.top})`}>
+          {annotationLayers.back /* Annotations — RM-111 */}
           {!isSlope && orientation === "horizontal" && referenceLine ? (
             <g data-slot="dumbbell-chart-reference-line">
               <line
@@ -854,10 +1134,11 @@ function DumbbellPlot({
               })()}
             </g>
           ) : null}
-          {!isSlope && orientation === "horizontal" && showValueAxis ? (
+          {!isSlope && orientation === "horizontal" && (showValueAxis || valueAxis) ? (
             <g data-slot="dumbbell-chart-value-axis">
               {valueScale.ticks(4).map((tick) => {
                 const x = valueScale(tick);
+                const atTop = valueAxis?.position === "top";
                 return (
                   <g key={tick}>
                     <line
@@ -865,18 +1146,57 @@ function DumbbellPlot({
                       strokeWidth={TRACK_STROKE_WIDTH}
                       x1={x}
                       x2={x}
-                      y1={innerHeight}
-                      y2={innerHeight + 4}
+                      y1={atTop ? 0 : innerHeight}
+                      y2={atTop ? -4 : innerHeight + 4}
                     />
                     <HaloText
                       className="text-meta"
                       fill="var(--chart-label)"
                       textAnchor="middle"
                       x={x}
-                      y={innerHeight + 16}
+                      y={atTop ? -16 : innerHeight + 16}
                     >
                       {formatValue(tick)}
                     </HaloText>
+                  </g>
+                );
+              })}
+            </g>
+          ) : null}
+          {groupBy ? (
+            <g data-slot="dumbbell-chart-groups">
+              {bands.map((band, bandIndex) => {
+                if (band.kind !== "header") {
+                  return null;
+                }
+                const rect = rowRect(orientation, bandIndex, bandExtents, innerWidth, innerHeight);
+                const labelX = orientation === "vertical" ? rect.x + rect.width / 2 : 0;
+                // Fixed offset from the band's OWN top (validator
+                // fix-round-1, #491) — never `rect.height`-dependent, so the
+                // label sits in the band's own upper portion, clear of the
+                // boundary with the next row, instead of riding down against it.
+                const labelY = rect.y + GROUP_HEADER_LABEL_TOP_OFFSET;
+                const sepY = rect.y + rect.height - GROUP_HEADER_SEPARATOR_INSET;
+                return (
+                  <g data-slot="dumbbell-chart-group-header" key={`group:${band.label}`}>
+                    <HaloText
+                      className="text-meta"
+                      fill="var(--chart-foreground)"
+                      textAnchor={orientation === "vertical" ? "middle" : "start"}
+                      x={labelX}
+                      y={labelY}
+                    >
+                      {band.label}
+                    </HaloText>
+                    <line
+                      data-slot="dumbbell-chart-group-separator"
+                      stroke="var(--chart-grid)"
+                      strokeWidth={TRACK_STROKE_WIDTH}
+                      x1={0}
+                      x2={innerWidth}
+                      y1={sepY}
+                      y2={sepY}
+                    />
                   </g>
                 );
               })}
@@ -966,9 +1286,14 @@ function DumbbellPlot({
                   { x1: slopeStartX, x2: slopeEndX, y1: y1, y2: y2 },
                 );
               })
-            : rows.map((row, i) => {
+            : bands.map((band, bandIndex) => {
+                if (band.kind !== "row") {
+                  return null;
+                }
+                const row = band.row;
+                const i = bandIndex;
                 const color = rowColor?.(row, i) ?? (rowColors[i % rowColors.length] as string);
-                const rect = rowRect(orientation, i, rows.length, innerWidth, innerHeight);
+                const rect = rowRect(orientation, i, bandExtents, innerWidth, innerHeight);
                 const isFaded = hoveredIndex != null && hoveredIndex !== row.index;
                 const startPos = valueScale(row.start);
                 const endPos = valueScale(row.end);
@@ -985,6 +1310,41 @@ function DumbbellPlot({
                   ? Math.max(rect.width - LABEL_GUTTER, 0)
                   : Math.max(margin.left - LABEL_GUTTER, 0);
                 const categoryDisplay = ellipsize(row.category, categoryBudget, measure).display;
+
+                // Delta label (RM-116): `delta` config wins over `showDelta`/
+                // `deltaLabelFormat` when set; `mode: "percent"` reads
+                // `delta / start` through the shared percent formatter.
+                const deltaShow = delta ? delta.show : showDelta;
+                let deltaText = "";
+                if (deltaShow) {
+                  if (delta?.mode === "percent") {
+                    const pct =
+                      row.start !== 0
+                        ? row.delta / row.start
+                        : row.delta >= 0
+                          ? Number.POSITIVE_INFINITY
+                          : Number.NEGATIVE_INFINITY;
+                    deltaText = `${pct >= 0 ? "+" : ""}${formatPercent(pct)}`;
+                  } else if (deltaLabelFormat && !delta) {
+                    deltaText = deltaLabelFormat(row.delta, row);
+                  } else {
+                    deltaText = `${row.delta >= 0 ? "+" : ""}${formatDelta(row.delta)}`;
+                  }
+                }
+
+                // Arrow (RM-116): head direction IS the non-hue channel
+                // alongside the diverging positive/negative colour.
+                const arrowColor =
+                  rowColor?.(row, i) ??
+                  (growsPositive ? ARROW_POSITIVE_COLOR : ARROW_NEGATIVE_COLOR);
+
+                // Dots (RM-116): every plotted value on this row, in the same
+                // order as `valueKeys` (start, then extras, then end).
+                const dotValues =
+                  variant === "dots" ? [row.start, ...row.extra.map((e) => e.value), row.end] : [];
+                const dotPositions = dotValues.map((v) => valueScale(v));
+                const dotRangeMin = dotPositions.length > 0 ? Math.min(...dotPositions) : 0;
+                const dotRangeMax = dotPositions.length > 0 ? Math.max(...dotPositions) : 0;
 
                 return paintRow(
                   row,
@@ -1011,98 +1371,154 @@ function DumbbellPlot({
                         y2={crossCenter}
                       />
                     )}
-                    {/* Connector */}
-                    {isVertical ? (
-                      <line
-                        data-slot="dumbbell-chart-connector"
-                        stroke={color}
-                        strokeWidth={CONNECTOR_STROKE_WIDTH}
-                        x1={crossCenter}
-                        x2={crossCenter}
-                        y1={startPos}
-                        y2={endPos}
-                      />
+                    {variant === "dots" ? (
+                      <>
+                        {range ? (
+                          <line
+                            data-slot="dumbbell-chart-range-bar"
+                            stroke="var(--chart-foreground-muted)"
+                            strokeWidth={DOTS_RANGE_BAR_WIDTH}
+                            x1={dotRangeMin}
+                            x2={dotRangeMax}
+                            y1={crossCenter}
+                            y2={crossCenter}
+                          />
+                        ) : null}
+                        {dotValues.map((_, dotIndex) => (
+                          <circle
+                            cx={dotPositions[dotIndex]}
+                            cy={crossCenter}
+                            data-slot="dumbbell-chart-dot"
+                            fill={dotKeyColors[dotIndex % dotKeyColors.length]}
+                            key={`dot:${row.index}:${dotIndex}`}
+                            r={DOT_RADIUS}
+                            stroke="var(--chart-background)"
+                            strokeWidth={1}
+                          />
+                        ))}
+                      </>
+                    ) : variant === "arrow" ? (
+                      <g data-slot="dumbbell-chart-arrow">
+                        <line
+                          data-slot="dumbbell-chart-connector"
+                          stroke={arrowColor}
+                          strokeWidth={CONNECTOR_STROKE_WIDTH}
+                          x1={startPos}
+                          x2={endPos}
+                          y1={crossCenter}
+                          y2={crossCenter}
+                        />
+                        <path
+                          d={arrowHeadPath(
+                            arrowHeadPoints(
+                              startPos,
+                              crossCenter,
+                              endPos,
+                              crossCenter,
+                              Math.min(ARROW_HEAD_LENGTH, Math.abs(endPos - startPos)),
+                              arrowWidth,
+                            ),
+                          )}
+                          data-slot="dumbbell-chart-arrow-head"
+                          fill={arrowColor}
+                        />
+                      </g>
                     ) : (
-                      <line
-                        data-slot="dumbbell-chart-connector"
-                        stroke={color}
-                        strokeWidth={CONNECTOR_STROKE_WIDTH}
-                        x1={startPos}
-                        x2={endPos}
-                        y1={crossCenter}
-                        y2={crossCenter}
-                      />
-                    )}
-                    {/* Beads (F12) */}
-                    {beads && beads.unit > 0
-                      ? (() => {
-                          const count = Math.round(Math.abs(row.delta) / beads.unit);
-                          if (count <= 0) {
+                      <>
+                        {/* Connector */}
+                        {isVertical ? (
+                          <line
+                            data-slot="dumbbell-chart-connector"
+                            stroke={color}
+                            strokeWidth={CONNECTOR_STROKE_WIDTH}
+                            x1={crossCenter}
+                            x2={crossCenter}
+                            y1={startPos}
+                            y2={endPos}
+                          />
+                        ) : (
+                          <line
+                            data-slot="dumbbell-chart-connector"
+                            stroke={color}
+                            strokeWidth={CONNECTOR_STROKE_WIDTH}
+                            x1={startPos}
+                            x2={endPos}
+                            y1={crossCenter}
+                            y2={crossCenter}
+                          />
+                        )}
+                        {/* Beads (F12) */}
+                        {beads && beads.unit > 0
+                          ? (() => {
+                              const count = Math.round(Math.abs(row.delta) / beads.unit);
+                              if (count <= 0) {
+                                return null;
+                              }
+                              const direction: UnitStackDirection = isVertical
+                                ? growsPositive
+                                  ? "up"
+                                  : "down"
+                                : growsPositive
+                                  ? "right"
+                                  : "left";
+                              const offset = growsPositive ? BEAD_OFFSET : -BEAD_OFFSET;
+                              const originX = isVertical ? crossCenter : startPos + offset;
+                              const originY = isVertical ? startPos - offset : crossCenter;
+                              return (
+                                <UnitStack
+                                  direction={direction}
+                                  jitter
+                                  kind="dot"
+                                  length={BEAD_LENGTH}
+                                  markEvery={BEAD_MARK_EVERY}
+                                  n={count}
+                                  seed={row.index}
+                                  step={BEAD_STEP}
+                                  x={originX}
+                                  y={originY}
+                                />
+                              );
+                            })()
+                          : null}
+                        {/* Extra keys (L7 competitor dots) */}
+                        {(extraKeys ?? []).map((key, keyIndex) => {
+                          const entry = row.extra.find((e) => e.key === key);
+                          if (!entry) {
                             return null;
                           }
-                          const direction: UnitStackDirection = isVertical
-                            ? growsPositive
-                              ? "up"
-                              : "down"
-                            : growsPositive
-                              ? "right"
-                              : "left";
-                          const offset = growsPositive ? BEAD_OFFSET : -BEAD_OFFSET;
-                          const originX = isVertical ? crossCenter : startPos + offset;
-                          const originY = isVertical ? startPos - offset : crossCenter;
+                          const extraColor = extraColors[keyIndex % extraColors.length] as string;
+                          const pos = valueScale(entry.value);
                           return (
-                            <UnitStack
-                              direction={direction}
-                              jitter
-                              kind="dot"
-                              length={BEAD_LENGTH}
-                              markEvery={BEAD_MARK_EVERY}
-                              n={count}
-                              seed={row.index}
-                              step={BEAD_STEP}
-                              x={originX}
-                              y={originY}
+                            <circle
+                              cx={isVertical ? crossCenter : pos}
+                              cy={isVertical ? pos : crossCenter}
+                              fill={extraColor}
+                              key={key}
+                              r={EXTRA_DOT_RADIUS}
+                              stroke="var(--chart-background)"
+                              strokeWidth={1}
                             />
                           );
-                        })()
-                      : null}
-                    {/* Extra keys (L7 competitor dots) */}
-                    {(extraKeys ?? []).map((key, keyIndex) => {
-                      const entry = row.extra.find((e) => e.key === key);
-                      if (!entry) {
-                        return null;
-                      }
-                      const extraColor = extraColors[keyIndex % extraColors.length] as string;
-                      const pos = valueScale(entry.value);
-                      return (
+                        })}
+                        {/* Start / end markers */}
                         <circle
-                          cx={isVertical ? crossCenter : pos}
-                          cy={isVertical ? pos : crossCenter}
-                          fill={extraColor}
-                          key={key}
-                          r={EXTRA_DOT_RADIUS}
-                          stroke="var(--chart-background)"
-                          strokeWidth={1}
+                          cx={isVertical ? crossCenter : startPos}
+                          cy={isVertical ? startPos : crossCenter}
+                          data-slot="dumbbell-chart-marker-start"
+                          {...markerPaint(markers.start === "filled", color)}
+                          r={MARKER_RADIUS}
+                          stroke={color}
                         />
-                      );
-                    })}
-                    {/* Start / end markers */}
-                    <circle
-                      cx={isVertical ? crossCenter : startPos}
-                      cy={isVertical ? startPos : crossCenter}
-                      data-slot="dumbbell-chart-marker-start"
-                      {...markerPaint(markers.start === "filled", color)}
-                      r={MARKER_RADIUS}
-                      stroke={color}
-                    />
-                    <circle
-                      cx={isVertical ? crossCenter : endPos}
-                      cy={isVertical ? endPos : crossCenter}
-                      data-slot="dumbbell-chart-marker-end"
-                      {...markerPaint(markers.end === "filled", color)}
-                      r={MARKER_RADIUS}
-                      stroke={color}
-                    />
+                        <circle
+                          cx={isVertical ? crossCenter : endPos}
+                          cy={isVertical ? endPos : crossCenter}
+                          data-slot="dumbbell-chart-marker-end"
+                          {...markerPaint(markers.end === "filled", color)}
+                          r={MARKER_RADIUS}
+                          stroke={color}
+                        />
+                      </>
+                    )}
                     {/* Category label */}
                     {isVertical ? (
                       <HaloText
@@ -1128,7 +1544,7 @@ function DumbbellPlot({
                       </HaloText>
                     )}
                     {/* Signed delta label */}
-                    {showDelta ? (
+                    {deltaShow ? (
                       <HaloText
                         className="text-meta"
                         data-slot="dumbbell-chart-delta-label"
@@ -1137,9 +1553,7 @@ function DumbbellPlot({
                         x={isVertical ? crossCenter : endPos + (growsPositive ? 10 : -10)}
                         y={isVertical ? endPos + (growsPositive ? -10 : 18) : crossCenter - 10}
                       >
-                        {deltaLabelFormat
-                          ? deltaLabelFormat(row.delta, row)
-                          : `${row.delta >= 0 ? "+" : ""}${formatValue(row.delta)}`}
+                        {deltaText}
                       </HaloText>
                     ) : null}
                     {/* Hover / interaction hit box */}
@@ -1172,6 +1586,7 @@ function DumbbellPlot({
                     : { x1: startPos, x2: endPos, y1: crossCenter, y2: crossCenter },
                 );
               })}
+          {annotationLayers.front /* Annotations — RM-111 */}
         </g>
       </svg>
       {datapointsEnabled ? <ChartDatapointLayer /> : null}
@@ -1258,6 +1673,12 @@ function defaultMargin(orientation: DumbbellOrientation, variant: DumbbellVarian
   if (variant === "slope") {
     return SLOPE_MARGIN;
   }
+  // "arrow"/"dots" always draw as rows (RM-116, like "slope" ignoring
+  // `orientation`) — the horizontal floor holds their category-label margin
+  // regardless of what `orientation` was passed.
+  if (variant === "arrow" || variant === "dots") {
+    return HORIZONTAL_MARGIN;
+  }
   return orientation === "vertical" ? VERTICAL_MARGIN : HORIZONTAL_MARGIN;
 }
 
@@ -1273,13 +1694,20 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     beads,
     markers = DEFAULT_MARKERS,
     extraKeys,
+    valueKeys,
+    range = false,
+    arrowWidth,
+    groupBy,
     showDelta = false,
     deltaLabelFormat,
+    delta,
     bothEndsLabeled = false,
     valueLabelFormat,
     referenceLine,
     showValueAxis = false,
+    valueAxis,
     sortBy = "none",
+    reverse = false,
     palette,
     rowColor,
     valueFormat,
@@ -1318,10 +1746,31 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     }
   };
 
-  const rows = useMemo(
-    () => sortDumbbellRows(buildDumbbellRows(data, category, startKey, endKey, extraKeys), sortBy),
-    [data, category, startKey, endKey, extraKeys, sortBy],
-  );
+  // `variant="dots"` (RM-116): `valueKeys` names every dot, `startKey`/
+  // `endKey` still resolve to its first/last (the domain and the optional
+  // `range` bar's extremes) and any keys between fold into `extraKeys` — no
+  // new `DumbbellRow` shape needed, the "dots" renderer just reads all of
+  // `start`/`extra`/`end` back out in that same order.
+  const effectiveStartKey =
+    variant === "dots" && valueKeys && valueKeys.length > 0 ? (valueKeys[0] as string) : startKey;
+  const effectiveEndKey =
+    variant === "dots" && valueKeys && valueKeys.length > 1
+      ? (valueKeys[valueKeys.length - 1] as string)
+      : endKey;
+  const effectiveExtraKeys =
+    variant === "dots" && valueKeys && valueKeys.length > 2 ? valueKeys.slice(1, -1) : extraKeys;
+
+  const rows = useMemo(() => {
+    const built = buildDumbbellRows(
+      data,
+      category,
+      effectiveStartKey,
+      effectiveEndKey,
+      effectiveExtraKeys,
+    );
+    const sorted = sortDumbbellRows(built, sortBy);
+    return reverse ? [...sorted].reverse() : sorted;
+  }, [data, category, effectiveStartKey, effectiveEndKey, effectiveExtraKeys, sortBy, reverse]);
 
   const width = bounds.width ?? 0;
   const height = bounds.height ?? 0;
@@ -1343,6 +1792,47 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     ...marginProp,
   };
 
+  // groupBy header-band height floor (validator round-2, #491): a horizontal
+  // header band needs `groupHeaderBandFloorPx(lineHeightPx)`, not the uniform
+  // per-band share `computeDumbbellBandExtents` gives every OTHER band (see
+  // `groupHeaderSize` in `DumbbellPlot`) — reallocating within the aspect-
+  // ratio height to afford that (round-1's attempt) starves the row bands'
+  // own labels instead. So the EXTRA room comes from the plot's own height:
+  // computed from `width` and the family's default aspect (replicated here,
+  // never read back from `bounds.height` — that would already reflect our
+  // own last override and drift upward every render), never below what
+  // `aspectRatio`/`plotHeight` already resolves to. Vertical `orientation`
+  // (dumbbell only) is unaffected — see `hasHorizontalGroupHeaders` above.
+  let heightOverridePx: number | undefined;
+  if (groupBy && !(orientation === "vertical" && variant === "dumbbell") && width > 0) {
+    const groupHeaderCount = new Set(rows.map((row) => String(row.datum[groupBy] ?? ""))).size;
+    if (groupHeaderCount > 0 && rows.length > 0) {
+      const measuredBreakpoint = breakpointForWidth(width);
+      const resolvedPlotHeight =
+        plotHeight !== undefined
+          ? resolveResponsive(plotHeight, measuredBreakpoint)
+          : aspectRatio === undefined
+            ? resolveResponsive(DEFAULT_CHART_PLOT_HEIGHT, measuredBreakpoint)
+            : undefined;
+      const naturalHeightPx =
+        resolvedPlotHeight === undefined
+          ? height
+          : typeof resolvedPlotHeight === "number"
+            ? resolvedPlotHeight
+            : width / resolvedPlotHeight.aspect;
+      const naturalRowShare = Math.max(
+        (naturalHeightPx - margin.top - margin.bottom) / rows.length,
+        0,
+      );
+      const requiredInnerAxisSize =
+        groupHeaderCount * groupHeaderBandFloorPx(lineHeightPx) + rows.length * naturalRowShare;
+      const requiredHeightPx = margin.top + margin.bottom + requiredInnerAxisSize;
+      if (requiredHeightPx > naturalHeightPx) {
+        heightOverridePx = requiredHeightPx;
+      }
+    }
+  }
+
   return (
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
@@ -1352,7 +1842,11 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
       data-slot="dumbbell-chart"
       ref={setContainerRef}
       role={role}
-      style={{ touchAction: "none" }}
+      style={
+        heightOverridePx !== undefined
+          ? { touchAction: "none", height: heightOverridePx }
+          : { touchAction: "none" }
+      }
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -1361,13 +1855,38 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
           {beads.label ?? `1 dot = ${beads.unit}`}
         </div>
       ) : null}
+      {variant === "dots" && valueKeys && valueKeys.length > 0 ? (
+        <div
+          className="pointer-events-none absolute end-2 top-2 z-10 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted-foreground"
+          data-slot="dumbbell-chart-dot-legend"
+        >
+          {(() => {
+            const legendColors = resolvePalette("categorical", valueKeys.length, {
+              explicit: true,
+            });
+            return valueKeys.map((key, keyIndex) => (
+              <span className="flex items-center gap-1" key={key}>
+                <span
+                  aria-hidden="true"
+                  className="inline-block size-2 rounded-full"
+                  style={{ backgroundColor: legendColors[keyIndex % valueKeys.length] }}
+                />
+                {key}
+              </span>
+            ));
+          })()}
+        </div>
+      ) : null}
       {width > 0 && height > 0 ? (
         <DumbbellBody
+          arrowWidth={arrowWidth}
           beads={beads}
           containerRef={containerRef}
           copyValueOnActivate={copyValueOnActivate}
           datapointLabel={datapointLabel}
+          delta={delta}
           extraKeys={extraKeys}
+          groupBy={groupBy}
           height={height}
           lineHeightPx={lineHeightPx}
           margin={margin}
@@ -1377,6 +1896,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
           onDatapointClick={onDatapointClick}
           orientation={orientation}
           palette={palette}
+          range={range}
           rowColor={rowColor}
           rows={rows}
           showDelta={showDelta}
@@ -1385,7 +1905,9 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
           valueLabelFormat={valueLabelFormat}
           referenceLine={referenceLine}
           showValueAxis={showValueAxis}
+          valueAxis={valueAxis}
           valueFormat={valueFormat}
+          valueKeys={valueKeys}
           variant={variant}
           width={width}
         />
@@ -1395,6 +1917,16 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
 });
 
 DumbbellChartBase.displayName = "DumbbellChartBase";
+
+// Annotations — RM-111: `annotations` lives on the main `DumbbellChartProps`
+// above (folded in alongside RM-116's own props during wave-1 integration —
+// `useAnnotatedChart` needs it on the same props object `DumbbellChartBase`
+// itself accepts).
+const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartProps>(
+  function DumbbellChartAnnotated(props, ref) {
+    return useAnnotatedChart(DumbbellChartBase, props, ref, "context");
+  },
+);
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
@@ -1409,7 +1941,7 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(
         dimExcluded={props.dimExcluded}
         selectionStates={props.selectionStates}
       >
-        <DumbbellChartBase {...props} ref={ref} />
+        <DumbbellChartAnnotated {...props} ref={ref} />
       </ChartSelectionProvider>
     );
   },

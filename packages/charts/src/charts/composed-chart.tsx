@@ -16,6 +16,8 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { Area, type AreaProps } from "./area";
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
@@ -389,11 +391,7 @@ function ChartInner({
   );
 }
 
-/**
- * @dataShape mixed marks on one shared axis — bars with a line target, for example
- * @avoidWhen a single mark type would do — reach for that container directly
- */
-export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(function ComposedChart(
+const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(function ComposedChart(
   {
     data,
     xDataKey = "date",
@@ -526,6 +524,21 @@ export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(func
     </ChartPlotRoot>
   );
 });
+
+// Annotations — RM-111
+export interface ComposedChartProps {
+  /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
+  annotations?: readonly ChartAnnotation[];
+}
+/**
+ * @dataShape mixed marks on one shared axis — bars with a line target, for example
+ * @avoidWhen a single mark type would do — reach for that container directly
+ */
+export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(
+  function ComposedChart(props, ref) {
+    return useAnnotatedChart(ComposedChartPlot, props, ref);
+  },
+);
 
 ComposedChart.displayName = "ComposedChart";
 
