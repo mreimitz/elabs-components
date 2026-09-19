@@ -6,6 +6,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 
 ## Components
 
+- ANNOTATION_ANCHORS
+- AnnotationKey
 - Area
 - AreaBand
 - AreaChart — Cumulative or part-of-whole trend over time — a filled line.
@@ -53,6 +55,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - CHART_STAGGER_BAR_MS
 - CHART_STAGGER_DOT_MS
 - CHART_TYPES
+- ChartAnnotations
 - ChartBrush
 - ChartBrushLayout
 - ChartBrushSelectionOverlay
@@ -109,6 +112,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Layering more than ~3 series types in one frame — split it into small multiples instead.
   - avoid: Colouring series by hand — resolve --chart-1..5 so the dark theme stays legible.
 - CONTINUOUS_MIN_OPACITY
+- CustomShapes
 - DateTicker
 - DEFAULT_CHART_CONFIG
 - DEFAULT_CHART_INTERACTIONS
@@ -116,10 +120,13 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_CHART_PLOT_HEIGHT
 - DEFAULT_CHART_STATUS
 - DEFAULT_CIRCULAR_CURVENESS
+- DEFAULT_DESCRIBE_SERIES_PHRASES
 - DEFAULT_FORCE_SEED
 - DEFAULT_HEATMAP_STEPS
 - DEFAULT_HOVER_OFFSET
 - DEFAULT_MAX_INTERACTIVE_DATAPOINTS
+- DEFAULT_PIE_LABEL_MIN_ANGLE
+- DEFAULT_SCATTER_SIZE_RANGE
 - DEFAULT_WHISKER_MULTIPLIER
 - DEFAULT_Y_AXIS_ID
 - DEFAULT_Y_DOMAIN_TWEEN_MS
@@ -260,6 +267,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: More than ~5 slices — a bar chart compares better; a pie is not a ranking.
   - avoid: A pie for values that don't sum to a meaningful whole.
   - avoid: Identifying slices by color alone — put the label and value on or beside the slice.
+- PieLabels
 - PieProvider
 - PieSlice
 - PROFIT_LOSS_LEGEND_ITEMS
@@ -304,6 +312,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Relying on keyboard focus reaching inside the <svg> — the keyboard path is the sibling ChartDatapointLayer, never a focusable SVG element.
 - SankeyTooltip
 - Scatter
+- SCATTER_SHAPE_SOFT_CAP
 - ScatterChart — Point cloud for correlation between two continuous measures.
   - avoid: Connecting the points — a line asserts a sequence a scatter does not have.
   - avoid: Plotting tens of thousands of raw points — bin or sample; the browser and the reader both give up.
@@ -313,6 +322,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - SegmentLineTo
 - SELECTED_OUTLINE_WIDTH
 - SELECTION_EXCLUDED_OPACITY
+- SERIES_LABEL_INK_MIX
 - SeriesBar
 - SeriesMarkers
 - SeriesPointMarker
@@ -337,6 +347,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Reaching for palette: 'categorical' to encode a second measure on top of area — the hue there still only labels the group a leaf already belongs to (structurally, via the band); asking it to carry an unrelated variable makes one channel do two jobs and defeats the mono default's greyscale-legible design.
   - avoid: Leaving a long tail of small leaves unmerged until tiles fall below labelMinArea — set otherThreshold before that happens (the unconditional 30-leaf cap is a backstop, not a substitute for tuning it); a treemap of unlabeled slivers reads as noise, not a breakdown.
   - avoid: Turning on drilldown as the only way to reach a leaf's value — the group-band zoom button is a SEPARATE affordance from onDatapointClick on purpose; a leaf stays selectable by its own click/Enter without first forcing a reader to drill in.
+- TrendLine
 - UNIT_CHART_GROUP_STAGGER_MS
 - UNIT_CHART_POSITION_STAGGER_MS
 - UNIT_STACK_EMPHASIS
@@ -368,12 +379,14 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useAnimatedYDomains
 - useCanvasDraw
 - useChart
+- useChartAnnotationsA11y
 - useChartBreakpoint
 - useChartConfig
 - useChartDatapointsEnabled
 - useChartHover
 - useChartInteraction
 - useChartLegendHover
+- useChartSeriesKey
 - useChartStable
 - useChartValueSetFormatter
 - useChoropleth

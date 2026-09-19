@@ -16,7 +16,11 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+// Labels — RM-110
+import { useChartAutoSummary } from "./chart-a11y";
 import type { LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
@@ -42,7 +46,11 @@ import type { ChartRevealOn } from "./chart-reveal-clip";
 import { PatternArea } from "./pattern-area";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
-import { TimeSeriesChartInner } from "./time-series-chart-shell";
+import {
+  ChartSeriesModeProvider,
+  type NullsMode,
+  TimeSeriesChartInner,
+} from "./time-series-chart-shell";
 import {
   ChartPlotRoot,
   type ChartPlotHeight,
@@ -161,6 +169,17 @@ export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps
    * set. Default: false.
    */
   labelBands?: boolean;
+  /**
+   * Container-level default for an `Area`'s own `nulls` prop (RM-112). Unset
+   * — every `Area` keeps its own default (`"gap"`).
+   */
+  nulls?: NullsMode;
+  /**
+   * Hovering (or, on touch, tapping) one series dims every other series to
+   * the shared selection-excluded opacity (RM-112, `dw-river.md` §2.3).
+   * Default false — today's behaviour.
+   */
+  focusOnHover?: boolean;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -239,6 +258,10 @@ interface ChartInnerProps {
   seams?: number;
   /** Band name labels — see `AreaChartProps.labelBands`. */
   labelBands?: boolean;
+  /** Container-level `nulls` default — see `AreaChartProps.nulls`. */
+  nulls?: NullsMode;
+  /** Dim non-hovered series — see `AreaChartProps.focusOnHover`. */
+  focusOnHover?: boolean;
 }
 
 function ChartInner({
@@ -271,6 +294,8 @@ function ChartInner({
   offset,
   seams,
   labelBands,
+  nulls,
+  focusOnHover,
 }: ChartInnerProps) {
   // `children` gets a fresh identity every parent render; `useStableValue`
   // collapses back to the previous reference when the series content hasn't
@@ -286,35 +311,37 @@ function ChartInner({
     // — so `Children.forEach`'s series/def/axis classification inside the
     // shell still walks the caller's original `children` untouched. See
     // `AreaStackProvider`'s own docblock in `./area`.
-    <AreaStackProvider labelBands={labelBands} offset={offset} seams={seams}>
-      <TimeSeriesChartInner
-        animationDuration={animationDuration}
-        animationEasing={animationEasing}
-        chartStatus={chartStatus}
-        clipPathId={clipPathId}
-        containerRef={containerRef}
-        data={data}
-        enterTransition={enterTransition}
-        height={height}
-        lines={lines}
-        loadingLabel={loadingLabel}
-        margin={margin}
-        onPhaseChange={onPhaseChange}
-        replayOnClick={replayOnClick}
-        revealOn={revealOn}
-        revealSignature={revealSignature}
-        tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
-        width={width}
-        xDataKey={xDataKey}
-        xDomain={xDomain}
-        xDomainSlotCount={xDomainSlotCount}
-        xScaleType={xScaleType}
-        yDomainTween={yDomainTween}
-        yDomainTweenDuration={yDomainTweenDuration}
-      >
-        {children}
-      </TimeSeriesChartInner>
-    </AreaStackProvider>
+    <ChartSeriesModeProvider focusOnHover={focusOnHover} nulls={nulls}>
+      <AreaStackProvider labelBands={labelBands} offset={offset} seams={seams}>
+        <TimeSeriesChartInner
+          animationDuration={animationDuration}
+          animationEasing={animationEasing}
+          chartStatus={chartStatus}
+          clipPathId={clipPathId}
+          containerRef={containerRef}
+          data={data}
+          enterTransition={enterTransition}
+          height={height}
+          lines={lines}
+          loadingLabel={loadingLabel}
+          margin={margin}
+          onPhaseChange={onPhaseChange}
+          replayOnClick={replayOnClick}
+          revealOn={revealOn}
+          revealSignature={revealSignature}
+          tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
+          width={width}
+          xDataKey={xDataKey}
+          xDomain={xDomain}
+          xDomainSlotCount={xDomainSlotCount}
+          xScaleType={xScaleType}
+          yDomainTween={yDomainTween}
+          yDomainTweenDuration={yDomainTweenDuration}
+        >
+          {children}
+        </TimeSeriesChartInner>
+      </AreaStackProvider>
+    </ChartSeriesModeProvider>
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
@@ -336,12 +363,7 @@ function ChartInner({
   );
 }
 
-/**
- * @dataShape measures over time where magnitude matters — stacked, or as a stream with
- *   offset="wiggle"
- * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
- */
-export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
+const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
   {
     data,
     xDataKey = "date",
@@ -379,6 +401,8 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
     offset,
     seams,
     labelBands,
+    nulls,
+    focusOnHover,
   },
   ref,
 ) {
@@ -401,13 +425,21 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
   );
 
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
+  const description = useChartAutoSummary("area", {
+    accessibleLabel,
+    accessibleDescription,
+    children,
+    data,
+    xDataKey,
+  });
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+  } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
   const [chartPhase, setChartPhase] = useState<ChartPhase>(() => resolveRestingChartPhase(status));
   const handlePhaseChange = useCallback(
     (phase: ChartPhase) => {
@@ -436,7 +468,7 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
       style={{ touchAction: "none", ...style }}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      <ChartA11yLabel descId={descId} description={description} />
       <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
         <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
           <ParentSize debounceTime={100}>
@@ -454,7 +486,9 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
                 margin={margin}
                 copyValueOnActivate={copyValueOnActivate}
+                focusOnHover={focusOnHover}
                 labelBands={labelBands}
+                nulls={nulls}
                 offset={offset}
                 onDatapointClick={onDatapointClick}
                 onPhaseChange={handlePhaseChange}
@@ -484,6 +518,20 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
       ) : null}
     </ChartPlotRoot>
   );
+});
+
+// Annotations — RM-111
+export interface AreaChartProps {
+  /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
+  annotations?: readonly ChartAnnotation[];
+}
+/**
+ * @dataShape measures over time where magnitude matters — stacked, or as a stream with
+ *   offset="wiggle"
+ * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
+ */
+export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(props, ref) {
+  return useAnnotatedChart(AreaChartPlot, props, ref);
 });
 
 AreaChart.displayName = "AreaChart";

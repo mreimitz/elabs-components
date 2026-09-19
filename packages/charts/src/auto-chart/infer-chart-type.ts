@@ -393,7 +393,7 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
   // ── 5. Stacked temporal bands → stream ─────────────────────────────────────
   //    Outranks `line` (rule 13) on the same temporal x; the `stacked` flag and
   //    a second series are what make a streamgraph legible at all.
-  if (temporalX && stacked && seriesKeys.length >= 2) {
+  if (temporalX && stacked === true && seriesKeys.length >= 2) {
     return pick(
       "stream",
       "stream",
@@ -418,8 +418,9 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
 
   // ── 7. Two measures that read as before/after → dumbbell ───────────────────
   //    Outranks `bar` (rule 15), which every two-series categorical spec
-  //    satisfies. Only the NAMED pair (or an explicit `y2`) fires it, so an
-  //    ordinary two-region comparison still draws as grouped bars.
+  //    satisfies. Only the NAMED pair, an explicit `y2`, or a declared
+  //    `kind: "change"` fires it, so an ordinary two-region comparison still
+  //    draws as grouped bars.
   if (categoricalX) {
     const explicitPair =
       spec.y2 && numericKeys.length === 1 && isNumericField(data, spec.y2)
@@ -429,12 +430,25 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
       !explicitPair && numericKeys.length === 2
         ? readsAsBeforeAfterPair(seriesNames[0] as string, seriesNames[1] as string)
         : null;
-    const pair = explicitPair ?? namedPair;
+    // RM-116: a declared "change" reading needs no NAME match — the spec
+    // author already said these two measures are one value at two moments.
+    const declaredChange = kind === "change";
+    const changePair =
+      !explicitPair && !namedPair && declaredChange && numericKeys.length === 2
+        ? ([numericKeys[0] as string, numericKeys[1] as string] as [string, string])
+        : null;
+    const pair = explicitPair ?? namedPair ?? changePair;
     if (pair) {
+      // "arrow" (RM-116): the rule string is the ONE place this decision is
+      // recorded — `auto-chart.tsx`'s dumbbell case reads `spec.kind` itself
+      // (not this string) to pick `variant`, since `inferChartType` below
+      // returns only the bare `ChartType`.
       return pick(
         "dumbbell",
-        "before-after",
-        `chose dumbbell: ${pair[0]} → ${pair[1]} is one measure at two moments, not two series`,
+        declaredChange ? "arrow" : "before-after",
+        declaredChange
+          ? `chose dumbbell (arrow): ${pair[0]} → ${pair[1]} is a declared change, not two series`
+          : `chose dumbbell: ${pair[0]} → ${pair[1]} is one measure at two moments, not two series`,
       );
     }
   }
@@ -491,6 +505,22 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
     }
   }
 
+  // ── 10a. Likert rows → diverging-bar (RM-113) ─────────────────────────────
+  //     A named middle series centres the stack on zero: the diverging-bar
+  //     reading with `stacked: "diverging"`, not a grouped or plain stack.
+  if (
+    categoricalX &&
+    stacked === "diverging" &&
+    spec.divergingCenter !== undefined &&
+    seriesKeys.includes(spec.divergingCenter)
+  ) {
+    return pick(
+      "diverging-bar",
+      "likert",
+      `chose diverging-bar: ${spec.divergingCenter} is the middle answer, so the stack centres on it`,
+    );
+  }
+
   // ── 10. A signed single measure → diverging-bar ────────────────────────────
   //     Outranks `pie` (rule 12) — which cannot draw a negative share at all —
   //     and `bar` (rule 15), whose grouped read hides the zero crossing.
@@ -528,6 +558,18 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
         );
       }
       // 12 — the pre-RM-038 pie rule, unchanged.
+      //
+      // RM-114 asks this rule to also fire above 8 raw categories when
+      // automatic grouping would fold them to <= 5 slices + "Other". NOT
+      // implemented: `explainChartType` only picks a TYPE — it has no way to
+      // tell `AutoChart`'s render step "and apply groupSmall({max:5}) too",
+      // so a spec without an explicit `groupSmall` would render an UNGROUPED
+      // 9+-slice pie, exactly the illegible chart the RM rule exists to
+      // avoid, and less honest than the current bar fallback. It also
+      // flipped the accepted "ten single-series categories -> bar (default)"
+      // fixture in `infer-chart-type.test.ts`, a previously-accepted test
+      // (wave-0 lesson: don't silently break one). Recorded as an open
+      // question in the result file rather than guessed at further.
       if (data.length <= 8) {
         return pick(
           "pie",

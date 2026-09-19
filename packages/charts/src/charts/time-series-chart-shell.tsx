@@ -6,16 +6,38 @@ import type { Transition } from "motion/react";
 import {
   Children,
   cloneElement,
+  createContext,
   isValidElement,
   memo,
   type ReactElement,
   type ReactNode,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
+import { useLocale } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
+import { useChartBreakpoint } from "./chart-breakpoint";
+import { useChartConfig } from "./chart-config-context";
+import { makeValueSetFmt } from "./chart-formatters";
+import { useAreaStacked } from "./area";
+import { SeriesEndLabels, SeriesKeyRow } from "./labels/series-end-labels";
+import {
+  ChartSeriesKeyProvider,
+  collectLabelRequests,
+  placeChartLabels,
+  reserveChartLabels,
+} from "./labels/use-chart-labels";
+import {
+  UnpaintedLabels,
+  UnpaintedLabelsProvider,
+  useUnpaintedLabelsStore,
+} from "./labels/unpainted-labels";
+import { ValueLabels } from "./labels/value-labels";
+import { useTextMeasurerOf } from "./use-text-measurer";
 import { resolveChartChildElement } from "./chart-child-passthrough";
 import { ChartProvider, type LineConfig, type Margin, type TooltipData } from "./chart-context";
 import {
@@ -28,6 +50,11 @@ import {
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
 import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
+import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
+import {
+  placementRects,
+  usePublishAnnotationObstacles,
+} from "./annotations/annotation-layout-context"; // Annotations — RM-111
 import { ChartFallback } from "./chart-fallback";
 import {
   type ChartPhase,
@@ -274,6 +301,86 @@ export interface TimeSeriesChartInnerProps {
   replayOnClick?: boolean;
 }
 
+// ── Series mode context (RM-112: `nulls` default + `focusOnHover`) ─────────
+
+/**
+ * How a `Line`/`Area` draws a non-numeric (`null`/`undefined`/`NaN`) sample.
+ * `"gap"` (default) breaks the path there — the honest "we have no data
+ * here" reading (Datawrapper's "connect all points" toggle, inverted: this
+ * is the toggle OFF). `"connect"` skips the missing sample so the path draws
+ * straight across it — Datawrapper's "connect all points" ON. `"zero"` is
+ * this package's pre-RM-112 behaviour (a silent honesty failure — a missing
+ * value drew as if it were the pixel origin) kept only for callers that
+ * relied on it.
+ */
+export type NullsMode = "gap" | "zero" | "connect";
+
+interface ChartSeriesModeValue {
+  /** Container-level `nulls` default; a `Line`/`Area`'s own `nulls` prop wins. */
+  nulls: NullsMode | undefined;
+  /** `LineChart`/`AreaChart` `focusOnHover` — dim every series but the hovered one. */
+  focusOnHover: boolean;
+  /** `dataKey` of the series currently hovered/tapped, or `null`. */
+  hoveredKey: string | null;
+  setHoveredKey: (key: string | null) => void;
+}
+
+const ChartSeriesModeContext = createContext<ChartSeriesModeValue | undefined>(undefined);
+
+export interface ChartSeriesModeProviderProps {
+  /** Container-level `nulls` default. Unset — every series keeps its own default. */
+  nulls?: NullsMode;
+  /**
+   * Hovering (or, on touch, tapping) one series dims every other series to
+   * the shared selection-excluded opacity (`SELECTION_EXCLUDED_OPACITY`,
+   * `chart-selection.ts`) — Datawrapper's line-chart hover fade
+   * (`dw-river.md` §2.3). Default false — today's behaviour (only the
+   * chart-wide tooltip dim and legend hover apply).
+   */
+  focusOnHover?: boolean;
+  children: ReactNode;
+}
+
+/**
+ * Wraps the chart body — mounted OUTSIDE `TimeSeriesChartInner` by
+ * `LineChart`/`AreaChart`, mirroring `AreaStackProvider` (`./area`), so a
+ * `hoveredKey` change re-renders only this provider and its consumers, never
+ * the memoised `TimeSeriesChartCore` tree.
+ */
+export function ChartSeriesModeProvider({
+  nulls,
+  focusOnHover = false,
+  children,
+}: ChartSeriesModeProviderProps) {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const value = useMemo<ChartSeriesModeValue>(
+    () => ({
+      nulls,
+      focusOnHover,
+      hoveredKey: focusOnHover ? hoveredKey : null,
+      setHoveredKey,
+    }),
+    [nulls, focusOnHover, hoveredKey],
+  );
+  return (
+    <ChartSeriesModeContext.Provider value={value}>{children}</ChartSeriesModeContext.Provider>
+  );
+}
+
+const DEFAULT_SERIES_MODE: ChartSeriesModeValue = {
+  nulls: undefined,
+  focusOnHover: false,
+  hoveredKey: null,
+  setHoveredKey: () => {
+    /* noop outside ChartSeriesModeProvider */
+  },
+};
+
+/** Reads {@link ChartSeriesModeProvider}'s value; safe defaults outside one. */
+export function useChartSeriesMode(): ChartSeriesModeValue {
+  return useContext(ChartSeriesModeContext) ?? DEFAULT_SERIES_MODE;
+}
+
 export function TimeSeriesChartInner(props: TimeSeriesChartInnerProps) {
   const { width, height } = props;
   if (width < 10 || height < 10) {
@@ -288,7 +395,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   data,
   xDataKey,
   xScaleType,
-  margin,
+  margin: marginProp,
   animationDuration,
   animationEasing = DEFAULT_ANIMATION_EASING,
   enterTransition,
@@ -317,6 +424,43 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   replayOnClick = false,
 }: TimeSeriesChartInnerProps) {
   const staticPreview = useStaticChartPreview();
+
+  // RM-110 label engine, reserve half: decide each series' end-label / key
+  // mode for this breakpoint and grow the margin ONCE for what they need,
+  // before any scale exists (the bar category-axis pattern — the reserve
+  // depends on label TEXT widths only, never on positions, so it is acyclic).
+  const breakpoint = useChartBreakpoint();
+  const unpaintedStore = useUnpaintedLabelsStore();
+  const { locale } = useLocale();
+  const { currency: configCurrency } = useChartConfig();
+  const { measure: measureLabel } = useTextMeasurerOf(containerRef);
+  const areaStacked = useAreaStacked();
+  const labelRequests = useMemo(
+    () => collectLabelRequests(children, { skipAreas: areaStacked }),
+    [children, areaStacked],
+  );
+  const labelReserve = useMemo(
+    () =>
+      reserveChartLabels(
+        labelRequests,
+        breakpoint,
+        measureLabel,
+        marginProp.right,
+        width - marginProp.left - marginProp.right,
+      ),
+    [labelRequests, breakpoint, measureLabel, marginProp.right, marginProp.left, width],
+  );
+  const margin = useMemo(
+    () =>
+      labelReserve.right === 0 && labelReserve.top === 0
+        ? marginProp
+        : {
+            ...marginProp,
+            right: marginProp.right + labelReserve.right,
+            top: marginProp.top + labelReserve.top,
+          },
+    [marginProp, labelReserve.right, labelReserve.top],
+  );
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -717,10 +861,21 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   const clipExcludedChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  // RM-111: a `ChartAnnotations` child paints twice — ranges under everything,
+  // notes and lines over the series (outside the reveal clip, so they never wipe in).
+  const annotationBackChildren: ReactElement[] = [];
+  const annotationFrontChildren: ReactElement[] = [];
   const yAxisTooltipHint = findYAxisTooltipHint(children);
 
   Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
+      return;
+    }
+
+    const annotationLayers = splitChartAnnotationsChild(child, index);
+    if (annotationLayers) {
+      annotationBackChildren.push(annotationLayers[0]);
+      annotationFrontChildren.push(annotationLayers[1]);
       return;
     }
 
@@ -881,6 +1036,58 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     plotData.length,
   ]);
 
+  const labelsVisible =
+    chartPhase === "revealing" || chartPhase === "ready" || chartPhase === "exitingReady";
+  const labelPlan = useMemo(() => {
+    const valueSeries = labelRequests.series.filter((s) => s.valueLabels);
+    if (!labelsVisible || (labelReserve.endSeries.length === 0 && valueSeries.length === 0)) {
+      return null;
+    }
+    return placeChartLabels({
+      endSeries: labelReserve.endSeries,
+      valueSeries,
+      data: visiblePlotData,
+      x: (row) => xScale(xAccessor(row)) ?? 0,
+      y: (value, request) => {
+        const id =
+          request.yAxisId == null || request.yAxisId === ""
+            ? DEFAULT_Y_AXIS_ID
+            : String(request.yAxisId);
+        return (yScales[id] ?? yScale)(value) ?? 0;
+      },
+      measure: measureLabel,
+      formatSet: (values, format) => makeValueSetFmt(locale, values, format, configCurrency),
+      bounds: {
+        x: 0,
+        y: -margin.top + labelReserve.top,
+        width: innerWidth + margin.right,
+        height: innerHeight + margin.top - labelReserve.top + margin.bottom,
+      },
+    });
+  }, [
+    labelsVisible,
+    labelRequests,
+    labelReserve,
+    visiblePlotData,
+    xScale,
+    xAccessor,
+    yScales,
+    yScale,
+    measureLabel,
+    locale,
+    configCurrency,
+    margin.top,
+    margin.right,
+    margin.bottom,
+    innerWidth,
+    innerHeight,
+  ]);
+  const unpaintedLabels =
+    labelPlan?.dropped.map((d) => (d.kind === "end" ? d.text : `${d.dataKey}: ${d.text}`)) ?? [];
+  // Annotations — RM-111: the labels placed above are obstacles for annotation text.
+  const annotationObstacles = useMemo(() => placementRects(labelPlan?.placed), [labelPlan]);
+  usePublishAnnotationObstacles("series-labels", annotationObstacles);
+
   // #352: the x values are neither Date-coercible NOR labellable (all null /
   // undefined / empty), so there is no time scale to draw with AND no category
   // to name — an ordinal axis would just be a row of blank ticks. Render the
@@ -929,31 +1136,45 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       >
         <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
 
+        {annotationBackChildren}
         {clipExcludedChildren}
         {useClipReveal ? (
           <g clipPath={`url(#${clipPathId})`}>{preOverlayChildren}</g>
         ) : (
           preOverlayChildren
         )}
+        {annotationFrontChildren}
         {postOverlayChildren}
+        {labelPlan ? (
+          <>
+            <ValueLabels placements={labelPlan.placed.filter((p) => p.label.kind === "value")} />
+            <SeriesEndLabels placements={labelPlan.placed.filter((p) => p.label.kind === "end")} />
+          </>
+        ) : null}
+        <SeriesKeyRow items={labelReserve.keyLayout} top={-margin.top} />
       </g>
     </svg>
   );
-
   return (
-    <ChartProvider value={contextValue}>
-      {datapointsEnabled ? (
-        // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
-        // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
-        // exists on the interactive path, so a chart without `onDatapointClick`
-        // keeps byte-identical DOM.
-        <div className="relative" style={{ width, height }}>
-          {svg}
-          <ChartDatapointLayer />
-        </div>
-      ) : (
-        svg
-      )}
-    </ChartProvider>
+    <ChartSeriesKeyProvider value={labelReserve.keyItems}>
+      <UnpaintedLabelsProvider store={unpaintedStore}>
+        <ChartProvider value={contextValue}>
+          {datapointsEnabled ? (
+            // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
+            // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
+            // exists on the interactive path, so a chart without `onDatapointClick`
+            // keeps byte-identical DOM.
+            <div className="relative" style={{ width, height }}>
+              {svg}
+              <ChartDatapointLayer />
+            </div>
+          ) : (
+            svg
+          )}
+          {/* Labels the solver (or a mark) dropped, restated for AT — the category-axis precedent. */}
+          <UnpaintedLabels extra={unpaintedLabels} store={unpaintedStore} />
+        </ChartProvider>
+      </UnpaintedLabelsProvider>
+    </ChartSeriesKeyProvider>
   );
 });

@@ -217,7 +217,9 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     itemRequiredKeys: ["id", "name", "start", "end"],
     dateItemKeys: ["start", "end"],
   },
-  // Dumbbell — RM-023
+  // Dumbbell — RM-023. `groupBy` — RM-116: optional, so a caller who never
+  // groups their rows checks nothing extra; a caller who does gets the same
+  // "does this column exist" floor every other nominated column gets.
   DumbbellChart: {
     dataKind: "array",
     requiredProps: ["data", "category", "startKey", "endKey"],
@@ -227,6 +229,7 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
       { prop: "startKey", numeric: true },
       { prop: "endKey", numeric: true },
     ],
+    keyProps: [{ prop: "groupBy", numeric: false }],
   },
   // Bullet — RM-061. A single scalar KPI value, not a data array — `dataKind:
   // "none"` skips every array/row check, so the one thing a mocked test can
@@ -349,6 +352,8 @@ function createChartContainerDouble<P extends DoubleOwnProps>(
     assertChartContract(name, record, spec);
     // Axes — RM-108
     assertAxisChildrenContract(props.children);
+    // Labels — RM-110
+    assertLabelChildrenContract(props.children);
     const a11y = useChartA11yContainerProps(props.accessibleLabel, props.accessibleDescription);
     const payload = buildChartDoublePayload(name, record, spec);
     return (
@@ -411,10 +416,18 @@ export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
   CHART_CONTRACT_SPECS.AreaChart,
 );
-export const BarChart = createChartContainerDouble<BarChartProps>(
+const BarChartBaseDouble = createChartContainerDouble<BarChartProps>(
   "BarChart",
   CHART_CONTRACT_SPECS.BarChart,
 );
+// BarChart — RM-113: the richness props are validated before the base contract.
+export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(
+  function BarChartTestDouble(props, ref) {
+    assertBarRichnessContract("BarChart", props as unknown as Record<string, unknown>);
+    return <BarChartBaseDouble {...props} ref={ref} />;
+  },
+);
+BarChart.displayName = "BarChart";
 export const LineChart = createChartContainerDouble<LineChartProps>(
   "LineChart",
   CHART_CONTRACT_SPECS.LineChart,
@@ -549,6 +562,12 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     assertChartSpecContract(props.spec);
     // Axes — RM-108
     assertAxisSpecContract((props.spec as { axes?: unknown } | undefined)?.axes);
+    // Labels — RM-110
+    assertLabelsSpecContract((props.spec as { labels?: unknown } | undefined)?.labels);
+    // Annotations — RM-111
+    assertAnnotationSpecContract(
+      (props.spec as { annotations?: unknown } | undefined)?.annotations,
+    );
     return (
       <div
         ref={ref}
@@ -723,3 +742,284 @@ export function assertAxisSpecContract(axes: unknown): void {
     );
   }
 }
+
+// Labels — RM-110
+//
+// `seriesLabel`, `valueLabels`, Scatter `labels`, Bar `showValues` objects and
+// `ChartSpec.labels`. The REAL engine silently paints nothing for an unknown
+// mode or placement, so the double names it.
+
+const SERIES_LABEL_MODES = ["end", "key", "none"] as const;
+const SERIES_LABEL_TIERS = ["base", "medium", "narrow"] as const;
+const VALUE_LABEL_PLACEMENTS = ["first", "last", "all", "peaks"] as const;
+const POINT_LABEL_MODES = ["auto", "all"] as const;
+
+function checkSeriesLabel(component: string, prop: string, value: unknown): void {
+  if (value === undefined) return;
+  if (typeof value === "object" && value !== null && "base" in value) {
+    for (const [tier, mode] of Object.entries(value as Record<string, unknown>)) {
+      checkOneOf(component, `${prop} tier`, tier, SERIES_LABEL_TIERS);
+      checkOneOf(component, `${prop}.${tier}`, mode, SERIES_LABEL_MODES);
+    }
+    return;
+  }
+  checkOneOf(component, prop, value, SERIES_LABEL_MODES);
+}
+
+function checkValueLabels(component: string, prop: string, value: unknown): void {
+  if (value === undefined) return;
+  if (typeof value !== "object" || value === null) {
+    axisViolation(component, prop, value, `"${prop}" must be { placement, count?, … }`);
+  }
+  const v = value as Record<string, unknown>;
+  if (v.placement === undefined) {
+    axisViolation(component, `${prop}.placement`, v.placement, `"placement" is required`);
+  }
+  checkOneOf(component, `${prop}.placement`, v.placement, VALUE_LABEL_PLACEMENTS);
+  if (v.count !== undefined && !(isFiniteNumber(v.count) && (v.count as number) >= 0)) {
+    axisViolation(component, `${prop}.count`, v.count, `"count" must be a number ≥ 0`);
+  }
+}
+
+function checkPointLabels(component: string, prop: string, value: unknown, field: string): void {
+  if (value === undefined) return;
+  const p = value as Record<string, unknown> | null;
+  if (typeof p !== "object" || p === null || typeof p[field] !== "string") {
+    axisViolation(component, prop, value, `"${prop}" must be { ${field}: string, mode?, … }`);
+  }
+  if (typeof p.mode === "string") checkOneOf(component, `${prop}.mode`, p.mode, POINT_LABEL_MODES);
+}
+
+/** Validate the label props of `Line` / `Area` / `Scatter` / `Bar` children (RM-110). */
+export function assertLabelChildrenContract(children: ReactNode): void {
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child)) return;
+    const type = child.type as { displayName?: string; name?: string };
+    const name = typeof child.type === "string" ? "" : (type.displayName ?? type.name ?? "");
+    const props = child.props as Record<string, unknown>;
+    if (name === "Line" || name === "Area") {
+      checkSeriesLabel(name, "seriesLabel", props.seriesLabel);
+      checkValueLabels(name, "valueLabels", props.valueLabels);
+    } else if (name === "Scatter") {
+      checkPointLabels(name, "labels", props.labels, "key");
+    } else if (name === "Bar" && typeof props.showValues === "object" && props.showValues) {
+      const sv = props.showValues as Record<string, unknown>;
+      checkOneOf(name, "showValues.placement", sv.placement, ["inside", "outside", "auto"]);
+      checkOneOf(name, "showValues.visibility", sv.visibility, ["always", "hover"]);
+    }
+    const nested = props.children as ReactNode;
+    if (nested) assertLabelChildrenContract(nested);
+  });
+}
+
+/** Validate `ChartSpec.labels` (RM-110). Exported for the contract test. */
+export function assertLabelsSpecContract(labels: unknown): void {
+  if (labels === undefined) return;
+  if (typeof labels !== "object" || labels === null) {
+    axisViolation(
+      "AutoChart",
+      "spec.labels",
+      labels,
+      `"labels" must be { series?, values?, points?, comparison? }`,
+    );
+  }
+  const l = labels as Record<string, unknown>;
+  for (const field of Object.keys(l)) {
+    checkOneOf("AutoChart", "spec.labels field", field, [
+      "series",
+      "values",
+      "points",
+      // BarChart — RM-113
+      "comparison",
+    ]);
+  }
+  checkSeriesLabel("AutoChart", "spec.labels.series", l.series);
+  checkValueLabels("AutoChart", "spec.labels.values", l.values);
+  checkPointLabels("AutoChart", "spec.labels.points", l.points, "key");
+  // BarChart — RM-113
+  checkOneOf("AutoChart", "spec.labels.comparison", l.comparison, BAR_COMPARISON_LABELS);
+}
+
+// BarChart — RM-113
+const BAR_STACKED_VALUES: readonly unknown[] = [true, false, "percent", "diverging"];
+const BAR_SORT_DIRECTIONS: readonly unknown[] = ["asc", "desc"];
+const BAR_COLOR_BY_SCALES: readonly unknown[] = ["categorical", "sequential", "diverging"];
+const BAR_COMPARISON_LABELS = ["value", "difference", "none"] as const;
+
+/**
+ * `stacked` / `divergingCenter` / `sort` / `groupBy` / `colorBy` / `overlays` /
+ * `comparison` (RM-113) must be well-formed, and a named `divergingCenter` must
+ * be one of the chart's own `Bar` series — the real chart silently falls back
+ * to a half split otherwise, which the double makes loud.
+ */
+export function assertBarRichnessContract(component: string, props: Record<string, unknown>): void {
+  const { stacked, divergingCenter, sort, groupBy, colorBy, overlays, comparison } = props;
+  if (stacked !== undefined && !BAR_STACKED_VALUES.includes(stacked)) {
+    axisViolation(component, "stacked", stacked, 'must be a boolean, "percent" or "diverging"');
+  }
+  if (divergingCenter !== undefined) {
+    if (typeof divergingCenter !== "string") {
+      axisViolation(component, "divergingCenter", divergingCenter, "must be a series key");
+    }
+    const keys: string[] = [];
+    Children.forEach(props.children as ReactNode, (child) => {
+      if (isValidElement(child)) {
+        const key = (child.props as { dataKey?: unknown }).dataKey;
+        if (typeof key === "string") keys.push(key);
+      }
+    });
+    if (keys.length > 0 && !keys.includes(divergingCenter)) {
+      axisViolation(
+        component,
+        "divergingCenter",
+        divergingCenter,
+        `must name a Bar series (${keys.join(", ")})`,
+      );
+    }
+  }
+  if (
+    sort !== undefined &&
+    sort !== "none" &&
+    !BAR_SORT_DIRECTIONS.includes(sort) &&
+    !(
+      typeof sort === "object" &&
+      sort !== null &&
+      typeof (sort as { by?: unknown }).by === "string" &&
+      BAR_SORT_DIRECTIONS.includes((sort as { dir?: unknown }).dir)
+    )
+  ) {
+    axisViolation(component, "sort", sort, 'must be "none", "asc", "desc" or { by, dir }');
+  }
+  if (groupBy !== undefined && typeof groupBy !== "string") {
+    axisViolation(component, "groupBy", groupBy, "must be a column key");
+  }
+  if (colorBy !== undefined) {
+    const c = colorBy as { key?: unknown; scale?: unknown; steps?: unknown } | null;
+    if (
+      typeof c !== "object" ||
+      c === null ||
+      typeof c.key !== "string" ||
+      (c.scale !== undefined && !BAR_COLOR_BY_SCALES.includes(c.scale)) ||
+      (c.steps !== undefined && !isFiniteNumber(c.steps))
+    ) {
+      axisViolation(component, "colorBy", colorBy, "must be { key, scale?, steps? }");
+    }
+  }
+  if (overlays !== undefined) {
+    if (!Array.isArray(overlays)) {
+      axisViolation(component, "overlays", overlays, "must be an array");
+    }
+    overlays.forEach((overlay: unknown, i: number) => {
+      const o = overlay as Record<string, unknown> | null;
+      const ok =
+        o !== null &&
+        typeof o === "object" &&
+        ((o.kind === "value" && typeof o.key === "string") ||
+          (o.kind === "range" && typeof o.lowKey === "string" && typeof o.highKey === "string"));
+      if (!ok) {
+        axisViolation(
+          component,
+          `overlays[${i}]`,
+          overlay,
+          'must be { kind: "value", key } or { kind: "range", lowKey, highKey }',
+        );
+      }
+    });
+  }
+  if (
+    comparison !== undefined &&
+    (typeof comparison !== "object" ||
+      comparison === null ||
+      typeof (comparison as { key?: unknown }).key !== "string")
+  ) {
+    axisViolation(component, "comparison", comparison, "must be { key, label? }");
+  }
+}
+
+// Annotations — RM-111
+const ANNOTATION_KINDS = ["text", "range", "line", "row"] as const;
+const ANNOTATION_ANCHOR_VALUES = ["n", "ne", "e", "se", "s", "sw", "w", "nw", "center"];
+
+function isAnnotationPosition(value: unknown): boolean {
+  return isFiniteNumber(value) || (typeof value === "string" && value.length > 0);
+}
+
+/**
+ * Validate `ChartSpec.annotations` (RM-111): the kind union, and the fields each
+ * kind cannot render without — the real layer silently skips an annotation it
+ * cannot place, which would hide the mistake. Exported for the contract test.
+ */
+export function assertAnnotationSpecContract(annotations: unknown): void {
+  if (annotations === undefined) return;
+  if (!Array.isArray(annotations)) {
+    axisViolation("AutoChart", "spec.annotations", annotations, `"annotations" must be an array`);
+    return;
+  }
+  annotations.forEach((item, i) => {
+    const prop = `spec.annotations[${i}]`;
+    if (typeof item !== "object" || item === null) {
+      axisViolation("AutoChart", prop, item, `"${prop}" must be an annotation object`);
+      return;
+    }
+    const a = item as Record<string, unknown>;
+    checkOneOf("AutoChart", `${prop}.kind`, a.kind, ANNOTATION_KINDS);
+    const requirePosition = (key: string) => {
+      if (!isAnnotationPosition(a[key])) {
+        axisViolation(
+          "AutoChart",
+          `${prop}.${key}`,
+          a[key],
+          `"${key}" must be a number or a string (an ISO date or a category)`,
+        );
+      }
+    };
+    const requireText = (key: string) => {
+      if (typeof a[key] !== "string" || (a[key] as string).trim() === "") {
+        axisViolation("AutoChart", `${prop}.${key}`, a[key], `"${key}" must be a non-empty string`);
+      }
+    };
+    if (a.kind === "text") {
+      requirePosition("x");
+      requirePosition("y");
+      requireText("text");
+      checkOneOf("AutoChart", `${prop}.anchor`, a.anchor, ANNOTATION_ANCHOR_VALUES);
+    } else if (a.kind === "range") {
+      if (a.x1 !== undefined || a.x2 !== undefined) {
+        requirePosition("x1");
+        requirePosition("x2");
+      } else {
+        requirePosition("y1");
+        requirePosition("y2");
+      }
+      checkOneOf("AutoChart", `${prop}.pattern`, a.pattern, ["solid", "stripes"]);
+    } else if (a.kind === "line") {
+      requirePosition(a.x !== undefined ? "x" : "y");
+      checkOneOf("AutoChart", `${prop}.style`, a.style, ["solid", "dashed", "dotted"]);
+      if (a.width !== undefined && ![1, 2, 3].includes(a.width as number)) {
+        axisViolation("AutoChart", `${prop}.width`, a.width, `"width" must be 1, 2 or 3`);
+      }
+    } else if (a.kind === "row") {
+      requireText("category");
+      requireText("text");
+    }
+  });
+}
+
+/**
+ * `ChartAnnotations` stand-in: inert like every composition primitive (it paints
+ * nothing a test can assert on), but it still validates the annotation union.
+ */
+export function ChartAnnotations(props: { annotations: readonly unknown[] }): null {
+  assertAnnotationSpecContract(props.annotations);
+  return null;
+}
+ChartAnnotations.displayName = "ChartAnnotations";
+
+/** `AnnotationKey` stand-in: the empty, `aria-hidden` list the real key renders at wide. */
+export const AnnotationKey = forwardRef<HTMLOListElement, { annotations: readonly unknown[] }>(
+  function AnnotationKeyTestDouble({ annotations }, ref) {
+    assertAnnotationSpecContract(annotations);
+    return <ol aria-hidden="true" data-count={0} data-slot="annotation-key" ref={ref} />;
+  },
+);
+AnnotationKey.displayName = "AnnotationKey";

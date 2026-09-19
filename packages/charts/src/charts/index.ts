@@ -227,7 +227,12 @@ export { PatternArea, type PatternAreaProps } from "./pattern-area";
 // Pie chart components
 export { PieCenter, type PieCenterProps } from "./pie-center";
 export { PieCenterShell, type PieCenterShellProps } from "./pie-center-shell";
-export { DEFAULT_HOVER_OFFSET, PieChart, type PieChartProps } from "./pie-chart";
+export {
+  DEFAULT_HOVER_OFFSET,
+  PieChart,
+  type PieChartLabelsConfig,
+  type PieChartProps,
+} from "./pie-chart";
 export {
   defaultPieColors,
   type PieArcData,
@@ -240,6 +245,29 @@ export {
   usePieStable,
 } from "./pie-context";
 export { PieSlice, type PieSliceHoverEffect, type PieSliceProps } from "./pie-slice";
+// Pie labels & grouping — RM-114
+export {
+  groupSmallSlices,
+  pieLegendItems,
+  type PieGroupResult,
+  type PieGroupSmallOptions,
+  type PieLegendItem,
+  type PieLegendItemsOptions,
+} from "./pie-grouping";
+export {
+  anyPieLabelRectsOverlap,
+  DEFAULT_PIE_LABEL_MIN_ANGLE,
+  formatPieLabelText,
+  layoutOutsideLabels,
+  PieLabels,
+  type PieLabelField,
+  type PieLabelPlacement,
+  type PieLabelRect,
+  type PieLabelsConfig,
+  type PieLabelsProps,
+  type PieLabelTextParts,
+  type PieOutsideLabelLayout,
+} from "./pie-labels";
 // Profit/loss line (sign-colored segments on LineChart)
 export {
   PROFIT_LOSS_LEGEND_ITEMS,
@@ -795,4 +823,95 @@ export { type GridMode } from "./grid";
 export { type AxisTickCount } from "./tick-targets";
 export { type XAxisOrientation } from "./x-axis";
 export { type AxisLabelPlacement } from "./y-axis";
+// Scatter depth — RM-115
+export {
+  DEFAULT_SCATTER_SIZE_RANGE,
+  resolveColorBy,
+  resolveScatterSizeRadius,
+  resolveShapeBy,
+  SCATTER_SHAPE_SOFT_CAP,
+  scatterSizeDomainMax,
+  type ScatterColorByConfig,
+  type ScatterColorByResolution,
+  type ScatterEncodingLegendItem,
+  type ScatterShapeByConfig,
+  type ScatterShapeByResolution,
+} from "./scatter-encodings";
+export {
+  fitTrend,
+  TrendLine,
+  trendDirection,
+  type TrendFit,
+  type TrendLineProps,
+  type TrendPoint,
+} from "./trend-line";
+export {
+  CustomShapes,
+  type CustomShapesProps,
+  type ScatterShapeSpec,
+  type ScatterShapeStyle,
+} from "./custom-shapes";
 export { type AxisDomain, type AxisDomainBound, type ValueScaleType } from "./y-axis-scales";
+// Labels — RM-110
+export {
+  type LabelAnchorSide,
+  type LabelBox,
+  type LabelLayoutOptions,
+  type LabelLayoutResult,
+  type LabelPlacement,
+  type LabelPlacementStatus,
+  type LabelRect,
+  layoutLabels,
+} from "./labels/label-layout";
+export {
+  type ChartSeriesKeyItem,
+  type ChartValueLabels,
+  type SeriesLabelMode,
+  useChartSeriesKey,
+  type ValueLabelPlacement,
+} from "./labels/use-chart-labels";
+export { type ScatterLabels } from "./labels/point-labels";
+export { SERIES_LABEL_INK_MIX, seriesLabelInk } from "./labels/series-label-ink";
+export {
+  type AutoSummaryKind,
+  DEFAULT_DESCRIBE_SERIES_PHRASES,
+  describeSeries,
+  type DescribeSeriesItem,
+  type DescribeSeriesNotable,
+  type DescribeSeriesOptions,
+  type DescribeSeriesPhrases,
+} from "./chart-a11y";
+export { type BarShowValues, type BarShowValuesSpec } from "./bar";
+// Annotations — RM-111
+export {
+  ANNOTATION_ANCHORS,
+  type AnnotationAnchor,
+  type AnnotationAxis,
+  type AnnotationColor,
+  type AnnotationConnector,
+  type AnnotationDisplay,
+  AnnotationKey,
+  type AnnotationKeyProps,
+  type AnnotationPlanEntry,
+  type AnnotationScales,
+  type AnnotationValue,
+  annotationValueToDate,
+  type ChartAnnotation,
+  type ChartAnnotationOf,
+  ChartAnnotations,
+  type ChartAnnotationsLayer,
+  type ChartAnnotationsProps,
+  type ChartLineAnnotation,
+  type ChartRangeAnnotation,
+  type ChartRowAnnotation,
+  type ChartSpecAnnotation,
+  type ChartTextAnnotation,
+  circledNumber,
+  describeAnnotations,
+  planAnnotations,
+  resolveAnnotationInk,
+  resolveAnnotationPosition,
+  resolveAnnotationTextInk,
+  useChartAnnotationsA11y,
+  withAnnotationDescription,
+} from "./annotations";

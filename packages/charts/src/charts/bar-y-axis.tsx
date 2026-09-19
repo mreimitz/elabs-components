@@ -1,5 +1,6 @@
 "use client";
 
+import { isBarGroupHeaderRow } from "./bar-groups";
 import { motion } from "motion/react";
 import { memo, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -132,7 +133,10 @@ const BarYAxisInner = memo(function BarYAxisInner({
     if (!barXAccessor) {
       return [];
     }
-    return data.map((d, index) => ({ label: barXAccessor(d), index }));
+    return data.flatMap((d, index) =>
+      // A `groupBy` header row (RM-113) is painted by the chart, never as a tick label.
+      isBarGroupHeaderRow(d) ? [] : [{ label: barXAccessor(d), index }],
+    );
   }, [barXAccessor, data]);
 
   // See `BarXAxis` for why a local plan exists: it is the degradation path when
