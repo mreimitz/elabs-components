@@ -30,6 +30,7 @@
 
 import { cn } from "@elabs-ai/components-ui";
 import { QuietDot } from "../../marks/quiet-dot";
+import { rampPositionOf } from "../legend/ramp-legend";
 import { HeatmapMissingMark } from "./heatmap-cell";
 import type { HeatmapEmptyValue } from "./heatmap-context";
 
@@ -70,6 +71,19 @@ export interface HeatmapLegendProps {
   zeroCount?: number;
   /** Cells holding no value (`null`). The no-data key renders only when this is > 0. */
   missingCount?: number;
+  /**
+   * `"endpoints"` (default, unchanged): `lo`/`hi` bracket the strip.
+   * `"ranges"` (RM-118): one `from–to` label under every swatch instead —
+   * lets a reader place a cell in its step without hovering it.
+   */
+  labelMode?: "endpoints" | "ranges";
+  /**
+   * The hovered cell's value elsewhere on the grid (RM-118) — moves a marker
+   * to that position on the strip, shared with `RampLegend`'s marker math
+   * (`rampPositionOf`) so every ramp key in the package tracks a hover the
+   * same way. `null`/unset: no marker.
+   */
+  hover?: number | null;
   className?: string;
 }
 
@@ -89,10 +103,16 @@ export function HeatmapLegend({
   missingCount = 0,
   swatches,
   zeroCount = 0,
+  labelMode = "endpoints",
+  hover,
 }: HeatmapLegendProps) {
   if (swatches.length === 0) {
     return null;
   }
+
+  const hasHover = typeof hover === "number" && Number.isFinite(hover);
+  const markerT = hasHover ? rampPositionOf(hover as number, [lo, hi]) : null;
+  const stepWidth = hi === lo ? 0 : (hi - lo) / swatches.length;
 
   return (
     <div
@@ -107,31 +127,58 @@ export function HeatmapLegend({
           ? `Colour scale: continuous, from ${formatValue(lo)} to ${formatValue(hi)}.`
           : `Colour scale: ${swatches.length} steps from ${formatValue(lo)} to ${formatValue(hi)}.`}
       </span>
-      <span aria-hidden="true" className="tabular-nums">
-        {formatValue(lo)}
-      </span>
+      {labelMode === "endpoints" ? (
+        <span aria-hidden="true" className="tabular-nums">
+          {formatValue(lo)}
+        </span>
+      ) : null}
       <span
         aria-hidden="true"
-        className={cn("flex items-center", continuous ? "gap-0" : "gap-0.5")}
+        className="relative flex items-center"
+        data-slot="heatmap-legend-strip"
       >
-        {swatches.map((swatch, index) => (
+        <span className={cn("flex items-center", continuous ? "gap-0" : "gap-0.5")}>
+          {swatches.map((swatch, index) => (
+            <span
+              className={cn("h-2.5 w-4", continuous ? "rounded-none" : "rounded-[2px]")}
+              data-slot="heatmap-legend-step"
+              // A ramp step's identity IS its position: two samples of a
+              // continuous scale can legitimately resolve to the same ink.
+              key={`step-${index}`}
+              style={{
+                backgroundColor: swatch.color,
+                backgroundImage: swatch.hatched ? NEGATIVE_HATCH_BACKGROUND : undefined,
+                opacity: swatch.opacity,
+              }}
+            />
+          ))}
+        </span>
+        {hasHover && markerT !== null ? (
           <span
-            className={cn("h-2.5 w-4", continuous ? "rounded-none" : "rounded-[2px]")}
-            data-slot="heatmap-legend-step"
-            // A ramp step's identity IS its position: two samples of a
-            // continuous scale can legitimately resolve to the same ink.
-            key={`step-${index}`}
-            style={{
-              backgroundColor: swatch.color,
-              backgroundImage: swatch.hatched ? NEGATIVE_HATCH_BACKGROUND : undefined,
-              opacity: swatch.opacity,
-            }}
+            className="pointer-events-none absolute top-0 h-full w-0.5 -translate-x-1/2 bg-chart-foreground transition-[left] duration-fast ease-standard motion-reduce:transition-none"
+            data-slot="heatmap-legend-marker"
+            data-ramp-marker-value={hover}
+            style={{ left: `${markerT * 100}%` }}
           />
-        ))}
+        ) : null}
       </span>
-      <span aria-hidden="true" className="tabular-nums">
-        {formatValue(hi)}
-      </span>
+      {labelMode === "endpoints" ? (
+        <span aria-hidden="true" className="tabular-nums">
+          {formatValue(hi)}
+        </span>
+      ) : (
+        <span aria-hidden="true" className="flex items-center gap-0.5 tabular-nums">
+          {swatches.map((_, index) => (
+            <span
+              className="w-4 text-center first:text-start last:text-end"
+              data-slot="heatmap-legend-range-label"
+              key={`range-${index}`}
+            >
+              {formatValue(lo + stepWidth * index)}–{formatValue(lo + stepWidth * (index + 1))}
+            </span>
+          ))}
+        </span>
+      )}
       {/* One key per non-value state, and only for a state the grid actually
           holds (#251): a key for a category with no members is its own small lie. */}
       {emptyValue === "quiet" && zeroCount > 0 ? (
