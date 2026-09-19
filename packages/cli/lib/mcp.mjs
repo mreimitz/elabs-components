@@ -54,7 +54,7 @@ export const SUPPORTED_PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", PROTOCOL
  * `hosted` mode leaves these out of `tools/list` and refuses them by name.
  */
 export const LOCAL_ONLY_TOOLS = new Set(["audit"]);
-export const SERVER_INFO = { name: "brand-ui", version: "4.2.0" };
+export const SERVER_INFO = { name: "brand-ui", version: "4.3.0" };
 
 /**
  * Where a REMOTE caller can actually open what this server names.

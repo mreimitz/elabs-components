@@ -1,5 +1,70 @@
 # @elabs-ai/components-ai
 
+## 4.3.0
+
+### Minor Changes
+
+- 3951d51: A2UI — the generative-UI path (D2) ships. `@elabs-ai/components-ai` gains `<A2uiSurface>`: an agent describes a screen as JSON (`{ "a2ui": "1", "root": node }` of catalog types), the surface validates it against the catalog and renders it with the real components; `on.<event>` bindings reach the host's `onAction`, streaming prefixes build up node by node, and a settled invalid surface reports every problem with its path. The shipped catalog (`uiCatalog`, 62 ui types + `Stack`/`Grid`) is generated from the manifest; apps extend it with `createA2uiCatalog`/`defineA2uiType`. `@elabs-ai/components-charts` exports its half (`CHARTS_A2UI_BINDINGS`, `CHARTS_A2UI_CATALOG_SCHEMA`: `AutoChart`, `ChartCard`, `MetricGrid`, `Sparkline`, `BulletChart`, `Gauge`). The CLI adds `brand-ui a2ui catalog | schema | validate | example`, the MCP server the `a2ui` tool, and the JSON Schema is published as `@elabs-ai/components-ai/a2ui/schema.json`. `CardHeader` now lays a `CardAction` out top-right (it rendered below the description before).
+- 4e07999: `ChatShell`: the transcript now runs the full height and scrolls behind a floating, padded composer, fading out around it. The composer is centred at `--chat-composer-column` (default `--container-3xl`) and the transcript at `--chat-column` (default `--container-4xl`); `ConversationContent` reads both, and `ConversationScrollButton` sits above the composer. This applies to both variants — `variant` now only decides the frame (`card` border vs `bare`). The root carries `data-slot="chat-shell"`. `ProducedAssetTree` renders its empty note without an empty `role="tree"`.
+
+  `Composer`: new `mentions` prop — an @-mention roster (`MentionInput`) on the composer's own field, controlled or uncontrolled, reset after an accepted submit. It is exclusive with `slashCommands` at the type level (`ComposerProps` is now `ComposerBaseProps & ComposerFieldProps`).
+
+- 3a3b59a: Created apps download less and install cleanly. `ui`, `icons`, `ai`, `data`, `flow`, `maps`, `charts`, `marketing`, `viewer` and `terminal` now build one output file per source module (entry points, `exports` and type declarations are unchanged), so an app's bundler keeps only the components it imports: the `dashboard` template's first JavaScript download drops from 609 KB to 147 KB gzip. `@elabs-ai/components-charts` moves `@visx/brush` to 4.0.1-alpha.0 like the rest of visx, which ends the `ERESOLVE` peer warnings npm printed for React 19 apps. `brand-ui create` writes the app's CI workflow for the package manager that ran it: `npm ci` for an app created with `npx`, otherwise `pnpm/action-setup` pinned to the pnpm major that created it (the old workflow failed for npm apps, and for pnpm apps without a `packageManager` field). The app's CLAUDE.md lists that package manager's commands and says to commit the lockfile, and `create --install` under pnpm now installs with pnpm (it picked npm).
+
+### Patch Changes
+
+- 779c040: Theme seams for brand fidelity (docs/review/2026-09-18-brand-theme-fidelity-review.md). Every addition is opt-in: each new token defaults to today's rendering, so existing themes look the same.
+
+  `@elabs-ai/components-tokens` adds 30 contract tokens, which every `[data-theme]` block now has to define:
+  - Sidebar active bar: `--sidebar-indicator`, `--sidebar-indicator-width` (`0` = no bar), `--sidebar-indicator-radius`, `--sidebar-indicator-inset`.
+  - App shell: `--shell-secondary-width`.
+  - Buttons: `--button-outline-border`, `--secondary-border`, `--secondary-text`.
+  - Table header: `--table-header-background`, `--table-header-foreground`, `--table-header-size`, `--table-header-transform`, `--table-header-tracking`.
+  - Surfaces: `--card-shadow`, `--card-border`, `--card-title-leading`, `--popover-shadow`, `--dialog-shadow`.
+  - Badges: `--badge-radius`, `--badge-appearance` (`auto` | `tint` | `solid` | `outline` | `neutral`).
+  - Tabs: `--tabs-variant` (`segmented` | `underline`), `--tabs-indicator-width`, `--tabs-active-weight`.
+  - Focus: `--focus-ring-width`, `--focus-ring-offset` (a negative value pulls the ring inside the edge), `--input-focus-border`.
+  - Icons: `--icon-fill` (`outline` | `solid`).
+  - Selection: `--selection`, `--selection-foreground`, `--selection-muted`.
+
+  It also adds a `heading-xs` type role (`text-heading-xs`, caption size at 600), the utilities these tokens drive (`bg-sidebar-indicator`, `bg-table-header-background`, `text-table-header`, `shadow-card`, `shadow-popover`, `shadow-dialog`, `rounded-badge`, `font-tabs-active`, `border-input-focus`, `bg-selection`, …), and the `badge-*` and `tabs-underline` custom variants. Keyword tokens are read with container style queries. A browser without style queries renders the default.
+
+  `@elabs-ai/components-ui`:
+  - `AppShell` gains `brandPlacement` (`"sidebar"` | `"topbar"`), `topBar={{ start, center, end }}`, `navigation` (`"sidebar"` | `"topbar"`) and `secondaryPanel`. `TopNav` gains `center`, which keeps its slot truly centred.
+  - `Badge` and `StatusBadge` gain `appearance` (`"tint"` | `"solid"` | `"outline"` | `"neutral"`); the prop is named `appearance`, not `tone`, because `StatusBadge` already has a `tone`. Leave it unset and `--badge-appearance` decides. A custom-tone `StatusBadge` never goes solid.
+  - `TabsList` without a `variant` follows `--tabs-variant`, and it no longer renders `data-variant="segmented"` when the prop is unset.
+  - Sidebar, buttons, cards, menus, dialogs, form fields, tables and trees now read the tokens above.
+  - `cn()` now recognises the `eyebrow`, `kpi-sm`, `display-lg` and `heading-xs` type roles, the new token utilities, and the `leading-(--x)` / `tracking-(--x)` shorthand. Before this, `cn("text-eyebrow", "text-muted-foreground")` silently dropped the role.
+
+  `@elabs-ai/components-icons`: `Icon` gains `variant` (`"outline"` | `"solid"`), and `createIcon(node, name, { solid })` takes an optional filled glyph. Leave `variant` unset and `--icon-fill` picks the glyph. An icon without a solid glyph always draws its outline.
+
+  `@elabs-ai/components-data`: `DataTable` headers read the `--table-header-*` tokens, and selected rows read `--selection`.
+
+  `@elabs-ai/components-ai`, `-charts`, `-editor`, `-marketing`: hand-rolled uppercase labels now use the `eyebrow` role. Their letter spacing moves to the role's `0.06em`.
+
+- 5f1c63d: `Persona` no longer freezes the browser tab in a React development build. Once the Rive artwork loaded, an internal component received the Rive instance as a prop, and React 19.2's development-only performance logging walked that object on every re-render until the tab ran out of memory (about 4.6 GB, then the page crashed). The view-model hooks now run inside `Persona`'s Rive layer, so the instance never passes through props. Artwork, state inputs and the light/dark ink of the dynamic-colour variants behave as before. Production builds do not run that logging.
+- a514030: App shell headers now share one height in every theme. `SideDock`'s header is a fixed `h-header` band (its `description` moves to the top of the body), and `ChatShell`'s header and `ContextPanelHeader` use `h-header` too, so they line up with the top bar even when a theme retunes `--header-size`. `ContextRail` no longer draws an edge line or a leading bar on the active switcher icon, and its count badge is no longer clipped. `NavUser` is now the standard sidebar footer: the user row opens an account menu with Settings (`settingsHref` or `onSettings`) and Sign out (`onSignOut`), plus any extra items passed as `children`; its previous placeholder items (Upgrade to Pro, Account, Billing, Notifications) are gone. A collapsed `Sidebar` no longer clips `lg` menu buttons: the icon-rail padding now lives per size, so the footer avatar sits whole in its 32px square.
+- Updated dependencies [3951d51]
+- Updated dependencies [5646c7f]
+- Updated dependencies [779c040]
+- Updated dependencies [f0155e5]
+- Updated dependencies [015b988]
+- Updated dependencies [431e9a2]
+- Updated dependencies [fc40636]
+- Updated dependencies [817dd16]
+- Updated dependencies [e52e84c]
+- Updated dependencies [dbee30e]
+- Updated dependencies [4386ae3]
+- Updated dependencies [8a807dc]
+- Updated dependencies [a2aff19]
+- Updated dependencies [3a3b59a]
+- Updated dependencies [a514030]
+- Updated dependencies [4e07999]
+- Updated dependencies [18f063e]
+  - @elabs-ai/components-ui@4.3.0
+  - @elabs-ai/components-tokens@4.3.0
+  - @elabs-ai/components-icons@4.3.0
+
 ## 4.2.0
 
 ### Minor Changes
