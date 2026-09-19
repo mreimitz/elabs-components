@@ -46,6 +46,7 @@ import {
   ARCHETYPES,
   planScaffold,
   emitScaffold,
+  packageManagerFrom,
   scanRepo,
   mapComponents,
   planCodemod,
@@ -371,8 +372,7 @@ function cmdSearch() {
  * read (a direct `node` run), pnpm leads and the npm line follows.
  */
 function nextStepLines(dir, installed) {
-  const ua = process.env.npm_config_user_agent || "";
-  const pm = /^(pnpm|yarn|bun|npm)\b/.exec(ua)?.[1];
+  const pm = packageManagerFrom(process.env.npm_config_user_agent)?.name;
   const line = (m) =>
     `    cd ${dir}${installed ? "" : ` && ${m} install`} && ${m === "npm" ? "npm run dev" : `${m} dev`}`;
   if (pm) return [line(pm)];
@@ -896,6 +896,7 @@ function cmdScaffold() {
       target: target ?? ".",
       dryRun,
       force: flags.has("--force"),
+      packageManager: packageManagerFrom(process.env.npm_config_user_agent),
     });
     if (r.status === "error") return engineEmit(r, [`scaffold: ${r.error}`]);
     return engineEmit(r, [
@@ -973,7 +974,12 @@ function cmdCreate() {
     standalone: true,
     intent: { purpose: `${title} — started from the brand-ui ${archetype} template.` },
   };
-  const r = emitScaffold(spec, { root, target: dir, force: flags.has("--force") });
+  const r = emitScaffold(spec, {
+    root,
+    target: dir,
+    force: flags.has("--force"),
+    packageManager: packageManagerFrom(process.env.npm_config_user_agent),
+  });
   if (r.status === "error") return engineEmit(r, [`create: ${r.error}`]);
   const lines = [
     `brand-ui create — ${r.status}`,
@@ -986,11 +992,9 @@ function cmdCreate() {
     ),
   ];
   if (flags.has("--install")) {
-    const pm =
-      existsSync(join(r.target, "pnpm-lock.yaml")) ||
-      !process.env.npm_config_user_agent?.includes("npm")
-        ? "pnpm"
-        : "npm";
+    // The one the app's CI workflow was written for, so the lockfile install
+    // creates is the one CI reads.
+    const pm = r.packageManager;
     lines.push(`  installing with ${pm}…`);
     const res = spawnSync(pm, ["install"], {
       cwd: r.target,
@@ -1176,7 +1180,8 @@ const GENERAL_HELP = `brand-ui <command>
 
   create <dir>           New runnable app from a template, no interview:
       [--template <a>]   dashboard (default) | data-app | ai-assistant | flow-workspace
-      [--theme light|dark] | settings | marketing — then: cd <dir> && pnpm install && pnpm dev
+      [--theme light|dark] | settings | marketing — then: cd <dir> && npm install && npm run dev
+                         (or: pnpm install && pnpm dev)
       [--title "…"] [--force] [--install]
   scaffold <app-spec.md> Plan a born-compliant app from an app-spec (greenfield)
       [--write <dir>]    …and EMIT a RUNNABLE app: index.html, src/{App,main}.tsx,

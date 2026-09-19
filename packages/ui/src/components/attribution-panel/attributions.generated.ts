@@ -810,7 +810,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     id: "@visx/brush",
     category: "dependency",
     name: "@visx/brush",
-    version: "3.12.0",
+    version: "4.0.1-alpha.0",
     license: "MIT",
     copyright: "@hshoff",
     url: "https://www.npmjs.com/package/@visx/brush",

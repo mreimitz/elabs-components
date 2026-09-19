@@ -8,7 +8,7 @@
 import { before, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -127,6 +127,36 @@ test("create: next steps follow the caller's package manager (npx → npm)", (t)
   assert.equal(r.status, 0, r.stderr || r.stdout);
   assert.match(r.stdout, /cd via-npx && npm install && npm run dev/);
   assert.doesNotMatch(r.stdout, /pnpm install/);
+});
+
+test("create --install: installs with the package manager that ran it, the one CI expects", (t) => {
+  if (!repoRoot) return t.skip("not inside the monorepo — templates unavailable");
+  if (process.platform === "win32") return t.skip("the stand-in package managers are sh scripts");
+  const dir = mkdtempSync(join(tmpdir(), "brand-ui-create-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  // Stand-ins record which one ran; a real install is the create matrix's job.
+  const bin = join(dir, "bin");
+  mkdirSync(bin);
+  const used = join(dir, "used");
+  for (const pm of ["npm", "pnpm"])
+    writeFileSync(join(bin, pm), `#!/bin/sh\necho ${pm} > "${used}"\n`, { mode: 0o755 });
+
+  for (const [agent, pm, ci] of [
+    // pnpm's agent string also contains `npm/` — it once picked npm here.
+    ["pnpm/9.15.4 npm/? node/v22.0.0 darwin arm64", "pnpm", /pnpm install --frozen-lockfile/],
+    ["npm/10.9.0 node/v22.0.0 darwin arm64", "npm", /npm ci/],
+  ]) {
+    const r = spawnSync(process.execPath, [BIN, "create", `via-${pm}`, "--install"], {
+      cwd: dir,
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, npm_config_user_agent: agent },
+    });
+    assert.equal(r.status, 0, r.stderr || r.stdout);
+    assert.match(r.stdout, new RegExp(`installing with ${pm}…`));
+    assert.equal(readFileSync(used, "utf8").trim(), pm);
+    const workflow = readFileSync(join(dir, `via-${pm}`, ".github/workflows/brand-ui.yml"), "utf8");
+    assert.match(workflow, ci);
+  }
 });
 
 test("create: a standalone app installs under pnpm 9, 10 and 11 (esbuild allowed, root add allowed)", (t) => {

@@ -86,11 +86,12 @@ jobs:
         run: pnpm --filter @elabs-ai/components-docs test-contract
 
   changes:
-    name: Website paths changed?
+    name: Which paths changed?
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       home: ${{ steps.diff.outputs.home }}
+      create: ${{ steps.diff.outputs.create }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,16 +100,89 @@ jobs:
         id: diff
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          EVENT: ${{ github.event_name }}
         run: |
-          # The website job runs only when a path the site is built from changed (RM-104).
+          # The website job runs only when a path the site is built from changed (RM-104);
+          # the create matrix when the CLI, a package's manifest or build, or a template
+          # changed, and on every push to main (RM-130).
           if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
             echo "home=true" >> "$GITHUB_OUTPUT"
-          elif git diff --name-only "$BASE" "$GITHUB_SHA" \
-            | grep -qE '^(apps/home/|packages/marketing/|packages/tokens/|registry/|scripts/gen-home\.mjs$|scripts/check/rules/home-bundle\.mjs$|\.github/workflows/ci\.yml$)'; then
+            echo "create=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "$BASE" "$GITHUB_SHA")"
+          if echo "$changed" | grep -qE '^(apps/home/|packages/marketing/|packages/tokens/|registry/|scripts/gen-home\.mjs$|scripts/check/rules/home-bundle\.mjs$|\.github/workflows/ci\.yml$)'; then
             echo "home=true" >> "$GITHUB_OUTPUT"
           else
             echo "home=false" >> "$GITHUB_OUTPUT"
           fi
+          if [ "$EVENT" = "push" ] || echo "$changed" | grep -qE '^(packages/cli/|packages/[^/]+/(package\.json|tsup\.config\.ts)$|docs/playbooks/templates/|scripts/create-matrix\.mjs$|scripts/lib/tsup-modules\.mjs$|pnpm-lock\.yaml$|\.github/workflows/ci\.yml$)'; then
+            echo "create=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "create=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  create-pack:
+    name: Create matrix — build and pack
+    needs: changes
+    if: ${{ needs.changes.outputs.create == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build the packages
+        run: pnpm turbo run build --filter=./packages/*
+      # Built and packed once, on Linux, as a release is; every OS cell installs these.
+      - name: Pack every package and the CLI
+        run: node scripts/create-matrix.mjs --pack create-tarballs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: create-tarballs
+          path: create-tarballs/
+          retention-days: 1
+
+  create-matrix:
+    name: Create matrix (${{ matrix.os }}, ${{ matrix.pm }})
+    needs: create-pack
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        pm: [npm, pnpm]
+    steps:
+      # No workspace install: the cell is a first-time user with Node and one
+      # package manager, running the script from a bare checkout.
+      - uses: actions/checkout@v4
+      - if: matrix.pm == 'pnpm'
+        uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: create-tarballs
+          path: create-tarballs
+      # Every template, outside the workspace: create → install → the app's own CI
+      # steps → build → audit --strict (scripts/create-matrix.mjs).
+      - name: create → install → app CI → build → audit
+        run: node scripts/create-matrix.mjs --pm ${{ matrix.pm }} --tarballs create-tarballs --json create-matrix.json
+      - name: Upload the matrix results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: create-matrix-${{ matrix.os }}-${{ matrix.pm }}
+          path: create-matrix.json
+          if-no-files-found: ignore
+          retention-days: 14
 
   home:
     name: Website gates (e2e, Lighthouse, bundle)

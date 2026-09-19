@@ -1,4 +1,13 @@
 import { defineConfig } from "tsup";
+import { moduleEntries } from "../../scripts/lib/tsup-modules.mjs";
+
+const PUBLIC = {
+  index: "src/index.ts",
+  // Dashboard — RM-069: the `./dashboard` subpath (ADR 0037). Same pass as the trunk so
+  // chart code it composes lands in shared chunks instead of being bundled twice; zustand
+  // and @dnd-kit/core stay external as regular dependencies.
+  "dashboard/index": "src/dashboard/index.ts",
+};
 
 // Two passes, because the `./test` double module must NOT bundle any @visx/d3
 // engine even though esbuild would happily tree-shake-in a shared chunk if it
@@ -12,15 +21,11 @@ import { defineConfig } from "tsup";
 // the same warning).
 export default defineConfig([
   {
-    entry: {
-      index: "src/index.ts",
-      // Dashboard — RM-069: the `./dashboard` subpath (ADR 0037). Same pass as the trunk so
-      // chart code it composes lands in shared chunks instead of being bundled twice; zustand
-      // and @dnd-kit/core stay external as regular dependencies.
-      "dashboard/index": "src/dashboard/index.ts",
-    },
+    // One output file per source module (RM-130, scripts/lib/tsup-modules.mjs), so an
+    // app's bundler drops the modules it never reaches; types stay on the public entries.
+    entry: moduleEntries(PUBLIC),
     format: ["esm"],
-    dts: true,
+    dts: { entry: PUBLIC },
     sourcemap: true,
     // NOTE: neither pass cleans. tsup runs the two configs concurrently, so a
     // `clean: true` here races the other pass's output and non-deterministically

@@ -150,12 +150,49 @@ export const CompoundFocusIndicator: Story = {
 };
 
 /**
- * `--tw-ring-shadow` is a `0 0 0 calc(<offset> + <width>) <colour>` string; the
- * painted reach is that `calc`. Reading it (rather than `boxShadow`) keeps the
- * measurement independent of whatever elevation rung the element also carries.
+ * The compound ring's outer reach, in pixels.
+ *
+ * Since ADR 0027 Amendment 2 (commit 779c040b), `--tw-ring-shadow` is a
+ * three-segment composite (`@utility focus-ring-static`, themes.css) whose
+ * SPECIFIED value keeps its nested `var(--focus-ring-offset)` /
+ * `var(--focus-ring-width)` references literal when read directly via
+ * `getPropertyValue("--tw-ring-shadow")` — custom-property computed values do
+ * not substitute var()s referencing other custom properties, so the old
+ * `calc(<offset> + <width>)` regex never matches the new shape and always
+ * reported a false `0`. `getComputedStyle().boxShadow`, by contrast, is a
+ * genuine standard property: its computed value fully resolves every
+ * `var()`/`calc()`, elevation rung included. The ring is always the widest
+ * NON-inset layer in that resolved list — the "gap" layer only reaches
+ * `offset`, the elevation rungs (`shadow-input` et al.) carry zero spread,
+ * and only the ring layer reaches `offset + width` (+ any call-site
+ * `ring-offset-*`) — so its spread is the measurement this helper returns.
  */
 function ringSpread(style: CSSStyleDeclaration): number {
-  const shadow = style.getPropertyValue("--tw-ring-shadow");
-  const match = /calc\(\s*([\d.]+)px\s*\+\s*([\d.]+)px\s*\)/.exec(shadow);
-  return match ? parseFloat(match[1]) + parseFloat(match[2]) : 0;
+  const layers = splitShadowLayers(style.boxShadow);
+  const spreads = layers
+    .filter((layer) => !/\binset\b/.test(layer))
+    .map((layer) => {
+      const lengths = [...layer.matchAll(/(-?[\d.]+)px/g)].map((match) => Number(match[1]));
+      return lengths.length ? lengths[lengths.length - 1]! : 0;
+    });
+  return spreads.length ? Math.max(...spreads) : 0;
+}
+
+/** Split a computed `box-shadow` into its comma-separated layers, ignoring commas nested inside a colour function's parens (`color(srgb 0 0 0 / 0.1)`, `oklch(…)`). */
+function splitShadowLayers(shadowValue: string): string[] {
+  const layers: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const char of shadowValue) {
+    if (char === "(") depth += 1;
+    if (char === ")") depth -= 1;
+    if (char === "," && depth === 0) {
+      layers.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) layers.push(current.trim());
+  return layers;
 }
