@@ -1397,6 +1397,59 @@ describe("AutoChart legend vs series end labels", () => {
   });
 });
 
+// Facet + legend engine (RM-118 × RM-120, orchestrator ruling after the
+// wave-2 merge): before the merge, a faceted line/area AutoChart with
+// `legend` set rendered one shared `AutoLegend` below the grid; the merge
+// dropped it entirely (see the result file's "Wave-2 merge" section). This
+// restores it, as ONE shared `ChartLegend` — not `AutoLegend` — above the
+// grid, matching the maintainer's "new shared look" for every other family.
+describe("AutoChart faceted line legend (RM-118 × RM-120 regression fix)", () => {
+  const facetedTrend = [
+    { date: "2024-01-01", region: "East", ebikes: 10, cargo: 4 },
+    { date: "2024-02-01", region: "East", ebikes: 14, cargo: 6 },
+    { date: "2024-01-01", region: "West", ebikes: 8, cargo: 3 },
+    { date: "2024-02-01", region: "West", ebikes: 12, cargo: 5 },
+  ];
+  const facetedSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "line",
+    data: facetedTrend,
+    x: "date",
+    series: [{ key: "ebikes" }, { key: "cargo" }],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with 2 items, above the grid", () => {
+    const { container, getAllByRole } = render(<AutoChart spec={facetedSpec(true)} height={280} />);
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "ebikes",
+      "cargo",
+    ]);
+
+    // "above the grid": the legend root is the grid's previous sibling, not
+    // a per-panel legend inside it and not a second one below it.
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
+  });
+});
+
 // BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.
 describe("AutoChart bar comparison labels", () => {
   const sales = [
