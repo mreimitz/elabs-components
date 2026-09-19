@@ -591,6 +591,8 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     assertAnnotationSpecContract(
       (props.spec as { annotations?: unknown } | undefined)?.annotations,
     );
+    // Dual-axis — RM-121
+    assertDualAxisSpecContract(props.spec);
     return (
       <div
         ref={ref}
@@ -1165,3 +1167,55 @@ export const ChartMultiples = forwardRef<HTMLDivElement, ChartMultiplesProps>(
   },
 );
 ChartMultiples.displayName = "ChartMultiples";
+
+// Dual-axis — RM-121
+const DUAL_AXIS_SIDES: readonly unknown[] = ["left", "right"];
+const DUAL_AXIS_MARKS: readonly unknown[] = ["line", "area", "column"];
+
+/**
+ * A `type: "dual-axis"` spec: real `axis`/`mark` values, at least one line,
+ * and columns on the left axis only — the rules the real `AutoChart` answers
+ * with `ChartFallback kind="unsupported"`.
+ */
+function assertDualAxisSpecContract(spec: unknown): void {
+  const { type, series } = (spec ?? {}) as { type?: unknown; series?: unknown };
+  if (type !== "dual-axis" || !Array.isArray(series)) return;
+  const entries = series.map(
+    (entry) =>
+      (typeof entry === "string" ? { key: entry } : entry) as { axis?: unknown; mark?: unknown },
+  );
+  entries.forEach((entry, i) => {
+    if (entry.axis !== undefined && !DUAL_AXIS_SIDES.includes(entry.axis)) {
+      axisViolation(
+        "AutoChart",
+        `spec.series[${i}].axis`,
+        entry.axis,
+        `"axis" is "left" or "right"`,
+      );
+    }
+    if (entry.mark !== undefined && !DUAL_AXIS_MARKS.includes(entry.mark)) {
+      axisViolation(
+        "AutoChart",
+        `spec.series[${i}].mark`,
+        entry.mark,
+        `"mark" is "line", "area" or "column"`,
+      );
+    }
+  });
+  if (!entries.some((entry) => (entry.mark ?? "line") === "line")) {
+    axisViolation(
+      "AutoChart",
+      "spec.series",
+      series,
+      `a "dual-axis" spec needs at least one series with mark "line"`,
+    );
+  }
+  if (entries.some((entry) => entry.mark === "column" && entry.axis === "right")) {
+    axisViolation(
+      "AutoChart",
+      "spec.series",
+      series,
+      `a "dual-axis" spec draws columns on the left axis only`,
+    );
+  }
+}

@@ -89,6 +89,8 @@ export const CHART_TYPES = [
   "bump",
   "stream",
   "diverging-bar",
+  // Dual-axis — RM-121: explicit only, never inferred.
+  "dual-axis",
 ] as const satisfies readonly ChartType[];
 
 /** True when `value` is a member of {@link CHART_TYPES}. */

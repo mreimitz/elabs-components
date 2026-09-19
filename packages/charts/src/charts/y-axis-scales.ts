@@ -386,3 +386,198 @@ export function buildYScalesFromDomains({
 export function wrapSingleYScale(yScale: YScale): Record<string, YScale> {
   return { [DEFAULT_Y_AXIS_ID]: yScale };
 }
+
+// ---------------------------------------------------------------------------
+// Dual-axis — RM-121
+// ---------------------------------------------------------------------------
+
+/**
+ * How a two-axis chart's gridlines relate (RM-121). `"independent"`: each
+ * axis picks its own ticks. `"ticks"`: both axes share one tick count and one
+ * set of pixel rows, so every gridline reads on both scales.
+ */
+export type DualAxisAlign = "independent" | "ticks";
+
+/**
+ * Zero baselines on a two-axis chart (RM-121, the "both or neither" rule).
+ * `"both"`: both domains include 0. `"auto"`: if either axis carries a length
+ * mark (columns, areas — `charts-honesty`), both include 0; otherwise neither
+ * is forced and each axis fits its own data.
+ */
+export type DualAxisZero = "both" | "auto";
+
+/** `ComposedChart yAxes` / `ChartSpec axes.y2` (RM-121). */
+export interface DualAxisOptions {
+  /** Default `"ticks"`. */
+  align?: DualAxisAlign;
+  /**
+   * Both scales grow by the same factor from a shared origin: every value on
+   * the right axis is one constant multiple of the left value at the same
+   * pixel, so `left.max / left.tick = right.max / right.tick` for every
+   * gridline pair. Implies `align: "ticks"`. Default `false`.
+   */
+  proportional?: boolean;
+  /** Default `"auto"`. */
+  zero?: DualAxisZero;
+}
+
+/** One axis' input to {@link resolveDualAxisDomains}. */
+export interface DualAxisInput {
+  /** Raw `[min, max]` of the values plotted on this axis (stack sums for stacked columns). */
+  extent: [number, number];
+  /** The axis carries a length mark (column/area): its domain always includes 0. */
+  lengthEncoding?: boolean;
+}
+
+/** One resolved axis: its pinned domain, and — when aligned — its exact ticks. */
+export interface DualAxisResolved {
+  domain: [number, number];
+  /** Exact tick values; `undefined` under `align: "independent"` (the axis generates its own). */
+  ticks?: number[];
+}
+
+const DUAL_AXIS_MANTISSAS = [1, 2, 2.5, 5] as const;
+
+/** Round away float dust (`0.30000000000000004` → `0.3`). */
+function cleanTick(value: number): number {
+  const cleaned = Number(value.toPrecision(12));
+  return Object.is(cleaned, -0) ? 0 : cleaned;
+}
+
+/** Nice steps (1-2-2.5-5 × 10^k) from `raw` up to about 10 × `raw`, ascending. */
+function niceStepCandidates(raw: number): number[] {
+  if (!(raw > 0) || !Number.isFinite(raw)) return [1];
+  const base = 10 ** Math.floor(Math.log10(raw));
+  const out: number[] = [];
+  for (const decade of [base, base * 10, base * 100]) {
+    for (const m of DUAL_AXIS_MANTISSAS) {
+      const step = cleanTick(m * decade);
+      if (step >= raw * (1 - 1e-9) && out.length < 6) out.push(step);
+    }
+  }
+  return out;
+}
+
+function widenFlat([lo, hi]: [number, number]): [number, number] {
+  if (lo < hi) return [lo, hi];
+  if (lo === 0) return [0, 1];
+  const pad = Math.abs(lo) * 0.1;
+  return [lo - pad, hi + pad];
+}
+
+interface AxisFit {
+  step: number;
+  k: number;
+}
+
+function wasteOf(span: number, step: number, n: number): number {
+  return (n * step - span) / (n * step);
+}
+
+/**
+ * Resolve both value axes of a dual-axis chart (RM-121): the zero rule, the
+ * tick alignment (a nice-step search over a shared interval count) and the
+ * proportional option. Pure; `targetTicks` is the tick COUNT the height
+ * allows (`tickTargetForHeight`), `maxTicks` the density ceiling.
+ *
+ * - Both include zero (`zero: "both"`, or `"auto"` with a length mark on
+ *   either side): the zero gridline sits on the same pixel row on both axes.
+ * - `align: "ticks"`: both axes get `n + 1` ticks on the same rows, `n`
+ *   picked (near the target) to minimise the empty share of the plot.
+ * - `proportional`: additionally one shared step index `k` for the lowest
+ *   tick, so `right(y) = c · left(y)` at every pixel row.
+ * - A length-encoded axis always includes 0 (`charts-honesty`), whatever
+ *   else is asked.
+ */
+export function resolveDualAxisDomains(
+  left: DualAxisInput,
+  right: DualAxisInput,
+  {
+    align = "ticks",
+    proportional = false,
+    zero = "auto",
+    targetTicks = 5,
+    maxTicks = 7,
+  }: DualAxisOptions & { targetTicks?: number; maxTicks?: number } = {},
+): { left: DualAxisResolved; right: DualAxisResolved } {
+  const includeZero =
+    zero === "both" || Boolean(left.lengthEncoding) || Boolean(right.lengthEncoding);
+  const bounds = [left.extent, right.extent].map(([lo, hi]) =>
+    widenFlat(includeZero ? [Math.min(lo, 0), Math.max(hi, 0)] : [lo, hi]),
+  ) as [[number, number], [number, number]];
+
+  if (align === "independent" && !proportional) {
+    // Each axis keeps its own ticks; only the zero rule applies.
+    const [l, r] = bounds.map((b) => {
+      const scale = scaleLinear<number>({ domain: b, range: [0, 1], nice: true });
+      const [lo, hi] = scale.domain();
+      return { domain: [lo ?? b[0], hi ?? b[1]] as [number, number] };
+    });
+    return { left: l!, right: r! };
+  }
+
+  // A shared step index for the lowest tick keeps zero (or the proportional
+  // origin) on one pixel row across both axes.
+  const sharedK = includeZero || proportional;
+  const ceiling = Math.max(3, maxTicks);
+  const target = Math.min(Math.max(3, targetTicks), ceiling);
+  let best: { n: number; fits: [AxisFit, AxisFit]; score: number } | undefined;
+
+  for (let n = 2; n + 1 <= ceiling; n++) {
+    const candidates = bounds.map(([lo, hi]) => niceStepCandidates((hi - lo) / n));
+    const penalty = 0.12 * Math.abs(n + 1 - target);
+    if (sharedK) {
+      for (const s1 of candidates[0]!) {
+        for (const s2 of candidates[1]!) {
+          const k = Math.min(
+            Math.floor(bounds[0][0] / s1 + 1e-9),
+            Math.floor(bounds[1][0] / s2 + 1e-9),
+          );
+          if ((k + n) * s1 < bounds[0][1] - 1e-9 || (k + n) * s2 < bounds[1][1] - 1e-9) continue;
+          const score =
+            wasteOf(bounds[0][1] - bounds[0][0], s1, n) +
+            wasteOf(bounds[1][1] - bounds[1][0], s2, n) +
+            penalty;
+          if (!best || score < best.score - 1e-12) {
+            best = {
+              n,
+              fits: [
+                { step: s1, k },
+                { step: s2, k },
+              ],
+              score,
+            };
+          }
+        }
+      }
+      continue;
+    }
+    const fits = bounds.map(([lo, hi], i) => {
+      let pick: (AxisFit & { waste: number }) | undefined;
+      for (const step of candidates[i]!) {
+        const k = Math.floor(lo / step + 1e-9);
+        if ((k + n) * step < hi - 1e-9) continue;
+        const waste = wasteOf(hi - lo, step, n);
+        if (!pick || waste < pick.waste) pick = { step, k, waste };
+      }
+      return pick;
+    });
+    if (!fits[0] || !fits[1]) continue;
+    const score = fits[0].waste + fits[1].waste + penalty;
+    if (!best || score < best.score - 1e-12) {
+      best = { n, fits: [fits[0], fits[1]], score };
+    }
+  }
+
+  if (!best) {
+    // Unreachable for finite input (the candidate ladder spans two decades);
+    // degrade to independent nice domains rather than throw.
+    return resolveDualAxisDomains(left, right, { align: "independent", zero });
+  }
+  const { n, fits } = best;
+  const [l, r] = fits.map(({ step, k }) => {
+    const ticks = Array.from({ length: n + 1 }, (_, j) => cleanTick((k + j) * step));
+    return { domain: [ticks[0]!, ticks[n]!] as [number, number], ticks };
+  });
+  return { left: l!, right: r! };
+}

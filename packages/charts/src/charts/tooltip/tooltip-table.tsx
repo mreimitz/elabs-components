@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext, type ReactNode, useContext } from "react";
 import type { ChartValueFormat } from "../value-format";
 import { useChartTooltipValueFormat } from "./tooltip-content";
 import type { TooltipRow } from "./tooltip-content";
@@ -24,6 +25,9 @@ export interface ChartTooltipTableProps {
  */
 export function ChartTooltipTable({ title, rows, valueFormat, currency }: ChartTooltipTableProps) {
   const format = useChartTooltipValueFormat(valueFormat, currency);
+  // Dual-axis — RM-121: group the columns under their axis' side header.
+  const axisGroups = useTooltipTableAxisGroups(rows);
+  const columns = axisGroups ? axisGroups.flatMap((group) => group.rows) : rows;
   return (
     <table
       className="border-collapse text-body text-chart-tooltip-foreground"
@@ -34,9 +38,28 @@ export function ChartTooltipTable({ title, rows, valueFormat, currency }: ChartT
           {title}
         </caption>
       )}
+      {axisGroups?.map((group) => (
+        <colgroup key={`${group.id}-cols`} span={group.rows.length} />
+      ))}
       <thead>
+        {axisGroups && (
+          <tr data-slot="chart-tooltip-table-axis-row">
+            {axisGroups.map((group) => (
+              <th
+                className="px-3 pt-1 text-start text-chart-tooltip-muted text-meta font-medium"
+                colSpan={group.rows.length}
+                data-axis={group.id}
+                data-slot="chart-tooltip-table-axis-header"
+                key={`${group.id}-axis`}
+                scope="colgroup"
+              >
+                {group.label}
+              </th>
+            ))}
+          </tr>
+        )}
         <tr>
-          {rows.map((row) => (
+          {columns.map((row) => (
             <th
               className="px-3 pt-1 pb-1 text-start text-chart-tooltip-muted text-meta font-medium"
               key={`${row.label}-head`}
@@ -56,7 +79,7 @@ export function ChartTooltipTable({ title, rows, valueFormat, currency }: ChartT
       </thead>
       <tbody>
         <tr>
-          {rows.map((row) => (
+          {columns.map((row) => (
             <td className="px-3 pb-2.5 font-medium tabular-nums" key={`${row.label}-value`}>
               {typeof row.value === "number"
                 ? row.unit
@@ -72,5 +95,44 @@ export function ChartTooltipTable({ title, rows, valueFormat, currency }: ChartT
 }
 
 ChartTooltipTable.displayName = "ChartTooltipTable";
+
+// Dual-axis — RM-121
+/** One value axis' column group in a dual-axis tooltip table. */
+export interface ChartTooltipTableAxisGroup {
+  /** The axis id (`YAxis yAxisId`). */
+  id: string;
+  /** The axis' side header — "Left scale" / "Right scale". */
+  label: ReactNode;
+  /** The series keys (`TooltipRow.label`) drawn on this axis. */
+  keys: readonly string[];
+}
+
+/**
+ * Provided by a dual-axis `ComposedChart` (RM-121): the table groups its
+ * series columns under one side header per axis. Internal — no public prop.
+ */
+export const ChartTooltipTableAxisGroupsContext = createContext<
+  readonly ChartTooltipTableAxisGroup[] | undefined
+>(undefined);
+
+/**
+ * The provided axis groups with the hovered rows sorted into them, or
+ * `undefined` (a flat table) unless EVERY row belongs to exactly one group —
+ * a custom `rows` renderer with its own labels keeps today's flat shape.
+ */
+function useTooltipTableAxisGroups(
+  rows: TooltipRow[],
+): Array<{ id: string; label: ReactNode; rows: TooltipRow[] }> | undefined {
+  const groups = useContext(ChartTooltipTableAxisGroupsContext);
+  if (!groups || groups.length < 2 || rows.length === 0) return undefined;
+  const sorted = groups.map((group) => ({
+    id: group.id,
+    label: group.label,
+    rows: rows.filter((row) => group.keys.includes(row.label)),
+  }));
+  const placed = sorted.reduce((sum, group) => sum + group.rows.length, 0);
+  if (placed !== rows.length) return undefined;
+  return sorted.filter((group) => group.rows.length > 0);
+}
 
 export default ChartTooltipTable;

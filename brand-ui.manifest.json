@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T11:07:31.062Z",
+  "generatedAt": "2026-09-19T12:33:41.779Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -14933,6 +14933,10 @@
           "module": "packages/charts/src/charts/chart-legend.tsx"
         },
         {
+          "name": "ChartLegendSplitGroup",
+          "module": "packages/charts/src/charts/chart-legend.tsx"
+        },
+        {
           "name": "ChartLineAnnotation",
           "module": "packages/charts/src/charts/annotations/index.ts"
         },
@@ -15275,6 +15279,18 @@
         {
           "name": "DrawPathProps",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "DualAxisAlign",
+          "module": "packages/charts/src/charts/y-axis-scales.ts"
+        },
+        {
+          "name": "DualAxisOptions",
+          "module": "packages/charts/src/charts/y-axis-scales.ts"
+        },
+        {
+          "name": "DualAxisZero",
+          "module": "packages/charts/src/charts/y-axis-scales.ts"
         },
         {
           "name": "DumbbellBeadsConfig",
@@ -17647,7 +17663,7 @@
               "name": "spec",
               "optional": false,
               "type": "ChartSpec",
-              "description": "The serializable chart specification produced by an LLM tool-call. `spec.type` is optional; omit it and the data shape decides (see `explainChartType`). The full `ChartType` union AutoChart renders is: `line` | `area` | `bar` | `pie` | `scatter` | `radar` | `funnel` | `candlestick` | `heatmap` | `calendar` | `waterfall` | `dumbbell` | `unit` | `treemap` | `histogram` | `box` | `strip` | `bump` | `stream` | `diverging-bar`. Anything else — including `network`, `parallel`, `tree` and `sankey`, which stay explicit-container-only — renders `ChartFallback` instead. That list is not hand-kept prose: `auto-chart.test.tsx` parses it back out of this comment and asserts it equals `CHART_TYPES`, so a type added to the union without being documented here fails the suite."
+              "description": "The serializable chart specification produced by an LLM tool-call. `spec.type` is optional; omit it and the data shape decides (see `explainChartType`). The full `ChartType` union AutoChart renders is: `line` | `area` | `bar` | `pie` | `scatter` | `radar` | `funnel` | `candlestick` | `heatmap` | `calendar` | `waterfall` | `dumbbell` | `unit` | `treemap` | `histogram` | `box` | `strip` | `bump` | `stream` | `diverging-bar` | `dual-axis`. Anything else — including `network`, `parallel`, `tree` and `sankey`, which stay explicit-container-only — renders `ChartFallback` instead. That list is not hand-kept prose: `auto-chart.test.tsx` parses it back out of this comment and asserts it equals `CHART_TYPES`, so a type added to the union without being documented here fails the suite."
             },
             {
               "name": "plotHeight",
@@ -18996,7 +19012,7 @@
             {
               "name": "layout",
               "optional": true,
-              "type": "\"row\" | \"stack\"",
+              "type": "\"row\" | \"stack\" | \"split\"",
               "description": "Item flow direction (RM-118, sitting 3). `\"stack\"` (default — every caller before this prop existed) is byte-identical to before: one item per line. `\"row\"` wraps items left-to-right (`flex-wrap`), matching the layout `AutoChart`'s old `AutoLegend` used, AND drops the `w-full` an interactive (`onItemClick`/toggle) item otherwise gets — `w-full` inside a row would force every item onto its own line regardless of this prop. `useContainerLegend` (the container legend engine) passes its own resolved `layout` (\"row\" at `base`/`medium`/`wide`, \"stack\" at `narrow` or density `sm`) through; a direct caller may set its own or leave it unset for the original stacked behaviour."
             },
             {
@@ -19415,8 +19431,8 @@
             {
               "name": "stacked",
               "optional": true,
-              "type": "boolean",
-              "description": "Stack `SeriesBar` segments in child order at each x (line/area are not stacked)."
+              "type": "boolean | \"percent\"",
+              "description": "Stack `SeriesBar` segments in child order at each x (line/area are not stacked). `\"percent\"` (RM-121) stacks each x to 100 % through `bar-stacking.ts`: the primary `YAxis` is pinned to 0–100 % and prints percent unless it sets its own format, and the tooltip keeps the raw values. Put line/area series on another `yAxisId` beside it."
             },
             {
               "name": "stackGap",

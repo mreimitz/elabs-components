@@ -271,7 +271,8 @@
             "strip",
             "bump",
             "stream",
-            "diverging-bar"
+            "diverging-bar",
+            "dual-axis"
           ],
           "description": "Chart type; inferred from the data when omitted."
         },

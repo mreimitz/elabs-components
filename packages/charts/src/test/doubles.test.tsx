@@ -5,6 +5,8 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChartContractError } from "./contract";
 import { assertLabelsSpecContract, BarChart, InlineChip } from "./doubles";
+import { AutoChart as AutoChartDouble } from "./doubles"; // Dual-axis — RM-121
+import type { ChartSpec } from "../auto-chart/chart-spec"; // Dual-axis — RM-121
 
 afterEach(cleanup);
 
@@ -77,5 +79,42 @@ describe("InlineChip double (RM-117)", () => {
 
   it("throws a ChartContractError for an empty series key", () => {
     expect(() => render(<InlineChip series="">RAM</InlineChip>)).toThrow(ChartContractError);
+  });
+});
+
+// Dual-axis — RM-121
+describe("AutoChart double: dual-axis rules (RM-121)", () => {
+  const data = [{ month: "2024-01-01", orders: 182, conversion: 2.4 }];
+  const spec = (series: ChartSpec["series"]): ChartSpec => ({
+    type: "dual-axis",
+    data,
+    x: "month",
+    series,
+  });
+
+  it("accepts columns on the left and a line on the right", () => {
+    expect(() =>
+      render(
+        <AutoChartDouble
+          spec={spec([
+            { key: "orders", mark: "column" },
+            { key: "conversion", axis: "right" },
+          ])}
+        />,
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects a spec with no line, or columns on the right axis", () => {
+    expect(() =>
+      render(<AutoChartDouble spec={spec([{ key: "orders", mark: "column" }])} />),
+    ).toThrow(ChartContractError);
+    expect(() =>
+      render(
+        <AutoChartDouble
+          spec={spec([{ key: "orders", mark: "column", axis: "right" }, { key: "conversion" }])}
+        />,
+      ),
+    ).toThrow(ChartContractError);
   });
 });

@@ -106,6 +106,8 @@ import type {
   FacetSpec,
 } from "./chart-spec";
 import { ChartMultiples } from "../multiples/chart-multiples"; // ChartMultiples — RM-120
+import { ComposedChart } from "../charts/composed-chart"; // Dual-axis — RM-121
+import { SeriesBar } from "../charts/series-bar"; // Dual-axis — RM-121
 import {
   facetHint,
   inferChartType,
@@ -419,6 +421,124 @@ function tooltipSpecProps(spec: ChartSpec) {
     focus: spec.tooltip?.focus,
     pin: spec.tooltip?.pin,
   };
+}
+
+// Dual-axis — RM-121
+/** `ComposedChart` owns the dual-axis legend (the split layout), like line/area. */
+LEGEND_ENGINE_TYPES.add("dual-axis");
+
+interface DualAxisSeriesSpec extends NormalizedSeries {
+  axis: "left" | "right";
+  mark: "line" | "area" | "column";
+}
+
+/** `series[].axis`/`.mark` with their defaults, in declaration order. */
+function dualAxisSeries(spec: ChartSpec, series: NormalizedSeries[]): DualAxisSeriesSpec[] {
+  return series.map((s, i) => {
+    const raw = spec.series[i];
+    const own = typeof raw === "string" ? undefined : raw;
+    return {
+      ...s,
+      axis: own?.axis === "right" ? "right" : "left",
+      mark: own?.mark === "area" || own?.mark === "column" ? own.mark : "line",
+    };
+  });
+}
+
+/**
+ * Why a `"dual-axis"` spec cannot be drawn, or `null`: it needs at least one
+ * line, and `SeriesBar` draws on the primary (left) scale only.
+ */
+function dualAxisSpecProblem(spec: ChartSpec): string | null {
+  const series = spec.series.map((s) => (typeof s === "string" ? { key: s } : s));
+  if (!series.some((s) => (s.mark ?? "line") === "line")) {
+    return 'a "dual-axis" spec needs at least one series with mark "line"';
+  }
+  if (series.some((s) => s.mark === "column" && s.axis === "right")) {
+    return 'a "dual-axis" spec draws columns on the left axis only; move the line to the right';
+  }
+  return null;
+}
+
+/**
+ * `type: "dual-axis"`: a `ComposedChart` with both value axes planned
+ * (`axes.y2` carries `align`/`proportional`/`zero`), colour-matched axis
+ * labels, a split legend and the table tooltip by default.
+ */
+function renderDualAxisChart(
+  spec: ChartSpec,
+  series: NormalizedSeries[],
+  timeData: Record<string, unknown>[],
+  plotHeight: Responsive<ChartPlotHeight> | undefined,
+  yFormat: (value: number) => string,
+  copyValueOnActivate: boolean,
+  links: AutoChartLinkProps,
+  containerLegend: ContainerLegendProp | undefined,
+): ReactNode {
+  const dual = dualAxisSeries(spec, series);
+  const axisProps = resolveAxisSpecProps(spec.axes, false);
+  const rightAxisProps = resolveAxisSpecProps({ y: spec.axes?.y2 }, false).y;
+  const y2 = spec.axes?.y2;
+  const legend =
+    containerLegend === true
+      ? { layout: "split" as const }
+      : containerLegend && typeof containerLegend === "object"
+        ? { layout: "split" as const, ...containerLegend }
+        : containerLegend;
+  return (
+    <ComposedChart
+      data={timeData}
+      xDataKey={spec.x}
+      plotHeight={plotHeight}
+      legend={legend}
+      yAxes={{ align: y2?.align, proportional: y2?.proportional, zero: y2?.zero }}
+      stacked={spec.stacked === "percent" ? "percent" : Boolean(spec.stacked)}
+      accessibleLabel={spec.title}
+      accessibleDescription={spec.description ?? spec.altText}
+      copyValueOnActivate={copyValueOnActivate}
+      hoverCategory={links.hoverCategory}
+      onHoverCategory={links.onHoverCategory}
+      dimExcluded={links.dimExcluded}
+      selectionStates={links.selectionStates}
+      onDatapointClick={links.onDatapointClick}
+    >
+      <Grid horizontal mode={axisProps.gridMode} />
+      {dual
+        .filter((s) => s.mark === "column")
+        .map((s) => (
+          <SeriesBar dataKey={s.key} fill={s.color} key={s.key} />
+        ))}
+      {dual
+        .filter((s) => s.mark === "area")
+        .map((s) => (
+          <Area dataKey={s.key} fill={s.color} key={s.key} stroke={s.color} yAxisId={s.axis} />
+        ))}
+      {dual
+        .filter((s) => s.mark === "line")
+        .map((s) => (
+          <Line
+            curve={spec.curve}
+            dataKey={s.key}
+            key={s.key}
+            name={s.label}
+            stroke={s.color}
+            yAxisId={s.axis}
+          />
+        ))}
+      <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
+      <YAxis formatValue={yFormat} matchSeriesColor {...axisProps.y} orientation="left" />
+      {dual.some((s) => s.axis === "right") ? (
+        <YAxis
+          formatValue={yFormat}
+          matchSeriesColor
+          {...rightAxisProps}
+          orientation="right"
+          yAxisId="right"
+        />
+      ) : null}
+      <ChartTooltip {...tooltipSpecProps(spec)} variant={spec.tooltip?.variant ?? "table"} />
+    </ComposedChart>
+  );
 }
 
 function renderChart(
@@ -1089,6 +1209,20 @@ function renderChart(
       );
     }
 
+    // Dual-axis — RM-121
+    case "dual-axis": {
+      return renderDualAxisChart(
+        spec,
+        series,
+        timeCoercedData,
+        plotHeight,
+        yFormat,
+        copyValueOnActivate,
+        links,
+        containerLegend,
+      );
+    }
+
     // ── Unsupported / deferred ────────────────────────────────────────────────
     default: {
       return null;
@@ -1146,7 +1280,7 @@ export interface AutoChartProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    * `line` | `area` | `bar` | `pie` | `scatter` | `radar` | `funnel` |
    * `candlestick` | `heatmap` | `calendar` | `waterfall` | `dumbbell` |
    * `unit` | `treemap` | `histogram` | `box` | `strip` | `bump` | `stream` |
-   * `diverging-bar`.
+   * `diverging-bar` | `dual-axis`.
    *
    * Anything else — including `network`, `parallel`, `tree` and `sankey`, which
    * stay explicit-container-only — renders `ChartFallback` instead.
@@ -1375,6 +1509,21 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
 
   if (isUnsupported) {
     warnUnsupportedChartType(spec.type);
+    return (
+      <ChartFallback
+        ref={ref}
+        kind="unsupported"
+        className={cn("w-full", className)}
+        style={fallbackStyle}
+        {...props}
+      />
+    );
+  }
+
+  // Dual-axis — RM-121: explicit only; a spec it cannot draw honestly is unsupported.
+  const dualAxisProblem = type === "dual-axis" ? dualAxisSpecProblem(spec) : null;
+  if (dualAxisProblem) {
+    warnChartOnce(`AutoChart.dual-axis:${dualAxisProblem}`, `[AutoChart] ${dualAxisProblem}.`);
     return (
       <ChartFallback
         ref={ref}

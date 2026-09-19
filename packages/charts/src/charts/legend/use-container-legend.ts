@@ -32,11 +32,11 @@ import {
 } from "../chart-breakpoint";
 import { useChartConfig } from "../chart-config-context";
 import type { ChartLegendEntry } from "../chart-context";
-import { ChartLegend, type LegendItem } from "../chart-legend";
+import { ChartLegend, type ChartLegendSplitGroup, type LegendItem } from "../chart-legend";
 import type { ChartValueFormat } from "../value-format";
 
 export type ContainerLegendPosition = "top" | "bottom" | "left" | "right" | "none";
-export type ContainerLegendLayoutMode = "row" | "stack";
+export type ContainerLegendLayoutMode = "row" | "stack" | "split";
 export type ContainerLegendInteractive = "hover" | "toggle" | "none";
 
 export interface ContainerLegendConfig {
@@ -88,6 +88,12 @@ export interface UseContainerLegendOptions {
    * but never actually hide anything. Omit for no cap (Bar, Line, Area).
    */
   maxInteractive?: ContainerLegendInteractive;
+  // split layout — RM-121
+  /**
+   * The rows `layout: "split"` renders: one per value axis, each named by its
+   * side label. Unset (or empty), `"split"` falls back to `"row"`.
+   */
+  splitGroups?: readonly ChartLegendSplitGroup[];
 }
 
 export interface ContainerLegendResult {
@@ -125,6 +131,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     valueFormat,
     currency,
     maxInteractive,
+    splitGroups,
   } = options;
   const resolvedItems = useMemo(() => items ?? [], [items]);
 
@@ -173,7 +180,8 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
   // Acceptance: density `sm` renders `stack` only (never hidden — `xs` is
   // the only density this engine hides at; see `ChartLegend`'s
   // `hideAtDensity` below).
-  if (density === "sm") layout = "stack";
+  // split layout — RM-121: `split` keeps its per-axis rows at `sm`, stacked.
+  if (density === "sm" && layout !== "split") layout = "stack";
   const requestedInteractive = configProp?.interactive ?? DEFAULT_INTERACTIVE;
   const interactive =
     maxInteractive && INTERACTIVE_RANK[requestedInteractive] > INTERACTIVE_RANK[maxInteractive]
@@ -215,6 +223,9 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         // value here is what makes `layout: "row"` (the wide-tier default)
         // actually lay items out left-to-right instead of stacking them.
         layout,
+        // split layout — RM-121: the per-axis rows, stacked at narrow / `sm`.
+        splitGroups,
+        splitStacked: breakpoint === "narrow" || density === "sm",
         // Task 3(c) (sitting 3): a bare `ChartLegend` has no accessible name
         // of its own (see `chart-legend.tsx`'s `"aria-label"` prop doc) — the
         // engine gives every container legend the SAME name `AutoLegend` gave
