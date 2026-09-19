@@ -84,6 +84,7 @@ import {
 import type { ChartSpec } from "./chart-spec";
 import { ChartFrame } from "../chart-frame/chart-frame";
 import { SELECTION_EXCLUDED_OPACITY } from "../charts/chart-selection";
+import { Line, LineChart } from "../charts";
 
 afterEach(cleanup);
 
@@ -1290,8 +1291,11 @@ describe("AutoChart inside a fill-host tile", () => {
   });
 });
 
-// Labels — RM-110 (maintainer decision 7): the AutoLegend steps aside for a
+// Labels — RM-110 (maintainer decision 7): the legend steps aside for a
 // line/area spec only when every series gets an end label under the default.
+// RM-118: `line`/`area` now render their legend through `useContainerLegend`
+// (`LineChart`/`AreaChart`'s own `legend` prop, forwarded from `spec.legend`)
+// instead of the plain-`<ul>` `AutoLegend` — same show/hide decision, new root.
 describe("AutoChart legend vs series end labels", () => {
   const trend = [
     { date: "2024-01-01", ebikes: 10, cargo: 4 },
@@ -1300,7 +1304,7 @@ describe("AutoChart legend vs series end labels", () => {
   ];
   const legendOf = (spec: ChartSpec) =>
     render(<AutoChart spec={spec} height={280} />).container.querySelector(
-      'ul[aria-label="Chart legend"]',
+      '[data-slot="container-legend-root"]',
     );
 
   it("hides the legend when every line series has a real name", () => {
@@ -1331,6 +1335,118 @@ describe("AutoChart legend vs series end labels", () => {
     expect(legendOf({ ...base, labels: { series: "none" } })).not.toBeNull();
     cleanup();
     expect(legendOf({ ...base, labels: { series: "end" } })).toBeNull();
+  });
+
+  // Acceptance-4 (RM-118, orchestrator ruling): AutoChart never calls
+  // `useContainerLegend` itself — it only forwards `spec.legend` into
+  // `LineChart`'s own `legend` prop. Proving DOM equality of the rendered
+  // legend (not the plot, which AutoChart and this comparison compose from
+  // different children — `Grid`, `ChartTooltip`, axes — on purpose) against a
+  // `LineChart` built by hand with the SAME normalized series (key-only
+  // labels → `var(--chart-N)` palette colors, same order) is proof that
+  // forwarding, not a second implementation, is what produces the legend.
+  it("renders the identical legend DOM as calling LineChart directly with the same series (Acceptance-4)", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [{ key: "ebikes" }, { key: "cargo" }],
+    };
+    const auto = render(<AutoChart spec={spec} height={280} />);
+    const autoLegend = auto.container.querySelector(
+      '[data-slot="container-legend-root"] .legend-container',
+    );
+    expect(autoLegend).not.toBeNull();
+    cleanup();
+
+    const explicit = render(
+      <LineChart data={trend} xDataKey="date" legend>
+        <Line dataKey="ebikes" name="ebikes" stroke="var(--chart-1)" />
+        <Line dataKey="cargo" name="cargo" stroke="var(--chart-2)" />
+      </LineChart>,
+    );
+    const explicitLegend = explicit.container.querySelector(
+      '[data-slot="container-legend-root"] .legend-container',
+    );
+    expect(explicitLegend).not.toBeNull();
+
+    expect(autoLegend?.outerHTML).toBe(explicitLegend?.outerHTML);
+  });
+
+  // Task 3(a)/(c) (sitting 3): the pre-existing suite above only ever
+  // selected `[data-slot="container-legend-root"]` — this locks in the
+  // accessible-name parity that selector swap (from AutoLegend's old
+  // `ul[aria-label="Chart legend"]`) must not have lost. `AutoLegend` gave
+  // its `<ul>` role "list" (native) plus this SAME name; `ChartLegend`'s
+  // root is a plain `<div>` with no ARIA list role, so the engine instead
+  // exposes `role="group"` + the identical name (`chart-legend.tsx`'s new
+  // `aria-label` prop, `use-container-legend.ts`'s `t("charts.legend.label")`
+  // default) — see the result file's "Existing keys" section for the full
+  // base-vs-branch accessibility-tree comparison (role/name/item count).
+  it("keeps an accessible name on the legend after the AutoLegend → engine swap (Acceptance-4, a11y)", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [{ key: "ebikes" }, { key: "cargo" }],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    // Item count parity with the old `<li>`-per-series `AutoLegend`.
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
+});
+
+// Facet + legend engine (RM-118 × RM-120, orchestrator ruling after the
+// wave-2 merge): before the merge, a faceted line/area AutoChart with
+// `legend` set rendered one shared `AutoLegend` below the grid; the merge
+// dropped it entirely (see the result file's "Wave-2 merge" section). This
+// restores it, as ONE shared `ChartLegend` — not `AutoLegend` — above the
+// grid, matching the maintainer's "new shared look" for every other family.
+describe("AutoChart faceted line legend (RM-118 × RM-120 regression fix)", () => {
+  const facetedTrend = [
+    { date: "2024-01-01", region: "East", ebikes: 10, cargo: 4 },
+    { date: "2024-02-01", region: "East", ebikes: 14, cargo: 6 },
+    { date: "2024-01-01", region: "West", ebikes: 8, cargo: 3 },
+    { date: "2024-02-01", region: "West", ebikes: 12, cargo: 5 },
+  ];
+  const facetedSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "line",
+    data: facetedTrend,
+    x: "date",
+    series: [{ key: "ebikes" }, { key: "cargo" }],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with 2 items, above the grid", () => {
+    const { container, getAllByRole } = render(<AutoChart spec={facetedSpec(true)} height={280} />);
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "ebikes",
+      "cargo",
+    ]);
+
+    // "above the grid": the legend root is the grid's previous sibling, not
+    // a per-panel legend inside it and not a second one below it.
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
   });
 });
 

@@ -47,6 +47,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useCallback,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -221,6 +222,14 @@ export interface HeatmapChartProps extends ChartSelectionProps, ChartInteraction
   valueFormat?: ChartValueFormat;
   /** Show the ramp key below the plot. Default `true`. */
   showLegend?: boolean;
+  /**
+   * How the legend key states the scale — the same `"ranges"`/`"endpoints"`
+   * vocabulary `RampLegend`'s `scale.labels` uses (RM-118). `"endpoints"`
+   * (default, unchanged): `lo`/`hi` bracket the strip. `"ranges"`: one
+   * `from–to` label under every swatch, so a reader can place a cell in its
+   * step without hovering it — most useful together with a small `steps`.
+   */
+  legendLabels?: "endpoints" | "ranges";
   /**
    * A visible title for the column axis (#280), e.g. "Months since signup" —
    * printed directly under the plot, ABOVE the legend, so it reads as the
@@ -505,6 +514,13 @@ interface HeatmapBodyProps {
   revealOn: ChartRevealOn;
   rowHighlight?: (rowLabel: string) => boolean;
   loading: boolean;
+  /**
+   * RM-118: notifies the hovered cell up to `HeatmapChartShell`, which is
+   * outside this measured box, so it can feed `HeatmapLegend`'s `hover`
+   * marker — the legend sits as a SIBLING of the `ParentSize` box (see the
+   * file docblock), so it has no access to `HeatmapProvider`'s hover context.
+   */
+  onHoverChange?: (hover: HeatmapHoverContextValue) => void;
 }
 
 function HeatmapBody({
@@ -518,6 +534,7 @@ function HeatmapBody({
   loading,
   margin,
   mode,
+  onHoverChange,
   revealOn,
   rowHighlight,
   scale,
@@ -528,6 +545,9 @@ function HeatmapBody({
 }: HeatmapBodyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<HeatmapHoverContextValue>({ hovered: null, pointer: null });
+  useEffect(() => {
+    onHoverChange?.(hover);
+  }, [hover, onHoverChange]);
   const hatchId = `heatmap-neg-${useId().replace(/:/g, "")}`;
   const datapointsEnabled = useChartDatapointsEnabled();
   const activate = useActivateDatapoint();
@@ -1030,6 +1050,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     palette = "sequential",
     revealOn = "mount",
     rowHighlight,
+    legendLabels = "endpoints",
     showLegend = true,
     showValueHalo = true,
     showValues,
@@ -1122,6 +1143,14 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
   const minPlotWidth =
     variant === "calendar" ? grid.columns * MIN_CALENDAR_COLUMN_PX + margin.left + margin.right : 0;
 
+  // RM-118: the live-hovered cell, lifted here from `HeatmapBody` (which owns
+  // the pointer math) so `HeatmapLegend` below — a SIBLING of the measured
+  // plot box, outside `HeatmapProvider` — can move its marker with it.
+  const [liveHover, setLiveHover] = useState<HeatmapHoverContextValue>({
+    hovered: null,
+    pointer: null,
+  });
+
   return (
     <ChartPlotRoot
       aria-describedby={ariaDescribedby}
@@ -1176,6 +1205,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
                     loading={loading}
                     margin={margin}
                     mode={resolvedMode}
+                    onHoverChange={setLiveHover}
                     revealOn={revealOn}
                     rowHighlight={rowHighlight}
                     scale={scale}
@@ -1204,6 +1234,8 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
           emptyValue={emptyValue}
           formatValue={formatValue}
           hi={scale.hi}
+          hover={liveHover.hovered?.value ?? null}
+          labelMode={legendLabels}
           lo={scale.lo}
           missingCount={scale.missingCount}
           swatches={scale.swatches}

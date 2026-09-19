@@ -25,6 +25,7 @@ import type { ChartTooltipVariant } from "../charts/tooltip/chart-tooltip";
 import type { ChartPlotHeight } from "../charts/chart-breakpoint"; // Facet — RM-120
 import type { FacetSort } from "../multiples/facet-sort"; // Facet — RM-120
 import type { WaterfallDataFormat, WaterfallSort } from "../charts/waterfall-steps"; // RM-122
+import type { ContainerLegendConfig } from "../charts/legend/use-container-legend";
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -244,10 +245,20 @@ export interface ChartSpec {
   donut?: boolean;
 
   /**
-   * Show the legend. Default: true when series.length > 1, false for single series.
-   * Pass `true` to force-show or `false` to force-hide.
+   * `true`/`false` force-show/-hide the legend, unchanged. The config form
+   * (`{ position, layout, interactive, values, title }`, RM-118 —
+   * `ContainerLegendConfig` in `useContainerLegend`) picks placement, row/
+   * stack layout and hover-dim vs. click-to-toggle on every container this
+   * spec type maps to that wires `useContainerLegend` directly.
+   *
+   * `AutoChart` itself does not consume the config form yet (its own legend
+   * still renders through the type-`"pie"`-vs-series branch ABOVE where
+   * `useContainerLegend` — a hook — could safely be called without moving
+   * `AutoChart`'s type resolution earlier than its loading/empty-data early
+   * returns): an object here is currently read as "truthy → show", same as
+   * `true`. Default: shown when `series.length > 1`, hidden for one series.
    */
-  legend?: boolean;
+  legend?: boolean | ContainerLegendConfig;
 
   /**
    * How to format numeric values in labels/tooltips. Default: `"compact"` —

@@ -13,7 +13,7 @@
  * (the @elabs-ai/components-editor / @elabs-ai/components-flow precedent for SVG-heavy components).
  */
 import { describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 
 // vi.mock is hoisted above all imports by Vitest's transform.
 vi.mock("@visx/responsive", () => {
@@ -33,13 +33,45 @@ vi.mock("@visx/responsive", () => {
   };
 });
 
-// Stub the SVG engine so jsdom never hits path.getTotalLength().
+// Stub the SVG engine so jsdom never hits path.getTotalLength(). The legend
+// engine (RM-118) forwards `hiddenKeys` into `TimeSeriesChartInner` and
+// `legendHoveredKey` into `ChartSeriesModeProvider` — both surfaced here as
+// `data-*` attributes so the "legend (RM-118)" tests below can assert the
+// wiring crosses this exact seam without needing the real SVG pipeline.
 vi.mock("./time-series-chart-shell", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");
   return {
-    TimeSeriesChartInner: ({ children }: { children: React.ReactNode }) =>
-      React.createElement("svg", { "data-testid": "chart-inner" }, children),
+    TimeSeriesChartInner: ({
+      children,
+      hiddenKeys,
+    }: {
+      children: React.ReactNode;
+      hiddenKeys?: ReadonlySet<string>;
+    }) =>
+      React.createElement(
+        "svg",
+        {
+          "data-testid": "chart-inner",
+          "data-hidden-keys": hiddenKeys ? Array.from(hiddenKeys).join(",") : "",
+        },
+        children,
+      ),
+    ChartSeriesModeProvider: ({
+      children,
+      legendHoveredKey,
+    }: {
+      children: React.ReactNode;
+      legendHoveredKey?: string | null;
+    }) =>
+      React.createElement(
+        "div",
+        {
+          "data-testid": "series-mode-provider",
+          "data-legend-hovered-key": legendHoveredKey ?? "",
+        },
+        children,
+      ),
   };
 });
 
@@ -150,6 +182,88 @@ describe("ComposedChart", () => {
         </ComposedChart>,
       );
       expect(queryByText("Loading data…")).not.toBeInTheDocument();
+    });
+  });
+
+  // Legend engine (RM-118, sitting 3): `legend` widened into ComposedChart's
+  // touches so the toggle works end to end on Line/Area/Composed (R3). Fake
+  // "Line" children (named via `displayName`, never the real `./line`
+  // export) get picked up by `extractComposedSeries`'s `getChildComponentName`
+  // match exactly like a real `<Line>` would, without pulling in the real
+  // component's `useChartStable` context dependency the module docblock
+  // above already explains jsdom can't satisfy here. `hiddenKeys` /
+  // `legendHoveredKey` reaching the (stubbed) `TimeSeriesChartInner` /
+  // `ChartSeriesModeProvider` seam is exactly what this sitting wired.
+  describe("legend (RM-118)", () => {
+    function FakeLine({ dataKey }: { dataKey: string }) {
+      return <g data-testid={`line-${dataKey}`} />;
+    }
+    FakeLine.displayName = "Line";
+
+    it("an unset legend renders no legend, even with more than one series (R1 default)", () => {
+      const { container } = render(
+        <ComposedChart data={minimalData}>
+          <FakeLine dataKey="value" />
+          <FakeLine dataKey="trend" />
+        </ComposedChart>,
+      );
+      expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+    });
+
+    it("legend={true} renders both series as legend entries", () => {
+      const { container } = render(
+        <ComposedChart data={minimalData} legend>
+          <FakeLine dataKey="value" />
+          <FakeLine dataKey="trend" />
+        </ComposedChart>,
+      );
+      const legend = container.querySelector(".legend-container");
+      expect(legend).not.toBeNull();
+      expect(legend?.textContent).toContain("value");
+      expect(legend?.textContent).toContain("trend");
+    });
+
+    it('interactive: "toggle" flips aria-pressed and forwards the hidden key into TimeSeriesChartInner', () => {
+      const { container } = render(
+        <ComposedChart data={minimalData} legend={{ interactive: "toggle" }}>
+          <FakeLine dataKey="value" />
+          <FakeLine dataKey="trend" />
+        </ComposedChart>,
+      );
+
+      const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+      expect(buttons).toHaveLength(2);
+      const trendButton = buttons[1] as HTMLButtonElement;
+      expect(trendButton.getAttribute("aria-pressed")).toBe("true");
+
+      const chartInner = container.querySelector('[data-testid="chart-inner"]');
+      expect(chartInner?.getAttribute("data-hidden-keys")).toBe("");
+
+      fireEvent.click(trendButton);
+
+      expect(trendButton.getAttribute("aria-pressed")).toBe("false");
+      // WCAG 1.4.1: hidden reads via a struck-through label, not colour alone.
+      expect(trendButton.querySelector("span.line-through")).not.toBeNull();
+      expect(chartInner?.getAttribute("data-hidden-keys")).toBe("trend");
+    });
+
+    it("hovering a legend item forwards its key into ChartSeriesModeProvider (Refs #545)", () => {
+      const { container } = render(
+        <ComposedChart data={minimalData} legend>
+          <FakeLine dataKey="value" />
+          <FakeLine dataKey="trend" />
+        </ComposedChart>,
+      );
+
+      const provider = container.querySelector('[data-testid="series-mode-provider"]');
+      expect(provider?.getAttribute("data-legend-hovered-key")).toBe("");
+
+      const items = container.querySelectorAll(".legend-container > *");
+      fireEvent.mouseEnter(items[1] as HTMLElement);
+      expect(provider?.getAttribute("data-legend-hovered-key")).toBe("trend");
+
+      fireEvent.mouseLeave(items[1] as HTMLElement);
+      expect(provider?.getAttribute("data-legend-hovered-key")).toBe("");
     });
   });
 });

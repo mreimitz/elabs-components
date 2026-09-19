@@ -39,9 +39,11 @@ import {
   DEFAULT_CHART_STATUS,
   resolveRestingChartPhase,
 } from "./chart-phase";
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import type { ChartLegendEntry } from "./chart-context";
 import { Line, type LineProps } from "./line";
 import { SeriesBar, type SeriesBarProps } from "./series-bar";
-import { TimeSeriesChartInner } from "./time-series-chart-shell";
+import { ChartSeriesModeProvider, TimeSeriesChartInner } from "./time-series-chart-shell";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import {
@@ -67,6 +69,12 @@ export interface ComposedChartProps extends ChartSelectionProps, ChartHoverLinkP
   enterTransition?: Transition;
   /** Signature of motion URL state — triggers reveal replay when it changes. */
   revealSignature?: string;
+  /**
+   * Animate the y-domain over this duration (ms), including a legend
+   * toggle's re-tween (RM-118, validator FAIL 1a). Default: 500, same as
+   * `LineChart`/`AreaChart`.
+   */
+  yDomainTweenDuration?: number;
   aspectRatio?: string;
   /**
    * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
@@ -112,6 +120,13 @@ export interface ComposedChartProps extends ChartSelectionProps, ChartHoverLinkP
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. series names + value range). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Legend engine (RM-118): `true` or a config object mounts `ChartLegend`
+   * beside the plot via `useContainerLegend`; `{ interactive: "toggle" }`
+   * hides a series and re-tweens the y-domain. Unset (default) renders
+   * NOTHING new — same R1 as `LineChart`/`AreaChart`.
+   */
+  legend?: ContainerLegendProp;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -251,6 +266,7 @@ interface ChartInnerProps {
   animationEasing?: string;
   enterTransition?: Transition;
   revealSignature?: string;
+  yDomainTweenDuration?: number;
   children: ReactNode;
   containerRef: React.RefObject<HTMLDivElement | null>;
   barSize?: number;
@@ -271,6 +287,20 @@ interface ChartInnerProps {
   datapointLabel?: ChartDatapointLabel;
   maxInteractiveDatapoints?: number;
   onPhaseChange?: (phase: ChartPhase) => void;
+  /** Toggled-off series keys (RM-118) — see `TimeSeriesChartInnerProps.hiddenKeys`. */
+  hiddenKeys?: ReadonlySet<string>;
+  /**
+   * The legend item currently hovered or keyboard-focused (RM-118, `Refs
+   * #545`) — same seam `LineChart`/`AreaChart` forward into
+   * `ChartSeriesModeProvider`.
+   */
+  legendHoveredKey?: string | null;
+  /**
+   * The container legend engine's own `visible` (RM-118, sitting 3, R4) —
+   * see `TimeSeriesChartInnerProps.legendVisible`'s doc for why this
+   * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
+   */
+  legendVisible?: boolean;
 }
 
 function ChartInner({
@@ -284,6 +314,7 @@ function ChartInner({
   animationEasing,
   enterTransition,
   revealSignature,
+  yDomainTweenDuration,
   children,
   containerRef,
   barSize,
@@ -298,6 +329,9 @@ function ChartInner({
   datapointLabel,
   maxInteractiveDatapoints,
   onPhaseChange,
+  hiddenKeys,
+  legendHoveredKey,
+  legendVisible,
 }: ChartInnerProps) {
   // See `use-stable-value.ts`: collapses back to the previous reference when
   // the extracted series content is unchanged, even though `children` gets a
@@ -342,34 +376,44 @@ function ChartInner({
   // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
   const clipPathId = `composed-chart-grow-clip-${useId().replace(/:/g, "")}`;
   const chart = (
-    <TimeSeriesChartInner
-      animationDuration={animationDuration}
-      animationEasing={animationEasing}
-      clipPathId={clipPathId}
-      composedBarDataKeys={barDataKeys.length > 0 ? barDataKeys : undefined}
-      composedBarGap={barGap}
-      composedBarSize={barSize}
-      composedMaxBarSize={maxBarSize}
-      composedStacked={stacked}
-      composedStackGap={stackGap}
-      composedStackOffsets={composedStackOffsets}
-      containerRef={containerRef}
-      chartStatus={chartStatus}
-      data={data}
-      enterTransition={enterTransition}
-      height={height}
-      lines={lines}
-      loadingLabel={loadingLabel}
-      margin={margin}
-      onPhaseChange={onPhaseChange}
-      revealSignature={revealSignature}
-      width={width}
-      xDataKey={xDataKey}
-      xScaleType={xScaleType}
-      yScaleDomainMax={yScaleDomainMax}
-    >
-      {children}
-    </TimeSeriesChartInner>
+    // Same seam Line/Area mount `ChartSeriesModeProvider` at (RM-118): wraps
+    // the WHOLE `TimeSeriesChartInner` tree so `legendHoveredKey` reaches the
+    // shared hover-dim fade. `ComposedChart` has no `focusOnHover`/`nulls`
+    // prop of its own yet, so both stay at the provider's own defaults —
+    // this wiring is additive, byte-identical when `legend` is unset.
+    <ChartSeriesModeProvider legendHoveredKey={legendHoveredKey}>
+      <TimeSeriesChartInner
+        animationDuration={animationDuration}
+        animationEasing={animationEasing}
+        clipPathId={clipPathId}
+        composedBarDataKeys={barDataKeys.length > 0 ? barDataKeys : undefined}
+        composedBarGap={barGap}
+        composedBarSize={barSize}
+        composedMaxBarSize={maxBarSize}
+        composedStacked={stacked}
+        composedStackGap={stackGap}
+        composedStackOffsets={composedStackOffsets}
+        containerRef={containerRef}
+        chartStatus={chartStatus}
+        data={data}
+        enterTransition={enterTransition}
+        height={height}
+        hiddenKeys={hiddenKeys}
+        legendVisible={legendVisible}
+        lines={lines}
+        loadingLabel={loadingLabel}
+        margin={margin}
+        onPhaseChange={onPhaseChange}
+        revealSignature={revealSignature}
+        width={width}
+        xDataKey={xDataKey}
+        xScaleType={xScaleType}
+        yDomainTweenDuration={yDomainTweenDuration}
+        yScaleDomainMax={yScaleDomainMax}
+      >
+        {children}
+      </TimeSeriesChartInner>
+    </ChartSeriesModeProvider>
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
@@ -401,6 +445,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     animationEasing,
     enterTransition,
     revealSignature,
+    yDomainTweenDuration,
     aspectRatio,
     plotHeight,
     className = "",
@@ -423,6 +468,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     onHoverCategory,
     selectionStates,
     dimExcluded,
+    legend,
     ...props
   },
   forwardedRef,
@@ -430,6 +476,39 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
   const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
   const internalRef = useRef<HTMLDivElement>(null);
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
+
+  // Legend engine (RM-118) — see the identical comment in `line-chart.tsx`.
+  // `children` is walked a second time here (cheap) so the legend items and
+  // the container's own width measurement are both available BEFORE
+  // `ParentSize` mounts, at the level the legend needs to sit beside the plot.
+  const composedSeriesForLegend = useStableValue(
+    useMemo(() => extractComposedSeries(children), [children]),
+  );
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      composedSeriesForLegend.lines.map((line) => ({
+        key: line.dataKey,
+        label: line.dataKey,
+        color: line.stroke || "var(--chart-line-primary)",
+        kind: "series" as const,
+      })),
+    [composedSeriesForLegend],
+  );
+  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+  const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  const handleLegendHoverChange = useCallback(
+    (index: number | null) => {
+      setLegendHoveredIndex(index);
+      setLegendHoveredKey(index == null ? null : (legendItems[index]?.key ?? null));
+    },
+    [legendItems],
+  );
+  const containerLegend = useContainerLegend({
+    legend,
+    items: legendItems,
+    hoveredIndex: legendHoveredIndex,
+    onHoverChange: handleLegendHoverChange,
+  });
 
   // Merge the forwarded ref with the internal containerRef (used for tooltip anchoring).
   const mergedRef = useCallback(
@@ -468,7 +547,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
       chartPhase === "revealingLoading"),
   );
 
-  return (
+  return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
@@ -496,6 +575,9 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 datapointLabel={datapointLabel}
                 enterTransition={enterTransition}
                 height={height}
+                hiddenKeys={containerLegend.hiddenKeys}
+                legendHoveredKey={legendHoveredKey}
+                legendVisible={containerLegend.visible}
                 loadingLabel={loadingLabel}
                 margin={margin}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
@@ -509,6 +591,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 width={width}
                 xDataKey={xDataKey}
                 xScaleType={xScaleType}
+                yDomainTweenDuration={yDomainTweenDuration}
               >
                 {children}
                 {selectionStates ? <ChartSelectionSeriesLayer /> : null}
@@ -521,7 +604,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}
-    </ChartPlotRoot>
+    </ChartPlotRoot>,
   );
 });
 

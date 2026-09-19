@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { curveNatural } from "@visx/curve";
 import { Area } from "./area";
@@ -10,6 +10,7 @@ import { Line } from "./line";
 import { SeriesBar } from "./series-bar";
 import { ChartTooltip } from "./tooltip";
 import { XAxis } from "./x-axis";
+import { YAxis } from "./y-axis";
 
 const meta = {
   title: "Charts/ComposedChart",
@@ -211,5 +212,110 @@ export const SelectionStates: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
+  },
+};
+
+/**
+ * Container legend (RM-118): `legend={{ interactive: "toggle" }}` mounts
+ * `ChartLegend` above the plot with real `aria-pressed` buttons — click, or
+ * Tab then Enter, hides a `<Line>` series and the y-domain re-tweens around
+ * what is left visible. Only `Line` children publish a legend entry
+ * (`extractComposedSeries`); `ComposedChart` has no `focusOnHover` prop of
+ * its own yet, so a keyboard-focused legend item wires through
+ * `ChartSeriesModeProvider` (same seam Line/Area use) but has no visible
+ * dim effect until a future sitting adds one.
+ */
+// `chartData`'s `revenue`/`runRate` peak within ~100 of each other (6,100 vs
+// 6,200) — close enough that `nice: true` rounds BOTH domains to the same
+// top tick, so hiding either one never visibly moves the axis. This story
+// needs a real gap (mirrors Line/AreaChart's fixtures) to prove the domain
+// actually recomputes.
+const legendToggleData = [
+  { date: new Date("2024-01-01"), revenue: 900, runRate: 3800 },
+  { date: new Date("2024-02-01"), revenue: 1200, runRate: 4600 },
+  { date: new Date("2024-03-01"), revenue: 1050, runRate: 5200 },
+  { date: new Date("2024-04-01"), revenue: 1400, runRate: 5000 },
+  { date: new Date("2024-05-01"), revenue: 1800, runRate: 5700 },
+  { date: new Date("2024-06-01"), revenue: 1600, runRate: 6200 },
+];
+
+export const LegendToggle: Story = {
+  name: "Legend toggle",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ComposedChart
+        animationDuration={0}
+        data={legendToggleData}
+        legend={{ interactive: "toggle" }}
+        onDatapointClick={() => {}}
+        yDomainTweenDuration={0}
+      >
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="revenue" name="Revenue" stroke="var(--chart-1)" />
+        <Line curve={curveNatural} dataKey="runRate" name="Run rate" stroke="var(--chart-2)" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </ComposedChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const yTicks = () =>
+      [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
+        (node) => node.textContent ?? "",
+      );
+    // Datapoint drill-down targets carry an aria-label starting with the
+    // series key too, so a plain accessible-name query could match those —
+    // scope to the legend's own toggle buttons.
+    const legendToggle = (label: RegExp) =>
+      [...canvasElement.querySelectorAll("button[aria-pressed]")].find((button) =>
+        label.test(button.textContent ?? ""),
+      ) as HTMLButtonElement | undefined;
+    // The y-axis ticks render before the legend does — wait for the button
+    // itself, not just the ticks, so a fast `animationDuration={0}` mount
+    // never races `.focus()` against an undefined lookup.
+    //
+    // Matched on the raw `dataKey`, not the `name` prop below: unlike
+    // Line/AreaChart, `ComposedChart`'s `extractComposedSeries` never carries
+    // a `<Line>`/`<Area>`/`SeriesBar`'s `name` into its `LineConfig`, so the
+    // legend renders `dataKey` verbatim ("runRate", not "Run rate"). Pre-
+    // existing, out of scope for this sitting's y-domain fix (validator FAIL
+    // 1a) — `name` still reaches `ChartTooltip`.
+    await waitFor(() => expect(legendToggle(/runRate/)).toBeTruthy());
+    // Ticks are either compacted ("6K") or, when the whole set would not
+    // compact ("one unit per scale", charts.md), Intl-grouped ("1,800") —
+    // `Number("6K")` and `Number("1,800")` are both `NaN`, so strip the
+    // grouping comma and the compaction suffix before parsing.
+    const parseTick = (text: string): number => {
+      const match = /^(-?[\d.]+)([KM]?)$/.exec(text.trim().replace(/,/g, ""));
+      if (!match) return Number.NaN;
+      const [, digits, suffix] = match;
+      const n = Number(digits);
+      return suffix === "K" ? n * 1_000 : suffix === "M" ? n * 1_000_000 : n;
+    };
+
+    // "runRate" (peak 6200) is the max series here — "revenue" peaks at
+    // 1800. Hiding runRate must shrink the top tick. Keyboard operated
+    // (RM-118, validator FAIL 1a).
+    await waitFor(() => expect(yTicks().length).toBeGreaterThan(0));
+    const before = yTicks();
+
+    const runRateToggle = legendToggle(/runRate/) as HTMLButtonElement;
+    runRateToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(runRateToggle).toHaveAttribute("aria-pressed", "false"));
+    await waitFor(() => expect(yTicks()).not.toEqual(before));
+    const afterHide = yTicks();
+    await expect(parseTick(afterHide.at(-1) ?? "")).toBeLessThan(parseTick(before.at(-1) ?? ""));
+
+    runRateToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(runRateToggle).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(yTicks()).toEqual(before));
+    // Settle focus back to the body — otherwise the interaction ends with the
+    // legend's own hover/focus dim still applied to the neighbouring item,
+    // which the a11y gate correctly flags on ITS OWN contrast (unrelated to
+    // this story; not this sitting's fix to make).
+    runRateToggle.blur();
   },
 };

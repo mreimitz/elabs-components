@@ -44,6 +44,8 @@ import {
   BumpChart,
   Candlestick,
   CandlestickChart,
+  ChartLegend,
+  type LegendItem,
   ChartTooltip,
   DistributionChart,
   DumbbellChart,
@@ -83,6 +85,7 @@ import { ChartFallback } from "../charts/chart-fallback";
 import { useChartFrameChrome } from "../chart-frame/chart-frame-context";
 import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
+import type { ContainerLegendProp } from "../charts/legend/use-container-legend";
 import type { XAxisProps } from "../charts/x-axis";
 import type { YAxisProps } from "../charts/y-axis";
 import {
@@ -273,6 +276,14 @@ function everySeriesEndLabelled(
 // AutoLegend
 // ---------------------------------------------------------------------------
 
+/**
+ * Chart types whose container renders its own legend via `useContainerLegend`
+ * (RM-118). `AutoChart` forwards the SAME show/hide decision `AutoLegend`
+ * used to make into that container's own `legend` prop instead of rendering
+ * `AutoLegend` below it — one legend per chart, never two.
+ */
+const LEGEND_ENGINE_TYPES = new Set<ChartType>(["line", "area", "stream"]);
+
 interface AutoLegendProps {
   series: NormalizedSeries[];
 }
@@ -409,6 +420,14 @@ function renderChart(
   /** Put the exact value on the clipboard when a datapoint is activated. */
   copyValueOnActivate: boolean,
   links: AutoChartLinkProps = {},
+  /**
+   * RM-118: the SAME show/hide decision `AutoLegend` below used to render
+   * itself with (`spec.legend` if set, else "more than one series and not
+   * every series end-labelled") — forwarded, unchanged, into `LineChart`'s/
+   * `AreaChart`'s own `legend` prop for the families wired to
+   * `useContainerLegend` internally. `AutoChart` itself never calls that hook.
+   */
+  containerLegend?: ContainerLegendProp,
 ): ReactNode {
   // `groupSmall`/`half` (RM-114) — pie/donut only, ignored elsewhere. Slice
   // labels live under the shared label engine's `labels.slices` (RM-110's
@@ -437,6 +456,7 @@ function renderChart(
           xDataKey={x}
           nulls={nulls}
           plotHeight={plotHeight}
+          legend={containerLegend}
           accessibleLabel={spec.title}
           accessibleDescription={withAnnotationDescription(
             spec.description ?? spec.altText,
@@ -485,6 +505,7 @@ function renderChart(
           nulls={nulls}
           offset={type === "stream" ? "wiggle" : stacked ? "none" : undefined}
           plotHeight={plotHeight}
+          legend={containerLegend}
           accessibleLabel={spec.title}
           accessibleDescription={withAnnotationDescription(
             spec.description ?? spec.altText,
@@ -1357,6 +1378,32 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   const showLegend =
     spec.legend ?? (legendItems.length > 1 && !everySeriesEndLabelled(spec, type, series));
 
+  // Facet + legend engine (RM-118 × RM-120, orchestrator ruling): a faceted
+  // line/area/stream spec whose legend is shown gets ONE shared `ChartLegend`
+  // above the whole grid — the wave-2-merge regression this restores (before
+  // the merge, `AutoLegend` rendered this same single shared legend; the
+  // merge's `LEGEND_ENGINE_TYPES` exclusion silently dropped it for facets
+  // because `renderFacetedChart`'s per-panel `renderChart` calls never
+  // forward a `containerLegend`). Same show/hide decision (`showLegend`) and
+  // the same object-config shape (`ContainerLegendConfig`) the non-faceted
+  // container legend engine reads — `values`/`title` only; `position`/
+  // `layout`/`interactive` don't apply to a single grid-level legend, so
+  // they're read but otherwise inert here. Hover-dim across panels and
+  // per-series toggle are explicitly out of scope (see "Follow-ups" in the
+  // result file) — this legend is static, like `AutoLegend` was.
+  const facetLegendConfig =
+    typeof showLegend === "object" && showLegend !== null ? showLegend : undefined;
+  const showFacetLegend =
+    LEGEND_ENGINE_TYPES.has(type) && (showLegend === true || facetLegendConfig !== undefined);
+  const facetLegend: FacetLegend | undefined = showFacetLegend
+    ? {
+        items: series.map((s) => ({ key: s.key, label: s.label, color: s.color, value: 0 })),
+        showValue: facetLegendConfig?.values === true,
+        title: facetLegendConfig?.title as string | undefined,
+        "aria-label": t("charts.legend.label"),
+      }
+    : undefined;
+
   // ── Chart title ───────────────────────────────────────────────────────────
   const title = spec.title;
   const links: AutoChartLinkProps = {
@@ -1381,6 +1428,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
             yFormat,
             copyValueOnActivate,
             links,
+            facetLegend,
           )
         : renderChart(
             type,
@@ -1392,6 +1440,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
             yFormat,
             copyValueOnActivate,
             links,
+            LEGEND_ENGINE_TYPES.has(type) ? showLegend : undefined,
           );
   } catch {
     return (
@@ -1448,7 +1497,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       ) : (
         chartBody
       )}
-      {showLegend ? <AutoLegend series={legendItems} /> : null}
+      {showLegend && !LEGEND_ENGINE_TYPES.has(type) ? <AutoLegend series={legendItems} /> : null}
     </div>
   );
 });
@@ -1458,9 +1507,26 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
 const FACETED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "bar", "pie"]);
 
 /**
+ * `facetLegend` → the one shared `ChartLegend` `renderFacetedChart` mounts
+ * above the grid for a faceted line/area/stream spec — same show/hide
+ * decision and object-config shape (`values`/`title`) the non-faceted
+ * container legend engine reads, built once from the spec's full (unfiltered)
+ * series list so it stays correct even when `{ series: true }` gives each
+ * panel only one of them.
+ */
+interface FacetLegend {
+  items: LegendItem[];
+  showValue: boolean;
+  title?: string;
+  "aria-label": string;
+}
+
+/**
  * `ChartSpec.facet` → `ChartMultiples`: one `renderChart` per panel, with the
  * panel's rows and title (its accessible label). `{ series: true }` keeps one
- * series per panel. The spec's `title` and legend stay outside the grid.
+ * series per panel. The spec's `title` stays outside the grid; `facetLegend`
+ * set (line/area/stream only — see `AutoChart`'s `showFacetLegend`) mounts
+ * ONE shared `ChartLegend` above the whole grid, never one per panel.
  */
 function renderFacetedChart(
   type: ChartType,
@@ -1471,10 +1537,11 @@ function renderFacetedChart(
   yFormat: (value: number) => string,
   copyValueOnActivate: boolean,
   links: AutoChartLinkProps,
+  facetLegend?: FacetLegend,
 ): ReactNode {
   const bySeries = typeof facet.by !== "string";
   const data = type === "line" || type === "area" ? timeCoercedData : spec.data;
-  return (
+  const grid = (
     <ChartMultiples
       baseline={facet.baseline}
       by={facet.by}
@@ -1500,6 +1567,20 @@ function renderFacetedChart(
         )
       }
     </ChartMultiples>
+  );
+  if (!facetLegend) return grid;
+  return (
+    <div className="flex w-full flex-col gap-4" data-slot="auto-chart-facet-legend-root">
+      <ChartLegend
+        aria-label={facetLegend["aria-label"]}
+        className="w-full"
+        items={facetLegend.items}
+        layout="row"
+        showValue={facetLegend.showValue}
+        title={facetLegend.title}
+      />
+      {grid}
+    </div>
   );
 }
 

@@ -733,3 +733,81 @@ export const UnitInferred: Story = inferenceStory(
   "unit",
   "waffle",
 );
+
+/**
+ * A series known only by its column key (no `label`) is NOT end-labelled
+ * (RM-110), so the legend engine's default shows a legend — forwarded
+ * through `spec.legend` into `LineChart`'s own `legend` prop
+ * (`LEGEND_ENGINE_TYPES`), never a second, `AutoChart`-owned implementation.
+ * The rendered `.legend-container` is byte-identical to an explicit
+ * `<LineChart legend>` built from the same normalized series (see
+ * `auto-chart.test.tsx`'s "renders the identical legend DOM…" test, and
+ * `LineChart`'s own `LegendToggle` story for the equivalent explicit call).
+ */
+export const LineLegendFromColumnKeys: Story = {
+  args: {
+    spec: {
+      type: "line",
+      data: [
+        { date: "2024-01-01", ebikes: 10, cargo: 4 },
+        { date: "2024-02-01", ebikes: 14, cargo: 6 },
+        { date: "2024-03-01", ebikes: 19, cargo: 9 },
+      ],
+      x: "date",
+      series: [{ key: "ebikes" }, { key: "cargo" }],
+    } satisfies ChartSpec,
+    height: 280,
+  },
+};
+
+/**
+ * `ChartSpec.facet` (RM-120) splits one line spec into a grid, one panel per
+ * `region` — and `legend: true` (RM-118) shows ONE shared `Chart legend`
+ * above the whole grid, not one per panel and not the old per-chart
+ * `AutoLegend` a faceted spec briefly lost across the wave-2 branch merge.
+ */
+export const LineFacetedLegend: Story = {
+  args: {
+    spec: {
+      type: "line",
+      data: [
+        { date: "2024-01-01", region: "North", revenue: 12000, expenses: 8500 },
+        { date: "2024-02-01", region: "North", revenue: 15200, expenses: 9100 },
+        { date: "2024-03-01", region: "North", revenue: 14100, expenses: 8800 },
+        { date: "2024-01-01", region: "South", revenue: 9000, expenses: 6200 },
+        { date: "2024-02-01", region: "South", revenue: 10400, expenses: 6800 },
+        { date: "2024-03-01", region: "South", revenue: 9700, expenses: 6500 },
+      ],
+      x: "date",
+      series: [{ key: "revenue" }, { key: "expenses" }],
+      facet: { by: "region" },
+      legend: true,
+    } satisfies ChartSpec,
+    height: 280,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const groups = await waitFor(() => canvas.getAllByRole("group", { name: "Chart legend" }));
+    await expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    await expect(within(legend).getByText("revenue")).toBeInTheDocument();
+    await expect(within(legend).getByText("expenses")).toBeInTheDocument();
+
+    // Browser proof (RM-118 x RM-120 regression fix): the legend box sits
+    // above the grid box, not beside or inside it.
+    const grid = canvasElement.querySelector('[data-slot="chart-multiples"]');
+    if (!grid) throw new Error("expected the ChartMultiples grid to be present");
+    const legendBox = legend.getBoundingClientRect();
+    const gridBox = grid.getBoundingClientRect();
+    console.log(
+      "[RM-118 facet legend proof]",
+      JSON.stringify({
+        legendRootCount: groups.length,
+        itemTexts: Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent),
+        legendBox: { top: legendBox.top, bottom: legendBox.bottom, height: legendBox.height },
+        gridBox: { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height },
+      }),
+    );
+    await expect(legendBox.bottom).toBeLessThanOrEqual(gridBox.top);
+  },
+};

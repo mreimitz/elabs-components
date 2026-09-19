@@ -112,6 +112,9 @@ export {
   InlineChip,
   // ChartMultiples — RM-120
   ChartMultiples,
+  // Legend engine — RM-118
+  RampLegend,
+  SizeLegend,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─

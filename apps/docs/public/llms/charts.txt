@@ -300,6 +300,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - RadarLabels
 - RadarProvider
 - RadialGradient
+- RampLegend
 - ReferenceLine
 - Ring
 - RingCenter
@@ -333,6 +334,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - SeriesBar
 - SeriesMarkers
 - SeriesPointMarker
+- SizeLegend
 - Sparkline — Tiny, axis-less trend that lives inside a KPI tile or a table cell.
   - avoid: Adding axes and tooltips to a Sparkline — if it needs them it is a LineChart.
   - avoid: A Sparkline as the only carrier of a number — pair it with the value (MetricCard).
@@ -399,6 +401,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useChartValueSetFormatter
 - useChoropleth
 - useChoroplethZoom
+- useContainerLegend
 - useHeatmap
 - useHeatmapHover
 - useHighDecoration

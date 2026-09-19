@@ -42,7 +42,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-222 exported components — including `ANNOTATION_ANCHORS`, `AnnotationKey`, `Area`, `AreaBand`, `AreaChart`.
+224 exported components — including `ANNOTATION_ANCHORS`, `AnnotationKey`, `Area`, `AreaBand`, `AreaChart`.
 
 Don't guess the API — ask the CLI:
 
