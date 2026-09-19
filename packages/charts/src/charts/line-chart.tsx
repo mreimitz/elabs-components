@@ -279,6 +279,12 @@ interface ChartInnerProps {
    * pointer hovering the line/area itself.
    */
   legendHoveredKey?: string | null;
+  /**
+   * The container legend engine's own `visible` (RM-118, sitting 3, R4) —
+   * see `TimeSeriesChartInnerProps.legendVisible`'s doc for why this
+   * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
+   */
+  legendVisible?: boolean;
 }
 
 function ChartInner({
@@ -312,6 +318,7 @@ function ChartInner({
   focusOnHover,
   hiddenKeys,
   legendHoveredKey,
+  legendVisible,
 }: ChartInnerProps) {
   // See `use-stable-value.ts`: collapses back to the previous reference when
   // the extracted series content is unchanged, even though `children` gets a
@@ -342,6 +349,7 @@ function ChartInner({
         enterTransition={enterTransition}
         height={height}
         hiddenKeys={hiddenKeys}
+        legendVisible={legendVisible}
         lines={lines}
         loadingLabel={loadingLabel}
         margin={margin}
@@ -538,6 +546,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
                 height={height}
                 hiddenKeys={containerLegend.hiddenKeys}
                 legendHoveredKey={legendHoveredKey}
+                legendVisible={containerLegend.visible}
                 loadingLabel={loadingLabel}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
                 margin={margin}

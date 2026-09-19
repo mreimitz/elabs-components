@@ -363,8 +363,11 @@ export function ChartLegend({
   return (
     <div
       className={cn(
-        "legend-container flex gap-2",
-        layout === "row" ? "flex-row flex-wrap gap-x-4 gap-y-2" : "flex-col",
+        "legend-container flex",
+        // Byte-identical to the pre-existing "flex flex-col gap-2" string for
+        // every caller that never passes `layout` (default `"stack"`) — see
+        // `ChartLegendProps.layout`'s doc. `row` swaps in a wrapping flex row.
+        layout === "row" ? "flex-row flex-wrap gap-x-4 gap-y-2" : "flex-col gap-2",
         className,
       )}
       ref={containerRef}

@@ -274,6 +274,21 @@ export interface TimeSeriesChartInnerProps {
    * byte-identical.
    */
   hiddenKeys?: ReadonlySet<string>;
+  /**
+   * The container legend engine's own `visible` (RM-118, sitting 3, R4:
+   * "the key row must yield" to a visible container legend). Unlike the
+   * pre-RM-118 inline `<ChartLegend>` child `collectLabelRequests`'s
+   * `hasLegend` detects — which hides itself at narrow through the
+   * `ChartConfigProvider` density downgrade (ADR 0039), letting RM-110's
+   * own `SeriesKeyRow` take over there — `useContainerLegend`'s legend
+   * stays visible (stacked) at narrow by design (Acceptance bullet 1). So
+   * rendering BOTH would double the swatch+name row; this prop suppresses
+   * `SeriesKeyRow` outright whenever the container legend already covers
+   * that job. It only gates the render, never the margin reserve, so the
+   * plot keeps the same right/top margin either way. Unset (default) is
+   * byte-identical to before this prop existed.
+   */
+  legendVisible?: boolean;
   /** SVG clipPath id for grow animation. */
   clipPathId: string;
   /** Optional ComposedChart bar layout (forwarded into context). */
@@ -425,6 +440,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   containerRef,
   lines: linesProp,
   hiddenKeys,
+  legendVisible,
   clipPathId,
   composedBarDataKeys,
   composedBarSize,
@@ -1193,7 +1209,9 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
             <SeriesEndLabels placements={labelPlan.placed.filter((p) => p.label.kind === "end")} />
           </>
         ) : null}
-        <SeriesKeyRow items={labelReserve.keyLayout} top={-margin.top} />
+        {/* R4 (sitting 3): a visible container legend already shows this
+            job's swatch+name row — see `legendVisible`'s doc above. */}
+        {legendVisible ? null : <SeriesKeyRow items={labelReserve.keyLayout} top={-margin.top} />}
       </g>
     </svg>
   );

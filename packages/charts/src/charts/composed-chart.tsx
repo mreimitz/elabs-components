@@ -288,6 +288,12 @@ interface ChartInnerProps {
    * `ChartSeriesModeProvider`.
    */
   legendHoveredKey?: string | null;
+  /**
+   * The container legend engine's own `visible` (RM-118, sitting 3, R4) —
+   * see `TimeSeriesChartInnerProps.legendVisible`'s doc for why this
+   * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
+   */
+  legendVisible?: boolean;
 }
 
 function ChartInner({
@@ -317,6 +323,7 @@ function ChartInner({
   onPhaseChange,
   hiddenKeys,
   legendHoveredKey,
+  legendVisible,
 }: ChartInnerProps) {
   // See `use-stable-value.ts`: collapses back to the previous reference when
   // the extracted series content is unchanged, even though `children` gets a
@@ -384,6 +391,7 @@ function ChartInner({
         enterTransition={enterTransition}
         height={height}
         hiddenKeys={hiddenKeys}
+        legendVisible={legendVisible}
         lines={lines}
         loadingLabel={loadingLabel}
         margin={margin}
@@ -559,6 +567,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 height={height}
                 hiddenKeys={containerLegend.hiddenKeys}
                 legendHoveredKey={legendHoveredKey}
+                legendVisible={containerLegend.visible}
                 loadingLabel={loadingLabel}
                 margin={margin}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
