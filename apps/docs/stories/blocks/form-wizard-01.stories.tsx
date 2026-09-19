@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CheckoutWizard } from "@/components/form-wizard-01/checkout-wizard";
 
 const meta = {
-  title: "Patterns/Blocks/Form Wizard",
+  title: "Patterns/Blocks/Forms and Setup/Form Wizard",
   parameters: {
     layout: "fullscreen",
     docs: {

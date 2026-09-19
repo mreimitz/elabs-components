@@ -513,6 +513,86 @@
       "title": "Handoff Inspector — Where was the context dropped?",
       "description": "One edge of a multi-agent run: sender → a metric pill on the arrow (context size, latency, tokens, fields present of required) → receiver; a context-comparison table (sent vs expected, status badge per field) that shows the required field that was not sent; the payload size against the workflow baseline as a Meter with a marker; and the edge’s 24-hour health beside it.",
       "categories": ["agent-ops"]
+    },
+    {
+      "name": "command-center-revenue-01",
+      "type": "registry:block",
+      "root": "registry/blocks/command-center-revenue-01",
+      "title": "Command Center — Revenue desk",
+      "description": "A revenue desk in one block: a MetricGrid of four headline numbers that each name their baseline and carry a 13-week Sparkline, a ComposedChart of weekly revenue with its trailing average against a labelled plan rule, a donut PieChart of the service-line mix, a BumpChart of which line is climbing, and the accounts that decide the quarter with a Meter each. Container-query layout, so it holds in a dashboard column and on a full page.",
+      "categories": ["command-center"]
+    },
+    {
+      "name": "command-center-live-ops-01",
+      "type": "registry:block",
+      "root": "registry/blocks/command-center-live-ops-01",
+      "title": "Command Center — Live ops wall",
+      "description": "An operations wall that moves: a LiveLineChart streaming one reading a second, three Gauge dials with their targets on the dial, a Timeline of what the on-call already knows, services sorted worst first with a Sparkline and a status badge each, and a HeatmapChart of when the load arrives. The headline is computed from the services; paused freezes the stream.",
+      "categories": ["command-center"]
+    },
+    {
+      "name": "geo-network-map-01",
+      "type": "registry:block",
+      "root": "registry/blocks/geo-network-map-01",
+      "title": "Geo — Network map",
+      "description": "A network on the map it runs on: MapCanvas in globe projection with one MapArc per lane, its width bound to volume through a paint expression, hubs as MapMarkers with tooltips, and a panel that ranks the lanes with a Meter and calls out the late ones. Selecting a lane on the map or in the list dims the rest and redraws that arc heavier.",
+      "categories": ["geo"]
+    },
+    {
+      "name": "infographic-journey-flow-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-journey-flow-01",
+      "title": "Infographic — Where do they drop off?",
+      "description": "\"Where do they drop off?\" — a SankeyChart from the channel a request came in on, through what happened to its quote, to how it ended, with a FunnelChart beside it that counts each step. The headline names the channel that loses the largest share of its own requests.",
+      "categories": ["infographic"]
+    },
+    {
+      "name": "infographic-profile-compare-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-profile-compare-01",
+      "title": "Infographic — How do the options compare?",
+      "description": "\"How do the options compare?\" — a RadarChart with one shape per option across five scored promises, beside a ParallelCoordinatesChart of the raw measures behind the scores. The headline names the strongest profile and the promise it is weakest on.",
+      "categories": ["infographic"]
+    },
+    {
+      "name": "infographic-dependency-web-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-dependency-web-01",
+      "title": "Infographic — What depends on what?",
+      "description": "\"What depends on what?\" — a platform's call graph as a NetworkChart (node size is traffic, colour is tier) beside the same services as a TreeChart of ownership. The headline counts inbound links and names the service most others lean on.",
+      "categories": ["infographic"]
+    },
+    {
+      "name": "command-center-launch-plan-01",
+      "type": "registry:block",
+      "root": "registry/blocks/command-center-launch-plan-01",
+      "title": "Command Center — Launch plan",
+      "description": "A launch on one screen: the Gantt carries the plan with summary rows, dependencies, a baseline under the task that slipped, a milestone and markers for today and go-live; selecting a task spells out its dates, baseline, what it waits for and its progress in a Descriptions panel. The headline counts the days left and the tasks past baseline.",
+      "categories": ["command-center"]
+    },
+    {
+      "name": "command-center-market-tape-01",
+      "type": "registry:block",
+      "root": "registry/blocks/command-center-market-tape-01",
+      "title": "Command Center — Market tape",
+      "description": "A rate desk: a tape of lanes across the top with price, move and a 20-day Sparkline each, over a CandlestickChart of the index and a BarChart of daily volume. Every move carries an arrow and a sign as well as a colour; the chart title is computed from the first open and the last close.",
+      "categories": ["command-center"]
+    },
+    {
+      "name": "geo-fleet-tracker-01",
+      "type": "registry:block",
+      "root": "registry/blocks/geo-fleet-tracker-01",
+      "title": "Geo — Fleet tracker",
+      "description": "A fleet where it is: each vehicle's planned route as a dashed MapRoute, the part already driven solid, the vehicle's MapMarker at the join and the depot marked; the list shows stops done on a Meter and minutes against plan, and selecting a vehicle fades the others.",
+      "categories": ["geo"]
+    },
+    {
+      "name": "agent-run-review-01",
+      "type": "registry:block",
+      "root": "registry/blocks/agent-run-review-01",
+      "title": "Agent run review",
+      "description": "One agent run, reviewable end to end: a Plan with its decision contract, an AgentTimeline whose last step follows your answer, a Tool call with arguments and result one click away, a ToolResultCard hosting the chart the run produced, TokenUsage in the header and an ApprovalCard for the one side effect that waits for a human. Reports the decision through onDecision and never performs it.",
+      "categories": ["agent-ops"]
     }
   ]
 }

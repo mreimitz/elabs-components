@@ -8,10 +8,11 @@ import { SpendAgainstLimit } from "@/components/spend-against-limit-01/spend-aga
  */
 const meta = {
   component: SpendAgainstLimit,
-  title: "Patterns/Blocks/Agent Ops/How Close Is Each Agent To Its Ceiling (Spend Against Limit)",
+  title: "Patterns/Blocks/Agent Ops/Spend Against Limit",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "How close is each agent to its ceiling?",
       description: {
         component:
           "Every non-human spender on the card programme, sorted by share of ceiling: monospace agent id, autonomy band as a status badge, a bar with the ceiling drawn as a vertical mark, the literal “$612 of $500”, and Revoke. Over the ceiling paints the destructive rung and says so. Three autonomy-band tiles total the envelopes.\n\nCopy-own it: `npx shadcn add spend-against-limit-01` (pulls `agent-ops-parts`).",

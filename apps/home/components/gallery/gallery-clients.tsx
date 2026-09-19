@@ -6,9 +6,6 @@
 import { useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@elabs-ai/components-ui";
 import { galleryCopy } from "../../content/copy";
-import { KpiMovers } from "../blocks/kpi-movers-01/kpi-movers";
-import { KpiStatusThreshold } from "../blocks/kpi-status-threshold-01/kpi-status-threshold";
-import { InfographicCohortRetention } from "../blocks/infographic-cohort-retention-01/infographic-cohort-retention";
 import { ChartGrid } from "./chart-grid";
 import { CHART_RENDERS } from "./chart-tiles";
 import {
@@ -51,22 +48,6 @@ export function ChartsExplorer({ links }: { links: Links }) {
         ))}
       </ToggleGroup>
       <ChartGrid tiles={tiles} links={links} />
-    </div>
-  );
-}
-
-export function BlockExamples() {
-  return (
-    <div className="columns-1 gap-4 md:columns-2 xl:columns-3">
-      <div className="mb-4 break-inside-avoid">
-        <InfographicCohortRetention />
-      </div>
-      <div className="mb-4 break-inside-avoid">
-        <KpiStatusThreshold />
-      </div>
-      <div className="mb-4 flex break-inside-avoid flex-col gap-4">
-        <KpiMovers />
-      </div>
     </div>
   );
 }

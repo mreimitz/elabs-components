@@ -12,7 +12,7 @@ import { ChartFrameDataBlock } from "@/components/chart-frame-data/chart-frame-d
  * table engine, no island.
  */
 const meta = {
-  title: "Patterns/Blocks/ChartFrame + DataTable",
+  title: "Patterns/Blocks/Data Surfaces/Chart and Table",
   component: ChartFrameDataBlock,
   tags: ["autodocs"],
   parameters: {

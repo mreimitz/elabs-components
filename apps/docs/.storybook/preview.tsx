@@ -525,7 +525,27 @@ const preview: Preview = {
           "Marketing",
           "Process",
           "Patterns",
-          ["Templates", "Scenarios", "Blocks"],
+          [
+            "Templates",
+            "Scenarios",
+            "Blocks",
+            // Reading order of the copy-own block families: numbers first, then the
+            // arguments built on them, then the surfaces they sit in.
+            [
+              "KPI Cards",
+              "Stat Cards",
+              "Infographics",
+              "Editorial Charts",
+              "Command Centers",
+              "Maps and Geo",
+              "Process and Flow",
+              "Data Surfaces",
+              "Agent Ops",
+              "AI and Terminal",
+              "Forms and Setup",
+              "Marketing",
+            ],
+          ],
           // `!dev` harness stories (hidden from the sidebar, kept in the test run).
           "Internal",
         ],

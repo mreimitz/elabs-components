@@ -345,7 +345,7 @@ function IdleTranscript() {
       {/*
        * Reuse the empty-state treatment the sibling block already ships
        * (`registry/blocks/terminal-session-idle/terminal-session-idle.tsx`,
-       * `patterns-blocks-terminal-session-idle--empty-transcript`) rather
+       * `patterns-blocks-ai-and-terminal-terminal-session-idle--empty-transcript`) rather
        * than authoring a third variant of it — the transcript has nothing
        * else to show, so it says so.
        */}
@@ -570,7 +570,7 @@ export const Idle: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: "brand-ui Agent" })).toBeInTheDocument();
     // The empty-state message the sibling block already ships
-    // (`patterns-blocks-terminal-session-idle--empty-transcript`) — the
+    // (`patterns-blocks-ai-and-terminal-terminal-session-idle--empty-transcript`) — the
     // transcript has nothing else to show, so it says so.
     await expect(canvas.getByText("No messages yet — type a prompt to begin.")).toBeInTheDocument();
     await expect(canvas.getByPlaceholderText("Type your next instruction…")).toBeInTheDocument();

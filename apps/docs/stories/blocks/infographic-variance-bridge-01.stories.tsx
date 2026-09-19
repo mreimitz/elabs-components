@@ -17,6 +17,7 @@ const meta = {
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "What drove the change?",
       description: {
         component:
           "Answers “what drove the change?” — a revenue bridge from last quarter's total to this quarter's, split into named drivers, with a `Leader` callout on the one that actually explains the move. Every step states its own sign in words, never colour alone. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-variance-bridge-01` (pulls `kpi-card-parts`).",

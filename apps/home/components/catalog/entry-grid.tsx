@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@elab
 import { hrefOf, type CatalogEntry } from "../../lib/catalog-index";
 import { catalogCopy } from "../../content/copy";
 import { StoryThumb } from "./story-thumb";
+import { BlockThumb } from "./block-renders";
+import { isNativeBlock } from "./block-render-meta";
 
 export function EntryCard({
   entry,
@@ -18,12 +20,19 @@ export function EntryCard({
 }) {
   return (
     <Card className="group relative gap-0 overflow-hidden p-0 transition-shadow duration-fast ease-standard hover:shadow-md">
-      {thumb && entry.first ? (
+      {thumb && isNativeBlock(entry.block) ? (
+        <div className="border-b border-border">
+          <BlockThumb name={entry.block} />
+        </div>
+      ) : thumb && entry.first ? (
         <div className="border-b border-border">
           <StoryThumb id={entry.first} width={thumbWidth} />
         </div>
       ) : null}
       <CardHeader className="p-4">
+        {entry.question ? (
+          <p className="text-caption font-medium text-muted-foreground">{entry.question}</p>
+        ) : null}
         <CardTitle className="text-subtitle">
           <a href={hrefOf(entry)} className="rounded-sm after:absolute after:inset-0 focus-ring">
             {entry.name}

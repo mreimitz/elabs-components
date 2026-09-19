@@ -14,6 +14,10 @@ export interface CatalogEntry {
   package: string;
   component: string | null;
   summary: string;
+  /** The question a block answers (its Storybook docs subtitle), or "". */
+  question: string;
+  /** The registry item behind a block page, or null. */
+  block: string | null;
   stories: number;
   /** The first story's id — the entry's thumbnail. */
   first: string | null;

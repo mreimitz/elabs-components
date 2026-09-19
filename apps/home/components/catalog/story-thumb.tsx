@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@elabs-ai/components-ui";
 import { useTheme } from "@elabs-ai/components-tokens";
+import { useStoryId } from "../../lib/story-alias";
 import { storySrc } from "./story-frame";
 
 export function StoryThumb({
@@ -25,6 +26,7 @@ export function StoryThumb({
   const [near, setNear] = useState(false);
   const [scale, setScale] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const liveId = useStoryId(id);
 
   useEffect(() => {
     const el = holder.current;
@@ -64,9 +66,9 @@ export function StoryThumb({
       style={{ aspectRatio: `1 / ${ratio}` }}
     >
       {!loaded ? <Skeleton className="absolute inset-0 rounded-none" /> : null}
-      {near && scale > 0 ? (
+      {near && scale > 0 && liveId ? (
         <iframe
-          src={storySrc(id, theme)}
+          src={storySrc(liveId, theme)}
           title=""
           tabIndex={-1}
           loading="lazy"

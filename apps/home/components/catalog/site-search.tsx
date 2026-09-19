@@ -106,7 +106,7 @@ export function SiteSearch({ className }: { className?: string }) {
               {entries.map((entry) => (
                 <CommandItem
                   key={`${entry.section}/${entry.package}/${entry.slug}`}
-                  value={`${entry.name} ${entry.package} ${entry.group} ${entry.summary} ${
+                  value={`${entry.name} ${entry.package} ${entry.group} ${entry.question} ${entry.summary} ${
                     entry.section === "charts"
                       ? (CHART_KEYWORDS.get(entry.component ?? "") ?? "")
                       : ""
@@ -116,9 +116,9 @@ export function SiteSearch({ className }: { className?: string }) {
                   <Icon aria-hidden="true" />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <MatchHighlight text={entry.name} query={query.trim() || undefined} />
-                    {entry.summary ? (
+                    {entry.question || entry.summary ? (
                       <span className="truncate text-meta text-muted-foreground">
-                        {entry.summary}
+                        {entry.question || entry.summary}
                       </span>
                     ) : null}
                   </span>

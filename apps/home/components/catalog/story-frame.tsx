@@ -14,6 +14,7 @@ import { ExternalLink } from "lucide-react";
 import { Button, Skeleton } from "@elabs-ai/components-ui";
 import { useTheme } from "@elabs-ai/components-tokens";
 import { catalogCopy } from "../../content/copy";
+import { useStoryId } from "../../lib/story-alias";
 import { StoryExpand, type StoryExpandDetail } from "./story-expand";
 
 const copy = catalogCopy.frame;
@@ -111,14 +112,16 @@ export function StoryFrame({
     frame.current?.addEventListener("beforeunload", () => observer?.disconnect(), { once: true });
   }
 
-  const src = storySrc(id, theme);
+  const liveId = useStoryId(id);
+  const src = liveId ? storySrc(liveId, theme) : null;
   return (
     <div
       ref={holder}
       data-slot="story-frame"
       data-state={state}
       className={`group/frame relative overflow-hidden rounded-lg border border-border bg-background ${className ?? ""}`}
-      style={{ height }}
+      // A story the live Storybook does not have yet is one quiet line, not an empty stage.
+      style={{ height: state === "pending" ? 56 : height }}
     >
       {state === "loading" ? (
         <div className="absolute inset-0 flex flex-col gap-3 p-6" aria-hidden="true">
@@ -131,7 +134,7 @@ export function StoryFrame({
           {copy.pending}
         </p>
       ) : null}
-      {near ? (
+      {near && src ? (
         <iframe
           ref={frame}
           src={src}
@@ -145,7 +148,7 @@ export function StoryFrame({
         <div className="absolute end-2 top-2 flex gap-1 opacity-0 transition-opacity duration-fast ease-standard group-focus-within/frame:opacity-100 group-hover/frame:opacity-100">
           <StoryExpand id={id} name={name} detail={detail} />
           <Button asChild size="icon-sm" variant="outline">
-            <a href={`/storybook/?path=/story/${id}`} aria-label={copy.openStory}>
+            <a href={`/storybook/?path=/story/${liveId ?? id}`} aria-label={copy.openStory}>
               <ExternalLink aria-hidden="true" />
             </a>
           </Button>

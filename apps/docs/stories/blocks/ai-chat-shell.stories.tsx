@@ -9,7 +9,7 @@ import { AiChat } from "@/components/ai-chat-shell/ai-chat";
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/AI Chat Shell",
+  title: "Patterns/Blocks/AI and Terminal/AI Chat Shell",
   component: AiChat,
   parameters: {
     layout: "fullscreen",

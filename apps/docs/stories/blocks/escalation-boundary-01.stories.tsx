@@ -7,10 +7,11 @@ import { EscalationBoundary } from "@/components/escalation-boundary-01/escalati
  */
 const meta = {
   component: EscalationBoundary,
-  title: "Patterns/Blocks/Agent Ops/Where Does Autonomy End (Escalation Boundary)",
+  title: "Patterns/Blocks/Agent Ops/Escalation Boundary",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Where does autonomy end?",
       description: {
         component:
           "The one dial an AI-ops product must put on screen: a stacked distribution bar of every decision by how well it was corroborated, with the evidence threshold drawn as a mark; the evidence ladder; and three “If you move it” scenario cards that state the trade in the reader’s units and move the boundary when clicked.\n\nCopy-own it: `npx shadcn add escalation-boundary-01` (pulls `agent-ops-parts`).",

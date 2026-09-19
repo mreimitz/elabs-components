@@ -7,6 +7,20 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "agent-run-review-01",
+    "title": "Agent run review",
+    "categories": ["agent-ops"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "agent-trace-waterfall-01",
     "title": "Agent Trace — Where did the run spend its time, and where did it fail?",
     "categories": ["agent-ops"],
@@ -134,6 +148,51 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "command-center-launch-plan-01",
+    "title": "Command Center — Launch plan",
+    "categories": ["command-center"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "command-center-live-ops-01",
+    "title": "Command Center — Live ops wall",
+    "categories": ["command-center"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "command-center-market-tape-01",
+    "title": "Command Center — Market tape",
+    "categories": ["command-center"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "command-center-revenue-01",
+    "title": "Command Center — Revenue desk",
+    "categories": ["command-center"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "dashboard-sheet-app",
     "title": "Dashboard sheet app",
     "categories": ["dashboard"],
@@ -253,6 +312,29 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "geo-fleet-tracker-01",
+    "title": "Geo — Fleet tracker",
+    "categories": ["geo"],
+    "dependencies": [
+      "@elabs-ai/components-maps",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "geo-network-map-01",
+    "title": "Geo — Network map",
+    "categories": ["geo"],
+    "dependencies": [
+      "@elabs-ai/components-maps",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "handoff-inspector-01",
     "title": "Handoff Inspector — Where was the context dropped?",
     "categories": ["agent-ops"],
@@ -294,6 +376,17 @@
     "archetype": "dashboard"
   },
   {
+    "name": "infographic-dependency-web-01",
+    "title": "Infographic — What depends on what?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "infographic-gap-to-benchmark-01",
     "title": "Infographic — How far from the benchmark?",
     "categories": ["infographic"],
@@ -305,8 +398,30 @@
     "archetype": "dashboard"
   },
   {
+    "name": "infographic-journey-flow-01",
+    "title": "Infographic — Where do they drop off?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "infographic-part-to-whole-01",
     "title": "Infographic — Where does the money go?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "infographic-profile-compare-01",
+    "title": "Infographic — How do the options compare?",
     "categories": ["infographic"],
     "dependencies": [
       "@elabs-ai/components-charts",

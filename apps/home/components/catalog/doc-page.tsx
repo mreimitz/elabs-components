@@ -19,6 +19,8 @@ import {
 import { entryForComponent, hrefOf, type CatalogApi, type CatalogPage } from "../../lib/catalog";
 import { install } from "../../lib/content";
 import { catalogCopy, heroCopy } from "../../content/copy";
+import { BlockHero } from "./block-renders";
+import type { NativeBlockName } from "./block-render-meta";
 import { StoryFrame, type StoryFrameSize } from "./story-frame";
 import type { StoryExpandDetail } from "./story-expand";
 
@@ -160,6 +162,8 @@ export interface DocPageProps {
   trail?: { href: string; label: string }[];
   /** A native render shown instead of the first story (chart pages). */
   hero?: ReactNode;
+  /** A registry block the site renders from its own copy — the lead example, with enlarge. */
+  nativeBlock?: NativeBlockName;
   /** Extra "use it for" lines authored for this page (chart shapes). */
   useFor?: string[];
   frameSize?: StoryFrameSize;
@@ -173,7 +177,8 @@ export interface DocPageProps {
 
 export function DocPage({
   page,
-  hero,
+  hero: heroProp,
+  nativeBlock,
   useFor = [],
   frameSize = "auto",
   lead: leadOverride,
@@ -186,7 +191,7 @@ export function DocPage({
   const avoid = [...(intent?.avoidWhen ? [intent.avoidWhen] : []), ...(intent?.antiPatterns ?? [])];
   const tokens = Object.entries(intent?.stateTokens ?? {});
   const [first, ...rest] = page.stories;
-  const examples = hero ? page.stories : rest;
+  const examples = heroProp || nativeBlock ? page.stories : rest;
   const importLine =
     page.component && page.importFrom ? importSnippet(page.component, page.importFrom) : null;
   const installLine = page.block
@@ -207,6 +212,21 @@ export function DocPage({
     ],
     stories: page.stories,
   };
+  const hero = nativeBlock ? (
+    <BlockHero
+      name={nativeBlock}
+      detail={{
+        pageName: page.name,
+        question: page.question || undefined,
+        summary: expandDetail.summary,
+        labels: expandDetail.labels,
+        commands: expandDetail.commands,
+        links: expandDetail.links,
+      }}
+    />
+  ) : (
+    heroProp
+  );
   const lead = leadOverride || page.summary || page.template?.description || page.about;
 
   return (
@@ -218,6 +238,7 @@ export function DocPage({
             <Badge variant="secondary">{page.group}</Badge>
             {intent?.category ? <Badge variant="outline">{intent.category}</Badge> : null}
           </div>
+          {page.question ? <p className="text-title text-balance">{page.question}</p> : null}
           {lead ? <p className="max-w-prose text-subtitle text-muted-foreground">{lead}</p> : null}
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
@@ -231,7 +252,15 @@ export function DocPage({
 
         <section aria-label={copy.overview} className="flex flex-col gap-6">
           {hero ? (
-            <div className="rounded-lg border border-border bg-card p-6">{hero}</div>
+            <div
+              className={
+                nativeBlock
+                  ? "rounded-lg border border-border bg-surface-muted p-4"
+                  : "rounded-lg border border-border bg-card p-6"
+              }
+            >
+              {hero}
+            </div>
           ) : first ? (
             <StoryFrame id={first.id} name={first.name} size={frameSize} detail={expandDetail} />
           ) : null}

@@ -4,7 +4,7 @@ import { ChartEditorialPatchwork } from "@/components/chart-editorial-patchwork/
 import { contrastRatio, expectHouseFocusRing, resolveColour } from "./_chart-editorial-assertions";
 
 const meta = {
-  title: "Patterns/Blocks/Chart Editorial — Radial Patchwork",
+  title: "Patterns/Blocks/Editorial Charts/Radial Patchwork",
   parameters: {
     layout: "centered",
     docs: {

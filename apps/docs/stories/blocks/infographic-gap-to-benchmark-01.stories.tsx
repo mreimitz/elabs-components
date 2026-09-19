@@ -16,6 +16,7 @@ const meta = {
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "How far from the benchmark?",
       description: {
         component:
           "Answers “how far from the benchmark?” — a sorted `DumbbellChart`, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised. Correctly flips the gap's sign for a lower-is-better metric (`higherIsBetter={false}`) so “ahead of benchmark” always means the same thing. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-gap-to-benchmark-01` (pulls `kpi-card-parts`).",

@@ -13,6 +13,7 @@ const meta = {
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Which one is the outlier?",
       description: {
         component:
           "Answers “which region is the outlier?” — twelve depots, one tiny 13-week line per tile, every tile on the SAME y-axis so height compares directly, with the one depot that stands out ringed and coloured while every other depot stays on a shared muted neutral. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-small-multiples-01` (pulls `kpi-card-parts`).",

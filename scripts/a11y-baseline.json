@@ -68,7 +68,7 @@
     "navigation-wizard--default": ["button-name"],
     "overlays-dropdownmenu--default": ["aria-hidden-focus"],
     "overlays-popover--default": ["aria-dialog-name"],
-    "patterns-blocks-chartframe-datatable--default": ["scrollable-region-focusable"],
+    "patterns-blocks-data-surfaces-chart-and-table--default": ["scrollable-region-focusable"],
     "patterns-scenarios-agentic-ai-workspace--collapsed-nav": [
       "aria-allowed-attr",
       "button-name",

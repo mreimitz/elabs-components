@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { StatList } from "@/components/stat-list-01/stat-list";
 
 const meta = {
-  title: "Patterns/Blocks/Stat List",
+  title: "Patterns/Blocks/Stat Cards/Stat List",
   parameters: {
     layout: "fullscreen",
     docs: {

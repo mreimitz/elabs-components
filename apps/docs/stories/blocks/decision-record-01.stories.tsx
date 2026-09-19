@@ -7,10 +7,11 @@ import { DecisionRecord } from "@/components/decision-record-01/decision-record"
  */
 const meta = {
   component: DecisionRecord,
-  title: "Patterns/Blocks/Agent Ops/Why Did The AI Do That (Decision Record)",
+  title: "Patterns/Blocks/Agent Ops/Decision Record",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Why did the AI do that?",
       description: {
         component:
           "Every AI action expanded into the reason it happened: what it did, what it looked at, what rule applied, how confident (or an honest “not applicable”), and how to reverse it — then the check list and what the copilot proposes, nothing actioned until a person approves.\n\nCopy-own it: `npx shadcn add decision-record-01` (pulls `agent-ops-parts`).",

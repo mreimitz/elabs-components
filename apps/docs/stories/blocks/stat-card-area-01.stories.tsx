@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { StatCardArea } from "@/components/stat-card-area-01/stat-card-area";
 
 const meta = {
-  title: "Patterns/Blocks/Stat Card (Area)",
+  title: "Patterns/Blocks/Stat Cards/Area Stat",
   parameters: {
     layout: "centered",
     docs: {

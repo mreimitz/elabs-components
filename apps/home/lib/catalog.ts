@@ -54,6 +54,7 @@ export interface CatalogPage {
   docsId: string;
   file: string;
   summary: string;
+  question: string;
   about: string;
   intent: CatalogIntent | null;
   api: CatalogApi[];

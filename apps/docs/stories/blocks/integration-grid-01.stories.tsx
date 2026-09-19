@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { IntegrationGrid } from "@/components/integration-grid-01/integration-grid";
 
 const meta = {
-  title: "Patterns/Blocks/Integration Grid",
+  title: "Patterns/Blocks/Forms and Setup/Integration Grid",
   parameters: {
     layout: "fullscreen",
     docs: {

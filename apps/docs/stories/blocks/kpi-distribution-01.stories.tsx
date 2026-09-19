@@ -12,10 +12,11 @@ import {
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/Is It Consistent (Distribution)",
+  title: "Patterns/Blocks/KPI Cards/Distribution",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Is it consistent?",
       description: {
         component:
           "Answers “is it consistent?” — an average hides the tail, so this card shows the median next to p90/p95 read against a named SLA threshold, backed by the actual record-level distribution (a box plot) with the threshold drawn as a reference line and the share past it stated in text. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-distribution-01` (pulls `kpi-card-parts`).",

@@ -7,10 +7,11 @@ import { VerdictSideBySide } from "@/components/verdict-side-by-side-01/verdict-
  */
 const meta = {
   component: VerdictSideBySide,
-  title: "Patterns/Blocks/Agent Ops/Keep This, Cancel That (Verdict Side By Side)",
+  title: "Patterns/Blocks/Agent Ops/Verdict Side By Side",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Keep this, cancel that?",
       description: {
         component:
           "A keep-vs-cancel verdict side by side: two cards on the success/destructive washes with annual cost, a segmented seat-utilisation meter and the deciding facts; “If you cancel” as consequence stats; “How the copilot knows” as a numbered evidence list; and the refusal — a person signs.\n\nCopy-own it: `npx shadcn add verdict-side-by-side-01` (pulls `agent-ops-parts`).",

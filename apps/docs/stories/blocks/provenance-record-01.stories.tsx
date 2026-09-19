@@ -6,10 +6,11 @@ import { ProvenanceRecord } from "@/components/provenance-record-01/provenance-r
  * Renders the SHIPPED registry block, not a copy of it — see `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Agent Ops/Where Did Each Field Come From (Provenance Record)",
+  title: "Patterns/Blocks/Agent Ops/Provenance Record",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Where did each field come from?",
       description: {
         component:
           "A record whose every field says where its value came from: derived (confidence + evidence kind), pinned (who, when), conflict (two sources disagree, nothing chosen) or empty (“No signal yet” — never a guess). Each state has its own glyph + text; the footer counts them.\n\nCopy-own it: `npx shadcn add provenance-record-01` (pulls `agent-ops-parts`).",

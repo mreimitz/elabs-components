@@ -47,13 +47,36 @@ export const PACKAGE_ORDER = [
   "patterns",
 ];
 
+/**
+ * Block families in reading order — numbers, the arguments built on them, then the surfaces
+ * they sit in. Mirrors the `Patterns/Blocks` order in Storybook's `storySort`.
+ */
+export const BLOCK_FAMILY_ORDER = [
+  "KPI Cards",
+  "Stat Cards",
+  "Infographics",
+  "Editorial Charts",
+  "Command Centers",
+  "Maps and Geo",
+  "Process and Flow",
+  "Data Surfaces",
+  "Agent Ops",
+  "AI and Terminal",
+  "Forms and Setup",
+  "Marketing",
+];
+
+/** Sort by a known reading order first, alphabetically after it. */
+export const byOrder = (order: readonly string[]) => (a: string, b: string) =>
+  (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99) || a.localeCompare(b);
+
 const leaf = (entry: CatalogEntry): NavLeaf => ({
   href: hrefOf(entry),
   name: entry.name,
   summary: entry.summary,
 });
 
-function groupsOf(entries: CatalogEntry[]): NavGroup[] {
+function groupsOf(entries: CatalogEntry[], order: readonly string[] = []): NavGroup[] {
   const groups = new Map<string, NavLeaf[]>();
   for (const entry of entries) {
     const list = groups.get(entry.group) ?? [];
@@ -61,7 +84,7 @@ function groupsOf(entries: CatalogEntry[]): NavGroup[] {
     groups.set(entry.group, list);
   }
   return Array.from(groups.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
+    .sort((a, b) => byOrder(order)(a[0], b[0]))
     .map(([label, leaves]) => ({ id: label, label, leaves }));
 }
 
@@ -75,7 +98,7 @@ export function buildNav(sectionLabels: Record<CatalogSection, string>): NavBran
         id: section,
         label: sectionLabels[section],
         href: `/${section}`,
-        groups: groupsOf(entries),
+        groups: groupsOf(entries, section === "blocks" ? BLOCK_FAMILY_ORDER : []),
         count: entries.length,
       });
       continue;

@@ -16,6 +16,7 @@ const meta = {
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "What happened, and when?",
       description: {
         component:
           "Answers “what happened, and when?” — a weekly line with up to three events labelled directly on the data point they explain, connected by a Leader, never a legend. The headline states the finding in words. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-annotated-trend-01` (pulls `kpi-card-parts`).",

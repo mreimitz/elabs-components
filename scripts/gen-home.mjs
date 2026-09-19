@@ -562,6 +562,7 @@ async function buildAll() {
     // The catalogue: one record per Storybook docs page (scripts/lib/home-catalog.mjs).
     "catalog-index.json": catalog.index,
     "catalog-pages.json": catalog.pages,
+    "story-aliases.json": catalog.aliases,
   };
 }
 

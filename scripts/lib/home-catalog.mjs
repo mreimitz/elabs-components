@@ -89,6 +89,12 @@ function sectionOf(title) {
 }
 
 export function buildCatalog(manifest, registry, { repoRoot }) {
+  // Pages whose Storybook title changed since the last deploy: new story id → the id the
+  // deployed Storybook still answers to (scripts/lib/home-story-retitles.json).
+  const retitles = JSON.parse(
+    readFileSync(join(repoRoot, "scripts/lib/home-story-retitles.json"), "utf8"),
+  ).titles;
+  const aliases = {};
   const { pages: docsPages } = indexStoryDocsPages(repoRoot);
 
   // name → { pkg, module } for every exported component, and per-package lookups.
@@ -120,7 +126,13 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
     const own = page.component ? owner.get(page.component) : null;
     const pkgShort = pkgDir ?? own?.pkg.replace("@elabs-ai/components-", "") ?? "patterns";
 
-    let slug = slugOf(page.title);
+    // A block's short name only reads inside its family ("Pace", "Forecast"), so its URL
+    // carries the family too: /blocks/kpi-cards-pace.
+    const titleParts = page.title.split("/");
+    let slug =
+      section === "blocks" && titleParts.length > 3
+        ? sanitizeStorySegment(titleParts.slice(-2).join("-"))
+        : slugOf(page.title);
     const key = `${section}/${section === "components" ? `${pkgShort}/` : ""}${slug}`;
     if (used.has(key)) slug = sanitizeStorySegment(page.title.split("/").slice(-2).join("-"));
     used.add(`${section}/${section === "components" ? `${pkgShort}/` : ""}${slug}`);
@@ -185,8 +197,15 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
         : null;
 
     const stories = storiesOf(src, page.title);
+    const oldTitle = retitles[page.title];
+    if (oldTitle)
+      for (const story of stories)
+        aliases[story.id] = `${sanitizeStorySegment(oldTitle)}--${story.id.split("--")[1]}`;
     const name = parts.at(-1);
     const summary = intent?.purpose ?? block?.description ?? "";
+    // The question a block answers, authored once as the docs page's subtitle.
+    const question =
+      src.match(/\bsubtitle:\s*(["'`])((?:\\.|(?!\1).)*)\1/)?.[2]?.replace(/\\(.)/g, "$1") ?? "";
 
     pages[`${section}/${section === "components" ? `${pkgShort}/` : ""}${slug}`] = {
       section,
@@ -200,6 +219,7 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
       docsId: page.storyId,
       file: page.file,
       summary,
+      question,
       // A template's file comment is maintainer notes (how its source is derived), not a
       // description of the screen — the site leads with the use case instead.
       about: section === "templates" ? "" : fileDoc(src),
@@ -233,6 +253,9 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
       package: pkgShort,
       component: page.component || null,
       summary,
+      question,
+      // The registry item behind a block page — what the site renders natively when it has a copy.
+      block: block?.name ?? null,
       stories: stories.length,
       first: stories[0]?.id ?? null,
     });
@@ -247,5 +270,5 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
         ? -1
         : 1,
   );
-  return { index, pages };
+  return { index, pages, aliases };
 }

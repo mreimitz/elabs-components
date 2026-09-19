@@ -88,7 +88,7 @@ import {
 import { SearchInput } from "@elabs-ai/components-data";
 import { SiteSearch } from "../../catalog/site-search";
 import { SITE_SERVICE_LOGOS } from "./service-marks";
-import { buildNav, type NavBranch } from "../../catalog/nav-model";
+import { buildNav, type NavBranch, type NavGroup, type NavLeaf } from "../../catalog/nav-model";
 import { HeroDials } from "../../hero/hero-dials";
 import { CATALOG_INDEX, hrefOf } from "../../../lib/catalog-index";
 import { familyOfTheme, writeThemeToUrl } from "../../../lib/theme-state";
@@ -120,6 +120,61 @@ const BRANCH_ICONS: Record<string, Icon> = {
 
 const isActive = (href: string, path: string) =>
   href === path || (href !== "/" && path.startsWith(`${href}/`));
+
+/** One page in the rail: a single line, the full name on hover when it is cut short. */
+function Leaf({ item, pathname }: { item: NavLeaf; pathname: string }) {
+  return (
+    <SidebarMenuSubItem>
+      <SidebarMenuSubButton href={item.href} isActive={pathname === item.href} title={item.name}>
+        <span>{item.name}</span>
+      </SidebarMenuSubButton>
+    </SidebarMenuSubItem>
+  );
+}
+
+/** A family inside a branch (Blocks → KPI Cards): collapsible, with its own count. */
+function SubGroup({
+  group,
+  pathname,
+  forceOpen,
+}: {
+  group: NavGroup;
+  pathname: string;
+  forceOpen: boolean;
+}) {
+  const here = group.leaves.some((item) => item.href === pathname);
+  const [open, setOpen] = useState(here);
+  useEffect(() => {
+    if (here) setOpen(true);
+  }, [here]);
+  return (
+    <Collapsible open={forceOpen || open} onOpenChange={setOpen} asChild>
+      <SidebarMenuSubItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuSubButton asChild isActive={false}>
+            <button type="button" className="group/sub w-full font-medium">
+              <ChevronRight
+                aria-hidden="true"
+                className="transition-transform duration-fast ease-standard group-data-[state=open]/sub:rotate-90"
+              />
+              <span className="min-w-0 flex-1 truncate text-start">{group.label}</span>
+              <span className="text-caption text-sidebar-muted-foreground tabular-nums">
+                {group.leaves.length}
+              </span>
+            </button>
+          </SidebarMenuSubButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub className="mx-2 me-0 pe-0">
+            {group.leaves.map((item) => (
+              <Leaf key={item.href} item={item} pathname={pathname} />
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuSubItem>
+    </Collapsible>
+  );
+}
 
 function Branch({
   branch,
@@ -156,22 +211,20 @@ function Branch({
           />
         </CollapsibleTrigger>
         <CollapsibleContent>
-          {branch.groups.map((group) => (
-            <SidebarMenuSub key={group.id}>
-              {branch.groups.length > 1 ? (
-                <li className="px-2 pt-2 text-caption font-semibold text-sidebar-muted-foreground">
-                  {group.label}
-                </li>
-              ) : null}
-              {group.leaves.map((item) => (
-                <SidebarMenuSubItem key={item.href}>
-                  <SidebarMenuSubButton href={item.href} isActive={pathname === item.href}>
-                    {item.name}
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              ))}
-            </SidebarMenuSub>
-          ))}
+          <SidebarMenuSub>
+            {branch.groups.length > 1
+              ? branch.groups.map((group) => (
+                  <SubGroup
+                    key={group.id}
+                    group={group}
+                    pathname={pathname}
+                    forceOpen={forceOpen}
+                  />
+                ))
+              : branch.groups[0]?.leaves.map((item) => (
+                  <Leaf key={item.href} item={item} pathname={pathname} />
+                ))}
+          </SidebarMenuSub>
         </CollapsibleContent>
       </SidebarMenuItem>
     </Collapsible>

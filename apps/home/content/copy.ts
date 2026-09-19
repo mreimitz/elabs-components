@@ -742,7 +742,7 @@ export const galleryCopy = {
     blocks: {
       title: "Blocks",
       description:
-        "Copy-own compositions from the registry: KPI cards, infographics, agent-ops panels, app shells. Installed with one command, then yours to edit.",
+        "Copy-own compositions from the registry: command centers, maps, infographics, KPI cards, agent-ops panels. Installed with one command, then yours to edit.",
       all: "Browse blocks in Storybook",
       count: (n: number) => `${n} blocks`,
     },
@@ -867,6 +867,24 @@ export const galleryCopy = {
 // The catalogue: sidebar, search, and the generated detail pages for components, charts, blocks
 // and templates. Names, purposes, props and examples come from `catalog-*.json`; these are the
 // labels around them.
+/** One line per block family, in the words of the person choosing between them. */
+export const blockFamilyCopy: Record<string, string> = {
+  "KPI Cards": "One number, one question. Pick the card by what the reader is asking of it.",
+  "Stat Cards": "A figure with its trend or its geography, sized for a dashboard row.",
+  Infographics:
+    "An argument, not a chart: a headline that states the finding and one view built to prove it.",
+  "Editorial Charts": "Long-form chart recipes built from the charts package's marks layer.",
+  "Command Centers":
+    "A whole desk on one screen: headline numbers, the run against plan, and what decides it.",
+  "Maps and Geo": "Networks, routes and fleets on the map they run on.",
+  "Process and Flow": "Canvases you build on and process maps you explore.",
+  "Data Surfaces": "Tables with the toolbar, the chart and the comparison already wired.",
+  "Agent Ops": "What an agent did, what it cost, where it failed and where a human decides.",
+  "AI and Terminal": "Chat, code and console surfaces for working with a model.",
+  "Forms and Setup": "Multi-step forms and the screens that connect a product to others.",
+  Marketing: "The top of a landing page.",
+};
+
 export const catalogCopy = {
   sections: {
     templates: "Templates",
@@ -878,7 +896,7 @@ export const catalogCopy = {
     templates:
       "Full screens, one per kind of product. Start from the one closest to what you are building, then swap its blocks and components.",
     blocks:
-      "Copy-own compositions from the registry: KPI cards, infographics, agent-ops panels, shells. One command puts the source in your repo.",
+      "Copy-own compositions from the registry, grouped by what they are for: numbers, arguments, command centers, maps, process, agent operations. One command puts the source in your repo.",
     charts:
       "Pick a chart by the question it answers. Every type has its own page: what it is for, when to avoid it, and every variant, live.",
     components:

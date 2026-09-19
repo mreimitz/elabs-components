@@ -4,7 +4,7 @@ import { ChartEditorialHourglass } from "@/components/chart-editorial-hourglass/
 import { expectHouseFocusRing } from "./_chart-editorial-assertions";
 
 const meta = {
-  title: "Patterns/Blocks/Chart Editorial — Hourglass Stream",
+  title: "Patterns/Blocks/Editorial Charts/Hourglass Stream",
   parameters: {
     layout: "centered",
     docs: {

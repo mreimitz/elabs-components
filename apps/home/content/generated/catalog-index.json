@@ -1,531 +1,848 @@
 [
   {
     "section": "blocks",
-    "slug": "ai-chat-shell",
-    "name": "AI Chat Shell",
-    "group": "Compositions",
+    "slug": "ai-and-terminal-agent-run-review",
+    "name": "Agent Run Review",
+    "group": "AI and Terminal",
     "package": "patterns",
-    "component": "AiChat",
-    "summary": "Chat surface with transcript, composer, tool calls and a context rail.",
+    "component": "AgentRunReview",
+    "summary": "One agent run, reviewable end to end: a Plan with its decision contract, an AgentTimeline whose last step follows your answer, a Tool call with arguments and result one click away, a ToolResultCard hosting the chart the run produced, TokenUsage in the header and an ApprovalCard for the one side effect that waits for a human. Reports the decision through onDecision and never performs it.",
+    "question": "What did the agent do, and what is it asking me?",
+    "block": "agent-run-review-01",
     "stories": 2,
-    "first": "patterns-blocks-ai-chat-shell--default"
+    "first": "patterns-blocks-ai-and-terminal-agent-run-review--default"
   },
   {
     "section": "blocks",
-    "slug": "annotated-trend",
+    "slug": "ai-and-terminal-ai-chart",
+    "name": "AI Chart",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "AiChartBlock",
+    "summary": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@elabs-ai/components-charts) composed with Tool/ToolOutput from @elabs-ai/components-ai. The canonical copy-owned home for @elabs-ai/components-ai + @elabs-ai/components-charts cross-sibling composition.",
+    "question": "",
+    "block": "ai-chart",
+    "stories": 1,
+    "first": "patterns-blocks-ai-and-terminal-ai-chart--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-ai-chat-shell",
+    "name": "AI Chat Shell",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "AiChat",
+    "summary": "Chat surface with transcript, composer, tool calls and a context rail.",
+    "question": "",
+    "block": "ai-chat-shell",
+    "stories": 2,
+    "first": "patterns-blocks-ai-and-terminal-ai-chat-shell--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "infographics-annotated-trend",
     "name": "Annotated Trend",
     "group": "Infographics",
     "package": "patterns",
     "component": null,
     "summary": "\"What happened, and when?\" — a 20-week LineChart with up to three labelled events anchored to the exact data point they explain, connected by a Leader, never a legend. Compact keeps only the most consequential event.",
+    "question": "What happened, and when?",
+    "block": "infographic-annotated-trend-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-annotated-trend--default"
   },
   {
     "section": "blocks",
-    "slug": "before-after",
+    "slug": "stat-cards-area-stat",
+    "name": "Area Stat",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "KPI stat card with a live area chart sparkline, hover-driven value/label updates, and a tokenized trend badge.",
+    "question": "",
+    "block": "stat-card-area-01",
+    "stories": 1,
+    "first": "patterns-blocks-stat-cards-area-stat--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-audit-log",
+    "name": "Audit Log",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null,
+    "summary": "An append-only audit table whose actor column tells three authors apart by glyph — copilot, delegated agent, person — and whose result column is a status badge with an icon (Applied / Held / Stopped / Reverted), so a row still reads in greyscale. Monospace tabular timestamps; the action is one plain sentence with the number it wrote in it.",
+    "question": "Who did what?",
+    "block": "audit-log-01",
+    "stories": 3,
+    "first": "patterns-blocks-agent-ops-audit-log--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "infographics-before-after",
     "name": "Before After",
     "group": "Infographics",
     "package": "patterns",
     "component": null,
     "summary": "\"Who improved, who slipped?\" — a DumbbellChart slope chart of 6 depots, Q2 → Q3, with the biggest riser and biggest faller emphasised and every other depot on a shared muted line; direction is carried by the line's own slope, never colour alone.",
+    "question": "Who improved, who slipped?",
+    "block": "infographic-before-after-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-before-after--default"
   },
   {
     "section": "blocks",
-    "slug": "better-or-worse-than-normal-trend",
-    "name": "Better Or Worse Than Normal (Trend)",
-    "group": "KPI Cards",
-    "package": "patterns",
-    "component": null,
-    "summary": "\"Better or worse than normal?\" — a 13-week Sparkline trend read against a target pace, last year, and a normal operating band, with a text legend spelling out the line styles so the encoding never rides on colour alone.",
-    "stories": 4,
-    "first": "patterns-blocks-kpi-cards-better-or-worse-than-normal-trend--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "chart-card-kpi-header",
-    "name": "Chart Card (KPI header)",
-    "group": "Compositions",
-    "package": "patterns",
-    "component": null,
-    "summary": "An elevated chart-in-a-card: a header with a headline KPI + delta + a segmented period control (ToggleGroup), a token-coloured AreaChart, and a footer breakdown legend. The period control re-renders the chart.",
-    "stories": 1,
-    "first": "patterns-blocks-chart-card-kpi-header--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "chart-editorial-bubble-almanac",
-    "name": "Chart Editorial — Bubble Almanac",
-    "group": "Compositions",
+    "slug": "editorial-charts-bubble-almanac",
+    "name": "Bubble Almanac",
+    "group": "Editorial Charts",
     "package": "patterns",
     "component": null,
     "summary": "A category × category matrix drawn as hand-irregular blob bubbles on ruled ledger paper, with a margin note calling out the busiest cell (PeakRing + Marginalia). One-off editorial composition adapted from lieflat-charts' 'L9 Bubble Almanac'.",
+    "question": "",
+    "block": "chart-editorial-almanac",
     "stories": 1,
-    "first": "patterns-blocks-chart-editorial-bubble-almanac--default"
+    "first": "patterns-blocks-editorial-charts-bubble-almanac--default"
   },
   {
     "section": "blocks",
-    "slug": "chart-editorial-hourglass-stream",
-    "name": "Chart Editorial — Hourglass Stream",
-    "group": "Compositions",
-    "package": "patterns",
-    "component": null,
-    "summary": "A funnel redrawn as counted barcode strips (UnitStack) with trickle threads (DrawPath) narrowing between stages, plus stage-to-stage conversion callouts. One-off editorial composition adapted from lieflat-charts' 'L13 Hourglass Stream', built entirely from @elabs-ai/components-charts' marks layer.",
-    "stories": 1,
-    "first": "patterns-blocks-chart-editorial-hourglass-stream--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "chart-editorial-radial-patchwork",
-    "name": "Chart Editorial — Radial Patchwork",
-    "group": "Compositions",
-    "package": "patterns",
-    "component": null,
-    "summary": "Events on a 24 h clock face, density shown by overlaid translucent sectors (fill-opacity 0.07–0.16 — the one sanctioned use of transparency in this system) with rim ticks and a category legend. One-off editorial composition adapted from lieflat-charts' 'L10 Radial Patchwork'.",
-    "stories": 3,
-    "first": "patterns-blocks-chart-editorial-radial-patchwork--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "chartframe-datatable",
-    "name": "ChartFrame + DataTable",
-    "group": "Compositions",
+    "slug": "data-surfaces-chart-and-table",
+    "name": "Chart and Table",
+    "group": "Data Surfaces",
     "package": "patterns",
     "component": "ChartFrameDataBlock",
     "summary": "ChartFrame (expand / flip-to-table / download-CSV) wired to @elabs-ai/components-data: full TanStack DataTable on flip and downloadCsv on export.",
+    "question": "",
+    "block": "chart-frame-data",
     "stories": 2,
-    "first": "patterns-blocks-chartframe-datatable--default"
+    "first": "patterns-blocks-data-surfaces-chart-and-table--default"
   },
   {
     "section": "blocks",
-    "slug": "cohort-retention",
+    "slug": "stat-cards-chart-card",
+    "name": "Chart Card",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "An elevated chart-in-a-card: a header with a headline KPI + delta + a segmented period control (ToggleGroup), a token-coloured AreaChart, and a footer breakdown legend. The period control re-renders the chart.",
+    "question": "",
+    "block": "chart-card-kpi-01",
+    "stories": 1,
+    "first": "patterns-blocks-stat-cards-chart-card--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "stat-cards-choropleth-stat",
+    "name": "Choropleth Stat",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "KPI stat card with a choropleth world-map chart, hover-driven country value/label updates, and a tokenized trend badge.",
+    "question": "",
+    "block": "stat-card-choropleth-01",
+    "stories": 1,
+    "first": "patterns-blocks-stat-cards-choropleth-stat--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-code-workspace",
+    "name": "Code Workspace",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "CodeWorkspaceBlock",
+    "summary": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @elabs-ai/components-editor/monaco-environment once at the app entry).",
+    "question": "",
+    "block": "code-workspace",
+    "stories": 1,
+    "first": "patterns-blocks-ai-and-terminal-code-workspace--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "infographics-cohort-retention",
     "name": "Cohort Retention",
     "group": "Infographics",
     "package": "patterns",
     "component": null,
     "summary": "\"Do customers stay?\" — a triangular cohort retention heatmap: one row per monthly signup cohort, one column per month since signup, shaded by the share still active. A cohort younger than N months draws an empty cell, never a fabricated zero. One cohort is called out with a peak ring and a stated, computed gap against its named peers.",
+    "question": "Do customers stay?",
+    "block": "infographic-cohort-retention-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-cohort-retention--default"
   },
   {
     "section": "blocks",
-    "slug": "compared-to-what-multi-baseline",
-    "name": "Compared To What (Multi-baseline)",
-    "group": "KPI Cards",
-    "package": "patterns",
-    "component": null,
-    "summary": "\"Compared to what?\" — one wide card per KPI stacking three named baselines (target, last year, budget), each with a shared-scale dot strip so the same number's distance to every reference reads at a glance.",
-    "stories": 4,
-    "first": "patterns-blocks-kpi-cards-compared-to-what-multi-baseline--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "comparison-table",
+    "slug": "data-surfaces-comparison-table",
     "name": "Comparison Table",
-    "group": "Compositions",
+    "group": "Data Surfaces",
     "package": "ui",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
-    "first": "patterns-blocks-comparison-table--default"
+    "first": "patterns-blocks-data-surfaces-comparison-table--default"
   },
   {
     "section": "blocks",
-    "slug": "form-wizard",
+    "slug": "kpi-cards-composition",
+    "name": "Composition",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "\"What is it made of?\" — a 100%-stacked segmented bar per card (revenue by channel, shipments by region) plus a legend list that is the accessible source of truth: label, share, absolute value, and the share's own change vs last year in pp. Bar and legend share one order and a rank number so colour is never the only link between a segment and its row; shares under 3% merge into \"Other\".",
+    "question": "What is it made of?",
+    "block": "kpi-composition-01",
+    "stories": 4,
+    "first": "patterns-blocks-kpi-cards-composition--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "data-surfaces-data-table",
+    "name": "Data Table",
+    "group": "Data Surfaces",
+    "package": "patterns",
+    "component": "DataTableBlock",
+    "summary": "Filterable, sortable, paginated TanStack data table with toolbar.",
+    "question": "",
+    "block": "data-table",
+    "stories": 1,
+    "first": "patterns-blocks-data-surfaces-data-table--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-decision-record",
+    "name": "Decision Record",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "DecisionRecord",
+    "summary": "Every AI action expanded into the reason it happened: what it did, what it looked at (named, openable evidence), what rule applied (the clause, monospace), how confident (or an honest \"not applicable\"), and how to reverse it. Below: the check list (confirmed / not confirmed) and what the copilot proposes — numbered, editable, nothing actioned until a person approves.",
+    "question": "Why did the AI do that?",
+    "block": "decision-record-01",
+    "stories": 2,
+    "first": "patterns-blocks-agent-ops-decision-record--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "infographics-dependency-web",
+    "name": "Dependency Web",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": "InfographicDependencyWeb",
+    "summary": "\"What depends on what?\" — a platform's call graph as a NetworkChart (node size is traffic, colour is tier) beside the same services as a TreeChart of ownership. The headline counts inbound links and names the service most others lean on.",
+    "question": "What depends on what?",
+    "block": "infographic-dependency-web-01",
+    "stories": 2,
+    "first": "patterns-blocks-infographics-dependency-web--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "kpi-cards-distribution",
+    "name": "Distribution",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "\"Is it consistent?\" — an average hides the tail: a median headline next to p90/p95 read against a named SLA threshold, a box plot of the record-level distribution with the threshold drawn as a reference line, and the share past it stated in text.",
+    "question": "Is it consistent?",
+    "block": "kpi-distribution-01",
+    "stories": 4,
+    "first": "patterns-blocks-kpi-cards-distribution--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-escalation-boundary",
+    "name": "Escalation Boundary",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "EscalationBoundary",
+    "summary": "The one dial an AI-ops product must put on screen: a stacked distribution bar of every decision by how well it was corroborated, with the evidence threshold drawn as a mark; the evidence ladder (countable tick meter, meaning, decisions, share, side); and three \"If you move it\" scenario cards that state the trade in the reader’s units (cleared share, queue delta, catches, reviews per catch) and MOVE the boundary when clicked.",
+    "question": "Where does autonomy end?",
+    "block": "escalation-boundary-01",
+    "stories": 3,
+    "first": "patterns-blocks-agent-ops-escalation-boundary--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-finding-cards",
+    "name": "Finding Cards",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "FindingCards",
+    "summary": "Recoverable-spend findings as a row of cards: a status badge naming the kind, a one-line title, the recoverable figure as the only coloured number (kpi-sm), a two-sentence summary and a primary + secondary action, under a header that states the programme and the total the cards add up to. The primary action is what a person signs; the secondary always opens the evidence.",
+    "question": "What did the copilot find?",
+    "block": "finding-cards-01",
+    "stories": 3,
+    "first": "patterns-blocks-agent-ops-finding-cards--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "maps-and-geo-fleet-tracker",
+    "name": "Fleet Tracker",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "GeoFleetTracker",
+    "summary": "A fleet where it is: each vehicle's planned route as a dashed MapRoute, the part already driven solid, the vehicle's MapMarker at the join and the depot marked; the list shows stops done on a Meter and minutes against plan, and selecting a vehicle fades the others.",
+    "question": "Where is everyone, and who is late?",
+    "block": "geo-fleet-tracker-01",
+    "stories": 2,
+    "first": "patterns-blocks-maps-and-geo-fleet-tracker--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "process-and-flow-flow-builder",
+    "name": "Flow Builder",
+    "group": "Process and Flow",
+    "package": "patterns",
+    "component": "FlowBuilder",
+    "summary": "Workflow-builder canvas with a node palette, auto-layout, grouping, placeholder growth, insert-between, an inspector, and copy-own undo/redo + copy/paste.",
+    "question": "",
+    "block": "flow-builder",
+    "stories": 1,
+    "first": "patterns-blocks-process-and-flow-flow-builder--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "process-and-flow-flow-canvas",
+    "name": "Flow Canvas",
+    "group": "Process and Flow",
+    "package": "patterns",
+    "component": "FlowCanvas",
+    "summary": "Branded React Flow canvas with custom nodes, edges and controls.",
+    "question": "",
+    "block": "flow-canvas",
+    "stories": 1,
+    "first": "patterns-blocks-process-and-flow-flow-canvas--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "kpi-cards-forecast",
+    "name": "Forecast",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "\"Where will I land?\" — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a today marker separating the two, with the projection method stated in words.",
+    "question": "Where will I land?",
+    "block": "kpi-forecast-01",
+    "stories": 4,
+    "first": "patterns-blocks-kpi-cards-forecast--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "forms-and-setup-form-wizard",
     "name": "Form Wizard",
-    "group": "Compositions",
+    "group": "Forms and Setup",
     "package": "patterns",
     "component": null,
     "summary": "A multi-step form with a horizontal numbered stepper (the Wizard primitive) — a checkout flow (Customer → Shipping → Payment → Review) with real fields, correct autocomplete/type hints, and a Descriptions review step.",
+    "question": "",
+    "block": "form-wizard-01",
     "stories": 1,
-    "first": "patterns-blocks-form-wizard--default"
+    "first": "patterns-blocks-forms-and-setup-form-wizard--default"
   },
   {
     "section": "blocks",
-    "slug": "gap-to-benchmark",
+    "slug": "infographics-gap-to-benchmark",
     "name": "Gap To Benchmark",
     "group": "Infographics",
     "package": "patterns",
     "component": null,
     "summary": "\"How far from the benchmark?\" — a sorted DumbbellChart, one row per depot, hollow benchmark marker vs filled actual marker, worst gap first, with the widest gaps emphasised; the gap's sign correctly flips for a lower-is-better metric.",
+    "question": "How far from the benchmark?",
+    "block": "infographic-gap-to-benchmark-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-gap-to-benchmark--default"
   },
   {
     "section": "blocks",
-    "slug": "how-close-is-each-agent-to-its-ceiling-spend-against-limit",
-    "name": "How Close Is Each Agent To Its Ceiling (Spend Against Limit)",
+    "slug": "agent-ops-handoff-inspector",
+    "name": "Handoff Inspector",
     "group": "Agent Ops",
     "package": "patterns",
-    "component": "SpendAgainstLimit",
-    "summary": "Every non-human spender on the card programme, sorted by share of ceiling: monospace agent id, autonomy band as a status badge (Auto / Review / Hold), a bar with the ceiling drawn as a vertical mark, the literal \"$612 of $500\", and Revoke. Over the ceiling paints the destructive rung and says so. Above it, three autonomy-band tiles total the envelopes per band.",
-    "stories": 4,
-    "first": "patterns-blocks-agent-ops-how-close-is-each-agent-to-its-ceiling-spend-against-limit--default"
+    "component": "HandoffInspector",
+    "summary": "One edge of a multi-agent run: sender → a metric pill on the arrow (context size, latency, tokens, fields present of required) → receiver; a context-comparison table (sent vs expected, status badge per field) that shows the required field that was not sent; the payload size against the workflow baseline as a Meter with a marker; and the edge’s 24-hour health beside it.",
+    "question": "Where was the context dropped?",
+    "block": "handoff-inspector-01",
+    "stories": 3,
+    "first": "patterns-blocks-agent-ops-handoff-inspector--default"
   },
   {
     "section": "blocks",
-    "slug": "how-reliable-is-it-streak",
-    "name": "How Reliable Is It (Streak)",
+    "slug": "marketing-hero",
+    "name": "Hero",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingHero",
+    "summary": "Landing hero section with eyebrow, headline, CTAs and logo strip.",
+    "question": "",
+    "block": "marketing-hero",
+    "stories": 1,
+    "first": "patterns-blocks-marketing-hero--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "kpi-cards-hero-and-satellites",
+    "name": "Hero and Satellites",
     "group": "KPI Cards",
     "package": "patterns",
     "component": null,
-    "summary": "\"How reliable is it?\" — a ratio/streak headline over a 30-day strip of day cells, missed days marked by shape as well as colour, with the current and longest streaks and a comparison to the prior 30 days.",
+    "summary": "\"What is the headline?\" — one hero KPI (a big value, a named comparison vs target, a 13-week trend against last year) with three compact satellite KPIs beside it, each a value + signed delta vs target + a tiny trend, composed as one card with a single separation gesture.",
+    "question": "What is the headline?",
+    "block": "kpi-hero-satellites-01",
     "stories": 4,
-    "first": "patterns-blocks-kpi-cards-how-reliable-is-it-streak--default"
+    "first": "patterns-blocks-kpi-cards-hero-and-satellites--default"
   },
   {
     "section": "blocks",
-    "slug": "integration-grid",
+    "slug": "editorial-charts-hourglass-stream",
+    "name": "Hourglass Stream",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": null,
+    "summary": "A funnel redrawn as counted barcode strips (UnitStack) with trickle threads (DrawPath) narrowing between stages, plus stage-to-stage conversion callouts. One-off editorial composition adapted from lieflat-charts' 'L13 Hourglass Stream', built entirely from @elabs-ai/components-charts' marks layer.",
+    "question": "",
+    "block": "chart-editorial-hourglass",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-hourglass-stream--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-insight-feed",
+    "name": "Insight Feed",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null,
+    "summary": "The AI-ops briefing pattern: a numbered feed of things the copilot did or noticed — a one-sentence fact, a paragraph of why, the evidence it read, its confidence and two actions — with a conflict item that carries no confidence (\"No verdict — a person decides\"). Beside it, a \"Needs a person\" rail of what stopped and a \"Derivation load\" split of applied / sent to you / pinned by people.",
+    "question": "What changed while you were away?",
+    "block": "insight-feed-01",
+    "stories": 4,
+    "first": "patterns-blocks-agent-ops-insight-feed--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "forms-and-setup-integration-grid",
     "name": "Integration Grid",
-    "group": "Compositions",
+    "group": "Forms and Setup",
     "package": "patterns",
     "component": null,
     "summary": "A responsive grid of integration cards (icon + name + description + connect/manage action + connection status) under a page header with an Add action — the canonical ‘connect your tools’ surface. Logos are consumer-supplied (Lucide placeholders here).",
+    "question": "",
+    "block": "integration-grid-01",
     "stories": 1,
-    "first": "patterns-blocks-integration-grid--default"
+    "first": "patterns-blocks-forms-and-setup-integration-grid--default"
   },
   {
     "section": "blocks",
-    "slug": "is-it-consistent-distribution",
-    "name": "Is It Consistent (Distribution)",
+    "slug": "infographics-journey-flow",
+    "name": "Journey Flow",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": "InfographicJourneyFlow",
+    "summary": "\"Where do they drop off?\" — a SankeyChart from the channel a request came in on, through what happened to its quote, to how it ended, with a FunnelChart beside it that counts each step. The headline names the channel that loses the largest share of its own requests.",
+    "question": "Where do they drop off?",
+    "block": "infographic-journey-flow-01",
+    "stories": 2,
+    "first": "patterns-blocks-infographics-journey-flow--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-kpi-provenance-strip",
+    "name": "KPI Provenance Strip",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null,
+    "summary": "\"Where the business stands\" — four headline figures on ONE surface, each with an inline signed delta and the line that earns the number its place: source and freshness (\"ERP · 2 min ago\", \"Derived from 61 open orders · 06:02\"). Peers separated by hairlines, no value without provenance; the delta is secondary (arrow + sign, never colour alone).",
+    "question": "Where does this number come from?",
+    "block": "kpi-provenance-strip-01",
+    "stories": 4,
+    "first": "patterns-blocks-agent-ops-kpi-provenance-strip--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "command-centers-launch-plan",
+    "name": "Launch Plan",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "CommandCenterLaunchPlan",
+    "summary": "A launch on one screen: the Gantt carries the plan with summary rows, dependencies, a baseline under the task that slipped, a milestone and markers for today and go-live; selecting a task spells out its dates, baseline, what it waits for and its progress in a Descriptions panel. The headline counts the days left and the tasks past baseline.",
+    "question": "Will we make the date, and what is in the way?",
+    "block": "command-center-launch-plan-01",
+    "stories": 2,
+    "first": "patterns-blocks-command-centers-launch-plan--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "stat-cards-line-stat",
+    "name": "Line Stat",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "KPI stat card with an inline line chart, hover-driven value/label updates, and a tokenized trend badge.",
+    "question": "",
+    "block": "stat-card-line-01",
+    "stories": 1,
+    "first": "patterns-blocks-stat-cards-line-stat--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "command-centers-live-ops-wall",
+    "name": "Live Ops Wall",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "CommandCenterLiveOps",
+    "summary": "An operations wall that moves: a LiveLineChart streaming one reading a second, three Gauge dials with their targets on the dial, a Timeline of what the on-call already knows, services sorted worst first with a Sparkline and a status badge each, and a HeatmapChart of when the load arrives. The headline is computed from the services; paused freezes the stream.",
+    "question": "What is happening right now, and what needs me?",
+    "block": "command-center-live-ops-01",
+    "stories": 3,
+    "first": "patterns-blocks-command-centers-live-ops-wall--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "command-centers-market-tape",
+    "name": "Market Tape",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "CommandCenterMarketTape",
+    "summary": "A rate desk: a tape of lanes across the top with price, move and a 20-day Sparkline each, over a CandlestickChart of the index and a BarChart of daily volume. Every move carries an arrow and a sign as well as a colour; the chart title is computed from the first open and the last close.",
+    "question": "Where is the market, and what moved it?",
+    "block": "command-center-market-tape-01",
+    "stories": 2,
+    "first": "patterns-blocks-command-centers-market-tape--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "kpi-cards-movers",
+    "name": "Movers",
     "group": "KPI Cards",
     "package": "patterns",
     "component": null,
-    "summary": "\"Is it consistent?\" — an average hides the tail: a median headline next to p90/p95 read against a named SLA threshold, a box plot of the record-level distribution with the threshold drawn as a reference line, and the share past it stated in text.",
+    "summary": "\"What changed most?\" — the top 3 risers and top 3 fallers in a ranked depot field (on-time delivery, revenue), each row stating its rank, how many places it moved, and a diverging mini bar from a shared, stated zero axis. Distinct from stat-list-01's single-snapshot share bars: this is about movement between two points in time.",
+    "question": "What changed most?",
+    "block": "kpi-movers-01",
     "stories": 4,
-    "first": "patterns-blocks-kpi-cards-is-it-consistent-distribution--default"
+    "first": "patterns-blocks-kpi-cards-movers--default"
   },
   {
     "section": "blocks",
-    "slug": "keep-this-cancel-that-verdict-side-by-side",
-    "name": "Keep This, Cancel That (Verdict Side By Side)",
-    "group": "Agent Ops",
+    "slug": "kpi-cards-multi-baseline",
+    "name": "Multi-baseline",
+    "group": "KPI Cards",
     "package": "patterns",
-    "component": "VerdictSideBySide",
-    "summary": "A keep-vs-cancel verdict side by side: two cards on the success/destructive washes with annual cost, a segmented seat-utilisation Meter and the deciding facts; a one-line reading of the comparison; “If you cancel” as four consequence stats; “How the copilot knows” as a numbered evidence list; and the refusal — the copilot prepares everything, a person signs.",
-    "stories": 2,
-    "first": "patterns-blocks-agent-ops-keep-this-cancel-that-verdict-side-by-side--default"
+    "component": null,
+    "summary": "\"Compared to what?\" — one wide card per KPI stacking three named baselines (target, last year, budget), each with a shared-scale dot strip so the same number's distance to every reference reads at a glance.",
+    "question": "Compared to what?",
+    "block": "kpi-multi-baseline-01",
+    "stories": 4,
+    "first": "patterns-blocks-kpi-cards-multi-baseline--default"
   },
   {
     "section": "blocks",
-    "slug": "on-pace-progress-gauge",
-    "name": "On Pace (Progress + Gauge)",
+    "slug": "maps-and-geo-network-map",
+    "name": "Network Map",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "GeoNetworkMap",
+    "summary": "A network on the map it runs on: MapCanvas in globe projection with one MapArc per lane, its width bound to volume through a paint expression, hubs as MapMarkers with tooltips, and a panel that ranks the lanes with a Meter and calls out the late ones. Selecting a lane on the map or in the list dims the rest and redraws that arc heavier.",
+    "question": "Where does the volume flow, and which lane is late?",
+    "block": "geo-network-map-01",
+    "stories": 3,
+    "first": "patterns-blocks-maps-and-geo-network-map--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "kpi-cards-pace",
+    "name": "Pace",
     "group": "KPI Cards",
     "package": "patterns",
     "component": null,
     "summary": "\"Will I make it by period end?\" — quarter-to-date Progress bars with a marker for the expected pace and a computed days-ahead/behind status, plus a Gauge card reading a rate KPI against its target and thresholds.",
+    "question": "Will I make it by period end?",
+    "block": "kpi-pace-01",
     "stories": 4,
-    "first": "patterns-blocks-kpi-cards-on-pace-progress-gauge--default"
+    "first": "patterns-blocks-kpi-cards-pace--default"
   },
   {
     "section": "blocks",
-    "slug": "on-target-bullet",
-    "name": "On Target (Bullet)",
-    "group": "KPI Cards",
-    "package": "patterns",
-    "component": null,
-    "summary": "\"Am I on target?\" — a grid of KPI cards, each a BulletChart (value against target, last year, and 2–3 qualitative bands) plus a named comparison row and an as-of footnote. A lower-is-better KPI states that its bands read best-to-worst in reverse.",
-    "stories": 4,
-    "first": "patterns-blocks-kpi-cards-on-target-bullet--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "part-to-whole",
+    "slug": "infographics-part-to-whole",
     "name": "Part To Whole",
     "group": "Infographics",
     "package": "patterns",
     "component": null,
     "summary": "\"Where does the money go?\" — a two-level treemap of Q3 cost, category → sub-category, drawn in one neutral mono shade except for the single highlighted tile, outlined and named with a Leader + HaloText callout stating its share and the change from last quarter. Tile area is exactly proportional to cost.",
+    "question": "Where does the money go?",
+    "block": "infographic-part-to-whole-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-part-to-whole--default"
   },
   {
     "section": "blocks",
-    "slug": "scorecard",
+    "slug": "process-and-flow-process-explorer",
+    "name": "Process Explorer",
+    "group": "Process and Flow",
+    "package": "patterns",
+    "component": "ProcessExplorerPage",
+    "summary": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree.",
+    "question": "",
+    "block": "process-explorer-page",
+    "stories": 1,
+    "first": "patterns-blocks-process-and-flow-process-explorer--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "infographics-profile-compare",
+    "name": "Profile Compare",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": "InfographicProfileCompare",
+    "summary": "\"How do the options compare?\" — a RadarChart with one shape per option across five scored promises, beside a ParallelCoordinatesChart of the raw measures behind the scores. The headline names the strongest profile and the promise it is weakest on.",
+    "question": "How do the options compare?",
+    "block": "infographic-profile-compare-01",
+    "stories": 2,
+    "first": "patterns-blocks-infographics-profile-compare--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-provenance-record",
+    "name": "Provenance Record",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null,
+    "summary": "A record whose every field says where its value came from: derived (confidence meter + evidence kind), pinned (who and when — a pin out-ranks any derivation), conflict (two permitted sources disagree; nothing chosen) or empty (\"No signal yet\" — never a guess). Each state has its own glyph + text, and the footer counts the four so the reader knows how much of the record is machine-derived.",
+    "question": "Where did each field come from?",
+    "block": "provenance-record-01",
+    "stories": 3,
+    "first": "patterns-blocks-agent-ops-provenance-record--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "editorial-charts-radial-patchwork",
+    "name": "Radial Patchwork",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": null,
+    "summary": "Events on a 24 h clock face, density shown by overlaid translucent sectors (fill-opacity 0.07–0.16 — the one sanctioned use of transparency in this system) with rim ticks and a category legend. One-off editorial composition adapted from lieflat-charts' 'L10 Radial Patchwork'.",
+    "question": "",
+    "block": "chart-editorial-patchwork",
+    "stories": 3,
+    "first": "patterns-blocks-editorial-charts-radial-patchwork--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "kpi-cards-ratio-and-unit",
+    "name": "Ratio and Unit",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "\"How big is it in human terms?\" — a rate restated as a small, countable fraction (\"1 in 12 orders arrived late\") via UnitChart, with the exact rate spelled out beneath the rounded headline and a comparison vs last year. Highlighted units use an accent fill against a neutral rest rather than hue alone.",
+    "question": "How big is it in human terms?",
+    "block": "kpi-ratio-unit-01",
+    "stories": 4,
+    "first": "patterns-blocks-kpi-cards-ratio-and-unit--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "command-centers-revenue-desk",
+    "name": "Revenue Desk",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "CommandCenterRevenue",
+    "summary": "A revenue desk in one block: a MetricGrid of four headline numbers that each name their baseline and carry a 13-week Sparkline, a ComposedChart of weekly revenue with its trailing average against a labelled plan rule, a donut PieChart of the service-line mix, a BumpChart of which line is climbing, and the accounts that decide the quarter with a Meter each. Container-query layout, so it holds in a dashboard column and on a full page.",
+    "question": "How is the quarter going, and what decides it?",
+    "block": "command-center-revenue-01",
+    "stories": 4,
+    "first": "patterns-blocks-command-centers-revenue-desk--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-score-explanation",
+    "name": "Score Explanation",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null,
+    "summary": "A scored decision decomposed into its signals: one row per signal, a signed bar whose length is the contribution in points and whose direction is the sign — ink for positive, the warning rung for negative, each with a signed number so the sign never rides on colour. One shared zero-based scale; the footer states how many weaker signals were considered but not shown.",
+    "question": "Why is the score 91?",
+    "block": "score-explanation-01",
+    "stories": 3,
+    "first": "patterns-blocks-agent-ops-score-explanation--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "infographics-scorecard",
     "name": "Scorecard",
     "group": "Infographics",
     "package": "patterns",
     "component": null,
     "summary": "The Power BI-style scorecard, done with an honest baseline on every number: one row per KPI — actual, target, a signed delta, a BulletChart progress-to-target, a 13-week trend, and a named status — in a horizontally scrollable Table.",
+    "question": "Give me the whole picture in one table.",
+    "block": "infographic-scorecard-01",
     "stories": 3,
     "first": "patterns-blocks-infographics-scorecard--default"
   },
   {
     "section": "blocks",
-    "slug": "should-i-act",
-    "name": "Should I act?",
-    "group": "KPI Cards",
-    "package": "patterns",
-    "component": null,
-    "summary": "\"Should I act?\" — a status (icon + text, never colour alone) read against a visible on-track/at-risk/off-track threshold scale with today's value marked, plus how long the current status has held.",
-    "stories": 4,
-    "first": "patterns-blocks-kpi-cards-should-i-act--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "small-multiples",
+    "slug": "infographics-small-multiples",
     "name": "Small Multiples",
     "group": "Infographics",
     "package": "patterns",
     "component": null,
     "summary": "\"Which depot is the outlier?\" — twelve depots, one tiny 13-week line per tile, every tile on the same shared y-axis so height compares directly, with the one depot that stands out ringed and coloured (PeakRing) while every other depot stays on a muted neutral.",
+    "question": "Which one is the outlier?",
+    "block": "infographic-small-multiples-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-small-multiples--default"
   },
   {
     "section": "blocks",
-    "slug": "stat-card-area",
-    "name": "Stat Card (Area)",
-    "group": "Compositions",
+    "slug": "agent-ops-spend-against-limit",
+    "name": "Spend Against Limit",
+    "group": "Agent Ops",
     "package": "patterns",
-    "component": null,
-    "summary": "KPI stat card with a live area chart sparkline, hover-driven value/label updates, and a tokenized trend badge.",
-    "stories": 1,
-    "first": "patterns-blocks-stat-card-area--default"
+    "component": "SpendAgainstLimit",
+    "summary": "Every non-human spender on the card programme, sorted by share of ceiling: monospace agent id, autonomy band as a status badge (Auto / Review / Hold), a bar with the ceiling drawn as a vertical mark, the literal \"$612 of $500\", and Revoke. Over the ceiling paints the destructive rung and says so. Above it, three autonomy-band tiles total the envelopes per band.",
+    "question": "How close is each agent to its ceiling?",
+    "block": "spend-against-limit-01",
+    "stories": 4,
+    "first": "patterns-blocks-agent-ops-spend-against-limit--default"
   },
   {
     "section": "blocks",
-    "slug": "stat-card-choropleth",
-    "name": "Stat Card (Choropleth)",
-    "group": "Compositions",
-    "package": "patterns",
-    "component": null,
-    "summary": "KPI stat card with a choropleth world-map chart, hover-driven country value/label updates, and a tokenized trend badge.",
-    "stories": 1,
-    "first": "patterns-blocks-stat-card-choropleth--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "stat-card-line",
-    "name": "Stat Card (Line)",
-    "group": "Compositions",
-    "package": "patterns",
-    "component": null,
-    "summary": "KPI stat card with an inline line chart, hover-driven value/label updates, and a tokenized trend badge.",
-    "stories": 1,
-    "first": "patterns-blocks-stat-card-line--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "stat-cards",
-    "name": "Stat Cards",
-    "group": "Compositions",
+    "slug": "stat-cards-stat-grid",
+    "name": "Stat Grid",
+    "group": "Stat Cards",
     "package": "patterns",
     "component": null,
     "summary": "Elevated KPI tiles beyond a flat number: MetricCard + inline Sparkline (bar or line, coloured by a --chart-* token), a goal/progress tile, and a this-vs-last comparison tile.",
+    "question": "",
+    "block": "stat-cards-01",
     "stories": 1,
-    "first": "patterns-blocks-stat-cards--default"
+    "first": "patterns-blocks-stat-cards-stat-grid--default"
   },
   {
     "section": "blocks",
-    "slug": "stat-list",
+    "slug": "stat-cards-stat-list",
     "name": "Stat List",
-    "group": "Compositions",
+    "group": "Stat Cards",
     "package": "patterns",
     "component": null,
     "summary": "Compact summary widgets: a ranked list with share bars + delta (Sales by country), a leaderboard (Top performers), and a transaction/activity feed with signed amounts.",
+    "question": "",
+    "block": "stat-list-01",
     "stories": 1,
-    "first": "patterns-blocks-stat-list--default"
+    "first": "patterns-blocks-stat-cards-stat-list--default"
   },
   {
     "section": "blocks",
-    "slug": "terminal-session-idle",
-    "name": "Terminal Session (idle)",
-    "group": "Compositions",
-    "package": "patterns",
-    "component": "TerminalSessionIdle",
-    "summary": "A settled coding-agent console: launch banner, transcript, composer with mode/effort indicator, status bar. Nothing is running.",
-    "stories": 2,
-    "first": "patterns-blocks-terminal-session-idle--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "terminal-session-mid-turn",
-    "name": "Terminal Session (mid-turn)",
-    "group": "Compositions",
-    "package": "patterns",
-    "component": "TerminalSessionMidTurn",
-    "summary": "A coding-agent console under way: tool calls, a diff hunk, a working line with a stop affordance, a pending permission prompt, status bar.",
-    "stories": 2,
-    "first": "patterns-blocks-terminal-session-mid-turn--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "unit",
-    "name": "Unit)",
+    "slug": "kpi-cards-status-threshold",
+    "name": "Status Threshold",
     "group": "KPI Cards",
     "package": "patterns",
     "component": null,
-    "summary": "\"How big is it in human terms?\" — a rate restated as a small, countable fraction (\"1 in 12 orders arrived late\") via UnitChart, with the exact rate spelled out beneath the rounded headline and a comparison vs last year. Highlighted units use an accent fill against a neutral rest rather than hue alone.",
+    "summary": "\"Should I act?\" — a status (icon + text, never colour alone) read against a visible on-track/at-risk/off-track threshold scale with today's value marked, plus how long the current status has held.",
+    "question": "Should I act?",
+    "block": "kpi-status-threshold-01",
     "stories": 4,
-    "first": "patterns-blocks-kpi-cards-how-big-is-it-ratio-unit--default"
+    "first": "patterns-blocks-kpi-cards-status-threshold--default"
   },
   {
     "section": "blocks",
-    "slug": "variance-bridge",
+    "slug": "kpi-cards-streak",
+    "name": "Streak",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "\"How reliable is it?\" — a ratio/streak headline over a 30-day strip of day cells, missed days marked by shape as well as colour, with the current and longest streaks and a comparison to the prior 30 days.",
+    "question": "How reliable is it?",
+    "block": "kpi-streak-01",
+    "stories": 4,
+    "first": "patterns-blocks-kpi-cards-streak--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "kpi-cards-target-bullet",
+    "name": "Target Bullet",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "\"Am I on target?\" — a grid of KPI cards, each a BulletChart (value against target, last year, and 2–3 qualitative bands) plus a named comparison row and an as-of footnote. A lower-is-better KPI states that its bands read best-to-worst in reverse.",
+    "question": "Am I on target?",
+    "block": "kpi-target-bullet-01",
+    "stories": 4,
+    "first": "patterns-blocks-kpi-cards-target-bullet--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-terminal-session-idle",
+    "name": "Terminal Session Idle",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "TerminalSessionIdle",
+    "summary": "A settled coding-agent console: launch banner, transcript, composer with mode/effort indicator, status bar. Nothing is running.",
+    "question": "",
+    "block": "terminal-session-idle",
+    "stories": 2,
+    "first": "patterns-blocks-ai-and-terminal-terminal-session-idle--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-terminal-session-mid-turn",
+    "name": "Terminal Session Mid-turn",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "TerminalSessionMidTurn",
+    "summary": "A coding-agent console under way: tool calls, a diff hunk, a working line with a stop affordance, a pending permission prompt, status bar.",
+    "question": "",
+    "block": "terminal-session-mid-turn",
+    "stories": 2,
+    "first": "patterns-blocks-ai-and-terminal-terminal-session-mid-turn--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-trace-waterfall",
+    "name": "Trace Waterfall",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null,
+    "summary": "An execution waterfall for one multi-agent run: a stat strip where every number carries its comparison (duration vs p95, retries, tokens in/out, cost vs workflow average, failed at), the charts package’s Gantt at sub-second granularity with one row per agent span nested under its caller, and a context-flow chain that shows the hop where a required field was dropped.",
+    "question": "Where did the run fail?",
+    "block": "agent-trace-waterfall-01",
+    "stories": 2,
+    "first": "patterns-blocks-agent-ops-trace-waterfall--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "kpi-cards-trend-reference",
+    "name": "Trend Reference",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null,
+    "summary": "\"Better or worse than normal?\" — a 13-week Sparkline trend read against a target pace, last year, and a normal operating band, with a text legend spelling out the line styles so the encoding never rides on colour alone.",
+    "question": "Better or worse than normal?",
+    "block": "kpi-trend-reference-01",
+    "stories": 4,
+    "first": "patterns-blocks-kpi-cards-trend-reference--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "infographics-variance-bridge",
     "name": "Variance Bridge",
     "group": "Infographics",
     "package": "patterns",
     "component": null,
     "summary": "\"What drove the change?\" — a revenue bridge from last quarter's total to this quarter's, split into price, volume, mix, FX and other, built with WaterfallChart and a Leader callout on the one or two steps that actually explain the move. Steps sum exactly to the ending total; every step states its own sign in words, never colour alone.",
+    "question": "What drove the change?",
+    "block": "infographic-variance-bridge-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-variance-bridge--default"
   },
   {
     "section": "blocks",
-    "slug": "what-changed-most-movers",
-    "name": "What Changed Most (Movers)",
-    "group": "KPI Cards",
-    "package": "patterns",
-    "component": null,
-    "summary": "\"What changed most?\" — the top 3 risers and top 3 fallers in a ranked depot field (on-time delivery, revenue), each row stating its rank, how many places it moved, and a diverging mini bar from a shared, stated zero axis. Distinct from stat-list-01's single-snapshot share bars: this is about movement between two points in time.",
-    "stories": 4,
-    "first": "patterns-blocks-kpi-cards-what-changed-most-movers--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "what-changed-while-you-were-away-insight-feed",
-    "name": "What Changed While You Were Away (Insight Feed)",
+    "slug": "agent-ops-verdict-side-by-side",
+    "name": "Verdict Side By Side",
     "group": "Agent Ops",
     "package": "patterns",
-    "component": null,
-    "summary": "The AI-ops briefing pattern: a numbered feed of things the copilot did or noticed — a one-sentence fact, a paragraph of why, the evidence it read, its confidence and two actions — with a conflict item that carries no confidence (\"No verdict — a person decides\"). Beside it, a \"Needs a person\" rail of what stopped and a \"Derivation load\" split of applied / sent to you / pinned by people.",
-    "stories": 4,
-    "first": "patterns-blocks-agent-ops-what-changed-while-you-were-away-insight-feed--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "what-did-the-copilot-find-finding-cards",
-    "name": "What Did The Copilot Find (Finding Cards)",
-    "group": "Agent Ops",
-    "package": "patterns",
-    "component": "FindingCards",
-    "summary": "Recoverable-spend findings as a row of cards: a status badge naming the kind, a one-line title, the recoverable figure as the only coloured number (kpi-sm), a two-sentence summary and a primary + secondary action, under a header that states the programme and the total the cards add up to. The primary action is what a person signs; the secondary always opens the evidence.",
-    "stories": 3,
-    "first": "patterns-blocks-agent-ops-what-did-the-copilot-find-finding-cards--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "what-is-it-made-of-composition",
-    "name": "What Is It Made Of (Composition)",
-    "group": "KPI Cards",
-    "package": "patterns",
-    "component": null,
-    "summary": "\"What is it made of?\" — a 100%-stacked segmented bar per card (revenue by channel, shipments by region) plus a legend list that is the accessible source of truth: label, share, absolute value, and the share's own change vs last year in pp. Bar and legend share one order and a rank number so colour is never the only link between a segment and its row; shares under 3% merge into \"Other\".",
-    "stories": 4,
-    "first": "patterns-blocks-kpi-cards-what-is-it-made-of-composition--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "what-s-the-headline-hero-satellites",
-    "name": "What's The Headline (Hero + Satellites)",
-    "group": "KPI Cards",
-    "package": "patterns",
-    "component": null,
-    "summary": "\"What is the headline?\" — one hero KPI (a big value, a named comparison vs target, a 13-week trend against last year) with three compact satellite KPIs beside it, each a value + signed delta vs target + a tiny trend, composed as one card with a single separation gesture.",
-    "stories": 4,
-    "first": "patterns-blocks-kpi-cards-what-s-the-headline-hero-satellites--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "where-did-each-field-come-from-provenance-record",
-    "name": "Where Did Each Field Come From (Provenance Record)",
-    "group": "Agent Ops",
-    "package": "patterns",
-    "component": null,
-    "summary": "A record whose every field says where its value came from: derived (confidence meter + evidence kind), pinned (who and when — a pin out-ranks any derivation), conflict (two permitted sources disagree; nothing chosen) or empty (\"No signal yet\" — never a guess). Each state has its own glyph + text, and the footer counts the four so the reader knows how much of the record is machine-derived.",
-    "stories": 3,
-    "first": "patterns-blocks-agent-ops-where-did-each-field-come-from-provenance-record--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "where-did-the-run-fail-agent-trace-waterfall",
-    "name": "Where Did The Run Fail (Agent Trace Waterfall)",
-    "group": "Agent Ops",
-    "package": "patterns",
-    "component": null,
-    "summary": "An execution waterfall for one multi-agent run: a stat strip where every number carries its comparison (duration vs p95, retries, tokens in/out, cost vs workflow average, failed at), the charts package’s Gantt at sub-second granularity with one row per agent span nested under its caller, and a context-flow chain that shows the hop where a required field was dropped.",
+    "component": "VerdictSideBySide",
+    "summary": "A keep-vs-cancel verdict side by side: two cards on the success/destructive washes with annual cost, a segmented seat-utilisation Meter and the deciding facts; a one-line reading of the comparison; “If you cancel” as four consequence stats; “How the copilot knows” as a numbered evidence list; and the refusal — the copilot prepares everything, a person signs.",
+    "question": "Keep this, cancel that?",
+    "block": "verdict-side-by-side-01",
     "stories": 2,
-    "first": "patterns-blocks-agent-ops-where-did-the-run-fail-agent-trace-waterfall--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "where-does-autonomy-end-escalation-boundary",
-    "name": "Where Does Autonomy End (Escalation Boundary)",
-    "group": "Agent Ops",
-    "package": "patterns",
-    "component": "EscalationBoundary",
-    "summary": "The one dial an AI-ops product must put on screen: a stacked distribution bar of every decision by how well it was corroborated, with the evidence threshold drawn as a mark; the evidence ladder (countable tick meter, meaning, decisions, share, side); and three \"If you move it\" scenario cards that state the trade in the reader’s units (cleared share, queue delta, catches, reviews per catch) and MOVE the boundary when clicked.",
-    "stories": 3,
-    "first": "patterns-blocks-agent-ops-where-does-autonomy-end-escalation-boundary--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "where-does-this-number-come-from-kpi-provenance-strip",
-    "name": "Where Does This Number Come From (KPI Provenance Strip)",
-    "group": "Agent Ops",
-    "package": "patterns",
-    "component": null,
-    "summary": "\"Where the business stands\" — four headline figures on ONE surface, each with an inline signed delta and the line that earns the number its place: source and freshness (\"ERP · 2 min ago\", \"Derived from 61 open orders · 06:02\"). Peers separated by hairlines, no value without provenance; the delta is secondary (arrow + sign, never colour alone).",
-    "stories": 4,
-    "first": "patterns-blocks-agent-ops-where-does-this-number-come-from-kpi-provenance-strip--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "where-was-the-context-dropped-handoff-inspector",
-    "name": "Where Was The Context Dropped (Handoff Inspector)",
-    "group": "Agent Ops",
-    "package": "patterns",
-    "component": "HandoffInspector",
-    "summary": "One edge of a multi-agent run: sender → a metric pill on the arrow (context size, latency, tokens, fields present of required) → receiver; a context-comparison table (sent vs expected, status badge per field) that shows the required field that was not sent; the payload size against the workflow baseline as a Meter with a marker; and the edge’s 24-hour health beside it.",
-    "stories": 3,
-    "first": "patterns-blocks-agent-ops-where-was-the-context-dropped-handoff-inspector--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "where-will-i-land-forecast",
-    "name": "Where Will I Land (Forecast)",
-    "group": "KPI Cards",
-    "package": "patterns",
-    "component": null,
-    "summary": "\"Where will I land?\" — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a today marker separating the two, with the projection method stated in words.",
-    "stories": 4,
-    "first": "patterns-blocks-kpi-cards-where-will-i-land-forecast--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "who-did-what-audit-log",
-    "name": "Who Did What (Audit Log)",
-    "group": "Agent Ops",
-    "package": "patterns",
-    "component": null,
-    "summary": "An append-only audit table whose actor column tells three authors apart by glyph — copilot, delegated agent, person — and whose result column is a status badge with an icon (Applied / Held / Stopped / Reverted), so a row still reads in greyscale. Monospace tabular timestamps; the action is one plain sentence with the number it wrote in it.",
-    "stories": 3,
-    "first": "patterns-blocks-agent-ops-who-did-what-audit-log--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "why-did-the-ai-do-that-decision-record",
-    "name": "Why Did The AI Do That (Decision Record)",
-    "group": "Agent Ops",
-    "package": "patterns",
-    "component": "DecisionRecord",
-    "summary": "Every AI action expanded into the reason it happened: what it did, what it looked at (named, openable evidence), what rule applied (the clause, monospace), how confident (or an honest \"not applicable\"), and how to reverse it. Below: the check list (confirmed / not confirmed) and what the copilot proposes — numbered, editable, nothing actioned until a person approves.",
-    "stories": 2,
-    "first": "patterns-blocks-agent-ops-why-did-the-ai-do-that-decision-record--default"
-  },
-  {
-    "section": "blocks",
-    "slug": "why-is-the-score-91-score-explanation",
-    "name": "Why Is The Score 91 (Score Explanation)",
-    "group": "Agent Ops",
-    "package": "patterns",
-    "component": null,
-    "summary": "A scored decision decomposed into its signals: one row per signal, a signed bar whose length is the contribution in points and whose direction is the sign — ink for positive, the warning rung for negative, each with a signed number so the sign never rides on colour. One shared zero-based scale; the footer states how many weaker signals were considered but not shown.",
-    "stories": 3,
-    "first": "patterns-blocks-agent-ops-why-is-the-score-91-score-explanation--default"
+    "first": "patterns-blocks-agent-ops-verdict-side-by-side--default"
   },
   {
     "section": "charts",
@@ -535,6 +852,8 @@
     "package": "charts",
     "component": "ChartAnnotations",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "charts-annotations--bikes-recipe"
   },
@@ -546,6 +865,8 @@
     "package": "charts",
     "component": "AreaChart",
     "summary": "Cumulative or part-of-whole trend over time — a filled line.",
+    "question": "",
+    "block": null,
     "stories": 14,
     "first": "charts-areachart--default"
   },
@@ -557,6 +878,8 @@
     "package": "charts",
     "component": "AutoChart",
     "summary": "Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.",
+    "question": "",
+    "block": null,
     "stories": 34,
     "first": "charts-autochart--line-inferred"
   },
@@ -568,6 +891,8 @@
     "package": "charts",
     "component": "YAxis",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 12,
     "first": "charts-axes--width-derived-ticks"
   },
@@ -579,6 +904,8 @@
     "package": "charts",
     "component": "BarChart",
     "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
+    "question": "",
+    "block": null,
     "stories": 35,
     "first": "charts-barchart--default"
   },
@@ -590,6 +917,8 @@
     "package": "charts",
     "component": "BulletChart",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "charts-bulletchart--default"
   },
@@ -601,6 +930,8 @@
     "package": "charts",
     "component": "BumpChart",
     "summary": "Rank over discrete time — who is #1 changes over time. variant=\"lines\" plots the trajectory (rank as an inverted y-axis); variant=\"strip\" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "charts-bumpchart--default"
   },
@@ -612,6 +943,8 @@
     "package": "charts",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 24,
     "first": "charts-bydatashape--few-categories-compare"
   },
@@ -623,6 +956,8 @@
     "package": "charts",
     "component": "CandlestickChart",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "charts-candlestickchart--default"
   },
@@ -634,6 +969,8 @@
     "package": "charts",
     "component": "CanvasLayer",
     "summary": "The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "charts-canvaslayer--default"
   },
@@ -645,6 +982,8 @@
     "package": "charts",
     "component": "ChartBrush",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "charts-chartbrush--default"
   },
@@ -656,6 +995,8 @@
     "package": "charts",
     "component": "ChartCard",
     "summary": "Titled card surface around a chart — header, description, and the chart body.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "charts-chartcard--default"
   },
@@ -667,6 +1008,8 @@
     "package": "charts",
     "component": "ChartFrame",
     "summary": "Opt-in chart wrapper adding expand / flip-to-table / download-CSV to any chart child.",
+    "question": "",
+    "block": null,
     "stories": 19,
     "first": "charts-chartframe--default"
   },
@@ -678,6 +1021,8 @@
     "package": "charts",
     "component": "ChartLegend",
     "summary": "Series key with label, value and an optional progress bar; pattern-aware under decoration.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "charts-chartlegend--default"
   },
@@ -689,6 +1034,8 @@
     "package": "charts",
     "component": "ChartMultiples",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "charts-chartmultiples--memory-prices-multiples"
   },
@@ -700,6 +1047,8 @@
     "package": "charts",
     "component": "ChoroplethChart",
     "summary": "Region-shaded map for a measure that is defined per geographic area.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "charts-choroplethchart--default"
   },
@@ -711,6 +1060,8 @@
     "package": "charts",
     "component": "ComposedChart",
     "summary": "One cartesian frame that layers several series types (bars + lines + areas) together.",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "charts-composedchart--default"
   },
@@ -722,6 +1073,8 @@
     "package": "charts",
     "component": "DistributionChart",
     "summary": "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "charts-distributionchart--rung-histogram"
   },
@@ -733,6 +1086,8 @@
     "package": "charts",
     "component": "DumbbellChart",
     "summary": "Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant=\"slope\" swaps the per-category track for two shared value columns.",
+    "question": "",
+    "block": null,
     "stories": 15,
     "first": "charts-dumbbellchart--default"
   },
@@ -744,6 +1099,8 @@
     "package": "charts",
     "component": "HaloText",
     "summary": "SVG text that punches a plot-ground halo out from behind itself, so a label stays readable directly ON a mark instead of beside it.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "charts-editorialmarks--vocabulary"
   },
@@ -755,6 +1112,8 @@
     "package": "charts",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "charts-formatting--value-format-object-spec"
   },
@@ -766,6 +1125,8 @@
     "package": "charts",
     "component": "FunnelChart",
     "summary": "Stage-by-stage drop-off through an ordered pipeline.",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "charts-funnelchart--default"
   },
@@ -777,6 +1138,8 @@
     "package": "charts",
     "component": "Gantt",
     "summary": "Schedule grid — tasks as bars over time, with a task table beside them.",
+    "question": "",
+    "block": null,
     "stories": 31,
     "first": "charts-gantt--default"
   },
@@ -788,6 +1151,8 @@
     "package": "charts",
     "component": "Gauge",
     "summary": "Single-value dial against a known range — a KPI with an explicit ceiling.",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "charts-gauge--default"
   },
@@ -799,6 +1164,8 @@
     "package": "charts",
     "component": "HeatmapChart",
     "summary": "Two discrete dimensions × one value — weekday × hour, product × region, or a year of days.",
+    "question": "",
+    "block": null,
     "stories": 13,
     "first": "charts-heatmapchart--matrix"
   },
@@ -810,6 +1177,8 @@
     "package": "charts",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "charts-reveal-inview--in-view"
   },
@@ -821,6 +1190,8 @@
     "package": "charts",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "charts-labels--end-labels-with-key-fallback"
   },
@@ -832,6 +1203,8 @@
     "package": "charts",
     "component": "LineChart",
     "summary": "Trend over a continuous (usually time) axis.",
+    "question": "",
+    "block": null,
     "stories": 29,
     "first": "charts-linechart--default"
   },
@@ -843,6 +1216,8 @@
     "package": "charts",
     "component": "LiveLineChart",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "charts-livelinechart--default"
   },
@@ -854,6 +1229,8 @@
     "package": "charts",
     "component": "MetricGrid",
     "summary": "Responsive grid of KPI tiles — the summary row at the top of a dashboard.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "charts-metricgrid--default"
   },
@@ -865,6 +1242,8 @@
     "package": "charts",
     "component": "NetworkChart",
     "summary": "A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "charts-networkchart--small-circular"
   },
@@ -876,6 +1255,8 @@
     "package": "charts",
     "component": "ParallelCoordinatesChart",
     "summary": "Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "charts-parallelcoordinateschart--default"
   },
@@ -887,6 +1268,8 @@
     "package": "charts",
     "component": "PieChart",
     "summary": "Part-of-whole split across a handful of categories.",
+    "question": "",
+    "block": null,
     "stories": 12,
     "first": "charts-piechart--default"
   },
@@ -898,6 +1281,8 @@
     "package": "charts",
     "component": "RadarChart",
     "summary": "Multi-metric profile comparison on a shared radial axis.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "charts-radarchart--default"
   },
@@ -909,6 +1294,8 @@
     "package": "charts",
     "component": "RampLegend",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "charts-ramplegend--stepped"
   },
@@ -920,6 +1307,8 @@
     "package": "charts",
     "component": "RingChart",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "charts-ringchart--default"
   },
@@ -931,6 +1320,8 @@
     "package": "charts",
     "component": "SankeyChart",
     "summary": "Flow diagram — how quantity moves between stages or nodes.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "charts-sankeychart--default"
   },
@@ -942,6 +1333,8 @@
     "package": "charts",
     "component": "ScatterChart",
     "summary": "Point cloud for correlation between two continuous measures.",
+    "question": "",
+    "block": null,
     "stories": 21,
     "first": "charts-scatterchart--default"
   },
@@ -953,6 +1346,8 @@
     "package": "charts",
     "component": "BarChart",
     "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "charts-seriespattern--multi-series-bar"
   },
@@ -964,6 +1359,8 @@
     "package": "charts",
     "component": "SizeLegend",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "charts-sizelegend--default"
   },
@@ -975,6 +1372,8 @@
     "package": "charts",
     "component": "Sparkline",
     "summary": "Tiny, axis-less trend that lives inside a KPI tile or a table cell.",
+    "question": "",
+    "block": null,
     "stories": 10,
     "first": "charts-sparkline--default"
   },
@@ -986,6 +1385,8 @@
     "package": "charts",
     "component": "ChartTooltip",
     "summary": "Hover readout for the point/series under the pointer.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "charts-tooltip-presets--rows"
   },
@@ -997,6 +1398,8 @@
     "package": "charts",
     "component": "TreeChart",
     "summary": "Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "charts-treechart--default"
   },
@@ -1008,6 +1411,8 @@
     "package": "charts",
     "component": "TreemapChart",
     "summary": "Two-level squarified treemap — a hierarchy where area, not position, encodes value.",
+    "question": "",
+    "block": null,
     "stories": 13,
     "first": "charts-treemapchart--default"
   },
@@ -1019,6 +1424,8 @@
     "package": "charts",
     "component": "UnitChart",
     "summary": "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
+    "question": "",
+    "block": null,
     "stories": 10,
     "first": "charts-unitchart--default"
   },
@@ -1030,6 +1437,8 @@
     "package": "charts",
     "component": "WaterfallChart",
     "summary": "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
+    "question": "",
+    "block": null,
     "stories": 13,
     "first": "charts-waterfallchart--default"
   },
@@ -1041,6 +1450,8 @@
     "package": "ai",
     "component": "A2uiSurface",
     "summary": "The SAFE generative-UI path (D2): renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction.",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "ai-a2ui-agent-ops--while-you-were-away"
   },
@@ -1052,6 +1463,8 @@
     "package": "ai",
     "component": "A2uiSurface",
     "summary": "The SAFE generative-UI path (D2): renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "ai-a2ui-analytics--quarter-headline"
   },
@@ -1063,6 +1476,8 @@
     "package": "ai",
     "component": "A2uiSurface",
     "summary": "The SAFE generative-UI path (D2): renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction.",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "ai-a2ui-surface--default"
   },
@@ -1074,6 +1489,8 @@
     "package": "process",
     "component": "AbstractionControls",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "process-abstractioncontrols--default"
   },
@@ -1085,6 +1502,8 @@
     "package": "editor",
     "component": "MarkdownPreview",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "editor-markdownpreview-academic--footnotes"
   },
@@ -1096,6 +1515,8 @@
     "package": "ui",
     "component": "Accordion",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "disclosure-accordion--default"
   },
@@ -1107,6 +1528,8 @@
     "package": "ui",
     "component": "AdvancedGroup",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "forms-advancedgroup--default"
   },
@@ -1118,6 +1541,8 @@
     "package": "ai",
     "component": "AgentEvent",
     "summary": "One lifecycle or hook event on the agent timeline — what fired around a tool call, and whether its checks passed.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "ai-agentevent--default"
   },
@@ -1129,6 +1554,8 @@
     "package": "ai",
     "component": "AgentTimeline",
     "summary": "Chronological rail of agent steps and checkpoints — what the agent did, in order.",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "ai-agenttimeline--default"
   },
@@ -1140,6 +1567,8 @@
     "package": "patterns",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "editor-ai-content-access--with-code-workspace"
   },
@@ -1151,6 +1580,8 @@
     "package": "ui",
     "component": "Alert",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "states-alert--info"
   },
@@ -1162,6 +1593,8 @@
     "package": "ui",
     "component": "AlertDialog",
     "summary": "Confirmation overlay for destructive / irreversible actions — friction proportional to consequence.",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "overlays-alertdialog--default"
   },
@@ -1173,6 +1606,8 @@
     "package": "ui",
     "component": "AmbientField",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "display-ambientfield--default"
   },
@@ -1184,6 +1619,8 @@
     "package": "icons",
     "component": "AppIcon",
     "summary": "The standard app/brand mark for app chrome — theme-aware, morphs mark↔lockup on sidebar collapse.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "icons-appicon--default"
   },
@@ -1195,6 +1632,8 @@
     "package": "ai",
     "component": "ApprovalCard",
     "summary": "The named human-in-the-loop variant of Confirmation — a titled, described approval card, binary or N-option with scope.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "ai-approvalcard--pending"
   },
@@ -1206,6 +1645,8 @@
     "package": "ui",
     "component": "AppSidebar",
     "summary": "The opinionated application sidebar: the Sidebar skeleton behind typed header and footer slots, with the navigation as children.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "layout-appsidebar--default"
   },
@@ -1217,6 +1658,8 @@
     "package": "ui",
     "component": "AspectRatio",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "display-aspectratio--default"
   },
@@ -1228,6 +1671,8 @@
     "package": "ai",
     "component": "AssetPreview",
     "summary": "Type-keyed preview of ONE produced asset — markdown/code/sql/csv/image — inside the Artifact chrome.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "ai-assetpreview--markdown"
   },
@@ -1239,6 +1684,8 @@
     "package": "ui",
     "component": "AttributionPanel",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "core-attributionpanel--default"
   },
@@ -1250,6 +1697,8 @@
     "package": "ai",
     "component": "AudioPlayer",
     "summary": "Themed audio transport for generated/recorded speech, built on media-chrome's MediaController.",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "ai-audioplayer--default"
   },
@@ -1261,6 +1710,8 @@
     "package": "ai",
     "component": "AudioVisualizer",
     "summary": "Canvas-drawn live mic-level / waveform meter, driven entirely by a `levels` prop.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "ai-audiovisualizer--default"
   },
@@ -1272,6 +1723,8 @@
     "package": "ui",
     "component": "Avatar",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "display-avatar--default"
   },
@@ -1283,6 +1736,8 @@
     "package": "ui",
     "component": "Badge",
     "summary": "Compact status/label chip (status, count, category).",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "core-badge--default"
   },
@@ -1294,6 +1749,8 @@
     "package": "ui",
     "component": "BentoGrid",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "layout-bentogrid--default"
   },
@@ -1305,6 +1762,8 @@
     "package": "ui",
     "component": "BoundedNumber",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "forms-boundednumber--default"
   },
@@ -1316,6 +1775,8 @@
     "package": "icons",
     "component": "BrandLogo",
     "summary": "The product's mark/lockup, drawn from tokens so it adapts to every theme.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "icons-brandlogo--default"
   },
@@ -1327,6 +1788,8 @@
     "package": "ui",
     "component": "Breadcrumb",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "navigation-breadcrumb--default"
   },
@@ -1338,6 +1801,8 @@
     "package": "editor",
     "component": "IterationBuilderDialog",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "editor-iteration-builderdialog--pivot-builder"
   },
@@ -1349,6 +1814,8 @@
     "package": "charts",
     "component": "DashboardSheet",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 11,
     "first": "dashboard-tiles-built-ins--all-built-ins-on-one-sheet"
   },
@@ -1360,6 +1827,8 @@
     "package": "ui",
     "component": "Button",
     "summary": "Primary action trigger — the canonical way to invoke an action.",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "core-button--default"
   },
@@ -1371,6 +1840,8 @@
     "package": "ui",
     "component": "ButtonGroup",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "forms-buttongroup--default"
   },
@@ -1382,6 +1853,8 @@
     "package": "editor",
     "component": "CalcBlock",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "editor-calcblock--default"
   },
@@ -1393,6 +1866,8 @@
     "package": "editor",
     "component": "MarkdownWorkspace",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "editor-calceditor--workspace"
   },
@@ -1404,6 +1879,8 @@
     "package": "editor",
     "component": "CalcInline",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "editor-calcinline--default"
   },
@@ -1415,6 +1892,8 @@
     "package": "ui",
     "component": "Calendar",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "forms-calendar--default"
   },
@@ -1426,6 +1905,8 @@
     "package": "ai",
     "component": "Canvas",
     "summary": "The in-chat agent workspace graph surface (React Flow) — the canvas an agent renders inside a conversation (ADR 0018).",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "ai-canvas--default"
   },
@@ -1437,6 +1918,8 @@
     "package": "flow",
     "component": "CanvasShell",
     "summary": "Branded React Flow canvas wrapper with token-driven background + sane defaults.",
+    "question": "orders",
+    "block": null,
     "stories": 1,
     "first": "flow-canvasshell--pipeline"
   },
@@ -1448,6 +1931,8 @@
     "package": "ui",
     "component": "Card",
     "summary": "Surface grouping related content into a bordered, padded block.",
+    "question": "",
+    "block": null,
     "stories": 10,
     "first": "core-card--default"
   },
@@ -1459,6 +1944,8 @@
     "package": "process",
     "component": "CaseTable",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "process-casetable--default"
   },
@@ -1470,6 +1957,8 @@
     "package": "process",
     "component": "CaseTimeline",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "process-casetimeline--sequential"
   },
@@ -1481,6 +1970,8 @@
     "package": "ui",
     "component": "ChangeReview",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 13,
     "first": "ai-changereview--default"
   },
@@ -1492,6 +1983,8 @@
     "package": "patterns",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "foundations-chartramps--default"
   },
@@ -1503,6 +1996,8 @@
     "package": "ai",
     "component": "ChatGreeting",
     "summary": "The centered, display-scale first-run greeting for an empty chat scene — a headline, not a status message.",
+    "question": "How can I",
+    "block": null,
     "stories": 6,
     "first": "ai-chatgreeting--default"
   },
@@ -1514,6 +2009,8 @@
     "package": "ui",
     "component": "Checkbox",
     "summary": "Binary on/off toggle within a form (multi-select within a group).",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "forms-checkbox--default"
   },
@@ -1525,6 +2022,8 @@
     "package": "ai",
     "component": "CodeBlock",
     "summary": "Shiki-highlighted code block with a copy button, filename and language selector.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "ai-codeblock--default"
   },
@@ -1536,6 +2035,8 @@
     "package": "editor",
     "component": "CodeEditor",
     "summary": "Monaco-backed editable code editor (controlled/uncontrolled), themed from tokens.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "editor-codeeditor--default"
   },
@@ -1547,6 +2048,8 @@
     "package": "editor",
     "component": "CodeWorkspace",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "editor-codeworkspace--three-files"
   },
@@ -1558,6 +2061,8 @@
     "package": "ui",
     "component": "Collapsible",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "disclosure-collapsible--default"
   },
@@ -1569,6 +2074,8 @@
     "package": "ui",
     "component": "ColorPicker",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "forms-colorpicker--default"
   },
@@ -1580,6 +2087,8 @@
     "package": "patterns",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "foundations-colors--all-colors"
   },
@@ -1591,6 +2100,8 @@
     "package": "data",
     "component": "ColumnPicker",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "data-columnpicker--default"
   },
@@ -1602,6 +2113,8 @@
     "package": "ui",
     "component": "Combobox",
     "summary": "Searchable single/multi select — Select with typeahead over a large or async option set.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "forms-combobox--default"
   },
@@ -1613,6 +2126,8 @@
     "package": "ui",
     "component": "Command",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "overlays-command--default"
   },
@@ -1624,6 +2139,8 @@
     "package": "ui",
     "component": "CommandChip",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "display-commandchip--default"
   },
@@ -1635,6 +2152,8 @@
     "package": "ui",
     "component": "CommandTrigger",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "navigation-commandtrigger--default"
   },
@@ -1646,6 +2165,8 @@
     "package": "process",
     "component": "CompareKpiStrip",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "process-processcompare-comparekpistrip--default"
   },
@@ -1657,6 +2178,8 @@
     "package": "ai",
     "component": "Composer",
     "summary": "The standard chat input — a PromptInput pre-assembled with attachments, tools and submit.",
+    "question": "",
+    "block": null,
     "stories": 15,
     "first": "ai-composer--default"
   },
@@ -1668,6 +2191,8 @@
     "package": "ui",
     "component": "ConfirmDialog",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "overlays-confirmdialog--default"
   },
@@ -1679,6 +2204,8 @@
     "package": "process",
     "component": "ConformanceOverlay",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "process-conformanceoverlay--default"
   },
@@ -1690,6 +2217,8 @@
     "package": "ui",
     "component": "ContextMenu",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "overlays-contextmenu--default"
   },
@@ -1701,6 +2230,8 @@
     "package": "ai",
     "component": "ContextPanel",
     "summary": "The chat workspace's right context rail — sources, produced assets and a root↔detail drill-in.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "ai-contextpanel--default"
   },
@@ -1712,6 +2243,8 @@
     "package": "ui",
     "component": "ContextRail",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "layout-contextrail--default"
   },
@@ -1723,6 +2256,8 @@
     "package": "ai",
     "component": "Conversation",
     "summary": "Auto-stick-to-bottom chat transcript region.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "ai-conversation--default"
   },
@@ -1734,6 +2269,8 @@
     "package": "ui",
     "component": "CopyableValue",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "display-copyablevalue--default"
   },
@@ -1745,6 +2282,8 @@
     "package": "marketing",
     "component": "CTASection",
     "summary": "Closing conversion band — one message, one action.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "marketing-ctasection--default"
   },
@@ -1756,6 +2295,8 @@
     "package": "patterns",
     "component": null,
     "summary": "The classic left-sidebar dashboard: a collapsible-icon nav rail with a tenant switcher and nav groups beside a floating inset surface carrying a metric row, a revenue trend and an overnight activity feed. Skip link, one main landmark, active-route indicator and command trigger included.",
+    "question": "",
+    "block": "sidebar-02",
     "stories": 10,
     "first": "layout-app-shell-dashboard--default"
   },
@@ -1767,6 +2308,8 @@
     "package": "patterns",
     "component": "DashboardSheetApp",
     "summary": "The installable canonical full-screen, user-editable dashboard: app nav + DashboardToolbar + DashboardSelectionBar + asset/properties panels + DashboardSheet, with the table/chat/process-map tile blocks registered alongside the built-in kinds.",
+    "question": "",
+    "block": "dashboard-sheet-app",
     "stories": 1,
     "first": "dashboard-recipes-dashboard-sheet-app--default"
   },
@@ -1778,6 +2321,8 @@
     "package": "data",
     "component": "DataTable",
     "summary": "TanStack-backed data grid with sorting, filtering, pagination and a render-prop toolbar.",
+    "question": "",
+    "block": null,
     "stories": 31,
     "first": "data-datatable--default"
   },
@@ -1789,6 +2334,8 @@
     "package": "ui",
     "component": "DatePicker",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "forms-datepicker--default"
   },
@@ -1800,6 +2347,8 @@
     "package": "ui",
     "component": "DateRangePicker",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "forms-daterangepicker--default"
   },
@@ -1811,6 +2360,8 @@
     "package": "editor",
     "component": "DecisionCard",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 17,
     "first": "editor-aiobjects-decisioncard--accepted"
   },
@@ -1822,6 +2373,8 @@
     "package": "ui",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "foundations-decoration--dial"
   },
@@ -1833,6 +2386,8 @@
     "package": "ui",
     "component": "Descriptions",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "layout-descriptions--default"
   },
@@ -1844,6 +2399,8 @@
     "package": "ui",
     "component": "Dialog",
     "summary": "Modal overlay for focused tasks/flows that block the page until dismissed.",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "overlays-dialog--default"
   },
@@ -1855,6 +2412,8 @@
     "package": "editor",
     "component": "DiffEditor",
     "summary": "The Monaco side-by-side diff surface — the only diff in the library that can be typed into.",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "editor-diffeditor--side-by-side"
   },
@@ -1866,6 +2425,8 @@
     "package": "ai",
     "component": "DiffView",
     "summary": "A line-level unified diff inside an agent transcript — what the agent changed, with correct old/new line numbers.",
+    "question": "",
+    "block": null,
     "stories": 10,
     "first": "ai-diffview--default"
   },
@@ -1877,6 +2438,8 @@
     "package": "editor",
     "component": "DocumentOutline",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "editor-documentoutline--default"
   },
@@ -1888,6 +2451,8 @@
     "package": "process",
     "component": "DottedChart",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "process-dottedchart--absolute"
   },
@@ -1899,6 +2464,8 @@
     "package": "patterns",
     "component": null,
     "summary": "Two navigation levels plus a summoned third surface: a permanent 56px icon rail picks the area, a collapsible second panel lists that area's sections, and the floating inset carries the settings screen. A resizable right-hand SideDock holds the change history — a column above 1100px, an overlay below it. The icon rail is deliberately not a Sidebar, so it survives every breakpoint while the section panel becomes a sheet.",
+    "question": "",
+    "block": "sidebar-05",
     "stories": 13,
     "first": "layout-app-shell-double-sided--default"
   },
@@ -1910,6 +2477,8 @@
     "package": "ui",
     "component": "Drawer",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "overlays-drawer--default"
   },
@@ -1921,6 +2490,8 @@
     "package": "ui",
     "component": "DropdownMenu",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "overlays-dropdownmenu--default"
   },
@@ -1932,6 +2503,8 @@
     "package": "charts",
     "component": "EditSheet",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "dashboard-edit--fit-24-x-12"
   },
@@ -1943,6 +2516,8 @@
     "package": "patterns",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "foundations-elevation--elevation-scale"
   },
@@ -1954,6 +2529,8 @@
     "package": "ui",
     "component": "EmptyState",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "states-emptystate--default"
   },
@@ -1965,6 +2542,8 @@
     "package": "ui",
     "component": "ErrorState",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "states-errorstate--default"
   },
@@ -1976,6 +2555,8 @@
     "package": "ui",
     "component": "ExpandDialog",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 12,
     "first": "overlays-expanddialog--default"
   },
@@ -1987,6 +2568,8 @@
     "package": "charts",
     "component": "EngineDriverRecipe",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "dashboard-recipes-external-engine-driver--default"
   },
@@ -1998,6 +2581,8 @@
     "package": "data",
     "component": "FacetFilter",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "data-facetfilter--default"
   },
@@ -2009,6 +2594,8 @@
     "package": "marketing",
     "component": "FeatureGrid",
     "summary": "Grid of capability cards below the hero.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "marketing-featuregrid--default"
   },
@@ -2020,6 +2607,8 @@
     "package": "ui",
     "component": "FieldRoot",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "forms-field--default"
   },
@@ -2031,6 +2620,8 @@
     "package": "ui",
     "component": "FieldRow",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "forms-fieldrow--default"
   },
@@ -2042,6 +2633,8 @@
     "package": "ai",
     "component": "FileTree",
     "summary": "Hierarchical file/folder list for a workspace — `code` (IDE source tree) or `document` (produced assets) look.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "ai-filetree--default"
   },
@@ -2053,6 +2646,8 @@
     "package": "ui",
     "component": "FileUpload",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "forms-fileupload--default"
   },
@@ -2064,6 +2659,8 @@
     "package": "viewer",
     "component": "FileViewer",
     "summary": "Render a file the app did not write (upload, signed URL, agent output) — detects the format, loads the matching adapter on demand, draws it with brand-ui components.",
+    "question": "",
+    "block": null,
     "stories": 32,
     "first": "viewer-fileviewer--default"
   },
@@ -2075,6 +2672,8 @@
     "package": "charts",
     "component": "DashboardSheet",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "dashboard-tiles-filter--default"
   },
@@ -2086,6 +2685,8 @@
     "package": "data",
     "component": "FilterBar",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "data-filterbar--default"
   },
@@ -2097,6 +2698,8 @@
     "package": "data",
     "component": "FilterChip",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "data-filterbar-filterchip--default"
   },
@@ -2108,6 +2711,8 @@
     "package": "patterns",
     "component": null,
     "summary": "Sidebar + top nav + page layout scaffold for an internal app.",
+    "question": "",
+    "block": "app-shell",
     "stories": 12,
     "first": "layout-app-shell-flagship--default"
   },
@@ -2119,6 +2724,8 @@
     "package": "flow",
     "component": "FlowButtonEdge",
     "summary": "",
+    "question": "Raw data in",
+    "block": null,
     "stories": 2,
     "first": "flow-flowbuttonedge--default"
   },
@@ -2130,6 +2737,8 @@
     "package": "flow",
     "component": "FlowEdge",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "flow-flowedge--default"
   },
@@ -2141,6 +2750,8 @@
     "package": "flow",
     "component": "FlowEdgeTokens",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "flow-flowedgetokens--static-positions"
   },
@@ -2152,6 +2763,8 @@
     "package": "flow",
     "component": "FlowFloatingEdge",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "flow-flowfloatingedge--default"
   },
@@ -2163,6 +2776,8 @@
     "package": "flow",
     "component": "FlowGroupNode",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "flow-flowgroupnode--group-and-ungroup"
   },
@@ -2174,6 +2789,8 @@
     "package": "flow",
     "component": null,
     "summary": "",
+    "question": "Raw data in",
+    "block": null,
     "stories": 6,
     "first": "flow-flowlayout--default"
   },
@@ -2185,6 +2802,8 @@
     "package": "flow",
     "component": "ElkLayoutDemo",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "flow-flowlayoutelk--elk-layout"
   },
@@ -2196,6 +2815,8 @@
     "package": "flow",
     "component": "FlowMiniMap",
     "summary": "",
+    "question": "orders",
+    "block": null,
     "stories": 1,
     "first": "flow-flowminimap--default"
   },
@@ -2207,6 +2828,8 @@
     "package": "flow",
     "component": "FlowNode",
     "summary": "Branded custom React Flow node (title/subtitle/kind/icon/tone).",
+    "question": "orders table",
+    "block": null,
     "stories": 6,
     "first": "flow-flownode--default"
   },
@@ -2218,6 +2841,8 @@
     "package": "flow",
     "component": "FlowPlaceholderNode",
     "summary": "",
+    "question": "onto empty canvas",
+    "block": null,
     "stories": 3,
     "first": "flow-flowplaceholdernode--default"
   },
@@ -2229,6 +2854,8 @@
     "package": "flow",
     "component": "FlowSelfLoopEdge",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "flow-flowselfloopedge--self-loop"
   },
@@ -2240,6 +2867,8 @@
     "package": "flow",
     "component": "FlowSmartEdge",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "flow-flowsmartedge--default"
   },
@@ -2251,6 +2880,8 @@
     "package": "flow",
     "component": "FlowWeightedEdge",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "flow-flowweightededge--weighted"
   },
@@ -2262,6 +2893,8 @@
     "package": "ui",
     "component": "DemoForm",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "forms-form--default"
   },
@@ -2273,6 +2906,8 @@
     "package": "ai",
     "component": "Gallery",
     "summary": "Image/asset grid with a +N overflow tile that opens a lightbox Dialog (carousel + metadata).",
+    "question": "",
+    "block": null,
     "stories": 12,
     "first": "ai-gallery--single-image"
   },
@@ -2284,6 +2919,8 @@
     "package": "icons",
     "component": "DashboardIcon",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "icons-gallery--default"
   },
@@ -2295,6 +2932,8 @@
     "package": "marketing",
     "component": "GatesBand",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "marketing-gatesband--default"
   },
@@ -2306,6 +2945,8 @@
     "package": "ai",
     "component": "GroupedParts",
     "summary": "Renders an ordered message part list, folding adjacent reasoning/tool parts into collapsible traces.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "ai-groupedparts--default"
   },
@@ -2317,6 +2958,8 @@
     "package": "process",
     "component": "HappyPathEditor",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "process-happypatheditor--default"
   },
@@ -2328,6 +2971,8 @@
     "package": "flow",
     "component": "HelperLines",
     "summary": "",
+    "question": "orders",
+    "block": null,
     "stories": 2,
     "first": "flow-helperlines--default"
   },
@@ -2339,6 +2984,8 @@
     "package": "marketing",
     "component": "Hero",
     "summary": "Above-the-fold marketing headline, subcopy and the primary call to action.",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "marketing-hero--centered"
   },
@@ -2350,6 +2997,8 @@
     "package": "ui",
     "component": "HoverCard",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "overlays-hovercard--default"
   },
@@ -2361,6 +3010,8 @@
     "package": "icons",
     "component": "Icon",
     "summary": "The brand/product-vocabulary icon primitive — 24×24, stroke = currentColor, so it themes with text.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "icons-icon--decorative"
   },
@@ -2372,6 +3023,8 @@
     "package": "ui",
     "component": "IconButton",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "core-iconbutton--default"
   },
@@ -2383,6 +3036,8 @@
     "package": "ui",
     "component": "Demo",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "states-illustrations--empty-list"
   },
@@ -2394,6 +3049,8 @@
     "package": "ui",
     "component": "Input",
     "summary": "Single-line text field — the base form input.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "core-input--default"
   },
@@ -2405,6 +3062,8 @@
     "package": "ui",
     "component": "InputGroup",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "forms-inputgroup--search"
   },
@@ -2416,6 +3075,8 @@
     "package": "ui",
     "component": "InputOTP",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "forms-inputotp--default"
   },
@@ -2427,6 +3088,8 @@
     "package": "flow",
     "component": "InspectorPanel",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "flow-inspectorpanel--default"
   },
@@ -2438,6 +3101,8 @@
     "package": "ui",
     "component": "InstallTabs",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "display-installtabs--default"
   },
@@ -2449,6 +3114,8 @@
     "package": "ui",
     "component": "IntegrationMatrix",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "display-integrationmatrix--default"
   },
@@ -2460,6 +3127,8 @@
     "package": "charts",
     "component": "DashboardInteractionsEditor",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "dashboard-interactions--highlight-vs-filter"
   },
@@ -2471,6 +3140,8 @@
     "package": "terminal",
     "component": "InteractiveTerminal",
     "summary": "Streaming terminal surface for agent shell output, with an optional input line.",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "terminal-interactiveterminal--default"
   },
@@ -2482,6 +3153,8 @@
     "package": "editor",
     "component": "MarkdownPreview",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "editor-markdownpreview-iteration--stacked"
   },
@@ -2493,6 +3166,8 @@
     "package": "ui",
     "component": "Kbd",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "display-kbd--default"
   },
@@ -2504,6 +3179,8 @@
     "package": "ui",
     "component": "KeyboardShortcuts",
     "summary": "Grouped, searchable presentation of an application's shortcut set — the sheet the Kbd atom belongs in.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "disclosure-keyboardshortcuts--default"
   },
@@ -2515,6 +3192,8 @@
     "package": "ui",
     "component": "KeyValueEditor",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "forms-keyvalueeditor--default"
   },
@@ -2526,6 +3205,8 @@
     "package": "ui",
     "component": "Label",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "forms-label--default"
   },
@@ -2537,6 +3218,8 @@
     "package": "flow",
     "component": "Legend",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 10,
     "first": "flow-legend--default"
   },
@@ -2548,6 +3231,8 @@
     "package": "ui",
     "component": "LinkPreviewCard",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "core-linkpreviewcard--default"
   },
@@ -2559,6 +3244,8 @@
     "package": "ui",
     "component": "ListEditor",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "forms-listeditor--default"
   },
@@ -2570,6 +3257,8 @@
     "package": "ui",
     "component": "LoadingState",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "states-loadingstate--default"
   },
@@ -2581,6 +3270,8 @@
     "package": "ui",
     "component": "LocaleProvider",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "foundations-localization--default"
   },
@@ -2592,6 +3283,8 @@
     "package": "marketing",
     "component": "LogoStrip",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "marketing-logostrip--default"
   },
@@ -2603,6 +3296,8 @@
     "package": "patterns",
     "component": null,
     "summary": "Three-zone mail shell: the collapsible icon rail, a searchable message list, and a reading pane sharing one floating inset surface. A variation on the dashboard shell, not a separate idea; below md the two content zones become a drill-down.",
+    "question": "",
+    "block": "sidebar-04",
     "stories": 10,
     "first": "layout-app-shell-mail--default"
   },
@@ -2614,6 +3309,8 @@
     "package": "maps",
     "component": "MapArc",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "maps-maparc--default"
   },
@@ -2625,6 +3322,8 @@
     "package": "maps",
     "component": "MapCanvas",
     "summary": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "maps-mapcanvas--default"
   },
@@ -2636,6 +3335,8 @@
     "package": "maps",
     "component": "MapClusterLayer",
     "summary": "Clusters dense point data into count bubbles that split apart as you zoom in.",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "maps-mapclusterlayer--default"
   },
@@ -2647,6 +3348,8 @@
     "package": "maps",
     "component": "MapControls",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "maps-mapcontrols--default"
   },
@@ -2658,6 +3361,8 @@
     "package": "maps",
     "component": "MapGeoJSON",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "maps-mapgeojson--default"
   },
@@ -2669,6 +3374,8 @@
     "package": "maps",
     "component": "MapMarker",
     "summary": "A point on the map, optionally carrying content, a label, a popup or a tooltip.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "maps-mapmarker--default"
   },
@@ -2680,6 +3387,8 @@
     "package": "maps",
     "component": "MapRoute",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "maps-maproute--default"
   },
@@ -2691,6 +3400,8 @@
     "package": "editor",
     "component": "MarkdownEditor",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 11,
     "first": "editor-markdowneditor--default"
   },
@@ -2702,6 +3413,8 @@
     "package": "editor",
     "component": "MarkdownPreview",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "editor-markdownpreview--brand-dialect"
   },
@@ -2713,6 +3426,8 @@
     "package": "editor",
     "component": "MarkdownToolbar",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "editor-markdowntoolbar--default"
   },
@@ -2724,6 +3439,8 @@
     "package": "ai",
     "component": "MarkdownView",
     "summary": "Branded, read-only renderer for a produced markdown document (not a code view).",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "ai-markdownview--default"
   },
@@ -2735,6 +3452,8 @@
     "package": "editor",
     "component": "MarkdownWorkspace",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "editor-markdownworkspace--split"
   },
@@ -2746,6 +3465,8 @@
     "package": "ui",
     "component": "MatchHighlight",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "display-matchhighlight--default"
   },
@@ -2757,6 +3478,8 @@
     "package": "ui",
     "component": "MentionInput",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "forms-mentioninput--empty"
   },
@@ -2768,6 +3491,8 @@
     "package": "ui",
     "component": "Menubar",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "navigation-menubar--default"
   },
@@ -2779,6 +3504,8 @@
     "package": "editor",
     "component": "MermaidDiagram",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "editor-mermaiddiagram--default"
   },
@@ -2790,6 +3517,8 @@
     "package": "editor",
     "component": "MermaidWorkspace",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "editor-mermaidworkspace--default"
   },
@@ -2801,6 +3530,8 @@
     "package": "ai",
     "component": "MessageCompare",
     "summary": "Side-by-side 2-4 column comparison of model responses to the same prompt — the one-at-a-time sibling of MessageBranch.",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "ai-messagecompare--default"
   },
@@ -2812,6 +3543,8 @@
     "package": "ai",
     "component": "MessageEdit",
     "summary": "Edit-in-place for a user message — swaps the bubble between content and an editor.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "ai-messageedit--default"
   },
@@ -2823,6 +3556,8 @@
     "package": "ai",
     "component": "MessageFeedback",
     "summary": "Thumbs up/down on a single assistant message.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "ai-messagefeedback--default"
   },
@@ -2834,6 +3569,8 @@
     "package": "ai",
     "component": "MessageForm",
     "summary": "A model-emitted, zod-validated form rendered inside a chat message; returns structured values on submit.",
+    "question": "",
+    "block": null,
     "stories": 11,
     "first": "ai-messageform--default"
   },
@@ -2845,6 +3582,8 @@
     "package": "ai",
     "component": "MessageTable",
     "summary": "A model-emitted, column-oriented data table rendered as message content.",
+    "question": "",
+    "block": null,
     "stories": 11,
     "first": "ai-messagetable--default"
   },
@@ -2856,6 +3595,8 @@
     "package": "ui",
     "component": "Meter",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "display-meter--default"
   },
@@ -2867,6 +3608,8 @@
     "package": "editor",
     "component": "MetricBlock",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "editor-metricblock--default"
   },
@@ -2878,6 +3621,8 @@
     "package": "ui",
     "component": "MetricCard",
     "summary": "Single KPI tile — label, value, delta/trend.",
+    "question": "",
+    "block": null,
     "stories": 15,
     "first": "core-metriccard--default"
   },
@@ -2889,6 +3634,8 @@
     "package": "process",
     "component": "MetricLayerSwitch",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "process-metriclayerswitch--default"
   },
@@ -2900,6 +3647,8 @@
     "package": "ui",
     "component": "ModelPicker",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "core-modelpicker--default"
   },
@@ -2911,6 +3660,8 @@
     "package": "ai",
     "component": "ModelProviderLogo",
     "summary": "The mark of an AI model provider, sized for a row in a model list.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "ai-modelproviderlogo--default"
   },
@@ -2922,6 +3673,8 @@
     "package": "ui",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "foundations-motion--playground"
   },
@@ -2933,6 +3686,8 @@
     "package": "ui",
     "component": "NavigationMenu",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "navigation-navigationmenu--default"
   },
@@ -2944,6 +3699,8 @@
     "package": "ui",
     "component": "NavNotifications",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "navigation-navnotifications--default"
   },
@@ -2955,6 +3712,8 @@
     "package": "ui",
     "component": "NumberInput",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "forms-numberinput--default"
   },
@@ -2966,6 +3725,8 @@
     "package": "ui",
     "component": "Pagination",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "navigation-pagination--default"
   },
@@ -2977,6 +3738,8 @@
     "package": "charts",
     "component": "Panels",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "dashboard-chrome-panels--default"
   },
@@ -2988,6 +3751,8 @@
     "package": "patterns",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "foundations-paper--default"
   },
@@ -2999,6 +3764,8 @@
     "package": "ui",
     "component": "ParallaxPlane",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "display-parallaxplane--default"
   },
@@ -3010,6 +3777,8 @@
     "package": "process",
     "component": "PerformanceSpectrum",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "process-performancespectrum--top-segments"
   },
@@ -3021,6 +3790,8 @@
     "package": "ai",
     "component": "PermissionModeSelect",
     "summary": "Standing permission-policy chooser — how far the agent may act on its own, not whether one call proceeds.",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "ai-permissionmodeselect--default"
   },
@@ -3032,6 +3803,8 @@
     "package": "ai",
     "component": "Persona",
     "summary": "The animated agent avatar/presence mark (Rive), used as the assistant's identity.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "ai-persona--default"
   },
@@ -3043,6 +3816,8 @@
     "package": "ai",
     "component": "Plan",
     "summary": "A Card-shaped, collapsible plan the agent proposes before it starts executing — and the decision the human returns.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "ai-plan--default"
   },
@@ -3054,6 +3829,8 @@
     "package": "ui",
     "component": "Popover",
     "summary": "Anchored, dismissible floating panel for lightweight contextual content.",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "overlays-popover--default"
   },
@@ -3065,6 +3842,8 @@
     "package": "process",
     "component": "ProcessCompare",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "process-processcompare--side-by-side"
   },
@@ -3076,6 +3855,8 @@
     "package": "process",
     "component": "ProcessFilterBar",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "process-processfilterbar--single-filter"
   },
@@ -3087,6 +3868,8 @@
     "package": "process",
     "component": "ProcessKpiStrip",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "process-processkpistrip--default"
   },
@@ -3098,6 +3881,8 @@
     "package": "process",
     "component": "ProcessMap",
     "summary": "Directly-follows process map: activities as nodes, transitions as edges, both painted from one metric choice, with an accessible table twin.",
+    "question": "",
+    "block": null,
     "stories": 13,
     "first": "process-processmap--frequency"
   },
@@ -3109,6 +3894,8 @@
     "package": "process",
     "component": "ProcessReplay",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "process-processreplay--paused"
   },
@@ -3120,6 +3907,8 @@
     "package": "ui",
     "component": "Progress",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "display-progress--default"
   },
@@ -3131,6 +3920,8 @@
     "package": "ai",
     "component": "PromptInput",
     "summary": "Chat composer FORM (Enter submits) emitting a message to the app's runtime.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "ai-composer-promptinput--default"
   },
@@ -3142,6 +3933,8 @@
     "package": "ai",
     "component": "PromptInputEffort",
     "summary": "Composer control for an ordered reasoning-budget scale whose indicator fills as the level rises.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "ai-composer-promptinputeffort--default"
   },
@@ -3153,6 +3946,8 @@
     "package": "ai",
     "component": "PromptInputMode",
     "summary": "Composer control for the agent's operating mode — an app-defined enum of how autonomously it may act.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "ai-composer-promptinputmode--default"
   },
@@ -3164,6 +3959,8 @@
     "package": "ai",
     "component": "PromptInputSlash",
     "summary": "The slash-command palette over a composer — type `/`, filter by prefix, pick a command with the keyboard.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "ai-composer-promptinputslash--default"
   },
@@ -3175,6 +3972,8 @@
     "package": "editor",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "editor-prose--all"
   },
@@ -3186,6 +3985,8 @@
     "package": "ui",
     "component": "RadioGroup",
     "summary": "Mutually-exclusive single choice from a small visible set.",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "forms-radiogroup--default"
   },
@@ -3197,6 +3998,8 @@
     "package": "ui",
     "component": "Rating",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "forms-rating--default"
   },
@@ -3208,6 +4011,8 @@
     "package": "ui",
     "component": "ResizablePanelGroup",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "layout-resizable--default"
   },
@@ -3219,6 +4024,8 @@
     "package": "ui",
     "component": "Reveal",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "core-reveal--default"
   },
@@ -3230,6 +4037,8 @@
     "package": "ui",
     "component": "RevealOnEnter",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "display-revealonenter--default"
   },
@@ -3241,6 +4050,8 @@
     "package": "ui",
     "component": "RevisionTimeline",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "data-revisiontimeline--linear-history"
   },
@@ -3252,6 +4063,8 @@
     "package": "ui",
     "component": "SchemaForm",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 17,
     "first": "forms-schemaform--default"
   },
@@ -3263,6 +4076,8 @@
     "package": "ui",
     "component": "ScrollArea",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "display-scrollarea--default"
   },
@@ -3274,6 +4089,8 @@
     "package": "data",
     "component": "SearchInput",
     "summary": "Controlled search box that drives a DataTable's global filter.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "data-searchinput--default"
   },
@@ -3285,6 +4102,8 @@
     "package": "ui",
     "component": "SectionHeader",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "layout-sectionheader--default"
   },
@@ -3296,6 +4115,8 @@
     "package": "ui",
     "component": "SegmentedField",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "forms-segmentedfield--default"
   },
@@ -3307,6 +4128,8 @@
     "package": "ui",
     "component": "Select",
     "summary": "Single-choice dropdown from a known set of options.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "forms-select--default"
   },
@@ -3318,6 +4141,8 @@
     "package": "charts",
     "component": "DashboardSelectionBar",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "dashboard-selection-bar--with-filter-tiles"
   },
@@ -3329,6 +4154,8 @@
     "package": "ai",
     "component": "SelectionToolbar",
     "summary": "A floating toolbar over selected transcript text, offering Quote as the default action.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "ai-selectiontoolbar--default"
   },
@@ -3340,6 +4167,8 @@
     "package": "ui",
     "component": "Separator",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "display-separator--default"
   },
@@ -3351,6 +4180,8 @@
     "package": "icons",
     "component": "ServiceLogo",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "icons-servicelogo--default"
   },
@@ -3362,6 +4193,8 @@
     "package": "ai",
     "component": "SessionHeader",
     "summary": "Session launch card — model, workspace, capabilities, what's new and quick actions, shown above the greeting in an empty session.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "ai-sessionheader--default"
   },
@@ -3373,6 +4206,8 @@
     "package": "ai",
     "component": "SessionStatusBar",
     "summary": "Ambient session row — workspace, branch, model and integration-connection progress, docked above or below the transcript.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "ai-sessionstatusbar--default"
   },
@@ -3384,6 +4219,8 @@
     "package": "charts",
     "component": "DashboardSheet",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 13,
     "first": "dashboard-sheet--fit-24-x-12"
   },
@@ -3395,6 +4232,8 @@
     "package": "ui",
     "component": "Sheet",
     "summary": "Edge-anchored panel (left/right/top/bottom) for secondary flows beside the page.",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "overlays-sheet--default"
   },
@@ -3406,6 +4245,8 @@
     "package": "ui",
     "component": "SideDock",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "layout-sidedock--default"
   },
@@ -3417,6 +4258,8 @@
     "package": "ui",
     "component": "Skeleton",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "states-skeleton--card"
   },
@@ -3428,6 +4271,8 @@
     "package": "ui",
     "component": "SkipLink",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "navigation-skiplink--default"
   },
@@ -3439,6 +4284,8 @@
     "package": "editor",
     "component": "SlashMenu",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "editor-markdowneditor-slashmenu--default"
   },
@@ -3450,6 +4297,8 @@
     "package": "ui",
     "component": "Slider",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "forms-slider--default"
   },
@@ -3461,6 +4310,8 @@
     "package": "ui",
     "component": "SliderNumber",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "forms-slidernumber--default"
   },
@@ -3472,6 +4323,8 @@
     "package": "patterns",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "foundations-spacing-radius--spacing"
   },
@@ -3483,6 +4336,8 @@
     "package": "ui",
     "component": "SpecPlayground",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "display-specplayground--default"
   },
@@ -3494,6 +4349,8 @@
     "package": "ui",
     "component": "Spinner",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "display-spinner--default"
   },
@@ -3505,6 +4362,8 @@
     "package": "ui",
     "component": "SplitPanel",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "layout-splitpanel--master-detail"
   },
@@ -3516,6 +4375,8 @@
     "package": "ui",
     "component": "StatePanel",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "states-statepanel--empty"
   },
@@ -3527,6 +4388,8 @@
     "package": "marketing",
     "component": "StatsBand",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "marketing-statsband--default"
   },
@@ -3538,6 +4401,8 @@
     "package": "ui",
     "component": "StatusBadge",
     "summary": "The closed seven-state execution-status vocabulary, each state carrying its own icon as well as its own tone.",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "core-statusbadge--default"
   },
@@ -3549,6 +4414,8 @@
     "package": "ai",
     "component": "Suggestions",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "ai-suggestion--default"
   },
@@ -3560,6 +4427,8 @@
     "package": "ui",
     "component": "SurfaceTour",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "layout-surfacetour--default"
   },
@@ -3571,6 +4440,8 @@
     "package": "ui",
     "component": "Switch",
     "summary": "Immediate on/off setting toggle (applies on change, not on submit).",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "forms-switch--default"
   },
@@ -3582,6 +4453,8 @@
     "package": "ui",
     "component": "Table",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "data-table--default"
   },
@@ -3593,6 +4466,8 @@
     "package": "ui",
     "component": "Tabs",
     "summary": "Switch between peer views in the same context without navigating away.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "core-tabs--default"
   },
@@ -3604,6 +4479,8 @@
     "package": "ui",
     "component": "TagInput",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "forms-taginput--default"
   },
@@ -3615,6 +4492,8 @@
     "package": "editor",
     "component": "IterationTemplateDialog",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "editor-iteration-templatedialog--default"
   },
@@ -3626,6 +4505,8 @@
     "package": "terminal",
     "component": "Terminal",
     "summary": "Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming.",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "terminal-terminal--default"
   },
@@ -3637,6 +4518,8 @@
     "package": "terminal",
     "component": "TerminalBanner",
     "summary": "The console-dress launch card above an empty transcript: identity (name, model, version, workspace), capabilities, what's new and quick actions with key hints — every section independently optional.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "terminal-terminalbanner--default"
   },
@@ -3648,6 +4531,8 @@
     "package": "terminal",
     "component": "TerminalComposer",
     "summary": "The prompt composer for the agent-session family: a text input well, an optional mode indicator, an optional ordered effort scale, a shortcut-hint row, and a submit affordance that becomes a stop affordance while busy.",
+    "question": "",
+    "block": null,
     "stories": 11,
     "first": "terminal-terminalcomposer--default"
   },
@@ -3659,6 +4544,8 @@
     "package": "terminal",
     "component": "TerminalConsole",
     "summary": "The console FRAME (ADR 0033): the one resting surface a coding-agent console draws — edge, radius, ground and elevation — so a transcript, banner, permission prompt, composer and status bar sit inside it as flush regions separated by a single seam instead of as separately framed cards.",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "terminal-terminalconsole--default"
   },
@@ -3670,6 +4557,8 @@
     "package": "terminal",
     "component": "TerminalDiffHunk",
     "summary": "An inline unified diff hunk in console dress: a header naming the file, then one row per line — a line-number column, a polarity marker, and the line text — with a collapsed run of context lines behind a real disclosure.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "terminal-terminaldiffhunk--default"
   },
@@ -3681,6 +4570,8 @@
     "package": "terminal",
     "component": "TerminalEventLine",
     "summary": "The CLI dress of an agent lifecycle/hook event line: a fixed marker glyph, a label, and an optional phase/hook-count/duration, sharing AgentEvent's outcome and hook-count model so the two skins stay in sync.",
+    "question": "",
+    "block": null,
     "stories": 10,
     "first": "terminal-terminaleventline--default"
   },
@@ -3692,6 +4583,8 @@
     "package": "terminal",
     "component": "TerminalOverlay",
     "summary": "The console-dress modal frame: a real Radix Dialog painted on the terminal ground, with a title row, arbitrary caller content, and an optional key-hint legend along the bottom — a frame, not a catalogue of panels.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "terminal-terminaloverlay--default"
   },
@@ -3703,6 +4596,8 @@
     "package": "terminal",
     "component": "TerminalPermission",
     "summary": "The per-call scoped approval prompt: title, command preview, question, then numbered options whose SCOPE (once/session/deny) is stated in real label text and chosen through a real Radix RadioGroup, never a hand-rolled focus walk.",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "terminal-terminalpermission--default"
   },
@@ -3714,6 +4609,8 @@
     "package": "terminal",
     "component": "TerminalSlashMenu",
     "summary": "The `/`-command palette for the console composer: a popover listbox anchored to TerminalComposer's own textarea, filtered by prefix, navigated with wrapping/clamped arrow keys, and spliced into the text on Enter — the caret never leaves the field.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "terminal-terminalslashmenu--default"
   },
@@ -3725,6 +4622,8 @@
     "package": "terminal",
     "component": "TerminalStatusBar",
     "summary": "The ambient chrome row along the bottom of a console surface: branch and working directory on the left, connection/context/turn progress on the right, every fact independently optional.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "terminal-terminalstatusbar--default"
   },
@@ -3736,6 +4635,8 @@
     "package": "terminal",
     "component": "TerminalSurface",
     "summary": "The console ground for the agent-session family: the terminal surface, the mono type role and the two-column gutter grid, established once and published to every row inside.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "terminal-terminalsurface--default"
   },
@@ -3747,6 +4648,8 @@
     "package": "terminal",
     "component": "TerminalTodoList",
     "summary": "A three-state checklist (done/active/pending) rendered as a real <ol>/<li>, where each row's state is a glyph AND an announced word riding TerminalRow's gutterLabel, so it survives greyscale and reaches assistive tech.",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "terminal-terminaltodolist--default"
   },
@@ -3758,6 +4661,8 @@
     "package": "terminal",
     "component": "TerminalToolCall",
     "summary": "A single tool invocation dressed as a CLI line: a status glyph (success/error/pending), the tool name plus its optional argument in parentheses, a result summary on a `⎿` row, and detail behind a real disclosure.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "terminal-terminaltoolcall--default"
   },
@@ -3769,6 +4674,8 @@
     "package": "terminal",
     "component": "TerminalTranscriptRow",
     "summary": "One line of an agent transcript on top of TerminalRow: a closed kind axis (user/agent/output/error) that carries who spoke and whether it failed as a glyph, a colour and an accessible label.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "terminal-terminaltranscriptrow--default"
   },
@@ -3780,6 +4687,8 @@
     "package": "terminal",
     "component": "TerminalWorking",
     "summary": "The in-turn footer row pinned last in a transcript: a spinner/diamond glyph, a label, elapsed time, token spend and a stop control — the three facts and an exit the human needs while the agent runs.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "terminal-terminalworking--default"
   },
@@ -3791,6 +4700,8 @@
     "package": "ai",
     "component": "TestResults",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "ai-testresults--default"
   },
@@ -3802,6 +4713,8 @@
     "package": "ui",
     "component": "Textarea",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "core-textarea--default"
   },
@@ -3813,6 +4726,8 @@
     "package": "ui",
     "component": "ThemeFamilySwitch",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "core-themefamilyswitch--default"
   },
@@ -3824,6 +4739,8 @@
     "package": "ui",
     "component": "ThemeSwitcher",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "core-themeswitcher--toggle"
   },
@@ -3835,6 +4752,8 @@
     "package": "patterns",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "foundations-theming--overview"
   },
@@ -3846,6 +4765,8 @@
     "package": "patterns",
     "component": "ChatTileDemo",
     "summary": "A DashboardTileKind wrapping @elabs-ai/components-ai's ChatShell/Composer: the composer is disabled when the sheet's interactions.active is false.",
+    "question": "",
+    "block": "dashboard-tile-chat",
     "stories": 2,
     "first": "dashboard-recipes-tile-chat--default"
   },
@@ -3857,6 +4778,8 @@
     "package": "patterns",
     "component": "ProcessMapTileDemo",
     "summary": "A DashboardTileKind wrapping @elabs-ai/components-process's ProcessMap: the sheet's tri-state selection maps 1:1 onto ProcessMap's own selectionStates, and a node click emits that activity as the tile's selection.",
+    "question": "",
+    "block": "dashboard-tile-process-map",
     "stories": 1,
     "first": "dashboard-recipes-tile-process-map--default"
   },
@@ -3868,6 +4791,8 @@
     "package": "patterns",
     "component": "TableTileDemo",
     "summary": "A DashboardTileKind wrapping @elabs-ai/components-data's DataTable: selection tri-state dims/frames excluded rows, a row click toggles that row's field value into the sheet's selection.",
+    "question": "",
+    "block": "dashboard-tile-table",
     "stories": 1,
     "first": "dashboard-recipes-tile-table--default"
   },
@@ -3879,6 +4804,8 @@
     "package": "ui",
     "component": "Timeline",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "core-timeline--default"
   },
@@ -3890,6 +4817,8 @@
     "package": "ui",
     "component": "Toaster",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "feedback-toast--default"
   },
@@ -3901,6 +4830,8 @@
     "package": "ui",
     "component": "Toggle",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "forms-toggle--default"
   },
@@ -3912,6 +4843,8 @@
     "package": "ui",
     "component": "ToggleGroup",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "forms-togglegroup--default"
   },
@@ -3923,6 +4856,8 @@
     "package": "ui",
     "component": "TokenSpotlight",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "display-tokenspotlight--default"
   },
@@ -3934,6 +4869,8 @@
     "package": "charts",
     "component": "DashboardToolbar",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "dashboard-chrome-toolbar--default"
   },
@@ -3945,6 +4882,8 @@
     "package": "ui",
     "component": "Toolbar",
     "summary": "A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls.",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "layout-toolbar--default"
   },
@@ -3956,6 +4895,8 @@
     "package": "ai",
     "component": "ToolResultCard",
     "summary": "The artifact a tool PRODUCED, presented as the headline — raised surface, no border, children carry the payload. Its header row is title | actions | status, where actions are scoped to the whole artifact (expand, download, open).",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "ai-toolresultcard--default"
   },
@@ -3967,6 +4908,8 @@
     "package": "ui",
     "component": "Tooltip",
     "summary": "Transient hover/focus hint with supplementary (non-essential) text.",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "overlays-tooltip--default"
   },
@@ -3978,6 +4921,8 @@
     "package": "ui",
     "component": "Transfer",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "forms-transfer--default"
   },
@@ -3989,6 +4934,8 @@
     "package": "ui",
     "component": "Tree",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 13,
     "first": "navigation-tree--default"
   },
@@ -4000,6 +4947,8 @@
     "package": "ui",
     "component": "TreeSelect",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "forms-treeselect--default"
   },
@@ -4011,6 +4960,8 @@
     "package": "marketing",
     "component": "TrustStrip",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "marketing-truststrip--default"
   },
@@ -4022,6 +4973,8 @@
     "package": "ai",
     "component": "TurnStatus",
     "summary": "In-turn footer reporting the three facts a running turn owes the user: elapsed time, cost, and how to stop it.",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "ai-turnstatus--default"
   },
@@ -4033,6 +4986,8 @@
     "package": "ui",
     "component": "Text",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "foundations-typography--default"
   },
@@ -4044,6 +4999,8 @@
     "package": "marketing",
     "component": "UseCaseCard",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "marketing-usecasecard--default"
   },
@@ -4055,6 +5012,8 @@
     "package": "process",
     "component": "VariantExplorer",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 8,
     "first": "process-variantexplorer--top-ten"
   },
@@ -4066,6 +5025,8 @@
     "package": "ui",
     "component": "ViewToolbar",
     "summary": "The row above a list, table or board — status and filters on the left, actions on the right, every control its own tab stop.",
+    "question": "",
+    "block": null,
     "stories": 9,
     "first": "layout-viewtoolbar--default"
   },
@@ -4077,6 +5038,8 @@
     "package": "process",
     "component": "ViolationList",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 4,
     "first": "process-violationlist--default"
   },
@@ -4088,6 +5051,8 @@
     "package": "ui",
     "component": "VirtualSelect",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 6,
     "first": "forms-virtualselect--default"
   },
@@ -4099,6 +5064,8 @@
     "package": "patterns",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "ai-composer-withmentioninput--default"
   },
@@ -4110,6 +5077,8 @@
     "package": "ui",
     "component": "Wizard",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "navigation-wizard--default"
   },
@@ -4121,6 +5090,8 @@
     "package": "ui",
     "component": "WorkspacePicker",
     "summary": "Choose the workspace or project directory a session runs against, from recents or a typed path.",
+    "question": "",
+    "block": null,
     "stories": 7,
     "first": "core-workspacepicker--default"
   },
@@ -4132,6 +5103,8 @@
     "package": "flow",
     "component": "ZoomControls",
     "summary": "",
+    "question": "orders",
+    "block": null,
     "stories": 3,
     "first": "flow-zoomcontrols--default"
   },
@@ -4143,6 +5116,8 @@
     "package": "ai",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "patterns-templates-ai-assistant--default"
   },
@@ -4154,6 +5129,8 @@
     "package": "charts",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "patterns-templates-dashboard--default"
   },
@@ -4165,6 +5142,8 @@
     "package": "charts",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "patterns-templates-dashboard-sheet--default"
   },
@@ -4176,6 +5155,8 @@
     "package": "data",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "patterns-templates-data-app--default"
   },
@@ -4187,6 +5168,8 @@
     "package": "patterns",
     "component": "AdminConsole",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "patterns-templates-enterprise-admin-console--default"
   },
@@ -4198,6 +5181,8 @@
     "package": "flow",
     "component": null,
     "summary": "",
+    "question": "Raw data in",
+    "block": null,
     "stories": 1,
     "first": "patterns-templates-flow-workspace--default"
   },
@@ -4209,6 +5194,8 @@
     "package": "marketing",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "patterns-templates-marketing--default"
   },
@@ -4220,6 +5207,8 @@
     "package": "ui",
     "component": "ObjectDetailHub",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 2,
     "first": "patterns-templates-object-detail-hub--default"
   },
@@ -4231,6 +5220,8 @@
     "package": "process",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "patterns-templates-process-explorer--default"
   },
@@ -4242,6 +5233,8 @@
     "package": "ui",
     "component": "CustomersScreen",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 5,
     "first": "patterns-templates-screen-states--ready"
   },
@@ -4253,6 +5246,8 @@
     "package": "ui",
     "component": null,
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 1,
     "first": "patterns-templates-settings--default"
   },
@@ -4264,6 +5259,8 @@
     "package": "patterns",
     "component": "AgentSessionScreen",
     "summary": "",
+    "question": "",
+    "block": null,
     "stories": 3,
     "first": "patterns-templates-terminal-agent-session--default"
   }

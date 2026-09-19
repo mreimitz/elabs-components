@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DocPage } from "../../../../components/catalog/doc-page";
+import { isNativeBlock } from "../../../../components/catalog/block-render-meta";
 import { catalogPage, entriesOf } from "../../../../lib/catalog";
 import { catalogCopy } from "../../../../content/copy";
 
@@ -24,5 +25,13 @@ export default async function BlockPage({ params }: { params: Promise<Params> })
   const { slug } = await params;
   const page = catalogPage("blocks", slug);
   if (!page) notFound();
-  return <DocPage page={page} trail={[{ href: "/blocks", label: catalogCopy.sections.blocks }]} />;
+  const native = page.block?.name;
+  return (
+    <DocPage
+      page={page}
+      trail={[{ href: "/blocks", label: catalogCopy.sections.blocks }]}
+      nativeBlock={isNativeBlock(native) ? native : undefined}
+      wide={isNativeBlock(native)}
+    />
+  );
 }

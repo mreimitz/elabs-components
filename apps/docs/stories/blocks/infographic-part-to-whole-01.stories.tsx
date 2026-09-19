@@ -13,6 +13,7 @@ const meta = {
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Where does the money go?",
       description: {
         component:
           "Answers “where does the money go?” — a two-level treemap of Q3 cost, category → sub-category, drawn in one neutral mono shade except for the single highlighted tile, which is outlined and named with a Leader + HaloText callout stating its share and the change from last quarter. Tile area is exactly proportional to cost. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-part-to-whole-01` (pulls `kpi-card-parts`).",

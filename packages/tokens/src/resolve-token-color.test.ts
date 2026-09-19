@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { oklchToHex } from "./resolve-token-color";
+import { labToHex, oklchToHex } from "./resolve-token-color";
 
 describe("oklchToHex", () => {
   it("converts white and black", () => {
@@ -42,5 +42,32 @@ describe("oklchToHex", () => {
     expect(oklchToHex("rgb(1, 2, 3)")).toBeNull();
     expect(oklchToHex("var(--primary)")).toBeNull();
     expect(oklchToHex("")).toBeNull();
+  });
+});
+
+describe("labToHex", () => {
+  it("converts white, black and mid grey", () => {
+    expect(labToHex("lab(100% 0 0)")).toBe("#ffffff");
+    expect(labToHex("lab(0 0 0)")).toBe("#000000");
+    expect(labToHex("lab(53.585% 0 0)")).toBe("#808080");
+  });
+
+  it("converts what a CSS build step leaves for a green oklch token (negative a)", () => {
+    // The exact value MapLibre rejected: Lightning CSS lowers the token's oklch() to lab().
+    const hex = labToHex("lab(49.0713% -45.4403 30.0506)");
+    expect(hex).toMatch(/^#[0-9a-f]{6}$/);
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex!.slice(i, i + 2), 16));
+    expect(g).toBeGreaterThan(r!);
+    expect(g).toBeGreaterThan(b!);
+  });
+
+  it("appends an alpha byte for translucent colors", () => {
+    expect(labToHex("lab(100% 0 0 / 0.5)")).toBe("#ffffff80");
+    expect(labToHex("lab(100 0 0 / 50%)")).toBe("#ffffff80");
+  });
+
+  it("returns null for non-lab input", () => {
+    expect(labToHex("oklch(1 0 0)")).toBeNull();
+    expect(labToHex("#00ff00")).toBeNull();
   });
 });

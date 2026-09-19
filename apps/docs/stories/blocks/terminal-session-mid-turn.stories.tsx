@@ -9,7 +9,7 @@ import { TerminalSessionMidTurn } from "@/components/terminal-session-mid-turn/t
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Terminal Session (mid-turn)",
+  title: "Patterns/Blocks/AI and Terminal/Terminal Session Mid-turn",
   component: TerminalSessionMidTurn,
   parameters: {
     layout: "fullscreen",

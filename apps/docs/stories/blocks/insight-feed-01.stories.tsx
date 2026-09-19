@@ -6,10 +6,11 @@ import { InsightFeed } from "@/components/insight-feed-01/insight-feed";
  * Renders the SHIPPED registry block, not a copy of it — see `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Agent Ops/What Changed While You Were Away (Insight Feed)",
+  title: "Patterns/Blocks/Agent Ops/Insight Feed",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "What changed while you were away?",
       description: {
         component:
           "The AI-ops briefing: a numbered feed of what the copilot did or noticed — a one-sentence fact, a paragraph of why, evidence chips, a confidence meter and two actions. A conflict item carries no confidence (“No verdict — a person decides”). Beside it, “Needs a person” and “Derivation load”.\n\nCopy-own it: `npx shadcn add insight-feed-01` (pulls `agent-ops-parts`).",

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { StatCardChoropleth } from "@/components/stat-card-choropleth-01/stat-card-choropleth";
 
 const meta = {
-  title: "Patterns/Blocks/Stat Card (Choropleth)",
+  title: "Patterns/Blocks/Stat Cards/Choropleth Stat",
   parameters: {
     layout: "centered",
     docs: {

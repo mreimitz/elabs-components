@@ -3,18 +3,22 @@
  * its counts and lists from `content/generated/*.json` through `lib/content.ts` and hands the
  * client grids only what they render.
  */
-import { Badge, Button, SectionHeader, ThemeSwitcher } from "@elabs-ai/components-ui";
+import { Button, SectionHeader, ThemeSwitcher } from "@elabs-ai/components-ui";
 import { EntryGrid } from "../catalog/entry-grid";
+import { BlockHero } from "../catalog/block-renders";
+import { isNativeBlock } from "../catalog/block-render-meta";
+import { BLOCK_FAMILY_ORDER } from "../catalog/nav-model";
 import { StoryFrame } from "../catalog/story-frame";
-import { entriesOf } from "../../lib/catalog";
+import { entriesOf, grouped } from "../../lib/catalog";
+import { hrefOf } from "../../lib/catalog-index";
 import { catalogCopy, tourCopy } from "../../content/copy";
 import { ComponentWall } from "./component-wall";
 import { HeroDials } from "../hero/hero-dials";
-import { blocks, countFor, packages } from "../../lib/content";
-import { chartDetailLinks, titleCase } from "../../lib/gallery-links";
+import { countFor, packages } from "../../lib/content";
+import { chartDetailLinks } from "../../lib/gallery-links";
 import { galleryCopy } from "../../content/copy";
 import { CHART_TILE_COMPONENTS } from "./chart-tile-meta";
-import { FeaturedCharts, BlockExamples } from "./gallery-clients";
+import { FeaturedCharts } from "./gallery-clients";
 
 const copy = galleryCopy.sections;
 const SECTION = "mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16";
@@ -72,14 +76,24 @@ export function PackagesSection() {
   );
 }
 
+/** The blocks the home page leads with: one at working size, the rest as linked cards. */
+const FEATURED_BLOCK = "command-center-live-ops-01";
+const SHOWN_BLOCKS = [
+  "command-center-revenue-01",
+  "geo-network-map-01",
+  "infographic-journey-flow-01",
+  "agent-run-review-01",
+  "geo-fleet-tracker-01",
+  "command-center-market-tape-01",
+];
+
 export function BlocksSection() {
-  const categories = new Map<string, number>();
-  for (const block of blocks) {
-    for (const category of block.categories) {
-      categories.set(category, (categories.get(category) ?? 0) + 1);
-    }
-  }
-  const ordered = Array.from(categories.entries()).sort((a, b) => b[1] - a[1]);
+  const all = entriesOf("blocks");
+  const families = grouped(all, BLOCK_FAMILY_ORDER);
+  const featured = all.find((entry) => entry.block === FEATURED_BLOCK);
+  const shown = SHOWN_BLOCKS.map((name) => all.find((entry) => entry.block === name)).filter(
+    (entry): entry is NonNullable<typeof entry> => Boolean(entry),
+  );
   return (
     <section id="blocks" aria-labelledby="blocks-title" className={SECTION}>
       <SectionHeader
@@ -91,17 +105,36 @@ export function BlocksSection() {
           </Button>
         }
       />
-      <ul className="flex flex-wrap gap-2" aria-label={copy.blocks.count(blocks.length)}>
-        {ordered.map(([category, count]) => (
-          <li key={category}>
-            <Badge variant="outline" className="gap-2">
-              {titleCase(category)}
-              <span className="text-muted-foreground tabular-nums">{count}</span>
-            </Badge>
+      <ul className="flex flex-wrap gap-2" aria-label={copy.blocks.count(all.length)}>
+        {families.map(([family, list]) => (
+          <li key={family}>
+            <a
+              href={`/blocks#${family.toLowerCase().replace(/\s+/g, "-")}`}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-meta font-medium text-card-foreground hover:bg-accent focus-ring"
+            >
+              {family}
+              <span className="text-muted-foreground tabular-nums">{list.length}</span>
+            </a>
           </li>
         ))}
       </ul>
-      <BlockExamples />
+      {featured && isNativeBlock(featured.block) ? (
+        <figure className="flex flex-col gap-3">
+          <div className="rounded-lg border border-border bg-surface-muted p-4">
+            <BlockHero name={featured.block} />
+          </div>
+          <figcaption className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-body">
+            <a
+              href={hrefOf(featured)}
+              className="rounded-sm font-medium hover:underline focus-ring"
+            >
+              {featured.group} · {featured.name}
+            </a>
+            <span className="text-muted-foreground">{featured.question}</span>
+          </figcaption>
+        </figure>
+      ) : null}
+      <EntryGrid entries={shown} />
     </section>
   );
 }

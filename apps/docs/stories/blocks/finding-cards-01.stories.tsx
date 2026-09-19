@@ -8,10 +8,11 @@ import { FindingCards } from "@/components/finding-cards-01/finding-cards";
  */
 const meta = {
   component: FindingCards,
-  title: "Patterns/Blocks/Agent Ops/What Did The Copilot Find (Finding Cards)",
+  title: "Patterns/Blocks/Agent Ops/Finding Cards",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "What did the copilot find?",
       description: {
         component:
           "Recoverable-spend findings as a row of cards: a status badge naming the kind, a title, the recoverable figure as the only coloured number, a summary and a primary + secondary action — under a header that states the programme and the total.\n\nCopy-own it: `npx shadcn add finding-cards-01` (pulls `agent-ops-parts`).",
