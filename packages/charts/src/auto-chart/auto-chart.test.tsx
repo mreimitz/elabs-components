@@ -1316,6 +1316,29 @@ describe("AutoChart legend vs series end labels", () => {
 
     expect(autoLegend?.outerHTML).toBe(explicitLegend?.outerHTML);
   });
+
+  // Task 3(a)/(c) (sitting 3): the pre-existing suite above only ever
+  // selected `[data-slot="container-legend-root"]` — this locks in the
+  // accessible-name parity that selector swap (from AutoLegend's old
+  // `ul[aria-label="Chart legend"]`) must not have lost. `AutoLegend` gave
+  // its `<ul>` role "list" (native) plus this SAME name; `ChartLegend`'s
+  // root is a plain `<div>` with no ARIA list role, so the engine instead
+  // exposes `role="group"` + the identical name (`chart-legend.tsx`'s new
+  // `aria-label` prop, `use-container-legend.ts`'s `t("charts.legend.label")`
+  // default) — see the result file's "Existing keys" section for the full
+  // base-vs-branch accessibility-tree comparison (role/name/item count).
+  it("keeps an accessible name on the legend after the AutoLegend → engine swap (Acceptance-4, a11y)", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [{ key: "ebikes" }, { key: "cargo" }],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    // Item count parity with the old `<li>`-per-series `AutoLegend`.
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
 });
 
 // BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.
