@@ -129,6 +129,21 @@ export const InAmbientTextContainer: Story = {
       );
     };
 
+    /*
+     * `Input` animates its colour, and reduced motion only shortens that to
+     * 0.01ms: until the browser draws its next frame, a read straight after a
+     * flip still returns the previous theme's ink. Measure the resting colour.
+     * A transition that a newer one replaces rejects instead of finishing, so
+     * wait until none is left rather than for the first batch.
+     */
+    const settle = async () => {
+      for (;;) {
+        const running = [reference, nested, muted].flatMap((input) => input.getAnimations());
+        if (running.length === 0) return;
+        await Promise.allSettled(running.map((animation) => animation.finished));
+      }
+    };
+
     const host = themeHost(nested);
     const original = host.getAttribute("data-theme");
     /*
@@ -148,11 +163,13 @@ export const InAmbientTextContainer: Story = {
     try {
       host.setAttribute("data-theme", "light");
       await assertThemeApplied("light");
+      await settle();
       const lightInk = getComputedStyle(nested).color;
       await assertMatchesReference();
 
       host.setAttribute("data-theme", "dark");
       await assertThemeApplied("dark");
+      await settle();
       await assertMatchesReference();
       // The two themes must actually resolve to different ink, or "checked in
       // both themes" is a claim about an attribute nobody read.

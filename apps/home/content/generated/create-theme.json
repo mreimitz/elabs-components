@@ -1,0 +1,6 @@
+{
+  "skill": "brand-ui-create-theme",
+  "slashCommand": "/brand-ui-create-theme",
+  "argumentHint": "<theme name> [links, file paths, brief]",
+  "invocation": "/brand-ui-create-theme <theme name> [links, file paths, brief]"
+}

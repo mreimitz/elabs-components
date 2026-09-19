@@ -275,3 +275,5 @@ export * from "./components/spec-playground";
 // IntegrationMatrix, InstallTabs — RM-102
 export * from "./components/integration-matrix";
 export * from "./components/install-tabs";
+// TokenSpotlight — RM-103
+export * from "./components/token-spotlight";
