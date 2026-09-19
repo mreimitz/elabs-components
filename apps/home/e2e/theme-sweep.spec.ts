@@ -15,7 +15,12 @@ import {
 // Reduced motion keeps the captures deterministic: no stream-in, no parallax, no crossfade.
 test.use({ contextOptions: { reducedMotion: "reduce" } });
 
-const SWEPT: RegionName[] = ["hero", "tour", "agents", "tokens"];
+// Screenshot budget (brief: 72 PNGs under 8 MB, else reduce): the full 4-region set measured
+// 8.12 MB for 54 PNGs without `tokens`, so every family keeps `hero` + `tour` and only the two
+// reference families (`default`, `qlik`) keep every region. The value assertions still run for all.
+const FULL_SET = new Set(["default", "qlik"]);
+const SWEPT = (slug: string): RegionName[] =>
+  FULL_SET.has(slug) ? ["hero", "tour", "agents", "tokens"] : ["hero", "tour"];
 
 for (const family of THEME_FAMILIES) {
   for (const { mode, value, background } of family.modes) {
@@ -27,7 +32,7 @@ for (const family of THEME_FAMILIES) {
       testInfo.annotations.push({ type: "value", description: `${value} body ${computed}` });
       await page.mouse.move(0, 0);
 
-      for (const region of SWEPT) {
+      for (const region of SWEPT(family.slug)) {
         const target = page.locator(REGIONS[region]);
         if ((await target.count()) === 0) {
           testInfo.annotations.push({
