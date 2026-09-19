@@ -1370,6 +1370,23 @@ describe("AutoChart legend vs series end labels", () => {
     // is declared further up this file for the existing 'pie' tests.
     expect(legend.querySelectorAll(":scope > *")).toHaveLength(smallPositiveData.length);
   });
+
+  it("keeps the 'Chart legend' name and item-count parity for 'scatter' (RM-118 Part B)", () => {
+    const spec: ChartSpec = {
+      type: "scatter",
+      data: [
+        { x: 1, y: 10, z: 5 },
+        { x: 2, y: 20, z: 8 },
+        { x: 3, y: 15, z: 12 },
+      ],
+      x: "x",
+      xType: "number",
+      series: ["y", "z"],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
 });
 
 // BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.

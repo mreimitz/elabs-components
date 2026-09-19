@@ -43,6 +43,24 @@ export const Default: Story = {
   ),
 };
 
+// Legend engine (RM-118): placement + hover only, no toggle (Scatter has no
+// per-series hide).
+export const LegendHoverOnly: Story = {
+  name: "Legend, hover only",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ScatterChart data={chartData} legend>
+        <Grid horizontal />
+        <Scatter animate={false} dataKey="sessions" />
+        <Scatter animate={false} dataKey="conversions" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </ScatterChart>
+    </div>
+  ),
+};
+
 export const SingleSeries: Story = {
   render: () => (
     <div className="h-72 w-[560px]">
@@ -460,6 +478,38 @@ export const BubbleSizeColorAndLogAxis: Story = {
     );
     expect(fills.size).toBeGreaterThan(1);
     expect(canvasElement.querySelector('[data-slot="scatter-custom-shapes"]')).not.toBeNull();
+  },
+};
+
+// Legend engine (RM-118 R4): a `colorBy` child's own colour key is ONE key
+// per chart — it replaces the plain per-series (`dataKey`) legend row, using
+// the SAME colour stops `resolveColorBy` gives the points themselves.
+export const LegendColorByKey: Story = {
+  name: "Legend, colour key",
+  render: () => (
+    <div className="h-80 w-full max-w-[640px]">
+      <ScatterChart data={studentLoanData} legend xDataKey="loaned" xScale="linear">
+        <Grid horizontal />
+        <Scatter
+          animate={false}
+          colorBy={{ key: "eu" }}
+          dataKey="rate"
+          sizeKey="loaned"
+          sizeRange={[6, 26]}
+        />
+        <XAxis scale="log" title="Amount loaned" />
+        <YAxis title="Repayment rate" titlePlacement="inside" />
+        <ChartTooltip />
+      </ScatterChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    });
+    const legend = canvasElement.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("EU");
+    expect(legend?.textContent).toContain("Non-EU");
   },
 };
 

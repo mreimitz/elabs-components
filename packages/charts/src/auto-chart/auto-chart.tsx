@@ -283,6 +283,7 @@ const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   // RM-118 Part B
   "bar",
   "pie",
+  "scatter",
 ]);
 
 interface AutoLegendProps {
@@ -625,6 +626,7 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           data={scatterData}
+          legend={containerLegend}
           xDataKey={x}
           xScale={spec.xType === "number" ? "linear" : "time"}
           accessibleLabel={spec.title}
