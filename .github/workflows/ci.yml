@@ -152,7 +152,9 @@ jobs:
     name: Create matrix (${{ matrix.os }}, ${{ matrix.pm }})
     needs: create-pack
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    # windows × npm is the slow cell: six apps, each installed twice (npm install,
+    # then the app's own `npm ci`), took 41.4 min on 2026-09-19. Keep headroom.
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
