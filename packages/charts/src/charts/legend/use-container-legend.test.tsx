@@ -22,8 +22,17 @@ function Demo({ legend }: { legend?: Parameters<typeof useContainerLegend>[0]["l
 }
 
 describe("useContainerLegend", () => {
-  it("defaults to a visible, top-positioned, row-laid-out legend for 2+ items", () => {
+  // R1 (orchestrator ruling, sitting 3): an unset `legend` never shows a
+  // legend — moved into the engine itself so every container inherits it
+  // from one place (see `use-container-legend.ts`'s `wants` computation).
+  it("an unset legend never renders, even with 2+ items", () => {
     render(<Demo />);
+    expect(screen.getByTestId("visible").textContent).toBe("false");
+    expect(screen.queryByText("Revenue")).toBeNull();
+  });
+
+  it("legend={true} renders a visible, top-positioned, row-laid-out legend for 2+ items", () => {
+    render(<Demo legend />);
     expect(screen.getByTestId("visible").textContent).toBe("true");
     expect(screen.getByTestId("position").textContent).toBe("top");
     expect(screen.getByTestId("layout").textContent).toBe("row");
@@ -31,10 +40,22 @@ describe("useContainerLegend", () => {
     expect(screen.getByText("Cost")).toBeInTheDocument();
   });
 
+  it("a config object turns the legend on just like legend={true}", () => {
+    render(<Demo legend={{}} />);
+    expect(screen.getByTestId("visible").textContent).toBe("true");
+  });
+
   it("legend={false} never renders, even with 2+ items", () => {
     render(<Demo legend={false} />);
     expect(screen.getByTestId("visible").textContent).toBe("false");
     expect(screen.queryByText("Revenue")).toBeNull();
+  });
+
+  it("gives the mounted legend the locale-aware accessible name AutoLegend used to have", () => {
+    const { container } = render(<Demo legend />);
+    const root = container.querySelector(".legend-container");
+    expect(root).toHaveAttribute("role", "group");
+    expect(root).toHaveAccessibleName("Chart legend");
   });
 
   it("wraps the plot in a flex row and shrinks a right-positioned legend to a fixed column", () => {
@@ -45,19 +66,19 @@ describe("useContainerLegend", () => {
     expect(root?.className).toContain("flex-row");
   });
 
-  it("density xs hides the legend entirely", () => {
+  it("density xs hides an explicitly-on legend entirely", () => {
     render(
       <ChartConfigProvider value={{ density: "xs" }}>
-        <Demo />
+        <Demo legend />
       </ChartConfigProvider>,
     );
     expect(screen.getByTestId("visible").textContent).toBe("false");
   });
 
-  it("density sm still renders, stacked", () => {
+  it("density sm still renders an explicitly-on legend, stacked", () => {
     render(
       <ChartConfigProvider value={{ density: "sm" }}>
-        <Demo />
+        <Demo legend />
       </ChartConfigProvider>,
     );
     expect(screen.getByTestId("visible").textContent).toBe("true");

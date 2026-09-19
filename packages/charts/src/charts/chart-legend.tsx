@@ -90,6 +90,16 @@ export interface ChartLegendProps {
   currency?: string;
   /** Title shown above the legend */
   title?: string;
+  /**
+   * Accessible name for the legend region (RM-118, sitting 3). Unset
+   * (default — every caller before this prop existed) renders no role/name,
+   * byte-identical to before. `useContainerLegend` (the container legend
+   * engine) always passes the locale-aware `"charts.legend.label"` default
+   * ("Chart legend") — the same name `AutoChart`'s old `AutoLegend` gave its
+   * `<ul aria-label>` before the engine replaced it. A direct caller may set
+   * its own or leave it unset.
+   */
+  "aria-label"?: string;
   /** Additional class name for the container */
   className?: string;
   /** Class name for the title */
@@ -288,6 +298,7 @@ export function ChartLegend({
   valueFormat,
   currency,
   title,
+  "aria-label": ariaLabel,
   className = "",
   titleClassName = "text-sm font-semibold",
   itemClassName = "",
@@ -336,7 +347,11 @@ export function ChartLegend({
   }
 
   return (
-    <div className={cn("legend-container flex flex-col gap-2", className)} ref={containerRef}>
+    <div
+      className={cn("legend-container flex flex-col gap-2", className)}
+      ref={containerRef}
+      {...(ariaLabel ? { role: "group", "aria-label": ariaLabel } : {})}
+    >
       {title && <h3 className={cn("mb-1 text-legend-foreground", titleClassName)}>{title}</h3>}
       {items.map((item, i) => {
         const percentage = item.maxValue ? (item.value / item.maxValue) * 100 : 0;

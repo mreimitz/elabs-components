@@ -186,9 +186,8 @@ export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps
    * Legend engine (RM-118): `true` or a config object mounts `ChartLegend`
    * beside the plot via `useContainerLegend`; `{ interactive: "toggle" }`
    * hides a band and re-tweens the y-domain. Unset (default) renders
-   * NOTHING new — RM-110's end labels stay the default multi-series key for
-   * `AreaChart`, unlike `useContainerLegend`'s generic "on when there's more
-   * than one item" default.
+   * NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end
+   * labels stay the default multi-series key for `AreaChart`.
    */
   legend?: ContainerLegendProp;
 }
@@ -452,10 +451,9 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
       })),
     [areaConfigsForLegend],
   );
-  // An unset `legend` never turns `useContainerLegend`'s generic "more than
-  // one item" default on for THIS container — see `AreaChartProps.legend`.
-  const containerLegendProp: ContainerLegendProp =
-    legend === true || (typeof legend === "object" && legend !== null) ? legend : false;
+  // R1 (moved into the engine, sitting 3): `useContainerLegend` itself now
+  // treats an unset `legend` as "off" — see its module doc — so `AreaChart`
+  // forwards its own `legend` prop straight through, no per-file guard.
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
   const handleLegendHoverChange = useCallback(
@@ -466,7 +464,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     [legendItems],
   );
   const containerLegend = useContainerLegend({
-    legend: containerLegendProp,
+    legend,
     items: legendItems,
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,

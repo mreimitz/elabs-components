@@ -23,7 +23,7 @@
  */
 
 import { type ReactNode, createElement, useCallback, useMemo, useState } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, useLocale } from "@elabs-ai/components-ui";
 import {
   resolveResponsive,
   useMeasuredChartBreakpoint,
@@ -115,6 +115,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
   const resolvedItems = useMemo(() => items ?? [], [items]);
 
   const { density } = useChartConfig();
+  const { t } = useLocale();
   const { ref, breakpoint } = useMeasuredChartBreakpoint<HTMLDivElement>();
 
   const [internalHovered, setInternalHovered] = useState<number | null>(null);
@@ -140,9 +141,14 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
   );
 
   const configProp = typeof legend === "object" && legend !== null ? legend : undefined;
-  const explicitlyOn = legend === true || configProp !== undefined;
-  const implicitlyOn = legend === undefined && resolvedItems.length > 1;
-  const wants = legend !== false && (explicitlyOn || implicitlyOn);
+  // R1 (orchestrator ruling, sitting 3): an unset `legend` NEVER shows a
+  // legend — moved here, into the engine itself, so every container inherits
+  // it from one place instead of each caller re-guarding `legend === true ||
+  // typeof legend === "object"` before calling this hook (sitting 2's
+  // `LineChart`/`AreaChart` did exactly that; see their `git blame` for the
+  // now-removed `containerLegendProp` guard). Only an explicit `true` or a
+  // config object turns the legend on; `false` and `undefined` both mean "no".
+  const wants = legend === true || configProp !== undefined;
 
   let position = resolveResponsive(configProp?.position ?? DEFAULT_POSITION, breakpoint);
   // Change §"RM-118 legend engine": narrow never renders left/right.
@@ -182,6 +188,12 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         valueFormat,
         currency,
         title: configProp?.title as string | undefined,
+        // Task 3(c) (sitting 3): a bare `ChartLegend` has no accessible name
+        // of its own (see `chart-legend.tsx`'s `"aria-label"` prop doc) — the
+        // engine gives every container legend the SAME name `AutoLegend` gave
+        // its `<ul>` before RM-118 replaced it, so AutoChart's legend keeps
+        // an accessible name across the swap.
+        "aria-label": t("charts.legend.label"),
         // The engine's own default ({ position, layout, interactive }) IS the
         // "explicit legend" ADR 0039 says wins over the narrow/`sm` tier
         // default — so this only ever hides at `xs` (no room at all), never
