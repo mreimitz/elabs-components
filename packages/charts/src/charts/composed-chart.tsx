@@ -4,6 +4,10 @@ import { ParentSize } from "@visx/responsive";
 import { useChartConfig } from "./chart-config-context";
 import type { GridProps } from "./grid";
 import { tickTargetForHeight } from "./tick-targets";
+import {
+  type ChartTooltipTableAxisGroup,
+  ChartTooltipTableAxisGroupsContext,
+} from "./tooltip/tooltip-table";
 import { DualAxisContext, useSideLabel, type YAxisProps } from "./y-axis";
 import {
   DEFAULT_Y_AXIS_ID,
@@ -470,6 +474,8 @@ interface ChartInnerProps {
   legendVisible?: boolean;
   /** Dual-axis — RM-121: see `ComposedChartProps.yAxes`. */
   yAxes?: DualAxisOptions;
+  /** Dual-axis — RM-121: the per-axis column groups of `ChartTooltip variant="table"`. */
+  tooltipAxisGroups?: readonly ChartTooltipTableAxisGroup[];
 }
 
 function ChartInner({
@@ -502,6 +508,7 @@ function ChartInner({
   legendHoveredKey,
   legendVisible,
   yAxes,
+  tooltipAxisGroups,
 }: ChartInnerProps) {
   // Dual-axis — RM-121: plan both value axes, then hand the plan to the
   // direct `YAxis`/`Grid` children as ordinary `domain`/`ticks` props — the
@@ -608,7 +615,11 @@ function ChartInner({
     </ChartSeriesModeProvider>
   );
   const chartWithAxes = dualPlan ? (
-    <DualAxisContext.Provider value={true}>{chart}</DualAxisContext.Provider>
+    <DualAxisContext.Provider value={true}>
+      <ChartTooltipTableAxisGroupsContext.Provider value={tooltipAxisGroups}>
+        {chart}
+      </ChartTooltipTableAxisGroupsContext.Provider>
+    </DualAxisContext.Provider>
   ) : (
     chart
   );
@@ -808,6 +819,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 xDataKey={xDataKey}
                 xScaleType={xScaleType}
                 yAxes={yAxes}
+                tooltipAxisGroups={legendSplitGroups}
                 yDomainTweenDuration={yDomainTweenDuration}
               >
                 {children}

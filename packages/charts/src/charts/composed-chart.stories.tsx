@@ -365,7 +365,7 @@ export const DualAxis: Story = {
         <YAxis matchSeriesColor />
         <YAxis matchSeriesColor orientation="right" unit="%" yAxisId="right" />
         <XAxis />
-        <ChartTooltip />
+        <ChartTooltip variant="table" />
       </ComposedChart>
     </div>
   ),
