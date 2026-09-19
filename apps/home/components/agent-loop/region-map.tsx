@@ -2,23 +2,19 @@
 /**
  * Region map (RM-099) — the render for "Show revenue by region on a map". The RM named the
  * `stat-card-choropleth-01` block, but it needs `geojson` + `topojson-client`, which the site's
- * library-only rule (`home-imports`) blocks; this composes `MapCanvas` + `MapGeoJSON` +
- * `MapMarker` from `@elabs-ai/components-maps` over the order fixture instead.
+ * library-only rule (`home-imports`) blocks; this composes `MapCanvas` + `MapMarker` from
+ * `@elabs-ai/components-maps` over the order fixture instead.
  *
  * `blank` (orchestrator ruling 15): the tile-less transparent style, so the map makes NO request
- * to any outside origin (no basemap, glyph or sprite fetch). The geography cue is a generated
- * 30° graticule drawn with `MapGeoJSON`; each region is a marker labelled with its revenue.
+ * to any outside origin (no basemap, glyph or sprite fetch). Each region is a marker labelled with
+ * its revenue. A token-coloured outline layer would need the maps package's `useTokenColor`, which
+ * is not exported (WebGL paint cannot read CSS variables), so the blank canvas carries no
+ * geography lines.
  * Reached only through a dynamic `import()` in `renders.tsx`, so the maps chunk loads when this
  * prompt runs, never before.
  */
 import { useMemo } from "react";
-import {
-  MapCanvas,
-  MapGeoJSON,
-  MapMarker,
-  MapMarkerContent,
-  MapMarkerLabel,
-} from "@elabs-ai/components-maps";
+import { MapCanvas, MapMarker, MapMarkerContent, MapMarkerLabel } from "@elabs-ai/components-maps";
 import { REGIONS, type Region } from "../../content/fixtures/company";
 import { generateOrders } from "../../content/fixtures/orders";
 
@@ -29,30 +25,6 @@ const REGION_POINTS: Record<Region, [number, number]> = {
   APAC: [115, 10],
   LATAM: [-60, -15],
 };
-
-/** Meridians every 30° and parallels every 30°, as LineStrings — geography without tiles. */
-function graticule() {
-  const features = [];
-  for (let lng = -180; lng <= 180; lng += 30)
-    features.push({
-      type: "Feature" as const,
-      properties: {},
-      geometry: {
-        type: "LineString" as const,
-        coordinates: Array.from({ length: 17 }, (_, i) => [lng, -80 + i * 10]),
-      },
-    });
-  for (let lat = -60; lat <= 60; lat += 30)
-    features.push({
-      type: "Feature" as const,
-      properties: {},
-      geometry: {
-        type: "LineString" as const,
-        coordinates: Array.from({ length: 37 }, (_, i) => [-180 + i * 10, lat]),
-      },
-    });
-  return { type: "FeatureCollection" as const, features };
-}
 
 export type RegionMapProps = {
   label: string;
@@ -65,7 +37,6 @@ export function RegionMap({ label, locale = "en-US" }: RegionMapProps) {
     for (const order of generateOrders(2000)) totals[order.region] += order.amount;
     return totals;
   }, []);
-  const lines = useMemo(graticule, []);
   const money = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "USD",
@@ -79,7 +50,6 @@ export function RegionMap({ label, locale = "en-US" }: RegionMapProps) {
       aria-label={label}
     >
       <MapCanvas blank viewport={{ center: [0, 20], zoom: 0.4 }}>
-        <MapGeoJSON id="agent-loop-graticule" data={lines} fillPaint={false} />
         {REGIONS.map((region) => (
           <MapMarker
             key={region}

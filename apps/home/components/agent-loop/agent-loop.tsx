@@ -41,6 +41,7 @@ export function AgentLoop({ prompts = PROMPTS, transport, honestyLine, onRun }: 
   const traceRef = useRef<HTMLOListElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const honestyRef = useRef<HTMLDivElement>(null);
   const focusTarget = useRef<"trace" | "heading" | "prompt" | null>(null);
 
   useEffect(() => {
@@ -48,7 +49,12 @@ export function AgentLoop({ prompts = PROMPTS, transport, honestyLine, onRun }: 
       traceRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
       focusTarget.current = null;
     } else if (focusTarget.current === "heading" && rendered) {
-      headingRef.current?.focus();
+      // The render slot has a fixed height (`h-128`, reserved so the lazy block cannot shift
+      // the layout), so the line's position is final now. Bring the honesty line (D5) into view with the block — it sits directly under the
+      // render slot and must be on screen once the block lands (concept §8.4) — then move
+      // focus to the block's heading without a second scroll.
+      honestyRef.current?.scrollIntoView({ block: "nearest" });
+      headingRef.current?.focus({ preventScroll: true });
       focusTarget.current = null;
     } else if (focusTarget.current === "prompt" && phase === "idle") {
       textareaRef.current?.focus();
@@ -145,11 +151,16 @@ export function AgentLoop({ prompts = PROMPTS, transport, honestyLine, onRun }: 
                   {copy.renderHeading(title)}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-4">
+              <CardContent
+                role="region"
+                aria-label={copy.renderHeading(title)}
+                tabIndex={0}
+                className="focus-ring-inset flex h-128 flex-col gap-4 overflow-y-auto"
+              >
                 {Surface ? (
                   <Surface label={copy.regionMapLabel} />
                 ) : (
-                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4">
                     {rendered.blocks.map((id) => {
                       const Block = BLOCK_RENDERS[id];
                       return Block ? <Block key={id} /> : null;
@@ -164,7 +175,7 @@ export function AgentLoop({ prompts = PROMPTS, transport, honestyLine, onRun }: 
             </CardContent>
           )}
         </Card>
-        {honestyLine}
+        <div ref={honestyRef}>{honestyLine}</div>
       </div>
     </div>
   );

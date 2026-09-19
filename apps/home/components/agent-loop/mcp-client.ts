@@ -8,7 +8,6 @@
  * the recorded answer from `agent-loop-recorded.json` and `recorded: true`, so the UI can badge
  * the card instead of breaking. No model is ever called (D5): this is a lookup server.
  */
-import { findRecorded } from "./prompt-map";
 
 export type McpCallOutcome = { recorded: boolean; result: unknown };
 export type AgentLoopTransport = {
@@ -20,7 +19,7 @@ export type McpClientOptions = {
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
   /** Where a failed call's answer comes from; defaults to the generated recorded responses. */
-  recorded?: (tool: string, args: unknown) => unknown;
+  recorded?: (tool: string, args: unknown) => unknown | Promise<unknown>;
 };
 
 export const MCP_PROTOCOL_VERSION = "2025-06-18";
@@ -56,7 +55,7 @@ export function createMcpClient({
   endpoint = "/mcp",
   timeoutMs = 4000,
   fetchImpl,
-  recorded = findRecorded,
+  recorded = (tool, args) => import("./recorded").then((m) => m.findRecorded(tool, args)),
 }: McpClientOptions = {}): AgentLoopTransport {
   let nextId = 1;
   let initialized: Promise<void> | null = null;
@@ -107,7 +106,7 @@ export function createMcpClient({
         const result = await rpc("tools/call", { name: tool, arguments: args });
         return { recorded: false, result };
       } catch {
-        return { recorded: true, result: recorded(tool, args) };
+        return { recorded: true, result: await recorded(tool, args) };
       }
     },
   };

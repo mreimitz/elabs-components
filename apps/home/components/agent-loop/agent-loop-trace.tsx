@@ -3,11 +3,13 @@
  * AgentLoopTrace (RM-099) — one ai `Tool` card per MCP call. Name, arguments and the raw JSON
  * result sit in the card's collapsible body (`ToolInput`/`ToolOutput`); the elapsed ms and the
  * "recorded" badge are composed by the site into `ToolHeader`'s `summary` slot, so no ai part
- * is edited. Cards enter with a short slide under `motion-safe` only — reduced motion shows
+ * is edited. The body composes the ai `CodeBlock` with `wrap` (rather than `ToolInput`/`ToolOutput`,
+ * which render it unwrapped): long MCP text would otherwise overflow into a horizontal scroll
+ * container that is not keyboard-focusable (axe `scrollable-region-focusable`). Cards enter with a short slide under `motion-safe` only — reduced motion shows
  * them in place (the 350 ms step floor is readability, and stays).
  */
 import { forwardRef } from "react";
-import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@elabs-ai/components-ai";
+import { CodeBlock, Tool, ToolContent, ToolHeader } from "@elabs-ai/components-ai";
 import { Badge } from "@elabs-ai/components-ui";
 import type { TraceStep } from "./run-loop";
 
@@ -16,6 +18,8 @@ export type AgentLoopTraceLabels = {
   recordedHint: string;
   pending: string;
   elapsed: (ms: number) => string;
+  arguments: string;
+  result: string;
 };
 
 export type AgentLoopTraceProps = { steps: TraceStep[]; labels: AgentLoopTraceLabels };
@@ -56,12 +60,10 @@ export const AgentLoopTrace = forwardRef<HTMLOListElement, AgentLoopTraceProps>(
                 }
               />
               <ToolContent>
-                <ToolInput input={step.args} />
-                <ToolOutput
-                  output={step.result as never}
-                  errorText={undefined}
-                  isStreaming={step.status === "pending"}
-                />
+                <TracePayload label={labels.arguments} value={step.args} />
+                {step.status === "done" ? (
+                  <TracePayload label={labels.result} value={step.result} />
+                ) : null}
               </ToolContent>
             </Tool>
           </li>
@@ -70,3 +72,14 @@ export const AgentLoopTrace = forwardRef<HTMLOListElement, AgentLoopTraceProps>(
     );
   },
 );
+
+function TracePayload({ label, value }: { label: string; value: unknown }) {
+  return (
+    <div className="space-y-2">
+      <h4 className="text-meta uppercase text-muted-foreground">{label}</h4>
+      <div className="rounded-md bg-muted/50">
+        <CodeBlock code={JSON.stringify(value, null, 2) ?? ""} language="json" wrap />
+      </div>
+    </div>
+  );
+}

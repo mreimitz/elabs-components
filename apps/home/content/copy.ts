@@ -331,6 +331,8 @@ export const agentLoopCopy = {
   recorded: "recorded",
   recordedHint: "The live server was unreachable, so this card shows the recorded response.",
   elapsed: (ms: number) => `${ms} ms`,
+  arguments: "Arguments",
+  result: "Result",
   pending: "Calling…",
   running: (prompt: string) => `Running “${prompt}”…`,
   done: "Done — block rendered.",
