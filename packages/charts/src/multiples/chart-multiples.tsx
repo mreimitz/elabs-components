@@ -112,8 +112,11 @@ export interface ChartMultiplesProps<
 > extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "title"> {
   /** Long rows, split into panels by `by`. Ignored when `panels` is set. */
   data?: T[];
-  /** Column whose value names each row's panel. */
-  by?: string;
+  /**
+   * A column key (one panel per value), or `{ series: true }` — one panel per
+   * `dataKeys` entry over the same rows (split bars).
+   */
+  by?: string | { series: true };
   /** Explicit panels (instead of `data` + `by`). */
   panels?: ChartMultiplesPanelInput<T>[];
   /** Row key of the x value (hover lookup, shared x extent, baseline join). */
@@ -135,7 +138,11 @@ export interface ChartMultiplesProps<
   baseline?: ChartMultiplesBaseline;
   /** Per-panel visibility, per breakpoint (a panel's own `showAt` wins). */
   showAt?: (panel: ChartMultiplesPanel<T>) => Responsive<boolean>;
-  /** Synced hover: every panel shows the crosshair at the hovered category. Default `true`. */
+  /**
+   * Synced hover: every panel shows the crosshair at the hovered category and
+   * `panelTitle` receives the hovered value. Line, Area and Composed panels
+   * only; bar and pie panels get the shared layout and domains. Default `true`.
+   */
   syncHover?: boolean;
   /** Title slot; `hovered` is set while any panel is hovered (value-in-title). */
   panelTitle?: (panel: ChartMultiplesPanel<T>, hovered?: ChartMultiplesHover<T>) => ReactNode;
@@ -252,14 +259,18 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
   const breakpoint = forcedBreakpoint ?? breakpointForWidth(width);
 
   // 1. Panels in input order (explicit, or split by `by`), baseline joined in.
+  const bySeries = typeof by === "object" && by !== null && by.series === true;
+  const byColumn = typeof by === "string" ? by : undefined;
   const inputs = useMemo<ChartMultiplesPanelInput<T>[]>(() => {
     if (panelsProp) return panelsProp;
-    if (!data || !by) return [];
-    return splitFacetRows(data, by).map((group) => ({
+    if (!data) return [];
+    if (bySeries) return dataKeys.map((dataKey) => ({ key: dataKey, data }));
+    if (!byColumn) return [];
+    return splitFacetRows(data, byColumn).map((group) => ({
       key: group.key,
       data: group.rows as T[],
     }));
-  }, [panelsProp, data, by]);
+  }, [panelsProp, data, bySeries, byColumn, dataKeys]);
 
   const baselinePanelKey = baseline && "key" in baseline ? baseline.key : undefined;
   const baselineKey = baseline
@@ -267,7 +278,12 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
       ? FACET_BASELINE_KEY
       : baseline.series
     : undefined;
-  const valueKey = dataKeys[0];
+  const firstKey = dataKeys[0];
+  /** The value column a panel's stats, sort, hover value and scale read. */
+  const valueKeyOf = useCallback(
+    (panelKey: string) => (bySeries && !panelsProp ? panelKey : firstKey),
+    [bySeries, panelsProp, firstKey],
+  );
 
   const sortedPanels = useMemo(() => {
     const baselineRows = baselinePanelKey
@@ -276,6 +292,7 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
     const joined = inputs
       .filter((panel) => panel.key !== baselinePanelKey)
       .map((panel) => {
+        const valueKey = valueKeyOf(panel.key);
         const rows =
           baselineRows && valueKey !== undefined
             ? panel.data.map((row) => {
@@ -292,7 +309,7 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
         };
       });
     return sortFacetPanels(joined, sort, reverse, locale);
-  }, [inputs, baselinePanelKey, valueKey, xDataKey, sort, reverse, locale]);
+  }, [inputs, baselinePanelKey, valueKeyOf, xDataKey, sort, reverse, locale]);
 
   // 2. Visibility at this breakpoint.
   const visible = useMemo(() => {
@@ -325,10 +342,27 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
   const panelScales = useMemo(
     () =>
       computeFacetScales(
-        visible.map((panel) => facetValueExtent(panel.data, scaleKeys)),
+        visible.map((panel) => {
+          const own = valueKeyOf(panel.key);
+          const keys = bySeries && !panelsProp && own !== undefined ? [own] : scaleKeys;
+          return facetValueExtent(
+            panel.data,
+            baselineKey && keys !== scaleKeys ? [...keys, baselineKey] : keys,
+          );
+        }),
         { y: yMode, rangeRounding, yDomain },
       ),
-    [visible, scaleKeys, yMode, rangeRounding, yDomain],
+    [
+      visible,
+      scaleKeys,
+      valueKeyOf,
+      bySeries,
+      panelsProp,
+      baselineKey,
+      yMode,
+      rangeRounding,
+      yDomain,
+    ],
   );
   const sharedXDomain = useMemo<[Date, Date] | undefined>(() => {
     const extents = visible.map((panel) => timeExtent(panel.data, xDataKey));
@@ -393,6 +427,7 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
         let hovered: ChartMultiplesHover<T> | undefined;
         if (hoverCategory !== null) {
           const row = panel.data.find((r) => sameCategory(r[xDataKey], hoverCategory));
+          const valueKey = valueKeyOf(panel.key);
           const raw = row && valueKey !== undefined ? row[valueKey] : undefined;
           hovered = {
             category: hoverCategory,
@@ -403,6 +438,7 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
         return (
           <FacetPanel
             key={panel.key}
+            hostBreakpoint={breakpoint}
             plotHeight={panelHeight}
             scope={scope}
             title={
@@ -424,6 +460,9 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
 /**
  * Small multiples: one chart per facet value in a responsive grid, with
  * shared or range-rounded scales, sort, a muted baseline and synced hover.
+ * Panel furniture density follows the HOST grid's tier, not each panel's own
+ * width (an explicit host `narrow` density still wins), while every panel still
+ * publishes its own `data-chart-breakpoint`.
  */
 export const ChartMultiples = forwardRef(ChartMultiplesInner) as (<
   T extends Record<string, unknown> = Record<string, unknown>,

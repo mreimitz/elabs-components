@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T01:02:41.441Z",
+  "generatedAt": "2026-09-19T02:17:02.512Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13452,6 +13452,11 @@
           "module": "packages/charts/src/charts/markers/index.ts"
         },
         {
+          "name": "ChartMultiples",
+          "kind": "value",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
           "name": "ChartProvider",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-context.tsx"
@@ -13645,6 +13650,21 @@
           "name": "END_LABEL_MIN_GAP",
           "kind": "value",
           "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "FACET_BASELINE_KEY",
+          "kind": "value",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "FACET_DEFAULT_COLUMNS",
+          "kind": "value",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "FACET_DEFAULT_PANEL_HEIGHT",
+          "kind": "value",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
         },
         {
           "name": "FORCE_ALPHA_MIN",
@@ -14865,6 +14885,30 @@
           "module": "packages/charts/src/charts/markers/index.ts"
         },
         {
+          "name": "ChartMultiplesBaseline",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesHover",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesPanel",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesPanelInput",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesProps",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesScales",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
           "name": "ChartPalette",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
@@ -15159,6 +15203,22 @@
         {
           "name": "DumbbellVariant",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "FacetPanelScale",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
+          "name": "FacetPanelStats",
+          "module": "packages/charts/src/multiples/facet-sort.ts"
+        },
+        {
+          "name": "FacetScalesOptions",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
+          "name": "FacetSort",
+          "module": "packages/charts/src/multiples/facet-sort.ts"
         },
         {
           "name": "FieldCluster",
@@ -16315,6 +16375,10 @@
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
+          "name": "computeFacetScales",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
           "name": "computeForcePositions",
           "module": "packages/charts/src/charts/network/index.ts"
         },
@@ -16425,6 +16489,10 @@
         {
           "name": "explainChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "facetPanelStats",
+          "module": "packages/charts/src/multiples/facet-sort.ts"
         },
         {
           "name": "findBulletBand",
@@ -16623,6 +16691,10 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "niceStepAtLeast",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
           "name": "niceYDomain",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
@@ -16677,6 +16749,10 @@
         {
           "name": "radarCssVars",
           "module": "packages/charts/src/charts/radar-context.tsx"
+        },
+        {
+          "name": "rangeRoundedFacetScale",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
         },
         {
           "name": "readsAsBeforeAfterPair",
@@ -16823,6 +16899,10 @@
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
+          "name": "sharedFacetScale",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
           "name": "shouldTweenYDomain",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
@@ -16837,6 +16917,10 @@
         {
           "name": "sortDumbbellRows",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "sortFacetPanels",
+          "module": "packages/charts/src/multiples/facet-sort.ts"
         },
         {
           "name": "spaceSlopeLabels",
@@ -18764,6 +18848,116 @@
               "optional": true,
               "type": "boolean",
               "description": "Animate down, fade, and blur during loading → ready handoff."
+            }
+          ]
+        },
+        "ChartMultiples": {
+          "extends": [
+            "Record<string, unknown> = Record<string, unknown>",
+            "> extends Omit<HTMLAttributes<HTMLDivElement>",
+            "\"children\" | \"title\">"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": true,
+              "type": "T[]",
+              "description": "Long rows, split into panels by `by`. Ignored when `panels` is set."
+            },
+            {
+              "name": "by",
+              "optional": true,
+              "type": "string | { series: true }",
+              "description": "A column key (one panel per value), or `{ series: true }` — one panel per `dataKeys` entry over the same rows (split bars)."
+            },
+            {
+              "name": "panels",
+              "optional": true,
+              "type": "ChartMultiplesPanelInput<T>[]",
+              "description": "Explicit panels (instead of `data` + `by`)."
+            },
+            {
+              "name": "xDataKey",
+              "optional": false,
+              "type": "string",
+              "description": "Row key of the x value (hover lookup, shared x extent, baseline join)."
+            },
+            {
+              "name": "dataKeys",
+              "optional": false,
+              "type": "string[]",
+              "description": "Row keys of the plotted values; the first drives sort, stats and the hovered value."
+            },
+            {
+              "name": "columns",
+              "optional": true,
+              "type": "Responsive<number | \"auto\">",
+              "description": "Panels per row, per breakpoint. Default `{ base: \"auto\", narrow: 1 }`."
+            },
+            {
+              "name": "minPanelWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Minimum panel width `columns: \"auto\"` packs to. Default 240."
+            },
+            {
+              "name": "panelHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "Each panel's plot height (px or `{ aspect }`), per breakpoint. Default 200."
+            },
+            {
+              "name": "scales",
+              "optional": true,
+              "type": "ChartMultiplesScales"
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "FacetSort",
+              "description": "Panel order. Default `\"data\"` (input order). Numeric keys sort largest first."
+            },
+            {
+              "name": "reverse",
+              "optional": true,
+              "type": "boolean",
+              "description": "Reverse the sort order."
+            },
+            {
+              "name": "baseline",
+              "optional": true,
+              "type": "ChartMultiplesBaseline",
+              "description": "A series drawn muted behind every panel's own series: a panel `key` (removed from the grid) or a row `series` key."
+            },
+            {
+              "name": "showAt",
+              "optional": true,
+              "type": "(panel: ChartMultiplesPanel<T>) => Responsive<boolean>",
+              "description": "Per-panel visibility, per breakpoint (a panel's own `showAt` wins)."
+            },
+            {
+              "name": "syncHover",
+              "optional": true,
+              "type": "boolean",
+              "description": "Synced hover: every panel shows the crosshair at the hovered category and `panelTitle` receives the hovered value. Line, Area and Composed panels only; bar and pie panels get the shared layout and domains. Default `true`."
+            },
+            {
+              "name": "panelTitle",
+              "optional": true,
+              "type": "(panel: ChartMultiplesPanel<T>, hovered?: ChartMultiplesHover<T>) => ReactNode",
+              "description": "Title slot; `hovered` is set while any panel is hovered (value-in-title)."
+            },
+            {
+              "name": "annotations",
+              "optional": true,
+              "type": "Array<ChartAnnotation & { panel?: string }>",
+              "description": "Annotations; `panel` names one panel, `\"all\"`/unset repeats it in every panel."
+            },
+            {
+              "name": "children",
+              "optional": false,
+              "type": "(panel: ChartMultiplesPanel<T>) => ReactNode",
+              "description": "Renders one panel's chart."
             }
           ]
         },
@@ -23921,6 +24115,7 @@
         "ChartCard": "charts-chartcard--docs",
         "ChartFrame": "charts-chartframe--docs",
         "ChartLegend": "charts-chartlegend--docs",
+        "ChartMultiples": "charts-chartmultiples--docs",
         "ChoroplethChart": "charts-choroplethchart--docs",
         "ComposedChart": "charts-composedchart--docs",
         "DashboardInteractionsEditor": "dashboard-interactions--docs",

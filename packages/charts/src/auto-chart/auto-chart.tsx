@@ -99,8 +99,11 @@ import type {
   ChartSpec,
   ChartSeriesSpec,
   ChartType,
+  FacetSpec,
 } from "./chart-spec";
+import { ChartMultiples } from "../multiples/chart-multiples"; // ChartMultiples — RM-120
 import {
+  facetHint,
   inferChartType,
   isChartSpecPalette,
   isChartType,
@@ -1269,6 +1272,9 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   } else {
     type = inferChartType(spec);
   }
+  // Facet hint — RM-120: ≥ 6 line series → suggest small multiples (dev only, never a switch).
+  const spaghetti = isUnsupported ? null : facetHint(spec, type);
+  if (spaghetti) warnChartOnce("AutoChart.facet-hint", spaghetti);
 
   if (isUnsupported) {
     warnUnsupportedChartType(spec.type);
@@ -1287,9 +1293,18 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // Pie/donut slices are colored by DATA ROW (the `x` value), not by series, so
   // the legend must map each slice label to its palette color. Every other chart
   // type colors by series, so the normalized series ARE the legend items.
+  const pieRows =
+    type === "pie" && spec.facet && typeof spec.facet.by === "string"
+      ? // ChartMultiples — RM-120: multiple pies share slice labels; key each label once.
+        spec.data.filter(
+          (row, i) =>
+            spec.data.findIndex((other) => other[spec.x] === row[spec.x]) === i &&
+            row[spec.x] != null,
+        )
+      : spec.data;
   const legendItems: NormalizedSeries[] =
     type === "pie"
-      ? spec.data.map((row, i) => ({
+      ? pieRows.map((row, i) => ({
           key: `${String(row[spec.x] ?? i)}-${i}`,
           label: String(row[spec.x] ?? `Slice ${i + 1}`),
           color: paletteColor(i),
@@ -1315,17 +1330,29 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // ── Render ────────────────────────────────────────────────────────────────
   let chartNode: ReactNode = null;
   try {
-    chartNode = renderChart(
-      type,
-      spec,
-      series,
-      spec.data,
-      timeCoercedData,
-      effectivePlotHeight,
-      yFormat,
-      copyValueOnActivate,
-      links,
-    );
+    chartNode =
+      spec.facet && FACETED_CHART_TYPES.has(type)
+        ? renderFacetedChart(
+            type,
+            spec,
+            spec.facet,
+            series,
+            timeCoercedData,
+            yFormat,
+            copyValueOnActivate,
+            links,
+          )
+        : renderChart(
+            type,
+            spec,
+            series,
+            spec.data,
+            timeCoercedData,
+            effectivePlotHeight,
+            yFormat,
+            copyValueOnActivate,
+            links,
+          );
   } catch {
     return (
       <ChartFallback
@@ -1385,6 +1412,56 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     </div>
   );
 });
+
+// ChartMultiples — RM-120
+/** Spec types `ChartSpec.facet` applies to (the rest ignore it). */
+const FACETED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "bar", "pie"]);
+
+/**
+ * `ChartSpec.facet` → `ChartMultiples`: one `renderChart` per panel, with the
+ * panel's rows and title (its accessible label). `{ series: true }` keeps one
+ * series per panel. The spec's `title` and legend stay outside the grid.
+ */
+function renderFacetedChart(
+  type: ChartType,
+  spec: ChartSpec,
+  facet: FacetSpec,
+  series: NormalizedSeries[],
+  timeCoercedData: Record<string, unknown>[],
+  yFormat: (value: number) => string,
+  copyValueOnActivate: boolean,
+  links: AutoChartLinkProps,
+): ReactNode {
+  const bySeries = typeof facet.by !== "string";
+  const data = type === "line" || type === "area" ? timeCoercedData : spec.data;
+  return (
+    <ChartMultiples
+      baseline={facet.baseline}
+      by={facet.by}
+      columns={facet.columns}
+      data={data}
+      dataKeys={series.map((s) => s.key)}
+      panelHeight={facet.panelHeight}
+      scales={{ ...facet.scales, yDomain: spec.axes?.y?.domain }}
+      sort={facet.sort}
+      xDataKey={spec.x}
+    >
+      {(panel) =>
+        renderChart(
+          type,
+          { ...spec, data: panel.data, facet: undefined, title: panel.title },
+          bySeries ? series.filter((s) => s.key === panel.key) : series,
+          panel.data,
+          panel.data,
+          undefined,
+          yFormat,
+          copyValueOnActivate,
+          links,
+        )
+      }
+    </ChartMultiples>
+  );
+}
 
 // BarChart — RM-113
 /** The `ChartSpec` bar-richness fields, as `BarChart` props (unset stays unset). */

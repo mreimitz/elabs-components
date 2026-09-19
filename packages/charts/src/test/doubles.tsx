@@ -1023,3 +1023,95 @@ export const AnnotationKey = forwardRef<HTMLOListElement, { annotations: readonl
   },
 );
 AnnotationKey.displayName = "AnnotationKey";
+
+// ChartMultiples — RM-120
+import type { ChartMultiplesProps } from "../multiples/chart-multiples";
+import { splitFacetRows } from "../multiples/facet-layout";
+import { facetPanelStats, sortFacetPanels } from "../multiples/facet-sort";
+
+/**
+ * `ChartMultiples` double: validates `xDataKey` / `dataKeys` / `by`, splits and
+ * sorts the panels with the real pure helpers and calls `children(panel)` once
+ * per panel in a plain grid — no measuring, no scales, no synced hover. A
+ * `showAt` rule resolves at the wide tier (its `base`).
+ */
+export const ChartMultiples = forwardRef<HTMLDivElement, ChartMultiplesProps>(
+  function ChartMultiplesTestDouble(
+    {
+      data,
+      by,
+      panels,
+      xDataKey,
+      dataKeys,
+      sort = "data",
+      reverse = false,
+      showAt,
+      children,
+      // Accepted and ignored by the double (layout / scales / hover only).
+      columns: _columns,
+      minPanelWidth: _minPanelWidth,
+      panelHeight: _panelHeight,
+      scales: _scales,
+      baseline: _baseline,
+      syncHover: _syncHover,
+      panelTitle: _panelTitle,
+      annotations: _annotations,
+      ...props
+    },
+    ref,
+  ) {
+    if (typeof xDataKey !== "string" || xDataKey === "") {
+      axisViolation("ChartMultiples", "xDataKey", xDataKey, "a row key is required");
+    }
+    if (!Array.isArray(dataKeys) || dataKeys.length === 0) {
+      axisViolation("ChartMultiples", "dataKeys", dataKeys, "at least one value key is required");
+    }
+    if (!panels && !(Array.isArray(data) && by !== undefined)) {
+      axisViolation("ChartMultiples", "by", by, "pass `panels`, or `data` with `by`");
+    }
+    const bySeries = typeof by === "object" && by !== null;
+    const inputs =
+      panels ??
+      (bySeries
+        ? dataKeys.map((key) => ({ key, data: data ?? [], showAt: undefined }))
+        : splitFacetRows(data ?? [], by as string).map((g) => ({
+            key: g.key,
+            data: g.rows,
+            showAt: undefined,
+          })));
+    const built = inputs.map((input) => ({
+      input,
+      key: input.key,
+      title: ("title" in input && input.title) || input.key,
+      data: input.data,
+      stats: facetPanelStats(input.data, bySeries && !panels ? input.key : dataKeys[0]),
+    }));
+    const visible = sortFacetPanels(built, sort, reverse).filter((entry, index) => {
+      const rule = entry.input.showAt ?? showAt?.({ ...entry, index, annotations: [] }) ?? true;
+      return typeof rule === "object" ? rule.base : rule;
+    });
+    return (
+      <div className="grid" data-columns={1} data-slot="chart-multiples" ref={ref} {...props}>
+        {visible.map((entry, index) => (
+          <div
+            data-panel-key={entry.key}
+            data-slot="chart-multiples-panel"
+            key={entry.key}
+            role="group"
+            aria-label={entry.title}
+          >
+            {children({
+              key: entry.key,
+              title: entry.title,
+              data: entry.data,
+              stats: entry.stats,
+              index,
+              annotations: [],
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  },
+);
+ChartMultiples.displayName = "ChartMultiples";

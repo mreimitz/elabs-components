@@ -2,7 +2,10 @@ import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { ChartConfigProvider, useChartFacetScope } from "../charts/chart-config-context";
+import { AutoChart } from "../auto-chart/auto-chart";
+import { ChartTooltip, Grid, Line, LineChart, XAxis, YAxis } from "../charts";
 import { ChartMultiples } from "./chart-multiples";
+import { facetPanelDensity } from "./facet-panel";
 
 const rows = [
   { chip: "DRAM", date: new Date(2024, 0, 1), price: 2 },
@@ -107,5 +110,81 @@ describe("ChartMultiples", () => {
     expect(values).toEqual(["8", "6", "13"]);
     act(() => screen.getByTestId("probe-DRAM").blur());
     expect(container.querySelectorAll("[data-slot='chart-multiples-panel-value']")).toHaveLength(0);
+  });
+
+  it("splits one panel per series with by: { series: true }", () => {
+    const wide = [
+      { month: "Jan", north: 3, south: 9 },
+      { month: "Feb", north: 6, south: 3 },
+    ];
+    const { container } = render(
+      <ChartMultiples
+        by={{ series: true }}
+        data={wide}
+        dataKeys={["north", "south"]}
+        sort="end"
+        xDataKey="month"
+      >
+        {(panel) => <span data-testid={`end-${panel.key}`}>{panel.stats.end}</span>}
+      </ChartMultiples>,
+    );
+    expect(panelKeys(container)).toEqual(["north", "south"]);
+    expect(screen.getByTestId("end-south").textContent).toBe("3");
+  });
+
+  it("resolves panel density from the host tier; an explicit host narrow wins", () => {
+    expect(facetPanelDensity("md", "wide")).toEqual({ base: "md", narrow: "md" });
+    expect(facetPanelDensity("md", "narrow")).toEqual({ base: "sm", narrow: "sm" });
+    expect(facetPanelDensity({ base: "md", narrow: "md" }, "narrow")).toEqual({
+      base: "md",
+      narrow: "md",
+    });
+  });
+
+  it("renders a ChartSpec facet identically to the explicit composition", () => {
+    const format = (value: number) => String(value);
+    const spec = {
+      type: "line" as const,
+      data: rows,
+      x: "date",
+      series: ["price"],
+      facet: { by: "chip", sort: "deltaPercent" as const },
+    };
+    const auto = render(<AutoChart spec={spec} />);
+    const autoHtml = auto.container.querySelector("[data-slot='chart-multiples']")?.outerHTML;
+    auto.unmount();
+    const explicit = render(
+      <div>
+        <ChartMultiples
+          by="chip"
+          data={rows}
+          dataKeys={["price"]}
+          sort="deltaPercent"
+          xDataKey="date"
+        >
+          {(panel) => (
+            <LineChart
+              accessibleLabel={panel.title}
+              copyValueOnActivate
+              data={panel.data}
+              xDataKey="date"
+            >
+              <Grid horizontal />
+              <Line dataKey="price" key="price" />
+              <XAxis />
+              <YAxis formatValue={format} />
+              <ChartTooltip />
+            </LineChart>
+          )}
+        </ChartMultiples>
+      </div>,
+    );
+    const explicitHtml = explicit.container.querySelector(
+      "[data-slot='chart-multiples']",
+    )?.outerHTML;
+    const normalize = (html: string | undefined) =>
+      (html ?? "").replace(/(id|aria-labelledby|aria-describedby)="[^"]*"/g, "");
+    expect(panelKeys(explicit.container)).toEqual(["DRAM", "HDD", "NAND"]);
+    expect(normalize(autoHtml)).toBe(normalize(explicitHtml));
   });
 });

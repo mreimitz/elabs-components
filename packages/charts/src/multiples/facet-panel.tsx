@@ -3,20 +3,21 @@
 /**
  * One cell of a `ChartMultiples` grid (RM-120): the panel title slot above a
  * normal chart container. The cell publishes the panel's facet scope, its plot
- * height (the `plotHeight` rung a frame uses) and keeps the value axis at a
- * narrow panel width — a small multiple without its scale is unreadable, so a
- * panel keeps `md` furniture at `narrow` unless the host names a `narrow`
- * density itself. Each panel still measures its OWN `data-chart-breakpoint`.
+ * height (the `plotHeight` rung a frame uses) and the furniture density of the
+ * HOST grid's tier: panels are narrow by construction, so their density follows
+ * the grid's width, not their own (a 2 × 2 grid at 900 px keeps its value axes;
+ * at a 380 px host the maintainer narrow default applies). Each panel still
+ * measures its OWN `data-chart-breakpoint`.
  */
 import { forwardRef, type HTMLAttributes, type ReactNode, useId, useMemo } from "react";
 import { cn } from "@elabs-ai/components-ui";
 
 import {
+  type ChartBreakpoint,
   ChartFramePlotHeightProvider,
   type ChartPlotHeight,
-  isResponsiveByBreakpoint,
   type Responsive,
-  resolveResponsive,
+  resolveDensityForBreakpoint,
 } from "../charts/chart-breakpoint";
 import {
   type ChartDensity,
@@ -26,14 +27,17 @@ import {
   useChartConfig,
 } from "../charts/chart-config-context";
 
-/** A panel keeps its host density at `narrow` (the value axis stays) unless the host says otherwise. */
-export function facetPanelDensity(density: Responsive<ChartDensity>): Responsive<ChartDensity> {
-  if (isResponsiveByBreakpoint(density)) {
-    return density.narrow !== undefined
-      ? density
-      : { ...density, narrow: resolveResponsive(density, "narrow") };
-  }
-  return { base: density, narrow: density };
+/**
+ * The density every panel uses: the host density resolved at the HOST grid's
+ * tier (so an explicit host `narrow` entry still wins), pinned for every panel
+ * tier — a panel's own narrow width never drops its value axis on its own.
+ */
+export function facetPanelDensity(
+  density: Responsive<ChartDensity>,
+  hostBreakpoint: ChartBreakpoint,
+): Responsive<ChartDensity> {
+  const resolved = resolveDensityForBreakpoint(density, hostBreakpoint);
+  return { base: resolved, narrow: resolved };
 }
 
 export interface FacetPanelProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
@@ -41,13 +45,15 @@ export interface FacetPanelProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
   scope: ChartFacetScopeValue;
   /** The panel's plot height (the frame rung of `plotHeight`). */
   plotHeight: Responsive<ChartPlotHeight>;
+  /** The host grid's tier; panel furniture density resolves from it. */
+  hostBreakpoint: ChartBreakpoint;
   /** Title slot content (the default title, or the caller's `panelTitle`). */
   title: ReactNode;
   children?: ReactNode;
 }
 
 export const FacetPanel = forwardRef<HTMLDivElement, FacetPanelProps>(function FacetPanel(
-  { scope, plotHeight, title, children, className, ...props },
+  { scope, plotHeight, hostBreakpoint, title, children, className, ...props },
   ref,
 ) {
   const titleId = useId();
@@ -55,9 +61,12 @@ export const FacetPanel = forwardRef<HTMLDivElement, FacetPanelProps>(function F
   const panelConfig = useMemo(
     () => ({
       ...config,
-      densityByBreakpoint: facetPanelDensity(config.densityByBreakpoint ?? config.density),
+      densityByBreakpoint: facetPanelDensity(
+        config.densityByBreakpoint ?? config.density,
+        hostBreakpoint,
+      ),
     }),
-    [config],
+    [config, hostBreakpoint],
   );
   return (
     <div

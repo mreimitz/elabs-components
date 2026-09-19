@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { ChartTooltip, Grid, Line, LineChart, XAxis, YAxis } from "../charts";
+import { AutoChart } from "../auto-chart/auto-chart";
+import { ChartConfigProvider, ChartTooltip, Grid, Line, LineChart, XAxis, YAxis } from "../charts";
 import {
   ChartMultiples,
   type ChartMultiplesHover,
@@ -199,5 +200,87 @@ export const HidePanelOnNarrowMultiples: Story = {
     >
       {PriceLine}
     </ChartMultiples>
+  ),
+};
+
+/**
+ * The host names its narrow density (`{ base: "md", narrow: "md" }`), so the
+ * panels keep their value axes even on a phone-width grid.
+ */
+export const ExplicitNarrowDensityMultiples: Story = {
+  args: { children: () => null, dataKeys: ["price"], xDataKey: "month" },
+  render: () => (
+    <ChartConfigProvider value={{ density: { base: "md", narrow: "md" } }}>
+      <ChartMultiples<PriceRow>
+        by="chip"
+        columns={{ base: 2, narrow: 1 }}
+        data={MEMORY_PRICES}
+        dataKeys={["price"]}
+        scales={{ y: "independent", rangeRounding: true }}
+        xDataKey="month"
+      >
+        {PriceLine}
+      </ChartMultiples>
+    </ChartConfigProvider>
+  ),
+};
+
+/** The same shared-scale grid, emitted as a `ChartSpec` with `facet` and rendered by `AutoChart`. */
+export const FromChartSpecMultiples: Story = {
+  args: { children: () => null, dataKeys: ["price"], xDataKey: "month" },
+  render: () => (
+    <AutoChart
+      spec={{
+        type: "line",
+        data: INDEXED,
+        x: "month",
+        series: ["price"],
+        facet: { by: "chip", columns: { base: 2, narrow: 1 } },
+      }}
+    />
+  ),
+};
+
+/** Split bars: one panel per measure (`facet.by = { series: true }`), independent value scales. */
+export const SplitBarsMultiples: Story = {
+  args: { children: () => null, dataKeys: ["price"], xDataKey: "month" },
+  render: () => (
+    <AutoChart
+      spec={{
+        type: "bar",
+        orientation: "horizontal",
+        data: [
+          { team: "Search", tickets: 42, hours: 310 },
+          { team: "Payments", tickets: 17, hours: 520 },
+          { team: "Mobile", tickets: 29, hours: 140 },
+        ],
+        x: "team",
+        series: ["tickets", "hours"],
+        facet: { by: { series: true }, scales: { y: "independent" } },
+      }}
+    />
+  ),
+};
+
+/** Multiple pies: one pie per region (`facet.by = "region"`). */
+export const MultiplePiesMultiples: Story = {
+  args: { children: () => null, dataKeys: ["share"], xDataKey: "channel" },
+  render: () => (
+    <AutoChart
+      spec={{
+        type: "pie",
+        data: [
+          { region: "EMEA", channel: "Direct", share: 52 },
+          { region: "EMEA", channel: "Partner", share: 31 },
+          { region: "EMEA", channel: "Online", share: 17 },
+          { region: "Americas", channel: "Direct", share: 38 },
+          { region: "Americas", channel: "Partner", share: 22 },
+          { region: "Americas", channel: "Online", share: 40 },
+        ],
+        x: "channel",
+        series: ["share"],
+        facet: { by: "region", columns: { base: 2, narrow: 1 } },
+      }}
+    />
   ),
 };

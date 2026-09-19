@@ -21,6 +21,8 @@ import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/ba
 import type { BarSort } from "../charts/bar-stacking";
 import type { ChartColorBy } from "../charts/chart-context";
 import type { DumbbellSortBy } from "../charts/dumbbell-layout";
+import type { ChartPlotHeight } from "../charts/chart-breakpoint"; // Facet — RM-120
+import type { FacetSort } from "../multiples/facet-sort"; // Facet — RM-120
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -353,6 +355,9 @@ export interface ChartSpec {
   overlays?: BarOverlay[];
   /** A muted prior-period column behind each bar; `labels.comparison` picks its grey label. */
   comparison?: BarComparison;
+  // Facet — RM-120
+  /** Small multiples for `line`/`area`/`bar`/`pie`: one panel per `by` column value, or per series with `{ series: true }` — see {@link FacetSpec}. */
+  facet?: FacetSpec;
 }
 
 // Pie/donut grouping, sort, half preset — RM-114
@@ -448,4 +453,30 @@ export interface AxisSpec {
   gridMode?: "lines" | "ticks" | "off";
   /** `x`: `"bottom"` (default) or `"top"`. `y`: `"left"` (default) or `"right"`. */
   position?: "top" | "bottom" | "left" | "right";
+}
+
+// Facet — RM-120
+/**
+ * Small multiples (RM-120) — the serialisable subset of `ChartMultiples`,
+ * honoured by `line`, `area`, `bar` and `pie` specs (ignored elsewhere). The
+ * value-domain pin is the existing `axes.y.domain`.
+ *
+ * Presets:
+ * - **Split bars** — one panel per measure: `{ type: "bar", orientation:
+ *   "horizontal", facet: { by: { series: true }, scales: { y: "independent" } } }`.
+ * - **Multiple pies** — one pie per group: `{ type: "pie", facet: { by: "region" } }`.
+ */
+export interface FacetSpec {
+  /** A column key (one panel per value), or `{ series: true }` (one panel per series). */
+  by: string | { series: true };
+  /** Panels per row, per breakpoint. Default `{ base: "auto", narrow: 1 }`. */
+  columns?: Responsive<number | "auto">;
+  /** `y: "shared"` (default) or `"independent"`; `rangeRounding` aligns independent gridlines. */
+  scales?: { y?: "shared" | "independent"; rangeRounding?: boolean };
+  /** Panel order: `"start" | "end" | "delta" | "deltaPercent" | "range" | "title" | "data"`. */
+  sort?: FacetSort;
+  /** A muted series behind every panel: a panel `key` (removed from the grid) or a row `series` key. */
+  baseline?: { key: string } | { series: string };
+  /** Each panel's plot height (px or `{ aspect }`), per breakpoint. Default 200. */
+  panelHeight?: Responsive<ChartPlotHeight>;
 }
