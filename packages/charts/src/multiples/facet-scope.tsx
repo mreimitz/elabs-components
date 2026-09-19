@@ -55,21 +55,22 @@ export function applyFacetScope(
   if (scope.baselineKey && (options.baseline ?? true)) {
     out.push(createElement(FacetBaseline, { dataKey: scope.baselineKey, key: "facet-baseline" }));
   }
-  Children.forEach(children, (child) => {
+  // `toArray` keys each child so the rebuilt list renders without key warnings.
+  for (const child of Children.toArray(children)) {
     if (!isValidElement(child)) {
       out.push(child);
-      return;
+      continue;
     }
     const props = child.props as Record<string, unknown>;
     const name = childName(child);
     if (name === "YAxis") {
-      if (!paintsValueAxis(scope, props.orientation)) return;
+      if (!paintsValueAxis(scope, props.orientation)) continue;
       out.push(
         scope.yTicks && props.ticks === undefined && props.yAxisId == null
           ? cloneElement(child as ReactElement<{ ticks?: number[] }>, { ticks: scope.yTicks })
           : child,
       );
-      return;
+      continue;
     }
     if (name === "Grid") {
       out.push(
@@ -79,11 +80,11 @@ export function applyFacetScope(
             })
           : child,
       );
-      return;
+      continue;
     }
-    if (name === "XAxis" && scope.sharedX && !scope.bottom) return;
+    if (name === "XAxis" && scope.sharedX && !scope.bottom) continue;
     out.push(child);
-  });
+  }
   return out;
 }
 
