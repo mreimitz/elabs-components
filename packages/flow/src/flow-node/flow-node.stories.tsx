@@ -204,6 +204,43 @@ export const FocusIndicator: Story = {
       return (hi! + 0.05) / (lo! + 0.05);
     };
 
+    // Since ADR 0027 Amendment 2 (commit 779c040b), the shared `focus-ring*`
+    // composite always paints its ring as three `box-shadow` layers: a
+    // `var(--background)`-coloured "gap" segment and an inset echo segment
+    // that both have zero offset/blur/spread by construction at this node's
+    // default geometry (they exist for OTHER call sites with a non-zero
+    // `--focus-ring-offset`), plus the one visible ring segment in between.
+    // A zero-geometry layer paints nothing, so comparing the raw `boxShadow`
+    // string byte-for-byte (its old shape, before Amendment 2, had no such
+    // padding layers) now reports a difference where nothing actually
+    // renders differently. Splitting into layers and keeping only the ones
+    // with a non-zero length lets the assertion below compare what is
+    // genuinely PAINTED — the resting selection ring plus the node's
+    // elevation shadow — while staying just as strict: drop the ring
+    // entirely, or change its colour/width, and the visible layers stop
+    // matching.
+    const splitShadowLayers = (shadowValue: string): string[] => {
+      const layers: string[] = [];
+      let depth = 0;
+      let current = "";
+      for (const char of shadowValue) {
+        if (char === "(") depth += 1;
+        if (char === ")") depth -= 1;
+        if (char === "," && depth === 0) {
+          layers.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      if (current.trim()) layers.push(current.trim());
+      return layers;
+    };
+    const isVisibleShadowLayer = (layer: string): boolean =>
+      [...layer.matchAll(/(-?[\d.]+)px/g)].some((match) => Number(match[1]) !== 0);
+    const visibleShadow = (shadowValue: string): string =>
+      splitShadowLayers(shadowValue).filter(isVisibleShadowLayer).join(", ");
+
     let plainWrapper!: HTMLElement;
     let plainDiv!: HTMLElement;
     let chosenWrapper!: HTMLElement;
@@ -283,7 +320,9 @@ export const FocusIndicator: Story = {
     await waitFor(() => {
       expect(getComputedStyle(chosenDiv).outlineStyle).toBe("solid");
     });
-    await expect(getComputedStyle(chosenDiv).boxShadow).toBe(restingChosenShadow);
+    await expect(visibleShadow(getComputedStyle(chosenDiv).boxShadow)).toBe(
+      visibleShadow(restingChosenShadow),
+    );
 
     // Blur restores the resting state.
     await userEvent.tab();
