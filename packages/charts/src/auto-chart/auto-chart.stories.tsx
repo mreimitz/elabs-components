@@ -733,3 +733,29 @@ export const UnitInferred: Story = inferenceStory(
   "unit",
   "waffle",
 );
+
+/**
+ * A series known only by its column key (no `label`) is NOT end-labelled
+ * (RM-110), so the legend engine's default shows a legend — forwarded
+ * through `spec.legend` into `LineChart`'s own `legend` prop
+ * (`LEGEND_ENGINE_TYPES`), never a second, `AutoChart`-owned implementation.
+ * The rendered `.legend-container` is byte-identical to an explicit
+ * `<LineChart legend>` built from the same normalized series (see
+ * `auto-chart.test.tsx`'s "renders the identical legend DOM…" test, and
+ * `LineChart`'s own `LegendToggle` story for the equivalent explicit call).
+ */
+export const LineLegendFromColumnKeys: Story = {
+  args: {
+    spec: {
+      type: "line",
+      data: [
+        { date: "2024-01-01", ebikes: 10, cargo: 4 },
+        { date: "2024-02-01", ebikes: 14, cargo: 6 },
+        { date: "2024-03-01", ebikes: 19, cargo: 9 },
+      ],
+      x: "date",
+      series: [{ key: "ebikes" }, { key: "cargo" }],
+    } satisfies ChartSpec,
+    height: 280,
+  },
+};

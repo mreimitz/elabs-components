@@ -5,8 +5,10 @@ import { expect, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { AreaChart } from "./area-chart";
 import { Area } from "./area";
+import { ChartDatapointLayer } from "./chart-datapoint-layer";
 import { Grid } from "./grid";
 import { XAxis } from "./x-axis";
+import { YAxis } from "./y-axis";
 import { ChartTooltip } from "./tooltip";
 
 const meta = {
@@ -569,4 +571,52 @@ export const SelectionStates: Story = {
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
   },
+};
+
+/**
+ * Container legend (RM-118): `legend={{ interactive: "toggle" }}` mounts
+ * `ChartLegend` above the plot with real `aria-pressed` buttons — click, or
+ * Tab then Enter, hides a series and the y-domain re-tweens around what is
+ * left visible. `focusOnHover` reuses the same fade a pointer-hovered area
+ * already had for a keyboard-focused legend item (Refs #545).
+ */
+export const LegendToggle: Story = {
+  name: "Legend toggle",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <AreaChart
+        animationDuration={0}
+        aspectRatio={undefined}
+        data={chartData}
+        focusOnHover
+        legend={{ interactive: "toggle" }}
+        onDatapointClick={() => {}}
+        style={{ height: "100%" }}
+      >
+        <Grid horizontal />
+        <Area
+          curve={curveNatural}
+          dataKey="desktop"
+          fill="var(--chart-1)"
+          fillOpacity={0.4}
+          name="Desktop"
+          stroke="var(--chart-1)"
+          strokeWidth={2.5}
+        />
+        <Area
+          curve={curveNatural}
+          dataKey="mobile"
+          fill="var(--chart-2)"
+          fillOpacity={0.4}
+          name="Mobile"
+          stroke="var(--chart-2)"
+          strokeWidth={2.5}
+        />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+        <ChartDatapointLayer />
+      </AreaChart>
+    </div>
+  ),
 };

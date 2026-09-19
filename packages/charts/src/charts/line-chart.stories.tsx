@@ -6,12 +6,15 @@ import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { AreaBand } from "./area-band";
 import type { ChartDatapoint } from "./chart-datapoint";
+import { ChartDatapointLayer } from "./chart-datapoint-layer";
+import { ChartConfigProvider } from "./chart-config-context";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
 import { ReferenceLine } from "./reference-line";
 import { XAxis } from "./x-axis";
 import { Line } from "./line";
 import { LineChart } from "./line-chart";
+import { YAxis } from "./y-axis";
 
 const meta = {
   title: "Charts/LineChart",
@@ -937,4 +940,136 @@ export const SelectionStates: Story = {
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
   },
+};
+
+/**
+ * Container legend (RM-118): `legend={{ position: "right", interactive:
+ * "toggle" }}` mounts `ChartLegend` beside the plot with real
+ * `aria-pressed` buttons — click, or Tab then Enter, hides a series and the
+ * y-domain re-tweens around what is left visible. `focusOnHover` reuses the
+ * same fade a pointer-hovered line already had for a keyboard-focused
+ * legend item (Refs #545). At `narrow` the legend moves above the plot and
+ * stacks.
+ */
+export const LegendToggle: Story = {
+  name: "Legend toggle, right of plot",
+  render: () => (
+    <div className="h-72 w-full max-w-[720px]">
+      <LineChart
+        aspectRatio={undefined}
+        data={chartData}
+        focusOnHover
+        legend={{ position: "right", interactive: "toggle" }}
+        onDatapointClick={() => {}}
+      >
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="users" name="Users" stroke="var(--chart-1)" />
+        <Line curve={curveNatural} dataKey="sessions" name="Sessions" stroke="var(--chart-2)" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+        <ChartDatapointLayer />
+      </LineChart>
+    </div>
+  ),
+};
+
+const columnKeyData = [
+  { date: new Date("2024-01-01"), ebikes: 10, cargo: 4 },
+  { date: new Date("2024-02-01"), ebikes: 14, cargo: 6 },
+  { date: new Date("2024-03-01"), ebikes: 19, cargo: 9 },
+];
+
+/**
+ * Built by hand from the SAME normalized series `AutoChart`'s
+ * `LineLegendFromColumnKeys` story forwards (`spec.series: [{ key:
+ * "ebikes" }, { key: "cargo" }]`, no `name` — the legend engine always
+ * labels an item by its `dataKey`, never a display `name`). Its
+ * `.legend-container` is byte-identical to that story's — proof that
+ * `AutoChart` forwards into `LineChart`'s own `legend` prop rather than
+ * running a second implementation (Acceptance-4).
+ */
+export const LegendFromColumnKeys: Story = {
+  name: "Legend from column keys",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={columnKeyData} legend>
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="ebikes" stroke="var(--chart-1)" />
+        <Line curve={curveNatural} dataKey="cargo" stroke="var(--chart-2)" />
+        <XAxis />
+        <ChartTooltip />
+      </LineChart>
+    </div>
+  ),
+};
+
+/**
+ * Density tiers the container legend engine (RM-118) reads from
+ * `ChartConfigProvider` (RM-072, a host-picked furniture tier — never
+ * derived from viewport width): `xs` has no room at all, so an explicitly-on
+ * legend renders nothing; `sm` keeps the legend but always stacks it
+ * (one item per line), the same as a `narrow` breakpoint.
+ */
+export const LegendDensity: Story = {
+  name: "Legend at xs and sm density",
+  render: () => (
+    <div className="flex gap-8">
+      {(["xs", "sm"] as const).map((density) => (
+        <div data-testid={`density-${density}`} key={density}>
+          <p className="mb-2 text-caption text-muted-foreground">density: {density}</p>
+          <div className="h-72 w-full max-w-[360px]">
+            <ChartConfigProvider value={{ density }}>
+              <LineChart aspectRatio={undefined} data={chartData} legend>
+                <Grid horizontal />
+                <Line curve={curveNatural} dataKey="users" name="Users" stroke="var(--chart-1)" />
+                <Line
+                  curve={curveNatural}
+                  dataKey="sessions"
+                  name="Sessions"
+                  stroke="var(--chart-2)"
+                />
+                <XAxis />
+              </LineChart>
+            </ChartConfigProvider>
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
+};
+
+/**
+ * R4 (sitting 3, RM-118): two long series names overflow RM-110's own end
+ * labels at a narrow width, which normally falls back to `SeriesKeyRow` — a
+ * compact swatch+name row inside the plot. But `legend` is also forced on
+ * here, and the container legend (unlike the pre-RM-118 inline `<ChartLegend>`
+ * child) STAYS visible and stacked at narrow by design (Acceptance bullet 1).
+ * Rendering both would show the same series list twice, so
+ * `legendVisible` (`time-series-chart-shell.tsx`) suppresses the key row
+ * whenever the container legend already covers that job — the plot itself
+ * never reserves less space, only the redundant row disappears.
+ */
+export const LegendYieldsToKeyRow: Story = {
+  name: "Legend suppresses the redundant key row",
+  render: () => (
+    <div className="h-72 w-full max-w-[380px]">
+      <LineChart aspectRatio={undefined} data={chartData} legend>
+        <Grid horizontal />
+        <Line
+          curve={curveNatural}
+          dataKey="users"
+          name="International website visitors"
+          stroke="var(--chart-1)"
+        />
+        <Line
+          curve={curveNatural}
+          dataKey="sessions"
+          name="Returning customer sessions"
+          stroke="var(--chart-2)"
+        />
+        <XAxis />
+      </LineChart>
+    </div>
+  ),
 };

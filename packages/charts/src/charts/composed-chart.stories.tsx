@@ -4,12 +4,14 @@ import { expect, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { curveNatural } from "@visx/curve";
 import { Area } from "./area";
+import { ChartDatapointLayer } from "./chart-datapoint-layer";
 import { ComposedChart } from "./composed-chart";
 import { Grid } from "./grid";
 import { Line } from "./line";
 import { SeriesBar } from "./series-bar";
 import { ChartTooltip } from "./tooltip";
 import { XAxis } from "./x-axis";
+import { YAxis } from "./y-axis";
 
 const meta = {
   title: "Charts/ComposedChart",
@@ -212,4 +214,35 @@ export const SelectionStates: Story = {
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
   },
+};
+
+/**
+ * Container legend (RM-118): `legend={{ interactive: "toggle" }}` mounts
+ * `ChartLegend` above the plot with real `aria-pressed` buttons — click, or
+ * Tab then Enter, hides a `<Line>` series and the y-domain re-tweens around
+ * what is left visible. Only `Line` children publish a legend entry
+ * (`extractComposedSeries`); `ComposedChart` has no `focusOnHover` prop of
+ * its own yet, so a keyboard-focused legend item wires through
+ * `ChartSeriesModeProvider` (same seam Line/Area use) but has no visible
+ * dim effect until a future sitting adds one.
+ */
+export const LegendToggle: Story = {
+  name: "Legend toggle",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ComposedChart
+        data={chartData}
+        legend={{ interactive: "toggle" }}
+        onDatapointClick={() => {}}
+      >
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="revenue" name="Revenue" stroke="var(--chart-1)" />
+        <Line curve={curveNatural} dataKey="runRate" name="Run rate" stroke="var(--chart-2)" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+        <ChartDatapointLayer />
+      </ComposedChart>
+    </div>
+  ),
 };
