@@ -142,6 +142,8 @@
   "InputGroup": "forms-inputgroup--docs",
   "InputOTP": "forms-inputotp--docs",
   "InspectorPanel": "flow-inspectorpanel--docs",
+  "InstallTabs": "display-installtabs--docs",
+  "IntegrationMatrix": "display-integrationmatrix--docs",
   "InteractiveTerminal": "terminal-interactiveterminal--docs",
   "IterationBuilderDialog": "editor-iteration-builderdialog--docs",
   "IterationTemplateDialog": "editor-iteration-templatedialog--docs",

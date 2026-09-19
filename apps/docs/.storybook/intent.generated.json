@@ -122,6 +122,8 @@
   "Display/Avatar": {"name":"Avatar","package":"@elabs-ai/components-ui","storyId":"display-avatar--docs"},
   "Display/CommandChip": {"name":"CommandChip","package":"@elabs-ai/components-ui","storyId":"display-commandchip--docs"},
   "Display/CopyableValue": {"name":"CopyableValue","package":"@elabs-ai/components-ui","storyId":"display-copyablevalue--docs"},
+  "Display/InstallTabs": {"name":"InstallTabs","package":"@elabs-ai/components-ui","storyId":"display-installtabs--docs"},
+  "Display/IntegrationMatrix": {"name":"IntegrationMatrix","package":"@elabs-ai/components-ui","storyId":"display-integrationmatrix--docs"},
   "Display/Kbd": {"name":"Kbd","package":"@elabs-ai/components-ui","storyId":"display-kbd--docs"},
   "Display/MatchHighlight": {"name":"MatchHighlight","package":"@elabs-ai/components-ui","storyId":"display-matchhighlight--docs"},
   "Display/Meter": {"name":"Meter","package":"@elabs-ai/components-ui","storyId":"display-meter--docs"},

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T00:53:37.618Z",
+  "generatedAt": "2026-09-19T01:54:11.191Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -34294,6 +34294,16 @@
           "module": "packages/ui/src/components/command-chip/command-chip.tsx"
         },
         {
+          "name": "DEFAULT_INSTALL_TABS_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "DEFAULT_INTEGRATION_MATRIX_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
           "name": "DEFAULT_MESSAGES",
           "kind": "value",
           "module": "packages/ui/src/components/locale-provider/messages.ts"
@@ -34697,6 +34707,16 @@
           "name": "InputOTPSlot",
           "kind": "value",
           "module": "packages/ui/src/components/input-otp/input-otp.tsx"
+        },
+        {
+          "name": "InstallTabs",
+          "kind": "value",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "IntegrationMatrix",
+          "kind": "value",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
         },
         {
           "name": "Kbd",
@@ -36318,8 +36338,48 @@
           "module": "packages/ui/src/components/mention-input/mention-value.ts"
         },
         {
+          "name": "InstallTabsHostTab",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "InstallTabsLabels",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "InstallTabsProps",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "InstallTabsSelectOption",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
           "name": "IntegerFieldSpec",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "IntegrationMatrixAction",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixHost",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixLabels",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixProps",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixRoutineStep",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixRow",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
         },
         {
           "name": "KeyboardShortcutsProps",
@@ -39334,6 +39394,143 @@
             "VariantProps<typeof inputGroupVariants>"
           ],
           "props": []
+        },
+        "InstallTabs": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "packageOptions",
+              "optional": false,
+              "type": "InstallTabsSelectOption[]",
+              "description": "The `pnpm add` tab's per-archetype options; the first is the default selection."
+            },
+            {
+              "name": "blockOptions",
+              "optional": false,
+              "type": "InstallTabsSelectOption[]",
+              "description": "The `Copy-own` tab's per-block options; the first is the default selection."
+            },
+            {
+              "name": "hostTabs",
+              "optional": false,
+              "type": "InstallTabsHostTab[]",
+              "description": "One tab per host, in order, between `Copy-own` and `Prompt`."
+            },
+            {
+              "name": "prompt",
+              "optional": false,
+              "type": "string",
+              "description": "The multi-line agent prompt shown (read-only) on the `Prompt` tab."
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "Selected tab id (controlled): `\"packages\"`, `\"copy-own\"`, a host id, or `\"prompt\"`."
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string",
+              "description": "Initially selected tab id (uncontrolled). Default: `\"packages\"`."
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "packageValue",
+              "optional": true,
+              "type": "string",
+              "description": "Selected `pnpm add` archetype id (controlled)."
+            },
+            {
+              "name": "onPackageValueChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "blockValue",
+              "optional": true,
+              "type": "string",
+              "description": "Selected `Copy-own` block id (controlled)."
+            },
+            {
+              "name": "onBlockValueChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "onCommandCopy",
+              "optional": true,
+              "type": "(command: string, copied: boolean) => void"
+            },
+            {
+              "name": "onPromptCopy",
+              "optional": true,
+              "type": "(copied: boolean) => void"
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<InstallTabsLabels>"
+            }
+          ]
+        },
+        "IntegrationMatrix": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "hosts",
+              "optional": false,
+              "type": "IntegrationMatrixHost[]"
+            },
+            {
+              "name": "rows",
+              "optional": false,
+              "type": "IntegrationMatrixRow[]"
+            },
+            {
+              "name": "routine",
+              "optional": true,
+              "type": "IntegrationMatrixRoutineStep[]",
+              "description": "The routine strip below the matrix; omitted entirely when empty."
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "Selected host id (controlled)."
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string",
+              "description": "Initially selected host id (uncontrolled). Default: the first host."
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void",
+              "description": "Fires when the visitor picks another host."
+            },
+            {
+              "name": "onCopyAction",
+              "optional": true,
+              "type": "(rowId: string, actionLabel: string, text: string, copied: boolean) => void",
+              "description": "Fires after a copy attempt with the row id, the action label and the text."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<IntegrationMatrixLabels>"
+            }
+          ]
         },
         "KeyboardShortcuts": {
           "extends": [
@@ -42765,6 +42962,8 @@
         "Input": "core-input--docs",
         "InputGroup": "forms-inputgroup--docs",
         "InputOTP": "forms-inputotp--docs",
+        "InstallTabs": "display-installtabs--docs",
+        "IntegrationMatrix": "display-integrationmatrix--docs",
         "Kbd": "display-kbd--docs",
         "KeyValueEditor": "forms-keyvalueeditor--docs",
         "KeyboardShortcuts": "disclosure-keyboardshortcuts--docs",

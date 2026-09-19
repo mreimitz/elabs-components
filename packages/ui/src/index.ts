@@ -272,3 +272,6 @@ export * from "./components/command-chip";
 export * from "./components/surface-tour";
 // SpecPlayground — RM-101
 export * from "./components/spec-playground";
+// IntegrationMatrix, InstallTabs — RM-102
+export * from "./components/integration-matrix";
+export * from "./components/install-tabs";

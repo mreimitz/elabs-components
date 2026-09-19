@@ -4,6 +4,8 @@ import { Tour } from "../components/tour/tour";
 import { TOUR_TABS } from "../components/tour/tabs";
 import { AgentLoopSection } from "../components/agent-loop/agent-loop-section";
 import { EmitUiSection } from "../components/agent-loop/emit-ui";
+import { WorksWith } from "../components/agents/works-with";
+import { RouteCards } from "../components/routes/route-cards";
 
 // The page, section by section in movement order; each RM item appends its section under its
 // own comment. RM-094's hero replaced the RM-091 placeholder card (its theme switch now lives
@@ -21,8 +23,10 @@ export default function HomePage() {
       <AgentLoopSection />
       {/* RM-101 — the agents movement's second half, directly under the agent loop. */}
       <EmitUiSection />
-      {/* Scroll room until the later sections land (the float plane needs a scrolling page). */}
-      <div aria-hidden="true" className="min-h-screen" />
+      {/* RM-102 — the matrix is its own section (`id="works-with"`), install + route cards
+          follow as movement 6. */}
+      <WorksWith />
+      <RouteCards />
     </main>
   );
 }

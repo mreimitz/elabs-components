@@ -1,3 +1,5 @@
 .next/
 next-env.d.ts
 *.tsbuildinfo
+# Build output copied from registry/__output by scripts/copy-registry-output.mjs (RM-102).
+public/r/
