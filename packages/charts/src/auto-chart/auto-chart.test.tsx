@@ -11,7 +11,7 @@
  *
  * Real render/interaction/a11y is covered by the Storybook stories.
  */
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ── @visx/responsive → fixed 560×288 ─────────────────────────────────────────
@@ -1285,7 +1285,25 @@ describe("AutoChart bar comparison labels", () => {
     { region: "South", now: 18, prev: 27 },
   ];
 
-  it("paints grey difference labels from labels.comparison and none without it", async () => {
+  // The comparison labels are gated behind BarChart's own enter-reveal gate
+  // (`useChartRevealGate`, default `revealOn="mount"`): they only paint once
+  // `isLoaded` flips true, on a real `setTimeout(animationDuration)` (default
+  // 1100ms) that AutoChart has no prop to shorten (#488). A real-clock
+  // `waitFor` raced that timer against whatever else was on the machine and
+  // sometimes lost; `bar-chart-reveal.test.tsx` already drives the same gate
+  // deterministically with fake timers — same seam here.
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Longer than BarChart's default 1100ms reveal, so it has settled. */
+  const PAST_REVEAL_MS = 1500;
+
+  it("paints grey difference labels from labels.comparison and none without it", () => {
     const spec: ChartSpec = {
       type: "bar",
       data: sales,
@@ -1296,18 +1314,19 @@ describe("AutoChart bar comparison labels", () => {
     const { container } = render(
       <AutoChart spec={{ ...spec, labels: { comparison: "difference" } }} />,
     );
-    // The labels wait for the bars' enter animation to settle.
-    await waitFor(
-      () => {
-        const labels = [
-          ...container.querySelectorAll('[data-slot="bar-chart-comparison-label"]'),
-        ].map((label) => label.textContent);
-        expect(labels).toEqual(["+18", "−9"]);
-      },
-      { timeout: 3000 },
+    // Settle the bars' enter animation deterministically instead of racing it.
+    act(() => {
+      vi.advanceTimersByTime(PAST_REVEAL_MS);
+    });
+    const labels = [...container.querySelectorAll('[data-slot="bar-chart-comparison-label"]')].map(
+      (label) => label.textContent,
     );
+    expect(labels).toEqual(["+18", "−9"]);
     cleanup();
     const plain = render(<AutoChart spec={spec} />);
+    act(() => {
+      vi.advanceTimersByTime(PAST_REVEAL_MS);
+    });
     expect(
       plain.container.querySelectorAll('[data-slot="bar-chart-comparison-label"]'),
     ).toHaveLength(0);
