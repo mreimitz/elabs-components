@@ -36,6 +36,10 @@ paths:
   means the same thing on every page and after every sort.
 - Every visual cell keeps its value in the accessible tree (printed, or `sr-only` with
   `hideValue`); the SVG/bar is `aria-hidden`. Sort reads the raw value, never the visual.
+- **One printed-label box per COLUMN, never per row** (`labelBoxCh`, in `ch`, over all
+  rows). A visual draws in what its value text leaves over, so a per-row box gives the row
+  with the shorter number the longer track — it then draws a longer bar for a smaller
+  value, and a diverging column's zero rule lands on a different x in every row.
 - **The table breakpoint is a deliberate copy** of charts' `useMeasuredChartBreakpoint`
   (`use-table-breakpoint.ts`), because `data` may not import `charts`. It measures the
   table's own box, not the viewport. Keep this thresholds table and the one in the file

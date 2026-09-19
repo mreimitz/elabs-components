@@ -81,7 +81,7 @@ import {
   resolveShowAt,
   type DataTableColumnMeta,
 } from "./column-meta";
-import { computeColumnScales, extentOf, seriesValues } from "./cell-scales";
+import { computeColumnScales, extentOf, labelBoxCh, seriesEnds, seriesValues } from "./cell-scales";
 import { BarCell } from "./cells/bar-cell";
 import { ColumnsCell } from "./cells/columns-cell";
 import { HeatmapCell, HeatmapLegend, heatmapCellStyle } from "./cells/heatmap-cell";
@@ -1414,6 +1414,36 @@ function DataTableInner<TData, TValue>(
         : null,
     [needsScales, leafColumns, coreRows],
   );
+  // One printed-label reservation per visual column, over ALL rows: a bar's
+  // track and a sparkline's drawing get what the text leaves over, so a box
+  // sized per row would give a row with a shorter number a LONGER bar (and move
+  // a diverging column's zero rule from row to row). `ch` against the column's
+  // longest label; `tabular-nums` makes every digit exactly 1ch.
+  const labelBoxes = useMemo(() => {
+    const boxes = new Map<string, { value?: number; ends?: readonly [number, number] }>();
+    for (const column of leafColumns) {
+      const meta = column.columnDef.meta;
+      const visual = meta?.visual;
+      const labelOf = (value: unknown) => formatCellValue(value, meta?.format, formatNumber);
+      if (visual?.kind === "bar" && visual.style !== "slim") {
+        boxes.set(column.id, {
+          value: labelBoxCh(coreRows.map((row) => labelOf(row.getValue(column.id)))),
+        });
+      }
+      if (visual?.kind === "sparkline" && visual.labels === "ends") {
+        const ends = coreRows
+          .map((row) => seriesEnds(seriesValues(row.original, visual.keys)))
+          .filter((pair): pair is readonly [number, number] => pair !== null);
+        boxes.set(column.id, {
+          ends: [
+            labelBoxCh(ends.map(([first]) => labelOf(first))),
+            labelBoxCh(ends.map(([, last]) => labelOf(last))),
+          ],
+        });
+      }
+    }
+    return boxes;
+  }, [leafColumns, coreRows, formatNumber]);
   const rowRanks = useMemo(
     () =>
       showRanks
@@ -1930,6 +1960,7 @@ function DataTableInner<TData, TValue>(
               : undefined
           }
           negativeColor={visual.negative !== false}
+          labelWidth={labelBoxes.get(cell.column.id)?.value}
         />
       );
     }
@@ -1947,9 +1978,7 @@ function DataTableInner<TData, TValue>(
           />
         );
       }
-      const present = values.filter((v): v is number => v !== null);
-      const first = present[0];
-      const last = present[present.length - 1];
+      const ends = seriesEnds(values);
       return (
         <SparklineCell
           values={values}
@@ -1958,10 +1987,11 @@ function DataTableInner<TData, TValue>(
           fill={visual.fill}
           height={visual.height}
           ends={
-            visual.labels === "ends" && first !== undefined && last !== undefined
-              ? [cellLabel(first, meta), cellLabel(last, meta)]
+            visual.labels === "ends" && ends
+              ? [cellLabel(ends[0], meta), cellLabel(ends[1], meta)]
               : undefined
           }
+          endsWidth={labelBoxes.get(cell.column.id)?.ends}
         />
       );
     }

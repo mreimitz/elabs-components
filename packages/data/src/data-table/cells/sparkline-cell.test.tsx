@@ -22,4 +22,22 @@ describe("SparklineCell", () => {
     expect(getByText("4", { selector: "span[aria-hidden]" })).toBeInTheDocument();
     expect(container.querySelectorAll("span[aria-hidden]")).toHaveLength(2);
   });
+  it("reserves one end-label box per column, so every row draws on the same x scale", () => {
+    const ends = (first: string, last: string) => {
+      const { container } = render(
+        <SparklineCell
+          values={[1, 4]}
+          domain={{ min: 1, max: 4 }}
+          label={`${first}, ${last}`}
+          ends={[first, last]}
+          endsWidth={[3, 4]}
+        />,
+      );
+      return [...container.querySelectorAll<HTMLElement>("span[aria-hidden]")].map(
+        (span) => span.style.width,
+      );
+    };
+    expect(ends("90", "110")).toEqual(["3ch", "4ch"]);
+    expect(ends("300", "380")).toEqual(["3ch", "4ch"]);
+  });
 });

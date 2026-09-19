@@ -1588,6 +1588,27 @@ export const BarCells: Story = {
     const rides = bars(2).map((s) => Number.parseFloat(s.width));
     await expect(Math.max(...rides)).toBe(100);
     await expect(rides[0]).toBeCloseTo((1840 / 2410) * 100, 1);
+    // Bars compare DOWN the column, in pixels: every track in a column is the
+    // same length (the value box is a column-wide reservation), so a rendered
+    // bar's share of the longest bar equals its share of the column max.
+    const rects = (selector: string) =>
+      [...canvasElement.querySelectorAll<HTMLElement>(`tbody td:nth-child(2) ${selector}`)].map(
+        (el) => el.getBoundingClientRect(),
+      );
+    const tracks = rects('[data-slot="bar-cell-track"]').map((r) => Math.round(r.width));
+    await expect(new Set(tracks).size).toBe(1);
+    const drawn = rects('[data-slot="bar-cell-bar"]').map((r) => r.width);
+    const longest = Math.max(...drawn);
+    for (const [i, value] of [1840, 2410, 920, 1260, 610, 1780].entries()) {
+      await expect(drawn[i]! / longest).toBeCloseTo(value / 2410, 2);
+    }
+    // The same reservation keeps the diverging column's zero rule on one x.
+    const zeros = [
+      ...canvasElement.querySelectorAll<HTMLElement>(
+        'tbody td:nth-child(3) [data-slot="bar-cell-zero"]',
+      ),
+    ].map((el) => Math.round(el.getBoundingClientRect().x));
+    await expect(new Set(zeros).size).toBe(1);
     const [, lyon] = bars(3);
     await expect(lyon?.backgroundColor).toBe("var(--chart-div-neg-2)");
     await expect(
@@ -1646,6 +1667,12 @@ export const SparklineAndColumnCells: Story = {
       ),
     ].map((svg) => svg.getAttribute("data-y-max"));
     await expect(new Set(maxes)).toEqual(new Set(["700"]));
+    // The printed end labels get a column-wide box, so every row's drawing is
+    // the same width: the lines share the x scale as well as the y scale.
+    const widths = [
+      ...canvasElement.querySelectorAll<SVGElement>('[data-slot="sparkline-cell-svg"]'),
+    ].map((svg) => Math.round(svg.getBoundingClientRect().width));
+    await expect(new Set(widths).size).toBe(1);
     const lyon = canvas.getByRole("row", { name: /Lyon/ });
     await expect(lyon).toHaveTextContent(/480.*640.*700.*590/);
   },

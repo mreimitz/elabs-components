@@ -25,6 +25,25 @@ describe("BarCell", () => {
       "true",
     );
   });
+  it("reserves one value box per column, so a shorter number gets no longer bar", () => {
+    // Same reservation, different label lengths: the track (and therefore every
+    // bar drawn in it) is the same length on both rows.
+    const box = (label: string) => {
+      const { container } = render(
+        <BarCell value={10} label={label} domain={[0, 40]} labelWidth={7} />,
+      );
+      return container.querySelector<HTMLElement>('[data-slot="bar-cell-value"]')?.style.width;
+    };
+    expect(box("+12.5 %")).toBe("7ch");
+    expect(box("-4.2 %")).toBe("7ch");
+    // A slim bar sits UNDER its value and spans the cell: nothing to reserve.
+    const { container } = render(
+      <BarCell value={10} label="-4.2 %" domain={[0, 40]} variant="slim" labelWidth={7} />,
+    );
+    expect(container.querySelector<HTMLElement>('[data-slot="bar-cell-value"]')?.style.width).toBe(
+      "",
+    );
+  });
   it("uses a category colour for positive bars; negative: false keeps it on negatives", () => {
     const { container } = render(
       <BarCell

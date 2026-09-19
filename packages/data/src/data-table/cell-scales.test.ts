@@ -5,6 +5,8 @@ import {
   computeColumnScales,
   extentOf,
   heatmapColorScaleSpec,
+  labelBoxCh,
+  seriesEnds,
   seriesValues,
 } from "./cell-scales";
 
@@ -21,6 +23,19 @@ describe("cell-scales", () => {
   it("extentOf ignores non-finite values", () => {
     expect(extentOf([3, "x", null, Number.NaN, -1, 7])).toEqual({ min: -1, max: 7 });
     expect(extentOf(["x"])).toBeNull();
+  });
+
+  it("labelBoxCh reserves the column's longest label, so tracks match down the column", () => {
+    expect(labelBoxCh(["+12.5 %", "-4.2 %", "+0.4 %"])).toBe(7);
+    expect(labelBoxCh([])).toBe(0);
+    // Code points, not UTF-16 units: an astral glyph counts once.
+    expect(labelBoxCh(["1 🚲"])).toBe(3);
+  });
+
+  it("seriesEnds takes the first and last finite values", () => {
+    expect(seriesEnds([null, 2, null, 9, null])).toEqual([2, 9]);
+    expect(seriesEnds([5])).toEqual([5, 5]);
+    expect(seriesEnds([null, null])).toBeNull();
   });
 
   it("barDomain always contains zero; a fixed range wins", () => {

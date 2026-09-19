@@ -78,6 +78,33 @@ export function barGeometry(
   };
 }
 
+/**
+ * How much room a column reserves for a printed label, in `ch`: the longest
+ * label's length in code points.
+ *
+ * A visual cell draws in what its printed value leaves over, so the text box
+ * must be a COLUMN-wide constant. Sized per row instead, a row with a shorter
+ * number gets a longer track and therefore draws a longer bar for a smaller
+ * value, and a diverging column's zero rule lands on a different pixel in every
+ * row. `tabular-nums` makes every digit exactly `1ch` and the separators
+ * narrower, so a reservation of the longest label's character count holds it.
+ */
+export function labelBoxCh(labels: readonly string[]): number {
+  let widest = 0;
+  for (const label of labels) widest = Math.max(widest, [...label].length);
+  return widest;
+}
+
+/** The first and last finite values of a series; `null` when it has none. */
+export function seriesEnds(
+  values: readonly (number | null)[],
+): readonly [first: number, last: number] | null {
+  const present = values.filter((v): v is number => v !== null);
+  const first = present[0];
+  const last = present[present.length - 1];
+  return first === undefined || last === undefined ? null : [first, last];
+}
+
 /** A row's numbers for `keys`, `null` where a key holds no finite number. */
 export function seriesValues(original: unknown, keys: readonly string[]): (number | null)[] {
   const record = (original ?? {}) as Record<string, unknown>;

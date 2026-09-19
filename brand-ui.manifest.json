@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T21:41:08.551Z",
+  "generatedAt": "2026-09-19T22:31:49.064Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -26238,6 +26238,12 @@
               "optional": true,
               "type": "boolean",
               "description": "Paint a negative value in the negative token. Default `true`."
+            },
+            {
+              "name": "labelWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Room reserved for the printed value, in `ch` (`labelBoxCh` over the whole column). Every bar in a column then shares one track length, so bar lengths compare down the column and a diverging column's zero rule keeps one x. Unset (or `\"slim\"`, where the bar sits under the value) leaves the value box to size itself."
             }
           ]
         },
@@ -26848,6 +26854,12 @@
               "optional": true,
               "type": "readonly [first: string, last: string]",
               "description": "Printed first / last values (with `labels: \"ends\"`)."
+            },
+            {
+              "name": "endsWidth",
+              "optional": true,
+              "type": "readonly [first: number, last: number]",
+              "description": "Room reserved for those two labels, in `ch` (`labelBoxCh` over the whole column). The drawing takes what they leave over, so one reservation per column keeps every row's line on the same x scale."
             },
             {
               "name": "fill",

@@ -24,6 +24,14 @@ export interface BarCellProps extends HTMLAttributes<HTMLDivElement> {
   fillColor?: string | null;
   /** Paint a negative value in the negative token. Default `true`. */
   negativeColor?: boolean;
+  /**
+   * Room reserved for the printed value, in `ch` (`labelBoxCh` over the whole
+   * column). Every bar in a column then shares one track length, so bar lengths
+   * compare down the column and a diverging column's zero rule keeps one x.
+   * Unset (or `"slim"`, where the bar sits under the value) leaves the value
+   * box to size itself.
+   */
+  labelWidth?: number;
 }
 
 /**
@@ -40,6 +48,7 @@ export const BarCell = forwardRef<HTMLDivElement, BarCellProps>(function BarCell
     track = false,
     fillColor,
     negativeColor = true,
+    labelWidth,
     className,
     ...props
   },
@@ -65,7 +74,16 @@ export const BarCell = forwardRef<HTMLDivElement, BarCellProps>(function BarCell
       )}
       {...props}
     >
-      <span data-slot="bar-cell-value" className="shrink-0 tabular-nums">
+      {/*
+        The value box is a column-wide reservation (`labelWidth`), never this
+        row's own text width: `shrink-0` plus an explicit `width` keeps every
+        track in the column the same length, whatever the number reads.
+      */}
+      <span
+        data-slot="bar-cell-value"
+        className={cn("shrink-0 tabular-nums", !slim && "whitespace-nowrap text-end")}
+        style={!slim && labelWidth ? { width: `${labelWidth}ch` } : undefined}
+      >
         {label}
       </span>
       <span

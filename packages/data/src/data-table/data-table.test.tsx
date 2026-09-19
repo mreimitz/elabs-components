@@ -3171,6 +3171,29 @@ describe("DataTable — presentation layer", () => {
     expect(container.querySelector("tbody td:nth-child(3)")).toHaveTextContent("-5");
   });
 
+  it("bar: one value box per column, so bar LENGTHS compare down the column", () => {
+    // Without a column-wide reservation the track is whatever each row's number
+    // leaves over, so "9" would draw a longer bar than its share of the column.
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City" },
+      { accessorKey: "rides", header: "Rides", meta: { visual: { kind: "bar", track: true } } },
+      {
+        accessorKey: "change",
+        header: "Change",
+        meta: { format: { sign: "always", suffix: " %" }, visual: { kind: "bar" } },
+      },
+    ];
+    const { container } = render(<DataTable columns={cols} data={cities.slice(0, 3)} />);
+    const boxes = (col: number) =>
+      [
+        ...container.querySelectorAll(`tbody td:nth-child(${col}) [data-slot="bar-cell-value"]`),
+      ].map((el) => (el as HTMLElement).style.width);
+    // "20" / "40" / "9" → the column's longest label is 2 characters.
+    expect(boxes(2)).toEqual(["2ch", "2ch", "2ch"]);
+    // "-5 %" / "+20 %" / "+5 %" → 5, on every row including the short ones.
+    expect(boxes(3)).toEqual(["5ch", "5ch", "5ch"]);
+  });
+
   it('sparkline + columns with range "column" share one y scale across rows', () => {
     const cols: ColumnDef<CityRow>[] = [
       { accessorKey: "city", header: "City" },

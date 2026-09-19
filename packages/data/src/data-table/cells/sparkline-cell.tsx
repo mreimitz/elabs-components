@@ -17,6 +17,12 @@ export interface SparklineCellProps extends HTMLAttributes<HTMLDivElement> {
   label: string;
   /** Printed first / last values (with `labels: "ends"`). */
   ends?: readonly [first: string, last: string];
+  /**
+   * Room reserved for those two labels, in `ch` (`labelBoxCh` over the whole
+   * column). The drawing takes what they leave over, so one reservation per
+   * column keeps every row's line on the same x scale.
+   */
+  endsWidth?: readonly [first: number, last: number];
   fill?: boolean;
   /** Drawing height in px. Default 24. */
   height?: number;
@@ -40,7 +46,7 @@ function sparkPath(values: readonly (number | null)[], domain: NumericExtent, he
 
 /** An in-cell sparkline: a ≤ 40-line inline SVG on a shared or own y domain. */
 export const SparklineCell = forwardRef<HTMLDivElement, SparklineCellProps>(function SparklineCell(
-  { values, domain, label, ends, fill = false, height = 24, className, ...props },
+  { values, domain, label, ends, endsWidth, fill = false, height = 24, className, ...props },
   ref,
 ) {
   const h = Math.max(0, height);
@@ -54,8 +60,17 @@ export const SparklineCell = forwardRef<HTMLDivElement, SparklineCellProps>(func
       {...props}
     >
       <span className="sr-only">{label}</span>
+      {/*
+        Both end labels are column-wide reservations (`endsWidth`), never this
+        row's own text width, so every row's drawing gets the same width and the
+        lines share one x scale as well as the y scale.
+      */}
       {ends && (
-        <span aria-hidden="true" className="shrink-0 text-meta text-muted-foreground tabular-nums">
+        <span
+          aria-hidden="true"
+          className="shrink-0 whitespace-nowrap text-end text-meta text-muted-foreground tabular-nums"
+          style={endsWidth?.[0] ? { width: `${endsWidth[0]}ch` } : undefined}
+        >
           {ends[0]}
         </span>
       )}
@@ -82,7 +97,11 @@ export const SparklineCell = forwardRef<HTMLDivElement, SparklineCellProps>(func
         />
       </svg>
       {ends && (
-        <span aria-hidden="true" className="shrink-0 text-meta text-foreground tabular-nums">
+        <span
+          aria-hidden="true"
+          className="shrink-0 whitespace-nowrap text-start text-meta text-foreground tabular-nums"
+          style={endsWidth?.[1] ? { width: `${endsWidth[1]}ch` } : undefined}
+        >
           {ends[1]}
         </span>
       )}
