@@ -24,6 +24,7 @@ import {
   type MapFrameSide,
   type MapHeight,
   type MapResponsive,
+  mapBreakpointForWidth,
   resolveMapHeightStyle,
   useMeasuredMapBreakpoint,
 } from "../lib/use-map-breakpoint";
@@ -280,9 +281,24 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     }
   }, []);
 
+  const heightRef = useRef(height);
+  heightRef.current = height;
+
   // Initialize the map.
   useEffect(() => {
     if (!containerRef.current) return;
+
+    // The tier is measured in a layout effect whose re-render lands AFTER this
+    // effect, so the box may still carry the wide-tier height here. Size it for
+    // its real tier first: MapLibre sizes its canvas (and fits `bounds`) from
+    // the box at construction, and drops the first resize it observes.
+    Object.assign(
+      containerRef.current.style,
+      resolveMapHeightStyle(
+        heightRef.current,
+        mapBreakpointForWidth(containerRef.current.getBoundingClientRect().width),
+      ),
+    );
 
     const initialStyle = resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
     currentStyleRef.current = initialStyle;
@@ -435,6 +451,14 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     mapInstance.getCanvas().tabIndex = isStatic ? -1 : 0;
   }, [mapInstance, isStatic]);
 
+  // A tier change can swap the box's height (the default goes square at
+  // `narrow`); resize straight away rather than wait on MapLibre's observer.
+  const heightStyle = resolveMapHeightStyle(height, breakpoint);
+  const heightKey = `${heightStyle.height ?? ""}|${heightStyle.aspectRatio ?? ""}`;
+  useEffect(() => {
+    mapInstance?.resize();
+  }, [mapInstance, heightKey]);
+
   // Furniture outside the map box (legends `above` / `below`, the narrow
   // annotation key) portals into strips rendered only while something asks.
   const [slotRequests, setSlotRequests] = useState<Record<MapFrameSide, number>>({
@@ -495,7 +519,7 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
             data-map-breakpoint={breakpoint}
             data-interactive={isStatic ? "false" : undefined}
             className={cn("relative h-full w-full", className)}
-            style={resolveMapHeightStyle(height, breakpoint)}
+            style={heightStyle}
           >
             {(!isLoaded || loading) && <MapLoadingOverlay />}
             {/* SSR-safe: children render only when the map exists on the client. */}

@@ -61,6 +61,8 @@ export class MockMap {
   constructor(options: { container: HTMLElement } & Record<string, any>) {
     this.container = options.container;
     this.options = options;
+    // What MapLibre would measure: the box's height rule at construction time.
+    this.aspectAtConstruction = options.container.style.aspectRatio;
     MockMap.instances.push(this);
   }
 
@@ -138,6 +140,12 @@ export class MockMap {
   }
   getCanvas() {
     return this.canvas;
+  }
+  aspectAtConstruction = "";
+  resizeCount = 0;
+  resize() {
+    this.resizeCount += 1;
+    return this;
   }
   getCanvasContainer() {
     return this.canvasContainer;

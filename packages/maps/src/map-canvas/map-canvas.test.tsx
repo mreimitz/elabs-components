@@ -229,6 +229,16 @@ describe("MapCanvas", () => {
       spy.mockRestore();
     });
 
+    it("sizes the box for its tier BEFORE MapLibre measures it", () => {
+      const spy = atWidth(348);
+      render(<MapCanvas />);
+      const map = MockMap.instances[0]!;
+      // The narrow square was already on the box when the map was built, so
+      // the canvas and any `bounds` fit use the final size.
+      expect(map.aspectAtConstruction).toBe("1 / 1");
+      spy.mockRestore();
+    });
+
     it("resolves a responsive height at the measured tier", () => {
       const spy = atWidth(868);
       const { container } = render(<MapCanvas height={{ base: 420, narrow: { aspect: 1 } }} />);
