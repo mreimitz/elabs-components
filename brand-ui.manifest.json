@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T06:17:33.637Z",
+  "generatedAt": "2026-09-19T09:48:04.178Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -19045,6 +19045,12 @@
               "optional": true,
               "type": "string",
               "description": "Signature of motion URL state — triggers reveal replay when it changes."
+            },
+            {
+              "name": "yDomainTweenDuration",
+              "optional": true,
+              "type": "number",
+              "description": "Animate the y-domain over this duration (ms), including a legend toggle's re-tween (RM-118, validator FAIL 1a). Default: 500, same as `LineChart`/`AreaChart`."
             },
             {
               "name": "aspectRatio",
