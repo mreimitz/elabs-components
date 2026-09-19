@@ -31,7 +31,7 @@ describe("GatesBand", () => {
       />,
     );
     const groupLabels = Array.from(
-      container.querySelectorAll('[data-slot="gates-band-summary"] span:first-child'),
+      container.querySelectorAll('[data-slot="gates-band-label"]'),
     ).map((el) => el.textContent);
     expect(groupLabels).toEqual(["Stories", "Components", "Themes"]);
   });
@@ -45,7 +45,9 @@ describe("GatesBand", () => {
       />,
     );
     const groups = Array.from(container.querySelectorAll('[data-slot="gates-band-group"]'));
-    expect(groups.every((group) => (group as HTMLDetailsElement).open)).toBe(false);
+    expect(groups).toHaveLength(3);
+    // `some`, not `every`: a single open group must fail this, not just "all of them open".
+    expect(groups.some((group) => (group as HTMLDetailsElement).open)).toBe(false);
     expect(screen.getAllByText("1 rule")).toHaveLength(2); // stories + themes: one rule each
     expect(screen.getByText("2 rules")).toBeInTheDocument(); // components: two rules
   });
@@ -60,6 +62,34 @@ describe("GatesBand", () => {
     fireEvent.click(summary);
     expect(details.open).toBe(false);
   });
+
+  it("every summary carries a visible, hidden-from-AT chevron cue that turns on [open]", () => {
+    // jsdom computes no Tailwind CSS, so this pins the markup the cue depends on; the
+    // `DisclosureOpens` story asserts the real computed rotation in a browser, closed vs open.
+    const { container } = render(<GatesBand gates={GATES} count={GATES.length} />);
+    const groups = Array.from(
+      container.querySelectorAll<HTMLDetailsElement>('[data-slot="gates-band-group"]'),
+    );
+    for (const details of groups) {
+      expect(details).toHaveClass("group/gate");
+      const summary = details.querySelector('[data-slot="gates-band-summary"]')!;
+      // The native marker is gone under `flex`; the chevron replaces it, and the WebKit
+      // pseudo-marker is hidden so Safari never draws a second one.
+      expect(summary).toHaveClass("flex", "list-none", "[&::-webkit-details-marker]:hidden");
+      expect(summary).toHaveClass("hover:text-foreground");
+      const chevron = summary.querySelector('[data-slot="gates-band-chevron"]')!;
+      expect(chevron).toHaveAttribute("aria-hidden", "true");
+      expect(chevron.textContent).toBe("");
+      expect(chevron).toHaveClass("-rotate-45", "group-open/gate:rotate-45");
+      expect(chevron).toHaveClass("motion-reduce:transition-none");
+    }
+    // The chevron adds nothing to the summary's accessible text: label + count only.
+    expect(groups[0]!.querySelector("summary")!.textContent).toBe("stories1 rule");
+  });
+
+  // Keyboard: jsdom (and user-event, whose Enter→click shim covers only button/input/a[href])
+  // never runs <summary>'s native activation behaviour for a synthetic keydown, so Enter can't
+  // be exercised here. The `DisclosureOpens` story presses a real, trusted Enter in Chromium.
 
   it("splits a doc's backtick runs into real <code>, leaving no literal backtick in the text", () => {
     const { container } = render(
@@ -78,6 +108,36 @@ describe("GatesBand", () => {
     expect(item.textContent).not.toContain("`");
     const codeRuns = Array.from(item.querySelectorAll("code")).map((el) => el.textContent);
     expect(codeRuns).toEqual(["raw-palette", "text-info-text", "text-yellow-600"]);
+  });
+
+  it("an odd trailing backtick renders literally instead of flipping the rest into code", () => {
+    const { container } = render(
+      <GatesBand
+        gates={[
+          {
+            id: "stray-tick",
+            doc: "Use `cn()` to merge, then a stray ` tick and more prose.",
+            category: "components",
+          },
+        ]}
+        count={1}
+      />,
+    );
+    const item = container.querySelector('[data-slot="gates-band-item"]')!;
+    const codeRuns = Array.from(item.querySelectorAll("code")).map((el) => el.textContent);
+    expect(codeRuns).toEqual(["stray-tick", "cn()"]);
+    expect(item.textContent).toBe(
+      "stray-tick — Use cn() to merge, then a stray ` tick and more prose.",
+    );
+  });
+
+  it("a lone backtick stays literal prose", () => {
+    const { container } = render(
+      <GatesBand gates={[{ id: "lone", doc: "One ` only.", category: "repo" }]} count={1} />,
+    );
+    const item = container.querySelector('[data-slot="gates-band-item"]')!;
+    expect(item.querySelectorAll("code")).toHaveLength(1); // the id only
+    expect(item.textContent).toBe("lone — One ` only.");
   });
 
   it("an unlisted category falls back to its own slug, never a hand-typed label", () => {

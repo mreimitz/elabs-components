@@ -23,13 +23,20 @@ export function defaultFormatGroupSummary(count: number): string {
   return `${count} rule${count === 1 ? "" : "s"}`;
 }
 
-/** Splits a gate's doc on its markdown backtick pairs and renders every odd segment as real
- * `<code>` — a pure string split, never an HTML sink (`gates.json` docs always carry an even
- * number of backticks, so segments alternate prose/code cleanly). */
+/** Splits a gate's doc on its markdown backtick pairs and renders every paired run as real
+ * `<code>` — a pure string split, never an HTML sink. An odd backtick count leaves the last one
+ * unpaired: it (and the text after it) folds back into the trailing prose as a literal backtick,
+ * so one stray backtick never flips the rest of the doc into code. */
 function renderGateDoc(doc: string): ReactNode {
-  return doc.split("`").map((segment, index) => {
-    // The key mixes the segment's own text with its position: two segments can share text (e.g.
-    // adjacent empty strings from ``` ``), so the index alone would collide.
+  const segments = doc.split("`");
+  if (segments.length % 2 === 0) {
+    const tail = segments.pop() ?? "";
+    segments[segments.length - 1] += `\`${tail}`;
+  }
+  return segments.map((segment, index) => {
+    // The segments are a fixed split of one immutable string, never reordered, so the position
+    // alone is already unique and stable; the text rides along only so the key reads as content,
+    // not a bare `.map` index (`no-index-key-reorderable`).
     const key = `${index}-${segment}`;
     return index % 2 === 1 ? (
       <code key={key} className="font-mono text-code text-foreground">
@@ -117,13 +124,25 @@ export function GatesBand({
       </h3>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {groups.map((group) => (
-          <details key={group.category} data-slot="gates-band-group">
+          <details key={group.category} data-slot="gates-band-group" className="group/gate">
+            {/* `flex` drops the native ::marker (and `list-none` + the WebKit pseudo keep Safari
+                from drawing its own), so the cue is the CSS-drawn chevron below: it points to
+                the inline end while closed and turns down once open — pure CSS on `[open]`, no
+                hooks, works with JS off. Label + chevron inherit the summary's colour, which
+                lifts to `foreground` on hover and while open. */}
             <summary
               data-slot="gates-band-summary"
-              className="flex items-center justify-between gap-2 rounded-sm py-1 marker:text-muted-foreground focus-ring"
+              className="flex list-none items-center justify-between gap-2 rounded-sm py-1 text-muted-foreground transition-colors duration-fast ease-standard hover:text-foreground focus-ring group-open/gate:text-foreground motion-reduce:transition-none [&::-webkit-details-marker]:hidden"
             >
-              <span className="text-caption font-medium text-muted-foreground uppercase">
-                {group.label}
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  data-slot="gates-band-chevron"
+                  className="size-1.5 shrink-0 -rotate-45 border-e-2 border-b-2 border-current transition-transform duration-fast ease-standard group-open/gate:rotate-45 motion-reduce:transition-none rtl:rotate-45 rtl:group-open/gate:-rotate-45"
+                />
+                <span data-slot="gates-band-label" className="text-caption font-medium uppercase">
+                  {group.label}
+                </span>
               </span>
               <span className="text-caption text-muted-foreground tabular-nums">
                 {formatGroupSummary(group.gates.length)}

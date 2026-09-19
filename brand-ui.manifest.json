@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T16:58:04.736Z",
+  "generatedAt": "2026-09-19T17:36:11.732Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29962,7 +29962,12 @@
           "module": "packages/marketing/src/use-case-card/use-case-card.tsx"
         }
       ],
-      "otherExports": [],
+      "otherExports": [
+        {
+          "name": "defaultFormatGroupSummary",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
+        }
+      ],
       "props": {
         "CTASection": {
           "extends": [],
