@@ -840,6 +840,21 @@ function flagValue(...names) {
   return null;
 }
 
+/**
+ * Positional arguments, skipping the value after each named value-taking flag by
+ * POSITION — never by comparing text, so `create dashboard --template dashboard`
+ * still finds the folder.
+ */
+function positionals(...valueFlags) {
+  const out = [];
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    if (valueFlags.includes(a) && rest[i + 1] && !rest[i + 1].startsWith("--")) i++;
+    else if (!a.startsWith("--")) out.push(a);
+  }
+  return out;
+}
+
 /** The "make it runnable" block a STANDALONE scaffold ends with (#263). */
 function installLines(install) {
   if (!install?.standalone) return [];
@@ -925,9 +940,7 @@ function cmdScaffold() {
  */
 function cmdCreate() {
   const templateFlag = flagValue("--template", "--archetype");
-  const dir = args.find(
-    (a) => a !== templateFlag && a !== flagValue("--theme") && a !== flagValue("--title"),
-  );
+  const [dir] = positionals("--template", "--archetype", "--theme", "--title");
   if (!dir) {
     console.error(
       `usage: brand-ui create <dir> [--template ${ARCHETYPES.join("|")}] [--theme light|dark] [--title "<name>"] [--force] [--install]`,
