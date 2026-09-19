@@ -17,8 +17,8 @@ APAC, LATAM), twelve product modules (`company.ts`), one fiscal quarter: **Q3 FY
 ## The story the tour tells
 
 1. **A back-office team browsing 2M orders** (§4.2) — `orders.ts`'s `generateOrders(n)` is the
-   same seeded generator whether asked for 50 or 50,000 rows; the data-app tab calls it with
-   `ORDERS_FULL_COUNT` (50,000) so the virtualised `DataTable` is honestly showing scale, not a
+   same seeded generator whether asked for 50 or 10,000 rows; the data-app tab calls it with
+   `ORDERS_FULL_COUNT` (10,000) so the virtualised `DataTable` is honestly showing scale, not a
    fixed 50-row demo. 480 accounts, each with one fixed region and one fixed account owner
    (`ACCOUNT_REGIONS`/`ACCOUNT_OWNERS`) — a customer's orders don't jump regions.
 2. **An ops analyst finding why 12 % of cases take twice as long** (§4.2) — `process-log.ts`
@@ -45,7 +45,7 @@ APAC, LATAM), twelve product modules (`company.ts`), one fiscal quarter: **Q3 FY
   authored list of names and numbers.
 - **Seed determinism.** `generateOrders(n)` and `generateProcessLog(cases, seed)` are pure:
   the same arguments return deep-equal output on every run, in every process.
-- **Generation budget.** `generateOrders(50_000)` completes in well under 150 ms, so the
+- **Generation budget.** `generateOrders(10_000)` completes in well under 150 ms, so the
   data-app tab's "real size" claim costs nothing to render.
 - **No placeholder text, throwaway numbered labels, or generic stand-in brand names.** The
   deny-list itself lives only in `fixtures.test.ts` (the checker), never spelled out in a

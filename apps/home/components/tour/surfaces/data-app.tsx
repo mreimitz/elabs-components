@@ -2,7 +2,7 @@
 
 /**
  * Data app surface (RM-097) — the tour's "Data app" tab: a virtualised `DataTable` over
- * `generateOrders(50_000)` (RM-095's order book), scoped to the frame — no app nav, unlike
+ * `generateOrders(10_000)` (RM-095's order book), scoped to the frame — no app nav, unlike
  * the full-page `docs/playbooks/templates/data-app.tsx`. `FilterBar` + two `FacetFilter`s
  * (region, status) + `SearchInput` + `ColumnPicker` mirror that template's toolbar; a
  * bulk-action bar appears once rows are selected. The row count is read off the CURRENT
@@ -75,7 +75,7 @@ const columns: ColumnDef<OrderRow>[] = [
   { accessorKey: "owner", header: "Owner" },
 ];
 
-// Generated once per module load, not per render — 50 000 deterministic rows
+// Generated once per module load, not per render — 10 000 deterministic rows
 // (`fixtures.test.ts` keeps this under 150 ms).
 const ALL_ORDERS: OrderRow[] = generateOrders(ORDERS_FULL_COUNT);
 

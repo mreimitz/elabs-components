@@ -2,7 +2,7 @@
  * Ashgrove's order book — the data-app tab's virtualised `DataTable` (RM-095, concept §4.2
  * "a back-office team browsing 2M orders"). `generateOrders(n)` is pure and seeded (never
  * `Math.random`, see `lib/prng.ts`): the same `n` always returns the same rows, and
- * `generateOrders(50_000)` completes in under 150 ms (`fixtures.test.ts`) so the tab's claim
+ * `generateOrders(10_000)` completes in under 150 ms (`fixtures.test.ts`) so the tab's claim
  * of scale is honest rather than a fixed 50-row demo table pretending to be a data app.
  */
 import type { ColumnDef } from "@elabs-ai/components-data";
@@ -23,8 +23,8 @@ export interface OrderRow {
   owner: Owner;
 }
 
-/** Default size for the data-app tab — "2M orders" (§4.2) is the story; 50k is what renders. */
-export const ORDERS_FULL_COUNT = 50_000;
+/** Default size for the data-app tab — "2M orders" (§4.2) is the story; 10k is what renders. */
+export const ORDERS_FULL_COUNT = 10_000;
 
 // ── Account pool ─────────────────────────────────────────────────────────────
 // Combinatorial, not random: `NAME_A × NAME_B × SUFFIX` gives 24 × 12 × 8 = 2 304 distinct

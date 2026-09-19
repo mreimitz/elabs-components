@@ -9,7 +9,7 @@ import { ACCOUNT_REGIONS, generateOrders, type OrderRow } from "./orders";
 import type { Region } from "./company";
 
 /** Sample size for the movers computation — large enough for a stable top-8, far short of
- *  the full 50k so this module stays cheap to import from the hero. */
+ *  the full 10k so this module stays cheap to import from the hero. */
 export const CHURN_SAMPLE_SIZE = 6_000;
 
 /** Q3 FY26's three calendar months, as `Date#getUTCMonth()` values (Jul = 6, Sep = 8). */
