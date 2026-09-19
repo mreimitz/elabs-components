@@ -62,8 +62,10 @@ export const Thing = forwardRef<HTMLDivElement, ThingProps>(function Thing(
 ```tsx
 // ❌
 <button className="outline-none">Go</button>
-// ✅ (Button already does this; for custom controls keep it)
-<button className="outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">Go</button>
+// ❌ a hand-rolled ring (it drops the theme's contour and drifts from every other control)
+<button className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Go</button>
+// ✅ (Button already does this; for custom controls use the focus-ring utility)
+<button className="focus-ring">Go</button>
 ```
 
 ## Spacing & sizing

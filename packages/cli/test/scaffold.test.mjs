@@ -162,9 +162,13 @@ test("emitScaffold: the manifest-derived context file ships with the app (#123 A
   assert.deepEqual(r.plan.contextFiles, ["CLAUDE.md", "AGENTS.md", "brand-ui-context.md"]);
 
   const ctx = readFileSync(join(dir, "brand-ui-context.md"), "utf8");
-  assert.match(ctx, /<!-- brand-ui:context:start -->/, "the regenerable marker block");
-  assert.match(ctx, /### @elabs-ai\/components-ui/, "the real component inventory");
+  assert.match(ctx, /## @elabs-ai\/components-ui \(\d+ components\)/, "the installed packages");
   assert.match(ctx, /\bDataTable\b/, "a component an agent would otherwise guess at");
+  assert.match(ctx, /brand-ui docs <Name> --brief/, "the routine names the next lookup");
+  // Only what this app installs: the agent reads the file before its first edit.
+  assert.doesNotMatch(ctx, /components-flow/, "a package the app does not install");
+  assert.doesNotMatch(ctx, /\bDataTableToolbar\b|\bCardHeader\b/, "one name per component");
+  assert.ok(ctx.length < 8192, `short enough to read first (${ctx.length} bytes)`);
   assert.match(
     readFileSync(join(dir, "CLAUDE.md"), "utf8"),
     /brand-ui-context\.md/,

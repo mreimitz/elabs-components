@@ -325,10 +325,13 @@ export const NO_MATCH_GUIDANCE =
  * Shared text rendering for the component arm (CLI + MCP print the same thing).
  * `storyLink(row)` — optional; when it returns a URL, a `story:` line follows the
  * row (the hosted MCP passes one; the CLI and stdio MCP do not).
+ * `offset` + `next` page the arm: `cap` rows from `offset`, and when more remain,
+ * `next(nextOffset)` says how to ask for them. Without `next` the output is the
+ * unpaged default, byte for byte.
  */
-export function renderComponentArm(query, result, cap = 30, { storyLink } = {}) {
+export function renderComponentArm(query, result, cap = 30, { storyLink, offset = 0, next } = {}) {
   const lines = [`Components/hooks matching "${query}":`];
-  for (const r of result.rows.slice(0, cap)) {
+  for (const r of result.rows.slice(offset, offset + cap)) {
     lines.push(
       `  ${r.name}  (${r.pkg}${r.importPath ? ` → import from "${r.importPath}"` : ""} · ${r.kind})` +
         (r.aka ? "  ← brand-ui's name for this" : "") +
@@ -337,8 +340,7 @@ export function renderComponentArm(query, result, cap = 30, { storyLink } = {}) 
     const story = storyLink?.(r);
     if (story) lines.push(`    story: ${story}`);
   }
-  if (result.rows.length > cap)
-    lines.push(`  … ${result.rows.length - cap} more — narrow the query`);
+  lines.push(...moreLines(result.rows.length, cap, { offset, next, fallback: "narrow the query" }));
   if (!result.rows.length) {
     lines.push("  (none)");
     if (result.nearest.length) {
@@ -352,4 +354,26 @@ export function renderComponentArm(query, result, cap = 30, { storyLink } = {}) 
     lines.push("", NO_MATCH_GUIDANCE);
   }
   return lines;
+}
+
+/**
+ * The types/other-exports arm, paged like {@link renderComponentArm}. Unpaged (no
+ * `next`), it cuts at `cap` silently, as it always has.
+ */
+export function renderTypeArm(query, typeRows, cap = 30, { offset = 0, next } = {}) {
+  if (!typeRows.length) return [];
+  const lines = ["", `Types/other exports matching "${query}":`];
+  for (const r of typeRows.slice(offset, offset + cap))
+    lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
+  if (next) lines.push(...moreLines(typeRows.length, cap, { offset, next }));
+  return lines;
+}
+
+/** The "N more" tail of a paged arm (or the unpaged `fallback` wording). */
+function moreLines(total, cap, { offset, next, fallback }) {
+  const nextOffset = offset + cap;
+  if (!next) return total > cap && fallback ? [`  … ${total - cap} more — ${fallback}`] : [];
+  if (total > nextOffset) return [`  … ${total - nextOffset} more — ${next(nextOffset)}`];
+  if (total && offset >= total) return [`  (no more — ${total} in all)`];
+  return [];
 }

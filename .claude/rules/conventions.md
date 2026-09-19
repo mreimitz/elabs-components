@@ -278,6 +278,7 @@ Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pn
 
 ### Repo
 
+- Keep what an agent reads first under its byte ceiling: the brand-ui skill router (8 KiB), `llms.txt` and each `llms/<pkg>.txt`, a created app's `brand-ui-context.md` for every template, and every component's `docs --brief` card. (`agent-token-budget`)
 - Resolve every Git merge conflict before committing: no line may start with a `<<<<<<<` / `=======` / `>>>>>>>` marker. (`conflict-markers`)
 - Keep `docs/csp-policy.json` and the `csp:published`/`csp:dev` blocks in `docs/CSP-AND-NETWORK.md` §2.7 identical, and justify every non-`'self'` relaxation with a carve-out whose `why` names the reason. (`csp-policy`)
 - `pnpm-lock.yaml` never repeats a sibling mapping key (a bad merge breaks `--frozen-lockfile` and silently stops CI); dedupe or regenerate with `pnpm install --lockfile-only`. (`lockfile-dup-keys`)

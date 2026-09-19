@@ -12,658 +12,91 @@ allowed-tools:
 
 # brand-ui
 
-A source-owned, token-driven React component system: modern enterprise SaaS by
-default, themeable to any brand. Packages: `@elabs-ai/components-ui` (foundation + app UI),
-`@elabs-ai/components-data` (TanStack DataTable + filters), `@elabs-ai/components-ai` (AI Elements / chat),
-`@elabs-ai/components-flow` (React Flow canvas), `@elabs-ai/components-maps` (MapLibre GL maps),
-`@elabs-ai/components-charts` (KPI tiles + 13 charts + `ChartFrame`), `@elabs-ai/components-marketing`
-(landing sections), `@elabs-ai/components-editor` (Monaco code editor),
-`@elabs-ai/components-viewer` (FileViewer — display a file the app did not write),
-`@elabs-ai/components-terminal` (terminal surfaces — shell/agent output, coding-agent CLI look-alikes),
-`@elabs-ai/components-tokens` (themes +
-`ThemeProvider`), `@elabs-ai/components-icons` (brand/product icons; generic UI glyphs use the
-default icon library **Lucide** / `lucide-react`).
+A source-owned, token-driven React component system (`@elabs-ai/components-*`),
+themeable to any brand. This file is the router: follow the routine, and load a
+reference file only when the task needs it.
 
-> Run the CLI with the project's runner. In this monorepo: `pnpm brand-ui <cmd>`.
-> In a consuming project, add it with `pnpm add -D @elabs-ai/components-cli` (a
-> public npm package — no registry setup, no token), then run
-> `pnpm exec brand-ui <cmd>`. Or run it with no install at all:
-> `npx -y @elabs-ai/components-cli <cmd>`. Examples below say `brand-ui`.
+Run the CLI as `pnpm exec brand-ui <cmd>` or `npx brand-ui <cmd>` once
+`@elabs-ai/components-cli` is a dev dependency (`pnpm add -D` or `npm install -D`;
+public npm, no token), or with no install as `npx -y @elabs-ai/components-cli <cmd>`.
+Inside the brand-ui repo: `pnpm brand-ui <cmd>`. When the `mcp__brand-ui__*` tools are
+connected they answer the same without a shell. Examples below say `brand-ui`.
 
-## Packages & themes at a glance
+## The routine
 
-The factual catalogue below is generated from the manifest (`pnpm gen`) and
-stale-gated — never hand-edit between the markers.
+1. `brand-ui info`: once per session. Packages present, themes, tokens, registry.
+2. `brand-ui search <need>`: the component, a copy-own registry block, or for a whole
+   screen ("dashboard", "chatbot", "settings page") the playbook and template to start from.
+3. `brand-ui docs <Component> --brief`: its parts and real props. Never guess an API;
+   drop `--brief` for every prop.
+4. Build: compose existing components, their variants and semantic tokens.
+5. `brand-ui audit <path>`: the static token and type-role pass. For the rendered
+   cross-theme and contrast pass, use the `brand-ui-audit` skill.
+
+## Decisions
+
+<!-- brand-ui:gen:decisions:start -->
+<!-- Generated from the decision summary by `pnpm gen`; edit the decisions there. -->
+
+- **D1 · Which paradigm?** **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI (A2UI) is for screens the agent must design at runtime.
+- **D2 · Rendering agent output** A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI: JSON validated against the catalog, rendered by `A2uiSurface`.
+- **D3 · Which package** `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · dashboard sheet → `@elabs-ai/components-charts/dashboard` · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai)
+- **D4 · Import vs copy-own** Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry).
+- **D5 · Scope boundary (what brand-ui ISN'T)** brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls.
+- **D6 · Dependency & import discipline** `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph.
+- **D7 · Maintainer decisions** New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory).
+<!-- brand-ui:gen:decisions:end -->
+
+## Packages
 
 <!-- brand-ui:gen:catalogue:start -->
-<!-- GENERATED from brand-ui.manifest.json by 'pnpm gen' (WP-10 #87). Edit package purposes in the CLI's render-docs module (PKG_PURPOSE), not here. The gen:check gate fails on drift. -->
+<!-- Generated from the manifest by `pnpm gen`; package purposes are PKG_PURPOSE in the CLI. -->
 
-**Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 285 · **Registry blocks:** 65
+**Themes (2):** dark, light (default) · **Tokens:** 285 · **Registry blocks:** 65 · **Components:** 433 in 13 packages
 
-**Exported surface:** 1312 components · 97 hooks across 13 packages.
+- `@elabs-ai/components-tokens` (2): Semantic CSS-variable themes + ThemeProvider/useTheme.
+- `@elabs-ai/components-icons` (32): Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).
+- `@elabs-ai/components-ui` (132): Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).
+- `@elabs-ai/components-data` (6): TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.
+- `@elabs-ai/components-ai` (75): ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.
+- `@elabs-ai/components-flow` (19): Branded React Flow canvas, nodes, edges, controls, inspector.
+- `@elabs-ai/components-maps` (8): MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.
+- `@elabs-ai/components-charts` (96): MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).
+- `@elabs-ai/components-marketing` (8): Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.
+- `@elabs-ai/components-editor` (7): Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.
+- `@elabs-ai/components-viewer` (5): FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.
+- `@elabs-ai/components-terminal` (17): Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.
+- `@elabs-ai/components-process` (26): Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data.
 
-| Package                          | Components | Hooks | Use it for                                                                                                    |
-| -------------------------------- | ---------: | ----: | ------------------------------------------------------------------------------------------------------------- |
-| `@elabs-ai/components-tokens`    |         19 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                                        |
-| `@elabs-ai/components-icons`     |         32 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).                                 |
-| `@elabs-ai/components-ui`        |        405 |    15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                |
-| `@elabs-ai/components-data`      |          6 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                                        |
-| `@elabs-ai/components-ai`        |        449 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
-| `@elabs-ai/components-flow`      |         34 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                                                 |
-| `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                      |
-| `@elabs-ai/components-charts`    |        224 |    43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
-| `@elabs-ai/components-marketing` |          9 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                                             |
-| `@elabs-ai/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                            |
-| `@elabs-ai/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.                              |
-| `@elabs-ai/components-terminal`  |         31 |     1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                                       |
-| `@elabs-ai/components-process`   |         64 |     7 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
-
-_Counts are exact, from the manifest. Confirm component names/props with `brand-ui search <q>` / `brand-ui docs <Component>` — never guess the API._
+_One count per component; `brand-ui docs <Component>` lists its parts (`CardHeader`, …)._
 
 <!-- brand-ui:gen:catalogue:end -->
 
-## Step 0 — Load project context (do this first, once per session)
-
-Run **`brand-ui info`** before writing UI. It reports which `@elabs-ai/components-*` packages
-are present, the available themes + default, the token set, and the registry. Do
-not re-run if you've already seen it this conversation.
-
-Then, **do not guess the API.** brand-ui is source-owned and versioned — your
-memory of its props is unreliable. To get the real surface:
-
-- `brand-ui search <query>` — find components/hooks/registry items.
-- `brand-ui docs <Component>` — print the component's real props from source.
-- Or read the file the manifest points to. Never invent props.
-
-> **Two equivalent ways to reach this ground truth.** The commands above are the
-> **CLI**. The same engine is also exposed as a **persistent MCP server** — if the
-> `mcp__brand-ui__*` tools are available (server `brand-ui` in `.mcp.json`, started
-> with `brand-ui mcp`), prefer them: `mcp__brand-ui__info`, `…__search`, `…__docs`,
-> `…__tokens`, `…__audit` return the same data over MCP and work **with the
-> Storybook dev server down**. Use the **Storybook MCP** (`mcp__storybook__*`,
-> only while `pnpm storybook` runs) for the _rendered_ view (previews, interaction +
-> a11y tests); use **brand-ui MCP / CLI** for the _API_ (props, variants, tokens).
-> When neither is available, fall back to the CLI commands or reading source.
-
-## Principles
-
-1. **Use an existing `@brand` component before writing markup.** `brand-ui search`
-   first. There are 600+ exported components/parts across the packages.
-2. **Compose, don't reinvent.** App shell = `SidebarProvider` + `Sidebar` +
-   `SidebarInset`. Dashboard = `MetricGrid` + `DataTable`. Assistant = `ChatShell`
-   - AI elements. Pipeline = `CanvasShell` + `FlowNode`/`FlowEdge`.
-3. **Semantic tokens only.** `bg-background`, `text-muted-foreground`, `bg-primary`,
-   `border-border`, `bg-card`. Never raw hex, `rgb()`, or `bg-[#…]`.
-4. **Built-in variants before custom styles.** `variant="outline"`, `size="sm"`.
-
-## Critical rules
-
-Always enforced. Full detail with Incorrect/Correct pairs in
-[reference/rules.md](reference/rules.md).
-
-- **Semantic tokens, never raw color.** The only place raw colors live is the
-  `@elabs-ai/components-tokens` theme stylesheet (`@elabs-ai/components-tokens/styles.css`). In app code use
-  token-backed utilities. Run `brand-ui audit <path>` to catch violations.
-- **`className` is for layout, not recoloring.** Don't override a component's
-  colors or typography; use its variants/tokens.
-- **`forwardRef` + `cn()` + spread `...props`** on any component you author or
-  extend. Merge `className` last so callers can override layout.
-- **Radix for interactive/overlay behavior.** Don't hand-roll focus traps,
-  dismissal, or stacking — Dialog/Sheet/Popover/Dropdown handle it. No manual
-  `z-index` on overlays.
-- **Visible focus ring.** Every interactive element keeps
-  `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`.
-  Never `outline: none` without a replacement.
-- **Theme-safe.** It must read correctly in every theme (light [default],
-  dark). Rely on tokens, not `dark:`.
-- **Spacing:** `flex`/`grid` + `gap-*`, not `space-x/space-y-*`. **Equal w/h:**
-  `size-*`, not `w-N h-N`. **`cn()`** for conditional classes.
-- **Accessibility:** real elements (`<button>`, `<a>`, `<input>`), labels on
-  inputs (visible or `sr-only`), `aria-label` on icon-only controls,
-  `aria-hidden` on decorative SVGs. Body text ≥ 4.5:1 in all themes.
-- **`Avatar` needs `AvatarFallback`. Dialog/Sheet/Drawer need a Title** (use
-  `sr-only` if visually hidden).
-
-## Component selection
-
-| Need                   | Use (package)                                                                                                                                                                                                                           |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Action                 | `Button` variants (`@elabs-ai/components-ui`)                                                                                                                                                                                           |
-| Form inputs            | `Input`, `Select`, `Combobox`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `Textarea`, `InputOTP`, `Calendar`, `DatePicker`, `Form` (`@elabs-ai/components-ui`)                                                                       |
-| Grouped input + addon  | `InputGroup` + `InputGroupInput`/`InputGroupTextarea` + `InputGroupAddon` (`@elabs-ai/components-ui`)                                                                                                                                   |
-| 2–5 option toggle      | `ToggleGroup` (`@elabs-ai/components-ui`)                                                                                                                                                                                               |
-| Data table             | `DataTable` + `SearchInput`/`FacetFilter`/`ColumnPicker` (`@elabs-ai/components-data`)                                                                                                                                                  |
-| Display                | `Card`, `Badge`, `Avatar`, `Table`, `Progress`, `Skeleton` (`@elabs-ai/components-ui`)                                                                                                                                                  |
-| Icons                  | **`lucide-react`** (default — generic UI glyphs) · `@elabs-ai/components-icons` (`Icon`/`createIcon`/`BrandLogo` — brand/product icons). No other icon set; see the brand-ui icons rule                                                 |
-| Navigation             | `Sidebar`, `NavigationMenu`, `Breadcrumb`, `Tabs`, `Pagination` (`@elabs-ai/components-ui`)                                                                                                                                             |
-| App shell              | `SidebarProvider`/`Sidebar`/`SidebarInset` + `sidebar-02/04/05` blocks                                                                                                                                                                  |
-| Overlays               | `Dialog`, `Sheet`, `Drawer`, `AlertDialog`, `Popover`, `Tooltip`, `HoverCard`                                                                                                                                                           |
-| Command palette        | `Command` inside `Dialog`                                                                                                                                                                                                               |
-| Feedback               | `Alert`, `Sonner` toast, `EmptyState`, `ErrorState`, `LoadingState`, `Spinner`                                                                                                                                                          |
-| AI / chat              | `ChatShell`, `Conversation`, `Message`, `PromptInput`, `Reasoning`, `Tool`, `Sources` (`@elabs-ai/components-ai`)                                                                                                                       |
-| Flow canvas            | `CanvasShell`, `FlowNode`, `FlowEdge`, `ZoomControls`, `InspectorPanel` (`@elabs-ai/components-flow`)                                                                                                                                   |
-| KPIs / charts          | `MetricCard`, `MetricGrid`, `ChartCard`, `ChartFrame` + 13 chart types (`@elabs-ai/components-charts`) — see Charts section below                                                                                                       |
-| Marketing              | `Hero`, `FeatureGrid`, `StatsBand`, `CTASection`, `LogoStrip` (`@elabs-ai/components-marketing`)                                                                                                                                        |
-| Code editor            | `CodeEditor`, `DiffEditor`, `CodeWorkspace` (`@elabs-ai/components-editor`; import `@elabs-ai/components-editor/monaco-environment` once)                                                                                               |
-| Markdown authoring     | `MarkdownWorkspace`, `MarkdownEditor`, `MarkdownPreview`, `Timeline`, `MetricBlock` (`@elabs-ai/components-editor/markdown`); `parseFrontmatter`/`serializeFrontmatter` (`@elabs-ai/components-editor/markdown/frontmatter`, YAML only) |
-| File / document viewer | `FileViewer` + `FileViewerProvider`/`FileViewerToolbar`/`FileViewerContent` (`@elabs-ai/components-viewer`) — images, text, JSON, CSV today; formats are added by registering an adapter                                                |
-
-Confirm exact names with `brand-ui search`; the registry also has copy-own blocks
-(`brand-ui search` shows `registry:*` items).
-
-## Two consumption modes
-
-1. **Import (stable primitives):** `import { Button, Card } from "@elabs-ai/components-ui"`.
-   Once at the app root: `import "@elabs-ai/components-tokens/styles.css"` and wrap in
-   `<ThemeProvider defaultTheme="light">`. React Flow consumers also
-   `import "@xyflow/react/dist/style.css"`.
-2. **Copy-own (prototype blocks):** `npx shadcn@latest add <registry-url>/<item>.json`.
-   After adding, **read the files** and fix imports to the project's alias, verify
-   composition against the Critical rules, and remove any raw colors.
-
-## Theming
-
-Themes are `data-theme` blocks; `ThemeProvider`/`useTheme` (from `@elabs-ai/components-tokens`)
-set and persist the choice. Every visual decision is a token — to re-brand, change
-token values, never hardcode in components. See [reference/theming.md](reference/theming.md).
-
-## Workflow
-
-1. **Context** — `brand-ui info` (once).
-2. **Intent → playbook** (whole screens only) — before composing a full screen,
-   run `brand-ui search <what you are building>` ("dashboard", "chatbot",
-   "landing page", "admin console"). A matching **playbook** tells you which
-   components, in which order, wired which way. Read
-   `docs/playbooks/<archetype>.md`, start from its
-   `docs/playbooks/templates/<archetype>.tsx`, and don't re-make the decisions it
-   lists as already made. The same routing table is in the generated context file
-   under _Playbooks (intent → archetype)_. Skip this step for a single component.
-3. **Find** — `brand-ui search <need>`; prefer an existing component/block.
-4. **API** — `brand-ui docs <Component>` (or read the source) for real props.
-5. **Compose** — use compound components + variants + tokens.
-6. **Verify** — `brand-ui audit <path>` (static), and for visual/contrast across
-   themes use the **brand-ui-audit** skill.
-
-## Rendering agent output (the @elabs-ai/components-ai contract)
-
-`@elabs-ai/components-ai` renders **agent-produced** data; your app owns the model call (D5). When you
-(or an agent) produce chat/GenUI output, emit one of the three **shipped** shapes below and
-let the components render it — **there is no system prompt to copy**. Full routing lives in
-`docs/DECISIONS.md` §D2 and the `ai-sdk-vs-a2ui` rule; the machine-readable version is
-`brand-ui.manifest.json` (`agentOutput`); the live page is Storybook → _Docs/AI Output
-Contract for Agents_. The contract below is generated from the manifest and stale-gated —
-never hand-edit between the markers.
-
-<!-- brand-ui:gen:agent-output:start -->
-
-> **Generated** by `pnpm gen` from the CLI's agent-output module — edit there, not here. The `gen:check` gate fails on drift.
-
-`@elabs-ai/components-ai` is a **presentation layer**: it renders a data model — your app owns the model calls (D5). There is **no system prompt to copy**; there are two shipped output shapes and a wiring pattern. Pick the path, emit the shape, let the components render it.
-
-### Which path (D2)
-
-| The agent is producing…                          | Emit          | Status                             |
-| ------------------------------------------------ | ------------- | ---------------------------------- |
-| A conversation (text, tools, reasoning, sources) | ai/UIMessage  | shipped                            |
-| Ad-hoc UI as a JSX string                        | `JSXPreview`  | shipped (escape hatch)             |
-| An agent-designed surface (UI as data)           | `A2uiSurface` | shipped (the safe generative path) |
-
-_Mental model: AI SDK = what the agent **said**; A2UI = a screen the agent **designed**. A chat that shows messages is still "build-with" — don't reach for generative UI just because there's a chatbox._
-
-### Path A · Conversation — the AI SDK UIMessage (the default)
-
-Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @elabs-ai/components-ai renders it. ~the default for any chat.
-
-- **Authority:** Vercel AI SDK — import type only (D6). brand-ui does NOT redefine UIMessage/ToolUIPart; the SDK is authoritative for their shape.
-- **brand-ui owns:** brand-ui owns ONLY the projection: the tool-state→Status mapping, the role narrowing, the fields its components consume, and SourceListItem.
-- **Roles** (`Message from`): `user` · `assistant` · `system`
-- **Rendered by:** `Conversation`, `Message`, `Tool`, `Reasoning`, `Sources`
-
-| Part `type`  | Rendered by                                     | Notes                                                                                                        |
-| ------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `text`       | `Message`, `MessageResponse`                    | Plain/markdown text; MessageResponse streams it (Streamdown).                                                |
-| `reasoning`  | `Reasoning`, `ReasoningContent`                 | A reasoning string; pass isStreaming to auto-open + show a duration.                                         |
-| `tool`       | `Tool`, `ToolHeader`, `ToolInput`, `ToolOutput` | A pre-rendered React-element `output` is deprecated — emit a JSON payload and render it with ToolResultCard. |
-| `source-url` | `Sources`, `Source`, `SourceList`               | brand-ui-owned grounding item — not an SDK source part.                                                      |
-
-A **tool part** is typed `tool-<name> | dynamic-tool` and carries `type`, `state`, `input`, `output`, `errorText`. Its `state` maps onto the closed `@elabs-ai/components-ui` `Status` enum:
-
-| Tool `state`         | → `Status`          |
-| -------------------- | ------------------- |
-| `input-streaming`    | `pending`           |
-| `input-available`    | `running`           |
-| `approval-requested` | `awaiting-approval` |
-| `approval-responded` | `running`           |
-| `output-available`   | `complete`          |
-| `output-denied`      | `denied`            |
-| `output-error`       | `failed`            |
-
-_A pre-rendered React-element `output` is deprecated — emit a JSON payload and render it with ToolResultCard._
-
-The data the agent emits (a `UIMessage[]` — the AI SDK owns this shape):
-
-```ts
-const messages = [
-  { id: "m1", role: "user", parts: [{ type: "text", text: "Weather in Berlin?" }] },
-  {
-    id: "m2",
-    role: "assistant",
-    parts: [
-      { type: "reasoning", text: "User wants current weather — call the tool." },
-      {
-        type: "tool-getWeather", // `tool-<name>`, or { type: "dynamic-tool", toolName }
-        toolCallId: "call_1",
-        state: "output-available", // 7-state machine → StatusBadge
-        input: { city: "Berlin" },
-        output: { tempC: 18, summary: "Partly cloudy" },
-      },
-      { type: "text", text: "It is 18°C and partly cloudy in Berlin." },
-      {
-        type: "source-url",
-        sourceId: "s1",
-        url: "https://example.com/berlin",
-        title: "Berlin forecast",
-      },
-    ],
-  },
-];
-```
-
-Map each turn's parts onto the components (**in your app** — `@elabs-ai/components-ai` never calls the model):
-
-```tsx
-{
-  messages.map((m) => (
-    <Message key={m.id} from={m.role}>
-      <MessageContent>
-        {m.parts.map((part, i) => {
-          if (part.type === "reasoning")
-            return (
-              <Reasoning key={i}>
-                <ReasoningContent>{part.text}</ReasoningContent>
-              </Reasoning>
-            );
-          if (part.type.startsWith("tool-"))
-            return (
-              <Tool key={i}>
-                <ToolHeader type={part.type} state={part.state} />
-                <ToolContent>
-                  <ToolInput input={part.input} />
-                  <ToolOutput output={part.output} errorText={part.errorText} />
-                </ToolContent>
-              </Tool>
-            );
-          if (part.type === "text") return <MessageResponse key={i}>{part.text}</MessageResponse>;
-          return null;
-        })}
-      </MessageContent>
-    </Message>
-  ));
-}
-```
-
-> Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @elabs-ai/components-ai never calls the model.
-
-### Path B · Ad-hoc JSX — JSXPreview (the escape hatch)
-
-When the agent emits UI as a JSX markup STRING. Flexible but less safe — prefer A2UI (data, validated) for an agent-designed surface.
-
-| Prop          | Type                                     |
-| ------------- | ---------------------------------------- |
-| `jsx`         | `string`                                 |
-| `isStreaming` | `boolean?`                               |
-| `components`  | `allow-list — Record<string, Component>` |
-| `bindings`    | `record?`                                |
-| `onError`     | `fn?`                                    |
-
-- **Safety:** Renders ONLY tags present in the `components` allow-list you pass — the app decides what is renderable. Never widen it to arbitrary tags.
-- **Streaming:** When isStreaming, partial tags auto-close (completeJsxTag) and a parse error falls back to the last good render — emit progressively; don't worry about closing every tag per chunk.
-
-```tsx
-// The agent emits a JSX markup STRING; you pass the allow-list.
-const jsx = `<Stat label="Revenue" value="$1.2M" delta="+12%" />`;
-
-<JSXPreview jsx={jsx} components={{ Stat }}>
-  <JSXPreviewContent />
-  <JSXPreviewError />
-</JSXPreview>;
-```
-
-> Pass the agent's JSX string to `<JSXPreview jsx={…} components={allowList} />`. The allow-list is yours.
-
-### Path C · A2UI — an agent-DESIGNED surface (data, validated against the catalog)
-
-The SAFE generative-UI path: the agent describes a screen as JSON — a tree of catalog types with props, children and `on.<event>` action bindings — brand-ui validates it against the catalog and renders it with the real components. No code, no className, no style in a surface.
-
-- **Protocol:** `{ "a2ui": "1", "title"?: string, "root": node } · node = string | { type, id?, props?, children?, on? }`
-
-| Prop          | Type                                                                           |
-| ------------- | ------------------------------------------------------------------------------ |
-| `surface`     | `A2uiSurfaceSpec \| string (JSON text, may be a streaming prefix)`             |
-| `catalog`     | `A2uiCatalog? — defaults to uiCatalog; extend with createA2uiCatalog`          |
-| `onAction`    | `(action: { name, payload? }, context: { event, value?, node, path }) => void` |
-| `isStreaming` | `boolean?`                                                                     |
-| `loading`     | `boolean?`                                                                     |
-| `onError`     | `(errors: A2uiError[]) => void`                                                |
-
-- **Safety:** Only catalog types render; every prop is checked against the type's schema (unknown props, enum values, required props); className/style/code never pass. Actions are names the HOST resolves in onAction — a surface cannot call anything.
-- **Streaming:** Pass the JSON text as it arrives with isStreaming: the surface completes the partial document, draws every node that already validates and prunes the rest; nothing errors until the input settles.
-- **Tooling:**
-  - `brand-ui a2ui catalog [<Type>]` — the types, props, enums and events you may emit
-  - `brand-ui a2ui schema` — JSON Schema (draft 2020-12) for structured output
-  - `brand-ui a2ui validate <file>` — every problem with its path; exit 1 when invalid
-  - `brand-ui a2ui example` — a starter surface
-  - MCP tool `a2ui` with `{ verb: catalog|schema|validate|example }` on the hosted server
-
-```tsx
-// The agent emits JSON naming catalog types (brand-ui a2ui catalog) and host actions.
-const surface = {
-  a2ui: "1",
-  title: "Order 4711",
-  root: {
-    type: "Card",
-    children: [
-      { type: "CardHeader", children: [{ type: "CardTitle", children: ["Order 4711"] }] },
-      {
-        type: "CardContent",
-        children: [
-          {
-            type: "Grid",
-            props: { columns: 2 },
-            children: [
-              {
-                type: "MetricCard",
-                props: { label: "Total", value: 1240, valueFormat: "currency", currency: "EUR" },
-              },
-              { type: "StatusBadge", props: { status: "awaiting-approval" } },
-            ],
-          },
-        ],
-      },
-      {
-        type: "CardFooter",
-        children: [
-          {
-            type: "Button",
-            on: { click: { name: "approve", payload: { id: 4711 } } },
-            children: ["Approve"],
-          },
-        ],
-      },
-    ],
-  },
-};
-
-<A2uiSurface surface={surface} onAction={(action) => approve(action.payload)} />;
-```
-
-> Read the catalog (`brand-ui a2ui catalog` or the MCP `a2ui` tool), emit the surface as a tool result or message part, validate it (`brand-ui a2ui validate`), render with `<A2uiSurface surface={…} onAction={…} />`. Charts: merge CHARTS_A2UI_BINDINGS + CHARTS_A2UI_CATALOG_SCHEMA from @elabs-ai/components-charts with createA2uiCatalog (AutoChart, ChartCard, MetricGrid, Sparkline, BulletChart, Gauge); apps add their own types the same way (a KPI block, a domain card).
-
-### Wire it into YOUR runtime
-
-The app owns the model. `useChat()` (from `ai`, **in your app**) gives you `messages: UIMessage[]`; render them with Path A. To drive a tool-calling model, assemble your tool definitions / prompt fragments **in your app** from `brand-ui.manifest.json` (`agentOutput` + per-component `intent`) — brand-ui ships the machine-readable contract; your app composes the prompt. Any runtime that produces `UIMessage`-shaped data (or a JSX string) works — brand-ui is transport-agnostic.
-
-### Don't
-
-- Don't expect @elabs-ai/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).
-- Don't paste a frozen system prompt from this contract — assemble tool defs / prompt fragments in YOUR app from the manifest + this block.
-- Don't emit tags outside the JSXPreview `components` allow-list.
-- Don't put className, style, JSX or code in an A2UI surface — it is data; a type or prop outside `brand-ui a2ui catalog` fails validation.
-- Don't reach for JSXPreview/generative UI just because there's a chatbox — a chat that shows messages is still Build-with.
-- Don't invent component props — verify via `brand-ui docs <Component>` or the Storybook MCP.
-
-_Verify every component name/prop with `brand-ui docs <Component>` or the Storybook MCP — never guess._
-
-<!-- brand-ui:gen:agent-output:end -->
-
-### Agent-designed surfaces (A2UI)
-
-When the agent must **design** a screen at runtime — an order card with actions, a KPI
-row for the question just asked — it emits an A2UI surface: JSON, not code. Read the
-catalog first, emit `{ "a2ui": "1", "root": … }` using only catalog types and props, bind
-interaction as `on.<event>` → `{ name, payload }`, validate, and let `<A2uiSurface>`
-(`@elabs-ai/components-ai`) render it. The host app receives every action in `onAction`
-and decides what it means (D5). Never put `className`, `style` or code in a surface.
-
-For an **analytics** surface — a question answered with numbers — compose from the charts
-half of the catalog (`brand-ui a2ui catalog AutoChart` … `Gauge`; the app merges
-`CHARTS_A2UI_BINDINGS` from `@elabs-ai/components-charts`): run `chart-for "<data shape>"`
-before choosing an `AutoChart` `type`, put every chart in a `ChartCard` and state its
-`source`, lead with ONE hero (a `MetricCard`/`MetricGrid` row or the app's KPI block) and
-let the charts explain it, give KPI blocks facts (actual, target, prior year, weekly) and
-never a delta you computed yourself, and end with the follow-up questions as `Button`s
-(`on.click` → the host asks the next question). Storybook: _AI / A2UI Analytics_.
-
-<!-- brand-ui:gen:a2ui:start -->
-
-> **Generated** by `pnpm gen` from the CLI's a2ui module — edit there, not here.
-
-| Command                                   | What it does                                                                                                                                                                                        |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `brand-ui a2ui catalog [<Type>] [--json]` | Lists every type an agent may emit in a surface — props with enums and defaults, required props, events (`on.click` → the host action), whether it takes children — or the full entry for one type. |
-| `brand-ui a2ui schema`                    | Prints the A2UI surface v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-ai/a2ui/schema.json`) — feed it to a structured-output mode.                                         |
-| `brand-ui a2ui validate <file> [--json]`  | Runs `validateA2uiSurface`: one `path code message` line per problem (unknown type/prop/event, enum value, missing required prop, children on a leaf); exit 1 when invalid.                         |
-| `brand-ui a2ui example`                   | Prints a small valid surface (Card → Grid of MetricCards → Button with an `on.click` action) to start from.                                                                                         |
-
-<!-- brand-ui:gen:a2ui:end -->
-
-## Charts (@elabs-ai/components-charts)
-
-`@elabs-ai/components-charts` provides 13 composable chart containers, `ChartFrame` (an
-expand/flip-to-table/download-CSV wrapper), and the KPI tile primitives
-(`MetricCard`, `MetricGrid`, `ChartCard`). All visuals are token-driven —
-series colors come from `--chart-1..5` so every chart is theme-safe without
-any inline styles. The package depends only on `@elabs-ai/components-ui` and `@elabs-ai/components-tokens`;
-it must NOT import from `@elabs-ai/components-data` (sibling dep rule).
-
-### Which chart when
-
-For the full 25-container data-shape table (which axis/measure combination maps
-to which container, alternatives, and when to avoid each), the four
-chart-selection rules (judge the shape first, compare ≥ 3 candidates, cap a page
-at 6 charts, never repeat a silhouette), and palette-by-cardinality guidance, see
-[reference/chart-selection.md](reference/chart-selection.md) — or query it
-directly with `brand-ui chart-for "<data shape>"` (also exposed as the `chart_for`
-MCP tool). The quick table below is a shorter, pre-RM-038 cheat sheet covering
-13 of the 25 containers.
-
-| Chart              | Use when                                                       |
-| ------------------ | -------------------------------------------------------------- |
-| `AreaChart`        | Trend over time with magnitude / filled area emphasis          |
-| `LineChart`        | Trend or multi-series comparison over time                     |
-| `BarChart`         | Categorical comparison; supports vertical, horizontal, stacked |
-| `ScatterChart`     | Correlation between two continuous variables                   |
-| `PieChart`         | Part-to-whole for a small number of categories                 |
-| `RingChart`        | Part-to-whole with a center slot for a summary value           |
-| `FunnelChart`      | Stage drop-off / conversion funnel                             |
-| `RadarChart`       | Multivariate attribute comparison across categories            |
-| `CandlestickChart` | OHLC financial / time-series open-high-low-close data          |
-| `ComposedChart`    | Mixed bar columns + lines on a shared time scale               |
-| `LiveLineChart`    | Streaming / real-time data updated at high frequency           |
-| `ChoroplethChart`  | Geographic data mapped to regions (world/country polygons)     |
-| `SankeyChart`      | Flow allocation between nodes (budget, traffic, energy)        |
-
-### Dashboard sheets (agent-emitted)
-
-A whole dashboard is a serialisable `DashboardSpec` for `@elabs-ai/components-charts/dashboard`.
-Pick tiles by the question the reader asks (3–5 metrics on top, trends 12×6, records
-full width at the bottom, filters in a left column, at most 12 tiles), omit `layout` and let
-`autoLayout` place them, then validate — see
-[reference/sheet-for.md](reference/sheet-for.md) for the mapping, size rules and three
-copyable specs.
-
-<!-- brand-ui:gen:dashboard-spec:start -->
-
-> **Generated** by `pnpm gen` from the CLI's dashboard-spec module — edit there, not here.
-
-| Command                                                                     | What it does                                                                                                                                             |
-| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `brand-ui dashboard-spec schema`                                            | Prints the DashboardSpec v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-charts/dashboard/schema.json`).                          |
-| `brand-ui dashboard-spec validate <file> [--json]`                          | Runs `validateDashboardSpec`: one `path code message` line per problem (shape, duplicate ids, dangling refs, overlaps, conditions); exit 1 when invalid. |
-| `brand-ui dashboard-spec kinds [--json]`                                    | Lists the nine built-in tile kinds with default and minimum sizes and capabilities.                                                                      |
-| `brand-ui dashboard-spec layout <file> [--strategy=by-kind\|reading-order]` | Places every tile that has no `layout` with `autoLayout` (existing layouts kept) and prints the spec.                                                    |
-
-<!-- brand-ui:gen:dashboard-spec:end -->
-
-### Composition pattern
-
-Charts follow a provider-children model: the chart container owns a
-`ChartProvider` internally; composition primitives (`Area`, `Line`, `Bar`, …)
-are passed as children and read scale/data from context.
-
-```tsx
-// Verified against the @elabs-ai/components-charts area-chart example
-import { AreaChart, Area, Grid, XAxis, ChartTooltip } from "@elabs-ai/components-charts";
-import { curveNatural } from "@visx/curve";
-
-const data = [
-  { date: new Date("2024-01-01"), desktop: 186, mobile: 80 },
-  { date: new Date("2024-06-01"), desktop: 214, mobile: 140 },
-];
-
-<div className="h-72 w-full">
-  <AreaChart data={data} style={{ height: "100%" }}>
-    <Grid horizontal />
-    <Area
-      dataKey="desktop"
-      curve={curveNatural}
-      stroke="var(--chart-1)"
-      fill="var(--chart-1)"
-      fillOpacity={0.4}
-    />
-    <Area
-      dataKey="mobile"
-      curve={curveNatural}
-      stroke="var(--chart-2)"
-      fill="var(--chart-2)"
-      fillOpacity={0.4}
-    />
-    <XAxis />
-    <ChartTooltip />
-  </AreaChart>
-</div>;
-```
-
-Key composition primitives per chart family:
-
-- **Area/Line/Composed** — `Area`, `Line`, `SeriesBar`, `XAxis`, `YAxis`, `Grid`, `ChartTooltip`
-- **Bar** — `Bar`, `BarXAxis`, `BarYAxis`, `Grid`, `ChartTooltip`
-- **Pie/Ring** — `PieSlice`/`Ring`, `PieCenter`/`RingCenter`, `ChartTooltip`
-- **Scatter** — `Scatter`, `XAxis`, `YAxis`, `Grid`, `ChartTooltip`
-- **Radar** — `RadarArea`, `RadarAxis`, `RadarGrid`, `RadarLabels`
-- **Candlestick** — `Candlestick`, `XAxis`, `YAxis`, `Grid`, `ChartTooltip`
-- **LiveLine** — `LiveLine`, `LiveXAxis`, `LiveYAxis`
-- **Sankey** — `SankeyNode`, `SankeyLink`, `SankeyTooltip`
-- **Choropleth** — `ChoroplethFeatureComponent`, `ChoroplethGraticule`, `ChoroplethTooltip`
-
-### `useChart` hooks
-
-Three hooks give composition primitives access to the chart's internal state.
-**They throw when called outside a `ChartProvider`** — which means they throw
-inside `ChartFrame` (ChartFrame renders above the chart's provider). Never
-call them from a `ChartFrame` prop or a parent component; instead pass
-`data`/`columns` as props directly to `ChartFrame`.
-
-| Hook               | Re-renders on hover?   | Use for                                                         |
-| ------------------ | ---------------------- | --------------------------------------------------------------- |
-| `useChartStable()` | No                     | Axes, grids, fill primitives — cold consumers                   |
-| `useChartHover()`  | Yes (every mouse move) | Tooltip, crosshair — hot consumers                              |
-| `useChart()`       | Yes                    | Convenience: merged stable + hover; use only when you need both |
-
-Return shape (selected fields from `ChartContextValue`):
-
-```ts
-const { data, xScale, yScale, width, height, tooltipData } = useChart();
-// tooltipData: { point, index, x, yPositions } | null
-```
-
-### ChartFrame
-
-`ChartFrame` wraps any chart child and adds three toolbar controls — expand
-(full-screen modal), flip-to-table, and download CSV. Controls are hidden
-automatically when `data` is absent or empty (feature degradation).
-
-```tsx
-import {
-  ChartFrame,
-  BarChart,
-  Bar,
-  BarXAxis,
-  Grid,
-  ChartTooltip,
-} from "@elabs-ai/components-charts";
-
-const data = [
-  { month: "Jan", revenue: 12000 },
-  { month: "Feb", revenue: 15500 },
-];
-const columns = [
-  { key: "month", header: "Month" },
-  { key: "revenue", header: "Revenue ($)" },
-];
-
-// Pass the SAME data to both ChartFrame and the chart — they can't share context.
-<ChartFrame title="Revenue" description="Jan–Jun 2025" data={data} columns={columns}>
-  <BarChart data={data} xDataKey="month">
-    <Grid horizontal />
-    <Bar dataKey="revenue" fill="var(--chart-1)" />
-    <BarXAxis />
-    <ChartTooltip />
-  </BarChart>
-</ChartFrame>;
-```
-
-Key props: `title`, `description`, `data`, `columns` (`{ key, header? }[]`),
-`features` (`["expand","table","download"]` — default all), `height` (inline body
-px, default 260), `detail` (right-pane content in the modal), `onDownload`
-(custom CSV handler; default is a local RFC-4180 serializer), `renderTable`
-(custom table renderer; default is `@elabs-ai/components-ui` `Table`).
-
-### KPI tiles
-
-**`MetricCard`** — compact KPI tile. Props: `label`, `value`, `description?`,
-`delta?` (signed string, e.g. `"+12.4%"`), `deltaDirection?`
-(`"up"|"down"|"neutral"`), `positiveIsGood?` (flip color for metrics where down
-is good), `icon?`, `visual?` (inline slot for a sparkline or chart).
-
-**`MetricGrid`** — responsive grid wrapper for a row of `MetricCard`s. Props:
-`columns` (2|3|4, default 4), `reveal` (stagger-in animation, default false).
-
-**`ChartCard`** — presentational Card shell for any chart child. Props: `title`,
-`description?`, `actions?` (header-right slot for pickers/menus), `children`
-(the chart), `height` (body px, default 260). Chart-library-agnostic — pass any
-chart as children and use `--chart-1..5` tokens for series colors.
-
-**Stat-card registry blocks** — copy-own compositions of a `MetricCard` +
-embedded sparkline chart, for dashboards that need chart-backed KPI tiles:
-
-```
-npx shadcn@latest add <registry-url>/stat-card-area-01.json
-npx shadcn@latest add <registry-url>/stat-card-line-01.json
-npx shadcn@latest add <registry-url>/stat-card-choropleth-01.json
-```
-
-After adding, read the copied files and fix `@/…` aliases to your project path.
-
-### Token surface
-
-Series colors: `var(--chart-1)` through `var(--chart-5)` (five slots defined in
-every theme). Supporting tokens: `--chart-label` (axis/legend text),
-`--chart-grid` (grid lines), `--chart-background` (chart area), `--chart-foreground`,
-`--chart-foreground-muted`, `--chart-crosshair`, `--chart-tooltip-background`.
-
-Pass series colors as `stroke="var(--chart-1)"` / `fill="var(--chart-1)"` — never
-raw hex. A monochrome theme renders chart series as a lightness ramp; use the
-tokens and every theme renders correctly for free.
-
-## References
-
-- [reference/rules.md](reference/rules.md) — critical rules with Incorrect/Correct pairs.
-- [reference/composition.md](reference/composition.md) — app shell, dashboard, chat, flow, forms patterns.
-- [reference/chart-selection.md](reference/chart-selection.md) — data-shape table for all
-  25 chart containers, the four chart-selection rules, palette-by-cardinality guidance;
-  query it directly with `brand-ui chart-for "<data shape>"` / the `chart_for` MCP tool.
-- [reference/sheet-for.md](reference/sheet-for.md) — which dashboard tiles answer which question,
-  sizes, the auto-layout rules and three copyable `DashboardSpec` examples; check a spec with
-  `brand-ui dashboard-spec validate <file>`.
-- [reference/theming.md](reference/theming.md) — tokens, ThemeProvider, themes, contrast.
+## Rules that always apply
+
+- Semantic tokens only (`bg-background`, `text-muted-foreground`, `bg-primary`,
+  `border-border`); never hex, `rgb()`, `bg-[#…]` or a palette class like `text-gray-500`.
+- Type is a role: `text-title`, `text-body`, `text-caption`, … or `<Heading>`/`<Text>`;
+  never `text-sm` or `text-[17px]`.
+- `className` is for layout, never recoloring; use the component's variants.
+- Focus: `focus-ring` on any interactive element you author; never remove the outline
+  without it.
+- Overlays (`Dialog`, `Sheet`, `Popover`, `DropdownMenu`) own focus, dismissal and
+  stacking: no hand-rolled traps, no manual `z-index`. `Dialog`, `Sheet` and `Drawer`
+  need a title (`sr-only` if hidden); `Avatar` needs `AvatarFallback`.
+- Real elements (`<button>`, `<a>`, `<input>`), labelled inputs, `aria-label` on
+  icon-only controls. Every async region shows loading, empty and error states
+  (`Skeleton`, `StatePanel`).
+- It must read in every theme: rely on tokens, never `dark:`.
+- Icons: `lucide-react` for generic glyphs, `@elabs-ai/components-icons` for brand marks.
+
+## Load when needed
+
+- Composing an app shell, dashboard, chat, flow or form: [reference/composition.md](reference/composition.md)
+- Which component for a need; import or copy-own: [reference/components.md](reference/components.md)
+- Rendering agent output (chat messages, tool calls, JSX strings, A2UI surfaces): [reference/agent-output.md](reference/agent-output.md)
+- Charts, KPI tiles, `ChartFrame`: [reference/charts.md](reference/charts.md)
+- Which chart for a data shape: `brand-ui chart-for "<data shape>"`, or [reference/chart-selection.md](reference/chart-selection.md)
+- A dashboard sheet (`DashboardSpec`): [reference/sheet-for.md](reference/sheet-for.md)
+- Theming and re-branding: [reference/theming.md](reference/theming.md)
+- The rules above with Incorrect/Correct code: [reference/rules.md](reference/rules.md)

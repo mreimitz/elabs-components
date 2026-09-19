@@ -5,14 +5,18 @@ the way it emits a `ChartSpec`. This reference is the procedure for emitting a g
 decide the reader’s questions first, map each question to a tile, then let `autoLayout`
 place the tiles instead of guessing `x/y/w/h`.
 
-Tooling:
+<!-- brand-ui:gen:dashboard-spec:start -->
 
-- `brand-ui dashboard-spec schema` prints the JSON Schema (draft 2020-12) — shape only.
-- `brand-ui dashboard-spec validate <file>` runs the schema AND `validateDashboardSpec`
-  (ids, refs, overlaps, `visibleWhen` grammar); exit 1 with the error list.
-- `brand-ui dashboard-spec kinds` lists the nine built-in tile kinds with sizes.
-- `brand-ui dashboard-spec layout <file> [--strategy by-kind|reading-order]` fills in
-  every missing `layout` and prints the spec.
+> **Generated** by `pnpm gen` from the CLI's dashboard-spec module — edit there, not here.
+
+| Command                                                                     | What it does                                                                                                                                             |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `brand-ui dashboard-spec schema`                                            | Prints the DashboardSpec v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-charts/dashboard/schema.json`).                          |
+| `brand-ui dashboard-spec validate <file> [--json]`                          | Runs `validateDashboardSpec`: one `path code message` line per problem (shape, duplicate ids, dangling refs, overlaps, conditions); exit 1 when invalid. |
+| `brand-ui dashboard-spec kinds [--json]`                                    | Lists the nine built-in tile kinds with default and minimum sizes and capabilities.                                                                      |
+| `brand-ui dashboard-spec layout <file> [--strategy=by-kind\|reading-order]` | Places every tile that has no `layout` with `autoLayout` (existing layouts kept) and prints the spec.                                                    |
+
+<!-- brand-ui:gen:dashboard-spec:end -->
 
 ## Question → tile
 

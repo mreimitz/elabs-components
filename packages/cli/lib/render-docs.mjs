@@ -250,6 +250,86 @@ export function componentCounts(info) {
   };
 }
 
+const kebabCase = (name) =>
+  name
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
+    .toLowerCase();
+
+/**
+ * One name per component module, the modules {@link componentCounts} counts:
+ * the export named like its file (`Card` for `card.tsx`), else the shortest.
+ * A short list that still reaches every component; `brand-ui docs <Name>`
+ * lists the module's parts (`CardHeader`, …).
+ */
+export function moduleComponentNames(info) {
+  const byModule = new Map();
+  for (const c of info.components || []) {
+    if (isConstantName(c.name)) continue;
+    const key = c.module || c.name;
+    byModule.set(key, [...(byModule.get(key) || []), c.name]);
+  }
+  return [...byModule]
+    .map(([module, names]) => {
+      const file = module
+        .split("/")
+        .pop()
+        .replace(/\.[jt]sx?$/, "");
+      const shortest = [...names].sort((a, b) => a.length - b.length || a.localeCompare(b))[0];
+      return names.find((n) => kebabCase(n) === file) ?? shortest;
+    })
+    .sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * The `brand-ui-context.md` a created app ships: the routine, then one name per
+ * component for the packages that app installs. Parts and props stay behind
+ * `brand-ui docs <Name> --brief`, so this is a few KB where the full inventory
+ * ({@link renderContextBlock}) of every package is about 28 KB and an agent
+ * reads it before its first edit.
+ * @param {object} manifest
+ * @param {string[]} packages  the packages the app installs
+ */
+export function renderAppContext(manifest, packages) {
+  const lines = [
+    "# brand-ui in this app",
+    "",
+    "Generated when this app was created, for the packages it installs. Each name",
+    "below is one component; `brand-ui docs <Name> --brief` shows its parts, props",
+    "and import line. Never guess a prop.",
+    "",
+    "## The routine",
+    "",
+    "1. `brand-ui search <concept>`: find the component. It searches every package,",
+    "   including ones this app does not install yet.",
+    "2. `brand-ui docs <Name> --brief`: its parts and real props (drop `--brief` for all of them).",
+    "3. Build with it: semantic tokens and type roles only, every state covered.",
+    "4. `brand-ui audit src`: the token and type-role pass.",
+    "",
+    "Run them as `pnpm exec brand-ui <command>`, or `npx brand-ui <command>` with npm.",
+    "In Claude Code the `mcp__brand-ui__search` and `mcp__brand-ui__docs` tools answer the same.",
+    "",
+  ];
+  for (const pkg of orderedPackages(manifest).filter((p) => packages.includes(p))) {
+    const info = manifest.packages[pkg] || {};
+    const names = moduleComponentNames(info);
+    const hooks = (info.hooks || []).map((h) => h.name).sort((a, b) => a.localeCompare(b));
+    const subpaths = Object.keys(info.subpaths || {}).sort((a, b) => a.localeCompare(b));
+    lines.push(`## ${pkg} (${names.length} components)`, "");
+    if (PKG_PURPOSE[pkg]) lines.push(PKG_PURPOSE[pkg], "");
+    if (names.length) lines.push(names.join(", "), "");
+    if (hooks.length) lines.push(`Hooks: ${hooks.join(", ")}`, "");
+    if (subpaths.length)
+      lines.push(`Subpath imports: ${subpaths.map((s) => `\`${s}\``).join(", ")}`, "");
+  }
+  lines.push(
+    "The names come from the release this app was created with. After an upgrade,",
+    "`search` and `docs` answer for the installed version.",
+    "",
+  );
+  return lines.join("\n");
+}
+
 /**
  * The README's "by the numbers" region. One definition of a component everywhere
  * it is counted for people: {@link componentCounts} — one per component module,
@@ -616,6 +696,13 @@ export function renderPackageTable(manifest, { scope = "product", format = "tabl
  * @param {string} repoRoot
  */
 export function renderDecisionSummary(repoRoot) {
+  const note =
+    "<!-- Generated from the DECISIONS:SUMMARY region of `docs/DECISIONS.md` — edit decisions there, not here. -->";
+  return `${note}\n\n${decisionSummaryBody(repoRoot)}`;
+}
+
+/** The DECISIONS:SUMMARY region of `docs/DECISIONS.md`, links made root-relative. */
+function decisionSummaryBody(repoRoot) {
   const src = readFileSync(join(repoRoot, "docs/DECISIONS.md"), "utf8");
   // Match from the END of the START comment line to the START of the END comment.
   const startRe = /<!--\s*DECISIONS:SUMMARY:START[\s\S]*?-->/;
@@ -629,13 +716,10 @@ export function renderDecisionSummary(repoRoot) {
   }
   // docs/DECISIONS.md links rules as `../.claude/rules/…`; every target (CLAUDE.md, AGENTS.md)
   // lives at the repo root, so drop the leading `../` or the links resolve outside the repo.
-  const body = src
+  return src
     .slice(startMatch.index + startMatch[0].length, endIdx)
     .trim()
     .replaceAll("](../", "](");
-  const note =
-    "<!-- Generated from the DECISIONS:SUMMARY region of `docs/DECISIONS.md` — edit decisions there, not here. -->";
-  return `${note}\n\n${body}`;
 }
 
 /**
@@ -653,58 +737,67 @@ export function renderSelectionTable(manifest) {
 }
 
 /**
- * The SKILL-CATALOGUE region (#87 / WP-10): the factual "list of things" inside a
- * hand-written skill (skills/<name>/SKILL.md) — themes (+ default), radius, token + registry
- * counts, and the per-package component/hook counts with the routing purpose.
- * This is exactly the data that used to drift in the skill prose ("600+
- * components", "13 charts", "light/dark themes"); it is now generated
- * from the manifest and stale-gated, while the skill's judgment prose around the
- * markers survives verbatim. Deterministic (orderedPackages, no timestamps);
- * Prettier normalizes the table padding so the gate diffs only real changes.
+ * The SKILL-CATALOGUE region (#87 / WP-10): the factual "list of things" inside the
+ * hand-written skills/brand-ui/SKILL.md router — themes (+ default), token and
+ * registry counts, and each package's component count with its routing purpose.
+ * The count is {@link componentCounts} (one per component module), the number the
+ * README and llms.txt print, so the three agree. A list, not a table: Prettier pads
+ * a table's cells to the widest row, and the router has a byte budget.
+ * Deterministic (orderedPackages, no timestamps).
  */
 export function renderSkillCatalogue(manifest) {
   const pkgs = orderedPackages(manifest);
-  let totalComponents = 0;
-  let totalHooks = 0;
-  for (const pkg of pkgs) {
-    const info = manifest.packages[pkg] || {};
-    totalComponents += (info.components || []).length;
-    totalHooks += (info.hooks || []).length;
-  }
+  const counts = pkgs.map((pkg) => componentCounts(manifest.packages[pkg] || {}).components);
+  const total = counts.reduce((a, b) => a + b, 0);
   const lines = [];
   lines.push(
     // Consumer-clean: shipped skills must not name repo-internal paths (the
     // plugin:consumer-clean gate bans the `packages/` substring), so point at
-    // PKG_PURPOSE by module name only.
-    "<!-- GENERATED from brand-ui.manifest.json by 'pnpm gen' (WP-10 #87). " +
-      "Edit package purposes in the CLI's render-docs module (PKG_PURPOSE), not here. " +
-      "The gen:check gate fails on drift. -->",
+    // PKG_PURPOSE by name only.
+    "<!-- Generated from the manifest by `pnpm gen`; package purposes are PKG_PURPOSE in the CLI. -->",
   );
   lines.push("");
   lines.push(
     `**Themes (${(manifest.themes || []).length}):** ${themeLine(manifest)} · ` +
-      `**Radius:** \`${manifest.radius ?? "—"}\` · **Tokens:** ${manifest.tokenCount ?? 0} · ` +
-      `**Registry blocks:** ${(manifest.registry || []).length}`,
+      `**Tokens:** ${manifest.tokenCount ?? 0} · ` +
+      `**Registry blocks:** ${(manifest.registry || []).length} · ` +
+      `**Components:** ${total} in ${pkgs.length} packages`,
   );
   lines.push("");
-  lines.push(
-    `**Exported surface:** ${totalComponents} components · ${totalHooks} hooks across ${pkgs.length} packages.`,
-  );
-  lines.push("");
-  lines.push("| Package | Components | Hooks | Use it for |");
-  lines.push("| --- | --: | --: | --- |");
-  for (const pkg of pkgs) {
-    const info = manifest.packages[pkg] || {};
-    const comps = (info.components || []).length;
-    const hooks = (info.hooks || []).length;
-    lines.push(`| \`${pkg}\` | ${comps} | ${hooks} | ${cell(PKG_PURPOSE[pkg] || "")} |`);
-  }
+  pkgs.forEach((pkg, i) => lines.push(`- \`${pkg}\` (${counts[i]}): ${PKG_PURPOSE[pkg] || ""}`));
   lines.push("");
   lines.push(
-    "_Counts are exact, from the manifest. Confirm component names/props with " +
-      "`brand-ui search <q>` / `brand-ui docs <Component>` — never guess the API._",
+    "_One count per component; `brand-ui docs <Component>` lists its parts (`CardHeader`, …)._",
   );
   return lines.join("\n");
+}
+
+/**
+ * The D1–D7 answers for the skill router, from the same DECISIONS:SUMMARY region
+ * {@link renderDecisionSummary} copies into CLAUDE.md/AGENTS.md. The detail-rule
+ * column is dropped: it links repo-internal rule files a plugin user does not have.
+ * @param {string} repoRoot
+ */
+export function renderSkillDecisions(repoRoot) {
+  const rows = decisionSummaryBody(repoRoot)
+    .split("\n")
+    .filter((l) => /^\|\s*\*\*D\d+\*\*/.test(l))
+    .map((l) =>
+      l
+        .replace(/^\|\s*|\s*\|$/g, "")
+        .split(/\s+\|\s+/)
+        .map((c) => c.trim()),
+    );
+  if (!rows.length)
+    throw new Error("renderSkillDecisions: no D-rows in the DECISIONS:SUMMARY region");
+  return [
+    "<!-- Generated from the decision summary by `pnpm gen`; edit the decisions there. -->",
+    "",
+    ...rows.map(([id, question, answer]) => {
+      const d = id.replaceAll("*", "");
+      return answer === undefined ? `- **${d}** ${question}` : `- **${d} · ${question}** ${answer}`;
+    }),
+  ].join("\n");
 }
 
 // ---------------------------------------------------------------------------

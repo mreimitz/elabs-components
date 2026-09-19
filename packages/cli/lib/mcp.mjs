@@ -28,7 +28,7 @@ import {
   tasteSearchDirs,
 } from "./core.mjs";
 import { renderDocsBrief, smallerCard } from "./docs-brief.mjs";
-import { searchExports, renderComponentArm } from "./search.mjs";
+import { searchExports, renderComponentArm, renderTypeArm } from "./search.mjs";
 import { scanText } from "./audit.mjs";
 import { matchChartFor, renderChartForText } from "./chart-for.mjs";
 import {
@@ -147,6 +147,18 @@ export const TOOLS = [
       type: "object",
       properties: {
         query: { type: "string", description: "Name, concept, or whole-screen intent." },
+        limit: {
+          type: "integer",
+          minimum: 1,
+          description:
+            "Components and types per page (default 40). Passing limit or offset pages the answer and ends each list with its nextOffset.",
+        },
+        offset: {
+          type: "integer",
+          minimum: 0,
+          description:
+            "Where the page starts (default 0); use the nextOffset a previous call returned.",
+        },
       },
       required: ["query"],
       additionalProperties: false,
@@ -285,9 +297,23 @@ function activeTaste(root, manifest, target = null) {
   return resolveTasteProfile({ manifest, dirs: tasteSearchDirs({ target, root }) });
 }
 
-function toolSearch(ctx, q) {
+function toolSearch(ctx, q, { limit, offset } = {}) {
   const query = String(q || "").toLowerCase();
   if (!query) return { ...textContent("usage: search { query }"), isError: true };
+  // Paging (RM-129): only a call that passes limit or offset is paged, so the
+  // default answer stays exactly what it was.
+  const paged = limit !== undefined || offset !== undefined;
+  const cap = limit ?? 40;
+  const from = offset ?? 0;
+  if (!Number.isInteger(cap) || cap < 1 || !Number.isInteger(from) || from < 0)
+    return {
+      ...textContent("usage: search { query, limit?: integer ≥ 1, offset?: integer ≥ 0 }"),
+      isError: true,
+    };
+  const again = limit === undefined ? "" : `, limit: ${cap}`;
+  const page = paged
+    ? { offset: from, next: (n) => `nextOffset: ${n} (search { query, offset: ${n}${again} })` }
+    : {};
   const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
   // Same ranked search as the CLI's cmdSearch() (lib/search.mjs); components/hooks
@@ -310,13 +336,11 @@ function toolSearch(ctx, q) {
   // A remote caller has no repo to open `docs <Name>` against first — give it
   // the live story straight from search when the hit is a component with one
   // (review §4.4/wave-3). Local/stdio is unchanged: `docs` is the story-link call.
-  const lines = renderComponentArm(query, result, 40, {
+  const lines = renderComponentArm(query, result, cap, {
     storyLink: ctx.hosted ? (r) => (r.storyId ? storyUrl(r.storyId, ctx) : null) : undefined,
+    ...page,
   });
-  if (typeRows.length) {
-    lines.push("", `Types/other exports matching "${query}":`);
-    for (const r of typeRows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
-  }
+  lines.push(...renderTypeArm(query, typeRows, cap, page));
   if (reg.length) {
     lines.push("", `Registry items matching "${query}":`);
     for (const r of reg) lines.push(`  ${r.name}  [${r.type}] — ${r.title}`);
@@ -545,7 +569,7 @@ function callTool(ctx, name, argsObj = {}) {
     case "info":
       return toolInfo(ctx);
     case "search":
-      return toolSearch(ctx, argsObj.query);
+      return toolSearch(ctx, argsObj.query, { limit: argsObj.limit, offset: argsObj.offset });
     case "docs":
       return toolDocs(ctx, argsObj.component, argsObj.detail);
     case "tokens":
