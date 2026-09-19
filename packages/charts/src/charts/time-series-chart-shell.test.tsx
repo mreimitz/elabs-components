@@ -58,8 +58,10 @@ vi.mock("@visx/responsive", () => {
 
 import { AreaChart } from "./area-chart";
 import { useChartStable } from "./chart-context";
+import { ComposedChart } from "./composed-chart";
 import { LineChart } from "./line-chart";
 import { XAxis } from "./x-axis";
+import { YAxis } from "./y-axis";
 
 afterEach(cleanup);
 
@@ -443,5 +445,169 @@ describe("legend `hiddenKeys` (RM-118) filters `lines` before the value-axis dom
     fireEvent.click(buttons[0] as HTMLButtonElement);
 
     await waitFor(() => expect(keys).toEqual(["b"]));
+  });
+});
+
+// RM-118 validator FAIL 1a: the previous describe block proves `lines` itself
+// drops the hidden key, but not that the RENDERED y-axis ticks follow —
+// `lines` feeds `yDomainTargetByAxis` correctly, but `useAnimatedYDomains`
+// only re-tweened toward a new target on a `chartPhase` transition or a
+// brush `xDomain` change (`use-animated-y-domains.ts`); a legend toggle does
+// neither, so the ANIMATED domain `YAxis` actually reads never moved. Fixed
+// by re-tweening on a `hiddenKeys` content-signature change too. One test
+// per family sharing this shell (Line/Area/Composed) with a real `<YAxis>`,
+// reading rendered tick text — `[data-slot="y-axis"] span` (a portaled
+// `<span>`, not SVG `<text>`; see `bar-chart.test.tsx`'s own `yLabels`
+// helper for the same selector).
+describe("legend `hiddenKeys` (RM-118) recomputes the rendered y-axis domain (validator FAIL 1a)", () => {
+  function FakeSeries(_props: { dataKey: string }) {
+    return null;
+  }
+  FakeSeries.displayName = "FakeSeries";
+
+  // ComposedChart's own `extractComposedSeries` matches a series child by
+  // `displayName === "Line"` specifically (`composed-chart.tsx`'s
+  // `tryAppendLine`) — unlike LineChart/AreaChart's classifier above, which
+  // accepts any child carrying a `dataKey` prop. Mirrors
+  // `composed-chart.test.tsx`'s own established `FakeLine` pattern.
+  function FakeLine(_props: { dataKey: string }) {
+    return null;
+  }
+  FakeLine.displayName = "Line";
+
+  // "b" is the max series on both value (100 vs 10-20) AND therefore drives
+  // the top tick; hiding it must shrink the domain toward "a"'s own extent.
+  const twoSeriesData = [
+    { date: new Date(2024, 0, 1), a: 10, b: 100 },
+    { date: new Date(2024, 0, 2), a: 20, b: 90 },
+  ];
+
+  function yLabels(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('[data-slot="y-axis"] span')].map(
+      (node) => node.textContent ?? "",
+    );
+  }
+
+  it("LineChart: hiding the max series shrinks the rendered ticks; re-showing it restores them", async () => {
+    const { container } = render(
+      <LineChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="date"
+        yDomainTweenDuration={0}
+      >
+        <FakeSeries dataKey="a" />
+        <FakeSeries dataKey="b" />
+        <YAxis />
+      </LineChart>,
+    );
+
+    await waitFor(() => expect(yLabels(container).length).toBeGreaterThan(0));
+    const before = yLabels(container);
+    const topBefore = Number(before.at(-1));
+
+    const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[1] as HTMLButtonElement); // "b" — the max series
+
+    await waitFor(() => {
+      expect(Number(yLabels(container).at(-1))).toBeLessThan(topBefore);
+    });
+
+    fireEvent.click(buttons[1] as HTMLButtonElement);
+    await waitFor(() => expect(yLabels(container)).toEqual(before));
+  });
+
+  it("AreaChart: hiding the max series shrinks the rendered ticks; re-showing it restores them", async () => {
+    const { container } = render(
+      <AreaChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="date"
+        yDomainTweenDuration={0}
+      >
+        <FakeSeries dataKey="a" />
+        <FakeSeries dataKey="b" />
+        <YAxis />
+      </AreaChart>,
+    );
+
+    await waitFor(() => expect(yLabels(container).length).toBeGreaterThan(0));
+    const before = yLabels(container);
+    const topBefore = Number(before.at(-1));
+
+    const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[1] as HTMLButtonElement); // "b" — the max series
+
+    await waitFor(() => {
+      expect(Number(yLabels(container).at(-1))).toBeLessThan(topBefore);
+    });
+
+    fireEvent.click(buttons[1] as HTMLButtonElement);
+    await waitFor(() => expect(yLabels(container)).toEqual(before));
+  });
+
+  it("ComposedChart: hiding the max series shrinks the rendered ticks; re-showing it restores them", async () => {
+    const { container } = render(
+      <ComposedChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="date"
+        yDomainTweenDuration={0}
+      >
+        <FakeLine dataKey="a" />
+        <FakeLine dataKey="b" />
+        <YAxis />
+      </ComposedChart>,
+    );
+
+    await waitFor(() => expect(yLabels(container).length).toBeGreaterThan(0));
+    const before = yLabels(container);
+    const topBefore = Number(before.at(-1));
+
+    const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[1] as HTMLButtonElement); // "b" — the max series
+
+    await waitFor(() => {
+      expect(Number(yLabels(container).at(-1))).toBeLessThan(topBefore);
+    });
+
+    fireEvent.click(buttons[1] as HTMLButtonElement);
+    await waitFor(() => expect(yLabels(container)).toEqual(before));
+  });
+
+  it("an explicitly pinned `YAxis domain` still wins over the auto-computed one after a toggle", async () => {
+    const { container } = render(
+      <LineChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="date"
+        yDomainTweenDuration={0}
+      >
+        <FakeSeries dataKey="a" />
+        <FakeSeries dataKey="b" />
+        <YAxis domain={[0, 500]} numTicks={3} />
+      </LineChart>,
+    );
+
+    await waitFor(() => expect(yLabels(container).length).toBeGreaterThan(0));
+    // A pinned `domain` still runs through visx's own "nice" tick rounding
+    // (`numTicks={3}` on `[0, 500]` lands on 0/200/400, not a tick AT 500)
+    // — the point is that this array never moves, toggle or not.
+    const before = yLabels(container);
+
+    const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+    const toggleButton = buttons[1] as HTMLButtonElement;
+    fireEvent.click(toggleButton); // "b" — the max series
+
+    await waitFor(() => expect(toggleButton.getAttribute("aria-pressed")).toBe("false"));
+    // The pinned domain never moves, toggle or not.
+    expect(yLabels(container)).toEqual(before);
   });
 });

@@ -111,6 +111,18 @@ export interface UseAnimatedYDomainsOptions {
   onSettled?: () => void;
   /** When true, tweens y-domains on target changes while the chart is in the ready phase (e.g. brush zoom). */
   tweenOnTargetChange?: boolean;
+  /**
+   * RM-118 (validator FAIL 1a) — a stable signature of the container
+   * legend's toggled-off series keys (e.g. `[...hiddenKeys].sort().join(",")`,
+   * `""` when nothing is hidden). Hiding/showing a series changes
+   * `targetByAxis` (the filtered series' own extent) while `chartPhase` stays
+   * `"ready"` — no phase transition, no brush — so it falls through both the
+   * phase-driven effect below AND the brush-only `tweenOnTargetChange` path.
+   * This re-tweens toward `targetByAxis` whenever the signature itself
+   * changes, independent of `tweenOnTargetChange`. A chart with no
+   * toggleable legend always passes `""`, so this is a no-op there.
+   */
+  hiddenKeysSignature?: string;
 }
 
 export function useAnimatedYDomains({
@@ -121,6 +133,7 @@ export function useAnimatedYDomains({
   targetByAxis,
   onSettled,
   tweenOnTargetChange = false,
+  hiddenKeysSignature = "",
 }: UseAnimatedYDomainsOptions): Record<string, YDomain> {
   const reducedMotion = useReducedMotion();
   const destinationByAxis = resolveAnimatedYDestinationDomains(
@@ -216,6 +229,39 @@ export function useAnimatedYDomains({
 
     return () => control?.stop();
   }, [chartPhase, durationMs, enabled, reducedMotion, targetSignature, tweenOnTargetChange]);
+
+  // RM-118 (validator FAIL 1a) — a legend toggle changes `targetByAxis`
+  // (the filtered series' own extent) without ever moving `chartPhase` off
+  // `"ready"` and without a brush `xDomain`, so it reaches neither effect
+  // above. React to the hidden-keys signature directly instead, same
+  // destination/tween machinery as the brush path just above. Showing a
+  // series again restores the original signature (`""`, or the prior sorted
+  // list), which re-fires this exactly the same way — same existing tween.
+  const prevHiddenKeysSignatureRef = useRef(hiddenKeysSignature);
+
+  useEffect(() => {
+    if (chartPhase !== "ready") {
+      prevHiddenKeysSignatureRef.current = hiddenKeysSignature;
+      return;
+    }
+
+    if (prevHiddenKeysSignatureRef.current === hiddenKeysSignature) {
+      return;
+    }
+    prevHiddenKeysSignatureRef.current = hiddenKeysSignature;
+
+    const control = tweenDomains({
+      destination: targetRef.current,
+      durationMs,
+      enabled,
+      reducedMotion,
+      animatedRef,
+      setAnimatedByAxis,
+      onSettled: () => onSettledRef.current?.(),
+    });
+
+    return () => control?.stop();
+  }, [chartPhase, durationMs, enabled, reducedMotion, hiddenKeysSignature]);
 
   return animatedByAxis;
 }

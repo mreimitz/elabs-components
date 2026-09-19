@@ -69,6 +69,12 @@ export interface ComposedChartProps extends ChartSelectionProps, ChartHoverLinkP
   enterTransition?: Transition;
   /** Signature of motion URL state — triggers reveal replay when it changes. */
   revealSignature?: string;
+  /**
+   * Animate the y-domain over this duration (ms), including a legend
+   * toggle's re-tween (RM-118, validator FAIL 1a). Default: 500, same as
+   * `LineChart`/`AreaChart`.
+   */
+  yDomainTweenDuration?: number;
   aspectRatio?: string;
   /**
    * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
@@ -260,6 +266,7 @@ interface ChartInnerProps {
   animationEasing?: string;
   enterTransition?: Transition;
   revealSignature?: string;
+  yDomainTweenDuration?: number;
   children: ReactNode;
   containerRef: React.RefObject<HTMLDivElement | null>;
   barSize?: number;
@@ -307,6 +314,7 @@ function ChartInner({
   animationEasing,
   enterTransition,
   revealSignature,
+  yDomainTweenDuration,
   children,
   containerRef,
   barSize,
@@ -400,6 +408,7 @@ function ChartInner({
         width={width}
         xDataKey={xDataKey}
         xScaleType={xScaleType}
+        yDomainTweenDuration={yDomainTweenDuration}
         yScaleDomainMax={yScaleDomainMax}
       >
         {children}
@@ -436,6 +445,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     animationEasing,
     enterTransition,
     revealSignature,
+    yDomainTweenDuration,
     aspectRatio,
     plotHeight,
     className = "",
@@ -581,6 +591,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 width={width}
                 xDataKey={xDataKey}
                 xScaleType={xScaleType}
+                yDomainTweenDuration={yDomainTweenDuration}
               >
                 {children}
                 {selectionStates ? <ChartSelectionSeriesLayer /> : null}

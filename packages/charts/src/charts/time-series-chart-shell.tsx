@@ -660,10 +660,23 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     [data, lines, resolveYDomain, visiblePlotData, xDomain],
   );
 
+  // RM-118 (validator FAIL 1a): a content signature of `hiddenKeys`, not the
+  // Set reference itself — an interactive legend's toggle hands back a new
+  // Set object on every click even when nothing else about the selection
+  // changed, and `useAnimatedYDomains` only needs to re-tween when the
+  // MEMBERSHIP actually differs. `""` (nothing hidden, or no toggleable
+  // legend at all) is stable, so this never fires for a chart that never
+  // toggles anything.
+  const hiddenKeysSignature = useMemo(
+    () => (hiddenKeys && hiddenKeys.size > 0 ? Array.from(hiddenKeys).sort().join(",") : ""),
+    [hiddenKeys],
+  );
+
   const animatedYDomainsByAxis = useAnimatedYDomains({
     chartPhase,
     durationMs: yDomainTweenDuration,
     enabled: yDomainTween,
+    hiddenKeysSignature,
     onSettled: notifyYDomainTweenComplete,
     skeletonByAxis: yDomainSkeletonByAxis,
     targetByAxis: yDomainTargetByAxis,
