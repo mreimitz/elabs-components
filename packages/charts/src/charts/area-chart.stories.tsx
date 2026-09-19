@@ -619,6 +619,11 @@ export const LegendToggle: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
+    // Narrow hides the value axis entirely (RM-118 addendum) — read the tier
+    // before relying on any y-axis tick to be there.
+    const tier = canvasElement
+      .querySelector("[data-chart-breakpoint]")
+      ?.getAttribute("data-chart-breakpoint");
     const yTicks = () =>
       [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
         (node) => node.textContent ?? "",
@@ -634,6 +639,24 @@ export const LegendToggle: Story = {
     // itself, not just the ticks, so a fast `animationDuration={0}` mount
     // never races `.focus()` against an undefined lookup.
     await waitFor(() => expect(legendToggle(/desktop/i)).toBeTruthy());
+
+    if (tier === "narrow") {
+      // No y-axis to read a moved tick from — the toggle itself, and the
+      // axis staying absent throughout, are what narrow correctly shows.
+      await expect(yTicks()).toEqual([]);
+      const desktopToggleNarrow = legendToggle(/desktop/i) as HTMLButtonElement;
+      desktopToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(desktopToggleNarrow).toHaveAttribute("aria-pressed", "false"));
+      await expect(yTicks()).toEqual([]);
+      desktopToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(desktopToggleNarrow).toHaveAttribute("aria-pressed", "true"));
+      await expect(yTicks()).toEqual([]);
+      desktopToggleNarrow.blur();
+      return;
+    }
+
     // Ticks compact ("300"/"150") — kept as a numeric parse for symmetry
     // with Line/ComposedChart's play functions (their ticks DO compact to
     // "4K" etc., where `Number(...)` alone would be `NaN`).

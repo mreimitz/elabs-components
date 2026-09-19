@@ -983,6 +983,11 @@ export const LegendToggle: Story = {
   name: "Legend toggle, right of plot",
   render: () => <LegendTogglePlot />,
   play: async ({ canvasElement }) => {
+    // Narrow hides the value axis entirely (RM-118 addendum) — read the tier
+    // before relying on any y-axis tick to be there.
+    const tier = canvasElement
+      .querySelector("[data-chart-breakpoint]")
+      ?.getAttribute("data-chart-breakpoint");
     const yTicks = () =>
       [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
         (node) => node.textContent ?? "",
@@ -999,6 +1004,23 @@ export const LegendToggle: Story = {
     // itself, not just the ticks, so a fast mount never races `.focus()`
     // against an undefined lookup.
     await waitFor(() => expect(legendToggle(/sessions/i)).toBeTruthy());
+
+    if (tier === "narrow") {
+      // No y-axis to read a moved tick from — the toggle itself, and the
+      // axis staying absent throughout, are what narrow correctly shows.
+      await expect(yTicks()).toEqual([]);
+      const sessionsToggleNarrow = legendToggle(/sessions/i) as HTMLButtonElement;
+      sessionsToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(sessionsToggleNarrow).toHaveAttribute("aria-pressed", "false"));
+      await expect(yTicks()).toEqual([]);
+      sessionsToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(sessionsToggleNarrow).toHaveAttribute("aria-pressed", "true"));
+      await expect(yTicks()).toEqual([]);
+      sessionsToggleNarrow.blur();
+      return;
+    }
 
     // Validator round 2: the original assertion snapshotted `yTicks()` as
     // "before" right after the axis first painted, which can itself land

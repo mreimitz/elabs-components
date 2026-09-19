@@ -260,6 +260,11 @@ export const LegendToggle: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
+    // Narrow hides the value axis entirely (RM-118 addendum) — read the tier
+    // before relying on any y-axis tick to be there.
+    const tier = canvasElement
+      .querySelector("[data-chart-breakpoint]")
+      ?.getAttribute("data-chart-breakpoint");
     const yTicks = () =>
       [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
         (node) => node.textContent ?? "",
@@ -282,6 +287,23 @@ export const LegendToggle: Story = {
     // existing, out of scope for this sitting's y-domain fix (validator FAIL
     // 1a) — `name` still reaches `ChartTooltip`.
     await waitFor(() => expect(legendToggle(/runRate/)).toBeTruthy());
+
+    if (tier === "narrow") {
+      // No y-axis to read a moved tick from — the toggle itself, and the
+      // axis staying absent throughout, are what narrow correctly shows.
+      await expect(yTicks()).toEqual([]);
+      const runRateToggleNarrow = legendToggle(/runRate/) as HTMLButtonElement;
+      runRateToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(runRateToggleNarrow).toHaveAttribute("aria-pressed", "false"));
+      await expect(yTicks()).toEqual([]);
+      runRateToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(runRateToggleNarrow).toHaveAttribute("aria-pressed", "true"));
+      await expect(yTicks()).toEqual([]);
+      runRateToggleNarrow.blur();
+      return;
+    }
     // Ticks are either compacted ("6K") or, when the whole set would not
     // compact ("one unit per scale", charts.md), Intl-grouped ("1,800") —
     // `Number("6K")` and `Number("1,800")` are both `NaN`, so strip the

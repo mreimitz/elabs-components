@@ -757,6 +757,9 @@ export const EditorialChrome: Story = {
     chromeExportSpy.mockClear();
     const canvas = within(canvasElement);
     const frame = canvasElement.querySelector<HTMLElement>("[data-chart-breakpoint]")!;
+    // Narrow hides the legend and value axis and caps ticks (RM-118 addendum);
+    // everything else below still holds, just reshaped.
+    const tier = frame.getAttribute("data-chart-breakpoint");
     const title = canvas.getByText("RAM prices doubled in six months");
     const notes = canvas.getByText("Contract prices in USD per GB, not adjusted for inflation.");
     const footer = canvasElement.querySelector('[data-slot="chart-frame-footer"]')!;
@@ -774,8 +777,13 @@ export const EditorialChrome: Story = {
         order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
     }
-    await expect(footer.textContent).toBe(
-      "Chart: Data desk•Source: DRAMeXchange•Get the data•Download image",
+    // The footer's last link ("Download image") mounts once `state.hasSvg`
+    // flips via a MutationObserver, a beat after the chart path above — wait
+    // for the settled text rather than reading it the instant the path exists.
+    await waitFor(() =>
+      expect(footer.textContent).toBe(
+        "Chart: Data desk•Source: DRAMeXchange•Get the data•Download image",
+      ),
     );
     await expect(canvas.getByRole("link", { name: "DRAMeXchange" })).toHaveAttribute(
       "href",
@@ -814,13 +822,37 @@ export const EditorialChrome: Story = {
     );
     const svgBlob = chromeExportSpy.mock.calls.find((c) => c[0] === "svg")![1] as Blob;
     const text = await exportedText(svgBlob);
-    await expect(text.byRole("title")).toEqual(["RAM prices doubled in six months"]);
+    if (tier === "narrow") {
+      // The export is as wide as the (narrower) frame, so the title wraps
+      // into more than one tspan — still the same words, just reflowed.
+      await expect(text.byRole("title").join(" ")).toBe("RAM prices doubled in six months");
+    } else {
+      await expect(text.byRole("title")).toEqual(["RAM prices doubled in six months"]);
+    }
     const ticks = [...paintedTicks(frame, "x-axis"), ...paintedTicks(frame, "y-axis")];
-    await expect(ticks.length).toBeGreaterThan(3);
+    if (tier === "narrow") {
+      // Narrow hides the value axis and caps ticks at 4 (RM-118 addendum):
+      // fewer ticks than the wider tiers, but still some.
+      await expect(ticks.length).toBeGreaterThan(0);
+    } else {
+      await expect(ticks.length).toBeGreaterThan(3);
+    }
     for (const tick of ticks) await expect(text.all).toContain(tick);
-    await expect(text.byRole("axis-title")).toEqual(["USD per GB"]);
+    if (tier === "narrow") {
+      // The value axis — and its unit label — is hidden at narrow.
+      await expect(text.byRole("axis-title")).toEqual([]);
+    } else {
+      await expect(text.byRole("axis-title")).toEqual(["USD per GB"]);
+    }
+    // "Short-term RAM" is repeated in the description prose, so it survives
+    // narrow; "Flash storage" (capitalised) lives only in the legend, which
+    // narrow hides — the prose keeps the lowercase "flash storage" instead.
     await expect(text.all).toContain("Short-term RAM");
-    await expect(text.all).toContain("Flash storage");
+    if (tier === "narrow") {
+      await expect(text.all).not.toContain("Flash storage");
+    } else {
+      await expect(text.all).toContain("Flash storage");
+    }
     await expect(text.byRole("notes").join(" ")).toContain("Contract prices");
     const footerRuns = text.byRole("footer");
     for (const word of ["Chart", "Data desk", "Source", "DRAMeXchange"]) {
@@ -868,6 +900,9 @@ export const PlainExport: Story = {
   play: async ({ canvasElement }) => {
     plainExportSpy.mockClear();
     const canvas = within(canvasElement);
+    const tier = canvasElement
+      .querySelector("[data-chart-breakpoint]")
+      ?.getAttribute("data-chart-breakpoint");
     await waitFor(() => expect(canvas.getByLabelText("Export as SVG")).toBeInTheDocument());
     await userEvent.click(canvas.getByLabelText("Export as SVG"));
     await waitFor(() => expect(plainExportSpy).toHaveBeenCalled());
@@ -877,7 +912,12 @@ export const PlainExport: Story = {
     }
     await expect(text.all).not.toContain("RAM prices doubled");
     await expect(text.all).not.toContain("DRAMeXchange");
-    await expect(text.byRole("axis-title")).toEqual(["USD per GB"]);
+    if (tier === "narrow") {
+      // The value axis — and its unit label — is hidden at narrow.
+      await expect(text.byRole("axis-title")).toEqual([]);
+    } else {
+      await expect(text.byRole("axis-title")).toEqual(["USD per GB"]);
+    }
   },
 };
 
