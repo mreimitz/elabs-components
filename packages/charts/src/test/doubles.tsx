@@ -63,6 +63,28 @@ export { ChartFrame } from "../chart-frame/chart-frame";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";
 export { Sparkline } from "../sparkline/sparkline";
 export type { SparklineLabels, SparklineProps } from "../sparkline/sparkline";
+// Legend engine — RM-118. `RampLegend`/`SizeLegend` touch only react,
+// `@elabs-ai/components-ui`, `chart-formatters` and (`SizeLegend`) the pure
+// `areaRadius` helper — zero `@visx`/`d3`/`motion` at runtime, so re-exporting
+// the real implementation is zero drift risk, same as the five above.
+//
+// `ChartLegend`/`useContainerLegend` are NOT re-exported here: `ChartLegend`
+// reaches `series-pattern.tsx`/`use-high-decoration.ts`, both of which import
+// `chart-context.tsx`'s `DEFAULT_Y_AXIS_ID`/`useChartStable` AS VALUES, and
+// `chart-context.tsx` itself imports `y-axis-scales.ts`, which imports
+// `@visx/scale` at runtime (`pnpm check --rule charts-test-double` catches
+// this: it fails "engine-isolation" the moment `ChartLegend` is added here).
+// `ChartLegend` was already outside the test double before this item — this
+// only documents why it stays there; giving it one costs a hand-written fake
+// double, out of `touches`.
+export {
+  RampLegend,
+  rampPositionOf,
+  type RampLegendLabelMode,
+  type RampLegendProps,
+  type RampLegendScale,
+} from "../charts/legend/ramp-legend";
+export { SizeLegend, type SizeLegendProps } from "../charts/legend/size-legend";
 
 // ── The per-family contract specs (the flat, auditable list) ────────────────
 
@@ -392,6 +414,7 @@ import type { ScatterChartProps } from "../charts/scatter-chart";
 import type { CandlestickChartProps } from "../charts/candlestick-chart";
 import type { LiveLineChartProps } from "../charts/live-line-chart";
 import type { PieChartProps } from "../charts/pie-chart";
+import type { InlineChipProps } from "../chart-frame/inline-chip";
 import type { RingChartProps } from "../charts/ring-chart";
 import type { FunnelChartProps } from "../charts/funnel-chart";
 import type { RadarChartProps } from "../charts/radar-chart";
@@ -568,6 +591,8 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     assertAnnotationSpecContract(
       (props.spec as { annotations?: unknown } | undefined)?.annotations,
     );
+    // Dual-axis — RM-121
+    assertDualAxisSpecContract(props.spec);
     return (
       <div
         ref={ref}
@@ -1023,3 +1048,174 @@ export const AnnotationKey = forwardRef<HTMLOListElement, { annotations: readonl
   },
 );
 AnnotationKey.displayName = "AnnotationKey";
+
+// InlineChip — RM-117
+/**
+ * `InlineChip` stand-in: the real chip's DOM (root + named swatch) without the
+ * frame's series registry, so the swatch paints `currentColor`. It still
+ * validates `series` — the real chip silently falls back to `currentColor` and
+ * the bare key for an empty one, which would hide the mistake.
+ */
+export const InlineChip = forwardRef<HTMLSpanElement, InlineChipProps>(
+  function InlineChipTestDouble({ series, label, className, children, ...props }, ref) {
+    if (typeof series !== "string" || series.length === 0) {
+      axisViolation("InlineChip", "series", series, `"series" must be a non-empty series key`);
+    }
+    return (
+      <span ref={ref} data-slot="inline-chip" data-series={series} className={className} {...props}>
+        <span
+          data-slot="inline-chip-swatch"
+          role="img"
+          aria-label={label ?? series}
+          style={{ backgroundColor: "currentColor" }}
+        />
+        {children}
+      </span>
+    );
+  },
+);
+InlineChip.displayName = "InlineChip";
+
+// ChartMultiples — RM-120
+import type { ChartMultiplesProps } from "../multiples/chart-multiples";
+import { splitFacetRows } from "../multiples/facet-layout";
+import { facetPanelStats, sortFacetPanels } from "../multiples/facet-sort";
+
+/**
+ * `ChartMultiples` double: validates `xDataKey` / `dataKeys` / `by`, splits and
+ * sorts the panels with the real pure helpers and calls `children(panel)` once
+ * per panel in a plain grid — no measuring, no scales, no synced hover. A
+ * `showAt` rule resolves at the wide tier (its `base`).
+ */
+export const ChartMultiples = forwardRef<HTMLDivElement, ChartMultiplesProps>(
+  function ChartMultiplesTestDouble(
+    {
+      data,
+      by,
+      panels,
+      xDataKey,
+      dataKeys,
+      sort = "data",
+      reverse = false,
+      showAt,
+      children,
+      // Accepted and ignored by the double (layout / scales / hover only).
+      columns: _columns,
+      minPanelWidth: _minPanelWidth,
+      panelHeight: _panelHeight,
+      scales: _scales,
+      baseline: _baseline,
+      syncHover: _syncHover,
+      panelTitle: _panelTitle,
+      annotations: _annotations,
+      ...props
+    },
+    ref,
+  ) {
+    if (typeof xDataKey !== "string" || xDataKey === "") {
+      axisViolation("ChartMultiples", "xDataKey", xDataKey, "a row key is required");
+    }
+    if (!Array.isArray(dataKeys) || dataKeys.length === 0) {
+      axisViolation("ChartMultiples", "dataKeys", dataKeys, "at least one value key is required");
+    }
+    if (!panels && !(Array.isArray(data) && by !== undefined)) {
+      axisViolation("ChartMultiples", "by", by, "pass `panels`, or `data` with `by`");
+    }
+    const bySeries = typeof by === "object" && by !== null;
+    const inputs =
+      panels ??
+      (bySeries
+        ? dataKeys.map((key) => ({ key, data: data ?? [], showAt: undefined }))
+        : splitFacetRows(data ?? [], by as string).map((g) => ({
+            key: g.key,
+            data: g.rows,
+            showAt: undefined,
+          })));
+    const built = inputs.map((input) => ({
+      input,
+      key: input.key,
+      title: ("title" in input && input.title) || input.key,
+      data: input.data,
+      stats: facetPanelStats(input.data, bySeries && !panels ? input.key : dataKeys[0]),
+    }));
+    const visible = sortFacetPanels(built, sort, reverse).filter((entry, index) => {
+      const rule = entry.input.showAt ?? showAt?.({ ...entry, index, annotations: [] }) ?? true;
+      return typeof rule === "object" ? rule.base : rule;
+    });
+    return (
+      <div className="grid" data-columns={1} data-slot="chart-multiples" ref={ref} {...props}>
+        {visible.map((entry, index) => (
+          <div
+            data-panel-key={entry.key}
+            data-slot="chart-multiples-panel"
+            key={entry.key}
+            role="group"
+            aria-label={entry.title}
+          >
+            {children({
+              key: entry.key,
+              title: entry.title,
+              data: entry.data,
+              stats: entry.stats,
+              index,
+              annotations: [],
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  },
+);
+ChartMultiples.displayName = "ChartMultiples";
+
+// Dual-axis — RM-121
+const DUAL_AXIS_SIDES: readonly unknown[] = ["left", "right"];
+const DUAL_AXIS_MARKS: readonly unknown[] = ["line", "area", "column"];
+
+/**
+ * A `type: "dual-axis"` spec: real `axis`/`mark` values, at least one line,
+ * and columns on the left axis only — the rules the real `AutoChart` answers
+ * with `ChartFallback kind="unsupported"`.
+ */
+function assertDualAxisSpecContract(spec: unknown): void {
+  const { type, series } = (spec ?? {}) as { type?: unknown; series?: unknown };
+  if (type !== "dual-axis" || !Array.isArray(series)) return;
+  const entries = series.map(
+    (entry) =>
+      (typeof entry === "string" ? { key: entry } : entry) as { axis?: unknown; mark?: unknown },
+  );
+  entries.forEach((entry, i) => {
+    if (entry.axis !== undefined && !DUAL_AXIS_SIDES.includes(entry.axis)) {
+      axisViolation(
+        "AutoChart",
+        `spec.series[${i}].axis`,
+        entry.axis,
+        `"axis" is "left" or "right"`,
+      );
+    }
+    if (entry.mark !== undefined && !DUAL_AXIS_MARKS.includes(entry.mark)) {
+      axisViolation(
+        "AutoChart",
+        `spec.series[${i}].mark`,
+        entry.mark,
+        `"mark" is "line", "area" or "column"`,
+      );
+    }
+  });
+  if (!entries.some((entry) => (entry.mark ?? "line") === "line")) {
+    axisViolation(
+      "AutoChart",
+      "spec.series",
+      series,
+      `a "dual-axis" spec needs at least one series with mark "line"`,
+    );
+  }
+  if (entries.some((entry) => entry.mark === "column" && entry.axis === "right")) {
+    axisViolation(
+      "AutoChart",
+      "spec.series",
+      series,
+      `a "dual-axis" spec draws columns on the left axis only`,
+    );
+  }
+}

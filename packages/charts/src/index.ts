@@ -52,3 +52,6 @@ export * from "./a2ui";
 
 // ── Gantt — interactive, virtualized, accessible Gantt/timeline widget (#240) ─
 export * from "./gantt";
+
+// ChartMultiples — RM-120
+export * from "./multiples";

@@ -21,11 +21,17 @@
  * - The source/attribution row (RM-019) is appended at the bottom when
  *   present, inside the same `<svg>` — so it travels with the picture.
  *
+ * - RM-117: the HTML around and over the `<svg>` (axis ticks and titles,
+ *   legends, the frame's title, description, notes and footer) comes along as
+ *   an SVG twin measured by `export-layer.tsx` and passed in as `layer`.
+ *
  * PNG rasterises that same built SVG through an offscreen `<canvas>` at a
- * fixed 2× pixel ratio (a deliberate, device-independent "@2x" export scale
+ * chosen pixel ratio, 2× by default (a deliberate, device-independent export scale
  * — not the exporting device's actual `devicePixelRatio`, which would make
  * the same chart produce a different file depending on who clicked export).
  */
+
+import { renderChartExportLayer, type ChartExportLayerModel } from "./export-layer";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -47,8 +53,19 @@ const INLINED_PROPERTIES = [
   "lighting-color",
 ] as const;
 
-/** Fixed export scale — see module doc for why this is not `window.devicePixelRatio`. */
+/** Default export scale — see module doc for why this is not `window.devicePixelRatio`. */
 const EXPORT_PIXEL_RATIO = 2;
+
+/** PNG pixel ratio (RM-117): 1× to 4× the chart's CSS size. */
+export type ChartExportScale = 1 | 2 | 3 | 4;
+
+/** What an export asks for (RM-117) — the menu, the footer actions and `onExport` share it. */
+export interface ChartExportRequest {
+  /** PNG pixel ratio. Default `2`. Ignored by SVG (it is resolution-free). */
+  scale?: ChartExportScale;
+  /** Leave out the header (title, description) and the footer (notes, byline, source). */
+  plain?: boolean;
+}
 
 /** Height (px) reserved for the source/attribution row appended at the bottom of an export. */
 const SOURCE_ROW_HEIGHT = 28;
@@ -61,6 +78,15 @@ export interface ChartExportOptions {
   source?: string;
   /** Resolved (computed, not `var(…)`) background colour painted behind the chart. */
   backgroundColor?: string;
+  /**
+   * The measured HTML text layer (RM-117, `measureChartExportLayer`): axis
+   * ticks and titles, legends, keys and — for a framed export — the header and
+   * footer. When its canvas is the `<svg>`'s own box the layer is appended to
+   * the clone; otherwise the clone is placed inside a canvas of the layer's size.
+   */
+  layer?: ChartExportLayerModel;
+  /** Accessible name of the exported picture (a root `<title>`), usually the chart title. */
+  title?: string;
 }
 
 /**
@@ -192,7 +218,70 @@ export function buildExportSvg(
     appendSourceRow(clone, width, height, options.source);
   }
 
-  return clone;
+  const layer = options.layer;
+  if (!layer) return clone;
+  if (layer.userSpace !== undefined) {
+    // Measured against the <svg> itself (a dashboard part): the layer joins the
+    // clone in the svg's own user space, so the part's size, viewBox and marks
+    // stay exactly as they were. An empty layer adds nothing at all.
+    if (layer.runs.length > 0 || layer.swatches.length > 0) {
+      const group = renderChartExportLayer(layer);
+      group.setAttribute("transform", layer.userSpace);
+      clone.append(group);
+    }
+    return clone;
+  }
+  const inPlace =
+    layer.chart.x === 0 &&
+    layer.chart.y === 0 &&
+    Math.abs(layer.width - width) < 0.5 &&
+    Math.abs(layer.height - height) < 0.5;
+  if (inPlace) {
+    clone.append(renderChartExportLayer(layer));
+    return clone;
+  }
+  return composeFramedExport(clone, width, height, layer, options);
+}
+
+/**
+ * RM-117: the frame's picture — a canvas the frame's CSS size, the chart clone
+ * at its measured box, and the HTML layer (header, ticks, legend, footer) over it.
+ */
+function composeFramedExport(
+  clone: SVGSVGElement,
+  chartWidth: number,
+  chartHeight: number,
+  layer: ChartExportLayerModel,
+  options: ChartExportOptions,
+): SVGSVGElement {
+  const root = document.createElementNS(SVG_NS, "svg");
+  root.setAttribute("xmlns", SVG_NS);
+  root.setAttribute("width", String(layer.width));
+  root.setAttribute("height", String(layer.height));
+  root.setAttribute("viewBox", `0 0 ${layer.width} ${layer.height}`);
+  if (options.title) {
+    root.setAttribute("role", "img");
+    const title = document.createElementNS(SVG_NS, "title");
+    title.textContent = options.title;
+    root.append(title);
+  }
+  const background = document.createElementNS(SVG_NS, "rect");
+  background.setAttribute("x", "0");
+  background.setAttribute("y", "0");
+  background.setAttribute("width", String(layer.width));
+  background.setAttribute("height", String(layer.height));
+  background.setAttribute("fill", options.backgroundColor ?? "transparent");
+  root.append(background);
+  // The clone keeps its own pixel viewBox, so it draws 1:1 at its measured box.
+  clone.setAttribute("viewBox", `0 0 ${chartWidth} ${chartHeight}`);
+  clone.setAttribute("x", String(layer.chart.x));
+  clone.setAttribute("y", String(layer.chart.y));
+  clone.setAttribute("width", String(chartWidth));
+  clone.setAttribute("height", String(chartHeight));
+  clone.removeAttribute("xmlns");
+  root.append(clone);
+  root.append(renderChartExportLayer(layer));
+  return root;
 }
 
 /** Serialises an export-built SVG element to a well-formed, standalone SVG string. */
@@ -234,6 +323,10 @@ export interface ExportChartParams {
   source?: string;
   /** Resolved (computed) background colour, painted as the export's `<rect>`. */
   backgroundColor?: string;
+  /** The measured HTML text layer (RM-117) — see {@link ChartExportOptions.layer}. */
+  layer?: ChartExportLayerModel;
+  /** PNG pixel ratio (RM-117). Default `2`. */
+  scale?: ChartExportScale;
   /**
    * Routes the export to the caller instead of triggering a local browser
    * download — mirrors `onDownload`, for apps that want to route an export
@@ -248,9 +341,10 @@ export function exportChartSvg({
   title,
   source,
   backgroundColor,
+  layer,
   onExport,
 }: ExportChartParams): void {
-  const built = buildExportSvg(svg, { source, backgroundColor });
+  const built = buildExportSvg(svg, { source, backgroundColor, layer, title });
   const serialized = serializeSvg(built);
   const blob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
   const filename = `${slugifyChartFilename(title)}.svg`;
@@ -271,7 +365,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
- * Builds, rasterises at a fixed 2× pixel ratio and (unless `onExport` is set)
+ * Builds, rasterises at `scale` (default 2×) and (unless `onExport` is set)
  * downloads the chart as a PNG file. The resolved background is already
  * painted into the built SVG's `<rect>`, so it comes along for free when
  * `drawImage` rasterises it.
@@ -281,9 +375,11 @@ export async function exportChartPng({
   title,
   source,
   backgroundColor,
+  layer,
+  scale = EXPORT_PIXEL_RATIO,
   onExport,
 }: ExportChartParams): Promise<void> {
-  const built = buildExportSvg(svg, { source, backgroundColor });
+  const built = buildExportSvg(svg, { source, backgroundColor, layer, title });
   const serialized = serializeSvg(built);
   const width = Number.parseFloat(built.getAttribute("width") ?? "0") || 1;
   const height = Number.parseFloat(built.getAttribute("height") ?? "0") || 1;
@@ -294,11 +390,11 @@ export async function exportChartPng({
   try {
     const image = await loadImage(url);
     const canvas = document.createElement("canvas");
-    canvas.width = width * EXPORT_PIXEL_RATIO;
-    canvas.height = height * EXPORT_PIXEL_RATIO;
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.scale(EXPORT_PIXEL_RATIO, EXPORT_PIXEL_RATIO);
+    ctx.scale(scale, scale);
     ctx.drawImage(image, 0, 0, width, height);
 
     // canvas.toBlob uses a callback-based API, wrapping in a Promise is necessary

@@ -63,6 +63,22 @@ test("create: writes a runnable app on the dashboard template and prints next st
   assert.ok(pkg.dependencies["@elabs-ai/components-charts"], "dashboard's charts package declared");
 });
 
+test("create: a folder named like its template, theme or title is still the folder", (t) => {
+  if (!repoRoot) return t.skip("not inside the monorepo — templates unavailable");
+  const dir = mkdtempSync(join(tmpdir(), "brand-ui-create-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  for (const [folder, args] of [
+    ["dashboard", ["dashboard", "--template", "dashboard"]],
+    ["marketing", ["--template", "marketing", "marketing"]],
+    ["dark", ["dark", "--theme", "dark"]],
+    ["settings", ["--template=settings", "settings"]],
+  ]) {
+    const r = run(["create", ...args], dir);
+    assert.equal(r.status, 0, `${args.join(" ")}: ${r.stderr || r.stdout}`);
+    assert.ok(existsSync(join(dir, folder, "package.json")), `${folder}/ written`);
+  }
+});
+
 test("create: defaults the title from the directory name and rejects an unknown template", (t) => {
   if (!repoRoot) return t.skip("not inside the monorepo — templates unavailable");
   const dir = mkdtempSync(join(tmpdir(), "brand-ui-create-"));

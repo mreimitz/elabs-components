@@ -191,6 +191,24 @@ export {
   useLegend,
   useLegendItem,
 } from "./legend";
+// Legend engine — RM-118
+export {
+  RampLegend,
+  rampPositionOf,
+  SizeLegend,
+  useContainerLegend,
+  type ContainerLegendConfig,
+  type ContainerLegendInteractive,
+  type ContainerLegendLayoutMode,
+  type ContainerLegendPosition,
+  type ContainerLegendProp,
+  type ContainerLegendResult,
+  type RampLegendLabelMode,
+  type RampLegendProps,
+  type RampLegendScale,
+  type SizeLegendProps,
+  type UseContainerLegendOptions,
+} from "./legend";
 // Line chart components
 export { Line, type LineProps } from "./line";
 export { LineChart, type LineChartProps } from "./line-chart";
@@ -395,6 +413,16 @@ export {
   type DateTickerProps,
   type IndicatorWidth,
   type TooltipRow,
+  // Tooltip presets — RM-119
+  type ChartTooltipVariant,
+  useChartTooltipValueFormat,
+  ChartTooltipInline,
+  type ChartTooltipInlineProps,
+  ChartTooltipTable,
+  type ChartTooltipTableProps,
+  useTooltipPin,
+  type UseTooltipPinOptions,
+  type TooltipPinControls,
 } from "./tooltip";
 export { useAnimatedYDomains } from "./use-animated-y-domains";
 // Chart interaction hook
@@ -915,3 +943,7 @@ export {
   useChartAnnotationsA11y,
   withAnnotationDescription,
 } from "./annotations";
+
+// Dual-axis — RM-121
+export { type DualAxisAlign, type DualAxisOptions, type DualAxisZero } from "./y-axis-scales";
+export { type ChartLegendSplitGroup } from "./chart-legend";

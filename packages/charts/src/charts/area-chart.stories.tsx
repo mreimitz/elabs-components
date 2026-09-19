@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { AreaChart } from "./area-chart";
 import { Area } from "./area";
 import { Grid } from "./grid";
 import { XAxis } from "./x-axis";
+import { YAxis } from "./y-axis";
 import { ChartTooltip } from "./tooltip";
 
 const meta = {
@@ -568,5 +569,128 @@ export const SelectionStates: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
+  },
+};
+
+/**
+ * Container legend (RM-118): `legend={{ interactive: "toggle" }}` mounts
+ * `ChartLegend` above the plot with real `aria-pressed` buttons — click, or
+ * Tab then Enter, hides a series and the y-domain re-tweens around what is
+ * left visible. `focusOnHover` reuses the same fade a pointer-hovered area
+ * already had for a keyboard-focused legend item (Refs #545).
+ */
+export const LegendToggle: Story = {
+  name: "Legend toggle",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <AreaChart
+        animationDuration={0}
+        aspectRatio={undefined}
+        data={chartData}
+        focusOnHover
+        legend={{ interactive: "toggle" }}
+        onDatapointClick={() => {}}
+        style={{ height: "100%" }}
+        yDomainTweenDuration={0}
+      >
+        <Grid horizontal />
+        <Area
+          curve={curveNatural}
+          dataKey="desktop"
+          fill="var(--chart-1)"
+          fillOpacity={0.4}
+          name="Desktop"
+          stroke="var(--chart-1)"
+          strokeWidth={2.5}
+        />
+        <Area
+          curve={curveNatural}
+          dataKey="mobile"
+          fill="var(--chart-2)"
+          fillOpacity={0.4}
+          name="Mobile"
+          stroke="var(--chart-2)"
+          strokeWidth={2.5}
+        />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </AreaChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    // Narrow hides the value axis entirely (RM-118 addendum) — read the tier
+    // before relying on any y-axis tick to be there.
+    const tier = canvasElement
+      .querySelector("[data-chart-breakpoint]")
+      ?.getAttribute("data-chart-breakpoint");
+    const yTicks = () =>
+      [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
+        (node) => node.textContent ?? "",
+      );
+    // Datapoint drill-down targets ALSO carry an aria-label starting with
+    // the series key (`desktop, Jan 1, 2024…`), so a plain accessible-name
+    // query matches those too — scope to the legend's own toggle buttons.
+    const legendToggle = (label: RegExp) =>
+      [...canvasElement.querySelectorAll("button[aria-pressed]")].find((button) =>
+        label.test(button.textContent ?? ""),
+      ) as HTMLButtonElement | undefined;
+    // The y-axis ticks render before the legend does — wait for the button
+    // itself, not just the ticks, so a fast `animationDuration={0}` mount
+    // never races `.focus()` against an undefined lookup.
+    await waitFor(() => expect(legendToggle(/desktop/i)).toBeTruthy());
+
+    if (tier === "narrow") {
+      // No y-axis to read a moved tick from — the toggle itself, and the
+      // axis staying absent throughout, are what narrow correctly shows.
+      await expect(yTicks()).toEqual([]);
+      const desktopToggleNarrow = legendToggle(/desktop/i) as HTMLButtonElement;
+      desktopToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(desktopToggleNarrow).toHaveAttribute("aria-pressed", "false"));
+      await expect(yTicks()).toEqual([]);
+      desktopToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(desktopToggleNarrow).toHaveAttribute("aria-pressed", "true"));
+      await expect(yTicks()).toEqual([]);
+      desktopToggleNarrow.blur();
+      return;
+    }
+
+    // Ticks compact ("300"/"150") — kept as a numeric parse for symmetry
+    // with Line/ComposedChart's play functions (their ticks DO compact to
+    // "4K" etc., where `Number(...)` alone would be `NaN`).
+    const parseTick = (text: string): number => {
+      const match = /^(-?[\d.]+)([KM]?)$/.exec(text.trim().replace(/,/g, ""));
+      if (!match) return Number.NaN;
+      const [, digits, suffix] = match;
+      const n = Number(digits);
+      return suffix === "K" ? n * 1_000 : suffix === "M" ? n * 1_000_000 : n;
+    };
+
+    // "desktop" (peak 305) is the max series in this fixture — "mobile"
+    // peaks at 200, below desktop at every point, so hiding desktop is the
+    // toggle that actually moves the domain. Keyboard operated (RM-118,
+    // validator FAIL 1a).
+    await waitFor(() => expect(yTicks().length).toBeGreaterThan(0));
+    const before = yTicks();
+
+    const desktopToggle = legendToggle(/desktop/i) as HTMLButtonElement;
+    desktopToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(desktopToggle).toHaveAttribute("aria-pressed", "false"));
+    await waitFor(() => expect(yTicks()).not.toEqual(before));
+    const afterHide = yTicks();
+    await expect(parseTick(afterHide.at(-1) ?? "")).toBeLessThan(parseTick(before.at(-1) ?? ""));
+
+    desktopToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(desktopToggle).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(yTicks()).toEqual(before));
+    // Settle focus back to the body — otherwise the interaction ends with
+    // `focusOnHover`'s fade still applied to the neighbouring item, which
+    // the a11y gate correctly flags on ITS OWN contrast (unrelated to this
+    // story; not this sitting's fix to make).
+    desktopToggle.blur();
   },
 };

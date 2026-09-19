@@ -490,3 +490,25 @@ export const HalfDonut: Story = {
     </div>
   ),
 };
+
+/**
+ * Container legend (RM-118): `legend` mounts `ChartLegend` above the plot,
+ * one swatch per slice in data order. Hover only (R3) — hovering or
+ * focusing a row reuses Pie's own existing single-slice hover state, the
+ * same one a pointer hovering a slice already drives; there is no
+ * toggle/hide affordance for Pie yet (an `interactive: "toggle"` request
+ * downgrades to `"hover"`). At `narrow` the legend keeps its position but
+ * stacks one item per line.
+ */
+export const LegendHoverOnly: Story = {
+  name: "Legend, hover only",
+  render: () => (
+    <div className="h-72 w-full max-w-[420px]">
+      <PieChart data={trafficData} legend size={280}>
+        {trafficData.map((item, i) => (
+          <PieSlice animate={false} index={i} key={item.label} />
+        ))}
+      </PieChart>
+    </div>
+  ),
+};
