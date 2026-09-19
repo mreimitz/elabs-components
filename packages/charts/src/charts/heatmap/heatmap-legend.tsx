@@ -113,6 +113,20 @@ export function HeatmapLegend({
   const hasHover = typeof hover === "number" && Number.isFinite(hover);
   const markerT = hasHover ? rampPositionOf(hover as number, [lo, hi]) : null;
   const stepWidth = hi === lo ? 0 : (hi - lo) / swatches.length;
+  const stepSpans = swatches.map((swatch, index) => (
+    <span
+      className={cn("h-2.5 w-4", continuous ? "rounded-none" : "rounded-[2px]")}
+      data-slot="heatmap-legend-step"
+      // A ramp step's identity IS its position: two samples of a continuous
+      // scale can legitimately resolve to the same ink.
+      key={`step-${index}`}
+      style={{
+        backgroundColor: swatch.color,
+        backgroundImage: swatch.hatched ? NEGATIVE_HATCH_BACKGROUND : undefined,
+        opacity: swatch.opacity,
+      }}
+    />
+  ));
 
   return (
     <div
@@ -135,27 +149,16 @@ export function HeatmapLegend({
       {hasHover && markerT !== null ? (
         // Only the hovered render gains the wrapping strip: it is the sole
         // reason a positioning ancestor is needed, so the default (no hover)
-        // render stays the exact pre-RM-118 markup byte-for-byte.
+        // render stays the exact pre-RM-118 markup byte-for-byte. Both
+        // branches share `stepSpans` below so the step markup — and its
+        // key/radius — has one source occurrence, not two.
         <span
           aria-hidden="true"
           className="relative flex items-center"
           data-slot="heatmap-legend-strip"
         >
           <span className={cn("flex items-center", continuous ? "gap-0" : "gap-0.5")}>
-            {swatches.map((swatch, index) => (
-              <span
-                className={cn("h-2.5 w-4", continuous ? "rounded-none" : "rounded-[2px]")}
-                data-slot="heatmap-legend-step"
-                // A ramp step's identity IS its position: two samples of a
-                // continuous scale can legitimately resolve to the same ink.
-                key={`step-${index}`}
-                style={{
-                  backgroundColor: swatch.color,
-                  backgroundImage: swatch.hatched ? NEGATIVE_HATCH_BACKGROUND : undefined,
-                  opacity: swatch.opacity,
-                }}
-              />
-            ))}
+            {stepSpans}
           </span>
           <span
             className="pointer-events-none absolute top-0 h-full w-0.5 -translate-x-1/2 bg-chart-foreground transition-[left] duration-fast ease-standard motion-reduce:transition-none"
@@ -169,18 +172,7 @@ export function HeatmapLegend({
           aria-hidden="true"
           className={cn("flex items-center", continuous ? "gap-0" : "gap-0.5")}
         >
-          {swatches.map((swatch, index) => (
-            <span
-              className={cn("h-2.5 w-4", continuous ? "rounded-none" : "rounded-[2px]")}
-              data-slot="heatmap-legend-step"
-              key={`step-${index}`}
-              style={{
-                backgroundColor: swatch.color,
-                backgroundImage: swatch.hatched ? NEGATIVE_HATCH_BACKGROUND : undefined,
-                opacity: swatch.opacity,
-              }}
-            />
-          ))}
+          {stepSpans}
         </span>
       )}
       {labelMode === "endpoints" ? (
