@@ -1661,6 +1661,27 @@ describe("AutoChart faceted bar legend (RM-118 Part B × RM-120 sitting 2)", () 
     expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
     expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
   });
+
+  // RM-118 fix round 2: `renderFacetedChart` mounts its own direct
+  // `<ChartLegend>` for this one shared legend — a separate call site from
+  // `useContainerLegend`'s (the non-faceted path), so the round-1 source fix
+  // there didn't cover it. This row must reach the same `text-meta` role,
+  // never `ChartLegend`'s own bare-caller default.
+  it("legend: true → the shared legend label reaches the text-meta role, never text-sm/text-xs", () => {
+    const { getAllByRole } = render(<AutoChart spec={facetedBarSpec(true)} height={280} />);
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    const rows = legend.querySelectorAll(":scope > *");
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      const label = row.querySelector("span");
+      expect(label).toHaveClass("text-meta");
+      expect(label).not.toHaveClass("text-sm");
+      expect(label).not.toHaveClass("text-xs");
+    }
+  });
 });
 
 describe("AutoChart faceted pie legend (RM-118 Part B × RM-120 sitting 2)", () => {

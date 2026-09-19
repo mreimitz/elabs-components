@@ -1629,6 +1629,13 @@ function renderFacetedChart(
         aria-label={facetLegend["aria-label"]}
         className="w-full"
         items={facetLegend.items}
+        // RM-118 fix round 2: this is the one direct `<ChartLegend>` mount
+        // outside `useContainerLegend` (the non-faceted path's shared
+        // engine) — it needs the same override that engine already passes,
+        // never `ChartLegend`'s own bare-caller default for this prop (see
+        // `use-container-legend.ts` for the matching call site and the
+        // reasoning this mirrors).
+        labelClassName="text-meta"
         layout="row"
         showValue={facetLegend.showValue}
         title={facetLegend.title}
