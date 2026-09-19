@@ -11,9 +11,12 @@
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "e2e": "node -e \"console.log('@elabs-ai/home: no e2e suite yet')\"",
+    "test": "vitest run --exclude \"e2e/**\"",
+    "test:watch": "vitest --exclude \"e2e/**\"",
+    "e2e": "playwright test -c e2e/playwright.config.ts",
+    "e2e:update": "playwright test -c e2e/playwright.config.ts --update-snapshots",
+    "lhci": "cd .next && lhci collect --config=../lighthouserc.json --collect.url=http://localhost:${E2E_PORT:-4620}/?lhci=desktop && lhci collect --config=../lighthouserc.json --additive --collect.settings.preset=perf --collect.url=http://localhost:${E2E_PORT:-4620}/?lhci=mobile && lhci assert --config=../lighthouserc.json && lhci upload --config=../lighthouserc.json",
+    "bundle-budget": "node scripts/bundle-budget.mjs",
     "postinstall": "node ../../scripts/gen-home-themes.mjs",
     "clean": "rm -rf .next .turbo next-env.d.ts"
   },
@@ -40,8 +43,11 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@elabs-ai/components-eslint-config": "workspace:*",
     "@elabs-ai/components-typescript-config": "workspace:*",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "1.60.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.19.19",
     "@types/react": "^19.0.2",

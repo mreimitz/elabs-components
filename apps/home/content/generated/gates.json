@@ -186,6 +186,12 @@
     "source": "scripts/check/rules/header-band.mjs"
   },
   {
+    "id": "home-bundle",
+    "doc": "Keep the website's `/` initial JavaScript (gzip, `apps/home/.next`) within the `home-bundle` budget in `scripts/check/baseline.json` and free of per-section engines (@xyflow, monaco-editor, maplibre-gl, @milkdown, components-process, components-terminal); skipped without a build unless `HOME_BUNDLE_REQUIRED=1`.",
+    "category": "packages",
+    "source": "scripts/check/rules/home-bundle.mjs"
+  },
+  {
     "id": "home-imports",
     "doc": "Build the website (`apps/home`, ADR 0038) only from the library: import react, react-dom, next, motion, @vercel/analytics, lucide-react, `@elabs-ai/*` or a relative path; a registry block copied under `apps/home/components/blocks/` keeps its `// registry: <name> — copied <YYYY-MM-DD>` header.",
     "category": "packages",

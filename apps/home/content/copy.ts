@@ -555,3 +555,57 @@ export const routeCardsCopy = {
     action: "View on GitHub",
   },
 } as const;
+
+// RM-103 — the "One token system" band (concept §4.5, §5a "Scroll choreography 5"): a curated
+// token row, the theme families as swatches, and the generated gate catalogue. The curated
+// token list and every label are authored HERE — `TokenSpotlight` (`@elabs-ai/components-ui`)
+// ships no default tokens or English copy of its own (wave-4 ruling 20/26, "no site strings
+// in ui"); the family and gate DATA come from `content/generated/*.json` through `lib/content`.
+export const tokenBandCopy = {
+  heading: "One token system",
+  intro:
+    "Hover a token to see every place it lands on this page — the ground behind it tints to match.",
+  tokens: [
+    { token: "--background", label: "Background" },
+    { token: "--foreground", label: "Foreground" },
+    { token: "--primary", label: "Primary" },
+    { token: "--surface-2", label: "Surface 2" },
+    { token: "--border", label: "Border" },
+    { token: "--chart-1", label: "Chart 1" },
+    { token: "--chart-2", label: "Chart 2" },
+    { token: "--chart-3", label: "Chart 3" },
+    { token: "--ring", label: "Ring" },
+    { token: "--radius", label: "Radius" },
+  ],
+} as const;
+
+export const themeSwatchesCopy = {
+  heading: "Nine families, none of them the menu",
+  intro: "Reference themes, ready to use as they are — or as a start for your own.",
+  use: "Use",
+  active: "Active",
+  /** `themes/qlik/README.md` §"Fonts": Source Sans 3 is self-hosted (vendored), not a CDN import. */
+  typefaceVendored: "Source Sans 3, vendored",
+  typefaceSystem: "System stack",
+  createTheme: {
+    heading: "Bring your own brand",
+    description:
+      "An agent with the create-theme skill turns a brand's own material — links, a style sheet, a logo — into a new family.",
+    hostLabel: "Agent host",
+  },
+} as const;
+
+export const gatesBandCopy = {
+  categoryLabels: {
+    stories: "Stories",
+    packages: "Packages",
+    components: "Components",
+    themes: "Themes",
+    repo: "Repo",
+    registry: "Registry",
+    external: "External commands",
+  },
+  footerPrefix: "The full list lives in",
+  footerLinkText: "docs/GATES.md",
+  footerSuffix: "on GitHub.",
+} as const;

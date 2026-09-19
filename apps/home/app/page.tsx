@@ -5,6 +5,7 @@ import { TOUR_TABS } from "../components/tour/tabs";
 import { AgentLoopSection } from "../components/agent-loop/agent-loop-section";
 import { EmitUiSection } from "../components/agent-loop/emit-ui";
 import { WorksWith } from "../components/agents/works-with";
+import { TokenBand } from "../components/tokens/token-band";
 import { RouteCards } from "../components/routes/route-cards";
 
 // The page, section by section in movement order; each RM item appends its section under its
@@ -26,6 +27,9 @@ export default function HomePage() {
       {/* RM-102 — the matrix is its own section (`id="works-with"`), install + route cards
           follow as movement 6. */}
       <WorksWith />
+      {/* RM-103 — the tokens band sits between the works-with matrix and the closing route
+          cards (concept order §4.4 → §4.5 → §4.6; wave-4 ruling 24). */}
+      <TokenBand />
       <RouteCards />
     </main>
   );
