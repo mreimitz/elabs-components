@@ -1995,7 +1995,9 @@ function DataTableInner<TData, TValue>(
       const value = cell.getValue();
       const color = scale?.heatmap?.colorOf(typeof value === "number" ? value : null) ?? null;
       style = { ...style, ...heatmapCellStyle(color) };
-      className = meta.visual.hideValue ? "px-0 text-center" : "text-center";
+      // A value-less heatmap cell is pure colour: no padding (so the column can
+      // shrink with the table) but a real height, or the band would vanish.
+      className = meta.visual.hideValue ? "h-6 px-0 text-center" : "text-center";
     }
     if (meta.colorBy && (meta.colorBy.scope ?? "cell") === "cell") {
       const color =
@@ -2095,7 +2097,9 @@ function DataTableInner<TData, TValue>(
           // #173: header bottom is the only cue between header and first data row → border-strong
           // RM-123 `hideHeader`: the header row collapses to zero height (its
           // labels stay for screen readers), so it draws no rule and no wash.
-          hideHeader ? "[&_th]:h-0 [&_th]:py-0" : "border-b border-border-strong",
+          // A hidden header must not reserve width either — its own padding
+          // would otherwise floor every column (a 24 px minimum per cell).
+          hideHeader ? "[&_th]:h-0 [&_th]:p-0" : "border-b border-border-strong",
           // A sticky header scrolls OVER the body, so its fill must be opaque or data
           // rows bleed through the labels; the non-sticky header keeps the /60 wash.
           // z-20 (raised from z-10 for #333) puts the header row above the pinned

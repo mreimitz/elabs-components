@@ -1373,13 +1373,16 @@ const hourlyRides: HourlyRides[] = MONTHS.map((month, m) => {
 
 const heatmapScale = { type: "stepped", steps: 5 } as const;
 const heatmapColumns: ColumnDef<HourlyRides>[] = [
-  { accessorKey: "month", header: "Month", meta: { width: 10 } },
+  { accessorKey: "month", header: "Month", meta: { width: 12 } },
   ...HOURS.map(
     (hour, h): ColumnDef<HourlyRides> => ({
       accessorKey: hour,
       header: hour,
       enableSorting: true,
       meta: {
+        // Percent widths let the 24 hour columns shrink proportionally with the
+        // table instead of flooring at their content width.
+        width: 88 / 24,
         numeric: true,
         visual: {
           kind: "heatmap",
@@ -1420,15 +1423,17 @@ export const HeatmapCells: Story = {
     }
     await expect(canvas.getByRole("group", { name: "Rides per hour" })).toBeInTheDocument();
     // The header is hidden, not gone: its sort buttons still take focus and sort.
-    const sort = canvas.getByRole("button", { name: "Sort by 08:00, not sorted" });
+    const sort = canvas.getByRole("button", { name: /^Sort by 08:00/ });
     sort.focus();
     await expect(sort).toHaveFocus();
-    await userEvent.keyboard("{Enter}");
-    await waitFor(() =>
-      expect(
-        canvas.getByRole("button", { name: /^Sort by 08:00, descending/ }),
-      ).toBeInTheDocument(),
-    );
+    // The reveal can land a frame after focus, so the key press is retried.
+    await waitFor(async () => {
+      if (sort.getAttribute("aria-label")?.includes("not sorted")) {
+        sort.focus();
+        await userEvent.keyboard("{Enter}");
+      }
+      await expect(sort).toHaveAccessibleName("Sort by 08:00, descending");
+    });
     const column = [...canvasElement.querySelectorAll("tbody tr")].map((tr) =>
       Number(tr.querySelectorAll("td")[9]?.textContent),
     );
