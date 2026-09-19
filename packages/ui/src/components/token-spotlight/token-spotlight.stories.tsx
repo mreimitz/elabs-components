@@ -75,7 +75,10 @@ export const KeyboardFocus: Story = {
 };
 
 /** Under reduced motion the outline still appears — CSS `animation: none` (`token-spotlight.css`)
- * just removes the pulse, so no `data-token-consumer` element carries a running Animation. */
+ * just removes the pulse. Asserted on the computed style directly (`animationName`), never on
+ * `document.getAnimations()`: an unrelated `transition-colors` on the outlined element is a real
+ * `CSSTransition` that legitimately runs for a few ms right after the attribute flips, and is not
+ * the pulse this story is about. */
 export const ReducedMotion: Story = {
   globals: { motionPref: "reduced" },
   render: (args) => (
@@ -89,6 +92,6 @@ export const ReducedMotion: Story = {
     await userEvent.hover(chip);
     const consumer = canvas.getByText("Uses --primary");
     await waitFor(() => expect(consumer).toHaveAttribute("data-token-consumer", "primary"));
-    await expect(document.getAnimations().filter((a) => a.playState === "running")).toEqual([]);
+    await waitFor(() => expect(getComputedStyle(consumer).animationName).toBe("none"));
   },
 };
