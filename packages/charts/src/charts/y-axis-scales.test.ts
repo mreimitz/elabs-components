@@ -5,6 +5,7 @@ import {
   buildValueScale,
   collectValueAxisConfigs,
   niceLogEnd,
+  resolveDualAxisDomains,
   resolveValueAxis,
   valueExtent,
 } from "./y-axis-scales";
@@ -155,5 +156,86 @@ describe("collectValueAxisConfigs / applyValueAxisConfigs (RM-108)", () => {
     expect(out.scaleKindsByAxis.left).toBe("log");
     expect(out.domainsByAxis.right).toEqual([0, 3]);
     expect(valueExtent(data, ["a"])).toEqual([60, 1900]);
+  });
+});
+
+// Dual-axis — RM-121
+describe("resolveDualAxisDomains (RM-121)", () => {
+  const gridRows = (ticks: number[], [lo, hi]: [number, number], h = 200) =>
+    ticks.map((t) => Math.round(h - ((t - lo) / (hi - lo)) * h));
+
+  it("aligns ticks: same count, same pixel rows, zero on both (columns left)", () => {
+    const { left, right } = resolveDualAxisDomains(
+      { extent: [120, 480], lengthEncoding: true },
+      { extent: [2.1, 7.4] },
+      { align: "ticks", targetTicks: 5 },
+    );
+    expect(left.ticks).toBeDefined();
+    expect(left.ticks!.length).toBe(right.ticks!.length);
+    expect(left.domain[0]).toBe(0);
+    expect(right.domain[0]).toBe(0);
+    expect(gridRows(left.ticks!, left.domain)).toEqual(gridRows(right.ticks!, right.domain));
+    expect(left.domain[1]).toBeGreaterThanOrEqual(480);
+    expect(right.domain[1]).toBeGreaterThanOrEqual(7.4);
+  });
+
+  it("proportional keeps max / tick equal on both axes, columns still zero-based", () => {
+    const { left, right } = resolveDualAxisDomains(
+      { extent: [120, 480], lengthEncoding: true },
+      { extent: [2.1, 7.4] },
+      { proportional: true, targetTicks: 5 },
+    );
+    expect(left.domain[0]).toBe(0);
+    const lt = left.ticks!.filter((t) => t !== 0);
+    const rt = right.ticks!.filter((t) => t !== 0);
+    lt.forEach((t, i) => {
+      expect(left.domain[1] / t).toBeCloseTo(right.domain[1] / rt[i]!, 9);
+    });
+  });
+
+  it("proportional without zero shares one origin (right = c · left at every row)", () => {
+    const { left, right } = resolveDualAxisDomains(
+      { extent: [104, 196] },
+      { extent: [5.3, 9.6] },
+      { proportional: true, targetTicks: 5 },
+    );
+    expect(left.domain[0]).toBeGreaterThan(0);
+    const c = right.domain[0] / left.domain[0];
+    left.ticks!.forEach((t, i) => expect(right.ticks![i]).toBeCloseTo(t * c, 9));
+    expect(left.domain[1] / left.domain[0]).toBeCloseTo(right.domain[1] / right.domain[0], 9);
+  });
+
+  it("zero 'auto' with two lines forces neither axis to zero", () => {
+    const { left, right } = resolveDualAxisDomains(
+      { extent: [104, 196] },
+      { extent: [5.3, 9.6] },
+      { align: "ticks" },
+    );
+    expect(left.domain[0]).toBeGreaterThan(0);
+    expect(right.domain[0]).toBeGreaterThan(0);
+    expect(left.ticks!.length).toBe(right.ticks!.length);
+  });
+
+  it("zero 'both' includes zero on both, and respects the tick ceiling", () => {
+    const { left, right } = resolveDualAxisDomains(
+      { extent: [104, 196] },
+      { extent: [5.3, 9.6] },
+      { zero: "both", targetTicks: 3, maxTicks: 4 },
+    );
+    expect(left.domain[0]).toBe(0);
+    expect(right.domain[0]).toBe(0);
+    expect(left.ticks!.length).toBeLessThanOrEqual(4);
+    expect(left.ticks!.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("independent leaves ticks to each axis but still applies the zero rule", () => {
+    const { left, right } = resolveDualAxisDomains(
+      { extent: [120, 480], lengthEncoding: true },
+      { extent: [2.1, 7.4] },
+      { align: "independent" },
+    );
+    expect(left.ticks).toBeUndefined();
+    expect(left.domain[0]).toBe(0);
+    expect(right.domain[0]).toBe(0);
   });
 });

@@ -1,7 +1,16 @@
 "use client";
 
-import { memo, type ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  memo,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
+import { cn, useLocale } from "@elabs-ai/components-ui";
 import { AxisTitle, type AxisTitlePlacement } from "./axis-title";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import type { ChartValueFormat } from "./value-format";
@@ -11,7 +20,13 @@ import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
 import { type AxisTickCount, resolveAxisTickTarget, tickTargetForHeight } from "./tick-targets";
-import type { AxisDomain, ValueScaleType, YAxisOrientation } from "./y-axis-scales";
+import { seriesLabelInk } from "./labels/series-label-ink";
+import {
+  type AxisDomain,
+  normalizeYAxisId,
+  type ValueScaleType,
+  type YAxisOrientation,
+} from "./y-axis-scales";
 import { resolveYAxisTickCount, valueAxisTicks } from "./y-axis-ticks";
 
 /** Where tick labels sit relative to the plot (RM-108). */
@@ -91,12 +106,51 @@ export interface YAxisProps {
   unitOn?: "last" | "first" | "all";
 }
 
+// Dual-axis — RM-121
+export interface YAxisProps {
+  /**
+   * Paint the tick labels and title in the colour of this axis' series when
+   * it carries exactly ONE series; neutral otherwise (RM-121, Datawrapper's
+   * "label colour: match data"). The text goes through `seriesLabelInk` — the
+   * stroke mixed toward the label ink so it still reads at 4.5:1. Default `false`.
+   */
+  matchSeriesColor?: boolean;
+  /**
+   * A caption naming which scale this is, above the tick column (RM-121).
+   * `"auto"` → "Left scale" / "Right scale" by `orientation`, through the
+   * locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).
+   */
+  sideLabel?: ReactNode | "auto";
+}
+
+/**
+ * Set by `ComposedChart` when `yAxes` is on (RM-121): a two-axis chart keeps
+ * both value axes at the narrow tier (`density="sm"` otherwise drops the value
+ * axis), because the chart cannot be read without its two scales. Internal.
+ */
+export const DualAxisContext = createContext(false);
+
+const SIDE_LABEL_FALLBACK = { left: "Left scale", right: "Right scale" } as const;
+
+/** Resolve `sideLabel="auto"` through the locale seam, falling back to English. Internal. */
+export function useSideLabel(
+  sideLabel: ReactNode | "auto" | undefined,
+  orientation: YAxisOrientation,
+): ReactNode {
+  const { t } = useLocale();
+  if (sideLabel !== "auto") return sideLabel;
+  const key = orientation === "right" ? "charts.axis.rightScale" : "charts.axis.leftScale";
+  const translated = t(key);
+  return translated === key ? SIDE_LABEL_FALLBACK[orientation] : translated;
+}
+
 export function YAxis(props: YAxisProps) {
   // RM-117: hand the chart's series colours to an enclosing ChartFrame
   // (read by InlineChip). No visual change; a no-op outside a frame.
   useChartFrameSeriesBridge();
   const { containerRef } = useChartStable();
   const { density } = useChartConfig();
+  const dualAxis = useContext(DualAxisContext);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -106,7 +160,8 @@ export function YAxis(props: YAxisProps) {
   const container = containerRef.current;
   // RM-072: the value axis is the first furniture a small tile drops — `sm`
   // keeps only the category axis, `xs` keeps none.
-  if (!(mounted && container) || density === "xs" || density === "sm") {
+  // RM-121: a dual-axis chart keeps both value axes at `sm` (see `DualAxisContext`).
+  if (!(mounted && container) || density === "xs" || (density === "sm" && !dualAxis)) {
     return null;
   }
 
@@ -128,9 +183,19 @@ const YAxisInner = memo(function YAxisInner({
   formatValue,
   unit,
   unitOn = "last",
+  matchSeriesColor = false,
+  sideLabel,
   container,
 }: YAxisProps & { container: HTMLDivElement }) {
-  const { margin, innerWidth, innerHeight, width, height } = useChartStable();
+  const { margin, innerWidth, innerHeight, width, height, lines } = useChartStable();
+  // RM-121: the one series this axis carries, when there is exactly one.
+  const axisKey = normalizeYAxisId(yAxisId);
+  const matchedInk = useMemo(() => {
+    if (!matchSeriesColor) return undefined;
+    const own = lines.filter((line) => normalizeYAxisId(line.yAxisId) === axisKey);
+    return own.length === 1 && own[0]?.stroke ? seriesLabelInk(own[0].stroke) : undefined;
+  }, [matchSeriesColor, lines, axisKey]);
+  const resolvedSideLabel = useSideLabel(sideLabel, orientation);
   const yScale = useYScale(yAxisId);
   const isLeft = orientation === "left";
   const isInside = labelPlacement === "inside";
@@ -186,7 +251,8 @@ const YAxisInner = memo(function YAxisInner({
   // Inside labels + inside title would stack two texts in the same top-left
   // corner; the River convention instead appends the title to the TOP tick
   // label ("2K riders"), so the unit reads with the number it qualifies.
-  const titleJoinsTopLabel = isInside && titlePlacement === "inside" && title != null;
+  const titleJoinsTopLabel =
+    isInside && titlePlacement === "inside" && title != null && sideLabel == null;
   const topTickValue =
     ticks.length > 0 ? ticks.reduce((top, tick) => (tick.y < top.y ? tick : top)).value : undefined;
 
@@ -198,12 +264,32 @@ const YAxisInner = memo(function YAxisInner({
       ? { left: 0, width: margin.left }
       : { right: 0, width: margin.right };
 
+  // RM-121: the side label leads the title ("Right scale · %"); both take the
+  // matched ink (AxisTitle's own neutral ink would otherwise win).
+  const titleNode =
+    resolvedSideLabel != null ? (
+      <>
+        <span data-slot="y-axis-side-label">{resolvedSideLabel}</span>
+        {title != null ? <> · {title}</> : null}
+      </>
+    ) : (
+      title
+    );
+  const heading =
+    matchedInk && titleNode != null ? (
+      <span style={{ color: matchedInk }}>{titleNode}</span>
+    ) : (
+      titleNode
+    );
+
   return createPortal(
     <div
       className="pointer-events-none absolute inset-0"
       data-label-placement={labelPlacement}
+      data-series-color={matchedInk ? "" : undefined}
       data-slot="y-axis"
       data-tick-count={ticks.length}
+      style={matchedInk ? { color: matchedInk } : undefined}
     >
       <div className="absolute top-0 bottom-0" style={columnStyle}>
         {ticks.map((tick) => (
@@ -227,7 +313,13 @@ const YAxisInner = memo(function YAxisInner({
                 axis paints — without `whitespace-nowrap` it wraps onto a
                 second line at narrow widths and crowds the tick below it
                 (same fix x-axis.tsx already has for its own tick labels). */}
-            <span className="whitespace-nowrap text-chart-label text-meta">
+            <span
+              className={cn(
+                "whitespace-nowrap text-meta",
+                // RM-121: the matched ink rides on the root's `color`.
+                matchedInk ? "text-current" : "text-chart-label",
+              )}
+            >
               {tick.label}
               {titleJoinsTopLabel && tick.value === topTickValue ? (
                 <>
@@ -249,7 +341,7 @@ const YAxisInner = memo(function YAxisInner({
           side={orientation}
           width={width}
         >
-          {title}
+          {heading}
         </AxisTitle>
       )}
     </div>,

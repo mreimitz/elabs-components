@@ -319,3 +319,105 @@ export const LegendToggle: Story = {
     runRateToggle.blur();
   },
 };
+
+// Dual-axis — RM-121
+/** Monthly orders (a count) beside the conversion rate (a percentage): two units, two scales. */
+const dualAxisData = [
+  { date: new Date(2024, 0, 1), orders: 182, conversion: 2.4 },
+  { date: new Date(2024, 1, 1), orders: 236, conversion: 3.1 },
+  { date: new Date(2024, 2, 1), orders: 311, conversion: 3.6 },
+  { date: new Date(2024, 3, 1), orders: 287, conversion: 4.2 },
+  { date: new Date(2024, 4, 1), orders: 402, conversion: 5.3 },
+  { date: new Date(2024, 5, 1), orders: 468, conversion: 6.1 },
+];
+
+/** Tick label rows (px from the chart top) of the value axis on `side`. */
+function tickRows(root: HTMLElement, side: "left" | "right"): number[] {
+  const axes = Array.from(root.querySelectorAll<HTMLElement>('[data-slot="y-axis"]'));
+  const axis = axes.find((el) => {
+    const column = el.firstElementChild as HTMLElement | null;
+    return side === "left" ? column?.style.left === "0px" : column?.style.right === "0px";
+  });
+  return Array.from(axis?.querySelectorAll<HTMLElement>(":scope > div > div") ?? []).map((tick) =>
+    Math.round(Number.parseFloat(tick.style.top)),
+  );
+}
+
+/**
+ * Columns on the left scale, a line on the right (Datawrapper’s dual-axis
+ * rules: different units, different mark types, both zero-based, colour-matched
+ * axis labels). `align: "ticks"` puts both scales on the same gridlines.
+ */
+export const DualAxis: Story = {
+  args: { data: dualAxisData, children: null },
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <ComposedChart
+        accessibleLabel="Orders and conversion rate, January to June 2024"
+        animationDuration={0}
+        data={dualAxisData}
+        legend={{ layout: "split" }}
+        yAxes={{ align: "ticks" }}
+      >
+        <Grid horizontal />
+        <SeriesBar dataKey="orders" fill="var(--chart-1)" />
+        <Line dataKey="conversion" stroke="var(--chart-2)" yAxisId="right" />
+        <YAxis matchSeriesColor />
+        <YAxis matchSeriesColor orientation="right" unit="%" yAxisId="right" />
+        <XAxis />
+        <ChartTooltip />
+      </ComposedChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const left = tickRows(canvasElement, "left");
+      const right = tickRows(canvasElement, "right");
+      expect(left.length).toBeGreaterThanOrEqual(3);
+      expect(right).toEqual(left);
+    });
+    const rows = canvasElement.querySelectorAll('[data-slot="chart-legend-split-row"]');
+    await expect(rows).toHaveLength(2);
+    await expect(rows[0]).toHaveTextContent("Left scale");
+    await expect(rows[1]).toHaveTextContent("Right scale");
+  },
+};
+
+/**
+ * Two lines, neither zero-based: `proportional` gives both scales one shared
+ * origin, so each gridline is the same relative change on both sides.
+ */
+export const DualAxisProportional: Story = {
+  args: { data: dualAxisData, children: null },
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <ComposedChart
+        accessibleLabel="Average order value and items per order, January to June 2024"
+        animationDuration={0}
+        data={[
+          { date: new Date(2024, 0, 1), value: 104, items: 5.3 },
+          { date: new Date(2024, 1, 1), value: 131, items: 6.2 },
+          { date: new Date(2024, 2, 1), value: 152, items: 7.9 },
+          { date: new Date(2024, 3, 1), value: 148, items: 8.4 },
+          { date: new Date(2024, 4, 1), value: 177, items: 9.1 },
+          { date: new Date(2024, 5, 1), value: 196, items: 9.6 },
+        ]}
+        yAxes={{ proportional: true }}
+      >
+        <Grid horizontal />
+        <Line dataKey="value" stroke="var(--chart-1)" />
+        <Line dataKey="items" stroke="var(--chart-3)" yAxisId="right" />
+        <YAxis matchSeriesColor sideLabel="auto" />
+        <YAxis matchSeriesColor orientation="right" sideLabel="auto" yAxisId="right" />
+        <XAxis />
+      </ComposedChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const left = tickRows(canvasElement, "left");
+      expect(left.length).toBeGreaterThanOrEqual(3);
+      expect(tickRows(canvasElement, "right")).toEqual(left);
+    });
+  },
+};

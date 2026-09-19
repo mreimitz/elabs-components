@@ -1,9 +1,22 @@
 "use client";
 
 import { ParentSize } from "@visx/responsive";
+import { useChartConfig } from "./chart-config-context";
+import type { GridProps } from "./grid";
+import { tickTargetForHeight } from "./tick-targets";
+import { DualAxisContext, useSideLabel, type YAxisProps } from "./y-axis";
+import {
+  DEFAULT_Y_AXIS_ID,
+  type DualAxisOptions,
+  type DualAxisResolved,
+  normalizeYAxisId,
+  resolveDualAxisDomains,
+  valueExtent,
+} from "./y-axis-scales";
 import type { Transition } from "motion/react";
 import {
   Children,
+  cloneElement,
   forwardRef,
   isValidElement,
   type ReactElement,
@@ -255,6 +268,160 @@ function computeComposedYScaleDomainMax(
   return max > 0 ? max : undefined;
 }
 
+// Dual-axis — RM-121
+/** One plotted series as the dual-axis planner sees it. */
+interface DualAxisSeries {
+  dataKey: string;
+  axisId: string;
+  /** Columns and areas are lengths: their axis always includes 0 (`charts-honesty`). */
+  length: boolean;
+  bar: boolean;
+}
+
+function collectDualAxisSeries(children: ReactNode): DualAxisSeries[] {
+  const series: DualAxisSeries[] = [];
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child)) return;
+    const name = getChildComponentName(child);
+    const props = child.props as { dataKey?: string; yAxisId?: string | number };
+    if (!props.dataKey) return;
+    if (child.type === SeriesBar || name === "SeriesBar") {
+      // `SeriesBar` draws on the primary (left) scale.
+      series.push({ dataKey: props.dataKey, axisId: DEFAULT_Y_AXIS_ID, length: true, bar: true });
+    } else if (child.type === Area || name === "Area") {
+      series.push({
+        dataKey: props.dataKey,
+        axisId: normalizeYAxisId(props.yAxisId),
+        length: true,
+        bar: false,
+      });
+    } else if (child.type === Line || name === "Line") {
+      series.push({
+        dataKey: props.dataKey,
+        axisId: normalizeYAxisId(props.yAxisId),
+        length: false,
+        bar: false,
+      });
+    }
+  });
+  return series;
+}
+
+/** `[min, max]` of an axis' values, counting a stacked column set as its row sums. */
+function dualAxisExtent(
+  data: Record<string, unknown>[],
+  series: DualAxisSeries[],
+  stacked: boolean,
+): [number, number] {
+  const barKeys = stacked ? series.filter((s) => s.bar).map((s) => s.dataKey) : [];
+  const otherKeys = series.filter((s) => !barKeys.includes(s.dataKey)).map((s) => s.dataKey);
+  let [lo, hi] = otherKeys.length > 0 ? valueExtent(data, otherKeys) : [0, 0];
+  let seen = otherKeys.length > 0;
+  if (barKeys.length > 0) {
+    for (const row of data) {
+      let sum = 0;
+      for (const key of barKeys) {
+        const v = row[key];
+        if (typeof v === "number" && Number.isFinite(v)) sum += v;
+      }
+      lo = seen ? Math.min(lo, sum) : sum;
+      hi = seen ? Math.max(hi, sum) : sum;
+      seen = true;
+    }
+  }
+  return [lo, hi];
+}
+
+/** The two resolved axes of a dual-axis `ComposedChart`, keyed by their ids. */
+interface DualAxisPlan {
+  leftId: string;
+  rightId: string;
+  left: DualAxisResolved;
+  right: DualAxisResolved;
+}
+
+function pinnedDomainOf(children: ReactNode, axisId: string): [number, number] | undefined {
+  let pinned: [number, number] | undefined;
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child) || getChildComponentName(child) !== "YAxis") return;
+    const props = child.props as YAxisProps;
+    if (normalizeYAxisId(props.yAxisId) !== axisId || !props.domain) return;
+    const [lo, hi] = props.domain;
+    if (typeof lo === "number" && typeof hi === "number") pinned = [lo, hi];
+  });
+  return pinned;
+}
+
+/**
+ * Plan both value axes (RM-121). `null` unless `yAxes` is set AND the
+ * visible series sit on exactly two axis groups, one of them the primary.
+ */
+function planDualAxes({
+  children,
+  data,
+  hiddenKeys,
+  stacked,
+  yAxes,
+  innerHeight,
+  maxTicks,
+}: {
+  children: ReactNode;
+  data: Record<string, unknown>[];
+  hiddenKeys?: ReadonlySet<string>;
+  stacked: boolean;
+  yAxes?: DualAxisOptions;
+  innerHeight: number;
+  maxTicks: number;
+}): DualAxisPlan | null {
+  if (!yAxes) return null;
+  const series = collectDualAxisSeries(children).filter((s) => !hiddenKeys?.has(s.dataKey));
+  const ids = Array.from(new Set(series.map((s) => s.axisId)));
+  const rightId = ids.find((id) => id !== DEFAULT_Y_AXIS_ID);
+  if (ids.length !== 2 || !ids.includes(DEFAULT_Y_AXIS_ID) || !rightId) return null;
+  const inputFor = (axisId: string) => {
+    const own = series.filter((s) => s.axisId === axisId);
+    return {
+      extent: pinnedDomainOf(children, axisId) ?? dualAxisExtent(data, own, stacked),
+      lengthEncoding: own.some((s) => s.length),
+    };
+  };
+  const { left, right } = resolveDualAxisDomains(inputFor(DEFAULT_Y_AXIS_ID), inputFor(rightId), {
+    ...yAxes,
+    targetTicks: tickTargetForHeight(innerHeight),
+    maxTicks,
+  });
+  return { leftId: DEFAULT_Y_AXIS_ID, rightId, left, right };
+}
+
+/**
+ * Hand each direct `YAxis` its planned `domain`/`ticks` and the `Grid` the
+ * shared rows (RM-121). An explicit `ticks`/`rowTickValues` prop wins.
+ */
+function applyDualAxisPlan(children: ReactNode, plan: DualAxisPlan): ReactNode {
+  const axisFor = (id: string) =>
+    id === plan.rightId ? plan.right : id === plan.leftId ? plan.left : undefined;
+  return Children.map(children, (child) => {
+    if (!isValidElement(child)) return child;
+    const name = getChildComponentName(child);
+    if (name === "YAxis") {
+      const props = child.props as YAxisProps;
+      const axis = axisFor(normalizeYAxisId(props.yAxisId));
+      if (!axis) return child;
+      return cloneElement(child as ReactElement<YAxisProps>, {
+        domain: axis.domain,
+        ticks: props.ticks ?? axis.ticks,
+      });
+    }
+    if (name === "Grid") {
+      const props = child.props as GridProps;
+      const axis = axisFor(normalizeYAxisId(props.yAxisId));
+      if (!axis?.ticks || props.rowTickValues) return child;
+      return cloneElement(child as ReactElement<GridProps>, { rowTickValues: axis.ticks });
+    }
+    return child;
+  });
+}
+
 interface ChartInnerProps {
   width: number;
   height: number;
@@ -301,6 +468,8 @@ interface ChartInnerProps {
    * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
    */
   legendVisible?: boolean;
+  /** Dual-axis — RM-121: see `ComposedChartProps.yAxes`. */
+  yAxes?: DualAxisOptions;
 }
 
 function ChartInner({
@@ -332,7 +501,30 @@ function ChartInner({
   hiddenKeys,
   legendHoveredKey,
   legendVisible,
+  yAxes,
 }: ChartInnerProps) {
+  // Dual-axis — RM-121: plan both value axes, then hand the plan to the
+  // direct `YAxis`/`Grid` children as ordinary `domain`/`ticks` props — the
+  // shell's RM-108 value-axis path pins them, so nothing below changes.
+  const { density } = useChartConfig();
+  const dualInnerHeight = height - margin.top - margin.bottom;
+  const dualPlan = useMemo(
+    () =>
+      planDualAxes({
+        children,
+        data,
+        hiddenKeys,
+        stacked,
+        yAxes,
+        innerHeight: dualInnerHeight,
+        maxTicks: density === "sm" || density === "xs" ? 4 : 7,
+      }),
+    [children, data, hiddenKeys, stacked, yAxes, dualInnerHeight, density],
+  );
+  const plotChildren = useMemo(
+    () => (dualPlan ? applyDualAxisPlan(children, dualPlan) : children),
+    [children, dualPlan],
+  );
   // See `use-stable-value.ts`: collapses back to the previous reference when
   // the extracted series content is unchanged, even though `children` gets a
   // fresh identity from React on every parent render.
@@ -411,16 +603,21 @@ function ChartInner({
         yDomainTweenDuration={yDomainTweenDuration}
         yScaleDomainMax={yScaleDomainMax}
       >
-        {children}
+        {plotChildren}
       </TimeSeriesChartInner>
     </ChartSeriesModeProvider>
+  );
+  const chartWithAxes = dualPlan ? (
+    <DualAxisContext.Provider value={true}>{chart}</DualAxisContext.Provider>
+  ) : (
+    chart
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
   // primitive under it) can read the drill-down registry from context. It is
   // mounted only when a handler exists — the opt-out path gains no context.
   if (!onDatapointClick && !copyValueOnActivate) {
-    return chart;
+    return chartWithAxes;
   }
 
   return (
@@ -430,7 +627,7 @@ function ChartInner({
       copyValueOnActivate={copyValueOnActivate}
       onDatapointClick={onDatapointClick}
     >
-      {chart}
+      {chartWithAxes}
     </ChartDatapointProvider>
   );
 }
@@ -469,6 +666,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     selectionStates,
     dimExcluded,
     legend,
+    yAxes,
     ...props
   },
   forwardedRef,
@@ -503,8 +701,26 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     },
     [legendItems],
   );
+  // split layout — RM-121: one legend row per value axis, each named by its
+  // side label. Only read when `legend.layout` resolves to `"split"`.
+  const leftSideLabel = useSideLabel("auto", "left");
+  const rightSideLabel = useSideLabel("auto", "right");
+  const legendSplitGroups = useMemo(() => {
+    const keysByAxis = new Map<string, string[]>();
+    for (const line of composedSeriesForLegend.lines) {
+      const axisId = normalizeYAxisId(line.yAxisId);
+      keysByAxis.set(axisId, [...(keysByAxis.get(axisId) ?? []), line.dataKey]);
+    }
+    const rightId = Array.from(keysByAxis.keys()).find((id) => id !== DEFAULT_Y_AXIS_ID);
+    if (keysByAxis.size !== 2 || !keysByAxis.has(DEFAULT_Y_AXIS_ID) || !rightId) return undefined;
+    return [
+      { id: DEFAULT_Y_AXIS_ID, label: leftSideLabel, keys: keysByAxis.get(DEFAULT_Y_AXIS_ID)! },
+      { id: rightId, label: rightSideLabel, keys: keysByAxis.get(rightId)!, align: "end" as const },
+    ];
+  }, [composedSeriesForLegend, leftSideLabel, rightSideLabel]);
   const containerLegend = useContainerLegend({
     legend,
+    splitGroups: legendSplitGroups,
     items: legendItems,
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
@@ -591,6 +807,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 width={width}
                 xDataKey={xDataKey}
                 xScaleType={xScaleType}
+                yAxes={yAxes}
                 yDomainTweenDuration={yDomainTweenDuration}
               >
                 {children}
@@ -607,6 +824,20 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     </ChartPlotRoot>,
   );
 });
+
+// Dual-axis — RM-121
+export interface ComposedChartProps {
+  /**
+   * Two value axes (RM-121). Set it, give each series a `yAxisId` (`SeriesBar`
+   * draws on the primary `"left"` axis) and place both `YAxis` as direct
+   * children: `align: "ticks"` (default) gives both axes one tick count on the
+   * same pixel rows, `proportional` makes them grow by the same factor, and
+   * `zero` applies the "both or neither" baseline rule. Columns and areas stay
+   * zero-based whatever is asked (`charts-honesty`). Both axes stay visible
+   * at the narrow tier. Unset: every axis is independent, as before.
+   */
+  yAxes?: DualAxisOptions;
+}
 
 // Annotations — RM-111
 export interface ComposedChartProps {

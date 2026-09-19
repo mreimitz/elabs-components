@@ -102,7 +102,7 @@ export interface ChartLegendProps {
    * or density `sm`) through; a direct caller may set its own or leave it
    * unset for the original stacked behaviour.
    */
-  layout?: "row" | "stack";
+  layout?: "row" | "stack" | "split";
   /**
    * Accessible name for the legend region (RM-118, sitting 3). Unset
    * (default — every caller before this prop existed) renders no role/name,
@@ -296,6 +296,103 @@ function SimpleItem({
   );
 }
 
+// split layout — RM-121
+/** One row of a `layout="split"` legend: the items of one value axis. */
+export interface ChartLegendSplitGroup {
+  /** Stable id (the axis id). */
+  id: string;
+  /** The side label naming the row ("Left scale"). */
+  label: ReactNode;
+  /** `item.key ?? item.label` of every item in this row. */
+  keys: readonly string[];
+  /** `"end"` aligns the row with a right-hand axis when rows sit side by side. */
+  align?: "start" | "end";
+}
+
+export interface ChartLegendProps {
+  /**
+   * `layout="split"` (RM-121): one row per value axis, each led by its side
+   * label. Items not named by any group are omitted. Unset, `"split"`
+   * renders as `"row"`.
+   */
+  splitGroups?: readonly ChartLegendSplitGroup[];
+  /** Stack the split rows vertically (the narrow tier). Default `false`: side by side, wrapping. */
+  splitStacked?: boolean;
+}
+
+/** `layout="split"` (RM-121): one nested row-layout `ChartLegend` per axis group. */
+function ChartLegendSplit({
+  groups,
+  stacked,
+  items,
+  hoveredIndex,
+  onHover,
+  onItemClick,
+  className,
+  "aria-label": ariaLabel,
+  ...rest
+}: Omit<ChartLegendProps, "splitGroups" | "splitStacked" | "layout"> & {
+  groups: readonly ChartLegendSplitGroup[];
+  stacked: boolean;
+}) {
+  const baseId = useId();
+  return (
+    <div
+      className={cn(
+        "legend-container flex gap-x-6 gap-y-2",
+        stacked ? "flex-col" : "flex-row flex-wrap justify-between",
+        className,
+      )}
+      data-slot="chart-legend-split"
+      data-stacked={stacked ? "" : undefined}
+      {...(ariaLabel ? { role: "group", "aria-label": ariaLabel } : {})}
+    >
+      {groups.map((group) => {
+        const members = items
+          .map((item, index) => ({ item, index }))
+          .filter(({ item }) => group.keys.includes(item.key ?? item.label));
+        if (members.length === 0) return null;
+        const localHovered = members.findIndex(({ index }) => index === hoveredIndex);
+        const labelId = `${baseId}-${group.id}`;
+        return (
+          <div
+            aria-labelledby={labelId}
+            className={cn(
+              "flex min-w-0 flex-row flex-wrap items-center gap-x-2 gap-y-1",
+              !stacked && group.align === "end" && "justify-end",
+            )}
+            data-axis={group.id}
+            data-slot="chart-legend-split-row"
+            key={group.id}
+            role="group"
+          >
+            <span
+              className="text-meta font-medium text-chart-label"
+              data-slot="chart-legend-side-label"
+              id={labelId}
+            >
+              {group.label}
+            </span>
+            <ChartLegend
+              {...rest}
+              hideAtDensity={[]}
+              hoveredIndex={localHovered === -1 ? null : localHovered}
+              items={members.map(({ item }) => item)}
+              layout="row"
+              onHover={(local) => onHover?.(local == null ? null : (members[local]?.index ?? null))}
+              onItemClick={
+                onItemClick
+                  ? (item, local, event) => onItemClick(item, members[local]?.index ?? local, event)
+                  : undefined
+              }
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ChartLegend({
   items,
   hoveredIndex = null,
@@ -320,6 +417,8 @@ export function ChartLegend({
   valueClassName = "text-sm tabular-nums",
   renderItem,
   hideAtDensity = ["xs", "sm"],
+  splitGroups,
+  splitStacked = false,
 }: ChartLegendProps) {
   // Default showPercentage to true when showProgress is true
   const displayPercentage = showPercentage ?? showProgress;
@@ -360,6 +459,37 @@ export function ChartLegend({
     return null;
   }
 
+  // split layout — RM-121
+  if (layout === "split" && splitGroups && splitGroups.length > 0) {
+    return (
+      <ChartLegendSplit
+        aria-label={ariaLabel}
+        className={className}
+        currency={currency}
+        formatValue={formatValue}
+        groups={splitGroups}
+        hiddenKeys={hiddenKeys}
+        hoveredIndex={hoveredIndex}
+        itemClassName={itemClassName}
+        items={items}
+        labelClassName={labelClassName}
+        onHover={onHover}
+        onItemClick={onItemClick}
+        onToggleKey={onToggleKey}
+        renderItem={renderItem}
+        showMarker={showMarker}
+        showPercentage={showPercentage}
+        showProgress={showProgress}
+        showValue={showValue}
+        stacked={splitStacked}
+        valueClassName={valueClassName}
+        valueFormat={valueFormat}
+      />
+    );
+  }
+  // split layout — RM-121: `"split"` with no groups flows as a row.
+  const flow = layout === "split" ? "row" : layout;
+
   return (
     <div
       className={cn(
@@ -367,7 +497,7 @@ export function ChartLegend({
         // Byte-identical to the pre-existing "flex flex-col gap-2" string for
         // every caller that never passes `layout` (default `"stack"`) — see
         // `ChartLegendProps.layout`'s doc. `row` swaps in a wrapping flex row.
-        layout === "row" ? "flex-row flex-wrap gap-x-4 gap-y-2" : "flex-col gap-2",
+        flow === "row" ? "flex-row flex-wrap gap-x-4 gap-y-2" : "flex-col gap-2",
         className,
       )}
       ref={containerRef}
@@ -427,7 +557,7 @@ export function ChartLegend({
             className={cn(
               "cursor-pointer rounded-lg px-2 py-1.5 transition-[background-color,opacity] duration-fast ease-entrance motion-reduce:transition-none",
               (onItemClick || isToggleable) &&
-                (layout === "row" ? "text-start focus-ring" : "w-full text-start focus-ring"),
+                (flow === "row" ? "text-start focus-ring" : "w-full text-start focus-ring"),
               isHovered && "bg-legend-muted",
               isFaded && "opacity-40",
               itemClassName,

@@ -267,3 +267,99 @@ describe("ComposedChart", () => {
     });
   });
 });
+
+// Dual-axis — RM-121
+describe("ComposedChart yAxes (RM-121)", () => {
+  const dualData: ComposedChartProps["data"] = [
+    { date: new Date(2024, 0, 1), orders: 120, rate: 2.1 },
+    { date: new Date(2024, 1, 1), orders: 310, rate: 4.8 },
+    { date: new Date(2024, 2, 1), orders: 480, rate: 7.4 },
+  ];
+  function FakeBar({ dataKey }: { dataKey: string }) {
+    return <g data-testid={`bar-${dataKey}`} />;
+  }
+  FakeBar.displayName = "SeriesBar";
+  function FakeLine({ dataKey }: { dataKey: string; yAxisId?: string }) {
+    return <g data-testid={`line-${dataKey}`} />;
+  }
+  FakeLine.displayName = "Line";
+  function FakeYAxis({
+    yAxisId = "left",
+    domain,
+    ticks,
+  }: {
+    yAxisId?: string;
+    domain?: [number, number];
+    ticks?: number[];
+  }) {
+    return (
+      <g
+        data-domain={domain ? domain.join(",") : ""}
+        data-testid={`y-axis-${yAxisId}`}
+        data-ticks={ticks ? ticks.join(",") : ""}
+      />
+    );
+  }
+  FakeYAxis.displayName = "YAxis";
+  function FakeGrid({ rowTickValues }: { rowTickValues?: number[] }) {
+    return <g data-rows={rowTickValues ? rowTickValues.join(",") : ""} data-testid="grid" />;
+  }
+  FakeGrid.displayName = "Grid";
+
+  const renderDual = (props: Partial<ComposedChartProps>) =>
+    render(
+      <ComposedChart data={dualData} {...props}>
+        <FakeGrid />
+        <FakeBar dataKey="orders" />
+        <FakeLine dataKey="rate" yAxisId="right" />
+        <FakeYAxis />
+        <FakeYAxis yAxisId="right" />
+      </ComposedChart>,
+    );
+
+  const read = (el: Element | null, attr: string) =>
+    (el?.getAttribute(attr) ?? "").split(",").filter(Boolean).map(Number);
+
+  it("unset: the axes receive no planned domain or ticks (unchanged)", () => {
+    const { getByTestId } = renderDual({});
+    expect(getByTestId("y-axis-left").getAttribute("data-domain")).toBe("");
+    expect(getByTestId("y-axis-right").getAttribute("data-ticks")).toBe("");
+    expect(getByTestId("grid").getAttribute("data-rows")).toBe("");
+  });
+
+  it('align "ticks": equal tick counts, both zero-based, the grid on the shared rows', () => {
+    const { getByTestId } = renderDual({ yAxes: { align: "ticks" } });
+    const left = read(getByTestId("y-axis-left"), "data-ticks");
+    const right = read(getByTestId("y-axis-right"), "data-ticks");
+    expect(left.length).toBeGreaterThanOrEqual(3);
+    expect(left.length).toBe(right.length);
+    expect(left[0]).toBe(0);
+    expect(right[0]).toBe(0);
+    expect(read(getByTestId("grid"), "data-rows")).toEqual(left);
+    const [, leftHi] = read(getByTestId("y-axis-left"), "data-domain");
+    expect(leftHi).toBeGreaterThanOrEqual(480);
+  });
+
+  it("proportional: max / tick is equal on both axes; the columns stay zero-based", () => {
+    const { getByTestId } = renderDual({ yAxes: { proportional: true } });
+    const left = read(getByTestId("y-axis-left"), "data-ticks");
+    const right = read(getByTestId("y-axis-right"), "data-ticks");
+    expect(left[0]).toBe(0);
+    const leftMax = left[left.length - 1]!;
+    const rightMax = right[right.length - 1]!;
+    for (let i = 1; i < left.length; i++) {
+      expect(leftMax / left[i]!).toBeCloseTo(rightMax / right[i]!, 9);
+    }
+  });
+
+  it('legend layout "split": one row per axis, named Left scale / Right scale', () => {
+    const { container } = renderDual({ yAxes: {}, legend: { layout: "split" } });
+    const rows = container.querySelectorAll('[data-slot="chart-legend-split-row"]');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.textContent).toContain("Left scale");
+    expect(rows[0]?.textContent).toContain("orders");
+    expect(rows[1]?.textContent).toContain("Right scale");
+    expect(rows[1]?.textContent).toContain("rate");
+    expect(rows[1]).toHaveAttribute("role", "group");
+  });
+});
