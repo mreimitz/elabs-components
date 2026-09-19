@@ -95,3 +95,67 @@ export const ReducedMotion: Story = {
     await waitFor(() => expect(getComputedStyle(consumer).animationName).toBe("none"));
   },
 };
+
+/** Only elements that visibly PAINT the token are marked: a border counts only on a side with a
+ * width (every element carries `border-color: var(--border)` at width 0 from the base layer), and
+ * the text colour counts only on an element with its own text — not on a wrapper that merely
+ * inherits it. SVG shapes are reported as their `<svg>`. */
+export const OnlyRealConsumers: Story = {
+  args: {
+    tokens: [
+      { token: "--border", label: "Border" },
+      { token: "--foreground", label: "Foreground" },
+    ],
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-6 p-6">
+      <TokenSpotlight {...args} />
+      <div className="flex gap-4">
+        <div className="rounded-md border border-border p-4">Bordered</div>
+        <div className="rounded-md p-4">No border</div>
+        <div data-testid="inherits-only" className="text-foreground">
+          <span className="text-foreground">Own text</span>
+        </div>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const borderChip = canvas.getByText("--border");
+    await userEvent.hover(borderChip);
+    const bordered = canvas.getByText("Bordered");
+    await waitFor(() => expect(bordered).toHaveAttribute("data-token-consumer", "border"));
+    await expect(canvas.getByText("No border")).not.toHaveAttribute("data-token-consumer");
+    await userEvent.unhover(borderChip);
+    await waitFor(() => expect(bordered).not.toHaveAttribute("data-token-consumer"));
+
+    await userEvent.hover(canvas.getByText("--foreground"));
+    await waitFor(() =>
+      expect(canvas.getByText("Own text")).toHaveAttribute("data-token-consumer", "foreground"),
+    );
+    await expect(canvas.getByTestId("inherits-only")).not.toHaveAttribute("data-token-consumer");
+  },
+};
+
+/** Each chip shows the token’s resolved value in a readable form: colours as a rounded
+ * `oklch(L C H)` whatever colour space the CSS build emitted (never `lab()`), lengths such as
+ * `--radius` as px (never a raw `calc()`). Values are re-read when `data-theme` or
+ * `data-decoration` changes on `<html>`. */
+export const ResolvedValues: Story = {
+  args: {
+    tokens: [
+      { token: "--background", label: "Background" },
+      { token: "--primary", label: "Primary" },
+      { token: "--radius", label: "Radius" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const valueOf = (token: string) =>
+      canvas.getByText(token).closest("button")?.querySelector(":scope > span:nth-of-type(2)")
+        ?.textContent ?? "";
+    await waitFor(() => expect(valueOf("--background")).toMatch(/^oklch\([\d.]+ [\d.]+ \d+\)$/));
+    await expect(valueOf("--primary")).toMatch(/^oklch\([\d.]+ [\d.]+ \d+\)$/);
+    await expect(valueOf("--radius")).toMatch(/^[\d.]+px$/);
+  },
+};
