@@ -126,7 +126,7 @@ export const ChartTooltipBox = createInertPart("ChartTooltipBox");
 export const ChartTooltipContent = createInertPart("ChartTooltipContent");
 export const ChartTooltipDot = createInertPart("ChartTooltipDot");
 export const ChartTooltipIndicator = createInertPart("ChartTooltipIndicator");
-// Tooltip presets — RM-119
+// ChartTooltipInline, ChartTooltipTable — RM-119
 export const ChartTooltipInline = createInertPart("ChartTooltipInline");
 export const ChartTooltipTable = createInertPart("ChartTooltipTable");
 export const ChoroplethFeatureComponent = createInertPart("ChoroplethFeatureComponent");

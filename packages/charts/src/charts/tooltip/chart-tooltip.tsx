@@ -52,13 +52,14 @@ export interface ChartTooltipProps {
    */
   variant?: ChartTooltipVariant;
   /**
-   * Drive RM-112's per-series dim (`SeriesHoverDim`/`LineChart focusOnHover`
-   * /`AreaChart focusOnHover`) from the tooltip's OWN nearest-series
-   * resolution: whichever series' y position is closest to the pointer, at
-   * ANY x along the crosshair, counts as hovered — not only a direct hover
-   * on that series' own 2px stroke. Compose with `focusOnHover` on the
-   * container: that prop is what actually gates `SeriesHoverDim`'s opacity
-   * change, this one only decides WHICH series is "it". Also the default
+   * Drive RM-112's per-series dim (`SeriesHoverDim`) from the tooltip's OWN
+   * nearest-series resolution: whichever series' y position is closest to
+   * the pointer, at ANY x along the crosshair, counts as hovered — not only
+   * a direct hover on that series' own 2px stroke. Works standalone: it
+   * registers "focus requested" on the shared series-mode context, so the
+   * dim fires with no `focusOnHover` prop on the `LineChart`/`AreaChart`
+   * container (a container `focusOnHover` still works exactly as before,
+   * and the two compose — either one turns the dim on). Also the default
    * target series for `variant="inline"`. Default false.
    */
   focus?: boolean;
@@ -171,7 +172,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
     orientation,
     barXAccessor,
   } = useChart();
-  const { setHoveredKey } = useChartSeriesMode();
+  const { setHoveredKey, setFocusRequested } = useChartSeriesMode();
 
   const isHorizontal = orientation === "horizontal";
   const discreteInteraction = dateLabels.length > 60;
@@ -277,6 +278,14 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
     }
     return best;
   }, [pointerY, tooltipData, lines, margin.top]);
+
+  // Registers "focus requested" on the shared series-mode context so the
+  // hover dim (`SeriesHoverDim`) fires even with no `focusOnHover` prop on
+  // the container — `<ChartTooltip focus />` alone is enough.
+  useEffect(() => {
+    setFocusRequested(focus);
+    return () => setFocusRequested(false);
+  }, [focus, setFocusRequested]);
 
   useEffect(() => {
     if (!focus) {

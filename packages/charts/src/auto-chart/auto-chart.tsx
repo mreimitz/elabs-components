@@ -441,10 +441,6 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
-          // Tooltip presets — RM-119: `ChartTooltip focus` only decides WHICH
-          // series is nearest; `focusOnHover` here is what actually gates
-          // `SeriesHoverDim`'s dim.
-          focusOnHover={spec.tooltip?.focus}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
@@ -490,8 +486,6 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
-          // Tooltip presets — RM-119 (see the `LineChart` case above).
-          focusOnHover={spec.tooltip?.focus}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (

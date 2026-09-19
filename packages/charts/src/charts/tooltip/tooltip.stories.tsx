@@ -10,8 +10,8 @@ import { ChartTooltip } from "./chart-tooltip";
 /**
  * RM-119 tooltip presets — `variant="rows"` (default), `"table"` (one column
  * per series), `"inline"` (the value painted at the mark, no box); `focus`
- * (nearest-series dim, compose with `LineChart focusOnHover`); `pin`
- * (tap-to-pin on a coarse pointer).
+ * (nearest-series dim — works standalone, no `focusOnHover` needed on the
+ * container); `pin` (tap-to-pin on a coarse pointer).
  */
 const meta = {
   title: "Charts/Tooltip Presets",
@@ -90,13 +90,15 @@ export const Inline: Story = {
 
 /**
  * `focus` — the tooltip's nearest-series resolution drives RM-112's
- * per-series dim (`LineChart focusOnHover`): hovering closer to one series'
- * line fades the other two to the shared excluded opacity.
+ * per-series dim (`SeriesHoverDim`): hovering closer to one series' line
+ * fades the other two to the shared excluded opacity. `ChartTooltip focus`
+ * registers the request on its own — no `focusOnHover` on the `LineChart`
+ * container below.
  */
 export const Focus: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <LineChart aspectRatio={undefined} data={threeSeriesData} focusOnHover xDataKey="date">
+      <LineChart aspectRatio={undefined} data={threeSeriesData} xDataKey="date">
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" stroke="var(--chart-1)" />
         <Line curve={curveNatural} dataKey="sessions" stroke="var(--chart-2)" />

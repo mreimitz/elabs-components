@@ -318,11 +318,21 @@ export type NullsMode = "gap" | "zero" | "connect";
 interface ChartSeriesModeValue {
   /** Container-level `nulls` default; a `Line`/`Area`'s own `nulls` prop wins. */
   nulls: NullsMode | undefined;
-  /** `LineChart`/`AreaChart` `focusOnHover` — dim every series but the hovered one. */
+  /**
+   * `LineChart`/`AreaChart` `focusOnHover` OR'd with a `<ChartTooltip focus>`
+   * that registered itself via {@link ChartSeriesModeValue.setFocusRequested}
+   * (RM-119) — dim every series but the hovered one.
+   */
   focusOnHover: boolean;
   /** `dataKey` of the series currently hovered/tapped, or `null`. */
   hoveredKey: string | null;
   setHoveredKey: (key: string | null) => void;
+  /**
+   * RM-119: a `<ChartTooltip focus>` calls this so the hover dim works with
+   * no `focusOnHover` on the container — `focusOnHover` above becomes
+   * `focusOnHoverProp || focusRequested`. Outside a provider this is a noop.
+   */
+  setFocusRequested: (requested: boolean) => void;
 }
 
 const ChartSeriesModeContext = createContext<ChartSeriesModeValue | undefined>(undefined);
@@ -349,16 +359,21 @@ export interface ChartSeriesModeProviderProps {
  */
 export function ChartSeriesModeProvider({
   nulls,
-  focusOnHover = false,
+  focusOnHover: focusOnHoverProp = false,
   children,
 }: ChartSeriesModeProviderProps) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  // RM-119: a `<ChartTooltip focus>` registers itself here — `focus` alone,
+  // with no `focusOnHover` prop on the container, still produces the dim.
+  const [focusRequested, setFocusRequested] = useState(false);
+  const focusOnHover = focusOnHoverProp || focusRequested;
   const value = useMemo<ChartSeriesModeValue>(
     () => ({
       nulls,
       focusOnHover,
       hoveredKey: focusOnHover ? hoveredKey : null,
       setHoveredKey,
+      setFocusRequested,
     }),
     [nulls, focusOnHover, hoveredKey],
   );
@@ -372,6 +387,9 @@ const DEFAULT_SERIES_MODE: ChartSeriesModeValue = {
   focusOnHover: false,
   hoveredKey: null,
   setHoveredKey: () => {
+    /* noop outside ChartSeriesModeProvider */
+  },
+  setFocusRequested: () => {
     /* noop outside ChartSeriesModeProvider */
   },
 };
