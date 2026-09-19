@@ -14,6 +14,7 @@ import {
 } from "./category-axis-plan";
 import { thinToDensity, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
+import { useChartFrameSeriesBridge } from "../chart-frame/chart-frame-context";
 import { useTextMeasurer } from "./use-text-measurer";
 
 export interface BarXAxisProps {
@@ -139,6 +140,9 @@ function BarXAxisLabel({
 }
 
 export function BarXAxis(props: BarXAxisProps) {
+  // RM-117: hand the chart's series colours to an enclosing ChartFrame
+  // (read by InlineChip). No visual change; a no-op outside a frame.
+  useChartFrameSeriesBridge();
   const { containerRef, barScale } = useChartStable();
   const [mounted, setMounted] = useState(false);
 
@@ -261,7 +265,7 @@ const BarXAxisInner = memo(function BarXAxisInner({
   const top = anchorsToPlotEdge ? height - margin.bottom + CATEGORY_AXIS_PADDING : undefined;
 
   return createPortal(
-    <div className="pointer-events-none absolute inset-0">
+    <div className="pointer-events-none absolute inset-0" data-slot="bar-x-axis">
       {labelsToShow.map((item) => (
         <BarXAxisLabel
           angleDeg={angleDeg}

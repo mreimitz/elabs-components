@@ -14,6 +14,7 @@ import {
 } from "./category-axis-plan";
 import { thinToDensity, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
+import { useChartFrameSeriesBridge } from "../chart-frame/chart-frame-context";
 import { useTextMeasurer } from "./use-text-measurer";
 
 export interface BarYAxisProps {
@@ -91,6 +92,9 @@ function BarYAxisLabel({
 }
 
 export function BarYAxis(props: BarYAxisProps) {
+  // RM-117: hand the chart's series colours to an enclosing ChartFrame
+  // (read by InlineChip). No visual change; a no-op outside a frame.
+  useChartFrameSeriesBridge();
   const { containerRef, barScale } = useChartStable();
   const [mounted, setMounted] = useState(false);
 
@@ -204,6 +208,7 @@ const BarYAxisInner = memo(function BarYAxisInner({
   return createPortal(
     <div
       className="pointer-events-none absolute top-0 bottom-0"
+      data-slot="bar-y-axis"
       style={{
         left: 0,
         width: margin.left,

@@ -3,6 +3,9 @@
 import {
   createContext,
   use,
+  useCallback,
+  useEffect,
+  useId,
   useMemo,
   useReducer,
   useRef,
@@ -14,7 +17,54 @@ import {
   type ChartDensity,
   type ChartInteractions,
 } from "../charts/chart-config-context";
-import { exportChartPng, exportChartSvg, findChartSvg, type ChartExportKind } from "./export-svg";
+import { useChartStable } from "../charts/chart-context";
+import {
+  exportChartPng,
+  exportChartSvg,
+  findChartSvg,
+  type ChartExportKind,
+  type ChartExportRequest,
+} from "./export-svg";
+import { measureChartExportLayer } from "./export-layer";
+
+/** `ChartFrame`'s `onExport` (RM-042; RM-117 adds the resolved `request`). */
+export type ChartFrameExportHandler = (
+  kind: ChartExportKind,
+  blob: Blob,
+  filename: string,
+  request: Required<ChartExportRequest>,
+) => void;
+
+/** "Chart: Author" — the byline a frame's footer opens with (RM-117). */
+export interface ChartFrameByline {
+  /** Which word leads the byline. Default `"chart"`. */
+  kind?: "chart" | "map" | "table";
+  author: ReactNode;
+}
+
+/** A named, optionally linked source (RM-117): "Source: Name". */
+export interface ChartFrameSourceLink {
+  name: ReactNode;
+  href?: string;
+}
+
+/**
+ * Editorial chrome a chart inside the frame may hand up (RM-117) — `AutoChart`
+ * does, from its `ChartSpec`. The frame's own props win over these.
+ */
+export interface ChartFrameChromeInput {
+  notes?: ReactNode;
+  byline?: ChartFrameByline;
+  source?: ReactNode | ChartFrameSourceLink;
+  altText?: string;
+}
+
+/** One series colour a chart publishes to its frame (RM-117) — read by `InlineChip`. */
+export interface ChartFrameSeriesEntry {
+  key: string;
+  color: string;
+  label?: string;
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -43,10 +93,18 @@ export interface ChartFrameActions {
   download: () => void;
   /** Registers whether the chart body currently renders an `<svg>` (RM-042). */
   setHasSvg: (hasSvg: boolean) => void;
-  /** Exports the chart body's `<svg>` as a self-contained SVG file. No-op when absent. */
-  exportSvg: () => void;
-  /** Exports the chart body's `<svg>` as a 2× PNG file. No-op when absent. */
-  exportPng: () => void;
+  /**
+   * Exports the frame as a self-contained SVG file — the chart `<svg>` plus an
+   * SVG twin of its HTML text (RM-117). No-op when absent. `request`
+   * overrides the frame's `exportOptions`.
+   */
+  exportSvg: (request?: ChartExportRequest) => void;
+  /** Exports the same picture as a PNG (2× unless `request.scale` says otherwise). */
+  exportPng: (request?: ChartExportRequest) => void;
+  /** A chart hands its series colours up (RM-117). Returns the unregister. */
+  registerSeries: (id: string, entries: readonly ChartFrameSeriesEntry[]) => () => void;
+  /** A chart hands editorial chrome up (RM-117). Returns the unregister. */
+  registerChrome: (id: string, chrome: ChartFrameChromeInput) => () => void;
 }
 
 /** DOM handles the provider needs but does not itself render (RM-042). */
@@ -69,6 +127,10 @@ export interface ChartFrameMeta {
   density: ChartDensity;
   /** Resolved interaction switches forwarded to every chart family (RM-072). */
   interactions: Required<ChartInteractions>;
+  /** Series key → colour and name, from every chart in the body (RM-117). */
+  series: Readonly<Record<string, ChartFrameSeriesEntry>>;
+  /** Chrome handed up by a chart in the body (RM-117); the frame's props win. */
+  chrome: ChartFrameChromeInput;
 }
 
 export interface ChartFrameContextValue {
@@ -97,6 +159,33 @@ type Action =
   | { type: "SET_EXPANDED"; open: boolean }
   | { type: "TOGGLE_VIEW" }
   | { type: "SET_HAS_SVG"; hasSvg: boolean };
+
+type Registry<T> = Readonly<Record<string, T>>;
+
+/** Adds/replaces (`value`) or removes (`undefined`) one registrant; same object when unchanged. */
+function updateRegistry<T>(
+  registry: Registry<T>,
+  id: string,
+  value: T | undefined,
+  same: (a: T, b: T) => boolean,
+): Registry<T> {
+  const prev = registry[id];
+  if (value === undefined) {
+    if (prev === undefined) return registry;
+    const next = { ...registry };
+    delete next[id];
+    return next;
+  }
+  if (prev !== undefined && same(prev, value)) return registry;
+  return { ...registry, [id]: value };
+}
+
+const sameSeries = (a: readonly ChartFrameSeriesEntry[], b: readonly ChartFrameSeriesEntry[]) =>
+  a.length === b.length &&
+  a.every((e, i) => e.key === b[i]!.key && e.color === b[i]!.color && e.label === b[i]!.label);
+
+const sameChrome = (a: ChartFrameChromeInput, b: ChartFrameChromeInput) =>
+  a.notes === b.notes && a.byline === b.byline && a.source === b.source && a.altText === b.altText;
 
 function reducer(state: ChartFrameState, action: Action): ChartFrameState {
   switch (action.type) {
@@ -127,7 +216,9 @@ export interface ChartFrameProviderProps {
    * Routes an SVG/PNG export to the caller instead of a local browser
    * download — mirrors `onDownload`. See `ChartFrameProps.onExport`.
    */
-  onExport?: (kind: ChartExportKind, blob: Blob, filename: string) => void;
+  onExport?: ChartFrameExportHandler;
+  /** Defaults for every export the frame starts (RM-117). */
+  exportOptions?: ChartExportRequest;
   /** Loading vs ready. Default: false. */
   loading?: boolean;
   /** Furniture tier (RM-072). Default `"md"`. */
@@ -148,11 +239,30 @@ export function ChartFrameProvider({
   source,
   onDownload,
   onExport,
+  exportOptions,
   loading = false,
   density = "md",
   interactions,
   onExpandChange,
 }: ChartFrameProviderProps) {
+  const [seriesRegistry, setSeriesRegistry] = useReducerState<
+    Registry<readonly ChartFrameSeriesEntry[]>
+  >({});
+  const [chromeRegistry, setChromeRegistry] = useReducerState<Registry<ChartFrameChromeInput>>({});
+  const registerSeries = useCallback(
+    (id: string, entries: readonly ChartFrameSeriesEntry[]) => {
+      setSeriesRegistry((r) => updateRegistry(r, id, entries, sameSeries));
+      return () => setSeriesRegistry((r) => updateRegistry(r, id, undefined, sameSeries));
+    },
+    [setSeriesRegistry],
+  );
+  const registerChrome = useCallback(
+    (id: string, chrome: ChartFrameChromeInput) => {
+      setChromeRegistry((r) => updateRegistry(r, id, chrome, sameChrome));
+      return () => setChromeRegistry((r) => updateRegistry(r, id, undefined, sameChrome));
+    },
+    [setChromeRegistry],
+  );
   const [state, dispatch] = useReducer(reducer, {
     expanded: false,
     view: "chart",
@@ -170,6 +280,37 @@ export function ChartFrameProvider({
   const sourceText = typeof source === "string" ? source : undefined;
 
   // Latest-callback ref: an inline `onExpandChange` must not churn `actions`.
+  const scale = exportOptions?.scale;
+  const plainDefault = exportOptions?.plain;
+  /**
+   * Everything one export needs, read at click time (RM-117): the chart
+   * `<svg>`, the card's resolved background, and the HTML layer measured over
+   * the whole frame — or over the chart body only when `plain`.
+   */
+  const exportParams = useCallback(
+    (request?: ChartExportRequest) => {
+      const svg = findChartSvg(refs.chartBody.current);
+      if (!svg) return undefined;
+      const card = refs.card.current;
+      const plain = request?.plain ?? plainDefault ?? false;
+      const box = plain ? refs.chartBody.current : card;
+      const backgroundColor = card ? getComputedStyle(card).backgroundColor : undefined;
+      const layer = box ? measureChartExportLayer(box, { svg, box }) : undefined;
+      return {
+        svg,
+        title: titleText,
+        // The measured layer already carries the frame's own source row.
+        source: layer ? undefined : sourceText,
+        backgroundColor,
+        layer,
+        scale: request?.scale ?? scale ?? 2,
+        plain,
+        onExport,
+      };
+    },
+    [refs, titleText, sourceText, onExport, scale, plainDefault],
+  );
+
   const onExpandChangeRef = useRef(onExpandChange);
   onExpandChangeRef.current = onExpandChange;
 
@@ -182,32 +323,18 @@ export function ChartFrameProvider({
       toggleView: () => dispatch({ type: "TOGGLE_VIEW" }),
       download: () => onDownload(rows, columns),
       setHasSvg: (hasSvg: boolean) => dispatch({ type: "SET_HAS_SVG", hasSvg }),
-      exportSvg: () => {
-        const svg = findChartSvg(refs.chartBody.current);
-        if (!svg) return;
-        const backgroundColor = refs.card.current
-          ? getComputedStyle(refs.card.current).backgroundColor
-          : undefined;
-        exportChartSvg({ svg, title: titleText, source: sourceText, backgroundColor, onExport });
+      exportSvg: (request?: ChartExportRequest) => {
+        const params = exportParams(request);
+        if (params) exportChartSvg(params);
       },
-      exportPng: () => {
-        const svg = findChartSvg(refs.chartBody.current);
-        if (!svg) return;
-        const backgroundColor = refs.card.current
-          ? getComputedStyle(refs.card.current).backgroundColor
-          : undefined;
-        // Fire-and-forget: rasterisation is async (canvas.toBlob), the
-        // toolbar button is a plain click handler with no pending state.
-        void exportChartPng({
-          svg,
-          title: titleText,
-          source: sourceText,
-          backgroundColor,
-          onExport,
-        });
+      exportPng: (request?: ChartExportRequest) => {
+        const params = exportParams(request);
+        if (params) void exportChartPng(params);
       },
+      registerSeries,
+      registerChrome,
     }),
-    [onDownload, rows, columns, refs, titleText, sourceText, onExport],
+    [onDownload, rows, columns, exportParams, registerSeries, registerChrome],
   );
 
   const { passive, active, select, edit } = { ...DEFAULT_CHART_INTERACTIONS, ...interactions };
@@ -221,11 +348,99 @@ export function ChartFrameProvider({
       loading,
       density,
       interactions: { passive, active, select, edit },
+      series: mergeSeries(seriesRegistry),
+      chrome: mergeChrome(chromeRegistry),
     }),
-    [rows, columns, features, title, description, loading, density, passive, active, select, edit],
+    [
+      rows,
+      columns,
+      features,
+      title,
+      description,
+      loading,
+      density,
+      passive,
+      active,
+      select,
+      edit,
+      seriesRegistry,
+      chromeRegistry,
+    ],
   );
 
   const value = useMemo(() => ({ state, actions, meta, refs }), [state, actions, meta, refs]);
 
   return <ChartFrameContext value={value}>{children}</ChartFrameContext>;
+}
+// ── Registries (RM-117) ───────────────────────────────────────────────────────
+
+/** `useState` over a reducer — the setter takes an updater and keeps one identity. */
+function useReducerState<T>(initial: T): [T, (update: (prev: T) => T) => void] {
+  return useReducer((prev: T, update: (prev: T) => T) => update(prev), initial);
+}
+
+function mergeSeries(
+  registry: Registry<readonly ChartFrameSeriesEntry[]>,
+): Record<string, ChartFrameSeriesEntry> {
+  const out: Record<string, ChartFrameSeriesEntry> = {};
+  for (const entries of Object.values(registry)) {
+    for (const entry of entries) out[entry.key] ??= entry;
+  }
+  return out;
+}
+
+function mergeChrome(registry: Registry<ChartFrameChromeInput>): ChartFrameChromeInput {
+  const out: ChartFrameChromeInput = {};
+  for (const chrome of Object.values(registry)) {
+    out.notes ??= chrome.notes;
+    out.byline ??= chrome.byline;
+    out.source ??= chrome.source;
+    out.altText ??= chrome.altText;
+  }
+  return out;
+}
+
+/** The frame around this subtree, or `null` outside one (RM-117). */
+export function useOptionalChartFrame(): ChartFrameContextValue | null {
+  return use(ChartFrameContext);
+}
+
+/**
+ * Publishes the enclosing chart's series colours to its frame (RM-117), so an
+ * `InlineChip` in the frame's description paints the same ink. Called by the
+ * axes — every cartesian chart renders one. No-op outside a frame.
+ */
+export function useChartFrameSeriesBridge(): void {
+  const frame = use(ChartFrameContext);
+  const { lines, legendItems } = useChartStable();
+  const id = useId();
+  const register = frame?.actions.registerSeries;
+  const entries = useMemo<ChartFrameSeriesEntry[]>(
+    () => [
+      ...lines.map((l) => ({ key: l.dataKey, color: l.stroke })),
+      ...(legendItems ?? []).map((e) => ({
+        key: e.key,
+        color: e.color,
+        label: e.label,
+      })),
+    ],
+    [lines, legendItems],
+  );
+  useEffect(() => {
+    if (!register) return undefined;
+    return register(id, entries);
+  }, [register, id, entries]);
+}
+
+/** Hands editorial chrome up to the enclosing frame (RM-117). No-op outside one. */
+export function useChartFrameChrome(chrome: ChartFrameChromeInput): void {
+  const frame = use(ChartFrameContext);
+  const id = useId();
+  const register = frame?.actions.registerChrome;
+  const { notes, byline, source, altText } = chrome;
+  useEffect(() => {
+    if (!register) return undefined;
+    if (!notes && !byline && !source && !altText) return undefined;
+    return register(id, { notes, byline, source, altText });
+  }, [register, id, notes, byline, source, altText]);
 }

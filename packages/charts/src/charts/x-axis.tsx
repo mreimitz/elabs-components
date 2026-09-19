@@ -7,6 +7,7 @@ import { HairlineFloor } from "../marks/hairline-floor";
 import { AxisTitle, type AxisTitlePlacement } from "./axis-title";
 import { CHART_DENSITY_SM_MAX_TICKS, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
+import { useChartFrameSeriesBridge } from "../chart-frame/chart-frame-context";
 import { makeDateFmtForPreset, shortDateFmt } from "./chart-formatters";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { dateFormatForSpan, finerDateFormatPreset, type DateFormatPreset } from "./date-format";
@@ -1024,6 +1025,9 @@ function dateTicks(ticks: XAxisProps["ticks"]): Date[] | undefined {
 }
 
 export function XAxis(props: XAxisProps) {
+  // RM-117: hand the chart's series colours to an enclosing ChartFrame
+  // (read by InlineChip). No visual change; a no-op outside a frame.
+  useChartFrameSeriesBridge();
   const { containerRef } = useChartStable();
   const { density } = useChartConfig();
   const [mounted, setMounted] = useState(false);
