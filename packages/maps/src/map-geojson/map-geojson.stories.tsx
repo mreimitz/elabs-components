@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 
 import { MapCanvas } from "../map-canvas";
+import { GREATER_TORONTO, LAKE_ONTARIO, LOCATOR_BOUNDS } from "../test-utils/locator-fixture";
 import { MapGeoJSON } from "./map-geojson";
 
 /**
@@ -121,4 +122,40 @@ function ChoroplethDemo() {
 
 export const InteractiveHover: Story = {
   render: () => <ChoroplethDemo />,
+};
+
+function AreaMarkersDemo() {
+  const lake = useThemedTokenColor("--chart-1");
+  const region = useThemedTokenColor("--chart-2");
+  return (
+    <div className="w-full p-4">
+      <MapCanvas interactive={false} bounds={LOCATOR_BOUNDS} fitBoundsOptions={{ padding: 32 }}>
+        <MapGeoJSON
+          id="gta"
+          data={GREATER_TORONTO}
+          fillPaint={{ "fill-color": region }}
+          fillOpacity={0.3}
+          vignette={{ width: 10, opacity: 0.4 }}
+          linePaint={false}
+        />
+        <MapGeoJSON
+          id="lake"
+          data={LAKE_ONTARIO}
+          fillPaint={{ "fill-color": lake }}
+          pattern={{ kind: "stripes", width: 2, gap: 4 }}
+          vignette={{ width: 14, opacity: 0.35 }}
+          linePaint={{ "line-color": lake, "line-width": 1 }}
+        />
+      </MapCanvas>
+    </div>
+  );
+}
+
+/**
+ * Area markers for a locator: a striped fill (a second channel besides
+ * colour — it survives greyscale) and a soft vignette glow along the edge.
+ * `fillOpacity` sets the tint under the stripes.
+ */
+export const PatternAndVignette: Story = {
+  render: () => <AreaMarkersDemo />,
 };
