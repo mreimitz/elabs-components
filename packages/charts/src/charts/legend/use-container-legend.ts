@@ -188,6 +188,15 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         valueFormat,
         currency,
         title: configProp?.title as string | undefined,
+        // Bug fix (sitting 3, Task 4 default-changes investigation): this
+        // engine has always computed a `layout` ("row" wide, "stack" narrow
+        // or density `sm`) but, until now, only ever wrote it to the inert
+        // `data-container-legend-layout` attribute below — `ChartLegend`
+        // itself had no `layout` prop, so every container legend rendered
+        // `flex-col` (one item per line) regardless. Forwarding the real
+        // value here is what makes `layout: "row"` (the wide-tier default)
+        // actually lay items out left-to-right instead of stacking them.
+        layout,
         // Task 3(c) (sitting 3): a bare `ChartLegend` has no accessible name
         // of its own (see `chart-legend.tsx`'s `"aria-label"` prop doc) — the
         // engine gives every container legend the SAME name `AutoLegend` gave

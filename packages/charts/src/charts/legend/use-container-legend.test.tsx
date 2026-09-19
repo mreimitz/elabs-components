@@ -32,12 +32,20 @@ describe("useContainerLegend", () => {
   });
 
   it("legend={true} renders a visible, top-positioned, row-laid-out legend for 2+ items", () => {
-    render(<Demo legend />);
+    const { container } = render(<Demo legend />);
     expect(screen.getByTestId("visible").textContent).toBe("true");
     expect(screen.getByTestId("position").textContent).toBe("top");
     expect(screen.getByTestId("layout").textContent).toBe("row");
     expect(screen.getByText("Revenue")).toBeInTheDocument();
     expect(screen.getByText("Cost")).toBeInTheDocument();
+    // Bug fix (sitting 3): the resolved "row" layout must actually reach
+    // `ChartLegend`'s own DOM, not just this hook's return value — before
+    // this fix `.legend-container` was unconditionally `flex-col` (see
+    // `use-container-legend.ts`'s `layout` forward, added alongside this
+    // test).
+    const legendContainer = container.querySelector(".legend-container");
+    expect(legendContainer?.className).toContain("flex-row");
+    expect(legendContainer?.className).not.toContain("flex-col");
   });
 
   it("a config object turns the legend on just like legend={true}", () => {
@@ -76,13 +84,16 @@ describe("useContainerLegend", () => {
   });
 
   it("density sm still renders an explicitly-on legend, stacked", () => {
-    render(
+    const { container } = render(
       <ChartConfigProvider value={{ density: "sm" }}>
         <Demo legend />
       </ChartConfigProvider>,
     );
     expect(screen.getByTestId("visible").textContent).toBe("true");
     expect(screen.getByTestId("layout").textContent).toBe("stack");
+    const legendContainer = container.querySelector(".legend-container");
+    expect(legendContainer?.className).toContain("flex-col");
+    expect(legendContainer?.className).not.toContain("flex-row");
   });
 
   it("interactive: toggle renders real aria-pressed buttons that flip on click", () => {

@@ -91,6 +91,19 @@ export interface ChartLegendProps {
   /** Title shown above the legend */
   title?: string;
   /**
+   * Item flow direction (RM-118, sitting 3). `"stack"` (default — every
+   * caller before this prop existed) is byte-identical to before: one item
+   * per line. `"row"` wraps items left-to-right (`flex-wrap`), matching the
+   * layout `AutoChart`'s old `AutoLegend` used, AND drops the `w-full` an
+   * interactive (`onItemClick`/toggle) item otherwise gets — `w-full` inside
+   * a row would force every item onto its own line regardless of this prop.
+   * `useContainerLegend` (the container legend engine) passes its own
+   * resolved `layout` ("row" at `base`/`medium`/`wide`, "stack" at `narrow`
+   * or density `sm`) through; a direct caller may set its own or leave it
+   * unset for the original stacked behaviour.
+   */
+  layout?: "row" | "stack";
+  /**
    * Accessible name for the legend region (RM-118, sitting 3). Unset
    * (default — every caller before this prop existed) renders no role/name,
    * byte-identical to before. `useContainerLegend` (the container legend
@@ -298,6 +311,7 @@ export function ChartLegend({
   valueFormat,
   currency,
   title,
+  layout = "stack",
   "aria-label": ariaLabel,
   className = "",
   titleClassName = "text-sm font-semibold",
@@ -348,7 +362,11 @@ export function ChartLegend({
 
   return (
     <div
-      className={cn("legend-container flex flex-col gap-2", className)}
+      className={cn(
+        "legend-container flex gap-2",
+        layout === "row" ? "flex-row flex-wrap gap-x-4 gap-y-2" : "flex-col",
+        className,
+      )}
       ref={containerRef}
       {...(ariaLabel ? { role: "group", "aria-label": ariaLabel } : {})}
     >
@@ -405,7 +423,8 @@ export function ChartLegend({
           <Item
             className={cn(
               "cursor-pointer rounded-lg px-2 py-1.5 transition-[background-color,opacity] duration-fast ease-entrance motion-reduce:transition-none",
-              (onItemClick || isToggleable) && "w-full text-start focus-ring",
+              (onItemClick || isToggleable) &&
+                (layout === "row" ? "text-start focus-ring" : "w-full text-start focus-ring"),
               isHovered && "bg-legend-muted",
               isFaded && "opacity-40",
               itemClassName,
