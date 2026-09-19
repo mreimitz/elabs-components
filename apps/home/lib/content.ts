@@ -53,6 +53,10 @@ export interface ThemeSwatch {
   label: string;
   primary: string | null;
   background: string | null;
+  /** The family's own `--chart-1` (RM-103 W5-B, #586): a second, more saturated colour
+   * alongside `primary` so the nine swatch cards read apart even though `background` is
+   * deliberately near-white/near-black in every family. */
+  chart1: string | null;
 }
 
 export interface ThemeFamily {
