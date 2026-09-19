@@ -1457,6 +1457,36 @@ describe("AutoChart legend vs series end labels", () => {
     expect(container.firstChild).toBeInTheDocument();
     expect(queryByRole("group", { name: "Chart legend" })).not.toBeInTheDocument();
   });
+
+  it("renders NO legend for a 2-series 'dumbbell' spec with legend left unset — a disclosed behaviour change from the old <AutoLegend> fallback (RM-118 Part B)", () => {
+    // Before this RM, "dumbbell" was outside `LEGEND_ENGINE_TYPES`, so AutoChart's
+    // generic `showLegend` heuristic (`spec.legend ?? legendItems.length > 1 && …`)
+    // could default to `true` for a 2+-series spec and fall through to
+    // `<AutoLegend series={legendItems}/>` — a plain "before"/"after" key. Now that
+    // "dumbbell" is IN the engine set, that fallback is suppressed in favour of
+    // `legend={containerLegend}` forwarded straight into `DumbbellChart`, which — by
+    // design (see the test above) — renders nothing for the default
+    // `variant="dumbbell"` (no `valueKeys`). Net effect: an AutoChart-driven
+    // multi-series dumbbell with `legend` left unset now shows no key at all, where
+    // it used to show one. No published AutoChart story exercises `type: "dumbbell"`
+    // (confirmed by grep), so this never surfaced in the story-comparison gate —
+    // pinned here so the change is visible and intentional rather than silent.
+    // Follow-up: `ChartSpec` would need a `valueKeys`-shaped field for AutoChart to
+    // ever drive `DumbbellChart`'s own dots-legend content (see RM-118B result file).
+    const spec: ChartSpec = {
+      type: "dumbbell",
+      data: [
+        { region: "North", before: 42, after: 61 },
+        { region: "South", before: 31, after: 46 },
+      ],
+      x: "region",
+      series: ["before", "after"],
+    };
+    const { container, queryByRole } = render(<AutoChart spec={spec} height={280} />);
+    expect(container.firstChild).toBeInTheDocument();
+    expect(queryByRole("group", { name: "Chart legend" })).not.toBeInTheDocument();
+    expect(container.querySelector("ul[aria-label]")).not.toBeInTheDocument();
+  });
 });
 
 // BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.
