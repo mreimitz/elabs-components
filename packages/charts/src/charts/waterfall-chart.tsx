@@ -15,7 +15,9 @@ import type { BarOrientation } from "./bar-chart";
 import { BarChart } from "./bar-chart";
 import type { ChartAnnotation } from "./annotations/annotation-types"; // Annotations — RM-111
 import {
+  placementRects,
   useAnnotationLayoutScope,
+  useAnnotationObstacles,
   usePublishAnnotationObstacles,
 } from "./annotations/annotation-layout-context"; // Annotations — RM-111
 import { estimateTextWidth } from "./use-text-measurer"; // Annotations — RM-111
@@ -23,6 +25,14 @@ import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y"; // RM-122 zoomToDifferences a11y note
 import { type Margin, useChart } from "./chart-context";
+import { type LabelBox, type LabelPlacement, layoutLabels } from "./labels/label-layout"; // RM-122 wave 2
+import { seriesLabelInk } from "./labels/series-label-ink"; // RM-122 wave 2
+import {
+  UnpaintedLabels,
+  UnpaintedLabelsProvider,
+  useReportUnpaintedLabels,
+  useUnpaintedLabelsStore,
+} from "./labels/unpainted-labels"; // RM-122 wave 2 — the wave-1 dropped-label seam
 import type {
   ChartDatapointClickHandler,
   ChartDatapointLabel,
@@ -160,7 +170,8 @@ export interface WaterfallLabelsConfig {
    * `showValues`'s own placement; `"inside"` sits just inside it. */
   placement?: "inside" | "outside";
   /** Paint the label in the row's own fill color instead of the neutral
-   * `HaloText` ink. Default `false`. */
+   * `HaloText` ink — through `seriesLabelInk` (never the raw fill: the
+   * sequential ramp fails text contrast on its own, #544). Default `false`. */
   matchColor?: boolean;
 }
 
@@ -354,6 +365,21 @@ function patternIndexForRow(row: WaterfallRow): number {
 
 // ── Bars + connectors + labels ──────────────────────────────────────────────
 
+/**
+ * One `labels`-configured row's value label as a `layoutLabels` box (RM-122
+ * wave 2). Carries the paint-time fields (`text`, `textAnchor`, `fill`,
+ * `rowIndex`) `layoutLabels` hands back untouched on `LabelPlacement.label`,
+ * the same shape `ChartLabelBox` uses for Line/Area's value labels.
+ */
+interface WaterfallLabelBox extends LabelBox {
+  text: string;
+  textAnchor: "start" | "end" | "middle";
+  /** `seriesLabelInk(rowFill)` when `labels.matchColor`, else unset (the
+   * neutral `HaloText` ink) — never the raw row fill (#544). */
+  fill: string | undefined;
+  rowIndex: number;
+}
+
 interface WaterfallBarsProps {
   /** Unused — present only so this satisfies `extractBarConfigs`'s "any
    * direct child with a string `dataKey`" series-registration heuristic. */
@@ -388,7 +414,7 @@ function WaterfallBars({
   zoomToDifferences,
   labels,
 }: WaterfallBarsProps) {
-  const { barScale, bandWidth, yScale, margin, orientation } = useChart();
+  const { barScale, bandWidth, yScale, margin, orientation, innerWidth, innerHeight } = useChart();
   const isHorizontal = orientation === "horizontal";
   const themeRadius = useResolvedRadius();
   const format = useChartValueFormatter(valueFormat);
@@ -505,10 +531,12 @@ function WaterfallBars({
 
   // Annotations — RM-111: inside an annotated chart the value labels are
   // obstacles for annotation text. The boxes mirror the label placement below
-  // (11px, weight 800, so the width estimate is widened).
+  // (11px, weight 800, so the width estimate is widened). Only for the
+  // pre-existing `showValues` path — `labels` publishes its OWN placed boxes
+  // below, so the two never race over the same obstacle key.
   const annotated = useAnnotationLayoutScope();
   const valueLabelRects = useMemo(() => {
-    if (!annotated || !showValues) return null;
+    if (!annotated || !showValues || labels) return null;
     return geometry.map((g) => {
       const text = formatSigned(g.row.value, format, g.row.kind === "step");
       const width = estimateTextWidth(text, 11) * 1.15;
@@ -519,8 +547,115 @@ function WaterfallBars({
       const y = g.row.isIncrease ? g.y - 6 : g.y + g.height + 14;
       return { x: g.x + g.width / 2 - width / 2, y: y - 11, width, height: 14 };
     });
-  }, [annotated, showValues, geometry, format, isHorizontal]);
-  usePublishAnnotationObstacles("waterfall-values", valueLabelRects);
+  }, [annotated, showValues, labels, geometry, format, isHorizontal]);
+
+  // RM-122 wave 2: `labels` routes total/difference text through ONE
+  // `layoutLabels` pass instead of the fixed offset below — the orchestrator
+  // note names this explicitly ("waterfall difference labels"), not a
+  // time-boxed simplification.
+  //
+  // Obstacles: RM-111's own annotation notes (`useAnnotationObstacles` — the
+  // OTHER half of the existing bidirectional exchange: `ChartAnnotations`
+  // already treats a waterfall's value labels as ITS obstacle, see
+  // `chart-annotations.tsx`'s doc comment) plus ONE conservative rect for the
+  // category axis. The axis rect is the axis's own reserved MARGIN band
+  // (`reserveCategoryAxisMargin`, `bar-chart.tsx`) — BarXAxis/BarYAxis never
+  // paint a tick label outside the margin the plan grew for them, so this one
+  // rect is a strict superset of every real tick-label rect regardless of
+  // which rung of the axis's own wrap/tilt/stride cascade fired. That keeps
+  // this a single pass: no second collision engine re-deriving the axis's own
+  // fit logic, just the box it is already known to stay inside.
+  //
+  // `bounds` is the same plot inner box, so a label can never nudge INTO the
+  // axis margin either — the obstacle rect above is what makes that explicit
+  // to `layoutLabels`'s solver rather than merely implied by clipping.
+  const annotationObstacles = useAnnotationObstacles();
+  const labelLayout = useMemo(() => {
+    if (!labels || geometry.length === 0) return null;
+    const inside = labels.placement === "inside";
+    const boxes: WaterfallLabelBox[] = [];
+    for (const g of geometry) {
+      const text = waterfallLabelText(g.row, showValues, labels, format, percentFormat);
+      if (!text) continue;
+      const roundTop = !isHorizontal && g.row.isIncrease;
+      const roundRight = isHorizontal && g.row.isIncrease;
+      const anchorX = isHorizontal
+        ? roundRight
+          ? g.x + g.width + (inside ? -6 : 6)
+          : g.x + (inside ? 6 : -6)
+        : g.x + g.width / 2;
+      const anchorY = isHorizontal
+        ? g.y + g.height / 2
+        : roundTop
+          ? g.y + (inside ? 14 : -6)
+          : g.y + g.height + (inside ? -6 : 14);
+      const width = estimateTextWidth(text, 11) * 1.15;
+      const height = 14;
+      const textAnchor: "start" | "end" | "middle" = isHorizontal
+        ? roundRight !== inside
+          ? "start"
+          : "end"
+        : "middle";
+      const boxX =
+        textAnchor === "middle"
+          ? anchorX - width / 2
+          : textAnchor === "start"
+            ? anchorX
+            : anchorX - width;
+      const boxY = isHorizontal ? anchorY - height / 2 : anchorY - 11;
+      const rowFill = fillForRow(g.row, positiveFill, negativeFill, totalFill);
+      boxes.push({
+        anchorSide: isHorizontal ? (roundRight ? "left" : "right") : roundTop ? "top" : "bottom",
+        fill: labels.matchColor ? seriesLabelInk(rowFill) : undefined,
+        height,
+        id: `waterfall-label-${g.row.index}`,
+        priority: g.row.kind !== "step" ? 1 : 0,
+        rowIndex: g.row.index,
+        text,
+        textAnchor,
+        width,
+        x: boxX,
+        y: boxY,
+      });
+    }
+    const axisObstacle = isHorizontal
+      ? { height: innerHeight, width: margin.left, x: -margin.left, y: 0 }
+      : { height: margin.bottom, width: innerWidth, x: 0, y: innerHeight };
+    return layoutLabels(boxes, {
+      bounds: { height: innerHeight, width: innerWidth, x: 0, y: 0 },
+      obstacles: [...annotationObstacles, axisObstacle],
+    });
+  }, [
+    labels,
+    geometry,
+    showValues,
+    format,
+    percentFormat,
+    isHorizontal,
+    positiveFill,
+    negativeFill,
+    totalFill,
+    innerWidth,
+    innerHeight,
+    margin,
+    annotationObstacles,
+  ]);
+  const labelPlacementByRow = useMemo(() => {
+    if (!labelLayout) return null;
+    const map = new Map<number, LabelPlacement<WaterfallLabelBox>>();
+    for (const p of labelLayout.placed) map.set(p.label.rowIndex, p);
+    return map;
+  }, [labelLayout]);
+  const droppedLabelTexts = useMemo(
+    () => labelLayout?.dropped.map((box) => box.text) ?? [],
+    [labelLayout],
+  );
+  useReportUnpaintedLabels("waterfall-labels", droppedLabelTexts);
+
+  usePublishAnnotationObstacles(
+    "waterfall-values",
+    labels ? placementRects(labelLayout?.placed) : valueLabelRects,
+  );
 
   const datapointTargets = useMemo<ChartDatapointTarget[]>(() => {
     if (!datapointsEnabled || geometry.length === 0) {
@@ -717,40 +852,74 @@ function WaterfallBars({
           />
         );
 
-        const labelText = waterfallLabelText(g.row, showValues, labels, format, percentFormat);
+        // RM-122 wave 2: `labels` given routes the label through the
+        // `layoutLabels` pass above (`labelPlacementByRow`) instead of this
+        // fixed offset. `labels` unset keeps the exact pre-existing code path
+        // below, untouched — byte-identical output.
+        let labelNode: ReactNode = null;
+        if (labels) {
+          const placement = labelPlacementByRow?.get(g.row.index);
+          if (placement) {
+            const box = placement.label;
+            const textX =
+              box.textAnchor === "middle"
+                ? placement.x + box.width / 2
+                : box.textAnchor === "start"
+                  ? placement.x
+                  : placement.x + box.width;
+            const textY = isHorizontal ? placement.y + box.height / 2 : placement.y + 11;
+            labelNode = (
+              <HaloText
+                dominantBaseline={isHorizontal ? "middle" : undefined}
+                fill={box.fill}
+                fontSize={11}
+                fontWeight={800}
+                textAnchor={box.textAnchor}
+                x={textX}
+                y={textY}
+              >
+                {box.text}
+              </HaloText>
+            );
+          }
+        } else {
+          const labelText = waterfallLabelText(g.row, showValues, labels, format, percentFormat);
 
-        // `labels.placement === "inside"` (RM-122) sits the label just INSIDE
-        // the bar's far edge instead of past it; a POINT row has no "inside"
-        // to sit in, so it keeps the outside placement either way.
-        const inside = labels?.placement === "inside" && !g.isPoint;
-        const labelX = isHorizontal
-          ? roundRight
-            ? g.x + g.width + (inside ? -6 : 6)
-            : g.x + (inside ? 6 : -6)
-          : g.x + g.width / 2;
-        const labelY = isHorizontal
-          ? g.y + g.height / 2
-          : roundTop
-            ? g.y + (inside ? 14 : -6)
-            : g.y + g.height + (inside ? -6 : 14);
-        const labelFill = labels?.matchColor ? fill : undefined;
+          // This branch only runs when `labels` is unset (TS narrows it to
+          // exactly `undefined` here — the `if (labels)` above), so
+          // `labels?.placement`/`labels?.matchColor` are always `undefined`:
+          // inlined as their known values, the pre-existing fixed offset.
+          const inside = false;
+          const labelX = isHorizontal
+            ? roundRight
+              ? g.x + g.width + (inside ? -6 : 6)
+              : g.x + (inside ? 6 : -6)
+            : g.x + g.width / 2;
+          const labelY = isHorizontal
+            ? g.y + g.height / 2
+            : roundTop
+              ? g.y + (inside ? 14 : -6)
+              : g.y + g.height + (inside ? -6 : 14);
+          const labelFill = undefined;
+          labelNode = labelText ? (
+            <HaloText
+              dominantBaseline={isHorizontal ? "middle" : undefined}
+              fill={labelFill}
+              fontSize={11}
+              fontWeight={800}
+              textAnchor={isHorizontal ? (roundRight !== inside ? "start" : "end") : "middle"}
+              x={labelX}
+              y={labelY}
+            >
+              {labelText}
+            </HaloText>
+          ) : null;
+        }
 
         return (
           <g key={`waterfall-row-${g.row.index}`}>
             {shape}
-            {labelText ? (
-              <HaloText
-                dominantBaseline={isHorizontal ? "middle" : undefined}
-                fill={labelFill}
-                fontSize={11}
-                fontWeight={800}
-                textAnchor={isHorizontal ? (roundRight !== inside ? "start" : "end") : "middle"}
-                x={labelX}
-                y={labelY}
-              >
-                {labelText}
-              </HaloText>
-            ) : null}
+            {labelNode}
           </g>
         );
       })}
@@ -913,6 +1082,12 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
     // alternative, unchanged.
     const zoomNote = zoomToDifferences && computeWaterfallZoomDomain(rows).zoomed;
     const zoomNoteDescId = useId();
+    // RM-122 wave 2: the `labels`-driven `layoutLabels` pass inside
+    // `WaterfallBars` reports the labels it dropped through this store — the
+    // same `sr-only` seam RM-110's Line/Area value labels use (wave 1).
+    // Reporting stays inert (and this store unused) whenever `labels` is
+    // unset, so a chart on the pre-existing path renders no extra DOM.
+    const unpaintedStore = useUnpaintedLabelsStore();
 
     return (
       <div className={cn("w-full", className)} data-slot="waterfall-chart" ref={ref}>
@@ -923,61 +1098,64 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
             description="Totals render as points, not bars, because the axis is zoomed to the differences."
           />
         ) : null}
-        <BarChart
-          accessibleDescription={accessibleDescription}
-          accessibleLabel={accessibleLabel}
-          annotations={annotations} // Annotations — RM-111: BarChart paints, keys and describes them.
-          className="w-full"
-          plotHeight={plotHeight ?? height}
-          copyValueOnActivate={copyValueOnActivate}
-          data={rows as unknown as Record<string, unknown>[]}
-          datapointLabel={datapointLabel as ChartDatapointLabel | undefined}
-          margin={margin}
-          maxInteractiveDatapoints={maxInteractiveDatapoints}
-          onDatapointClick={onDatapointClick as ChartDatapointClickHandler | undefined}
-          orientation={orientation}
-          xDataKey="label"
-        >
-          {grid ? <Grid horizontal={!isHorizontal} vertical={isHorizontal} /> : null}
-          <WaterfallBars
-            callouts={callouts}
-            connectors={connectors}
-            dataKey="__cumulative"
-            labels={labels}
-            negativeFill={negativeFill}
-            positiveFill={positiveFill}
-            rows={rows}
-            showValues={showValues}
-            totalFill={totalFill}
-            unit={unit}
-            valueFormat={valueFormat}
-            zoomToDifferences={zoomToDifferences}
-          />
-          {isHorizontal ? <BarYAxis /> : <BarXAxis />}
-          <ChartTooltip
-            rows={(point) => {
-              const row = point as unknown as WaterfallRow;
-              return [
-                {
-                  color: fillForRow(row, positiveFill, negativeFill, totalFill),
-                  label: "Value",
-                  value: formatSigned(row.value, format, row.kind === "step"),
-                },
-                {
-                  color: "var(--chart-foreground-muted)",
-                  label: "Before",
-                  value: formatSigned(row.before, format, false),
-                },
-                {
-                  color: "var(--chart-foreground-muted)",
-                  label: "After",
-                  value: formatSigned(row.after, format, false),
-                },
-              ];
-            }}
-            showDots={false}
-          />
-        </BarChart>
+        <UnpaintedLabelsProvider store={unpaintedStore}>
+          <BarChart
+            accessibleDescription={accessibleDescription}
+            accessibleLabel={accessibleLabel}
+            annotations={annotations} // Annotations — RM-111: BarChart paints, keys and describes them.
+            className="w-full"
+            plotHeight={plotHeight ?? height}
+            copyValueOnActivate={copyValueOnActivate}
+            data={rows as unknown as Record<string, unknown>[]}
+            datapointLabel={datapointLabel as ChartDatapointLabel | undefined}
+            margin={margin}
+            maxInteractiveDatapoints={maxInteractiveDatapoints}
+            onDatapointClick={onDatapointClick as ChartDatapointClickHandler | undefined}
+            orientation={orientation}
+            xDataKey="label"
+          >
+            {grid ? <Grid horizontal={!isHorizontal} vertical={isHorizontal} /> : null}
+            <WaterfallBars
+              callouts={callouts}
+              connectors={connectors}
+              dataKey="__cumulative"
+              labels={labels}
+              negativeFill={negativeFill}
+              positiveFill={positiveFill}
+              rows={rows}
+              showValues={showValues}
+              totalFill={totalFill}
+              unit={unit}
+              valueFormat={valueFormat}
+              zoomToDifferences={zoomToDifferences}
+            />
+            {isHorizontal ? <BarYAxis /> : <BarXAxis />}
+            <ChartTooltip
+              rows={(point) => {
+                const row = point as unknown as WaterfallRow;
+                return [
+                  {
+                    color: fillForRow(row, positiveFill, negativeFill, totalFill),
+                    label: "Value",
+                    value: formatSigned(row.value, format, row.kind === "step"),
+                  },
+                  {
+                    color: "var(--chart-foreground-muted)",
+                    label: "Before",
+                    value: formatSigned(row.before, format, false),
+                  },
+                  {
+                    color: "var(--chart-foreground-muted)",
+                    label: "After",
+                    value: formatSigned(row.after, format, false),
+                  },
+                ];
+              }}
+              showDots={false}
+            />
+          </BarChart>
+        </UnpaintedLabelsProvider>
+        <UnpaintedLabels store={unpaintedStore} />
       </div>
     );
   },
