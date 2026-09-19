@@ -169,21 +169,33 @@ export function CustomShapes({ shapes, yAxisId }: CustomShapesProps) {
 
   return (
     <g aria-hidden="true" data-slot="scatter-custom-shapes">
-      {shapes.map((shape, i) => (
-        <Fragment key={i}>
-          {shape.kind === "line" ? (
-            <ShapeLine
-              innerHeight={innerHeight}
-              innerWidth={innerWidth}
-              shape={shape}
-              toX={toX}
-              yScale={yScale}
-            />
-          ) : (
-            <ShapePath shape={shape} toX={toX} yScale={yScale} />
-          )}
-        </Fragment>
-      ))}
+      {shapes.map((shape, i) => {
+        // A shape has no required unique field, so fall back through its own
+        // identifying value (label, then the line's constant, then the
+        // path's point count) before the index breaks a genuine tie.
+        const shapeId =
+          shape.label ??
+          ("y" in shape
+            ? `y:${shape.y}`
+            : "x" in shape
+              ? `x:${String(shape.x)}`
+              : `path:${shape.points.length}`);
+        return (
+          <Fragment key={`${shape.kind}-${shapeId}-${i}`}>
+            {shape.kind === "line" ? (
+              <ShapeLine
+                innerHeight={innerHeight}
+                innerWidth={innerWidth}
+                shape={shape}
+                toX={toX}
+                yScale={yScale}
+              />
+            ) : (
+              <ShapePath shape={shape} toX={toX} yScale={yScale} />
+            )}
+          </Fragment>
+        );
+      })}
     </g>
   );
 }
