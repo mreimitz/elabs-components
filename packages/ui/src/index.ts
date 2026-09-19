@@ -277,3 +277,22 @@ export * from "./components/integration-matrix";
 export * from "./components/install-tabs";
 // TokenSpotlight — RM-103
 export * from "./components/token-spotlight";
+// colorScaleFor — RM-124: the one value → colour-token scale (continuous / stepped,
+// quantile, Jenks, …) shared by `charts`, `data` and `maps`, which may not import each other.
+export {
+  colorScaleFor,
+  type ColorScale,
+  type ColorScaleCategory,
+  type ColorScaleDomain,
+  type ColorScaleMethod,
+  type ColorScalePalette,
+  type ColorScaleSpec,
+  type ColorScaleStep,
+  type ColorScaleStop,
+  type ColorScaleType,
+  type ColorScaleValue,
+  type ContinuousColorScaleMethod,
+  type ContinuousColorScaleSpec,
+  type SteppedColorScaleMethod,
+  type SteppedColorScaleSpec,
+} from "./lib/color-scale";
