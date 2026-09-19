@@ -79,6 +79,7 @@ import {
   type ChartFooterLabels,
   type ChartFrameAction,
 } from "./chart-footer";
+import { ChartFrameAltTextContext } from "../charts/chart-a11y";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 import { exactValueString } from "../charts/value-format";
 import { ChartSourceRow } from "../chart-card/chart-card";
@@ -1092,7 +1093,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
               }
             : {})}
         >
-          {altText ? (
+          {altText && altTarget !== "none" ? (
             <span id={altId} className="sr-only" data-slot="chart-frame-alt-text">
               {altText}
             </span>
@@ -1105,7 +1106,11 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                 value={fillHost ? "fill" : plotHeight}
                 onPlotConsumer={registerPlotConsumer}
               >
-                <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
+                {/* A labelled chart takes `altText` as its own description (over
+                    its generated summary) through this seam — RM-117. */}
+                <ChartFrameAltTextContext value={altText}>
+                  <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
+                </ChartFrameAltTextContext>
               </ChartFramePlotHeightProvider>
             </ChartConfigBridge>
           )}

@@ -392,6 +392,7 @@ import type { ScatterChartProps } from "../charts/scatter-chart";
 import type { CandlestickChartProps } from "../charts/candlestick-chart";
 import type { LiveLineChartProps } from "../charts/live-line-chart";
 import type { PieChartProps } from "../charts/pie-chart";
+import type { InlineChipProps } from "../chart-frame/inline-chip";
 import type { RingChartProps } from "../charts/ring-chart";
 import type { FunnelChartProps } from "../charts/funnel-chart";
 import type { RadarChartProps } from "../charts/radar-chart";
@@ -1023,3 +1024,30 @@ export const AnnotationKey = forwardRef<HTMLOListElement, { annotations: readonl
   },
 );
 AnnotationKey.displayName = "AnnotationKey";
+
+// InlineChip — RM-117
+/**
+ * `InlineChip` stand-in: the real chip's DOM (root + named swatch) without the
+ * frame's series registry, so the swatch paints `currentColor`. It still
+ * validates `series` — the real chip silently falls back to `currentColor` and
+ * the bare key for an empty one, which would hide the mistake.
+ */
+export const InlineChip = forwardRef<HTMLSpanElement, InlineChipProps>(
+  function InlineChipTestDouble({ series, label, className, children, ...props }, ref) {
+    if (typeof series !== "string" || series.length === 0) {
+      axisViolation("InlineChip", "series", series, `"series" must be a non-empty series key`);
+    }
+    return (
+      <span ref={ref} data-slot="inline-chip" data-series={series} className={className} {...props}>
+        <span
+          data-slot="inline-chip-swatch"
+          role="img"
+          aria-label={label ?? series}
+          style={{ backgroundColor: "currentColor" }}
+        />
+        {children}
+      </span>
+    );
+  },
+);
+InlineChip.displayName = "InlineChip";

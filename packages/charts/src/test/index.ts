@@ -108,6 +108,8 @@ export {
   // Annotations — RM-111
   AnnotationKey,
   ChartAnnotations,
+  // InlineChip — RM-117
+  InlineChip,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─

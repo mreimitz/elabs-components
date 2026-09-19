@@ -1090,6 +1090,47 @@ describe("ChartFrame editorial chrome (RM-117)", () => {
       "Own description",
     );
   });
+
+  it("altText wins over a labelled chart's generated summary", async () => {
+    render(
+      <ChartFrame title="Revenue" altText="South leads with 600; North trails at 400.">
+        <BarChart
+          data={snapshotBarData}
+          xDataKey="region"
+          accessibleLabel="Revenue by region"
+          animationDuration={0}
+        >
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    await act(async () => {});
+    expect(screen.getByRole("figure", { name: "Revenue by region" })).toHaveAccessibleDescription(
+      "South leads with 600; North trails at 400.",
+    );
+    // The chart owns the description, so the frame renders no second copy.
+    expect(document.querySelector('[data-slot="chart-frame-alt-text"]')).toBeNull();
+  });
+
+  it("a chart's own accessibleDescription wins over altText", async () => {
+    render(
+      <ChartFrame title="Revenue" altText="Alt text">
+        <BarChart
+          data={snapshotBarData}
+          xDataKey="region"
+          accessibleLabel="Revenue by region"
+          accessibleDescription="Own description"
+          animationDuration={0}
+        >
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    await act(async () => {});
+    expect(screen.getByRole("figure", { name: "Revenue by region" })).toHaveAccessibleDescription(
+      "Own description",
+    );
+  });
 });
 
 describe("InlineChip (RM-117)", () => {
@@ -1120,5 +1161,23 @@ describe("InlineChip (RM-117)", () => {
     expect(chip).toHaveAttribute("role", "img");
     expect(chip).toHaveAccessibleName("Short-term RAM");
     expect(chip.style.backgroundColor).toBe("var(--chart-1)");
+  });
+
+  it("an explicit label wins over the key", () => {
+    const { container } = render(
+      <ChartFrame
+        title="RAM"
+        description={
+          <InlineChip series="ram" label="Short-term RAM">
+            RAM
+          </InlineChip>
+        }
+      >
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(container.querySelector('[data-slot="inline-chip-swatch"]')).toHaveAccessibleName(
+      "Short-term RAM",
+    );
   });
 });

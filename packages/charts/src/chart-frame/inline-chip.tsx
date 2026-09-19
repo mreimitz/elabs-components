@@ -18,12 +18,17 @@ import { useOptionalChartFrame } from "./chart-frame-context";
 export interface InlineChipProps extends HTMLAttributes<HTMLSpanElement> {
   /** The series key (`dataKey`) whose colour the chip takes. */
   series: string;
+  /**
+   * The series' display name, the chip's accessible name. Wins over the name
+   * the chart publishes; without either the chip is named by `series`.
+   */
+  label?: string;
   /** The words the chip introduces — usually the series' name in prose. */
   children?: ReactNode;
 }
 
 export const InlineChip = forwardRef<HTMLSpanElement, InlineChipProps>(function InlineChip(
-  { series, className, children, ...props },
+  { series, label, className, children, ...props },
   ref,
 ) {
   const frame = useOptionalChartFrame();
@@ -42,7 +47,7 @@ export const InlineChip = forwardRef<HTMLSpanElement, InlineChipProps>(function 
       <span
         data-slot="inline-chip-swatch"
         role="img"
-        aria-label={entry?.label ?? series}
+        aria-label={label ?? entry?.label ?? series}
         className="inline-block size-2.5 shrink-0 self-center rounded-xs"
         style={{ backgroundColor: entry?.color ?? "currentColor" }}
       />
