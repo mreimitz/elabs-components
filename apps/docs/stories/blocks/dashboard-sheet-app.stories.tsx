@@ -22,7 +22,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Dashboards" })).toBeInTheDocument();
+    await expect(await canvas.findByRole("heading", { name: "Dashboards" })).toBeInTheDocument();
     await expect(canvas.getByRole("radio", { name: "View" })).toBeInTheDocument();
     await expect(canvas.getByText("Orders by month")).toBeInTheDocument();
     // "3 tiles on the starter sheet: a month filter, a revenue chart, an orders table".

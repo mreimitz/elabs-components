@@ -712,6 +712,8 @@ export const TileOperations: Story = {
     // it targets — `dispatchAnchoredContextMenu` (`context-menu-anchor.ts`) now carries the
     // tile's own rect. Both keyboard routes (Shift+F10 directly, and the header kebab's own
     // "Tile actions…" replay of the same recipe) are checked here.
+    // Radix parks new popper content at `translate(0, -200%)` until floating-ui has measured
+    // it, so callers retry this until the menu is placed rather than reading that first frame.
     const expectMenuNearTile = (tile: HTMLElement, menu: HTMLElement) => {
       const tileRect = tile.getBoundingClientRect();
       const menuRect = menu.getBoundingClientRect();
@@ -733,7 +735,7 @@ export const TileOperations: Story = {
       await userEvent.keyboard("{Shift>}{F10}{/Shift}");
       const body = within(canvasElement.ownerDocument.body);
       const menu = await body.findByRole("menu");
-      const { tileRect, menuRect } = expectMenuNearTile(tile, menu);
+      const { tileRect, menuRect } = await waitFor(() => expectMenuNearTile(tile, menu));
       console.info("Shift+F10 menu rect", menuRect, "tile rect", tileRect);
       await userEvent.keyboard("{Escape}");
       await waitForMenuClosed(body);
@@ -752,7 +754,7 @@ export const TileOperations: Story = {
         const menu = await body.findByRole("menu");
         const duplicate = await body.findByRole("menuitem", { name: "Duplicate" });
         expect(duplicate).toBeInTheDocument();
-        const { tileRect, menuRect } = expectMenuNearTile(tile, menu);
+        const { tileRect, menuRect } = await waitFor(() => expectMenuNearTile(tile, menu));
         console.info("Kebab menu rect", menuRect, "tile rect", tileRect);
         await userEvent.keyboard("{Escape}");
         await waitForMenuClosed(body);
