@@ -526,16 +526,19 @@ describe("TreemapChart legend (RM-118)", () => {
 
     fireEvent.mouseEnter(rows[0] as Element);
     const groups = container.querySelectorAll('[data-slot="treemap-group"]');
-    expect(groups[0]?.getAttribute("opacity")).toBe("1");
+    // The hovered group's own `<g>` gets no `opacity` attribute at all — only a
+    // DIMMED one ever carries one, keeping the DOM byte-identical to before
+    // RM-118 wherever nothing is dimmed.
+    expect(groups[0]?.getAttribute("opacity")).toBeNull();
     expect(groups[1]?.getAttribute("opacity")).toBe("0.35");
     const leaves = container.querySelectorAll('[data-slot="treemap-leaf"]');
     expect(leaves.length).toBeGreaterThan(0);
     for (const leaf of leaves) {
-      expect(["1", "0.35"]).toContain(leaf.getAttribute("opacity"));
+      expect([null, "0.35"]).toContain(leaf.getAttribute("opacity"));
     }
 
     fireEvent.mouseLeave(rows[0] as Element);
-    expect(groups[1]?.getAttribute("opacity")).toBe("1");
+    expect(groups[1]?.getAttribute("opacity")).toBeNull();
   });
 
   it("palette='sequential' renders RampLegend instead of the discrete container legend", () => {

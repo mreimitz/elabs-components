@@ -1427,10 +1427,14 @@ function DumbbellPlot({
                             data-slot="dumbbell-chart-dot"
                             fill={dotKeyColors[dotIndex % dotKeyColors.length]}
                             key={`dot:${row.index}:${dotIndex}`}
+                            // `undefined` (never a literal `1`) when not dimmed — keeps
+                            // the DOM byte-identical to before RM-118 for every render
+                            // where no legend row is hovered (React omits an
+                            // `undefined`-valued attribute rather than printing it).
                             opacity={
                               legendHoveredDotIndex !== null && legendHoveredDotIndex !== dotIndex
                                 ? LEGEND_DIM_OPACITY
-                                : 1
+                                : undefined
                             }
                             r={DOT_RADIUS}
                             stroke="var(--chart-background)"

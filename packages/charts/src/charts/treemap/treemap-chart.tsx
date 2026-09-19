@@ -562,7 +562,10 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                   <g
                     data-slot="treemap-group"
                     key={group.id}
-                    opacity={isGroupDimmed(groupIndex) ? LEGEND_DIM_OPACITY : 1}
+                    // `undefined` (never a literal `1`) keeps the DOM byte-identical to
+                    // before RM-118 when no legend row is hovered — React omits an
+                    // `undefined`-valued attribute entirely rather than printing it.
+                    opacity={isGroupDimmed(groupIndex) ? LEGEND_DIM_OPACITY : undefined}
                   >
                     <motion.rect
                       animate={{ x: box.x, y: box.y, width: bandWidth, height: group.bandHeight }}
@@ -623,7 +626,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                 <g
                   data-slot="treemap-leaf"
                   key={leaf.id}
-                  opacity={isGroupDimmed(leaf.groupIndex) ? LEGEND_DIM_OPACITY : 1}
+                  // Same `undefined`-when-not-dimmed reasoning as the group `<g>` above.
+                  opacity={isGroupDimmed(leaf.groupIndex) ? LEGEND_DIM_OPACITY : undefined}
                 >
                   <motion.rect
                     animate={{ x: box.x, y: box.y, width: box.width, height: box.height }}

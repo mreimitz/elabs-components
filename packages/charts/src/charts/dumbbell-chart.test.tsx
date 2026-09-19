@@ -1115,16 +1115,19 @@ describe("DumbbellChart legend (RM-118)", () => {
     const rows = container.querySelectorAll(".legend-container > div");
     expect(rows).toHaveLength(3);
     fireEvent.mouseEnter(rows[0] as Element);
-    // "us" is dotIndex 0, drawn first on every row (2 rows x 3 keys).
+    // "us" is dotIndex 0, drawn first on every row (2 rows x 3 keys). The
+    // hovered key's own dots carry no `opacity` attribute at all — only a
+    // dimmed dot ever does, keeping the DOM byte-identical to before RM-118
+    // wherever nothing is dimmed.
     const dots = container.querySelectorAll('[data-slot="dumbbell-chart-dot"]');
     expect(dots).toHaveLength(6);
     for (const dot of dots) {
       const isUs = dot.getAttribute("data-dot-key") === "us";
-      expect(dot.getAttribute("opacity")).toBe(isUs ? "1" : "0.35");
+      expect(dot.getAttribute("opacity")).toBe(isUs ? null : "0.35");
     }
     fireEvent.mouseLeave(rows[0] as Element);
     for (const dot of dots) {
-      expect(dot.getAttribute("opacity")).toBe("1");
+      expect(dot.getAttribute("opacity")).toBeNull();
     }
   });
 

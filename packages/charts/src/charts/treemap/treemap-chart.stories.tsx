@@ -136,8 +136,11 @@ export const LegendCategorical: Story = {
     await userEvent.hover(rows[0] as Element);
     await waitFor(() => {
       const groups = canvasElement.querySelectorAll('[data-slot="treemap-group"]');
-      // Hovering the FIRST row (Platform) dims the SECOND group's (Product) tiles.
-      expect(groups[0]?.getAttribute("opacity")).toBe("1");
+      // Hovering the FIRST row (Platform) dims the SECOND group's (Product)
+      // tiles; the hovered group itself carries no `opacity` attribute at all
+      // (only a dimmed group ever does, keeping the DOM byte-identical to
+      // before RM-118 wherever nothing is dimmed).
+      expect(groups[0]?.getAttribute("opacity")).toBeNull();
       expect(groups[1]?.getAttribute("opacity")).toBe("0.35");
     });
   },

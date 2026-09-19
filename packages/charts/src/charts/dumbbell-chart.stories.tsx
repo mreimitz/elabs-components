@@ -885,11 +885,12 @@ export const LegendPlacement: Story = {
     await userEvent.hover(rows[0] as Element);
     await waitFor(() => {
       const dots = canvasElement.querySelectorAll('[data-slot="dumbbell-chart-dot"]');
-      // "us" is the hovered (first) key — its own dots stay at full opacity,
-      // every other key's dots on every row dim.
+      // "us" is the hovered (first) key — its own dots carry no `opacity`
+      // attribute at all (full opacity, the default), every other key's
+      // dots on every row dim.
       for (const dot of dots) {
         const isUs = dot.getAttribute("data-dot-key") === "us";
-        expect(dot.getAttribute("opacity")).toBe(isUs ? "1" : "0.35");
+        expect(dot.getAttribute("opacity")).toBe(isUs ? null : "0.35");
       }
     });
   },
