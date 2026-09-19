@@ -25,5 +25,13 @@
   "files.exclude": { "**/.claude/worktrees": true },
   "files.watcherExclude": { "**/.claude/worktrees/**": true },
   "search.exclude": { "**/.claude/worktrees": true },
-  "typescript.tsserver.watchOptions": { "excludeDirectories": ["**/.claude/worktrees"] }
+  "typescript.tsserver.watchOptions": { "excludeDirectories": ["**/.claude/worktrees"] },
+
+  // F5 on a debug profile asks "Error exists after running preLaunchTask" whenever the
+  // Problems panel holds ANY error anywhere in the workspace — VS Code counts every error
+  // marker, not just the task's own (the dev-server tasks never report one; their
+  // problem matchers only watch the wrapper's ready markers). A stray TypeScript or
+  // workflow-lint error in an unrelated file must not block starting the app, so launch
+  // anyway. A dev server that really fails to start prints why in its task terminal.
+  "debug.onTaskErrors": "debugAnyway"
 }
