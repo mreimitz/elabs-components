@@ -55,20 +55,20 @@ export async function expectBodyBackground(page: Page, background: string) {
     page.evaluate((value) => {
       const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
       if (!ctx) return null;
-      const rgb = (color: string) => {
+      const paint = (color: string) => {
         ctx.clearRect(0, 0, 1, 1);
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, 1, 1);
         return [...ctx.getImageData(0, 0, 1, 1).data.slice(0, 3)];
       };
       const body = getComputedStyle(document.body).backgroundColor;
-      const a = rgb(body);
-      const b = rgb(value);
+      const a = paint(body);
+      const b = paint(value);
       return { body, a, b, same: a.every((v, i) => Math.abs(v - (b[i] ?? -9)) <= 1) };
     }, background);
   await expect.poll(async () => (await read())?.same).toBe(true);
   const final = await read();
-  return `${final?.body} = rgb(${final?.a.join(", ")})`;
+  return `${final?.body} = sRGB bytes [${final?.a.join(", ")}]`;
 }
 
 /**
