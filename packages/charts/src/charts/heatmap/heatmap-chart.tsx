@@ -47,6 +47,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useCallback,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -505,6 +506,13 @@ interface HeatmapBodyProps {
   revealOn: ChartRevealOn;
   rowHighlight?: (rowLabel: string) => boolean;
   loading: boolean;
+  /**
+   * RM-118: notifies the hovered cell up to `HeatmapChartShell`, which is
+   * outside this measured box, so it can feed `HeatmapLegend`'s `hover`
+   * marker — the legend sits as a SIBLING of the `ParentSize` box (see the
+   * file docblock), so it has no access to `HeatmapProvider`'s hover context.
+   */
+  onHoverChange?: (hover: HeatmapHoverContextValue) => void;
 }
 
 function HeatmapBody({
@@ -518,6 +526,7 @@ function HeatmapBody({
   loading,
   margin,
   mode,
+  onHoverChange,
   revealOn,
   rowHighlight,
   scale,
@@ -528,6 +537,9 @@ function HeatmapBody({
 }: HeatmapBodyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<HeatmapHoverContextValue>({ hovered: null, pointer: null });
+  useEffect(() => {
+    onHoverChange?.(hover);
+  }, [hover, onHoverChange]);
   const hatchId = `heatmap-neg-${useId().replace(/:/g, "")}`;
   const datapointsEnabled = useChartDatapointsEnabled();
   const activate = useActivateDatapoint();
@@ -1122,6 +1134,14 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
   const minPlotWidth =
     variant === "calendar" ? grid.columns * MIN_CALENDAR_COLUMN_PX + margin.left + margin.right : 0;
 
+  // RM-118: the live-hovered cell, lifted here from `HeatmapBody` (which owns
+  // the pointer math) so `HeatmapLegend` below — a SIBLING of the measured
+  // plot box, outside `HeatmapProvider` — can move its marker with it.
+  const [liveHover, setLiveHover] = useState<HeatmapHoverContextValue>({
+    hovered: null,
+    pointer: null,
+  });
+
   return (
     <ChartPlotRoot
       aria-describedby={ariaDescribedby}
@@ -1176,6 +1196,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
                     loading={loading}
                     margin={margin}
                     mode={resolvedMode}
+                    onHoverChange={setLiveHover}
                     revealOn={revealOn}
                     rowHighlight={rowHighlight}
                     scale={scale}
@@ -1204,6 +1225,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
           emptyValue={emptyValue}
           formatValue={formatValue}
           hi={scale.hi}
+          hover={liveHover.hovered?.value ?? null}
           lo={scale.lo}
           missingCount={scale.missingCount}
           swatches={scale.swatches}
