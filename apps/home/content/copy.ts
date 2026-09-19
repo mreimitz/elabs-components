@@ -139,3 +139,173 @@ export const heroCopy = {
     flowStep: (step: number, steps: number) => `Step ${step} of ${steps}`,
   },
 } as const;
+
+// RM-096 — the surface tour (concept §4.2): movement title, per-tab labels, use cases, hints
+// and the agent prompt. The MCP URL, archetype intents, story ids and commands are NOT here —
+// they come from `content/generated/*.json` through `lib/content.ts` (see `tour/tabs.ts`).
+export const tourCopy = {
+  title: "Seven surfaces, one system",
+  description:
+    "Each tab is a full-size screen built from the library. Open it in Storybook, copy a prompt for your coding agent, or scaffold it.",
+  tabs: {
+    dashboard: {
+      label: "Dashboard",
+      useCase: "KPIs, charts and records in one screen, with tiles people can rearrange.",
+      hint: "Drag a tile",
+    },
+    "ai-assistant": {
+      label: "AI assistant",
+      useCase: "A chat that renders tool calls, reasoning and sources, not only text.",
+      hint: "Expand the tool call",
+    },
+    "data-app": {
+      label: "Data app",
+      useCase: "A table for browsing and operating on records: search, facets, bulk actions.",
+      hint: "Sort a column",
+    },
+    "flow-workspace": {
+      label: "Flow workspace",
+      useCase: "A node canvas with an inspector, for pipelines and agent graphs.",
+      hint: "Drag a node",
+    },
+    "process-explorer": {
+      label: "Process explorer",
+      useCase: "Process mining on an event log: the map, variants and throughput.",
+      hint: "Hover a path",
+    },
+    settings: {
+      label: "Settings",
+      useCase: "Grouped forms with sections, descriptions and saved state.",
+      hint: null,
+    },
+    marketing: {
+      label: "Marketing",
+      useCase: "A landing page: hero, feature grid, stats and a call to action.",
+      hint: null,
+    },
+  },
+  /** Screen-reader label of a tab whose surface has not landed yet (RM-097/098 replace these). */
+  placeholder: (label: string) => `${label} preview`,
+  /** The multi-line prompt "Copy prompt" writes: the hosted MCP URL, the archetype, its intent. */
+  prompt: ({
+    mcpUrl,
+    archetype,
+    intent,
+    useCase,
+  }: {
+    mcpUrl: string;
+    archetype: string;
+    intent: string;
+    useCase: string;
+  }) =>
+    [
+      `Using brand-ui (MCP: ${mcpUrl}), build a ${archetype} screen.`,
+      `Intent: ${intent}.`,
+      `Use case: ${useCase}`,
+      "Use only @elabs-ai/components-* components and semantic tokens; follow the brand-ui playbook for this archetype.",
+    ].join("\n"),
+  actions: {
+    openInStorybook: "Open in Storybook",
+    copyPrompt: "Copy prompt",
+    promptCopied: "Prompt copied",
+    promptCopyFailed: "Could not copy the prompt",
+    scaffold: "Scaffold",
+    copyCommand: "Copy scaffold command",
+  },
+} as const;
+
+// RM-097 — the three tour surfaces (Dashboard, Data app, Settings): every literal the surfaces
+// render, so `conventions/i18n-strings` has nothing left to flag in `tour/surfaces/**`. Data
+// itself (KPI labels, order rows, member names) stays in `content/fixtures/**`; this is UI chrome
+// only.
+export const dashboardSurfaceCopy = {
+  reset: "Reset",
+} as const;
+
+export const dataAppSurfaceCopy = {
+  /** `"{count} orders"`, `count` already `Intl.NumberFormat`-formatted by the caller. */
+  orderCount: (count: string) => `${count} orders`,
+  regionFacetTitle: "Region",
+  statusFacetTitle: "Status",
+  /** `"{count} selected"` in the bulk-action bar, `count` already locale-formatted. */
+  selectedCount: (count: string) => `${count} selected`,
+  clearSelection: "Clear selection",
+} as const;
+
+export const settingsSurfaceCopy = {
+  sectionsNavLabel: "Settings sections",
+  sections: {
+    workspace: "Workspace",
+    members: "Members",
+    notifications: "Notifications",
+    apiKeys: "API keys",
+    danger: "Danger zone",
+  },
+  workspace: {
+    description: (workspaceName: string) => `Details every member of ${workspaceName} can see.`,
+    nameLabel: "Workspace name",
+  },
+  members: {
+    description: "Everyone with access to this workspace.",
+    name: "Name",
+    email: "Email",
+    role: "Role",
+  },
+  notifications: {
+    description: "Control which alerts reach the team.",
+  },
+  apiKeys: {
+    description: "Keys used by services connecting to this workspace.",
+    label: "Label",
+    key: "Key",
+    createdBy: "Created by",
+    created: "Created",
+  },
+  danger: {
+    transferDescription: "Hand the owner role to another member.",
+    deleteDescription: "This cannot be undone.",
+    /** The `AlertDialogDescription`'s second sentence: `Type “{name}” to confirm.` */
+    typeToConfirm: (workspaceName: string) => `Type “${workspaceName}” to confirm.`,
+    cancel: "Cancel",
+  },
+} as const;
+
+// RM-098 — copy specific to the AI assistant, flow workspace, process explorer and marketing
+// tabs (`tourCopy.tabs` above already carries the shared per-tab label/useCase/hint, RM-096).
+export const tourSurfaceCopy = {
+  aiAssistant: {
+    /** D5 (`decisions.md`): the composer never calls a model — it only renders one. */
+    composerPlaceholder: "This demo doesn’t call a model — it renders one.",
+    composerSubmitLabel: "Send is disabled — this demo renders a fixed transcript",
+    toolSummary: "2 regions returned",
+  },
+  flowWorkspace: {
+    demoLabel: "Flow workspace demo",
+    inspectorTitle: "Inspector",
+    inspectorEmpty: "Select a node to see its details.",
+    narrow: "This canvas is best on a wider screen — try 1024px or up.",
+  },
+  processExplorer: {
+    demoLabel: "Process explorer demo",
+    viewToggleLabel: "View",
+    mapView: "Map",
+    conformanceView: "Conformance",
+    narrow: "This map is best on a wider screen — try 1024px or up.",
+    /** `share` is a formatted percent read from the fixture, never typed (RM-098 acceptance). */
+    slowVariantNote: (share: string) =>
+      `${share} of cases take a manual-review detour and run about twice as long.`,
+    /* `casesButton`/`casesTitle`/`casesDescription`: `CaseTable` moved into a bottom `Sheet`
+       (docs/playbooks/templates/process-explorer.tsx's own drill-down pattern) instead of
+       always-inline — the tour's shared `h-128 md:h-160` frame (`tour.tsx`, every tab) has no
+       room left for map + variant rail + case table all at once once the 6-metric KPI strip
+       claims its two rows, so the table is a drill-down, not a fourth always-visible region. */
+    casesButton: "Case table",
+    casesTitle: "Cases",
+    casesDescription: "The filtered case list — export or scan alongside the map.",
+  },
+  marketing: {
+    demoLabel: "Marketing demo",
+    caption:
+      "You’re looking at it — this page is the marketing archetype, from the same components.",
+  },
+} as const;

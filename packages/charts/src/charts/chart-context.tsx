@@ -225,6 +225,118 @@ export function resolvePalette(
   }
 }
 
+/**
+ * Colour bars by ANOTHER column (RM-113) instead of by series. `scale`
+ * picks the family: `"categorical"` (default) gives one hue per distinct
+ * value, `"sequential"`/`"diverging"` bucket a numeric column into `steps`
+ * ramp steps (default 5).
+ */
+export interface ChartColorBy {
+  key: string;
+  scale?: "categorical" | "sequential" | "diverging";
+  steps?: number;
+}
+
+/** One entry of a colour key: a category, or a numeric bucket `[from, to]`. */
+export interface ChartColorKeyItem {
+  key: string;
+  color: string;
+  /** Categorical: the category itself. Absent for a numeric bucket. */
+  label?: string;
+  from?: number;
+  to?: number;
+}
+
+export interface ResolvedColorBy {
+  /** The bar colour for a row; `undefined` when the row has no usable value. */
+  colorOf: (row: Record<string, unknown>) => string | undefined;
+  items: ChartColorKeyItem[];
+}
+
+const DEFAULT_COLOR_BY_STEPS = 5;
+
+/**
+ * Resolve `colorBy` over the rows through {@link resolvePalette} — the one
+ * place colours are chosen, so the categorical soft cap (six hues, then the
+ * neutral ladder plus one dev warning) applies here exactly as it does to
+ * series.
+ */
+export function resolveColorBy(
+  rows: readonly Record<string, unknown>[],
+  colorBy: ChartColorBy,
+): ResolvedColorBy {
+  const { key, scale = "categorical" } = colorBy;
+  if (scale === "categorical") {
+    const categories: string[] = [];
+    for (const row of rows) {
+      const raw = row[key];
+      if (raw === undefined || raw === null) continue;
+      const name = String(raw);
+      if (!categories.includes(name)) categories.push(name);
+    }
+    const colors = resolvePalette("categorical", categories.length);
+    const byName = new Map(categories.map((name, i) => [name, colors[i] as string]));
+    return {
+      colorOf: (row) => {
+        const raw = row[key];
+        return raw === undefined || raw === null ? undefined : byName.get(String(raw));
+      },
+      items: categories.map((name) => ({
+        key: name,
+        label: name,
+        color: byName.get(name) as string,
+      })),
+    };
+  }
+
+  const steps = Math.max(2, Math.min(7, Math.round(colorBy.steps ?? DEFAULT_COLOR_BY_STEPS)));
+  const values = rows
+    .map((row) => row[key])
+    .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+  const colors = resolvePalette(scale, steps);
+  let lo: number;
+  let hi: number;
+  if (scale === "diverging") {
+    // Symmetric about zero, so the middle step is always "no change".
+    const m = values.reduce((acc, v) => Math.max(acc, Math.abs(v)), 0) || 1;
+    lo = -m;
+    hi = m;
+  } else {
+    lo = values.length > 0 ? Math.min(...values) : 0;
+    hi = values.length > 0 ? Math.max(...values) : 1;
+    if (hi === lo) hi = lo + 1;
+  }
+  const width = (hi - lo) / steps;
+  const bucketOf = (v: number) => Math.max(0, Math.min(steps - 1, Math.floor((v - lo) / width)));
+  return {
+    colorOf: (row) => {
+      const v = row[key];
+      return typeof v === "number" && Number.isFinite(v) ? colors[bucketOf(v)] : undefined;
+    },
+    items: colors.map((color, i) => ({
+      key: `${key}-${i}`,
+      color,
+      from: lo + i * width,
+      to: lo + (i + 1) * width,
+    })),
+  };
+}
+
+/**
+ * One entry a chart exposes for its legend (RM-113): a series, a colour-key
+ * category, a comparison column, or an overlay. The chart only PUBLISHES
+ * these on its context; rendering them is the legend's job.
+ */
+export interface ChartLegendEntry {
+  key: string;
+  label: string;
+  color: string;
+  kind: "series" | "color" | "comparison" | "overlay";
+  /** Overlay / comparison glyph — how the legend swatch should be drawn. */
+  marker?: "bar" | "range" | "tick" | "dot";
+  pattern?: "solid" | "stripes";
+}
+
 export interface Margin {
   top: number;
   right: number;
@@ -408,6 +520,17 @@ export interface ChartContextValue extends ChartHoverContextValue {
   stacked?: boolean;
   /** Stack offsets: Map of data index -> Map of dataKey -> cumulative offset */
   stackOffsets?: Map<number, Map<string, number>>;
+  // BarChart — RM-113
+  /** Stack layout mode when stacked: `"stacked"`, `"percent"` (fraction space) or `"diverging"`. */
+  stackMode?: "stacked" | "percent" | "diverging";
+  /** Per-segment `[lo, hi]` value extents (data index → dataKey); set when a bar draws from extents. */
+  stackExtents?: Map<number, Map<string, readonly [number, number]>>;
+  /** `colorBy` resolution: a row's bar colour, overriding the series fill. */
+  barColorOf?: (row: Record<string, unknown>) => string | undefined;
+  /** Fraction of the band each side a main bar gives up to its `comparison` column. */
+  barCrossInset?: number;
+  /** Legend entries the chart exposes (series, colour key, comparison, overlays). */
+  legendItems?: readonly ChartLegendEntry[];
 
   // ComposedChart + SeriesBar (optional)
   /** `SeriesBar` dataKeys in tree order, for grouped columns at each x */
@@ -492,6 +615,11 @@ export function ChartProvider({
       orientation: value.orientation,
       stacked: value.stacked,
       stackOffsets: value.stackOffsets,
+      stackMode: value.stackMode,
+      stackExtents: value.stackExtents,
+      barColorOf: value.barColorOf,
+      barCrossInset: value.barCrossInset,
+      legendItems: value.legendItems,
       composedBarDataKeys: value.composedBarDataKeys,
       composedBarSize: value.composedBarSize,
       composedMaxBarSize: value.composedMaxBarSize,
@@ -542,6 +670,11 @@ export function ChartProvider({
       value.orientation,
       value.stacked,
       value.stackOffsets,
+      value.stackMode,
+      value.stackExtents,
+      value.barColorOf,
+      value.barCrossInset,
+      value.legendItems,
       value.composedBarDataKeys,
       value.composedBarSize,
       value.composedMaxBarSize,

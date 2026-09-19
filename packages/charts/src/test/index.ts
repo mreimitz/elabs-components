@@ -105,6 +105,9 @@ export {
   TreeChart,
   // Network — RM-036
   NetworkChart,
+  // Annotations — RM-111
+  AnnotationKey,
+  ChartAnnotations,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
@@ -140,6 +143,7 @@ export {
   ChoroplethGraticule,
   ChoroplethProvider,
   ChoroplethTooltip,
+  CustomShapes,
   DateTicker,
   DrawPath,
   Gauge,
@@ -181,6 +185,7 @@ export {
   PeakRing,
   PieCenter,
   PieCenterShell,
+  PieLabels,
   PieProvider,
   PieSlice,
   ProfitLossLegend,
@@ -210,6 +215,7 @@ export {
   SeriesMarkers,
   SeriesPointMarker,
   StaticChartPreviewProvider,
+  TrendLine,
   UnitStack,
   XAxis,
   YAxis,

@@ -268,3 +268,5 @@ export * from "./components/virtual-select";
 export * from "./components/workspace-picker";
 export * from "./components/wizard";
 export * from "./components/command-chip";
+// SurfaceTour — RM-096
+export * from "./components/surface-tour";

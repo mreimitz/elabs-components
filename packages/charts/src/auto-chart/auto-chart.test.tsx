@@ -11,7 +11,7 @@
  *
  * Real render/interaction/a11y is covered by the Storybook stories.
  */
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ── @visx/responsive → fixed 560×288 ─────────────────────────────────────────
@@ -292,6 +292,59 @@ describe("AutoChart", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
+  // Post-merge fix (orchestrator ruling): `ChartSpec` has one `sort` field,
+  // shared with BarChart's row order (`BarSort`), narrowed per chart family
+  // in `auto-chart.tsx` rather than a separate `pieSort`.
+  it("pie: sort 'desc' orders slices largest-first; sort 'asc' is ignored, keeping data order", () => {
+    // AMER is the largest value but listed last in `data` — its position in
+    // `data` never changes (PieSlice is index-based), only its ANGULAR
+    // placement does. Read that placement off each slice's hitbox path's
+    // starting point (the `M` command's x). Every slice shares the same
+    // outer radius, so two slices placed at the same angular POSITION start
+    // at the same x, regardless of the chart's own start-angle convention —
+    // no need to assume where "angle 0" is.
+    const regions = [
+      { label: "EMEA", value: 42 },
+      { label: "APAC", value: 31 },
+      { label: "AMER", value: 55 },
+    ];
+    const startX = (d: string | null): number => {
+      const match = d?.match(/^M(-?[\d.]+),/);
+      if (!match?.[1]) {
+        throw new Error(`no M command found in path: ${d}`);
+      }
+      return Number(match[1]);
+    };
+    const sliceStartXs = (sort: "none" | "asc" | "desc" | undefined): number[] => {
+      const { container, unmount } = render(
+        <AutoChart
+          spec={{ type: "pie", data: regions, x: "label", series: ["value"], sort }}
+          height={280}
+        />,
+      );
+      const hitboxes = container.querySelectorAll('path[fill="transparent"]');
+      expect(hitboxes.length).toBe(3);
+      const xs = Array.from(hitboxes).map((h) => startX(h.getAttribute("d")));
+      unmount();
+      return xs;
+    };
+
+    // Default (`sort` unset → "none"): data order kept, so EMEA (index 0)
+    // is placed FIRST and AMER (index 2) is placed LAST.
+    const [firstSliceStartX, , amerStartXNone] = sliceStartXs(undefined);
+
+    // sort: "desc" — AMER (largest) is placed FIRST, so it starts at the
+    // same angular position EMEA occupied above.
+    const [, , amerStartXDesc] = sliceStartXs("desc");
+    expect(amerStartXDesc).toBeCloseTo(firstSliceStartX!, 5);
+
+    // sort: "asc" is not a pie value (only "desc"/"none" are honoured) — the
+    // pie narrowing in auto-chart.tsx drops it, so AMER stays LAST, exactly
+    // as under the unset default.
+    const [, , amerStartXAsc] = sliceStartXs("asc");
+    expect(amerStartXAsc).toBeCloseTo(amerStartXNone!, 5);
+  });
+
   it("renders without throwing for 'scatter' type", () => {
     const { container } = render(
       <AutoChart
@@ -344,6 +397,46 @@ describe("AutoChart", () => {
       />,
     );
     expect(container.firstChild).toBeInTheDocument();
+  });
+
+  it("'scatter' with spec.colorBy colours points by that column (one ChartSpec field shared with 'bar')", () => {
+    // Orchestrator ruling: ChartSpec has ONE `colorBy` field — bar (RM-113)
+    // and scatter (RM-115) both read `spec.colorBy`, since `ChartColorBy`'s
+    // shape (`{ key, scale?, steps? }`) already covers both. This is the
+    // scatter-side half of that contract: a categorical `colorBy.key` must
+    // reach `<Scatter colorBy>` and paint a different fill per group.
+    const studentLoanData = [
+      { income: 20000, repaymentRate: 2, eu: "eu" },
+      { income: 25000, repaymentRate: 3, eu: "eu" },
+      { income: 30000, repaymentRate: 5, eu: "non-eu" },
+      { income: 35000, repaymentRate: 6, eu: "non-eu" },
+    ];
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "scatter",
+          data: studentLoanData,
+          x: "income",
+          xType: "number",
+          series: ["repaymentRate"],
+          colorBy: { key: "eu" },
+        }}
+        height={280}
+      />,
+    );
+    // Each point renders 2 circles (an inner filled shape, an unfilled outer
+    // ring) — keep only the filled one.
+    const fills = Array.from(container.querySelectorAll('[data-slot="scatter-point"] circle'))
+      .map((el) => el.getAttribute("fill"))
+      .filter((f) => f !== "none");
+    expect(fills).toHaveLength(4);
+    expect(fills.every((f) => Boolean(f))).toBe(true);
+    // Two distinct groups ("eu" vs "non-eu") must resolve to two distinct fills.
+    expect(new Set(fills).size).toBe(2);
+    // Same-group points share exactly one fill.
+    expect(fills[0]).toBe(fills[1]);
+    expect(fills[2]).toBe(fills[3]);
+    expect(fills[0]).not.toBe(fills[2]);
   });
 
   it("renders without throwing for 'radar' type", () => {
@@ -1016,6 +1109,93 @@ describe("AutoChart selection pass-through (RM-073)", () => {
   });
 });
 
+// nulls / curve / symbols — RM-112
+describe("AutoChart nulls/curve/symbols pass-through (RM-112)", () => {
+  const nullsData = [
+    { date: "2024-01-01", revenue: 12000 },
+    { date: "2024-01-02", revenue: 15200 },
+    { date: "2024-01-03", revenue: null },
+    { date: "2024-01-04", revenue: 14100 },
+  ];
+
+  it("spec.nulls reaches the 'line' family and breaks the path at the gap", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{ type: "line", data: nullsData, x: "date", series: ["revenue"], nulls: "gap" }}
+        height={280}
+      />,
+    );
+    const d = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect((d.match(/M/g) ?? []).length).toBe(2);
+  });
+
+  it("spec.nulls reaches the 'area' family and breaks the crest at the gap", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{ type: "area", data: nullsData, x: "date", series: ["revenue"], nulls: "gap" }}
+        height={280}
+      />,
+    );
+    const d = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect((d.match(/M/g) ?? []).length).toBe(2);
+  });
+
+  it("spec.curve reaches every 'line' series", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          curve: "step-after",
+        }}
+        height={280}
+      />,
+    );
+    const stepD = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    const { container: monotoneContainer } = render(
+      <AutoChart
+        spec={{ type: "line", data: temporalData, x: "date", series: ["revenue"] }}
+        height={280}
+      />,
+    );
+    const monotoneD =
+      monotoneContainer.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect(stepD).not.toBe(monotoneD);
+  });
+
+  it("spec.symbols reaches every 'line'/'area' series as hollow markers", () => {
+    const { container: lineContainer } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          symbols: { style: "hollow" },
+        }}
+        height={280}
+      />,
+    );
+    expect(lineContainer.querySelectorAll("circle").length).toBeGreaterThan(0);
+
+    const { container: areaContainer } = render(
+      <AutoChart
+        spec={{
+          type: "area",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          symbols: { style: "hollow" },
+        }}
+        height={280}
+      />,
+    );
+    expect(areaContainer.querySelectorAll("circle").length).toBeGreaterThan(0);
+  });
+});
+
 // A dashboard chart tile is `ChartFrame chrome="tile"` with no plot height: the
 // frame hands its chart "fill", i.e. `height: 100%`. That only resolves when
 // EVERY box from the frame body down to the plot is definite — an auto-height
@@ -1051,5 +1231,104 @@ describe("AutoChart inside a fill-host tile", () => {
         expect(definite(el), `auto-height link: <div class="${el.className}">`).toBe(true);
       }
     }
+  });
+});
+
+// Labels — RM-110 (maintainer decision 7): the AutoLegend steps aside for a
+// line/area spec only when every series gets an end label under the default.
+describe("AutoChart legend vs series end labels", () => {
+  const trend = [
+    { date: "2024-01-01", ebikes: 10, cargo: 4 },
+    { date: "2024-02-01", ebikes: 14, cargo: 6 },
+    { date: "2024-03-01", ebikes: 19, cargo: 9 },
+  ];
+  const legendOf = (spec: ChartSpec) =>
+    render(<AutoChart spec={spec} height={280} />).container.querySelector(
+      'ul[aria-label="Chart legend"]',
+    );
+
+  it("hides the legend when every line series has a real name", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [
+        { key: "ebikes", label: "E-bikes" },
+        { key: "cargo", label: "Cargo bikes" },
+      ],
+    };
+    expect(legendOf(spec)).toBeNull();
+  });
+
+  it("keeps the legend when a series is known only by its column name", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [{ key: "ebikes", label: "E-bikes" }, { key: "cargo" }],
+    };
+    expect(legendOf(spec)).not.toBeNull();
+  });
+
+  it("keeps the legend when labels.series opts out, and hides it for an explicit end", () => {
+    const base: ChartSpec = { type: "area", data: trend, x: "date", series: ["ebikes", "cargo"] };
+    expect(legendOf({ ...base, labels: { series: "none" } })).not.toBeNull();
+    cleanup();
+    expect(legendOf({ ...base, labels: { series: "end" } })).toBeNull();
+  });
+});
+
+// BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.
+describe("AutoChart bar comparison labels", () => {
+  const sales = [
+    { region: "North", now: 40, prev: 22 },
+    { region: "South", now: 18, prev: 27 },
+  ];
+
+  // The comparison labels are gated behind BarChart's own enter-reveal gate
+  // (`useChartRevealGate`, default `revealOn="mount"`): they only paint once
+  // `isLoaded` flips true, on a real `setTimeout(animationDuration)` (default
+  // 1100ms) that AutoChart has no prop to shorten (#488). A real-clock
+  // `waitFor` raced that timer against whatever else was on the machine and
+  // sometimes lost; `bar-chart-reveal.test.tsx` already drives the same gate
+  // deterministically with fake timers — same seam here.
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Longer than BarChart's default 1100ms reveal, so it has settled. */
+  const PAST_REVEAL_MS = 1500;
+
+  it("paints grey difference labels from labels.comparison and none without it", () => {
+    const spec: ChartSpec = {
+      type: "bar",
+      data: sales,
+      x: "region",
+      series: ["now"],
+      comparison: { key: "prev" },
+    };
+    const { container } = render(
+      <AutoChart spec={{ ...spec, labels: { comparison: "difference" } }} />,
+    );
+    // Settle the bars' enter animation deterministically instead of racing it.
+    act(() => {
+      vi.advanceTimersByTime(PAST_REVEAL_MS);
+    });
+    const labels = [...container.querySelectorAll('[data-slot="bar-chart-comparison-label"]')].map(
+      (label) => label.textContent,
+    );
+    expect(labels).toEqual(["+18", "−9"]);
+    cleanup();
+    const plain = render(<AutoChart spec={spec} />);
+    act(() => {
+      vi.advanceTimersByTime(PAST_REVEAL_MS);
+    });
+    expect(
+      plain.container.querySelectorAll('[data-slot="bar-chart-comparison-label"]'),
+    ).toHaveLength(0);
   });
 });
