@@ -466,6 +466,51 @@ export function buildEmitUiExamples({ repoRoot = REPO_ROOT } = {}) {
   };
 }
 
+// ─────────────────────── create-theme.json (RM-103) ────────────────────────────
+/**
+ * The "One token system" band's closing chip (RM-103, wave-4 ruling 23; W4-M1): there is no
+ * `create-theme` CLI verb — re-branding goes through the plugin skill `brand-ui-create-theme`,
+ * invoked by name as a slash command exactly like `/brand-ui-start`/`/brand-ui-new-app`
+ * (docs/CONSUMING.md, docs/SKILLS.md) — never the maintainer-only `/create-theme` shortcut that
+ * only exists inside this repo. Derived from that skill's own `SKILL.md` frontmatter (name +
+ * `user-invocable`) so the chip can never hand-type a skill name, argument hint or invocation the
+ * skill doesn't actually have; throws if the skill's shape changes underneath it instead of
+ * silently going stale.
+ */
+export const CREATE_THEME_SKILL_DIR = "skills/brand-ui-create-theme";
+
+/** Minimal YAML frontmatter reader — the same shape `scripts/check/rules/plugin-manifest.mjs`
+ * uses for skill `SKILL.md` files, kept local so this module adds no new cross-file coupling. */
+export function parseSkillFrontmatter(text) {
+  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const fm = {};
+  if (!m) return fm;
+  for (const line of m[1].split(/\r?\n/)) {
+    const kv = line.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+    if (kv) fm[kv[1]] = kv[2].trim().replace(/^["']|["']$/g, "");
+  }
+  return fm;
+}
+
+export function buildCreateThemeSkill({ repoRoot = REPO_ROOT } = {}) {
+  const text = readFileSync(join(repoRoot, CREATE_THEME_SKILL_DIR, "SKILL.md"), "utf8");
+  const fm = parseSkillFrontmatter(text);
+  if (fm.name !== "brand-ui-create-theme" || fm["user-invocable"] !== "true") {
+    throw new Error(
+      "gen-home: skills/brand-ui-create-theme/SKILL.md frontmatter changed shape — " +
+        "update buildCreateThemeSkill (scripts/gen-home.mjs).",
+    );
+  }
+  const slashCommand = `/${fm.name}`;
+  const argumentHint = fm["argument-hint"] ?? "";
+  return {
+    skill: fm.name,
+    slashCommand,
+    argumentHint,
+    invocation: argumentHint ? `${slashCommand} ${argumentHint}` : slashCommand,
+  };
+}
+
 async function buildAll() {
   const manifest = json("brand-ui.manifest.json");
   const registry = json("registry/registry.json");
@@ -509,6 +554,8 @@ async function buildAll() {
     "agent-loop-recorded.json": buildAgentLoopRecorded(manifest),
     // RM-101
     "emit-ui-examples.json": buildEmitUiExamples(),
+    // RM-103
+    "create-theme.json": buildCreateThemeSkill(),
   };
 }
 

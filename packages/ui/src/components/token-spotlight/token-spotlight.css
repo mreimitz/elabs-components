@@ -1,0 +1,32 @@
+/*
+ * TokenSpotlight — the outline pulse a hovered/focused chip draws on every element that
+ * consumes its token (RM-103, wave-4 ruling 20). Tokens only (`--ring`, `--t-fast`,
+ * `--ease-standard`); no HTML sink, no inline style — `data-token-consumer` is the only
+ * hook, added/removed by the component itself (precedent: `ambient-field.css`).
+ */
+@layer base {
+  [data-token-consumer] {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    animation: brand-ui-token-consumer-pulse var(--t-fast) var(--ease-standard);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root:not([data-motion-pref="full"]) [data-token-consumer] {
+      animation: none;
+    }
+  }
+
+  [data-motion-pref="reduced"] [data-token-consumer] {
+    animation: none;
+  }
+
+  @keyframes brand-ui-token-consumer-pulse {
+    from {
+      outline-color: transparent;
+    }
+    to {
+      outline-color: var(--ring);
+    }
+  }
+}

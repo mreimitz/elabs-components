@@ -138,6 +138,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DEFAULT_SPEC_PLAYGROUND_LABELS
 - DEFAULT_SURFACE_TOUR_ACTIONS_LABELS
 - DEFAULT_THEME_FAMILY_SWITCH_LABELS
+- DEFAULT_TOKEN_SPOTLIGHT_LABELS
 - Descriptions
 - DescriptionsItem
 - Dialog — Modal overlay for focused tasks/flows that block the page until dismissed.
@@ -437,6 +438,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - Toggle (variant=default*|outline|segmented · size=default*|sm|lg)
 - ToggleGroup
 - ToggleGroupItem
+- TOKEN_SPOTLIGHT_SCAN_LIMIT
+- TokenSpotlight
 - Toolbar (orientation=horizontal*|vertical) — A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls.
   - avoid: Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.
   - avoid: Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.
