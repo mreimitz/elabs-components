@@ -372,10 +372,10 @@ export interface ChartSpecTooltip {
   /** `ChartTooltip variant`. Default: `"rows"`. */
   variant?: ChartTooltipVariant;
   /**
-   * `ChartTooltip focus` — also flips `focusOnHover` on the rendered
-   * `LineChart`/`AreaChart` container, since that is what actually gates the
-   * per-series dim (`SeriesHoverDim`); `focus` alone only decides WHICH
-   * series counts as hovered.
+   * `ChartTooltip focus` — registers "focus requested" on the shared
+   * series-mode context standalone, so RM-112's per-series dim
+   * (`SeriesHoverDim`) fires with no `focusOnHover` needed on the rendered
+   * `LineChart`/`AreaChart` container.
    */
   focus?: boolean;
   /** `ChartTooltip pin`. Unset keeps the coarse-pointer-only default. */
