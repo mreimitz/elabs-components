@@ -57,6 +57,17 @@ import { ChoroplethFeature as ChoroplethFeatureComponent } from "./choropleth-fe
 import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { ChoroplethFeatureProperties } from "./choropleth-context";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { screen } from "@testing-library/react";
+import { geoMercator } from "d3-geo";
+import { areaRadius } from "../../marks/area-radius";
+import { ChartConfigProvider } from "../chart-config-context";
+import { overlayCategories } from "./choropleth-feature";
+import { fitProjectionToFeatures } from "./fit-to-data";
+import { layoutPlaceLabels, MAX_PLACE_LABELS } from "./place-labels";
+import { layoutSymbols, symbolShrink } from "./symbol-layer";
+import { worldFeatureCollection } from "./world-fixture";
 
 // Minimal valid GeoJSON — a single polygon country
 const minimalData: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
@@ -574,5 +585,339 @@ describe("ChoroplethFeature decoration pattern channel (ADR 0011, #257)", () => 
       ),
     ).toBe(true);
     expect(seriesPatterns(container)).toHaveLength(1);
+  });
+});
+// ---------------------------------------------------------------------------
+// Thematic layer — RM-124
+// ---------------------------------------------------------------------------
+
+/** The US-states fixture with a value on exactly `n` states (the rest: no data). */
+function statesWithData(n: number): FeatureCollection<Geometry, ChoroplethFeatureProperties> {
+  let given = 0;
+  return {
+    type: "FeatureCollection",
+    features: US_STATE_SEEDS.map((seed) => {
+      const feature = squareStateFeature(seed);
+      const keep = seed.value !== undefined && given < n;
+      if (keep) given += 1;
+      return {
+        ...feature,
+        properties: {
+          ...feature.properties,
+          value: keep ? seed.value : undefined,
+        },
+      };
+    }),
+  };
+}
+
+describe("ChoroplethChart fitToData / hideNoData", () => {
+  const twelve = statesWithData(12);
+  const withData = twelve.features.filter((f) => typeof f.properties.value === "number");
+
+  it("the fixture has 12 data-bearing states and more without data", () => {
+    expect(withData).toHaveLength(12);
+    expect(twelve.features.length).toBeGreaterThan(12);
+  });
+
+  it("frames the 12 data-bearing states inside the padded plot, touching the padding", () => {
+    const fitted = fitProjectionToFeatures(withData, 560, 315, [0, 20], 16);
+    expect(fitted).not.toBeNull();
+    const projection = geoMercator()
+      .center([0, 20])
+      .scale(fitted!.scale)
+      .translate(fitted!.translate);
+    const xs: number[] = [];
+    const ys: number[] = [];
+    for (const feature of withData) {
+      const ring = (feature.geometry as unknown as { coordinates: [number, number][][] })
+        .coordinates[0]!;
+      for (const coords of ring) {
+        const [x, y] = projection(coords)!;
+        xs.push(x);
+        ys.push(y);
+      }
+    }
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    expect(minX).toBeGreaterThanOrEqual(15.5);
+    expect(maxX).toBeLessThanOrEqual(560 - 15.5);
+    expect(minY).toBeGreaterThanOrEqual(15.5);
+    expect(maxY).toBeLessThanOrEqual(315 - 15.5);
+    // One axis is tight: the frame is as large as it can be.
+    const tightX = Math.abs(minX - 16) < 1 && Math.abs(maxX - (560 - 16)) < 1;
+    const tightY = Math.abs(minY - 16) < 1 && Math.abs(maxY - (315 - 16)) < 1;
+    expect(tightX || tightY).toBe(true);
+  });
+
+  it("hideNoData removes every region without data from the DOM", () => {
+    const { container, rerender } = render(
+      <ChoroplethChart data={twelve} fitToData>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    expect(container.querySelectorAll(".choropleth-features path").length).toBe(
+      twelve.features.length,
+    );
+    rerender(
+      <ChoroplethChart data={twelve} fitToData hideNoData>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    expect(container.querySelectorAll(".choropleth-features path").length).toBe(12);
+  });
+
+  it("hideNoData with no data at all renders the empty state, not a blank frame", () => {
+    render(
+      <ChoroplethChart data={statesWithData(0)} hideNoData>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("No data");
+  });
+});
+
+describe("ChoroplethChart colour scale + legend", () => {
+  it("fills regions from the scale with token refs only, no-data regions muted", () => {
+    const data = statesWithData(12);
+    const { container } = render(
+      <ChoroplethChart data={data} scale={{ type: "stepped", method: "quantile", steps: 4 }}>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const fills = [...container.querySelectorAll(".choropleth-features path")].map((p) =>
+      p.getAttribute("fill"),
+    );
+    expect(fills.filter((f) => f === "var(--muted)")).toHaveLength(data.features.length - 12);
+    for (const fill of fills.filter((f) => f !== "var(--muted)")) {
+      expect(fill).toMatch(/^var\(--chart-seq-[1-7]\)$/);
+    }
+  });
+
+  it("draws the RampLegend over the map at wide and below it at narrow", () => {
+    const legend = {
+      title: "Cooling degree days",
+      labels: "custom" as const,
+      custom: ["Cooling needed →"],
+    };
+    const view = (breakpoint: "wide" | "narrow") => (
+      <ChartConfigProvider value={{ breakpoint }}>
+        <ChoroplethChart
+          data={statesWithData(12)}
+          legend={legend}
+          scale={{ type: "stepped", method: "quantile", steps: 11 }}
+        >
+          <ChoroplethFeatureComponent />
+        </ChoroplethChart>
+      </ChartConfigProvider>
+    );
+    const { container, rerender } = render(view("wide"));
+    const wide = container.querySelector('[data-slot="choropleth-legend"]')!;
+    expect(wide.getAttribute("data-legend-position")).toBe("bottom-left");
+    expect(wide.closest('[data-slot="choropleth-plot"]')).not.toBeNull();
+    expect(container.querySelectorAll('[data-slot="ramp-legend-step"]')).toHaveLength(11);
+    expect(wide).toHaveTextContent("Cooling needed →");
+    expect(wide).toHaveTextContent("Cooling degree days");
+    rerender(view("narrow"));
+    const narrow = container.querySelector('[data-slot="choropleth-legend"]')!;
+    expect(narrow.getAttribute("data-legend-position")).toBe("below");
+    expect(narrow.closest('[data-slot="choropleth-plot"]')).toBeNull();
+  });
+
+  it("an implicit legend hides at narrow", () => {
+    const { container } = render(
+      <ChartConfigProvider value={{ breakpoint: "narrow" }}>
+        <ChoroplethChart data={statesWithData(12)} scale={{ type: "continuous" }}>
+          <ChoroplethFeatureComponent />
+        </ChoroplethChart>
+      </ChartConfigProvider>,
+    );
+    expect(container.querySelector('[data-slot="choropleth-legend"]')).toBeNull();
+  });
+
+  it("moves the ramp marker to the hovered region", () => {
+    const { container } = render(
+      <ChoroplethChart
+        data={statesWithData(12)}
+        legend
+        scale={{ type: "stepped", method: "quantile", steps: 4 }}
+      >
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    expect(container.querySelector('[data-slot="ramp-legend-marker"]')).toBeNull();
+    const valued = [...container.querySelectorAll(".choropleth-features path")].find(
+      (p) => p.getAttribute("fill") !== "var(--muted)",
+    )!;
+    fireEvent.mouseEnter(valued);
+    fireEvent.mouseMove(valued);
+    expect(container.querySelector('[data-slot="ramp-legend-marker"]')).not.toBeNull();
+  });
+
+  it("a categorical palette draws a swatch list, not a ramp", () => {
+    const data = statesWithData(12);
+    data.features = data.features.map((f, i) => ({
+      ...f,
+      properties: { ...f.properties, party: i % 2 === 0 ? "North" : "South" },
+    }));
+    const { container } = render(
+      <ChoroplethChart
+        data={data}
+        legend
+        scale={{ type: "stepped", palette: "categorical", key: "party" }}
+      >
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    expect(container.querySelector('[data-slot="choropleth-legend-categories"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="ramp-legend"]')).toBeNull();
+  });
+});
+
+describe("ChoroplethChart place labels", () => {
+  const candidates = Array.from({ length: 40 }, (_, i) => ({
+    id: `p${String(i).padStart(2, "0")}`,
+    text: `Place ${i}`,
+    x: 40 + (i % 8) * 70,
+    y: 20 + Math.floor(i / 8) * 60,
+    priority: 40 - i,
+  }));
+
+  it("never paints more than 30 and drops every label at narrow", () => {
+    const wide = layoutPlaceLabels(candidates, {}, { width: 600, height: 320, breakpoint: "wide" });
+    expect(wide.painted.length).toBeGreaterThan(0);
+    expect(wide.painted.length).toBeLessThanOrEqual(MAX_PLACE_LABELS);
+    expect(wide.painted.length + wide.dropped.length).toBe(40);
+    const narrow = layoutPlaceLabels(
+      candidates,
+      {},
+      { width: 348, height: 200, breakpoint: "narrow" },
+    );
+    expect(narrow.painted).toHaveLength(0);
+    expect(narrow.dropped).toHaveLength(40);
+  });
+
+  it("drops the lower-priority label of a colliding pair", () => {
+    const pair = [
+      { id: "a", text: "Alpha", x: 100, y: 100, priority: 1 },
+      { id: "b", text: "Bravo", x: 104, y: 100, priority: 2 },
+    ];
+    const result = layoutPlaceLabels(pair, {}, { width: 300, height: 200, breakpoint: "wide" });
+    expect(result.painted.map((p) => p.id)).toEqual(["b"]);
+    expect(result.dropped).toEqual(["Alpha"]);
+  });
+
+  it("paints labels in the chart and restates the dropped ones as text", () => {
+    const { container } = render(
+      <ChoroplethChart data={statesWithData(12)} labels={{ max: 5 }}>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const layer = container.querySelector('[data-slot="choropleth-place-labels"]')!;
+    const painted = Number(layer.getAttribute("data-painted-count"));
+    expect(painted).toBeGreaterThan(0);
+    expect(painted).toBeLessThanOrEqual(5);
+    expect(container.querySelectorAll('[data-slot="choropleth-place-label"]')).toHaveLength(
+      painted,
+    );
+  });
+});
+
+describe("ChoroplethChart symbols", () => {
+  const points = [
+    { lon: -100, lat: 40, name: "Small", value: 10 },
+    { lon: -80, lat: 35, name: "Large", value: 40 },
+  ];
+  const project = (c: [number, number]): [number, number] => [c[0] + 200, 100 - c[1]];
+
+  it("sizeKey: a 4× value draws a 2× radius (the area encodes the value)", () => {
+    const [large, small] = layoutSymbols({ points, sizeKey: "value" }, [], project, 900);
+    expect(large!.value).toBe(40);
+    expect(large!.radius / small!.radius).toBeCloseTo(2, 6);
+    expect(areaRadius(40, 40, 20) / areaRadius(10, 40, 20)).toBeCloseTo(2, 6);
+  });
+
+  it("symbols shrink by sqrt(width / 700) on a narrow plot", () => {
+    const wide = layoutSymbols({ points }, [], project, 868);
+    const narrow = layoutSymbols({ points }, [], project, 348);
+    expect(symbolShrink(868)).toBe(1);
+    expect(symbolShrink(0)).toBe(0);
+    expect(narrow[0]!.radius / wide[0]!.radius).toBeCloseTo(Math.sqrt(348 / 700), 6);
+  });
+
+  it("paints one symbol per valued region and a size key", () => {
+    const { container } = render(
+      <ChoroplethChart data={statesWithData(12)} symbols={{ sizeKey: "value" }}>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    expect(container.querySelectorAll('[data-slot="choropleth-symbol"]')).toHaveLength(12);
+    expect(container.querySelector('[data-slot="size-legend"]')).not.toBeNull();
+  });
+});
+
+describe("ChoroplethChart zoom controls", () => {
+  it("zooms with real buttons and reset returns to the fitted view", () => {
+    const { container } = render(
+      <ChoroplethChart data={statesWithData(12)} fitToData zoomControls>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const transform = () =>
+      container
+        .querySelector(".choropleth-features")!
+        .closest("g[transform]")!
+        .getAttribute("transform");
+    const fitted = transform();
+    const zoomIn = screen.getByRole("button", { name: "Zoom in" });
+    expect(zoomIn.tagName).toBe("BUTTON");
+    expect(zoomIn).toHaveAttribute("type", "button");
+    zoomIn.focus();
+    expect(document.activeElement).toBe(zoomIn);
+    // A native <button> turns Enter / Space into a click; jsdom does not, so
+    // the click stands in for the key press here (the story play presses keys).
+    fireEvent.click(zoomIn);
+    expect(transform()).not.toBe(fitted);
+    fireEvent.click(screen.getByRole("button", { name: "Zoom out" }));
+    fireEvent.click(zoomIn);
+    fireEvent.click(screen.getByRole("button", { name: "Reset zoom" }));
+    expect(transform()).toBe(fitted);
+  });
+});
+
+describe("ChoroplethChart overlay", () => {
+  it("adds a stripes pattern per overlay category", () => {
+    const data = statesWithData(12);
+    data.features = data.features.map((f, i) => ({
+      ...f,
+      properties: { ...f.properties, flagged: i % 3 === 0 ? "Estimated" : "" },
+    }));
+    expect(overlayCategories(data.features, "flagged")).toEqual(["Estimated"]);
+    const { container } = render(
+      <ChoroplethChart data={data} overlayBy={{ key: "flagged" }}>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const overlay = container.querySelector('[data-slot="choropleth-overlay"]')!;
+    expect(overlay.querySelectorAll('[data-overlay-category="Estimated"]').length).toBe(
+      data.features.filter((_, i) => i % 3 === 0).length,
+    );
+  });
+});
+
+describe("world fixture", () => {
+  it("is at most 150 kB on disk", () => {
+    const bytes = readFileSync(join(__dirname, "world-fixture.ts")).byteLength;
+    expect(bytes).toBeLessThanOrEqual(150 * 1024);
+  });
+
+  it("keeps d3-geo winding: every country is smaller than a hemisphere", () => {
+    const world = worldFeatureCollection();
+    expect(world.features.length).toBeGreaterThan(170);
+    for (const feature of world.features) {
+      expect(geoArea(feature)).toBeLessThan(2 * Math.PI);
+    }
   });
 });

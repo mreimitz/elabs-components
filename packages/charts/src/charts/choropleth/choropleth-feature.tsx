@@ -8,12 +8,15 @@ import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "../series
 import { useEnterComplete } from "../use-enter-complete";
 import { useHighDecorationOf } from "../use-high-decoration";
 import { useMountProgress } from "../use-mount-progress";
+import type { ColorScale } from "@elabs-ai/components-ui";
 import {
   type ChoroplethFeature as ChoroplethFeatureType,
+  type ChoroplethOverlayConfig,
   defaultChoroplethColors,
   useChoroplethInteraction,
   useChoroplethStable,
 } from "./choropleth-context";
+import { featureValueAt } from "./fit-to-data";
 
 export interface ChoroplethFeatureProps {
   fill?: string;
@@ -60,10 +63,75 @@ interface FeatureRecord {
 /** No per-region decoration patterns (low decoration, or no palette fills). */
 const NO_PATTERN_INDICES: ReadonlyMap<string, number> = new Map();
 
-/** `properties.value`, when it is a finite number — the "does this region have data" test. */
-function getFeatureNumericValue(feature: ChoroplethFeatureType): number | undefined {
+/**
+ * The region's value — the "does this region have data" test. Without a colour
+ * scale: `properties.value` when it is a finite number (unchanged). With one
+ * (RM-124): the scale's `key`, numeric strings included, as `colorScaleFor` reads it.
+ */
+function getFeatureNumericValue(
+  feature: ChoroplethFeatureType,
+  valueKey?: string,
+): number | undefined {
+  if (valueKey !== undefined) return featureValueAt(feature, valueKey);
   const raw = feature.properties?.value;
   return typeof raw === "number" && Number.isFinite(raw) ? raw : undefined;
+}
+
+// Overlay — RM-124 ────────────────────────────────────────────────────────────
+
+const OVERLAY_BASE_ANGLE: Record<NonNullable<ChoroplethOverlayConfig["direction"]>, number> = {
+  up: -45,
+  down: 45,
+  horizontal: 0,
+  vertical: 90,
+};
+
+/** Each later category turns its stripes by these offsets, so categories read apart in greyscale. */
+const OVERLAY_ANGLE_STEPS = [0, 90, 45, -45];
+
+/** The overlay category a feature carries, or `null` (no overlay). */
+export function overlayCategoryOf(feature: ChoroplethFeatureType, key: string): string | null {
+  const raw = feature.properties?.[key];
+  if (raw === undefined || raw === null || raw === false || raw === "") return null;
+  return raw === true ? "true" : String(raw);
+}
+
+/** Every overlay category in first-seen order. */
+export function overlayCategories(
+  features: readonly ChoroplethFeatureType[],
+  key: string,
+): string[] {
+  const seen: string[] = [];
+  for (const feature of features) {
+    const category = overlayCategoryOf(feature, key);
+    if (category !== null && !seen.includes(category)) seen.push(category);
+  }
+  return seen;
+}
+
+/** The stripe angle (degrees) for the `index`-th overlay category. */
+export function overlayAngle(
+  direction: ChoroplethOverlayConfig["direction"],
+  index: number,
+): number {
+  const base = OVERLAY_BASE_ANGLE[direction ?? "up"];
+  const step = OVERLAY_ANGLE_STEPS[index % OVERLAY_ANGLE_STEPS.length] ?? 0;
+  return base + step;
+}
+
+/** One stripes `<pattern>`: foreground-ink lines on a transparent ground. */
+export function OverlayStripesPattern({ id, angle }: { id: string; angle: number }) {
+  return (
+    <pattern
+      height={6}
+      id={id}
+      patternTransform={`rotate(${angle})`}
+      patternUnits="userSpaceOnUse"
+      width={6}
+    >
+      <line stroke="var(--chart-foreground)" strokeWidth={1.5} x1={0} x2={0} y1={0} y2={6} />
+    </pattern>
+  );
 }
 
 /** A human-readable name for a feature, for the `labelTop` inline label. */
@@ -86,12 +154,17 @@ function resolveFeatureFill(
   getFeaturePattern: ChoroplethFeatureProps["getFeaturePattern"],
   noDataFill: ChoroplethFeatureProps["noDataFill"],
   noDataHatchFillUrl: string,
+  colorScale?: ColorScale | null,
+  valueKey?: string,
 ): string {
   const patternId = getFeaturePattern?.(feature, index);
   if (patternId) {
     return `url(#${patternId})`;
   }
-  if (noDataFill && getFeatureNumericValue(feature) === undefined) {
+  if (
+    noDataFill &&
+    getFeatureNumericValue(feature, colorScale ? valueKey : undefined) === undefined
+  ) {
     return noDataFill === "hatch" ? noDataHatchFillUrl : "var(--muted)";
   }
   if (fill) {
@@ -99,6 +172,10 @@ function resolveFeatureFill(
   }
   if (getFeatureColor) {
     return getFeatureColor(feature, index);
+  }
+  // Colour scale — RM-124: a region without data is `--muted`, never a ramp step.
+  if (colorScale) {
+    return colorScale.colorOf(feature.properties?.[valueKey ?? "value"] as never) ?? "var(--muted)";
   }
   return defaultChoroplethColors[index % defaultChoroplethColors.length] ?? "var(--chart-1)";
 }
@@ -332,6 +409,9 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
     width,
     height,
     containerRef,
+    colorScale,
+    valueKey,
+    overlay,
   } = useChoroplethStable();
   const { hoveredFeatureIndex, setHoveredFeatureIndex, focusedFeatureIndex, setTooltipData } =
     useChoroplethInteraction();
@@ -388,6 +468,8 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
           getFeaturePattern,
           noDataFill,
           noDataHatchFillUrl,
+          colorScale,
+          valueKey,
         ),
         feature,
         centroid: featureCentroids[index] ?? null,
@@ -404,7 +486,41 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
     noDataFill,
     noDataHatchFillUrl,
     pathGenerator,
+    colorScale,
+    valueKey,
   ]);
+
+  // Overlay — RM-124: one stripes pattern per category, painted over the fill.
+  const overlayLayer = useMemo(() => {
+    if (!overlay) return null;
+    const categories = overlayCategories(
+      baseRecords.map((record) => record.feature),
+      overlay.key,
+    );
+    if (categories.length === 0) return null;
+    const idOf = (index: number) => `choropleth-overlay-${patternScope}-${index}`;
+    return {
+      defs: categories.map((category, index) => (
+        <OverlayStripesPattern
+          angle={overlayAngle(overlay.direction, index)}
+          id={idOf(index)}
+          key={`overlay-${category}`}
+        />
+      )),
+      paths: baseRecords.flatMap((record) => {
+        const category = overlayCategoryOf(record.feature, overlay.key);
+        if (category === null) return [];
+        return [
+          <path
+            d={record.path}
+            data-overlay-category={category}
+            fill={`url(#${idOf(categories.indexOf(category))})`}
+            key={`overlay-${record.index}`}
+          />,
+        ];
+      }),
+    };
+  }, [overlay, baseRecords, patternScope]);
 
   const patternIndices = useMemo(
     () => (high ? indexPaletteFills(baseRecords.map((record) => record.fill)) : NO_PATTERN_INDICES),
@@ -479,9 +595,10 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
 
   return (
     <g className="choropleth-features">
-      {patterns || noDataFill === "hatch" || patternIndices.size > 0 ? (
+      {patterns || noDataFill === "hatch" || patternIndices.size > 0 || overlayLayer ? (
         <defs>
           {patterns}
+          {overlayLayer?.defs}
           {Array.from(patternIndices, ([color, patternIndex]) =>
             makeSeriesPattern(patternIndex, seriesPatternId(patternIndex, patternScope), color),
           )}
@@ -508,6 +625,11 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
       ) : (
         <EnterFeatureLayer {...layerProps} revealEpoch={revealEpoch} />
       )}
+      {overlayLayer ? (
+        <g data-slot="choropleth-overlay" pointerEvents="none">
+          {overlayLayer.paths}
+        </g>
+      ) : null}
       {topLabels.length > 0 ? (
         <g aria-hidden="true">
           {topLabels.map((label) => (
