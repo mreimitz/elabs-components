@@ -844,6 +844,23 @@ describe("AutoChart", () => {
           series: ["change"],
         },
       ],
+      // Dual-axis — RM-121
+      [
+        "dual-axis",
+        {
+          type: "dual-axis",
+          data: [
+            { month: "2024-01-01", orders: 182, conversion: 2.4 },
+            { month: "2024-02-01", orders: 236, conversion: 3.1 },
+          ],
+          x: "month",
+          series: [
+            { key: "orders", mark: "column" },
+            { key: "conversion", axis: "right" },
+          ],
+          axes: { y2: { align: "ticks" } },
+        },
+      ],
     ];
 
     for (const [name, spec] of specs) {
@@ -1553,5 +1570,57 @@ describe("AutoChart waterfall groupBy → subtotalBy (RM-122)", () => {
     expect(container.querySelectorAll('[data-slot="waterfall-chart-step"]')).toHaveLength(
       quarters.length,
     );
+  });
+});
+
+// Dual-axis — RM-121
+describe('AutoChart type "dual-axis" validation (RM-121)', () => {
+  const data = [
+    { month: "2024-01-01", orders: 182, conversion: 2.4 },
+    { month: "2024-02-01", orders: 236, conversion: 3.1 },
+  ];
+
+  it("renders ChartFallback kind=unsupported when no series is a line", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "dual-axis",
+          data,
+          x: "month",
+          series: [
+            { key: "orders", mark: "column" },
+            { key: "conversion", mark: "area", axis: "right" },
+          ],
+        }}
+      />,
+    );
+    expect(container.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+  });
+
+  it("renders ChartFallback kind=unsupported for columns on the right axis", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "dual-axis",
+          data,
+          x: "month",
+          series: [{ key: "orders", mark: "column", axis: "right" }, { key: "conversion" }],
+        }}
+      />,
+    );
+    expect(container.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+  });
+
+  it("is never inferred", () => {
+    expect(
+      inferChartType({
+        data,
+        x: "month",
+        series: [
+          { key: "orders", mark: "column" },
+          { key: "conversion", axis: "right" },
+        ],
+      }),
+    ).not.toBe("dual-axis");
   });
 });

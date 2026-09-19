@@ -406,7 +406,7 @@ export type DualAxisAlign = "independent" | "ticks";
  */
 export type DualAxisZero = "both" | "auto";
 
-/** `ComposedChart yAxes` / `ChartSpec yAxes` (RM-121). */
+/** `ComposedChart yAxes` / `ChartSpec axes.y2` (RM-121). */
 export interface DualAxisOptions {
   /** Default `"ticks"`. */
   align?: DualAxisAlign;

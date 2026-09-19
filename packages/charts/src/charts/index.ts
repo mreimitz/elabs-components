@@ -943,3 +943,7 @@ export {
   useChartAnnotationsA11y,
   withAnnotationDescription,
 } from "./annotations";
+
+// Dual-axis — RM-121
+export { type DualAxisAlign, type DualAxisOptions, type DualAxisZero } from "./y-axis-scales";
+export { type ChartLegendSplitGroup } from "./chart-legend";

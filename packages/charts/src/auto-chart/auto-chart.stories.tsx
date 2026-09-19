@@ -811,3 +811,80 @@ export const LineFacetedLegend: Story = {
     await expect(legendBox.bottom).toBeLessThanOrEqual(gridBox.top);
   },
 };
+
+// Dual-axis — RM-121
+const dualAxisSpecData = [
+  { month: "2024-01-01", orders: 182, conversion: 2.4 },
+  { month: "2024-02-01", orders: 236, conversion: 3.1 },
+  { month: "2024-03-01", orders: 311, conversion: 3.6 },
+  { month: "2024-04-01", orders: 287, conversion: 4.2 },
+  { month: "2024-05-01", orders: 402, conversion: 5.3 },
+  { month: "2024-06-01", orders: 468, conversion: 6.1 },
+];
+
+/** Tick label rows (px, from each tick's own `top`) of the value axis on `side`. */
+function dualAxisTickRows(root: HTMLElement, side: "left" | "right"): number[] {
+  const axis = Array.from(root.querySelectorAll<HTMLElement>('[data-slot="y-axis"]')).find((el) => {
+    const column = el.firstElementChild as HTMLElement | null;
+    return side === "left" ? column?.style.left === "0px" : column?.style.right === "0px";
+  });
+  return Array.from(axis?.querySelectorAll<HTMLElement>(":scope > div > div") ?? []).map((tick) =>
+    Math.round(Number.parseFloat(tick.style.top)),
+  );
+}
+
+/**
+ * `type: "dual-axis"`: order counts as columns on the left scale, the
+ * conversion rate as a line on the right. `axes.y2.align: "ticks"` puts both
+ * scales on the same gridlines; the legend splits by side and the tooltip is
+ * a table with a header per axis.
+ */
+export const DualAxisSpec: Story = {
+  args: {
+    spec: {
+      type: "dual-axis",
+      data: dualAxisSpecData,
+      x: "month",
+      series: [
+        { key: "orders", label: "Orders", mark: "column" },
+        { key: "conversion", label: "Conversion", axis: "right" },
+      ],
+      axes: { y2: { align: "ticks", title: "Conversion rate, %" } },
+      title: "Orders and conversion rate",
+      description:
+        "Monthly orders (left scale) and conversion rate in percent (right scale), January to June 2024.",
+    } satisfies ChartSpec,
+    plotHeight: 280,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const left = dualAxisTickRows(canvasElement, "left");
+      expect(left.length).toBeGreaterThanOrEqual(3);
+      expect(dualAxisTickRows(canvasElement, "right")).toEqual(left);
+    });
+    const rows = canvasElement.querySelectorAll('[data-slot="chart-legend-split-row"]');
+    await expect(rows).toHaveLength(2);
+    await expect(rows[0]).toHaveTextContent("Left scale");
+    await expect(rows[1]).toHaveTextContent("Right scale");
+  },
+};
+
+/** A dual-axis spec with no line series cannot be drawn honestly: `ChartFallback` says so. */
+export const DualAxisSpecWithoutLine: Story = {
+  args: {
+    spec: {
+      type: "dual-axis",
+      data: dualAxisSpecData,
+      x: "month",
+      series: [
+        { key: "orders", label: "Orders", mark: "column" },
+        { key: "conversion", label: "Conversion", mark: "area", axis: "right" },
+      ],
+      title: "Orders and conversion rate",
+    } satisfies ChartSpec,
+    plotHeight: 280,
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+  },
+};

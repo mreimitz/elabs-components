@@ -23,6 +23,7 @@ import type { ChartColorBy } from "../charts/chart-context";
 import type { DumbbellSortBy } from "../charts/dumbbell-layout";
 import type { ChartTooltipVariant } from "../charts/tooltip/chart-tooltip";
 import type { ChartPlotHeight } from "../charts/chart-breakpoint"; // Facet — RM-120
+import type { DualAxisOptions } from "../charts/y-axis-scales"; // Dual-axis — RM-121
 import type { FacetSort } from "../multiples/facet-sort"; // Facet — RM-120
 import type { WaterfallDataFormat, WaterfallSort } from "../charts/waterfall-steps"; // RM-122
 import type { ContainerLegendConfig } from "../charts/legend/use-container-legend";
@@ -68,7 +69,9 @@ export type ChartType =
   | "strip"
   | "bump"
   | "stream"
-  | "diverging-bar";
+  | "diverging-bar"
+  // Dual-axis — RM-121: explicit only, never inferred.
+  | "dual-axis";
 
 /**
  * A declared hint about what the rows MEAN, for the shapes structure alone
@@ -129,6 +132,14 @@ export interface ChartSeriesSpec {
    * palette is used instead — keeps all charts token-driven and theme-safe.
    */
   color?: string;
+  // Dual-axis — RM-121
+  /** `type: "dual-axis"` only: the value axis this series reads against. Default `"left"`. */
+  axis?: "left" | "right";
+  /**
+   * `type: "dual-axis"` only: how this series is drawn. Default `"line"`. At
+   * least one series must be a line, and columns sit on the left axis.
+   */
+  mark?: "line" | "area" | "column";
 }
 
 /**
@@ -277,7 +288,7 @@ export interface ChartSpec {
 
   // Axes — RM-108
   /** Per-axis range, ticks, scale, title, grid and position (RM-108) — see {@link AxisSpec}. */
-  axes?: { x?: AxisSpec; y?: AxisSpec; y2?: AxisSpec };
+  axes?: { x?: AxisSpec; y?: AxisSpec; y2?: AxisSpec & DualAxisOptions };
 
   /**
    * How to format an x-axis Date tick (RM-109) — one rung of the
@@ -487,8 +498,10 @@ export interface ChartLabelsSpec {
  * the `XAxis`/`YAxis`/`Grid` props. Honoured by the line, area, bar,
  * scatter, candlestick and composed families; ignored elsewhere.
  *
- * `y2` is the right-hand value axis of a dual-axis chart. No spec series can
- * target it yet, so `AutoChart` ignores it today.
+ * `y2` is the right-hand value axis of a `type: "dual-axis"` spec (RM-121);
+ * every other type ignores it. On `y2` only, `align` / `proportional` / `zero`
+ * (`DualAxisOptions`, `ComposedChart yAxes`) say how the right axis relates
+ * to the left one: shared tick rows, one growth factor, the zero rule.
  */
 export interface AxisSpec {
   /**
