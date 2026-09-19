@@ -10,14 +10,16 @@
         "value": "light",
         "label": "Light",
         "primary": "oklch(0.875 0.148 116.5)",
-        "background": "oklch(0.985 0.002 257)"
+        "background": "oklch(0.985 0.002 257)",
+        "chart1": "oklch(0.875 0.148 116.5)"
       },
       {
         "mode": "dark",
         "value": "dark",
         "label": "Dark",
         "primary": "oklch(0.875 0.148 116.5)",
-        "background": "oklch(0.21 0.012 257)"
+        "background": "oklch(0.21 0.012 257)",
+        "chart1": "oklch(0.875 0.148 116.5)"
       }
     ]
   },
@@ -32,14 +34,16 @@
         "value": "claude-dark",
         "label": "Claude Dark",
         "primary": "oklch(0.68 0.118 39.1)",
-        "background": "oklch(0.205 0.004 84.6)"
+        "background": "oklch(0.205 0.004 84.6)",
+        "chart1": "oklch(0.68 0.118 39.1)"
       },
       {
         "mode": "light",
         "value": "claude-light",
         "label": "Claude Light",
         "primary": "oklch(0.57 0.118 38.8)",
-        "background": "oklch(0.982 0.005 95.1)"
+        "background": "oklch(0.982 0.005 95.1)",
+        "chart1": "oklch(0.658 0.113 39.1)"
       }
     ]
   },
@@ -54,14 +58,16 @@
         "value": "clickhouse-dark",
         "label": "ClickHouse Dark",
         "primary": "oklch(0.969 0.17 111)",
-        "background": "oklch(0.238 0.006 106.8)"
+        "background": "oklch(0.238 0.006 106.8)",
+        "chart1": "oklch(0.613 0.181 261.9)"
       },
       {
         "mode": "light",
         "value": "clickhouse-light",
         "label": "ClickHouse Light",
         "primary": "oklch(0.305 0.008 308.2)",
-        "background": "oklch(1 0 0)"
+        "background": "oklch(1 0 0)",
+        "chart1": "oklch(0.613 0.181 261.9)"
       }
     ]
   },
@@ -76,14 +82,16 @@
         "value": "graphite-dark",
         "label": "Graphite Dark",
         "primary": "oklch(0.74 0.012 260)",
-        "background": "oklch(0.2 0.006 260)"
+        "background": "oklch(0.2 0.006 260)",
+        "chart1": "oklch(0.8 0.03 260)"
       },
       {
         "mode": "light",
         "value": "graphite-light",
         "label": "Graphite Light",
         "primary": "oklch(0.55 0.01 260)",
-        "background": "oklch(0.985 0.002 260)"
+        "background": "oklch(0.985 0.002 260)",
+        "chart1": "oklch(0.45 0.03 260)"
       }
     ]
   },
@@ -98,14 +106,16 @@
         "value": "heap-dark",
         "label": "Heap Dark",
         "primary": "oklch(0.783 0.167 159.3)",
-        "background": "oklch(0.18 0.05 280)"
+        "background": "oklch(0.18 0.05 280)",
+        "chart1": "oklch(0.783 0.167 159.3)"
       },
       {
         "mode": "light",
         "value": "heap-light",
         "label": "Heap Light",
         "primary": "oklch(0.783 0.167 159.3)",
-        "background": "oklch(0.985 0.004 286)"
+        "background": "oklch(0.985 0.004 286)",
+        "chart1": "oklch(0.783 0.167 159.3)"
       }
     ]
   },
@@ -120,14 +130,16 @@
         "value": "ocean-dark",
         "label": "Ocean Dark",
         "primary": "oklch(0.875 0.148 235)",
-        "background": "oklch(0.21 0.012 235)"
+        "background": "oklch(0.21 0.012 235)",
+        "chart1": "oklch(0.875 0.148 235)"
       },
       {
         "mode": "light",
         "value": "ocean-light",
         "label": "Ocean Light",
         "primary": "oklch(0.875 0.148 235)",
-        "background": "oklch(0.985 0.002 235)"
+        "background": "oklch(0.985 0.002 235)",
+        "chart1": "oklch(0.875 0.148 235)"
       }
     ]
   },
@@ -142,14 +154,16 @@
         "value": "qlik-dark",
         "label": "Qlik Dark",
         "primary": "oklch(0.736 0.158 151)",
-        "background": "oklch(0.269 0 0)"
+        "background": "oklch(0.269 0 0)",
+        "chart1": "oklch(0.772 0.131 191)"
       },
       {
         "mode": "light",
         "value": "qlik-light",
         "label": "Qlik Bright",
         "primary": "oklch(0.545 0.149 150.2)",
-        "background": "oklch(0.985 0 0)"
+        "background": "oklch(0.985 0 0)",
+        "chart1": "oklch(0.471 0.089 224.4)"
       }
     ]
   },
@@ -164,14 +178,16 @@
         "value": "salesforce-dark",
         "label": "Salesforce Dark",
         "primary": "oklch(0.571 0.235 260.4)",
-        "background": "oklch(0.209 0 0)"
+        "background": "oklch(0.209 0 0)",
+        "chart1": "oklch(0.666 0.176 258.3)"
       },
       {
         "mode": "light",
         "value": "salesforce-light",
         "label": "Salesforce Light",
         "primary": "oklch(0.563 0.167 251.9)",
-        "background": "oklch(0.964 0 0)"
+        "background": "oklch(0.964 0 0)",
+        "chart1": "oklch(0.563 0.167 251.9)"
       }
     ]
   },
@@ -186,14 +202,16 @@
         "value": "snowflake-dark",
         "label": "Snowflake Dark",
         "primary": "oklch(0.614 0.187 258.9)",
-        "background": "oklch(0.209 0.01 268.2)"
+        "background": "oklch(0.209 0.01 268.2)",
+        "chart1": "oklch(0.684 0.156 258.2)"
       },
       {
         "mode": "light",
         "value": "snowflake-light",
         "label": "Snowflake Light",
         "primary": "oklch(0.558 0.202 259.5)",
-        "background": "oklch(1 0 0)"
+        "background": "oklch(1 0 0)",
+        "chart1": "oklch(0.558 0.202 259.5)"
       }
     ]
   }

@@ -22,6 +22,12 @@ const FULL_SET = new Set(["default", "qlik"]);
 const SWEPT = (slug: string): RegionName[] =>
   FULL_SET.has(slug) ? ["hero", "tour", "agents", "tokens"] : ["hero", "tour"];
 
+// The site nav is sticky: a region taller than the 900 px viewport (`#tokens` is ~1,600 px)
+// is shot with the nav painted over its middle, hiding the content beneath it and failing on
+// any nav change. Hide it (visibility only, no layout shift) for the shot alone — the nav is
+// not what these regions baseline, and no value assertion above reads it.
+const REGION_SHOT_STYLE = '[data-slot="site-nav"] { visibility: hidden !important; }';
+
 for (const family of THEME_FAMILIES) {
   for (const { mode, value, background } of family.modes) {
     test(`${family.slug} ${mode}`, async ({ page }, testInfo) => {
@@ -44,10 +50,12 @@ for (const family of THEME_FAMILIES) {
         await target.scrollIntoViewIfNeeded();
         await page.waitForLoadState("networkidle");
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
-        // Ruling 38: the GatesBand rule grid inside #tokens is generated text already asserted
-        // by the gates test, so it is masked out of the pixel comparison (not the DOM) here.
-        const mask = region === "tokens" ? [target.locator('[data-slot="gates-band"]')] : undefined;
-        await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo, { mask });
+        // Ruling 46 lifts ruling 38's GatesBand mask: the band now renders collapsed (one
+        // category label + rule count per group, the rules behind closed <details>), so a new
+        // check rule changes a digit or two, well inside `maxDiffPixelRatio`, not the layout.
+        await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo, {
+          style: REGION_SHOT_STYLE,
+        });
       }
     });
   }
