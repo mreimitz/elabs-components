@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T17:36:11.732Z",
+  "generatedAt": "2026-09-19T21:07:30.345Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -37487,6 +37487,46 @@
           "module": "packages/ui/src/components/color-picker/color-picker.tsx"
         },
         {
+          "name": "ColorScale",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ColorScaleCategory",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ColorScaleDomain",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ColorScaleMethod",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ColorScalePalette",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ColorScaleSpec",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ColorScaleStep",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ColorScaleStop",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ColorScaleType",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ColorScaleValue",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
           "name": "ColorToken",
           "module": "packages/ui/src/components/color-picker/color-picker.tsx"
         },
@@ -37533,6 +37573,14 @@
         {
           "name": "ContextRailSection",
           "module": "packages/ui/src/components/context-rail/context-rail.tsx"
+        },
+        {
+          "name": "ContinuousColorScaleMethod",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "ContinuousColorScaleSpec",
+          "module": "packages/ui/src/lib/color-scale.ts"
         },
         {
           "name": "CopyableValueProps",
@@ -38307,6 +38355,14 @@
           "module": "packages/ui/src/components/status-badge/status-badge.tsx"
         },
         {
+          "name": "SteppedColorScaleMethod",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
+          "name": "SteppedColorScaleSpec",
+          "module": "packages/ui/src/lib/color-scale.ts"
+        },
+        {
           "name": "StreamdownTranslationKey",
           "module": "packages/ui/src/lib/streamdown-translations.ts"
         },
@@ -38623,6 +38679,10 @@
         {
           "name": "collectValidatableFields",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "colorScaleFor",
+          "module": "packages/ui/src/lib/color-scale.ts"
         },
         {
           "name": "countItems",
