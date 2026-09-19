@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T01:02:41.441Z",
+  "generatedAt": "2026-09-19T04:06:38.976Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13757,6 +13757,11 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "InlineChip",
+          "kind": "value",
+          "module": "packages/charts/src/chart-frame/inline-chip.tsx"
+        },
+        {
           "name": "KDE_GRID_POINTS",
           "kind": "value",
           "module": "packages/charts/src/charts/distribution/index.ts"
@@ -14809,6 +14814,26 @@
           "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
         {
+          "name": "ChartExportRequest",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
+          "name": "ChartExportScale",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
+          "name": "ChartFooterLabels",
+          "module": "packages/charts/src/chart-frame/chart-footer.tsx"
+        },
+        {
+          "name": "ChartFrameAction",
+          "module": "packages/charts/src/chart-frame/chart-footer.tsx"
+        },
+        {
+          "name": "ChartFrameByline",
+          "module": "packages/charts/src/chart-frame/chart-frame-context.tsx"
+        },
+        {
           "name": "ChartFrameColumn",
           "module": "packages/charts/src/chart-frame/chart-frame-context.tsx"
         },
@@ -14819,6 +14844,10 @@
         {
           "name": "ChartFrameProps",
           "module": "packages/charts/src/chart-frame/chart-frame.tsx"
+        },
+        {
+          "name": "ChartFrameSourceLink",
+          "module": "packages/charts/src/chart-frame/chart-frame-context.tsx"
         },
         {
           "name": "ChartHoverCategory",
@@ -15383,6 +15412,10 @@
         {
           "name": "IndicatorWidth",
           "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "InlineChipProps",
+          "module": "packages/charts/src/chart-frame/inline-chip.tsx"
         },
         {
           "name": "KdeOptions",
@@ -18520,7 +18553,43 @@
               "name": "description",
               "optional": true,
               "type": "ReactNode",
-              "description": "Prose that IS the legend — what a reader needs to read the chart correctly (series, units, scope), written as a sentence, not a caption."
+              "description": "Prose that IS the legend — what a reader needs to read the chart correctly (series, units, scope), written as a sentence, not a caption. Bold the finding with `<strong>`; colour-key a series in the prose with `<InlineChip series=\"ram\">short-term RAM</InlineChip>` — the chip takes the series' colour from the chart inside this frame, and its accessible name is the series name (RM-117)."
+            },
+            {
+              "name": "notes",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Notes under the chart (RM-117): method, definitions, caveats. Italic, above the footer; part of an exported picture."
+            },
+            {
+              "name": "byline",
+              "optional": true,
+              "type": "ChartFrameByline",
+              "description": "\"Chart: Author\" at the start of the footer (RM-117). `kind` picks the word."
+            },
+            {
+              "name": "altText",
+              "optional": true,
+              "type": "string",
+              "description": "Text alternative for the whole picture (RM-117) — Datawrapper's \"alt text\". Becomes the chart figure's `aria-describedby` content when the chart has no description of its own; with no chart figure, the frame body becomes the figure it describes."
+            },
+            {
+              "name": "actions",
+              "optional": true,
+              "type": "ChartFrameAction[]",
+              "description": "Footer links (RM-117), always drawn in Datawrapper's order: `\"data\"` (Get the data → CSV), your own nodes (an Embed link), `\"svg\"`, `\"png\"` (Download image). Built-ins degrade like the toolbar: no data → no `\"data\"`, no `<svg>` → no image links. Never part of an exported picture."
+            },
+            {
+              "name": "exportOptions",
+              "optional": true,
+              "type": "ChartExportRequest",
+              "description": "Defaults for every export this frame starts — toolbar, menu and footer (RM-117)."
+            },
+            {
+              "name": "footerLabels",
+              "optional": true,
+              "type": "Partial<ChartFooterLabels>",
+              "description": "Words of the footer row (RM-117) — pass your own to localise them."
             },
             {
               "name": "data",
@@ -18579,14 +18648,14 @@
             {
               "name": "onExport",
               "optional": true,
-              "type": "(kind: ChartExportKind, blob: Blob, filename: string) => void",
+              "type": "ChartFrameExportHandler",
               "description": "Routes an SVG/PNG export to the caller — with the generated `Blob` and filename — instead of triggering a local browser download. Mirrors `onDownload`, for apps that want to route an export through their own storage. When absent, the built-in handler downloads the file directly."
             },
             {
               "name": "source",
               "optional": true,
-              "type": "ReactNode",
-              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal, under the chart in both — never appended to the summary statistics; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent. A string that overflows the row stays fully recoverable — a native `title` and, once it measurably overflows, a keyboard-reachable tooltip (#184). A non-string node keeps only the CSS caps with no overflow recovery — keep it short, or accept it may be visually truncated with no fallback."
+              "type": "ReactNode | ChartFrameSourceLink",
+              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal, under the chart in both — never appended to the summary statistics; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent. A string that overflows the row stays fully recoverable — a native `title` and, once it measurably overflows, a keyboard-reachable tooltip (#184). A non-string node keeps only the CSS caps with no overflow recovery — keep it short, or accept it may be visually truncated with no fallback. RM-117: `{ name, href }` names and links the source. With that form, a `byline` or `actions`, the source joins the footer row as \"Source: Name\" instead of the all-caps row."
             },
             {
               "name": "chrome",
@@ -20142,6 +20211,31 @@
               "optional": true,
               "type": "boolean",
               "description": "Match loop timing to the loading line pulse (cycle + inter-loop pause)."
+            }
+          ]
+        },
+        "InlineChip": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": [
+            {
+              "name": "series",
+              "optional": false,
+              "type": "string",
+              "description": "The series key (`dataKey`) whose colour the chip takes."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "The series' display name, the chip's accessible name. Wins over the name the chart publishes; without either the chip is named by `series`."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The words the chip introduces — usually the series' name in prose."
             }
           ]
         },

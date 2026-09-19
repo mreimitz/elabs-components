@@ -190,6 +190,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: emptyValue="blank" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.
   - avoid: Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.
   - avoid: Leaning on the darkest ramp step to say "this is the peak" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign.
+- InlineChip
 - KDE_GRID_POINTS
 - KDE_TAPER
 - Leader — The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.
