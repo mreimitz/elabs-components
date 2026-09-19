@@ -2925,3 +2925,301 @@ describe("DataTable — #13 row drag-reorder", () => {
     expect(describedByText).toMatch(/To pick up|space bar/i);
   });
 });
+
+// ─── Presentation layer: visuals, format, showAt, cards, sticky rows, ranks ──
+
+/** Every element measures `width` wide, so the table breakpoint resolves from it. */
+function mockTableWidth(width: number) {
+  return vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+    () =>
+      ({
+        width,
+        height: 40,
+        top: 0,
+        left: 0,
+        right: width,
+        bottom: 40,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect,
+  );
+}
+
+interface CityRow {
+  city: string;
+  rides: number;
+  change: number;
+  q1: number;
+  q2: number;
+  q3: number;
+  region: string;
+}
+
+const cities: CityRow[] = [
+  { city: "Oslo", rides: 20, change: -5, q1: 1, q2: 4, q3: 2, region: "North" },
+  { city: "Lyon", rides: 40, change: 20, q1: 8, q2: 3, q3: 5, region: "South" },
+  { city: "Graz", rides: 9, change: 5, q1: 2, q2: 2, q3: 8, region: "South" },
+  { city: "Average", rides: 23, change: 6.7, q1: 3.7, q2: 3, q3: 5, region: "All" },
+];
+
+describe("DataTable — presentation layer", () => {
+  it("no presentation prop: the default DOM is unchanged (table, no rank, no layout attr)", () => {
+    const { container } = render(<DataTable columns={columns} data={data} />);
+    expect(container.querySelector("table")).not.toBeNull();
+    expect(container.querySelector("dl")).toBeNull();
+    expect(container.querySelector("[data-layout]")).toBeNull();
+    expect(container.querySelector('[data-slot="data-table-rank-cell"]')).toBeNull();
+  });
+
+  it('layout="auto": <dl> cards under 450 px, a <table> above', () => {
+    const narrow = mockTableWidth(380);
+    const { container, unmount } = render(
+      <DataTable columns={columns} data={data} layout="auto" aria-label="Rows" />,
+    );
+    expect(container.querySelector('[data-layout="cards"]')).not.toBeNull();
+    expect(container.querySelector("table")).toBeNull();
+    expect(container.querySelectorAll('[data-slot="data-table-card"] dl')).toHaveLength(3);
+    expect(screen.getAllByRole("term").map((t) => t.textContent)).toContain("Name");
+    unmount();
+    narrow.mockRestore();
+    const wide = mockTableWidth(900);
+    const again = render(<DataTable columns={columns} data={data} layout="auto" />);
+    expect(again.container.querySelector('[data-layout="table"]')).not.toBeNull();
+    expect(again.container.querySelector("table")).not.toBeNull();
+    expect(again.container.querySelector("dl")).toBeNull();
+    wide.mockRestore();
+  });
+
+  it("cards keep sorting: the sort bar reorders the cards", () => {
+    const { container } = render(<DataTable columns={columns} data={data} layout="cards" />);
+    const firstName = () =>
+      container.querySelector('[data-slot="data-table-card"] dd')?.textContent ?? "";
+    expect(firstName()).toBe("Alpha");
+    // TanStack sorts a numeric column descending first.
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Value, not sorted" }));
+    expect(firstName()).toBe("Alpha");
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Value, descending" }));
+    expect(firstName()).toBe("Beta");
+  });
+
+  it("showAt { base: true, narrow: false } hides the column under 450 px only", () => {
+    const cols: ColumnDef<Row>[] = [
+      columns[0]!,
+      { ...columns[1]!, meta: { showAt: { base: true, narrow: false } } },
+    ];
+    const narrow = mockTableWidth(380);
+    const { unmount } = render(<DataTable columns={cols} data={data} />);
+    expect(screen.queryByRole("columnheader", { name: /Value/ })).toBeNull();
+    expect(screen.getAllByRole("columnheader")).toHaveLength(1);
+    unmount();
+    narrow.mockRestore();
+    const wide = mockTableWidth(900);
+    render(<DataTable columns={cols} data={data} />);
+    expect(screen.getByRole("columnheader", { name: /Value/ })).toBeInTheDocument();
+    wide.mockRestore();
+  });
+
+  it("stickyRows keeps the average row on every page and after sorting", () => {
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City" },
+      { accessorKey: "rides", header: "Rides", enableSorting: true },
+    ];
+    const { container } = render(
+      <DataTable
+        columns={cols}
+        data={cities}
+        enablePagination
+        pageSize={2}
+        stickyRows={(row) => (row.city === "Average" ? "bottom" : undefined)}
+      />,
+    );
+    const names = () =>
+      [...container.querySelectorAll("tbody tr")].map(
+        (tr) => tr.querySelector("td")?.textContent ?? "",
+      );
+    expect(names()).toEqual(["Oslo", "Lyon", "Average"]);
+    fireEvent.click(screen.getByRole("button", { name: /Next/i }));
+    expect(names()).toEqual(["Graz", "Average"]);
+    fireEvent.click(screen.getByRole("button", { name: /Previous/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Rides, not sorted" }));
+    // Descending (numeric columns sort descending first): Lyon 40, Oslo 20 on
+    // page one — the average (23) is not sorted into them, it stays last.
+    expect(names()).toEqual(["Lyon", "Oslo", "Average"]);
+    fireEvent.click(screen.getByRole("button", { name: /Next/i }));
+    expect(names()).toEqual(["Graz", "Average"]);
+    expect(container.querySelector('tr[data-sticky="bottom"]')).toHaveTextContent("Average");
+  });
+
+  it("showRanks renders 1…n in data order, unaffected by sort (sticky rows unranked)", () => {
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City" },
+      { accessorKey: "rides", header: "Rides", enableSorting: true },
+    ];
+    const { container } = render(
+      <DataTable
+        columns={cols}
+        data={cities}
+        showRanks
+        stickyRows={(row) => (row.city === "Average" ? "bottom" : undefined)}
+      />,
+    );
+    const ranked = () =>
+      [...container.querySelectorAll("tbody tr")].map((tr) => [
+        tr.querySelector('[data-slot="data-table-rank-cell"]')?.textContent ?? "",
+        tr.querySelectorAll("td")[1]?.textContent ?? "",
+      ]);
+    expect(ranked()).toEqual([
+      ["1", "Oslo"],
+      ["2", "Lyon"],
+      ["3", "Graz"],
+      ["", "Average"],
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Rides, not sorted" }));
+    expect(ranked()).toEqual([
+      ["2", "Lyon"],
+      ["1", "Oslo"],
+      ["3", "Graz"],
+      ["", "Average"],
+    ]);
+    expect(screen.getAllByRole("columnheader")[0]).toHaveTextContent("#");
+  });
+
+  it('searchMode="exact" matches whole, case-insensitive values only', () => {
+    const { container, rerender } = render(
+      <DataTable columns={columns} data={data} initialView={{ globalFilter: "et" }} />,
+    );
+    expect(container.querySelectorAll("tbody tr")).toHaveLength(1);
+    rerender(<DataTable columns={columns} data={data} globalFilter="beta" searchMode="exact" />);
+    expect(container.querySelectorAll("tbody tr")).toHaveLength(1);
+    expect(container.querySelector("tbody tr")).toHaveTextContent("Beta");
+    rerender(<DataTable columns={columns} data={data} globalFilter="bet" searchMode="exact" />);
+    expect(screen.queryByText("Beta")).toBeNull();
+  });
+
+  it("mergeEmptyHeaders spans an ungrouped column's header down the header rows", () => {
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City" },
+      {
+        id: "quarters",
+        header: "Quarters",
+        columns: [
+          { accessorKey: "q1", header: "Q1" },
+          { accessorKey: "q2", header: "Q2" },
+        ],
+      },
+    ];
+    const { container, rerender } = render(<DataTable columns={cols} data={cities} />);
+    expect(container.querySelectorAll("thead tr")[0]?.querySelectorAll("th")).toHaveLength(2);
+    rerender(<DataTable columns={cols} data={cities} mergeEmptyHeaders />);
+    const [top, bottom] = [...container.querySelectorAll("thead tr")];
+    const city = [...(top?.querySelectorAll("th") ?? [])].find((th) => th.textContent === "City");
+    expect(city).toHaveAttribute("rowspan", "2");
+    expect(top?.querySelector("th[colspan='2']")).toHaveTextContent("Quarters");
+    expect([...(bottom?.querySelectorAll("th") ?? [])].map((th) => th.textContent)).toEqual([
+      "Q1",
+      "Q2",
+    ]);
+  });
+
+  it("heatmap: ramp-token backgrounds, values kept for AT, numeric sort", () => {
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City" },
+      {
+        accessorKey: "rides",
+        header: "Rides",
+        enableSorting: true,
+        meta: {
+          numeric: true,
+          visual: { kind: "heatmap", scale: { type: "stepped", steps: 3 }, hideValue: true },
+        },
+      },
+    ];
+    const { container } = render(<DataTable columns={cols} data={cities.slice(0, 3)} />);
+    const tds = [...container.querySelectorAll("tbody td:nth-child(2)")] as HTMLElement[];
+    for (const td of tds) {
+      expect(td.style.backgroundColor).toMatch(/^var\(--chart-seq-\d\)$/);
+      expect(td.querySelector('[data-slot="heatmap-cell"]')).toHaveClass("sr-only");
+    }
+    expect(tds.map((td) => td.textContent)).toEqual(["20", "40", "9"]);
+    const order = () =>
+      [...container.querySelectorAll("tbody td:nth-child(2)")].map((td) => td.textContent);
+    // Numeric, not string, order both ways ("9" would sort after "40" as text).
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Rides, not sorted" }));
+    expect(order()).toEqual(["40", "20", "9"]);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Rides, descending" }));
+    expect(order()).toEqual(["9", "20", "40"]);
+  });
+
+  it('bar: range "column" is proportional to the column max; negatives paint left of zero', () => {
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City" },
+      { accessorKey: "rides", header: "Rides", meta: { visual: { kind: "bar", track: true } } },
+      { accessorKey: "change", header: "Change", meta: { visual: { kind: "bar" } } },
+    ];
+    const { container } = render(<DataTable columns={cols} data={cities.slice(0, 3)} />);
+    const bars = (col: number) =>
+      [...container.querySelectorAll(`tbody td:nth-child(${col}) [data-slot="bar-cell-bar"]`)].map(
+        (el) => (el as HTMLElement).style,
+      );
+    expect(bars(2).map((s) => s.width)).toEqual(["50%", "100%", "22.5%"]);
+    expect(container.querySelector('[data-slot="bar-cell-track"]')).toHaveClass("bg-muted");
+    const [oslo] = bars(3);
+    expect(oslo?.backgroundColor).toBe("var(--chart-div-neg-2)");
+    expect(oslo?.insetInlineStart).toBe("0%");
+    // The printed value stays in the cell for AT.
+    expect(container.querySelector("tbody td:nth-child(3)")).toHaveTextContent("-5");
+  });
+
+  it('sparkline + columns with range "column" share one y scale across rows', () => {
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City" },
+      {
+        id: "trend",
+        header: "Trend",
+        meta: { visual: { kind: "sparkline", keys: ["q1", "q2", "q3"], range: "column" } },
+      },
+      {
+        id: "bars",
+        header: "Quarters",
+        meta: { visual: { kind: "columns", keys: ["q1", "q2", "q3"], range: "column" } },
+      },
+    ];
+    const { container } = render(<DataTable columns={cols} data={cities.slice(0, 3)} />);
+    const maxes = [...container.querySelectorAll('[data-slot="sparkline-cell-svg"]')].map((svg) =>
+      svg.getAttribute("data-y-max"),
+    );
+    expect(new Set(maxes)).toEqual(new Set(["8"]));
+    const colMaxes = [...container.querySelectorAll('[data-slot="columns-cell-svg"]')].map((svg) =>
+      svg.getAttribute("data-y-max"),
+    );
+    expect(new Set(colMaxes)).toEqual(new Set(["8"]));
+    // Each cell's numbers are in the accessible tree.
+    expect(container.querySelector("tbody tr td:nth-child(2)")).toHaveTextContent(/1.*4.*2/);
+  });
+
+  it("meta.format formats the default cell; colorBy washes by category", () => {
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City", meta: { colorBy: { key: "region", target: "text" } } },
+      {
+        accessorKey: "change",
+        header: "Change",
+        meta: { format: { sign: "always", suffix: " %" } },
+      },
+    ];
+    const { container } = render(<DataTable columns={cols} data={cities.slice(0, 2)} />);
+    expect(container.querySelector("tbody td:nth-child(2)")).toHaveTextContent("-5 %");
+    expect(container.querySelectorAll("tbody td:nth-child(2)")[1]).toHaveTextContent("+20 %");
+    const [oslo, lyon] = [...container.querySelectorAll("tbody td:nth-child(1)")] as HTMLElement[];
+    expect(oslo?.style.color).toMatch(/color-mix/);
+    expect(oslo?.style.color).not.toBe(lyon?.style.color);
+  });
+
+  it("hideHeader keeps the header row for AT but hides it visually", () => {
+    render(<DataTable columns={columns} data={data} hideHeader />);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(2);
+    expect(
+      screen.getByRole("button", { name: "Sort by Name, not sorted" }).closest("span"),
+    ).toHaveClass("sr-only");
+  });
+});

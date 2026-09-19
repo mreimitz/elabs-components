@@ -82,7 +82,7 @@ import { MarkdownCell } from "./cells/markdown-cell";
 import { SparklineCell } from "./cells/sparkline-cell";
 import { DataTableCard, DataTableCardList, type DataTableCardField } from "./card-layout";
 import { DataTableRankCell, DataTableRankHeader, computeRowRanks } from "./ranks-column";
-import { stickyRowPinning, type DataTableStickyRows } from "./sticky-rows";
+import { stickyRowPinning, withoutStickyRows, type DataTableStickyRows } from "./sticky-rows";
 import { useTableBreakpoint } from "./use-table-breakpoint";
 
 export type { DataTableColumnMeta } from "./column-meta";
@@ -1222,7 +1222,13 @@ function DataTableInner<TData, TValue>(
 
   // ── Row models — omit client model for manual slices ─────────────────────
   const sortedRowModel = manualSorting ? {} : { getSortedRowModel: getSortedRowModel() };
-  const filteredRowModel = manualFiltering ? {} : { getFilteredRowModel: getFilteredRowModel() };
+  const filteredRowModel = manualFiltering
+    ? {}
+    : {
+        getFilteredRowModel: stickyRows
+          ? withoutStickyRows(getFilteredRowModel<TData>())
+          : getFilteredRowModel(),
+      };
   // Only attach the client pagination row model when we actually paginate locally.
   // Under `manualPagination`, TanStack ignores a supplied `getPaginationRowModel`
   // (it returns the pre-pagination rows — i.e. the page the app already fetched),
@@ -1415,6 +1421,15 @@ function DataTableInner<TData, TValue>(
     layout === "auto" || hasShowAt,
   );
   const cardsActive = layout === "cards" || (layout === "auto" && breakpoint === "narrow");
+  // Published only when a presentation prop is in play, so the default DOM is
+  // unchanged: `data-layout` is what renders, `data-breakpoint` what was measured.
+  const presentationAttrs =
+    layout !== "table" || hasShowAt
+      ? {
+          "data-layout": cardsActive ? "cards" : "table",
+          "data-breakpoint": layout === "auto" || hasShowAt ? breakpoint : undefined,
+        }
+      : null;
   const isColumnShown = (column: Column<TData, unknown>) =>
     resolveShowAt(column.columnDef.meta?.showAt, breakpoint);
   const rootRef = useCallback(
@@ -3014,7 +3029,7 @@ function DataTableInner<TData, TValue>(
     // If both enablePagination and enableRowVirtualization are set,
     // virtualization wins; pagination controls are silently suppressed.
     return (
-      <div ref={rootRef} className={cn("space-y-3", className)} {...rest}>
+      <div ref={rootRef} {...presentationAttrs} className={cn("space-y-3", className)} {...rest}>
         {toolbar ? toolbar(table) : null}
         {renderLegends()}
         {/* Outer border is redundant (surface change) → plain border per #173 spec.
@@ -3083,7 +3098,7 @@ function DataTableInner<TData, TValue>(
   // region) so the edge-fade affordance can stay pinned to the visible edges
   // instead of scrolling away with the table content.
   const nonVirtualizedContent = (
-    <div ref={rootRef} className={cn("space-y-3", className)} {...rest}>
+    <div ref={rootRef} {...presentationAttrs} className={cn("space-y-3", className)} {...rest}>
       {toolbar ? toolbar(table) : null}
       {renderLegends()}
       {/* Outer border is redundant (surface change) → plain border per #173 spec */}

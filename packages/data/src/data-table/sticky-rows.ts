@@ -1,4 +1,4 @@
-import type { RowPinningState } from "@tanstack/react-table";
+import type { RowModel, RowPinningState, Table } from "@tanstack/react-table";
 
 /**
  * sticky-rows.ts — `DataTable`'s `stickyRows` (RM-123): rows such as an
@@ -39,4 +39,39 @@ export function stickyRowPinning<TData>(
     (position === "top" ? top : bottom).push(id);
   });
   return top.length === 0 && bottom.length === 0 ? EMPTY : { top, bottom };
+}
+
+/**
+ * Wraps a filtered-row-model factory so sticky (pinned) rows leave the flow the
+ * table sorts and pages: every page holds `pageSize` ordinary rows and the page
+ * count ignores the sticky ones, which `keepPinnedRows` still renders at the
+ * top / bottom of every page. Sticky rows are also exempt from search and
+ * filters — an "average" row describes the whole table, not the matches.
+ */
+export function withoutStickyRows<TData>(
+  factory: (table: Table<TData>) => () => RowModel<TData>,
+): (table: Table<TData>) => () => RowModel<TData> {
+  return (table) => {
+    const compute = factory(table);
+    let lastModel: RowModel<TData> | undefined;
+    let lastPinning: RowPinningState | undefined;
+    let lastResult: RowModel<TData> | undefined;
+    return () => {
+      const model = compute();
+      const pinning = table.getState().rowPinning;
+      if (model === lastModel && pinning === lastPinning && lastResult) return lastResult;
+      lastModel = model;
+      lastPinning = pinning;
+      const sticky = new Set([...(pinning?.top ?? []), ...(pinning?.bottom ?? [])]);
+      if (sticky.size === 0) {
+        lastResult = model;
+        return model;
+      }
+      const rows = model.rows.filter((row) => !sticky.has(row.id));
+      const flatRows = model.flatRows.filter((row) => !sticky.has(row.id));
+      const rowsById = Object.fromEntries(flatRows.map((row) => [row.id, row]));
+      lastResult = { rows, flatRows, rowsById };
+      return lastResult;
+    };
+  };
 }
