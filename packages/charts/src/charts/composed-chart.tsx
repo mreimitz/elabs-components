@@ -59,7 +59,8 @@ import {
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import type { ChartLegendEntry } from "./chart-context";
 import { Line, type LineProps } from "./line";
-import { SeriesBar, type SeriesBarProps } from "./series-bar";
+import { SeriesBar, type SeriesBarProps, SeriesBarStackExtentsContext } from "./series-bar";
+import { computeBarStackLayout } from "./bar-stacking";
 import { ChartSeriesModeProvider, TimeSeriesChartInner } from "./time-series-chart-shell";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
@@ -110,8 +111,14 @@ export interface ComposedChartProps extends ChartSelectionProps, ChartHoverLinkP
   maxBarSize?: number;
   /** Gap between grouped `SeriesBar` series in px. Default: 4 */
   barGap?: number;
-  /** Stack `SeriesBar` segments in child order at each x (line/area are not stacked). */
-  stacked?: boolean;
+  /**
+   * Stack `SeriesBar` segments in child order at each x (line/area are not
+   * stacked). `"percent"` (RM-121) stacks each x to 100 % through
+   * `bar-stacking.ts`: the primary `YAxis` is pinned to 0–100 % and prints
+   * percent unless it sets its own format, and the tooltip keeps the raw
+   * values. Put line/area series on another `yAxisId` beside it.
+   */
+  stacked?: boolean | "percent";
   /** Gap in px between stacked segments. Default: 0 */
   stackGap?: number;
   onPhaseChange?: (phase: ChartPhase) => void;
@@ -426,6 +433,38 @@ function applyDualAxisPlan(children: ReactNode, plan: DualAxisPlan): ReactNode {
   });
 }
 
+// Percent stacking — RM-121
+/**
+ * `stacked="percent"`: the bars draw in fraction space, so the primary
+ * `YAxis` is pinned to exactly `[0, 1]` (`resolveStackDomain`) and prints
+ * percent unless it set its own format — the same rule as `BarChart`. A
+ * `ChartTooltip` that set no format keeps plain numbers: its rows are the raw
+ * values, which the axis' percent style would misprint.
+ */
+function applyPercentStack(children: ReactNode): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement(child)) return child;
+    const name = getChildComponentName(child);
+    if (name === "YAxis") {
+      const props = child.props as YAxisProps;
+      if (normalizeYAxisId(props.yAxisId) !== DEFAULT_Y_AXIS_ID) return child;
+      const ownFormat = props.valueFormat !== undefined || props.formatValue !== undefined;
+      return cloneElement(child as ReactElement<YAxisProps>, {
+        domain: props.domain ?? [0, 1],
+        ...(ownFormat ? {} : { valueFormat: "percent" as const }),
+      });
+    }
+    if (name === "ChartTooltip") {
+      const props = child.props as { unit?: string; valueFormat?: unknown };
+      if (props.unit != null || props.valueFormat != null) return child;
+      return cloneElement(child as ReactElement<{ valueFormat?: string }>, {
+        valueFormat: "number",
+      });
+    }
+    return child;
+  });
+}
+
 interface ChartInnerProps {
   width: number;
   height: number;
@@ -443,7 +482,7 @@ interface ChartInnerProps {
   barSize?: number;
   maxBarSize?: number;
   barGap?: number;
-  stacked?: boolean;
+  stacked?: boolean | "percent";
   stackGap?: number;
   chartStatus?: ChartStatus;
   loadingLabel?: string;
@@ -514,23 +553,27 @@ function ChartInner({
   // direct `YAxis`/`Grid` children as ordinary `domain`/`ticks` props — the
   // shell's RM-108 value-axis path pins them, so nothing below changes.
   const { density } = useChartConfig();
+  const percentChildren = useMemo(
+    () => (stacked === "percent" ? applyPercentStack(children) : children),
+    [children, stacked],
+  );
   const dualInnerHeight = height - margin.top - margin.bottom;
   const dualPlan = useMemo(
     () =>
       planDualAxes({
-        children,
+        children: percentChildren,
         data,
         hiddenKeys,
-        stacked,
+        stacked: Boolean(stacked),
         yAxes,
         innerHeight: dualInnerHeight,
         maxTicks: density === "sm" || density === "xs" ? 4 : 7,
       }),
-    [children, data, hiddenKeys, stacked, yAxes, dualInnerHeight, density],
+    [percentChildren, data, hiddenKeys, stacked, yAxes, dualInnerHeight, density],
   );
   const plotChildren = useMemo(
-    () => (dualPlan ? applyDualAxisPlan(children, dualPlan) : children),
-    [children, dualPlan],
+    () => (dualPlan ? applyDualAxisPlan(percentChildren, dualPlan) : percentChildren),
+    [percentChildren, dualPlan],
   );
   // See `use-stable-value.ts`: collapses back to the previous reference when
   // the extracted series content is unchanged, even though `children` gets a
@@ -539,9 +582,25 @@ function ChartInner({
     useMemo(() => extractComposedSeries(children), [children]),
   );
 
+  // Percent stacking — RM-121: each x's segments as shares of its positive total.
+  const percentLayout = useMemo(
+    () =>
+      stacked === "percent" && barDataKeys.length > 0
+        ? computeBarStackLayout({ data, keys: barDataKeys, mode: "percent" })
+        : null,
+    [data, barDataKeys, stacked],
+  );
+
   const composedStackOffsets = useMemo(() => {
     if (!(stacked && barDataKeys.length > 0)) {
       return undefined;
+    }
+    if (percentLayout) {
+      const offsets = new Map<number, Map<string, number>>();
+      for (const [index, extents] of percentLayout.extents) {
+        offsets.set(index, new Map(Array.from(extents, ([key, [lo]]) => [key, lo])));
+      }
+      return offsets;
     }
     const offsets = new Map<number, Map<string, number>>();
     for (let i = 0; i < data.length; i++) {
@@ -561,14 +620,16 @@ function ChartInner({
       offsets.set(i, pointOffsets);
     }
     return offsets;
-  }, [data, barDataKeys, stacked]);
+  }, [data, barDataKeys, stacked, percentLayout]);
 
   const yScaleDomainMax = useMemo(
     () =>
-      stacked && barDataKeys.length > 0
-        ? computeComposedYScaleDomainMax(data, lines, barDataKeys)
-        : undefined,
-    [data, lines, barDataKeys, stacked],
+      percentLayout
+        ? 1
+        : stacked && barDataKeys.length > 0
+          ? computeComposedYScaleDomainMax(data, lines, barDataKeys)
+          : undefined,
+    [data, lines, barDataKeys, stacked, percentLayout],
   );
 
   // One clip per chart instance: a fixed id makes every chart on a page
@@ -589,7 +650,7 @@ function ChartInner({
         composedBarGap={barGap}
         composedBarSize={barSize}
         composedMaxBarSize={maxBarSize}
-        composedStacked={stacked}
+        composedStacked={Boolean(stacked)}
         composedStackGap={stackGap}
         composedStackOffsets={composedStackOffsets}
         containerRef={containerRef}
@@ -614,14 +675,21 @@ function ChartInner({
       </TimeSeriesChartInner>
     </ChartSeriesModeProvider>
   );
+  const chartWithStack = percentLayout ? (
+    <SeriesBarStackExtentsContext.Provider value={percentLayout.extents}>
+      {chart}
+    </SeriesBarStackExtentsContext.Provider>
+  ) : (
+    chart
+  );
   const chartWithAxes = dualPlan ? (
     <DualAxisContext.Provider value={true}>
       <ChartTooltipTableAxisGroupsContext.Provider value={tooltipAxisGroups}>
-        {chart}
+        {chartWithStack}
       </ChartTooltipTableAxisGroupsContext.Provider>
     </DualAxisContext.Provider>
   ) : (
-    chart
+    chartWithStack
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape

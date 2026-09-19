@@ -421,3 +421,50 @@ export const DualAxisProportional: Story = {
     });
   },
 };
+
+// Percent stacking — RM-121
+/**
+ * `stacked="percent"`: each month’s channels fill 100 %, so the columns compare
+ * shares, not volumes. The value axis prints percent; the tooltip keeps the
+ * raw order counts.
+ */
+export const StackedPercent: Story = {
+  args: { data: dualAxisData, children: null },
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <ComposedChart
+        accessibleLabel="Orders by channel as a share of each month, January to June 2024"
+        animationDuration={0}
+        data={[
+          { date: new Date(2024, 0, 1), web: 112, store: 70 },
+          { date: new Date(2024, 1, 1), web: 151, store: 85 },
+          { date: new Date(2024, 2, 1), web: 214, store: 97 },
+          { date: new Date(2024, 3, 1), web: 205, store: 82 },
+          { date: new Date(2024, 4, 1), web: 301, store: 101 },
+          { date: new Date(2024, 5, 1), web: 367, store: 101 },
+        ]}
+        stacked="percent"
+      >
+        <Grid horizontal />
+        <SeriesBar dataKey="web" fill="var(--chart-1)" />
+        <SeriesBar dataKey="store" fill="var(--chart-3)" />
+        <YAxis />
+        <XAxis />
+        <ChartTooltip variant="table" />
+      </ComposedChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const bars = canvasElement.querySelectorAll<SVGGElement>("g.series-bar");
+      expect(bars).toHaveLength(2);
+      const tops = Array.from(bars[1]!.querySelectorAll("rect")).map((rect) =>
+        Math.round(Number(rect.getAttribute("y"))),
+      );
+      expect(tops).toHaveLength(6);
+      // Every month's stack ends on the same pixel row: 100 %.
+      expect(new Set(tops).size).toBe(1);
+    });
+    await expect(canvasElement.querySelector('[data-slot="y-axis"]')).toHaveTextContent("100%");
+  },
+};

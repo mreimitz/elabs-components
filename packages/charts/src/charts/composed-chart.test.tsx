@@ -363,3 +363,66 @@ describe("ComposedChart yAxes (RM-121)", () => {
     expect(rows[1]).toHaveAttribute("role", "group");
   });
 });
+
+// Percent stacking — RM-121
+describe('ComposedChart stacked="percent" (RM-121)', () => {
+  const shareData: ComposedChartProps["data"] = [
+    { date: new Date(2024, 0, 1), web: 30, store: 10, rate: 2.1 },
+    { date: new Date(2024, 1, 1), web: 45, store: 55, rate: 4.8 },
+  ];
+  function FakeBar({ dataKey }: { dataKey: string }) {
+    return <g data-testid={`bar-${dataKey}`} />;
+  }
+  FakeBar.displayName = "SeriesBar";
+  function FakeYAxis({
+    yAxisId = "left",
+    domain,
+    valueFormat,
+  }: {
+    yAxisId?: string;
+    domain?: [number, number];
+    valueFormat?: string;
+  }) {
+    return (
+      <g
+        data-domain={domain ? domain.join(",") : ""}
+        data-format={valueFormat ?? ""}
+        data-testid={`y-axis-${yAxisId}`}
+      />
+    );
+  }
+  FakeYAxis.displayName = "YAxis";
+  function FakeTooltip({ valueFormat }: { valueFormat?: string }) {
+    return <g data-format={valueFormat ?? ""} data-testid="tooltip" />;
+  }
+  FakeTooltip.displayName = "ChartTooltip";
+
+  const renderShare = (stacked: ComposedChartProps["stacked"], leftAxis = <FakeYAxis />) =>
+    render(
+      <ComposedChart data={shareData} stacked={stacked}>
+        <FakeBar dataKey="web" />
+        <FakeBar dataKey="store" />
+        {leftAxis}
+        <FakeYAxis yAxisId="right" />
+        <FakeTooltip />
+      </ComposedChart>,
+    );
+
+  it("pins the primary axis to 0–100 % in percent and keeps raw tooltip numbers", () => {
+    const { getByTestId } = renderShare("percent");
+    expect(getByTestId("y-axis-left").getAttribute("data-domain")).toBe("0,1");
+    expect(getByTestId("y-axis-left").getAttribute("data-format")).toBe("percent");
+    expect(getByTestId("y-axis-right").getAttribute("data-domain")).toBe("");
+    expect(getByTestId("tooltip").getAttribute("data-format")).toBe("number");
+  });
+
+  it("keeps an explicit axis format and leaves plain stacking untouched", () => {
+    const own = renderShare("percent", <FakeYAxis valueFormat="number" />);
+    expect(own.getByTestId("y-axis-left").getAttribute("data-format")).toBe("number");
+    own.unmount();
+    const plain = renderShare(true);
+    expect(plain.getByTestId("y-axis-left").getAttribute("data-domain")).toBe("");
+    expect(plain.getByTestId("y-axis-left").getAttribute("data-format")).toBe("");
+    expect(plain.getByTestId("tooltip").getAttribute("data-format")).toBe("");
+  });
+});

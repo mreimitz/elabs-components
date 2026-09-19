@@ -2,7 +2,8 @@
 
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
-import { useId, useMemo } from "react";
+import { createContext, useContext, useId, useMemo } from "react";
+import type { BarStackExtents } from "./bar-stacking";
 import { chartCssVars, useChart } from "./chart-context";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
@@ -28,6 +29,8 @@ function computeSeriesBarLayout(input: {
   stackGap: number;
   isLastSeries: boolean;
   radius: number;
+  /** Percent stacking — RM-121: this segment's `[lo, hi]` in the scale's fraction space. */
+  stackExtent?: readonly [number, number];
 }): {
   barLeft: number;
   barHeight: number;
@@ -50,7 +53,25 @@ function computeSeriesBarLayout(input: {
     stackGap,
     isLastSeries,
     radius,
+    stackExtent,
   } = input;
+
+  // Percent stacking — RM-121: the segment spans its `bar-stacking.ts` extent.
+  if (stacked && stackExtent) {
+    const [lo, hi] = stackExtent;
+    const baseY = yScale(lo) ?? innerHeight;
+    let barHeight = Math.max(0, baseY - (yScale(hi) ?? baseY));
+    const valueY = baseY - barHeight - seriesIndex * stackGap;
+    if (!isLastSeries && stackGap > 0) {
+      barHeight = Math.max(0, barHeight - stackGap);
+    }
+    return {
+      barLeft: xCenter - barWidth / 2,
+      barHeight,
+      effectiveRadius: stackGap > 0 || isLastSeries ? radius : 0,
+      valueY,
+    };
+  }
 
   if (stacked && composedStackOffsets) {
     const offset = composedStackOffsets.get(rowIndex)?.get(dataKey) ?? 0;
@@ -101,6 +122,13 @@ export interface SeriesBarProps {
   fadedOpacity?: number;
 }
 
+// Percent stacking — RM-121
+/**
+ * `ComposedChart stacked="percent"`: each row's `bar-stacking.ts` extents in
+ * fraction space (0–1). Internal — provided only in percent mode.
+ */
+export const SeriesBarStackExtentsContext = createContext<BarStackExtents | undefined>(undefined);
+
 export function SeriesBar({
   dataKey,
   fill = chartCssVars.linePrimary,
@@ -132,6 +160,7 @@ export function SeriesBar({
     tooltipData,
     chartPhase,
   } = useChart();
+  const stackExtents = useContext(SeriesBarStackExtentsContext);
 
   // While the chart shows loading chrome, rows are fabricated placeholder data
   // (generateChartSkeletonData) — paint bars with a neutral skeleton fill +
@@ -234,6 +263,7 @@ export function SeriesBar({
           stackGap,
           isLastSeries,
           radius: resolvedRadius,
+          stackExtent: stackExtents?.get(i)?.get(dataKey),
         });
 
         const categoryLabel = String(xAccessor(d).getTime());
