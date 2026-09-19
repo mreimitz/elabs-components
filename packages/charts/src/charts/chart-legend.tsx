@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, type ReactNode } from "react";
-import { useChartConfig } from "./chart-config-context";
+import { type ChartDensity, useChartConfig } from "./chart-config-context";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "./series-pattern";
@@ -22,6 +22,11 @@ export interface LegendItem {
    * When set, the legend swatch renders the decoration pattern swatch instead of a solid dot.
    */
   seriesIndex?: number;
+  /**
+   * Stable identity for `hiddenKeys`/`onToggleKey` (RM-118) — a container's
+   * own `ChartLegendEntry.key`. Falls back to `label` when unset.
+   */
+  key?: string;
 }
 
 export interface ChartLegendProps {
@@ -45,6 +50,24 @@ export interface ChartLegendProps {
     index: number,
     event: React.MouseEvent | React.KeyboardEvent,
   ) => void;
+  /**
+   * Series toggle (RM-118, `legend={{ interactive: "toggle" }}`). Set together
+   * with `onToggleKey`: every item renders as a real `<button aria-pressed>`
+   * — native keyboard support, no extra wiring — and `hiddenKeys` marks which
+   * ones read `aria-pressed="false"` and paint dimmed with a struck-through
+   * label (WCAG 1.4.1: hidden is never colour-only). Independent of
+   * `onItemClick` (drill-down); a container sets one or the other.
+   */
+  hiddenKeys?: ReadonlySet<string>;
+  /** Toggles one item's hidden state. Keyed by `item.key ?? item.label`. */
+  onToggleKey?: (key: string, item: LegendItem, index: number) => void;
+  /**
+   * Density tiers that hide the whole legend (RM-072 default: `xs`/`sm`).
+   * The container legend engine (`useContainerLegend`, RM-118) passes
+   * `["xs"]` — `sm` renders `stack`-laid-out instead of hiding — so this
+   * stays `["xs", "sm"]` for every OTHER (direct) caller, unchanged.
+   */
+  hideAtDensity?: readonly ChartDensity[];
   /** Show progress bars. Default: false */
   showProgress?: boolean;
   /** Show color marker dot. Default: true */
@@ -213,7 +236,8 @@ function SimpleItem({
   labelClassName,
   valueClassName,
   high,
-}: SimpleItemProps) {
+  hidden,
+}: SimpleItemProps & { hidden?: boolean }) {
   // Note: item.color must remain inline style as it's dynamic data
   return (
     <div className="flex items-center gap-3">
@@ -223,13 +247,22 @@ function SimpleItem({
           <LegendPatternSwatch seriesIndex={item.seriesIndex} color={item.color} />
         ) : (
           <div
-            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            className={cn("h-2.5 w-2.5 shrink-0 rounded-full", hidden && "opacity-40")}
             style={{ backgroundColor: item.color }}
           />
         ))}
 
-      {/* Label */}
-      <span className={cn("flex-1 text-legend-foreground", labelClassName)}>{item.label}</span>
+      {/* Label — a toggled-off series (RM-118) also strikes through: hidden
+          is never colour/opacity alone (WCAG 1.4.1). */}
+      <span
+        className={cn(
+          "flex-1 text-legend-foreground",
+          hidden && "text-legend-muted-foreground line-through",
+          labelClassName,
+        )}
+      >
+        {item.label}
+      </span>
 
       {showValue ? (
         <span className={cn("text-legend-muted-foreground", valueClassName)}>
@@ -245,6 +278,8 @@ export function ChartLegend({
   hoveredIndex = null,
   onHover,
   onItemClick,
+  hiddenKeys,
+  onToggleKey,
   showProgress = false,
   showMarker = true,
   showValue = true,
@@ -259,6 +294,7 @@ export function ChartLegend({
   labelClassName = "text-sm font-medium",
   valueClassName = "text-sm tabular-nums",
   renderItem,
+  hideAtDensity = ["xs", "sm"],
 }: ChartLegendProps) {
   // Default showPercentage to true when showProgress is true
   const displayPercentage = showPercentage ?? showProgress;
@@ -293,8 +329,9 @@ export function ChartLegend({
   const high = useHighDecorationOf(containerRef);
   const { density } = useChartConfig();
 
-  // RM-072: `xs`/`sm` tiles have no room for a legend.
-  if (density === "xs" || density === "sm") {
+  // RM-072: `xs`/`sm` tiles have no room for a legend, by default. A
+  // container legend (`useContainerLegend`) narrows this to `["xs"]`.
+  if (hideAtDensity.includes(density)) {
     return null;
   }
 
@@ -305,24 +342,37 @@ export function ChartLegend({
         const percentage = item.maxValue ? (item.value / item.maxValue) * 100 : 0;
         const isHovered = hoveredIndex === i;
         const isFaded = hoveredIndex !== null && hoveredIndex !== i;
+        const itemKey = item.key ?? item.label;
+        const isToggleable = Boolean(onToggleKey);
+        const isHidden = isToggleable && (hiddenKeys?.has(itemKey) ?? false);
 
-        // A real <button> when the legend is interactive, a plain <div>
-        // otherwise — never a div-with-onClick (see accessibility.md,
-        // "Real elements"). The button inherits the same box, so the legend
-        // looks identical either way.
-        const Item = (onItemClick ? "button" : "div") as "button";
-        const interactiveProps: Partial<React.ComponentPropsWithoutRef<"button">> = onItemClick
+        // A real <button> when the legend is interactive (drill-down or
+        // toggle), a plain <div> otherwise — never a div-with-onClick (see
+        // accessibility.md, "Real elements"). The button inherits the same
+        // box, so the legend looks identical either way. Toggle wins when
+        // both are set — a container names one or the other in practice.
+        const Item = (onItemClick || isToggleable ? "button" : "div") as "button";
+        const interactiveProps: Partial<React.ComponentPropsWithoutRef<"button">> = isToggleable
           ? {
-              onClick: (event) => onItemClick(item, i, event),
+              "aria-pressed": !isHidden,
+              onClick: (event) => {
+                onToggleKey?.(itemKey, item, i);
+                onItemClick?.(item, i, event);
+              },
               type: "button",
             }
-          : {};
+          : onItemClick
+            ? {
+                onClick: (event) => onItemClick(item, i, event),
+                type: "button",
+              }
+            : {};
 
         // Allow custom rendering
         if (renderItem) {
           return (
             <Item
-              className={cn(onItemClick && "text-start focus-ring")}
+              className={cn((onItemClick || isToggleable) && "text-start focus-ring")}
               data-hovered={isHovered ? "" : undefined}
               key={`legend-${item.label}-${item.value}`}
               onMouseEnter={() => onHover?.(i)}
@@ -338,9 +388,10 @@ export function ChartLegend({
           <Item
             className={cn(
               "cursor-pointer rounded-lg px-2 py-1.5 transition-[background-color,opacity] duration-fast ease-entrance motion-reduce:transition-none",
-              onItemClick && "w-full text-start focus-ring",
+              (onItemClick || isToggleable) && "w-full text-start focus-ring",
               isHovered && "bg-legend-muted",
               isFaded && "opacity-40",
+              isHidden && "opacity-60",
               itemClassName,
             )}
             data-hovered={isHovered ? "" : undefined}
@@ -365,6 +416,7 @@ export function ChartLegend({
               <SimpleItem
                 formatValue={resolvedFormatValue}
                 high={high}
+                hidden={isHidden}
                 item={item}
                 labelClassName={labelClassName}
                 showMarker={showMarker}

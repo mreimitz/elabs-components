@@ -1,0 +1,222 @@
+"use client";
+
+/**
+ * use-container-legend.ts — the legend engine (RM-118).
+ *
+ * Reads a container's `legend` prop and its own `legendItems` (published on
+ * whatever chart context that container uses) and mounts `ChartLegend` in
+ * the measured slot the `position`/`layout` config resolves to — so the
+ * legend's own height/width is part of the container's total box, not a
+ * caller-placed sibling. `RM-121` (dual-axis) and `RM-124` (choropleth) both
+ * depend on this hook and on `RampLegend` — see `ramp-legend.tsx`.
+ *
+ * ## Two independent width measurements, on purpose
+ *
+ * `ChartPlotRoot` (`chart-breakpoint.ts`) measures the PLOT box itself —
+ * correctly, since a `position: "right"` legend must shrink the plot's own
+ * width, which then legitimately narrows the plot's own breakpoint tier too.
+ * But deciding WHETHER to put the legend at the side or on top has to read
+ * the container's TOTAL width (before the legend takes its share) — a 900 px
+ * chart with `position: "right"` is still "wide" even though the plot beside
+ * a 160 px legend measures ~740 px. This hook owns that second, outer
+ * measurement (`useMeasuredChartBreakpoint`) independently of the plot's own.
+ */
+
+import { type ReactNode, createElement, useCallback, useMemo, useState } from "react";
+import { cn } from "@elabs-ai/components-ui";
+import {
+  resolveResponsive,
+  useMeasuredChartBreakpoint,
+  type ChartBreakpoint,
+  type Responsive,
+} from "../chart-breakpoint";
+import { useChartConfig } from "../chart-config-context";
+import type { ChartLegendEntry } from "../chart-context";
+import { ChartLegend, type LegendItem } from "../chart-legend";
+import type { ChartValueFormat } from "../value-format";
+
+export type ContainerLegendPosition = "top" | "bottom" | "left" | "right" | "none";
+export type ContainerLegendLayoutMode = "row" | "stack";
+export type ContainerLegendInteractive = "hover" | "toggle" | "none";
+
+export interface ContainerLegendConfig {
+  /** Where the legend mounts, relative to the plot. Never `left`/`right` at `narrow`. */
+  position?: Responsive<ContainerLegendPosition>;
+  /** `row`: one line, wraps. `stack`: one item per line. */
+  layout?: Responsive<ContainerLegendLayoutMode>;
+  /**
+   * `"hover"` (default) — dims every other series, no series is ever hidden.
+   * `"toggle"` — items are real `aria-pressed` buttons that hide a series.
+   * `"none"` — a static key, no pointer/keyboard affordance at all.
+   */
+  interactive?: ContainerLegendInteractive;
+  /** Show each item's value column. Default `false` — most containers' `legendItems` carry no per-item value. */
+  values?: boolean;
+  title?: ReactNode;
+}
+
+/** `legend` on every container this engine wires (RM-118). */
+export type ContainerLegendProp = boolean | ContainerLegendConfig;
+
+const DEFAULT_POSITION: Responsive<ContainerLegendPosition> = { base: "top", narrow: "top" };
+const DEFAULT_LAYOUT: Responsive<ContainerLegendLayoutMode> = { base: "row", narrow: "stack" };
+const DEFAULT_INTERACTIVE: ContainerLegendInteractive = "hover";
+
+export interface UseContainerLegendOptions {
+  /** The container's own `legend` prop, verbatim. */
+  legend: ContainerLegendProp | undefined;
+  /** The entries this container exposes on its own chart context. */
+  items: readonly ChartLegendEntry[] | undefined;
+  /** Controlled hover index — omit to let the hook manage it itself. */
+  hoveredIndex?: number | null;
+  onHoverChange?: (index: number | null) => void;
+  /** Controlled hidden-key set (`interactive: "toggle"`) — omit to self-manage. */
+  hiddenKeys?: ReadonlySet<string>;
+  onToggleKey?: (key: string) => void;
+  valueFormat?: ChartValueFormat;
+  currency?: string;
+}
+
+export interface ContainerLegendResult {
+  /** Whether anything renders at all. */
+  visible: boolean;
+  position: ContainerLegendPosition;
+  layout: ContainerLegendLayoutMode;
+  interactive: ContainerLegendInteractive;
+  /** The tier this hook's OWN (outer) measurement resolved — see module docs. */
+  breakpoint: ChartBreakpoint;
+  /** Keys currently hidden (`interactive: "toggle"`, self-managed unless `hiddenKeys` is controlled). */
+  hiddenKeys: ReadonlySet<string>;
+  /**
+   * Wraps `plot` with the legend mounted in the resolved slot. Not visible:
+   * returns `plot` untouched (so a container can always call this
+   * unconditionally around its `ChartPlotRoot`).
+   */
+  wrap: (plot: ReactNode) => ReactNode;
+}
+
+/**
+ * Resolves `legend`, measures the container's own width, and returns the
+ * position/layout/interactivity plus a `wrap()` that mounts `ChartLegend` in
+ * the right slot. Call once per container render; `wrap` around the whole
+ * `ChartPlotRoot` tree.
+ */
+export function useContainerLegend(options: UseContainerLegendOptions): ContainerLegendResult {
+  const {
+    legend,
+    items,
+    hoveredIndex: hoveredIndexProp,
+    onHoverChange,
+    hiddenKeys: hiddenKeysProp,
+    onToggleKey: onToggleKeyProp,
+    valueFormat,
+    currency,
+  } = options;
+  const resolvedItems = useMemo(() => items ?? [], [items]);
+
+  const { density } = useChartConfig();
+  const { ref, breakpoint } = useMeasuredChartBreakpoint<HTMLDivElement>();
+
+  const [internalHovered, setInternalHovered] = useState<number | null>(null);
+  const hoveredIndex = hoveredIndexProp ?? internalHovered;
+  const setHovered = onHoverChange ?? setInternalHovered;
+
+  const [internalHidden, setInternalHidden] = useState<ReadonlySet<string>>(() => new Set());
+  const hiddenKeys = hiddenKeysProp ?? internalHidden;
+  const toggleKey = useCallback(
+    (key: string) => {
+      if (onToggleKeyProp) {
+        onToggleKeyProp(key);
+        return;
+      }
+      setInternalHidden((prev) => {
+        const next = new Set(prev);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+    },
+    [onToggleKeyProp],
+  );
+
+  const configProp = typeof legend === "object" && legend !== null ? legend : undefined;
+  const explicitlyOn = legend === true || configProp !== undefined;
+  const implicitlyOn = legend === undefined && resolvedItems.length > 1;
+  const wants = legend !== false && (explicitlyOn || implicitlyOn);
+
+  let position = resolveResponsive(configProp?.position ?? DEFAULT_POSITION, breakpoint);
+  // Change §"RM-118 legend engine": narrow never renders left/right.
+  if (breakpoint === "narrow" && (position === "left" || position === "right")) {
+    position = "top";
+  }
+  let layout = resolveResponsive(configProp?.layout ?? DEFAULT_LAYOUT, breakpoint);
+  // Acceptance: density `sm` renders `stack` only (never hidden — `xs` is
+  // the only density this engine hides at; see `ChartLegend`'s
+  // `hideAtDensity` below).
+  if (density === "sm") layout = "stack";
+  const interactive = configProp?.interactive ?? DEFAULT_INTERACTIVE;
+
+  const visible = wants && density !== "xs" && position !== "none" && resolvedItems.length > 0;
+
+  const legendItems: LegendItem[] = useMemo(
+    () =>
+      resolvedItems.map((entry) => ({
+        label: entry.label,
+        value: 0,
+        color: entry.color,
+        key: entry.key,
+      })),
+    [resolvedItems],
+  );
+
+  const isSide = position === "left" || position === "right";
+
+  const legendNode = visible
+    ? createElement(ChartLegend, {
+        items: legendItems,
+        hoveredIndex,
+        onHover: setHovered,
+        hiddenKeys: interactive === "toggle" ? hiddenKeys : undefined,
+        onToggleKey: interactive === "toggle" ? (key: string) => toggleKey(key) : undefined,
+        showValue: configProp?.values === true,
+        valueFormat,
+        currency,
+        title: configProp?.title as string | undefined,
+        // The engine's own default ({ position, layout, interactive }) IS the
+        // "explicit legend" ADR 0039 says wins over the narrow/`sm` tier
+        // default — so this only ever hides at `xs` (no room at all), never
+        // `sm` (charts.md "Responsive"). A caller using bare `<ChartLegend>`
+        // directly (outside this engine) keeps the old `["xs","sm"]` default.
+        hideAtDensity: ["xs"],
+        className: isSide ? "w-40 shrink-0" : "w-full",
+      } as Parameters<typeof ChartLegend>[0])
+    : null;
+
+  const wrap = useCallback(
+    (plot: ReactNode): ReactNode => {
+      if (!visible) return plot;
+      const plotBox = createElement("div", { className: "min-w-0 flex-1", key: "plot" }, plot);
+      const legendBox = createElement(
+        "div",
+        { className: isSide ? undefined : "w-full", key: "legend" },
+        legendNode,
+      );
+      const before = position === "left" || position === "top";
+      return createElement(
+        "div",
+        {
+          className: cn(isSide ? "flex flex-row" : "flex flex-col", "gap-4"),
+          "data-container-legend-layout": layout,
+          "data-container-legend-position": position,
+          "data-slot": "container-legend-root",
+          ref,
+        },
+        before ? legendBox : plotBox,
+        before ? plotBox : legendBox,
+      );
+    },
+    [visible, isSide, position, layout, legendNode, ref],
+  );
+
+  return { breakpoint, hiddenKeys, interactive, layout, position, visible, wrap };
+}
