@@ -3,6 +3,15 @@
  * publish-registry-pages.mjs — push the built registry JSON to the `gh-pages`
  * branch, versioned (issue #31).
  *
+ * DEPRECATED (RM-102, #470): the site now also serves the built registry at
+ * `elabs-ai.com/r` (its `prebuild` copies `registry/__output/*.json` into
+ * `apps/home/public/r/`). This GitHub Pages publish keeps running until RM-105's
+ * domain cut-over — `registry/registry.json`'s `homepage` still points here — and
+ * RM-106 removes the Pages publish step from `.github/workflows/release.yml`
+ * once the domain move is verified (RM-089-decisions.md wave-3 ruling 6).
+ *
+ * ORIGINAL RATIONALE (issue #31), unchanged below:
+ *
  * The maintainer decision on #31: host the built registry (`pnpm registry:build`
  * → `registry/__output/*.json`) on GitHub Pages, at a VERSIONED path with a
  * `latest` alias, so `npx shadcn add <url>/<item>.json` — the command

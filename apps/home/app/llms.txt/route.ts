@@ -8,7 +8,8 @@ import { renderLlmsHub } from "@elabs-ai/components-cli/lib/render-docs.mjs";
 import manifest from "../../../../brand-ui.manifest.json";
 
 export function GET() {
-  return new Response(renderLlmsHub(manifest), {
+  // Same siteRoutes reasoning as app/mcp/route.ts: this site's /storybook/ rewrite is real.
+  return new Response(renderLlmsHub(manifest, { siteRoutes: true }), {
     headers: { "content-type": "text/plain; charset=utf-8" },
   });
 }
