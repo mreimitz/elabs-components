@@ -270,3 +270,6 @@ export * from "./components/wizard";
 export * from "./components/command-chip";
 // SurfaceTour — RM-096
 export * from "./components/surface-tour";
+// IntegrationMatrix, InstallTabs — RM-102
+export * from "./components/integration-matrix";
+export * from "./components/install-tabs";
