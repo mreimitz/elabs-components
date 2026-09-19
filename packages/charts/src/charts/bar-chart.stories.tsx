@@ -1269,3 +1269,55 @@ export const ValuesOnHover: Story = {
     </div>
   ),
 };
+
+/**
+ * Container legend (RM-118): `legend={{ interactive: "toggle" }}` mounts
+ * `ChartLegend` above the plot with real `aria-pressed` buttons — click, or
+ * Tab then Enter, hides a series. The value domain recomputes from the
+ * visible series only, and stays zero-based (`resolveBarValueDomain`,
+ * charts-honesty). Works the same on a grouped or a `stacked` chart.
+ */
+export const LegendToggle: Story = {
+  name: "Legend toggle",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <BarChart
+        data={monthlyData}
+        legend={{ interactive: "toggle" }}
+        onDatapointClick={() => {}}
+        xDataKey="month"
+      >
+        <Grid horizontal />
+        <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />
+        <Bar dataKey="profit" fill="var(--chart-2)" lineCap="round" />
+        <BarXAxis />
+        <ChartTooltip />
+      </BarChart>
+    </div>
+  ),
+};
+
+const colorByData = [
+  { name: "North", value: 42, region: "North" },
+  { name: "South", value: 65, region: "South" },
+  { name: "East", value: 30, region: "East" },
+];
+
+/**
+ * One key per chart (R4): RM-113's `colorBy` key already names every bar's
+ * colour, so the container legend engine yields — `legend` is set, but
+ * nothing new mounts, and there is no toggle affordance in this mode.
+ */
+export const LegendYieldsToColorByKey: Story = {
+  name: "Legend yields to the colorBy key",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <BarChart colorBy={{ key: "region" }} data={colorByData} legend xDataKey="name">
+        <Grid horizontal />
+        <Bar dataKey="value" />
+        <BarXAxis />
+        <ChartTooltip />
+      </BarChart>
+    </div>
+  ),
+};
