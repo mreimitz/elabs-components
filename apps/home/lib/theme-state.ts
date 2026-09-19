@@ -3,6 +3,7 @@
 // colour scheme, then `default`/`light`. Deliberately NOT a client module: the root layout
 // renders `siteThemeInitScript()` on the server so the theme is on <html> before first paint.
 import { useTheme } from "@elabs-ai/components-tokens";
+import { useThemeTransition } from "@elabs-ai/components-ui";
 import { SITE_THEME_FAMILIES, type SiteThemeFamily } from "../themes";
 
 export type SiteThemeMode = "light" | "dark";
@@ -107,7 +108,9 @@ export interface SiteThemeState {
 
 /** The site's family/mode over ThemeProvider, with the URL kept in sync. Client-only. */
 export function useSiteTheme(): SiteThemeState {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
+  // The same animated setter `ThemeSwitcher` uses, so a theme card switches exactly like the menu.
+  const setTheme = useThemeTransition();
   const current = familyOfTheme(theme) ?? { family: "default", mode: "light" as const };
   const apply = (family: string, mode: SiteThemeMode) => {
     const next = FAMILY_THEMES[family]?.[mode];

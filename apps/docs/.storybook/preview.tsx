@@ -134,11 +134,35 @@ function BrandDocsPage() {
   );
 }
 
+/**
+ * A docs page renders every story of a component into ONE document. A story
+ * that pins `globals: { decoration: "10" }` (the `*HighDecoration` stories) used
+ * to write that pin onto the shared root, so whichever story rendered last set
+ * the decoration of every chart on the page — the default story included. On a
+ * docs page the root follows the toolbar only, and a story's own pin is scoped
+ * to a wrapper around that story; `--decoration` inherits, so the charts inside
+ * still read it.
+ */
 const withDecoration: Decorator = (Story, context) => {
   const decoration = (context.globals.decoration as string) ?? "theme";
+  if (context.viewMode !== "docs") {
+    return (
+      <DecorationBoundary decoration={decoration}>
+        <Story />
+      </DecorationBoundary>
+    );
+  }
+  const toolbar = (context.userGlobals?.decoration as string | undefined) ?? "theme";
+  const pinned = context.storyGlobals?.decoration as string | undefined;
   return (
-    <DecorationBoundary decoration={decoration}>
-      <Story />
+    <DecorationBoundary decoration={toolbar}>
+      {pinned && pinned !== "theme" ? (
+        <div data-decoration={pinned} style={{ display: "contents" }}>
+          <Story />
+        </div>
+      ) : (
+        <Story />
+      )}
     </DecorationBoundary>
   );
 };

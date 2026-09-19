@@ -35,23 +35,9 @@
 @source "../../../packages/icons/src/**/*.{ts,tsx}";
 @source "../../../packages/tokens/src/**/*.{ts,tsx}";
 
-/* RM-091 — the view-transition crossfade (the family imports sit with the other imports above).
-   The switch is one crossfade of the whole page (lib/use-theme-transition.ts wraps the theme
-   write in document.startViewTransition). The engine's ThemeSwitcher wipe freezes the OLD frame
-   (`animation: none`), which a plain fade cannot use — fade both frames instead. Durations ride
-   the motion gate (--t-slow), so reduced motion collapses them to the floor. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: var(--t-slow);
-  animation-timing-function: var(--ease-standard);
-  animation-fill-mode: both;
-}
-::view-transition-old(root) {
-  animation-name: home-vt-fade-out;
-}
-::view-transition-new(root) {
-  animation-name: home-vt-fade-in;
-}
+/* Theme switches animate with the library's own reveal (`ThemeSwitcher` /
+   `useThemeTransition` in @elabs-ai/components-ui, keyed off `html[data-vt]`), so this file
+   sets no `::view-transition-*(root)` animation of its own. */
 /* The ambient ground (RM-092 names it `view-transition-name: ground`) lands after the content. */
 ::view-transition-group(ground),
 ::view-transition-old(ground),
@@ -61,17 +47,6 @@
   animation-delay: calc(120ms * var(--motion-factor));
   animation-fill-mode: both;
 }
-@keyframes home-vt-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-@keyframes home-vt-fade-in {
-  from {
-    opacity: 0;
-  }
-}
-
 /* Fallback where there are no view transitions: colours ease for ONE switch only — the
    attribute is set around the theme write and removed after --t-slow, never left on (it would
    slow every hover). */

@@ -111,9 +111,9 @@ test("parallax planes stay put while scrolling", async ({ page }) => {
   }
 });
 
-test("the hero shows its final values at first paint", async ({ page }) => {
+test("the component wall shows its final values at first paint", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  const scene = page.locator(`${REGIONS.hero} [role="region"]`).first();
+  const scene = page.locator(`${REGIONS.examples} [role="region"]`).first();
   // Values outside SVG and the x-axis: axis ticks are laid out after the first measure (a
   // container width), not streamed in.
   const values = () =>

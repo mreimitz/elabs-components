@@ -42,12 +42,11 @@ for (const { slug, mode } of CASES) {
     await gotoHome(page);
     await selectTheme(page, family, mode);
     await page.mouse.move(0, 0);
-    for (const id of ["#tour", "#agents", "#works-with"]) {
+    for (const id of ["#use-cases", "#blocks", "#charts", "#examples", "#agents", "#themes"]) {
       await page.locator(id).scrollIntoViewIfNeeded();
       await page.waitForLoadState("networkidle");
     }
-    await expect(page.locator('#tour [role="tabpanel"][data-state="active"]')).toBeVisible();
-    await expect(page.locator('[data-slot="agent-loop"]')).toBeVisible();
+    await expect(page.locator("#emit-ui")).toBeVisible();
     // axe samples colours as painted: a crossfade caught mid-way (the tour's affordance hint
     // fading in, a status badge's `transition-colors`) reads as a false contrast failure.
     await settle(page);

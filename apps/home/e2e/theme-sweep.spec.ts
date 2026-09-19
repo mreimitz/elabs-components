@@ -20,7 +20,7 @@ test.use({ contextOptions: { reducedMotion: "reduce" } });
 // reference families (`default`, `qlik`) keep every region. The value assertions still run for all.
 const FULL_SET = new Set(["default", "qlik"]);
 const SWEPT = (slug: string): RegionName[] =>
-  FULL_SET.has(slug) ? ["hero", "tour", "agents", "tokens"] : ["hero", "tour"];
+  FULL_SET.has(slug) ? ["hero", "examples", "charts", "agents", "themes"] : ["hero", "examples"];
 
 for (const family of THEME_FAMILIES) {
   for (const { mode, value, background } of family.modes) {
@@ -37,17 +37,14 @@ for (const family of THEME_FAMILIES) {
         if ((await target.count()) === 0) {
           testInfo.annotations.push({
             type: "skip-region",
-            description: `${region}: ${REGIONS[region]} is not on this page (RM-103 not merged)`,
+            description: `${region}: ${REGIONS[region]} is not on this page`,
           });
           continue;
         }
         await target.scrollIntoViewIfNeeded();
         await page.waitForLoadState("networkidle");
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
-        // Ruling 38: the GatesBand rule grid inside #tokens is generated text already asserted
-        // by the gates test, so it is masked out of the pixel comparison (not the DOM) here.
-        const mask = region === "tokens" ? [target.locator('[data-slot="gates-band"]')] : undefined;
-        await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo, { mask });
+        await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo);
       }
     });
   }

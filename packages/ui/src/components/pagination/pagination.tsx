@@ -1,3 +1,5 @@
+"use client";
+
 import { forwardRef, type ComponentProps } from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { cn } from "../../lib/cn";

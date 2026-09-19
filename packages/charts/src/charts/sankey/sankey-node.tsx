@@ -38,7 +38,16 @@ export interface SankeyNodeProps {
   showLabels?: boolean;
   /** Custom node color function */
   getNodeColor?: (node: SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum>, index: number) => string;
+  /**
+   * The value line under each node's name, from the node's flow. Default:
+   * `"<n> sessions"` (the unit this chart shipped with). Pass your own to name
+   * the unit the links actually count — `(v) => \`${v} invoices\``. The same
+   * text is what the label-fit measurement reserves room for.
+   */
+  formatValue?: (value: number) => string;
 }
+
+const defaultValueText = (value: number) => `${intFmt(value)} sessions`;
 
 interface AnimatedNodeProps {
   x: number;
@@ -55,7 +64,8 @@ interface AnimatedNodeProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   name: string;
-  value: number;
+  /** The already-formatted value line (`SankeyNodeProps.formatValue`). */
+  valueText: string;
   /**
    * Where the labels sit: beside the node (`left`/`right`, the outer columns
    * and any middle column whose gutter fits the name) or centred `above` it —
@@ -103,7 +113,7 @@ function AnimatedNode({
   onMouseEnter,
   onMouseLeave,
   name,
-  value,
+  valueText,
   labelPlacement,
   showLabels,
   nameVisible,
@@ -187,7 +197,7 @@ function AnimatedNode({
           transition={valueEnter}
           y={valueY}
         >
-          {intFmt(value)} sessions
+          {valueText}
         </MotionHaloText>
       )}
     </motion.g>
@@ -267,6 +277,7 @@ export function SankeyNode({
   fadedOpacity = 0.4,
   showLabels = true,
   getNodeColor: getNodeColorProp,
+  formatValue = defaultValueText,
 }: SankeyNodeProps) {
   const {
     nodes,
@@ -359,7 +370,7 @@ export function SankeyNode({
   // One label plan per node, resolved together so neighbours can yield to
   // each other: placement (side or above), then which lines have room.
   const labelPlans = useMemo(() => {
-    const valueText = (v: number) => `${intFmt(v)} sessions`;
+    const valueText = formatValue;
     const plans = nodes.map((node, index) => {
       const nodeX = node.x0 ?? 0;
       const nodeWidth = (node.x1 ?? 0) - nodeX;
@@ -447,7 +458,17 @@ export function SankeyNode({
       }
     }
     return plans;
-  }, [nodes, links, innerWidth, columns, clearanceAbove, nodePitches, measure, lineHeightPx]);
+  }, [
+    nodes,
+    links,
+    innerWidth,
+    columns,
+    clearanceAbove,
+    nodePitches,
+    measure,
+    lineHeightPx,
+    formatValue,
+  ]);
 
   return (
     <g className="sankey-nodes">
@@ -517,7 +538,7 @@ export function SankeyNode({
             rx={lineCap}
             showLabels={showLabels}
             totalNodes={nodes.length}
-            value={displayValue}
+            valueText={formatValue(displayValue)}
             valueVisible={valueVisible}
             width={nodeWidth}
             x={nodeX}

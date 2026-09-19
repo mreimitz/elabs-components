@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { agentLoopCopy, routeCardsCopy, worksWithCopy } from "../content/copy";
+import { agentLoopCopy, galleryCopy, routeCardsCopy, worksWithCopy } from "../content/copy";
 import { INSTALL, REGIONS } from "./helpers";
 
 // Concept §5: the page reads perfectly with JavaScript off — the server HTML carries every
@@ -11,24 +11,31 @@ test("the server HTML reads without JavaScript", async ({ page }) => {
   expect(response?.status()).toBe(200);
 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  for (const id of ["tour", "agents", "works-with"] as const) {
+  for (const id of [
+    "use-cases",
+    "blocks",
+    "charts",
+    "maps",
+    "examples",
+    "agents",
+    "themes",
+  ] as const) {
     const heading = page.locator(`#${id}`).getByRole("heading").first();
     await expect(heading, `#${id} heading`).toBeAttached();
     expect((await heading.textContent())?.trim().length ?? 0).toBeGreaterThan(0);
   }
-  await expect(page.getByRole("heading", { name: worksWithCopy.heading })).toBeAttached();
+  await expect(
+    page.getByRole("heading", { name: galleryCopy.sections.charts.title, exact: true }),
+  ).toBeAttached();
   await expect(page.getByRole("heading", { name: routeCardsCopy.heading })).toBeAttached();
   await expect(page.locator(REGIONS.hero)).toBeAttached();
 
   const html = await page.content();
-  expect(html).toContain(agentLoopCopy.honestyLine);
   expect(html).toContain(INSTALL.hostedMcp.command);
 
-  const navLinks = page.getByRole("banner").getByRole("link");
+  // The site frame is the app shell: its primary navigation is the rail, not a banner.
+  const navLinks = page.getByRole("navigation", { name: "Primary" }).getByRole("link");
   expect(await navLinks.count()).toBeGreaterThan(0);
-  const footerLinks = page.getByRole("contentinfo").getByRole("link");
-  expect(await footerLinks.count()).toBeGreaterThan(3);
-
   const hidden = await page.$$eval("[style]", (els) =>
     els
       .filter((el) => /(^|;)\s*opacity\s*:\s*0(\.0*)?\s*(;|$)/.test(el.getAttribute("style") ?? ""))
@@ -37,4 +44,42 @@ test("the server HTML reads without JavaScript", async ({ page }) => {
   expect(hidden, "inline opacity:0 hides content with JS off").toEqual([]);
 
   await expect(page.locator('head link[rel="alternate"][href="/llms.txt"]')).toHaveCount(1);
+});
+
+// The agent loop, its honesty line (D5) and the install matrix moved to `/agents`; they read
+// with JavaScript off there.
+test("/agents reads without JavaScript", async ({ page }) => {
+  const response = await page.goto("/agents");
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: worksWithCopy.heading })).toBeAttached();
+  expect(await page.content()).toContain(agentLoopCopy.honestyLine);
+});
+
+for (const route of [
+  "/templates",
+  "/templates/dashboard",
+  "/blocks",
+  "/charts",
+  "/charts/barchart",
+  "/components",
+  "/components/ui",
+  "/components/ui/button",
+  "/components/maps/mapcanvas",
+  "/resources",
+  "/attributions",
+]) {
+  test(`${route} answers with a level-1 heading, JavaScript off`, async ({ page }) => {
+    const response = await page.goto(route);
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+}
+
+// The app shell has no page footer; the link directory that used to sit there is `/resources`.
+test("/resources lists the package docs and agent endpoints, JavaScript off", async ({ page }) => {
+  await page.goto("/resources");
+  const links = page.locator('[data-slot="site-resources"]').getByRole("link");
+  expect(await links.count()).toBeGreaterThan(10);
+  await expect(page.locator('[data-slot="site-resources"] a[href="/llms.txt"]')).toBeAttached();
 });

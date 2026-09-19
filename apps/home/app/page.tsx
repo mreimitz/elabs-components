@@ -1,36 +1,65 @@
+import { Button, SectionHeader } from "@elabs-ai/components-ui";
 import { SiteGround } from "../components/site-ground";
 import { Hero } from "../components/hero/hero";
-import { Tour } from "../components/tour/tour";
-import { TOUR_TABS } from "../components/tour/tabs";
-import { AgentLoopSection } from "../components/agent-loop/agent-loop-section";
+import {
+  BlocksSection,
+  ChartsSection,
+  MapsSection,
+  PackagesSection,
+  UseCasesSection,
+  WallSection,
+} from "../components/gallery/sections";
 import { EmitUiSection } from "../components/agent-loop/emit-ui";
-import { WorksWith } from "../components/agents/works-with";
-import { TokenBand } from "../components/tokens/token-band";
+import { ThemeSwatches } from "../components/tokens/theme-swatches";
 import { RouteCards } from "../components/routes/route-cards";
+import { countFor } from "../lib/content";
+import { galleryCopy, shellCopy } from "../content/copy";
 
-// The page, section by section in movement order; each RM item appends its section under its
-// own comment. RM-094's hero replaced the RM-091 placeholder card (its theme switch now lives
-// in the hero) and the RM-092 depth-plane preview (the float plane is the real use).
+const copy = galleryCopy.sections;
+
+// The page in reading order, led by the use case: what you can build (templates), what it is
+// built from (blocks, charts, maps, components, packages), how an agent uses it, how it
+// re-brands, where to go next. Every tile links into the catalogue's detail pages; the
+// agent-loop trace, the install matrix and the gate catalogue live on `/agents`.
 export default function HomePage() {
   return (
-    <main className="flex min-h-dvh w-full flex-col">
-      {/* RM-092 */}
+    <div className="flex w-full flex-col">
       <SiteGround />
-      {/* RM-094 */}
       <Hero />
-      {/* RM-096 */}
-      <Tour meta={TOUR_TABS} />
-      {/* RM-099 */}
-      <AgentLoopSection />
-      {/* RM-101 — the agents movement's second half, directly under the agent loop. */}
+      <UseCasesSection />
+      <BlocksSection />
+      <ChartsSection />
+      <MapsSection />
+      <WallSection />
+      <PackagesSection />
+      <section
+        id="agents"
+        className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-6 pt-16 pb-12"
+      >
+        <SectionHeader
+          title={copy.agents.title}
+          description={copy.agents.description}
+          actions={
+            <Button asChild variant="outline">
+              <a href="/agents">{copy.agents.more}</a>
+            </Button>
+          }
+        />
+        <p className="text-meta text-muted-foreground">
+          <a
+            className="underline underline-offset-2 focus-ring"
+            href={`${shellCopy.links.github}/blob/main/docs/GATES.md`}
+          >
+            {copy.agents.gates(countFor("gates").value)}
+          </a>
+        </p>
+      </section>
       <EmitUiSection />
-      {/* RM-102 — the matrix is its own section (`id="works-with"`), install + route cards
-          follow as movement 6. */}
-      <WorksWith />
-      {/* RM-103 — the tokens band sits between the works-with matrix and the closing route
-          cards (concept order §4.4 → §4.5 → §4.6; wave-4 ruling 24). */}
-      <TokenBand />
+      <section id="themes" className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16">
+        <SectionHeader title={copy.themes.title} description={copy.themes.description} />
+        <ThemeSwatches />
+      </section>
       <RouteCards />
-    </main>
+    </div>
   );
 }

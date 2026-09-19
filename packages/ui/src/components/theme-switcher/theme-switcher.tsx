@@ -13,7 +13,7 @@ import {
   type ThemeScheme,
 } from "@elabs-ai/components-tokens";
 
-import { Button } from "../button";
+import { Button, type ButtonProps } from "../button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +59,12 @@ export interface ThemeSwitcherProps extends Omit<HTMLAttributes<HTMLButtonElemen
   effect?: ThemeTransitionEffect;
   /** Control size. Default "default". */
   size?: ButtonSize;
+  /**
+   * The trigger button's variant. Default: `"outline"` for the dropdown forms and `"ghost"` for
+   * the two-theme toggle (today's behaviour). Pass `"ghost"` when the switcher sits in a row of
+   * borderless icon buttons — an app top bar — so it reads as one of them.
+   */
+  variant?: ButtonProps["variant"];
   /**
    * Controlled preference (#366). When set, the switcher derives its "current"
    * state — including "system" — from this prop instead of its own internal,
@@ -113,6 +119,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
       showSystem = true,
       effect = "polygon",
       size = "default",
+      variant,
       preference,
       onPreferenceChange,
       className,
@@ -274,7 +281,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
           <DropdownMenuTrigger asChild>
             <Button
               ref={ref}
-              variant="outline"
+              variant={variant ?? "outline"}
               size={ICON_SIZE[size]}
               aria-label={t("ui.themeSwitcher.theme")}
               className={className}
@@ -328,7 +335,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
           <DropdownMenuTrigger asChild>
             <Button
               ref={ref}
-              variant="outline"
+              variant={variant ?? "outline"}
               size={ICON_SIZE[size]}
               aria-label={t("ui.themeSwitcher.theme")}
               className={className}
@@ -390,7 +397,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
           <TooltipTrigger asChild>
             <Button
               ref={ref}
-              variant="ghost"
+              variant={variant ?? "ghost"}
               size={ICON_SIZE[size]}
               aria-label={`Theme: ${roleLabel(current)}. Activate to switch to ${roleLabel(next)}.`}
               onClick={apply}

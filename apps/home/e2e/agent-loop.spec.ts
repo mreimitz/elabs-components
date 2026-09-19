@@ -1,12 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gotoHome } from "./helpers";
 
 // RM-099's "Ask your agent" loop: the live path talks to the site's own /mcp (request bodies
 // asserted), and with /mcp unreachable the same prompt replays the recorded responses.
 const PROMPT = "Build me a KPI overview for churn with a trend and a movers list";
 
 async function runPrompt(page: Page) {
-  await gotoHome(page);
+  // The loop lives on `/agents` (the home page keeps only the agents summary and the editor).
+  await page.goto("/agents", { waitUntil: "load" });
   await page.locator("#agents").scrollIntoViewIfNeeded();
   await page.getByRole("combobox", { name: "Choose an example prompt" }).click();
   await page.getByRole("option", { name: PROMPT }).click();

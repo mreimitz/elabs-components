@@ -53,6 +53,8 @@ import { HOME_MCP_OPTIONS } from "../apps/home/lib/mcp-site-options.mjs";
 import { A2UI_EXAMPLE, validateSurface } from "../packages/cli/lib/a2ui.mjs";
 import { validateSpec } from "../packages/cli/lib/dashboard-spec.mjs";
 
+import { buildCatalog } from "./lib/home-catalog.mjs";
+
 export const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 export const OUT_DIR = join(REPO_ROOT, "apps/home/content/generated");
 // RM-093 — MCP discovery (2026-09-17 review §4.2 (6), §6 B4): a public well-known file, so an
@@ -514,6 +516,7 @@ export function buildCreateThemeSkill({ repoRoot = REPO_ROOT } = {}) {
 async function buildAll() {
   const manifest = json("brand-ui.manifest.json");
   const registry = json("registry/registry.json");
+  const catalog = buildCatalog(manifest, registry, { repoRoot: REPO_ROOT });
   const cli = buildCli(manifest);
   return {
     "packages.json": buildPackages(manifest),
@@ -556,6 +559,9 @@ async function buildAll() {
     "emit-ui-examples.json": buildEmitUiExamples(),
     // RM-103
     "create-theme.json": buildCreateThemeSkill(),
+    // The catalogue: one record per Storybook docs page (scripts/lib/home-catalog.mjs).
+    "catalog-index.json": catalog.index,
+    "catalog-pages.json": catalog.pages,
   };
 }
 

@@ -24,6 +24,10 @@ export function formatKpiValue(
         style: "currency",
         currency,
         notation: "compact",
+        // Pinned: with `style: "currency"` the engine's default minimum comes from the
+        // currency (2), which Node and browsers clamp differently under compact notation
+        // ("€230.0K" on the server, "€230K" in Chrome) — a hydration mismatch when SSR'd.
+        minimumFractionDigits: 0,
         maximumFractionDigits: 1,
       }).format(value);
     case "percent":
