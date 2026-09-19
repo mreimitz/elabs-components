@@ -7,7 +7,27 @@ import { CopyableValue } from "../copyable-value";
 import { Skeleton } from "../skeleton";
 import { useLocale } from "../locale-provider";
 import { cn } from "../../lib/cn";
-import { type NumberFormatKind, numberFormatOptions } from "../../lib/compact-number";
+import {
+  type NumberFormat,
+  type ResolvedNumberFormat,
+  resolveNumberFormat,
+} from "../../lib/compact-number";
+
+/**
+ * Applies a {@link ResolvedNumberFormat}'s `prefix`/`suffix`/`parens` on top
+ * of the plain `Intl` string `formatNumber` produces — the two things Intl
+ * itself cannot render (RM-109). Twin of `formatResolvedChartValue`
+ * (`packages/charts/src/charts/chart-formatters.ts`).
+ */
+function formatResolvedNumber(
+  resolved: ResolvedNumberFormat,
+  formatNumber: (n: number, opts?: Intl.NumberFormatOptions) => string,
+  value: number,
+): string {
+  const numeric = formatNumber(resolved.parens ? Math.abs(value) : value, resolved.options);
+  const signed = resolved.parens && value < 0 ? `(${numeric})` : numeric;
+  return `${resolved.prefix}${signed}${resolved.suffix}`;
+}
 
 /*
  * ADR 0012: this is the ONE KPI tile — `@elabs-ai/components-charts` re-exports it.
@@ -83,8 +103,15 @@ export type MetricCardSize = NonNullable<VariantProps<typeof metricValueVariants
  * away via `CopyableValue`. Anything that is not a `number` (a string, an
  * element) is passed through untouched, so every existing call site is
  * unaffected.
+ *
+ * Also accepts the object form (RM-109, `NumberFormatSpec` —
+ * `{ decimals, abbreviate, sign, prefix, suffix, … }`,
+ * `packages/ui/src/lib/compact-number.ts`) for a tile that needs e.g.
+ * `{ decimals: 1, suffix: "%" }` without hand-formatting the string itself.
+ * The two preset-string cases render byte-for-byte as before this type
+ * widened — only a spec OBJECT argument reaches the new code path.
  */
-export type MetricCardValueFormat = NumberFormatKind | ((value: number) => ReactNode);
+export type MetricCardValueFormat = NumberFormat | ((value: number) => ReactNode);
 
 export interface MetricCardProps
   extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof metricValueVariants> {
@@ -174,7 +201,11 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
     ? value
     : typeof valueFormat === "function"
       ? valueFormat(value)
-      : formatNumber(value, numberFormatOptions(valueFormat, value, currency));
+      : formatResolvedNumber(
+          resolveNumberFormat(valueFormat, value, currency),
+          formatNumber,
+          value,
+        );
   // Only offer the exact figure when the display actually differs from it —
   // a button around a value that was never shortened is noise.
   const showsExact = isNumeric && String(formattedValue) === String(value);

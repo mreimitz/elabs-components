@@ -11,6 +11,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - AccordionItem
 - AccordionTrigger
 - AdvancedGroup
+- AffordanceHint
 - Alert (variant=default*|info|success|warning|destructive)
 - AlertDescription
 - AlertDialog — Confirmation overlay for destructive / irreversible actions — friction proportional to consequence.
@@ -100,6 +101,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Using Combobox for a tiny fixed option set — a plain Select is simpler and lighter.
   - avoid: Restyling the trigger/panel by hand — Combobox is a Popover + Command assembly; style through those parts.
 - Command
+- CommandChip
 - CommandDialog
 - CommandEmpty
 - CommandGroup
@@ -129,8 +131,14 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - CopyableValue
 - DatePicker
 - DateRangePicker
+- DEFAULT_COMMAND_CHIP_LABELS
+- DEFAULT_INSTALL_TABS_LABELS
+- DEFAULT_INTEGRATION_MATRIX_LABELS
 - DEFAULT_MESSAGES
+- DEFAULT_SPEC_PLAYGROUND_LABELS
+- DEFAULT_SURFACE_TOUR_ACTIONS_LABELS
 - DEFAULT_THEME_FAMILY_SWITCH_LABELS
+- DEFAULT_TOKEN_SPOTLIGHT_LABELS
 - Descriptions
 - DescriptionsItem
 - Dialog — Modal overlay for focused tasks/flows that block the page until dismissed.
@@ -216,6 +224,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - InputOTPGroup
 - InputOTPSeparator
 - InputOTPSlot
+- InstallTabs
+- IntegrationMatrix
 - Kbd
 - KeyboardShortcuts — Grouped, searchable presentation of an application's shortcut set — the sheet the Kbd atom belongs in.
   - avoid: Rendering a raw key string instead of Kbd — the atom carries the platform glyphs and the translate opt-out.
@@ -380,6 +390,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - SkipLink
 - Slider
 - SliderNumber
+- SpecPlayground
 - Spinner
 - SplitPanel
 - StatePanel (kind=empty*|error|loading)
@@ -395,6 +406,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - StatusIcon
 - STREAMDOWN_TRANSLATION_KEYS
 - SuccessIllustration
+- SurfaceTour
+- SurfaceTourActions
 - Switch — Immediate on/off setting toggle (applies on change, not on submit).
   - avoid: Switch that needs a separate Save to apply — use a Checkbox in a form instead; a Switch should apply immediately.
 - Table
@@ -425,6 +438,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - Toggle (variant=default*|outline|segmented · size=default*|sm|lg)
 - ToggleGroup
 - ToggleGroupItem
+- TOKEN_SPOTLIGHT_SCAN_LIMIT
+- TokenSpotlight
 - Toolbar (orientation=horizontal*|vertical) — A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls.
   - avoid: Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.
   - avoid: Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.

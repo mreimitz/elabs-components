@@ -72,7 +72,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Orders")).toBeInTheDocument();
+    await expect(await canvas.findByText("Orders")).toBeInTheDocument();
 
     // Selecting "Feb" excludes the other two rows — de-emphasised with the
     // muted-foreground ink + dashed-frame recipe (`.claude/rules/dashboard.md`), never the

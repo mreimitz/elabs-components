@@ -37,6 +37,7 @@ import {
 } from "./ring-context";
 import { useHighDecorationOf } from "./use-high-decoration";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 
 function generateRingArcPath(
   innerRadius: number,
@@ -61,6 +62,11 @@ export interface RingChartProps extends ChartSelectionProps {
   data: RingData[];
   /** Chart size in pixels. If not provided, uses parent container size */
   size?: number;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Stroke width of each ring. Default: 12 */
   strokeWidth?: number;
   /** Gap between rings. Default: 6 */
@@ -118,8 +124,15 @@ export interface RingChartProps extends ChartSelectionProps {
    * layout room for it. Only takes visible effect at `--decoration` ≥ 8 (the
    * smooth-arc rendering below that threshold has no leader/label
    * treatment); unset renders exactly as before.
+   *
+   * Also accepts `PieChart`'s `labels` OBJECT shape (RM-114 API parity only
+   * — `{ placement: "outside" }` maps to this same tick-ring mode; every
+   * other `placement`/`show`/`matchColor`/`minAngle` field is a no-op here,
+   * `RingChart` has no inside-label or leader-collision treatment of its
+   * own). `{ placement: "none" }` and every other object shape behave as
+   * unset.
    */
-  labels?: "outside";
+  labels?: "outside" | { placement?: "outside" | "none" };
 }
 
 interface RingChartInnerProps {
@@ -138,7 +151,7 @@ interface RingChartInnerProps {
   enterTransition?: Transition;
   enterStaggerScale: number;
   geometryScrubbing: boolean;
-  labels?: "outside";
+  labels?: "outside" | { placement?: "outside" | "none" };
 }
 
 function isRing(child: ReactNode): boolean {
@@ -199,8 +212,16 @@ const RingChartCore = memo(function RingChartCore({
   enterTransition,
   enterStaggerScale,
   geometryScrubbing,
-  labels,
+  labels: labelsProp,
 }: RingChartInnerProps) {
+  // RM-114 alias parity: `{ placement: "outside" }` (PieChart's `labels`
+  // shape) means the same thing as the bare string here; everything else
+  // resolves to "no label mode", today's behavior.
+  const labels: "outside" | undefined =
+    labelsProp === "outside" ||
+    (typeof labelsProp === "object" && labelsProp?.placement === "outside")
+      ? "outside"
+      : undefined;
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -486,6 +507,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
   {
     data,
     size: fixedSize,
+    plotHeight,
     strokeWidth = 12,
     ringGap = 6,
     baseInnerRadius = 60,
@@ -551,7 +573,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
   // If fixed size is provided, use it directly
   if (fixedSize) {
     return (
-      <div
+      <ChartPlotRoot
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative flex items-center justify-center", className)}
@@ -582,16 +604,17 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
             {children}
           </RingChartInner>,
         )}
-      </div>
+      </ChartPlotRoot>
     );
   }
 
   // Otherwise use ParentSize for responsive sizing
   return (
-    <div
+    <ChartPlotRoot
+      plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
-      className={cn("relative aspect-square w-full", className)}
+      className={cn("relative w-full", className)}
       ref={callbackRef}
       role={role}
       tabIndex={tabIndex}
@@ -622,7 +645,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
           )
         }
       </ParentSize>
-    </div>
+    </ChartPlotRoot>
   );
 });
 

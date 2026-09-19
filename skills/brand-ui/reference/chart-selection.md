@@ -97,6 +97,8 @@ never guesses at them; you reach for the container directly.
 | Arbitrary node/edge relationships, no hierarchy                      | `NetworkChart`             | `data: { nodes, edges }`                            | The relationship IS a hierarchy — use `TreeChart`/`treemap`        |
 | Tasks/phases across a timeline, with dependencies                    | `Gantt`                    | `tasks`, `dependencies`, `viewMode`                 | Not really scheduled work — use `dumbbell` (a single before/after) |
 
+**Dual-axis (RM-121).** A second value axis is for expert readers and only when four rules hold: (1) the two series have **different units** (a count beside a rate), never the same unit on two scales; (2) the scales are **proportional or both zero-based** — both or neither — so a gridline means the same on each side (`ComposedChart yAxes={{ align: "ticks" }}` shares the rows, `proportional` shares the growth factor, columns and areas always stay zero-based); (3) the series use **different mark types** (columns on the left, a line on the right) and their ranges don't overlap into a false crossing; (4) each **axis is labelled in its series' colour** (`YAxis matchSeriesColor`, `sideLabel="auto"`) and the legend names the sides (`legend={{ layout: "split" }}`). If any rule fails, use two charts or small multiples instead.
+
 ## Querying instead of guessing
 
 `brand-ui chart-for "<data shape>"` and the `chart_for` MCP tool rank chart

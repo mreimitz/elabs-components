@@ -12,11 +12,16 @@ import {
   useMemo,
   useRef,
   useState,
+  useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
-import type { LineConfig, Margin } from "./chart-context";
+// Labels — RM-110
+import { useChartAutoSummary } from "./chart-a11y";
+import type { ChartLegendEntry, LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
 import {
@@ -38,10 +43,22 @@ import {
   resolveRestingChartPhase,
 } from "./chart-phase";
 import type { ChartRevealOn } from "./chart-reveal-clip";
+// Legend engine — RM-118
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { PatternArea } from "./pattern-area";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
-import { TimeSeriesChartInner } from "./time-series-chart-shell";
+import {
+  ChartSeriesModeProvider,
+  type NullsMode,
+  TimeSeriesChartInner,
+} from "./time-series-chart-shell";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+} from "./chart-breakpoint";
 
 export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps {
   /** Data array - each item should have a date field and numeric values */
@@ -82,6 +99,11 @@ export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps
   replayOnClick?: boolean;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
   /** Loading vs ready — drives chart phase and loading chrome. Default: `"ready"`. */
@@ -149,6 +171,25 @@ export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps
    * set. Default: false.
    */
   labelBands?: boolean;
+  /**
+   * Container-level default for an `Area`'s own `nulls` prop (RM-112). Unset
+   * — every `Area` keeps its own default (`"gap"`).
+   */
+  nulls?: NullsMode;
+  /**
+   * Hovering (or, on touch, tapping) one series dims every other series to
+   * the shared selection-excluded opacity (RM-112, `dw-river.md` §2.3).
+   * Default false — today's behaviour.
+   */
+  focusOnHover?: boolean;
+  /**
+   * Legend engine (RM-118): `true` or a config object mounts `ChartLegend`
+   * beside the plot via `useContainerLegend`; `{ interactive: "toggle" }`
+   * hides a band and re-tweens the y-domain. Unset (default) renders
+   * NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end
+   * labels stay the default multi-series key for `AreaChart`.
+   */
+  legend?: ContainerLegendProp;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -227,6 +268,25 @@ interface ChartInnerProps {
   seams?: number;
   /** Band name labels — see `AreaChartProps.labelBands`. */
   labelBands?: boolean;
+  /** Container-level `nulls` default — see `AreaChartProps.nulls`. */
+  nulls?: NullsMode;
+  /** Dim non-hovered series — see `AreaChartProps.focusOnHover`. */
+  focusOnHover?: boolean;
+  /** Toggled-off series keys (RM-118) — see `TimeSeriesChartInnerProps.hiddenKeys`. */
+  hiddenKeys?: ReadonlySet<string>;
+  /**
+   * The legend item currently hovered or keyboard-focused (RM-118, `Refs
+   * #545`) — merged into `ChartSeriesModeProvider`'s own hover-dim state so a
+   * legend hover reuses the SAME fade `focusOnHover` already draws for a
+   * pointer hovering the band itself.
+   */
+  legendHoveredKey?: string | null;
+  /**
+   * The container legend engine's own `visible` (RM-118, sitting 3, R4) —
+   * see `TimeSeriesChartInnerProps.legendVisible`'s doc for why this
+   * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
+   */
+  legendVisible?: boolean;
 }
 
 function ChartInner({
@@ -259,6 +319,11 @@ function ChartInner({
   offset,
   seams,
   labelBands,
+  nulls,
+  focusOnHover,
+  hiddenKeys,
+  legendHoveredKey,
+  legendVisible,
 }: ChartInnerProps) {
   // `children` gets a fresh identity every parent render; `useStableValue`
   // collapses back to the previous reference when the series content hasn't
@@ -266,40 +331,51 @@ function ChartInner({
   // recompute on an unrelated re-render.
   const lines = useStableValue(useMemo(() => extractAreaConfigs(children), [children]));
 
+  // One clip per chart instance: a fixed id makes every chart on a page
+  // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
+  const clipPathId = `chart-area-grow-clip-${useId().replace(/:/g, "")}`;
   const chart = (
     // The provider wraps the WHOLE `TimeSeriesChartInner` tree, not `children`
     // — so `Children.forEach`'s series/def/axis classification inside the
     // shell still walks the caller's original `children` untouched. See
     // `AreaStackProvider`'s own docblock in `./area`.
-    <AreaStackProvider labelBands={labelBands} offset={offset} seams={seams}>
-      <TimeSeriesChartInner
-        animationDuration={animationDuration}
-        animationEasing={animationEasing}
-        chartStatus={chartStatus}
-        clipPathId="chart-area-grow-clip"
-        containerRef={containerRef}
-        data={data}
-        enterTransition={enterTransition}
-        height={height}
-        lines={lines}
-        loadingLabel={loadingLabel}
-        margin={margin}
-        onPhaseChange={onPhaseChange}
-        replayOnClick={replayOnClick}
-        revealOn={revealOn}
-        revealSignature={revealSignature}
-        tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
-        width={width}
-        xDataKey={xDataKey}
-        xDomain={xDomain}
-        xDomainSlotCount={xDomainSlotCount}
-        xScaleType={xScaleType}
-        yDomainTween={yDomainTween}
-        yDomainTweenDuration={yDomainTweenDuration}
-      >
-        {children}
-      </TimeSeriesChartInner>
-    </AreaStackProvider>
+    <ChartSeriesModeProvider
+      focusOnHover={focusOnHover}
+      legendHoveredKey={legendHoveredKey}
+      nulls={nulls}
+    >
+      <AreaStackProvider labelBands={labelBands} offset={offset} seams={seams}>
+        <TimeSeriesChartInner
+          animationDuration={animationDuration}
+          animationEasing={animationEasing}
+          chartStatus={chartStatus}
+          clipPathId={clipPathId}
+          containerRef={containerRef}
+          data={data}
+          enterTransition={enterTransition}
+          height={height}
+          hiddenKeys={hiddenKeys}
+          legendVisible={legendVisible}
+          lines={lines}
+          loadingLabel={loadingLabel}
+          margin={margin}
+          onPhaseChange={onPhaseChange}
+          replayOnClick={replayOnClick}
+          revealOn={revealOn}
+          revealSignature={revealSignature}
+          tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
+          width={width}
+          xDataKey={xDataKey}
+          xDomain={xDomain}
+          xDomainSlotCount={xDomainSlotCount}
+          xScaleType={xScaleType}
+          yDomainTween={yDomainTween}
+          yDomainTweenDuration={yDomainTweenDuration}
+        >
+          {children}
+        </TimeSeriesChartInner>
+      </AreaStackProvider>
+    </ChartSeriesModeProvider>
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
@@ -321,12 +397,7 @@ function ChartInner({
   );
 }
 
-/**
- * @dataShape measures over time where magnitude matters — stacked, or as a stream with
- *   offset="wiggle"
- * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
- */
-export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
+const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
   {
     data,
     xDataKey = "date",
@@ -338,7 +409,8 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
     revealSignature,
     revealOn,
     replayOnClick,
-    aspectRatio = "2 / 1",
+    aspectRatio,
+    plotHeight,
     className = "",
     status = DEFAULT_CHART_STATUS,
     loadingLabel,
@@ -363,12 +435,48 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
     offset,
     seams,
     labelBands,
+    nulls,
+    focusOnHover,
+    legend,
   },
   ref,
 ) {
   const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
   // Internal ref anchors tooltips; merge with the forwarded ref via a callback ref.
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Legend engine (RM-118) — see the identical comment in `line-chart.tsx`.
+  const areaConfigsForLegend = useStableValue(
+    useMemo(() => extractAreaConfigs(children), [children]),
+  );
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      areaConfigsForLegend.map((line) => ({
+        key: line.dataKey,
+        label: line.dataKey,
+        color: line.stroke || "var(--chart-line-primary)",
+        kind: "series" as const,
+      })),
+    [areaConfigsForLegend],
+  );
+  // R1 (moved into the engine, sitting 3): `useContainerLegend` itself now
+  // treats an unset `legend` as "off" — see its module doc — so `AreaChart`
+  // forwards its own `legend` prop straight through, no per-file guard.
+  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+  const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  const handleLegendHoverChange = useCallback(
+    (index: number | null) => {
+      setLegendHoveredIndex(index);
+      setLegendHoveredKey(index == null ? null : (legendItems[index]?.key ?? null));
+    },
+    [legendItems],
+  );
+  const containerLegend = useContainerLegend({
+    legend,
+    items: legendItems,
+    hoveredIndex: legendHoveredIndex,
+    onHoverChange: handleLegendHoverChange,
+  });
 
   const mergedRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -385,13 +493,21 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
   );
 
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
+  const description = useChartAutoSummary("area", {
+    accessibleLabel,
+    accessibleDescription,
+    children,
+    data,
+    xDataKey,
+  });
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+  } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
   const [chartPhase, setChartPhase] = useState<ChartPhase>(() => resolveRestingChartPhase(status));
   const handlePhaseChange = useCallback(
     (phase: ChartPhase) => {
@@ -409,17 +525,18 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
       chartPhase === "revealingLoading"),
   );
 
-  return (
-    <div
+  return containerLegend.wrap(
+    <ChartPlotRoot
+      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
-      style={{ aspectRatio, touchAction: "none", ...style }}
+      style={{ touchAction: "none", ...style }}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      <ChartA11yLabel descId={descId} description={description} />
       <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
         <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
           <ParentSize debounceTime={100}>
@@ -433,11 +550,16 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
                 datapointLabel={datapointLabel}
                 enterTransition={enterTransition}
                 height={height}
+                hiddenKeys={containerLegend.hiddenKeys}
+                legendHoveredKey={legendHoveredKey}
+                legendVisible={containerLegend.visible}
                 loadingLabel={loadingLabel}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
                 margin={margin}
                 copyValueOnActivate={copyValueOnActivate}
+                focusOnHover={focusOnHover}
                 labelBands={labelBands}
+                nulls={nulls}
                 offset={offset}
                 onDatapointClick={onDatapointClick}
                 onPhaseChange={handlePhaseChange}
@@ -465,8 +587,22 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}
-    </div>
+    </ChartPlotRoot>,
   );
+});
+
+// Annotations — RM-111
+export interface AreaChartProps {
+  /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
+  annotations?: readonly ChartAnnotation[];
+}
+/**
+ * @dataShape measures over time where magnitude matters — stacked, or as a stream with
+ *   offset="wiggle"
+ * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
+ */
+export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(props, ref) {
+  return useAnnotatedChart(AreaChartPlot, props, ref);
 });
 
 AreaChart.displayName = "AreaChart";

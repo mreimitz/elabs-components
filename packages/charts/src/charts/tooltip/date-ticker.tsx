@@ -32,12 +32,19 @@ const DateTickerInner = memo(function DateTickerInner({
   currentIndex,
   labels,
 }: Omit<DateTickerProps, "visible">) {
-  // Parse labels into month and day parts
+  // Parse labels into month and day parts. Labels are usually "Mon d" (the
+  // shortDateFmt shape), but RM-109's date-format ladder also hands this a
+  // single-token rung ("2016", "14:00") or a three-token one ("Mon, 3 Mar")
+  // when an `XAxis dateFormat` preset other than the default is in play — a
+  // single token has no month to stack, so it renders in the day slot alone
+  // instead of leaving it blank; three-plus tokens keep everything after the
+  // first as the day part instead of dropping it.
   const parsedLabels = useMemo(() => {
     return labels.map((label, index) => {
       const parts = label.split(" ");
-      const month = parts[0] || "";
-      const day = parts[1] || "";
+      const hasMonth = parts.length > 1;
+      const month = hasMonth ? (parts[0] ?? "") : "";
+      const day = hasMonth ? parts.slice(1).join(" ") : (parts[0] ?? "");
       return { month, day, full: label, key: `${label}::${index}` };
     });
   }, [labels]);

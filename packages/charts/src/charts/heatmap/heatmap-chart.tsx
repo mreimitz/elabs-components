@@ -47,6 +47,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useCallback,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -98,6 +99,12 @@ import {
 } from "./heatmap-scale";
 import { HeatmapTooltip } from "./heatmap-tooltip";
 import { type ChartSelectionProps, ChartSelectionProvider } from "../chart-selection";
+import {
+  ChartPlotBox,
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  type Responsive,
+} from "../chart-breakpoint";
 
 /** Plot-area insets. */
 export interface HeatmapMargin {
@@ -216,6 +223,14 @@ export interface HeatmapChartProps extends ChartSelectionProps, ChartInteraction
   /** Show the ramp key below the plot. Default `true`. */
   showLegend?: boolean;
   /**
+   * How the legend key states the scale — the same `"ranges"`/`"endpoints"`
+   * vocabulary `RampLegend`'s `scale.labels` uses (RM-118). `"endpoints"`
+   * (default, unchanged): `lo`/`hi` bracket the strip. `"ranges"`: one
+   * `from–to` label under every swatch, so a reader can place a cell in its
+   * step without hovering it — most useful together with a small `steps`.
+   */
+  legendLabels?: "endpoints" | "ranges";
+  /**
    * A visible title for the column axis (#280), e.g. "Months since signup" —
    * printed directly under the plot, ABOVE the legend, so it reads as the
    * axis's own caption rather than a floating sentence after the key. Default
@@ -227,6 +242,11 @@ export interface HeatmapChartProps extends ChartSelectionProps, ChartInteraction
   margin?: Partial<HeatmapMargin>;
   /** Aspect ratio of the plot body. Default `"16 / 9"` (`"6 / 1"` for calendar). */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /**
    * When the enter stagger plays (RM-020). `"mount"` (default) plays as soon as
    * the chart renders; `"inView"` holds every cell hidden until the plot
@@ -494,6 +514,13 @@ interface HeatmapBodyProps {
   revealOn: ChartRevealOn;
   rowHighlight?: (rowLabel: string) => boolean;
   loading: boolean;
+  /**
+   * RM-118: notifies the hovered cell up to `HeatmapChartShell`, which is
+   * outside this measured box, so it can feed `HeatmapLegend`'s `hover`
+   * marker — the legend sits as a SIBLING of the `ParentSize` box (see the
+   * file docblock), so it has no access to `HeatmapProvider`'s hover context.
+   */
+  onHoverChange?: (hover: HeatmapHoverContextValue) => void;
 }
 
 function HeatmapBody({
@@ -507,6 +534,7 @@ function HeatmapBody({
   loading,
   margin,
   mode,
+  onHoverChange,
   revealOn,
   rowHighlight,
   scale,
@@ -517,6 +545,9 @@ function HeatmapBody({
 }: HeatmapBodyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<HeatmapHoverContextValue>({ hovered: null, pointer: null });
+  useEffect(() => {
+    onHoverChange?.(hover);
+  }, [hover, onHoverChange]);
   const hatchId = `heatmap-neg-${useId().replace(/:/g, "")}`;
   const datapointsEnabled = useChartDatapointsEnabled();
   const activate = useActivateDatapoint();
@@ -1002,6 +1033,8 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     accessibleDescription,
     accessibleLabel,
     aspectRatio,
+
+    plotHeight,
     cellRadius = 4,
     className,
     data,
@@ -1017,6 +1050,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     palette = "sequential",
     revealOn = "mount",
     rowHighlight,
+    legendLabels = "endpoints",
     showLegend = true,
     showValueHalo = true,
     showValues,
@@ -1109,21 +1143,34 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
   const minPlotWidth =
     variant === "calendar" ? grid.columns * MIN_CALENDAR_COLUMN_PX + margin.left + margin.right : 0;
 
+  // RM-118: the live-hovered cell, lifted here from `HeatmapBody` (which owns
+  // the pointer math) so `HeatmapLegend` below — a SIBLING of the measured
+  // plot box, outside `HeatmapProvider` — can move its marker with it.
+  const [liveHover, setLiveHover] = useState<HeatmapHoverContextValue>({
+    hovered: null,
+    pointer: null,
+  });
+
   return (
-    <div
+    <ChartPlotRoot
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("flex w-full flex-col gap-2", className)}
       data-slot="heatmap-chart"
+      fillsFrame
       ref={ref}
       role={role}
       style={style}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <div
+      <ChartPlotBox
+        plotBox={{
+          aspectRatio,
+          plotHeight,
+          defaultPlotHeight: variant === "calendar" ? "6 / 1" : "16 / 9",
+        }}
         className="relative w-full overflow-x-auto"
-        style={{ aspectRatio: aspectRatio ?? (variant === "calendar" ? "6 / 1" : "16 / 9") }}
       >
         {isEmpty ? (
           // The one live region of the empty state. `StatePanel kind="empty"`
@@ -1158,6 +1205,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
                     loading={loading}
                     margin={margin}
                     mode={resolvedMode}
+                    onHoverChange={setLiveHover}
                     revealOn={revealOn}
                     rowHighlight={rowHighlight}
                     scale={scale}
@@ -1171,7 +1219,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
             </ParentSize>
           </div>
         )}
-      </div>
+      </ChartPlotBox>
       {xAxisLabel && !isEmpty ? (
         <p
           className="text-center text-caption text-muted-foreground"
@@ -1186,13 +1234,15 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
           emptyValue={emptyValue}
           formatValue={formatValue}
           hi={scale.hi}
+          hover={liveHover.hovered?.value ?? null}
+          labelMode={legendLabels}
           lo={scale.lo}
           missingCount={scale.missingCount}
           swatches={scale.swatches}
           zeroCount={scale.zeroCount}
         />
       ) : null}
-    </div>
+    </ChartPlotRoot>
   );
 });
 

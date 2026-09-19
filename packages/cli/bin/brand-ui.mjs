@@ -36,7 +36,7 @@ import {
   matchTemplates,
   matchCliVerbs,
 } from "../lib/core.mjs";
-import { renderDocsBrief } from "../lib/docs-brief.mjs";
+import { renderDocsBrief, smallerCard } from "../lib/docs-brief.mjs";
 import { searchExports, renderComponentArm, NO_MATCH_GUIDANCE } from "../lib/search.mjs";
 import { writeContext, checkContext } from "../lib/context.mjs";
 import { resolveAllProps } from "../lib/docgen.mjs";
@@ -608,96 +608,99 @@ function cmdDocs() {
       records.push(docsJsonRecord(hit, extractProps(hit.module, hit.name)));
       continue;
     }
+    const full = renderCliDocs(hit);
     // --brief: the smaller first read (lib/docs-brief.mjs); DataTable 29 KB → 6 KB.
-    if (flags.has("--brief")) {
-      console.log(`${renderDocsBrief(hit)}\n`);
-      continue;
-    }
-    console.log(`# ${hit.name}  (${hit.pkg})`);
-    if (hit.importPath) console.log(`import from: ${hit.importPath}`);
-    console.log(`source: ${hit.module}`);
-    // Intent metadata (#80): purpose / relationships / state→token / anti-patterns.
-    // The agent-distinctive layer types can't encode — print it ABOVE the prop
-    // table so an agent reads "what's correct/wrong" before "what's possible".
-    const intent = hit.intent;
-    if (intent) {
-      if (intent.purpose)
-        console.log(`purpose: ${intent.purpose}${intent.category ? `  [${intent.category}]` : ""}`);
-      const rel = intent.relationships || {};
-      const relLines = [
-        rel.usedInside?.length && `used inside: ${rel.usedInside.join(", ")}`,
-        rel.contains?.length && `contains: ${rel.contains.join(", ")}`,
-        rel.pairsWith?.length && `pairs with: ${rel.pairsWith.join(", ")}`,
-        rel.avoidNextTo?.length && `avoid next to: ${rel.avoidNextTo.join(", ")}`,
-      ].filter(Boolean);
-      for (const l of relLines) console.log(`  ${l}`);
-      if (intent.stateTokens && Object.keys(intent.stateTokens).length) {
-        console.log("state → token:");
-        for (const [state, tok] of Object.entries(intent.stateTokens))
-          console.log(`  ${state}: ${tok}`);
-      }
-      if (intent.antiPatterns?.length) {
-        console.log("anti-patterns (avoid):");
-        for (const ap of intent.antiPatterns) console.log(`  ✗ ${ap}`);
-      }
-    }
-    // Resolved prop table (#79): own-declared props with optionality, type and
-    // TSDoc, plus the `extends` clause. When the docgen pass (ADR 0013) enriched
-    // this entry, own-declared props carry resolved defaults/descriptions and a
-    // `resolved` map holds the expanded INHERITED prop surface — printed below.
-    if (hit.props) {
-      if (hit.props.extends?.length) {
-        const note = hit.props.resolved
-          ? "inherited — expanded below"
-          : "inherited props — read source/types";
-        console.log(`extends: ${hit.props.extends.join(", ")}  (${note})`);
-      }
-      if (hit.props.props?.length) {
-        console.log("props (own-declared):");
-        for (const p of hit.props.props) {
-          const req = p.optional ? "?" : "";
-          const def = p.defaultValue !== undefined ? `  = ${p.defaultValue}` : "";
-          const desc = p.description ? `  — ${p.description}` : "";
-          console.log(`  ${p.name}${req}: ${p.type}${def}${desc}`);
-        }
-      }
-      // Resolved inherited props (react-docgen-typescript). Only present after
-      // `pnpm gen` ran with the devDep installed; absent → this is skipped.
-      const resolved = hit.props.resolved;
-      if (resolved && Object.keys(resolved).length) {
-        console.log("props (inherited, resolved):");
-        for (const name of Object.keys(resolved).sort((a, b) => a.localeCompare(b))) {
-          const r = resolved[name];
-          const req = r.optional === false ? "" : "?";
-          const type = r.type ? `: ${r.type}` : "";
-          const def = r.defaultValue !== undefined ? `  = ${r.defaultValue}` : "";
-          const desc = r.description ? `  — ${r.description}` : "";
-          console.log(`  ${name}${req}${type}${def}${desc}`);
-        }
-      }
-    }
-    const props = extractProps(hit.module, hit.name);
-    if (props?.snippets?.length) {
-      console.log("```ts");
-      console.log(props.snippets.join("\n\n"));
-      console.log("```");
-    } else if (!hit.props) {
-      console.log(`(read ${hit.module} for the full API — never guess props.)`);
-    }
-    if (hit.variants?.variants) {
-      console.log("variants (expanded from cva — these are the real values):");
-      for (const [group, values] of Object.entries(hit.variants.variants)) {
-        const def = hit.variants.defaultVariants?.[group];
-        const rendered = values.map((v) => (v === def ? `${v} (default)` : v)).join(" | ");
-        console.log(`  ${group}: ${rendered}`);
-      }
-    }
-    console.log("");
+    // Where the brief card would not be smaller, print the full one.
+    console.log(`${flags.has("--brief") ? smallerCard(renderDocsBrief(hit), full) : full}\n`);
   }
   // A single query prints its record directly; multiple queries print an array
   // (one record per queried name, in the order given) — same convention as the
   // markdown loop, one entry per name.
   if (json) console.log(JSON.stringify(records.length === 1 ? records[0] : records, null, 2));
+}
+
+/** The full `docs` card for one manifest row, as text (the CLI's default output). */
+function renderCliDocs(hit) {
+  const out = [];
+  out.push(`# ${hit.name}  (${hit.pkg})`);
+  if (hit.importPath) out.push(`import from: ${hit.importPath}`);
+  out.push(`source: ${hit.module}`);
+  // Intent metadata (#80): purpose / relationships / state→token / anti-patterns.
+  // The agent-distinctive layer types can't encode — print it ABOVE the prop
+  // table so an agent reads "what's correct/wrong" before "what's possible".
+  const intent = hit.intent;
+  if (intent) {
+    if (intent.purpose)
+      out.push(`purpose: ${intent.purpose}${intent.category ? `  [${intent.category}]` : ""}`);
+    const rel = intent.relationships || {};
+    const relLines = [
+      rel.usedInside?.length && `used inside: ${rel.usedInside.join(", ")}`,
+      rel.contains?.length && `contains: ${rel.contains.join(", ")}`,
+      rel.pairsWith?.length && `pairs with: ${rel.pairsWith.join(", ")}`,
+      rel.avoidNextTo?.length && `avoid next to: ${rel.avoidNextTo.join(", ")}`,
+    ].filter(Boolean);
+    for (const l of relLines) out.push(`  ${l}`);
+    if (intent.stateTokens && Object.keys(intent.stateTokens).length) {
+      out.push("state → token:");
+      for (const [state, tok] of Object.entries(intent.stateTokens)) out.push(`  ${state}: ${tok}`);
+    }
+    if (intent.antiPatterns?.length) {
+      out.push("anti-patterns (avoid):");
+      for (const ap of intent.antiPatterns) out.push(`  ✗ ${ap}`);
+    }
+  }
+  // Resolved prop table (#79): own-declared props with optionality, type and
+  // TSDoc, plus the `extends` clause. When the docgen pass (ADR 0013) enriched
+  // this entry, own-declared props carry resolved defaults/descriptions and a
+  // `resolved` map holds the expanded INHERITED prop surface — printed below.
+  if (hit.props) {
+    if (hit.props.extends?.length) {
+      const note = hit.props.resolved
+        ? "inherited — expanded below"
+        : "inherited props — read source/types";
+      out.push(`extends: ${hit.props.extends.join(", ")}  (${note})`);
+    }
+    if (hit.props.props?.length) {
+      out.push("props (own-declared):");
+      for (const p of hit.props.props) {
+        const req = p.optional ? "?" : "";
+        const def = p.defaultValue !== undefined ? `  = ${p.defaultValue}` : "";
+        const desc = p.description ? `  — ${p.description}` : "";
+        out.push(`  ${p.name}${req}: ${p.type}${def}${desc}`);
+      }
+    }
+    // Resolved inherited props (react-docgen-typescript). Only present after
+    // `pnpm gen` ran with the devDep installed; absent → this is skipped.
+    const resolved = hit.props.resolved;
+    if (resolved && Object.keys(resolved).length) {
+      out.push("props (inherited, resolved):");
+      for (const name of Object.keys(resolved).sort((a, b) => a.localeCompare(b))) {
+        const r = resolved[name];
+        const req = r.optional === false ? "" : "?";
+        const type = r.type ? `: ${r.type}` : "";
+        const def = r.defaultValue !== undefined ? `  = ${r.defaultValue}` : "";
+        const desc = r.description ? `  — ${r.description}` : "";
+        out.push(`  ${name}${req}${type}${def}${desc}`);
+      }
+    }
+  }
+  const props = extractProps(hit.module, hit.name);
+  if (props?.snippets?.length) {
+    out.push("```ts");
+    out.push(props.snippets.join("\n\n"));
+    out.push("```");
+  } else if (!hit.props) {
+    out.push(`(read ${hit.module} for the full API — never guess props.)`);
+  }
+  if (hit.variants?.variants) {
+    out.push("variants (expanded from cva — these are the real values):");
+    for (const [group, values] of Object.entries(hit.variants.variants)) {
+      const def = hit.variants.defaultVariants?.[group];
+      const rendered = values.map((v) => (v === def ? `${v} (default)` : v)).join(" | ");
+      out.push(`  ${group}: ${rendered}`);
+    }
+  }
+  return out.join("\n");
 }
 
 // ---- static audit (token/style/anti-slop lint; the rendered + contrast pass lives in the skill) ----
@@ -837,6 +840,21 @@ function flagValue(...names) {
   return null;
 }
 
+/**
+ * Positional arguments, skipping the value after each named value-taking flag by
+ * POSITION — never by comparing text, so `create dashboard --template dashboard`
+ * still finds the folder.
+ */
+function positionals(...valueFlags) {
+  const out = [];
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    if (valueFlags.includes(a) && rest[i + 1] && !rest[i + 1].startsWith("--")) i++;
+    else if (!a.startsWith("--")) out.push(a);
+  }
+  return out;
+}
+
 /** The "make it runnable" block a STANDALONE scaffold ends with (#263). */
 function installLines(install) {
   if (!install?.standalone) return [];
@@ -922,9 +940,7 @@ function cmdScaffold() {
  */
 function cmdCreate() {
   const templateFlag = flagValue("--template", "--archetype");
-  const dir = args.find(
-    (a) => a !== templateFlag && a !== flagValue("--theme") && a !== flagValue("--title"),
-  );
+  const [dir] = positionals("--template", "--archetype", "--theme", "--title");
   if (!dir) {
     console.error(
       `usage: brand-ui create <dir> [--template ${ARCHETYPES.join("|")}] [--theme light|dark] [--title "<name>"] [--force] [--install]`,
@@ -1137,7 +1153,8 @@ const GENERAL_HELP = `brand-ui <command>
   docs <Component...>    Locate a component and print its real props from source
       [--json]           …or emit the same data as structured JSON
       [--brief]          …or a smaller first read: import, purpose, anti-patterns,
-                         variants, own props with one-line descriptions
+                         variants, own props with one-line descriptions (the full
+                         card where the brief one would not be smaller)
   chart-for "<shape>"    Rank @elabs-ai/components-charts chart containers for a data shape
       [--json]           ("weekday by hour ticket volume") — judge the shape first;
                          see skills/brand-ui/reference/chart-selection.md

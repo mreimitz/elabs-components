@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { AreaChart } from "./area-chart";
 import { Area } from "./area";
 import { Grid } from "./grid";
 import { XAxis } from "./x-axis";
+import { YAxis } from "./y-axis";
 import { ChartTooltip } from "./tooltip";
 
 const meta = {
@@ -234,6 +235,9 @@ export const Streamgraph: Story = {
 /**
  * `seams={2}` — a `--chart-background` stroke drawn between bands, the F16
  * "paper seam" that visually separates each ribbon from its neighbour.
+ * `seams` IS this package's separator-lines feature for stacked areas
+ * (Datawrapper's "separator lines" option) — there is no additional
+ * `separatorLines` prop.
  */
 export const StreamWithSeams: Story = {
   render: () => (
@@ -454,6 +458,84 @@ function SelectionProof({ children, className }: { children: ReactNode; classNam
   );
 }
 
+// nulls — a null at index 3 (not an edge), matching `Line`'s identical fixture.
+const nullsData = [
+  { date: new Date(2024, 0, 1), value: 10 },
+  { date: new Date(2024, 0, 2), value: 18 },
+  { date: new Date(2024, 0, 3), value: 14 },
+  { date: new Date(2024, 0, 4), value: null },
+  { date: new Date(2024, 0, 5), value: 22 },
+  { date: new Date(2024, 0, 6), value: 19 },
+];
+
+/**
+ * `nulls` (RM-112). `"gap"` (the default) breaks the fill/crest at a
+ * non-numeric sample; `"connect"` bridges straight across it; `"zero"` (the
+ * pre-RM-112 default) reads it as 0 — same three modes, same resolution, as
+ * `Line`'s `nulls`.
+ */
+export const Nulls: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <AreaChart animationDuration={0} aspectRatio={undefined} data={nullsData}>
+        <Grid horizontal />
+        <Area dataKey="value" fill="var(--chart-1)" nulls="gap" stroke="var(--chart-1)" />
+        <XAxis />
+      </AreaChart>
+    </div>
+  ),
+};
+
+/**
+ * `symbols` (RM-112) — the same shared `resolveSeriesSymbols` rule as
+ * `Line symbols`: unset placement on a ≤12-point series defaults to hollow
+ * markers at the first/last point only.
+ */
+export const Symbols: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <AreaChart animationDuration={0} aspectRatio={undefined} data={chartData}>
+        <Grid horizontal />
+        <Area
+          dataKey="desktop"
+          fill="var(--chart-1)"
+          stroke="var(--chart-1)"
+          symbols={{ style: "hollow" }}
+        />
+        <XAxis />
+      </AreaChart>
+    </div>
+  ),
+};
+
+const focusHoverData = [
+  { date: new Date(2024, 0, 1), a: 10, b: 30, c: 20 },
+  { date: new Date(2024, 0, 2), a: 20, b: 25, c: 15 },
+  { date: new Date(2024, 0, 3), a: 15, b: 28, c: 24 },
+  { date: new Date(2024, 0, 4), a: 26, b: 18, c: 12 },
+];
+
+/**
+ * `focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY`
+ * while the pointer (or the legend) is over one — same behaviour, same wide
+ * invisible hit-stroke, as `Line`'s `focusOnHover`.
+ */
+export const FocusHover: Story = {
+  name: "Focus on hover",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <AreaChart animationDuration={0} aspectRatio={undefined} data={focusHoverData} focusOnHover>
+        <Grid horizontal />
+        <Area dataKey="a" fill="var(--chart-1)" fillOpacity={0.2} stroke="var(--chart-1)" />
+        <Area dataKey="b" fill="var(--chart-2)" fillOpacity={0.2} stroke="var(--chart-2)" />
+        <Area dataKey="c" fill="var(--chart-3)" fillOpacity={0.2} stroke="var(--chart-3)" />
+        <XAxis />
+        <ChartTooltip />
+      </AreaChart>
+    </div>
+  ),
+};
+
 const selectionRegionData = [
   { region: "EMEA", step: 1, revenue: 42, target: 50 },
   { region: "APAC", step: 2, revenue: 31, target: 36 },
@@ -487,5 +569,128 @@ export const SelectionStates: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
+  },
+};
+
+/**
+ * Container legend (RM-118): `legend={{ interactive: "toggle" }}` mounts
+ * `ChartLegend` above the plot with real `aria-pressed` buttons — click, or
+ * Tab then Enter, hides a series and the y-domain re-tweens around what is
+ * left visible. `focusOnHover` reuses the same fade a pointer-hovered area
+ * already had for a keyboard-focused legend item (Refs #545).
+ */
+export const LegendToggle: Story = {
+  name: "Legend toggle",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <AreaChart
+        animationDuration={0}
+        aspectRatio={undefined}
+        data={chartData}
+        focusOnHover
+        legend={{ interactive: "toggle" }}
+        onDatapointClick={() => {}}
+        style={{ height: "100%" }}
+        yDomainTweenDuration={0}
+      >
+        <Grid horizontal />
+        <Area
+          curve={curveNatural}
+          dataKey="desktop"
+          fill="var(--chart-1)"
+          fillOpacity={0.4}
+          name="Desktop"
+          stroke="var(--chart-1)"
+          strokeWidth={2.5}
+        />
+        <Area
+          curve={curveNatural}
+          dataKey="mobile"
+          fill="var(--chart-2)"
+          fillOpacity={0.4}
+          name="Mobile"
+          stroke="var(--chart-2)"
+          strokeWidth={2.5}
+        />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </AreaChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    // Narrow hides the value axis entirely (RM-118 addendum) — read the tier
+    // before relying on any y-axis tick to be there.
+    const tier = canvasElement
+      .querySelector("[data-chart-breakpoint]")
+      ?.getAttribute("data-chart-breakpoint");
+    const yTicks = () =>
+      [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
+        (node) => node.textContent ?? "",
+      );
+    // Datapoint drill-down targets ALSO carry an aria-label starting with
+    // the series key (`desktop, Jan 1, 2024…`), so a plain accessible-name
+    // query matches those too — scope to the legend's own toggle buttons.
+    const legendToggle = (label: RegExp) =>
+      [...canvasElement.querySelectorAll("button[aria-pressed]")].find((button) =>
+        label.test(button.textContent ?? ""),
+      ) as HTMLButtonElement | undefined;
+    // The y-axis ticks render before the legend does — wait for the button
+    // itself, not just the ticks, so a fast `animationDuration={0}` mount
+    // never races `.focus()` against an undefined lookup.
+    await waitFor(() => expect(legendToggle(/desktop/i)).toBeTruthy());
+
+    if (tier === "narrow") {
+      // No y-axis to read a moved tick from — the toggle itself, and the
+      // axis staying absent throughout, are what narrow correctly shows.
+      await expect(yTicks()).toEqual([]);
+      const desktopToggleNarrow = legendToggle(/desktop/i) as HTMLButtonElement;
+      desktopToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(desktopToggleNarrow).toHaveAttribute("aria-pressed", "false"));
+      await expect(yTicks()).toEqual([]);
+      desktopToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(desktopToggleNarrow).toHaveAttribute("aria-pressed", "true"));
+      await expect(yTicks()).toEqual([]);
+      desktopToggleNarrow.blur();
+      return;
+    }
+
+    // Ticks compact ("300"/"150") — kept as a numeric parse for symmetry
+    // with Line/ComposedChart's play functions (their ticks DO compact to
+    // "4K" etc., where `Number(...)` alone would be `NaN`).
+    const parseTick = (text: string): number => {
+      const match = /^(-?[\d.]+)([KM]?)$/.exec(text.trim().replace(/,/g, ""));
+      if (!match) return Number.NaN;
+      const [, digits, suffix] = match;
+      const n = Number(digits);
+      return suffix === "K" ? n * 1_000 : suffix === "M" ? n * 1_000_000 : n;
+    };
+
+    // "desktop" (peak 305) is the max series in this fixture — "mobile"
+    // peaks at 200, below desktop at every point, so hiding desktop is the
+    // toggle that actually moves the domain. Keyboard operated (RM-118,
+    // validator FAIL 1a).
+    await waitFor(() => expect(yTicks().length).toBeGreaterThan(0));
+    const before = yTicks();
+
+    const desktopToggle = legendToggle(/desktop/i) as HTMLButtonElement;
+    desktopToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(desktopToggle).toHaveAttribute("aria-pressed", "false"));
+    await waitFor(() => expect(yTicks()).not.toEqual(before));
+    const afterHide = yTicks();
+    await expect(parseTick(afterHide.at(-1) ?? "")).toBeLessThan(parseTick(before.at(-1) ?? ""));
+
+    desktopToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(desktopToggle).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(yTicks()).toEqual(before));
+    // Settle focus back to the body — otherwise the interaction ends with
+    // `focusOnHover`'s fade still applied to the neighbouring item, which
+    // the a11y gate correctly flags on ITS OWN contrast (unrelated to this
+    // story; not this sitting's fix to make).
+    desktopToggle.blur();
   },
 };

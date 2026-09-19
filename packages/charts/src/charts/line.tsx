@@ -1,12 +1,11 @@
 "use client";
 
-import { curveNatural } from "@visx/curve";
 import { LinePath } from "@visx/shape";
-import { useCallback, useId, useMemo, useRef, useState } from "react";
-import { HaloText } from "../marks/halo-text";
+import { type ReactNode, useCallback, useId, useMemo, useRef, useState } from "react";
+import type { Responsive } from "./chart-breakpoint";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
-import { intFmt } from "./chart-formatters";
-import type { CurveFactory } from "./curve-types";
+import { type CurveAlias, type CurveFactory, resolveCurve } from "./curve-types";
+import { useChartSeriesMode, type NullsMode } from "./time-series-chart-shell";
 import {
   type FadeEdges,
   fadeGradientStops,
@@ -23,7 +22,7 @@ import { resolveDashTailBounds, usePathStrokeMetrics } from "./path-stroke-utils
 import { SeriesDashTailOverlay } from "./series-dash-tail-overlay";
 import { SeriesHighlightLayer } from "./series-highlight-layer";
 import { SeriesHoverDim } from "./series-hover-dim";
-import { SeriesMarkers } from "./series-markers";
+import { resolveSeriesSymbols, SeriesMarkers, type SeriesSymbolsSpec } from "./series-markers";
 import {
   type MarkerVariant,
   resolveMarkerVariantFill,
@@ -31,6 +30,7 @@ import {
   StaticSeriesPointMarker,
 } from "./series-point-marker";
 import { isPaletteFill, seriesDashArray, seriesMarkerShape } from "./series-pattern";
+import type { ChartValueLabels, SeriesLabelMode } from "./labels/use-chart-labels";
 import { useHighDecoration } from "./use-high-decoration";
 
 /**
@@ -85,23 +85,12 @@ export function spacedTopK(
   return accepted.sort((a, b) => a - b);
 }
 
-function resolveLabelPeaksSpec(
-  labelPeaks: number | { count: number; minGap?: number } | undefined,
-): { count: number; minGap: number } | null {
-  if (labelPeaks == null) {
-    return null;
-  }
-  if (typeof labelPeaks === "number") {
-    return { count: labelPeaks, minGap: DEFAULT_PEAK_MIN_GAP };
-  }
-  return { count: labelPeaks.count, minGap: labelPeaks.minGap ?? DEFAULT_PEAK_MIN_GAP };
-}
-
-/** Enlarged marker radius for a labelled peak — bigger than the default (5px)
- * marker so "the one mark that matters" reads as emphasised, not just annotated. */
-const PEAK_MARKER_RADIUS = 6;
-/** Vertical offset (px) of a peak's `HaloText` value label above its marker. */
-const PEAK_LABEL_OFFSET = 12;
+/**
+ * Minimum width (px) of the invisible hit-stroke `focusOnHover` (RM-112)
+ * renders on top of the visible line — the real stroke (`strokeWidth`,
+ * default 2.5) is too thin a target for a pointer to land on reliably.
+ */
+const FOCUS_HOVER_HIT_STROKE_MIN_WIDTH = 8;
 
 export interface LineProps {
   /** Key in data to use for y values */
@@ -112,8 +101,16 @@ export interface LineProps {
   stroke?: string;
   /** Stroke width. Default: 2.5. Set to 1 for a lieflat-style "hairline" line. */
   strokeWidth?: number;
-  /** Curve function. Default: curveNatural */
-  curve?: CurveFactory;
+  /**
+   * Curve interpolation — a named alias (`"linear"` | `"monotone"` |
+   * `"natural"` | `"step"` | `"step-before"` | `"step-after"`, RM-112) or a
+   * raw `@visx/curve` factory. Default: `"monotone"`. `"natural"`
+   * (`curveNatural`, this package's pre-RM-112 default) is offered for
+   * parity only — Datawrapper's own guidance is to avoid natural/cardinal
+   * interpolation because it overshoots between two equal neighbours
+   * (`.claude/rules/charts.md` "Honesty").
+   */
+  curve?: CurveFactory | CurveAlias;
   /** Whether to animate the line. Default: true */
   animate?: boolean;
   /**
@@ -142,6 +139,31 @@ export interface LineProps {
    */
   markerStyle?: (d: Record<string, unknown>, index: number) => MarkerVariant;
   /**
+   * Placement/style wrapper over `showMarkers`/`markers` (RM-112,
+   * Datawrapper's line symbols: 8 shapes, first-and-last/all placement,
+   * filled/hollow style). Setting this turns markers on regardless of
+   * `showMarkers`. `placement` — `"all"` | `"ends"` | `"first"` | `"last"`,
+   * default `"ends"`. `style` — `"filled"` | `"hollow"`, default `"hollow"`.
+   * `shape`/`size` map onto `markers.shape`/`markers.radius`. Default unset:
+   * no symbols — today's behaviour, driven by `showMarkers`/`markers` alone.
+   */
+  symbols?: SeriesSymbolsSpec;
+  /**
+   * How this line draws a non-numeric sample (RM-112). Overrides the
+   * container-level `LineChart nulls` default. Unset — read the container
+   * default, or `"gap"` with no container default (a visible break, never a
+   * silent zero — the pre-RM-112 default was the "zero" behaviour, kept as
+   * `nulls="zero"`).
+   */
+  nulls?: NullsMode;
+  /**
+   * Paint a `--chart-background` halo stroke under the series stroke
+   * (Datawrapper's line outline, May 2024) so two crossing lines still read
+   * apart. `true` uses a 2px halo on each side; a number sets the halo width
+   * in px. Default `false` — no halo, today's behaviour.
+   */
+  outline?: boolean | number;
+  /**
    * Label the top-k highest points on the line (RM-028) — lieflat's
    * "top-2/top-3 peaks, enlarged and labelled" rule (L3 Barcode Lollipop). A
    * bare number is the peak count at the default {@link DEFAULT_PEAK_MIN_GAP}
@@ -153,6 +175,31 @@ export interface LineProps {
    * peak labels, today's behaviour.
    */
   labelPeaks?: number | { count: number; minGap?: number };
+  /**
+   * Series display name — the text of its end label, key item and auto
+   * summary (RM-110). Default: `dataKey`.
+   */
+  name?: string;
+  /**
+   * Where the series names itself (RM-110): `"end"` — a label at its last
+   * point (the chart reserves right margin for it); `"key"` — a swatch + name
+   * in a key row above the plot; `"none"`. Takes a `Responsive` value, e.g.
+   * `{ base: "end", narrow: "key" }`. Default: in a chart with two or more
+   * `Line`/`Area` series, a series whose `name` is set and differs from its
+   * `dataKey` gets `{ base: "end", narrow: "key" }` when a `ChartLegend` is
+   * composed, else `"end"`; every other series gets `"none"`. An explicit
+   * value always wins. Colliding end labels are nudged apart, or dropped and
+   * restated `sr-only`.
+   */
+  seriesLabel?: Responsive<SeriesLabelMode>;
+  /**
+   * Automatic value labels (RM-110): `{ placement: "first" | "last" | "all" |
+   * "peaks", count?, outline?, matchColor?, format? }`. Placed with every
+   * other label through one collision pass — a label that cannot be placed is
+   * dropped and restated `sr-only`. `labelPeaks={n}` is the alias
+   * `{ placement: "peaks", count: n }` (exact, uncompacted numbers).
+   */
+  valueLabels?: ChartValueLabels;
   /**
    * Data index from which the line stroke becomes dashed (inclusive).
    * Useful for projecting incomplete periods, e.g. dashed from yesterday through today.
@@ -193,14 +240,16 @@ export function Line({
   yAxisId,
   stroke = chartCssVars.linePrimary,
   strokeWidth = 2.5,
-  curve = curveNatural,
+  curve = "monotone",
   animate = true,
   fadeEdges = true,
   showHighlight = true,
   showMarkers = false,
   markers,
   markerStyle,
-  labelPeaks,
+  symbols,
+  nulls: nullsProp,
+  outline = false,
   dashFromIndex,
   dashArray = "6,4",
   dashStroke,
@@ -229,6 +278,9 @@ export function Line({
     notifyLoadingPulseComplete,
   } = useChartStable();
   const yScale = useYScale(yAxisId);
+  const seriesMode = useChartSeriesMode();
+  const resolvedNulls: NullsMode = nullsProp ?? seriesMode.nulls ?? "gap";
+  const resolvedCurve = useMemo(() => resolveCurve(curve), [curve]);
 
   const phasePulseMode = resolveLineLoadingPulseMode(chartPhase);
   const pulseMode =
@@ -262,12 +314,46 @@ export function Line({
   const useDecorationDash = high && isPaletteFill(stroke);
   const bpDashArray = useDecorationDash ? seriesDashArray(resolvedIndex) : undefined;
   const bpMarkerShape = useDecorationDash ? seriesMarkerShape(resolvedIndex) : undefined;
+  // Symbols (RM-112): placement/style wrapper over showMarkers/markers,
+  // resolved by the one `Line`/`Area`-shared helper (`series-markers.tsx`).
+  const resolvedSymbols = useMemo(
+    () => resolveSeriesSymbols(symbols, data.length),
+    [symbols, data.length],
+  );
+  const symbolsFill =
+    resolvedSymbols?.style === "hollow" ? chartCssVars.background : (markers?.fill ?? stroke);
+  const symbolsStroke =
+    resolvedSymbols?.style === "hollow"
+      ? (markers?.stroke ?? stroke)
+      : (markers?.stroke ?? markers?.fill ?? stroke);
+
   // At high decoration, force markers on (with shape differentiation)
-  const effectiveShowMarkers = showMarkers || useDecorationDash;
+  const effectiveShowMarkers = showMarkers || useDecorationDash || resolvedSymbols !== null;
+
+  // `nulls="connect"` (RM-112) filters the missing samples out of the data
+  // FED to `LinePath` — the path draws straight across the gap, exactly as
+  // if that sample never existed. `nulls="gap"` instead keeps every sample
+  // and uses `defined` (below) so d3 breaks the path there. `nulls="zero"`
+  // keeps every sample and does neither — `getY` below is the pre-RM-112
+  // pixel-origin fallback, unchanged, so an existing `nulls="zero"` caller
+  // (or the un-migrated default before this RM landed) sees byte-identical
+  // output.
+  const lineRenderData = useMemo(() => {
+    if (resolvedNulls !== "connect") {
+      return renderData;
+    }
+    return renderData.filter((d) => typeof d[dataKey] === "number");
+  }, [renderData, resolvedNulls, dataKey]);
+
+  const isDefined = useCallback(
+    (d: Record<string, unknown>) => typeof d[dataKey] === "number",
+    [dataKey],
+  );
 
   const pathRef = useRef<SVGPathElement>(null);
   const { pathLength, pathD } = usePathStrokeMetrics(pathRef, [
-    renderData,
+    lineRenderData,
+    resolvedNulls,
     innerWidth,
     dashFromIndex,
     animate,
@@ -279,6 +365,10 @@ export function Line({
   const getY = useCallback(
     (d: Record<string, unknown>) => {
       const value = d[dataKey];
+      // `nulls="zero"` legacy fallback (see `lineRenderData` above) — pixel
+      // origin, not `yScale(0)`. Unused visually under "gap" (the point is
+      // undrawn between `defined` breaks) or "connect" (the point is
+      // filtered out of `lineRenderData` before this ever runs on it).
       return typeof value === "number" ? (yScale(value) ?? 0) : 0;
     },
     [dataKey, yScale],
@@ -294,6 +384,8 @@ export function Line({
   if (showSeriesStroke && !hasDashTail) {
     visibleStroke = lineStroke;
   }
+  // `outline` halo (RM-112): `true` → 2px on each side, a number → that many px.
+  const outlineWidth = outline === true ? 2 : outline === false ? 0 : outline;
 
   // Per-point marker variant (RM-028): filled/hollow/none decided per data
   // point. `null` (markerStyle unset) renders nothing extra — today's
@@ -315,30 +407,6 @@ export function Line({
     });
   }, [markerStyle, data, dataKey, xScale, xAccessor, yScale]);
 
-  // Peak labels (RM-028): top-k points by value, spaced apart via spacedTopK.
-  // `null` (labelPeaks unset) renders nothing extra — today's behaviour is
-  // unchanged.
-  const peakSpec = useMemo(() => resolveLabelPeaksSpec(labelPeaks), [labelPeaks]);
-  const peakPoints = useMemo(() => {
-    if (!peakSpec) {
-      return null;
-    }
-    const values = data.map((d) => {
-      const value = d[dataKey];
-      return typeof value === "number" ? value : Number.NaN;
-    });
-    return spacedTopK(values, peakSpec.count, peakSpec.minGap).map((index) => {
-      const d = data[index] as Record<string, unknown>;
-      const value = values[index] as number;
-      return {
-        index,
-        value,
-        cx: xScale(xAccessor(d)) ?? 0,
-        cy: yScale(value) ?? 0,
-      };
-    });
-  }, [peakSpec, data, dataKey, xScale, xAccessor, yScale]);
-
   return (
     <>
       {fadeStops ? (
@@ -355,10 +423,29 @@ export function Line({
         </defs>
       ) : null}
 
-      <SeriesHoverDim dimOpacity={0.3} enabled={effectiveShowHighlight} seriesIndex={seriesIndex}>
+      <SeriesHoverDim
+        dataKey={dataKey}
+        dimOpacity={0.3}
+        enabled={effectiveShowHighlight}
+        seriesIndex={seriesIndex}
+      >
+        {outlineWidth > 0 ? (
+          <LinePath
+            curve={resolvedCurve}
+            data={lineRenderData}
+            defined={resolvedNulls === "gap" ? isDefined : undefined}
+            stroke={showSeriesStroke ? chartCssVars.background : "transparent"}
+            strokeLinecap="round"
+            strokeWidth={strokeWidth + outlineWidth * 2}
+            x={(d) => xScale(xAccessor(d)) ?? 0}
+            y={getY}
+          />
+        ) : null}
+
         <LinePath
-          curve={curve}
-          data={renderData}
+          curve={resolvedCurve}
+          data={lineRenderData}
+          defined={resolvedNulls === "gap" ? isDefined : undefined}
           innerRef={pathRef}
           stroke={visibleStroke}
           strokeDasharray={bpDashArray}
@@ -382,6 +469,31 @@ export function Line({
           xAccessor={xAccessor}
           xScale={xScale}
         />
+
+        {seriesMode.focusOnHover ? (
+          // Invisible, wide hit target for `focusOnHover` (RM-112) — the
+          // visible stroke above is too thin to hover reliably. Rendered
+          // LAST (topmost) within this series' own <g> so it sits above the
+          // shared tooltip-tracking rect underneath (`time-series-chart-shell.tsx`
+          // renders that rect FIRST, i.e. earlier == lower in paint order),
+          // and pointer events still bubble to that rect's ancestor listener
+          // — nothing here calls `stopPropagation`, so the chart-wide
+          // crosshair/tooltip tracking keeps working over a focused line.
+          // Only rendered when `focusOnHover` is set, so a chart that never
+          // opts in keeps byte-identical DOM.
+          <LinePath
+            aria-hidden="true"
+            curve={resolvedCurve}
+            data={lineRenderData}
+            defined={resolvedNulls === "gap" ? isDefined : undefined}
+            pointerEvents="stroke"
+            stroke="transparent"
+            strokeLinecap="round"
+            strokeWidth={Math.max(FOCUS_HOVER_HIT_STROKE_MIN_WIDTH, strokeWidth + 6)}
+            x={(d) => xScale(xAccessor(d)) ?? 0}
+            y={getY}
+          />
+        ) : null}
       </SeriesHoverDim>
 
       {effectiveShowMarkers ? (
@@ -389,9 +501,11 @@ export function Line({
           animate={animate}
           dataKey={dataKey}
           {...markers}
-          fill={markers?.fill ?? stroke}
-          shape={bpMarkerShape ?? markers?.shape}
-          stroke={markers?.stroke ?? markers?.fill ?? stroke}
+          fill={resolvedSymbols ? symbolsFill : (markers?.fill ?? stroke)}
+          placement={resolvedSymbols?.placement}
+          radius={resolvedSymbols?.size ?? markers?.radius}
+          shape={bpMarkerShape ?? resolvedSymbols?.shape ?? markers?.shape}
+          stroke={resolvedSymbols ? symbolsStroke : (markers?.stroke ?? markers?.fill ?? stroke)}
         />
       ) : null}
 
@@ -415,32 +529,6 @@ export function Line({
               />
             );
           })}
-        </g>
-      ) : null}
-
-      {peakPoints && peakPoints.length > 0 && showSeriesStroke ? (
-        <g aria-hidden="true" data-slot="line-peak-labels">
-          {peakPoints.map((point) => (
-            <g key={`${dataKey}-peak-${point.index}`}>
-              <StaticSeriesPointMarker
-                cx={point.cx}
-                cy={point.cy}
-                fill={stroke}
-                radius={PEAK_MARKER_RADIUS}
-                ringGap={0}
-                stroke={stroke}
-                strokeWidth={0}
-              />
-              <HaloText
-                fontSize={11}
-                textAnchor="middle"
-                x={point.cx}
-                y={point.cy - PEAK_LABEL_OFFSET}
-              >
-                {intFmt(point.value)}
-              </HaloText>
-            </g>
-          ))}
         </g>
       ) : null}
 
@@ -469,5 +557,24 @@ export function Line({
 }
 
 Line.displayName = "Line";
+
+export interface LinePeakLabelsProps {
+  /** The series whose peaks the group holds. */
+  series: string;
+  children: ReactNode;
+}
+
+/**
+ * The group a `labelPeaks` Line paints its peak labels into. The label engine
+ * places the peaks (RM-110), but the group keeps the `line-peak-labels` slot
+ * Line has published since RM-028, so consumers and tests still find it.
+ */
+export function LinePeakLabels({ series, children }: LinePeakLabelsProps) {
+  return (
+    <g aria-hidden="true" data-series={series} data-slot="line-peak-labels">
+      {children}
+    </g>
+  );
+}
 
 export default Line;

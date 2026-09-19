@@ -537,6 +537,9 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.dashboard.tileOps.alignBottom": "Align bottom edges",
   "charts.dashboard.tileOps.distributeHorizontal": "Distribute horizontally",
   "charts.dashboard.tileOps.distributeVertical": "Distribute vertically",
+  // Dual-axis — RM-121
+  "charts.axis.leftScale": "Left scale",
+  "charts.axis.rightScale": "Right scale",
 
   // ── @elabs-ai/components-maps ─────────────────────────────────────────────────────────────
   "maps.popup.close": "Close popup",

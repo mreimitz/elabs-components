@@ -25,6 +25,7 @@ import {
   forwardRef,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -65,10 +66,20 @@ import {
 import {
   ChartFrameProvider,
   useChartFrame,
+  type ChartFrameByline,
   type ChartFrameColumn,
+  type ChartFrameExportHandler,
   type ChartFrameFeature,
+  type ChartFrameSourceLink,
 } from "./chart-frame-context";
-import { findChartSvg, type ChartExportKind } from "./export-svg";
+import { findChartSvg, type ChartExportRequest } from "./export-svg";
+import {
+  ChartFooter,
+  isChartSourceLink,
+  type ChartFooterLabels,
+  type ChartFrameAction,
+} from "./chart-footer";
+import { ChartFrameAltTextContext } from "../charts/chart-a11y";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 import { exactValueString } from "../charts/value-format";
 import { ChartSourceRow } from "../chart-card/chart-card";
@@ -78,6 +89,20 @@ import {
   type ChartDensity,
   type ChartInteractions,
 } from "../charts/chart-config-context";
+import {
+  ChartBreakpointScope,
+  ChartFramePlotHeightProvider,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+  resolvePlotBoxStyle,
+  useMeasuredChartBreakpoint,
+  warnChartOnce,
+  resolveResponsive,
+} from "../charts/chart-breakpoint";
+
+/** The body box of a frame whose content does not size itself (pre-ADR 0039 default). */
+const BOUNDED_BODY_HEIGHT = 260;
 
 // ── Minimal local CSV serializer (RFC 4180 + injection guard) ─────────────────
 // The canonical reusable version lives in @elabs-ai/components-data (`toCsv`). This local
@@ -285,7 +310,7 @@ function ChartFrameToolbar({ placement = "inline" }: { placement?: "inline" | "e
                 variant="ghost"
                 size="icon-sm"
                 aria-label={t("charts.chartFrame.exportSvg")}
-                onClick={actions.exportSvg}
+                onClick={() => actions.exportSvg()}
               >
                 <FileCode2 aria-hidden="true" />
               </Button>
@@ -301,7 +326,7 @@ function ChartFrameToolbar({ placement = "inline" }: { placement?: "inline" | "e
                 variant="ghost"
                 size="icon-sm"
                 aria-label={t("charts.chartFrame.exportPng")}
-                onClick={actions.exportPng}
+                onClick={() => actions.exportPng()}
               >
                 <ImageDown aria-hidden="true" />
               </Button>
@@ -403,12 +428,13 @@ function ChartFrameModal({
   children,
   detail,
   renderTable,
-  source,
+  footer,
 }: {
   children: ReactNode;
   detail?: ReactNode;
   renderTable: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
-  source?: ReactNode;
+  /** Notes + footer, or the legacy source row (RM-117). */
+  footer?: ReactNode;
 }) {
   const { state, actions, meta } = useChartFrame();
   const { title, description, rows, columns } = meta;
@@ -463,11 +489,7 @@ function ChartFrameModal({
               </ChartConfigBridge>
             )}
           </div>
-          {source ? (
-            // `pt-2` (tighter than the view pane's own `p-4`) reads as a
-            // footnote closer to the pane's edge than to the chart above it.
-            <ChartSourceRow source={source} className="shrink-0 pt-2" />
-          ) : null}
+          {footer}
         </div>
       </ExpandDialog>
     </Dialog>
@@ -481,7 +503,13 @@ function ChartFrameModal({
  * layered over any outer provider (springs, currency) rather than resetting it.
  * Renders no DOM, so a frame with neither prop keeps its exact markup.
  */
-function ChartConfigBridge({ density, children }: { density?: ChartDensity; children: ReactNode }) {
+function ChartConfigBridge({
+  density,
+  children,
+}: {
+  density?: Responsive<ChartDensity>;
+  children: ReactNode;
+}) {
   const outer = useChartConfig();
   const { meta } = useChartFrame();
   const value = useMemo(
@@ -513,8 +541,9 @@ export interface ChartFrameMenuApi {
   expand: () => void;
   toggleView: () => void;
   download: () => void;
-  exportSvg: () => void;
-  exportPng: () => void;
+  /** RM-117: `{ scale, plain }` override the frame's `exportOptions`. */
+  exportSvg: (request?: ChartExportRequest) => void;
+  exportPng: (request?: ChartExportRequest) => void;
 }
 
 export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
@@ -527,8 +556,37 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
   /**
    * Prose that IS the legend — what a reader needs to read the chart
    * correctly (series, units, scope), written as a sentence, not a caption.
+   * Bold the finding with `<strong>`; colour-key a series in the prose with
+   * `<InlineChip series="ram">short-term RAM</InlineChip>` — the chip takes
+   * the series' colour from the chart inside this frame, and its accessible
+   * name is the series name (RM-117).
    */
   description?: ReactNode;
+  /**
+   * Notes under the chart (RM-117): method, definitions, caveats. Italic,
+   * above the footer; part of an exported picture.
+   */
+  notes?: ReactNode;
+  /** "Chart: Author" at the start of the footer (RM-117). `kind` picks the word. */
+  byline?: ChartFrameByline;
+  /**
+   * Text alternative for the whole picture (RM-117) — Datawrapper's "alt text".
+   * Becomes the chart figure's `aria-describedby` content when the chart has
+   * no description of its own; with no chart figure, the frame body becomes
+   * the figure it describes.
+   */
+  altText?: string;
+  /**
+   * Footer links (RM-117), always drawn in Datawrapper's order: `"data"` (Get
+   * the data → CSV), your own nodes (an Embed link), `"svg"`, `"png"`
+   * (Download image). Built-ins degrade like the toolbar: no data → no
+   * `"data"`, no `<svg>` → no image links. Never part of an exported picture.
+   */
+  actions?: ChartFrameAction[];
+  /** Defaults for every export this frame starts — toolbar, menu and footer (RM-117). */
+  exportOptions?: ChartExportRequest;
+  /** Words of the footer row (RM-117) — pass your own to localise them. */
+  footerLabels?: Partial<ChartFooterLabels>;
   /** Primary data input for table view and CSV download. */
   data?: Record<string, unknown>[];
   /**
@@ -546,10 +604,19 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    */
   features?: ChartFrameFeature[];
   /**
-   * Inline body height in px. Defaults to 260 for `chrome="card"`/`"bare"`.
-   * With `chrome="tile"` and no `height`, the frame fills its host instead
-   * (`h-full` flex column, chart body takes the space left after header and
-   * source row) — the host tile sets the height (#444).
+   * The chart's own drawing height (ADR 0039): px, or `{ aspect }` (width ÷
+   * height), optionally per breakpoint. The title, legend, notes and source
+   * row are added AROUND it, so the frame is as tall as its content. Unset: the
+   * chart's family default (2 : 1, and 1.25 : 1 when narrow, for line/bar/…).
+   * With `chrome="tile"` and neither `plotHeight` nor `height`, the chart fills
+   * the tile's remaining height instead (#444). `plotHeight={260}` keeps the
+   * pre-ADR-0039 look of a card.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
+  /**
+   * @deprecated Use `plotHeight` — it sets the chart's own height, and the
+   * title, legend and notes are added around it. `height={n}` is now an alias
+   * for `plotHeight={n}` (it no longer fixes the body); removed in 5.0.0.
    */
   height?: number;
   /**
@@ -576,7 +643,7 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * `onDownload`, for apps that want to route an export through their own
    * storage. When absent, the built-in handler downloads the file directly.
    */
-  onExport?: (kind: ChartExportKind, blob: Blob, filename: string) => void;
+  onExport?: ChartFrameExportHandler;
   /**
    * Attribution / provenance footer — e.g. "Source: Internal analytics,
    * updated daily". Renders as the card's all-caps, letter-spaced source row
@@ -589,8 +656,12 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * overflows, a keyboard-reachable tooltip (#184). A non-string node keeps
    * only the CSS caps with no overflow recovery — keep it short, or accept
    * it may be visually truncated with no fallback.
+   *
+   * RM-117: `{ name, href }` names and links the source. With that form, a
+   * `byline` or `actions`, the source joins the footer row as "Source: Name"
+   * instead of the all-caps row.
    */
-  source?: ReactNode;
+  source?: ReactNode | ChartFrameSourceLink;
   /**
    * Surface drawn around the chart (RM-072). Default `"card"` — byte-identical
    * to a frame without the prop. See `ChartFrameChrome`.
@@ -617,9 +688,11 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * Furniture tier (`"xs" | "sm" | "md" | "lg"`, default `"md"`). Forwarded to
    * every chart family through `useChartConfig()`; the frame itself drops
    * `description` and the source row at `xs` and clamps the title to one line
-   * at `xs`/`sm`.
+   * at `xs`/`sm`. Optionally per breakpoint (ADR 0039): inside a `narrow`
+   * chart `md`/`lg` become `sm` unless an explicit `narrow` entry says
+   * otherwise (`{ base: "md", narrow: "md" }` keeps the legend and value axis).
    */
-  density?: ChartDensity;
+  density?: Responsive<ChartDensity>;
   /** The chart content. Rendered in both inline and expanded modal positions. */
   children: ReactNode;
 }
@@ -632,12 +705,19 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     columns: columnsProp,
     detail,
     features: featuresProp,
+    plotHeight,
     height,
     renderTable,
     onDownload,
     onExport,
     loading = false,
     source,
+    notes,
+    byline,
+    altText,
+    actions,
+    exportOptions,
+    footerLabels,
     chrome = "card",
     headerSlot,
     menuSlot,
@@ -651,6 +731,12 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
   ref,
 ) {
   const hasData = Array.isArray(data) && data.length > 0;
+  if (height !== undefined) {
+    warnChartOnce(
+      "ChartFrame.height",
+      '[ChartFrame] "height" is deprecated and will be removed in 5.0.0. Use "plotHeight": it sets the chart\'s own height, and the title, legend and notes are added around it.',
+    );
+  }
 
   // Derive resolved columns from data keys when not specified.
   const firstRow = hasData ? data![0] : undefined;
@@ -674,10 +760,16 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
       ? allFeatures
       : allFeatures.filter((f) => f === "expand" || f === "export-svg" || f === "export-png");
 
+  const sourceText =
+    typeof source === "string"
+      ? source
+      : isChartSourceLink(source) && typeof source.name === "string"
+        ? source.name
+        : undefined;
   const resolvedDownload =
     onDownload ??
     ((rows: Record<string, unknown>[], cols: ChartFrameColumn[]) =>
-      localDownloadCsv(rows, cols, "chart-data", typeof source === "string" ? source : undefined));
+      localDownloadCsv(rows, cols, "chart-data", sourceText));
 
   const resolvedRenderTable =
     renderTable ??
@@ -692,11 +784,12 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
       features={resolvedFeatures}
       title={title}
       description={description}
-      source={source}
+      source={sourceText}
       onDownload={resolvedDownload}
       onExport={onExport}
+      exportOptions={exportOptions}
       loading={loading}
-      density={density}
+      density={resolveResponsive(density, "wide")}
       interactions={interactions}
       onExpandChange={onExpandChange}
     >
@@ -706,12 +799,18 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
         headerSlot={headerSlot}
         menuSlot={menuSlot}
         className={className}
-        height={height}
+        plotHeight={plotHeight ?? height}
+        densityInput={density}
         detail={detail}
         renderTable={resolvedRenderTable}
         title={title}
         description={description}
         source={source}
+        notes={notes}
+        byline={byline}
+        altText={altText}
+        actions={actions}
+        footerLabels={footerLabels}
         {...props}
       >
         {children}
@@ -720,15 +819,30 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
   );
 });
 
+/**
+ * Content boxes whose size sets the chart body's scroll size: a chart's own drawing (the
+ * outermost `<svg>`, not its parts), a canvas plot, the table view.
+ */
+const OVERFLOW_CONTENT_BOXES = "svg:not(svg svg), canvas, table";
+/** An added or removed node that may hold (or be) one of {@link OVERFLOW_CONTENT_BOXES}. */
+const isContentBox = (node: Node) =>
+  node instanceof HTMLElement || (node instanceof SVGSVGElement && !node.ownerSVGElement);
+
 // Inner component that consumes the context (avoids provider/consumer in the
 // same render function).
 interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
-  height?: number;
+  plotHeight?: Responsive<ChartPlotHeight>;
+  densityInput: Responsive<ChartDensity>;
   detail?: ReactNode;
   renderTable: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
   title?: ReactNode;
   description?: ReactNode;
-  source?: ReactNode;
+  source?: ReactNode | ChartFrameSourceLink;
+  notes?: ReactNode;
+  byline?: ChartFrameByline;
+  altText?: string;
+  actions?: ChartFrameAction[];
+  footerLabels?: Partial<ChartFooterLabels>;
   chrome: ChartFrameChrome;
   headerSlot?: ReactNode;
   menuSlot?: ChartFrameProps["menuSlot"];
@@ -737,12 +851,18 @@ interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "tit
 
 const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(function ChartFrameInner(
   {
-    height,
+    plotHeight,
+    densityInput,
     detail,
     renderTable,
     title,
     description,
-    source: sourceProp,
+    source: sourcePropIn,
+    notes: notesProp,
+    byline: bylineProp,
+    altText: altTextProp,
+    actions: footerActions,
+    footerLabels,
     chrome,
     headerSlot,
     menuSlot,
@@ -759,8 +879,51 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   // (`useToolbarCollapsed`, #444). `md`/`lg` leave the header untouched.
   const compact = density === "xs" || density === "sm";
   const visibleDescription = density === "xs" ? undefined : description;
+  // RM-117: a chart inside the frame (AutoChart) may hand chrome up; the
+  // frame's own props win.
+  const sourceProp = sourcePropIn ?? meta.chrome.source;
+  const notesAll = notesProp ?? meta.chrome.notes;
+  const bylineAll = bylineProp ?? meta.chrome.byline;
+  const altText = altTextProp ?? meta.chrome.altText;
   const source = density === "xs" ? undefined : sourceProp;
+  const notes = density === "xs" ? undefined : notesAll;
+  const byline = density === "xs" ? undefined : bylineAll;
   const { t } = useLocale();
+  // The footer row (RM-117) replaces the all-caps source row once there is
+  // more than a plain source to show; a frame with only `source` keeps it.
+  const footerRow = (
+    shownSource: ReactNode | ChartFrameSourceLink,
+    shownByline: ChartFrameByline | undefined,
+    shownNotes: ReactNode,
+    rowClassName?: string,
+  ): ReactNode => {
+    const richFooter = Boolean(
+      shownByline || footerActions?.length || isChartSourceLink(shownSource),
+    );
+    const notesNode = shownNotes ? (
+      <p data-slot="chart-frame-notes" className="text-meta text-chart-foreground-muted italic">
+        {shownNotes}
+      </p>
+    ) : null;
+    const row = richFooter ? (
+      <ChartFooter
+        byline={shownByline}
+        source={shownSource}
+        actions={footerActions}
+        labels={footerLabels}
+        className={rowClassName}
+      />
+    ) : shownSource ? (
+      <ChartSourceRow source={shownSource as ReactNode} className={rowClassName} />
+    ) : null;
+    if (!notesNode) return row;
+    return (
+      <>
+        {notesNode}
+        {row}
+      </>
+    );
+  };
 
   // Merge the caller's forwarded ref with the internal `card` ref (RM-042):
   // export reads the card's resolved background at click time via
@@ -797,9 +960,47 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
     return () => observer.disconnect();
   }, [actions, refs.chartBody, state.view, loading, children]);
 
-  // A tile without an explicit `height` fills its host (#444); every other
-  // chrome keeps the fixed 260px default.
-  const fillHost = chrome === "tile" && height === undefined;
+  // RM-117 altText: the chart figure's description when it has none; with no
+  // chart figure at all, the chart body becomes the figure it describes.
+  const altId = useId();
+  const [altTarget, setAltTarget] = useState<"chart" | "frame" | "none">("none");
+  useEffect(() => {
+    const container = refs.chartBody.current;
+    if (!altText || !container || state.view !== "chart") {
+      setAltTarget("none");
+      return undefined;
+    }
+    let wired: Element | null = null;
+    const update = () => {
+      const figure = container.querySelector('[role="figure"]');
+      if (wired && wired !== figure) {
+        wired.removeAttribute("aria-describedby");
+        wired = null;
+      }
+      if (!figure) {
+        setAltTarget("frame");
+        return;
+      }
+      if (figure === wired || !figure.hasAttribute("aria-describedby")) {
+        figure.setAttribute("aria-describedby", altId);
+        wired = figure;
+        setAltTarget("chart");
+        return;
+      }
+      setAltTarget("none");
+    };
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(container, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      wired?.removeAttribute("aria-describedby");
+    };
+  }, [altText, altId, refs.chartBody, state.view, loading, children]);
+
+  // A tile without a plot height fills its host (#444). Every other frame is
+  // as tall as its content: the chart sizes its own plot (ADR 0039 §3).
+  const fillHost = chrome === "tile" && plotHeight === undefined;
   const titleText = typeof title === "string" ? title : undefined;
 
   // WCAG 2.1.1 (axe `scrollable-region-focusable`, #432 round 3): this box is
@@ -815,6 +1016,31 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   // non-overflowing case, so no existing chart snapshot/story changes.
   const bodyScrollRef = useRef<HTMLDivElement>(null);
   const [overflowing, setOverflowing] = useState(false);
+  // ADR 0039: the frame's own tier (measured on the body) scopes frame-level
+  // parts outside the chart container, e.g. a legend composed beside it.
+  const { ref: bodyRef, breakpoint } = useMeasuredChartBreakpoint(bodyScrollRef);
+  // A chart that sizes its own plot box (a `ChartPlotRoot`/`ChartPlotBox`
+  // reading the plot-height context) registers here; while one is mounted the
+  // body is as tall as its content (ADR 0039 §3). Anything else — plain
+  // children, a canvas plot such as the process DottedChart, the table flip —
+  // keeps the bounded body box it always had: `plotHeight` (or the deprecated
+  // `height`), else 260 px.
+  const [plotConsumers, setPlotConsumers] = useState(0);
+  const registerPlotConsumer = useCallback(() => {
+    setPlotConsumers((n) => n + 1);
+    return () => setPlotConsumers((n) => n - 1);
+  }, []);
+  const bodyBoxStyle = fillHost
+    ? undefined
+    : loading
+      ? // Not-ready: the skeleton takes the plot box the chart will take.
+        resolvePlotBoxStyle(
+          { plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT },
+          breakpoint,
+        )
+      : plotConsumers > 0
+        ? undefined
+        : resolvePlotBoxStyle({ plotHeight, defaultPlotHeight: BOUNDED_BODY_HEIGHT }, breakpoint);
 
   useEffect(() => {
     const el = bodyScrollRef.current;
@@ -823,17 +1049,34 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
       const next = el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight;
       setOverflowing((prev) => (prev === next ? prev : next));
     };
-    measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    if (el.firstElementChild) observer.observe(el.firstElementChild);
-    return () => observer.disconnect();
+    // The body and its wrapper are both 100% boxes, so neither resizes when only the
+    // content does: a chart redraws its <svg> at the new width a beat after the body
+    // shrank, and the overflow that measured true a moment earlier is gone with no resize
+    // to report it. Observe the content boxes that set the scroll size too — drawings,
+    // canvases, tables — and pick up new ones as the content mounts.
+    const watch = () => {
+      observer.disconnect();
+      observer.observe(el);
+      if (el.firstElementChild) observer.observe(el.firstElementChild);
+      for (const box of el.querySelectorAll(OVERFLOW_CONTENT_BOXES)) observer.observe(box);
+      measure();
+    };
+    watch();
+    const mutations = new MutationObserver((records) => {
+      if (records.some((r) => [...r.addedNodes, ...r.removedNodes].some(isContentBox))) watch();
+    });
+    mutations.observe(el, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      mutations.disconnect();
+    };
   }, [state.view, loading, children]);
 
   const body = (
     <div
-      ref={bodyScrollRef}
-      style={fillHost ? undefined : { height: height ?? 260 }}
+      ref={bodyRef}
+      style={bodyBoxStyle}
       className={cn(
         "w-full overflow-auto",
         fillHost && "h-full",
@@ -868,11 +1111,34 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           key={state.view}
           ref={refs.chartBody}
           className="size-full animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"
+          {...(altTarget === "frame"
+            ? {
+                role: "figure" as const,
+                "aria-label": titleText ?? t("charts.chartFrame.defaultTitle"),
+                "aria-describedby": altId,
+              }
+            : {})}
         >
+          {altText && altTarget !== "none" ? (
+            <span id={altId} className="sr-only" data-slot="chart-frame-alt-text">
+              {altText}
+            </span>
+          ) : null}
           {state.view === "table" ? (
             renderTable(rows, columns)
           ) : (
-            <ChartConfigBridge>{children}</ChartConfigBridge>
+            <ChartConfigBridge density={densityInput}>
+              <ChartFramePlotHeightProvider
+                value={fillHost ? "fill" : plotHeight}
+                onPlotConsumer={registerPlotConsumer}
+              >
+                {/* A labelled chart takes `altText` as its own description (over
+                    its generated summary) through this seam — RM-117. */}
+                <ChartFrameAltTextContext value={altText}>
+                  <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
+                </ChartFrameAltTextContext>
+              </ChartFramePlotHeightProvider>
+            </ChartConfigBridge>
           )}
         </div>
       )}
@@ -880,7 +1146,21 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   );
 
   const modal = (
-    <ChartFrameModal detail={detail} renderTable={renderTable} source={sourceProp}>
+    <ChartFrameModal
+      detail={detail}
+      renderTable={renderTable}
+      footer={
+        notesAll || bylineAll || footerActions?.length || isChartSourceLink(sourceProp) ? (
+          // `pt-2` (tighter than the view pane's own `p-4`) reads as a
+          // footnote closer to the pane's edge than to the chart above it.
+          <div className="flex shrink-0 flex-col gap-1 pt-2">
+            {footerRow(sourceProp, bylineAll, notesAll)}
+          </div>
+        ) : sourceProp ? (
+          <ChartSourceRow source={sourceProp as ReactNode} className="shrink-0 pt-2" />
+        ) : null
+      }
+    >
       {children}
     </ChartFrameModal>
   );
@@ -892,6 +1172,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           ref={mergedCardRef}
           data-slot="chart-frame"
           data-chrome="bare"
+          data-chart-breakpoint={breakpoint}
           className={cn("flex min-h-0 flex-col", className)}
           {...props}
         >
@@ -912,8 +1193,8 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
             expand: () => actions.setExpanded(true),
             toggleView: actions.toggleView,
             download: actions.download,
-            exportSvg: actions.exportSvg,
-            exportPng: actions.exportPng,
+            exportSvg: (request?: ChartExportRequest) => actions.exportSvg(request),
+            exportPng: (request?: ChartExportRequest) => actions.exportPng(request),
           })
         : menuSlot;
     const hasDefaultHeader = Boolean(title || visibleDescription);
@@ -923,6 +1204,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           ref={mergedCardRef}
           data-slot="chart-frame"
           data-chrome="tile"
+          data-chart-breakpoint={breakpoint}
           className={cn("flex min-h-0 min-w-0 flex-col gap-2", fillHost && "h-full", className)}
           {...props}
         >
@@ -949,7 +1231,13 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           <div data-slot="chart-frame-body" className="min-h-0 flex-1">
             {body}
           </div>
-          {source ? <ChartSourceRow source={source} className="w-full shrink-0" /> : null}
+          {notes || byline || footerActions?.length || isChartSourceLink(source) ? (
+            <div data-slot="chart-frame-bottom" className="flex w-full shrink-0 flex-col gap-1">
+              {footerRow(source, byline, notes, "w-full")}
+            </div>
+          ) : source ? (
+            <ChartSourceRow source={source as ReactNode} className="w-full shrink-0" />
+          ) : null}
         </div>
         {modal}
       </>
@@ -958,7 +1246,12 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
 
   return (
     <>
-      <Card ref={mergedCardRef} className={cn("flex flex-col", className)} {...props}>
+      <Card
+        ref={mergedCardRef}
+        data-chart-breakpoint={breakpoint}
+        className={cn("flex flex-col", className)}
+        {...props}
+      >
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
           <div className={compact ? "min-w-0 space-y-1" : "space-y-1"}>
             {title && (
@@ -969,12 +1262,18 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           <ChartFrameToolbar />
         </CardHeader>
         <CardContent className="flex-1 pt-0">{body}</CardContent>
-        {source ? (
+        {source || notes || byline || footerActions?.length ? (
           // `pb-3` (tighter than the card's default `pb-6`) reads as a
           // footnote sitting close to the card's edge, not a fourth content
           // block equidistant from the chart above and the edge below (#184).
-          <CardFooter className="pt-0 pb-3">
-            <ChartSourceRow source={source} className="w-full" />
+          <CardFooter
+            className={cn(
+              "pt-0 pb-3",
+              (notes || byline || footerActions?.length || isChartSourceLink(source)) &&
+                "flex-col items-stretch gap-1",
+            )}
+          >
+            {footerRow(source, byline, notes, "w-full")}
           </CardFooter>
         ) : null}
       </Card>

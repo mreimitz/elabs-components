@@ -16,8 +16,10 @@ import {
   REPO_ROOT,
   OUT_DIR,
   bestArchetype,
+  buildAgentLoopRecorded,
   buildBlocks,
   buildCli,
+  buildCreateThemeSkill,
   buildInstall,
   buildPackages,
   buildPlaybooks,
@@ -25,7 +27,9 @@ import {
   buildThemes,
   deriveRoutine,
   layerOf,
+  parseSkillFrontmatter,
 } from "./gen-home.mjs";
+import { HOME_MCP_OPTIONS } from "../apps/home/lib/mcp-site-options.mjs";
 
 const readOut = (name) => JSON.parse(readFileSync(join(OUT_DIR, name), "utf8"));
 
@@ -275,4 +279,117 @@ test("gates.json: every entry has a real source file and a category from the rea
     assert.ok(g.id && g.doc && g.category && g.source, JSON.stringify(g));
   }
   assert.ok(gates.length >= 80);
+});
+
+// ── agent-loop-recorded.json vs the live /mcp route (RM-100 wave-3 ruling 8, W3-M1) ────────────
+
+test("buildAgentLoopRecorded uses the SAME options object apps/home/app/mcp/route.ts passes to createMcpHttpHandler", () => {
+  // apps/home/app/mcp/route.ts is a Next route (JSON import, "use node" runtime) this plain
+  // node:test file cannot import directly, so this reads its source text and asserts it wires
+  // the ONE shared HOME_MCP_OPTIONS object in — if the route ever grows a second, hand-typed
+  // `{ hosted, siteRoutes }` literal instead, this fails and names the file to fix, rather than
+  // letting the recorded fallback silently disagree with what the live route answers.
+  const routeSrc = readFileSync(join(REPO_ROOT, "apps/home/app/mcp/route.ts"), "utf8");
+  assert.match(
+    routeSrc,
+    /import\s*\{\s*HOME_MCP_OPTIONS\s*\}\s*from\s*["']\.\.\/\.\.\/lib\/mcp-site-options\.mjs["']/,
+    "apps/home/app/mcp/route.ts must import HOME_MCP_OPTIONS from apps/home/lib/mcp-site-options.mjs",
+  );
+  assert.match(
+    routeSrc,
+    /createMcpHttpHandler\(\{\s*manifest\s*,\s*\.\.\.HOME_MCP_OPTIONS\s*\}\)/,
+    "apps/home/app/mcp/route.ts must spread ...HOME_MCP_OPTIONS into createMcpHttpHandler, not a hand-typed options literal",
+  );
+  assert.deepEqual(
+    HOME_MCP_OPTIONS,
+    { hosted: true, siteRoutes: true },
+    "HOME_MCP_OPTIONS must keep siteRoutes: true — the site's /storybook/ and /r routes are real (wave-3 ruling 18)",
+  );
+});
+
+test("agent-loop-recorded.json: every recorded answer uses this site's /storybook/ links, never the DEFAULT emitters' bare /?path= form", () => {
+  const recorded = buildAgentLoopRecorded(manifest);
+  const text = JSON.stringify(recorded);
+  const storybookLinks = text.match(/elabs-ai\.com\/storybook\//g) ?? [];
+  const bareStoryLinks = text.match(/elabs-ai\.com\/\?path=/g) ?? [];
+  assert.ok(
+    storybookLinks.length > 0,
+    "expected at least one https://elabs-ai.com/storybook/ link once siteRoutes: true is threaded through",
+  );
+  assert.equal(
+    bareStoryLinks.length,
+    0,
+    "the recorded fallback must not contain the default https://elabs-ai.com/?path= form — that means it was built without siteRoutes: true",
+  );
+  assert.deepEqual(
+    recorded,
+    readOut("agent-loop-recorded.json"),
+    "apps/home/content/generated/agent-loop-recorded.json is stale — run `pnpm gen`",
+  );
+});
+
+// ── create-theme.json (RM-103, wave-4 ruling 23: no invented "create-theme" CLI verb) ─────────
+
+test("parseSkillFrontmatter: reads name/description/argument-hint, strips quotes", () => {
+  const text = [
+    "---",
+    "name: brand-ui-create-theme",
+    'argument-hint: "<theme name> [links, file paths, brief]"',
+    'description: some text ending in "/create-theme".',
+    "---",
+    "# body",
+  ].join("\n");
+  assert.deepEqual(parseSkillFrontmatter(text), {
+    name: "brand-ui-create-theme",
+    "argument-hint": "<theme name> [links, file paths, brief]",
+    description: 'some text ending in "/create-theme".',
+  });
+});
+
+test("parseSkillFrontmatter: no frontmatter block is an empty object, never a throw", () => {
+  assert.deepEqual(parseSkillFrontmatter("# just a heading\n"), {});
+});
+
+test("buildCreateThemeSkill: derives the plugin skill's own slash form from SKILL.md, never the in-repo maintainer shortcut", () => {
+  const derived = buildCreateThemeSkill();
+  assert.equal(derived.skill, "brand-ui-create-theme");
+  // A site visitor installs the plugin and invokes its skill by name — the same way the docs
+  // give `/brand-ui-start`/`/brand-ui-new-app` — never `/create-theme`, the maintainer-only
+  // shortcut that exists solely inside this repo (`.claude/commands/create-theme.md`).
+  assert.equal(derived.slashCommand, "/brand-ui-create-theme");
+  assert.notEqual(derived.slashCommand, "/create-theme");
+  assert.ok(
+    derived.argumentHint.length > 0,
+    "argumentHint should come from the skill's own frontmatter",
+  );
+  assert.equal(derived.invocation, `${derived.slashCommand} ${derived.argumentHint}`);
+
+  const skillMd = readFileSync(join(REPO_ROOT, "skills/brand-ui-create-theme/SKILL.md"), "utf8");
+  const fm = parseSkillFrontmatter(skillMd);
+  assert.equal(fm.name, derived.skill, "derived skill name must match SKILL.md's own frontmatter");
+  assert.equal(
+    fm["argument-hint"],
+    derived.argumentHint,
+    "derived argument hint must match SKILL.md's own frontmatter",
+  );
+});
+
+test("buildCreateThemeSkill: there is still no create-theme CLI verb to derive this from instead", () => {
+  const manifest = JSON.parse(readFileSync(join(REPO_ROOT, "brand-ui.manifest.json"), "utf8"));
+  const cli = buildCli(manifest);
+  const verbs = Object.values(cli.verbGroups)
+    .flat()
+    .map((v) => v.verb);
+  assert.ok(
+    !verbs.includes("create-theme"),
+    "a real create-theme CLI verb appeared — buildCreateThemeSkill should derive from cli.json instead of the skill",
+  );
+});
+
+test("FRESH: apps/home/content/generated/create-theme.json equals what the skill's SKILL.md derives", () => {
+  assert.deepEqual(
+    buildCreateThemeSkill(),
+    readOut("create-theme.json"),
+    "apps/home/content/generated/create-theme.json is stale — run `pnpm gen`",
+  );
 });

@@ -185,6 +185,79 @@ describe("Command — onActiveItemIdChange (#365)", () => {
   });
 });
 
+/**
+ * #541 — cmdk auto-highlights the first item on mount and calls the native
+ * `Element.prototype.scrollIntoView({ block: "nearest" })` on it, which walks
+ * every scrollable ancestor including the window. `overrideItemScrollIntoView`
+ * (`command.tsx`) shadows `scrollIntoView` as an OWN property on each item, so
+ * the file-level `beforeEach` stub above — standing in for the native,
+ * jsdom-less method on `Element.prototype` — must never be reached at all:
+ * own-property lookups win over the prototype every time.
+ */
+describe("Command — inline list never scrolls the page (#541)", () => {
+  function TallHarness() {
+    return (
+      <div>
+        <div style={{ height: 2000 }} data-testid="spacer" />
+        <Command>
+          <CommandInput placeholder="Search…" />
+          <CommandList>
+            <CommandGroup heading="Fruit">
+              {Array.from({ length: 20 }, (_, i) => (
+                <CommandItem key={i} value={`fruit-${i}`}>{`Fruit ${i}`}</CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </div>
+    );
+  }
+
+  it("never reaches the native scrollIntoView on mount, and leaves window.scrollY at 0", async () => {
+    const { container } = render(<TallHarness />);
+
+    await waitFor(() => {
+      expect(container.querySelector('[aria-selected="true"]')).not.toBeNull();
+    });
+
+    expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
+    expect(window.scrollY).toBe(0);
+  });
+
+  it("keyboard navigation scrolls the CommandList itself, never the window", async () => {
+    const { container } = render(<TallHarness />);
+    const list = container.querySelector('[data-slot="command-list"]') as HTMLElement;
+    const input = screen.getByPlaceholderText("Search…");
+
+    // jsdom has no layout engine (every rect is 0,0,0,0) — fake an
+    // overflowing list so the "nearest" edge math this fix replicates has
+    // something real to compute against.
+    const fakeRect = (top: number, height: number): DOMRect =>
+      ({
+        top,
+        bottom: top + height,
+        left: 0,
+        right: 300,
+        width: 300,
+        height,
+        x: 0,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    vi.spyOn(list, "getBoundingClientRect").mockReturnValue(fakeRect(0, 300));
+    const items = Array.from(container.querySelectorAll('[cmdk-item=""]'));
+    items.forEach((item, i) => {
+      vi.spyOn(item as HTMLElement, "getBoundingClientRect").mockReturnValue(fakeRect(i * 32, 32));
+    });
+
+    await userEvent.type(input, "{ArrowDown}".repeat(15));
+
+    await waitFor(() => expect(list.scrollTop).toBeGreaterThan(0));
+    expect(window.scrollY).toBe(0);
+  });
+});
+
 describe("CommandItem — dev-only warning for cmdk-overridden props", () => {
   it("warns when a consumer passes id, role, or aria-selected", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { DumbbellChart } from "./dumbbell-chart";
 
@@ -583,5 +583,315 @@ export const SelectionStates: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
+  },
+};
+
+// ── RM-116 validator fix-round-1/round-2 (#491): no painted text may ──────
+// ── intersect, at the width a real browser viewport actually gives it ─────
+
+/** Minimum clear px between any two painted text boxes — the validator's bar
+ *  (round-2: ≥ 1px, down from round-1's 2px — the acceptance bar itself, not
+ *  a margin this test re-encodes as the spec). */
+const TEXT_OVERLAP_MIN_GAP_PX = 1;
+
+/**
+ * Storybook's `layout: "centered"` parameter (this story's `meta.parameters`)
+ * pads the preview ~16px each side (`sb-main-centered`, applied inside the
+ * SAME iframe a real browser viewport renders — not manager-UI chrome, so it
+ * is not an artifact of running headless) — 32px total. A real page viewport
+ * of `W` px therefore hands `[data-testid="dumbbell-story-wrapper"]`
+ * `W - SB_CENTERED_PADDING_PX` px, capped at the wrapper's own
+ * `max-w-[640px]`.
+ */
+const SB_CENTERED_PADDING_PX = 32;
+/** The wrapper's own `max-w-[640px]` (every render below in this file). */
+const STORY_MAX_WIDTH_PX = 640;
+/**
+ * The validator's real browser viewport widths (Playwright
+ * `page.setViewportSize`, `iframe.html?id=…` at 380/600/900px) — kept here so
+ * `REAL_VIEWPORT_CONTENT_WIDTHS_PX` documents its own derivation instead of
+ * three bare content-width constants.
+ */
+const VALIDATOR_VIEWPORT_WIDTHS_PX = [380, 600, 900];
+/**
+ * Round-2 (#491) fix for round-1's actual bug: `assertNoTextOverlapAtWidths`
+ * resized only this wrapper — directly to 380/600/900 — while the vitest
+ * browser project's OWN viewport stayed fixed and wide, so the chart got
+ * MORE width than a real 380/600/900px page viewport ever would (Storybook's
+ * centered-layout padding + this wrapper's own width cap both still apply at
+ * a real viewport, never inside this test). That let round-1's fix pass here
+ * while a real narrow viewport still overlapped. These are the PROVEN
+ * equivalent widths instead — a real Playwright page at 380/600/900px reads
+ * the exact same `[data-chart-breakpoint]` container `clientWidth` (348,
+ * 568, 640) that resizing this wrapper to these numbers produces; both
+ * readings are quoted side by side in the round-2 result file
+ * (`RM-116-result.md`).
+ */
+const REAL_VIEWPORT_CONTENT_WIDTHS_PX = VALIDATOR_VIEWPORT_WIDTHS_PX.map((width) =>
+  Math.min(width - SB_CENTERED_PADDING_PX, STORY_MAX_WIDTH_PX),
+);
+
+/**
+ * True nearest-edge Euclidean distance between two axis-aligned rects: 0 when
+ * they intersect/touch, else the straight-line gap between their closest
+ * corners/edges. `min(gapX, gapY)` — the first version of this helper —
+ * UNDER-reports a diagonal pair: two boxes offset by a large `gapY` and a
+ * small `gapX` (e.g. a group header's own label and an unrelated row's delta
+ * label two bands below it) are nowhere near touching, but the min-of-axes
+ * read flags the small `gapX` alone. `Math.hypot(dx, dy)` is the honest
+ * distance a reader would actually perceive between the two boxes.
+ */
+function rectGapPx(a: DOMRect, b: DOMRect): number {
+  const dx = Math.max(0, b.left - a.right, a.left - b.right);
+  const dy = Math.max(0, b.top - a.bottom, a.top - b.bottom);
+  return Math.hypot(dx, dy);
+}
+
+/**
+ * Fails on the pre-fix geometry (validator fix-round-1, #491): at 380px a
+ * `groupBy` header band got no more room than a single row, so a group
+ * header's own `HaloText` painted on top of the first row's delta label in
+ * its group ("Referral" intersecting "+46.7%"). Every SVG `<text>` in the
+ * chart PLUS the dot-plot's HTML colour-key legend (the requirement's fourth
+ * text kind) must clear every other by `TEXT_OVERLAP_MIN_GAP_PX` — measured
+ * with `getBoundingClientRect`, the way the validator measured it, never
+ * against a margin/offset constant (that re-encodes the bug as the spec).
+ */
+async function assertNoPaintedTextOverlap(canvasElement: HTMLElement): Promise<void> {
+  await waitFor(() => {
+    const svgTexts = Array.from(canvasElement.querySelectorAll("svg text"));
+    const legendItems = Array.from(
+      canvasElement.querySelectorAll('[data-slot="dumbbell-chart-dot-legend"] > span'),
+    );
+    const elements = [...svgTexts, ...legendItems];
+    expect(elements.length).toBeGreaterThan(0);
+    const boxes = elements.map((el) => el.getBoundingClientRect());
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i] as DOMRect;
+        const b = boxes[j] as DOMRect;
+        const gap = rectGapPx(a, b);
+        expect(rectsIntersect(a, b)).toBe(false);
+        expect(gap).toBeGreaterThanOrEqual(TEXT_OVERLAP_MIN_GAP_PX);
+      }
+    }
+  });
+}
+
+/**
+ * Resizes the story's own wrapper (not the browser viewport — the vitest
+ * browser project runs one fixed viewport) to each width in turn and asserts
+ * no painted text overlaps at any of them. `ChartPlotRoot`'s `ResizeObserver`
+ * reflows the chart on the width change; `waitFor` inside the assertion
+ * absorbs that latency. Pass `REAL_VIEWPORT_CONTENT_WIDTHS_PX`, never the raw
+ * validator viewport widths — see its docblock (round-2, #491).
+ *
+ * Always restores the wrapper's ORIGINAL inline `width`/`maxWidth` in a
+ * `finally`, success or failure (round-2, #491): a `play` function's own DOM
+ * mutations survive after it returns — CSF3 runs `play` on every preview
+ * load, including a bare `iframe.html` visit with no interactions-addon
+ * channel — so a resize left dangling here is exactly what made round-1's
+ * validator read a real 600px viewport as `narrow`: the story's own play
+ * function had stuck the wrapper at its FIRST swept width and never let go.
+ */
+async function assertNoTextOverlapAtWidths(
+  canvasElement: HTMLElement,
+  widths: number[],
+): Promise<void> {
+  const wrapper = canvasElement.querySelector<HTMLElement>(
+    '[data-testid="dumbbell-story-wrapper"]',
+  );
+  expect(wrapper).not.toBeNull();
+  const originalWidth = wrapper!.style.width;
+  const originalMaxWidth = wrapper!.style.maxWidth;
+  try {
+    for (const width of widths) {
+      wrapper!.style.width = `${width}px`;
+      wrapper!.style.maxWidth = `${width}px`;
+      await assertNoPaintedTextOverlap(canvasElement);
+    }
+  } finally {
+    wrapper!.style.width = originalWidth;
+    wrapper!.style.maxWidth = originalMaxWidth;
+  }
+}
+
+// ── RM-116: arrow / dots plots — Datawrapper parity §2.14–2.16 ─────────────
+
+// 12 rows, 3 channels (4 metrics each) — a marketing-funnel move per channel,
+// mixed positive/negative, deliberately not already sorted by anything.
+const funnelChangeByChannel = [
+  { metric: "Signups", channel: "Paid", before: 120, after: 180 },
+  { metric: "Trials", channel: "Paid", before: 300, after: 210 },
+  { metric: "Conversions", channel: "Paid", before: 40, after: 52 },
+  { metric: "Churn", channel: "Paid", before: 18, after: 9 },
+  { metric: "Signups", channel: "Organic", before: 220, after: 260 },
+  { metric: "Trials", channel: "Organic", before: 410, after: 380 },
+  { metric: "Conversions", channel: "Organic", before: 70, after: 95 },
+  { metric: "Churn", channel: "Organic", before: 25, after: 30 },
+  { metric: "Signups", channel: "Referral", before: 60, after: 45 },
+  { metric: "Trials", channel: "Referral", before: 90, after: 130 },
+  { metric: "Conversions", channel: "Referral", before: 15, after: 22 },
+  { metric: "Churn", channel: "Referral", before: 8, after: 5 },
+];
+
+/**
+ * `variant="arrow"` — an arrow head at `endKey`, coloured by sign (the
+ * diverging positive/negative pair), grouped by channel with a header +
+ * separator per group, sorted by `%` change. Head direction is the
+ * second (non-hue) channel a signed reading needs (conventions.md, WCAG
+ * 1.4.1) — a decrease still reads in greyscale as an arrow pointing left.
+ */
+export const ArrowPlot: Story = {
+  name: "Arrow plot",
+  args: {
+    data: funnelChangeByChannel,
+    category: "metric",
+    startKey: "before",
+    endKey: "after",
+    variant: "arrow",
+    groupBy: "channel",
+    sortBy: "deltaPercent",
+    delta: { show: true, mode: "percent" },
+  },
+  render: (args) => (
+    // No fixed height (validator round-2, #491): a grouped chart's own height
+    // floor (`groupHeaderBandFloorPx`, `dumbbell-chart.tsx`) can now grow past
+    // any height this story pins, so the wrapper only bounds width — the
+    // chart sizes itself.
+    <div className="w-full max-w-[640px]" data-testid="dumbbell-story-wrapper">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const svgEl = canvasElement.querySelector("svg");
+      expect(svgEl).not.toBeNull();
+      // Every row still draws its own head — grouping only adds bands.
+      const heads = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-arrow-head"]');
+      expect(heads).toHaveLength(funnelChangeByChannel.length);
+      const headFills = new Set(Array.from(heads).map((h) => h.getAttribute("fill")));
+      expect(headFills.has("var(--chart-div-pos-2)")).toBe(true);
+      expect(headFills.has("var(--chart-div-neg-2)")).toBe(true);
+      // Three groups, one header each — group order is first-seen in the
+      // resolved SORT order (deltaPercent here), not the input order, so
+      // only the set of names (not their sequence) is asserted.
+      const headers = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-group-header"]');
+      expect(new Set(Array.from(headers).map((h) => h.textContent))).toEqual(
+        new Set(["Paid", "Organic", "Referral"]),
+      );
+      const deltaLabels = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-delta-label"]');
+      expect(deltaLabels).toHaveLength(funnelChangeByChannel.length);
+      for (const label of Array.from(deltaLabels)) {
+        expect(label.textContent).toMatch(/^[+-]\d+(\.\d+)?%$/);
+      }
+    });
+    // Validator fix-round-1/round-2 (#491): grouped bands are the densest
+    // geometry this component draws — sweep the widths a real narrowed
+    // browser viewport actually gives the chart.
+    await assertNoTextOverlapAtWidths(canvasElement, REAL_VIEWPORT_CONTENT_WIDTHS_PX);
+  },
+};
+
+// Three competing scores per product on a shared axis — a spread reading, not
+// a before/after — plus the extremes bridged by a range bar.
+const productScores = [
+  { product: "Alpha", us: 42, rivalA: 58, rivalB: 71 },
+  { product: "Beta", us: 66, rivalA: 49, rivalB: 55 },
+  { product: "Gamma", us: 30, rivalA: 35, rivalB: 28 },
+  { product: "Delta", us: 80, rivalA: 62, rivalB: 74 },
+];
+
+/**
+ * `variant="dots"` — N `valueKeys` per row as dots on the shared axis
+ * (Datawrapper's dot plot), `range` drawing a bar between each row's
+ * extremes; the colour key outside the plot lists the three keys.
+ */
+export const DotsPlot: Story = {
+  name: "Dot plot with range",
+  args: {
+    data: productScores,
+    category: "product",
+    startKey: "us",
+    endKey: "rivalB",
+    variant: "dots",
+    valueKeys: ["us", "rivalA", "rivalB"],
+    range: true,
+  },
+  render: (args) => (
+    <div className="h-80 w-full max-w-[640px]" data-testid="dumbbell-story-wrapper">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const svgEl = canvasElement.querySelector("svg");
+      expect(svgEl).not.toBeNull();
+      const dots = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-dot"]');
+      expect(dots).toHaveLength(productScores.length * 3);
+      const bars = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-range-bar"]');
+      expect(bars).toHaveLength(productScores.length);
+    });
+    for (const key of ["us", "rivalA", "rivalB"]) {
+      expect(canvasElement.textContent).toContain(key);
+    }
+    // Validator fix-round-1/round-2 (#491): the colour-key legend is the
+    // fourth painted-text kind the acceptance bar names alongside category/
+    // delta/group-header labels; sweep the widths a real narrowed browser
+    // viewport actually gives the chart.
+    await assertNoTextOverlapAtWidths(canvasElement, REAL_VIEWPORT_CONTENT_WIDTHS_PX);
+  },
+};
+
+// Legend engine (RM-118): placement + hover only, no toggle (a dumbbell row
+// is a category, not a series — there is nothing per-key to hide).
+/**
+ * `legend` replaces the always-on corner colour key above with the shared
+ * container-legend engine — same three rows, now placement-aware and with a
+ * real hover: pointing at a row dims every OTHER key's dots, on every row.
+ */
+export const LegendPlacement: Story = {
+  name: "Legend, placement and hover",
+  args: {
+    data: productScores,
+    category: "product",
+    startKey: "us",
+    endKey: "rivalB",
+    variant: "dots",
+    valueKeys: ["us", "rivalA", "rivalB"],
+    legend: true,
+  },
+  render: (args) => (
+    <div className="h-80 w-full max-w-[640px]" data-testid="dumbbell-story-wrapper">
+      <DumbbellChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    });
+    // The shared engine REPLACES RM-116's own corner badge — never both.
+    expect(
+      canvasElement.querySelector('[data-slot="dumbbell-chart-dot-legend"]'),
+    ).not.toBeInTheDocument();
+    const legend = canvasElement.querySelector(".legend-container");
+    for (const key of ["us", "rivalA", "rivalB"]) {
+      expect(legend?.textContent).toContain(key);
+    }
+    // No toggle affordance (R3) — plain rows, not buttons.
+    expect(canvasElement.querySelectorAll(".legend-container button")).toHaveLength(0);
+
+    const rows = canvasElement.querySelectorAll(".legend-container > div");
+    await userEvent.hover(rows[0] as Element);
+    await waitFor(() => {
+      const dots = canvasElement.querySelectorAll('[data-slot="dumbbell-chart-dot"]');
+      // "us" is the hovered (first) key — its own dots carry no `opacity`
+      // attribute at all (full opacity, the default), every other key's
+      // dots on every row dim.
+      for (const dot of dots) {
+        const isUs = dot.getAttribute("data-dot-key") === "us";
+        expect(dot.getAttribute("opacity")).toBe(isUs ? null : "0.35");
+      }
+    });
   },
 };

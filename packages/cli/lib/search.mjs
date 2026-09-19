@@ -321,15 +321,22 @@ export const NO_MATCH_GUIDANCE =
   '(e.g. "picker"), check the registry blocks and playbooks below, or compose it from ' +
   "primitives (Card, FieldRoot, Button, …) with semantic tokens only.";
 
-/** Shared text rendering for the component arm (CLI + MCP print the same thing). */
-export function renderComponentArm(query, result, cap = 30) {
+/**
+ * Shared text rendering for the component arm (CLI + MCP print the same thing).
+ * `storyLink(row)` — optional; when it returns a URL, a `story:` line follows the
+ * row (the hosted MCP passes one; the CLI and stdio MCP do not).
+ */
+export function renderComponentArm(query, result, cap = 30, { storyLink } = {}) {
   const lines = [`Components/hooks matching "${query}":`];
-  for (const r of result.rows.slice(0, cap))
+  for (const r of result.rows.slice(0, cap)) {
     lines.push(
       `  ${r.name}  (${r.pkg}${r.importPath ? ` → import from "${r.importPath}"` : ""} · ${r.kind})` +
         (r.aka ? "  ← brand-ui's name for this" : "") +
         (r.intent?.purpose ? `\n      ${r.intent.purpose}` : ""),
     );
+    const story = storyLink?.(r);
+    if (story) lines.push(`    story: ${story}`);
+  }
   if (result.rows.length > cap)
     lines.push(`  … ${result.rows.length - cap} more — narrow the query`);
   if (!result.rows.length) {

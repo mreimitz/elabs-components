@@ -111,6 +111,23 @@ export const Fit24x12: Story = {
     await within(document.body).findByRole("dialog");
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(owner).toHaveFocus());
+    // Again, closing before the menu has finished closing. The menu's close-focus runs after
+    // its exit animation and used to land on "More actions" when the modal closed first (it
+    // failed on CI under load). userEvent's pacing gives the menu time to finish, so select
+    // and close in one task, with plain DOM events. `findByRole` waits for the first modal to
+    // finish closing: until then the rest of the page is `aria-hidden`.
+    (await within(owner).findByRole("button", { name: "More actions" })).focus();
+    await userEvent.keyboard("{Enter}");
+    const again = await within(document.body).findByRole("menuitem", { name: "Full screen" });
+    await waitFor(() => expect(again).toHaveFocus());
+    again.click();
+    within(document.body)
+      .getByRole("dialog")
+      .dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await waitFor(() => expect(within(document.body).queryByRole("dialog")).toBeNull());
+    // Let the menu's own close-focus run, then read where focus settled.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await expect(owner).toHaveFocus();
   },
 };
 

@@ -28,6 +28,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ChartSpec, ChartType } from "./chart-spec";
 import { CHART_TYPES, explainChartType, inferChartType, isChartType } from "./infer-chart-type";
+import { facetHint } from "./infer-chart-type"; // Facet hint — RM-120
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -450,6 +451,38 @@ const FIXTURES: Fixture[] = [
     rule: "signed",
   },
 
+  // 10a — diverging-bar, Likert reading (RM-113): a named middle series.
+  {
+    name: "Likert answers with a named neutral series",
+    spec: {
+      data: [
+        { q: "Q1", Disagree: 20, Neutral: 30, Agree: 50 },
+        { q: "Q2", Disagree: 40, Neutral: 20, Agree: 40 },
+      ],
+      x: "q",
+      series: ["Disagree", "Neutral", "Agree"],
+      stacked: "diverging",
+      divergingCenter: "Neutral",
+    },
+    type: "diverging-bar",
+    rule: "likert",
+  },
+  // pair: the same rows as a percent stack stay a bar (and never a stream).
+  {
+    name: "Likert answers as a percent stack",
+    spec: {
+      data: [
+        { q: "Q1", Disagree: 20, Neutral: 30, Agree: 50 },
+        { q: "Q2", Disagree: 40, Neutral: 20, Agree: 40 },
+      ],
+      x: "q",
+      series: ["Disagree", "Neutral", "Agree"],
+      stacked: "percent",
+    },
+    type: "bar",
+    rule: "default",
+  },
+
   // 11 — unit (waffle), editorial register only.
   {
     name: "four shares summing to 100 in the editorial register",
@@ -618,7 +651,9 @@ describe("the ChartType union and its runtime companion", () => {
   });
 
   it("carries the seven pre-RM-038 members plus the thirteen new families", () => {
-    expect(CHART_TYPES).toHaveLength(20);
+    // 20 + "dual-axis" (RM-121, explicit only — never inferred).
+    expect(CHART_TYPES).toHaveLength(21);
+    expect(CHART_TYPES).toContain("dual-axis");
     for (const core of ["line", "area", "bar", "pie", "scatter", "radar", "funnel"]) {
       expect(CHART_TYPES).toContain(core);
     }
@@ -648,5 +683,24 @@ describe("the ChartType union and its runtime companion", () => {
     expect(block).not.toBeNull();
     const documented = [...(block?.[1] ?? "").matchAll(/`([a-z-]+)`/g)].map((m) => m[1] as string);
     expect(documented.sort()).toEqual([...CHART_TYPES].sort());
+  });
+});
+
+// Facet hint — RM-120
+describe("facetHint", () => {
+  const rows = [{ d: "2024-01-01", a: 1, b: 2, c: 3, e: 4, f: 5, g: 6 }];
+  const spec = (series: string[], extra: Partial<ChartSpec> = {}): ChartSpec => ({
+    data: rows,
+    x: "d",
+    series,
+    ...extra,
+  });
+
+  it("suggests facets for ≥ 6 line series, never switching the type", () => {
+    const six = spec(["a", "b", "c", "e", "f", "g"], { type: "line" });
+    expect(facetHint(six, "line")).toMatch(/facet/);
+    expect(facetHint(spec(["a", "b", "c", "e", "f"]), "line")).toBeNull();
+    expect(facetHint({ ...six, facet: { by: { series: true } } }, "line")).toBeNull();
+    expect(facetHint(six, "bar")).toBeNull();
   });
 });

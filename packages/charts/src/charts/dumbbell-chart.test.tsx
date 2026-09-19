@@ -866,3 +866,284 @@ describe("DumbbellChart decoration pattern channel (ADR 0011, #257)", () => {
     expect(seriesPatterns(container)).toHaveLength(0);
   });
 });
+
+// RM-116 — dot / range / arrow plots: variant="arrow", variant="dots",
+// extended sortBy, groupBy, delta config.
+describe('DumbbellChart variant="arrow" (RM-116)', () => {
+  const changeData = [
+    { region: "North", team: "A", before: 100, after: 140 },
+    { region: "South", team: "A", before: 80, after: 60 },
+    { region: "East", team: "B", before: 20, after: 50 },
+  ];
+
+  it("draws an arrow head + connector per row, coloured by sign, no start/end markers", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="region"
+        data={changeData}
+        endKey="after"
+        startKey="before"
+        variant="arrow"
+      />,
+    );
+    expect(container.querySelectorAll('[data-slot="dumbbell-chart-arrow-head"]')).toHaveLength(3);
+    expect(container.querySelectorAll('[data-slot="dumbbell-chart-connector"]')).toHaveLength(3);
+    expect(container.querySelectorAll('[data-slot="dumbbell-chart-marker-start"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-slot="dumbbell-chart-marker-end"]')).toHaveLength(0);
+    const heads = Array.from(container.querySelectorAll('[data-slot="dumbbell-chart-arrow-head"]'));
+    // North/East increase (positive), South decreases (negative) — two
+    // distinct fills, never all three the same (WCAG 1.4.1: direction is the
+    // second channel, but the fills still have to differ for sign to read at
+    // all in a screenshot/print).
+    const fills = new Set(heads.map((h) => h.getAttribute("fill")));
+    expect(fills.size).toBe(2);
+    expect(fills.has("var(--chart-div-pos-2)")).toBe(true);
+    expect(fills.has("var(--chart-div-neg-2)")).toBe(true);
+  });
+
+  it('delta with mode="percent" labels the signed % change', () => {
+    const { container } = render(
+      <DumbbellChart
+        category="region"
+        data={changeData}
+        delta={{ show: true, mode: "percent" }}
+        endKey="after"
+        startKey="before"
+        variant="arrow"
+      />,
+    );
+    const labels = Array.from(
+      container.querySelectorAll('[data-slot="dumbbell-chart-delta-label"]'),
+    ).map((n) => n.textContent);
+    expect(labels).toEqual(["+40%", "-25%", "+150%"]);
+  });
+
+  it("groupBy renders one header band per first-seen group value, with a separator", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="region"
+        data={changeData}
+        endKey="after"
+        groupBy="team"
+        startKey="before"
+        variant="arrow"
+      />,
+    );
+    const headers = container.querySelectorAll('[data-slot="dumbbell-chart-group-header"]');
+    expect(headers).toHaveLength(2);
+    expect(headers[0]?.textContent).toBe("A");
+    expect(headers[1]?.textContent).toBe("B");
+    expect(container.querySelectorAll('[data-slot="dumbbell-chart-group-separator"]')).toHaveLength(
+      2,
+    );
+    // Every row still draws its own arrow head — grouping only adds bands.
+    expect(container.querySelectorAll('[data-slot="dumbbell-chart-arrow-head"]')).toHaveLength(3);
+  });
+
+  it('sortBy="deltaPercent" orders rows by |delta / start|, descending', () => {
+    const { container } = render(
+      <DumbbellChart
+        category="region"
+        data={changeData}
+        endKey="after"
+        sortBy="deltaPercent"
+        startKey="before"
+        variant="arrow"
+      />,
+    );
+    const categories = Array.from(
+      container.querySelectorAll('[data-slot="dumbbell-chart-category-label"]'),
+    ).map((n) => n.textContent);
+    // East: |30/20| = 1.5, South: |20/80| = 0.25, North: |40/100| = 0.4
+    expect(categories).toEqual(["East", "North", "South"]);
+  });
+
+  it("reverse flips the resolved sort order", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="region"
+        data={changeData}
+        endKey="after"
+        reverse
+        sortBy="label"
+        startKey="before"
+        variant="arrow"
+      />,
+    );
+    const categories = Array.from(
+      container.querySelectorAll('[data-slot="dumbbell-chart-category-label"]'),
+    ).map((n) => n.textContent);
+    expect(categories).toEqual(["South", "North", "East"]);
+  });
+});
+
+describe('DumbbellChart variant="dots" (RM-116)', () => {
+  const scoresData = [
+    { product: "Alpha", us: 40, themA: 55, themB: 70 },
+    { product: "Beta", us: 60, themA: 45, themB: 50 },
+  ];
+
+  it("renders one dot per valueKey per row", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    const dots = container.querySelectorAll('[data-slot="dumbbell-chart-dot"]');
+    expect(dots).toHaveLength(6); // 3 keys x 2 rows
+  });
+
+  it("draws a range bar between each row's extremes only when range is set", () => {
+    const { container: withoutRange } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    expect(withoutRange.querySelectorAll('[data-slot="dumbbell-chart-range-bar"]')).toHaveLength(0);
+
+    const { container: withRange } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        range
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    expect(withRange.querySelectorAll('[data-slot="dumbbell-chart-range-bar"]')).toHaveLength(2);
+  });
+
+  it("lists every valueKey in the colour key legend", () => {
+    const { getByText } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    expect(getByText("us")).toBeInTheDocument();
+    expect(getByText("themA")).toBeInTheDocument();
+    expect(getByText("themB")).toBeInTheDocument();
+  });
+});
+
+describe("DumbbellChart legend (RM-118)", () => {
+  const scoresData = [
+    { product: "Alpha", us: 40, themA: 55, themB: 70 },
+    { product: "Beta", us: 60, themA: 45, themB: 50 },
+  ];
+
+  it("leaves RM-116's own corner dot-key badge exactly as it always rendered when legend is unset (R1)", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    expect(container.querySelector('[data-slot="dumbbell-chart-dot-legend"]')).toBeInTheDocument();
+    // The new shared engine adds nothing of its own unasked.
+    expect(container.querySelector(".legend-container")).not.toBeInTheDocument();
+  });
+
+  it("legend + variant='dots' replaces the corner badge with the container legend — one row per valueKey, no buttons (no toggle, R3)", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        legend
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    // Old badge is gone — never both at once.
+    expect(
+      container.querySelector('[data-slot="dumbbell-chart-dot-legend"]'),
+    ).not.toBeInTheDocument();
+    const rows = container.querySelectorAll(".legend-container > *");
+    expect(rows).toHaveLength(3);
+    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+  });
+
+  it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (no per-key hide)', () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        legend={{ interactive: "toggle" }}
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    expect(container.querySelectorAll(".legend-container [aria-pressed]")).toHaveLength(0);
+  });
+
+  it("hovering a legend row dims every OTHER dot key's dots, on every row, never the hovered key's own", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        legend
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(3);
+    fireEvent.mouseEnter(rows[0] as Element);
+    // "us" is dotIndex 0, drawn first on every row (2 rows x 3 keys). The
+    // hovered key's own dots carry no `opacity` attribute at all — only a
+    // dimmed dot ever does, keeping the DOM byte-identical to before RM-118
+    // wherever nothing is dimmed.
+    const dots = container.querySelectorAll('[data-slot="dumbbell-chart-dot"]');
+    expect(dots).toHaveLength(6);
+    for (const dot of dots) {
+      const isUs = dot.getAttribute("data-dot-key") === "us";
+      expect(dot.getAttribute("opacity")).toBe(isUs ? null : "0.35");
+    }
+    fireEvent.mouseLeave(rows[0] as Element);
+    for (const dot of dots) {
+      expect(dot.getAttribute("opacity")).toBeNull();
+    }
+  });
+
+  it("a truthy legend on the default 'dumbbell' variant renders nothing — no discrete key to show", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="step"
+        data={[
+          { step: "Sign up", before: 100, after: 100 },
+          { step: "Verify email", before: 82, after: 94 },
+        ]}
+        endKey="after"
+        legend
+        startKey="before"
+      />,
+    );
+    expect(container.querySelector(".legend-container")).not.toBeInTheDocument();
+  });
+});

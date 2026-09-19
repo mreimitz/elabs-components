@@ -12,7 +12,7 @@
  *
  * Marker taxonomy — named regions, family:
  *   <!-- brand-ui:gen:<artifact>:start --> … <!-- brand-ui:gen:<artifact>:end -->
- * Artifacts: `packages`, `decisions`, `selection`. The shipped `brand-ui:context:*`
+ * Artifacts: `packages`, `decisions`, `selection`, `counts` (README). The shipped `brand-ui:context:*`
  * markers and the `DECISIONS:SUMMARY:*` source markers are NOT touched.
  *
  * BOUNDARY: the named regions are placed BY HAND in the target docs (the empty
@@ -34,6 +34,7 @@ import {
   renderSkillCatalogue,
   renderAgentOutputGuidance,
   renderPlaybookIndex,
+  renderReadmeCounts,
 } from "./render-docs.mjs";
 
 /**
@@ -124,6 +125,12 @@ export function genTargets(root, manifest) {
         { name: "a2ui-catalog", render: () => renderA2uiCatalogTable() },
         { name: "a2ui", render: () => renderA2uiSkillTable() },
       ],
+    },
+    {
+      // The README's counts (components per package, token contract, ADRs): one
+      // definition, generated, so the front page can't drift from llms.txt again.
+      file: join(root, "README.md"),
+      regions: [{ name: "counts", render: () => renderReadmeCounts(manifest, root) }],
     },
     {
       // The human playbook index (WP-09 #84). It used to be a hand-kept table, so a

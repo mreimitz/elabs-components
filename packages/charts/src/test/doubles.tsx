@@ -39,13 +39,14 @@
  */
 "use client";
 
-import { forwardRef, type CSSProperties, type ReactNode } from "react";
+import { Children, forwardRef, isValidElement, type CSSProperties, type ReactNode } from "react";
 import { ChartA11yLabel, useChartA11yContainerProps } from "../charts/chart-a11y";
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import {
   assertChartContract,
   assertChartSpecContract,
   buildChartDoublePayload,
+  ChartContractError,
   type ChartContractSpec,
 } from "./contract";
 
@@ -62,6 +63,28 @@ export { ChartFrame } from "../chart-frame/chart-frame";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";
 export { Sparkline } from "../sparkline/sparkline";
 export type { SparklineLabels, SparklineProps } from "../sparkline/sparkline";
+// Legend engine — RM-118. `RampLegend`/`SizeLegend` touch only react,
+// `@elabs-ai/components-ui`, `chart-formatters` and (`SizeLegend`) the pure
+// `areaRadius` helper — zero `@visx`/`d3`/`motion` at runtime, so re-exporting
+// the real implementation is zero drift risk, same as the five above.
+//
+// `ChartLegend`/`useContainerLegend` are NOT re-exported here: `ChartLegend`
+// reaches `series-pattern.tsx`/`use-high-decoration.ts`, both of which import
+// `chart-context.tsx`'s `DEFAULT_Y_AXIS_ID`/`useChartStable` AS VALUES, and
+// `chart-context.tsx` itself imports `y-axis-scales.ts`, which imports
+// `@visx/scale` at runtime (`pnpm check --rule charts-test-double` catches
+// this: it fails "engine-isolation" the moment `ChartLegend` is added here).
+// `ChartLegend` was already outside the test double before this item — this
+// only documents why it stays there; giving it one costs a hand-written fake
+// double, out of `touches`.
+export {
+  RampLegend,
+  rampPositionOf,
+  type RampLegendLabelMode,
+  type RampLegendProps,
+  type RampLegendScale,
+} from "../charts/legend/ramp-legend";
+export { SizeLegend, type SizeLegendProps } from "../charts/legend/size-legend";
 
 // ── The per-family contract specs (the flat, auditable list) ────────────────
 
@@ -216,7 +239,9 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     itemRequiredKeys: ["id", "name", "start", "end"],
     dateItemKeys: ["start", "end"],
   },
-  // Dumbbell — RM-023
+  // Dumbbell — RM-023. `groupBy` — RM-116: optional, so a caller who never
+  // groups their rows checks nothing extra; a caller who does gets the same
+  // "does this column exist" floor every other nominated column gets.
   DumbbellChart: {
     dataKind: "array",
     requiredProps: ["data", "category", "startKey", "endKey"],
@@ -226,6 +251,7 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
       { prop: "startKey", numeric: true },
       { prop: "endKey", numeric: true },
     ],
+    keyProps: [{ prop: "groupBy", numeric: false }],
   },
   // Bullet — RM-061. A single scalar KPI value, not a data array — `dataKind:
   // "none"` skips every array/row check, so the one thing a mocked test can
@@ -346,6 +372,10 @@ function createChartContainerDouble<P extends DoubleOwnProps>(
   const Double = forwardRef<HTMLDivElement, P>(function ChartTestDouble(props, ref) {
     const record = props as unknown as Record<string, unknown>;
     assertChartContract(name, record, spec);
+    // Axes — RM-108
+    assertAxisChildrenContract(props.children);
+    // Labels — RM-110
+    assertLabelChildrenContract(props.children);
     const a11y = useChartA11yContainerProps(props.accessibleLabel, props.accessibleDescription);
     const payload = buildChartDoublePayload(name, record, spec);
     return (
@@ -384,6 +414,7 @@ import type { ScatterChartProps } from "../charts/scatter-chart";
 import type { CandlestickChartProps } from "../charts/candlestick-chart";
 import type { LiveLineChartProps } from "../charts/live-line-chart";
 import type { PieChartProps } from "../charts/pie-chart";
+import type { InlineChipProps } from "../chart-frame/inline-chip";
 import type { RingChartProps } from "../charts/ring-chart";
 import type { FunnelChartProps } from "../charts/funnel-chart";
 import type { RadarChartProps } from "../charts/radar-chart";
@@ -408,10 +439,18 @@ export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
   CHART_CONTRACT_SPECS.AreaChart,
 );
-export const BarChart = createChartContainerDouble<BarChartProps>(
+const BarChartBaseDouble = createChartContainerDouble<BarChartProps>(
   "BarChart",
   CHART_CONTRACT_SPECS.BarChart,
 );
+// BarChart — RM-113: the richness props are validated before the base contract.
+export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(
+  function BarChartTestDouble(props, ref) {
+    assertBarRichnessContract("BarChart", props as unknown as Record<string, unknown>);
+    return <BarChartBaseDouble {...props} ref={ref} />;
+  },
+);
+BarChart.displayName = "BarChart";
 export const LineChart = createChartContainerDouble<LineChartProps>(
   "LineChart",
   CHART_CONTRACT_SPECS.LineChart,
@@ -544,6 +583,16 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     // columns, and the per-family requirements the real component silently
     // falls back on. Lives in `contract.ts` beside the other value rules.
     assertChartSpecContract(props.spec);
+    // Axes — RM-108
+    assertAxisSpecContract((props.spec as { axes?: unknown } | undefined)?.axes);
+    // Labels — RM-110
+    assertLabelsSpecContract((props.spec as { labels?: unknown } | undefined)?.labels);
+    // Annotations — RM-111
+    assertAnnotationSpecContract(
+      (props.spec as { annotations?: unknown } | undefined)?.annotations,
+    );
+    // Dual-axis — RM-121
+    assertDualAxisSpecContract(props.spec);
     return (
       <div
         ref={ref}
@@ -561,3 +610,612 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
   },
 );
 AutoChart.displayName = "AutoChart";
+
+// Axes — RM-108
+//
+// The axis props (`domain`, `scale`, `ticks`, `tickCount`, placements,
+// `orientation`, `Grid mode`, `BarXAxis fit`) and `ChartSpec.axes`. The REAL
+// axis silently ignores a malformed value — a `domain` of `["50", 100]` pins
+// nothing, a `scale` of `"logarithmic"` draws linear — so the double names it.
+// A request the real axis refuses ON PURPOSE (log on data containing 0, a
+// non-zero lower bound on bars) is data-dependent and only warns there, so it
+// is NOT a violation here.
+//
+// These throw `ChartContractError` directly: `contract.ts`'s reporter (which
+// honours `configureChartTestDouble({ onViolation: "warn" })`) is not exported.
+
+const AXIS_SCALES = ["linear", "log", "sqrt"] as const;
+const AXIS_PLACEMENTS = ["inside", "outside"] as const;
+const GRID_MODES = ["lines", "ticks", "off"] as const;
+const BAR_X_AXIS_FITS = ["auto", "wrap", "tilt", "off"] as const;
+const AXIS_COMPONENT_NAMES = ["XAxis", "YAxis", "Grid", "BarXAxis"] as const;
+
+function axisViolation(component: string, prop: string, received: unknown, reason: string): never {
+  throw new ChartContractError(component, prop, received, reason);
+}
+
+function checkOneOf(
+  component: string,
+  prop: string,
+  value: unknown,
+  allowed: readonly string[],
+): void {
+  if (value !== undefined && !allowed.includes(value as string)) {
+    axisViolation(component, prop, value, `"${prop}" must be one of ${allowed.join(" | ")}`);
+  }
+}
+
+function checkDomain(component: string, prop: string, value: unknown): void {
+  if (value === undefined) return;
+  const isBound = (bound: unknown) =>
+    bound === "auto" || (typeof bound === "number" && Number.isFinite(bound));
+  if (!(Array.isArray(value) && value.length === 2 && value.every(isBound))) {
+    axisViolation(
+      component,
+      prop,
+      value,
+      `"${prop}" must be [lower, upper], each a finite number or "auto"`,
+    );
+  }
+  const [lo, hi] = value as [unknown, unknown];
+  if (typeof lo === "number" && typeof hi === "number" && !(lo < hi)) {
+    axisViolation(component, prop, value, `"${prop}" lower bound must be below the upper bound`);
+  }
+}
+
+function checkTicks(
+  component: string,
+  prop: string,
+  value: unknown,
+  accept: (tick: unknown) => boolean,
+  what: string,
+): void {
+  if (value === undefined) return;
+  if (!(Array.isArray(value) && value.every(accept))) {
+    axisViolation(component, prop, value, `"${prop}" must be an array of ${what}`);
+  }
+}
+
+const isFiniteNumber = (tick: unknown) => typeof tick === "number" && Number.isFinite(tick);
+const isValidDate = (tick: unknown) => tick instanceof Date && !Number.isNaN(tick.getTime());
+
+/** Validate one axis part's props (RM-108). Exported for the contract test. */
+export function assertAxisPropsContract(name: string, props: Record<string, unknown>): void {
+  if (name === "Grid") {
+    checkOneOf(name, "mode", props.mode, GRID_MODES);
+    return;
+  }
+  if (name === "BarXAxis") {
+    checkOneOf(name, "fit", props.fit, BAR_X_AXIS_FITS);
+    return;
+  }
+  checkDomain(name, "domain", props.domain);
+  checkOneOf(name, "scale", props.scale, AXIS_SCALES);
+  checkOneOf(name, "titlePlacement", props.titlePlacement, AXIS_PLACEMENTS);
+  const tickCount = props.tickCount;
+  if (
+    tickCount !== undefined &&
+    tickCount !== "auto" &&
+    !(isFiniteNumber(tickCount) && (tickCount as number) >= 1)
+  ) {
+    axisViolation(name, "tickCount", tickCount, `"tickCount" must be "auto" or a number ≥ 1`);
+  }
+  if (name === "YAxis") {
+    checkOneOf(name, "labelPlacement", props.labelPlacement, AXIS_PLACEMENTS);
+    checkOneOf(name, "orientation", props.orientation, ["left", "right"]);
+    checkTicks(name, "ticks", props.ticks, isFiniteNumber, "finite numbers");
+  } else {
+    checkOneOf(name, "orientation", props.orientation, ["top", "bottom"]);
+    checkTicks(
+      name,
+      "ticks",
+      props.ticks,
+      (tick) => isValidDate(tick) || isFiniteNumber(tick),
+      "valid Dates (time x) or finite numbers (numeric x)",
+    );
+  }
+}
+
+function assertAxisChildrenContract(children: ReactNode): void {
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child) || typeof child.type !== "function") return;
+    const type = child.type as { displayName?: string; name?: string };
+    const name = type.displayName || type.name || "";
+    if ((AXIS_COMPONENT_NAMES as readonly string[]).includes(name)) {
+      assertAxisPropsContract(name, child.props as Record<string, unknown>);
+    }
+  });
+}
+
+/** Validate `ChartSpec.axes` (RM-108). Exported for the contract test. */
+export function assertAxisSpecContract(axes: unknown): void {
+  if (axes === undefined) return;
+  if (typeof axes !== "object" || axes === null) {
+    axisViolation("AutoChart", "spec.axes", axes, `"axes" must be { x?, y?, y2? }`);
+  }
+  for (const [key, axis] of Object.entries(axes as Record<string, unknown>)) {
+    const prop = `spec.axes.${key}`;
+    if (!["x", "y", "y2"].includes(key)) {
+      axisViolation("AutoChart", prop, axis, `"axes" only has x, y and y2`);
+    }
+    if (axis === undefined) continue;
+    if (typeof axis !== "object" || axis === null) {
+      axisViolation("AutoChart", prop, axis, `"${prop}" must be an AxisSpec object`);
+    }
+    const a = axis as Record<string, unknown>;
+    checkDomain("AutoChart", `${prop}.domain`, a.domain);
+    checkOneOf("AutoChart", `${prop}.scale`, a.scale, AXIS_SCALES);
+    checkOneOf("AutoChart", `${prop}.titlePlacement`, a.titlePlacement, AXIS_PLACEMENTS);
+    checkOneOf("AutoChart", `${prop}.gridMode`, a.gridMode, GRID_MODES);
+    checkOneOf(
+      "AutoChart",
+      `${prop}.position`,
+      a.position,
+      key === "x" ? ["top", "bottom"] : ["left", "right"],
+    );
+    if (a.title !== undefined && typeof a.title !== "string") {
+      axisViolation("AutoChart", `${prop}.title`, a.title, `"title" must be a string`);
+    }
+    checkTicks(
+      "AutoChart",
+      `${prop}.ticks`,
+      a.ticks,
+      (tick) =>
+        isFiniteNumber(tick) ||
+        (typeof tick === "string" && !Number.isNaN(new Date(tick).getTime())),
+      "finite numbers or ISO date strings",
+    );
+  }
+}
+
+// Labels — RM-110
+//
+// `seriesLabel`, `valueLabels`, Scatter `labels`, Bar `showValues` objects and
+// `ChartSpec.labels`. The REAL engine silently paints nothing for an unknown
+// mode or placement, so the double names it.
+
+const SERIES_LABEL_MODES = ["end", "key", "none"] as const;
+const SERIES_LABEL_TIERS = ["base", "medium", "narrow"] as const;
+const VALUE_LABEL_PLACEMENTS = ["first", "last", "all", "peaks"] as const;
+const POINT_LABEL_MODES = ["auto", "all"] as const;
+
+function checkSeriesLabel(component: string, prop: string, value: unknown): void {
+  if (value === undefined) return;
+  if (typeof value === "object" && value !== null && "base" in value) {
+    for (const [tier, mode] of Object.entries(value as Record<string, unknown>)) {
+      checkOneOf(component, `${prop} tier`, tier, SERIES_LABEL_TIERS);
+      checkOneOf(component, `${prop}.${tier}`, mode, SERIES_LABEL_MODES);
+    }
+    return;
+  }
+  checkOneOf(component, prop, value, SERIES_LABEL_MODES);
+}
+
+function checkValueLabels(component: string, prop: string, value: unknown): void {
+  if (value === undefined) return;
+  if (typeof value !== "object" || value === null) {
+    axisViolation(component, prop, value, `"${prop}" must be { placement, count?, … }`);
+  }
+  const v = value as Record<string, unknown>;
+  if (v.placement === undefined) {
+    axisViolation(component, `${prop}.placement`, v.placement, `"placement" is required`);
+  }
+  checkOneOf(component, `${prop}.placement`, v.placement, VALUE_LABEL_PLACEMENTS);
+  if (v.count !== undefined && !(isFiniteNumber(v.count) && (v.count as number) >= 0)) {
+    axisViolation(component, `${prop}.count`, v.count, `"count" must be a number ≥ 0`);
+  }
+}
+
+function checkPointLabels(component: string, prop: string, value: unknown, field: string): void {
+  if (value === undefined) return;
+  const p = value as Record<string, unknown> | null;
+  if (typeof p !== "object" || p === null || typeof p[field] !== "string") {
+    axisViolation(component, prop, value, `"${prop}" must be { ${field}: string, mode?, … }`);
+  }
+  if (typeof p.mode === "string") checkOneOf(component, `${prop}.mode`, p.mode, POINT_LABEL_MODES);
+}
+
+/** Validate the label props of `Line` / `Area` / `Scatter` / `Bar` children (RM-110). */
+export function assertLabelChildrenContract(children: ReactNode): void {
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child)) return;
+    const type = child.type as { displayName?: string; name?: string };
+    const name = typeof child.type === "string" ? "" : (type.displayName ?? type.name ?? "");
+    const props = child.props as Record<string, unknown>;
+    if (name === "Line" || name === "Area") {
+      checkSeriesLabel(name, "seriesLabel", props.seriesLabel);
+      checkValueLabels(name, "valueLabels", props.valueLabels);
+    } else if (name === "Scatter") {
+      checkPointLabels(name, "labels", props.labels, "key");
+    } else if (name === "Bar" && typeof props.showValues === "object" && props.showValues) {
+      const sv = props.showValues as Record<string, unknown>;
+      checkOneOf(name, "showValues.placement", sv.placement, ["inside", "outside", "auto"]);
+      checkOneOf(name, "showValues.visibility", sv.visibility, ["always", "hover"]);
+    }
+    const nested = props.children as ReactNode;
+    if (nested) assertLabelChildrenContract(nested);
+  });
+}
+
+/** Validate `ChartSpec.labels` (RM-110). Exported for the contract test. */
+export function assertLabelsSpecContract(labels: unknown): void {
+  if (labels === undefined) return;
+  if (typeof labels !== "object" || labels === null) {
+    axisViolation(
+      "AutoChart",
+      "spec.labels",
+      labels,
+      `"labels" must be { series?, values?, points?, comparison? }`,
+    );
+  }
+  const l = labels as Record<string, unknown>;
+  for (const field of Object.keys(l)) {
+    checkOneOf("AutoChart", "spec.labels field", field, [
+      "series",
+      "values",
+      "points",
+      // BarChart — RM-113
+      "comparison",
+    ]);
+  }
+  checkSeriesLabel("AutoChart", "spec.labels.series", l.series);
+  checkValueLabels("AutoChart", "spec.labels.values", l.values);
+  checkPointLabels("AutoChart", "spec.labels.points", l.points, "key");
+  // BarChart — RM-113
+  checkOneOf("AutoChart", "spec.labels.comparison", l.comparison, BAR_COMPARISON_LABELS);
+}
+
+// BarChart — RM-113
+const BAR_STACKED_VALUES: readonly unknown[] = [true, false, "percent", "diverging"];
+const BAR_SORT_DIRECTIONS: readonly unknown[] = ["asc", "desc"];
+const BAR_COLOR_BY_SCALES: readonly unknown[] = ["categorical", "sequential", "diverging"];
+const BAR_COMPARISON_LABELS = ["value", "difference", "none"] as const;
+
+/**
+ * `stacked` / `divergingCenter` / `sort` / `groupBy` / `colorBy` / `overlays` /
+ * `comparison` (RM-113) must be well-formed, and a named `divergingCenter` must
+ * be one of the chart's own `Bar` series — the real chart silently falls back
+ * to a half split otherwise, which the double makes loud.
+ */
+export function assertBarRichnessContract(component: string, props: Record<string, unknown>): void {
+  const { stacked, divergingCenter, sort, groupBy, colorBy, overlays, comparison } = props;
+  if (stacked !== undefined && !BAR_STACKED_VALUES.includes(stacked)) {
+    axisViolation(component, "stacked", stacked, 'must be a boolean, "percent" or "diverging"');
+  }
+  if (divergingCenter !== undefined) {
+    if (typeof divergingCenter !== "string") {
+      axisViolation(component, "divergingCenter", divergingCenter, "must be a series key");
+    }
+    const keys: string[] = [];
+    Children.forEach(props.children as ReactNode, (child) => {
+      if (isValidElement(child)) {
+        const key = (child.props as { dataKey?: unknown }).dataKey;
+        if (typeof key === "string") keys.push(key);
+      }
+    });
+    if (keys.length > 0 && !keys.includes(divergingCenter)) {
+      axisViolation(
+        component,
+        "divergingCenter",
+        divergingCenter,
+        `must name a Bar series (${keys.join(", ")})`,
+      );
+    }
+  }
+  if (
+    sort !== undefined &&
+    sort !== "none" &&
+    !BAR_SORT_DIRECTIONS.includes(sort) &&
+    !(
+      typeof sort === "object" &&
+      sort !== null &&
+      typeof (sort as { by?: unknown }).by === "string" &&
+      BAR_SORT_DIRECTIONS.includes((sort as { dir?: unknown }).dir)
+    )
+  ) {
+    axisViolation(component, "sort", sort, 'must be "none", "asc", "desc" or { by, dir }');
+  }
+  if (groupBy !== undefined && typeof groupBy !== "string") {
+    axisViolation(component, "groupBy", groupBy, "must be a column key");
+  }
+  if (colorBy !== undefined) {
+    const c = colorBy as { key?: unknown; scale?: unknown; steps?: unknown } | null;
+    if (
+      typeof c !== "object" ||
+      c === null ||
+      typeof c.key !== "string" ||
+      (c.scale !== undefined && !BAR_COLOR_BY_SCALES.includes(c.scale)) ||
+      (c.steps !== undefined && !isFiniteNumber(c.steps))
+    ) {
+      axisViolation(component, "colorBy", colorBy, "must be { key, scale?, steps? }");
+    }
+  }
+  if (overlays !== undefined) {
+    if (!Array.isArray(overlays)) {
+      axisViolation(component, "overlays", overlays, "must be an array");
+    }
+    overlays.forEach((overlay: unknown, i: number) => {
+      const o = overlay as Record<string, unknown> | null;
+      const ok =
+        o !== null &&
+        typeof o === "object" &&
+        ((o.kind === "value" && typeof o.key === "string") ||
+          (o.kind === "range" && typeof o.lowKey === "string" && typeof o.highKey === "string"));
+      if (!ok) {
+        axisViolation(
+          component,
+          `overlays[${i}]`,
+          overlay,
+          'must be { kind: "value", key } or { kind: "range", lowKey, highKey }',
+        );
+      }
+    });
+  }
+  if (
+    comparison !== undefined &&
+    (typeof comparison !== "object" ||
+      comparison === null ||
+      typeof (comparison as { key?: unknown }).key !== "string")
+  ) {
+    axisViolation(component, "comparison", comparison, "must be { key, label? }");
+  }
+}
+
+// Annotations — RM-111
+const ANNOTATION_KINDS = ["text", "range", "line", "row"] as const;
+const ANNOTATION_ANCHOR_VALUES = ["n", "ne", "e", "se", "s", "sw", "w", "nw", "center"];
+
+function isAnnotationPosition(value: unknown): boolean {
+  return isFiniteNumber(value) || (typeof value === "string" && value.length > 0);
+}
+
+/**
+ * Validate `ChartSpec.annotations` (RM-111): the kind union, and the fields each
+ * kind cannot render without — the real layer silently skips an annotation it
+ * cannot place, which would hide the mistake. Exported for the contract test.
+ */
+export function assertAnnotationSpecContract(annotations: unknown): void {
+  if (annotations === undefined) return;
+  if (!Array.isArray(annotations)) {
+    axisViolation("AutoChart", "spec.annotations", annotations, `"annotations" must be an array`);
+    return;
+  }
+  annotations.forEach((item, i) => {
+    const prop = `spec.annotations[${i}]`;
+    if (typeof item !== "object" || item === null) {
+      axisViolation("AutoChart", prop, item, `"${prop}" must be an annotation object`);
+      return;
+    }
+    const a = item as Record<string, unknown>;
+    checkOneOf("AutoChart", `${prop}.kind`, a.kind, ANNOTATION_KINDS);
+    const requirePosition = (key: string) => {
+      if (!isAnnotationPosition(a[key])) {
+        axisViolation(
+          "AutoChart",
+          `${prop}.${key}`,
+          a[key],
+          `"${key}" must be a number or a string (an ISO date or a category)`,
+        );
+      }
+    };
+    const requireText = (key: string) => {
+      if (typeof a[key] !== "string" || (a[key] as string).trim() === "") {
+        axisViolation("AutoChart", `${prop}.${key}`, a[key], `"${key}" must be a non-empty string`);
+      }
+    };
+    if (a.kind === "text") {
+      requirePosition("x");
+      requirePosition("y");
+      requireText("text");
+      checkOneOf("AutoChart", `${prop}.anchor`, a.anchor, ANNOTATION_ANCHOR_VALUES);
+    } else if (a.kind === "range") {
+      if (a.x1 !== undefined || a.x2 !== undefined) {
+        requirePosition("x1");
+        requirePosition("x2");
+      } else {
+        requirePosition("y1");
+        requirePosition("y2");
+      }
+      checkOneOf("AutoChart", `${prop}.pattern`, a.pattern, ["solid", "stripes"]);
+    } else if (a.kind === "line") {
+      requirePosition(a.x !== undefined ? "x" : "y");
+      checkOneOf("AutoChart", `${prop}.style`, a.style, ["solid", "dashed", "dotted"]);
+      if (a.width !== undefined && ![1, 2, 3].includes(a.width as number)) {
+        axisViolation("AutoChart", `${prop}.width`, a.width, `"width" must be 1, 2 or 3`);
+      }
+    } else if (a.kind === "row") {
+      requireText("category");
+      requireText("text");
+    }
+  });
+}
+
+/**
+ * `ChartAnnotations` stand-in: inert like every composition primitive (it paints
+ * nothing a test can assert on), but it still validates the annotation union.
+ */
+export function ChartAnnotations(props: { annotations: readonly unknown[] }): null {
+  assertAnnotationSpecContract(props.annotations);
+  return null;
+}
+ChartAnnotations.displayName = "ChartAnnotations";
+
+/** `AnnotationKey` stand-in: the empty, `aria-hidden` list the real key renders at wide. */
+export const AnnotationKey = forwardRef<HTMLOListElement, { annotations: readonly unknown[] }>(
+  function AnnotationKeyTestDouble({ annotations }, ref) {
+    assertAnnotationSpecContract(annotations);
+    return <ol aria-hidden="true" data-count={0} data-slot="annotation-key" ref={ref} />;
+  },
+);
+AnnotationKey.displayName = "AnnotationKey";
+
+// InlineChip — RM-117
+/**
+ * `InlineChip` stand-in: the real chip's DOM (root + named swatch) without the
+ * frame's series registry, so the swatch paints `currentColor`. It still
+ * validates `series` — the real chip silently falls back to `currentColor` and
+ * the bare key for an empty one, which would hide the mistake.
+ */
+export const InlineChip = forwardRef<HTMLSpanElement, InlineChipProps>(
+  function InlineChipTestDouble({ series, label, className, children, ...props }, ref) {
+    if (typeof series !== "string" || series.length === 0) {
+      axisViolation("InlineChip", "series", series, `"series" must be a non-empty series key`);
+    }
+    return (
+      <span ref={ref} data-slot="inline-chip" data-series={series} className={className} {...props}>
+        <span
+          data-slot="inline-chip-swatch"
+          role="img"
+          aria-label={label ?? series}
+          style={{ backgroundColor: "currentColor" }}
+        />
+        {children}
+      </span>
+    );
+  },
+);
+InlineChip.displayName = "InlineChip";
+
+// ChartMultiples — RM-120
+import type { ChartMultiplesProps } from "../multiples/chart-multiples";
+import { splitFacetRows } from "../multiples/facet-layout";
+import { facetPanelStats, sortFacetPanels } from "../multiples/facet-sort";
+
+/**
+ * `ChartMultiples` double: validates `xDataKey` / `dataKeys` / `by`, splits and
+ * sorts the panels with the real pure helpers and calls `children(panel)` once
+ * per panel in a plain grid — no measuring, no scales, no synced hover. A
+ * `showAt` rule resolves at the wide tier (its `base`).
+ */
+export const ChartMultiples = forwardRef<HTMLDivElement, ChartMultiplesProps>(
+  function ChartMultiplesTestDouble(
+    {
+      data,
+      by,
+      panels,
+      xDataKey,
+      dataKeys,
+      sort = "data",
+      reverse = false,
+      showAt,
+      children,
+      // Accepted and ignored by the double (layout / scales / hover only).
+      columns: _columns,
+      minPanelWidth: _minPanelWidth,
+      panelHeight: _panelHeight,
+      scales: _scales,
+      baseline: _baseline,
+      syncHover: _syncHover,
+      panelTitle: _panelTitle,
+      annotations: _annotations,
+      ...props
+    },
+    ref,
+  ) {
+    if (typeof xDataKey !== "string" || xDataKey === "") {
+      axisViolation("ChartMultiples", "xDataKey", xDataKey, "a row key is required");
+    }
+    if (!Array.isArray(dataKeys) || dataKeys.length === 0) {
+      axisViolation("ChartMultiples", "dataKeys", dataKeys, "at least one value key is required");
+    }
+    if (!panels && !(Array.isArray(data) && by !== undefined)) {
+      axisViolation("ChartMultiples", "by", by, "pass `panels`, or `data` with `by`");
+    }
+    const bySeries = typeof by === "object" && by !== null;
+    const inputs =
+      panels ??
+      (bySeries
+        ? dataKeys.map((key) => ({ key, data: data ?? [], showAt: undefined }))
+        : splitFacetRows(data ?? [], by as string).map((g) => ({
+            key: g.key,
+            data: g.rows,
+            showAt: undefined,
+          })));
+    const built = inputs.map((input) => ({
+      input,
+      key: input.key,
+      title: ("title" in input && input.title) || input.key,
+      data: input.data,
+      stats: facetPanelStats(input.data, bySeries && !panels ? input.key : dataKeys[0]),
+    }));
+    const visible = sortFacetPanels(built, sort, reverse).filter((entry, index) => {
+      const rule = entry.input.showAt ?? showAt?.({ ...entry, index, annotations: [] }) ?? true;
+      return typeof rule === "object" ? rule.base : rule;
+    });
+    return (
+      <div className="grid" data-columns={1} data-slot="chart-multiples" ref={ref} {...props}>
+        {visible.map((entry, index) => (
+          <div
+            data-panel-key={entry.key}
+            data-slot="chart-multiples-panel"
+            key={entry.key}
+            role="group"
+            aria-label={entry.title}
+          >
+            {children({
+              key: entry.key,
+              title: entry.title,
+              data: entry.data,
+              stats: entry.stats,
+              index,
+              annotations: [],
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  },
+);
+ChartMultiples.displayName = "ChartMultiples";
+
+// Dual-axis — RM-121
+const DUAL_AXIS_SIDES: readonly unknown[] = ["left", "right"];
+const DUAL_AXIS_MARKS: readonly unknown[] = ["line", "area", "column"];
+
+/**
+ * A `type: "dual-axis"` spec: real `axis`/`mark` values, at least one line,
+ * and columns on the left axis only — the rules the real `AutoChart` answers
+ * with `ChartFallback kind="unsupported"`.
+ */
+function assertDualAxisSpecContract(spec: unknown): void {
+  const { type, series } = (spec ?? {}) as { type?: unknown; series?: unknown };
+  if (type !== "dual-axis" || !Array.isArray(series)) return;
+  const entries = series.map(
+    (entry) =>
+      (typeof entry === "string" ? { key: entry } : entry) as { axis?: unknown; mark?: unknown },
+  );
+  entries.forEach((entry, i) => {
+    if (entry.axis !== undefined && !DUAL_AXIS_SIDES.includes(entry.axis)) {
+      axisViolation(
+        "AutoChart",
+        `spec.series[${i}].axis`,
+        entry.axis,
+        `"axis" is "left" or "right"`,
+      );
+    }
+    if (entry.mark !== undefined && !DUAL_AXIS_MARKS.includes(entry.mark)) {
+      axisViolation(
+        "AutoChart",
+        `spec.series[${i}].mark`,
+        entry.mark,
+        `"mark" is "line", "area" or "column"`,
+      );
+    }
+  });
+  if (!entries.some((entry) => (entry.mark ?? "line") === "line")) {
+    axisViolation(
+      "AutoChart",
+      "spec.series",
+      series,
+      `a "dual-axis" spec needs at least one series with mark "line"`,
+    );
+  }
+  if (entries.some((entry) => entry.mark === "column" && entry.axis === "right")) {
+    axisViolation(
+      "AutoChart",
+      "spec.series",
+      series,
+      `a "dual-axis" spec draws columns on the left axis only`,
+    );
+  }
+}

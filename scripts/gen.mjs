@@ -121,7 +121,7 @@ export const STEPS = [
     id: "home",
     run: node("scripts/gen-home.mjs"),
     check: node("scripts/gen-home.mjs", "--check"),
-    outputs: ["apps/home/content/generated/*.json"],
+    outputs: ["apps/home/content/generated/*.json", "apps/home/public/.well-known/mcp.json"],
   },
   {
     // The Storybook Intent block's data file — a small projection of the manifest
@@ -162,6 +162,7 @@ export const STEPS = [
       "apps/docs/stories/Generative-UI-A2UI.mdx",
       "skills/brand-ui/SKILL.md",
       "docs/playbooks/README.md",
+      "README.md",
     ],
   },
   {

@@ -1,7 +1,7 @@
 /**
  * home-imports — the website (`apps/home`, ADR 0038) is built only from the library. Every import
  * in apps/home/**\/*.{ts,tsx} resolves to react, react-dom, next, motion, @vercel/analytics,
- * `@elabs-ai/*`, a relative path, or a copy-own registry block copied under
+ * lucide-react, `@elabs-ai/*`, a relative path, or a copy-own registry block copied under
  * `apps/home/components/blocks/` — and such a copy keeps its
  * `// registry: <name> — copied <YYYY-MM-DD>` provenance header. Comments are ignored.
  */
@@ -14,6 +14,8 @@ export const HOME_ALLOWED_IMPORTS = [
   /^next(?:\/|$)/,
   /^motion(?:\/|$)/,
   /^@vercel\/analytics(?:\/|$)/,
+  // maintainer 2026-09-19: lucide-react allowed
+  /^lucide-react(?:\/|$)/,
   /^@elabs-ai\//,
 ];
 const BLOCKS_DIR = "apps/home/components/blocks/";
@@ -40,7 +42,7 @@ const home = (body, file = "apps/home/app/page.tsx") => ({ files: { [file]: body
 export default {
   id: "home-imports",
   scope: "packages",
-  doc: "Build the website (`apps/home`, ADR 0038) only from the library: import react, react-dom, next, motion, @vercel/analytics, `@elabs-ai/*` or a relative path; a registry block copied under `apps/home/components/blocks/` keeps its `// registry: <name> — copied <YYYY-MM-DD>` header.",
+  doc: "Build the website (`apps/home`, ADR 0038) only from the library: import react, react-dom, next, motion, @vercel/analytics, lucide-react, `@elabs-ai/*` or a relative path; a registry block copied under `apps/home/components/blocks/` keeps its `// registry: <name> — copied <YYYY-MM-DD>` header.",
   baseline: "none",
   run(ctx) {
     const out = [];
@@ -64,7 +66,7 @@ export default {
   fixtures: {
     pass: [
       home(
-        'import type { Metadata } from "next";\nimport Script from "next/script";\nimport { useState } from "react";\nimport { createPortal } from "react-dom";\nimport { motion } from "motion/react";\nimport { Analytics } from "@vercel/analytics/next";\nimport { Button } from "@elabs-ai/components-ui";\nimport "./globals.css";\nimport { Section } from "../components/section";',
+        'import type { Metadata } from "next";\nimport Script from "next/script";\nimport { useState } from "react";\nimport { createPortal } from "react-dom";\nimport { motion } from "motion/react";\nimport { Analytics } from "@vercel/analytics/next";\nimport { Bell } from "lucide-react";\nimport { Button } from "@elabs-ai/components-ui";\nimport "./globals.css";\nimport { Section } from "../components/section";',
       ),
       home(
         'import manifest from "../../../../brand-ui.manifest.json";',
@@ -91,3 +93,17 @@ export default {
     ],
   },
 };
+
+// RM-095: `ai` (Vercel AI SDK) is a types-only import for `UIMessage` in the fixtures
+// (`content/fixtures/conversation.ts`) — D6/ADR 0008 keeps it types-only, but this rule does
+// not distinguish type-only from value imports, so only the bare `ai` specifier is allowed,
+// never an `ai/*` subpath.
+HOME_ALLOWED_IMPORTS.push(/^ai$/);
+// RM-095: a `*.test.{ts,tsx}` and the root `vitest.config.ts` never ship in the Next.js build
+// — same reasoning `charts-honesty` already applies to `packages/charts/src` test files — so
+// they may reach `vitest`/`node:*` the production site itself never bundles.
+IGNORE.push("**/*.test.{ts,tsx}", "**/vitest.config.ts");
+// RM-104: the site gates under `apps/home/e2e/**` (Playwright specs + config) are test tooling
+// that never ships in the Next.js build — same reasoning as the RM-095 test-file ignore — so
+// they may import `@playwright/test`, `@axe-core/playwright` and `node:*`.
+IGNORE.push("apps/home/e2e/**");

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { curveNatural } from "@visx/curve";
 import { Area } from "./area";
@@ -10,6 +10,7 @@ import { Line } from "./line";
 import { SeriesBar } from "./series-bar";
 import { ChartTooltip } from "./tooltip";
 import { XAxis } from "./x-axis";
+import { YAxis } from "./y-axis";
 
 const meta = {
   title: "Charts/ComposedChart",
@@ -211,5 +212,291 @@ export const SelectionStates: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
+  },
+};
+
+/**
+ * Container legend (RM-118): `legend={{ interactive: "toggle" }}` mounts
+ * `ChartLegend` above the plot with real `aria-pressed` buttons — click, or
+ * Tab then Enter, hides a `<Line>` series and the y-domain re-tweens around
+ * what is left visible. Only `Line` children publish a legend entry
+ * (`extractComposedSeries`); `ComposedChart` has no `focusOnHover` prop of
+ * its own yet, so a keyboard-focused legend item wires through
+ * `ChartSeriesModeProvider` (same seam Line/Area use) but has no visible
+ * dim effect until a future sitting adds one.
+ */
+// `chartData`'s `revenue`/`runRate` peak within ~100 of each other (6,100 vs
+// 6,200) — close enough that `nice: true` rounds BOTH domains to the same
+// top tick, so hiding either one never visibly moves the axis. This story
+// needs a real gap (mirrors Line/AreaChart's fixtures) to prove the domain
+// actually recomputes.
+const legendToggleData = [
+  { date: new Date("2024-01-01"), revenue: 900, runRate: 3800 },
+  { date: new Date("2024-02-01"), revenue: 1200, runRate: 4600 },
+  { date: new Date("2024-03-01"), revenue: 1050, runRate: 5200 },
+  { date: new Date("2024-04-01"), revenue: 1400, runRate: 5000 },
+  { date: new Date("2024-05-01"), revenue: 1800, runRate: 5700 },
+  { date: new Date("2024-06-01"), revenue: 1600, runRate: 6200 },
+];
+
+export const LegendToggle: Story = {
+  name: "Legend toggle",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <ComposedChart
+        animationDuration={0}
+        data={legendToggleData}
+        legend={{ interactive: "toggle" }}
+        onDatapointClick={() => {}}
+        yDomainTweenDuration={0}
+      >
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="revenue" name="Revenue" stroke="var(--chart-1)" />
+        <Line curve={curveNatural} dataKey="runRate" name="Run rate" stroke="var(--chart-2)" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </ComposedChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    // Narrow hides the value axis entirely (RM-118 addendum) — read the tier
+    // before relying on any y-axis tick to be there.
+    const tier = canvasElement
+      .querySelector("[data-chart-breakpoint]")
+      ?.getAttribute("data-chart-breakpoint");
+    const yTicks = () =>
+      [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
+        (node) => node.textContent ?? "",
+      );
+    // Datapoint drill-down targets carry an aria-label starting with the
+    // series key too, so a plain accessible-name query could match those —
+    // scope to the legend's own toggle buttons.
+    const legendToggle = (label: RegExp) =>
+      [...canvasElement.querySelectorAll("button[aria-pressed]")].find((button) =>
+        label.test(button.textContent ?? ""),
+      ) as HTMLButtonElement | undefined;
+    // The y-axis ticks render before the legend does — wait for the button
+    // itself, not just the ticks, so a fast `animationDuration={0}` mount
+    // never races `.focus()` against an undefined lookup.
+    //
+    // Matched on the raw `dataKey`, not the `name` prop below: unlike
+    // Line/AreaChart, `ComposedChart`'s `extractComposedSeries` never carries
+    // a `<Line>`/`<Area>`/`SeriesBar`'s `name` into its `LineConfig`, so the
+    // legend renders `dataKey` verbatim ("runRate", not "Run rate"). Pre-
+    // existing, out of scope for this sitting's y-domain fix (validator FAIL
+    // 1a) — `name` still reaches `ChartTooltip`.
+    await waitFor(() => expect(legendToggle(/runRate/)).toBeTruthy());
+
+    if (tier === "narrow") {
+      // No y-axis to read a moved tick from — the toggle itself, and the
+      // axis staying absent throughout, are what narrow correctly shows.
+      await expect(yTicks()).toEqual([]);
+      const runRateToggleNarrow = legendToggle(/runRate/) as HTMLButtonElement;
+      runRateToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(runRateToggleNarrow).toHaveAttribute("aria-pressed", "false"));
+      await expect(yTicks()).toEqual([]);
+      runRateToggleNarrow.focus();
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => expect(runRateToggleNarrow).toHaveAttribute("aria-pressed", "true"));
+      await expect(yTicks()).toEqual([]);
+      runRateToggleNarrow.blur();
+      return;
+    }
+    // Ticks are either compacted ("6K") or, when the whole set would not
+    // compact ("one unit per scale", charts.md), Intl-grouped ("1,800") —
+    // `Number("6K")` and `Number("1,800")` are both `NaN`, so strip the
+    // grouping comma and the compaction suffix before parsing.
+    const parseTick = (text: string): number => {
+      const match = /^(-?[\d.]+)([KM]?)$/.exec(text.trim().replace(/,/g, ""));
+      if (!match) return Number.NaN;
+      const [, digits, suffix] = match;
+      const n = Number(digits);
+      return suffix === "K" ? n * 1_000 : suffix === "M" ? n * 1_000_000 : n;
+    };
+
+    // "runRate" (peak 6200) is the max series here — "revenue" peaks at
+    // 1800. Hiding runRate must shrink the top tick. Keyboard operated
+    // (RM-118, validator FAIL 1a).
+    await waitFor(() => expect(yTicks().length).toBeGreaterThan(0));
+    const before = yTicks();
+
+    const runRateToggle = legendToggle(/runRate/) as HTMLButtonElement;
+    runRateToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(runRateToggle).toHaveAttribute("aria-pressed", "false"));
+    await waitFor(() => expect(yTicks()).not.toEqual(before));
+    const afterHide = yTicks();
+    await expect(parseTick(afterHide.at(-1) ?? "")).toBeLessThan(parseTick(before.at(-1) ?? ""));
+
+    runRateToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(runRateToggle).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(yTicks()).toEqual(before));
+    // Settle focus back to the body — otherwise the interaction ends with the
+    // legend's own hover/focus dim still applied to the neighbouring item,
+    // which the a11y gate correctly flags on ITS OWN contrast (unrelated to
+    // this story; not this sitting's fix to make).
+    runRateToggle.blur();
+  },
+};
+
+// Dual-axis — RM-121
+/** Monthly orders (a count) beside the conversion rate (a percentage): two units, two scales. */
+const dualAxisData = [
+  { date: new Date(2024, 0, 1), orders: 182, conversion: 2.4 },
+  { date: new Date(2024, 1, 1), orders: 236, conversion: 3.1 },
+  { date: new Date(2024, 2, 1), orders: 311, conversion: 3.6 },
+  { date: new Date(2024, 3, 1), orders: 287, conversion: 4.2 },
+  { date: new Date(2024, 4, 1), orders: 402, conversion: 5.3 },
+  { date: new Date(2024, 5, 1), orders: 468, conversion: 6.1 },
+];
+
+/** Tick label rows (px from the chart top) of the value axis on `side`. */
+function tickRows(root: HTMLElement, side: "left" | "right"): number[] {
+  const axes = Array.from(root.querySelectorAll<HTMLElement>('[data-slot="y-axis"]'));
+  const axis = axes.find((el) => {
+    const column = el.firstElementChild as HTMLElement | null;
+    return side === "left" ? column?.style.left === "0px" : column?.style.right === "0px";
+  });
+  return Array.from(axis?.querySelectorAll<HTMLElement>(":scope > div > div") ?? []).map((tick) =>
+    Math.round(Number.parseFloat(tick.style.top)),
+  );
+}
+
+/**
+ * Columns on the left scale, a line on the right (Datawrapper’s dual-axis
+ * rules: different units, different mark types, both zero-based, colour-matched
+ * axis labels). `align: "ticks"` puts both scales on the same gridlines.
+ */
+export const DualAxis: Story = {
+  args: { data: dualAxisData, children: null },
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <ComposedChart
+        accessibleLabel="Orders and conversion rate, January to June 2024"
+        animationDuration={0}
+        data={dualAxisData}
+        legend={{ layout: "split" }}
+        yAxes={{ align: "ticks" }}
+      >
+        <Grid horizontal />
+        <SeriesBar dataKey="orders" fill="var(--chart-1)" />
+        <Line dataKey="conversion" stroke="var(--chart-2)" yAxisId="right" />
+        <YAxis matchSeriesColor />
+        <YAxis matchSeriesColor orientation="right" unit="%" yAxisId="right" />
+        <XAxis />
+        <ChartTooltip variant="table" />
+      </ComposedChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const left = tickRows(canvasElement, "left");
+      const right = tickRows(canvasElement, "right");
+      expect(left.length).toBeGreaterThanOrEqual(3);
+      expect(right).toEqual(left);
+    });
+    const rows = canvasElement.querySelectorAll('[data-slot="chart-legend-split-row"]');
+    await expect(rows).toHaveLength(2);
+    await expect(rows[0]).toHaveTextContent("Left scale");
+    await expect(rows[1]).toHaveTextContent("Right scale");
+  },
+};
+
+/**
+ * Two lines, neither zero-based: `proportional` gives both scales one shared
+ * origin, so each gridline is the same relative change on both sides.
+ */
+export const DualAxisProportional: Story = {
+  args: { data: dualAxisData, children: null },
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <ComposedChart
+        accessibleLabel="Average order value and items per order, January to June 2024"
+        animationDuration={0}
+        data={[
+          { date: new Date(2024, 0, 1), value: 104, items: 5.3 },
+          { date: new Date(2024, 1, 1), value: 131, items: 6.2 },
+          { date: new Date(2024, 2, 1), value: 152, items: 7.9 },
+          { date: new Date(2024, 3, 1), value: 148, items: 8.4 },
+          { date: new Date(2024, 4, 1), value: 177, items: 9.1 },
+          { date: new Date(2024, 5, 1), value: 196, items: 9.6 },
+        ]}
+        yAxes={{ proportional: true }}
+      >
+        <Grid horizontal />
+        <Line dataKey="value" stroke="var(--chart-1)" />
+        <Line dataKey="items" stroke="var(--chart-3)" yAxisId="right" />
+        <YAxis matchSeriesColor sideLabel="auto" />
+        <YAxis matchSeriesColor orientation="right" sideLabel="auto" yAxisId="right" />
+        <XAxis />
+      </ComposedChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const left = tickRows(canvasElement, "left");
+      expect(left.length).toBeGreaterThanOrEqual(3);
+      expect(tickRows(canvasElement, "right")).toEqual(left);
+    });
+  },
+};
+
+// Percent stacking — RM-121
+/**
+ * `stacked="percent"`: each month’s channels fill 100 %, so the columns compare
+ * shares, not volumes. The value axis prints percent; the tooltip keeps the
+ * raw order counts.
+ */
+export const StackedPercent: Story = {
+  args: { data: dualAxisData, children: null },
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <ComposedChart
+        accessibleLabel="Orders by channel as a share of each month, January to June 2024"
+        animationDuration={0}
+        data={[
+          { date: new Date(2024, 0, 1), web: 112, store: 70 },
+          { date: new Date(2024, 1, 1), web: 151, store: 85 },
+          { date: new Date(2024, 2, 1), web: 214, store: 97 },
+          { date: new Date(2024, 3, 1), web: 205, store: 82 },
+          { date: new Date(2024, 4, 1), web: 301, store: 101 },
+          { date: new Date(2024, 5, 1), web: 367, store: 101 },
+        ]}
+        stacked="percent"
+      >
+        <Grid horizontal />
+        <SeriesBar dataKey="web" fill="var(--chart-1)" />
+        <SeriesBar dataKey="store" fill="var(--chart-3)" />
+        <YAxis />
+        <XAxis />
+        <ChartTooltip variant="table" />
+      </ComposedChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const bars = canvasElement.querySelectorAll<SVGGElement>("g.series-bar");
+      expect(bars).toHaveLength(2);
+      const tops = Array.from(bars[1]!.querySelectorAll("rect")).map((rect) =>
+        Math.round(Number(rect.getAttribute("y"))),
+      );
+      expect(tops).toHaveLength(6);
+      // Every month's stack ends on the same pixel row: 100 %.
+      expect(new Set(tops).size).toBe(1);
+    });
+    // The narrow tier hides the value axis by default (RM-107); every wider
+    // tier paints it, in percent.
+    const tier = canvasElement
+      .querySelector("[data-chart-breakpoint]")
+      ?.getAttribute("data-chart-breakpoint");
+    await expect(tier).toBeTruthy();
+    if (tier === "narrow") {
+      await expect(canvasElement.querySelector('[data-slot="y-axis"]')).toBeNull();
+    } else {
+      await expect(canvasElement.querySelector('[data-slot="y-axis"]')).toHaveTextContent("100%");
+    }
   },
 };

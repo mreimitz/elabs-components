@@ -21,6 +21,8 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING } from "./animation";
+import { useChartFacetScope } from "./chart-config-context"; // ChartMultiples — RM-120
+import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
 import type { BarProps } from "./bar";
 import {
   type CategoryAxisFit,
@@ -28,16 +30,51 @@ import {
   type CategoryAxisPlan,
   planCategoryAxis,
 } from "./category-axis-plan";
+import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
+import { type ChartAnnotation } from "./annotations/annotation-types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+// Labels — RM-110
+import { useChartAutoSummary } from "./chart-a11y";
 import {
   chartCssVars,
+  type ChartColorBy,
+  type ChartLegendEntry,
   type ChartPalette,
   ChartProvider,
   type LineConfig,
   type Margin,
+  resolveColorBy,
   resolvePalette,
   type TooltipData,
 } from "./chart-context";
+import { arrangeBarGroups, BarGroupLayer, isBarGroupHeaderRow } from "./bar-groups";
+import { ChartLegendHoverProvider } from "./chart-legend-hover";
+// Legend engine — RM-118
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import {
+  type BarComparison,
+  type BarComparisonLabel,
+  BarColorKey,
+  BarComparisonLabels,
+  BarComparisonLayer,
+  type BarLayerGeometry,
+  type BarOverlay,
+  BarOverlayLayer,
+  BarTotalsLayer,
+  BarTrackLayer,
+  buildBarLegendItems,
+  collectOverlayExtent,
+} from "./bar-overlays";
+import {
+  type BarSort,
+  type BarStacked,
+  type BarStackOrder,
+  computeBarStackLayout,
+  orderBarRows,
+  resolveStackDomain,
+  resolveStackMode,
+} from "./bar-stacking";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -61,13 +98,38 @@ import { useScheduledTooltip } from "./use-scheduled-tooltip";
 import { useStableValue } from "./use-stable-value";
 import { useTextMeasurerOf } from "./use-text-measurer";
 import {
+  applyValueAxisConfigs,
   buildYScalesForLines,
+  buildYScalesFromDomains,
+  collectValueAxisConfigs,
+  DEFAULT_Y_AXIS_ID,
   getPrimaryYScale,
   normalizeYAxisId,
+  resolveValueAxis,
+  warnValueAxisOnce,
   wrapSingleYScale,
 } from "./y-axis-scales";
+import { computeYDomainsByAxis, niceYDomain } from "./y-domain-utils";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+} from "./chart-breakpoint";
 
 export type BarOrientation = "vertical" | "horizontal";
+
+// BarChart — RM-113: the richness vocabulary's public types, re-exported so
+// the charts barrel's `bar-chart` line carries them to consumers.
+export type {
+  BarComparison,
+  BarComparisonLabel,
+  BarOverlay,
+  BarRangeOverlay,
+  BarValueOverlay,
+} from "./bar-overlays";
+export type { BarSort, BarSortDirection, BarStacked, BarStackOrder } from "./bar-stacking";
+export type { ChartColorBy, ChartLegendEntry } from "./chart-context";
 
 export interface BarChartProps extends ChartSelectionProps {
   /** Data array - each item should have an x-axis key and numeric values */
@@ -95,6 +157,11 @@ export interface BarChartProps extends ChartSelectionProps {
   replayOnClick?: boolean;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
   /** Loading vs ready — shows skeleton chrome + placeholder bars while `"loading"`. Default: `"ready"`. */
@@ -107,10 +174,52 @@ export interface BarChartProps extends ChartSelectionProps {
   barWidth?: number;
   /** Bar chart orientation. Default: "vertical" */
   orientation?: BarOrientation;
-  /** Whether to stack bars instead of grouping them. Default: false */
-  stacked?: boolean;
+  /**
+   * Stack bars instead of grouping them. `true` stacks raw values;
+   * `"percent"` normalises each category to 100 % (value axis 0–100 %, a
+   * `YAxis` without its own format prints percent, `showValues` prints
+   * shares); `"diverging"` centres `divergingCenter` on the zero line with the
+   * series declared before it growing left/down and those after it right/up
+   * (Likert rows). Default: false
+   */
+  stacked?: BarStacked;
   /** Gap between stacked bar segments in pixels. Default: 0 */
   stackGap?: number;
+  /** `stacked="diverging"`: the series straddling zero (e.g. `"Neutral"`). Unset: the series split in half. */
+  divergingCenter?: string;
+  /** Segment order inside each stack (`stacked`/`"percent"`). Default: `"data"` (declaration order). */
+  stackOrder?: BarStackOrder;
+  /** Print each stack's total just past its end. Default: false */
+  showTotals?: boolean;
+  /** Row order: by value (`"asc"`/`"desc"`, the stack total when stacked) or `{ by, dir }`. Default: `"none"`. */
+  sort?: BarSort;
+  /** Reverse the (sorted) row order. Default: false */
+  reverse?: boolean;
+  /**
+   * Gather rows by this column: horizontal bars get a bold header row per
+   * group, vertical columns a header above each group; groups are separated
+   * by a hairline and keep their own (sorted) order.
+   */
+  groupBy?: string;
+  /**
+   * Colour each bar by another column through `resolvePalette` (six hues,
+   * then the neutral ladder with a dev warning) and show a colour key.
+   *
+   * One key per chart (RM-118 R4): whenever this produces a non-empty
+   * colour key, the `legend` container legend below YIELDS and renders
+   * nothing — `colorBy`'s own key already covers the same job, and
+   * `interactive: "toggle"` has no effect in that mode (there is no
+   * container legend to press).
+   */
+  colorBy?: ChartColorBy;
+  /** Paint a `--chart-mono-2` track behind each bar to the axis maximum ("to 100 %"). Default: false */
+  track?: boolean;
+  /** Value markers and range spans drawn per bar on top of the series; listed in `legendItems`. */
+  overlays?: BarOverlay[];
+  /** A muted prior-period column behind each main column (the main column narrows to make room). */
+  comparison?: BarComparison;
+  /** Grey label beside each comparison pair. Default: `"none"`. */
+  comparisonLabel?: BarComparisonLabel;
   /** Child components (Bar, Grid, ChartTooltip, etc.) */
   children: ReactNode;
   /** Reports reveal lifecycle for OG screenshots and loading orchestration. */
@@ -147,9 +256,30 @@ export interface BarChartProps extends ChartSelectionProps {
    * chart with a single unfilled `Bar` keeps today's `--chart-line-primary`.
    */
   palette?: ChartPalette;
+  /**
+   * Legend engine (RM-118): `true` or a config object mounts `ChartLegend`
+   * beside the plot via `useContainerLegend`; `{ interactive: "toggle" }`
+   * turns each item into a real `aria-pressed` button that hides a series
+   * on grouped OR stacked bars — the value domain (`resolveBarValueDomain`,
+   * always zero-based) recomputes from the VISIBLE series only, and the
+   * hidden series' `<Bar>` never mounts, so it drops out of the datapoint
+   * layer too. `interactive: "hover"` (default) dims the other series via
+   * the existing `ChartLegendHoverProvider` seam `Bar` already reads.
+   * Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its
+   * doc (R4, one key per chart).
+   */
+  legend?: ContainerLegendProp;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
+
+/** Stable "nothing hidden" default so an unset `hiddenKeys` never allocates. */
+const EMPTY_HIDDEN_KEYS: ReadonlySet<string> = new Set();
+
+/** `ChartLegendHoverProvider` needs a stable `onHoverChange` — bars never originate hover themselves. */
+function noopLegendHoverChange(): void {
+  /* Bar dimming is driven one-way, from the container legend down — bars never call this back. */
+}
 
 /** Shared "is this child a `<Bar>`" predicate — component name OR a `dataKey` prop. */
 function isBarChild(child: ReactNode): child is ReactElement<BarProps> {
@@ -218,6 +348,37 @@ function applyBarPalette(children: ReactNode, palette: ChartPalette | undefined)
     const color = colors[colorIndex];
     colorIndex += 1;
     return cloneElement(child, { fill: color });
+  });
+}
+
+/** Each side of the band a main column gives up to its `comparison` column (RM-113). */
+const COMPARISON_CROSS_INSET = 0.2;
+
+/**
+ * `stacked="percent"` (RM-113): a direct `YAxis` child that set no format of
+ * its own prints percent — the scale is in fraction space, so "0.4" would be
+ * a lie of omission. An explicit `valueFormat`/`formatValue` always wins.
+ */
+function applyPercentAxisFormat(children: ReactNode, percent: boolean): ReactNode {
+  if (!percent) {
+    return children;
+  }
+  return Children.map(children, (child) => {
+    if (!isValidElement(child) || typeof child.type !== "function") {
+      return child;
+    }
+    const childType = child.type as { displayName?: string; name?: string };
+    const props = child.props as { valueFormat?: unknown; formatValue?: unknown };
+    if (
+      (childType.displayName || childType.name) !== "YAxis" ||
+      props.valueFormat !== undefined ||
+      props.formatValue !== undefined
+    ) {
+      return child;
+    }
+    return cloneElement(child as ReactElement<{ valueFormat?: string }>, {
+      valueFormat: "percent",
+    });
   });
 }
 
@@ -313,6 +474,29 @@ function resolveBarValueDomain(max: number, min: number): [number, number] {
   }
   const domainMax = max > 0 ? max * 1.1 : 0;
   return [min * 1.1, domainMax];
+}
+
+/** One value axis' bar domain: the signed extent of `dataKeys`, zero-based (RM-027). */
+function resolveBarAxisDomain(
+  data: Record<string, unknown>[],
+  dataKeys: string[],
+): [number, number] {
+  let max = 0;
+  let min = 0;
+  for (const d of data) {
+    for (const key of dataKeys) {
+      const value = d[key];
+      if (typeof value === "number") {
+        if (value > max) {
+          max = value;
+        }
+        if (value < min) {
+          min = value;
+        }
+      }
+    }
+  }
+  return resolveBarValueDomain(max, min);
 }
 
 interface CategoryAxisChildConfig {
@@ -411,8 +595,19 @@ interface ChartInnerProps {
   barGap: number;
   barWidthProp?: number;
   orientation: BarOrientation;
-  stacked: boolean;
+  stacked: BarStacked;
   stackGap: number;
+  divergingCenter?: string;
+  stackOrder: BarStackOrder;
+  showTotals: boolean;
+  sort: BarSort;
+  reverse: boolean;
+  groupBy?: string;
+  colorBy?: ChartColorBy;
+  track: boolean;
+  overlays?: BarOverlay[];
+  comparison?: BarComparison;
+  comparisonLabel: BarComparisonLabel;
   children: ReactNode;
   containerRef: React.RefObject<HTMLDivElement | null>;
   chartStatus: ChartStatus;
@@ -429,6 +624,10 @@ interface ChartInnerProps {
   maxInteractiveDatapoints?: number;
   onPhaseChange?: (phase: ChartPhase) => void;
   palette?: ChartPalette;
+  /** Toggled-off series keys (RM-118) — see `BarChartProps.legend`'s doc. */
+  hiddenKeys?: ReadonlySet<string>;
+  /** The legend item currently hovered or keyboard-focused (RM-118) — dims every other series via `ChartLegendHoverProvider`. */
+  legendHoveredKey?: string | null;
 }
 
 function ChartInner(props: ChartInnerProps) {
@@ -478,12 +677,25 @@ const ChartCore = memo(function ChartCore({
   orientation,
   stacked,
   stackGap,
+  divergingCenter,
+  stackOrder,
+  showTotals,
+  sort,
+  reverse,
+  groupBy,
+  colorBy,
+  track,
+  overlays,
+  comparison,
+  comparisonLabel,
   children: childrenProp,
   containerRef,
   chartStatus,
   loadingLabel,
   onPhaseChange,
   palette,
+  hiddenKeys = EMPTY_HIDDEN_KEYS,
+  legendHoveredKey = null,
 }: ChartInnerProps) {
   const { tooltipData, setTooltipData, scheduleTooltip, clearTooltip } =
     useScheduledTooltip<TooltipData>();
@@ -499,14 +711,44 @@ const ChartCore = memo(function ChartCore({
   // default colour. Every other extraction below reads FROM this, so a
   // resolved default reaches the tooltip dot colour, the axis and the plot
   // alike.
-  const children = useMemo(() => applyBarPalette(childrenProp, palette), [childrenProp, palette]);
+  // RM-113: the stack layout mode, and whether this chart draws from the
+  // extents layout at all. A plain `stacked` (no order, totals, overlays,
+  // comparison or track) keeps the pre-RM-113 cumulative path byte-identical.
+  const stackMode = resolveStackMode(stacked);
+  const richLayout =
+    Boolean(stackMode && (stackMode !== "stacked" || stackOrder !== "data" || showTotals)) ||
+    Boolean(overlays && overlays.length > 0) ||
+    Boolean(comparison) ||
+    track;
+  // ChartMultiples — RM-120: a facet panel's value ticks / axis visibility (no baseline on bars).
+  const facet = useChartFacetScope();
+  const scopedChildren = useFacetScopedChildren(childrenProp, { baseline: false });
+  const children = useMemo(
+    () => applyPercentAxisFormat(applyBarPalette(scopedChildren, palette), stackMode === "percent"),
+    [scopedChildren, palette, stackMode],
+  );
 
   // Extract bar configs synchronously from children. `children` gets a new
   // identity from React on every parent render even when nothing relevant
   // changed; `useStableValue` collapses the extracted result back to its
   // previous reference when the content is unchanged, so `contextValue`
   // below (and the scales it drives) don't rebuild on an unrelated re-render.
-  const lines = useStableValue(useMemo(() => extractBarConfigs(children), [children]));
+  const allLines = useStableValue(useMemo(() => extractBarConfigs(children), [children]));
+  // RM-118 toggle: every calculation BELOW this point (row order, stack
+  // layout, the value domain, per-axis scales, tooltip positions and the
+  // context `lines` `Bar` itself reads for its own `seriesIndex`) reads
+  // `lines` — reassigned here to the VISIBLE subset so the whole pipeline
+  // recomputes from the visible series only with no further touch points.
+  // `legendItems` below is the one deliberate exception: it reads
+  // `allLines` so a toggled-off series stays listed (struck through, still
+  // pressable) rather than disappearing from its own legend.
+  const lines = useStableValue(
+    useMemo(
+      () =>
+        hiddenKeys.size === 0 ? allLines : allLines.filter((line) => !hiddenKeys.has(line.dataKey)),
+      [allLines, hiddenKeys],
+    ),
+  );
   const zeroLineSetting = useStableValue(
     useMemo(() => extractZeroLineSetting(children), [children]),
   );
@@ -514,7 +756,7 @@ const ChartCore = memo(function ChartCore({
   // While loading, render layout-shaped placeholder categories/bars instead of
   // the (likely empty) real data — mirrors the chart dataKeys so the
   // user-supplied Bar/Grid/BarXAxis children keep rendering unmodified.
-  const data = useMemo(() => {
+  const baseData = useMemo(() => {
     if (!isLoadingStatus) {
       return dataProp;
     }
@@ -525,6 +767,57 @@ const ChartCore = memo(function ChartCore({
       dataKeys: dataKeys.length > 0 ? dataKeys : undefined,
     });
   }, [dataProp, isLoadingStatus, lines, xDataKey]);
+
+  // RM-113: `sort` / `reverse`, then `groupBy` (horizontal bars get one
+  // header row per group). Neither set returns `baseData` itself.
+  const data = useMemo(() => {
+    if (isLoadingStatus) {
+      return baseData;
+    }
+    const ordered = orderBarRows(baseData, {
+      sort,
+      reverse,
+      keys: lines.map((line) => line.dataKey),
+      stacked: Boolean(stackMode),
+    }) as Record<string, unknown>[];
+    return groupBy ? arrangeBarGroups(ordered, groupBy, xDataKey, isHorizontal) : ordered;
+  }, [baseData, groupBy, isHorizontal, isLoadingStatus, lines, reverse, sort, stackMode, xDataKey]);
+
+  const stackLayout = useMemo(
+    () =>
+      stackMode
+        ? computeBarStackLayout({
+            data,
+            keys: lines.map((line) => line.dataKey),
+            mode: stackMode,
+            stackOrder,
+            divergingCenter,
+          })
+        : null,
+    [data, divergingCenter, lines, stackMode, stackOrder],
+  );
+
+  const colorResolution = useMemo(
+    () =>
+      colorBy && !isLoadingStatus
+        ? resolveColorBy(
+            data.filter((row) => !isBarGroupHeaderRow(row)),
+            colorBy,
+          )
+        : null,
+    [colorBy, data, isLoadingStatus],
+  );
+
+  const legendItems = useMemo(
+    () =>
+      buildBarLegendItems({
+        lines: allLines,
+        colorKey: colorResolution?.items,
+        comparison,
+        overlays,
+      }),
+    [allLines, colorResolution, comparison, overlays],
+  );
 
   // The margins the caller asked for, squeezed to whatever box the chart was
   // actually given. Below ~110px of height the fixed 40/40 pair alone exceeds
@@ -593,7 +886,11 @@ const ChartCore = memo(function ChartCore({
   const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
 
   const categoryEntries = useMemo(
-    () => data.map((d, index) => ({ label: categoryAccessor(d), index })),
+    () =>
+      data
+        .map((d, index) => ({ label: categoryAccessor(d), index, header: isBarGroupHeaderRow(d) }))
+        .filter((entry) => !entry.header)
+        .map(({ label, index }) => ({ label, index })),
     [data, categoryAccessor],
   );
 
@@ -648,6 +945,29 @@ const ChartCore = memo(function ChartCore({
   // `resolveBarValueDomain` reproduces the pre-RM-027 domain exactly for
   // every all-positive chart (see its own doc comment).
   const { maxValue, minValue } = useMemo(() => {
+    // RM-113: the extents layout (and every overlay / comparison column)
+    // decides the extent; both stay zero-including, so the domain below is
+    // still `resolveBarValueDomain`'s.
+    if (richLayout) {
+      const extra = collectOverlayExtent(data, overlays, comparison);
+      let max = extra.max;
+      let min = extra.min;
+      if (stackLayout) {
+        max = Math.max(max, stackLayout.max);
+        min = Math.min(min, stackLayout.min);
+      } else {
+        for (const line of lines) {
+          for (const d of data) {
+            const value = d[line.dataKey];
+            if (typeof value === "number") {
+              max = Math.max(max, value);
+              min = Math.min(min, value);
+            }
+          }
+        }
+      }
+      return { maxValue: max, minValue: min };
+    }
     if (stacked) {
       // For stacked bars, sum the POSITIVE and NEGATIVE segments at each
       // category SEPARATELY — a diverging stack has an independent positive
@@ -693,49 +1013,109 @@ const ChartCore = memo(function ChartCore({
       }
     }
     return { maxValue: max, minValue: min };
-  }, [data, lines, stacked]);
+  }, [comparison, data, lines, overlays, richLayout, stackLayout, stacked]);
 
   // Any negative value anywhere drives the zero-line auto-on default below.
   const hasNegativeValues = minValue < 0;
 
+  // RM-108: a `YAxis domain`/`scale` request, read off the direct children.
+  // Bars are a LENGTH encoding, so it goes through `resolveValueAxis` with
+  // `lengthEncoding: true`: the upper bound is honoured, a lower bound above 0
+  // is widened back to 0, and any non-linear scale falls back to linear — each
+  // with a dev warning (charts-honesty). No request → the pre-RM-108 path.
+  const facetYDomain = isHorizontal ? undefined : facet?.yDomain;
+  const valueAxisConfigs = useMemo(() => {
+    const configs = collectValueAxisConfigs(children);
+    // ChartMultiples — RM-120: the panel's domain, unless `YAxis domain` pins one.
+    if (facetYDomain && !configs[DEFAULT_Y_AXIS_ID]?.domain) {
+      configs[DEFAULT_Y_AXIS_ID] = { ...configs[DEFAULT_Y_AXIS_ID], domain: facetYDomain };
+    }
+    return configs;
+  }, [children, facetYDomain]);
+  const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
+  const primaryValueAxis = useMemo(() => {
+    const config = valueAxisConfigs[DEFAULT_Y_AXIS_ID];
+    if (!config) {
+      return null;
+    }
+    return resolveValueAxis({
+      autoDomain: niceYDomain(resolveBarValueDomain(maxValue, minValue)),
+      dataExtent: [minValue, maxValue],
+      domain: config.domain,
+      scale: config.scale,
+      lengthEncoding: true,
+    });
+  }, [maxValue, minValue, valueAxisConfigs]);
+
   // Value scale (linear) - for the value axis
+  // Percent mode draws in fraction space on EXACTLY [0, 1] — zero-based, and
+  // every stack ends at the same pixel.
+  const stackDomain = resolveStackDomain(stackLayout);
   const valueScale = useMemo(() => {
     const range = isHorizontal ? [0, innerWidth] : [innerHeight, 0];
+    if (stackDomain && !primaryValueAxis) {
+      return scaleLinear({ range, domain: stackDomain });
+    }
+    if (primaryValueAxis) {
+      return scaleLinear({ range, domain: primaryValueAxis.domain });
+    }
     return scaleLinear({
       range,
       domain: resolveBarValueDomain(maxValue, minValue),
       nice: true,
     });
-  }, [innerWidth, innerHeight, maxValue, minValue, isHorizontal]);
+  }, [innerWidth, innerHeight, maxValue, minValue, isHorizontal, primaryValueAxis, stackDomain]);
+
+  const verticalValueAxes = useMemo(() => {
+    if (isHorizontal || !hasValueAxisConfigs) {
+      return null;
+    }
+    return applyValueAxisConfigs({
+      autoDomainsByAxis: computeYDomainsByAxis({
+        lines,
+        resolveDomain: (dataKeys) => resolveBarAxisDomain(data, dataKeys),
+      }),
+      configs: valueAxisConfigs,
+      data,
+      lines,
+      lengthEncoding: true,
+    });
+  }, [data, hasValueAxisConfigs, isHorizontal, lines, valueAxisConfigs]);
+
+  useEffect(() => {
+    if (data.length === 0) {
+      return;
+    }
+    // Horizontal bars have one value scale (the `left` request); vertical
+    // bars resolve per axis id.
+    const warnings = isHorizontal
+      ? { [DEFAULT_Y_AXIS_ID]: primaryValueAxis?.warnings ?? [] }
+      : (verticalValueAxes?.warningsByAxis ?? {});
+    for (const [axisId, messages] of Object.entries(warnings)) {
+      warnValueAxisOnce(axisId, messages);
+    }
+  }, [data.length, isHorizontal, primaryValueAxis, verticalValueAxes]);
 
   const yScales = useMemo(() => {
-    if (isHorizontal) {
+    // A rich layout (RM-113) is one value scale: stacks, overlays and the
+    // comparison column all read the same axis.
+    if (isHorizontal || richLayout) {
       return wrapSingleYScale(valueScale);
+    }
+    if (verticalValueAxes) {
+      return buildYScalesFromDomains({
+        lines,
+        innerHeight,
+        domainsByAxis: verticalValueAxes.domainsByAxis,
+      });
     }
     return buildYScalesForLines({
       lines,
       data,
       innerHeight,
-      resolveDomain: (dataKeys) => {
-        let max = 0;
-        let min = 0;
-        for (const d of data) {
-          for (const key of dataKeys) {
-            const value = d[key];
-            if (typeof value === "number") {
-              if (value > max) {
-                max = value;
-              }
-              if (value < min) {
-                min = value;
-              }
-            }
-          }
-        }
-        return resolveBarValueDomain(max, min);
-      },
+      resolveDomain: (dataKeys) => resolveBarAxisDomain(data, dataKeys),
     });
-  }, [data, innerHeight, isHorizontal, lines, valueScale]);
+  }, [data, innerHeight, isHorizontal, lines, richLayout, valueScale, verticalValueAxes]);
 
   const primaryYScale = getPrimaryYScale(yScales, valueScale);
 
@@ -853,6 +1233,12 @@ const ChartCore = memo(function ChartCore({
       if (!d) {
         return;
       }
+      if (isBarGroupHeaderRow(d)) {
+        clearTooltip();
+        return;
+      }
+      // RM-113: a rich stack reads its segment ends straight off the layout.
+      const extentsAt = richLayout ? stackLayout?.extents.get(clampedIndex) : undefined;
 
       // Calculate positions for each bar
       const yPositions: Record<string, number> = {};
@@ -874,7 +1260,8 @@ const ChartCore = memo(function ChartCore({
             if (typeof value === "number") {
               cumulative += value;
               const axisScale = yScales[normalizeYAxisId(line.yAxisId)] ?? valueScale;
-              xPositions[line.dataKey] = axisScale(cumulative) ?? 0;
+              const end = extentsAt?.get(line.dataKey)?.[1] ?? cumulative;
+              xPositions[line.dataKey] = axisScale(end) ?? 0;
               yPositions[line.dataKey] = barPos + bandWidth / 2;
             }
           }
@@ -899,8 +1286,9 @@ const ChartCore = memo(function ChartCore({
           if (typeof value === "number") {
             cumulative += value;
             const axisScale = yScales[normalizeYAxisId(line.yAxisId)] ?? primaryYScale;
-            const gapOffset = seriesIdx * stackGap;
-            yPositions[line.dataKey] = (axisScale(cumulative) ?? 0) - gapOffset;
+            const gapOffset = extentsAt ? 0 : seriesIdx * stackGap;
+            const end = extentsAt?.get(line.dataKey)?.[1] ?? cumulative;
+            yPositions[line.dataKey] = (axisScale(end) ?? 0) - gapOffset;
             seriesIdx++;
           }
         }
@@ -954,8 +1342,11 @@ const ChartCore = memo(function ChartCore({
       stacked,
       stackGap,
       scheduleTooltip,
+      clearTooltip,
       yScales,
       primaryYScale,
+      richLayout,
+      stackLayout,
     ],
   );
 
@@ -970,13 +1361,27 @@ const ChartCore = memo(function ChartCore({
   const defsChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  // RM-111: a `ChartAnnotations` child paints ranges under the bars, the rest over them.
+  const annotationBackChildren: ReactElement[] = [];
+  const annotationFrontChildren: ReactElement[] = [];
 
-  Children.forEach(children, (child) => {
+  Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
       return;
     }
 
-    if (isGradientDefComponent(child)) {
+    // RM-118 toggle: a hidden series' `<Bar>` never mounts at all — no
+    // geometry, no datapoint targets, nothing for `seriesIndex` to
+    // misresolve against the now-shorter `lines` context value above.
+    if (isBarChild(child) && hiddenKeys.has((child.props as BarProps).dataKey)) {
+      return;
+    }
+
+    const annotationLayers = splitChartAnnotationsChild(child, index);
+    if (annotationLayers) {
+      annotationBackChildren.push(annotationLayers[0]);
+      annotationFrontChildren.push(annotationLayers[1]);
+    } else if (isGradientDefComponent(child)) {
       defsChildren.push(child);
     } else if (isPatternDefComponent(child)) {
       preOverlayChildren.push(child);
@@ -1023,13 +1428,34 @@ const ChartCore = memo(function ChartCore({
     // from — reserved space and painted labels can never disagree.
     categoryAxisPlan,
     orientation,
-    stacked,
+    stacked: Boolean(stackMode),
     stackOffsets,
+    // BarChart — RM-113
+    stackMode: stackMode ?? undefined,
+    stackExtents: richLayout && stackLayout ? stackLayout.extents : undefined,
+    barColorOf: colorResolution?.colorOf,
+    barCrossInset: comparison ? COMPARISON_CROSS_INSET : undefined,
+    legendItems,
     // Loading chrome (Grid shimmer/loadingStroke) reads chartPhase off context.
     chartPhase: (isLoadingStatus ? "loading" : isLoaded ? "ready" : "revealing") as ChartPhase,
     chartStatus,
     loadingLabel,
   };
+
+  const layerGeometry: BarLayerGeometry = {
+    rows: data,
+    bandOf: (row) => categoryScale(categoryAccessor(row)),
+    rowKey: categoryAccessor,
+    bandWidth,
+    valueScale: isHorizontal ? valueScale : primaryYScale,
+    isHorizontal,
+  };
+  // The track runs to the value axis' own maximum — 100 % in percent mode.
+  const valueAxisMax = (isHorizontal ? valueScale : primaryYScale).domain()[1] ?? 0;
+  const colorKey =
+    colorResolution && colorResolution.items.length > 0 ? (
+      <BarColorKey items={colorResolution.items} />
+    ) : null;
 
   const svg = (
     <svg aria-hidden="true" height={height} width={width}>
@@ -1060,8 +1486,46 @@ const ChartCore = memo(function ChartCore({
           />
         )}
 
+        {annotationBackChildren}
+        {/* RM-113 background layers: the track to the axis max, then the
+            muted comparison column — both under the series. */}
+        {track && !isLoadingStatus && <BarTrackLayer {...layerGeometry} max={valueAxisMax} />}
+        {comparison && !isLoadingStatus && (
+          <BarComparisonLayer {...layerGeometry} comparison={comparison} />
+        )}
+        {groupBy && !isLoadingStatus && (
+          <BarGroupLayer
+            bandOf={layerGeometry.bandOf}
+            bandWidth={bandWidth}
+            groupBy={groupBy}
+            innerHeight={innerHeight}
+            innerWidth={innerWidth}
+            isHorizontal={isHorizontal}
+            marginLeft={margin.left}
+            rows={data}
+            step={categoryScale.step()}
+          />
+        )}
+
         {/* SVG children rendered before markers */}
         {preOverlayChildren}
+        {/* RM-113 foreground layers: overlays, totals and comparison labels. */}
+        {overlays && overlays.length > 0 && !isLoadingStatus && (
+          <BarOverlayLayer {...layerGeometry} overlays={overlays} />
+        )}
+        {showTotals && stackLayout && !isLoadingStatus && isLoaded && (
+          <BarTotalsLayer {...layerGeometry} layout={stackLayout} />
+        )}
+        {comparison && comparisonLabel !== "none" && lines[0] && !isLoadingStatus && isLoaded && (
+          <BarComparisonLabels
+            {...layerGeometry}
+            comparison={comparison}
+            mainKey={lines[0].dataKey}
+            mode={comparisonLabel}
+          />
+        )}
+
+        {annotationFrontChildren}
 
         {/* Markers rendered last so they're on top for interaction */}
         {postOverlayChildren}
@@ -1069,30 +1533,43 @@ const ChartCore = memo(function ChartCore({
     </svg>
   );
 
+  // RM-118 hover: `Bar` already reads `ChartLegendHoverProvider` for its own
+  // dimming (`isLegendDimmed`, built ahead of this RM) — the index has to
+  // match the SAME (visible-only) `lines` `seriesIndex` resolves against,
+  // not the legend's own full listing, or a series after a hidden one would
+  // dim the wrong bar. `legendHoveredKey` not found among `lines` (e.g. the
+  // hovered item is itself hidden) dims nothing rather than guessing.
+  const legendHoveredIndexForBars = useMemo(() => {
+    if (legendHoveredKey == null) {
+      return null;
+    }
+    const idx = lines.findIndex((line) => line.dataKey === legendHoveredKey);
+    return idx >= 0 ? idx : null;
+  }, [legendHoveredKey, lines]);
+
   return (
-    <ChartProvider value={contextValue}>
-      {datapointsEnabled ? (
-        // Positioned SIBLING of the aria-hidden <svg>, never a child of it —
-        // a focusable inside aria-hidden is the axe `aria-hidden-focus` failure.
-        <div className="relative" style={{ width, height }}>
-          {svg}
-          <ChartDatapointLayer />
-        </div>
-      ) : (
-        svg
-      )}
-    </ChartProvider>
+    <ChartLegendHoverProvider
+      hoveredIndex={legendHoveredIndexForBars}
+      onHoverChange={noopLegendHoverChange}
+    >
+      <ChartProvider value={contextValue}>
+        {datapointsEnabled || colorKey ? (
+          // Positioned SIBLING of the aria-hidden <svg>, never a child of it —
+          // a focusable inside aria-hidden is the axe `aria-hidden-focus` failure.
+          <div className="relative" style={{ width, height }}>
+            {svg}
+            {colorKey}
+            {datapointsEnabled ? <ChartDatapointLayer /> : null}
+          </div>
+        ) : (
+          svg
+        )}
+      </ChartProvider>
+    </ChartLegendHoverProvider>
   );
 });
 
-/**
- * @dataShape categorical comparison of one or more measures across a small set of named
- *   categories
- * @dataShape a single signed measure around a meaningful zero, as diverging bars with a
- *   zero line
- * @avoidWhen a time axis with many points — use a line or area chart
- */
-export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
+const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
   {
     data,
     xDataKey = "name",
@@ -1103,7 +1580,8 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
     revealSignature,
     revealOn,
     replayOnClick,
-    aspectRatio = "2 / 1",
+    aspectRatio,
+    plotHeight,
     className = "",
     status = DEFAULT_CHART_STATUS,
     loadingLabel,
@@ -1112,6 +1590,17 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
     orientation = "vertical",
     stacked = false,
     stackGap = 0,
+    divergingCenter,
+    stackOrder = "data",
+    showTotals = false,
+    sort = "none",
+    reverse = false,
+    groupBy,
+    colorBy,
+    track = false,
+    overlays,
+    comparison,
+    comparisonLabel = "none",
     children,
     onPhaseChange,
     copyValueOnActivate,
@@ -1123,11 +1612,66 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
     palette,
     selectionStates,
     dimExcluded,
+    legend,
   },
   ref,
 ) {
   // Internal ref anchors tooltips; merge with the forwarded ref via a callback ref.
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Legend engine (RM-118). `children` is walked a second time here (cheap —
+  // the same small tree `ChartInner` below also walks) so the legend items
+  // and the container's own width measurement are both available BEFORE
+  // `ParentSize` mounts, at the level the legend needs to sit beside the
+  // plot. Runs the SAME default-fill assignment (`applyBarPalette`) the
+  // inner core runs so an unfilled multi-series chart's legend swatches
+  // match the painted bars instead of every item reading the one fallback
+  // colour.
+  const childrenForLegend = useMemo(() => applyBarPalette(children, palette), [children, palette]);
+  const barConfigsForLegend = useStableValue(
+    useMemo(() => extractBarConfigs(childrenForLegend), [childrenForLegend]),
+  );
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      barConfigsForLegend.map((line) => ({
+        key: line.dataKey,
+        label: line.dataKey,
+        color: line.stroke || "var(--chart-line-primary)",
+        kind: "series" as const,
+      })),
+    [barConfigsForLegend],
+  );
+  // R4: `colorBy`'s own key is ONE key per chart — whenever it would
+  // actually paint (a non-empty resolution), the container legend below
+  // yields by never seeing a `legend` prop, however the caller set it.
+  const colorKeyShowing = useMemo(
+    () =>
+      Boolean(colorBy) &&
+      resolveColorBy(
+        data.filter((row) => !isBarGroupHeaderRow(row)),
+        colorBy as ChartColorBy,
+      ).items.length > 0,
+    [colorBy, data],
+  );
+  const effectiveLegend: ContainerLegendProp | undefined = colorKeyShowing ? undefined : legend;
+  // R1 (moved into the engine): `useContainerLegend` itself treats an unset
+  // `legend` as "off", so `BarChart` forwards `effectiveLegend` straight
+  // through with no extra guard.
+  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+  const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  const handleLegendHoverChange = useCallback(
+    (index: number | null) => {
+      setLegendHoveredIndex(index);
+      setLegendHoveredKey(index == null ? null : (legendItems[index]?.key ?? null));
+    },
+    [legendItems],
+  );
+  const containerLegend = useContainerLegend({
+    legend: effectiveLegend,
+    items: legendItems,
+    hoveredIndex: legendHoveredIndex,
+    onHoverChange: handleLegendHoverChange,
+  });
 
   const mergedRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -1144,13 +1688,21 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
   );
 
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
+  const description = useChartAutoSummary("bar", {
+    accessibleLabel,
+    accessibleDescription,
+    children,
+    data,
+    xDataKey,
+  });
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+  } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
   const [chartPhase, setChartPhase] = useState<ChartPhase>(() => resolveRestingChartPhase(status));
   const handlePhaseChange = useCallback(
     (phase: ChartPhase) => {
@@ -1162,17 +1714,17 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
 
   const showLoadingLabel = Boolean(loadingLabel?.trim() && chartPhase === "loading");
 
-  return (
-    <div
+  return containerLegend.wrap(
+    <ChartPlotRoot
+      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
-      style={{ aspectRatio }}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      <ChartA11yLabel descId={descId} description={description} />
       <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
         <ParentSize debounceTime={100}>
           {({ width, height }) => (
@@ -1187,6 +1739,8 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
               datapointLabel={datapointLabel}
               enterTransition={enterTransition}
               height={height}
+              hiddenKeys={containerLegend.hiddenKeys}
+              legendHoveredKey={legendHoveredKey}
               loadingLabel={loadingLabel}
               margin={margin}
               maxInteractiveDatapoints={maxInteractiveDatapoints}
@@ -1200,6 +1754,17 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
               revealSignature={revealSignature}
               stacked={stacked}
               stackGap={stackGap}
+              divergingCenter={divergingCenter}
+              stackOrder={stackOrder}
+              showTotals={showTotals}
+              sort={sort}
+              reverse={reverse}
+              groupBy={groupBy}
+              colorBy={colorBy}
+              track={track}
+              overlays={overlays}
+              comparison={comparison}
+              comparisonLabel={comparisonLabel}
               width={width}
               xDataKey={xDataKey}
             >
@@ -1209,8 +1774,24 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
         </ParentSize>
       </ChartSelectionProvider>
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}
-    </div>
+    </ChartPlotRoot>,
   );
+});
+
+// Annotations — RM-111
+export interface BarChartProps {
+  /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
+  annotations?: readonly ChartAnnotation[];
+}
+/**
+ * @dataShape categorical comparison of one or more measures across a small set of named
+ *   categories
+ * @dataShape a single signed measure around a meaningful zero, as diverging bars with a
+ *   zero line
+ * @avoidWhen a time axis with many points — use a line or area chart
+ */
+export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(props, ref) {
+  return useAnnotatedChart(BarChartPlot, props, ref);
 });
 
 BarChart.displayName = "BarChart";

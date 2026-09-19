@@ -42,6 +42,20 @@ describe("ChartLegend — locale-aware formatting (review: was host-locale-blind
     expect(screen.getByText("21.200")).toBeInTheDocument();
   });
 
+  // RM-109 regression: `valueFormat` unset must still print plain grouped
+  // digits, never compact notation — `ChartLegend` briefly regressed to
+  // `useChartValueSetFormatter`'s own `"compact"` default ("21.2K"), caught
+  // live by a validator, not by the de-DE test above (Intl's de-DE compact
+  // and plain-grouped output for 21200 are textually identical — "21.200"
+  // either way — so that test could not have caught this). en-US's compact
+  // and plain forms visibly diverge ("21.2K" vs "21,200"), which is why this
+  // is the regression test, not a duplicate of the de-DE one.
+  it("formats an unset valueFormat as plain grouped digits, never compact (en-US)", () => {
+    render(<ChartLegend items={[{ color: "var(--chart-1)", label: "Revenue", value: 21200 }]} />);
+    expect(screen.getByText("21,200")).toBeInTheDocument();
+    expect(screen.queryByText("21.2K")).not.toBeInTheDocument();
+  });
+
   it("still honors an explicit caller-supplied formatValue over the locale default", () => {
     render(
       <ChartLegend
@@ -50,5 +64,46 @@ describe("ChartLegend — locale-aware formatting (review: was host-locale-blind
       />,
     );
     expect(screen.getByText("$42")).toBeInTheDocument();
+  });
+});
+
+describe("ChartLegend — layout prop (RM-118, sitting 3 bug fix)", () => {
+  const twoItems: LegendItem[] = [
+    { color: "var(--chart-1)", label: "Revenue", value: 100, key: "revenue" },
+    { color: "var(--chart-2)", label: "Cost", value: 50, key: "cost" },
+  ];
+
+  it("defaults to stack — byte-identical to every caller before `layout` existed", () => {
+    const { container } = render(<ChartLegend items={twoItems} />);
+    const root = container.querySelector(".legend-container");
+    expect(root?.className).toContain("flex-col");
+    expect(root?.className).not.toContain("flex-row");
+  });
+
+  it('layout="row" wraps items left-to-right instead of stacking them', () => {
+    const { container } = render(<ChartLegend items={twoItems} layout="row" />);
+    const root = container.querySelector(".legend-container");
+    expect(root?.className).toContain("flex-row");
+    expect(root?.className).toContain("flex-wrap");
+    expect(root?.className).not.toContain("flex-col");
+  });
+
+  it('layout="row" drops the w-full an interactive item otherwise gets, so items can sit side by side', () => {
+    const { container } = render(
+      <ChartLegend hiddenKeys={new Set()} items={twoItems} layout="row" onToggleKey={() => {}} />,
+    );
+    const buttons = container.querySelectorAll(".legend-container button");
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) {
+      expect(button.className).not.toContain("w-full");
+    }
+  });
+
+  it('layout="stack" (default) keeps w-full on an interactive item', () => {
+    const { container } = render(
+      <ChartLegend hiddenKeys={new Set()} items={twoItems} onToggleKey={() => {}} />,
+    );
+    const button = container.querySelector(".legend-container button");
+    expect(button?.className).toContain("w-full");
   });
 });

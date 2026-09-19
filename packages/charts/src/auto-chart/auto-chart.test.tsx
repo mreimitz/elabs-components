@@ -11,7 +11,7 @@
  *
  * Real render/interaction/a11y is covered by the Storybook stories.
  */
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ── @visx/responsive → fixed 560×288 ─────────────────────────────────────────
@@ -82,6 +82,9 @@ import {
   isTemporalField,
 } from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
+import { ChartFrame } from "../chart-frame/chart-frame";
+import { SELECTION_EXCLUDED_OPACITY } from "../charts/chart-selection";
+import { Line, LineChart } from "../charts";
 
 afterEach(cleanup);
 
@@ -260,24 +263,36 @@ describe("AutoChart", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
-  // #394: the auto-legend row label must reach the density-aware `text-meta`
+  // #394: the legend row label must reach the density-aware `text-meta`
   // ROLE, not the raw `text-xs` UTILITY the type dial cannot see
   // (styling-and-tokens.md "Type is a role, not a size"). Multi-series data
-  // (2 series) makes `showLegend` default true, rendering <AutoLegend>.
-  it("renders the auto-legend rows with the text-meta role, not the raw text-xs utility", () => {
+  // (2 series) makes `showLegend` default true. RM-118 Part B: `bar` now
+  // renders the SAME container legend engine line/area/stream already used
+  // (`useContainerLegend`), not the retired `<AutoLegend>` — its `<li>` row
+  // WAS the label element (`text-muted-foreground text-meta`); the engine's
+  // `ChartLegend` row is a wrapper `<div>`/`<button>` around a label `<span>`
+  // instead, so the assertion now reaches through to that span — same
+  // meaning (the rendered label text carries `text-meta`, never `text-xs`),
+  // adjusted for the new DOM shape. Fix round 1 restores this after it was
+  // wrongly weakened to a `not.toHaveClass("text-xs")`-only check that would
+  // have passed even with the plain `text-sm font-medium` regression this
+  // guards against. See `useContainerLegend`'s `labelClassName: "text-meta"`
+  // for the source-level fix this test locks in.
+  it("renders the legend rows through the text-meta role, never the raw text-xs utility", () => {
     const { container } = render(
       <AutoChart
         spec={{ type: "bar", data: categoricalData, x: "name", series: ["value", "other"] }}
         height={280}
       />,
     );
-    const legend = container.querySelector('ul[aria-label="Chart legend"]');
+    const legend = container.querySelector('[data-slot="container-legend-root"] .legend-container');
     expect(legend).not.toBeNull();
-    const rows = legend?.querySelectorAll("li") ?? [];
+    const rows = legend?.querySelectorAll(":scope > div") ?? [];
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
-      expect(row).toHaveClass("text-meta");
-      expect(row).not.toHaveClass("text-xs");
+      const label = row.querySelector("span");
+      expect(label).toHaveClass("text-meta");
+      expect(label).not.toHaveClass("text-xs");
     }
   });
 
@@ -289,6 +304,59 @@ describe("AutoChart", () => {
       />,
     );
     expect(container.firstChild).toBeInTheDocument();
+  });
+
+  // Post-merge fix (orchestrator ruling): `ChartSpec` has one `sort` field,
+  // shared with BarChart's row order (`BarSort`), narrowed per chart family
+  // in `auto-chart.tsx` rather than a separate `pieSort`.
+  it("pie: sort 'desc' orders slices largest-first; sort 'asc' is ignored, keeping data order", () => {
+    // AMER is the largest value but listed last in `data` — its position in
+    // `data` never changes (PieSlice is index-based), only its ANGULAR
+    // placement does. Read that placement off each slice's hitbox path's
+    // starting point (the `M` command's x). Every slice shares the same
+    // outer radius, so two slices placed at the same angular POSITION start
+    // at the same x, regardless of the chart's own start-angle convention —
+    // no need to assume where "angle 0" is.
+    const regions = [
+      { label: "EMEA", value: 42 },
+      { label: "APAC", value: 31 },
+      { label: "AMER", value: 55 },
+    ];
+    const startX = (d: string | null): number => {
+      const match = d?.match(/^M(-?[\d.]+),/);
+      if (!match?.[1]) {
+        throw new Error(`no M command found in path: ${d}`);
+      }
+      return Number(match[1]);
+    };
+    const sliceStartXs = (sort: "none" | "asc" | "desc" | undefined): number[] => {
+      const { container, unmount } = render(
+        <AutoChart
+          spec={{ type: "pie", data: regions, x: "label", series: ["value"], sort }}
+          height={280}
+        />,
+      );
+      const hitboxes = container.querySelectorAll('path[fill="transparent"]');
+      expect(hitboxes.length).toBe(3);
+      const xs = Array.from(hitboxes).map((h) => startX(h.getAttribute("d")));
+      unmount();
+      return xs;
+    };
+
+    // Default (`sort` unset → "none"): data order kept, so EMEA (index 0)
+    // is placed FIRST and AMER (index 2) is placed LAST.
+    const [firstSliceStartX, , amerStartXNone] = sliceStartXs(undefined);
+
+    // sort: "desc" — AMER (largest) is placed FIRST, so it starts at the
+    // same angular position EMEA occupied above.
+    const [, , amerStartXDesc] = sliceStartXs("desc");
+    expect(amerStartXDesc).toBeCloseTo(firstSliceStartX!, 5);
+
+    // sort: "asc" is not a pie value (only "desc"/"none" are honoured) — the
+    // pie narrowing in auto-chart.tsx drops it, so AMER stays LAST, exactly
+    // as under the unset default.
+    const [, , amerStartXAsc] = sliceStartXs("asc");
+    expect(amerStartXAsc).toBeCloseTo(amerStartXNone!, 5);
   });
 
   it("renders without throwing for 'scatter' type", () => {
@@ -343,6 +411,46 @@ describe("AutoChart", () => {
       />,
     );
     expect(container.firstChild).toBeInTheDocument();
+  });
+
+  it("'scatter' with spec.colorBy colours points by that column (one ChartSpec field shared with 'bar')", () => {
+    // Orchestrator ruling: ChartSpec has ONE `colorBy` field — bar (RM-113)
+    // and scatter (RM-115) both read `spec.colorBy`, since `ChartColorBy`'s
+    // shape (`{ key, scale?, steps? }`) already covers both. This is the
+    // scatter-side half of that contract: a categorical `colorBy.key` must
+    // reach `<Scatter colorBy>` and paint a different fill per group.
+    const studentLoanData = [
+      { income: 20000, repaymentRate: 2, eu: "eu" },
+      { income: 25000, repaymentRate: 3, eu: "eu" },
+      { income: 30000, repaymentRate: 5, eu: "non-eu" },
+      { income: 35000, repaymentRate: 6, eu: "non-eu" },
+    ];
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "scatter",
+          data: studentLoanData,
+          x: "income",
+          xType: "number",
+          series: ["repaymentRate"],
+          colorBy: { key: "eu" },
+        }}
+        height={280}
+      />,
+    );
+    // Each point renders 2 circles (an inner filled shape, an unfilled outer
+    // ring) — keep only the filled one.
+    const fills = Array.from(container.querySelectorAll('[data-slot="scatter-point"] circle'))
+      .map((el) => el.getAttribute("fill"))
+      .filter((f) => f !== "none");
+    expect(fills).toHaveLength(4);
+    expect(fills.every((f) => Boolean(f))).toBe(true);
+    // Two distinct groups ("eu" vs "non-eu") must resolve to two distinct fills.
+    expect(new Set(fills).size).toBe(2);
+    // Same-group points share exactly one fill.
+    expect(fills[0]).toBe(fills[1]);
+    expect(fills[2]).toBe(fills[3]);
+    expect(fills[0]).not.toBe(fills[2]);
   });
 
   it("renders without throwing for 'radar' type", () => {
@@ -748,6 +856,23 @@ describe("AutoChart", () => {
           series: ["change"],
         },
       ],
+      // Dual-axis — RM-121
+      [
+        "dual-axis",
+        {
+          type: "dual-axis",
+          data: [
+            { month: "2024-01-01", orders: 182, conversion: 2.4 },
+            { month: "2024-02-01", orders: 236, conversion: 3.1 },
+          ],
+          x: "month",
+          series: [
+            { key: "orders", mark: "column" },
+            { key: "conversion", axis: "right" },
+          ],
+          axes: { y2: { align: "ticks" } },
+        },
+      ],
     ];
 
     for (const [name, spec] of specs) {
@@ -1012,5 +1137,782 @@ describe("AutoChart selection pass-through (RM-073)", () => {
       ),
     );
     expect(painted).toEqual(new Set(["selected", "associated", "excluded"]));
+  });
+});
+
+// nulls / curve / symbols — RM-112
+describe("AutoChart nulls/curve/symbols pass-through (RM-112)", () => {
+  const nullsData = [
+    { date: "2024-01-01", revenue: 12000 },
+    { date: "2024-01-02", revenue: 15200 },
+    { date: "2024-01-03", revenue: null },
+    { date: "2024-01-04", revenue: 14100 },
+  ];
+
+  it("spec.nulls reaches the 'line' family and breaks the path at the gap", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{ type: "line", data: nullsData, x: "date", series: ["revenue"], nulls: "gap" }}
+        height={280}
+      />,
+    );
+    const d = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect((d.match(/M/g) ?? []).length).toBe(2);
+  });
+
+  it("spec.nulls reaches the 'area' family and breaks the crest at the gap", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{ type: "area", data: nullsData, x: "date", series: ["revenue"], nulls: "gap" }}
+        height={280}
+      />,
+    );
+    const d = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect((d.match(/M/g) ?? []).length).toBe(2);
+  });
+
+  it("spec.curve reaches every 'line' series", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          curve: "step-after",
+        }}
+        height={280}
+      />,
+    );
+    const stepD = container.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    const { container: monotoneContainer } = render(
+      <AutoChart
+        spec={{ type: "line", data: temporalData, x: "date", series: ["revenue"] }}
+        height={280}
+      />,
+    );
+    const monotoneD =
+      monotoneContainer.querySelector("path.visx-linepath")?.getAttribute("d") ?? "";
+    expect(stepD).not.toBe(monotoneD);
+  });
+
+  it("spec.symbols reaches every 'line'/'area' series as hollow markers", () => {
+    const { container: lineContainer } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          symbols: { style: "hollow" },
+        }}
+        height={280}
+      />,
+    );
+    expect(lineContainer.querySelectorAll("circle").length).toBeGreaterThan(0);
+
+    const { container: areaContainer } = render(
+      <AutoChart
+        spec={{
+          type: "area",
+          data: temporalData,
+          x: "date",
+          series: ["revenue"],
+          symbols: { style: "hollow" },
+        }}
+        height={280}
+      />,
+    );
+    expect(areaContainer.querySelectorAll("circle").length).toBeGreaterThan(0);
+  });
+});
+
+// Tooltip presets — RM-119
+describe("AutoChart spec.tooltip.focus reaches the line family standalone (RM-119)", () => {
+  const twoSeriesData = [
+    { date: "2024-01-01", a: 10, b: 30 },
+    { date: "2024-01-02", a: 20, b: 25 },
+    { date: "2024-01-03", a: 15, b: 28 },
+  ];
+
+  it("dims the other series on hover with no focusOnHover on the rendered container", async () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: twoSeriesData,
+          x: "date",
+          series: ["a", "b"],
+          tooltip: { focus: true },
+        }}
+        height={280}
+      />,
+    );
+
+    // Same seam the `Focus` story (`tooltip.stories.tsx`) asserts in the
+    // browser: `<ChartTooltip focus />` alone — AutoChart never sets
+    // `focusOnHover` on the `LineChart` it renders — registers "focus
+    // requested" on `ChartSeriesModeProvider` (`time-series-chart-shell.tsx`),
+    // which `SeriesHoverDim` (`series-hover-dim.tsx`) reads to widen each
+    // series' invisible hit-stroke path (RM-112) and gate its dim. No real
+    // timer involved: the reveal animation only tweens the visible stroke's
+    // clip/opacity, never whether these path elements are mounted.
+    await waitFor(() => {
+      expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+    });
+    const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+    const seriesAGroup = paths[0]?.closest("g");
+    const seriesBGroup = paths[1]?.closest("g");
+    expect(seriesAGroup).toBeTruthy();
+    expect(seriesBGroup).toBeTruthy();
+
+    fireEvent.mouseOver(seriesBGroup as Element);
+
+    await waitFor(() => {
+      expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+      expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+    });
+
+    fireEvent.mouseOut(seriesBGroup as Element);
+
+    await waitFor(() => {
+      expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+      expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+    });
+  });
+});
+
+// A dashboard chart tile is `ChartFrame chrome="tile"` with no plot height: the
+// frame hands its chart "fill", i.e. `height: 100%`. That only resolves when
+// EVERY box from the frame body down to the plot is definite — an auto-height
+// link collapses the plot to 0 px and no bars render (wave-0 gate, cluster B).
+describe("AutoChart inside a fill-host tile", () => {
+  const definite = (el: HTMLElement) =>
+    el.style.height !== "" || /(^|\s)(h-full|size-full|flex-1)(\s|$)/.test(el.className);
+
+  it.each([
+    ["bar", { type: "bar", x: "region", series: [{ key: "revenue" }] }],
+    ["heatmap", { type: "heatmap", x: "hour", series: [{ key: "count" }] }],
+  ] as const)("keeps a definite height chain from the tile body to the %s plot", (_t, partial) => {
+    const spec = {
+      ...partial,
+      data: [
+        { region: "EMEA", hour: "09", day: "Mon", revenue: 41, count: 4 },
+        { region: "APAC", hour: "10", day: "Tue", revenue: 30, count: 7 },
+      ],
+    } as unknown as ChartSpec;
+    const { container } = render(
+      <ChartFrame chrome="tile" title="Revenue">
+        <AutoChart spec={spec} />
+      </ChartFrame>,
+    );
+    const body = container.querySelector<HTMLElement>('[data-slot="chart-frame-body"]');
+    const plots = [...container.querySelectorAll<HTMLElement>("[style]")].filter(
+      (el) => el.style.height === "100%",
+    );
+    expect(body).not.toBeNull();
+    expect(plots.length, "no fill plot box rendered").toBeGreaterThan(0);
+    for (const plot of plots) {
+      for (let el = plot.parentElement; el && el !== body; el = el.parentElement) {
+        expect(definite(el), `auto-height link: <div class="${el.className}">`).toBe(true);
+      }
+    }
+  });
+});
+
+// Labels — RM-110 (maintainer decision 7): the legend steps aside for a
+// line/area spec only when every series gets an end label under the default.
+// RM-118: `line`/`area` now render their legend through `useContainerLegend`
+// (`LineChart`/`AreaChart`'s own `legend` prop, forwarded from `spec.legend`)
+// instead of the plain-`<ul>` `AutoLegend` — same show/hide decision, new root.
+describe("AutoChart legend vs series end labels", () => {
+  const trend = [
+    { date: "2024-01-01", ebikes: 10, cargo: 4 },
+    { date: "2024-02-01", ebikes: 14, cargo: 6 },
+    { date: "2024-03-01", ebikes: 19, cargo: 9 },
+  ];
+  const legendOf = (spec: ChartSpec) =>
+    render(<AutoChart spec={spec} height={280} />).container.querySelector(
+      '[data-slot="container-legend-root"]',
+    );
+
+  it("hides the legend when every line series has a real name", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [
+        { key: "ebikes", label: "E-bikes" },
+        { key: "cargo", label: "Cargo bikes" },
+      ],
+    };
+    expect(legendOf(spec)).toBeNull();
+  });
+
+  it("keeps the legend when a series is known only by its column name", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [{ key: "ebikes", label: "E-bikes" }, { key: "cargo" }],
+    };
+    expect(legendOf(spec)).not.toBeNull();
+  });
+
+  it("keeps the legend when labels.series opts out, and hides it for an explicit end", () => {
+    const base: ChartSpec = { type: "area", data: trend, x: "date", series: ["ebikes", "cargo"] };
+    expect(legendOf({ ...base, labels: { series: "none" } })).not.toBeNull();
+    cleanup();
+    expect(legendOf({ ...base, labels: { series: "end" } })).toBeNull();
+  });
+
+  // Acceptance-4 (RM-118, orchestrator ruling): AutoChart never calls
+  // `useContainerLegend` itself — it only forwards `spec.legend` into
+  // `LineChart`'s own `legend` prop. Proving DOM equality of the rendered
+  // legend (not the plot, which AutoChart and this comparison compose from
+  // different children — `Grid`, `ChartTooltip`, axes — on purpose) against a
+  // `LineChart` built by hand with the SAME normalized series (key-only
+  // labels → `var(--chart-N)` palette colors, same order) is proof that
+  // forwarding, not a second implementation, is what produces the legend.
+  it("renders the identical legend DOM as calling LineChart directly with the same series (Acceptance-4)", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [{ key: "ebikes" }, { key: "cargo" }],
+    };
+    const auto = render(<AutoChart spec={spec} height={280} />);
+    const autoLegend = auto.container.querySelector(
+      '[data-slot="container-legend-root"] .legend-container',
+    );
+    expect(autoLegend).not.toBeNull();
+    cleanup();
+
+    const explicit = render(
+      <LineChart data={trend} xDataKey="date" legend>
+        <Line dataKey="ebikes" name="ebikes" stroke="var(--chart-1)" />
+        <Line dataKey="cargo" name="cargo" stroke="var(--chart-2)" />
+      </LineChart>,
+    );
+    const explicitLegend = explicit.container.querySelector(
+      '[data-slot="container-legend-root"] .legend-container',
+    );
+    expect(explicitLegend).not.toBeNull();
+
+    expect(autoLegend?.outerHTML).toBe(explicitLegend?.outerHTML);
+  });
+
+  // Task 3(a)/(c) (sitting 3): the pre-existing suite above only ever
+  // selected `[data-slot="container-legend-root"]` — this locks in the
+  // accessible-name parity that selector swap (from AutoLegend's old
+  // `ul[aria-label="Chart legend"]`) must not have lost. `AutoLegend` gave
+  // its `<ul>` role "list" (native) plus this SAME name; `ChartLegend`'s
+  // root is a plain `<div>` with no ARIA list role, so the engine instead
+  // exposes `role="group"` + the identical name (`chart-legend.tsx`'s new
+  // `aria-label` prop, `use-container-legend.ts`'s `t("charts.legend.label")`
+  // default) — see the result file's "Existing keys" section for the full
+  // base-vs-branch accessibility-tree comparison (role/name/item count).
+  it("keeps an accessible name on the legend after the AutoLegend → engine swap (Acceptance-4, a11y)", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [{ key: "ebikes" }, { key: "cargo" }],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    // Item count parity with the old `<li>`-per-series `AutoLegend`.
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
+
+  // RM-118 Part B: 'bar' and 'pie' join the container legend engine this
+  // wave (see `LEGEND_ENGINE_TYPES`) — same accessible name + item-count
+  // parity proof as 'line' above, one per family.
+  it("keeps the 'Chart legend' name and item-count parity for 'bar' (RM-118 Part B)", () => {
+    const spec: ChartSpec = {
+      type: "bar",
+      data: categoricalData,
+      x: "name",
+      series: ["value", "other"],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
+
+  it("keeps the 'Chart legend' name and item-count parity for 'pie' (RM-118 Part B)", () => {
+    const spec: ChartSpec = {
+      type: "pie",
+      data: smallPositiveData,
+      x: "label",
+      series: ["count"],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    // One legend row per pie ROW (slice), not per series — `smallPositiveData`
+    // is declared further up this file for the existing 'pie' tests.
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(smallPositiveData.length);
+  });
+
+  it("keeps the 'Chart legend' name and item-count parity for 'scatter' (RM-118 Part B)", () => {
+    const spec: ChartSpec = {
+      type: "scatter",
+      data: [
+        { x: 1, y: 10, z: 5 },
+        { x: 2, y: 20, z: 8 },
+        { x: 3, y: 15, z: 12 },
+      ],
+      x: "x",
+      xType: "number",
+      series: ["y", "z"],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
+
+  it("keeps the 'Chart legend' name and item-count parity for 'treemap' (RM-118 Part B)", () => {
+    // `palette: "categorical"` is required here: AutoChart's treemap branch
+    // falls back to the documented "mono" default otherwise (#306), and a
+    // mono treemap has nothing to key — no legend at all, by design. jsdom
+    // never sizes the plot (`getBoundingClientRect` is 0 unmocked), so the
+    // layout — and with it every legend item — mock the same way the
+    // existing "AutoChart treemap palette" describe block above does.
+    // `legend: true` is explicit: AutoChart's own default-visibility
+    // heuristic (`showLegend`) keys off the normalized SERIES count, which
+    // is 0 for a hierarchy-shaped treemap spec — unlike bar/pie/scatter,
+    // treemap never defaults to a visible legend, so this proves the
+    // forwarded prop actually reaches `TreemapChart`, not the default.
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    const spec: ChartSpec = {
+      type: "treemap",
+      data: [],
+      x: "name",
+      series: [],
+      palette: "categorical",
+      legend: true,
+      hierarchy: {
+        name: "Work",
+        children: [
+          { name: "Platform", children: [{ name: "CI", value: 40 }] },
+          { name: "Product", children: [{ name: "Onboarding", value: 25 }] },
+        ],
+      },
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    // One legend row per top-level GROUP ("Platform", "Product"), not per leaf.
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    spy.mockRestore();
+  });
+
+  it("keeps 'dumbbell' OUT of the legend engine — spec.legend never reaches DumbbellChart's container-legend prop (RM-118 Part B)", () => {
+    // "dumbbell" is deliberately excluded from `LEGEND_ENGINE_TYPES` (see that
+    // set's own doc in auto-chart.tsx): DumbbellChart's `legend` prop only ever
+    // renders content for `variant="dots"` with `valueKeys` set, a shape
+    // `ChartSpec` cannot express (`dumbbellKeys` always resolves exactly
+    // `[startKey, endKey]`). Forwarding it here would silently swap the
+    // existing `<AutoLegend>` before/after key for nothing — a real default
+    // change caught via the published `charts-autochart--dumbbell-inferred`
+    // story (see RM-118B result file). `spec.legend: true` still renders
+    // SOMETHING — the pre-existing `<AutoLegend>` fallback, not the container
+    // engine's `role="group"` legend.
+    const spec: ChartSpec = {
+      type: "dumbbell",
+      data: [
+        { region: "North", before: 42, after: 61 },
+        { region: "South", before: 31, after: 46 },
+      ],
+      x: "region",
+      series: ["before", "after"],
+      legend: true,
+    };
+    const { container, queryByRole } = render(<AutoChart spec={spec} height={280} />);
+    expect(queryByRole("group", { name: "Chart legend" })).not.toBeInTheDocument();
+    const fallback = container.querySelector("ul[aria-label]");
+    expect(fallback).not.toBeNull();
+    expect(fallback?.textContent).toContain("before");
+    expect(fallback?.textContent).toContain("after");
+  });
+
+  it("preserves the pre-Part-B <AutoLegend> for a 2-series 'dumbbell' spec with legend left unset — no default change (RM-118 Part B)", () => {
+    // The same "before"/"after" spec as `charts-autochart--dumbbell-inferred`
+    // (a published story): `legend` unset, 2 series, so the generic
+    // `showLegend` heuristic (`spec.legend ?? legendItems.length > 1 && …`)
+    // defaults to `true`, same as every release before this one — and because
+    // "dumbbell" stays out of `LEGEND_ENGINE_TYPES`, that still falls through
+    // to `<AutoLegend series={legendItems}/>` exactly as before. Pinned here
+    // so a future attempt to wire "dumbbell" into the engine (once `ChartSpec`
+    // can express `valueKeys`) has to consciously re-decide this, not silently
+    // regress it again.
+    const spec: ChartSpec = {
+      type: "dumbbell",
+      data: [
+        { region: "North", before: 42, after: 61 },
+        { region: "South", before: 31, after: 46 },
+      ],
+      x: "region",
+      series: ["before", "after"],
+    };
+    const { container, queryByRole } = render(<AutoChart spec={spec} height={280} />);
+    expect(queryByRole("group", { name: "Chart legend" })).not.toBeInTheDocument();
+    const fallback = container.querySelector("ul[aria-label]");
+    expect(fallback).not.toBeNull();
+    expect(fallback?.textContent).toContain("before");
+    expect(fallback?.textContent).toContain("after");
+  });
+});
+
+// Facet + legend engine (RM-118 × RM-120, orchestrator ruling after the
+// wave-2 merge): before the merge, a faceted line/area AutoChart with
+// `legend` set rendered one shared `AutoLegend` below the grid; the merge
+// dropped it entirely (see the result file's "Wave-2 merge" section). This
+// restores it, as ONE shared `ChartLegend` — not `AutoLegend` — above the
+// grid, matching the maintainer's "new shared look" for every other family.
+describe("AutoChart faceted line legend (RM-118 × RM-120 regression fix)", () => {
+  const facetedTrend = [
+    { date: "2024-01-01", region: "East", ebikes: 10, cargo: 4 },
+    { date: "2024-02-01", region: "East", ebikes: 14, cargo: 6 },
+    { date: "2024-01-01", region: "West", ebikes: 8, cargo: 3 },
+    { date: "2024-02-01", region: "West", ebikes: 12, cargo: 5 },
+  ];
+  const facetedSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "line",
+    data: facetedTrend,
+    x: "date",
+    series: [{ key: "ebikes" }, { key: "cargo" }],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with 2 items, above the grid", () => {
+    const { container, getAllByRole } = render(<AutoChart spec={facetedSpec(true)} height={280} />);
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "ebikes",
+      "cargo",
+    ]);
+
+    // "above the grid": the legend root is the grid's previous sibling, not
+    // a per-panel legend inside it and not a second one below it.
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
+  });
+});
+
+// RM-118 Part B × RM-120, sitting 2 (integration): once 'bar' and 'pie' join
+// `LEGEND_ENGINE_TYPES` (this branch), the generic `showFacetLegend` check in
+// `AutoChart` already covers them for free — `FACETED_CHART_TYPES ∩
+// LEGEND_ENGINE_TYPES` is exactly line/area/bar/pie. Same regression class
+// Part A fixed for line/area: an `AutoChart`-driven facet whose legend is
+// shown gets ONE shared `ChartLegend` above the grid, never one per panel.
+describe("AutoChart faceted bar legend (RM-118 Part B × RM-120 sitting 2)", () => {
+  const facetedSales = [
+    { quarter: "Q1", region: "North", revenue: 40, profit: 12 },
+    { quarter: "Q2", region: "North", revenue: 44, profit: 14 },
+    { quarter: "Q1", region: "South", revenue: 30, profit: 9 },
+    { quarter: "Q2", region: "South", revenue: 33, profit: 10 },
+  ];
+  const facetedBarSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "bar",
+    data: facetedSales,
+    x: "quarter",
+    series: [{ key: "revenue" }, { key: "profit" }],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with 2 items, above the grid", () => {
+    const { container, getAllByRole } = render(
+      <AutoChart spec={facetedBarSpec(true)} height={280} />,
+    );
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "revenue",
+      "profit",
+    ]);
+
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    // A per-panel FAIL would show a second group inside the grid — assert none.
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedBarSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
+  });
+
+  // RM-118 fix round 2: `renderFacetedChart` mounts its own direct
+  // `<ChartLegend>` for this one shared legend — a separate call site from
+  // `useContainerLegend`'s (the non-faceted path), so the round-1 source fix
+  // there didn't cover it. This row must reach the same `text-meta` role,
+  // never `ChartLegend`'s own bare-caller default.
+  it("legend: true → the shared legend label reaches the text-meta role, never text-sm/text-xs", () => {
+    const { getAllByRole } = render(<AutoChart spec={facetedBarSpec(true)} height={280} />);
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    const rows = legend.querySelectorAll(":scope > *");
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      const label = row.querySelector("span");
+      expect(label).toHaveClass("text-meta");
+      expect(label).not.toHaveClass("text-sm");
+      expect(label).not.toHaveClass("text-xs");
+    }
+  });
+});
+
+describe("AutoChart faceted pie legend (RM-118 Part B × RM-120 sitting 2)", () => {
+  // Two panels (region), same 3 channels in both — the shared legend must
+  // list each CATEGORY once (deduped across panels), not once per panel and
+  // not the value column ("share"). This is the exact shape that was broken
+  // before the `legendItems`-not-`series` fix: `series` here normalizes to a
+  // single "share" entry, never the 3 channel names.
+  const facetedChannels = [
+    { region: "North", channel: "Direct", share: 42 },
+    { region: "North", channel: "Organic", share: 33 },
+    { region: "North", channel: "Referral", share: 25 },
+    { region: "South", channel: "Direct", share: 38 },
+    { region: "South", channel: "Organic", share: 36 },
+    { region: "South", channel: "Referral", share: 26 },
+  ];
+  const facetedPieSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "pie",
+    data: facetedChannels,
+    x: "channel",
+    series: ["share"],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with one item per category, above the grid", () => {
+    const { container, getAllByRole } = render(
+      <AutoChart spec={facetedPieSpec(true)} height={280} />,
+    );
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    // One item per CATEGORY (Direct/Organic/Referral), deduped across the two
+    // panels — not 6 (one per data row) and not 1 (the "share" value column).
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(3);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "Direct",
+      "Organic",
+      "Referral",
+    ]);
+
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    // A per-panel FAIL would show a second group inside the grid — assert none.
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedPieSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
+  });
+});
+
+// BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.
+describe("AutoChart bar comparison labels", () => {
+  const sales = [
+    { region: "North", now: 40, prev: 22 },
+    { region: "South", now: 18, prev: 27 },
+  ];
+
+  // The comparison labels are gated behind BarChart's own enter-reveal gate
+  // (`useChartRevealGate`, default `revealOn="mount"`): they only paint once
+  // `isLoaded` flips true, on a real `setTimeout(animationDuration)` (default
+  // 1100ms) that AutoChart has no prop to shorten (#488). A real-clock
+  // `waitFor` raced that timer against whatever else was on the machine and
+  // sometimes lost; `bar-chart-reveal.test.tsx` already drives the same gate
+  // deterministically with fake timers — same seam here.
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Longer than BarChart's default 1100ms reveal, so it has settled. */
+  const PAST_REVEAL_MS = 1500;
+
+  it("paints grey difference labels from labels.comparison and none without it", () => {
+    const spec: ChartSpec = {
+      type: "bar",
+      data: sales,
+      x: "region",
+      series: ["now"],
+      comparison: { key: "prev" },
+    };
+    const { container } = render(
+      <AutoChart spec={{ ...spec, labels: { comparison: "difference" } }} />,
+    );
+    // Settle the bars' enter animation deterministically instead of racing it.
+    act(() => {
+      vi.advanceTimersByTime(PAST_REVEAL_MS);
+    });
+    const labels = [...container.querySelectorAll('[data-slot="bar-chart-comparison-label"]')].map(
+      (label) => label.textContent,
+    );
+    expect(labels).toEqual(["+18", "−9"]);
+    cleanup();
+    const plain = render(<AutoChart spec={spec} />);
+    act(() => {
+      vi.advanceTimersByTime(PAST_REVEAL_MS);
+    });
+    expect(
+      plain.container.querySelectorAll('[data-slot="bar-chart-comparison-label"]'),
+    ).toHaveLength(0);
+  });
+});
+
+// RM-122 — `ChartSpec.groupBy` (the one shared grouping field) maps to
+// `WaterfallChart subtotalBy` for `type: "waterfall"`; there is no separate
+// `ChartSpec.subtotalBy` (one field per concept).
+describe("AutoChart waterfall groupBy → subtotalBy (RM-122)", () => {
+  // AutoChart's own `kind` classifier (`readsAsTotalRow`) is regex-based on
+  // the label text — it never reads a `kind` field off the raw spec row — so
+  // "Opening"/"Closing" render as plain steps here, same as any other row.
+  const quarters = [
+    { stage: "Opening", value: 1000 },
+    { stage: "Jan", value: 50, quarter: "Q1" },
+    { stage: "Feb", value: 30, quarter: "Q1" },
+    { stage: "Apr", value: 20, quarter: "Q2" },
+    { stage: "May", value: -5, quarter: "Q2" },
+    { stage: "Closing", value: 1095 },
+  ];
+
+  it("groupBy auto-inserts a subtotal checkpoint per group, filled like a total", () => {
+    const spec: ChartSpec = {
+      type: "waterfall",
+      data: quarters,
+      x: "stage",
+      series: ["value"],
+      groupBy: "quarter",
+    };
+    const { container } = render(<AutoChart spec={spec} />);
+    const steps = container.querySelectorAll('[data-slot="waterfall-chart-step"]');
+    // 6 data rows + Q1/Q2 auto-inserted subtotals.
+    expect(steps).toHaveLength(8);
+    const totalFillSteps = [...steps].filter(
+      (el) => el.getAttribute("fill") === "var(--chart-foreground)",
+    );
+    // Only the Q1/Q2 auto-inserted subtotals read as totals — "Opening" and
+    // "Closing" don't match the total-label regex, so they stay plain steps.
+    expect(totalFillSteps).toHaveLength(2);
+  });
+
+  it("without groupBy, no subtotal is inserted", () => {
+    const spec: ChartSpec = {
+      type: "waterfall",
+      data: quarters,
+      x: "stage",
+      series: ["value"],
+    };
+    const { container } = render(<AutoChart spec={spec} />);
+    // One step per row, no auto-inserted subtotal.
+    expect(container.querySelectorAll('[data-slot="waterfall-chart-step"]')).toHaveLength(
+      quarters.length,
+    );
+  });
+});
+
+// Dual-axis — RM-121
+describe('AutoChart type "dual-axis" validation (RM-121)', () => {
+  const data = [
+    { month: "2024-01-01", orders: 182, conversion: 2.4 },
+    { month: "2024-02-01", orders: 236, conversion: 3.1 },
+  ];
+
+  it("renders ChartFallback kind=unsupported when no series is a line", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "dual-axis",
+          data,
+          x: "month",
+          series: [
+            { key: "orders", mark: "column" },
+            { key: "conversion", mark: "area", axis: "right" },
+          ],
+        }}
+      />,
+    );
+    expect(container.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+  });
+
+  it("renders ChartFallback kind=unsupported for columns on the right axis", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "dual-axis",
+          data,
+          x: "month",
+          series: [{ key: "orders", mark: "column", axis: "right" }, { key: "conversion" }],
+        }}
+      />,
+    );
+    expect(container.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+  });
+
+  it("is never inferred", () => {
+    expect(
+      inferChartType({
+        data,
+        x: "month",
+        series: [
+          { key: "orders", mark: "column" },
+          { key: "conversion", axis: "right" },
+        ],
+      }),
+    ).not.toBe("dual-axis");
   });
 });

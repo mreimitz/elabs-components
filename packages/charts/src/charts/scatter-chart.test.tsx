@@ -1,24 +1,36 @@
-import { cleanup, render, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // react-use-measure uses ResizeObserver for layout measurement, which jsdom
 // does not implement. Mock it to return a fixed size so the chart's inner
 // render gate (width > 0 && height > 0) is satisfied.
 // Real render + a11y are covered by the Storybook interaction tests.
+// `box` is mutable (same technique as `labels.test.tsx`) so the RM-115 ×
+// RM-110 bubble-label-priority suite below can re-render at several widths.
+const box = vi.hoisted(() => ({ width: 560, height: 288 }));
 vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 560, height: 288 }],
+  default: () => [() => undefined, { ...box }],
 }));
 
 import { resolveExtremeLabelY } from "./scatter";
 import { ScatterChart, Scatter } from "./scatter-chart";
+import { CustomShapes } from "./custom-shapes";
 import { XAxis } from "./x-axis";
 
 afterEach(cleanup);
 
+// Local calendar-day constructors (not `new Date("2024-01-01")`, which parses
+// as UTC midnight): `buildDomainTicks` now prefers d3's calendar-aligned
+// `.ticks()` (date-ladder round, #478), and d3 operates in LOCAL time — a
+// UTC-midnight instant is not a local calendar boundary in any timezone
+// ahead of UTC, so d3 correctly ceils past it, dropping the naive "first
+// tick at domain start" a test author might expect. Constructing at local
+// midnight sidesteps that (real, disclosed) footgun instead of pinning this
+// suite's result to whatever timezone happens to run it.
 const chartData = [
-  { date: new Date("2024-01-01"), sessions: 420, conversions: 28 },
-  { date: new Date("2024-02-01"), sessions: 510, conversions: 34 },
-  { date: new Date("2024-03-01"), sessions: 390, conversions: 22 },
+  { date: new Date(2024, 0, 1), sessions: 420, conversions: 28 },
+  { date: new Date(2024, 1, 1), sessions: 510, conversions: 34 },
+  { date: new Date(2024, 2, 1), sessions: 390, conversions: 22 },
 ];
 
 // A categorical x dimension — single letters are genuinely non-Date-coercible
@@ -479,7 +491,7 @@ describe("ScatterChart — non-temporal (linear) x-scale (#302)", () => {
     });
   });
 
-  it("existing date-x stories are byte-for-byte unchanged (xScale unset, Date x data)", () => {
+  it("still paints calendar month labels with xScale unset and Date x data (date-ladder round, #478: exact ticks now d3-calendar-aligned, not byte-for-byte)", () => {
     const { container } = render(
       <ScatterChart data={chartData}>
         <Scatter dataKey="sessions" />
@@ -502,5 +514,407 @@ describe("resolveExtremeLabelY (#252)", () => {
 
   it("keeps the default above placement when it is already clear", () => {
     expect(resolveExtremeLabelY({ cy: 120, radius: 6, gridLineYs, innerHeight: 200 })).toBe(106);
+  });
+});
+
+// RM-115: sizeKey bubbles, colorBy / shapeBy columns, trend line, custom shapes.
+describe("Scatter — RM-115 sizeKey / colorBy / shapeBy / trend", () => {
+  const bubbleData = [
+    { x: 1, y: 10, loaned: 25 },
+    { x: 2, y: 20, loaned: 100 },
+  ];
+
+  // The FIRST <circle> under a marker's <g> is the filled inner shape
+  // (`MarkerInnerShape`); the ring stroke circle that follows is `fill="none"`.
+  const fillCircleOf = (markerGroup: Element) => markerGroup.querySelector("circle");
+
+  it("scales bubble radius by sqrt(value / max) — a 4x value draws at 2x radius", () => {
+    const { container } = render(
+      <ScatterChart data={bubbleData} xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="y" sizeKey="loaned" sizeRange={[0, 20]} />
+      </ScatterChart>,
+    );
+    const points = container.querySelectorAll('[data-slot="scatter-point"]');
+    expect(points).toHaveLength(2);
+    const [smallCircle, largeCircle] = Array.from(points).map(
+      (p) => fillCircleOf(p) as SVGCircleElement,
+    );
+    const smallR = Number(smallCircle?.getAttribute("r"));
+    const largeR = Number(largeCircle?.getAttribute("r"));
+    expect(largeR).toBeCloseTo(20, 5); // the larger value IS the domain max → draws at sizeRange[1]
+    expect(largeR / smallR).toBeCloseTo(2, 5);
+  });
+
+  it("colorBy assigns a distinct fill per category, keeping the series fill for an unset row", () => {
+    const data = [
+      { x: 1, y: 1, region: "EU" },
+      { x: 2, y: 2, region: "US" },
+      { x: 3, y: 3, region: undefined },
+    ];
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="y" colorBy={{ key: "region" }} fill="var(--chart-2)" />
+      </ScatterChart>,
+    );
+    const points = Array.from(container.querySelectorAll('[data-slot="scatter-point"]'));
+    expect(points).toHaveLength(3);
+    const fills = points.map((p) => fillCircleOf(p)?.getAttribute("fill"));
+    expect(fills[0]).not.toBe(fills[1]);
+    expect(fills[2]).toBe("var(--chart-2)"); // no `region` on this row → falls back to `fill`
+  });
+
+  it("shapeBy assigns a distinct marker shape per category", () => {
+    const data = [
+      { x: 1, y: 1, kind: "a" },
+      { x: 2, y: 2, kind: "b" },
+    ];
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <Scatter
+          animate={false}
+          dataKey="y"
+          shapeBy={{ key: "kind", shapes: ["star", "hexagon"] }}
+        />
+      </ScatterChart>,
+    );
+    const points = Array.from(container.querySelectorAll('[data-slot="scatter-point"]'));
+    // "star"/"hexagon" render a <polygon>, never the default <circle>.
+    expect(points[0]?.querySelector("polygon")).not.toBeNull();
+    expect(points[1]?.querySelector("polygon")).not.toBeNull();
+    expect(points[0]?.querySelector("polygon")?.getAttribute("points")).not.toBe(
+      points[1]?.querySelector("polygon")?.getAttribute("points"),
+    );
+  });
+
+  it("trend draws a least-squares path and exposes r² / slope sign as data attributes", () => {
+    // y = 2x + 1 exactly → r² = 1, "increasing".
+    const linearData = [0, 1, 2, 3, 4].map((x) => ({ x, y: 2 * x + 1 }));
+    const { container } = render(
+      <ScatterChart data={linearData} xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="y" trend="linear" />
+      </ScatterChart>,
+    );
+    const trend = container.querySelector('[data-slot="scatter-trend-line"]');
+    expect(trend).not.toBeNull();
+    expect(trend).toHaveAttribute("aria-hidden", "true");
+    expect(trend).toHaveAttribute("data-trend", "increasing");
+    expect(Number(trend?.getAttribute("data-r2"))).toBeCloseTo(1, 2);
+    expect(trend?.querySelector("line")).not.toBeNull();
+  });
+
+  it("renders no trend line for fewer than 2 usable points", () => {
+    const { container } = render(
+      <ScatterChart data={[{ x: 1, y: 1 }]} xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="y" trend="linear" />
+      </ScatterChart>,
+    );
+    expect(container.querySelector('[data-slot="scatter-trend-line"]')).toBeNull();
+  });
+
+  it("folds trend direction and r² into the auto summary (RM-115 × RM-110)", () => {
+    // y = 2x + 1 exactly → r² = 1, "increasing" — same fixture as the
+    // data-attribute test above, this time read through the accessible
+    // description rather than `TrendLine`'s own `data-r2`/`data-trend`.
+    const linearData = [0, 1, 2, 3, 4].map((x) => ({ x, y: 2 * x + 1 }));
+    const { container } = render(
+      <ScatterChart
+        accessibleLabel="Revenue vs. spend"
+        data={linearData}
+        xDataKey="x"
+        xScale="linear"
+      >
+        <Scatter animate={false} dataKey="y" trend="linear" />
+      </ScatterChart>,
+    );
+    const figure = container.querySelector('[role="figure"]');
+    const descId = figure?.getAttribute("aria-describedby");
+    const description = container.querySelector(`#${descId}`)?.textContent;
+    expect(description).toContain("trend increasing (r² 1.00)");
+  });
+
+  it("never appends trend facts to a caller-supplied accessibleDescription", () => {
+    const linearData = [0, 1, 2, 3, 4].map((x) => ({ x, y: 2 * x + 1 }));
+    const { container } = render(
+      <ScatterChart
+        accessibleDescription="Custom description, written by the caller."
+        accessibleLabel="Revenue vs. spend"
+        data={linearData}
+        xDataKey="x"
+        xScale="linear"
+      >
+        <Scatter animate={false} dataKey="y" trend="linear" />
+      </ScatterChart>,
+    );
+    const figure = container.querySelector('[role="figure"]');
+    const descId = figure?.getAttribute("aria-describedby");
+    const description = container.querySelector(`#${descId}`)?.textContent;
+    expect(description).toBe("Custom description, written by the caller.");
+  });
+});
+
+describe("CustomShapes — RM-115 lines / paths in data space", () => {
+  const data = [
+    { x: 0, y: 0 },
+    { x: 10, y: 10 },
+  ];
+
+  it("draws a horizontal `y=` line spanning the full plot width", () => {
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <CustomShapes shapes={[{ kind: "line", y: 5 }]} />
+        <Scatter animate={false} dataKey="y" />
+      </ScatterChart>,
+    );
+    const group = container.querySelector('[data-slot="scatter-custom-shapes"]');
+    expect(group).toHaveAttribute("aria-hidden", "true");
+    const line = group?.querySelector("line");
+    expect(line).not.toBeNull();
+    expect(line?.getAttribute("x1")).toBe("0");
+    expect(Number(line?.getAttribute("x2"))).toBeGreaterThan(0);
+    expect(line?.getAttribute("y1")).toBe(line?.getAttribute("y2"));
+  });
+
+  it("draws a vertical `x=` line and a multi-point path", () => {
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <CustomShapes
+          shapes={[
+            { kind: "line", x: 5 },
+            {
+              kind: "path",
+              points: [
+                [0, 0],
+                [5, 5],
+                [10, 2],
+              ],
+            },
+          ]}
+        />
+        <Scatter animate={false} dataKey="y" />
+      </ScatterChart>,
+    );
+    const group = container.querySelector('[data-slot="scatter-custom-shapes"]');
+    const lines = group?.querySelectorAll("line");
+    expect(lines).toHaveLength(1);
+    expect(lines?.[0]?.getAttribute("y1")).toBe("0");
+    const polyline = group?.querySelector("polyline");
+    expect(polyline?.getAttribute("points")?.split(" ")).toHaveLength(3);
+  });
+
+  it("draws a closed path as a filled polygon", () => {
+    const { container } = render(
+      <ScatterChart data={data} xDataKey="x" xScale="linear">
+        <CustomShapes
+          shapes={[
+            {
+              kind: "path",
+              closed: true,
+              points: [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+              ],
+            },
+          ]}
+        />
+        <Scatter animate={false} dataKey="y" />
+      </ScatterChart>,
+    );
+    const group = container.querySelector('[data-slot="scatter-custom-shapes"]');
+    expect(group?.querySelector("polygon")).not.toBeNull();
+    expect(group?.querySelector("polyline")).toBeNull();
+  });
+});
+
+// RM-115 × RM-110 wave-1 integration: `sizeKey` becomes the default label
+// `priority` when `labels` sets none of its own — the biggest bubbles keep
+// their names first, and every dropped name stays reachable `sr-only`.
+describe("Scatter — sizeKey defaults label priority (RM-115 × RM-110)", () => {
+  // 40 points, `population` strictly increasing and unique (`(i + 1) * 997`)
+  // so "highest priority" always names exactly one row: "P40".
+  const bubbleLabelData = Array.from({ length: 40 }, (_, i) => ({
+    id: `P${i + 1}`,
+    x: i,
+    y: 10 + ((i * 37) % 50),
+    population: (i + 1) * 997,
+  }));
+  const highestPriorityLabel = "P40"; // the largest `population`
+
+  function renderAtWidth(width: number, height = 320) {
+    box.width = width;
+    box.height = height;
+    return render(
+      <ScatterChart
+        accessibleLabel="Bubble label priority fixture"
+        data={bubbleLabelData}
+        xDataKey="x"
+        xScale="linear"
+      >
+        <Scatter
+          dataKey="y"
+          fill="var(--chart-1)"
+          labels={{ key: "id", mode: "auto" }}
+          sizeKey="population"
+          sizeRange={[3, 20]}
+        />
+      </ScatterChart>,
+    );
+  }
+
+  function paintedAndDropped(container: HTMLElement) {
+    const painted = Array.from(container.querySelectorAll('[data-slot="scatter-point-label"]')).map(
+      (el) => el.textContent,
+    );
+    const dropped = Number(
+      container.querySelector('[data-slot="chart-labels-unpainted"]')?.getAttribute("data-count") ??
+        0,
+    );
+    return { painted, dropped };
+  }
+
+  it("paints more labels as the plot widens — 380px < 600px < 900px — and accounts for every point at each width", () => {
+    // Measured (jsdom's deterministic per-character text-width fallback,
+    // `use-text-measurer.ts`): 12 painted / 28 sr-only at 380px, 20 / 20 at
+    // 600px, 32 / 8 at 900px — real-browser widths differ slightly by font
+    // metrics, but the width-driven monotonic ordering below is what the
+    // budget formula (`AUTO_LABEL_AREA_PX`) guarantees regardless.
+    const narrow = renderAtWidth(380);
+    const { painted: paintedNarrow, dropped: droppedNarrow } = paintedAndDropped(narrow.container);
+    expect(paintedNarrow.length + droppedNarrow).toBe(bubbleLabelData.length);
+    narrow.unmount();
+
+    const mid = renderAtWidth(600);
+    const { painted: paintedMid, dropped: droppedMid } = paintedAndDropped(mid.container);
+    expect(paintedMid.length + droppedMid).toBe(bubbleLabelData.length);
+    mid.unmount();
+
+    const wide = renderAtWidth(900);
+    const { painted: paintedWide, dropped: droppedWide } = paintedAndDropped(wide.container);
+    expect(paintedWide.length + droppedWide).toBe(bubbleLabelData.length);
+    wide.unmount();
+
+    expect(paintedNarrow.length).toBeLessThan(paintedMid.length);
+    expect(paintedMid.length).toBeLessThan(paintedWide.length);
+  });
+
+  it("keeps the highest-population bubble's label painted at every width", () => {
+    for (const width of [380, 600, 900]) {
+      const { container, unmount } = renderAtWidth(width);
+      const { painted } = paintedAndDropped(container);
+      expect(painted).toContain(highestPriorityLabel);
+      unmount();
+    }
+  });
+
+  it("restates every dropped label sr-only, reachable even though the mark itself is aria-hidden", () => {
+    const { container } = renderAtWidth(380);
+    const { painted, dropped } = paintedAndDropped(container);
+    expect(dropped).toBeGreaterThan(0); // 40 points into a 380px column WILL drop some
+    const restated = container.querySelector('[data-slot="chart-labels-unpainted"]');
+    expect(restated).toHaveClass("sr-only");
+    const restatedNames = restated?.textContent?.split(", ") ?? [];
+    expect(restatedNames).toHaveLength(dropped);
+    // Every restated name is a real row's `id`, and none of them is also painted.
+    const allIds = bubbleLabelData.map((d) => d.id);
+    for (const name of restatedNames) {
+      expect(allIds).toContain(name);
+      expect(painted).not.toContain(name);
+    }
+  });
+});
+
+// Legend engine (RM-118): `legend` prop → `useContainerLegend`.
+describe("ScatterChart legend (RM-118)", () => {
+  it("an unset legend renders no legend, even with more than one series (R1 default)", () => {
+    const { container } = render(
+      <ScatterChart data={chartData}>
+        <Scatter animate={false} dataKey="sessions" />
+        <Scatter animate={false} dataKey="conversions" />
+      </ScatterChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+  });
+
+  it("legend={true} lists every series' dataKey, in data order, as plain rows (no toggle, R3)", () => {
+    const { container } = render(
+      <ScatterChart data={chartData} legend>
+        <Scatter animate={false} dataKey="sessions" />
+        <Scatter animate={false} dataKey="conversions" />
+      </ScatterChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("sessions");
+    expect(legend?.textContent).toContain("conversions");
+    // No toggle affordance in this family (R3) — plain rows, not buttons.
+    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+  });
+
+  it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (no hide wiring)', () => {
+    const { container } = render(
+      <ScatterChart data={chartData} legend={{ interactive: "toggle" }}>
+        <Scatter animate={false} dataKey="sessions" />
+      </ScatterChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    expect(container.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(0);
+  });
+
+  it("hovering or focusing a legend row sets data-hovered, uncontrolled", () => {
+    const { container } = render(
+      <ScatterChart data={chartData} legend>
+        <Scatter animate={false} dataKey="sessions" />
+        <Scatter animate={false} dataKey="conversions" />
+      </ScatterChart>,
+    );
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(2);
+
+    fireEvent.mouseEnter(rows[1] as Element);
+    expect(rows[1]).toHaveAttribute("data-hovered", "");
+    expect(rows[0]).not.toHaveAttribute("data-hovered");
+
+    fireEvent.mouseLeave(rows[1] as Element);
+    expect(rows[1]).not.toHaveAttribute("data-hovered");
+
+    fireEvent.focus(rows[0] as Element);
+    expect(rows[0]).toHaveAttribute("data-hovered", "");
+    fireEvent.blur(rows[0] as Element);
+    expect(rows[0]).not.toHaveAttribute("data-hovered");
+  });
+
+  const colorByData = [
+    { region: "EU", value: 10, x: 1 },
+    { region: "US", value: 20, x: 2 },
+    { region: "EU", value: 15, x: 3 },
+    { region: "APAC", value: 30, x: 4 },
+  ];
+
+  it("a colorBy child's colour key replaces the per-series legend (R4, one key per chart)", () => {
+    const { container } = render(
+      <ScatterChart data={colorByData} legend xDataKey="x" xScale="linear">
+        <Scatter animate={false} colorBy={{ key: "region" }} dataKey="value" />
+      </ScatterChart>,
+    );
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("EU");
+    expect(legend?.textContent).toContain("US");
+    expect(legend?.textContent).toContain("APAC");
+    // The plain per-series row ("value", the dataKey) does not ALSO show —
+    // only the colour key (one key per chart, R4).
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(3);
+  });
+
+  it("without colorBy, the legend falls back to the plain per-series dataKey row", () => {
+    const { container } = render(
+      <ScatterChart data={colorByData} legend xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="value" />
+      </ScatterChart>,
+    );
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("value");
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(1);
   });
 });

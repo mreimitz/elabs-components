@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act, within } from "@testing-library/react";
+import { useEffect, useState } from "react";
+import { render, screen, fireEvent, act, within, waitFor } from "@testing-library/react";
 import { ChartFrame, type ChartFrameProps } from "./chart-frame";
+import { useOptionalChartFrame } from "./chart-frame-context";
+import { InlineChip } from "./inline-chip";
 import { Bar } from "../charts/bar";
 import { BarChart } from "../charts/bar-chart";
 import { BarXAxis } from "../charts/bar-x-axis";
@@ -504,7 +507,7 @@ const normalizeIds = (html: string) => html.replaceAll(/_r_[a-z0-9]+_/g, "_r_ID_
 // resolve to `var(--border)`/`var(--shadow-sm)` by default — same pixels, new
 // class names.
 const PRE_CHANGE_FRAME_DOM =
-  '<div data-slot="card" class="rounded-lg border border-card-border bg-card text-card-foreground shadow-card flex flex-col"><div data-slot="card-header" class="p-6 has-data-[slot=card-action]:grid has-data-[slot=card-action]:auto-rows-min has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-action]:items-start flex flex-row items-start justify-between gap-2 space-y-0 pb-2"><div class="space-y-1"><div data-slot="card-title" class="text-base">Snapshot</div><p data-slot="card-description" class="text-body text-balance text-muted-foreground">Desc</p></div><div class="flex items-center gap-1"><button type="button" aria-pressed="false" data-state="closed" data-slot="toggle" class="inline-flex items-center justify-center gap-2 rounded-control text-body font-control transition-colors duration-fast ease-standard hover:bg-muted hover:text-muted-foreground focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground data-[state=on]:font-semibold aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:font-semibold aria-checked:bg-accent aria-checked:text-accent-foreground aria-checked:font-semibold [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border border-transparent bg-transparent data-[state=on]:border-primary aria-pressed:border-primary aria-checked:border-primary h-control-sm px-2 min-w-control-sm" aria-label="Flip to table view"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-table" aria-hidden="true"><path d="M12 3v18"></path><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M3 15h18"></path></svg></button><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap touch-manipulation rounded-control text-body font-control transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard active:scale-[0.98] motion-reduce:active:scale-100 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground size-control-sm" type="button" aria-label="Download CSV" data-state="closed"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download" aria-hidden="true"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg></button><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap touch-manipulation rounded-control text-body font-control transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard active:scale-[0.98] motion-reduce:active:scale-100 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground size-control-sm" type="button" aria-label="Expand chart" data-state="closed"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-maximize2 lucide-maximize-2" aria-hidden="true"><path d="M15 3h6v6"></path><path d="m21 3-7 7"></path><path d="m3 21 7-7"></path><path d="M9 21H3v-6"></path></svg></button></div></div><div data-slot="card-content" class="p-6 flex-1 pt-0"><div style="height: 260px;" class="w-full overflow-auto"><div class="size-full animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"><div>chart</div></div></div></div><div data-slot="card-footer" class="flex items-center p-6 pt-0 pb-3"><p title="Source: test" class="truncate text-chart-foreground-muted uppercase w-full" data-state="closed">Source: test</p></div></div>';
+  '<div data-slot="card" class="rounded-lg border border-card-border bg-card text-card-foreground shadow-card flex flex-col" data-chart-breakpoint="wide"><div data-slot="card-header" class="p-6 has-data-[slot=card-action]:grid has-data-[slot=card-action]:auto-rows-min has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-action]:items-start flex flex-row items-start justify-between gap-2 space-y-0 pb-2"><div class="space-y-1"><div data-slot="card-title" class="text-base">Snapshot</div><p data-slot="card-description" class="text-body text-balance text-muted-foreground">Desc</p></div><div class="flex items-center gap-1"><button type="button" aria-pressed="false" data-state="closed" data-slot="toggle" class="inline-flex items-center justify-center gap-2 rounded-control text-body font-control transition-colors duration-fast ease-standard hover:bg-muted hover:text-muted-foreground focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground data-[state=on]:font-semibold aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:font-semibold aria-checked:bg-accent aria-checked:text-accent-foreground aria-checked:font-semibold [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border border-transparent bg-transparent data-[state=on]:border-primary aria-pressed:border-primary aria-checked:border-primary h-control-sm px-2 min-w-control-sm" aria-label="Flip to table view"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-table" aria-hidden="true"><path d="M12 3v18"></path><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M3 15h18"></path></svg></button><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap touch-manipulation rounded-control text-body font-control transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard active:scale-[0.98] motion-reduce:active:scale-100 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground size-control-sm" type="button" aria-label="Download CSV" data-state="closed"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download" aria-hidden="true"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg></button><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap touch-manipulation rounded-control text-body font-control transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard active:scale-[0.98] motion-reduce:active:scale-100 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground size-control-sm" type="button" aria-label="Expand chart" data-state="closed"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-maximize2 lucide-maximize-2" aria-hidden="true"><path d="M15 3h6v6"></path><path d="m21 3-7 7"></path><path d="m3 21 7-7"></path><path d="M9 21H3v-6"></path></svg></button></div></div><div data-slot="card-content" class="p-6 flex-1 pt-0"><div style="height: 260px;" class="w-full overflow-auto"><div class="size-full animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"><div>chart</div></div></div></div><div data-slot="card-footer" class="flex items-center p-6 pt-0 pb-3"><p title="Source: test" class="truncate text-chart-foreground-muted uppercase w-full" data-state="closed">Source: test</p></div></div>';
 
 const PRE_CHANGE_BAR_DOM =
   '<div class="relative w-full" style="aspect-ratio: 2 / 1;"><div data-testid="parent-size"><svg aria-hidden="true" height="288" width="560"><rect fill="transparent" height="288" width="560" x="0" y="0"></rect><g style="cursor: default;" transform="translate(40,40)"><rect fill="transparent" height="208" width="480" x="0" y="0"></rect><g class="bar-series-_r_ID_"><g opacity="1" style="transition: opacity var(--t-fast) var(--ease-standard);"><rect fill="var(--chart-1)" rx="4" ry="4" width="120px" height="0px" style="transform: translateX(30px) translateY(208px); transform-origin: 50% 50%; transform-box: fill-box;"></rect></g><g opacity="1" style="transition: opacity var(--t-fast) var(--ease-standard);"><rect fill="var(--chart-1)" rx="4" ry="4" width="120px" height="0px" style="transform: translateX(180px) translateY(208px); transform-origin: 50% 50%; transform-box: fill-box;"></rect></g><g opacity="1" style="transition: opacity var(--t-fast) var(--ease-standard);"><rect fill="var(--chart-1)" rx="4" ry="4" width="120px" height="0px" style="transform: translateX(330px) translateY(208px); transform-origin: 50% 50%; transform-box: fill-box;"></rect></g></g></g></svg></div><div class="pointer-events-none absolute inset-0"><div class="absolute flex justify-center" style="left: 130px; width: 0px; bottom: 12px;"><span class="whitespace-nowrap text-chart-label text-meta" style="opacity: 1;">North</span></div><div class="absolute flex justify-center" style="left: 280px; width: 0px; bottom: 12px;"><span class="whitespace-nowrap text-chart-label text-meta" style="opacity: 1;">South</span></div><div class="absolute flex justify-center" style="left: 430px; width: 0px; bottom: 12px;"><span class="whitespace-nowrap text-chart-label text-meta" style="opacity: 1;">East</span></div></div></div>';
@@ -527,7 +530,9 @@ describe("ChartFrame default DOM (RM-072 pre-change snapshot)", () => {
       </BarChart>,
     );
     await act(async () => {});
-    expect(normalizeIds(container.innerHTML)).toBe(PRE_CHANGE_BAR_DOM);
+    expect(normalizeIds(container.innerHTML).replace(/ data-chart-breakpoint="[a-z]+"/g, "")).toBe(
+      PRE_CHANGE_BAR_DOM,
+    );
   });
 });
 
@@ -782,15 +787,24 @@ describe("ChartFrame chrome (RM-072)", () => {
 // dashboard-sheet.responsive.test.tsx's `FixedWidthResizeObserver`.
 describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
   const realResizeObserver = globalThis.ResizeObserver;
-  let capturedCallback: ResizeObserverCallback | undefined;
+  // Every observer's callback: the frame body also carries the ADR 0039
+  // breakpoint observer, so "the last one constructed" is not the overflow one.
+  let capturedCallbacks: ResizeObserverCallback[] = [];
+  let observed = new Set<Element>();
+  const capturedCallback = (entries: ResizeObserverEntry[], observer: ResizeObserver) => {
+    for (const cb of capturedCallbacks) cb(entries, observer);
+  };
 
   beforeEach(() => {
-    capturedCallback = undefined;
+    capturedCallbacks = [];
+    observed = new Set();
     class CapturingResizeObserver {
       constructor(callback: ResizeObserverCallback) {
-        capturedCallback = callback;
+        capturedCallbacks.push(callback);
       }
-      observe() {}
+      observe(target: Element) {
+        observed.add(target);
+      }
       unobserve() {}
       disconnect() {}
     }
@@ -841,7 +855,7 @@ describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
     const body = getScrollBody();
     mockOverflow(body, true);
     act(() => {
-      capturedCallback?.([], {} as ResizeObserver);
+      capturedCallback([], {} as ResizeObserver);
     });
     expect(body).toHaveAttribute("tabindex", "0");
     // ARIA 1.2 forbids `aria-label` on a generic element (axe
@@ -859,17 +873,349 @@ describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
     const body = getScrollBody();
     mockOverflow(body, true);
     act(() => {
-      capturedCallback?.([], {} as ResizeObserver);
+      capturedCallback([], {} as ResizeObserver);
     });
     expect(body).toHaveAttribute("tabindex", "0");
     expect(body).toHaveAttribute("role", "group");
 
     mockOverflow(body, false);
     act(() => {
-      capturedCallback?.([], {} as ResizeObserver);
+      capturedCallback([], {} as ResizeObserver);
     });
     expect(body).not.toHaveAttribute("tabindex");
     expect(body).not.toHaveAttribute("aria-label");
     expect(body).not.toHaveAttribute("role");
+  });
+
+  // The body and its wrapper are 100% boxes: when a chart redraws its <svg> narrower a beat
+  // after the body shrank, neither resizes, so the frame must watch the drawing itself — also
+  // one that mounts after the frame (charts draw once they have measured their box).
+  it("watches the chart's own drawing, including one that mounts later", async () => {
+    function LateDrawing() {
+      const [drawn, setDrawn] = useState(false);
+      useEffect(() => {
+        const id = setTimeout(() => setDrawn(true), 0);
+        return () => clearTimeout(id);
+      }, []);
+      return (
+        <div>
+          <svg data-testid="first" width={10} height={10}>
+            <rect width={10} height={10} />
+          </svg>
+          {drawn ? <svg data-testid="late" width={10} height={10} /> : null}
+        </div>
+      );
+    }
+    render(
+      <ChartFrame title="Orders" chrome="tile" data={sampleData}>
+        <LateDrawing />
+      </ChartFrame>,
+    );
+    expect(observed.has(screen.getByTestId("first"))).toBe(true);
+    expect(observed.has(screen.getByTestId("first").querySelector("rect")!)).toBe(false);
+    const late = await screen.findByTestId("late");
+    await waitFor(() => expect(observed.has(late)).toBe(true));
+  });
+});
+
+// ADR 0039 §3–§4: `plotHeight` is the drawing area only — the title, legend,
+// notes and source row stack around it — and `height` is its deprecated alias.
+describe("ChartFrame plotHeight", () => {
+  function plotBoxOf(container: HTMLElement): HTMLElement {
+    // The frame root publishes the tier too; the chart's own root is the last one.
+    const roots = container.querySelectorAll<HTMLElement>("[data-chart-breakpoint]");
+    const box = roots[roots.length - 1];
+    if (roots.length < 2 || !box) throw new Error("no chart plot box inside the frame");
+    return box;
+  }
+
+  it.each([
+    ["a one-line title", "Revenue"],
+    [
+      "a two-line title",
+      "Revenue by region and month, before returns, discounts and the one-off Q3 correction",
+    ],
+  ])("sizes the chart's plot box to plotHeight with %s", (_label, title) => {
+    const { container } = render(
+      <ChartFrame title={title} plotHeight={240} data={sampleData}>
+        <BarChart data={sampleData} xDataKey="month" animationDuration={0}>
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    expect(plotBoxOf(container).style.height).toBe("240px");
+  });
+
+  it("no longer fixes the framed body to 260px by default", () => {
+    const { container } = render(
+      <ChartFrame title="Revenue" data={sampleData}>
+        <BarChart data={sampleData} xDataKey="month" animationDuration={0}>
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    expect(container.innerHTML).not.toContain("height: 260px");
+    expect(plotBoxOf(container).style.aspectRatio).toBe("2 / 1");
+  });
+
+  it("reads the deprecated height as plotHeight and warns exactly once per page", async () => {
+    // The once-per-page set is module state; a fresh module graph starts it empty.
+    vi.resetModules();
+    const { ChartFrame: FreshFrame } = await import("./chart-frame");
+    const { BarChart: FreshBarChart } = await import("../charts/bar-chart");
+    const { Bar: FreshBar } = await import("../charts/bar");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const chart = (
+        <FreshBarChart data={sampleData} xDataKey="month" animationDuration={0}>
+          <FreshBar dataKey="revenue" fill="var(--chart-1)" />
+        </FreshBarChart>
+      );
+      const first = render(
+        <FreshFrame title="Revenue" height={260} data={sampleData}>
+          {chart}
+        </FreshFrame>,
+      );
+      render(
+        <FreshFrame title="Costs" height={260} data={sampleData}>
+          {chart}
+        </FreshFrame>,
+      );
+      expect(plotBoxOf(first.container).style.height).toBe("260px");
+      const deprecations = warn.mock.calls.filter((args) =>
+        String(args[0]).includes('"height" is deprecated'),
+      );
+      expect(deprecations).toHaveLength(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+// Content that does not size itself through the plot-height context (plain
+// children, a canvas plot such as the process DottedChart) keeps the bounded,
+// scrollable body box it had before ADR 0039 (wave-0 gate, cluster A).
+describe("ChartFrame bounded body for non-chart content", () => {
+  // The scroll body (card and tile chrome alike): the frame's one `overflow-auto` box.
+  const bodyBox = (container: HTMLElement) =>
+    container.querySelector("div.w-full.overflow-auto") as HTMLElement;
+
+  it("bounds the body to an explicit height, so tall children scroll inside it", () => {
+    const { container } = render(
+      <ChartFrame title="Log" chrome="tile" height={80}>
+        <div style={{ height: 400 }}>tall, non-chart content</div>
+      </ChartFrame>,
+    );
+    expect(bodyBox(container).style.height).toBe("80px");
+    expect(bodyBox(container).className).toContain("overflow-auto");
+  });
+
+  it("keeps the 260px body with no height, and releases it once a chart sizes its own plot", () => {
+    const plain = render(
+      <ChartFrame title="Log">
+        <div>non-chart content</div>
+      </ChartFrame>,
+    );
+    expect(bodyBox(plain.container).style.height).toBe("260px");
+    plain.unmount();
+    const chart = render(
+      <ChartFrame title="Revenue" height={80}>
+        <BarChart data={sampleData} xDataKey="month" animationDuration={0}>
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    expect(bodyBox(chart.container).style.height).toBe("");
+  });
+});
+
+// ── RM-117: editorial chrome ─────────────────────────────────────────────────
+
+describe("ChartFrame editorial chrome (RM-117)", () => {
+  function PlainChart() {
+    return (
+      <svg data-testid="plot" width={300} height={150}>
+        <rect width={10} height={10} />
+      </svg>
+    );
+  }
+
+  it("orders title → description → chart → notes → footer, in Datawrapper's footer order", () => {
+    const { container } = render(
+      <ChartFrame
+        title="RAM prices doubled"
+        description="Short-term RAM rose fastest."
+        notes="Prices in USD, not inflation-adjusted."
+        byline={{ author: "Ada Lovelace" }}
+        source={{ name: "DRAMeXchange", href: "https://example.com/source" }}
+        actions={["png", "data"]}
+        data={[{ month: "Jan", ram: 1 }]}
+      >
+        <PlainChart />
+      </ChartFrame>,
+    );
+    const order = [
+      screen.getByText("RAM prices doubled"),
+      screen.getByText("Short-term RAM rose fastest."),
+      screen.getByTestId("plot"),
+      screen.getByText("Prices in USD, not inflation-adjusted."),
+      container.querySelector('[data-slot="chart-frame-footer"]')!,
+    ];
+    for (let i = 1; i < order.length; i++) {
+      expect(
+        order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+    expect(screen.getByText("Prices in USD, not inflation-adjusted.")).toHaveClass("italic");
+    const footer = container.querySelector('[data-slot="chart-frame-footer"]')!;
+    expect(footer.textContent).toBe(
+      "Chart: Ada Lovelace•Source: DRAMeXchange•Get the data•Download image",
+    );
+    expect(
+      within(footer as HTMLElement).getByRole("link", { name: "DRAMeXchange" }),
+    ).toHaveAttribute("href", "https://example.com/source");
+    // Action links are controls, never part of an exported picture.
+    const excluded = footer.querySelectorAll('[data-chart-export="exclude"]');
+    expect([...excluded].map((n) => n.textContent)).toEqual(["•Get the data", "•Download image"]);
+  });
+
+  it("keeps the all-caps source row when only a plain source is set", () => {
+    const { container } = render(
+      <ChartFrame title="Revenue" source="Internal analytics">
+        <PlainChart />
+      </ChartFrame>,
+    );
+    expect(container.querySelector('[data-slot="chart-frame-footer"]')).toBeNull();
+    expect(screen.getByText("Internal analytics")).toHaveClass("uppercase");
+  });
+
+  it("altText describes the chart figure when the chart has no description", () => {
+    render(
+      <ChartFrame title="Revenue" altText="A line rising from 1 to 9.">
+        <div role="figure" aria-label="Revenue chart">
+          <PlainChart />
+        </div>
+      </ChartFrame>,
+    );
+    const figure = screen.getByRole("figure", { name: "Revenue chart" });
+    const id = figure.getAttribute("aria-describedby");
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id!)?.textContent).toBe("A line rising from 1 to 9.");
+    expect(figure).toHaveAccessibleDescription("A line rising from 1 to 9.");
+  });
+
+  it("altText makes the body the figure when the chart renders none", () => {
+    render(
+      <ChartFrame title="Revenue" altText="A line rising from 1 to 9.">
+        <PlainChart />
+      </ChartFrame>,
+    );
+    expect(screen.getByRole("figure", { name: "Revenue" })).toHaveAccessibleDescription(
+      "A line rising from 1 to 9.",
+    );
+  });
+
+  it("altText leaves a chart's own description alone", () => {
+    render(
+      <ChartFrame title="Revenue" altText="Alt text">
+        <div role="figure" aria-label="Revenue chart" aria-describedby="own">
+          <span id="own">Own description</span>
+          <PlainChart />
+        </div>
+      </ChartFrame>,
+    );
+    expect(screen.getByRole("figure", { name: "Revenue chart" })).toHaveAccessibleDescription(
+      "Own description",
+    );
+  });
+
+  it("altText wins over a labelled chart's generated summary", async () => {
+    render(
+      <ChartFrame title="Revenue" altText="South leads with 600; North trails at 400.">
+        <BarChart
+          data={snapshotBarData}
+          xDataKey="region"
+          accessibleLabel="Revenue by region"
+          animationDuration={0}
+        >
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    await act(async () => {});
+    expect(screen.getByRole("figure", { name: "Revenue by region" })).toHaveAccessibleDescription(
+      "South leads with 600; North trails at 400.",
+    );
+    // The chart owns the description, so the frame renders no second copy.
+    expect(document.querySelector('[data-slot="chart-frame-alt-text"]')).toBeNull();
+  });
+
+  it("a chart's own accessibleDescription wins over altText", async () => {
+    render(
+      <ChartFrame title="Revenue" altText="Alt text">
+        <BarChart
+          data={snapshotBarData}
+          xDataKey="region"
+          accessibleLabel="Revenue by region"
+          accessibleDescription="Own description"
+          animationDuration={0}
+        >
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    await act(async () => {});
+    expect(screen.getByRole("figure", { name: "Revenue by region" })).toHaveAccessibleDescription(
+      "Own description",
+    );
+  });
+});
+
+describe("InlineChip (RM-117)", () => {
+  it("takes the series colour the chart publishes and names the series", () => {
+    function Publisher() {
+      const frame = useOptionalChartFrame();
+      const register = frame?.actions.registerSeries;
+      useEffect(
+        () =>
+          register?.("chart", [{ key: "ram", color: "var(--chart-1)", label: "Short-term RAM" }]),
+        [register],
+      );
+      return null;
+    }
+    const { container } = render(
+      <ChartFrame
+        title="RAM"
+        description={
+          <>
+            <InlineChip series="ram">short-term RAM</InlineChip> rose.
+          </>
+        }
+      >
+        <Publisher />
+      </ChartFrame>,
+    );
+    const chip = container.querySelector<HTMLElement>('[data-slot="inline-chip-swatch"]')!;
+    expect(chip).toHaveAttribute("role", "img");
+    expect(chip).toHaveAccessibleName("Short-term RAM");
+    expect(chip.style.backgroundColor).toBe("var(--chart-1)");
+  });
+
+  it("an explicit label wins over the key", () => {
+    const { container } = render(
+      <ChartFrame
+        title="RAM"
+        description={
+          <InlineChip series="ram" label="Short-term RAM">
+            RAM
+          </InlineChip>
+        }
+      >
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(container.querySelector('[data-slot="inline-chip-swatch"]')).toHaveAccessibleName(
+      "Short-term RAM",
+    );
   });
 });

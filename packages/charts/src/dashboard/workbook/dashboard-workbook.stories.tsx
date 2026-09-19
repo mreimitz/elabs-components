@@ -340,8 +340,11 @@ export const BookmarkAndEditPersistence: Story = {
     await waitFor(() =>
       expect(canvas.getByRole("tab", { name: "Overview", selected: true })).toBeInTheDocument(),
     );
-    // Quoted, after the round trip: the move and the dirty flag both survived.
-    await expect(canvas.getByTestId("probe-layout-layout-probe")).toHaveTextContent("x:0,y:2");
+    // Quoted, after the round trip: the move and the dirty flag both survived. The sheet's
+    // tiles remount on the switch back, so wait for the probe instead of reading it at once.
+    await expect(await canvas.findByTestId("probe-layout-layout-probe")).toHaveTextContent(
+      "x:0,y:2",
+    );
     await expect(canvas.getByTestId("probe-dirty-layout-probe")).toHaveTextContent("dirty:true");
 
     // #429: the two tab clicks just above are DIRECT user interaction (never routed through

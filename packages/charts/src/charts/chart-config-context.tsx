@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { resolveResponsive, type ChartBreakpoint, type Responsive } from "./chart-breakpoint";
+import type { ChartHoverCategory } from "./chart-hover-link"; // Facet scope — RM-120
 
 export interface SpringConfig {
   stiffness: number;
@@ -33,6 +35,9 @@ export interface ChartInteractions {
  * - `sm` — the category axis only, at most 4 ticks; legend hidden.
  * - `md` — today's furniture (default).
  * - `lg` — today's furniture, plus value labels where a family draws them.
+ *
+ * ADR 0039: inside a `narrow` chart container a host `md`/`lg` becomes `sm`,
+ * unless the host density is a `Responsive` value with an explicit `narrow`.
  */
 export type ChartDensity = "xs" | "sm" | "md" | "lg";
 
@@ -69,6 +74,16 @@ export interface ChartConfigValue {
   interactions: Required<ChartInteractions>;
   /** Furniture tier (RM-072). Default `"md"` — today's charts. */
   density: ChartDensity;
+  /**
+   * Forces the container breakpoint (ADR 0039) for every chart inside —
+   * stories, fixed-width export, thumbnails, tests. Unset: each chart measures.
+   */
+  breakpoint?: ChartBreakpoint;
+  /**
+   * The host's density as given, possibly per breakpoint (ADR 0039); `density`
+   * is its resolution for the current scope. Set by `ChartConfigProvider`.
+   */
+  densityByBreakpoint?: Responsive<ChartDensity>;
 }
 
 export const DEFAULT_CHART_INTERACTIONS: Required<ChartInteractions> = {
@@ -93,7 +108,15 @@ export interface ChartConfigProviderProps {
    * Partial overrides. `interactions` may itself be partial — missing keys
    * keep their defaults (`edit: false`, the rest `true`).
    */
-  value?: Partial<Omit<ChartConfigValue, "interactions">> & { interactions?: ChartInteractions };
+  value?: Partial<Omit<ChartConfigValue, "interactions" | "density" | "densityByBreakpoint">> & {
+    interactions?: ChartInteractions;
+    /**
+     * Furniture tier, optionally per breakpoint. An explicit `narrow` entry
+     * (`{ base: "md", narrow: "md" }`) keeps the legend and value axis on a
+     * narrow chart — the per-chart escape hatch from the narrow → `sm` coupling.
+     */
+    density?: Responsive<ChartDensity>;
+  };
   children: ReactNode;
 }
 
@@ -103,7 +126,10 @@ export function ChartConfigProvider({ value, children }: ChartConfigProviderProp
       ...DEFAULT_CHART_CONFIG,
       ...value,
       interactions: { ...DEFAULT_CHART_INTERACTIONS, ...value?.interactions },
-      density: value?.density ?? DEFAULT_CHART_CONFIG.density,
+      // A per-breakpoint density resolves to its `base` (wide) outside a
+      // container; the container's breakpoint scope re-resolves it.
+      density: densityBase(value?.density ?? DEFAULT_CHART_CONFIG.density),
+      densityByBreakpoint: value?.density ?? DEFAULT_CHART_CONFIG.density,
     }),
     [value],
   );
@@ -111,6 +137,81 @@ export function ChartConfigProvider({ value, children }: ChartConfigProviderProp
   return <ChartConfigContext.Provider value={merged}>{children}</ChartConfigContext.Provider>;
 }
 
+function densityBase(density: Responsive<ChartDensity>): ChartDensity {
+  // The wide tier resolves to `base`: the value outside any measured chart.
+  return resolveResponsive(density, "wide");
+}
+
+/**
+ * Internal: provides an already-resolved config (a breakpoint scope) without
+ * re-merging, so the host's per-breakpoint density survives nested scopes.
+ */
+export function ChartConfigValueProvider({
+  value,
+  children,
+}: {
+  value: ChartConfigValue;
+  children?: ReactNode;
+}) {
+  return <ChartConfigContext.Provider value={value}>{children}</ChartConfigContext.Provider>;
+}
+
 export function useChartConfig(): ChartConfigValue {
   return useContext(ChartConfigContext) ?? DEFAULT_CHART_CONFIG;
+}
+
+// Facet scope — RM-120
+
+/**
+ * What a `ChartMultiples` panel hands the chart inside it (RM-120). A chart
+ * container reads it through {@link useChartFacetScope}; outside a panel it is
+ * `null` and nothing changes. Every field is a DEFAULT — the child's own
+ * explicit prop (`YAxis domain`, `hoverCategory`, …) always wins.
+ */
+export interface ChartFacetScopeValue {
+  /** The panel's key (the facet value). */
+  panelKey: string;
+  /** 0-based grid position and grid size of the panel. */
+  column: number;
+  row: number;
+  columns: number;
+  rows: number;
+  /** No panel below this one in its column (the bottom row of an incomplete grid included). */
+  bottom: boolean;
+  /** Shared y: only the outer column paints value-axis labels (first for a left axis, last for a right one). */
+  sharedY: boolean;
+  /** Shared x: only the bottom panel of each column paints category-axis labels. */
+  sharedX: boolean;
+  /** The primary value axis' domain for this panel (shared, or range-rounded). */
+  yDomain?: [number, number];
+  /** Explicit value ticks (range rounding): gridlines land on the same rows in every panel. */
+  yTicks?: number[];
+  /** The x extent every panel shares (time x only), when the panels' own extents differ. */
+  xDomain?: [Date, Date];
+  /** Row key drawn as a muted baseline series behind the panel's own series. */
+  baselineKey?: string;
+  /** Synced hover: the category hovered in ANY panel, `null` when none. Unset → not synced. */
+  hoverCategory?: ChartHoverCategory;
+  /** Reports this panel's hovered category (move → category, leave → `null`). */
+  onHoverCategory?: (category: ChartHoverCategory) => void;
+}
+
+const ChartFacetScopeContext = createContext<ChartFacetScopeValue | null>(null);
+
+/** Internal: mounted by `ChartMultiples` around each panel's chart. */
+export function ChartFacetScopeProvider({
+  value,
+  children,
+}: {
+  value: ChartFacetScopeValue;
+  children?: ReactNode;
+}) {
+  return (
+    <ChartFacetScopeContext.Provider value={value}>{children}</ChartFacetScopeContext.Provider>
+  );
+}
+
+/** The enclosing `ChartMultiples` panel's scope, or `null` outside one. */
+export function useChartFacetScope(): ChartFacetScopeValue | null {
+  return useContext(ChartFacetScopeContext);
 }

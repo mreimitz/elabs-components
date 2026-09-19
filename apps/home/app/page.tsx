@@ -1,64 +1,36 @@
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  ParallaxPlane,
-  RevealOnEnter,
-} from "@elabs-ai/components-ui";
-import { SiteThemeSwitch } from "../lib/use-theme-transition";
 import { SiteGround } from "../components/site-ground";
+import { Hero } from "../components/hero/hero";
+import { Tour } from "../components/tour/tour";
+import { TOUR_TABS } from "../components/tour/tabs";
+import { AgentLoopSection } from "../components/agent-loop/agent-loop-section";
+import { EmitUiSection } from "../components/agent-loop/emit-ui";
+import { WorksWith } from "../components/agents/works-with";
+import { TokenBand } from "../components/tokens/token-band";
+import { RouteCards } from "../components/routes/route-cards";
 
-// RM-092: a preview of the three depth planes until the real sections (RM-094) replace it.
-// Stacked (below `sm`) the planes drift up to ±60px toward each other, so the column gap stays
-// wider than their 120px relative travel.
-const PLANES = [
-  { plane: "ground", title: "Ground", description: "Scrolls at 0.15× the page." },
-  { plane: "content", title: "Content", description: "Scrolls with the page." },
-  { plane: "float", title: "Float", description: "Scrolls at 1.2× the page." },
-] as const;
-
-// Placeholder: proves the pipeline (workspace source → Tailwind @source → tokens → theme) end to
-// end. The real sections replace it.
+// The page, section by section in movement order; each RM item appends its section under its
+// own comment. RM-094's hero replaced the RM-091 placeholder card (its theme switch now lives
+// in the hero) and the RM-092 depth-plane preview (the float plane is the real use).
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col justify-center gap-6 p-6">
-      {/* RM-091 */}
-      <SiteThemeSwitch className="self-center" />
-      <Card>
-        <CardHeader>
-          <CardTitle>brand-ui</CardTitle>
-          <CardDescription>
-            The website is being built. The components and their documentation are in Storybook.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild>
-            <a href="/storybook/">Open Storybook</a>
-          </Button>
-        </CardContent>
-      </Card>
+    <main className="flex min-h-dvh w-full flex-col">
       {/* RM-092 */}
       <SiteGround />
-      <section aria-label="Depth planes" className="flex min-h-screen flex-col justify-end">
-        <RevealOnEnter as="ul" stagger className="grid gap-36 sm:grid-cols-3 sm:gap-6">
-          {PLANES.map(({ plane, title, description }) => (
-            <li key={plane}>
-              <ParallaxPlane plane={plane}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{title}</CardTitle>
-                    <CardDescription>{description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              </ParallaxPlane>
-            </li>
-          ))}
-        </RevealOnEnter>
-      </section>
-      <div aria-hidden="true" className="min-h-screen" />
+      {/* RM-094 */}
+      <Hero />
+      {/* RM-096 */}
+      <Tour meta={TOUR_TABS} />
+      {/* RM-099 */}
+      <AgentLoopSection />
+      {/* RM-101 — the agents movement's second half, directly under the agent loop. */}
+      <EmitUiSection />
+      {/* RM-102 — the matrix is its own section (`id="works-with"`), install + route cards
+          follow as movement 6. */}
+      <WorksWith />
+      {/* RM-103 — the tokens band sits between the works-with matrix and the closing route
+          cards (concept order §4.4 → §4.5 → §4.6; wave-4 ruling 24). */}
+      <TokenBand />
+      <RouteCards />
     </main>
   );
 }

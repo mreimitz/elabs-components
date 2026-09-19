@@ -6,8 +6,11 @@ import { useState, type ReactNode } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import type { ChartDatapoint } from "./chart-datapoint";
+import { ChartLegend } from "./chart-legend";
 import { PieChart } from "./pie-chart";
 import { PieCenter } from "./pie-center";
+import { defaultPieColors } from "./pie-context";
+import { pieLegendItems } from "./pie-grouping";
 import { PieSlice } from "./pie-slice";
 
 const meta = {
@@ -374,4 +377,138 @@ export const SelectionStates: Story = {
   play: async ({ canvasElement }) => {
     await expectSelectionStates(canvasElement);
   },
+};
+
+// ── RM-114: labels, groupSmall, sort, half ─────────────────────────────────
+
+const channelData = [
+  { label: "Direct", value: 320 },
+  { label: "Organic", value: 280 },
+  { label: "Referral", value: 190 },
+  { label: "Social", value: 140 },
+  { label: "Email", value: 70 },
+  { label: "Affiliate", value: 20 },
+  { label: "Paid", value: 12 },
+  { label: "Other channel", value: 8 },
+];
+
+/**
+ * Eight channels folded to five + "Other" (`groupSmall={{ max: 5 }}`), with
+ * outside labels + leaders and a legend built from the same fold
+ * (`pieLegendItems`, RM-114). Resize the canvas: at `narrow` (< 480 px) the
+ * label layer's responsive default (`{ base: "outside", narrow: "none" }`)
+ * drops out and the legend — six rows, one per folded slice — carries the
+ * read instead.
+ */
+export const GroupedWithOutsideLabels: Story = {
+  name: "Grouped with outside labels",
+  parameters: { layout: "padded" },
+  render: () => {
+    const legendItems = pieLegendItems(channelData, {
+      groupSmall: { max: 5 },
+      getColor: (i) => defaultPieColors[i % defaultPieColors.length] as string,
+    });
+    return (
+      <div className="flex w-full max-w-3xl flex-col gap-4 sm:flex-row">
+        <div className="h-80 min-w-0 flex-1">
+          <PieChart
+            accessibleLabel="Traffic by channel, grouped to five channels plus Other"
+            data={channelData}
+            groupSmall={{ max: 5 }}
+            labels={{ placement: { base: "outside", narrow: "none" }, show: ["label", "percent"] }}
+          >
+            {null}
+          </PieChart>
+        </div>
+        <ChartLegend
+          className="shrink-0"
+          items={legendItems}
+          showPercentage
+          valueFormat="compact"
+        />
+      </div>
+    );
+  },
+};
+
+/**
+ * Inside percentages: painted above `minAngle`, hidden below it (the
+ * "Fourpercent" slice — sweep ≈ 0.063 rad, well under the default 0.2).
+ */
+export const InsidePercentLabels: Story = {
+  name: "Inside percent labels",
+  render: () => {
+    const data = [
+      { label: "Fourpercent", value: 1 },
+      { label: "A", value: 33 },
+      { label: "B", value: 33 },
+      { label: "C", value: 33 },
+    ];
+    return (
+      <div className="h-72 w-full max-w-[560px]">
+        <PieChart
+          accessibleLabel="Four shares, one below the label's minimum angle"
+          data={data}
+          labels={{ placement: "inside", show: ["percent"] }}
+          size={280}
+        >
+          {data.map((item, i) => (
+            <PieSlice animate={false} index={i} key={item.label} />
+          ))}
+        </PieChart>
+      </div>
+    );
+  },
+};
+
+const electionData = [
+  { label: "Party A", value: 48, color: "var(--chart-1)" },
+  { label: "Party B", value: 12, color: "var(--chart-3)" },
+  { label: "Party C", value: 40, color: "var(--chart-2)" },
+];
+
+/**
+ * The "election donut" preset — a 180° arc seated in data order (`sort`
+ * defaults to `"none"` once `half` is set), centre value below the arc.
+ */
+export const HalfDonut: Story = {
+  name: "Half donut",
+  render: () => (
+    <div className="h-56 w-full max-w-[560px]">
+      <PieChart
+        accessibleLabel="Seats by party, half-donut"
+        data={electionData}
+        half
+        innerRadius={90}
+        size={280}
+      >
+        {electionData.map((item, i) => (
+          <PieSlice animate={false} index={i} key={item.label} />
+        ))}
+        <PieCenter defaultLabel="Seats" />
+      </PieChart>
+    </div>
+  ),
+};
+
+/**
+ * Container legend (RM-118): `legend` mounts `ChartLegend` above the plot,
+ * one swatch per slice in data order. Hover only (R3) — hovering or
+ * focusing a row reuses Pie's own existing single-slice hover state, the
+ * same one a pointer hovering a slice already drives; there is no
+ * toggle/hide affordance for Pie yet (an `interactive: "toggle"` request
+ * downgrades to `"hover"`). At `narrow` the legend keeps its position but
+ * stacks one item per line.
+ */
+export const LegendHoverOnly: Story = {
+  name: "Legend, hover only",
+  render: () => (
+    <div className="h-72 w-full max-w-[420px]">
+      <PieChart data={trafficData} legend size={280}>
+        {trafficData.map((item, i) => (
+          <PieSlice animate={false} index={i} key={item.label} />
+        ))}
+      </PieChart>
+    </div>
+  ),
 };

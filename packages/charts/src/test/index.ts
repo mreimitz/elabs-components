@@ -105,6 +105,16 @@ export {
   TreeChart,
   // Network — RM-036
   NetworkChart,
+  // Annotations — RM-111
+  AnnotationKey,
+  ChartAnnotations,
+  // InlineChip — RM-117
+  InlineChip,
+  // ChartMultiples — RM-120
+  ChartMultiples,
+  // Legend engine — RM-118
+  RampLegend,
+  SizeLegend,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
@@ -136,10 +146,14 @@ export {
   ChartTooltipContent,
   ChartTooltipDot,
   ChartTooltipIndicator,
+  // ChartTooltipInline, ChartTooltipTable — RM-119
+  ChartTooltipInline,
+  ChartTooltipTable,
   ChoroplethFeatureComponent,
   ChoroplethGraticule,
   ChoroplethProvider,
   ChoroplethTooltip,
+  CustomShapes,
   DateTicker,
   DrawPath,
   Gauge,
@@ -181,6 +195,7 @@ export {
   PeakRing,
   PieCenter,
   PieCenterShell,
+  PieLabels,
   PieProvider,
   PieSlice,
   ProfitLossLegend,
@@ -210,6 +225,7 @@ export {
   SeriesMarkers,
   SeriesPointMarker,
   StaticChartPreviewProvider,
+  TrendLine,
   UnitStack,
   XAxis,
   YAxis,

@@ -22,6 +22,16 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+import type { ChartLegendEntry } from "./chart-context";
+// Legend engine — RM-118
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+// Labels — RM-110
+import { useChartAutoSummary } from "./chart-a11y";
+import {
+  UnpaintedLabels,
+  UnpaintedLabelsProvider,
+  useUnpaintedLabelsStore,
+} from "./labels/unpainted-labels";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -39,10 +49,49 @@ import {
   type PieData,
   PieProvider,
 } from "./pie-context";
-import type { PieSliceProps } from "./pie-slice";
+import { PieSlice, type PieSliceProps } from "./pie-slice";
+import { groupSmallSlices, type PieGroupSmallOptions } from "./pie-grouping";
+import { PieLabels, type PieLabelField, type PieLabelPlacement } from "./pie-labels";
+import { useChartValueFormatter, useChartValueSetFormatter } from "./chart-formatters";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
+import {
+  ChartPlotRoot,
+  type ChartPlotHeight,
+  type Responsive,
+  type ResponsiveByBreakpoint,
+  resolveResponsive,
+  useChartBreakpoint,
+} from "./chart-breakpoint";
+
+/**
+ * `PieChart`'s `labels` prop (RM-114) — opt-in slice labels. Unset renders
+ * nothing extra (byte-identical to before this prop existed).
+ */
+export interface PieChartLabelsConfig {
+  /**
+   * `"inside"` | `"outside"` | `"none"`, per breakpoint. Default
+   * `{ base: "outside", narrow: "none" }` — at `narrow` the legend/key
+   * carries the labels instead (ADR 0039's narrow density already hides the
+   * legend by default; pass an explicit `legend`/`ChartLegend` to keep one).
+   */
+  placement?: Responsive<PieLabelPlacement>;
+  /** Which facts each label states, in `label → value → percent` order. */
+  show: PieLabelField[];
+  /** Paint the label in the slice's own color instead of the neutral ink. Default `false`. */
+  matchColor?: boolean;
+  /** Hide an `"inside"` label under this wedge angle (radians). Default `0.2` (~11.5°). */
+  minAngle?: number;
+}
+
+const DEFAULT_PIE_LABELS_PLACEMENT: ResponsiveByBreakpoint<PieLabelPlacement> = {
+  base: "outside",
+  narrow: "none",
+};
+
+/** Extra room (px) an `"outside"` label placement reserves beyond `outerRadius` for its leader + text. */
+const PIE_OUTSIDE_LABEL_GUTTER = 70;
 
 /** Default hover offset in pixels */
 export const DEFAULT_HOVER_OFFSET = 10;
@@ -132,6 +181,11 @@ export interface PieChartProps extends ChartSelectionProps {
   data: PieData[];
   /** Chart size in pixels. If not provided, uses parent container size */
   size?: number;
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Inner radius for donut charts. Default: 0 (solid pie) */
   innerRadius?: number;
   /** Padding angle between slices in radians. Default: 0 */
@@ -207,6 +261,58 @@ export interface PieChartProps extends ChartSelectionProps {
    * seam" cut-paper look. Default: `0` (no seam — today's behavior).
    */
   seams?: number;
+  /**
+   * Slice labels (RM-114, Datawrapper parity) — inside/outside placement,
+   * `label`/`value`/`percent` facts, leaders on the outside ring. Unset
+   * renders nothing extra (today's behavior).
+   */
+  labels?: PieChartLabelsConfig;
+  /**
+   * Container legend (RM-118): one swatch per slice, mounted outside the
+   * plot via `useContainerLegend`. Unset renders nothing (R1) — today's
+   * behavior. Pie has no competing on-chart key the way `colorBy` (Bar) or
+   * RM-115's colour/shape key (Scatter) do, so R4's "one key per chart"
+   * never applies here.
+   *
+   * Hover-only (R3): hovering or focusing a legend item reuses Pie's own
+   * existing single-slice hover state — the SAME one a pointer hovering a
+   * slice already writes into (`hoveredIndex`/`onHoverChange` above) — so a
+   * legend hover and a pointer hover dim every other slice identically. An
+   * `interactive: "toggle"` request downgrades to `"hover"`: Pie has no
+   * hide-a-slice wiring yet (a hidden slice would silently change every
+   * other slice's percentage, which needs its own design pass — tracked as
+   * a follow-up, not built here).
+   */
+  legend?: ContainerLegendProp;
+  /**
+   * Fold the smallest slices into one trailing "Other" slice (RM-114,
+   * `pie-grouping.ts`). **Setting this hands slice rendering to `PieChart`
+   * itself** — any `PieSlice` elements in `children` are ignored (their
+   * indices would no longer match the folded result); keep `PieCenter` and
+   * defs/gradient children, they are unaffected. Unset: today's behavior,
+   * `children` renders verbatim.
+   */
+  groupSmall?: PieGroupSmallOptions;
+  /**
+   * Wedge order. `"desc"` — `startAngle` gets the LARGEST slice, then
+   * clockwise by descending size (d3-shape's own pie default). `"none"`
+   * (the default here) keeps `data`'s own order — pre-RM-114 behavior,
+   * kept as the default so an existing chart's wedge ANGLES never move
+   * under it (see the docblock on `effectiveSort` in `PieChartBase` for
+   * why the RM's stated `"desc"` default was not adopted). Slice INDEX
+   * identity never changes either way — a `<PieSlice index={i}>` always
+   * targets `data[i]`; only the angular position can move.
+   */
+  sort?: "desc" | "none";
+  /**
+   * The "election donut" preset (RM-114): `startAngle: -π/2, endAngle: π/2`
+   * — a dome across the top half, seated in data order by default (`sort`
+   * unset here behaves exactly as elsewhere: `"none"`). The centre slot (a
+   * `PieCenter` child) is positioned BELOW the arc instead of in the
+   * chart's geometric middle. Overrides any `startAngle`/`endAngle` props.
+   * Default `false`.
+   */
+  half?: boolean;
 }
 
 interface PieChartInnerProps {
@@ -229,6 +335,9 @@ interface PieChartInnerProps {
   radiusKey?: string;
   referenceRings?: number[];
   seams: number;
+  labels?: PieChartLabelsConfig;
+  sort: "desc" | "none";
+  half: boolean;
 }
 
 function generatePieArcPath(
@@ -318,10 +427,18 @@ const PieChartCore = memo(function PieChartCore({
   radiusKey,
   referenceRings,
   seams,
+  labels,
+  sort,
+  half,
 }: PieChartInnerProps) {
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  // Labels — RM-110/RM-114 integration: the sr-only seam `PieLabels` reports
+  // an outside label it could not place into (see `pie-labels.tsx`). Always
+  // created (cheap, no DOM) so the provider below is stable across renders;
+  // the `<UnpaintedLabels>` sibling that actually paints is gated on `labels`.
+  const unpaintedStore = useUnpaintedLabelsStore();
 
   // Use controlled or uncontrolled hover state
   const isControlled = hoveredIndexProp !== undefined;
@@ -341,17 +458,40 @@ const PieChartCore = memo(function PieChartCore({
   const size = Math.min(width, height);
   const center = size / 2;
 
+  // `labels` (RM-114) resolves its `placement` per breakpoint HERE — the
+  // nearest `ChartPlotRoot`'s `ChartBreakpointScope` is an ancestor of this
+  // component, never of `PieChartBase`. Its default `{ base: "outside",
+  // narrow: "none" }` means a `labels` prop with no `placement` shows nothing
+  // at `narrow` — the legend/key carries the facts there instead.
+  const breakpoint = useChartBreakpoint();
+  const labelPlacement = labels
+    ? resolveResponsive(labels.placement ?? DEFAULT_PIE_LABELS_PLACEMENT, breakpoint)
+    : "none";
+
   // Calculate radii with padding based on hover offset to prevent clipping.
   // `referenceRings` (#RM-030) additionally reserves a leader-column gutter
-  // (#246) so its labels never clip the SVG bounds — a chart with
-  // `referenceRings` unset keeps `padding === hoverOffset`, unchanged.
+  // (#246), and `labels="outside"` (RM-114) reserves a fixed gutter for its
+  // leader + text, so neither ever clips the SVG bounds — a chart with
+  // neither set keeps `padding === hoverOffset`, unchanged.
   const referenceRingGutter = pieReferenceRingGutter(radiusKey, referenceRings?.length ?? 0);
-  const padding = hoverOffset + referenceRingGutter;
+  const labelGutter = labelPlacement === "outside" ? PIE_OUTSIDE_LABEL_GUTTER : 0;
+  const padding = hoverOffset + referenceRingGutter + labelGutter;
   const outerRadius = center - padding;
   const innerRadius = innerRadiusProp;
 
   // Calculate total value
   const totalValue = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data]);
+
+  // Slice-label formatters (RM-114). `value` goes through the SET formatter
+  // (#250 — every slice's value label shares one scale, so a $1,200 slice
+  // never reads "1.2K" beside a $400 slice's "400"); `percent` is never
+  // compacted, per `value-format.ts`. Cheap and hook-rules-safe to call even
+  // when `labels` is unset — both formatters are internally memoized.
+  const pieLabelValueFmt = useChartValueSetFormatter(
+    data.map((d) => d.value),
+    "compact",
+  );
+  const pieLabelPercentFmt = useChartValueFormatter("percent");
 
   // Decoration pattern fills
   const high = useHighDecorationOf(containerRef);
@@ -434,14 +574,24 @@ const PieChartCore = memo(function PieChartCore({
       });
   }, [high, data, getColor]);
 
-  // Compute arcs using d3-shape pie
+  // Compute arcs using d3-shape pie. `sort` (RM-114) only ever changes WHICH
+  // angular slot a datum claims — d3's `pie()` always returns `arcs[i]` for
+  // `data[i]` regardless of its sort comparator (see d3-shape's own
+  // `pie.js`: "the arcs are stored in the original data's order"), so
+  // `<PieSlice index={i}>` keeps targeting the same datum no matter how
+  // `sort` is set. `"none"` reproduces the pre-RM-114 identity order
+  // (`.sort(null)`); `"desc"` leaves d3-shape's OWN default in place
+  // (`sortValues = descending` — largest slice at `startAngle`, then
+  // clockwise by descending size).
   const arcs = useMemo(() => {
     const pieGenerator = d3Pie<PieData>()
       .value((d) => d.value)
       .startAngle(startAngle)
       .endAngle(endAngle)
-      .padAngle(padAngle)
-      .sort(null); // Maintain data order
+      .padAngle(padAngle);
+    if (sort === "none") {
+      pieGenerator.sort(null);
+    }
 
     const computed = pieGenerator(data);
 
@@ -453,7 +603,7 @@ const PieChartCore = memo(function PieChartCore({
       padAngle: arc.padAngle,
       value: arc.value,
     })) as PieArcData[];
-  }, [data, startAngle, endAngle, padAngle]);
+  }, [data, startAngle, endAngle, padAngle, sort]);
 
   const scrubSlicePaths = useMemo((): readonly string[] | null => {
     if (!geometryScrubbing) {
@@ -607,111 +757,150 @@ const PieChartCore = memo(function PieChartCore({
   // This avoids Safari's foreignObject rendering bugs
   return (
     <PieProvider value={contextValue}>
-      <div
-        className="grid"
-        style={{
-          gridTemplateColumns: "1fr",
-          gridTemplateRows: "1fr",
-          width: size,
-          height: size,
-        }}
-      >
-        {/* SVG layer with pie slices */}
-        <svg
-          aria-hidden="true"
-          height={size}
-          style={{ gridArea: "1 / 1", contain: "layout style paint" }}
-          width={size}
+      <UnpaintedLabelsProvider store={unpaintedStore}>
+        <div
+          className="grid"
+          style={{
+            gridTemplateColumns: "1fr",
+            gridTemplateRows: "1fr",
+            width: size,
+            height: size,
+          }}
         >
-          {/* Defs for patterns and gradients */}
-          {(defsChildren.length > 0 || bpPatternIndices.length > 0) && (
-            <defs>
-              {defsChildren}
-              {bpPatternIndices.map((i) =>
-                makeSeriesPattern(i, seriesPatternId(i, patternScope), getColor(i)),
-              )}
-            </defs>
-          )}
+          {/* SVG layer with pie slices */}
+          <svg
+            aria-hidden="true"
+            height={size}
+            style={{ gridArea: "1 / 1", contain: "layout style paint" }}
+            width={size}
+          >
+            {/* Defs for patterns and gradients */}
+            {(defsChildren.length > 0 || bpPatternIndices.length > 0) && (
+              <defs>
+                {defsChildren}
+                {bpPatternIndices.map((i) =>
+                  makeSeriesPattern(i, seriesPatternId(i, patternScope), getColor(i)),
+                )}
+              </defs>
+            )}
 
-          <Group left={center} top={center}>
-            {/* radiusKey reference rings (#RM-030) — dashed value gridlines
+            <Group left={center} top={center}>
+              {/* radiusKey reference rings (#RM-030) — dashed value gridlines
                 behind the slices, on the same sqrt(v / max) radius scale.
                 Labels sit OUTSIDE outerRadius on a fixed-spacing leader
                 column (#246) — never on the rings' own compressible radii,
                 and never inside the plot where a slice could cover them. */}
-            {radiusKey && referenceRings && referenceRings.length > 0 && radiusKeyMax > 0 ? (
-              <g aria-hidden="true">
-                {referenceRingLabels.map((ring) => (
-                  <circle
-                    cx={0}
-                    cy={0}
-                    fill="none"
-                    key={`pie-reference-ring-circle-${ring.value}`}
-                    r={ring.ringRadius}
-                    stroke={pieCssVars.foregroundMuted}
-                    strokeDasharray="4 3"
-                    strokeWidth={1}
-                  />
-                ))}
-                {referenceRingLabels.map((ring) => (
-                  <g data-reference-ring-leader="" key={`pie-reference-ring-label-${ring.value}`}>
-                    <line
+              {radiusKey && referenceRings && referenceRings.length > 0 && radiusKeyMax > 0 ? (
+                <g aria-hidden="true">
+                  {referenceRingLabels.map((ring) => (
+                    <circle
+                      cx={0}
+                      cy={0}
+                      fill="none"
+                      key={`pie-reference-ring-circle-${ring.value}`}
+                      r={ring.ringRadius}
                       stroke={pieCssVars.foregroundMuted}
-                      strokeDasharray="1.5 2.5"
+                      strokeDasharray="4 3"
                       strokeWidth={1}
-                      x1={0}
-                      x2={0}
-                      y1={-ring.ringRadius}
-                      y2={-ring.leaderEndRadius}
                     />
-                    <text
-                      fill={pieCssVars.foregroundMuted}
-                      fontSize={9}
-                      textAnchor="middle"
-                      x={0}
-                      y={-ring.labelRadius}
-                    >
-                      {ring.value}
-                    </text>
-                  </g>
-                ))}
-              </g>
-            ) : null}
-            {scrubSlicePaths && scrubSliceFills
-              ? scrubSlicePaths.map((d, index) =>
-                  d ? (
-                    <path
-                      d={d}
-                      fill={scrubSliceFills[index]}
-                      key={data[index]?.label ?? index}
-                      pointerEvents="none"
-                    />
-                  ) : null,
-                )
-              : null}
-            {svgChildren}
-          </Group>
-        </svg>
+                  ))}
+                  {referenceRingLabels.map((ring) => (
+                    <g data-reference-ring-leader="" key={`pie-reference-ring-label-${ring.value}`}>
+                      <line
+                        stroke={pieCssVars.foregroundMuted}
+                        strokeDasharray="1.5 2.5"
+                        strokeWidth={1}
+                        x1={0}
+                        x2={0}
+                        y1={-ring.ringRadius}
+                        y2={-ring.leaderEndRadius}
+                      />
+                      <text
+                        fill={pieCssVars.foregroundMuted}
+                        fontSize={9}
+                        textAnchor="middle"
+                        x={0}
+                        y={-ring.labelRadius}
+                      >
+                        {ring.value}
+                      </text>
+                    </g>
+                  ))}
+                </g>
+              ) : null}
+              {scrubSlicePaths && scrubSliceFills
+                ? scrubSlicePaths.map((d, index) =>
+                    d ? (
+                      <path
+                        d={d}
+                        fill={scrubSliceFills[index]}
+                        key={data[index]?.label ?? index}
+                        pointerEvents="none"
+                      />
+                    ) : null,
+                  )
+                : null}
+              {svgChildren}
+              {/* Slice labels (RM-114) — painted OVER the slices, under nothing:
+                inside labels sit on the wedge itself, outside labels + leaders
+                sit past `outerRadius` in the gutter `labelGutter` reserved
+                above. No-op (`null`) whenever `labels` is unset. */}
+              {labels ? (
+                <PieLabels
+                  arcs={arcs}
+                  center={center}
+                  config={{ ...labels, placement: labelPlacement }}
+                  getColor={getColor}
+                  innerRadius={innerRadius}
+                  outerRadius={outerRadius}
+                  textFor={(index) => {
+                    const datum = data[index];
+                    return {
+                      label: datum?.label,
+                      value: pieLabelValueFmt(datum?.value ?? 0),
+                      percent: pieLabelPercentFmt(
+                        totalValue > 0 ? (datum?.value ?? 0) / totalValue : 0,
+                      ),
+                    };
+                  }}
+                />
+              ) : null}
+            </Group>
+          </svg>
 
-        {/* Keyboard drill-down targets — a positioned SIBLING of the
+          {/* Keyboard drill-down targets — a positioned SIBLING of the
             aria-hidden <svg>, stacked in the same grid cell so the layer's
             coordinate space is the SVG's own (#349). */}
-        {datapointsEnabled ? (
-          <div className="relative" style={{ gridArea: "1 / 1" }}>
-            <ChartDatapointLayer />
-          </div>
-        ) : null}
+          {datapointsEnabled ? (
+            <div className="relative" style={{ gridArea: "1 / 1" }}>
+              <ChartDatapointLayer />
+            </div>
+          ) : null}
 
-        {/* HTML layer with center content - stacked on top via grid */}
-        {centerChildren.length > 0 && (
-          <div
-            className="pointer-events-none flex items-center justify-center"
-            style={{ gridArea: "1 / 1" }}
-          >
-            {centerChildren}
-          </div>
-        )}
-      </div>
+          {/* HTML layer with center content - stacked on top via grid.
+            `half` (RM-114, the "election donut" preset) seats the arc across
+            the top half only, so the centre slot is anchored to the flat
+            base line and grows DOWN into the otherwise-empty bottom half,
+            instead of sitting in the box's geometric middle. */}
+          {centerChildren.length > 0 && (
+            <div
+              className="pointer-events-none flex justify-center"
+              style={
+                half
+                  ? { gridArea: "1 / 1", alignItems: "flex-start", paddingTop: center }
+                  : { gridArea: "1 / 1", alignItems: "center" }
+              }
+            >
+              {centerChildren}
+            </div>
+          )}
+        </div>
+        {/* Labels — RM-110/RM-114 integration: restates any outside label
+          `layoutOutsideLabels` dropped for collision (`pie-labels.tsx`).
+          Renders nothing when `labels` is unset OR nothing was dropped —
+          byte-identical DOM either way. */}
+        {labels ? <UnpaintedLabels store={unpaintedStore} /> : null}
+      </UnpaintedLabelsProvider>
     </PieProvider>
   );
 }, pieChartCorePropsEqual);
@@ -735,6 +924,9 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
     prev.radiusKey === next.radiusKey &&
     prev.referenceRings === next.referenceRings &&
     prev.seams === next.seams &&
+    prev.labels === next.labels &&
+    prev.sort === next.sort &&
+    prev.half === next.half &&
     prev.children === next.children
   );
 }
@@ -744,14 +936,15 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
   {
     data,
     size: fixedSize,
+    plotHeight,
     innerRadius = 0,
     padAngle = 0,
     cornerRadius = 0,
     startAngle = -Math.PI / 2,
     endAngle = (3 * Math.PI) / 2,
     className = "",
-    hoveredIndex,
-    onHoverChange,
+    hoveredIndex: hoveredIndexProp,
+    onHoverChange: onHoverChangeProp,
     hoverOffset = DEFAULT_HOVER_OFFSET,
     enterTransition,
     enterStaggerScale = 1,
@@ -759,6 +952,11 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     radiusKey,
     referenceRings,
     seams = 0,
+    labels,
+    legend,
+    groupSmall,
+    sort: sortProp,
+    half = false,
     children,
     copyValueOnActivate,
     onDatapointClick,
@@ -769,6 +967,94 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
   },
   ref,
 ) {
+  // `half` (RM-114) is a hard preset: -π/2 → π/2, overriding any
+  // `startAngle`/`endAngle` the caller passed.
+  const effectiveStartAngle = half ? -Math.PI / 2 : startAngle;
+  const effectiveEndAngle = half ? Math.PI / 2 : endAngle;
+  // DEVIATION from the RM text (recorded in the result file): the RM asks
+  // `sort` to default to `"desc"`. Doing so reorders every existing pie's
+  // wedge ANGLES (never a `<PieSlice index={i}>`'s datum — see `arcs`'s
+  // docblock in `PieChartCore`, d3-shape always returns arcs in input
+  // order), which broke `chart-selection.test.tsx`'s byte-exact "pre-RM-073
+  // DOM" baseline for `pie-chart`, a previously-accepted test this item may
+  // not relax (`.claude/scratch/…/RM-114-brief.md` lesson #2). Defaulting to
+  // `"none"` keeps every existing pie/donut byte-identical; `sort="desc"` is
+  // fully implemented and a one-line opt-in for a new chart that wants it.
+  const effectiveSort = sortProp ?? "none";
+
+  // `groupSmall` (RM-114) folds the smallest slices into one "Other" before
+  // ANYTHING downstream (arcs, legend, children) sees `data` — see
+  // `pie-grouping.ts`. A chart with `groupSmall` unset never runs this.
+  const groupedData = useMemo(
+    () => (groupSmall ? groupSmallSlices(data, groupSmall).data : data),
+    [data, groupSmall],
+  );
+
+  // Setting `groupSmall` hands slice rendering to `PieChart` itself: the
+  // folded slice count no longer matches whatever `PieSlice` elements the
+  // caller's `children` enumerated against the ORIGINAL `data`, so those are
+  // dropped (kept: `PieCenter`, defs/gradients, anything else) and replaced
+  // with one auto `<PieSlice index={i}>` per resulting slice. `groupSmall`
+  // unset renders `children` verbatim — today's behavior.
+  const effectiveChildren = useMemo(() => {
+    if (!groupSmall) return children;
+    const kept: ReactNode[] = [];
+    Children.forEach(children, (child) => {
+      if (isValidElement(child) && isPieSlice(child)) return;
+      kept.push(child);
+    });
+    return [
+      ...groupedData.map((_, i) => <PieSlice index={i} key={`pie-auto-slice-${i}`} />),
+      ...kept,
+    ];
+  }, [groupSmall, children, groupedData]);
+
+  // Legend engine — RM-118. One swatch per (post-groupSmall) slice, in data
+  // order — `<PieSlice index={i}>` and d3-shape's `arcs[i]` both key on that
+  // SAME order regardless of `sort` (see `effectiveSort`'s docblock above),
+  // so a legend-hover index maps onto a slice index with no translation.
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      groupedData.map((d, i) => ({
+        key: `${d.label}-${i}`,
+        label: d.label,
+        color: d.color ?? (defaultPieColors[i % defaultPieColors.length] as string),
+        kind: "color" as const,
+      })),
+    [groupedData],
+  );
+
+  // One hover state, two sources: a pointer over a slice (PieSlice → the
+  // context's `setHoveredIndex`, wired below) and a legend item (hover or
+  // focus). Lifting the controlled/uncontrolled merge PieChartCore already
+  // did up to this level means both sources write into the exact same
+  // value, so a legend hover dims every other slice identically to a
+  // pointer hover — Pie's existing hover seam, reused rather than doubled.
+  const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
+  const hoverIsControlled = hoveredIndexProp !== undefined;
+  const effectiveHoveredIndex = hoverIsControlled
+    ? (hoveredIndexProp as number | null)
+    : internalHoveredIndex;
+  const handleHoverChange = useCallback(
+    (index: number | null) => {
+      if (hoverIsControlled) {
+        onHoverChangeProp?.(index);
+      } else {
+        setInternalHoveredIndex(index);
+      }
+    },
+    [hoverIsControlled, onHoverChangeProp],
+  );
+
+  const containerLegend = useContainerLegend({
+    legend,
+    items: legendItems,
+    hoveredIndex: effectiveHoveredIndex,
+    onHoverChange: handleHoverChange,
+    // Pie has no hide-a-slice wiring yet (R3) — see the `legend` prop's JSDoc.
+    maxInteractive: "hover",
+  });
+
   // containerRef anchors tooltips; merged with the forwarded ref via callback ref
   const containerRef = useRef<HTMLDivElement>(null);
   const mergedRef = useCallback(
@@ -785,13 +1071,19 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     [ref],
   );
 
+  // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
+  const description = useChartAutoSummary("pie", {
+    accessibleLabel,
+    accessibleDescription,
+    data,
+  });
   const {
     role,
     "aria-label": ariaLabel,
     "aria-describedby": ariaDescribedby,
     tabIndex,
     descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+  } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
 
   // If fixed size is provided, use it directly
   // The provider sits ABOVE the chart body so `PieSlice` can read the
@@ -811,8 +1103,8 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     );
 
   if (fixedSize) {
-    return (
-      <div
+    return containerLegend.wrap(
+      <ChartPlotRoot
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative flex items-center justify-center", className)}
@@ -821,75 +1113,82 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
         style={{ width: fixedSize, height: fixedSize }}
         tabIndex={tabIndex}
       >
-        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        <ChartA11yLabel descId={descId} description={description} />
         {withInteraction(
           <PieChartInner
             containerRef={containerRef}
             cornerRadius={cornerRadius}
-            data={data}
-            endAngle={endAngle}
+            data={groupedData}
+            endAngle={effectiveEndAngle}
             enterStaggerScale={enterStaggerScale}
             enterTransition={enterTransition}
             geometryScrubbing={geometryScrubbing}
+            half={half}
             height={fixedSize}
-            hoveredIndexProp={hoveredIndex}
+            hoveredIndexProp={effectiveHoveredIndex}
             hoverOffset={hoverOffset}
             innerRadius={innerRadius}
-            onHoverChange={onHoverChange}
+            labels={labels}
+            onHoverChange={handleHoverChange}
             padAngle={padAngle}
             radiusKey={radiusKey}
             referenceRings={referenceRings}
             seams={seams}
-            startAngle={startAngle}
+            sort={effectiveSort}
+            startAngle={effectiveStartAngle}
             width={fixedSize}
           >
-            {children}
+            {effectiveChildren}
           </PieChartInner>,
         )}
-      </div>
+      </ChartPlotRoot>,
     );
   }
 
   // Otherwise use ParentSize for responsive sizing
-  return (
-    <div
+  return containerLegend.wrap(
+    <ChartPlotRoot
+      plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
-      className={cn("relative aspect-square w-full", className)}
+      className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
       tabIndex={tabIndex}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      <ChartA11yLabel descId={descId} description={description} />
       <ParentSize debounceTime={10}>
         {({ width, height }) =>
           withInteraction(
             <PieChartInner
               containerRef={containerRef}
               cornerRadius={cornerRadius}
-              data={data}
-              endAngle={endAngle}
+              data={groupedData}
+              endAngle={effectiveEndAngle}
               enterStaggerScale={enterStaggerScale}
               enterTransition={enterTransition}
               geometryScrubbing={geometryScrubbing}
+              half={half}
               height={height}
-              hoveredIndexProp={hoveredIndex}
+              hoveredIndexProp={effectiveHoveredIndex}
               hoverOffset={hoverOffset}
               innerRadius={innerRadius}
-              onHoverChange={onHoverChange}
+              labels={labels}
+              onHoverChange={handleHoverChange}
               padAngle={padAngle}
               radiusKey={radiusKey}
               referenceRings={referenceRings}
               seams={seams}
-              startAngle={startAngle}
+              sort={effectiveSort}
+              startAngle={effectiveStartAngle}
               width={width}
             >
-              {children}
+              {effectiveChildren}
             </PieChartInner>,
           )
         }
       </ParentSize>
-    </div>
+    </ChartPlotRoot>,
   );
 });
 

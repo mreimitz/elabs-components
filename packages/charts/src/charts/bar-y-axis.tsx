@@ -1,5 +1,6 @@
 "use client";
 
+import { isBarGroupHeaderRow } from "./bar-groups";
 import { motion } from "motion/react";
 import { memo, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -13,6 +14,7 @@ import {
 } from "./category-axis-plan";
 import { thinToDensity, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
+import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
 import { useTextMeasurer } from "./use-text-measurer";
 
 export interface BarYAxisProps {
@@ -90,6 +92,9 @@ function BarYAxisLabel({
 }
 
 export function BarYAxis(props: BarYAxisProps) {
+  // RM-117: hand the chart's series colours to an enclosing ChartFrame
+  // (read by InlineChip). No visual change; a no-op outside a frame.
+  useChartFrameSeriesBridge();
   const { containerRef, barScale } = useChartStable();
   const [mounted, setMounted] = useState(false);
 
@@ -132,7 +137,10 @@ const BarYAxisInner = memo(function BarYAxisInner({
     if (!barXAccessor) {
       return [];
     }
-    return data.map((d, index) => ({ label: barXAccessor(d), index }));
+    return data.flatMap((d, index) =>
+      // A `groupBy` header row (RM-113) is painted by the chart, never as a tick label.
+      isBarGroupHeaderRow(d) ? [] : [{ label: barXAccessor(d), index }],
+    );
   }, [barXAccessor, data]);
 
   // See `BarXAxis` for why a local plan exists: it is the degradation path when

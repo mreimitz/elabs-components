@@ -6,16 +6,44 @@ import type { Transition } from "motion/react";
 import {
   Children,
   cloneElement,
+  createContext,
   isValidElement,
   memo,
   type ReactElement,
   type ReactNode,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
+import { useLocale } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
+import { useChartBreakpoint } from "./chart-breakpoint";
+import { useChartConfig, useChartFacetScope } from "./chart-config-context";
+import {
+  ChartHoverLinkIndicator,
+  ChartHoverLinkProvider,
+  useChartHoverLink,
+} from "./chart-hover-link"; // ChartMultiples — RM-120
+import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
+import { makeValueSetFmt } from "./chart-formatters";
+import { useAreaStacked } from "./area";
+import { SeriesEndLabels, SeriesKeyRow } from "./labels/series-end-labels";
+import {
+  ChartSeriesKeyProvider,
+  collectLabelRequests,
+  placeChartLabels,
+  reserveChartLabels,
+} from "./labels/use-chart-labels";
+import {
+  UnpaintedLabels,
+  UnpaintedLabelsProvider,
+  useUnpaintedLabelsStore,
+} from "./labels/unpainted-labels";
+import { ValueLabels } from "./labels/value-labels";
+import { useTextMeasurerOf } from "./use-text-measurer";
 import { resolveChartChildElement } from "./chart-child-passthrough";
 import { ChartProvider, type LineConfig, type Margin, type TooltipData } from "./chart-context";
 import {
@@ -28,6 +56,11 @@ import {
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
 import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
+import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
+import {
+  placementRects,
+  usePublishAnnotationObstacles,
+} from "./annotations/annotation-layout-context"; // Annotations — RM-111
 import { ChartFallback } from "./chart-fallback";
 import {
   type ChartPhase,
@@ -54,10 +87,14 @@ import {
   buildYScalesFromDomains,
   DEFAULT_Y_AXIS_ID,
   getPrimaryYScale,
+  applyValueAxisConfigs,
+  collectValueAxisConfigs,
   groupLinesByYAxisId,
   normalizeYAxisId,
+  warnValueAxisOnce,
 } from "./y-axis-scales";
 import { computeYDomainsByAxis } from "./y-domain-utils";
+import type { ChartValueFormat } from "./value-format";
 
 /** Stable empty array so a non-interactive chart never re-registers targets. */
 const EMPTY_DATAPOINT_TARGETS: ChartDatapointTarget[] = [];
@@ -148,6 +185,64 @@ export function isClipExcludedComponent(child: ReactElement): boolean {
   return CLIP_EXCLUDED_COMPONENT_NAMES.has(componentName);
 }
 
+/** `<YAxis>`'s `unit`/`valueFormat`/`currency`, carried to the default `ChartTooltip` row builder (RM-109). */
+export interface YAxisTooltipHint {
+  unit?: string;
+  valueFormat?: ChartValueFormat;
+  currency?: string;
+}
+
+function componentNameOf(child: ReactElement): string {
+  const childType = child.type as { displayName?: string; name?: string };
+  return typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+}
+
+/**
+ * Reads the first `<YAxis unit|valueFormat>` found in `children` (RM-109) so
+ * the default `ChartTooltip` row builder can carry the SAME unit/format the
+ * axis painted, without the caller re-stating it on `<ChartTooltip>` too.
+ * Only the FIRST `<YAxis>` is used — a multi-axis chart (more than one
+ * `<YAxis yAxisId>`) needs an explicit `<ChartTooltip unit>` (or its own
+ * `rows` renderer) to disambiguate per series.
+ */
+export function findYAxisTooltipHint(children: ReactNode): YAxisTooltipHint | undefined {
+  let hint: YAxisTooltipHint | undefined;
+  Children.forEach(children, (child) => {
+    if (hint || !isValidElement(child) || componentNameOf(child) !== "YAxis") {
+      return;
+    }
+    const { unit, valueFormat, currency } = child.props as YAxisTooltipHint;
+    if (unit == null && valueFormat == null) {
+      return;
+    }
+    hint = { unit, valueFormat, currency };
+  });
+  return hint;
+}
+
+/**
+ * Injects `hint` onto a `<ChartTooltip>` child that did not already set its
+ * own `unit`/`valueFormat` (RM-109) — an explicit prop on `<ChartTooltip>`
+ * always wins outright. A no-op for every other child.
+ */
+export function withYAxisTooltipHint(
+  child: ReactElement,
+  hint: YAxisTooltipHint | undefined,
+): ReactElement {
+  if (!hint || componentNameOf(child) !== "ChartTooltip") {
+    return child;
+  }
+  const props = child.props as YAxisTooltipHint;
+  if (props.unit != null || props.valueFormat != null) {
+    return child;
+  }
+  return cloneElement(child as ReactElement<YAxisTooltipHint>, {
+    unit: hint.unit,
+    valueFormat: hint.valueFormat,
+    currency: hint.currency,
+  });
+}
+
 function ensureChildKey(child: ReactElement, index: number): ReactElement {
   if (child.key != null) {
     return child;
@@ -175,6 +270,31 @@ export interface TimeSeriesChartInnerProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   /** Series keys driving y-domain and tooltip (Line / Area / SeriesBar configs). */
   lines: LineConfig[];
+  /**
+   * Toggled-off series keys (RM-118, `legend={{ interactive: "toggle" }}`).
+   * Filtered out of `lines` before EVERY downstream y-domain/scale/tooltip
+   * calculation below reads it, so a hidden series drops out of the tween'd
+   * y-domain and the keyboard drill-down layer's accessible targets exactly
+   * like it was never in `lines` to begin with; its `Line`/`Area`/`SeriesBar`
+   * child is also dropped from paint. Unset (default) — today's behaviour,
+   * byte-identical.
+   */
+  hiddenKeys?: ReadonlySet<string>;
+  /**
+   * The container legend engine's own `visible` (RM-118, sitting 3, R4:
+   * "the key row must yield" to a visible container legend). Unlike the
+   * pre-RM-118 inline `<ChartLegend>` child `collectLabelRequests`'s
+   * `hasLegend` detects — which hides itself at narrow through the
+   * `ChartConfigProvider` density downgrade (ADR 0039), letting RM-110's
+   * own `SeriesKeyRow` take over there — `useContainerLegend`'s legend
+   * stays visible (stacked) at narrow by design (Acceptance bullet 1). So
+   * rendering BOTH would double the swatch+name row; this prop suppresses
+   * `SeriesKeyRow` outright whenever the container legend already covers
+   * that job. It only gates the render, never the margin reserve, so the
+   * plot keeps the same right/top margin either way. Unset (default) is
+   * byte-identical to before this prop existed.
+   */
+  legendVisible?: boolean;
   /** SVG clipPath id for grow animation. */
   clipPathId: string;
   /** Optional ComposedChart bar layout (forwarded into context). */
@@ -212,6 +332,115 @@ export interface TimeSeriesChartInnerProps {
   replayOnClick?: boolean;
 }
 
+// ── Series mode context (RM-112: `nulls` default + `focusOnHover`) ─────────
+
+/**
+ * How a `Line`/`Area` draws a non-numeric (`null`/`undefined`/`NaN`) sample.
+ * `"gap"` (default) breaks the path there — the honest "we have no data
+ * here" reading (Datawrapper's "connect all points" toggle, inverted: this
+ * is the toggle OFF). `"connect"` skips the missing sample so the path draws
+ * straight across it — Datawrapper's "connect all points" ON. `"zero"` is
+ * this package's pre-RM-112 behaviour (a silent honesty failure — a missing
+ * value drew as if it were the pixel origin) kept only for callers that
+ * relied on it.
+ */
+export type NullsMode = "gap" | "zero" | "connect";
+
+interface ChartSeriesModeValue {
+  /** Container-level `nulls` default; a `Line`/`Area`'s own `nulls` prop wins. */
+  nulls: NullsMode | undefined;
+  /**
+   * `LineChart`/`AreaChart` `focusOnHover` OR'd with a `<ChartTooltip focus>`
+   * that registered itself via {@link ChartSeriesModeValue.setFocusRequested}
+   * (RM-119) — dim every series but the hovered one.
+   */
+  focusOnHover: boolean;
+  /** `dataKey` of the series currently hovered/tapped, or `null`. */
+  hoveredKey: string | null;
+  setHoveredKey: (key: string | null) => void;
+  /**
+   * RM-119: a `<ChartTooltip focus>` calls this so the hover dim works with
+   * no `focusOnHover` on the container — `focusOnHover` above becomes
+   * `focusOnHoverProp || focusRequested`. Outside a provider this is a noop.
+   */
+  setFocusRequested: (requested: boolean) => void;
+}
+
+const ChartSeriesModeContext = createContext<ChartSeriesModeValue | undefined>(undefined);
+
+export interface ChartSeriesModeProviderProps {
+  /** Container-level `nulls` default. Unset — every series keeps its own default. */
+  nulls?: NullsMode;
+  /**
+   * Hovering (or, on touch, tapping) one series dims every other series to
+   * the shared selection-excluded opacity (`SELECTION_EXCLUDED_OPACITY`,
+   * `chart-selection.ts`) — Datawrapper's line-chart hover fade
+   * (`dw-river.md` §2.3). Default false — today's behaviour (only the
+   * chart-wide tooltip dim and legend hover apply).
+   */
+  focusOnHover?: boolean;
+  /**
+   * The container legend's currently hovered/keyboard-focused item key
+   * (RM-118, `useContainerLegend`, `Refs #545`) — merged with the
+   * pointer-driven `hoveredKey` below so a legend hover reuses the SAME
+   * `focusOnHover` fade a pointer hovering the line/area itself already
+   * draws. Wins over the internal pointer state while set; unset (default,
+   * every caller before RM-118) changes nothing.
+   */
+  legendHoveredKey?: string | null;
+  children: ReactNode;
+}
+
+/**
+ * Wraps the chart body — mounted OUTSIDE `TimeSeriesChartInner` by
+ * `LineChart`/`AreaChart`, mirroring `AreaStackProvider` (`./area`), so a
+ * `hoveredKey` change re-renders only this provider and its consumers, never
+ * the memoised `TimeSeriesChartCore` tree.
+ */
+export function ChartSeriesModeProvider({
+  nulls,
+  focusOnHover: focusOnHoverProp = false,
+  legendHoveredKey = null,
+  children,
+}: ChartSeriesModeProviderProps) {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const effectiveHoveredKey = legendHoveredKey ?? hoveredKey;
+  // RM-119: a `<ChartTooltip focus>` registers itself here — `focus` alone,
+  // with no `focusOnHover` prop on the container, still produces the dim.
+  const [focusRequested, setFocusRequested] = useState(false);
+  const focusOnHover = focusOnHoverProp || focusRequested;
+  const value = useMemo<ChartSeriesModeValue>(
+    () => ({
+      nulls,
+      focusOnHover,
+      hoveredKey: focusOnHover ? effectiveHoveredKey : null,
+      setHoveredKey,
+      setFocusRequested,
+    }),
+    [nulls, focusOnHover, effectiveHoveredKey],
+  );
+  return (
+    <ChartSeriesModeContext.Provider value={value}>{children}</ChartSeriesModeContext.Provider>
+  );
+}
+
+const DEFAULT_SERIES_MODE: ChartSeriesModeValue = {
+  nulls: undefined,
+  focusOnHover: false,
+  hoveredKey: null,
+  setHoveredKey: () => {
+    /* noop outside ChartSeriesModeProvider */
+  },
+  setFocusRequested: () => {
+    /* noop outside ChartSeriesModeProvider */
+  },
+};
+
+/** Reads {@link ChartSeriesModeProvider}'s value; safe defaults outside one. */
+export function useChartSeriesMode(): ChartSeriesModeValue {
+  return useContext(ChartSeriesModeContext) ?? DEFAULT_SERIES_MODE;
+}
+
 export function TimeSeriesChartInner(props: TimeSeriesChartInnerProps) {
   const { width, height } = props;
   if (width < 10 || height < 10) {
@@ -226,14 +455,16 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   data,
   xDataKey,
   xScaleType,
-  margin,
+  margin: marginProp,
   animationDuration,
   animationEasing = DEFAULT_ANIMATION_EASING,
   enterTransition,
   revealSignature = "",
-  children,
+  children: childrenProp,
   containerRef,
-  lines,
+  lines: linesProp,
+  hiddenKeys,
+  legendVisible,
   clipPathId,
   composedBarDataKeys,
   composedBarSize,
@@ -247,7 +478,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   loadingLabel,
   yDomainTween = true,
   yDomainTweenDuration = DEFAULT_Y_DOMAIN_TWEEN_MS,
-  xDomain,
+  xDomain: xDomainProp,
   xDomainSlotCount,
   tweenYDomainOnXDomainChange = false,
   onPhaseChange,
@@ -255,8 +486,78 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   replayOnClick = false,
 }: TimeSeriesChartInnerProps) {
   const staticPreview = useStaticChartPreview();
+
+  // ChartMultiples — RM-120: a facet panel supplies DEFAULTS — the shared x
+  // extent, the panel's value domain/ticks, axis visibility, a muted baseline
+  // and synced hover. An explicit prop on this chart or its children wins.
+  const facet = useChartFacetScope();
+  const hoverLink = useChartHoverLink();
+  const facetHoverLinked = facet?.onHoverCategory != null && hoverLink === null;
+  const scopedChildren = useFacetScopedChildren(childrenProp);
+  const children = useMemo(
+    () =>
+      facetHoverLinked ? (
+        <>
+          {scopedChildren}
+          <ChartHoverLinkIndicator />
+        </>
+      ) : (
+        scopedChildren
+      ),
+    [facetHoverLinked, scopedChildren],
+  );
+  const xDomain = xDomainProp ?? facet?.xDomain;
+
+  // RM-110 label engine, reserve half: decide each series' end-label / key
+  // mode for this breakpoint and grow the margin ONCE for what they need,
+  // before any scale exists (the bar category-axis pattern — the reserve
+  // depends on label TEXT widths only, never on positions, so it is acyclic).
+  const breakpoint = useChartBreakpoint();
+  const unpaintedStore = useUnpaintedLabelsStore();
+  const { locale } = useLocale();
+  const { currency: configCurrency } = useChartConfig();
+  const { measure: measureLabel } = useTextMeasurerOf(containerRef);
+  const areaStacked = useAreaStacked();
+  const labelRequests = useMemo(
+    () => collectLabelRequests(children, { skipAreas: areaStacked }),
+    [children, areaStacked],
+  );
+  const labelReserve = useMemo(
+    () =>
+      reserveChartLabels(
+        labelRequests,
+        breakpoint,
+        measureLabel,
+        marginProp.right,
+        width - marginProp.left - marginProp.right,
+      ),
+    [labelRequests, breakpoint, measureLabel, marginProp.right, marginProp.left, width],
+  );
+  const margin = useMemo(
+    () =>
+      labelReserve.right === 0 && labelReserve.top === 0
+        ? marginProp
+        : {
+            ...marginProp,
+            right: marginProp.right + labelReserve.right,
+            top: marginProp.top + labelReserve.top,
+          },
+    [marginProp, labelReserve.right, labelReserve.top],
+  );
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
+
+  // RM-118: shadow `lines` with the toggled-off series filtered out, BEFORE
+  // the value-axis domain below is computed — every calculation past this
+  // point already reads a variable named `lines`, so filtering it here once
+  // is the whole seam (mirrors RM-120's facet transform on `children`).
+  const lines = useMemo(
+    () =>
+      hiddenKeys && hiddenKeys.size > 0
+        ? linesProp.filter((line) => !hiddenKeys.has(line.dataKey))
+        : linesProp,
+    [linesProp, hiddenKeys],
+  );
 
   const resolveYDomain = useCallback(
     (sourceData: Record<string, unknown>[], dataKeys: string[]) => {
@@ -404,17 +705,81 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     [data, lines, resolveYDomain, visiblePlotData, xDomain],
   );
 
+  // RM-118 (validator FAIL 1a): a content signature of `hiddenKeys`, not the
+  // Set reference itself — an interactive legend's toggle hands back a new
+  // Set object on every click even when nothing else about the selection
+  // changed, and `useAnimatedYDomains` only needs to re-tween when the
+  // MEMBERSHIP actually differs. `""` (nothing hidden, or no toggleable
+  // legend at all) is stable, so this never fires for a chart that never
+  // toggles anything.
+  const hiddenKeysSignature = useMemo(
+    () => (hiddenKeys && hiddenKeys.size > 0 ? Array.from(hiddenKeys).sort().join(",") : ""),
+    [hiddenKeys],
+  );
+
   const animatedYDomainsByAxis = useAnimatedYDomains({
     chartPhase,
     durationMs: yDomainTweenDuration,
     enabled: yDomainTween,
+    hiddenKeysSignature,
     onSettled: notifyYDomainTweenComplete,
     skeletonByAxis: yDomainSkeletonByAxis,
     targetByAxis: yDomainTargetByAxis,
     tweenOnTargetChange: tweenYDomainOnXDomainChange && xDomain != null,
   });
 
-  const yDomainsForScales = animatedYDomainsByAxis;
+  // RM-108: `YAxis domain` / `scale` requests, read off the direct children.
+  // Applied AFTER the domain tween so pinned ends stay put while `"auto"` ends
+  // keep animating; a log axis resolves from the data extent and never tweens
+  // through zero.
+  const facetYDomain = facet?.yDomain;
+  const valueAxisConfigs = useMemo(() => {
+    const configs = collectValueAxisConfigs(children);
+    // ChartMultiples — RM-120: the panel's domain, unless `YAxis domain` pins one.
+    if (facetYDomain && !configs[DEFAULT_Y_AXIS_ID]?.domain) {
+      configs[DEFAULT_Y_AXIS_ID] = { ...configs[DEFAULT_Y_AXIS_ID], domain: facetYDomain };
+    }
+    return configs;
+  }, [children, facetYDomain]);
+  const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
+  const hasComposedBars = (composedBarDataKeys?.length ?? 0) > 0;
+  const valueAxisData = xDomain ? visiblePlotData : data;
+  const valueAxes = useMemo(
+    () =>
+      hasValueAxisConfigs
+        ? applyValueAxisConfigs({
+            autoDomainsByAxis: animatedYDomainsByAxis,
+            configs: valueAxisConfigs,
+            data: valueAxisData,
+            lines,
+            // A ComposedChart with bars draws LENGTHS: every axis stays
+            // zero-based and linear under any `domain`/`scale` request
+            // (charts-honesty). Conservative — it also covers a line-only axis
+            // beside the bars.
+            lengthEncoding: hasComposedBars,
+          })
+        : null,
+    [
+      animatedYDomainsByAxis,
+      hasComposedBars,
+      hasValueAxisConfigs,
+      lines,
+      valueAxisConfigs,
+      valueAxisData,
+    ],
+  );
+  const valueAxisWarnings = valueAxes?.warningsByAxis;
+  useEffect(() => {
+    if (!valueAxisWarnings || data.length === 0) {
+      return;
+    }
+    for (const [axisId, warnings] of Object.entries(valueAxisWarnings)) {
+      warnValueAxisOnce(axisId, warnings);
+    }
+  }, [valueAxisWarnings, data.length]);
+
+  const yDomainsForScales = valueAxes?.domainsByAxis ?? animatedYDomainsByAxis;
+  const scaleKindsByAxis = valueAxes?.scaleKindsByAxis;
 
   const yScales = useMemo(
     () =>
@@ -422,8 +787,9 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
         domainsByAxis: yDomainsForScales,
         innerHeight,
         lines,
+        scaleKindsByAxis,
       }),
-    [yDomainsForScales, innerHeight, lines],
+    [yDomainsForScales, innerHeight, lines, scaleKindsByAxis],
   );
 
   const yScale = getPrimaryYScale(
@@ -611,14 +977,37 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   const clipExcludedChildren: ReactElement[] = [];
   const preOverlayChildren: ReactElement[] = [];
   const postOverlayChildren: ReactElement[] = [];
+  // RM-111: a `ChartAnnotations` child paints twice — ranges under everything,
+  // notes and lines over the series (outside the reveal clip, so they never wipe in).
+  const annotationBackChildren: ReactElement[] = [];
+  const annotationFrontChildren: ReactElement[] = [];
+  const yAxisTooltipHint = findYAxisTooltipHint(children);
 
   Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
       return;
     }
 
+    // RM-118: a toggled-off series paints nothing — its `Line`/`Area`/
+    // `SeriesBar` child (identified the same way `lines` itself was built,
+    // by `dataKey`) is dropped before any other classification below.
+    const childDataKey = (child.props as { dataKey?: unknown } | null)?.dataKey;
+    if (hiddenKeys?.size && typeof childDataKey === "string" && hiddenKeys.has(childDataKey)) {
+      return;
+    }
+
+    const annotationLayers = splitChartAnnotationsChild(child, index);
+    if (annotationLayers) {
+      annotationBackChildren.push(annotationLayers[0]);
+      annotationFrontChildren.push(annotationLayers[1]);
+      return;
+    }
+
     const keyedChild = ensureChildKey(child, index);
-    const resolvedChild = resolveChartChildElement(keyedChild);
+    const resolvedChild = withYAxisTooltipHint(
+      resolveChartChildElement(keyedChild),
+      yAxisTooltipHint,
+    );
 
     if (isGradientDefComponent(resolvedChild)) {
       defsChildren.push(resolvedChild);
@@ -771,6 +1160,58 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     plotData.length,
   ]);
 
+  const labelsVisible =
+    chartPhase === "revealing" || chartPhase === "ready" || chartPhase === "exitingReady";
+  const labelPlan = useMemo(() => {
+    const valueSeries = labelRequests.series.filter((s) => s.valueLabels);
+    if (!labelsVisible || (labelReserve.endSeries.length === 0 && valueSeries.length === 0)) {
+      return null;
+    }
+    return placeChartLabels({
+      endSeries: labelReserve.endSeries,
+      valueSeries,
+      data: visiblePlotData,
+      x: (row) => xScale(xAccessor(row)) ?? 0,
+      y: (value, request) => {
+        const id =
+          request.yAxisId == null || request.yAxisId === ""
+            ? DEFAULT_Y_AXIS_ID
+            : String(request.yAxisId);
+        return (yScales[id] ?? yScale)(value) ?? 0;
+      },
+      measure: measureLabel,
+      formatSet: (values, format) => makeValueSetFmt(locale, values, format, configCurrency),
+      bounds: {
+        x: 0,
+        y: -margin.top + labelReserve.top,
+        width: innerWidth + margin.right,
+        height: innerHeight + margin.top - labelReserve.top + margin.bottom,
+      },
+    });
+  }, [
+    labelsVisible,
+    labelRequests,
+    labelReserve,
+    visiblePlotData,
+    xScale,
+    xAccessor,
+    yScales,
+    yScale,
+    measureLabel,
+    locale,
+    configCurrency,
+    margin.top,
+    margin.right,
+    margin.bottom,
+    innerWidth,
+    innerHeight,
+  ]);
+  const unpaintedLabels =
+    labelPlan?.dropped.map((d) => (d.kind === "end" ? d.text : `${d.dataKey}: ${d.text}`)) ?? [];
+  // Annotations — RM-111: the labels placed above are obstacles for annotation text.
+  const annotationObstacles = useMemo(() => placementRects(labelPlan?.placed), [labelPlan]);
+  usePublishAnnotationObstacles("series-labels", annotationObstacles);
+
   // #352: the x values are neither Date-coercible NOR labellable (all null /
   // undefined / empty), so there is no time scale to draw with AND no category
   // to name — an ordinal axis would just be a row of blank ticks. Render the
@@ -819,31 +1260,58 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       >
         <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
 
+        {annotationBackChildren}
         {clipExcludedChildren}
         {useClipReveal ? (
           <g clipPath={`url(#${clipPathId})`}>{preOverlayChildren}</g>
         ) : (
           preOverlayChildren
         )}
+        {annotationFrontChildren}
         {postOverlayChildren}
+        {labelPlan ? (
+          <>
+            <ValueLabels placements={labelPlan.placed.filter((p) => p.label.kind === "value")} />
+            <SeriesEndLabels placements={labelPlan.placed.filter((p) => p.label.kind === "end")} />
+          </>
+        ) : null}
+        {/* R4 (sitting 3): a visible container legend already shows this
+            job's swatch+name row — see `legendVisible`'s doc above. */}
+        {legendVisible ? null : <SeriesKeyRow items={labelReserve.keyLayout} top={-margin.top} />}
       </g>
     </svg>
   );
-
-  return (
-    <ChartProvider value={contextValue}>
-      {datapointsEnabled ? (
-        // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
-        // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
-        // exists on the interactive path, so a chart without `onDatapointClick`
-        // keeps byte-identical DOM.
-        <div className="relative" style={{ width, height }}>
-          {svg}
-          <ChartDatapointLayer />
-        </div>
-      ) : (
-        svg
-      )}
-    </ChartProvider>
+  const body = (
+    <ChartSeriesKeyProvider value={labelReserve.keyItems}>
+      <UnpaintedLabelsProvider store={unpaintedStore}>
+        <ChartProvider value={contextValue}>
+          {datapointsEnabled ? (
+            // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
+            // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
+            // exists on the interactive path, so a chart without `onDatapointClick`
+            // keeps byte-identical DOM.
+            <div className="relative" style={{ width, height }}>
+              {svg}
+              <ChartDatapointLayer />
+            </div>
+          ) : (
+            svg
+          )}
+          {/* Labels the solver (or a mark) dropped, restated for AT — the category-axis precedent. */}
+          <UnpaintedLabels extra={unpaintedLabels} store={unpaintedStore} />
+        </ChartProvider>
+      </UnpaintedLabelsProvider>
+    </ChartSeriesKeyProvider>
+  );
+  // ChartMultiples — RM-120: synced hover through the existing shared-crosshair seam.
+  return facetHoverLinked ? (
+    <ChartHoverLinkProvider
+      hoverCategory={facet?.hoverCategory ?? null}
+      onHoverCategory={facet?.onHoverCategory}
+    >
+      {body}
+    </ChartHoverLinkProvider>
+  ) : (
+    body
   );
 });
