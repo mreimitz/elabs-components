@@ -1,0 +1,49 @@
+{
+  "a2ui": "1",
+  "title": "Support this week",
+  "root": {
+    "type": "Stack",
+    "props": { "gap": "md" },
+    "children": [
+      {
+        "type": "SectionHeader",
+        "props": {
+          "title": "Support this week",
+          "description": "Three numbers an agent pulled from the helpdesk"
+        }
+      },
+      {
+        "type": "Grid",
+        "props": { "columns": 3 },
+        "children": [
+          {
+            "type": "MetricCard",
+            "props": {
+              "label": "Open tickets",
+              "value": 42,
+              "delta": "-6",
+              "deltaDirection": "down"
+            }
+          },
+          { "type": "MetricCard", "props": { "label": "First response", "value": "1 h 12 min" } },
+          {
+            "type": "MetricCard",
+            "props": { "label": "Solved on first reply", "value": 0.64, "valueFormat": "percent" }
+          }
+        ]
+      },
+      {
+        "type": "Stack",
+        "props": { "direction": "row", "justify": "end" },
+        "children": [
+          {
+            "type": "Button",
+            "props": { "variant": "outline" },
+            "on": { "click": { "name": "open-queue", "payload": { "queue": "tier-1" } } },
+            "children": ["Open the queue"]
+          }
+        ]
+      }
+    ]
+  }
+}

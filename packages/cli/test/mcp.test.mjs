@@ -58,6 +58,8 @@ test("tools/call info|search|docs|tokens read real ground truth from the engine"
   if (!root) return t.skip("not inside the brand-ui monorepo");
   const info = call("tools/call", { name: "info", arguments: {} });
   assert.match(info.result.content[0].text, /packages \(\d+\)/, "info lists the package count");
+  // `endpoints:` is hosted-only (RM-100) — local/stdio info never prints it.
+  assert.doesNotMatch(info.result.content[0].text, /^endpoints:/m);
 
   const search = call("tools/call", { name: "search", arguments: { query: "button" } });
   assert.match(search.result.content[0].text, /Button/, "search finds Button");
@@ -66,6 +68,10 @@ test("tools/call info|search|docs|tokens read real ground truth from the engine"
   const text = docs.result.content[0].text;
   assert.match(text, /# Button/, "docs renders the component heading");
   assert.match(text, /variants/, "docs renders the expanded cva variants");
+  // Local/stdio is UNCHANGED by RM-100 — still the public docs site's `/?path=`
+  // deep link, never the hosted `/storybook/` route, and no `endpoints:` line
+  // (that is hosted-only, added to `info` below).
+  assert.match(text, /^story: https:\/\/elabs-ai\.com\/\?path=\/docs\/core-button--docs$/m);
 
   const tokens = call("tools/call", { name: "tokens", arguments: {} });
   assert.match(tokens.result.content[0].text, /themes \(\d+\)/, "tokens summarizes the themes");

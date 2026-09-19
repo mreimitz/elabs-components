@@ -22,7 +22,7 @@ Theming is open: a theme is a stylesheet of semantic tokens, registered with `Th
 
 - [@elabs-ai/components-tokens](./llms/tokens.txt) — Semantic CSS-variable themes + ThemeProvider/useTheme. (2 components · 2 exports with their parts, 6 hooks)
 - [@elabs-ai/components-icons](./llms/icons.txt) — Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). (32 components · 32 exports with their parts, 0 hooks)
-- [@elabs-ai/components-ui](./llms/ui.txt) — Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). (128 components · 369 exports with their parts, 15 hooks)
+- [@elabs-ai/components-ui](./llms/ui.txt) — Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). (131 components · 372 exports with their parts, 15 hooks)
 - [@elabs-ai/components-data](./llms/data.txt) — TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. (6 components · 6 exports with their parts, 0 hooks)
 - [@elabs-ai/components-ai](./llms/ai.txt) — ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. (75 components · 439 exports with their parts, 14 hooks)
 - [@elabs-ai/components-flow](./llms/flow.txt) — Branded React Flow canvas, nodes, edges, controls, inspector. (19 components · 25 exports with their parts, 7 hooks)
@@ -38,10 +38,10 @@ Theming is open: a theme is a stylesheet of semantic tokens, registered with `Th
 
 - Hosted MCP (no install): `claude mcp add --transport http brand-ui https://elabs-ai.com/mcp` — Streamable HTTP, tools `info` · `search <q>` · `docs <Component>` · `tokens` · `chart_for` · `a2ui`
 - CLI over stdio: `npx -y @elabs-ai/components-cli mcp`, or `pnpm add -D @elabs-ai/components-cli` then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>` (the local CLI also has `audit`, which the hosted server cannot run)
+- Claude Code / Cowork plugin (skills, tracks the repo): `/plugin marketplace add mreimitz/elabs-components` then `/plugin install brand-ui`
 - New app in one command: `npx -y @elabs-ai/components-cli create <dir> --template dashboard` (data-app · ai-assistant · flow-workspace · settings · marketing) — a runnable Vite + React app with tokens, Tailwind `@source` lines and `ThemeProvider` wired
 - Generative UI (an agent DESIGNS a screen): emit an A2UI surface — JSON of catalog types (`npx -y @elabs-ai/components-cli a2ui catalog`, `… a2ui validate <file>`, or the MCP `a2ui` tool) — and render it with `<A2uiSurface surface onAction />` from `@elabs-ai/components-ai`
 - Docs site: https://elabs-ai.com (Storybook — every component, live, in every theme)
 - Discovery: https://elabs-ai.com/.well-known/mcp.json
 - Manifest: `brand-ui.manifest.json` (machine-readable ground truth)
-- Contributors only: the Storybook dev MCP at `http://localhost:6006/mcp`, available while `pnpm storybook` runs in this repo
-- Registry (copy-own): self-hosted registry JSON — `pnpm registry:build`, then `npx shadcn@latest add <your-host>/<item>.json` (or copy from `registry/blocks/<name>/`)
+- Registry (copy-own): `npx shadcn@latest add https://mreimitz.github.io/elabs-components/r/<item>.json` (or self-host — `pnpm registry:build`, or copy from `registry/blocks/<name>/`)
