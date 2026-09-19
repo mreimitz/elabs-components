@@ -15,7 +15,7 @@
     "test:watch": "vitest --exclude \"e2e/**\"",
     "e2e": "playwright test -c e2e/playwright.config.ts",
     "e2e:update": "playwright test -c e2e/playwright.config.ts --update-snapshots",
-    "lhci": "cd e2e && lhci collect --config=../lighthouserc.json --collect.url=http://localhost:${E2E_PORT:-4620}/?lhci=desktop && lhci collect --config=../lighthouserc.json --additive --collect.settings.preset=perf --collect.url=http://localhost:${E2E_PORT:-4620}/?lhci=mobile && lhci assert --config=../lighthouserc.json && lhci upload --config=../lighthouserc.json",
+    "lhci": "cd .next && lhci collect --config=../lighthouserc.json --collect.url=http://localhost:${E2E_PORT:-4620}/?lhci=desktop && lhci collect --config=../lighthouserc.json --additive --collect.settings.preset=perf --collect.url=http://localhost:${E2E_PORT:-4620}/?lhci=mobile && lhci assert --config=../lighthouserc.json && lhci upload --config=../lighthouserc.json",
     "bundle-budget": "node scripts/bundle-budget.mjs",
     "postinstall": "node ../../scripts/gen-home-themes.mjs",
     "clean": "rm -rf .next .turbo next-env.d.ts"

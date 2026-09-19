@@ -163,7 +163,7 @@ jobs:
           path: |
             apps/home/e2e/test-results/
             apps/home/e2e/playwright-report/
-            apps/home/e2e/.lighthouseci/
+            apps/home/.next/.lighthouseci/
             apps/home/.next/bundle-budget.json
           if-no-files-found: ignore
           retention-days: 14
