@@ -153,6 +153,8 @@ export const Default: Story = {
     await userEvent.click(discard);
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(await body.findByRole("button", { name: "Discard changes" }));
+    // The confirmation blocks pointer events on the page until it has finished closing.
+    await waitFor(() => expect(body.queryByRole("alertdialog")).toBeNull());
     await waitFor(() => expect(store().getState().spec).toEqual(mount));
     await waitFor(() => expect(store().getState().dirty).toBe(false));
 

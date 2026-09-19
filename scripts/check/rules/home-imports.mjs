@@ -103,3 +103,7 @@ HOME_ALLOWED_IMPORTS.push(/^ai$/);
 // — same reasoning `charts-honesty` already applies to `packages/charts/src` test files — so
 // they may reach `vitest`/`node:*` the production site itself never bundles.
 IGNORE.push("**/*.test.{ts,tsx}", "**/vitest.config.ts");
+// RM-104: the site gates under `apps/home/e2e/**` (Playwright specs + config) are test tooling
+// that never ships in the Next.js build — same reasoning as the RM-095 test-file ignore — so
+// they may import `@playwright/test`, `@axe-core/playwright` and `node:*`.
+IGNORE.push("apps/home/e2e/**");
