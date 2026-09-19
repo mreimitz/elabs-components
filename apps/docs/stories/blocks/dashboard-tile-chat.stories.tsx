@@ -47,7 +47,9 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const field = canvas.getByPlaceholderText("Ask about this sheet…") as HTMLTextAreaElement;
+    const field = (await canvas.findByPlaceholderText(
+      "Ask about this sheet…",
+    )) as HTMLTextAreaElement;
     // "composer enabled while the sheet is in view mode"
     await expect(field).toBeEnabled();
     await expect(field.disabled).toBe(false);
