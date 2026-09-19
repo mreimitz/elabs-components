@@ -263,24 +263,36 @@ describe("AutoChart", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
-  // #394: the auto-legend row label must reach the density-aware `text-meta`
+  // #394: the legend row label must reach the density-aware `text-meta`
   // ROLE, not the raw `text-xs` UTILITY the type dial cannot see
   // (styling-and-tokens.md "Type is a role, not a size"). Multi-series data
-  // (2 series) makes `showLegend` default true, rendering <AutoLegend>.
-  it("renders the auto-legend rows with the text-meta role, not the raw text-xs utility", () => {
+  // (2 series) makes `showLegend` default true. RM-118 Part B: `bar` now
+  // renders the SAME container legend engine line/area/stream already used
+  // (`useContainerLegend`), not the retired `<AutoLegend>` — its `<li>` row
+  // WAS the label element (`text-muted-foreground text-meta`); the engine's
+  // `ChartLegend` row is a wrapper `<div>`/`<button>` around a label `<span>`
+  // instead, so the assertion now reaches through to that span — same
+  // meaning (the rendered label text carries `text-meta`, never `text-xs`),
+  // adjusted for the new DOM shape. Fix round 1 restores this after it was
+  // wrongly weakened to a `not.toHaveClass("text-xs")`-only check that would
+  // have passed even with the plain `text-sm font-medium` regression this
+  // guards against. See `useContainerLegend`'s `labelClassName: "text-meta"`
+  // for the source-level fix this test locks in.
+  it("renders the legend rows through the text-meta role, never the raw text-xs utility", () => {
     const { container } = render(
       <AutoChart
         spec={{ type: "bar", data: categoricalData, x: "name", series: ["value", "other"] }}
         height={280}
       />,
     );
-    const legend = container.querySelector('ul[aria-label="Chart legend"]');
+    const legend = container.querySelector('[data-slot="container-legend-root"] .legend-container');
     expect(legend).not.toBeNull();
-    const rows = legend?.querySelectorAll("li") ?? [];
+    const rows = legend?.querySelectorAll(":scope > div") ?? [];
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
-      expect(row).toHaveClass("text-meta");
-      expect(row).not.toHaveClass("text-xs");
+      const label = row.querySelector("span");
+      expect(label).toHaveClass("text-meta");
+      expect(label).not.toHaveClass("text-xs");
     }
   });
 
@@ -1412,6 +1424,153 @@ describe("AutoChart legend vs series end labels", () => {
     // Item count parity with the old `<li>`-per-series `AutoLegend`.
     expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
   });
+
+  // RM-118 Part B: 'bar' and 'pie' join the container legend engine this
+  // wave (see `LEGEND_ENGINE_TYPES`) — same accessible name + item-count
+  // parity proof as 'line' above, one per family.
+  it("keeps the 'Chart legend' name and item-count parity for 'bar' (RM-118 Part B)", () => {
+    const spec: ChartSpec = {
+      type: "bar",
+      data: categoricalData,
+      x: "name",
+      series: ["value", "other"],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
+
+  it("keeps the 'Chart legend' name and item-count parity for 'pie' (RM-118 Part B)", () => {
+    const spec: ChartSpec = {
+      type: "pie",
+      data: smallPositiveData,
+      x: "label",
+      series: ["count"],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    // One legend row per pie ROW (slice), not per series — `smallPositiveData`
+    // is declared further up this file for the existing 'pie' tests.
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(smallPositiveData.length);
+  });
+
+  it("keeps the 'Chart legend' name and item-count parity for 'scatter' (RM-118 Part B)", () => {
+    const spec: ChartSpec = {
+      type: "scatter",
+      data: [
+        { x: 1, y: 10, z: 5 },
+        { x: 2, y: 20, z: 8 },
+        { x: 3, y: 15, z: 12 },
+      ],
+      x: "x",
+      xType: "number",
+      series: ["y", "z"],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
+
+  it("keeps the 'Chart legend' name and item-count parity for 'treemap' (RM-118 Part B)", () => {
+    // `palette: "categorical"` is required here: AutoChart's treemap branch
+    // falls back to the documented "mono" default otherwise (#306), and a
+    // mono treemap has nothing to key — no legend at all, by design. jsdom
+    // never sizes the plot (`getBoundingClientRect` is 0 unmocked), so the
+    // layout — and with it every legend item — mock the same way the
+    // existing "AutoChart treemap palette" describe block above does.
+    // `legend: true` is explicit: AutoChart's own default-visibility
+    // heuristic (`showLegend`) keys off the normalized SERIES count, which
+    // is 0 for a hierarchy-shaped treemap spec — unlike bar/pie/scatter,
+    // treemap never defaults to a visible legend, so this proves the
+    // forwarded prop actually reaches `TreemapChart`, not the default.
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    const spec: ChartSpec = {
+      type: "treemap",
+      data: [],
+      x: "name",
+      series: [],
+      palette: "categorical",
+      legend: true,
+      hierarchy: {
+        name: "Work",
+        children: [
+          { name: "Platform", children: [{ name: "CI", value: 40 }] },
+          { name: "Product", children: [{ name: "Onboarding", value: 25 }] },
+        ],
+      },
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    // One legend row per top-level GROUP ("Platform", "Product"), not per leaf.
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    spy.mockRestore();
+  });
+
+  it("keeps 'dumbbell' OUT of the legend engine — spec.legend never reaches DumbbellChart's container-legend prop (RM-118 Part B)", () => {
+    // "dumbbell" is deliberately excluded from `LEGEND_ENGINE_TYPES` (see that
+    // set's own doc in auto-chart.tsx): DumbbellChart's `legend` prop only ever
+    // renders content for `variant="dots"` with `valueKeys` set, a shape
+    // `ChartSpec` cannot express (`dumbbellKeys` always resolves exactly
+    // `[startKey, endKey]`). Forwarding it here would silently swap the
+    // existing `<AutoLegend>` before/after key for nothing — a real default
+    // change caught via the published `charts-autochart--dumbbell-inferred`
+    // story (see RM-118B result file). `spec.legend: true` still renders
+    // SOMETHING — the pre-existing `<AutoLegend>` fallback, not the container
+    // engine's `role="group"` legend.
+    const spec: ChartSpec = {
+      type: "dumbbell",
+      data: [
+        { region: "North", before: 42, after: 61 },
+        { region: "South", before: 31, after: 46 },
+      ],
+      x: "region",
+      series: ["before", "after"],
+      legend: true,
+    };
+    const { container, queryByRole } = render(<AutoChart spec={spec} height={280} />);
+    expect(queryByRole("group", { name: "Chart legend" })).not.toBeInTheDocument();
+    const fallback = container.querySelector("ul[aria-label]");
+    expect(fallback).not.toBeNull();
+    expect(fallback?.textContent).toContain("before");
+    expect(fallback?.textContent).toContain("after");
+  });
+
+  it("preserves the pre-Part-B <AutoLegend> for a 2-series 'dumbbell' spec with legend left unset — no default change (RM-118 Part B)", () => {
+    // The same "before"/"after" spec as `charts-autochart--dumbbell-inferred`
+    // (a published story): `legend` unset, 2 series, so the generic
+    // `showLegend` heuristic (`spec.legend ?? legendItems.length > 1 && …`)
+    // defaults to `true`, same as every release before this one — and because
+    // "dumbbell" stays out of `LEGEND_ENGINE_TYPES`, that still falls through
+    // to `<AutoLegend series={legendItems}/>` exactly as before. Pinned here
+    // so a future attempt to wire "dumbbell" into the engine (once `ChartSpec`
+    // can express `valueKeys`) has to consciously re-decide this, not silently
+    // regress it again.
+    const spec: ChartSpec = {
+      type: "dumbbell",
+      data: [
+        { region: "North", before: 42, after: 61 },
+        { region: "South", before: 31, after: 46 },
+      ],
+      x: "region",
+      series: ["before", "after"],
+    };
+    const { container, queryByRole } = render(<AutoChart spec={spec} height={280} />);
+    expect(queryByRole("group", { name: "Chart legend" })).not.toBeInTheDocument();
+    const fallback = container.querySelector("ul[aria-label]");
+    expect(fallback).not.toBeNull();
+    expect(fallback?.textContent).toContain("before");
+    expect(fallback?.textContent).toContain("after");
+  });
 });
 
 // Facet + legend engine (RM-118 × RM-120, orchestrator ruling after the
@@ -1461,6 +1620,139 @@ describe("AutoChart faceted line legend (RM-118 × RM-120 regression fix)", () =
   it("legend: false → no legend at all", () => {
     const { queryAllByRole, container } = render(
       <AutoChart spec={facetedSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
+  });
+});
+
+// RM-118 Part B × RM-120, sitting 2 (integration): once 'bar' and 'pie' join
+// `LEGEND_ENGINE_TYPES` (this branch), the generic `showFacetLegend` check in
+// `AutoChart` already covers them for free — `FACETED_CHART_TYPES ∩
+// LEGEND_ENGINE_TYPES` is exactly line/area/bar/pie. Same regression class
+// Part A fixed for line/area: an `AutoChart`-driven facet whose legend is
+// shown gets ONE shared `ChartLegend` above the grid, never one per panel.
+describe("AutoChart faceted bar legend (RM-118 Part B × RM-120 sitting 2)", () => {
+  const facetedSales = [
+    { quarter: "Q1", region: "North", revenue: 40, profit: 12 },
+    { quarter: "Q2", region: "North", revenue: 44, profit: 14 },
+    { quarter: "Q1", region: "South", revenue: 30, profit: 9 },
+    { quarter: "Q2", region: "South", revenue: 33, profit: 10 },
+  ];
+  const facetedBarSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "bar",
+    data: facetedSales,
+    x: "quarter",
+    series: [{ key: "revenue" }, { key: "profit" }],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with 2 items, above the grid", () => {
+    const { container, getAllByRole } = render(
+      <AutoChart spec={facetedBarSpec(true)} height={280} />,
+    );
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "revenue",
+      "profit",
+    ]);
+
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    // A per-panel FAIL would show a second group inside the grid — assert none.
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedBarSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
+  });
+
+  // RM-118 fix round 2: `renderFacetedChart` mounts its own direct
+  // `<ChartLegend>` for this one shared legend — a separate call site from
+  // `useContainerLegend`'s (the non-faceted path), so the round-1 source fix
+  // there didn't cover it. This row must reach the same `text-meta` role,
+  // never `ChartLegend`'s own bare-caller default.
+  it("legend: true → the shared legend label reaches the text-meta role, never text-sm/text-xs", () => {
+    const { getAllByRole } = render(<AutoChart spec={facetedBarSpec(true)} height={280} />);
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    const rows = legend.querySelectorAll(":scope > *");
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      const label = row.querySelector("span");
+      expect(label).toHaveClass("text-meta");
+      expect(label).not.toHaveClass("text-sm");
+      expect(label).not.toHaveClass("text-xs");
+    }
+  });
+});
+
+describe("AutoChart faceted pie legend (RM-118 Part B × RM-120 sitting 2)", () => {
+  // Two panels (region), same 3 channels in both — the shared legend must
+  // list each CATEGORY once (deduped across panels), not once per panel and
+  // not the value column ("share"). This is the exact shape that was broken
+  // before the `legendItems`-not-`series` fix: `series` here normalizes to a
+  // single "share" entry, never the 3 channel names.
+  const facetedChannels = [
+    { region: "North", channel: "Direct", share: 42 },
+    { region: "North", channel: "Organic", share: 33 },
+    { region: "North", channel: "Referral", share: 25 },
+    { region: "South", channel: "Direct", share: 38 },
+    { region: "South", channel: "Organic", share: 36 },
+    { region: "South", channel: "Referral", share: 26 },
+  ];
+  const facetedPieSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "pie",
+    data: facetedChannels,
+    x: "channel",
+    series: ["share"],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with one item per category, above the grid", () => {
+    const { container, getAllByRole } = render(
+      <AutoChart spec={facetedPieSpec(true)} height={280} />,
+    );
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    // One item per CATEGORY (Direct/Organic/Referral), deduped across the two
+    // panels — not 6 (one per data row) and not 1 (the "share" value column).
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(3);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "Direct",
+      "Organic",
+      "Referral",
+    ]);
+
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    // A per-panel FAIL would show a second group inside the grid — assert none.
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedPieSpec(false)} height={280} />,
     );
     expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
     expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();

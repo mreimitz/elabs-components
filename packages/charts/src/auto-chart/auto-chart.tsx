@@ -283,8 +283,30 @@ function everySeriesEndLabelled(
  * (RM-118). `AutoChart` forwards the SAME show/hide decision `AutoLegend`
  * used to make into that container's own `legend` prop instead of rendering
  * `AutoLegend` below it — one legend per chart, never two.
+ *
+ * NOT "dumbbell" (RM-118 Part B, deliberately excluded): `DumbbellChart`'s own
+ * `legend` prop only ever produces content for `variant="dots"` with
+ * `valueKeys` set (see its JSDoc) — the two-measure shape AutoChart infers a
+ * dumbbell FROM (`ChartSpec` has no `valueKeys`/`variant` field) never
+ * reaches that branch, so forwarding here would silently swap a real
+ * "before"/"after" `<AutoLegend>` key for nothing on every existing
+ * AutoChart-driven dumbbell spec (caught via the published
+ * `charts-autochart--dumbbell-inferred` story — a genuine default-change
+ * regression, not just a look change, so it stays out of the engine set
+ * until `ChartSpec` grows a shape `DumbbellChart` can actually render a
+ * legend from). Direct `<DumbbellChart legend>` usage is unaffected — see
+ * `dumbbell-chart.tsx` and its own tests/stories.
  */
-const LEGEND_ENGINE_TYPES = new Set<ChartType>(["line", "area", "stream"]);
+const LEGEND_ENGINE_TYPES = new Set<ChartType>([
+  "line",
+  "area",
+  "stream",
+  // RM-118 Part B
+  "bar",
+  "pie",
+  "scatter",
+  "treemap",
+]);
 
 interface AutoLegendProps {
   series: NormalizedSeries[];
@@ -675,6 +697,7 @@ function renderChart(
           xDataKey={x}
           stacked={stacked ?? false}
           orientation={orientation ?? "vertical"}
+          legend={containerLegend}
           accessibleLabel={spec.title}
           accessibleDescription={withAnnotationDescription(
             spec.description ?? spec.altText,
@@ -730,6 +753,7 @@ function renderChart(
           onDatapointClick={links.onDatapointClick}
           data={pieData}
           innerRadius={innerRadius}
+          legend={containerLegend}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
@@ -761,6 +785,7 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           data={scatterData}
+          legend={containerLegend}
           xDataKey={x}
           xScale={spec.xType === "number" ? "linear" : "time"}
           accessibleLabel={spec.title}
@@ -1011,6 +1036,13 @@ function renderChart(
           sortBy={spec.sort as DumbbellSortBy | undefined}
           groupBy={spec.groupBy}
           delta={spec.delta}
+          // RM-118 Part B: "dumbbell" is deliberately NOT in
+          // `LEGEND_ENGINE_TYPES` (see that set's own doc) — DumbbellChart's
+          // `legend` prop only ever renders for `variant="dots"` with
+          // `valueKeys`, a shape `ChartSpec` cannot express yet, so
+          // forwarding it here would silently swap the existing
+          // `<AutoLegend>` before/after key for nothing. `showLegend` still
+          // governs the `<AutoLegend>` fallback below, unchanged.
         />
       );
     }
@@ -1066,6 +1098,10 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
+          // RM-118 Part B: forwarded as-is — TreemapChart itself decides what
+          // it means per `palette` (categorical group key, sequential ramp,
+          // or nothing for mono).
+          legend={containerLegend}
         />
       );
     }
@@ -1528,25 +1564,41 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     spec.legend ?? (legendItems.length > 1 && !everySeriesEndLabelled(spec, type, series));
 
   // Facet + legend engine (RM-118 × RM-120, orchestrator ruling): a faceted
-  // line/area/stream spec whose legend is shown gets ONE shared `ChartLegend`
-  // above the whole grid — the wave-2-merge regression this restores (before
-  // the merge, `AutoLegend` rendered this same single shared legend; the
+  // spec of a type this wave's legend engine covers — today that intersection
+  // is `FACETED_CHART_TYPES ∩ LEGEND_ENGINE_TYPES` = line/area/bar/pie, the
+  // only faceted types (`renderFacetedChart` is only ever reached for those
+  // four) — whose legend is shown gets ONE shared `ChartLegend` above the
+  // whole grid, never one per panel. This generic `LEGEND_ENGINE_TYPES.has(type)`
+  // check is what restored the wave-2-merge regression for line/area (before
+  // that merge, `AutoLegend` rendered this same single shared legend; the
   // merge's `LEGEND_ENGINE_TYPES` exclusion silently dropped it for facets
   // because `renderFacetedChart`'s per-panel `renderChart` calls never
-  // forward a `containerLegend`). Same show/hide decision (`showLegend`) and
-  // the same object-config shape (`ContainerLegendConfig`) the non-faceted
-  // container legend engine reads — `values`/`title` only; `position`/
-  // `layout`/`interactive` don't apply to a single grid-level legend, so
-  // they're read but otherwise inert here. Hover-dim across panels and
-  // per-series toggle are explicitly out of scope (see "Follow-ups" in the
-  // result file) — this legend is static, like `AutoLegend` was.
+  // forward a `containerLegend`) AND, for free, gives bar/pie the same fix
+  // once Part B's sitting-2 merge added them to `LEGEND_ENGINE_TYPES` (RM-118
+  // Part B × RM-120 sitting 2) — no extra branch needed, only the
+  // `legendItems`-not-`series` fix below for pie's per-slice items. Same
+  // show/hide decision (`showLegend`) and the same object-config shape
+  // (`ContainerLegendConfig`) the non-faceted container legend engine reads —
+  // `values`/`title` only; `position`/`layout`/`interactive` don't apply to a
+  // single grid-level legend, so they're read but otherwise inert here.
+  // Hover-dim across panels and per-series toggle are explicitly out of scope
+  // (see "Follow-ups" in the result file) — this legend is static, like
+  // `AutoLegend` was.
   const facetLegendConfig =
     typeof showLegend === "object" && showLegend !== null ? showLegend : undefined;
   const showFacetLegend =
     LEGEND_ENGINE_TYPES.has(type) && (showLegend === true || facetLegendConfig !== undefined);
   const facetLegend: FacetLegend | undefined = showFacetLegend
     ? {
-        items: series.map((s) => ({ key: s.key, label: s.label, color: s.color, value: 0 })),
+        // RM-118 Part B × RM-120 (sitting 2 integration): `legendItems`, not
+        // `series` — `series` is `spec.series` normalized (right for
+        // line/area/bar, which colour by SERIES), but a faceted PIE colours by
+        // slice/category (`legendItems` already branches on `type === "pie"`
+        // using the deduped `pieRows`, same source `AutoLegend` used pre-merge).
+        // Using `series` here for pie would have listed the value column(s)
+        // instead of the slice categories — one shared legend for the grid,
+        // but the wrong items in it.
+        items: legendItems.map((s) => ({ key: s.key, label: s.label, color: s.color, value: 0 })),
         showValue: facetLegendConfig?.values === true,
         title: facetLegendConfig?.title as string | undefined,
         "aria-label": t("charts.legend.label"),
@@ -1657,11 +1709,12 @@ const FACETED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "ba
 
 /**
  * `facetLegend` → the one shared `ChartLegend` `renderFacetedChart` mounts
- * above the grid for a faceted line/area/stream spec — same show/hide
+ * above the grid for a faceted line/area/bar/pie spec — same show/hide
  * decision and object-config shape (`values`/`title`) the non-faceted
- * container legend engine reads, built once from the spec's full (unfiltered)
- * series list so it stays correct even when `{ series: true }` gives each
- * panel only one of them.
+ * container legend engine reads, built once from `legendItems` (the spec's
+ * full, unfiltered series for line/area/bar; the deduped slice/category rows
+ * for pie) so it stays correct even when `{ series: true }` gives each panel
+ * only one of them.
  */
 interface FacetLegend {
   items: LegendItem[];
@@ -1674,8 +1727,9 @@ interface FacetLegend {
  * `ChartSpec.facet` → `ChartMultiples`: one `renderChart` per panel, with the
  * panel's rows and title (its accessible label). `{ series: true }` keeps one
  * series per panel. The spec's `title` stays outside the grid; `facetLegend`
- * set (line/area/stream only — see `AutoChart`'s `showFacetLegend`) mounts
- * ONE shared `ChartLegend` above the whole grid, never one per panel.
+ * set (line/area/bar/pie only — the `FACETED_CHART_TYPES ∩ LEGEND_ENGINE_TYPES`
+ * intersection; see `AutoChart`'s `showFacetLegend`) mounts ONE shared
+ * `ChartLegend` above the whole grid, never one per panel.
  */
 function renderFacetedChart(
   type: ChartType,
@@ -1724,6 +1778,13 @@ function renderFacetedChart(
         aria-label={facetLegend["aria-label"]}
         className="w-full"
         items={facetLegend.items}
+        // RM-118 fix round 2: this is the one direct `<ChartLegend>` mount
+        // outside `useContainerLegend` (the non-faceted path's shared
+        // engine) — it needs the same override that engine already passes,
+        // never `ChartLegend`'s own bare-caller default for this prop (see
+        // `use-container-legend.ts` for the matching call site and the
+        // reasoning this mirrors).
+        labelClassName="text-meta"
         layout="row"
         showValue={facetLegend.showValue}
         title={facetLegend.title}
