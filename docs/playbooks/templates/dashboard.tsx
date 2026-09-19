@@ -37,6 +37,10 @@ const nav = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
+// Deliberate type error on a throwaway branch: proves the create matrix turns red
+// at the created app's typecheck step (RM-130). Never merge.
+export const brokenOnPurpose: number = "not a number";
+
 const metrics = [
   {
     label: "Monthly Revenue",
