@@ -263,14 +263,22 @@ describe("AutoChart", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
-  // #394: the legend row label must reach a type ROLE, never the raw
-  // `text-xs` UTILITY the type dial cannot see (styling-and-tokens.md "Type
-  // is a role, not a size"). Multi-series data (2 series) makes `showLegend`
-  // default true. RM-118 Part B: `bar` now renders the SAME container legend
-  // engine line/area/stream already used (`useContainerLegend`), not the
-  // retired `<AutoLegend>` — see the DOM-parity/a11y-name tests below for
-  // the equivalent 'line' coverage this mirrors.
-  it("renders the legend rows through a type role, never the raw text-xs utility", () => {
+  // #394: the legend row label must reach the density-aware `text-meta`
+  // ROLE, not the raw `text-xs` UTILITY the type dial cannot see
+  // (styling-and-tokens.md "Type is a role, not a size"). Multi-series data
+  // (2 series) makes `showLegend` default true. RM-118 Part B: `bar` now
+  // renders the SAME container legend engine line/area/stream already used
+  // (`useContainerLegend`), not the retired `<AutoLegend>` — its `<li>` row
+  // WAS the label element (`text-muted-foreground text-meta`); the engine's
+  // `ChartLegend` row is a wrapper `<div>`/`<button>` around a label `<span>`
+  // instead, so the assertion now reaches through to that span — same
+  // meaning (the rendered label text carries `text-meta`, never `text-xs`),
+  // adjusted for the new DOM shape. Fix round 1 restores this after it was
+  // wrongly weakened to a `not.toHaveClass("text-xs")`-only check that would
+  // have passed even with the plain `text-sm font-medium` regression this
+  // guards against. See `useContainerLegend`'s `labelClassName: "text-meta"`
+  // for the source-level fix this test locks in.
+  it("renders the legend rows through the text-meta role, never the raw text-xs utility", () => {
     const { container } = render(
       <AutoChart
         spec={{ type: "bar", data: categoricalData, x: "name", series: ["value", "other"] }}
@@ -282,7 +290,9 @@ describe("AutoChart", () => {
     const rows = legend?.querySelectorAll(":scope > div") ?? [];
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
-      expect(row.querySelector("span")).not.toHaveClass("text-xs");
+      const label = row.querySelector("span");
+      expect(label).toHaveClass("text-meta");
+      expect(label).not.toHaveClass("text-xs");
     }
   });
 

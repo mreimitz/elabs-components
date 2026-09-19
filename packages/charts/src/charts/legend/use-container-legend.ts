@@ -227,6 +227,17 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         // `sm` (charts.md "Responsive"). A caller using bare `<ChartLegend>`
         // directly (outside this engine) keeps the old `["xs","sm"]` default.
         hideAtDensity: ["xs"],
+        // Fix round 1 (RM-118 validator FAIL #1): every container legend row
+        // must reach the `text-meta` type ROLE, the same one the retired
+        // `<AutoLegend>` `<li>` carried (`text-muted-foreground text-meta`,
+        // `auto-chart.tsx`), never `ChartLegend`'s own bare-caller default
+        // for this prop — a raw font-size utility paired with a weight
+        // class, not a type role, and the density dial can't see it
+        // (styling-and-tokens.md "Type is a role, not a size"). This
+        // overrides the default ONLY for legends this engine mounts; a
+        // direct `<ChartLegend>` caller (its own stories included) is
+        // untouched, since it never sets `labelClassName` here.
+        labelClassName: "text-meta",
         className: isSide ? "w-40 shrink-0" : "w-full",
       } as Parameters<typeof ChartLegend>[0])
     : null;
