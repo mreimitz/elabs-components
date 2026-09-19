@@ -1,0 +1,4 @@
+# Local run output of the site gates (RM-104) — CI uploads these as artifacts.
+.lighthouseci/
+test-results/
+playwright-report/
