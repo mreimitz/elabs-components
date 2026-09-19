@@ -23,6 +23,14 @@ import { join } from "node:path";
 export const HOSTED_DOCS_URL = "https://elabs-ai.com";
 export const HOSTED_MCP_URL = `${HOSTED_DOCS_URL}/mcp`;
 
+/**
+ * Where `npx shadcn@latest add <url>/<item>.json` resolves TODAY — the published GitHub
+ * Pages registry (`registry/registry.json`'s own `homepage`, kept fresh by
+ * `pnpm registry:publish`). `HOSTED_DOCS_URL` itself has no `/r` route until the site's own
+ * routes exist (RM-105 — see `siteRoutes` on `renderLlmsHub`).
+ */
+export const REGISTRY_HOMEPAGE = "https://mreimitz.github.io/elabs-components/r";
+
 /** Packages in stable, dependency-order-ish display order (tokens → ui → domain). */
 const PKG_ORDER = [
   "@elabs-ai/components-tokens",
@@ -229,14 +237,20 @@ export function renderInventory(manifest) {
 /**
  * The root `llms.txt` hub — purpose, package routing map, themes, entry points.
  * @param {object} manifest
- * @param {{ siteOrigin?: string }} [opts] Where this instance's own URLs point
- *   (the hosted MCP, the docs site, `.well-known/mcp.json`, …). Defaults to the
- *   production site so the CLI's generated `llms.txt` and the site's own
- *   `/llms.txt` route agree byte-for-byte; a preview deployment can pass its
- *   own origin so it reports itself (RM-100, no live preview exists yet).
+ * @param {{ siteOrigin?: string, siteRoutes?: boolean }} [opts]
+ *   `siteOrigin`: where this instance's own URLs point (the hosted MCP, the docs site,
+ *   `.well-known/mcp.json`, …). Defaults to the production site so the CLI's generated
+ *   `llms.txt` and the site's own `/llms.txt` route agree byte-for-byte; a preview
+ *   deployment can pass its own origin so it reports itself (RM-100, no live preview
+ *   exists yet). `siteRoutes` (default false): opt the Docs-site and Registry links into
+ *   the `/storybook/` + `/r` forms — only for a caller whose site actually serves them.
+ *   `https://elabs-ai.com` is still the Storybook project until RM-105 moves the domain
+ *   (no `/storybook/`, no `/r`), so the default stays the links that work there today.
  */
-export function renderLlmsHub(manifest, { siteOrigin = HOSTED_DOCS_URL } = {}) {
+export function renderLlmsHub(manifest, { siteOrigin = HOSTED_DOCS_URL, siteRoutes = false } = {}) {
   const mcpUrl = `${siteOrigin}/mcp`;
+  const storybookUrl = siteRoutes ? `${siteOrigin}/storybook/` : siteOrigin;
+  const registryBase = siteRoutes ? `${siteOrigin}/r` : REGISTRY_HOMEPAGE;
   const lines = [];
   lines.push("# brand-ui");
   lines.push("");
@@ -303,13 +317,11 @@ export function renderLlmsHub(manifest, { siteOrigin = HOSTED_DOCS_URL } = {}) {
       "(`npx -y @elabs-ai/components-cli a2ui catalog`, `… a2ui validate <file>`, or the MCP `a2ui` tool) — " +
       "and render it with `<A2uiSurface surface onAction />` from `@elabs-ai/components-ai`",
   );
-  lines.push(
-    `- Docs site: ${siteOrigin}/storybook/ (Storybook — every component, live, in every theme)`,
-  );
+  lines.push(`- Docs site: ${storybookUrl} (Storybook — every component, live, in every theme)`);
   lines.push(`- Discovery: ${siteOrigin}/.well-known/mcp.json`);
   lines.push("- Manifest: `brand-ui.manifest.json` (machine-readable ground truth)");
   lines.push(
-    `- Registry (copy-own): \`npx shadcn@latest add ${siteOrigin}/r/<item>.json\` ` +
+    `- Registry (copy-own): \`npx shadcn@latest add ${registryBase}/<item>.json\` ` +
       "(or self-host — `pnpm registry:build`, or copy from `registry/blocks/<name>/`)",
   );
   lines.push("");

@@ -39,7 +39,7 @@ dark, light (default)
 - Claude Code / Cowork plugin (skills, tracks the repo): `/plugin marketplace add mreimitz/elabs-components` then `/plugin install brand-ui`
 - New app in one command: `npx -y @elabs-ai/components-cli create <dir> --template dashboard` (data-app · ai-assistant · flow-workspace · settings · marketing) — a runnable Vite + React app with tokens, Tailwind `@source` lines and `ThemeProvider` wired
 - Generative UI (an agent DESIGNS a screen): emit an A2UI surface — JSON of catalog types (`npx -y @elabs-ai/components-cli a2ui catalog`, `… a2ui validate <file>`, or the MCP `a2ui` tool) — and render it with `<A2uiSurface surface onAction />` from `@elabs-ai/components-ai`
-- Docs site: https://elabs-ai.com/storybook/ (Storybook — every component, live, in every theme)
+- Docs site: https://elabs-ai.com (Storybook — every component, live, in every theme)
 - Discovery: https://elabs-ai.com/.well-known/mcp.json
 - Manifest: `brand-ui.manifest.json` (machine-readable ground truth)
-- Registry (copy-own): `npx shadcn@latest add https://elabs-ai.com/r/<item>.json` (or self-host — `pnpm registry:build`, or copy from `registry/blocks/<name>/`)
+- Registry (copy-own): `npx shadcn@latest add https://mreimitz.github.io/elabs-components/r/<item>.json` (or self-host — `pnpm registry:build`, or copy from `registry/blocks/<name>/`)

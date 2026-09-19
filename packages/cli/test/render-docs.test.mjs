@@ -117,9 +117,21 @@ test("renderLlmsHub routes to per-package spokes and lists themes + entry points
   assert.match(hub, /npx -y @elabs-ai\/components-cli mcp/);
   assert.match(hub, /pnpm exec brand-ui info/);
   assert.match(hub, /tokens → ui\/icons → data/);
-  // Storybook is reached through the site's own /storybook/ route (ADR 0038),
-  // never the bare docs-site origin.
-  assert.match(hub, /https:\/\/elabs-ai\.com\/storybook\//, "docs site under /storybook/");
+  // DEFAULT (no siteRoutes): https://elabs-ai.com is still the Storybook project until
+  // RM-105 moves the domain — no /storybook/ route exists there, so the docs-site link is
+  // the bare origin (root IS Storybook) and the registry is the published GitHub Pages one,
+  // never a same-origin `/r` that would 404 (wave-3 ruling 18).
+  assert.match(
+    hub,
+    /- Docs site: https:\/\/elabs-ai\.com \(Storybook/,
+    "docs site is the bare origin by default",
+  );
+  assert.doesNotMatch(hub, /elabs-ai\.com\/storybook\//, "no /storybook/ link by default");
+  assert.match(
+    hub,
+    /npx shadcn@latest add https:\/\/mreimitz\.github\.io\/elabs-components\/r\/<item>\.json/,
+    "registry defaults to the published GitHub Pages registry",
+  );
   assert.match(
     hub,
     /\/plugin marketplace add mreimitz\/elabs-components/,
@@ -127,11 +139,37 @@ test("renderLlmsHub routes to per-package spokes and lists themes + entry points
   );
 });
 
+test("renderLlmsHub's siteRoutes opts a real site's own /storybook/ and /r routes back in", () => {
+  const hub = renderLlmsHub(FIXTURE, { siteRoutes: true });
+  assert.match(
+    hub,
+    /- Docs site: https:\/\/elabs-ai\.com\/storybook\//,
+    "docs site under /storybook/",
+  );
+  assert.match(
+    hub,
+    /npx shadcn@latest add https:\/\/elabs-ai\.com\/r\/<item>\.json/,
+    "registry under the site's own /r",
+  );
+});
+
 test("renderLlmsHub takes a siteOrigin override so a preview reports itself", () => {
   const hub = renderLlmsHub(FIXTURE, { siteOrigin: "https://rm-100.vercel.app" });
   assert.match(hub, /https:\/\/rm-100\.vercel\.app\/mcp/);
-  assert.match(hub, /https:\/\/rm-100\.vercel\.app\/storybook\//);
+  // Still the default form (no siteRoutes) — a preview origin does not imply that origin
+  // serves /storybook/ or /r.
+  assert.match(hub, /- Docs site: https:\/\/rm-100\.vercel\.app \(Storybook/);
   assert.doesNotMatch(hub, /elabs-ai\.com/, "no leftover production origin");
+});
+
+test("renderLlmsHub combines siteOrigin + siteRoutes for a real preview of the site", () => {
+  const hub = renderLlmsHub(FIXTURE, {
+    siteOrigin: "https://rm-100.vercel.app",
+    siteRoutes: true,
+  });
+  assert.match(hub, /https:\/\/rm-100\.vercel\.app\/mcp/);
+  assert.match(hub, /- Docs site: https:\/\/rm-100\.vercel\.app\/storybook\//);
+  assert.match(hub, /npx shadcn@latest add https:\/\/rm-100\.vercel\.app\/r\/<item>\.json/);
 });
 
 test("renderLlmsSpoke shows a package's components, variants and anti-patterns", () => {
