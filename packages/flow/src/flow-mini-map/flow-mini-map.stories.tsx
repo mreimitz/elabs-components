@@ -145,13 +145,16 @@ export const Default: Story = {
     // (the light panel's white) while the node rects, mounted after the switch, are
     // already dark: a false 2.47:1 in the dark theme only. Awaiting the running
     // transitions on the panel and its rects reads what the browser actually paints.
-    await Promise.all(
-      minimap.getAnimations({ subtree: true }).map((animation) =>
-        // A transition superseded by another change rejects `finished`; the settled
-        // value is still what the readback below measures.
-        animation.finished.catch(() => undefined),
-      ),
-    );
+    // Transitions keep starting after the first batch settles: a child's inherited
+    // colour starts its own once the parent's has ended, and a superseded one rejects
+    // `finished` while its replacement is still running. So keep waiting
+    // until none is left; awaiting only the first batch still read the white panel
+    // once on CI.
+    for (;;) {
+      const running = minimap.getAnimations({ subtree: true });
+      if (running.length === 0) break;
+      await Promise.allSettled(running.map((animation) => animation.finished));
+    }
     const panelBackground = getComputedStyle(minimap).backgroundColor;
 
     // The whole point of this helper is that a blank minimap must FAIL the check — lock
