@@ -14,7 +14,7 @@
     "description": "MetricCard, MetricGrid, ChartCard, ChartFrame, AutoChart (spec-driven via a serializable ChartSpec).",
     "path": "packages/charts",
     "layer": 2,
-    "exportCount": 278,
+    "exportCount": 281,
     "engines": []
   },
   {
