@@ -391,7 +391,6 @@ export function ChartLegend({
               (onItemClick || isToggleable) && "w-full text-start focus-ring",
               isHovered && "bg-legend-muted",
               isFaded && "opacity-40",
-              isHidden && "opacity-60",
               itemClassName,
             )}
             data-hovered={isHovered ? "" : undefined}
