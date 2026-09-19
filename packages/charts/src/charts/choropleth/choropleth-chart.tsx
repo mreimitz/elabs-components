@@ -1077,6 +1077,7 @@ function ChoroplethBody({
   legend,
   thematic,
   features,
+  isEmpty,
   renderMap,
 }: {
   plotBox: {
@@ -1086,6 +1087,8 @@ function ChoroplethBody({
   legend: ChoroplethChartProps["legend"];
   thematic: ChoroplethThematic;
   features: readonly ChoroplethFeature[];
+  /** The empty state is showing: a key would describe nothing. */
+  isEmpty: boolean;
   renderMap: (onPlotWidth: (width: number) => void) => ReactNode;
 }) {
   const breakpoint = useChartBreakpoint();
@@ -1096,7 +1099,7 @@ function ChoroplethBody({
   // Narrow default (maintainer ruling): an implicit key hides at narrow; a
   // `legend` the host passed is explicit and stays, below the map by default.
   const config: ChoroplethLegendConfig = typeof legend === "object" ? legend : {};
-  const shown = legend !== false && (legend !== undefined || breakpoint !== "narrow");
+  const shown = !isEmpty && legend !== false && (legend !== undefined || breakpoint !== "narrow");
   const placement = resolveResponsive(
     config.position ?? DEFAULT_CHOROPLETH_LEGEND_POSITION,
     breakpoint,
@@ -1285,6 +1288,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartProps>(
         <ChoroplethInteractionShell>
           <ChoroplethBody
             features={validData ? renderData.features : []}
+            isEmpty={Boolean(isEmpty)}
             legend={legend}
             plotBox={stacked ? { aspectRatio, plotHeight } : null}
             renderMap={renderMap}
