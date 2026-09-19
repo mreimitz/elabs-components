@@ -947,3 +947,28 @@ export {
 // Dual-axis — RM-121
 export { type DualAxisAlign, type DualAxisOptions, type DualAxisZero } from "./y-axis-scales";
 export { type ChartLegendSplitGroup } from "./chart-legend";
+
+// Choropleth — RM-124
+export {
+  type ChoroplethLegendConfig,
+  type ChoroplethLegendPosition,
+  type ChoroplethScaleSpec,
+  DEFAULT_CHOROPLETH_LEGEND_POSITION,
+} from "./choropleth/choropleth-chart";
+export { type ChoroplethOverlayConfig } from "./choropleth/choropleth-context";
+export {
+  type ChoroplethFitToData,
+  type ChoroplethFitToDataOptions,
+} from "./choropleth/fit-to-data";
+export { type ChoroplethCorner, type ChoroplethInsetConfig } from "./choropleth/inset-map";
+export { type ChoroplethPlaceLabelsConfig, MAX_PLACE_LABELS } from "./choropleth/place-labels";
+export {
+  type ChoroplethSymbolPoint,
+  type ChoroplethSymbolsConfig,
+  DEFAULT_SYMBOL_MAX_SIZE,
+  symbolShrink,
+} from "./choropleth/symbol-layer";
+export {
+  type ChoroplethZoomLabels,
+  DEFAULT_CHOROPLETH_ZOOM_LABELS,
+} from "./choropleth/zoom-controls";
