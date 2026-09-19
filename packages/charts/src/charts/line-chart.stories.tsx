@@ -956,12 +956,10 @@ export const LegendToggle: Story = {
     <div className="h-72 w-full max-w-[720px]">
       <LineChart
         aspectRatio={undefined}
-        animationDuration={0}
         data={chartData}
         focusOnHover
         legend={{ position: "right", interactive: "toggle" }}
         onDatapointClick={() => {}}
-        yDomainTweenDuration={0}
       >
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" name="Users" stroke="var(--chart-1)" />
@@ -1000,18 +998,47 @@ export const LegendToggle: Story = {
 
     // "sessions" (3100–4300) is the max series here; "users" tops out at
     // 1520 — hiding sessions must shrink the top tick toward ~1.5K, keyboard
-    // operated (RM-118, validator FAIL 1a — the y-domain used to stay frozen
-    // on a legend toggle).
+    // operated. This chart mounts at the DEFAULT `animationDuration`
+    // (1100ms) on purpose (RM-118, validator FAIL 1a round 2): toggling
+    // WHILE the chart is still revealing is exactly the case that used to
+    // stay frozen until the entrance animation happened to finish — see the
+    // fail-before/pass-after unit test in `time-series-chart-shell.test.tsx`
+    // ("recomputes even when toggled mid-reveal"). This story exercises the
+    // real, non-zero-duration path end to end.
     await waitFor(() => expect(yTicks().length).toBeGreaterThan(0));
     const before = yTicks();
 
+    // Toggle within the first ~500ms after mount — still mid-reveal.
     const sessionsToggle = legendToggle(/sessions/i) as HTMLButtonElement;
     sessionsToggle.focus();
     await userEvent.keyboard("{Enter}");
     await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "false"));
+
+    // Give the reveal (1100ms) and the y-domain tween time to fully settle,
+    // then confirm the ticks actually shrank — not just eventually, but as
+    // the direct result of the toggle that landed mid-reveal.
+    await waitFor(() => expect(yTicks()).not.toEqual(before), { timeout: 5000 });
+    const afterMidRevealHide = yTicks();
+    await expect(parseTick(afterMidRevealHide.at(-1) ?? "")).toBeLessThan(
+      parseTick(before.at(-1) ?? ""),
+    );
+
+    sessionsToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(yTicks()).toEqual(before), { timeout: 5000 });
+
+    // The normal case: toggling well AFTER the reveal has settled (chart is
+    // long "ready" by now) still hides and re-shows correctly — ticks
+    // shrink on hide, restore on re-show.
+    sessionsToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "false"));
     await waitFor(() => expect(yTicks()).not.toEqual(before));
-    const afterHide = yTicks();
-    await expect(parseTick(afterHide.at(-1) ?? "")).toBeLessThan(parseTick(before.at(-1) ?? ""));
+    const afterSettledHide = yTicks();
+    await expect(parseTick(afterSettledHide.at(-1) ?? "")).toBeLessThan(
+      parseTick(before.at(-1) ?? ""),
+    );
 
     sessionsToggle.focus();
     await userEvent.keyboard("{Enter}");
