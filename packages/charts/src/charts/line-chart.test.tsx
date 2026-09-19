@@ -697,6 +697,109 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
     });
   });
 
+  // Legend engine (RM-118): `legend` prop → `useContainerLegend`.
+  describe("legend (RM-118)", () => {
+    const twoSeriesData = [
+      { date: new Date(2024, 0, 1), a: 10, b: 30 },
+      { date: new Date(2024, 0, 2), a: 20, b: 25 },
+      { date: new Date(2024, 0, 3), a: 15, b: 28 },
+    ];
+
+    it("an unset legend renders no legend, even with more than one series (R1 default)", () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} xDataKey="date">
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+      expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+      expect(container.querySelector(".legend-container")).toBeNull();
+    });
+
+    it("legend={true} renders both series as legend entries", () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} legend xDataKey="date">
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+      expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+      const legend = container.querySelector(".legend-container");
+      expect(legend?.textContent).toContain("a");
+      expect(legend?.textContent).toContain("b");
+    });
+
+    it('interactive: "toggle" hides the clicked series, flips aria-pressed, and drops it from the y-domain', async () => {
+      const { container } = render(
+        <LineChart
+          animationDuration={0}
+          data={twoSeriesData}
+          legend={{ interactive: "toggle" }}
+          xDataKey="date"
+        >
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath")).toHaveLength(2);
+      });
+
+      const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+      expect(buttons).toHaveLength(2);
+      const buttonB = buttons[1] as HTMLButtonElement;
+      expect(buttonB.getAttribute("aria-pressed")).toBe("true");
+
+      fireEvent.click(buttonB);
+
+      await waitFor(() => {
+        expect(buttonB.getAttribute("aria-pressed")).toBe("false");
+        // The toggled-off series' `<Line>` no longer paints a path at all.
+        expect(container.querySelectorAll("path.visx-linepath")).toHaveLength(1);
+      });
+
+      // WCAG 1.4.1: hidden reads via a struck-through label, not colour alone.
+      expect(buttonB.querySelector("span.line-through")).not.toBeNull();
+
+      fireEvent.click(buttonB);
+      await waitFor(() => {
+        expect(buttonB.getAttribute("aria-pressed")).toBe("true");
+        expect(container.querySelectorAll("path.visx-linepath")).toHaveLength(2);
+      });
+    });
+
+    it("hovering a legend item dims every other series when focusOnHover is set (Refs #545)", async () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} focusOnHover legend xDataKey="date">
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+      const seriesAGroup = paths[0]?.closest("g");
+      const seriesBGroup = paths[1]?.closest("g");
+
+      const legendItems = container.querySelectorAll(".legend-container > div");
+      expect(legendItems.length).toBeGreaterThanOrEqual(2);
+      fireEvent.mouseEnter(legendItems[1] as Element);
+
+      await waitFor(() => {
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      });
+
+      fireEvent.mouseLeave(legendItems[1] as Element);
+      await waitFor(() => {
+        expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+      });
+    });
+  });
+
   // Wave-1 integration (RM-110 end labels + RM-112 nulls="gap"): the end
   // label's anchor comes from `placeChartLabels` scanning a series' RAW data
   // backward for the last finite value — it never reads the rendered/gapped

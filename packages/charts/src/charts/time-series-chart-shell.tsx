@@ -264,6 +264,16 @@ export interface TimeSeriesChartInnerProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   /** Series keys driving y-domain and tooltip (Line / Area / SeriesBar configs). */
   lines: LineConfig[];
+  /**
+   * Toggled-off series keys (RM-118, `legend={{ interactive: "toggle" }}`).
+   * Filtered out of `lines` before EVERY downstream y-domain/scale/tooltip
+   * calculation below reads it, so a hidden series drops out of the tween'd
+   * y-domain and the keyboard drill-down layer's accessible targets exactly
+   * like it was never in `lines` to begin with; its `Line`/`Area`/`SeriesBar`
+   * child is also dropped from paint. Unset (default) — today's behaviour,
+   * byte-identical.
+   */
+  hiddenKeys?: ReadonlySet<string>;
   /** SVG clipPath id for grow animation. */
   clipPathId: string;
   /** Optional ComposedChart bar layout (forwarded into context). */
@@ -338,6 +348,15 @@ export interface ChartSeriesModeProviderProps {
    * chart-wide tooltip dim and legend hover apply).
    */
   focusOnHover?: boolean;
+  /**
+   * The container legend's currently hovered/keyboard-focused item key
+   * (RM-118, `useContainerLegend`, `Refs #545`) — merged with the
+   * pointer-driven `hoveredKey` below so a legend hover reuses the SAME
+   * `focusOnHover` fade a pointer hovering the line/area itself already
+   * draws. Wins over the internal pointer state while set; unset (default,
+   * every caller before RM-118) changes nothing.
+   */
+  legendHoveredKey?: string | null;
   children: ReactNode;
 }
 
@@ -350,17 +369,19 @@ export interface ChartSeriesModeProviderProps {
 export function ChartSeriesModeProvider({
   nulls,
   focusOnHover = false,
+  legendHoveredKey = null,
   children,
 }: ChartSeriesModeProviderProps) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const effectiveHoveredKey = legendHoveredKey ?? hoveredKey;
   const value = useMemo<ChartSeriesModeValue>(
     () => ({
       nulls,
       focusOnHover,
-      hoveredKey: focusOnHover ? hoveredKey : null,
+      hoveredKey: focusOnHover ? effectiveHoveredKey : null,
       setHoveredKey,
     }),
-    [nulls, focusOnHover, hoveredKey],
+    [nulls, focusOnHover, effectiveHoveredKey],
   );
   return (
     <ChartSeriesModeContext.Provider value={value}>{children}</ChartSeriesModeContext.Provider>
@@ -402,7 +423,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   revealSignature = "",
   children,
   containerRef,
-  lines,
+  lines: linesProp,
+  hiddenKeys,
   clipPathId,
   composedBarDataKeys,
   composedBarSize,
@@ -463,6 +485,18 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   );
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
+
+  // RM-118: shadow `lines` with the toggled-off series filtered out, BEFORE
+  // the value-axis domain below is computed — every calculation past this
+  // point already reads a variable named `lines`, so filtering it here once
+  // is the whole seam (mirrors RM-120's facet transform on `children`).
+  const lines = useMemo(
+    () =>
+      hiddenKeys && hiddenKeys.size > 0
+        ? linesProp.filter((line) => !hiddenKeys.has(line.dataKey))
+        : linesProp,
+    [linesProp, hiddenKeys],
+  );
 
   const resolveYDomain = useCallback(
     (sourceData: Record<string, unknown>[], dataKeys: string[]) => {
@@ -869,6 +903,14 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
 
   Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
+      return;
+    }
+
+    // RM-118: a toggled-off series paints nothing — its `Line`/`Area`/
+    // `SeriesBar` child (identified the same way `lines` itself was built,
+    // by `dataKey`) is dropped before any other classification below.
+    const childDataKey = (child.props as { dataKey?: unknown } | null)?.dataKey;
+    if (hiddenKeys?.size && typeof childDataKey === "string" && hiddenKeys.has(childDataKey)) {
       return;
     }
 

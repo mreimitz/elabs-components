@@ -375,6 +375,8 @@ export function ChartLegend({
               className={cn((onItemClick || isToggleable) && "text-start focus-ring")}
               data-hovered={isHovered ? "" : undefined}
               key={`legend-${item.label}-${item.value}`}
+              onBlur={() => onHover?.(null)}
+              onFocus={() => onHover?.(i)}
               onMouseEnter={() => onHover?.(i)}
               onMouseLeave={() => onHover?.(null)}
               {...interactiveProps}
@@ -395,6 +397,8 @@ export function ChartLegend({
             )}
             data-hovered={isHovered ? "" : undefined}
             key={`legend-${item.label}-${item.value}`}
+            onBlur={() => onHover?.(null)}
+            onFocus={() => onHover?.(i)}
             onMouseEnter={() => onHover?.(i)}
             onMouseLeave={() => onHover?.(null)}
             {...interactiveProps}

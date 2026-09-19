@@ -34,7 +34,7 @@
  * `Line`) where a test needs to assert on rendered label text.
  */
 
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
@@ -370,5 +370,78 @@ describe("XAxis tickFormat / tickValues never see the synthetic instant (#352)",
       </LineChart>,
     );
     expect(container.textContent).toContain("FORMATTED");
+  });
+});
+
+// RM-118: the shell filters `lines` (the y-domain / scale / drill-down
+// source, and the context value `ChartTooltip` reads) BEFORE any downstream
+// calculation runs — see `TimeSeriesChartInnerProps.hiddenKeys`. A tiny fake
+// series component (not `Line`) proves this at the CONTEXT level, decoupled
+// from `Line`'s own `getTotalLength()` jsdom gap (this file's header).
+describe("legend `hiddenKeys` (RM-118) filters `lines` before the value-axis domain", () => {
+  function FakeSeries(_props: { dataKey: string }) {
+    return null;
+  }
+  FakeSeries.displayName = "FakeSeries";
+
+  function LinesProbe({ onResolve }: { onResolve: (keys: string[]) => void }) {
+    const { lines } = useChartStable();
+    onResolve(lines.map((l) => l.dataKey));
+    return null;
+  }
+
+  const twoSeriesData = [
+    { date: new Date(2024, 0, 1), a: 10, b: 100 },
+    { date: new Date(2024, 0, 2), a: 20, b: 90 },
+  ];
+
+  it("toggling a legend item off drops it from context `lines`; toggling back on restores it", async () => {
+    let keys: string[] = [];
+    const { container } = render(
+      <LineChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="date"
+      >
+        <FakeSeries dataKey="a" />
+        <FakeSeries dataKey="b" />
+        <LinesProbe onResolve={(k) => (keys = k)} />
+      </LineChart>,
+    );
+
+    await waitFor(() => expect(keys).toEqual(["a", "b"]));
+
+    const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[1] as HTMLButtonElement);
+
+    await waitFor(() => expect(keys).toEqual(["a"]));
+
+    fireEvent.click(buttons[1] as HTMLButtonElement);
+    await waitFor(() => expect(keys).toEqual(["a", "b"]));
+  });
+
+  it("AreaChart honours the same `hiddenKeys` seam through the shared shell", async () => {
+    let keys: string[] = [];
+    const { container } = render(
+      <AreaChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="date"
+      >
+        <FakeSeries dataKey="a" />
+        <FakeSeries dataKey="b" />
+        <LinesProbe onResolve={(k) => (keys = k)} />
+      </AreaChart>,
+    );
+
+    await waitFor(() => expect(keys).toEqual(["a", "b"]));
+
+    const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+    fireEvent.click(buttons[0] as HTMLButtonElement);
+
+    await waitFor(() => expect(keys).toEqual(["b"]));
   });
 });

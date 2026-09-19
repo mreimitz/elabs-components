@@ -21,7 +21,7 @@ import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
-import type { LineConfig, Margin } from "./chart-context";
+import type { ChartLegendEntry, LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
 import {
@@ -43,6 +43,8 @@ import {
   resolveRestingChartPhase,
 } from "./chart-phase";
 import type { ChartRevealOn } from "./chart-reveal-clip";
+// Legend engine — RM-118
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { Line, type LineProps } from "./line";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
@@ -155,6 +157,15 @@ export interface LineChartProps extends ChartSelectionProps, ChartHoverLinkProps
    * Default false — today's behaviour.
    */
   focusOnHover?: boolean;
+  /**
+   * Legend engine (RM-118): `true` or a config object mounts `ChartLegend`
+   * beside the plot via `useContainerLegend`; `{ interactive: "toggle" }`
+   * hides a series and re-tweens the y-domain. Unset (default) renders
+   * NOTHING new — RM-110's end labels stay the default multi-series key for
+   * `LineChart`, unlike `useContainerLegend`'s generic "on when there's more
+   * than one item" default.
+   */
+  legend?: ContainerLegendProp;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -260,6 +271,15 @@ interface ChartInnerProps {
   nulls?: NullsMode;
   /** Dim non-hovered series — see `LineChartProps.focusOnHover`. */
   focusOnHover?: boolean;
+  /** Toggled-off series keys (RM-118) — see `TimeSeriesChartInnerProps.hiddenKeys`. */
+  hiddenKeys?: ReadonlySet<string>;
+  /**
+   * The legend item currently hovered or keyboard-focused (RM-118, `Refs
+   * #545`) — merged into `ChartSeriesModeProvider`'s own hover-dim state so a
+   * legend hover reuses the SAME fade `focusOnHover` already draws for a
+   * pointer hovering the line/area itself.
+   */
+  legendHoveredKey?: string | null;
 }
 
 function ChartInner({
@@ -291,6 +311,8 @@ function ChartInner({
   onPhaseChange,
   nulls,
   focusOnHover,
+  hiddenKeys,
+  legendHoveredKey,
 }: ChartInnerProps) {
   // See `use-stable-value.ts`: collapses back to the previous reference when
   // the extracted series content is unchanged, even though `children` gets a
@@ -306,7 +328,11 @@ function ChartInner({
     // `focusOnHover` hover-state change re-renders only this provider and its
     // consumers, never the memoised chart-shell tree. See
     // `ChartSeriesModeProvider`'s own docblock in `./time-series-chart-shell`.
-    <ChartSeriesModeProvider focusOnHover={focusOnHover} nulls={nulls}>
+    <ChartSeriesModeProvider
+      focusOnHover={focusOnHover}
+      legendHoveredKey={legendHoveredKey}
+      nulls={nulls}
+    >
       <TimeSeriesChartInner
         animationDuration={animationDuration}
         animationEasing={animationEasing}
@@ -316,6 +342,7 @@ function ChartInner({
         data={data}
         enterTransition={enterTransition}
         height={height}
+        hiddenKeys={hiddenKeys}
         lines={lines}
         loadingLabel={loadingLabel}
         margin={margin}
@@ -393,12 +420,50 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     onHoverCategory,
     nulls,
     focusOnHover,
+    legend,
   },
   ref,
 ) {
   const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
   // Internal ref anchors tooltips; forwarded ref is merged via callback ref.
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Legend engine (RM-118). `children` is walked a second time here (cheap —
+  // the same small tree `ChartInner` below also walks) so the legend items
+  // and the container's own width measurement are both available BEFORE
+  // `ParentSize` mounts, at the level the legend needs to sit beside the plot.
+  const lineConfigsForLegend = useStableValue(
+    useMemo(() => extractLineConfigs(children), [children]),
+  );
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      lineConfigsForLegend.map((line) => ({
+        key: line.dataKey,
+        label: line.dataKey,
+        color: line.stroke || "var(--chart-line-primary)",
+        kind: "series" as const,
+      })),
+    [lineConfigsForLegend],
+  );
+  // An unset `legend` never turns `useContainerLegend`'s generic "more than
+  // one item" default on for THIS container — see `LineChartProps.legend`.
+  const containerLegendProp: ContainerLegendProp =
+    legend === true || (typeof legend === "object" && legend !== null) ? legend : false;
+  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+  const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  const handleLegendHoverChange = useCallback(
+    (index: number | null) => {
+      setLegendHoveredIndex(index);
+      setLegendHoveredKey(index == null ? null : (legendItems[index]?.key ?? null));
+    },
+    [legendItems],
+  );
+  const containerLegend = useContainerLegend({
+    legend: containerLegendProp,
+    items: legendItems,
+    hoveredIndex: legendHoveredIndex,
+    onHoverChange: handleLegendHoverChange,
+  });
 
   const mergedRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -445,7 +510,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
       chartPhase === "revealingLoading"),
   );
 
-  return (
+  return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
@@ -473,6 +538,8 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
                 datapointLabel={datapointLabel}
                 enterTransition={enterTransition}
                 height={height}
+                hiddenKeys={containerLegend.hiddenKeys}
+                legendHoveredKey={legendHoveredKey}
                 loadingLabel={loadingLabel}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
                 margin={margin}
@@ -504,7 +571,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}
-    </ChartPlotRoot>
+    </ChartPlotRoot>,
   );
 });
 
