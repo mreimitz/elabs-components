@@ -16,7 +16,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
 | `@elabs-ai/components-ui` | packages/ui | 405 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
-| `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
+| `@elabs-ai/components-data` | packages/data | 17 | 1 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
@@ -539,12 +539,24 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
+| BarCell | component |  | `@elabs-ai/components-data` |  |
 | ColumnPicker | component |  | `@elabs-ai/components-data` |  |
+| ColumnsCell | component |  | `@elabs-ai/components-data` |  |
+| DATA_TABLE_BREAKPOINT_THRESHOLDS | component |  | `@elabs-ai/components-data` |  |
 | DataTable | component |  | `@elabs-ai/components-data` | TanStack-backed data grid with sorting, filtering, pagination and a render-prop toolbar. |
+| DataTableCard | component |  | `@elabs-ai/components-data` |  |
+| DataTableCardList | component |  | `@elabs-ai/components-data` |  |
+| DataTableRankCell | component |  | `@elabs-ai/components-data` |  |
+| DataTableRankHeader | component |  | `@elabs-ai/components-data` |  |
 | FacetFilter | component |  | `@elabs-ai/components-data` |  |
 | FilterBar | component |  | `@elabs-ai/components-data` |  |
 | FilterChip | component |  | `@elabs-ai/components-data` |  |
+| HeatmapCell | component |  | `@elabs-ai/components-data` |  |
+| HeatmapLegend | component |  | `@elabs-ai/components-data` |  |
+| MarkdownCell | component |  | `@elabs-ai/components-data` |  |
 | SearchInput | component |  | `@elabs-ai/components-data` | Controlled search box that drives a DataTable's global filter. |
+| SparklineCell | component |  | `@elabs-ai/components-data` |  |
+| useTableBreakpoint | hook |  | `@elabs-ai/components-data` |  |
 
 ## @elabs-ai/components-ai
 

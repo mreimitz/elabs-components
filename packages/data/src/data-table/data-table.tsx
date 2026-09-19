@@ -434,25 +434,26 @@ export interface DataTableProps<TData, TValue> extends Omit<
    */
   layout?: "auto" | "table" | "cards";
   /**
-   * Rows that stay at the top or bottom of every page and after every sort
-   * (an "average" or "total" row). Receives each record and its `data` index.
+   * Rows pinned to the top or bottom of every page. An "average" or "total"
+   * row stays put through sorting, paging and search. Receives each record
+   * and its `data` index.
    */
   stickyRows?: DataTableStickyRows<TData>;
   /**
-   * Prepend a rank column: each row's 1-based position in `data` (sticky rows
-   * excluded). The rank travels with its row — sorting never renumbers it.
+   * Prepend a 1…n rank column, in `data` order. Sticky rows are not ranked;
+   * the rank travels with its row — sorting never renumbers it.
    */
   showRanks?: boolean;
   /** `"compact"` tightens row and header height. Default `"default"`. */
   density?: "default" | "compact";
   /**
-   * Grouped headers: merge a column's empty placeholder cells above it into
-   * one header cell that spans the header rows (Datawrapper's double header).
+   * Span an ungrouped column's header over the empty group rows. With
+   * grouped headers, the placeholder cells above a column merge into one.
    */
   mergeEmptyHeaders?: boolean;
   /**
-   * Global search: `"contains"` (default, TanStack's own) or `"exact"` — a row
-   * matches only when a cell equals the query (case-insensitive).
+   * `"exact"`: a row matches only when a cell equals the query. Default
+   * `"contains"` (TanStack's substring search); both ignore case.
    */
   searchMode?: "contains" | "exact";
   /**

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T21:07:30.345Z",
+  "generatedAt": "2026-09-19T21:41:08.551Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25843,14 +25843,49 @@
       },
       "components": [
         {
+          "name": "BarCell",
+          "kind": "value",
+          "module": "packages/data/src/data-table/cells/bar-cell.tsx"
+        },
+        {
           "name": "ColumnPicker",
           "kind": "value",
           "module": "packages/data/src/column-picker/column-picker.tsx"
         },
         {
+          "name": "ColumnsCell",
+          "kind": "value",
+          "module": "packages/data/src/data-table/cells/columns-cell.tsx"
+        },
+        {
+          "name": "DATA_TABLE_BREAKPOINT_THRESHOLDS",
+          "kind": "value",
+          "module": "packages/data/src/data-table/use-table-breakpoint.ts"
+        },
+        {
           "name": "DataTable",
           "kind": "value",
           "module": "packages/data/src/data-table/data-table.tsx"
+        },
+        {
+          "name": "DataTableCard",
+          "kind": "value",
+          "module": "packages/data/src/data-table/card-layout.tsx"
+        },
+        {
+          "name": "DataTableCardList",
+          "kind": "value",
+          "module": "packages/data/src/data-table/card-layout.tsx"
+        },
+        {
+          "name": "DataTableRankCell",
+          "kind": "value",
+          "module": "packages/data/src/data-table/ranks-column.tsx"
+        },
+        {
+          "name": "DataTableRankHeader",
+          "kind": "value",
+          "module": "packages/data/src/data-table/ranks-column.tsx"
         },
         {
           "name": "FacetFilter",
@@ -25868,13 +25903,43 @@
           "module": "packages/data/src/filter-bar/filter-chip.tsx"
         },
         {
+          "name": "HeatmapCell",
+          "kind": "value",
+          "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
+        },
+        {
+          "name": "HeatmapLegend",
+          "kind": "value",
+          "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
+        },
+        {
+          "name": "MarkdownCell",
+          "kind": "value",
+          "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
+        },
+        {
           "name": "SearchInput",
           "kind": "value",
           "module": "packages/data/src/search-input/search-input.tsx"
+        },
+        {
+          "name": "SparklineCell",
+          "kind": "value",
+          "module": "packages/data/src/data-table/cells/sparkline-cell.tsx"
         }
       ],
-      "hooks": [],
+      "hooks": [
+        {
+          "name": "useTableBreakpoint",
+          "kind": "value",
+          "module": "packages/data/src/data-table/use-table-breakpoint.ts"
+        }
+      ],
       "types": [
+        {
+          "name": "BarCellProps",
+          "module": "packages/data/src/data-table/cells/bar-cell.tsx"
+        },
         {
           "name": "CellContext",
           "module": "packages/data/src/index.ts"
@@ -25896,6 +25961,10 @@
           "module": "packages/data/src/index.ts"
         },
         {
+          "name": "ColumnsCellProps",
+          "module": "packages/data/src/data-table/cells/columns-cell.tsx"
+        },
+        {
           "name": "ColumnSizingState",
           "module": "packages/data/src/index.ts"
         },
@@ -25904,8 +25973,52 @@
           "module": "packages/data/src/to-csv.ts"
         },
         {
+          "name": "DataTableBarVisual",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableBreakpoint",
+          "module": "packages/data/src/data-table/use-table-breakpoint.ts"
+        },
+        {
+          "name": "DataTableCardField",
+          "module": "packages/data/src/data-table/card-layout.tsx"
+        },
+        {
+          "name": "DataTableCardProps",
+          "module": "packages/data/src/data-table/card-layout.tsx"
+        },
+        {
+          "name": "DataTableCellVisual",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableColorBy",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
           "name": "DataTableColumnMeta",
           "module": "packages/data/src/data-table/data-table.tsx"
+        },
+        {
+          "name": "DataTableColumnScale",
+          "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "DataTableColumnsVisual",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableHeatmapScale",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableHeatmapVisual",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableMarkdownOptions",
+          "module": "packages/data/src/data-table/column-meta.ts"
         },
         {
           "name": "DataTableProps",
@@ -25918,6 +26031,26 @@
         {
           "name": "DataTableServerArgs",
           "module": "packages/data/src/data-table/data-table.tsx"
+        },
+        {
+          "name": "DataTableShowAt",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableSparklineVisual",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableStickyRowPosition",
+          "module": "packages/data/src/data-table/sticky-rows.ts"
+        },
+        {
+          "name": "DataTableStickyRows",
+          "module": "packages/data/src/data-table/sticky-rows.ts"
+        },
+        {
+          "name": "DataTableValueFormatSpec",
+          "module": "packages/data/src/data-table/column-meta.ts"
         },
         {
           "name": "DataTableViewState",
@@ -25944,6 +26077,22 @@
           "module": "packages/data/src/filter-bar/filter-chip.tsx"
         },
         {
+          "name": "HeatmapCellProps",
+          "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
+        },
+        {
+          "name": "HeatmapLegendProps",
+          "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
+        },
+        {
+          "name": "MarkdownCellProps",
+          "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
+        },
+        {
+          "name": "NumericExtent",
+          "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
           "name": "Row",
           "module": "packages/data/src/index.ts"
         },
@@ -25956,6 +26105,10 @@
           "module": "packages/data/src/search-input/search-input.tsx"
         },
         {
+          "name": "SparklineCellProps",
+          "module": "packages/data/src/data-table/cells/sparkline-cell.tsx"
+        },
+        {
           "name": "Table",
           "module": "packages/data/src/index.ts"
         },
@@ -25966,6 +26119,26 @@
       ],
       "otherExports": [
         {
+          "name": "barDomain",
+          "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "barGeometry",
+          "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "columnSizeStyle",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "computeColumnScales",
+          "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "computeRowRanks",
+          "module": "packages/data/src/data-table/ranks-column.tsx"
+        },
+        {
           "name": "createSelectionColumn",
           "module": "packages/data/src/data-table/data-table.tsx"
         },
@@ -25974,11 +26147,100 @@
           "module": "packages/data/src/to-csv.ts"
         },
         {
+          "name": "extentOf",
+          "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "formatCellValue",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "heatmapCellStyle",
+          "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
+        },
+        {
+          "name": "heatmapColorScaleSpec",
+          "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "isSafeCellUrl",
+          "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
+        },
+        {
+          "name": "parseCellMarkdown",
+          "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
+        },
+        {
+          "name": "resolveShowAt",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "seriesValues",
+          "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "stickyRowPinning",
+          "module": "packages/data/src/data-table/sticky-rows.ts"
+        },
+        {
+          "name": "tableBreakpointForWidth",
+          "module": "packages/data/src/data-table/use-table-breakpoint.ts"
+        },
+        {
           "name": "toCsv",
           "module": "packages/data/src/to-csv.ts"
         }
       ],
       "props": {
+        "BarCell": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "value",
+              "optional": false,
+              "type": "number | null",
+              "description": "The number the bar draws; `null` draws no bar."
+            },
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "The printed (formatted) value. Always in the accessible tree."
+            },
+            {
+              "name": "domain",
+              "optional": false,
+              "type": "readonly [number, number]",
+              "description": "`[lo, hi]` of the track; always contains zero (see `barDomain`)."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "\"regular\" | \"slim\"",
+              "description": "`\"regular\"` (default): bar beside the value; `\"slim\"`: a thin bar under it."
+            },
+            {
+              "name": "track",
+              "optional": true,
+              "type": "boolean",
+              "description": "Paint the grey remainder of the track."
+            },
+            {
+              "name": "fillColor",
+              "optional": true,
+              "type": "string | null",
+              "description": "A category colour (`var(--chart-N)`) that replaces the positive fill."
+            },
+            {
+              "name": "negativeColor",
+              "optional": true,
+              "type": "boolean",
+              "description": "Paint a negative value in the negative token. Default `true`."
+            }
+          ]
+        },
         "ColumnPicker": {
           "extends": [
             "ButtonHTMLAttributes<HTMLButtonElement>"
@@ -25994,6 +26256,37 @@
               "optional": true,
               "type": "string",
               "description": "Trigger label. Defaults to \"Columns\"."
+            }
+          ]
+        },
+        "ColumnsCell": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "values",
+              "optional": false,
+              "type": "readonly { key: string; value: number | null }[]",
+              "description": "One entry per row key, in x order; a `null` value draws no column."
+            },
+            {
+              "name": "domain",
+              "optional": false,
+              "type": "NumericExtent | null",
+              "description": "The value domain: this row's own extent or the column's. Zero is always added."
+            },
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "Every value as text, for screen readers, sorting and copy."
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "number",
+              "description": "Drawing height in px. Default 24."
             }
           ]
         },
@@ -26245,6 +26538,48 @@
               "description": "Draw a quiet `--rule` hairline between columns (header and body). Off by default. Pinned cells keep their own seam and never take a divider."
             },
             {
+              "name": "layout",
+              "optional": true,
+              "type": "\"auto\" | \"table\" | \"cards\"",
+              "description": "`\"table\"` (default): always a `<table>`. `\"cards\"`: always one card per row (a `<dl>` of header → cell). `\"auto\"`: cards while the table's own container is narrower than 450 px, a `<table>` above. Only the markup changes; sorting, filtering, paging and selection use the same table."
+            },
+            {
+              "name": "stickyRows",
+              "optional": true,
+              "type": "DataTableStickyRows<TData>",
+              "description": "Rows pinned to the top or bottom of every page. An \"average\" or \"total\" row stays put through sorting, paging and search. Receives each record and its `data` index."
+            },
+            {
+              "name": "showRanks",
+              "optional": true,
+              "type": "boolean",
+              "description": "Prepend a 1…n rank column, in `data` order. Sticky rows are not ranked; the rank travels with its row — sorting never renumbers it."
+            },
+            {
+              "name": "density",
+              "optional": true,
+              "type": "\"default\" | \"compact\"",
+              "description": "`\"compact\"` tightens row and header height. Default `\"default\"`."
+            },
+            {
+              "name": "mergeEmptyHeaders",
+              "optional": true,
+              "type": "boolean",
+              "description": "Span an ungrouped column's header over the empty group rows. With grouped headers, the placeholder cells above a column merge into one."
+            },
+            {
+              "name": "searchMode",
+              "optional": true,
+              "type": "\"contains\" | \"exact\"",
+              "description": "`\"exact\"`: a row matches only when a cell equals the query. Default `\"contains\"` (TanStack's substring search); both ignore case."
+            },
+            {
+              "name": "hideHeader",
+              "optional": true,
+              "type": "boolean",
+              "description": "Hide the header row visually (a pixel heatmap). The headers stay for screen readers, and a focused sort button still shows itself."
+            },
+            {
               "name": "enableRowReorder",
               "optional": true,
               "type": "boolean",
@@ -26296,6 +26631,30 @@
               "name": "className",
               "optional": true,
               "type": "string"
+            }
+          ]
+        },
+        "DataTableCard": {
+          "extends": [
+            "LiHTMLAttributes<HTMLLIElement>"
+          ],
+          "props": [
+            {
+              "name": "fields",
+              "optional": false,
+              "type": "readonly DataTableCardField[]"
+            },
+            {
+              "name": "lead",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Content above the fields (the selection checkbox, the rank, the row action)."
+            },
+            {
+              "name": "density",
+              "optional": true,
+              "type": "\"default\" | \"compact\"",
+              "description": "`compact` tightens the padding, like the table's `density=\"compact\"`."
             }
           ]
         },
@@ -26374,6 +26733,66 @@
             }
           ]
         },
+        "HeatmapCell": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "The printed (formatted) value. Always in the accessible tree."
+            },
+            {
+              "name": "hideValue",
+              "optional": true,
+              "type": "boolean",
+              "description": "Hide the value visually; it stays for screen readers, sorting and copy."
+            }
+          ]
+        },
+        "HeatmapLegend": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "scale",
+              "optional": false,
+              "type": "ColorScale"
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "string",
+              "description": "What the colours measure (the column's header)."
+            },
+            {
+              "name": "formatValue",
+              "optional": false,
+              "type": "(value: number) => string"
+            }
+          ]
+        },
+        "MarkdownCell": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": [
+            {
+              "name": "text",
+              "optional": false,
+              "type": "string"
+            },
+            {
+              "name": "images",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render `![alt](src)` as an image. Default `false` (the alt text prints)."
+            }
+          ]
+        },
         "SearchInput": {
           "extends": [
             "Omit<\n  InputHTMLAttributes<HTMLInputElement>,\n  \"onChange\" | \"value\"\n>"
@@ -26399,6 +26818,47 @@
               "name": "containerClassName",
               "optional": true,
               "type": "string"
+            }
+          ]
+        },
+        "SparklineCell": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "values",
+              "optional": false,
+              "type": "readonly (number | null)[]"
+            },
+            {
+              "name": "domain",
+              "optional": false,
+              "type": "NumericExtent | null",
+              "description": "The y domain: this row's own extent (`range: \"cell\"`) or the column's."
+            },
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "Every value as text, for screen readers, sorting and copy."
+            },
+            {
+              "name": "ends",
+              "optional": true,
+              "type": "readonly [first: string, last: string]",
+              "description": "Printed first / last values (with `labels: \"ends\"`)."
+            },
+            {
+              "name": "fill",
+              "optional": true,
+              "type": "boolean"
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "number",
+              "description": "Drawing height in px. Default 24."
             }
           ]
         }

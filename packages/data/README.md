@@ -38,7 +38,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-6 exported components — including `ColumnPicker`, `DataTable`, `FacetFilter`, `FilterBar`, `FilterChip`.
+17 exported components — including `BarCell`, `ColumnPicker`, `ColumnsCell`, `DATA_TABLE_BREAKPOINT_THRESHOLDS`, `DataTable`.
 
 Don't guess the API — ask the CLI:
 
