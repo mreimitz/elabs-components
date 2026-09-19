@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T15:19:11.268Z",
+  "generatedAt": "2026-09-19T15:55:52.882Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -30040,6 +30040,12 @@
               "optional": true,
               "type": "Record<string, string>",
               "description": "Category slug → display label (e.g. `{ stories: \"Stories\" }`); an unlisted category falls back to its own slug, never invented."
+            },
+            {
+              "name": "formatGroupSummary",
+              "optional": true,
+              "type": "(count: number) => string",
+              "description": "Formats a group's visible rule count next to its category label. Defaults to `defaultFormatGroupSummary` (\"34 rules\")."
             },
             {
               "name": "labels",

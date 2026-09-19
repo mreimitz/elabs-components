@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 /** One rule/command, exactly the shape `gates.json` (RM-090) already carries — never re-typed. */
@@ -17,6 +17,30 @@ export const DEFAULT_GATES_BAND_LABELS: GatesBandLabels = {
   heading: "Gates, not guidelines",
 };
 
+/** A group's rule count as it reads next to its category label, e.g. "34 rules". Overridable so
+ * a host can localize the plural. */
+export function defaultFormatGroupSummary(count: number): string {
+  return `${count} rule${count === 1 ? "" : "s"}`;
+}
+
+/** Splits a gate's doc on its markdown backtick pairs and renders every odd segment as real
+ * `<code>` — a pure string split, never an HTML sink (`gates.json` docs always carry an even
+ * number of backticks, so segments alternate prose/code cleanly). */
+function renderGateDoc(doc: string): ReactNode {
+  return doc.split("`").map((segment, index) => {
+    // The key mixes the segment's own text with its position: two segments can share text (e.g.
+    // adjacent empty strings from ``` ``), so the index alone would collide.
+    const key = `${index}-${segment}`;
+    return index % 2 === 1 ? (
+      <code key={key} className="font-mono text-code text-foreground">
+        {segment}
+      </code>
+    ) : (
+      <Fragment key={key}>{segment}</Fragment>
+    );
+  });
+}
+
 export interface GatesBandProps {
   /** Every gate to render, already carrying its real `category` — grouping never re-categorises. */
   gates: readonly GatesBandGate[];
@@ -26,6 +50,9 @@ export interface GatesBandProps {
   /** Category slug → display label (e.g. `{ stories: "Stories" }`); an unlisted category falls
    * back to its own slug, never invented. */
   categoryLabels?: Record<string, string>;
+  /** Formats a group's visible rule count next to its category label. Defaults to
+   * `defaultFormatGroupSummary` ("34 rules"). */
+  formatGroupSummary?: (count: number) => string;
   labels?: Partial<GatesBandLabels>;
   /** A footnote the host renders under the grid (e.g. a link to `docs/GATES.md` on GitHub) — this
    * component embeds no URL of its own. */
@@ -65,14 +92,18 @@ function groupByCategory(
 
 /**
  * A generated rule catalogue in place of testimonials (concept §4.5): every check-rule/command in
- * `gates.json`, grouped by its own `category` field. Fully server-safe — no hooks, no handlers, no
- * `"use client"` — `@elabs-ai/components-marketing` never gains a client boundary (maintainer
- * decision, RM-089-decisions.md).
+ * `gates.json`, grouped by its own `category` field, each group behind a native `<details>`
+ * disclosure closed by default (#587) — a category and its count are always visible; the rules
+ * themselves are one click/Enter/Space away, never dumped inline. `<details>`/`<summary>` need no
+ * JavaScript to open or close, so the catalogue stays reachable with JS off, and the component
+ * stays fully server-safe — no hooks, no handlers, no `"use client"` — `@elabs-ai/components-
+ * marketing` never gains a client boundary (maintainer decision, RM-089-decisions.md).
  */
 export function GatesBand({
   gates,
   count,
   categoryLabels = {},
+  formatGroupSummary = defaultFormatGroupSummary,
   labels: labelsProp,
   footer,
   className,
@@ -86,19 +117,27 @@ export function GatesBand({
       </h3>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {groups.map((group) => (
-          <div key={group.category} data-slot="gates-band-group" className="flex flex-col gap-2">
-            <h4 className="text-caption font-medium text-muted-foreground uppercase">
-              {group.label}
-            </h4>
-            <ul className="flex flex-col gap-1.5">
+          <details key={group.category} data-slot="gates-band-group">
+            <summary
+              data-slot="gates-band-summary"
+              className="flex items-center justify-between gap-2 rounded-sm py-1 marker:text-muted-foreground focus-ring"
+            >
+              <span className="text-caption font-medium text-muted-foreground uppercase">
+                {group.label}
+              </span>
+              <span className="text-caption text-muted-foreground tabular-nums">
+                {formatGroupSummary(group.gates.length)}
+              </span>
+            </summary>
+            <ul data-slot="gates-band-list" className="mt-2 flex flex-col gap-1.5 ps-4">
               {group.gates.map((gate) => (
                 <li key={gate.id} data-slot="gates-band-item" className="text-body">
-                  <code className="text-code text-foreground">{gate.id}</code>
-                  <span className="text-muted-foreground"> — {gate.doc}</span>
+                  <code className="font-mono text-code text-foreground">{gate.id}</code>
+                  <span className="text-muted-foreground"> — {renderGateDoc(gate.doc)}</span>
                 </li>
               ))}
             </ul>
-          </div>
+          </details>
         ))}
       </div>
       {footer ? (
