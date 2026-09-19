@@ -66,7 +66,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, ArrowUpDown, GripVertical } from "lucide-react";
-import { Button, Checkbox, Skeleton, Spinner, useLocale } from "@elabs-ai/components-ui";
+import {
+  Button,
+  Checkbox,
+  Skeleton,
+  Spinner,
+  StatePanel,
+  useLocale,
+} from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   columnSizeStyle,
@@ -559,7 +566,7 @@ function colorByStyle(
   if (!color) return undefined;
   return target === "background"
     ? { backgroundColor: `color-mix(in oklab, ${color} 22%, transparent)` }
-    : { color: `color-mix(in oklab, ${color} 45%, var(--foreground))` };
+    : { color: `color-mix(in oklab, ${color} 35%, var(--foreground))` };
 }
 
 /**
@@ -2794,12 +2801,19 @@ function DataTableInner<TData, TValue>(
     const sortable = [...leafHeadersById().values()].filter(
       (h) => !h.isPlaceholder && isColumnShown(h.column) && h.column.getCanSort(),
     );
-    if (sortable.length === 0) return null;
+    // The selection column's header (select-all) leads the bar, as it leads the thead.
+    const selectHeader = leafHeadersById().get("select");
+    if (sortable.length === 0 && !selectHeader) return null;
     return (
       <div
         data-slot="data-table-card-sort"
         className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border-strong px-3 py-2 text-meta text-muted-foreground"
       >
+        {selectHeader && !selectHeader.isPlaceholder ? (
+          <span className="inline-flex">
+            {flexRender(selectHeader.column.columnDef.header, selectHeader.getContext())}
+          </span>
+        ) : null}
         {sortable.map((header) => (
           <span key={header.id} className="inline-flex">
             {renderSortButton(header)}
@@ -2910,7 +2924,7 @@ function DataTableInner<TData, TValue>(
       );
     }
     if (showEmpty) {
-      return <p className="px-3 py-8 text-center text-muted-foreground">{emptyMessage}</p>;
+      return <StatePanel kind="empty" title={emptyMessage} />;
     }
     const headers = leafHeadersById();
     return (
@@ -2961,7 +2975,13 @@ function DataTableInner<TData, TValue>(
         <HeatmapLegend
           key={column.id}
           scale={scale.heatmap}
-          title={typeof header === "string" ? header : undefined}
+          title={
+            typeof visual.legend === "string"
+              ? visual.legend
+              : typeof header === "string"
+                ? header
+                : undefined
+          }
           formatValue={(v) => cellLabel(v, column.columnDef.meta)}
         />,
       );

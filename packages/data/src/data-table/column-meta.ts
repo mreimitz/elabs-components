@@ -115,8 +115,12 @@ export interface DataTableHeatmapVisual {
   scale: DataTableHeatmapScale;
   /** Hide the printed value visually; screen readers, sorting and copy still read it. */
   hideValue?: boolean;
-  /** Print this column's colour key above the table. */
-  legend?: boolean;
+  /**
+   * Print the scale's colour key above the table. `true` titles it with the
+   * column header; a string is the title (use it when one heatmap spans several
+   * columns — the key is printed once per shared scale).
+   */
+  legend?: boolean | string;
 }
 
 export type DataTableCellVisual =
