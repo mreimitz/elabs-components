@@ -4,7 +4,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChartContractError } from "./contract";
-import { assertLabelsSpecContract, BarChart } from "./doubles";
+import { assertLabelsSpecContract, BarChart, InlineChip } from "./doubles";
 
 afterEach(cleanup);
 
@@ -59,5 +59,23 @@ describe("ChartSpec.labels.comparison (RM-113)", () => {
       expect(() => assertLabelsSpecContract({ series: "end", comparison })).not.toThrow();
     }
     expect(() => assertLabelsSpecContract({ comparison: "delta" })).toThrow(ChartContractError);
+  });
+});
+
+describe("InlineChip double (RM-117)", () => {
+  it("renders the real chip's slots and names the swatch", () => {
+    const { container } = render(
+      <InlineChip series="ram" label="Short-term RAM">
+        RAM
+      </InlineChip>,
+    );
+    const swatch = container.querySelector(
+      '[data-slot="inline-chip"] [data-slot="inline-chip-swatch"]',
+    );
+    expect(swatch).toHaveAccessibleName("Short-term RAM");
+  });
+
+  it("throws a ChartContractError for an empty series key", () => {
+    expect(() => render(<InlineChip series="">RAM</InlineChip>)).toThrow(ChartContractError);
   });
 });

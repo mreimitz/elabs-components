@@ -223,6 +223,14 @@ export interface HeatmapChartProps extends ChartSelectionProps, ChartInteraction
   /** Show the ramp key below the plot. Default `true`. */
   showLegend?: boolean;
   /**
+   * How the legend key states the scale — the same `"ranges"`/`"endpoints"`
+   * vocabulary `RampLegend`'s `scale.labels` uses (RM-118). `"endpoints"`
+   * (default, unchanged): `lo`/`hi` bracket the strip. `"ranges"`: one
+   * `from–to` label under every swatch, so a reader can place a cell in its
+   * step without hovering it — most useful together with a small `steps`.
+   */
+  legendLabels?: "endpoints" | "ranges";
+  /**
    * A visible title for the column axis (#280), e.g. "Months since signup" —
    * printed directly under the plot, ABOVE the legend, so it reads as the
    * axis's own caption rather than a floating sentence after the key. Default
@@ -1042,6 +1050,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     palette = "sequential",
     revealOn = "mount",
     rowHighlight,
+    legendLabels = "endpoints",
     showLegend = true,
     showValueHalo = true,
     showValues,
@@ -1226,6 +1235,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
           formatValue={formatValue}
           hi={scale.hi}
           hover={liveHover.hovered?.value ?? null}
+          labelMode={legendLabels}
           lo={scale.lo}
           missingCount={scale.missingCount}
           swatches={scale.swatches}

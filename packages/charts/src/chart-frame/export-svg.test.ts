@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { composeSvg, type ComposeSvgPart } from "./export-svg";
+import { buildExportSvg, composeSvg, serializeSvg, type ComposeSvgPart } from "./export-svg";
+import { renderChartExportLayer, type ChartExportLayerModel } from "./export-layer";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -107,5 +108,147 @@ describe("composeSvg (RM-084)", () => {
     const withoutDesc = composeSvg([], { width: 10, height: 10, title: "Q3 sales" });
     expect(withoutDesc.querySelector("desc")).toBeNull();
     expect(withoutDesc.getAttribute("aria-describedby")).toBeNull();
+  });
+});
+
+// ── RM-117: the export layer ─────────────────────────────────────────────────
+
+describe("buildExportSvg with an export layer (RM-117)", () => {
+  const layer: ChartExportLayerModel = {
+    width: 640,
+    height: 480,
+    chart: { x: 24, y: 80, width: 300, height: 150 },
+    swatches: [{ x: 24, y: 60, width: 10, height: 10, fill: "rgb(1, 2, 3)", radius: 2 }],
+    runs: [
+      {
+        role: "title",
+        text: "RAM prices doubled",
+        x: 24,
+        y: 30,
+        fill: "rgb(0, 0, 0)",
+        fontFamily: "Inter",
+        fontSize: "16px",
+        fontWeight: "600",
+        fontStyle: "normal",
+      },
+      {
+        role: "tick",
+        text: "Jan",
+        x: 40,
+        y: 240,
+        fill: "rgb(9, 9, 9)",
+        fontFamily: "Inter",
+        fontSize: "12px",
+        fontWeight: "400",
+        fontStyle: "normal",
+      },
+      {
+        role: "tick",
+        text: "Feb",
+        x: 80,
+        y: 240,
+        rotate: -45,
+        fill: "rgb(9, 9, 9)",
+        fontFamily: "Inter",
+        fontSize: "12px",
+        fontWeight: "400",
+        fontStyle: "normal",
+      },
+      {
+        role: "notes",
+        text: "Prices in USD.",
+        x: 24,
+        y: 420,
+        fill: "rgb(9, 9, 9)",
+        fontFamily: "Inter",
+        fontSize: "12px",
+        fontWeight: "400",
+        fontStyle: "italic",
+      },
+    ],
+  };
+
+  it("places the chart at its measured box inside a canvas the frame's size", () => {
+    const built = buildExportSvg(fakeChartSvg(3), {
+      layer,
+      backgroundColor: "rgb(255, 255, 255)",
+      title: "RAM",
+    });
+    expect(built.getAttribute("width")).toBe("640");
+    expect(built.getAttribute("height")).toBe("480");
+    const nested = built.querySelector("svg")!;
+    expect([nested.getAttribute("x"), nested.getAttribute("y")]).toEqual(["24", "80"]);
+    const texts = [...built.querySelectorAll('[data-slot="chart-export-layer"] text')];
+    expect(texts.map((t) => [t.getAttribute("data-export-role"), t.textContent])).toEqual([
+      ["title", "RAM prices doubled"],
+      ["tick", "Jan"],
+      ["tick", "Feb"],
+      ["notes", "Prices in USD."],
+    ]);
+    expect(texts[2]!.getAttribute("transform")).toBe("rotate(-45 80 240)");
+    expect(texts[3]!.getAttribute("font-style")).toBe("italic");
+    expect(built.querySelector('[data-slot="chart-export-layer"] rect')!.getAttribute("rx")).toBe(
+      "2",
+    );
+    expect(serializeSvg(built)).not.toContain("var(");
+  });
+
+  it("is deterministic: the same model serialises byte-identically", () => {
+    const a = serializeSvg(renderChartExportLayer(layer) as unknown as SVGSVGElement);
+    const b = serializeSvg(renderChartExportLayer(layer) as unknown as SVGSVGElement);
+    expect(a).toBe(b);
+  });
+
+  it("appends in place when the layer's canvas is the chart's own box (a dashboard part)", () => {
+    const svg = fakeChartSvg(2);
+    const inPlace: ChartExportLayerModel = {
+      ...layer,
+      width: 100,
+      height: 60,
+      chart: { x: 0, y: 0, width: 100, height: 60 },
+    };
+    const built = buildExportSvg(svg, { layer: inPlace });
+    const before = buildExportSvg(svg);
+    expect(built.getAttribute("width")).toBe(before.getAttribute("width"));
+    expect(built.getAttribute("viewBox")).toBe(before.getAttribute("viewBox"));
+    expect(built.lastElementChild?.getAttribute("data-slot")).toBe("chart-export-layer");
+  });
+
+  it("maps a layer measured in the svg's own box into its user space, untouched otherwise", () => {
+    const svg = fakeChartSvg(2);
+    const before = buildExportSvg(svg);
+    // A part drawn at 98.4 % of its viewBox: CSS pixels need scaling back up.
+    const measured: ChartExportLayerModel = {
+      ...layer,
+      width: 98.4,
+      height: 59.04,
+      chart: { x: 0, y: 0, width: 98.4, height: 59.04 },
+      userSpace: "matrix(1.01626 0 0 1.01626 0 0)",
+    };
+    const built = buildExportSvg(svg, { layer: measured });
+    expect(built.getAttribute("width")).toBe(before.getAttribute("width"));
+    expect(built.getAttribute("height")).toBe(before.getAttribute("height"));
+    expect(built.getAttribute("viewBox")).toBe(before.getAttribute("viewBox"));
+    const group = built.lastElementChild;
+    expect(group?.getAttribute("data-slot")).toBe("chart-export-layer");
+    expect(group?.getAttribute("transform")).toBe("matrix(1.01626 0 0 1.01626 0 0)");
+    // Everything but the layer is the plain export, byte for byte.
+    group?.remove();
+    expect(serializeSvg(built)).toBe(serializeSvg(before));
+  });
+
+  it("adds nothing for an empty layer measured in the svg's own box", () => {
+    const svg = fakeChartSvg(2);
+    const empty: ChartExportLayerModel = {
+      width: 100,
+      height: 60,
+      chart: { x: 0, y: 0, width: 100, height: 60 },
+      runs: [],
+      swatches: [],
+      userSpace: "matrix(1 0 0 1 0 0)",
+    };
+    expect(serializeSvg(buildExportSvg(svg, { layer: empty }))).toBe(
+      serializeSvg(buildExportSvg(svg)),
+    );
   });
 });

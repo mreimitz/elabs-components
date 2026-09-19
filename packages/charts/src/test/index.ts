@@ -108,6 +108,10 @@ export {
   // Annotations — RM-111
   AnnotationKey,
   ChartAnnotations,
+  // InlineChip — RM-117
+  InlineChip,
+  // ChartMultiples — RM-120
+  ChartMultiples,
   // Legend engine — RM-118
   RampLegend,
   SizeLegend,
@@ -142,6 +146,9 @@ export {
   ChartTooltipContent,
   ChartTooltipDot,
   ChartTooltipIndicator,
+  // ChartTooltipInline, ChartTooltipTable — RM-119
+  ChartTooltipInline,
+  ChartTooltipTable,
   ChoroplethFeatureComponent,
   ChoroplethGraticule,
   ChoroplethProvider,

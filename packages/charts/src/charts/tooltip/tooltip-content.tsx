@@ -36,23 +36,17 @@ export interface ChartTooltipContentProps {
   currency?: string;
 }
 
-export function ChartTooltipContent({
-  title,
-  rows,
-  children,
-  valueFormat,
-  currency,
-}: ChartTooltipContentProps) {
-  /*
-   * Locale-aware number formatting (ADR-0014): honors a `LocaleProvider`
-   * locale, falling back to the host default when no provider is mounted.
-   *
-   * The tooltip is the detail-on-demand surface — a reader hovers a point
-   * precisely to see its figure — so it renders `"number"` (grouped digits),
-   * not the compact default the axis ticks use. It also cannot carry a copy
-   * affordance: the tooltip is `pointer-events-none` so it never swallows the
-   * `mousemove` that drives the crosshair.
-   */
+/**
+ * Locale-aware number formatting (ADR-0014) shared by every tooltip preset
+ * (`rows` / `table` / `inline`, RM-119) — factored out of `ChartTooltipContent`
+ * so `ChartTooltipTable` formats its cells the SAME way the default box does.
+ *
+ * The tooltip is the detail-on-demand surface — a reader hovers a point
+ * precisely to see its figure — so it renders `"number"` (grouped digits),
+ * not the compact default the axis ticks use, regardless of what `valueFormat`
+ * asks for (`abbreviate` is always forced `false`).
+ */
+export function useChartTooltipValueFormat(valueFormat?: ChartValueFormat, currency?: string) {
   const tooltipFormat = useMemo(
     () =>
       valueFormat != null
@@ -60,7 +54,17 @@ export function ChartTooltipContent({
         : ("number" as const),
     [valueFormat],
   );
-  const format = useChartValueFormatter(tooltipFormat, currency);
+  return useChartValueFormatter(tooltipFormat, currency);
+}
+
+export function ChartTooltipContent({
+  title,
+  rows,
+  children,
+  valueFormat,
+  currency,
+}: ChartTooltipContentProps) {
+  const format = useChartTooltipValueFormat(valueFormat, currency);
   return (
     <div className="overflow-hidden">
       <div className="px-3 py-2.5">

@@ -413,6 +413,16 @@ export {
   type DateTickerProps,
   type IndicatorWidth,
   type TooltipRow,
+  // Tooltip presets — RM-119
+  type ChartTooltipVariant,
+  useChartTooltipValueFormat,
+  ChartTooltipInline,
+  type ChartTooltipInlineProps,
+  ChartTooltipTable,
+  type ChartTooltipTableProps,
+  useTooltipPin,
+  type UseTooltipPinOptions,
+  type TooltipPinControls,
 } from "./tooltip";
 export { useAnimatedYDomains } from "./use-animated-y-domains";
 // Chart interaction hook

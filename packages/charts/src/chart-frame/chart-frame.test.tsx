@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act, within } from "@testing-library/react";
+import { useEffect } from "react";
 import { ChartFrame, type ChartFrameProps } from "./chart-frame";
+import { useOptionalChartFrame } from "./chart-frame-context";
+import { InlineChip } from "./inline-chip";
 import { Bar } from "../charts/bar";
 import { BarChart } from "../charts/bar-chart";
 import { BarXAxis } from "../charts/bar-x-axis";
@@ -985,5 +988,196 @@ describe("ChartFrame bounded body for non-chart content", () => {
       </ChartFrame>,
     );
     expect(bodyBox(chart.container).style.height).toBe("");
+  });
+});
+
+// ── RM-117: editorial chrome ─────────────────────────────────────────────────
+
+describe("ChartFrame editorial chrome (RM-117)", () => {
+  function PlainChart() {
+    return (
+      <svg data-testid="plot" width={300} height={150}>
+        <rect width={10} height={10} />
+      </svg>
+    );
+  }
+
+  it("orders title → description → chart → notes → footer, in Datawrapper's footer order", () => {
+    const { container } = render(
+      <ChartFrame
+        title="RAM prices doubled"
+        description="Short-term RAM rose fastest."
+        notes="Prices in USD, not inflation-adjusted."
+        byline={{ author: "Ada Lovelace" }}
+        source={{ name: "DRAMeXchange", href: "https://example.com/source" }}
+        actions={["png", "data"]}
+        data={[{ month: "Jan", ram: 1 }]}
+      >
+        <PlainChart />
+      </ChartFrame>,
+    );
+    const order = [
+      screen.getByText("RAM prices doubled"),
+      screen.getByText("Short-term RAM rose fastest."),
+      screen.getByTestId("plot"),
+      screen.getByText("Prices in USD, not inflation-adjusted."),
+      container.querySelector('[data-slot="chart-frame-footer"]')!,
+    ];
+    for (let i = 1; i < order.length; i++) {
+      expect(
+        order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+    expect(screen.getByText("Prices in USD, not inflation-adjusted.")).toHaveClass("italic");
+    const footer = container.querySelector('[data-slot="chart-frame-footer"]')!;
+    expect(footer.textContent).toBe(
+      "Chart: Ada Lovelace•Source: DRAMeXchange•Get the data•Download image",
+    );
+    expect(
+      within(footer as HTMLElement).getByRole("link", { name: "DRAMeXchange" }),
+    ).toHaveAttribute("href", "https://example.com/source");
+    // Action links are controls, never part of an exported picture.
+    const excluded = footer.querySelectorAll('[data-chart-export="exclude"]');
+    expect([...excluded].map((n) => n.textContent)).toEqual(["•Get the data", "•Download image"]);
+  });
+
+  it("keeps the all-caps source row when only a plain source is set", () => {
+    const { container } = render(
+      <ChartFrame title="Revenue" source="Internal analytics">
+        <PlainChart />
+      </ChartFrame>,
+    );
+    expect(container.querySelector('[data-slot="chart-frame-footer"]')).toBeNull();
+    expect(screen.getByText("Internal analytics")).toHaveClass("uppercase");
+  });
+
+  it("altText describes the chart figure when the chart has no description", () => {
+    render(
+      <ChartFrame title="Revenue" altText="A line rising from 1 to 9.">
+        <div role="figure" aria-label="Revenue chart">
+          <PlainChart />
+        </div>
+      </ChartFrame>,
+    );
+    const figure = screen.getByRole("figure", { name: "Revenue chart" });
+    const id = figure.getAttribute("aria-describedby");
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id!)?.textContent).toBe("A line rising from 1 to 9.");
+    expect(figure).toHaveAccessibleDescription("A line rising from 1 to 9.");
+  });
+
+  it("altText makes the body the figure when the chart renders none", () => {
+    render(
+      <ChartFrame title="Revenue" altText="A line rising from 1 to 9.">
+        <PlainChart />
+      </ChartFrame>,
+    );
+    expect(screen.getByRole("figure", { name: "Revenue" })).toHaveAccessibleDescription(
+      "A line rising from 1 to 9.",
+    );
+  });
+
+  it("altText leaves a chart's own description alone", () => {
+    render(
+      <ChartFrame title="Revenue" altText="Alt text">
+        <div role="figure" aria-label="Revenue chart" aria-describedby="own">
+          <span id="own">Own description</span>
+          <PlainChart />
+        </div>
+      </ChartFrame>,
+    );
+    expect(screen.getByRole("figure", { name: "Revenue chart" })).toHaveAccessibleDescription(
+      "Own description",
+    );
+  });
+
+  it("altText wins over a labelled chart's generated summary", async () => {
+    render(
+      <ChartFrame title="Revenue" altText="South leads with 600; North trails at 400.">
+        <BarChart
+          data={snapshotBarData}
+          xDataKey="region"
+          accessibleLabel="Revenue by region"
+          animationDuration={0}
+        >
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    await act(async () => {});
+    expect(screen.getByRole("figure", { name: "Revenue by region" })).toHaveAccessibleDescription(
+      "South leads with 600; North trails at 400.",
+    );
+    // The chart owns the description, so the frame renders no second copy.
+    expect(document.querySelector('[data-slot="chart-frame-alt-text"]')).toBeNull();
+  });
+
+  it("a chart's own accessibleDescription wins over altText", async () => {
+    render(
+      <ChartFrame title="Revenue" altText="Alt text">
+        <BarChart
+          data={snapshotBarData}
+          xDataKey="region"
+          accessibleLabel="Revenue by region"
+          accessibleDescription="Own description"
+          animationDuration={0}
+        >
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    await act(async () => {});
+    expect(screen.getByRole("figure", { name: "Revenue by region" })).toHaveAccessibleDescription(
+      "Own description",
+    );
+  });
+});
+
+describe("InlineChip (RM-117)", () => {
+  it("takes the series colour the chart publishes and names the series", () => {
+    function Publisher() {
+      const frame = useOptionalChartFrame();
+      const register = frame?.actions.registerSeries;
+      useEffect(
+        () =>
+          register?.("chart", [{ key: "ram", color: "var(--chart-1)", label: "Short-term RAM" }]),
+        [register],
+      );
+      return null;
+    }
+    const { container } = render(
+      <ChartFrame
+        title="RAM"
+        description={
+          <>
+            <InlineChip series="ram">short-term RAM</InlineChip> rose.
+          </>
+        }
+      >
+        <Publisher />
+      </ChartFrame>,
+    );
+    const chip = container.querySelector<HTMLElement>('[data-slot="inline-chip-swatch"]')!;
+    expect(chip).toHaveAttribute("role", "img");
+    expect(chip).toHaveAccessibleName("Short-term RAM");
+    expect(chip.style.backgroundColor).toBe("var(--chart-1)");
+  });
+
+  it("an explicit label wins over the key", () => {
+    const { container } = render(
+      <ChartFrame
+        title="RAM"
+        description={
+          <InlineChip series="ram" label="Short-term RAM">
+            RAM
+          </InlineChip>
+        }
+      >
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(container.querySelector('[data-slot="inline-chip-swatch"]')).toHaveAccessibleName(
+      "Short-term RAM",
+    );
   });
 });

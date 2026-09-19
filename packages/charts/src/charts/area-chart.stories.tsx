@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { AreaChart } from "./area-chart";
 import { Area } from "./area";
-import { ChartDatapointLayer } from "./chart-datapoint-layer";
 import { Grid } from "./grid";
 import { XAxis } from "./x-axis";
 import { YAxis } from "./y-axis";
@@ -592,6 +591,7 @@ export const LegendToggle: Story = {
         legend={{ interactive: "toggle" }}
         onDatapointClick={() => {}}
         style={{ height: "100%" }}
+        yDomainTweenDuration={0}
       >
         <Grid horizontal />
         <Area
@@ -615,8 +615,59 @@ export const LegendToggle: Story = {
         <XAxis />
         <YAxis />
         <ChartTooltip />
-        <ChartDatapointLayer />
       </AreaChart>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const yTicks = () =>
+      [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
+        (node) => node.textContent ?? "",
+      );
+    // Datapoint drill-down targets ALSO carry an aria-label starting with
+    // the series key (`desktop, Jan 1, 2024…`), so a plain accessible-name
+    // query matches those too — scope to the legend's own toggle buttons.
+    const legendToggle = (label: RegExp) =>
+      [...canvasElement.querySelectorAll("button[aria-pressed]")].find((button) =>
+        label.test(button.textContent ?? ""),
+      ) as HTMLButtonElement | undefined;
+    // The y-axis ticks render before the legend does — wait for the button
+    // itself, not just the ticks, so a fast `animationDuration={0}` mount
+    // never races `.focus()` against an undefined lookup.
+    await waitFor(() => expect(legendToggle(/desktop/i)).toBeTruthy());
+    // Ticks compact ("300"/"150") — kept as a numeric parse for symmetry
+    // with Line/ComposedChart's play functions (their ticks DO compact to
+    // "4K" etc., where `Number(...)` alone would be `NaN`).
+    const parseTick = (text: string): number => {
+      const match = /^(-?[\d.]+)([KM]?)$/.exec(text.trim().replace(/,/g, ""));
+      if (!match) return Number.NaN;
+      const [, digits, suffix] = match;
+      const n = Number(digits);
+      return suffix === "K" ? n * 1_000 : suffix === "M" ? n * 1_000_000 : n;
+    };
+
+    // "desktop" (peak 305) is the max series in this fixture — "mobile"
+    // peaks at 200, below desktop at every point, so hiding desktop is the
+    // toggle that actually moves the domain. Keyboard operated (RM-118,
+    // validator FAIL 1a).
+    await waitFor(() => expect(yTicks().length).toBeGreaterThan(0));
+    const before = yTicks();
+
+    const desktopToggle = legendToggle(/desktop/i) as HTMLButtonElement;
+    desktopToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(desktopToggle).toHaveAttribute("aria-pressed", "false"));
+    await waitFor(() => expect(yTicks()).not.toEqual(before));
+    const afterHide = yTicks();
+    await expect(parseTick(afterHide.at(-1) ?? "")).toBeLessThan(parseTick(before.at(-1) ?? ""));
+
+    desktopToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(desktopToggle).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(yTicks()).toEqual(before));
+    // Settle focus back to the body — otherwise the interaction ends with
+    // `focusOnHover`'s fade still applied to the neighbouring item, which
+    // the a11y gate correctly flags on ITS OWN contrast (unrelated to this
+    // story; not this sitting's fix to make).
+    desktopToggle.blur();
+  },
 };

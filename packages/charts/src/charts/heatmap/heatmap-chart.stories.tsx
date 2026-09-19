@@ -241,6 +241,60 @@ export const MatrixWithValuesDark: Story = {
 };
 
 /**
+ * `legendLabels="ranges"` (RM-118): a `from–to` label under every swatch
+ * instead of just the strip's `lo`/`hi` endpoints — lets a reader place a
+ * cell in its step without hovering it. Five countable steps (the default),
+ * so the legend prints five swatches and five range labels.
+ */
+export const LegendRangeLabels: Story = {
+  args: {
+    data: PUNCH_CARD,
+    x: "hour",
+    y: "day",
+    valueKey: "count",
+    yOrder: WEEKDAYS,
+    xOrder: HOURS,
+    valueFormat: "compact",
+    steps: 5,
+    legendLabels: "ranges",
+  },
+  render: (args) => (
+    <div className="w-full max-w-[720px]">
+      <HeatmapChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const figure = await canvas.findByRole("figure", { name: /^Heatmap, 7 rows × 24 columns/ });
+    await waitFor(() =>
+      expect(figure.querySelectorAll('[data-slot="heatmap-cell"]')).toHaveLength(168),
+    );
+    const legend = canvasElement.querySelector('[data-slot="heatmap-legend"]');
+    await waitFor(() =>
+      expect(legend?.querySelectorAll('[data-slot="heatmap-legend-step"]')).toHaveLength(5),
+    );
+    await expect(legend?.querySelectorAll('[data-slot="heatmap-legend-range-label"]')).toHaveLength(
+      5,
+    );
+  },
+};
+
+export const LegendRangeLabelsDark: Story = {
+  tags: ["!dev"],
+  name: "LegendRangeLabels — dark",
+  args: LegendRangeLabels.args,
+  decorators: [
+    (Story) => (
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+  render: LegendRangeLabels.render,
+  play: LegendRangeLabels.play,
+};
+
+/**
  * F10: the value is the dot's AREA, not its radius — so a doubled number draws
  * a dot √2 wider, never twice as wide. The shade tracks the same ramp, so the
  * two encodings agree instead of competing.

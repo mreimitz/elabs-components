@@ -21,6 +21,10 @@ import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/ba
 import type { BarSort } from "../charts/bar-stacking";
 import type { ChartColorBy } from "../charts/chart-context";
 import type { DumbbellSortBy } from "../charts/dumbbell-layout";
+import type { ChartTooltipVariant } from "../charts/tooltip/chart-tooltip";
+import type { ChartPlotHeight } from "../charts/chart-breakpoint"; // Facet — RM-120
+import type { FacetSort } from "../multiples/facet-sort"; // Facet — RM-120
+import type { WaterfallDataFormat, WaterfallSort } from "../charts/waterfall-steps"; // RM-122
 import type { ContainerLegendConfig } from "../charts/legend/use-container-legend";
 
 /**
@@ -346,12 +350,17 @@ export interface ChartSpec {
    * `"desc"` (largest first) or `"none"` (data order, the default — matches
    * `PieChart`'s own default, kept so an existing spec renders
    * byte-identical wedges) are honoured; any other value (an object form,
-   * `"asc"`, a dumbbell literal) is ignored for pie. The union covers every
-   * family; `auto-chart.tsx` narrows before handing it to a component's own
-   * `sort`/`sortBy` prop.
+   * `"asc"`, a dumbbell literal) is ignored for pie. Waterfall (`type:
+   * "waterfall"`, RM-122): its own `WaterfallSort` (`"data"|"increasesFirst"|
+   * "decreasesFirst"`, default `"data"` — spreadsheet order, within each
+   * subtotal group). The union covers every family; `auto-chart.tsx` narrows
+   * before handing it to a component's own `sort`/`sortBy` prop.
    */
-  sort?: BarSort | DumbbellSortBy;
-  /** Gather rows by this column, with a header per group — `BarChart` (RM-113) and `DumbbellChart` (RM-116) both read this. */
+  sort?: BarSort | DumbbellSortBy | WaterfallSort;
+  /** Gather rows by this column, with a header per group — `BarChart`
+   * (RM-113) and `DumbbellChart` (RM-116) both read this; waterfall
+   * (`type: "waterfall"`, RM-122): a subtotal after each group, mapped to
+   * `WaterfallChart subtotalBy`. */
   groupBy?: string;
   /**
    * Colour marks by another column (categorical ≤ 6 hues, or a sequential /
@@ -364,6 +373,55 @@ export interface ChartSpec {
   overlays?: BarOverlay[];
   /** A muted prior-period column behind each bar; `labels.comparison` picks its grey label. */
   comparison?: BarComparison;
+  // Frame chrome — RM-117
+  /** Italic notes under the chart when the AutoChart sits in a `ChartFrame` (RM-117). */
+  notes?: string;
+  /** "Chart: Author" at the start of an enclosing `ChartFrame`'s footer (RM-117). */
+  byline?: { kind?: "chart" | "map" | "table"; author: string };
+  /** Attribution for an enclosing `ChartFrame`'s footer — text, or a named link (RM-117). */
+  source?: string | { name: string; href?: string };
+  /** Text alternative for the picture; the chart's description when `description` is unset (RM-117). */
+  altText?: string;
+
+  // Tooltip presets — RM-119
+  /**
+   * `ChartTooltip`'s own preset, forwarded 1:1 to the `<ChartTooltip>`
+   * `AutoChart` already renders for every line/area/scatter/bar family — see
+   * {@link ChartSpecTooltip}. Unset keeps today's default box.
+   */
+  tooltip?: ChartSpecTooltip;
+
+  // Facet — RM-120
+  /** Small multiples for `line`/`area`/`bar`/`pie`: one panel per `by` column value, or per series with `{ series: true }` — see {@link FacetSpec}. */
+  facet?: FacetSpec;
+
+  // WaterfallChart — RM-122
+  /** `type: "waterfall"` only: `"differences"` (default, signed deltas) or
+   * `"runningTotals"` (every row's value is the running total at that row,
+   * converted once). See `WaterfallChart dataFormat`. */
+  dataFormat?: WaterfallDataFormat;
+  /** `type: "waterfall"` only: drops the zero baseline when a checkpoint
+   * sits far above the steps' own swing, drawing totals as points instead of
+   * bars. See `WaterfallChart zoomToDifferences`. Default `false`. */
+  zoomToDifferences?: boolean;
+}
+
+/**
+ * `ChartSpec.tooltip` (RM-119) — the serialisable subset of `ChartTooltip`'s
+ * `variant` / `focus` / `pin` props.
+ */
+export interface ChartSpecTooltip {
+  /** `ChartTooltip variant`. Default: `"rows"`. */
+  variant?: ChartTooltipVariant;
+  /**
+   * `ChartTooltip focus` — registers "focus requested" on the shared
+   * series-mode context standalone, so RM-112's per-series dim
+   * (`SeriesHoverDim`) fires with no `focusOnHover` needed on the rendered
+   * `LineChart`/`AreaChart` container.
+   */
+  focus?: boolean;
+  /** `ChartTooltip pin`. Unset keeps the coarse-pointer-only default. */
+  pin?: boolean;
 }
 
 // Pie/donut grouping, sort, half preset — RM-114
@@ -459,4 +517,30 @@ export interface AxisSpec {
   gridMode?: "lines" | "ticks" | "off";
   /** `x`: `"bottom"` (default) or `"top"`. `y`: `"left"` (default) or `"right"`. */
   position?: "top" | "bottom" | "left" | "right";
+}
+
+// Facet — RM-120
+/**
+ * Small multiples (RM-120) — the serialisable subset of `ChartMultiples`,
+ * honoured by `line`, `area`, `bar` and `pie` specs (ignored elsewhere). The
+ * value-domain pin is the existing `axes.y.domain`.
+ *
+ * Presets:
+ * - **Split bars** — one panel per measure: `{ type: "bar", orientation:
+ *   "horizontal", facet: { by: { series: true }, scales: { y: "independent" } } }`.
+ * - **Multiple pies** — one pie per group: `{ type: "pie", facet: { by: "region" } }`.
+ */
+export interface FacetSpec {
+  /** A column key (one panel per value), or `{ series: true }` (one panel per series). */
+  by: string | { series: true };
+  /** Panels per row, per breakpoint. Default `{ base: "auto", narrow: 1 }`. */
+  columns?: Responsive<number | "auto">;
+  /** `y: "shared"` (default) or `"independent"`; `rangeRounding` aligns independent gridlines. */
+  scales?: { y?: "shared" | "independent"; rangeRounding?: boolean };
+  /** Panel order: `"start" | "end" | "delta" | "deltaPercent" | "range" | "title" | "data"`. */
+  sort?: FacetSort;
+  /** A muted series behind every panel: a panel `key` (removed from the grid) or a row `series` key. */
+  baseline?: { key: string } | { series: string };
+  /** Each panel's plot height (px or `{ aspect }`), per breakpoint. Default 200. */
+  panelHeight?: Responsive<ChartPlotHeight>;
 }

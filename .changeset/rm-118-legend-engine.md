@@ -33,3 +33,9 @@ badge is unchanged when `legend` stays unset). `AutoChart` forwards `spec.legend
 silently dropped the existing before/after key on every multi-series AutoChart dumbbell.
 `AutoLegend` itself stays for the rest, since `radar`/`funnel`/`waterfall`, `dumbbell` and the
 other families outside this wave can still reach it through a multi-series spec.
+
+Sitting 2 (integration with RM-120 small multiples): once `bar` and `pie` join the engine, a
+faceted `AutoChart` spec (`ChartSpec.facet`) of either type whose legend is shown now gets the same
+ONE-shared-`ChartLegend`-above-the-grid treatment RM-120's own wave-2 merge already restored for
+faceted `line`/`area` — never one legend per panel. A faceted pie's shared legend lists the slice
+categories (deduped across panels), the same items `AutoLegend` listed before this engine existed.

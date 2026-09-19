@@ -1,12 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
 import { useState, type ReactNode } from "react";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { AreaBand } from "./area-band";
 import type { ChartDatapoint } from "./chart-datapoint";
-import { ChartDatapointLayer } from "./chart-datapoint-layer";
 import { ChartConfigProvider } from "./chart-config-context";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
@@ -968,10 +967,89 @@ export const LegendToggle: Story = {
         <XAxis />
         <YAxis />
         <ChartTooltip />
-        <ChartDatapointLayer />
       </LineChart>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const yTicks = () =>
+      [...canvasElement.querySelectorAll('[data-slot="y-axis"] span')].map(
+        (node) => node.textContent ?? "",
+      );
+    // Datapoint drill-down targets ALSO carry an aria-label starting with
+    // the series key (`sessions, Jan 1, 2024…`), so a plain accessible-name
+    // query matches those too — scope to the legend's own toggle buttons.
+    const legendToggle = (label: RegExp) =>
+      [...canvasElement.querySelectorAll("button[aria-pressed]")].find((button) =>
+        label.test(button.textContent ?? ""),
+      ) as HTMLButtonElement | undefined;
+    // The y-axis ticks render before the legend does — wait for the button
+    // itself, not just the ticks, so a fast `animationDuration={0}` mount
+    // never races `.focus()` against an undefined lookup.
+    await waitFor(() => expect(legendToggle(/sessions/i)).toBeTruthy());
+    // Ticks compact ("4K"/"1.5K") — `Number("4K")` is `NaN`, so compare the
+    // parsed magnitude, not the raw string.
+    const parseTick = (text: string): number => {
+      const match = /^(-?[\d.]+)([KM]?)$/.exec(text.trim().replace(/,/g, ""));
+      if (!match) return Number.NaN;
+      const [, digits, suffix] = match;
+      const n = Number(digits);
+      return suffix === "K" ? n * 1_000 : suffix === "M" ? n * 1_000_000 : n;
+    };
+
+    // "sessions" (3100–4300) is the max series here; "users" tops out at
+    // 1520 — hiding sessions must shrink the top tick toward ~1.5K, keyboard
+    // operated. This chart mounts at the DEFAULT `animationDuration`
+    // (1100ms) on purpose (RM-118, validator FAIL 1a round 2): toggling
+    // WHILE the chart is still revealing is exactly the case that used to
+    // stay frozen until the entrance animation happened to finish — see the
+    // fail-before/pass-after unit test in `time-series-chart-shell.test.tsx`
+    // ("recomputes even when toggled mid-reveal"). This story exercises the
+    // real, non-zero-duration path end to end.
+    await waitFor(() => expect(yTicks().length).toBeGreaterThan(0));
+    const before = yTicks();
+
+    // Toggle within the first ~500ms after mount — still mid-reveal.
+    const sessionsToggle = legendToggle(/sessions/i) as HTMLButtonElement;
+    sessionsToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "false"));
+
+    // Give the reveal (1100ms) and the y-domain tween time to fully settle,
+    // then confirm the ticks actually shrank — not just eventually, but as
+    // the direct result of the toggle that landed mid-reveal.
+    await waitFor(() => expect(yTicks()).not.toEqual(before), { timeout: 5000 });
+    const afterMidRevealHide = yTicks();
+    await expect(parseTick(afterMidRevealHide.at(-1) ?? "")).toBeLessThan(
+      parseTick(before.at(-1) ?? ""),
+    );
+
+    sessionsToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(yTicks()).toEqual(before), { timeout: 5000 });
+
+    // The normal case: toggling well AFTER the reveal has settled (chart is
+    // long "ready" by now) still hides and re-shows correctly — ticks
+    // shrink on hide, restore on re-show.
+    sessionsToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "false"));
+    await waitFor(() => expect(yTicks()).not.toEqual(before));
+    const afterSettledHide = yTicks();
+    await expect(parseTick(afterSettledHide.at(-1) ?? "")).toBeLessThan(
+      parseTick(before.at(-1) ?? ""),
+    );
+
+    sessionsToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(sessionsToggle).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(yTicks()).toEqual(before));
+    // Settle focus back to the body — otherwise the interaction ends with the
+    // legend's own hover/focus dim still applied to the neighbouring item,
+    // which the a11y gate correctly flags on ITS OWN contrast (unrelated to
+    // this story; not this sitting's fix to make).
+    sessionsToggle.blur();
+  },
 };
 
 const columnKeyData = [

@@ -21,6 +21,8 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING } from "./animation";
+import { useChartFacetScope } from "./chart-config-context"; // ChartMultiples — RM-120
+import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
 import type { BarProps } from "./bar";
 import {
   type CategoryAxisFit,
@@ -718,9 +720,12 @@ const ChartCore = memo(function ChartCore({
     Boolean(overlays && overlays.length > 0) ||
     Boolean(comparison) ||
     track;
+  // ChartMultiples — RM-120: a facet panel's value ticks / axis visibility (no baseline on bars).
+  const facet = useChartFacetScope();
+  const scopedChildren = useFacetScopedChildren(childrenProp, { baseline: false });
   const children = useMemo(
-    () => applyPercentAxisFormat(applyBarPalette(childrenProp, palette), stackMode === "percent"),
-    [childrenProp, palette, stackMode],
+    () => applyPercentAxisFormat(applyBarPalette(scopedChildren, palette), stackMode === "percent"),
+    [scopedChildren, palette, stackMode],
   );
 
   // Extract bar configs synchronously from children. `children` gets a new
@@ -1018,7 +1023,15 @@ const ChartCore = memo(function ChartCore({
   // `lengthEncoding: true`: the upper bound is honoured, a lower bound above 0
   // is widened back to 0, and any non-linear scale falls back to linear — each
   // with a dev warning (charts-honesty). No request → the pre-RM-108 path.
-  const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
+  const facetYDomain = isHorizontal ? undefined : facet?.yDomain;
+  const valueAxisConfigs = useMemo(() => {
+    const configs = collectValueAxisConfigs(children);
+    // ChartMultiples — RM-120: the panel's domain, unless `YAxis domain` pins one.
+    if (facetYDomain && !configs[DEFAULT_Y_AXIS_ID]?.domain) {
+      configs[DEFAULT_Y_AXIS_ID] = { ...configs[DEFAULT_Y_AXIS_ID], domain: facetYDomain };
+    }
+    return configs;
+  }, [children, facetYDomain]);
   const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
   const primaryValueAxis = useMemo(() => {
     const config = valueAxisConfigs[DEFAULT_Y_AXIS_ID];

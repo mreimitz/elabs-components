@@ -86,6 +86,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - ChartLegendHoverProvider
 - ChartLoadingLabel
 - ChartMarkers
+- ChartMultiples
 - ChartProvider
 - ChartRevealClip
 - CHARTS_A2UI_BINDINGS
@@ -99,6 +100,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - ChartTooltipContent
 - ChartTooltipDot
 - ChartTooltipIndicator
+- ChartTooltipInline
+- ChartTooltipTable
 - ChoroplethChart — Region-shaded map for a measure that is defined per geographic area.
   - avoid: Shading raw counts instead of a rate — area size becomes the story and the map lies.
   - avoid: A rainbow ramp for a sequential measure — use one ordered ramp so darker always means more.
@@ -147,6 +150,9 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.
   - avoid: Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels.
 - END_LABEL_MIN_GAP
+- FACET_BASELINE_KEY
+- FACET_DEFAULT_COLUMNS
+- FACET_DEFAULT_PANEL_HEIGHT
 - FORCE_ALPHA_MIN
 - FORCE_GRAVITY
 - FORCE_TICK_BUDGET
@@ -190,6 +196,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: emptyValue="blank" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.
   - avoid: Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.
   - avoid: Leaning on the darkest ramp step to say "this is the peak" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign.
+- InlineChip
 - KDE_GRID_POINTS
 - KDE_TAPER
 - Leader — The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.
@@ -390,6 +397,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useChartLegendHover
 - useChartSeriesKey
 - useChartStable
+- useChartTooltipValueFormat
 - useChartValueSetFormatter
 - useChoropleth
 - useChoroplethZoom
@@ -416,6 +424,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useRingStable
 - useSankey
 - useStaticChartPreview
+- useTooltipPin
 - useYScale
 
 ## Subpath exports

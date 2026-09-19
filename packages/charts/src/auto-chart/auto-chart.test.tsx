@@ -11,7 +11,7 @@
  *
  * Real render/interaction/a11y is covered by the Storybook stories.
  */
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ── @visx/responsive → fixed 560×288 ─────────────────────────────────────────
@@ -83,6 +83,7 @@ import {
 } from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
 import { ChartFrame } from "../chart-frame/chart-frame";
+import { SELECTION_EXCLUDED_OPACITY } from "../charts/chart-selection";
 import { Line, LineChart } from "../charts";
 
 afterEach(cleanup);
@@ -1199,6 +1200,61 @@ describe("AutoChart nulls/curve/symbols pass-through (RM-112)", () => {
   });
 });
 
+// Tooltip presets — RM-119
+describe("AutoChart spec.tooltip.focus reaches the line family standalone (RM-119)", () => {
+  const twoSeriesData = [
+    { date: "2024-01-01", a: 10, b: 30 },
+    { date: "2024-01-02", a: 20, b: 25 },
+    { date: "2024-01-03", a: 15, b: 28 },
+  ];
+
+  it("dims the other series on hover with no focusOnHover on the rendered container", async () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: twoSeriesData,
+          x: "date",
+          series: ["a", "b"],
+          tooltip: { focus: true },
+        }}
+        height={280}
+      />,
+    );
+
+    // Same seam the `Focus` story (`tooltip.stories.tsx`) asserts in the
+    // browser: `<ChartTooltip focus />` alone — AutoChart never sets
+    // `focusOnHover` on the `LineChart` it renders — registers "focus
+    // requested" on `ChartSeriesModeProvider` (`time-series-chart-shell.tsx`),
+    // which `SeriesHoverDim` (`series-hover-dim.tsx`) reads to widen each
+    // series' invisible hit-stroke path (RM-112) and gate its dim. No real
+    // timer involved: the reveal animation only tweens the visible stroke's
+    // clip/opacity, never whether these path elements are mounted.
+    await waitFor(() => {
+      expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+    });
+    const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+    const seriesAGroup = paths[0]?.closest("g");
+    const seriesBGroup = paths[1]?.closest("g");
+    expect(seriesAGroup).toBeTruthy();
+    expect(seriesBGroup).toBeTruthy();
+
+    fireEvent.mouseOver(seriesBGroup as Element);
+
+    await waitFor(() => {
+      expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+      expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+    });
+
+    fireEvent.mouseOut(seriesBGroup as Element);
+
+    await waitFor(() => {
+      expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+      expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+    });
+  });
+});
+
 // A dashboard chart tile is `ChartFrame chrome="tile"` with no plot height: the
 // frame hands its chart "fill", i.e. `height: 100%`. That only resolves when
 // EVERY box from the frame body down to the plot is definite — an auto-height
@@ -1490,6 +1546,171 @@ describe("AutoChart legend vs series end labels", () => {
   });
 });
 
+// Facet + legend engine (RM-118 × RM-120, orchestrator ruling after the
+// wave-2 merge): before the merge, a faceted line/area AutoChart with
+// `legend` set rendered one shared `AutoLegend` below the grid; the merge
+// dropped it entirely (see the result file's "Wave-2 merge" section). This
+// restores it, as ONE shared `ChartLegend` — not `AutoLegend` — above the
+// grid, matching the maintainer's "new shared look" for every other family.
+describe("AutoChart faceted line legend (RM-118 × RM-120 regression fix)", () => {
+  const facetedTrend = [
+    { date: "2024-01-01", region: "East", ebikes: 10, cargo: 4 },
+    { date: "2024-02-01", region: "East", ebikes: 14, cargo: 6 },
+    { date: "2024-01-01", region: "West", ebikes: 8, cargo: 3 },
+    { date: "2024-02-01", region: "West", ebikes: 12, cargo: 5 },
+  ];
+  const facetedSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "line",
+    data: facetedTrend,
+    x: "date",
+    series: [{ key: "ebikes" }, { key: "cargo" }],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with 2 items, above the grid", () => {
+    const { container, getAllByRole } = render(<AutoChart spec={facetedSpec(true)} height={280} />);
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "ebikes",
+      "cargo",
+    ]);
+
+    // "above the grid": the legend root is the grid's previous sibling, not
+    // a per-panel legend inside it and not a second one below it.
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
+  });
+});
+
+// RM-118 Part B × RM-120, sitting 2 (integration): once 'bar' and 'pie' join
+// `LEGEND_ENGINE_TYPES` (this branch), the generic `showFacetLegend` check in
+// `AutoChart` already covers them for free — `FACETED_CHART_TYPES ∩
+// LEGEND_ENGINE_TYPES` is exactly line/area/bar/pie. Same regression class
+// Part A fixed for line/area: an `AutoChart`-driven facet whose legend is
+// shown gets ONE shared `ChartLegend` above the grid, never one per panel.
+describe("AutoChart faceted bar legend (RM-118 Part B × RM-120 sitting 2)", () => {
+  const facetedSales = [
+    { quarter: "Q1", region: "North", revenue: 40, profit: 12 },
+    { quarter: "Q2", region: "North", revenue: 44, profit: 14 },
+    { quarter: "Q1", region: "South", revenue: 30, profit: 9 },
+    { quarter: "Q2", region: "South", revenue: 33, profit: 10 },
+  ];
+  const facetedBarSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "bar",
+    data: facetedSales,
+    x: "quarter",
+    series: [{ key: "revenue" }, { key: "profit" }],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with 2 items, above the grid", () => {
+    const { container, getAllByRole } = render(
+      <AutoChart spec={facetedBarSpec(true)} height={280} />,
+    );
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "revenue",
+      "profit",
+    ]);
+
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    // A per-panel FAIL would show a second group inside the grid — assert none.
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedBarSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
+  });
+});
+
+describe("AutoChart faceted pie legend (RM-118 Part B × RM-120 sitting 2)", () => {
+  // Two panels (region), same 3 channels in both — the shared legend must
+  // list each CATEGORY once (deduped across panels), not once per panel and
+  // not the value column ("share"). This is the exact shape that was broken
+  // before the `legendItems`-not-`series` fix: `series` here normalizes to a
+  // single "share" entry, never the 3 channel names.
+  const facetedChannels = [
+    { region: "North", channel: "Direct", share: 42 },
+    { region: "North", channel: "Organic", share: 33 },
+    { region: "North", channel: "Referral", share: 25 },
+    { region: "South", channel: "Direct", share: 38 },
+    { region: "South", channel: "Organic", share: 36 },
+    { region: "South", channel: "Referral", share: 26 },
+  ];
+  const facetedPieSpec = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "pie",
+    data: facetedChannels,
+    x: "channel",
+    series: ["share"],
+    facet: { by: "region" },
+    legend,
+  });
+
+  it("legend: true → exactly one shared 'Chart legend' group with one item per category, above the grid", () => {
+    const { container, getAllByRole } = render(
+      <AutoChart spec={facetedPieSpec(true)} height={280} />,
+    );
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    // One item per CATEGORY (Direct/Organic/Referral), deduped across the two
+    // panels — not 6 (one per data row) and not 1 (the "share" value column).
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(3);
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "Direct",
+      "Organic",
+      "Referral",
+    ]);
+
+    const root = container.querySelector('[data-slot="auto-chart-facet-legend-root"]');
+    expect(root).not.toBeNull();
+    const grid = root?.querySelector('[data-slot="chart-multiples"]');
+    expect(grid).not.toBeNull();
+    expect(legend.nextElementSibling).toBe(grid);
+    // A per-panel FAIL would show a second group inside the grid — assert none.
+    expect(grid?.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(0);
+  });
+
+  it("legend: false → no legend at all", () => {
+    const { queryAllByRole, container } = render(
+      <AutoChart spec={facetedPieSpec(false)} height={280} />,
+    );
+    expect(queryAllByRole("group", { name: "Chart legend" })).toHaveLength(0);
+    expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
+  });
+});
+
 // BarChart — RM-113: the comparison label mode is a ChartLabelsSpec field.
 describe("AutoChart bar comparison labels", () => {
   const sales = [
@@ -1542,5 +1763,56 @@ describe("AutoChart bar comparison labels", () => {
     expect(
       plain.container.querySelectorAll('[data-slot="bar-chart-comparison-label"]'),
     ).toHaveLength(0);
+  });
+});
+
+// RM-122 — `ChartSpec.groupBy` (the one shared grouping field) maps to
+// `WaterfallChart subtotalBy` for `type: "waterfall"`; there is no separate
+// `ChartSpec.subtotalBy` (one field per concept).
+describe("AutoChart waterfall groupBy → subtotalBy (RM-122)", () => {
+  // AutoChart's own `kind` classifier (`readsAsTotalRow`) is regex-based on
+  // the label text — it never reads a `kind` field off the raw spec row — so
+  // "Opening"/"Closing" render as plain steps here, same as any other row.
+  const quarters = [
+    { stage: "Opening", value: 1000 },
+    { stage: "Jan", value: 50, quarter: "Q1" },
+    { stage: "Feb", value: 30, quarter: "Q1" },
+    { stage: "Apr", value: 20, quarter: "Q2" },
+    { stage: "May", value: -5, quarter: "Q2" },
+    { stage: "Closing", value: 1095 },
+  ];
+
+  it("groupBy auto-inserts a subtotal checkpoint per group, filled like a total", () => {
+    const spec: ChartSpec = {
+      type: "waterfall",
+      data: quarters,
+      x: "stage",
+      series: ["value"],
+      groupBy: "quarter",
+    };
+    const { container } = render(<AutoChart spec={spec} />);
+    const steps = container.querySelectorAll('[data-slot="waterfall-chart-step"]');
+    // 6 data rows + Q1/Q2 auto-inserted subtotals.
+    expect(steps).toHaveLength(8);
+    const totalFillSteps = [...steps].filter(
+      (el) => el.getAttribute("fill") === "var(--chart-foreground)",
+    );
+    // Only the Q1/Q2 auto-inserted subtotals read as totals — "Opening" and
+    // "Closing" don't match the total-label regex, so they stay plain steps.
+    expect(totalFillSteps).toHaveLength(2);
+  });
+
+  it("without groupBy, no subtotal is inserted", () => {
+    const spec: ChartSpec = {
+      type: "waterfall",
+      data: quarters,
+      x: "stage",
+      series: ["value"],
+    };
+    const { container } = render(<AutoChart spec={spec} />);
+    // One step per row, no auto-inserted subtotal.
+    expect(container.querySelectorAll('[data-slot="waterfall-chart-step"]')).toHaveLength(
+      quarters.length,
+    );
   });
 });

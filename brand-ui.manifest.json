@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T10:08:05.851Z",
+  "generatedAt": "2026-09-19T11:07:31.062Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13452,6 +13452,11 @@
           "module": "packages/charts/src/charts/markers/index.ts"
         },
         {
+          "name": "ChartMultiples",
+          "kind": "value",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
           "name": "ChartProvider",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-context.tsx"
@@ -13498,6 +13503,16 @@
         },
         {
           "name": "ChartTooltipIndicator",
+          "kind": "value",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "ChartTooltipInline",
+          "kind": "value",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "ChartTooltipTable",
           "kind": "value",
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
@@ -13647,6 +13662,21 @@
           "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
+          "name": "FACET_BASELINE_KEY",
+          "kind": "value",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "FACET_DEFAULT_COLUMNS",
+          "kind": "value",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "FACET_DEFAULT_PANEL_HEIGHT",
+          "kind": "value",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
           "name": "FORCE_ALPHA_MIN",
           "kind": "value",
           "module": "packages/charts/src/charts/network/index.ts"
@@ -13755,6 +13785,11 @@
           "name": "HeatmapChart",
           "kind": "value",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "InlineChip",
+          "kind": "value",
+          "module": "packages/charts/src/chart-frame/inline-chip.tsx"
         },
         {
           "name": "KDE_GRID_POINTS",
@@ -14379,6 +14414,11 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "useChartTooltipValueFormat",
+          "kind": "value",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
           "name": "useChartValueSetFormatter",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-formatters.ts"
@@ -14507,6 +14547,11 @@
           "name": "useStaticChartPreview",
           "kind": "value",
           "module": "packages/charts/src/charts/static-chart-preview-context.tsx"
+        },
+        {
+          "name": "useTooltipPin",
+          "kind": "value",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
           "name": "useYScale",
@@ -14824,6 +14869,26 @@
           "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
         {
+          "name": "ChartExportRequest",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
+          "name": "ChartExportScale",
+          "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
+          "name": "ChartFooterLabels",
+          "module": "packages/charts/src/chart-frame/chart-footer.tsx"
+        },
+        {
+          "name": "ChartFrameAction",
+          "module": "packages/charts/src/chart-frame/chart-footer.tsx"
+        },
+        {
+          "name": "ChartFrameByline",
+          "module": "packages/charts/src/chart-frame/chart-frame-context.tsx"
+        },
+        {
           "name": "ChartFrameColumn",
           "module": "packages/charts/src/chart-frame/chart-frame-context.tsx"
         },
@@ -14834,6 +14899,10 @@
         {
           "name": "ChartFrameProps",
           "module": "packages/charts/src/chart-frame/chart-frame.tsx"
+        },
+        {
+          "name": "ChartFrameSourceLink",
+          "module": "packages/charts/src/chart-frame/chart-frame-context.tsx"
         },
         {
           "name": "ChartHoverCategory",
@@ -14878,6 +14947,30 @@
         {
           "name": "ChartMarkersProps",
           "module": "packages/charts/src/charts/markers/index.ts"
+        },
+        {
+          "name": "ChartMultiplesBaseline",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesHover",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesPanel",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesPanelInput",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesProps",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartMultiplesScales",
+          "module": "packages/charts/src/multiples/chart-multiples.tsx"
         },
         {
           "name": "ChartPalette",
@@ -15020,7 +15113,19 @@
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
+          "name": "ChartTooltipInlineProps",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
           "name": "ChartTooltipProps",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "ChartTooltipTableProps",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "ChartTooltipVariant",
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
@@ -15198,6 +15303,22 @@
         {
           "name": "DumbbellVariant",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "FacetPanelScale",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
+          "name": "FacetPanelStats",
+          "module": "packages/charts/src/multiples/facet-sort.ts"
+        },
+        {
+          "name": "FacetScalesOptions",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
+          "name": "FacetSort",
+          "module": "packages/charts/src/multiples/facet-sort.ts"
         },
         {
           "name": "FieldCluster",
@@ -15422,6 +15543,10 @@
         {
           "name": "IndicatorWidth",
           "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "InlineChipProps",
+          "module": "packages/charts/src/chart-frame/inline-chip.tsx"
         },
         {
           "name": "KdeOptions",
@@ -16048,6 +16173,10 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "TooltipPinControls",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
           "name": "TooltipRow",
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
@@ -16170,6 +16299,10 @@
         {
           "name": "UseContainerLegendOptions",
           "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "UseTooltipPinOptions",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
           "name": "ValueFormat",
@@ -16374,6 +16507,10 @@
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
+          "name": "computeFacetScales",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
           "name": "computeForcePositions",
           "module": "packages/charts/src/charts/network/index.ts"
         },
@@ -16484,6 +16621,10 @@
         {
           "name": "explainChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "facetPanelStats",
+          "module": "packages/charts/src/multiples/facet-sort.ts"
         },
         {
           "name": "findBulletBand",
@@ -16682,6 +16823,10 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "niceStepAtLeast",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
           "name": "niceYDomain",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
@@ -16740,6 +16885,10 @@
         {
           "name": "rampPositionOf",
           "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "rangeRoundedFacetScale",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
         },
         {
           "name": "readsAsBeforeAfterPair",
@@ -16886,6 +17035,10 @@
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
+          "name": "sharedFacetScale",
+          "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
           "name": "shouldTweenYDomain",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
@@ -16900,6 +17053,10 @@
         {
           "name": "sortDumbbellRows",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "sortFacetPanels",
+          "module": "packages/charts/src/multiples/facet-sort.ts"
         },
         {
           "name": "spaceSlopeLabels",
@@ -18595,7 +18752,43 @@
               "name": "description",
               "optional": true,
               "type": "ReactNode",
-              "description": "Prose that IS the legend — what a reader needs to read the chart correctly (series, units, scope), written as a sentence, not a caption."
+              "description": "Prose that IS the legend — what a reader needs to read the chart correctly (series, units, scope), written as a sentence, not a caption. Bold the finding with `<strong>`; colour-key a series in the prose with `<InlineChip series=\"ram\">short-term RAM</InlineChip>` — the chip takes the series' colour from the chart inside this frame, and its accessible name is the series name (RM-117)."
+            },
+            {
+              "name": "notes",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Notes under the chart (RM-117): method, definitions, caveats. Italic, above the footer; part of an exported picture."
+            },
+            {
+              "name": "byline",
+              "optional": true,
+              "type": "ChartFrameByline",
+              "description": "\"Chart: Author\" at the start of the footer (RM-117). `kind` picks the word."
+            },
+            {
+              "name": "altText",
+              "optional": true,
+              "type": "string",
+              "description": "Text alternative for the whole picture (RM-117) — Datawrapper's \"alt text\". Becomes the chart figure's `aria-describedby` content when the chart has no description of its own; with no chart figure, the frame body becomes the figure it describes."
+            },
+            {
+              "name": "actions",
+              "optional": true,
+              "type": "ChartFrameAction[]",
+              "description": "Footer links (RM-117), always drawn in Datawrapper's order: `\"data\"` (Get the data → CSV), your own nodes (an Embed link), `\"svg\"`, `\"png\"` (Download image). Built-ins degrade like the toolbar: no data → no `\"data\"`, no `<svg>` → no image links. Never part of an exported picture."
+            },
+            {
+              "name": "exportOptions",
+              "optional": true,
+              "type": "ChartExportRequest",
+              "description": "Defaults for every export this frame starts — toolbar, menu and footer (RM-117)."
+            },
+            {
+              "name": "footerLabels",
+              "optional": true,
+              "type": "Partial<ChartFooterLabels>",
+              "description": "Words of the footer row (RM-117) — pass your own to localise them."
             },
             {
               "name": "data",
@@ -18654,14 +18847,14 @@
             {
               "name": "onExport",
               "optional": true,
-              "type": "(kind: ChartExportKind, blob: Blob, filename: string) => void",
+              "type": "ChartFrameExportHandler",
               "description": "Routes an SVG/PNG export to the caller — with the generated `Blob` and filename — instead of triggering a local browser download. Mirrors `onDownload`, for apps that want to route an export through their own storage. When absent, the built-in handler downloads the file directly."
             },
             {
               "name": "source",
               "optional": true,
-              "type": "ReactNode",
-              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal, under the chart in both — never appended to the summary statistics; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent. A string that overflows the row stays fully recoverable — a native `title` and, once it measurably overflows, a keyboard-reachable tooltip (#184). A non-string node keeps only the CSS caps with no overflow recovery — keep it short, or accept it may be visually truncated with no fallback."
+              "type": "ReactNode | ChartFrameSourceLink",
+              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal, under the chart in both — never appended to the summary statistics; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent. A string that overflows the row stays fully recoverable — a native `title` and, once it measurably overflows, a keyboard-reachable tooltip (#184). A non-string node keeps only the CSS caps with no overflow recovery — keep it short, or accept it may be visually truncated with no fallback. RM-117: `{ name, href }` names and links the source. With that form, a `byline` or `actions`, the source joins the footer row as \"Source: Name\" instead of the all-caps row."
             },
             {
               "name": "chrome",
@@ -18866,6 +19059,116 @@
             }
           ]
         },
+        "ChartMultiples": {
+          "extends": [
+            "Record<string, unknown> = Record<string, unknown>",
+            "> extends Omit<HTMLAttributes<HTMLDivElement>",
+            "\"children\" | \"title\">"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": true,
+              "type": "T[]",
+              "description": "Long rows, split into panels by `by`. Ignored when `panels` is set."
+            },
+            {
+              "name": "by",
+              "optional": true,
+              "type": "string | { series: true }",
+              "description": "A column key (one panel per value), or `{ series: true }` — one panel per `dataKeys` entry over the same rows (split bars)."
+            },
+            {
+              "name": "panels",
+              "optional": true,
+              "type": "ChartMultiplesPanelInput<T>[]",
+              "description": "Explicit panels (instead of `data` + `by`)."
+            },
+            {
+              "name": "xDataKey",
+              "optional": false,
+              "type": "string",
+              "description": "Row key of the x value (hover lookup, shared x extent, baseline join)."
+            },
+            {
+              "name": "dataKeys",
+              "optional": false,
+              "type": "string[]",
+              "description": "Row keys of the plotted values; the first drives sort, stats and the hovered value."
+            },
+            {
+              "name": "columns",
+              "optional": true,
+              "type": "Responsive<number | \"auto\">",
+              "description": "Panels per row, per breakpoint. Default `{ base: \"auto\", narrow: 1 }`."
+            },
+            {
+              "name": "minPanelWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Minimum panel width `columns: \"auto\"` packs to. Default 240."
+            },
+            {
+              "name": "panelHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "Each panel's plot height (px or `{ aspect }`), per breakpoint. Default 200."
+            },
+            {
+              "name": "scales",
+              "optional": true,
+              "type": "ChartMultiplesScales"
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "FacetSort",
+              "description": "Panel order. Default `\"data\"` (input order). Numeric keys sort largest first."
+            },
+            {
+              "name": "reverse",
+              "optional": true,
+              "type": "boolean",
+              "description": "Reverse the sort order."
+            },
+            {
+              "name": "baseline",
+              "optional": true,
+              "type": "ChartMultiplesBaseline",
+              "description": "A series drawn muted behind every panel's own series: a panel `key` (removed from the grid) or a row `series` key."
+            },
+            {
+              "name": "showAt",
+              "optional": true,
+              "type": "(panel: ChartMultiplesPanel<T>) => Responsive<boolean>",
+              "description": "Per-panel visibility, per breakpoint (a panel's own `showAt` wins)."
+            },
+            {
+              "name": "syncHover",
+              "optional": true,
+              "type": "boolean",
+              "description": "Synced hover: every panel shows the crosshair at the hovered category and `panelTitle` receives the hovered value. Line, Area and Composed panels only; bar and pie panels get the shared layout and domains. Default `true`."
+            },
+            {
+              "name": "panelTitle",
+              "optional": true,
+              "type": "(panel: ChartMultiplesPanel<T>, hovered?: ChartMultiplesHover<T>) => ReactNode",
+              "description": "Title slot; `hovered` is set while any panel is hovered (value-in-title)."
+            },
+            {
+              "name": "annotations",
+              "optional": true,
+              "type": "Array<ChartAnnotation & { panel?: string }>",
+              "description": "Annotations; `panel` names one panel, `\"all\"`/unset repeats it in every panel."
+            },
+            {
+              "name": "children",
+              "optional": false,
+              "type": "(panel: ChartMultiplesPanel<T>) => ReactNode",
+              "description": "Renders one panel's chart."
+            }
+          ]
+        },
         "ChartRevealClip": {
           "extends": [],
           "props": [
@@ -19051,6 +19354,12 @@
               "optional": true,
               "type": "string",
               "description": "Signature of motion URL state — triggers reveal replay when it changes."
+            },
+            {
+              "name": "yDomainTweenDuration",
+              "optional": true,
+              "type": "number",
+              "description": "Animate the y-domain over this duration (ms), including a legend toggle's re-tween (RM-118, validator FAIL 1a). Default: 500, same as `LineChart`/`AreaChart`."
             },
             {
               "name": "aspectRatio",
@@ -20253,6 +20562,31 @@
               "optional": true,
               "type": "boolean",
               "description": "Match loop timing to the loading line pulse (cycle + inter-loop pause)."
+            }
+          ]
+        },
+        "InlineChip": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": [
+            {
+              "name": "series",
+              "optional": false,
+              "type": "string",
+              "description": "The series key (`dataKey`) whose colour the chip takes."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "The series' display name, the chip's accessible name. Wins over the name the chart publishes; without either the chip is named by `series`."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The words the chip introduces — usually the series' name in prose."
             }
           ]
         },
@@ -22644,8 +22978,56 @@
             {
               "name": "connectors",
               "optional": true,
+              "type": "boolean | \"thin\" | \"thick\"",
+              "description": "Dashed hand-off hairline between each step's end and the next step's start: `false` draws none, `true`/`\"thin\"` the default weight, `\"thick\"` a heavier one (RM-122). Default `true`."
+            },
+            {
+              "name": "dataFormat",
+              "optional": true,
+              "type": "WaterfallDataFormat",
+              "description": "`\"differences\"` (default): `data` values are signed deltas. `\"runningTotals\"`: every row's `value` is the running total AT that row — converted once, up front (RM-122 `waterfall-steps.ts`)."
+            },
+            {
+              "name": "subtotalBy",
+              "optional": true,
+              "type": "string",
+              "description": "Auto-inserts a `kind: \"subtotal\"` checkpoint after each run of rows sharing this field's value (RM-122) — e.g. `subtotalBy=\"quarter\"` with `{ label, value, quarter: \"Q1\" }` rows. Off by default."
+            },
+            {
+              "name": "subtotalLabel",
+              "optional": true,
+              "type": "string",
+              "description": "The inserted subtotal row's label — a `\"{group}\"` template. Default `\"{group} subtotal\"`. Ignored without `subtotalBy`."
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "WaterfallSort",
+              "description": "Reorders `\"step\"` rows within each subtotal group (RM-122). Default `\"data\"` (spreadsheet order)."
+            },
+            {
+              "name": "start",
+              "optional": true,
+              "type": "WaterfallEndpointOptions",
+              "description": "Show/relabel the chart's own first row (RM-122, \"start column\")."
+            },
+            {
+              "name": "end",
+              "optional": true,
+              "type": "WaterfallEndpointOptions",
+              "description": "Show/relabel the chart's own last row (RM-122, \"end column\")."
+            },
+            {
+              "name": "zoomToDifferences",
+              "optional": true,
               "type": "boolean",
-              "description": "Dashed hand-off hairline between each step's end and the next step's start. Default `true`."
+              "description": "Drops the zero baseline when a checkpoint sits far above the steps' own swing, drawing `\"total\"`/`\"subtotal\"` rows as points instead of bars (RM-122; see `computeWaterfallZoomDomain`). Default `false`."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "WaterfallLabelsConfig",
+              "description": "Per-row value-label control (RM-122) — replaces `showValues`'s plain signed reading when given. See {@link WaterfallLabelsConfig}."
             },
             {
               "name": "grid",
@@ -24050,6 +24432,8 @@
         "ChartCard": "charts-chartcard--docs",
         "ChartFrame": "charts-chartframe--docs",
         "ChartLegend": "charts-chartlegend--docs",
+        "ChartMultiples": "charts-chartmultiples--docs",
+        "ChartTooltip": "charts-tooltip-presets--docs",
         "ChoroplethChart": "charts-choroplethchart--docs",
         "ComposedChart": "charts-composedchart--docs",
         "DashboardInteractionsEditor": "dashboard-interactions--docs",

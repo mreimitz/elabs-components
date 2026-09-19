@@ -759,3 +759,109 @@ export const LineLegendFromColumnKeys: Story = {
     height: 280,
   },
 };
+
+/**
+ * `ChartSpec.facet` (RM-120) splits one line spec into a grid, one panel per
+ * `region` — and `legend: true` (RM-118) shows ONE shared `Chart legend`
+ * above the whole grid, not one per panel and not the old per-chart
+ * `AutoLegend` a faceted spec briefly lost across the wave-2 branch merge.
+ */
+export const LineFacetedLegend: Story = {
+  args: {
+    spec: {
+      type: "line",
+      data: [
+        { date: "2024-01-01", region: "North", revenue: 12000, expenses: 8500 },
+        { date: "2024-02-01", region: "North", revenue: 15200, expenses: 9100 },
+        { date: "2024-03-01", region: "North", revenue: 14100, expenses: 8800 },
+        { date: "2024-01-01", region: "South", revenue: 9000, expenses: 6200 },
+        { date: "2024-02-01", region: "South", revenue: 10400, expenses: 6800 },
+        { date: "2024-03-01", region: "South", revenue: 9700, expenses: 6500 },
+      ],
+      x: "date",
+      series: [{ key: "revenue" }, { key: "expenses" }],
+      facet: { by: "region" },
+      legend: true,
+    } satisfies ChartSpec,
+    height: 280,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const groups = await waitFor(() => canvas.getAllByRole("group", { name: "Chart legend" }));
+    await expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    await expect(within(legend).getByText("revenue")).toBeInTheDocument();
+    await expect(within(legend).getByText("expenses")).toBeInTheDocument();
+
+    // Browser proof (RM-118 x RM-120 regression fix): the legend box sits
+    // above the grid box, not beside or inside it.
+    const grid = canvasElement.querySelector('[data-slot="chart-multiples"]');
+    if (!grid) throw new Error("expected the ChartMultiples grid to be present");
+    const legendBox = legend.getBoundingClientRect();
+    const gridBox = grid.getBoundingClientRect();
+    console.log(
+      "[RM-118 facet legend proof]",
+      JSON.stringify({
+        legendRootCount: groups.length,
+        itemTexts: Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent),
+        legendBox: { top: legendBox.top, bottom: legendBox.bottom, height: legendBox.height },
+        gridBox: { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height },
+      }),
+    );
+    await expect(legendBox.bottom).toBeLessThanOrEqual(gridBox.top);
+  },
+};
+
+/**
+ * RM-118 Part B × RM-120, sitting 2: `bar` joined `LEGEND_ENGINE_TYPES` this
+ * wave, so a faceted bar spec gets the same fix as `LineFacetedLegend` above —
+ * ONE shared `Chart legend` over the whole grid, never one per panel.
+ */
+export const BarFacetedLegend: Story = {
+  args: {
+    spec: {
+      type: "bar",
+      data: [
+        { quarter: "Q1", region: "North", revenue: 40, profit: 12 },
+        { quarter: "Q2", region: "North", revenue: 44, profit: 14 },
+        { quarter: "Q3", region: "North", revenue: 47, profit: 15 },
+        { quarter: "Q1", region: "South", revenue: 30, profit: 9 },
+        { quarter: "Q2", region: "South", revenue: 33, profit: 10 },
+        { quarter: "Q3", region: "South", revenue: 35, profit: 11 },
+      ],
+      x: "quarter",
+      series: [{ key: "revenue" }, { key: "profit" }],
+      facet: { by: "region" },
+      legend: true,
+    } satisfies ChartSpec,
+    height: 280,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const groups = await waitFor(() => canvas.getAllByRole("group", { name: "Chart legend" }));
+    await expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    await expect(within(legend).getByText("revenue")).toBeInTheDocument();
+    await expect(within(legend).getByText("profit")).toBeInTheDocument();
+
+    // Browser proof: the legend box sits above the grid box, not beside,
+    // inside, or duplicated per panel.
+    const grid = canvasElement.querySelector('[data-slot="chart-multiples"]');
+    if (!grid) throw new Error("expected the ChartMultiples grid to be present");
+    const legendBox = legend.getBoundingClientRect();
+    const gridBox = grid.getBoundingClientRect();
+    console.log(
+      "[RM-118 Part B facet legend proof]",
+      JSON.stringify({
+        legendRootCount: groups.length,
+        itemTexts: Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent),
+        legendBox: { top: legendBox.top, bottom: legendBox.bottom, height: legendBox.height },
+        gridBox: { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height },
+      }),
+    );
+    await expect(legendBox.bottom).toBeLessThanOrEqual(gridBox.top);
+    await expect(grid.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(
+      0,
+    );
+  },
+};
