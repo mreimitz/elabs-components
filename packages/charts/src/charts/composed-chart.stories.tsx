@@ -465,6 +465,16 @@ export const StackedPercent: Story = {
       // Every month's stack ends on the same pixel row: 100 %.
       expect(new Set(tops).size).toBe(1);
     });
-    await expect(canvasElement.querySelector('[data-slot="y-axis"]')).toHaveTextContent("100%");
+    // The narrow tier hides the value axis by default (RM-107); every wider
+    // tier paints it, in percent.
+    const tier = canvasElement
+      .querySelector("[data-chart-breakpoint]")
+      ?.getAttribute("data-chart-breakpoint");
+    await expect(tier).toBeTruthy();
+    if (tier === "narrow") {
+      await expect(canvasElement.querySelector('[data-slot="y-axis"]')).toBeNull();
+    } else {
+      await expect(canvasElement.querySelector('[data-slot="y-axis"]')).toHaveTextContent("100%");
+    }
   },
 };
