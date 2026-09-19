@@ -188,7 +188,8 @@ function ProgressItem({
   labelClassName,
   valueClassName,
   high,
-}: ProgressItemProps) {
+  faded,
+}: ProgressItemProps & { faded?: boolean }) {
   const percentage = item.maxValue ? (item.value / item.maxValue) * 100 : 0;
 
   // Plain tokenized bar (dropped @base-ui Progress — it can't take a per-series indicator
@@ -202,19 +203,28 @@ function ProgressItem({
       aria-label={item.label}
       className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1"
     >
-      {/* Color marker */}
+      {/* Color marker — decorative; see the matching note in `SimpleItem`. */}
       {showMarker &&
         (high && item.seriesIndex !== undefined ? (
           <LegendPatternSwatch seriesIndex={item.seriesIndex} color={item.color} />
         ) : (
           <div
-            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            className={cn("h-2.5 w-2.5 shrink-0 rounded-full", faded && "opacity-40")}
             style={{ backgroundColor: item.color }}
           />
         ))}
 
-      {/* Label */}
-      <span className={cn("text-legend-foreground", labelClassName)}>{item.label}</span>
+      {/* Label — hover-faded swaps to the muted-foreground TOKEN, same reasoning as
+          `SimpleItem` (a raw row-level `opacity-40` on this text fails AA contrast). */}
+      <span
+        className={cn(
+          "text-legend-foreground",
+          faded && "text-legend-muted-foreground",
+          labelClassName,
+        )}
+      >
+        {item.label}
+      </span>
 
       {showValue ? (
         <span className={cn("text-legend-muted-foreground", valueClassName)}>
@@ -260,27 +270,35 @@ function SimpleItem({
   valueClassName,
   high,
   hidden,
-}: SimpleItemProps & { hidden?: boolean }) {
+  faded,
+}: SimpleItemProps & { hidden?: boolean; faded?: boolean }) {
   // Note: item.color must remain inline style as it's dynamic data
   return (
     <div className="flex items-center gap-3">
-      {/* Color marker — decoration pattern swatch when high decoration + seriesIndex present */}
+      {/* Color marker — decoration pattern swatch when high decoration + seriesIndex present.
+          Decorative (no text), so a plain opacity dim for both the toggled-off and the
+          hover-faded state is fine here — the label below carries the WCAG-safe channel. */}
       {showMarker &&
         (high && item.seriesIndex !== undefined ? (
           <LegendPatternSwatch seriesIndex={item.seriesIndex} color={item.color} />
         ) : (
           <div
-            className={cn("h-2.5 w-2.5 shrink-0 rounded-full", hidden && "opacity-40")}
+            className={cn("h-2.5 w-2.5 shrink-0 rounded-full", (hidden || faded) && "opacity-40")}
             style={{ backgroundColor: item.color }}
           />
         ))}
 
-      {/* Label — a toggled-off series (RM-118) also strikes through: hidden
-          is never colour/opacity alone (WCAG 1.4.1). */}
+      {/* Label — a toggled-off series (RM-118) also strikes through: hidden is never
+          colour/opacity alone (WCAG 1.4.1). A hover-faded (not hidden) row swaps to the
+          same muted-foreground TOKEN rather than a raw `opacity-40` on this span: that
+          token is already AA-contrast-safe on the legend background, where dimming the
+          real ink via opacity is not (an item's other row still passing axe at ~2.3:1
+          contrast is what this fixes — see chart-legend.test.tsx). */}
       <span
         className={cn(
           "flex-1 text-legend-foreground",
-          hidden && "text-legend-muted-foreground line-through",
+          (hidden || faded) && "text-legend-muted-foreground",
+          hidden && "line-through",
           labelClassName,
         )}
       >
@@ -429,7 +447,9 @@ export function ChartLegend({
               (onItemClick || isToggleable) &&
                 (layout === "row" ? "text-start focus-ring" : "w-full text-start focus-ring"),
               isHovered && "bg-legend-muted",
-              isFaded && "opacity-40",
+              // NOT a row-level `opacity-40` (that dims the label text below AA contrast —
+              // see `SimpleItem`/`ProgressItem`, which each apply their own WCAG-safe
+              // treatment for `isFaded` instead).
               itemClassName,
             )}
             data-hovered={isHovered ? "" : undefined}
@@ -442,6 +462,7 @@ export function ChartLegend({
           >
             {showProgress && item.maxValue ? (
               <ProgressItem
+                faded={isFaded}
                 formatPercentage={formatPercentage}
                 formatValue={resolvedFormatValue}
                 high={high}
@@ -454,6 +475,7 @@ export function ChartLegend({
               />
             ) : (
               <SimpleItem
+                faded={isFaded}
                 formatValue={resolvedFormatValue}
                 high={high}
                 hidden={isHidden}
