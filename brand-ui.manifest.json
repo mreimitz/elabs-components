@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T15:19:11.268Z",
+  "generatedAt": "2026-09-19T15:33:25.717Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -24475,6 +24475,7 @@
         "CandlestickChart": "charts-candlestickchart--docs",
         "CanvasLayer": "charts-canvaslayer--docs",
         "ChartAnnotations": "charts-annotations--docs",
+        "ChartBrush": "charts-chartbrush--docs",
         "ChartCard": "charts-chartcard--docs",
         "ChartFrame": "charts-chartframe--docs",
         "ChartLegend": "charts-chartlegend--docs",

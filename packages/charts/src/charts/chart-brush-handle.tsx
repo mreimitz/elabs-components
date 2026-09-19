@@ -1,6 +1,6 @@
 "use client";
 
-import type { BrushHandleRenderProps } from "@visx/brush/lib/BrushHandle";
+import type { BrushHandleRenderProps } from "@visx/brush";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useChartStable } from "./chart-context";
