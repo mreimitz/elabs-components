@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T01:02:41.441Z",
+  "generatedAt": "2026-09-19T03:21:42.390Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -14072,6 +14072,11 @@
           "module": "packages/charts/src/charts/index.ts"
         },
         {
+          "name": "RampLegend",
+          "kind": "value",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
           "name": "ReferenceLine",
           "kind": "value",
           "module": "packages/charts/src/charts/reference-line.tsx"
@@ -14185,6 +14190,11 @@
           "name": "SeriesPointMarker",
           "kind": "value",
           "module": "packages/charts/src/charts/series-point-marker.tsx"
+        },
+        {
+          "name": "SizeLegend",
+          "kind": "value",
+          "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
           "name": "Sparkline",
@@ -14382,6 +14392,11 @@
           "name": "useChoroplethZoom",
           "kind": "value",
           "module": "packages/charts/src/charts/choropleth/index.ts"
+        },
+        {
+          "name": "useContainerLegend",
+          "kind": "value",
+          "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
           "name": "useHeatmap",
@@ -15071,6 +15086,30 @@
         {
           "name": "ComposeSvgPart",
           "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
+          "name": "ContainerLegendConfig",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "ContainerLegendInteractive",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "ContainerLegendLayoutMode",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "ContainerLegendPosition",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "ContainerLegendProp",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "ContainerLegendResult",
+          "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
           "name": "CustomShapesProps",
@@ -15777,6 +15816,18 @@
           "module": "packages/charts/src/charts/radar-context.tsx"
         },
         {
+          "name": "RampLegendLabelMode",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "RampLegendProps",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "RampLegendScale",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
           "name": "ReferenceLineProps",
           "module": "packages/charts/src/charts/reference-line.tsx"
         },
@@ -15969,6 +16020,10 @@
           "module": "packages/charts/src/charts/series-point-marker.tsx"
         },
         {
+          "name": "SizeLegendProps",
+          "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
           "name": "SparklineLabels",
           "module": "packages/charts/src/sparkline/sparkline.tsx"
         },
@@ -16111,6 +16166,10 @@
         {
           "name": "UseCanvasDrawResult",
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "UseContainerLegendOptions",
+          "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
           "name": "ValueFormat",
@@ -16677,6 +16736,10 @@
         {
           "name": "radarCssVars",
           "module": "packages/charts/src/charts/radar-context.tsx"
+        },
+        {
+          "name": "rampPositionOf",
+          "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
           "name": "readsAsBeforeAfterPair",
@@ -18658,6 +18721,24 @@
               "optional": true,
               "type": "( item: LegendItem, index: number, event: React.MouseEvent | React.KeyboardEvent, ) => void",
               "description": "Drill-down on a legend entry (#349). When set, each item renders as a real `<button>` — keyboard operable and named by the item's label — instead of a `<div>`. Unset, the legend is unchanged (a non-interactive `<div>` list). NOTE this lives on `ChartLegend`, not on the chart containers: the legend is a separately-placed composition primitive, so a callback on the container would be a prop the container cannot honour."
+            },
+            {
+              "name": "hiddenKeys",
+              "optional": true,
+              "type": "ReadonlySet<string>",
+              "description": "Series toggle (RM-118, `legend={{ interactive: \"toggle\" }}`). Set together with `onToggleKey`: every item renders as a real `<button aria-pressed>` — native keyboard support, no extra wiring — and `hiddenKeys` marks which ones read `aria-pressed=\"false\"` and paint dimmed with a struck-through label (WCAG 1.4.1: hidden is never colour-only). Independent of `onItemClick` (drill-down); a container sets one or the other."
+            },
+            {
+              "name": "onToggleKey",
+              "optional": true,
+              "type": "(key: string, item: LegendItem, index: number) => void",
+              "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
+            },
+            {
+              "name": "hideAtDensity",
+              "optional": true,
+              "type": "readonly ChartDensity[]",
+              "description": "Density tiers that hide the whole legend (RM-072 default: `xs`/`sm`). The container legend engine (`useContainerLegend`, RM-118) passes `[\"xs\"]` — `sm` renders `stack`-laid-out instead of hiding — so this stays `[\"xs\", \"sm\"]` for every OTHER (direct) caller, unchanged."
             },
             {
               "name": "showProgress",
@@ -23943,9 +24024,11 @@
         "ParallelCoordinatesChart": "charts-parallelcoordinateschart--docs",
         "PieChart": "charts-piechart--docs",
         "RadarChart": "charts-radarchart--docs",
+        "RampLegend": "charts-ramplegend--docs",
         "RingChart": "charts-ringchart--docs",
         "SankeyChart": "charts-sankeychart--docs",
         "ScatterChart": "charts-scatterchart--docs",
+        "SizeLegend": "charts-sizelegend--docs",
         "Sparkline": "charts-sparkline--docs",
         "TreeChart": "charts-treechart--docs",
         "TreemapChart": "charts-treemapchart--docs",

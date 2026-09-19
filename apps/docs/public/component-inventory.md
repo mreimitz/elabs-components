@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 215 | 40 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 217 | 41 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 7 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1251,6 +1251,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | RadarLabels | component |  | `@elabs-ai/components-charts` |  |
 | RadarProvider | component |  | `@elabs-ai/components-charts` |  |
 | RadialGradient | component |  | `@elabs-ai/components-charts` |  |
+| RampLegend | component |  | `@elabs-ai/components-charts` |  |
 | ReferenceLine | component |  | `@elabs-ai/components-charts` |  |
 | Ring | component |  | `@elabs-ai/components-charts` |  |
 | RingCenter | component |  | `@elabs-ai/components-charts` |  |
@@ -1274,6 +1275,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SeriesBar | component |  | `@elabs-ai/components-charts` |  |
 | SeriesMarkers | component |  | `@elabs-ai/components-charts` |  |
 | SeriesPointMarker | component |  | `@elabs-ai/components-charts` |  |
+| SizeLegend | component |  | `@elabs-ai/components-charts` |  |
 | Sparkline | component |  | `@elabs-ai/components-charts` | Tiny, axis-less trend that lives inside a KPI tile or a table cell. |
 | StaticChartPreviewProvider | component |  | `@elabs-ai/components-charts` |  |
 | STRIP_MAX_ROWS_PER_GROUP | component |  | `@elabs-ai/components-charts` |  |
@@ -1307,6 +1309,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useChartValueSetFormatter | hook |  | `@elabs-ai/components-charts` |  |
 | useChoropleth | hook |  | `@elabs-ai/components-charts` |  |
 | useChoroplethZoom | hook |  | `@elabs-ai/components-charts` |  |
+| useContainerLegend | hook |  | `@elabs-ai/components-charts` |  |
 | useHeatmap | hook |  | `@elabs-ai/components-charts` |  |
 | useHeatmapHover | hook |  | `@elabs-ai/components-charts` |  |
 | useHighDecoration | hook |  | `@elabs-ai/components-charts` |  |
