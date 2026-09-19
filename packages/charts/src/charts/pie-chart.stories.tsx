@@ -445,7 +445,7 @@ export const InsidePercentLabels: Story = {
       { label: "C", value: 33 },
     ];
     return (
-      <div className="h-72 w-[560px]">
+      <div className="h-72 w-full max-w-[560px]">
         <PieChart
           accessibleLabel="Four shares, one below the label's minimum angle"
           data={data}
@@ -474,7 +474,7 @@ const electionData = [
 export const HalfDonut: Story = {
   name: "Half donut",
   render: () => (
-    <div className="h-56 w-[560px]">
+    <div className="h-56 w-full max-w-[560px]">
       <PieChart
         accessibleLabel="Seats by party, half-donut"
         data={electionData}
