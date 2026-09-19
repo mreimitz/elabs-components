@@ -24,6 +24,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   emitScaffold,
+  packageManagerFrom,
   planScaffold,
   SCAFFOLD_FILES,
   ARCHETYPES,
@@ -425,6 +426,88 @@ test("emitScaffold(standalone): package.json + CLAUDE.md carry the real install 
     "the local-tarball fallback is not the documented path any more",
   );
 
+  rmSync(dir, { recursive: true, force: true });
+});
+
+// ---- the package manager that created the app (RM-130) ----------------------
+
+test("packageManagerFrom: the leading name wins — pnpm's agent string also says npm/", () => {
+  assert.deepEqual(packageManagerFrom("npm/10.9.4 node/v22.22.0 darwin arm64 workspaces/false"), {
+    name: "npm",
+    major: 10,
+  });
+  assert.deepEqual(packageManagerFrom("pnpm/9.15.4 npm/? node/v22.22.0 darwin arm64"), {
+    name: "pnpm",
+    major: 9,
+  });
+  assert.equal(packageManagerFrom(""), null, "a direct `node` run has no agent");
+  assert.equal(packageManagerFrom(undefined), null);
+});
+
+test("emitScaffold(standalone, npm): CI runs `npm ci` and CLAUDE.md speaks npm", () => {
+  const dir = tmp();
+  const r = emitScaffold(specFor("dashboard", { standalone: true, release: "2.0.0" }), {
+    root,
+    target: dir,
+    packageManager: { name: "npm", major: 10 },
+  });
+  assert.equal(r.status, "written", r.error);
+  assert.equal(r.packageManager, "npm");
+
+  // An app installed with npm has package-lock.json and no pnpm-lock.yaml, so a
+  // pnpm workflow fails on its first push.
+  const ci = readFileSync(join(dir, ".github/workflows/brand-ui.yml"), "utf8");
+  assert.match(ci, /cache: npm/);
+  assert.match(ci, /- run: npm ci$/m);
+  for (const script of ["typecheck", "lint", "audit:ui"])
+    assert.match(ci, new RegExp(`- run: npm run ${script}$`, "m"));
+  assert.doesNotMatch(ci, /pnpm/);
+
+  const claude = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.match(claude, /^npm run dev +# vite/m);
+  assert.match(claude, /npx brand-ui search <concept>/);
+  assert.match(claude, /npm install "@elabs-ai\/components-/);
+  assert.match(claude, /Commit `package-lock\.json`/, "the user is told to commit the lockfile");
+  assert.doesNotMatch(claude, /\bpnpm (dev|lint|typecheck|audit:ui|add|exec|install)\b/);
+
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("emitScaffold(standalone, pnpm): CI pins the pnpm major that created the app", () => {
+  for (const [caller, major] of [
+    [{ name: "pnpm", major: 11 }, 11],
+    [null, 10],
+  ]) {
+    const dir = tmp();
+    const r = emitScaffold(specFor("settings", { standalone: true, release: "2.0.0" }), {
+      root,
+      target: dir,
+      packageManager: caller,
+    });
+    assert.equal(r.status, "written", r.error);
+    assert.equal(r.packageManager, "pnpm");
+    // pnpm/action-setup fails without a version when package.json names no
+    // packageManager — the version the workflow used to leave out.
+    const ci = readFileSync(join(dir, ".github/workflows/brand-ui.yml"), "utf8");
+    assert.match(ci, new RegExp(`uses: pnpm/action-setup@v4\\n +with:\\n +version: ${major}\\n`));
+    assert.match(ci, /cache: pnpm/);
+    assert.match(ci, /- run: pnpm install --frozen-lockfile$/m);
+    const claude = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+    assert.match(claude, /^pnpm dev +# vite/m);
+    assert.match(claude, /Commit `pnpm-lock\.yaml`/);
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("emitScaffold(in-monorepo): stays pnpm whatever ran it", () => {
+  const dir = tmp();
+  const r = emitScaffold(specFor("data-app"), {
+    root,
+    target: dir,
+    packageManager: { name: "npm", major: 10 },
+  });
+  assert.equal(r.status, "written", r.error);
+  assert.equal(r.packageManager, "pnpm", "workspace:* deps only install with pnpm");
   rmSync(dir, { recursive: true, force: true });
 });
 

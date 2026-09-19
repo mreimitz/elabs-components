@@ -33,6 +33,17 @@ Job `quality`, in order: install → typecheck → lint → format:check → `pn
 
 Job `storybook` (blocking, `light` and `dark`): every story as an interaction + axe test.
 
+Jobs `create-pack` and `create-matrix` (RM-130; Ubuntu, macOS and Windows × npm and pnpm, six
+cells) prove `brand-ui create` for a first-time user. `create-pack` builds and packs every package
+and the CLI once on Linux, as a release does. Each cell then runs `scripts/create-matrix.mjs` from
+a bare checkout on those tarballs: it creates each template outside the workspace, installs, runs
+every step of the created app's own CI workflow, builds, and runs `audit:ui --strict`. npm cells
+fail on any `ERESOLVE` warning; the dashboard's entry chunk must stay under 250 KB gzip. It runs on
+every push to `main`, and on a PR when job `changes` sees `packages/cli/**`, a package's
+`package.json` or `tsup.config.ts`, `docs/playbooks/templates/**`, the lockfile, the script or
+`ci.yml`. Locally: build the packages, then `pnpm create:matrix --pm npm` (or `--pm pnpm`;
+`--template a,b`, `--keep`).
+
 Job `home` (the website gates below) runs when job `changes` sees a path the site is built from:
 `apps/home/**`, `packages/marketing/**`, `packages/tokens/**`, `registry/**`,
 `scripts/gen-home.mjs`, the `home-bundle` rule or `ci.yml` itself. It waits for `quality` to reuse

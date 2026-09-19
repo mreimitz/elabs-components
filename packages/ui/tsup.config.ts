@@ -1,4 +1,7 @@
 import { defineConfig } from "tsup";
+import { moduleEntries } from "../../scripts/lib/tsup-modules.mjs";
+
+const PUBLIC = { index: "src/index.ts", form: "src/components/form/index.ts" };
 
 // Two passes, because the two entries have opposite server/client natures and
 // tsup's `banner` applies to every file a pass emits (shared chunks included).
@@ -21,9 +24,12 @@ export default defineConfig([
     // every static top-level import to build its module graph, even one
     // whose binding is unused, so a consumer who never imports Form must
     // never have that import statement in the file they DO import.
-    entry: { index: "src/index.ts", form: "src/components/form/index.ts" },
+    // One output file per source module (RM-130, scripts/lib/tsup-modules.mjs), so an
+    // app's bundler drops the modules it never reaches; types stay on the public entries.
+    // `lib/cn` is the second pass's entry (no "use client"); never emit it here too.
+    entry: moduleEntries(PUBLIC, { exclude: ["lib/cn"] }),
     format: ["esm"],
-    dts: true,
+    dts: { entry: PUBLIC },
     sourcemap: true,
     // NOTE: neither pass cleans. tsup runs the two configs concurrently, so a
     // `clean: true` here races the other pass's output and non-deterministically

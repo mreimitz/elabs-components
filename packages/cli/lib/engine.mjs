@@ -412,6 +412,10 @@ export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}
   }
 
   const range = release ? `^${release}` : "latest";
+  // Quoted: `^` and `@` are glob/history characters in some shells, and a
+  // copy-pasted install line has to work in the shell the user actually has.
+  const addArgs = packages.map((p) => `"${p}@${range}"`).join(" ");
+  const peerArgs = peers.map((p) => `"${spec$(p)}"`).join(" ");
   return {
     standalone: true,
     registry: REGISTRY_URL,
@@ -423,10 +427,10 @@ export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}
     // Empty for the public registry: npmjs.org is npm's default, so there is
     // nothing to map and nothing to authenticate against.
     npmrc: npmrcFor(REGISTRY_URL),
-    // Quoted: `^` and `@` are glob/history characters in some shells, and a
-    // copy-pasted install line has to work in the shell the user actually has.
-    addCommand: `pnpm add ${packages.map((p) => `"${p}@${range}"`).join(" ")}`,
-    peerCommand: `pnpm add ${peers.map((p) => `"${spec$(p)}"`).join(" ")}`,
+    addArgs,
+    peerArgs,
+    addCommand: `pnpm add ${addArgs}`,
+    peerCommand: `pnpm add ${peerArgs}`,
     css,
     extras: uniq(extras),
     docs: "docs/CONSUMING.md §1-4",
@@ -922,6 +926,52 @@ function buildTsConfig() {
   );
 }
 
+/** The pnpm major a generated workflow installs when nothing says which one ran `create`. */
+const DEFAULT_PNPM_MAJOR = 10;
+
+/**
+ * The package manager that ran the CLI, read from `npm_config_user_agent`
+ * (`npm/10.9.4 node/…`, `pnpm/9.15.4 npm/? node/…`). Only the LEADING name
+ * counts — pnpm's agent string also contains `npm/`. null for a direct
+ * `node brand-ui.mjs` run.
+ *
+ * @returns {{ name: "npm"|"pnpm"|"yarn"|"bun", major: number } | null}
+ */
+export function packageManagerFrom(userAgent = "") {
+  const m = /^(npm|pnpm|yarn|bun)\/(\d+)/.exec(userAgent);
+  return m ? { name: m[1], major: Number(m[2]) } : null;
+}
+
+/**
+ * The package manager a scaffolded app is set up for: npm when npm ran `create`,
+ * otherwise pnpm (the monorepo's own, and the default for a direct run). Its
+ * workflow, CLAUDE.md commands and `--install` all follow it, so the lockfile the
+ * user commits is the one CI installs from.
+ */
+function appPackageManager(install, caller) {
+  if (install.standalone && caller?.name === "npm") return { name: "npm" };
+  return { name: "pnpm", major: caller?.name === "pnpm" ? caller.major : DEFAULT_PNPM_MAJOR };
+}
+
+/** How the app's scripts, local binaries and lockfile are named for `pm`. */
+function appCommands(pm) {
+  return pm.name === "npm"
+    ? {
+        run: (script) => `npm run ${script}`,
+        exec: (bin) => `npx ${bin}`,
+        add: "npm install",
+        lockfile: "package-lock.json",
+        ci: "npm ci",
+      }
+    : {
+        run: (script) => `pnpm ${script}`,
+        exec: (bin) => `pnpm exec ${bin}`,
+        add: "pnpm add",
+        lockfile: "pnpm-lock.yaml",
+        ci: "pnpm install --frozen-lockfile",
+      };
+}
+
 /**
  * `.github/workflows/brand-ui.yml` — the gates, actually running somewhere.
  *
@@ -929,15 +979,26 @@ function buildTsConfig() {
  * unpublished), so `brand-ui audit` is its ONLY machine enforcement of the
  * type/colour taxonomy — a gate that never runs is not a gate, so the scaffold
  * ships the CI job that runs it (#123 AC2 "gates").
+ *
+ * Written for the package manager that created the app: `npm ci` needs
+ * `package-lock.json`, `pnpm install --frozen-lockfile` needs `pnpm-lock.yaml`,
+ * and `pnpm/action-setup` fails without a version when package.json has no
+ * `packageManager` field — so the pnpm variant pins the major that ran `create`.
  */
-function buildWorkflow(install) {
+function buildWorkflow(pm) {
   // brand-ui publishes PUBLIC packages to npmjs.org, so a scaffolded app needs
   // no registry mapping and no token: npmjs.org is npm's default and the
   // packages resolve anonymously. The `registry-url` / `NODE_AUTH_TOKEN` pair
   // this used to emit is what a PRIVATE registry needs — emitting it now would
   // hand every generated app a secret it must provision and can never use.
-  const auth = "";
-  const env = "";
+  const cmd = appCommands(pm);
+  const pnpmSetup =
+    pm.name === "pnpm"
+      ? `      - uses: pnpm/action-setup@v4
+        with:
+          version: ${pm.major}
+`
+      : "";
   return `name: quality
 
 on:
@@ -949,17 +1010,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+${pnpmSetup}      - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm${auth}
-      - run: pnpm install --frozen-lockfile${env}
-      - run: pnpm typecheck
-      - run: pnpm lint
+          cache: ${pm.name}
+      # Installs exactly what ${cmd.lockfile} records — commit that file.
+      - run: ${cmd.ci}
+      - run: ${cmd.run("typecheck")}
+      - run: ${cmd.run("lint")}
       # The static token / anti-slop taxonomy pass. Keep it: type is a role and
       # colour is a token, and this is what proves it on every push.
-      - run: pnpm audit:ui
+      - run: ${cmd.run("audit:ui")}
 `;
 }
 
@@ -1069,8 +1130,24 @@ export default [
 }
 
 /** `CLAUDE.md` — the agent contract a later session inherits. */
-function buildClaudeMd(spec, plan, install) {
+function buildClaudeMd(spec, plan, install, pm) {
   const { title, archetype, theme } = spec;
+  const cmd = appCommands(pm);
+  const scripts = [
+    ["dev", "vite (index.html → src/main.tsx → src/App.tsx)"],
+    ["typecheck", "tsc --noEmit"],
+    ["lint", ""],
+    ["audit:ui", "brand-ui audit src"],
+  ];
+  const width = Math.max(...scripts.map(([s]) => cmd.run(s).length)) + 2;
+  const runBlock = scripts
+    .map(([s, what]) => (what ? `${cmd.run(s).padEnd(width)}# ${what}` : cmd.run(s)))
+    .join("\n");
+  const lockfileNote = install.standalone
+    ? `\n\nCommit \`${cmd.lockfile}\` with your changes: CI installs from it
+(\`${cmd.ci}\`) and fails without it. Install with ${pm.name} only, so
+there is one lockfile.`
+    : "";
   const installSection = install.standalone
     ? `## Install / make it runnable
 
@@ -1078,8 +1155,8 @@ The \`@elabs-ai/components-*\` packages are **public on npmjs.org** — no regis
 configuration, no token:
 
 \`\`\`bash
-${install.addCommand}
-${install.peerCommand}
+${cmd.add} ${install.addArgs}
+${cmd.add} ${install.peerArgs}
 \`\`\`
 
 \`src/styles.css\` already carries the token import and one \`@source\` line per
@@ -1102,7 +1179,7 @@ it before making structural changes.
 
 - **Use brand-ui components first.** Before writing any UI markup, check
   \`…-ui\`, \`…-data\`, \`…-ai\`, \`…-flow\`, \`…-charts\`, \`…-marketing\` for an existing
-  component (\`pnpm exec brand-ui search <concept>\`, or the \`mcp__brand-ui__search\`
+  component (\`${cmd.exec("brand-ui search <concept>")}\`, or the \`mcp__brand-ui__search\`
   tool in Claude Code). Do not hand-roll tables, dialogs, chat bubbles, or KPI tiles.
 - **Type is a role, not a size.** Use a \`text-<role>\` utility (\`text-title\`,
   \`text-body\`, \`text-caption\`, \`text-display\`, \`text-kpi\`, …) or the
@@ -1122,27 +1199,24 @@ it before making structural changes.
   blank region.
 - **brand-ui is presentation-only.** Model calls, fetching, and transport live in
   this app's hooks/services — never inside shared UI components.
-- **Audit after UI edits.** \`pnpm lint\` and \`pnpm audit:ui\` (= \`brand-ui audit
-src\`) — the static token/anti-slop pass; the rendered cross-theme + contrast pass
-  is the \`brand-ui-audit\` skill. Both run in CI
+- **Audit after UI edits.** \`${cmd.run("lint")}\` and \`${cmd.run("audit:ui")}\`
+  (= \`brand-ui audit src\`) — the static token/anti-slop pass; the rendered
+  cross-theme + contrast pass is the \`brand-ui-audit\` skill. Both run in CI
   (\`.github/workflows/brand-ui.yml\`) — keep that job green.
 
 ## What exists (don't guess an API)
 
 \`./brand-ui-context.md\` is the generated inventory of every component in every
 \`@elabs-ai/components-*\` package — read it before inventing a
-component. For the real props of one component: \`pnpm exec brand-ui docs <Name>\`
+component. For the real props of one component: \`${cmd.exec("brand-ui docs <Name>")}\`
 (or \`mcp__brand-ui__docs\`). Refresh the inventory after upgrading the packages
-with \`pnpm exec brand-ui context\`.
+with \`${cmd.exec("brand-ui context")}\`.
 
 ## Run it
 
 \`\`\`bash
-pnpm dev        # vite (index.html → src/main.tsx → src/App.tsx)
-pnpm typecheck  # tsc --noEmit
-pnpm lint
-pnpm audit:ui   # brand-ui audit src
-\`\`\`
+${runBlock}
+\`\`\`${lockfileNote}
 
 ${installSection}
 
@@ -1331,14 +1405,18 @@ function auditEmitted(files) {
  * see it (the CLI exits non-zero). `--force` overwrites — including files the
  * user wrote — so it is never the automatic answer.
  *
+ * `packageManager` is the caller's, from `packageManagerFrom()`: the app's CI
+ * workflow and CLAUDE.md commands are written for it (npm, else pnpm), and the
+ * result names the one chosen.
+ *
  * @returns {{ command:"scaffold", status:"written"|"partial"|"planned"|"error",
  *   implemented:true, error?:string, target?:string, dryRun?:boolean,
  *   written?:string[], skipped?:string[], todos?:string[], plan?:object,
- *   notes?:string[] }}
+ *   packageManager?:"npm"|"pnpm", notes?:string[] }}
  */
 export function emitScaffold(
   spec,
-  { root, target, dryRun = false, force = false, bundledDir } = {},
+  { root, target, dryRun = false, force = false, bundledDir, packageManager = null } = {},
 ) {
   const base = { command: "scaffold", implemented: true };
   if (!target) return { ...base, status: "error", error: "missing target (pass --write <dir>)" };
@@ -1361,6 +1439,7 @@ export function emitScaffold(
   if (set.error) return { ...base, status: "error", error: set.error };
   const packages = set.all;
   const install = plan.install;
+  const pm = appPackageManager(install, packageManager);
   const sourceMarkdown =
     typeof spec === "string" && spec.endsWith(".md") ? readFileSync(resolve(spec), "utf8") : null;
 
@@ -1376,11 +1455,11 @@ export function emitScaffold(
     "vite.config.ts": buildViteConfig(),
     "tsconfig.json": buildTsConfig(),
     "app-spec.md": buildAppSpecMd(plan.spec, sourceMarkdown),
-    "CLAUDE.md": buildClaudeMd(plan.spec, plan, install),
+    "CLAUDE.md": buildClaudeMd(plan.spec, plan, install, pm),
     "AGENTS.md": buildAgentsMd(plan.spec),
     "brand-ui-context.md": buildContextFile(root),
     "eslint.config.js": buildEslintConfig(install.standalone),
-    ".github/workflows/brand-ui.yml": buildWorkflow(install),
+    ".github/workflows/brand-ui.yml": buildWorkflow(pm),
     "package.json": buildPackageJson(plan.spec, install, {
       lucide: lucideVersion(root),
       tooling: toolingVersions(root),
@@ -1451,6 +1530,7 @@ export function emitScaffold(
     todos,
     audit,
     plan,
+    packageManager: pm.name,
     notes: [
       dryRun
         ? `Dry run — nothing was written. Re-run with --write ${target} to emit ${written.length} file(s).`
