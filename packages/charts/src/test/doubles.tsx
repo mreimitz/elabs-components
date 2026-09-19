@@ -593,6 +593,8 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     );
     // Dual-axis — RM-121
     assertDualAxisSpecContract(props.spec);
+    // Choropleth — RM-124
+    assertChoroplethSpecContract(props.spec);
     return (
       <div
         ref={ref}
@@ -845,7 +847,7 @@ export function assertLabelsSpecContract(labels: unknown): void {
       "AutoChart",
       "spec.labels",
       labels,
-      `"labels" must be { series?, values?, points?, comparison? }`,
+      `"labels" must be { series?, values?, points?, comparison?, places? }`,
     );
   }
   const l = labels as Record<string, unknown>;
@@ -856,6 +858,8 @@ export function assertLabelsSpecContract(labels: unknown): void {
       "points",
       // BarChart — RM-113
       "comparison",
+      // Choropleth — RM-124
+      "places",
     ]);
   }
   checkSeriesLabel("AutoChart", "spec.labels.series", l.series);
@@ -863,6 +867,68 @@ export function assertLabelsSpecContract(labels: unknown): void {
   checkPointLabels("AutoChart", "spec.labels.points", l.points, "key");
   // BarChart — RM-113
   checkOneOf("AutoChart", "spec.labels.comparison", l.comparison, BAR_COMPARISON_LABELS);
+  // Choropleth — RM-124
+  assertPlaceLabelsSpecContract(l.places);
+}
+
+// Choropleth — RM-124: `MAX_PLACE_LABELS` from `charts/choropleth/place-labels`,
+// copied rather than imported — `src/test/**` pulls in no runtime chart module
+// (`pnpm check --rule charts-test-double`). The place-labels test pins the pair.
+const MAX_PLACE_LABELS = 30;
+
+/**
+ * `labels.places` (RM-124): at most `MAX_PLACE_LABELS` names, each field the
+ * documented type. The real map silently caps `max` and ignores a `priority`
+ * no feature carries, so the double names both.
+ */
+function assertPlaceLabelsSpecContract(places: unknown): void {
+  if (places === undefined) return;
+  if (typeof places !== "object" || places === null) {
+    axisViolation(
+      "AutoChart",
+      "spec.labels.places",
+      places,
+      `"places" must be { key?, max?, priority?, collision? }`,
+    );
+  }
+  const p = places as Record<string, unknown>;
+  for (const field of Object.keys(p)) {
+    checkOneOf("AutoChart", "spec.labels.places field", field, [
+      "key",
+      "max",
+      "priority",
+      "collision",
+    ]);
+  }
+  for (const field of ["key", "priority"] as const) {
+    if (p[field] !== undefined && typeof p[field] !== "string") {
+      axisViolation(
+        "AutoChart",
+        `spec.labels.places.${field}`,
+        p[field],
+        `"${field}" names a feature property`,
+      );
+    }
+  }
+  if (p.max !== undefined) {
+    const max = p.max;
+    if (typeof max !== "number" || !Number.isInteger(max) || max < 1 || max > MAX_PLACE_LABELS) {
+      axisViolation(
+        "AutoChart",
+        "spec.labels.places.max",
+        max,
+        `"max" is a whole number from 1 to ${MAX_PLACE_LABELS}`,
+      );
+    }
+  }
+  if (p.collision !== undefined && typeof p.collision !== "boolean") {
+    axisViolation(
+      "AutoChart",
+      "spec.labels.places.collision",
+      p.collision,
+      `"collision" is a boolean`,
+    );
+  }
 }
 
 // BarChart — RM-113
@@ -1217,5 +1283,101 @@ function assertDualAxisSpecContract(spec: unknown): void {
       series,
       `a "dual-axis" spec draws columns on the left axis only`,
     );
+  }
+}
+
+// Choropleth — RM-124
+const CHOROPLETH_GEO_NAMES: readonly unknown[] = ["world", "us-states"];
+const COLOR_SCALE_TYPES: readonly unknown[] = ["continuous", "stepped"];
+const CONTINUOUS_SCALE_METHODS: readonly unknown[] = [
+  "linear",
+  "median",
+  "quartiles",
+  "quintiles",
+  "deciles",
+  "natural",
+];
+const STEPPED_SCALE_METHODS: readonly unknown[] = [
+  "equidistant",
+  "rounded",
+  "quantile",
+  "jenks",
+  "custom",
+];
+
+/**
+ * A `type: "choropleth"` spec: a real map, a well-formed `match` join, and a
+ * `scale` whose `method` belongs to its own `type` — the rules the real
+ * `AutoChart` answers with `ChartFallback kind="unsupported"` (no map) or
+ * silently drops back to the default scale (a method the other family owns).
+ */
+function assertChoroplethSpecContract(spec: unknown): void {
+  const { type, geo, match, scale } = (spec ?? {}) as {
+    type?: unknown;
+    geo?: unknown;
+    match?: unknown;
+    scale?: unknown;
+  };
+  if (type !== "choropleth") return;
+
+  if (typeof geo === "string") {
+    if (!CHOROPLETH_GEO_NAMES.includes(geo)) {
+      axisViolation("AutoChart", "spec.geo", geo, `the bundled maps are "world" and "us-states"`);
+    }
+  } else if (
+    typeof geo !== "object" ||
+    geo === null ||
+    !Array.isArray((geo as { features?: unknown }).features)
+  ) {
+    axisViolation(
+      "AutoChart",
+      "spec.geo",
+      geo,
+      `a "choropleth" spec needs a GeoJSON FeatureCollection, "world" or "us-states"`,
+    );
+  }
+
+  if (match !== undefined) {
+    const { row, feature } = match as { row?: unknown; feature?: unknown };
+    for (const [name, value] of [
+      ["row", row],
+      ["feature", feature],
+    ] as const) {
+      if (value !== undefined && typeof value !== "string") {
+        axisViolation(
+          "AutoChart",
+          `spec.match.${name}`,
+          value,
+          `"${name}" names the field the join reads`,
+        );
+      }
+    }
+  }
+
+  if (scale === undefined) return;
+  if (typeof scale !== "object" || scale === null) {
+    axisViolation("AutoChart", "spec.scale", scale, `"scale" must be a colour-scale object`);
+  }
+  const s = scale as { key?: unknown; type?: unknown; method?: unknown; steps?: unknown };
+  if (s.key !== undefined && typeof s.key !== "string") {
+    axisViolation("AutoChart", "spec.scale.key", s.key, `"key" names a feature property`);
+  }
+  if (!COLOR_SCALE_TYPES.includes(s.type)) {
+    axisViolation("AutoChart", "spec.scale.type", s.type, `"type" is "continuous" or "stepped"`);
+  }
+  const methods = s.type === "stepped" ? STEPPED_SCALE_METHODS : CONTINUOUS_SCALE_METHODS;
+  if (s.method !== undefined && !methods.includes(s.method)) {
+    axisViolation(
+      "AutoChart",
+      "spec.scale.method",
+      s.method,
+      `a "${String(s.type)}" scale's method is one of ${methods.join(" | ")}`,
+    );
+  }
+  if (
+    s.steps !== undefined &&
+    (typeof s.steps !== "number" || !Number.isInteger(s.steps) || s.steps < 1)
+  ) {
+    axisViolation("AutoChart", "spec.scale.steps", s.steps, `"steps" is a whole number ≥ 1`);
   }
 }

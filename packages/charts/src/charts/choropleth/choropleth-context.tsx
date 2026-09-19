@@ -4,6 +4,7 @@ import type { GeoPermissibleObjects } from "@visx/geo";
 import type { ProvidedZoom, TransformMatrix } from "@visx/zoom";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import type { Transition } from "motion/react";
+import type { ColorScale } from "@elabs-ai/components-ui";
 import {
   createContext,
   type Dispatch,
@@ -100,6 +101,25 @@ export interface ChoroplethStableContextValue {
   animationDuration: number;
   enterTransition?: Transition;
   revealEpoch: number;
+
+  // Thematic layer — RM-124 (optional: a hand-built `ChoroplethProvider` value
+  // without them renders exactly as before).
+  /** Feature property the colour scale reads. Default `"value"`. */
+  valueKey?: string;
+  /** The resolved colour scale (`colorScaleFor`), when the chart has a `scale`. */
+  colorScale?: ColorScale | null;
+  /** Categorical stripe overlay (`overlayBy`). */
+  overlay?: ChoroplethOverlayConfig | null;
+}
+
+/** `overlayBy` on `ChoroplethChart`: stripes over every region whose `key` holds a category. */
+export interface ChoroplethOverlayConfig {
+  /** Feature property holding the category; empty / `false` / missing means no overlay. */
+  key: string;
+  /** The overlay texture. Only `"stripes"` today. */
+  pattern?: "stripes";
+  /** Stripe direction of the first category; later categories turn by 90° / 45°. Default `"up"`. */
+  direction?: "up" | "down" | "horizontal" | "vertical";
 }
 
 export type ChoroplethContextValue = ChoroplethStableContextValue &
@@ -169,6 +189,9 @@ export function ChoroplethProvider({
       animationDuration: value.animationDuration,
       enterTransition: value.enterTransition,
       revealEpoch: value.revealEpoch,
+      valueKey: value.valueKey,
+      colorScale: value.colorScale,
+      overlay: value.overlay,
     }),
     [
       value.features,
@@ -187,6 +210,9 @@ export function ChoroplethProvider({
       value.animationDuration,
       value.enterTransition,
       value.revealEpoch,
+      value.valueKey,
+      value.colorScale,
+      value.overlay,
     ],
   );
 

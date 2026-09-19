@@ -23,7 +23,15 @@
 
 import type { ScatterLabels } from "../charts/labels/point-labels";
 import { hasDisplayName, resolveSeriesLabelMode } from "../charts/labels/use-chart-labels";
-import { Component, forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
+import {
+  Component,
+  forwardRef,
+  useEffect,
+  useMemo,
+  useState,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
 import { AnnotationKey } from "../charts/annotations/annotation-key";
 import { AnnotationLayoutProvider } from "../charts/annotations/annotation-layout-context";
@@ -47,6 +55,14 @@ import {
   ChartLegend,
   type LegendItem,
   ChartTooltip,
+  // Choropleth — RM-124
+  ChoroplethChart,
+  type ChoroplethFeature,
+  ChoroplethFeatureComponent,
+  type ChoroplethFeatureProperties,
+  type ChoroplethScaleSpec,
+  type ChoroplethSymbolsConfig,
+  ChoroplethTooltip,
   DistributionChart,
   DumbbellChart,
   type DumbbellSortBy,
@@ -89,6 +105,7 @@ import type { ContainerLegendProp } from "../charts/legend/use-container-legend"
 import type { XAxisProps } from "../charts/x-axis";
 import type { YAxisProps } from "../charts/y-axis";
 import {
+  ChartPlotRoot,
   DEFAULT_CHART_PLOT_HEIGHT,
   resolvePlotBoxStyle,
   useChartFramePlotHeight,
@@ -102,9 +119,14 @@ import type {
   ChartLabelsSpec,
   ChartSpec,
   ChartSeriesSpec,
+  // Choropleth — RM-124
+  ChartSpecGeo,
   ChartType,
   FacetSpec,
 } from "./chart-spec";
+// Choropleth — RM-124
+import type { FeatureCollection, Geometry } from "geojson";
+import type { SeriesSymbolsSpec } from "../charts/series-markers";
 import { ChartMultiples } from "../multiples/chart-multiples"; // ChartMultiples — RM-120
 import { ComposedChart } from "../charts/composed-chart"; // Dual-axis — RM-121
 import { SeriesBar } from "../charts/series-bar"; // Dual-axis — RM-121
@@ -541,6 +563,195 @@ function renderDualAxisChart(
   );
 }
 
+// Choropleth — RM-124
+// ---------------------------------------------------------------------------
+// A thematic map from a flat spec: rows joined to regions by `match`, coloured
+// by `scale` (the `colorScaleFor` ramps), with the ramp legend, place labels
+// and proportional symbols the container already owns.
+
+/** The bundled fixtures a spec can name instead of inlining a FeatureCollection. */
+type ChoroplethGeoName = Exclude<ChartSpecGeo, object>;
+
+type ChoroplethGeoCollection = FeatureCollection<Geometry, ChoroplethFeatureProperties>;
+
+/**
+ * The bundled maps, loaded on demand. A static import would put the 135 kB
+ * world outline in every bundle that reaches `AutoChart`, including the specs
+ * that draw a bar chart — so naming a fixture costs a chunk, and an inline
+ * `geo` costs nothing.
+ */
+const CHOROPLETH_GEO_LOADERS: Record<ChoroplethGeoName, () => Promise<ChoroplethGeoCollection>> = {
+  world: () => import("../charts/choropleth/world-fixture").then((m) => m.worldFeatureCollection()),
+  "us-states": () => import("../charts/choropleth/us-states-fixture").then((m) => m.usStatesData),
+};
+
+/**
+ * Why a `"choropleth"` spec cannot be drawn, or `null`. One thing is fatal:
+ * no map. Everything else (no `match`, no `scale`) has a documented default.
+ */
+function choroplethSpecProblem(spec: ChartSpec): string | null {
+  const geo = spec.geo;
+  if (typeof geo === "string") {
+    return geo in CHOROPLETH_GEO_LOADERS
+      ? null
+      : `a "choropleth" spec names no bundled map called ${JSON.stringify(geo)}`;
+  }
+  if (!geo || !Array.isArray((geo as ChoroplethGeoCollection).features)) {
+    return 'a "choropleth" spec needs `geo`: a GeoJSON FeatureCollection, "world" or "us-states"';
+  }
+  return null;
+}
+
+/**
+ * The join (RM-124): `row[match.row] === feature.properties[match.feature]`,
+ * compared as strings so a numeric ISO code and its `"276"` spelling meet.
+ * `match.row` defaults to `spec.x`, `match.feature` to `"id"` (a feature with
+ * no such property falls back to its GeoJSON `id`).
+ *
+ * A matched row's fields are merged ONTO the feature's properties (the row
+ * wins), so `scale.key`, `labels.places.priority` and `symbols.sizeKey` all
+ * read one flat record — the shape the container's own props document.
+ */
+function joinChoroplethRows(
+  geo: ChoroplethGeoCollection,
+  rows: Record<string, unknown>[],
+  matchRow: string,
+  matchFeature: string,
+): ChoroplethGeoCollection {
+  const byMatch = new Map<string, Record<string, unknown>>();
+  for (const row of rows) {
+    const joinValue = row[matchRow];
+    if (joinValue === undefined || joinValue === null) continue;
+    byMatch.set(String(joinValue), row);
+  }
+  return {
+    ...geo,
+    features: geo.features.map((feature) => {
+      const raw =
+        feature.properties?.[matchFeature] ?? (matchFeature === "id" ? feature.id : undefined);
+      const row = raw === undefined || raw === null ? undefined : byMatch.get(String(raw));
+      return row ? { ...feature, properties: { ...feature.properties, ...row } } : feature;
+    }),
+  };
+}
+
+/** `spec.symbols` read as the choropleth's proportional-symbol layer, not line markers. */
+function choroplethSymbolsSpec(spec: ChartSpec): ChoroplethSymbolsConfig | undefined {
+  const symbols = spec.symbols;
+  if (!symbols) return undefined;
+  const config = symbols as ChoroplethSymbolsConfig & SeriesSymbolsSpec;
+  // `placement`/`style` belong to the line/area reading of the same field and
+  // mean nothing on a map; everything else is the symbol layer's own.
+  const { key, sizeKey, shape, colorBy, maxSize, points } = config;
+  return { key, sizeKey, shape, colorBy, maxSize, points };
+}
+
+/** `type: "choropleth"` with an inline — or already loaded — map. */
+function choroplethChartElement(
+  spec: ChartSpec,
+  geo: ChoroplethGeoCollection,
+  series: NormalizedSeries[],
+  plotHeight: Responsive<ChartPlotHeight> | undefined,
+  yFormat: (value: number) => string,
+): ReactNode {
+  const valueKey = spec.scale?.key ?? series[0]?.key ?? "value";
+  const matchRow = spec.match?.row ?? spec.x;
+  const matchFeature = spec.match?.feature ?? "id";
+  const data = joinChoroplethRows(geo, spec.data ?? [], matchRow, matchFeature);
+  const scale: ChoroplethScaleSpec = { type: "continuous", ...spec.scale, key: valueKey };
+  const valueLabel = series[0]?.label ?? valueKey;
+  const readValue = (feature: ChoroplethFeature): number | undefined => {
+    const raw = feature.properties?.[valueKey];
+    return typeof raw === "number" && Number.isFinite(raw) ? raw : undefined;
+  };
+  return (
+    <ChoroplethChart
+      data={data}
+      plotHeight={plotHeight}
+      scale={scale}
+      legend={
+        spec.legend === false
+          ? false
+          : { title: valueLabel, valueFormat: spec.valueFormat, currency: spec.currency }
+      }
+      labels={spec.labels?.places}
+      symbols={choroplethSymbolsSpec(spec)}
+      annotations={spec.annotations}
+      accessibleLabel={spec.title}
+      accessibleDescription={withAnnotationDescription(
+        spec.description ?? spec.altText,
+        spec.annotations,
+      )}
+      keyboardNav={{ getFeatureValue: readValue, valueLabel }}
+    >
+      <ChoroplethFeatureComponent />
+      <ChoroplethTooltip
+        formatValue={yFormat}
+        getFeatureValue={readValue}
+        valueLabel={valueLabel}
+      />
+    </ChoroplethChart>
+  );
+}
+
+/**
+ * A named fixture is fetched on mount; until it lands the box is a skeleton of
+ * the same size, so the map does not shift the page when it arrives.
+ */
+function AutoChoroplethFixture({
+  name,
+  plotHeight,
+  render,
+}: {
+  name: ChoroplethGeoName;
+  plotHeight: Responsive<ChartPlotHeight> | undefined;
+  render: (geo: ChoroplethGeoCollection) => ReactNode;
+}): ReactNode {
+  const { t } = useLocale();
+  const [geo, setGeo] = useState<ChoroplethGeoCollection | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void CHOROPLETH_GEO_LOADERS[name]().then((loaded) => {
+      if (!cancelled) setGeo(loaded);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [name]);
+  if (geo) return <>{render(geo)}</>;
+  return (
+    <ChartPlotRoot
+      className="w-full"
+      plotBox={{ plotHeight, defaultPlotHeight: "16 / 9" }}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="sr-only">{t("charts.chart.loading")}</span>
+      <Skeleton className="size-full" />
+    </ChartPlotRoot>
+  );
+}
+
+/** `type: "choropleth"` (RM-124) — explicit only; never inferred. */
+function renderChoroplethChart(
+  spec: ChartSpec,
+  series: NormalizedSeries[],
+  plotHeight: Responsive<ChartPlotHeight> | undefined,
+  yFormat: (value: number) => string,
+): ReactNode {
+  const geo = spec.geo;
+  if (typeof geo === "string") {
+    return (
+      <AutoChoroplethFixture
+        name={geo}
+        plotHeight={plotHeight}
+        render={(loaded) => choroplethChartElement(spec, loaded, series, plotHeight, yFormat)}
+      />
+    );
+  }
+  return choroplethChartElement(spec, geo as ChoroplethGeoCollection, series, plotHeight, yFormat);
+}
+
 function renderChart(
   type: ChartType,
   spec: ChartSpec,
@@ -574,7 +785,13 @@ function renderChart(
   // `groupSmall`/`half` (RM-114) — pie/donut only, ignored elsewhere. Slice
   // labels live under the shared label engine's `labels.slices` (RM-110's
   // `ChartLabelsSpec`, `chart-spec.ts`), not a top-level field.
-  const { x, stacked, orientation, donut, groupSmall, half, nulls, curve, symbols } = spec;
+  const { x, stacked, orientation, donut, groupSmall, half, nulls, curve } = spec;
+  // Choropleth — RM-124: `symbols` carries two readings of one concept —
+  // line/area point markers, and a map's proportional symbols. The type is
+  // the union; the family picks the reading, so the cast is the narrowing
+  // TypeScript cannot do from a sibling field.
+  const symbols =
+    type === "choropleth" ? undefined : (spec.symbols as SeriesSymbolsSpec | undefined);
   const pieLabels = spec.labels?.slices;
   // Slice order shares `ChartSpec.sort` with BarChart's row order
   // (orchestrator ruling — one `sort` field, narrowed per family here, not
@@ -1223,6 +1440,11 @@ function renderChart(
       );
     }
 
+    // Choropleth — RM-124
+    case "choropleth": {
+      return renderChoroplethChart(spec, series, plotHeight, yFormat);
+    }
+
     // ── Unsupported / deferred ────────────────────────────────────────────────
     default: {
       return null;
@@ -1280,7 +1502,7 @@ export interface AutoChartProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    * `line` | `area` | `bar` | `pie` | `scatter` | `radar` | `funnel` |
    * `candlestick` | `heatmap` | `calendar` | `waterfall` | `dumbbell` |
    * `unit` | `treemap` | `histogram` | `box` | `strip` | `bump` | `stream` |
-   * `diverging-bar` | `dual-axis`.
+   * `diverging-bar` | `dual-axis` | `choropleth`.
    *
    * Anything else — including `network`, `parallel`, `tree` and `sankey`, which
    * stay explicit-container-only — renders `ChartFallback` instead.
@@ -1524,6 +1746,21 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   const dualAxisProblem = type === "dual-axis" ? dualAxisSpecProblem(spec) : null;
   if (dualAxisProblem) {
     warnChartOnce(`AutoChart.dual-axis:${dualAxisProblem}`, `[AutoChart] ${dualAxisProblem}.`);
+    return (
+      <ChartFallback
+        ref={ref}
+        kind="unsupported"
+        className={cn("w-full", className)}
+        style={fallbackStyle}
+        {...props}
+      />
+    );
+  }
+
+  // Choropleth — RM-124: explicit only; without a map there is nothing to draw.
+  const choroplethProblem = type === "choropleth" ? choroplethSpecProblem(spec) : null;
+  if (choroplethProblem) {
+    warnChartOnce(`AutoChart.choropleth:${choroplethProblem}`, `[AutoChart] ${choroplethProblem}.`);
     return (
       <ChartFallback
         ref={ref}

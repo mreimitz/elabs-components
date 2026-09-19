@@ -82,6 +82,9 @@ import {
   isTemporalField,
 } from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
+// Choropleth — RM-124
+import type { FeatureCollection, Geometry } from "geojson";
+import type { ChoroplethFeatureProperties } from "../charts/choropleth/choropleth-context";
 import { ChartFrame } from "../chart-frame/chart-frame";
 import { SELECTION_EXCLUDED_OPACITY } from "../charts/chart-selection";
 import { Line, LineChart } from "../charts";
@@ -101,6 +104,37 @@ const categoricalData = [
   { name: "B", value: 20, other: 8 },
   { name: "C", value: 15, other: 6 },
 ];
+
+// Choropleth — RM-124: two squares wide apart, each carrying its own `id`
+// and `name`, so a join can be proved on either property.
+const choroplethSquare = (
+  id: string,
+  name: string,
+  lon: number,
+): FeatureCollection<Geometry, ChoroplethFeatureProperties>["features"][number] => ({
+  type: "Feature",
+  id,
+  // Winding SW → NW → NE → SE, as `squareStateFeature` documents: d3-geo reads
+  // a reversed ring as the whole sphere minus the square.
+  geometry: {
+    type: "Polygon",
+    coordinates: [
+      [
+        [lon - 5, -5],
+        [lon - 5, 5],
+        [lon + 5, 5],
+        [lon + 5, -5],
+        [lon - 5, -5],
+      ],
+    ],
+  },
+  properties: { id, name },
+});
+
+const choroplethGeo: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
+  type: "FeatureCollection",
+  features: [choroplethSquare("A", "Alpha", -20), choroplethSquare("B", "Beta", 20)],
+};
 
 /** Big enough that the compact formatter actually compacts (≥ 1000). */
 const millionsData = [
@@ -854,6 +888,22 @@ describe("AutoChart", () => {
           ],
           x: "region",
           series: ["change"],
+        },
+      ],
+      // Choropleth — RM-124
+      [
+        "choropleth",
+        {
+          type: "choropleth",
+          geo: choroplethGeo,
+          match: { row: "code", feature: "id" },
+          data: [
+            { code: "A", region: "Alpha", cooling: 120 },
+            { code: "B", region: "Beta", cooling: 40 },
+          ],
+          x: "region",
+          series: ["cooling"],
+          scale: { type: "stepped", method: "quantile", steps: 2 },
         },
       ],
       // Dual-axis — RM-121
@@ -1914,5 +1964,109 @@ describe('AutoChart type "dual-axis" validation (RM-121)', () => {
         ],
       }),
     ).not.toBe("dual-axis");
+  });
+});
+
+// Choropleth — RM-124
+describe('AutoChart type "choropleth" (RM-124)', () => {
+  const rows = [
+    { code: "A", region: "Alpha", cooling: 120 },
+    { code: "B", region: "Beta", cooling: 40 },
+  ];
+  const spec = (extra: Partial<ChartSpec> = {}): ChartSpec => ({
+    type: "choropleth",
+    geo: choroplethGeo,
+    match: { row: "code", feature: "id" },
+    data: rows,
+    x: "region",
+    series: ["cooling"],
+    ...extra,
+  });
+  const regions = (container: HTMLElement) => [
+    ...container.querySelectorAll(".choropleth-features path"),
+  ];
+
+  it("joins rows to regions by `match` and colours them from `scale`", () => {
+    const { container } = render(
+      <AutoChart spec={spec({ scale: { type: "stepped", steps: 2 } })} />,
+    );
+    const fills = regions(container).map((path) => path.getAttribute("fill"));
+    expect(fills).toHaveLength(2);
+    // Two values, two classes: token references, and not the same one.
+    for (const fill of fills) expect(fill).toMatch(/^var\(--chart-/);
+    expect(new Set(fills).size).toBe(2);
+  });
+
+  it("joins on `spec.x` and the feature id when `match` is omitted", () => {
+    const { container } = render(
+      <AutoChart
+        spec={spec({
+          match: undefined,
+          x: "code",
+          scale: { key: "cooling", type: "stepped", steps: 2 },
+        })}
+      />,
+    );
+    // No `match`: `row` falls back to `spec.x` ("code") and `feature` to "id",
+    // so both regions still find their row and take two different classes.
+    const fills = regions(container).map((path) => path.getAttribute("fill"));
+    expect(new Set(fills).size).toBe(2);
+  });
+
+  it("leaves a region with no row at the no-data fill", () => {
+    const { container } = render(
+      <AutoChart spec={spec({ data: [rows[0] as Record<string, unknown>] })} />,
+    );
+    const fills = regions(container).map((path) => path.getAttribute("fill"));
+    expect(fills).toHaveLength(2);
+    // The unjoined region paints the no-data ink, never a ramp token.
+    expect(fills.filter((fill) => fill?.startsWith("var(--chart-"))).toHaveLength(1);
+  });
+
+  it("renders ChartFallback kind=unsupported without a map", () => {
+    const { container } = render(<AutoChart spec={spec({ geo: undefined })} />);
+    expect(container.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+  });
+
+  it("renders ChartFallback kind=unsupported for a bundled map it does not have", () => {
+    const { container } = render(
+      <AutoChart spec={spec({ geo: "atlantis" as unknown as ChartSpec["geo"] })} />,
+    );
+    expect(container.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+  });
+
+  it("loads a named fixture on demand, announcing the wait", async () => {
+    const { container } = render(
+      <AutoChart
+        spec={spec({
+          geo: "us-states",
+          match: { row: "code", feature: "id" },
+          data: [
+            { code: "CA", region: "California", cooling: 120 },
+            { code: "TX", region: "Texas", cooling: 40 },
+          ],
+        })}
+      />,
+    );
+    // The map is a dynamic import, so the first paint is the status skeleton.
+    expect(container.querySelector('[role="status"]')).not.toBeNull();
+    await waitFor(() => expect(regions(container).length).toBeGreaterThan(10));
+  });
+
+  it("draws proportional symbols from `symbols`, sqrt-scaled", () => {
+    const { container } = render(
+      <AutoChart spec={spec({ symbols: { key: "cooling", sizeKey: "cooling" } })} />,
+    );
+    const radii = [...container.querySelectorAll('[data-slot="choropleth-symbol"]')]
+      .map((node) => Number(node.getAttribute("data-radius")))
+      .sort((a, b) => b - a);
+    expect(radii).toHaveLength(2);
+    const [largest = 0, smallest = 0] = radii;
+    // 120 : 40 is 3×, so the radius ratio is √3.
+    expect(largest / smallest).toBeCloseTo(Math.sqrt(3), 2);
+  });
+
+  it("is never inferred", () => {
+    expect(inferChartType({ data: rows, x: "region", series: ["cooling"] })).not.toBe("choropleth");
   });
 });

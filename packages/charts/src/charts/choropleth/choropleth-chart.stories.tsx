@@ -1,13 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { feature } from "topojson-client";
 import type { Topology } from "topojson-specification";
-import type { FeatureCollection, Geometry } from "geojson";
+import type { FeatureCollection, Geometry, MultiPolygon } from "geojson";
 import { ChoroplethChart } from "./choropleth-chart";
 import { ChoroplethFeature as ChoroplethFeatureComponent } from "./choropleth-feature";
 import { ChoroplethTooltip } from "./choropleth-tooltip";
 import type { ChoroplethFeature, ChoroplethFeatureProperties } from "./choropleth-context";
 import { usStatesData } from "./us-states-fixture";
+import type { ChartAnnotation } from "../annotations";
+import { worldFeatureCollection } from "./world-fixture";
 
 // ---------------------------------------------------------------------------
 // Sample data: load world-atlas countries-110m topology synchronously via
@@ -338,5 +340,384 @@ export const HighDecoration: Story = {
   ),
   play: async ({ canvasElement }) => {
     await waitFor(() => expectSeriesPatterns(canvasElement, ".choropleth-features path", 2));
+  },
+};
+// ---------------------------------------------------------------------------
+// Thematic layer — colour scale, legend, fit, symbols, zoom, overlays (RM-124)
+// ---------------------------------------------------------------------------
+
+/** The tier the chart measured for itself — plays branch on it, never on the viewport. */
+function breakpointOf(root: HTMLElement): string {
+  return root.querySelector("[data-chart-breakpoint]")?.getAttribute("data-chart-breakpoint") ?? "";
+}
+
+/** Illustrative cooling degree days per year, by ISO 3166 numeric id (a demo series, not a statistic). */
+const COOLING_DEGREE_DAYS: Record<string, number> = {
+  "196": 1110, // Cyprus
+  "300": 640, // Greece
+  "008": 420, // Albania
+  "724": 410, // Spain
+  "380": 380, // Italy
+  "620": 300, // Portugal
+  "807": 280, // North Macedonia
+  "499": 255, // Montenegro
+  "100": 240, // Bulgaria
+  "191": 230, // Croatia
+  "688": 215, // Serbia
+  "642": 200, // Romania
+  "348": 170, // Hungary
+  "070": 150, // Bosnia and Herzegovina
+  "250": 110, // France
+  "705": 105, // Slovenia
+  "703": 90, // Slovakia
+  "040": 70, // Austria
+  "756": 50, // Switzerland
+  "203": 45, // Czechia
+  "276": 40, // Germany
+  "616": 38, // Poland
+  "442": 25, // Luxembourg
+  "440": 22, // Lithuania
+  "056": 20, // Belgium
+  "428": 12, // Latvia
+  "528": 11, // Netherlands
+  "233": 8, // Estonia
+  "246": 6, // Finland
+  "208": 5, // Denmark
+  "752": 4, // Sweden
+  "826": 3, // United Kingdom
+  "578": 2, // Norway
+  "372": 1, // Ireland
+  "352": 0, // Iceland
+};
+
+/**
+ * The world fixture with cooling values on Europe. France's overseas
+ * polygons (French Guiana) and Norway's Svalbard are trimmed so `fitToData`
+ * frames the continent.
+ */
+type Ring = MultiPolygon["coordinates"][number];
+const TRIM: Record<string, (polygon: Ring) => boolean> = {
+  "250": (polygon) => (polygon[0]?.[0]?.[0] ?? 0) > -30, // France without French Guiana
+  "578": (polygon) => (polygon[0]?.[0]?.[1] ?? 0) < 72, // Norway without Svalbard
+};
+
+const europeCooling: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
+  type: "FeatureCollection",
+  features: worldFeatureCollection().features.map((f) => {
+    const value = COOLING_DEGREE_DAYS[f.properties.id];
+    const trim = TRIM[f.properties.id];
+    const geometry: MultiPolygon = trim
+      ? { type: "MultiPolygon", coordinates: f.geometry.coordinates.filter(trim) }
+      : f.geometry;
+    return { ...f, geometry, properties: { ...f.properties, value } };
+  }),
+};
+
+/** Six notes, pinned by longitude / latitude. */
+const COOLING_NOTES: ChartAnnotation[] = [
+  { kind: "text", x: 33.2, y: 35, text: "Cyprus cools the most" },
+  { kind: "text", x: -3.7, y: 40.2, text: "Spain" },
+  { kind: "text", x: 12.5, y: 42.8, text: "Italy" },
+  { kind: "text", x: 22, y: 39.3, text: "Greece" },
+  { kind: "text", x: 16, y: 63, text: "The north barely cools" },
+  { kind: "text", x: 10.4, y: 51.2, text: "Germany" },
+];
+
+/**
+ * Datawrapper's “Europe cooling” recipe: an 11-class quantile scale, a titled
+ * ramp with words instead of numbers, and six notes. At the narrow tier the
+ * legend moves below the map, the notes become a numbered key, and the map
+ * keeps its 16:9 aspect.
+ */
+export const EuropeCooling: Story = {
+  name: "Stepped quantile scale with titled legend and notes",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="w-full max-w-[900px]">
+      <ChoroplethChart
+        accessibleLabel="Cooling degree days across Europe"
+        annotations={COOLING_NOTES}
+        data={europeCooling}
+        fitToData
+        legend={{
+          title: "Cooling degree days",
+          labels: "custom",
+          custom: ["Less", "Cooling needed →"],
+        }}
+        scale={{ type: "stepped", method: "quantile", steps: 11 }}
+      >
+        <ChoroplethFeatureComponent noDataFill="muted" />
+        <ChoroplethTooltip getFeatureValue={getFeatureValue} valueLabel="Cooling degree days" />
+      </ChoroplethChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(breakpointOf(canvasElement)).not.toBe(""));
+    const legend = canvasElement.querySelector('[data-slot="choropleth-legend"]');
+    await expect(legend).not.toBeNull();
+    await expect(canvasElement.querySelectorAll('[data-slot="ramp-legend-step"]')).toHaveLength(11);
+    await expect(legend).toHaveTextContent("Cooling needed →");
+    if (breakpointOf(canvasElement) === "narrow") {
+      await expect(legend?.getAttribute("data-legend-position")).toBe("below");
+      await expect(
+        canvasElement.querySelectorAll('[data-slot="annotation-key-item"]'),
+      ).toHaveLength(6);
+    } else {
+      await expect(legend?.getAttribute("data-legend-position")).toBe("bottom-left");
+      await waitFor(() =>
+        expect(canvasElement.querySelectorAll('[data-slot="chart-annotations-text"]')).toHaveLength(
+          6,
+        ),
+      );
+    }
+    // The map keeps its 16:9 aspect at every tier.
+    const plot = canvasElement.querySelector<HTMLElement>('[data-slot="choropleth-plot"]');
+    const box = plot?.getBoundingClientRect();
+    await expect(box && Math.abs(box.width / box.height - 16 / 9)).toBeLessThan(0.05);
+  },
+};
+
+/** The US-states fixture with a value on its first 12 valued states only. */
+const twelveStates: FeatureCollection<Geometry, ChoroplethFeatureProperties> = (() => {
+  let given = 0;
+  return {
+    type: "FeatureCollection",
+    features: usStatesData.features.map((f) => {
+      const keep = typeof f.properties.value === "number" && given < 12;
+      if (keep) given += 1;
+      return {
+        ...f,
+        properties: {
+          ...f.properties,
+          value: keep ? f.properties.value : undefined,
+        },
+      };
+    }),
+  };
+})();
+
+/**
+ * `fitToData` frames the 12 states that carry data and `hideNoData` removes
+ * the rest from the DOM, so the map is about the data, not the country.
+ */
+export const FitToDataHideNoData: Story = {
+  name: "Fit to data, regions without data hidden",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <ChoroplethChart
+        accessibleLabel="Population of 12 states"
+        data={twelveStates}
+        fitToData
+        hideNoData
+        legend={{ title: "Population (M)" }}
+        scale={{ type: "continuous" }}
+      >
+        <ChoroplethFeatureComponent />
+        <ChoroplethTooltip getFeatureValue={getStateValue} valueLabel="Population (M)" />
+      </ChoroplethChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll(".choropleth-features path")).toHaveLength(12),
+    );
+  },
+};
+
+/**
+ * Proportional symbols at region centroids: the AREA encodes the value, so a
+ * 4× value draws a 2× radius. On a plot narrower than 700 px every symbol
+ * shrinks by `sqrt(width / 700)`.
+ */
+export const ProportionalSymbols: Story = {
+  name: "Proportional symbols with a size key",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="w-full max-w-[900px]">
+      <ChoroplethChart
+        accessibleLabel="Market scores as proportional symbols"
+        data={worldData}
+        legend={{ title: "Score" }}
+        symbols={{ sizeKey: "value" }}
+      >
+        <ChoroplethFeatureComponent fill="var(--muted)" />
+      </ChoroplethChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-slot="choropleth-symbol"]')).toHaveLength(12),
+    );
+    const symbols = [...canvasElement.querySelectorAll('[data-slot="choropleth-symbol"]')].map(
+      (g) => ({
+        radius: Number(g.getAttribute("data-radius")),
+        value: Number(g.getAttribute("data-value")),
+      }),
+    );
+    const [largest, smallest] = [symbols[0]!, symbols[symbols.length - 1]!];
+    // Radius ratio = sqrt(value ratio), to the 0.01 px the attribute keeps.
+    await expect(largest.radius / smallest.radius).toBeCloseTo(
+      Math.sqrt(largest.value / smallest.value),
+      1,
+    );
+    if (breakpointOf(canvasElement) === "wide") {
+      await expect(largest.radius).toBeCloseTo(20, 1);
+    } else {
+      await expect(largest.radius).toBeLessThan(20);
+    }
+    await expect(canvasElement.querySelector('[data-slot="size-legend"]')).not.toBeNull();
+  },
+};
+
+/**
+ * Zoom buttons: real `<button>`s outside the map's `<svg>`, so every zoom the
+ * wheel or a drag can do is reachable from the keyboard. Reset returns to the
+ * fitted view.
+ */
+export const ZoomButtons: Story = {
+  name: "Zoom buttons with keyboard reset",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="w-full max-w-[900px]">
+      <ChoroplethChart
+        accessibleLabel="Cooling degree days across Europe, zoomable"
+        data={europeCooling}
+        fitToData
+        scale={{ type: "continuous" }}
+        zoomControls
+      >
+        <ChoroplethFeatureComponent noDataFill="muted" />
+      </ChoroplethChart>
+    </div>
+  ),
+  play: async ({ canvasElement, canvas }) => {
+    const transform = () =>
+      canvasElement
+        .querySelector(".choropleth-features")
+        ?.closest("g[transform]")
+        ?.getAttribute("transform");
+    await waitFor(() => expect(transform()).toBeTruthy());
+    const fitted = transform();
+    const zoomIn = canvas.getByRole("button", { name: "Zoom in" });
+    zoomIn.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(transform()).not.toBe(fitted));
+    canvas.getByRole("button", { name: "Zoom out" }).focus();
+    await userEvent.keyboard(" ");
+    canvas.getByRole("button", { name: "Reset zoom" }).focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(transform()).toBe(fitted));
+  },
+};
+
+/**
+ * A locator inset (the visible extent on a globe) and region names laid out
+ * by the label solver — at most 30, colliding ones dropped, none at narrow
+ * (the dropped names stay in the text for assistive technology).
+ */
+export const InsetAndPlaceLabels: Story = {
+  name: "Locator inset and place labels",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="w-full max-w-[900px]">
+      <ChoroplethChart
+        accessibleLabel="Cooling degree days across Europe with a locator globe"
+        data={europeCooling}
+        fitToData
+        inset={{ kind: "globe", position: "top-left" }}
+        labels={{ max: 12 }}
+        legend={{ title: "Cooling degree days", position: "bottom-right" }}
+        scale={{ type: "stepped", method: "jenks", steps: 5 }}
+      >
+        <ChoroplethFeatureComponent noDataFill="muted" />
+      </ChoroplethChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(breakpointOf(canvasElement)).not.toBe(""));
+    const painted = () =>
+      Number(
+        canvasElement
+          .querySelector('[data-slot="choropleth-place-labels"]')
+          ?.getAttribute("data-painted-count") ?? 0,
+      );
+    if (breakpointOf(canvasElement) === "narrow") {
+      await expect(painted()).toBe(0);
+    } else {
+      await waitFor(() => expect(painted()).toBeGreaterThan(0));
+      await expect(painted()).toBeLessThanOrEqual(12);
+    }
+    await expect(canvasElement.querySelector('[data-slot="choropleth-inset"]')).not.toBeNull();
+  },
+};
+
+/** Two regions per class plus a hatched overlay for estimated values. */
+const regionsWithFlags: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
+  type: "FeatureCollection",
+  features: usStatesData.features.map((f, index) => ({
+    ...f,
+    properties: {
+      ...f.properties,
+      region: index % 3 === 0 ? "East" : index % 3 === 1 ? "Central" : "West",
+      estimated: index % 4 === 0 ? "Estimated" : "",
+    },
+  })),
+};
+
+/**
+ * `palette: "categorical"` colours by a text field and keys it with swatches;
+ * `overlayBy` stripes the regions whose `estimated` field is set, so the
+ * flag reads in greyscale too.
+ */
+export const CategoriesWithPatternOverlay: Story = {
+  name: "Categories with a pattern overlay",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <ChoroplethChart
+        accessibleLabel="States by region; estimated values striped"
+        data={regionsWithFlags}
+        fitToData
+        legend={{ title: "Region" }}
+        overlayBy={{ key: "estimated", pattern: "stripes", direction: "up" }}
+        scale={{ type: "stepped", palette: "categorical", key: "region" }}
+      >
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelectorAll('[data-slot="choropleth-overlay"] path').length,
+      ).toBeGreaterThan(0),
+    );
+    await expect(
+      canvasElement.querySelector('[data-slot="choropleth-legend-overlay"]'),
+    ).toHaveTextContent("Estimated");
+  },
+};
+
+const statesWithoutData: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
+  type: "FeatureCollection",
+  features: usStatesData.features.map((f) => ({
+    ...f,
+    properties: { ...f.properties, value: undefined },
+  })),
+};
+
+/** No region carries data and `hideNoData` is on: an empty state, never a blank frame. */
+export const Empty: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <ChoroplethChart data={statesWithoutData} hideNoData scale={{ type: "continuous" }}>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole("status")).toHaveTextContent("No data");
   },
 };

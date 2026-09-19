@@ -122,6 +122,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_CHART_LIFECYCLE
 - DEFAULT_CHART_PLOT_HEIGHT
 - DEFAULT_CHART_STATUS
+- DEFAULT_CHOROPLETH_LEGEND_POSITION
+- DEFAULT_CHOROPLETH_ZOOM_LABELS
 - DEFAULT_CIRCULAR_CURVENESS
 - DEFAULT_DESCRIBE_SERIES_PHRASES
 - DEFAULT_FORCE_SEED
@@ -130,6 +132,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_MAX_INTERACTIVE_DATAPOINTS
 - DEFAULT_PIE_LABEL_MIN_ANGLE
 - DEFAULT_SCATTER_SIZE_RANGE
+- DEFAULT_SYMBOL_MAX_SIZE
 - DEFAULT_WHISKER_MULTIPLIER
 - DEFAULT_Y_AXIS_ID
 - DEFAULT_Y_DOMAIN_TWEEN_MS
@@ -229,6 +232,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Leaving a caveat here and nowhere else — the chart body is aria-hidden, so the note reaches nobody using a screen reader.
 - MarkerGroup
 - MarkerTooltipContent
+- MAX_PLACE_LABELS
 - MetricCard — Single KPI tile — label, value, delta/trend.
   - avoid: Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.
   - avoid: Encoding up/down by color alone — pair with an arrow/sign.

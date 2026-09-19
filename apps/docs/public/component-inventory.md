@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 224 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 228 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 9 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1175,6 +1175,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_CHART_LIFECYCLE | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_PLOT_HEIGHT | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_STATUS | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_CHOROPLETH_LEGEND_POSITION | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_CHOROPLETH_ZOOM_LABELS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CIRCULAR_CURVENESS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_DESCRIBE_SERIES_PHRASES | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_FORCE_SEED | component |  | `@elabs-ai/components-charts` |  |
@@ -1183,6 +1185,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_MAX_INTERACTIVE_DATAPOINTS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_PIE_LABEL_MIN_ANGLE | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_SCATTER_SIZE_RANGE | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_SYMBOL_MAX_SIZE | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_WHISKER_MULTIPLIER | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_AXIS_ID | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_DOMAIN_TWEEN_MS | component |  | `@elabs-ai/components-charts` |  |
@@ -1237,6 +1240,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Marginalia | component |  | `@elabs-ai/components-charts` | An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart. |
 | MarkerGroup | component |  | `@elabs-ai/components-charts` |  |
 | MarkerTooltipContent | component |  | `@elabs-ai/components-charts` |  |
+| MAX_PLACE_LABELS | component |  | `@elabs-ai/components-charts` |  |
 | MetricCard | component |  | `@elabs-ai/components-charts` | Single KPI tile — label, value, delta/trend. |
 | MetricGrid | component |  | `@elabs-ai/components-charts` | Responsive grid of KPI tiles — the summary row at the top of a dashboard. |
 | MIN_DATAPOINT_TARGET_SIZE | component |  | `@elabs-ai/components-charts` |  |

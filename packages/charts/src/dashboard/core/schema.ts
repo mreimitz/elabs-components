@@ -145,6 +145,8 @@ const CHART_TYPES = [
   "diverging-bar",
   // Dual-axis — RM-121
   "dual-axis",
+  // Choropleth — RM-124
+  "choropleth",
 ] as const satisfies readonly ChartType[];
 type MissingChartType = Exclude<ChartType, (typeof CHART_TYPES)[number]>;
 const chartTypesComplete: MissingChartType extends never ? true : never = true;

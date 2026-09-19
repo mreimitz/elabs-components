@@ -651,9 +651,11 @@ describe("the ChartType union and its runtime companion", () => {
   });
 
   it("carries the seven pre-RM-038 members plus the thirteen new families", () => {
-    // 20 + "dual-axis" (RM-121, explicit only — never inferred).
-    expect(CHART_TYPES).toHaveLength(21);
+    // 20 + "dual-axis" (RM-121) + "choropleth" (RM-124) — both explicit only,
+    // never inferred.
+    expect(CHART_TYPES).toHaveLength(22);
     expect(CHART_TYPES).toContain("dual-axis");
+    expect(CHART_TYPES).toContain("choropleth");
     for (const core of ["line", "area", "bar", "pie", "scatter", "radar", "funnel"]) {
       expect(CHART_TYPES).toContain(core);
     }

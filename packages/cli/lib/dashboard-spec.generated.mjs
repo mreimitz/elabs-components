@@ -743,6 +743,8 @@ var CHART_TYPES = [
   "diverging-bar",
   // Dual-axis — RM-121
   "dual-axis",
+  // Choropleth — RM-124
+  "choropleth",
 ];
 var VALUE_FORMATS = ["number", "compact", "currency", "percent"];
 var str = (description) => ({ type: "string", description });
