@@ -735,6 +735,16 @@ rather than shelling out. Add to your project's `.mcp.json`:
 Exposes `info`, `search`, `docs`, `tokens` and `audit`. It reads the bundled
 manifest, so it works offline and with no Storybook running.
 
+**No install, for any agent (Claude, Cursor, …):**
+`claude mcp add --transport http brand-ui https://elabs-ai.com/mcp` connects to
+the same tools over Streamable HTTP — everything above except `audit`, which
+reads your files and a hosted server cannot see them. There, `docs
+<Component>` returns the import line
+(`import { Button } from "@elabs-ai/components-ui"`) plus a `story` URL under
+`elabs-ai.com/storybook/` you can open straight from the response, and `info`
+lists the four site endpoints (`mcp`, `llms`, `storybook`, `registry`) — useful
+for a remote agent with no local checkout of this repo.
+
 ### 7c. The skills — judgment, not just API
 
 The CLI says what exists; the skills say _when to use what, and how to compose

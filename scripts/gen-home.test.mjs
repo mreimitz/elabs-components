@@ -16,6 +16,7 @@ import {
   REPO_ROOT,
   OUT_DIR,
   bestArchetype,
+  buildAgentLoopRecorded,
   buildBlocks,
   buildCli,
   buildInstall,
@@ -26,6 +27,7 @@ import {
   deriveRoutine,
   layerOf,
 } from "./gen-home.mjs";
+import { HOME_MCP_OPTIONS } from "../apps/home/lib/mcp-site-options.mjs";
 
 const readOut = (name) => JSON.parse(readFileSync(join(OUT_DIR, name), "utf8"));
 
@@ -275,4 +277,51 @@ test("gates.json: every entry has a real source file and a category from the rea
     assert.ok(g.id && g.doc && g.category && g.source, JSON.stringify(g));
   }
   assert.ok(gates.length >= 80);
+});
+
+// ── agent-loop-recorded.json vs the live /mcp route (RM-100 wave-3 ruling 8, W3-M1) ────────────
+
+test("buildAgentLoopRecorded uses the SAME options object apps/home/app/mcp/route.ts passes to createMcpHttpHandler", () => {
+  // apps/home/app/mcp/route.ts is a Next route (JSON import, "use node" runtime) this plain
+  // node:test file cannot import directly, so this reads its source text and asserts it wires
+  // the ONE shared HOME_MCP_OPTIONS object in — if the route ever grows a second, hand-typed
+  // `{ hosted, siteRoutes }` literal instead, this fails and names the file to fix, rather than
+  // letting the recorded fallback silently disagree with what the live route answers.
+  const routeSrc = readFileSync(join(REPO_ROOT, "apps/home/app/mcp/route.ts"), "utf8");
+  assert.match(
+    routeSrc,
+    /import\s*\{\s*HOME_MCP_OPTIONS\s*\}\s*from\s*["']\.\.\/\.\.\/lib\/mcp-site-options\.mjs["']/,
+    "apps/home/app/mcp/route.ts must import HOME_MCP_OPTIONS from apps/home/lib/mcp-site-options.mjs",
+  );
+  assert.match(
+    routeSrc,
+    /createMcpHttpHandler\(\{\s*manifest\s*,\s*\.\.\.HOME_MCP_OPTIONS\s*\}\)/,
+    "apps/home/app/mcp/route.ts must spread ...HOME_MCP_OPTIONS into createMcpHttpHandler, not a hand-typed options literal",
+  );
+  assert.deepEqual(
+    HOME_MCP_OPTIONS,
+    { hosted: true, siteRoutes: true },
+    "HOME_MCP_OPTIONS must keep siteRoutes: true — the site's /storybook/ and /r routes are real (wave-3 ruling 18)",
+  );
+});
+
+test("agent-loop-recorded.json: every recorded answer uses this site's /storybook/ links, never the DEFAULT emitters' bare /?path= form", () => {
+  const recorded = buildAgentLoopRecorded(manifest);
+  const text = JSON.stringify(recorded);
+  const storybookLinks = text.match(/elabs-ai\.com\/storybook\//g) ?? [];
+  const bareStoryLinks = text.match(/elabs-ai\.com\/\?path=/g) ?? [];
+  assert.ok(
+    storybookLinks.length > 0,
+    "expected at least one https://elabs-ai.com/storybook/ link once siteRoutes: true is threaded through",
+  );
+  assert.equal(
+    bareStoryLinks.length,
+    0,
+    "the recorded fallback must not contain the default https://elabs-ai.com/?path= form — that means it was built without siteRoutes: true",
+  );
+  assert.deepEqual(
+    recorded,
+    readOut("agent-loop-recorded.json"),
+    "apps/home/content/generated/agent-loop-recorded.json is stale — run `pnpm gen`",
+  );
 });
