@@ -132,18 +132,47 @@ export function HeatmapLegend({
           {formatValue(lo)}
         </span>
       ) : null}
-      <span
-        aria-hidden="true"
-        className="relative flex items-center"
-        data-slot="heatmap-legend-strip"
-      >
-        <span className={cn("flex items-center", continuous ? "gap-0" : "gap-0.5")}>
+      {hasHover && markerT !== null ? (
+        // Only the hovered render gains the wrapping strip: it is the sole
+        // reason a positioning ancestor is needed, so the default (no hover)
+        // render stays the exact pre-RM-118 markup byte-for-byte.
+        <span
+          aria-hidden="true"
+          className="relative flex items-center"
+          data-slot="heatmap-legend-strip"
+        >
+          <span className={cn("flex items-center", continuous ? "gap-0" : "gap-0.5")}>
+            {swatches.map((swatch, index) => (
+              <span
+                className={cn("h-2.5 w-4", continuous ? "rounded-none" : "rounded-[2px]")}
+                data-slot="heatmap-legend-step"
+                // A ramp step's identity IS its position: two samples of a
+                // continuous scale can legitimately resolve to the same ink.
+                key={`step-${index}`}
+                style={{
+                  backgroundColor: swatch.color,
+                  backgroundImage: swatch.hatched ? NEGATIVE_HATCH_BACKGROUND : undefined,
+                  opacity: swatch.opacity,
+                }}
+              />
+            ))}
+          </span>
+          <span
+            className="pointer-events-none absolute top-0 h-full w-0.5 -translate-x-1/2 bg-chart-foreground transition-[left] duration-fast ease-standard motion-reduce:transition-none"
+            data-slot="heatmap-legend-marker"
+            data-ramp-marker-value={hover}
+            style={{ left: `${markerT * 100}%` }}
+          />
+        </span>
+      ) : (
+        <span
+          aria-hidden="true"
+          className={cn("flex items-center", continuous ? "gap-0" : "gap-0.5")}
+        >
           {swatches.map((swatch, index) => (
             <span
               className={cn("h-2.5 w-4", continuous ? "rounded-none" : "rounded-[2px]")}
               data-slot="heatmap-legend-step"
-              // A ramp step's identity IS its position: two samples of a
-              // continuous scale can legitimately resolve to the same ink.
               key={`step-${index}`}
               style={{
                 backgroundColor: swatch.color,
@@ -153,15 +182,7 @@ export function HeatmapLegend({
             />
           ))}
         </span>
-        {hasHover && markerT !== null ? (
-          <span
-            className="pointer-events-none absolute top-0 h-full w-0.5 -translate-x-1/2 bg-chart-foreground transition-[left] duration-fast ease-standard motion-reduce:transition-none"
-            data-slot="heatmap-legend-marker"
-            data-ramp-marker-value={hover}
-            style={{ left: `${markerT * 100}%` }}
-          />
-        ) : null}
-      </span>
+      )}
       {labelMode === "endpoints" ? (
         <span aria-hidden="true" className="tabular-nums">
           {formatValue(hi)}
