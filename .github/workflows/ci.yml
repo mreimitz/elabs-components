@@ -79,6 +79,7 @@ jobs:
         run: |
           nproc; free -m; grep oom_kill /proc/vmstat
           ( while true; do echo "== $(date +%T) $(free -m | awk 'NR==2{print "used="$3" avail="$7}') $(grep oom_kill /proc/vmstat | tr '\n' ' ')"; ps -eo rss=,args= --sort=-rss | head -6 | awk '{printf "  %d MB %s\n", $1/1024, substr($0, index($0,$2), 140)}'; sleep 5; done ) > /tmp/mem.log 2>&1 &
+          ( while true; do now=$(date +%s%3N); ps -eo pid=,rss=,args= | awk -v t=$now '/--type=renderer/{printf "RSS %s %s %d\n", t, $1, $2/1024}'; sleep 1; done ) > /tmp/rss.log 2>&1 &
           set -o pipefail
           pnpm --filter @elabs-ai/components-docs test-storybook 2>&1 | tee /tmp/sb.log
       - name: Diagnostics
@@ -87,6 +88,8 @@ jobs:
           echo "--- memory, last 4 minutes"; tail -340 /tmp/mem.log
           echo "--- peak used"; grep -oE "used=[0-9]+" /tmp/mem.log | sort -t= -k2 -n | tail -1
           echo "--- oom kills since boot"; grep oom_kill /proc/vmstat
+          echo "--- per-tab rss"; cat /tmp/rss.log
+          echo "--- probe"; grep -oE "LEAKPROBE .*" /tmp/sb.log
           echo "--- browser stderr"; grep -E "pw:browser" /tmp/sb.log | grep -vE "<launching>|<launched>" | tail -80 || true
       - name: Contract tests (axe + overflow, every theme and width)
         if: matrix.theme == 'light'

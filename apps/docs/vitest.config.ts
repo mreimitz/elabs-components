@@ -52,7 +52,10 @@ export default defineConfig({
           // no setup of their own. This one only frees each finished story
           // file's iframe before the next file starts: without it a tab on a
           // 4-core CI runner can run out of memory and crash the whole run.
-          setupFiles: [join(dirName, ".storybook/vitest-free-frames.ts")],
+          setupFiles: [
+            join(dirName, ".storybook/vitest-free-frames.ts"),
+            join(dirName, ".storybook/leak-probe.ts"),
+          ],
           browser: {
             enabled: true,
             headless: true,
@@ -82,7 +85,7 @@ export default defineConfig({
                 browser: "chromium",
                 context: { reducedMotion: "reduce" },
                 // Exposes `gc()` to the setup file above.
-                launch: { args: ["--js-flags=--expose-gc"] },
+                launch: { args: ["--js-flags=--expose-gc", "--enable-precise-memory-info"] },
               },
             ],
           },
