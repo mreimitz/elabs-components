@@ -28,6 +28,15 @@
       "dependsOn": ["^topo"]
     },
     "e2e": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "lhci": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "bundle-budget": {
+      "dependsOn": ["build"],
       "cache": false
     }
   }

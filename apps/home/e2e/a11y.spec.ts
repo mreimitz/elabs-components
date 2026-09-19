@@ -5,13 +5,17 @@ import { expect, test } from "@playwright/test";
 import { HOME, THEME_FAMILIES, gotoHome, selectTheme, settle } from "./helpers";
 
 // axe on the whole page with the tour's first tab open and the agent loop rendered.
-// serious/critical must be 0. Ruling 30: a library- or theme-owned serious finding that is
-// already filed may be excluded by rule + selector + issue (at most 3, the list only shrinks).
+// serious/critical must be 0. Rulings 30 + 37: a library- or theme-owned serious finding may be
+// excluded by rule + selector + owner and either a filed `issue` ("#123") or, not yet filed,
+// `"issue": null` + a `finding` id ("RM-104-A1") from RM-104-result.md — at most 3, the list
+// only shrinks. A site-owned serious finding is never excluded.
 // `moderate` findings ratchet against `a11y-moderate-baseline.json` (only shrinks).
 interface Exclusion {
   rule: string;
   selector: string;
-  issue: string;
+  owner: string;
+  issue: string | null;
+  finding?: string;
 }
 const ratchet = JSON.parse(readFileSync(join(HOME, "e2e/a11y-ratchet.json"), "utf8")) as {
   exclusions: Exclusion[];
@@ -25,7 +29,11 @@ const CASES = [
 
 test("the exclusion list stays at 3 or fewer", () => {
   expect(ratchet.exclusions.length).toBeLessThanOrEqual(3);
-  for (const e of ratchet.exclusions) expect(e.issue).toMatch(/^#\d+$/);
+  for (const e of ratchet.exclusions) {
+    expect(e.owner, "a site-owned violation is never excluded").not.toBe("site");
+    if (e.issue === null) expect(e.finding).toMatch(/^RM-104-A\d+$/);
+    else expect(e.issue).toMatch(/^#\d+$/);
+  }
 });
 
 for (const { slug, mode } of CASES) {
