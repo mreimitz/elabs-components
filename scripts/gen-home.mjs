@@ -14,6 +14,8 @@
  *   playbooks.json, story-ids.json, install.json
  * …plus `agent-loop-recorded.json` (RM-099): the hosted MCP's answers to every call in the
  * hand-authored `apps/home/content/agent-loop.json`, the agent loop's offline fallback.
+ * …plus `emit-ui-examples.json` (RM-101): the A2UI / DashboardSpec editors' example menus,
+ * from the CLI's `a2ui example`, the dashboard golden `minimal.json` and `content/examples/`.
  * …plus one static asset outside that directory (RM-093): `apps/home/public/.well-known/
  * mcp.json`, MCP discovery metadata — served byte-for-byte, so it cannot go through
  * `apps/home/lib/content.ts` the way the nine files above do.
@@ -46,6 +48,9 @@ import {
 import { indexStoryDocsPages } from "../packages/cli/lib/story-ids.mjs";
 import { handleMessage, LOCAL_ONLY_TOOLS, SERVER_INFO, TOOLS } from "../packages/cli/lib/mcp.mjs";
 import { HOSTED_MCP_URL } from "../packages/cli/lib/render-docs.mjs";
+// RM-101
+import { A2UI_EXAMPLE, validateSurface } from "../packages/cli/lib/a2ui.mjs";
+import { validateSpec } from "../packages/cli/lib/dashboard-spec.mjs";
 
 export const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 export const OUT_DIR = join(REPO_ROOT, "apps/home/content/generated");
@@ -405,6 +410,59 @@ export function buildAgentLoopRecorded(manifest, map = json("apps/home/content/a
   );
 }
 
+// ─────────────────────── emit-ui-examples.json (RM-101) ───────────────────────
+/**
+ * The "Let the agent emit the UI" editors' example menus (RM-101), so a catalog or spec change
+ * reaches the site through `gen:check` instead of drifting. A2UI: the CLI's own
+ * `brand-ui a2ui example` output, then every hand-authored `apps/home/content/examples/
+ * a2ui-*.json`. DashboardSpec: the dashboard track's golden `minimal.json`, then every
+ * `apps/home/content/examples/dashboard-spec-*.json`. Each is checked with the CLI's
+ * validator (`a2ui validate` / `dashboard-spec validate`); an invalid one fails the gen.
+ * Output: `{ a2ui: [{ id, source, value }], dashboardSpec: [{ id, source, value }] }`.
+ */
+export const DASHBOARD_GOLDEN_MINIMAL =
+  "packages/charts/src/dashboard/core/__fixtures__/minimal.json";
+export const SITE_EXAMPLES_DIR = "apps/home/content/examples";
+
+export function buildEmitUiExamples({ repoRoot = REPO_ROOT } = {}) {
+  const siteFiles = (prefix) =>
+    existsSync(join(repoRoot, SITE_EXAMPLES_DIR))
+      ? readdirSync(join(repoRoot, SITE_EXAMPLES_DIR))
+          .filter((name) => name.startsWith(prefix) && name.endsWith(".json"))
+          .sort()
+          .map((name) => `${SITE_EXAMPLES_DIR}/${name}`)
+      : [];
+  const load = (path) => JSON.parse(readFileSync(join(repoRoot, path), "utf8"));
+  const checked = (entry, validate) => {
+    const result = validate(entry.value);
+    if (!result.ok) {
+      const first = result.errors[0];
+      throw new Error(`${entry.source}: invalid — ${first.path} ${first.code} ${first.message}`);
+    }
+    return entry;
+  };
+  const idOf = (path, prefix) =>
+    path.slice(path.lastIndexOf("/") + 1 + prefix.length, -".json".length);
+  return {
+    a2ui: [
+      { id: "cli-example", source: "brand-ui a2ui example", value: A2UI_EXAMPLE },
+      ...siteFiles("a2ui-").map((path) => ({
+        id: idOf(path, "a2ui-"),
+        source: path,
+        value: load(path),
+      })),
+    ].map((entry) => checked(entry, validateSurface)),
+    dashboardSpec: [
+      { id: "minimal", source: DASHBOARD_GOLDEN_MINIMAL, value: load(DASHBOARD_GOLDEN_MINIMAL) },
+      ...siteFiles("dashboard-spec-").map((path) => ({
+        id: idOf(path, "dashboard-spec-"),
+        source: path,
+        value: load(path),
+      })),
+    ].map((entry) => checked(entry, validateSpec)),
+  };
+}
+
 async function buildAll() {
   const manifest = json("brand-ui.manifest.json");
   const registry = json("registry/registry.json");
@@ -446,6 +504,8 @@ async function buildAll() {
     "install.json": buildInstall(manifest, registry, cli),
     // RM-099
     "agent-loop-recorded.json": buildAgentLoopRecorded(manifest),
+    // RM-101
+    "emit-ui-examples.json": buildEmitUiExamples(),
   };
 }
 

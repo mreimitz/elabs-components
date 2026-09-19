@@ -1,0 +1,65 @@
+{
+  "a2ui": "1",
+  "title": "Request access",
+  "root": {
+    "type": "Card",
+    "children": [
+      {
+        "type": "CardHeader",
+        "children": [
+          { "type": "CardTitle", "children": ["Request access"] },
+          {
+            "type": "CardDescription",
+            "children": ["The agent needs one answer before it can continue"]
+          }
+        ]
+      },
+      {
+        "type": "CardContent",
+        "children": [
+          {
+            "type": "Stack",
+            "props": { "gap": "sm" },
+            "children": [
+              {
+                "type": "Label",
+                "props": { "htmlFor": "access-reason" },
+                "children": ["Why do you need access?"]
+              },
+              {
+                "type": "Input",
+                "props": { "id": "access-reason", "placeholder": "Quarter-end reporting" },
+                "on": { "change": { "name": "reason-changed" } }
+              },
+              {
+                "type": "Stack",
+                "props": { "direction": "row", "gap": "sm", "align": "center" },
+                "children": [
+                  {
+                    "type": "Switch",
+                    "props": { "id": "access-notify", "aria-label": "Notify my manager" }
+                  },
+                  {
+                    "type": "Label",
+                    "props": { "htmlFor": "access-notify" },
+                    "children": ["Notify my manager"]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "CardFooter",
+        "children": [
+          {
+            "type": "Button",
+            "on": { "click": { "name": "submit-request", "payload": { "form": "access" } } },
+            "children": ["Send request"]
+          }
+        ]
+      }
+    ]
+  }
+}
