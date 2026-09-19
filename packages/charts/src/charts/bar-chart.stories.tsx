@@ -1297,6 +1297,67 @@ export const LegendToggle: Story = {
   ),
 };
 
+/**
+ * `interactive: "toggle"` on a STACKED bar chart, at the chart's DEFAULT
+ * `animationDuration` (1100ms) — deliberately not zeroed out (RM-118 fix
+ * round 1, item 3: "not exercised live"), so this story runs the real
+ * non-zero-duration path a validator drives live in a browser, not the
+ * `animationDuration={0}` path every unit test uses. Every assertion after
+ * a state change goes through `waitFor` rather than a synchronous `expect`
+ * right after the click/keypress — the bar-enter tween on mount and the
+ * toggle's own stacked-segment tween both run for real here, so reading DOM
+ * geometry synchronously would race the animation instead of asserting its
+ * settled result. `BarChart`'s toggle recompute (`lines`, `bar-chart.tsx`)
+ * isn't gated by the reveal timer the way `LineChart`/`AreaChart`'s shared
+ * `time-series-chart-shell` used to be (see that shell's "recomputes even
+ * when toggled mid-reveal" test and `line-chart.stories.tsx`'s "Legend
+ * toggle" story, RM-118 validator FAIL 1a round 2), but this story still
+ * exercises the toggle against the real timer end to end rather than assume
+ * it.
+ */
+export const LegendToggleStacked: Story = {
+  name: "Legend toggle, stacked",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <BarChart data={monthlyData} legend={{ interactive: "toggle" }} stacked xDataKey="month">
+        <Grid horizontal />
+        <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />
+        <Bar dataKey="profit" fill="var(--chart-2)" lineCap="round" />
+        <BarXAxis />
+        <ChartTooltip />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Real marks only — excludes the transparent hit-target rects and any
+    // grid-fade gradient rect (RM-118 sitting 2 convention).
+    const realRects = () => canvasElement.querySelectorAll('svg rect[fill^="var(--chart-"]');
+
+    // Settle the initial stacked entrance before reading a baseline — 12
+    // real bars (2 series × 6 months).
+    await waitFor(() => expect(realRects().length).toBe(12), { timeout: 5000 });
+
+    const profitToggle = canvas.getByRole("button", { name: /profit/i });
+    profitToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(profitToggle).toHaveAttribute("aria-pressed", "false"), {
+      timeout: 5000,
+    });
+    // Hiding "profit" drops its stacked segment from every month — 6 real
+    // bars remain (1 series × 6 months), never a stale 12.
+    await waitFor(() => expect(realRects().length).toBe(6), { timeout: 5000 });
+    await expect(profitToggle.querySelector("span.line-through")).not.toBeNull();
+
+    profitToggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(profitToggle).toHaveAttribute("aria-pressed", "true"), {
+      timeout: 5000,
+    });
+    await waitFor(() => expect(realRects().length).toBe(12), { timeout: 5000 });
+  },
+};
+
 const colorByData = [
   { name: "North", value: 42, region: "North" },
   { name: "South", value: 65, region: "South" },
