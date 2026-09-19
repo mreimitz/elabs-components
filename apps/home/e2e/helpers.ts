@@ -74,15 +74,23 @@ export async function expectBodyBackground(page: Page, background: string) {
 /**
  * Compare against a baseline only where one exists for THIS platform (ruling 28); otherwise
  * attach the actual image so CI uploads it. `--update-snapshots` always writes.
+ *
+ * `mask` (RM-089 ruling 38): regions to blank out of the PIXEL comparison only — their content is
+ * already covered by a value/DOM assertion elsewhere, so baselining them just churns the PNG.
  */
-export async function regionShot(target: Locator, name: string, testInfo: TestInfo) {
+export async function regionShot(
+  target: Locator,
+  name: string,
+  testInfo: TestInfo,
+  options: { mask?: Locator[] } = {},
+) {
   const updating = ["all", "changed"].includes(testInfo.config.updateSnapshots);
   const baseline = testInfo.snapshotPath(name, { kind: "screenshot" });
   if (existsSync(baseline) || updating) {
-    await expect(target).toHaveScreenshot(name);
+    await expect(target).toHaveScreenshot(name, { mask: options.mask });
     return "compared";
   }
-  const body = await target.screenshot({ animations: "disabled" });
+  const body = await target.screenshot({ animations: "disabled", mask: options.mask });
   await testInfo.attach(name, { body, contentType: "image/png" });
   testInfo.annotations.push({
     type: "screenshot",

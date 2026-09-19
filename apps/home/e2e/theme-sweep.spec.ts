@@ -44,7 +44,10 @@ for (const family of THEME_FAMILIES) {
         await target.scrollIntoViewIfNeeded();
         await page.waitForLoadState("networkidle");
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
-        await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo);
+        // Ruling 38: the GatesBand rule grid inside #tokens is generated text already asserted
+        // by the gates test, so it is masked out of the pixel comparison (not the DOM) here.
+        const mask = region === "tokens" ? [target.locator('[data-slot="gates-band"]')] : undefined;
+        await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo, { mask });
       }
     });
   }
