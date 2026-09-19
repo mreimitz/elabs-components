@@ -26,7 +26,10 @@ top-level group for `palette="categorical"` (real hover-dim on the group's tiles
 `RampLegend` instead for `palette="sequential"` (nothing for `"mono"`). `DumbbellChart` lists one
 row per `valueKeys` entry for `variant="dots"` (real hover-dim on that key's dots across every
 row), replacing its own pre-existing, always-on corner colour-key badge when `legend` is set (that
-badge is unchanged when `legend` stays unset). `AutoChart` forwards `spec.legend` to all five
-families, retiring its own `AutoLegend` fallback for them — `AutoLegend` itself stays, since
-`radar`/`funnel`/`waterfall` and the other families outside this wave can still reach it through a
-multi-series spec.
+badge is unchanged when `legend` stays unset). `AutoChart` forwards `spec.legend` to `bar`, `pie`,
+`scatter` and `treemap`, retiring its own `AutoLegend` fallback for those four. `dumbbell` stays on
+`AutoLegend`: `ChartSpec` has no `valueKeys`/`variant` field, so `DumbbellChart`'s own `legend`
+(dots-only) would render nothing for any AutoChart-driven spec today — wiring it in would have
+silently dropped the existing before/after key on every multi-series AutoChart dumbbell.
+`AutoLegend` itself stays for the rest, since `radar`/`funnel`/`waterfall`, `dumbbell` and the
+other families outside this wave can still reach it through a multi-series spec.

@@ -275,6 +275,19 @@ function everySeriesEndLabelled(
  * (RM-118). `AutoChart` forwards the SAME show/hide decision `AutoLegend`
  * used to make into that container's own `legend` prop instead of rendering
  * `AutoLegend` below it — one legend per chart, never two.
+ *
+ * NOT "dumbbell" (RM-118 Part B, deliberately excluded): `DumbbellChart`'s own
+ * `legend` prop only ever produces content for `variant="dots"` with
+ * `valueKeys` set (see its JSDoc) — the two-measure shape AutoChart infers a
+ * dumbbell FROM (`ChartSpec` has no `valueKeys`/`variant` field) never
+ * reaches that branch, so forwarding here would silently swap a real
+ * "before"/"after" `<AutoLegend>` key for nothing on every existing
+ * AutoChart-driven dumbbell spec (caught via the published
+ * `charts-autochart--dumbbell-inferred` story — a genuine default-change
+ * regression, not just a look change, so it stays out of the engine set
+ * until `ChartSpec` grows a shape `DumbbellChart` can actually render a
+ * legend from). Direct `<DumbbellChart legend>` usage is unaffected — see
+ * `dumbbell-chart.tsx` and its own tests/stories.
  */
 const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "line",
@@ -285,7 +298,6 @@ const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "pie",
   "scatter",
   "treemap",
-  "dumbbell",
 ]);
 
 interface AutoLegendProps {
@@ -862,13 +874,13 @@ function renderChart(
           sortBy={spec.sort as DumbbellSortBy | undefined}
           groupBy={spec.groupBy}
           delta={spec.delta}
-          // RM-118 Part B: forwarded as-is. DumbbellChart only renders a
-          // legend for `variant="dots"` with `valueKeys` set — this spec
-          // surface has no `valueKeys` field yet (`dumbbellKeys` always
-          // resolves exactly `[startKey, endKey]`), so today this is a
-          // no-op for every AutoChart-driven dumbbell, same as an unset
-          // `legend` would be.
-          legend={containerLegend}
+          // RM-118 Part B: "dumbbell" is deliberately NOT in
+          // `LEGEND_ENGINE_TYPES` (see that set's own doc) — DumbbellChart's
+          // `legend` prop only ever renders for `variant="dots"` with
+          // `valueKeys`, a shape `ChartSpec` cannot express yet, so
+          // forwarding it here would silently swap the existing
+          // `<AutoLegend>` before/after key for nothing. `showLegend` still
+          // governs the `<AutoLegend>` fallback below, unchanged.
         />
       );
     }
