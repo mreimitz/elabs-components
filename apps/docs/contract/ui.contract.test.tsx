@@ -976,6 +976,124 @@ describe("Input contract (browser)", () => {
   }
 });
 
+// ── InstallTabs (packages/ui/src/components/install-tabs/install-tabs.tsx) ────────────────────────────────────────
+import * as stories_install_tabs from "../../../packages/ui/src/components/install-tabs/install-tabs.stories";
+describe("InstallTabs contract (browser)", () => {
+  const meta = stories_install_tabs.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_install_tabs as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "display-installtabs--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "display-installtabs--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
+// ── IntegrationMatrix (packages/ui/src/components/integration-matrix/integration-matrix.tsx) ────────────────────────────────────────
+import * as stories_integration_matrix from "../../../packages/ui/src/components/integration-matrix/integration-matrix.stories";
+describe("IntegrationMatrix contract (browser)", () => {
+  const meta = stories_integration_matrix.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_integration_matrix as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "display-integrationmatrix--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "display-integrationmatrix--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
 // ── KeyValueEditor (packages/ui/src/components/key-value-editor/key-value-editor.tsx) ────────────────────────────────────────
 import * as stories_key_value_editor from "../../../packages/ui/src/components/key-value-editor/key-value-editor.stories";
 describe("KeyValueEditor contract (browser)", () => {

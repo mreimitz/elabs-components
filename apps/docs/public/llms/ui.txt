@@ -132,6 +132,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DatePicker
 - DateRangePicker
 - DEFAULT_COMMAND_CHIP_LABELS
+- DEFAULT_INSTALL_TABS_LABELS
+- DEFAULT_INTEGRATION_MATRIX_LABELS
 - DEFAULT_MESSAGES
 - DEFAULT_SURFACE_TOUR_ACTIONS_LABELS
 - DEFAULT_THEME_FAMILY_SWITCH_LABELS
@@ -220,6 +222,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - InputOTPGroup
 - InputOTPSeparator
 - InputOTPSlot
+- InstallTabs
+- IntegrationMatrix
 - Kbd
 - KeyboardShortcuts — Grouped, searchable presentation of an application's shortcut set — the sheet the Kbd atom belongs in.
   - avoid: Rendering a raw key string instead of Kbd — the atom carries the platform glyphs and the translate opt-out.
