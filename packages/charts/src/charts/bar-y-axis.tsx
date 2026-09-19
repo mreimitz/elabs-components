@@ -208,7 +208,6 @@ const BarYAxisInner = memo(function BarYAxisInner({
   return createPortal(
     <div
       className="pointer-events-none absolute top-0 bottom-0"
-      data-slot="bar-y-axis"
       style={{
         left: 0,
         width: margin.left,

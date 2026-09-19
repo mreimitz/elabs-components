@@ -265,7 +265,7 @@ const BarXAxisInner = memo(function BarXAxisInner({
   const top = anchorsToPlotEdge ? height - margin.bottom + CATEGORY_AXIS_PADDING : undefined;
 
   return createPortal(
-    <div className="pointer-events-none absolute inset-0" data-slot="bar-x-axis">
+    <div className="pointer-events-none absolute inset-0">
       {labelsToShow.map((item) => (
         <BarXAxisLabel
           angleDeg={angleDeg}

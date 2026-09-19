@@ -183,6 +183,8 @@ export function measureChartExportLayer(
   });
 
   const range = document.createRange();
+  // No layout engine (jsdom): nothing is painted, so there is nothing to measure.
+  if (typeof range.getBoundingClientRect !== "function") return model;
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const el = node as Element;

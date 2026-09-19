@@ -321,14 +321,7 @@ export interface ExportChartParams {
    * download — mirrors `onDownload`, for apps that want to route an export
    * through their own storage.
    */
-  onExport?: (
-    kind: ChartExportKind,
-    blob: Blob,
-    filename: string,
-    request: Required<ChartExportRequest>,
-  ) => void;
-  /** Whether the layer leaves out the header and footer — reported back to `onExport`. */
-  plain?: boolean;
+  onExport?: (kind: ChartExportKind, blob: Blob, filename: string) => void;
 }
 
 /** Builds, serialises and (unless `onExport` is set) downloads the chart as an SVG file. */
@@ -338,8 +331,6 @@ export function exportChartSvg({
   source,
   backgroundColor,
   layer,
-  scale = EXPORT_PIXEL_RATIO,
-  plain = false,
   onExport,
 }: ExportChartParams): void {
   const built = buildExportSvg(svg, { source, backgroundColor, layer, title });
@@ -347,7 +338,7 @@ export function exportChartSvg({
   const blob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
   const filename = `${slugifyChartFilename(title)}.svg`;
   if (onExport) {
-    onExport("svg", blob, filename, { scale, plain });
+    onExport("svg", blob, filename);
   } else {
     triggerBlobDownload(blob, filename);
   }
@@ -375,7 +366,6 @@ export async function exportChartPng({
   backgroundColor,
   layer,
   scale = EXPORT_PIXEL_RATIO,
-  plain = false,
   onExport,
 }: ExportChartParams): Promise<void> {
   const built = buildExportSvg(svg, { source, backgroundColor, layer, title });
@@ -402,7 +392,7 @@ export async function exportChartPng({
 
     const filename = `${slugifyChartFilename(title)}.png`;
     if (onExport) {
-      onExport("png", blob, filename, { scale, plain });
+      onExport("png", blob, filename);
     } else {
       triggerBlobDownload(blob, filename);
     }

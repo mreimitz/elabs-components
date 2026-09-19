@@ -27,13 +27,8 @@ import {
 } from "./export-svg";
 import { measureChartExportLayer } from "./export-layer";
 
-/** `ChartFrame`'s `onExport` (RM-042; RM-117 adds the resolved `request`). */
-export type ChartFrameExportHandler = (
-  kind: ChartExportKind,
-  blob: Blob,
-  filename: string,
-  request: Required<ChartExportRequest>,
-) => void;
+/** `ChartFrame`'s `onExport` (RM-042): the built file, routed to the caller. */
+export type ChartFrameExportHandler = (kind: ChartExportKind, blob: Blob, filename: string) => void;
 
 /** "Chart: Author" — the byline a frame's footer opens with (RM-117). */
 export interface ChartFrameByline {
@@ -304,7 +299,6 @@ export function ChartFrameProvider({
         backgroundColor,
         layer,
         scale: request?.scale ?? scale ?? 2,
-        plain,
         onExport,
       };
     },
