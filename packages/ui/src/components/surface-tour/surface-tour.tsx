@@ -381,7 +381,7 @@ export const SurfaceTour = forwardRef<HTMLElement, SurfaceTourProps>(function Su
         <div
           data-slot="surface-tour-tabs"
           className={cn(
-            "sticky z-20 -mx-2 bg-background px-2 py-2",
+            "sticky z-20 bg-background py-2",
             // Overflow affordance on narrow screens: the strip scrolls, the end edge fades.
             "max-md:after:pointer-events-none max-md:after:absolute max-md:after:inset-y-0 max-md:after:end-0 max-md:after:w-10 max-md:after:from-background ltr:max-md:after:bg-linear-to-l rtl:max-md:after:bg-linear-to-r",
           )}

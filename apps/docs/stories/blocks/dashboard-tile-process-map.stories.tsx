@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
-import { expect, userEvent } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import type { DashboardSpec } from "@elabs-ai/components-charts/dashboard";
 import { DashboardProvider, DashboardSheet } from "@elabs-ai/components-charts/dashboard";
 import { generateSyntheticLog } from "@elabs-ai/components-process/core";
@@ -51,7 +51,8 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const nodes = () =>
       canvasElement.querySelectorAll('[data-slot="dashboard-tile-process-map"] .react-flow__node');
-    await expect(nodes().length).toBeGreaterThan(0);
+    // The flow canvas lays out after mount; wait for its nodes instead of reading them at once.
+    await waitFor(() => expect(nodes().length).toBeGreaterThan(0));
 
     const first = nodes()[0] as HTMLElement;
     await userEvent.click(first);
