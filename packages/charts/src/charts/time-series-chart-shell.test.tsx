@@ -34,8 +34,20 @@
  * `Line`) where a test needs to assert on rendered label text.
  */
 
-import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// One mutable reduced-motion switch (the `line-chart.test.tsx` /
+// `chart-reveal-clip.test.tsx` pattern). Defaults to `false`, so every other
+// test here runs on the normal (real motion.animate()) path; only the
+// mid-reveal describe block below flips it, to sidestep a `motion/react`
+// frame-loop/fake-timers interaction (see that block's comment).
+const motionState = vi.hoisted(() => ({ reduced: false as boolean | null }));
+
+vi.mock("motion/react", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () => motionState.reduced,
+}));
 
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders.
@@ -610,4 +622,133 @@ describe("legend `hiddenKeys` (RM-118) recomputes the rendered y-axis domain (va
     // The pinned domain never moves, toggle or not.
     expect(yLabels(container)).toEqual(before);
   });
+});
+
+// RM-118 validator FAIL 1a, round 2: the previous describe block's tests all
+// pass `animationDuration={0}`/`yDomainTweenDuration={0}`, which sidesteps the
+// real bug entirely — a toggle that lands while `chartPhase` is still
+// `"revealing"` (the DEFAULT `animationDuration` is 1100ms) is lost for good.
+// `useAnimatedYDomains`'s `hiddenKeysSignature` effect used to only react
+// once `chartPhase === "ready"`; while `"revealing"`, its old guard
+// (`if (chartPhase !== "ready") { prevHiddenKeysSignatureRef.current =
+// hiddenKeysSignature; return; }`) kept the "previous" ref in lockstep with
+// the CURRENT signature, so by the time the phase-transition effect finally
+// snapped to `"ready"`, the hiddenKeysSignature effect saw no delta and never
+// fired for that toggle — the chart's ticks stayed visibly frozen at the
+// pre-toggle domain for the rest of the reveal (up to `animationDuration`),
+// only self-correcting once "revealing" happened to hand off to "ready".
+// Fixed by widening the effect's gate to react during every phase that
+// already renders live ticks (`"ready"`, `"revealing"`, `"gridTweenReady"`),
+// not only once the phase has fully settled.
+//
+// The discriminating check is the t=900 snapshot below, taken well inside
+// the 1100ms reveal (`phases.at(-1)` is asserted to still be `"revealing"`
+// at that point). A test that only checks the FINAL state after a long wait
+// cannot tell "reacted immediately" from "eventually self-corrected at the
+// revealing→ready transition" — both look identical after the fact. Run
+// against the pre-fix source (`chartPhase !== "ready"` gate restored), the
+// t=900 assertion below fails: ticks are still `["0","20","40","60","80",
+// "100","120"]` (the pre-toggle, both-series domain) instead of the
+// shrunk `["0","5","10","15","20"]`. Reproduced with the DEFAULT timings and
+// `vi.useFakeTimers()` (no `waitFor` on real timers).
+describe("legend `hiddenKeys` (RM-118) recomputes even when toggled mid-reveal (validator FAIL 1a, default timings)", () => {
+  function FakeSeries(_props: { dataKey: string }) {
+    return null;
+  }
+  FakeSeries.displayName = "FakeSeries";
+
+  // "b" is the max series (10/20 vs 90/100) and drives the top tick.
+  const twoSeriesData = [
+    { date: new Date(2024, 0, 1), a: 10, b: 100 },
+    { date: new Date(2024, 0, 2), a: 20, b: 90 },
+  ];
+
+  function yLabels(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('[data-slot="y-axis"] span')].map(
+      (node) => node.textContent ?? "",
+    );
+  }
+
+  // `motion.animate()` (real, not `duration:0`) runs a persistent,
+  // module-level requestAnimationFrame loop that does not hand off cleanly
+  // across per-test fake-timer instances (confirmed empirically: whichever
+  // fake-timers-plus-real-duration test runs first in a given process spuriously
+  // reproduces the pre-fix symptom below — ticks frozen through the whole
+  // "revealing" window — even against the FIXED source; a test-isolation
+  // artifact of the rAF loop, not a product bug). This block's actual subject
+  // is the effect's PHASE GATE (does it react to `hiddenKeysSignature` during
+  // "revealing", not only once "ready"), which does not need the animated
+  // tween itself — `reducedMotion` takes the `snapDomains` branch instead of
+  // `animate()`, so the assertion is deterministic and order-independent
+  // while the reveal timing (a plain `window.setTimeout`, unaffected by
+  // `motion/react`) still runs on fake timers.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    motionState.reduced = true;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    motionState.reduced = false;
+  });
+
+  it.each([
+    ["LineChart", LineChart],
+    ["AreaChart", AreaChart],
+  ] as const)(
+    "%s: a toggle ~200ms into the default 1100ms reveal shrinks the ticks immediately, not only once ready",
+    (_name, Chart) => {
+      const phases: string[] = [];
+      const { container } = render(
+        <Chart
+          data={twoSeriesData}
+          legend={{ interactive: "toggle" }}
+          onPhaseChange={(p) => phases.push(p)}
+          xDataKey="date"
+        >
+          <FakeSeries dataKey="a" />
+          <FakeSeries dataKey="b" />
+          <YAxis />
+        </Chart>,
+      );
+
+      const before = yLabels(container);
+      expect(before.length).toBeGreaterThan(0);
+      const topBefore = Number(before.at(-1));
+
+      // Toggle "b" (the max series) ~200ms into the reveal — well before the
+      // default `animationDuration` (1100ms) settles into `"ready"`.
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+      expect(buttons).toHaveLength(2);
+      fireEvent.click(buttons[1] as HTMLButtonElement); // "b" — the max series
+
+      // Still mid-reveal, 700ms later (t=900, well short of the 1100ms
+      // settle) — the discriminating assertion. Before the fix, this stayed
+      // frozen at `topBefore` until the phase transition to "ready" happened
+      // to bail it out; after the fix, it reacts the moment the signature
+      // changes, independent of the phase settling.
+      act(() => {
+        vi.advanceTimersByTime(700);
+      });
+      expect(phases.at(-1)).toBe("revealing");
+      expect(Number(yLabels(container).at(-1))).toBeLessThan(topBefore);
+
+      // Past the reveal (1100ms) — steady state stays correct, and
+      // re-showing restores the original domain.
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+      expect(phases.at(-1)).toBe("ready");
+      expect(Number(yLabels(container).at(-1))).toBeLessThan(topBefore);
+
+      fireEvent.click(buttons[1] as HTMLButtonElement);
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+      expect(yLabels(container)).toEqual(before);
+    },
+  );
 });

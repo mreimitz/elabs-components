@@ -237,10 +237,29 @@ export function useAnimatedYDomains({
   // destination/tween machinery as the brush path just above. Showing a
   // series again restores the original signature (`""`, or the prior sorted
   // list), which re-fires this exactly the same way — same existing tween.
+  //
+  // Gating this on `chartPhase === "ready"` alone (the original FAIL 1a fix)
+  // left a real window open: a toggle that lands while the chart is still
+  // `"revealing"` (the up-to-`animationDuration`, default 1100ms, entrance
+  // animation every mount plays) or `"gridTweenReady"` (the loading→ready
+  // domain morph, e.g. a reveal triggered by newly-arrived data) updated
+  // `prevHiddenKeysSignatureRef` WITHOUT tweening — so by the time
+  // `chartPhase` actually reached `"ready"`, the ref already matched the
+  // current signature and this effect fired as a no-op. The chart's ticks
+  // stayed frozen at the pre-toggle domain for the rest of the reveal, only
+  // self-correcting (via the phase-transition effect above, which always
+  // snaps to the LIVE `targetRef.current`) once "revealing"/"gridTweenReady"
+  // finally hands off to "ready" — a real user toggling within that window
+  // saw a stuck axis until the animation happened to finish. React during
+  // every phase that already renders `targetByAxis`-derived ticks instead of
+  // the loading skeleton (`"ready"`, `"revealing"`, `"gridTweenReady"`), not
+  // only once the phase has fully settled.
+  const isLiveDomainPhase =
+    chartPhase === "ready" || chartPhase === "revealing" || chartPhase === "gridTweenReady";
   const prevHiddenKeysSignatureRef = useRef(hiddenKeysSignature);
 
   useEffect(() => {
-    if (chartPhase !== "ready") {
+    if (!isLiveDomainPhase) {
       prevHiddenKeysSignatureRef.current = hiddenKeysSignature;
       return;
     }
@@ -261,7 +280,7 @@ export function useAnimatedYDomains({
     });
 
     return () => control?.stop();
-  }, [chartPhase, durationMs, enabled, reducedMotion, hiddenKeysSignature]);
+  }, [isLiveDomainPhase, durationMs, enabled, reducedMotion, hiddenKeysSignature]);
 
   return animatedByAxis;
 }
