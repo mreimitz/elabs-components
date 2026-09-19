@@ -70,5 +70,9 @@ export const SwitchHost: Story = {
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(await body.findByRole("menuitemradio", { name: "Cursor" }));
     await waitFor(() => expect(canvas.getByText(HOSTS[1]!.command)).toBeInTheDocument());
+    // The menu hides the rest of the page from assistive tech while it is open. Wait for it to
+    // close fully, so the post-play axe check sees the page a user sees, not the exit frame.
+    await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
+    await waitFor(() => expect(canvasElement.closest('[aria-hidden="true"]')).toBeNull());
   },
 };
