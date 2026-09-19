@@ -776,10 +776,12 @@ function renderChart(
           value: numberAt(row, valueKey),
           // Same classifier the `waterfall` rule used to recognise the shape.
           kind: readsAsTotalRow(label) ? "total" : "step",
-          // RM-122 `subtotalBy`: carry the row's own group field through so
-          // `WaterfallChart subtotalBy` (reading it generically off every
-          // datum) can group by it — a no-op when `spec.subtotalBy` is unset.
-          ...(spec.subtotalBy ? { [spec.subtotalBy]: row[spec.subtotalBy] } : null),
+          // RM-122: `spec.groupBy` (the one shared grouping field, D-rules
+          // "one ChartSpec field per concept") carries the row's own group
+          // value through so `WaterfallChart subtotalBy` — reading it
+          // generically off every datum — can group by it. A no-op when
+          // `spec.groupBy` is unset.
+          ...(spec.groupBy ? { [spec.groupBy]: row[spec.groupBy] } : null),
         };
       });
       // `spec.sort` is `BarSort | DumbbellSortBy | WaterfallSort` (see
@@ -796,7 +798,7 @@ function renderChart(
           plotHeight={plotHeight}
           orientation={orientation ?? "vertical"}
           sort={waterfallSort}
-          subtotalBy={spec.subtotalBy}
+          subtotalBy={spec.groupBy}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}

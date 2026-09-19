@@ -343,7 +343,10 @@ export interface ChartSpec {
    * before handing it to a component's own `sort`/`sortBy` prop.
    */
   sort?: BarSort | DumbbellSortBy | WaterfallSort;
-  /** Gather rows by this column, with a header per group — `BarChart` (RM-113) and `DumbbellChart` (RM-116) both read this. */
+  /** Gather rows by this column, with a header per group — `BarChart`
+   * (RM-113) and `DumbbellChart` (RM-116) both read this; waterfall
+   * (`type: "waterfall"`, RM-122): a subtotal after each group, mapped to
+   * `WaterfallChart subtotalBy`. */
   groupBy?: string;
   /**
    * Colour marks by another column (categorical ≤ 6 hues, or a sequential /
@@ -362,10 +365,6 @@ export interface ChartSpec {
    * `"runningTotals"` (every row's value is the running total at that row,
    * converted once). See `WaterfallChart dataFormat`. */
   dataFormat?: WaterfallDataFormat;
-  /** `type: "waterfall"` only: auto-inserts a subtotal checkpoint after each
-   * run of rows sharing this row field's value. See `WaterfallChart
-   * subtotalBy`. */
-  subtotalBy?: string;
   /** `type: "waterfall"` only: drops the zero baseline when a checkpoint
    * sits far above the steps' own swing, drawing totals as points instead of
    * bars. See `WaterfallChart zoomToDifferences`. Default `false`. */
