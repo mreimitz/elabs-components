@@ -46,6 +46,7 @@ import {
 import { indexStoryDocsPages } from "../packages/cli/lib/story-ids.mjs";
 import { handleMessage, LOCAL_ONLY_TOOLS, SERVER_INFO, TOOLS } from "../packages/cli/lib/mcp.mjs";
 import { HOSTED_MCP_URL } from "../packages/cli/lib/render-docs.mjs";
+import { HOME_MCP_OPTIONS } from "../apps/home/lib/mcp-site-options.mjs";
 
 export const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 export const OUT_DIR = join(REPO_ROOT, "apps/home/content/generated");
@@ -374,11 +375,13 @@ export function buildWellKnownMcp(cli) {
 // ─────────────────────── agent-loop-recorded.json (RM-099) ────────────────────
 /**
  * The "Ask your agent" loop's offline fallback (RM-099, wave-3 ruling 12): for every call in
- * the hand-authored prompt map `apps/home/content/agent-loop.json`, the answer a local
- * `brand-ui mcp` gives — produced in-process through the SAME `handleMessage` the hosted
- * `/mcp` route wraps, with `hosted: true` so the tool set matches the site's. Regenerated
- * with the manifest, so the recorded responses never drift from what the live server says.
- * Output: `{ [promptId]: [{ tool, args, result }] }`, calls in map order.
+ * the hand-authored prompt map `apps/home/content/agent-loop.json`, the answer the SITE's own
+ * `/mcp` gives — produced in-process through the SAME `handleMessage` that route wraps, with
+ * the SAME `HOME_MCP_OPTIONS` (`hosted: true, siteRoutes: true`) `apps/home/app/mcp/route.ts`
+ * passes to `createMcpHttpHandler`, imported from the one shared module so the two can never
+ * diverge (wave-3 ruling 8, W3-M1). Regenerated with the manifest, so the recorded responses
+ * never drift from what the live server says. Output: `{ [promptId]: [{ tool, args, result }] }`,
+ * calls in map order.
  */
 export function buildAgentLoopRecorded(manifest, map = json("apps/home/content/agent-loop.json")) {
   return Object.fromEntries(
@@ -392,7 +395,7 @@ export function buildAgentLoopRecorded(manifest, map = json("apps/home/content/a
             method: "tools/call",
             params: { name: tool, arguments: args },
           },
-          { manifest, hosted: true },
+          { manifest, ...HOME_MCP_OPTIONS },
         );
         if (!res || res.error) {
           throw new Error(
