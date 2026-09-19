@@ -249,6 +249,7 @@
   "StatsBand": "marketing-statsband--docs",
   "StatusBadge": "core-statusbadge--docs",
   "Suggestions": "ai-suggestion--docs",
+  "SurfaceTour": "layout-surfacetour--docs",
   "Switch": "forms-switch--docs",
   "Table": "data-table--docs",
   "TableTileDemo": "dashboard-recipes-tile-table--docs",

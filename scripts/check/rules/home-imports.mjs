@@ -1,7 +1,7 @@
 /**
  * home-imports — the website (`apps/home`, ADR 0038) is built only from the library. Every import
  * in apps/home/**\/*.{ts,tsx} resolves to react, react-dom, next, motion, @vercel/analytics,
- * `@elabs-ai/*`, a relative path, or a copy-own registry block copied under
+ * lucide-react, `@elabs-ai/*`, a relative path, or a copy-own registry block copied under
  * `apps/home/components/blocks/` — and such a copy keeps its
  * `// registry: <name> — copied <YYYY-MM-DD>` provenance header. Comments are ignored.
  */
@@ -14,6 +14,8 @@ export const HOME_ALLOWED_IMPORTS = [
   /^next(?:\/|$)/,
   /^motion(?:\/|$)/,
   /^@vercel\/analytics(?:\/|$)/,
+  // maintainer 2026-09-19: lucide-react allowed
+  /^lucide-react(?:\/|$)/,
   /^@elabs-ai\//,
 ];
 const BLOCKS_DIR = "apps/home/components/blocks/";
@@ -40,7 +42,7 @@ const home = (body, file = "apps/home/app/page.tsx") => ({ files: { [file]: body
 export default {
   id: "home-imports",
   scope: "packages",
-  doc: "Build the website (`apps/home`, ADR 0038) only from the library: import react, react-dom, next, motion, @vercel/analytics, `@elabs-ai/*` or a relative path; a registry block copied under `apps/home/components/blocks/` keeps its `// registry: <name> — copied <YYYY-MM-DD>` header.",
+  doc: "Build the website (`apps/home`, ADR 0038) only from the library: import react, react-dom, next, motion, @vercel/analytics, lucide-react, `@elabs-ai/*` or a relative path; a registry block copied under `apps/home/components/blocks/` keeps its `// registry: <name> — copied <YYYY-MM-DD>` header.",
   baseline: "none",
   run(ctx) {
     const out = [];
@@ -64,7 +66,7 @@ export default {
   fixtures: {
     pass: [
       home(
-        'import type { Metadata } from "next";\nimport Script from "next/script";\nimport { useState } from "react";\nimport { createPortal } from "react-dom";\nimport { motion } from "motion/react";\nimport { Analytics } from "@vercel/analytics/next";\nimport { Button } from "@elabs-ai/components-ui";\nimport "./globals.css";\nimport { Section } from "../components/section";',
+        'import type { Metadata } from "next";\nimport Script from "next/script";\nimport { useState } from "react";\nimport { createPortal } from "react-dom";\nimport { motion } from "motion/react";\nimport { Analytics } from "@vercel/analytics/next";\nimport { Bell } from "lucide-react";\nimport { Button } from "@elabs-ai/components-ui";\nimport "./globals.css";\nimport { Section } from "../components/section";',
       ),
       home(
         'import manifest from "../../../../brand-ui.manifest.json";',

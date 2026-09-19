@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 392 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 396 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -109,6 +109,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AccordionItem | component |  | `@elabs-ai/components-ui` |  |
 | AccordionTrigger | component |  | `@elabs-ai/components-ui` |  |
 | AdvancedGroup | component |  | `@elabs-ai/components-ui` |  |
+| AffordanceHint | component |  | `@elabs-ai/components-ui` |  |
 | Alert | component | variant=default*\|info\|success\|warning\|destructive | `@elabs-ai/components-ui` |  |
 | AlertDescription | component |  | `@elabs-ai/components-ui` |  |
 | AlertDialog | component |  | `@elabs-ai/components-ui` | Confirmation overlay for destructive / irreversible actions — friction proportional to consequence. |
@@ -209,6 +210,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DateRangePicker | component |  | `@elabs-ai/components-ui` |  |
 | DEFAULT_COMMAND_CHIP_LABELS | component |  | `@elabs-ai/components-ui` |  |
 | DEFAULT_MESSAGES | component |  | `@elabs-ai/components-ui` |  |
+| DEFAULT_SURFACE_TOUR_ACTIONS_LABELS | component |  | `@elabs-ai/components-ui` |  |
 | DEFAULT_THEME_FAMILY_SWITCH_LABELS | component |  | `@elabs-ai/components-ui` |  |
 | Descriptions | component |  | `@elabs-ai/components-ui` |  |
 | DescriptionsItem | component |  | `@elabs-ai/components-ui` |  |
@@ -446,6 +448,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | StatusIcon | component |  | `@elabs-ai/components-ui` |  |
 | STREAMDOWN_TRANSLATION_KEYS | component |  | `@elabs-ai/components-ui` |  |
 | SuccessIllustration | component |  | `@elabs-ai/components-ui` |  |
+| SurfaceTour | component |  | `@elabs-ai/components-ui` |  |
+| SurfaceTourActions | component |  | `@elabs-ai/components-ui` |  |
 | Switch | component |  | `@elabs-ai/components-ui` | Immediate on/off setting toggle (applies on change, not on submit). |
 | Table | component |  | `@elabs-ai/components-ui` |  |
 | TableBody | component |  | `@elabs-ai/components-ui` |  |
