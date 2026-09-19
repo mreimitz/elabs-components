@@ -1,6 +1,6 @@
 {
   // Start/stop tasks backing the debug profiles in launch.json.
-  // The two dev-server tasks are `isBackground` with a ready-matcher so a Chrome
+  // The dev-server tasks are `isBackground` with a ready-matcher so a Chrome
   // debug launch waits until the server is actually up before attaching.
   "version": "2.0.0",
   "tasks": [
@@ -48,10 +48,46 @@
       "presentation": { "reveal": "silent", "panel": "shared", "close": true }
     },
     {
-      "label": "stop: all apps",
-      "detail": "Kill the Storybook (:6006) dev server and its task wrapper",
+      "label": "dev: home",
+      "detail": "Start the website (apps/home) on http://localhost:3000, or reuse one already running from this checkout",
       "type": "shell",
-      "command": "pkill -f 'start-storybook\\.mjs' ; npx --yes kill-port 6006",
+      // Same handshake as "dev: storybook": the wrapper prints its own markers. See the
+      // header of .vscode/start-home.mjs for why Next's "✓ Ready" line is not trusted.
+      "command": "node .vscode/start-home.mjs",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "home",
+        "source": "home",
+        "fileLocation": "absolute",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "__HOME_BOOT__",
+          "endsPattern": "__HOME_READY__"
+        }
+      },
+      "presentation": {
+        "group": "apps",
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "stop: home",
+      "detail": "Kill the website server on :3000 AND the task wrapper that started it",
+      "type": "shell",
+      // Kill the wrapper too, for the same stale-task reason as "stop: storybook".
+      "command": "pkill -f 'start-home\\.mjs' ; npx --yes kill-port 3000",
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared", "close": true }
+    },
+    {
+      "label": "stop: all apps",
+      "detail": "Kill the website (:3000) and Storybook (:6006) dev servers and their task wrappers",
+      "type": "shell",
+      "command": "pkill -f 'start-(home|storybook)\\.mjs' ; npx --yes kill-port 3000 6006",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "shared", "close": false }
     }

@@ -1,12 +1,10 @@
 /* Qlik Dark — brand-ui downloadable theme family "qlik" (see README.md).
- * Values: Qlik Cloud "Sprout" design tokens measured live on the Analytics hub (qlik-dark),
- * chart sequence + accents from the Qlik Brand & Logo Guidelines (March 2026).
- * Hex sources are listed in README.md; the oklch() literals below are what the engine reads. */
+ * Values: Qlik Cloud "Sprout" design tokens, `[data-qlik-theme="qlik-dark"]` from the public
+ * npm package @qlik/design-tokens 1.4.2 (#262626 ground, #333 surfaces, #3c3c3c floating,
+ * #4ec574 primary, #5daef1 focus/link). Same shape rules as Qlik Bright. */
 [data-theme="qlik-dark"] {
   color-scheme: dark;
   --radius-base: 0.25rem;
-  /* Product type scale: 24/32 page titles, 20/26 section titles, and no negative tracking —
-     the engine tracking is tuned for Inter, not Source Sans. Body stays 14/20. */
   --type-size-display: 1.5rem;
   --type-leading-display: 2rem;
   --type-tracking-display: 0em;
@@ -46,18 +44,18 @@
   --canvas-grid: oklch(0.337 0 0);
   --card: oklch(0.321 0 0);
   --card-foreground: oklch(1 0 0);
-  --chart-1: oklch(0.736 0.158 151);
-  --chart-10: oklch(0.64 0.216 353.6);
-  --chart-11: oklch(0.801 0.091 244.2);
-  --chart-12: oklch(0.675 0.187 7.8);
-  --chart-2: oklch(0.76 0.012 217.6);
-  --chart-3: oklch(0.641 0.058 227);
-  --chart-4: oklch(0.696 0.121 187.1);
-  --chart-5: oklch(0.772 0.131 191);
-  --chart-6: oklch(0.7 0.108 169.8);
-  --chart-7: oklch(0.722 0.104 322);
-  --chart-8: oklch(0.664 0.012 226.1);
-  --chart-9: oklch(0.831 0.145 74.2);
+  --chart-1: oklch(0.772 0.131 191);
+  --chart-10: oklch(0.876 0.111 77.3);
+  --chart-11: oklch(0.432 0.15 349);
+  --chart-12: oklch(0.725 0 0);
+  --chart-2: oklch(0.728 0.126 245.7);
+  --chart-3: oklch(0.675 0.187 7.8);
+  --chart-4: oklch(0.831 0.145 74.2);
+  --chart-5: oklch(0.801 0.091 244.2);
+  --chart-6: oklch(0.641 0.058 227);
+  --chart-7: oklch(0.736 0.158 151);
+  --chart-8: oklch(0.64 0.216 353.6);
+  --chart-9: oklch(0.696 0.121 187.1);
   --chart-accent: var(--chart-1);
   --chart-ink-on-dark: oklch(1 0 0);
   --chart-ink-on-light: oklch(0 0 0);
@@ -71,12 +69,12 @@
   --chart-div-pos-2: oklch(0.771 0.15 150.1);
   --chart-foreground: var(--foreground);
   --chart-foreground-muted: oklch(0.767 0 0);
-  --chart-grid: oklch(0.439 0 0);
+  --chart-grid: oklch(1 0 0 / 0.12);
   --chart-indicator-color: var(--chart-1);
-  --chart-indicator-secondary-color: var(--chart-3);
+  --chart-indicator-secondary-color: var(--chart-2);
   --chart-label: var(--foreground);
   --chart-line-primary: var(--chart-1);
-  --chart-line-secondary: var(--chart-3);
+  --chart-line-secondary: var(--chart-2);
   --chart-marker-background: var(--card);
   --chart-marker-badge-background: var(--primary);
   --chart-marker-badge-foreground: var(--primary-foreground);
@@ -118,8 +116,8 @@
   --code-tag: oklch(0.766 0.132 347.9);
   --code-type: oklch(0.899 0.032 295.7);
   --destructive: oklch(0.675 0.187 7.8);
-  --destructive-foreground: oklch(0.321 0 0);
-  --destructive-text: oklch(0.729 0.151 5.3);
+  --destructive-foreground: oklch(0.269 0 0);
+  --destructive-text: oklch(0.835 0.151 5.3);
   --flow-edge: oklch(0.801 0.091 244.2);
   --flow-edge-strong: oklch(0.801 0.091 244.2);
   --flow-edge-weak: oklch(0.637 0 0);
@@ -144,7 +142,7 @@
   --info: oklch(0.728 0.126 245.7);
   --info-foreground: oklch(0.321 0 0);
   --info-text: oklch(0.801 0.091 244.2);
-  --input: oklch(0.637 0 0);
+  --input: oklch(1 0 0 / 0.15);
   --legend-foreground: var(--foreground);
   --legend-muted: var(--muted);
   --legend-muted-foreground: var(--muted-foreground);
@@ -163,15 +161,15 @@
   --secondary: oklch(0.398 0 0);
   --secondary-foreground: oklch(1 0 0);
   --shadow-color: oklch(0 0 0);
-  --shadow-ring-color: oklch(1 0 0 / 0.1);
-  --shadow-strength: 2.5;
+  --shadow-ring-color: oklch(1 0 0 / 0.06);
+  --shadow-strength: 1;
   --sidebar: oklch(0.269 0 0);
-  --sidebar-accent: oklch(0.356 0 0);
+  --sidebar-accent: oklch(0.371 0 0);
   --sidebar-accent-foreground: var(--accent-foreground);
   --sidebar-border: oklch(0.356 0 0);
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-muted-foreground: oklch(0.851 0 0);
-  --sidebar-primary: var(--sidebar-foreground);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-ring: var(--ring);
   --success: oklch(0.736 0.158 151);
@@ -229,8 +227,44 @@
   --scrim: oklch(0 0 0 / 0.2);
   --table-header-weight: 600;
   --table-stripe: transparent;
-  --table-row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --table-row-hover: color-mix(in oklab, var(--foreground) 8%, transparent);
   --table-row-rule-width: 1px;
   --icon-stroke: 1.5;
   --header-size: 12;
+  --sidebar-indicator: var(--sidebar-primary);
+  --sidebar-indicator-width: 0.125rem;
+  --sidebar-indicator-radius: 9999px;
+  --sidebar-indicator-inset: 0rem;
+  --shell-secondary-width: 16rem;
+  --button-outline-border: var(--border-strong);
+  --secondary-border: transparent;
+  --secondary-text: var(--secondary-foreground);
+  --table-header-background: var(--background);
+  --table-header-foreground: var(--foreground);
+  --table-header-size: 1em;
+  --table-header-transform: none;
+  --table-header-tracking: var(--type-tracking-body);
+  --card-shadow: none;
+  --card-border: var(--border);
+  --card-title-leading: 1.3;
+  --popover-shadow: var(--shadow-ring-md);
+  --dialog-shadow: var(--shadow-ring-lg);
+  --badge-radius: 0.25rem;
+  --badge-appearance: auto;
+  --tabs-variant: underline;
+  --tabs-indicator-width: 2px;
+  --tabs-active-weight: 600;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 0px;
+  --input-focus-border: var(--ring);
+  --icon-fill: outline;
+  --selection: var(--accent);
+  --selection-foreground: var(--accent-foreground);
+  --selection-muted: color-mix(in oklab, var(--accent) 50%, transparent);
+  --type-weight-display: 600;
+  --type-weight-title: 600;
+  --type-size-subtitle: 1rem;
+  --type-leading-subtitle: 1.25rem;
+  --type-weight-subtitle: 600;
+  --type-tracking-eyebrow: 0.04em;
 }

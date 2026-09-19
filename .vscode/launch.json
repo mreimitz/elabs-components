@@ -1,19 +1,31 @@
 {
-  // Debug profiles for each app. This repo ships ONE web app — Storybook
-  // (apps/docs). It launches Chrome with the debugger attached (set breakpoints
-  // in .tsx source via source maps):
+  // Debug profiles for the two web apps: the website (apps/home, Next.js on :3000)
+  // and Storybook (apps/docs, on :6006). Each launches Chrome with the debugger
+  // attached (set breakpoints in .tsx source via source maps):
   //   - F5 / "Run" runs the `preLaunchTask` (starts the dev server, waits until
   //     it's ready) then opens the app in a debuggable Chrome.
   //   - Stop (Shift+F5) runs the `postDebugTask` (kills the dev server's port).
   // Chrome must be installed; swap "chrome" for "msedge" to use Edge instead.
   //
-  // There is deliberately NO compound and no Playground/Workbench profile: those
-  // apps do not exist here. A profile pointing at a missing app fails twice over —
-  // its preLaunchTask aborts (`Command "playground" not found`) and Chrome then
-  // reports "Unable to attach to browser" against the dead port, which reads as
-  // "Storybook won't launch" even while Storybook is up on :6006.
+  // "🏠 Home + 📕 Storybook" starts both, each in its own Chrome tab. Storybook gets
+  // its own tab because the website's /storybook/ links cannot show a local
+  // Storybook dev server: its story iframe loads absolute Vite URLs (/@vite/client,
+  // …) that 404 under the /storybook/ prefix. Those links keep pointing at the
+  // published Storybook.
   "version": "0.2.0",
   "configurations": [
+    {
+      "name": "🏠 Home (website)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      // Turbopack source maps use absolute file:// paths, so breakpoints bind
+      // without sourceMapPathOverrides.
+      "webRoot": "${workspaceFolder}/apps/home",
+      "preLaunchTask": "dev: home",
+      "postDebugTask": "stop: home",
+      "presentation": { "group": "1_apps", "order": 1 }
+    },
     {
       "name": "📕 Storybook (Docs)",
       "type": "chrome",
@@ -26,6 +38,15 @@
       "preLaunchTask": "dev: storybook",
       "postDebugTask": "stop: storybook",
       "presentation": { "group": "1_apps", "order": 2 }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "🏠 Home + 📕 Storybook",
+      "configurations": ["🏠 Home (website)", "📕 Storybook (Docs)"],
+      // Stopping either tab stops both sessions (and each one's postDebugTask).
+      "stopAll": true,
+      "presentation": { "group": "0_all", "order": 0 }
     }
   ]
 }

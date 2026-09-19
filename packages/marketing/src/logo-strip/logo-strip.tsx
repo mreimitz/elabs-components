@@ -28,7 +28,7 @@ export function LogoStrip({
 
   return (
     <div className={cn("space-y-5 text-center", className)}>
-      {caption ? <p className="text-meta uppercase text-muted-foreground">{caption}</p> : null}
+      {caption ? <p className="text-eyebrow uppercase text-muted-foreground">{caption}</p> : null}
       {animate ? (
         <RevealGroup appear="fade" speed="base" staggerMs={40} className={rowClassName}>
           {items}

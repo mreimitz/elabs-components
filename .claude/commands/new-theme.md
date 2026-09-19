@@ -15,8 +15,9 @@ defineTheme({…})]}>`, and assert coverage against `THEME_TOKEN_NAMES` — the
 recipe is `docs/CONSUMING.md` §5.1.
 
 **Default path — a downloadable family** (ADR 0036): `pnpm theme:new <slug>
---label "<Label>" --hue <0-360> [--only light|dark]` scaffolds `themes/<slug>/`
-from the reference themes. Tune the values, then `pnpm check --rule community-themes`
+--label "<Label>" --hue <0-360> [--only light|dark] [--preset flat]` scaffolds
+`themes/<slug>/` from the reference themes (`--preset flat` starts from the flatter,
+denser SaaS shape — see `themes/README.md`). Tune the values, then `pnpm check --rule community-themes`
 (every token, AA ink pairs, `theme.ts` agrees with the CSS) and `pnpm gen`
 (Storybook's Theme/Mode toolbar picks it up). Add a row to `themes/README.md`.
 Stop here unless the theme should SHIP from `@elabs-ai/components-tokens`.

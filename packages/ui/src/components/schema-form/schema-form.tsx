@@ -1316,7 +1316,7 @@ export const SchemaFormTitle = forwardRef<HTMLParagraphElement, SchemaFormTitleP
       <p
         ref={ref}
         id={headingId}
-        className={cn("text-subtitle font-semibold text-foreground text-balance", className)}
+        className={cn("text-subtitle text-foreground text-balance", className)}
         {...props}
       >
         {content}

@@ -51,7 +51,7 @@ const metricValueVariants = cva("tabular-nums text-foreground", {
     },
     /* `md` adds nothing (today's rungs); `sm`/`lg` override the size via `cn()`. */
     size: {
-      sm: "text-title font-semibold",
+      sm: "text-title",
       md: "",
       lg: "text-kpi",
     },

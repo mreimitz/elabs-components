@@ -2,96 +2,92 @@
 
 A downloadable theme family for brand-ui — light ("Snowflake Light") and dark ("Snowflake Dark").
 
-Built from Snowflake's public brand guidelines plus observations of snowflake.com. Snowflake
-publishes no dark mode; the dark scheme is derived. Every value below names its source and
-how certain it is:
+Both schemes reproduce **Snowsight** (app.snowflake.com), the product UI, not snowflake.com.
+Snowsight's design-system CSS is served publicly from `app.snowflake.com/static/*.css` and
+carries two token generations — **Balto** (`--base-color-*`, `--nav-*`, `--primary-button-*`,
+`--table-*`) and the current **Stellar** set (`--stellar-color-*`, defined in oklch, with a
+complete `.darkMode` block). Values were read from that CSS on 2026-09-18 and cross-checked
+against docs.snowflake.com screenshots. Certainty per value:
 
-- **guideline** — stated on Snowflake's brand guidelines page.
-- **derived** — computed from a guideline value (hover shades, dark-mode lifts, ramps).
-- **unverified** — taken from a third-party page or read through a summarising web fetch,
-  and not yet confirmed against a raw first-party file. Re-check these before relying on
-  them (see [Verify before public use](#verify-before-public-use)).
+- **token** — a Balto/Stellar value, converted to `oklch()` unchanged.
+- **derived** — computed from token values (contrast lifts, extra chart series, ramps).
 
 The logo is Snowflake's trademark. This theme is for internal work and demos; public use
 needs Snowflake's permission.
 
+## What makes it Snowsight
+
+A **pale-grey `#f7f7f7` left navigation on a white page**, no top bar, blue-tinted greys
+everywhere (`#d5dae4` hairlines, `#5d6a85` secondary ink, `#1e252f` ink), and **royal blue
+`#1a6ce7`** on buttons, links and the active-nav pill — the cyan `#29b5e8` appears only in the
+logo. Selected state is a pale `#d6e6ff` pill with `#085bd7` ink and icon. Controls are 32 px
+with 6 px corners, cards 8 px with a hairline and no shadow, column headers are small caps,
+type is Inter with a mono results grid.
+
 ## What the theme reproduces
 
-| Element                 | Snowflake (light)                                                | Token(s)                                     | Certainty  |
-| ----------------------- | ---------------------------------------------------------------- | -------------------------------------------- | ---------- |
-| Brand / primary         | Snowflake Blue `#29B5E8`                                         | `--primary`, `--ring`, `--chart-1`           | guideline  |
-| Ink on primary          | Winter `#24323D` — white on Snowflake Blue is only 2.37:1        | `--primary-foreground`                       | guideline  |
-| Hover · pressed         | Snowflake Blue at lightness −0.025 / −0.05 (−0.10 fails the ink) | `--primary-hover`, `--primary-active`        | derived    |
-| Body text               | Winter `#24323D`                                                 | `--foreground`, `--sidebar-foreground`       | guideline  |
-| Links, coloured text    | Mid Blue `#11567F`                                               | `--link`, `--primary-text`, `--ring-contour` | guideline  |
-| Page ground             | white tinted toward the brand hue, `oklch(0.985 0.004 235)`      | `--background`                               | derived    |
-| Cards, popovers         | `#FFFFFF`                                                        | `--card`, `--popover`                        | unverified |
-| Muted text              | `#535862`                                                        | `--muted-foreground`                         | unverified |
-| Sidebar, hover wash     | soft blue-grey `#ECF1F5`, recessed below the page                | `--sidebar`, `--accent`                      | unverified |
-| Hairlines · strong rule | brand-tinted greys; Windy City `#8A999E` darkened for 3:1        | `--border`, `--input`, `--border-strong`     | derived    |
-| Radius                  | 8 px                                                             | `--radius-base: 0.5rem`                      | unverified |
-
-Dark: navy grounds on the brand hue (`oklch(0.20 / 0.235 / 0.26 0.02 235)`, sidebar
-`0.17`), Snowflake Blue stays the primary with navy `#042130` ink (unverified), links and
-coloured text `#76D0F1` (unverified), near-white text `oklch(0.96 0.005 235)`.
+| Element                             | Snowsight light · dark                                                                                                                                                                 | Token(s)                                                               | Certainty       |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------- |
+| Page · cards · popovers             | `#ffffff` — `#16181d` · `#1c1f24` · `#23272c`                                                                                                                                          | `--background`, `--card`, `--popover`                                  | token           |
+| Panels · sunken                     | `#fbfbfb` · `#eff0f2` — `#1e252f` · `#0f1216`                                                                                                                                          | `--surface`, `--surface-muted`                                         | token           |
+| Muted fill · filled search          | `#eceef1` (gray-15) — `#293246`                                                                                                                                                        | `--muted`, `--secondary`, `--accent`, `--chat-user`                    | token           |
+| Text · secondary text               | `#1e252f` · `#5d6a85` — `#d7dbe1` · `#bdc4d5`                                                                                                                                          | `--foreground`, `--muted-foreground`                                   | token           |
+| Hairline · strong rule              | `#d5dae4` · `#70819a` (gray-60, for 3:1) — `#293246` · `#5d6a85`                                                                                                                       | `--border`, `--input` · `--border-strong`                              | token · derived |
+| Primary button                      | `#1a6ce7` → `#085bd7` → `#004cbe`, white ink — `#3580f2` → `#5999f8` → `#1a6ce7`, `#0f161e` ink                                                                                        | `--primary*`                                                           | token           |
+| Links · coloured text               | `#2365d1` · `#085bd7` — `#71aaff` · `#86b6fc`                                                                                                                                          | `--link`, `--primary-text`                                             | token           |
+| Focus                               | `#3783ff` — `#5498ff`                                                                                                                                                                  | `--ring`                                                               | token           |
+| Nav                                 | `#f7f7f7`, `#d5dae4` edge, `#d6e6ff` pill with `#085bd7` ink and icon — `#191e24`, `#233554` pill, `#86b6fc` ink                                                                       | `--sidebar*`                                                           | token           |
+| Critical · success · caution · info | `#d3132f` (text `#be3122`) · `#087959` (text `#04785d`) · `#b87c00` with dark ink (text `#8a6000`) · `#2365d1` — dark `#ef405e` · `#1db588` · `#f3be0f` · `#5999f8` with `#0f161e` ink | `--destructive*`, `--success*`, `--warning*`, `--info*`                | token           |
+| Match highlight                     | `#ffedcd`, active `#fccf54` — `#653e03`, active `#dd5f04`                                                                                                                              | `--highlight*`                                                         | token           |
+| Radius                              | 8 px cards, 6 px controls                                                                                                                                                              | `--radius-base: 0.5rem`, `--control-radius: calc(var(--radius) - 2px)` | token           |
+| Controls                            | 32 px, 500 labels, flat white fields                                                                                                                                                   | `--control-size: 8`, `--control-weight: 500`, `--input-shadow: none`   | token           |
+| Tables                              | 600 header, no zebra, 1 px row rule, 7 % row hover                                                                                                                                     | `--table-*`                                                            | token           |
+| Elevation                           | menus `0 0 1px / 0 2px 8px rgba(0,0,0,.1)`, flat cards; dark 40 %                                                                                                                      | `--shadow-strength: 0.6` · `2.5`, `--shadow-ring-color`                | derived         |
+| Scrim                               | `oklch(0.15 0.01 260 / 40%)` · `/ 70%`, no blur                                                                                                                                        | `--overlay`, `--overlay-blur: 0px`                                     | token           |
+| Icons                               | 20 px line icons at 1.5 px                                                                                                                                                             | `--icon-stroke: 1.5`                                                   | token           |
+| SQL editor                          | keyword `#085bd7`, function `#087959`, type `#653e03`, string `#860112`, comment `#5d6a85` — dark `#86b6fc` · `#97f3cf` · `#fccf54` · `#f76a86` · `#70819a`                            | `--code-*`                                                             | token           |
 
 ## Chart palette
 
-`--chart-1…8` follow the guideline palette: Snowflake Blue `#29B5E8`, Valencia Orange
-`#FF9F36`, Mid Blue `#11567F`, First Light `#D45B90`, Star Blue `#71D3DC`, Purple Moon
-`#7D44CF`, Windy City `#8A999E`, Ruby Sky `#3C0045`. `--chart-9…12` are derived variants of
-the same palette (deepened orange and teal, tinted pink and purple).
-
-Dark mode lifts the three series that vanish on navy — Mid Blue, Purple Moon and Ruby Sky —
-and re-derives series 9–12. The sequential ramp is Snowflake Blue; the diverging ramp pairs
-Snowflake Blue with Valencia Orange; the mono ramp is neutral grey tinted toward the brand
-hue. All ramps are derived.
+Balto categorical, light · dark: `#1a6ce7` · `#5999f8`, `#ecb700` · `#f8c52a`, `#51caa5` ·
+`#80e3c1`, `#d3132f` · `#ef405e`, `#7157f4` · `#a797f8`, `#ff7c1d` · `#ffc59c`, `#70ddff` ·
+`#9ce7ff`, `#d45cff` · `#e59cff`; series 9–12 are derived from the same ramps. Sequential is
+the Stellar blue ramp `#c4dcff → #234f99` (reversed in dark); diverging pairs red and blue
+around gray-15; mono is the blue-grey ladder. Gridlines `#eceef1` · `#293246`, axis labels
+`#5d6a85` · `#bdc4d5`.
 
 ## Typography
 
-- `--font-sans`: **Lato** — Snowflake's body face (guideline). Lato is OFL-licensed but is
-  **not shipped** with this theme; it renders where installed, and Inter (shipped by the
-  token engine) is the fallback.
-- `--font-display`: **Texta**, then Lato — Texta is Snowflake's headline face (guideline). It
-  is a commercial typeface and is never shipped; it renders only where licensed and installed.
-- `--font-mono`: Source Code Pro (the engine default).
+- `--font-sans` / `--font-display`: **Inter** (`--themed-font-family-body`), shipped by the
+  token engine. Page titles 20/24 600, section titles 16/20 600, body 14/20; caps labels track
+  `0.02em`.
+- `--font-mono`: Snowsight uses the commercial **Apercu Mono Pro**, which is never shipped; the
+  theme names **Fira Mono** (Snowsight's newer token) then JetBrains Mono and the system stack.
 
 ## Logo
 
-`--brand-logo-mark` is the snowflake "bug" from the snowflake.com footer; `--brand-logo-lockup`
-is the mark with the wordmark (aspect 4.1818), from Wikimedia Commons. Both are all Snowflake
-Blue, so the same image works on light and dark grounds. Both were read through a summarising
-web fetch, not downloaded byte-for-byte — **unverified**.
+`--brand-logo-mark` / `--brand-logo-lockup` are unchanged from the previous version (the
+snowflake bug and the mark + wordmark, all Snowflake Blue `#29b5e8`, aspect 4.1818). They were
+read through a summarising fetch, not downloaded byte-for-byte — replace them with the files
+from Snowflake's brand page before public use.
 
 ## Decisions taken
 
-- Primary stays Snowflake Blue with dark Winter ink (faithful to the guideline) rather than
-  Mid Blue with white ink.
-- Controls keep 8 px product corners, not the marketing site's pill buttons.
-- Lato is not shipped with the theme.
-- The derived navy dark mode ships alongside light.
-
-## Verify before public use
-
-1. Download the official logo files from Snowflake's brand guidelines page and replace both
-   logo tokens.
-2. Confirm the unverified surface values (`--card`, `--muted-foreground`, `--sidebar`,
-   `--accent`, radius, dark `--primary-foreground` and links) against snowflake.com's own
-   stylesheets.
+- Primary is the product's royal blue with white ink, not the brand cyan with dark ink.
+- Page ground is pure white and the nav is grey — the reverse of the earlier version.
+- The dark scheme is Snowsight's own `.darkMode` token set, no longer derived.
+- Snowsight's active nav is a pill with no side bar; brand-ui's sidebar also draws a bar in
+  `--sidebar-primary`, which is set to the pill ink (see the enhancement list in
+  `docs/review/2026-09-18-brand-theme-fidelity-review.md`).
 
 ## Sources
 
-| id  | Source                                                                                                                | Kind                          |
-| --- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| s1  | [snowflake.com home page](https://www.snowflake.com/en/) — fetched without its `<head>`, so no stylesheets            | user link                     |
-| s2  | [Snowflake brand guidelines](https://www.snowflake.com/brand-guidelines/) — palette (hex/RGB/CMYK/Pantone), typefaces | guideline                     |
-| s3  | Web search for Snowflake brand colours                                                                                | search                        |
-| s4  | [shadcn.io Snowflake design summary](https://www.shadcn.io/design/snowflake) — values measured from snowflake.com     | third-party                   |
-| s5  | snowflake.com footer logo mark SVG (`nav-icon-snowflake-bug.svg`)                                                     | first-party, summarised fetch |
-| s6  | [Wikimedia Commons `Snowflake_Logo.svg`](https://upload.wikimedia.org/wikipedia/commons/f/ff/Snowflake_Logo.svg)      | third-party, summarised fetch |
-
-Tried without result: brandfetch.com (403), logotyp.us and select.dev (no colour values or
-SVG), brandcolorcode.com (gave `#00A1D9`, which contradicts the guidelines — ignored).
+| id  | Source                                                                                                                                                                                                                                                                      | Kind                    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| s1  | `https://app.snowflake.com/static/generated-styles-*.css`, `styles-*.css`, `polaris-*.css` (build `main-82973`, 2026-09-18) — Balto + Stellar tokens, light and `.darkMode`                                                                                                 | first-party CSS         |
+| s2  | [Snowsight navigation menu](https://docs.snowflake.com/en/user-guide/ui-snowsight-navigation), [Exploring the Snowsight UI](https://docs.snowflake.com/en/user-guide/ui-snowsight-homepage), [Workspaces](https://docs.snowflake.com/en/user-guide/ui-snowsight/workspaces) | first-party screenshots |
+| s3  | [Getting Started with Snowflake quickstart](https://www.snowflake.com/en/developers/guides/getting-started-with-snowflake/) — worksheet, databases list                                                                                                                     | first-party screenshots |
+| s4  | [Snowflake brand guidelines](https://www.snowflake.com/brand-guidelines/) — logo colour                                                                                                                                                                                     | guideline               |
 
 ## Use it
 

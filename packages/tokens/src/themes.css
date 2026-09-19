@@ -231,6 +231,66 @@
    reach for semantic tokens, not `dark:`. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* THEME-PICKED DEFAULTS — a keyword token chooses a component's treatment when
+   the caller did not. Each variant fires in two cases: the element carries the
+   explicit attribute (the caller's prop), OR it carries none and the keyword
+   token resolves to that value on its parent (a container style query; every
+   element is a style container, and the token inherits from the theme block).
+   A browser without style queries renders the token default — today's look.
+
+   `badge-*`  — `appearance` on Badge/StatusBadge (`data-appearance`), token
+                `--badge-appearance`. `auto` (the default) matches none of them.
+   `tabs-underline` — TabsList/TabsTrigger with no `variant` (`data-variant`
+                absent), token `--tabs-variant`. An explicit variant never
+                matches: its own cva classes already carry the treatment. */
+@custom-variant badge-tint {
+  &[data-appearance="tint"] {
+    @slot;
+  }
+  &:not([data-appearance]) {
+    @container style(--badge-appearance: tint) {
+      @slot;
+    }
+  }
+}
+@custom-variant badge-solid {
+  &[data-appearance="solid"] {
+    @slot;
+  }
+  &:not([data-appearance]) {
+    @container style(--badge-appearance: solid) {
+      @slot;
+    }
+  }
+}
+@custom-variant badge-outline {
+  &[data-appearance="outline"] {
+    @slot;
+  }
+  &:not([data-appearance]) {
+    @container style(--badge-appearance: outline) {
+      @slot;
+    }
+  }
+}
+@custom-variant badge-neutral {
+  &[data-appearance="neutral"] {
+    @slot;
+  }
+  &:not([data-appearance]) {
+    @container style(--badge-appearance: neutral) {
+      @slot;
+    }
+  }
+}
+@custom-variant tabs-underline {
+  &:not([data-variant]) {
+    @container style(--tabs-variant: underline) {
+      @slot;
+    }
+  }
+}
+
 /* Register the decoration dial as a typed number so it can be calc()'d into
    lengths/alphas (an UNregistered var is string-substituted and can't drive a
    gradient stop or interpolate). inherits:true makes it cascade to any subtree.
@@ -1011,6 +1071,69 @@
   /* App header bar height in `--spacing` steps (`h-header`); `14` == `h-14`. */
   --header-size: 14;
 
+  /* ── Component shape seams (docs/review/2026-09-18-brand-theme-fidelity-review.md)
+     Neutral seams for shapes components used to hard-code. Every default below
+     reproduces the pre-seam render exactly; a theme opts in by overriding one.
+
+     Sidebar active row (`SidebarMenuButton`): the indicator bar's colour, width
+     (`0` = no bar), radius and vertical inset. The active ICON keeps
+     `--sidebar-primary`, so removing the bar never blanks the icon. */
+  --sidebar-indicator: var(--sidebar-primary);
+  --sidebar-indicator-width: 0.25rem;
+  --sidebar-indicator-radius: 9999px;
+  --sidebar-indicator-inset: 0.375rem;
+  /* AppShell `secondaryPanel` width (the resource panel beside the nav). */
+  --shell-secondary-width: 16rem;
+  /* Button edges: `outline`'s border (split from the form-field `--input`), and
+     `secondary`'s edge + label ink (transparent / its own foreground = the
+     borderless tinted plate). */
+  --button-outline-border: var(--input);
+  --secondary-border: transparent;
+  --secondary-text: var(--secondary-foreground);
+  /* Table header row (DataTable, Table): fill, ink, size, case and tracking.
+     `1em` = the table's own body size, so the density dial still reaches it. */
+  --table-header-background: transparent;
+  --table-header-foreground: var(--muted-foreground);
+  --table-header-size: 1em;
+  --table-header-transform: none;
+  --table-header-tracking: var(--type-tracking-body);
+  /* Resting surfaces vs floating ones, dialled apart: a theme can draw flat
+     hairline cards and still float menus. `--card-title-leading` is unitless. */
+  --card-shadow: var(--shadow-sm);
+  --card-border: var(--border);
+  --card-title-leading: 1;
+  --popover-shadow: var(--shadow-ring-md);
+  --dialog-shadow: var(--shadow-ring-lg);
+  /* Badge corner, and the treatment a Badge/StatusBadge takes when the caller
+     passes no `appearance`: auto (each variant's own) | tint | solid | outline |
+     neutral. Read by a container style query — set it on an ANCESTOR (a theme
+     block, a region), never on the badge itself. */
+  --badge-radius: 9999px;
+  --badge-appearance: auto;
+  /* Tabs: the list style when the caller passes no `variant` (segmented |
+     underline, style-queried like `--badge-appearance`), the underline's
+     thickness, and the active tab's weight. */
+  --tabs-variant: segmented;
+  --tabs-indicator-width: 2px;
+  --tabs-active-weight: var(--control-weight);
+  /* Focus indicator geometry (the `focus-ring*` utilities). Offset > 0 opens a
+     `--background` gap; offset < 0 pulls the ring inside the edge (down to
+     `-width` = a fully inset ring). Always give both a unit. A form field's
+     border on focus: `var(--input)` = unchanged, `var(--ring)` = an edge swap. */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 0px;
+  --input-focus-border: var(--input);
+  /* Icon glyph set: outline | solid. `solid` swaps in a filled glyph where the
+     icon defines one (`createIcon(…, { solid })`) and keeps the outline where
+     it does not (every Lucide glyph). Style-queried, like `--badge-appearance`. */
+  --icon-fill: outline;
+  /* Selection in data components (DataTable rows, Tree, Transfer, filter
+     lists): selected fill + ink, and the quieter related state (e.g. a
+     partially-selected parent). Defaults are the old `--accent` wash. */
+  --selection: var(--accent);
+  --selection-foreground: var(--accent-foreground);
+  --selection-muted: color-mix(in oklab, var(--accent) 50%, transparent);
+
   /* ── Chart ramps — RM-018 ─────────────────────────────────────────────────
      ORDERED ramps, for the charts where LIGHTNESS IS DATA (heatmap, calendar,
      treemap, matrix, choropleth, signed bars). The categorical `--chart-1..12`
@@ -1426,6 +1549,28 @@
   --color-table-stripe: var(--table-stripe);
   --color-table-row-hover: var(--table-row-hover);
 
+  /* Component shape seams (see :root). `bg-sidebar-indicator`,
+     `border-button-outline-border`, `bg-table-header-background`,
+     `text-table-header` (size), `shadow-card`,
+     `rounded-badge`, `font-tabs-active`, `bg-selection`, … */
+  --color-sidebar-indicator: var(--sidebar-indicator);
+  --color-button-outline-border: var(--button-outline-border);
+  --color-secondary-border: var(--secondary-border);
+  --color-secondary-text: var(--secondary-text);
+  --color-table-header-background: var(--table-header-background);
+  --color-table-header-foreground: var(--table-header-foreground);
+  --color-card-border: var(--card-border);
+  --text-table-header: var(--table-header-size);
+  --shadow-card: var(--card-shadow);
+  --shadow-popover: var(--popover-shadow);
+  --shadow-dialog: var(--dialog-shadow);
+  --radius-badge: var(--badge-radius);
+  --font-weight-tabs-active: var(--tabs-active-weight);
+  --color-input-focus: var(--input-focus-border);
+  --color-selection: var(--selection);
+  --color-selection-foreground: var(--selection-foreground);
+  --color-selection-muted: var(--selection-muted);
+
   /* Motion — `duration-fast`/`duration-base`/`duration-slow`/`duration-slower`
      utilities resolve to the GATED effective durations, so every hand-rolled
      transition that uses them is gate-aware automatically. INLINE (like the
@@ -1634,7 +1779,8 @@
    numeric scale gets wrong for app UI.
 
    Role guide: display-lg = hero/deck headline · display = page headline · title = section/card/dialog ·
-   subtitle = sub-section / prominent body · body = default (== text-sm) ·
+   subtitle = sub-section / prominent body · heading-xs = small semibold label ·
+   body = default (== text-sm) ·
    caption = secondary/supporting body · meta = metadata/timestamp · eyebrow =
    uppercase tracked label (pair with `uppercase`) · kpi = executive metric
    values · kpi-sm = tile/satellite values (both pair with `tabular-nums`) ·
@@ -1751,6 +1897,14 @@
   --type-weight-display-lg: 600;
   --type-tracking-display-lg: -0.025em;
 
+  /* heading-xs — a small semibold label (a card section label, a form group
+     heading, a panel caption): caption's size and leading at title weight.
+     Unlike eyebrow it keeps its case. Additive: nothing re-renders. */
+  --type-size-heading-xs: var(--type-size-caption);
+  --type-leading-heading-xs: var(--type-leading-caption);
+  --type-weight-heading-xs: 600;
+  --type-tracking-heading-xs: 0em;
+
   /* chart type roles — RM-019. Two card-contract rungs (lieflat's fixed
      four-part card: title/description/chart/source) — NOT among the eight
      `ROLES` density-type-scale.test.ts enumerates (that suite's list is
@@ -1824,6 +1978,11 @@
   --text-display-lg--line-height: var(--type-leading-display-lg);
   --text-display-lg--font-weight: var(--type-weight-display-lg);
   --text-display-lg--letter-spacing: var(--type-tracking-display-lg);
+
+  --text-heading-xs: var(--type-size-heading-xs);
+  --text-heading-xs--line-height: var(--type-leading-heading-xs);
+  --text-heading-xs--font-weight: var(--type-weight-heading-xs);
+  --text-heading-xs--letter-spacing: var(--type-tracking-heading-xs);
 
   /* chart type roles — RM-019: `text-chart-value` / `text-chart-source`, the
      ChartCard/ChartFrame card-contract value + source rungs (RM-041/RM-042
@@ -1905,6 +2064,22 @@
   svg.lucide[stroke-width="2"],
   svg[data-slot="icon"][stroke-width="2"] {
     stroke-width: var(--icon-stroke);
+  }
+
+  /* Icon glyph set — theme-driven (`--icon-fill`). An `Icon` built with a solid
+     glyph and no explicit `variant` renders BOTH glyph groups; the token picks
+     which one paints. The query container is the `<svg>` itself (the groups'
+     parent), which inherits the token from the theme block. */
+  [data-icon-glyph="solid"] {
+    display: none;
+  }
+  @container style(--icon-fill: solid) {
+    [data-icon-glyph="outline"] {
+      display: none;
+    }
+    [data-icon-glyph="solid"] {
+      display: inline;
+    }
   }
 
   /* Pointer affordance for interactive controls — theme-invariant, automatic.
@@ -2068,12 +2243,47 @@
    this is not a bare `outline: none`.
    --------------------------------------------------------------------------- */
 
+/* GEOMETRY SEAM — `--focus-ring-width` / `--focus-ring-offset` (the theme's
+   shape for the indicator; defaults 2px / 0px reproduce `ring-2` exactly).
+   `@apply ring-2` still declares the `box-shadow` composite and the ring
+   colour; the `--tw-ring-shadow` line after it replaces only the ring LAYER
+   with a three-part stack:
+     1. a `--background` gap, as wide as a positive theme offset (plus any
+        call-site `ring-offset-*`, which Tailwind already paints on top);
+     2. the outer ring, from the edge out to `offset + width` (0 when the ring
+        sits fully inside), plus the call-site offset as before;
+     3. an inset ring, from the edge in to `-offset` (0 unless offset < 0).
+   A 0-spread layer paints nothing, so at the defaults only layer 2 draws, at
+   `2px + --tw-ring-offset-width` — byte-for-byte the old ring. The contour
+   rides just outside whatever the ring's outer edge now is.
+   `--focus-ring-call-offset` is the call site's `ring-offset-*`, zeroed when
+   the theme pulls the ring fully inside (offset <= -width): an inset ring must
+   not leave its contour floating a gap away from the control. Tailwind's own
+   `--tw-ring-offset-shadow` (set by a call site's `ring-offset-*`, which wins
+   on order) still paints its halo outside the edge in that mode — invisible on
+   `ring-offset-background` over `--background`, a faint band on other grounds. */
 @utility focus-ring {
   outline-color: var(--ring-contour);
   &:focus-visible {
     @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
+    --focus-ring-call-offset: min(
+      var(--tw-ring-offset-width),
+      1000 * max(0px, var(--focus-ring-offset) + var(--focus-ring-width))
+    );
+    --tw-ring-shadow:
+      0 0 0 calc(max(0px, var(--focus-ring-offset)) + var(--focus-ring-call-offset))
+        var(--background),
+      var(--tw-ring-inset,) 0 0 0
+        calc(
+          max(0px, var(--focus-ring-offset) + var(--focus-ring-width)) +
+            var(--focus-ring-call-offset)
+        )
+        var(--tw-ring-color, currentcolor),
+      inset 0 0 0 max(0px, -1 * var(--focus-ring-offset)) var(--tw-ring-color, currentcolor);
     outline: 1px solid var(--ring-contour);
-    outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
+    outline-offset: calc(
+      var(--focus-ring-call-offset) + max(0px, var(--focus-ring-offset) + var(--focus-ring-width))
+    );
   }
 }
 
@@ -2081,30 +2291,66 @@
   outline-color: var(--ring-contour);
   &:focus-within {
     @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
+    --focus-ring-call-offset: min(
+      var(--tw-ring-offset-width),
+      1000 * max(0px, var(--focus-ring-offset) + var(--focus-ring-width))
+    );
+    --tw-ring-shadow:
+      0 0 0 calc(max(0px, var(--focus-ring-offset)) + var(--focus-ring-call-offset))
+        var(--background),
+      var(--tw-ring-inset,) 0 0 0
+        calc(
+          max(0px, var(--focus-ring-offset) + var(--focus-ring-width)) +
+            var(--focus-ring-call-offset)
+        )
+        var(--tw-ring-color, currentcolor),
+      inset 0 0 0 max(0px, -1 * var(--focus-ring-offset)) var(--tw-ring-color, currentcolor);
     outline: 1px solid var(--ring-contour);
-    outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
+    outline-offset: calc(
+      var(--focus-ring-call-offset) + max(0px, var(--focus-ring-offset) + var(--focus-ring-width))
+    );
   }
 }
 
+/* The inset flavours are already inside the edge, so only the WIDTH applies;
+   the contour sits one pixel inside the ring (-3px at the 2px default). */
 @utility focus-ring-inset {
   outline-color: var(--ring-contour);
   &:focus-visible {
     @apply ring-2 ring-inset ring-[var(--focus-ring-color,var(--ring))];
+    --tw-ring-shadow: inset 0 0 0 calc(var(--focus-ring-width) + var(--tw-ring-offset-width))
+      var(--tw-ring-color, currentcolor);
     outline: 1px solid var(--ring-contour);
-    outline-offset: -3px;
+    outline-offset: calc(-1 * var(--focus-ring-width) - 1px);
   }
 }
 
 @utility focus-ring-static {
   @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
+  --focus-ring-call-offset: min(
+    var(--tw-ring-offset-width),
+    1000 * max(0px, var(--focus-ring-offset) + var(--focus-ring-width))
+  );
+  --tw-ring-shadow:
+    0 0 0 calc(max(0px, var(--focus-ring-offset)) + var(--focus-ring-call-offset)) var(--background),
+    var(--tw-ring-inset,) 0 0 0
+      calc(
+        max(0px, var(--focus-ring-offset) + var(--focus-ring-width)) + var(--focus-ring-call-offset)
+      )
+      var(--tw-ring-color, currentcolor),
+    inset 0 0 0 max(0px, -1 * var(--focus-ring-offset)) var(--tw-ring-color, currentcolor);
   outline: 1px solid var(--ring-contour);
-  outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
+  outline-offset: calc(
+    var(--focus-ring-call-offset) + max(0px, var(--focus-ring-offset) + var(--focus-ring-width))
+  );
 }
 
 @utility focus-ring-static-inset {
   @apply ring-2 ring-inset ring-[var(--focus-ring-color,var(--ring))];
+  --tw-ring-shadow: inset 0 0 0 calc(var(--focus-ring-width) + var(--tw-ring-offset-width))
+    var(--tw-ring-color, currentcolor);
   outline: 1px solid var(--ring-contour);
-  outline-offset: -3px;
+  outline-offset: calc(-1 * var(--focus-ring-width) - 1px);
 }
 
 /* ---------------------------------------------------------------------------

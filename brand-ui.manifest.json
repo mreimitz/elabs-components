@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T14:35:11.548Z",
+  "generatedAt": "2026-09-19T15:19:11.268Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 255,
+  "tokenCount": 285,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -240,6 +240,36 @@
     "--table-row-rule-width",
     "--icon-stroke",
     "--header-size",
+    "--sidebar-indicator",
+    "--sidebar-indicator-width",
+    "--sidebar-indicator-radius",
+    "--sidebar-indicator-inset",
+    "--shell-secondary-width",
+    "--button-outline-border",
+    "--secondary-border",
+    "--secondary-text",
+    "--table-header-background",
+    "--table-header-foreground",
+    "--table-header-size",
+    "--table-header-transform",
+    "--table-header-tracking",
+    "--card-shadow",
+    "--card-border",
+    "--card-title-leading",
+    "--popover-shadow",
+    "--dialog-shadow",
+    "--badge-radius",
+    "--badge-appearance",
+    "--tabs-variant",
+    "--tabs-indicator-width",
+    "--tabs-active-weight",
+    "--focus-ring-width",
+    "--focus-ring-offset",
+    "--input-focus-border",
+    "--icon-fill",
+    "--selection",
+    "--selection-foreground",
+    "--selection-muted",
     "--chart-seq-1",
     "--chart-seq-2",
     "--chart-seq-3",
@@ -28715,7 +28745,15 @@
           "module": "packages/icons/src/brand-logo.tsx"
         },
         {
+          "name": "CreateIconOptions",
+          "module": "packages/icons/src/icon.tsx"
+        },
+        {
           "name": "IconProps",
+          "module": "packages/icons/src/icon.tsx"
+        },
+        {
+          "name": "IconVariant",
           "module": "packages/icons/src/icon.tsx"
         },
         {
@@ -28828,6 +28866,12 @@
               "optional": true,
               "type": "string",
               "description": "Accessible name. When provided the icon is exposed to AT as an image; when omitted the icon is treated as decorative (aria-hidden)."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "IconVariant",
+              "description": "Force the outline or solid glyph, overriding the theme's `--icon-fill` token. Only icons created with `createIcon`'s `solid` option have a solid glyph to switch to — every other icon renders outline regardless of this prop. `Icon` used directly with raw `children` ignores it (it has no separate solid content to switch to)."
             }
           ]
         },
@@ -37287,6 +37331,10 @@
           "module": "packages/ui/src/components/app-shell/app-shell.tsx"
         },
         {
+          "name": "AppShellTopBarSlots",
+          "module": "packages/ui/src/components/app-shell/app-shell.tsx"
+        },
+        {
           "name": "AppSidebarProps",
           "module": "packages/ui/src/components/app-sidebar/app-sidebar.tsx"
         },
@@ -39474,13 +39522,43 @@
               "name": "sidebar",
               "optional": true,
               "type": "ReactNode",
-              "description": "Persistent left navigation (often a <Sidebar />)."
+              "description": "Persistent left navigation (often a <Sidebar />). Not rendered when `navigation=\"topbar\"` — put the primary navigation in `topBar`/`topNav` instead."
             },
             {
               "name": "topNav",
               "optional": true,
               "type": "ReactNode",
-              "description": "Top bar (often a <TopNav />)."
+              "description": "Top bar (often a <TopNav />), a fully-formed node the caller already brought. **Wins over `topBar` when both are passed** — this shell never merges the two, so pass one or the other, never both. Use `topNav` when you want to compose `TopNav` (or any other element) yourself; use `topBar` for the common case where this shell should compose `TopNav` for you from plain slots."
+            },
+            {
+              "name": "topBar",
+              "optional": true,
+              "type": "AppShellTopBarSlots",
+              "description": "Slots this shell composes into a `TopNav` for you — the convenience path for the common case (see `topNav` for precedence when both are set). `center` renders through `TopNav`'s own `center` prop: a true 3-column grid, so centred content (e.g. a global search field) stays centred regardless of how wide `start`/`end` are."
+            },
+            {
+              "name": "brandPlacement",
+              "optional": true,
+              "type": "\"sidebar\" | \"topbar\"",
+              "description": "Where the brand mark lives. `\"sidebar\"` (default) is today's behavior: this shell renders no brand of its own — the caller's `sidebar` node (e.g. a `SidebarHeader` / `TeamSwitcher`) owns it. `\"topbar\"` renders `brand` as the leading element of the top bar, before `topBar.start`. Has no effect without a `brand` node, and no effect when `topNav` is passed instead of `topBar` (bring your own top bar, bring your own brand placement inside it). @default \"sidebar\""
+            },
+            {
+              "name": "brand",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Brand mark rendered in the top bar when `brandPlacement=\"topbar\"`."
+            },
+            {
+              "name": "navigation",
+              "optional": true,
+              "type": "\"sidebar\" | \"topbar\"",
+              "description": "Where the primary navigation lives. `\"sidebar\"` (default) renders `sidebar` in the left column, unchanged. `\"topbar\"` renders no sidebar column at all — compose the primary navigation into `topBar`/`topNav` instead (e.g. a `NavigationMenu` in `topBar.center`). @default \"sidebar\""
+            },
+            {
+              "name": "secondaryPanel",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A second column beside the sidebar (e.g. a resource/filter panel) — `w-(--shell-secondary-width)` (16rem by default, every theme), hidden below `md` exactly like `sidebar`. Independent of `navigation`/`sidebar`: renders whenever it is passed. Pure layout, like `sidebar` — bring your own chrome (background, border) on the node itself."
             },
             {
               "name": "children",
@@ -39573,7 +39651,14 @@
             "HTMLAttributes<HTMLSpanElement>",
             "VariantProps<typeof badgeVariants>"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "appearance",
+              "optional": true,
+              "type": "BadgeAppearance",
+              "description": "Explicit per-instance override of the fill/border/ink treatment. Unset (default) renders NO `data-appearance` attribute, so the badge is driven purely by the ancestor `--badge-appearance` token (`auto` = each variant's own recipe, today's look). Meaningful only on the colour-bearing variants (`default`, `success`, `warning`, `destructive`, `info`) — see `badgeVariants`."
+            }
+          ]
         },
         "BentoGrid": {
           "extends": [
@@ -42878,6 +42963,12 @@
               "optional": true,
               "type": "boolean",
               "description": "Render label-only (no status icon)."
+            },
+            {
+              "name": "appearance",
+              "optional": true,
+              "type": "BadgeAppearance",
+              "description": "Explicit per-instance override of the fill/border/ink treatment — see `Badge`'s own doc. Meaningful only on the colour-bearing statuses (`running`/`complete`/`awaiting-approval`/`failed`) and tones (`info`/`success`/`warning`/`destructive`); `pending`/`denied`/`skipped` and the `neutral` tone are already neutral pills. On a `CustomStatus` (the out-of-vocabulary hatch), `\"solid\"` is never honoured — the hatch is calm-only (integrity constraint 2, file docblock)."
             }
           ]
         },
@@ -43326,6 +43417,12 @@
               "description": "Left slot (brand on mobile, breadcrumbs, title)."
             },
             {
+              "name": "center",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Centred slot (e.g. a global search field, or horizontal primary navigation). Laid out as the middle column of a 3-column grid, so it stays visually centred in the bar regardless of how wide `start`/`end` are — plain `flex-1` filler only centres content when both sides are equal width. Passing `center` switches the bar to this grid layout and `children` is ignored (pass everything through `start`/`center`/`end` instead); omit `center` to keep the original `start` / `children` / `end` flex row unchanged."
+            },
+            {
               "name": "end",
               "optional": true,
               "type": "ReactNode",
@@ -43447,7 +43544,7 @@
               "name": "surface",
               "optional": true,
               "type": "\"default\" | \"sidebar\"",
-              "description": "The surface on which the tree is rendered. - `\"default\"` (default) — renders selected rows with `bg-accent` (for use on background/card surfaces). - `\"sidebar\"` — renders selected rows with the sidebar's own active-item treatment (`bg-sidebar-accent` + `text-sidebar-accent-foreground` + `font-medium`), so selection reads consistently with `SidebarMenuButton`'s active state on the `--sidebar` surface. (No fill is ≥3:1 on a sidebar; perceivability comes from the foreground/weight shift + `aria-selected`, the same multi-cue approach the Sidebar uses.)"
+              "description": "The surface on which the tree is rendered. - `\"default\"` (default) — renders selected rows with `bg-selection` (for use on background/card surfaces). - `\"sidebar\"` — renders selected rows with the sidebar's own active-item treatment (`bg-sidebar-accent` + `text-sidebar-accent-foreground` + `font-medium`), so selection reads consistently with `SidebarMenuButton`'s active state on the `--sidebar` surface. (No fill is ≥3:1 on a sidebar; perceivability comes from the foreground/weight shift + `aria-selected`, the same multi-cue approach the Sidebar uses.)"
             },
             {
               "name": "virtualize",

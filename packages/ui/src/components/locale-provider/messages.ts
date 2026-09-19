@@ -744,6 +744,8 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.tool.showTechnicalDetails": "Show technical details",
   "ai.tool.error": "Error",
   "ai.tool.result": "Result",
+  // PackageInfo.
+  "ai.packageInfo.dependencies": "Dependencies",
   // AssetPreview.
   "ai.assetPreview.rowCount": { one: "{count} row", other: "{count} rows" },
   "ai.assetPreview.noPreview": "No preview available…",

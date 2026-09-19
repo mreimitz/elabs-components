@@ -46,9 +46,13 @@ secrets.*
 # Pins the editor to the workspace TypeScript so the IDE and `pnpm typecheck`
 # agree — must be shared, or every clone re-hits editor-only resolution errors.
 !.vscode/settings.json
-# Referenced by the "dev: storybook" task in tasks.json — must be shared, or a fresh
+# Referenced by the "dev: storybook" / "dev: home" tasks in tasks.json — must be shared, or a fresh
 # clone gets a debug profile that points at a missing script.
 !.vscode/start-storybook.mjs
+!.vscode/start-home.mjs
+# `next dev` (Next 16.3+) writes these into apps/home on every start.
+apps/home/AGENTS.md
+apps/home/CLAUDE.md
 *.log
 
 # Claude Code local overrides (machine-specific, never shared)

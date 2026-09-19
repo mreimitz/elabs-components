@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@elabs-ai/components-ui";
+import { Badge, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { ArrowRightIcon, MinusIcon, PackageIcon, PlusIcon } from "lucide-react";
 import type { HTMLAttributes } from "react";
@@ -173,14 +173,17 @@ export const PackageInfoDependencies = ({
   className,
   children,
   ...props
-}: PackageInfoDependenciesProps) => (
-  <div className={cn("space-y-2", className)} {...props}>
-    <span className="font-medium text-muted-foreground text-meta uppercase tracking-wide">
-      Dependencies
-    </span>
-    <div className="space-y-1">{children}</div>
-  </div>
-);
+}: PackageInfoDependenciesProps) => {
+  const { t } = useLocale();
+  return (
+    <div className={cn("space-y-2", className)} {...props}>
+      <span className="text-eyebrow uppercase text-muted-foreground">
+        {t("ai.packageInfo.dependencies")}
+      </span>
+      <div className="space-y-1">{children}</div>
+    </div>
+  );
+};
 
 export type PackageInfoDependencyProps = HTMLAttributes<HTMLDivElement> & {
   name: string;

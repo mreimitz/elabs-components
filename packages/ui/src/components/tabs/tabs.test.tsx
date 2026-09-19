@@ -143,6 +143,32 @@ describe("Tabs", () => {
     }
   });
 
+  it("renders no data-variant on the list or its triggers when variant is unset (token-driven)", () => {
+    render(
+      <Tabs defaultValue="a">
+        <TabsList data-testid="list">
+          <TabsTrigger value="a">A</TabsTrigger>
+        </TabsList>
+        <TabsContent value="a">Panel A</TabsContent>
+      </Tabs>,
+    );
+    expect(screen.getByTestId("list")).not.toHaveAttribute("data-variant");
+    expect(screen.getByRole("tab", { name: "A" })).not.toHaveAttribute("data-variant");
+  });
+
+  it("keeps data-variant on the list and its triggers when variant is explicit", () => {
+    render(
+      <Tabs defaultValue="a">
+        <TabsList data-testid="list" variant="underline">
+          <TabsTrigger value="a">A</TabsTrigger>
+        </TabsList>
+        <TabsContent value="a">Panel A</TabsContent>
+      </Tabs>,
+    );
+    expect(screen.getByTestId("list")).toHaveAttribute("data-variant", "underline");
+    expect(screen.getByRole("tab", { name: "A" })).toHaveAttribute("data-variant", "underline");
+  });
+
   it("renders TabsList as a bounded scroll container with safe centering", () => {
     render(
       <Tabs defaultValue="a">

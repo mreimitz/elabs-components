@@ -1,6 +1,7 @@
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useId, useMemo, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { Database, LayoutDashboard, Users, Workflow } from "lucide-react";
 import {
   BUILT_IN_THEME_DEFINITIONS,
   DECORATION_LEVELS,
@@ -11,13 +12,52 @@ import {
   defineTheme,
   DENSITIES,
   deriveTheme,
+  groupThemeFamilies,
   type DecorationLevel,
   type DensityMode,
   type MotionPreference,
   MOTION_PREFERENCES,
   ThemeProvider,
 } from "@elabs-ai/components-tokens";
-import { Button, ThemeSwitcher } from "@elabs-ai/components-ui";
+import {
+  AppShell,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  NavUser,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  ThemeSwitcher,
+  TopNav,
+  type Status,
+} from "@elabs-ai/components-ui";
+import { Bar, BarChart, BarXAxis, ChartCard, Grid } from "@elabs-ai/components-charts";
+import { COMMUNITY_THEME_DEFINITIONS } from "../../.storybook/community-themes.generated";
 
 /**
  * THEMING — how one set of components renders any number of different looks.
@@ -60,12 +100,6 @@ const meta = {
 } satisfies Meta;
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-// The two REFERENCE themes — slug (the data-theme value) + display label.
-const THEMES = [
-  { slug: "light", label: "Light", note: "Default. Brand primary on near-white surfaces." },
-  { slug: "dark", label: "Dark", note: "Warm charcoal surfaces, off-white text." },
-] as const;
 
 const DIALS = [
   {
@@ -392,32 +426,381 @@ export const RootSetup: StoryObj<RootSetupArgs> = {
   },
 };
 
-export const ShippedThemes: Story = {
-  name: "The reference themes",
-  render: () => (
-    <div className="space-y-4">
-      <p className="m-0 max-w-prose text-caption text-muted-foreground">
-        Two <strong>reference</strong> themes ship in{" "}
-        <code className="text-code">@elabs-ai/components-tokens</code> — enough to prove the
-        light/dark contract, and the worked example for one you author yourself. Downloadable brand
-        families (Ocean, Qlik, Snowflake) and the create/update tools are under &ldquo;Create or
-        update a theme&rdquo;. Pass the <strong>slug</strong> (the{" "}
-        <code className="text-code">data-theme</code> value), never the display name, when setting a
-        theme programmatically or via the Storybook globals.
-      </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {THEMES.map((t) => (
-          <div key={t.slug} className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-subtitle text-foreground">{t.label}</span>
-              <code className="text-meta text-muted-foreground">{t.slug}</code>
-            </div>
-            <p className="m-0 mt-1 text-caption text-muted-foreground">{t.note}</p>
+/*
+ * ─── Shipped themes: one product screen per family ─────────────────────────
+ *
+ * Every registered family renders the SAME generic screen (top bar, left nav,
+ * a chart, a small form, a table), built only from library components, so the
+ * families are compared on shape and colour at once, not on swatches.
+ *
+ * The family list is the Storybook registry itself: the built-in Default pair
+ * plus `COMMUNITY_THEME_DEFINITIONS`, which `pnpm gen` writes from repo-root
+ * `themes/`. A new family therefore shows up here with no edit to this file.
+ *
+ * Each screen is its own frame with the theme on that frame's ROOT element,
+ * exactly as an app applies it. A nested `[data-theme]` wrapper is not enough
+ * for a faithful specimen: the radius, the shadow ramp and the type roles are
+ * derived from theme values on `:root`, so a nested wrapper recolours but keeps
+ * the page's shape.
+ */
+
+const SCREEN_NAV = [
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "pipelines", label: "Pipelines", icon: Workflow },
+  { id: "datasets", label: "Datasets", icon: Database },
+  { id: "members", label: "Members", icon: Users },
+] as const;
+
+const SCREEN_RUNS_PER_DAY = [
+  { day: "Mon", runs: 12 },
+  { day: "Tue", runs: 18 },
+  { day: "Wed", runs: 22 },
+  { day: "Thu", runs: 21 },
+  { day: "Fri", runs: 15 },
+  { day: "Sat", runs: 6 },
+  { day: "Sun", runs: 5 },
+];
+
+const SCREEN_RECENT_RUNS: readonly {
+  id: string;
+  pipeline: string;
+  status: Status;
+  owner: string;
+  started: string;
+  duration: string;
+}[] = [
+  {
+    id: "r1",
+    pipeline: "Nightly import",
+    status: "complete",
+    owner: "Alex Morgan",
+    started: "02:00",
+    duration: "4m 12s",
+  },
+  {
+    id: "r2",
+    pipeline: "Customer sync",
+    status: "running",
+    owner: "Sam Lee",
+    started: "09:15",
+    duration: "—",
+  },
+  {
+    id: "r3",
+    pipeline: "Usage rollup",
+    status: "failed",
+    owner: "Priya Shah",
+    started: "08:40",
+    duration: "1m 03s",
+  },
+  {
+    id: "r4",
+    pipeline: "Archive cleanup",
+    status: "complete",
+    owner: "Jordan Kim",
+    started: "07:30",
+    duration: "38s",
+  },
+  {
+    id: "r5",
+    pipeline: "Weekly report",
+    status: "pending",
+    owner: "Alex Morgan",
+    started: "—",
+    duration: "—",
+  },
+];
+
+function ScreenSidebar({
+  active,
+  onNavigate,
+}: {
+  active: string;
+  onNavigate: (id: string) => void;
+}) {
+  return (
+    // A context-only provider: `Sidebar collapsible="none"` is a plain column
+    // that sits in AppShell's `sidebar` slot, and NavUser still reads the
+    // sidebar context it needs.
+    <SidebarProvider frame="nested">
+      <Sidebar collapsible="none" className="border-e border-sidebar-border">
+        <SidebarHeader className="h-header justify-center border-b border-sidebar-border px-4">
+          <span className="text-body font-semibold">Workspace</span>
+        </SidebarHeader>
+        <SidebarContent>
+          <nav aria-label="Main">
+            <SidebarGroup>
+              <SidebarGroupLabel>Navigate</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {SCREEN_NAV.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        isActive={active === item.id}
+                        aria-current={active === item.id ? "page" : undefined}
+                        onClick={() => onNavigate(item.id)}
+                      >
+                        <item.icon aria-hidden="true" />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </nav>
+        </SidebarContent>
+        <SidebarFooter>
+          <NavUser user={{ name: "Alex Morgan", email: "alex@example.com" }} />
+        </SidebarFooter>
+      </Sidebar>
+    </SidebarProvider>
+  );
+}
+
+function ScheduleRunForm() {
+  const id = useId();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle as="h2">Schedule a run</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form className="space-y-4" onSubmit={(event) => event.preventDefault()}>
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-pipeline`}>Pipeline</Label>
+            <Input id={`${id}-pipeline`} placeholder="Nightly import" />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-frequency`}>Frequency</Label>
+            <Select defaultValue="daily">
+              <SelectTrigger id={`${id}-frequency`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hourly">Hourly</SelectItem>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button type="submit" className="w-full">
+            Schedule
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RecentRunsTable() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle as="h2">Recent runs</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Pipeline</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead className="text-end">Started</TableHead>
+              <TableHead className="text-end">Duration</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {SCREEN_RECENT_RUNS.map((run) => (
+              <TableRow key={run.id}>
+                <TableCell className="font-medium">{run.pipeline}</TableCell>
+                <TableCell>
+                  <StatusBadge status={run.status} />
+                </TableCell>
+                <TableCell>{run.owner}</TableCell>
+                <TableCell className="text-end tabular-nums">{run.started}</TableCell>
+                <TableCell className="text-end tabular-nums">{run.duration}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** The generic product screen every family renders. Brand-neutral on purpose. */
+function ProductScreenSpecimen() {
+  const [active, setActive] = useState<string>("pipelines");
+  const title = SCREEN_NAV.find((item) => item.id === active)?.label ?? "";
+  return (
+    <AppShell
+      sidebar={<ScreenSidebar active={active} onNavigate={setActive} />}
+      topNav={
+        <TopNav end={<Button size="sm">New pipeline</Button>}>
+          <h1 className="text-subtitle font-semibold">{title}</h1>
+        </TopNav>
+      }
+    >
+      <div className="@container space-y-6 p-6">
+        <div className="grid gap-6 @2xl:grid-cols-3">
+          <ChartCard
+            className="@2xl:col-span-2"
+            titleAs="h2"
+            title="Runs peak mid-week"
+            description="Completed runs per day, last seven days."
+            height={200}
+          >
+            <BarChart
+              data={SCREEN_RUNS_PER_DAY}
+              xDataKey="day"
+              aspectRatio="auto"
+              className="h-full"
+              accessibleLabel="Completed runs per day"
+            >
+              <Grid horizontal />
+              <Bar dataKey="runs" fill="var(--chart-1)" lineCap="round" />
+              <BarXAxis />
+            </BarChart>
+          </ChartCard>
+          <ScheduleRunForm />
+        </div>
+        <RecentRunsTable />
+      </div>
+    </AppShell>
+  );
+}
+
+/** Built-in Default family first, then every generated community family. */
+const SHOWCASE_FAMILIES = groupThemeFamilies([
+  ...BUILT_IN_THEME_DEFINITIONS,
+  ...COMMUNITY_THEME_DEFINITIONS,
+]);
+
+const SHOWCASE_SCREEN_EXPORT = "product-screen";
+
+/**
+ * The frame URL for one variant, or `undefined` outside the Storybook preview
+ * page. Only `iframe.html` can render a story by id; the headless story runner
+ * mounts stories elsewhere, and there an empty frame is the honest result.
+ */
+function specimenFrameSrc(storyId: string, globals: Record<string, string>): string | undefined {
+  if (typeof window === "undefined" || !window.location.pathname.endsWith("/iframe.html")) {
+    return undefined;
+  }
+  const encoded = Object.entries(globals)
+    .filter(([, value]) => value !== "")
+    .map(([key, value]) => `${key}:${value}`)
+    .join(";");
+  return `${window.location.pathname}?id=${encodeURIComponent(storyId)}&viewMode=story&globals=${encoded}`;
+}
+
+/**
+ * The shared product screen on its own. `Shipped themes` below frames this
+ * story once per family variant; with the toolbar it is also the quickest way
+ * to look at a single family full size.
+ */
+export const ProductScreen: Story = {
+  name: "Product screen",
+  tags: ["!autodocs"],
+  parameters: { layout: "fullscreen" },
+  render: () => <ProductScreenSpecimen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent("Pipelines");
+    await expect(canvas.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
+    await expect(canvas.getByRole("figure", { name: "Completed runs per day" })).toBeVisible();
+    await expect(canvas.getByLabelText("Pipeline")).toBeInTheDocument();
+    await expect(canvas.getByRole("combobox", { name: "Frequency" })).toBeInTheDocument();
+    // Header row + one row per run.
+    await expect(canvas.getAllByRole("row")).toHaveLength(SCREEN_RECENT_RUNS.length + 1);
+
+    // The nav drives the page title, so the active row is real state.
+    await userEvent.click(canvas.getByRole("button", { name: "Datasets" }));
+    await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent("Datasets");
+    await expect(canvas.getByRole("button", { name: "Datasets" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    // Storybook runs this play function inside every "Shipped themes" frame
+    // too, so it ends where the screen started.
+    await userEvent.click(canvas.getByRole("button", { name: "Pipelines" }));
+    await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent("Pipelines");
+  },
+};
+
+export const ShippedThemes: Story = {
+  name: "Shipped themes",
+  render: (_args, context) => {
+    const screenId = `${context.componentId}--${SHOWCASE_SCREEN_EXPORT}`;
+    // Carry the other toolbar dials into every frame, so density and
+    // decoration can be compared across families too.
+    const dials = {
+      density: String(context.globals.density ?? ""),
+      decoration: String(context.globals.decoration ?? ""),
+      motionPref: String(context.globals.motionPref ?? ""),
+    };
+    return (
+      <div className="space-y-8">
+        <p className="m-0 max-w-prose text-caption text-muted-foreground">
+          Every registered family renders the same screen: the <strong>Default</strong> pair that
+          ships in <code className="text-code">@elabs-ai/components-tokens</code>, then each
+          downloadable family from the repo&rsquo;s <code className="text-code">themes/</code>{" "}
+          folder, which <code className="text-code">pnpm gen</code> wires in. Each screen is its own
+          frame with the theme on its root element, as an app applies it. Pass the variant value
+          under each frame (the <code className="text-code">data-theme</code> value), never the
+          display name, when setting a theme in code or through the Storybook globals.
+        </p>
+        {SHOWCASE_FAMILIES.map((family) => (
+          <section key={family.id} className="space-y-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="m-0 text-subtitle text-foreground">{family.label}</h2>
+              <code className="text-meta text-muted-foreground">{family.id}</code>
+            </div>
+            {family.schemes.map((scheme) => {
+              const variant = family[scheme]?.value ?? "";
+              const schemeLabel = scheme === "dark" ? "Dark" : "Light";
+              return (
+                <figure key={variant} data-theme-variant={variant} className="m-0 space-y-2">
+                  <iframe
+                    title={`${family.label} ${schemeLabel}: product screen`}
+                    src={specimenFrameSrc(screenId, { ...dials, theme: variant })}
+                    loading="lazy"
+                    className="block h-[40rem] w-full rounded-lg border border-border bg-background"
+                  />
+                  <figcaption className="flex flex-wrap items-baseline justify-between gap-2 text-meta text-muted-foreground">
+                    <span>{schemeLabel}</span>
+                    <code className="text-meta">{variant}</code>
+                  </figcaption>
+                </figure>
+              );
+            })}
+          </section>
         ))}
       </div>
-    </div>
-  ),
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const variants = SHOWCASE_FAMILIES.flatMap((family) =>
+      family.schemes.map((scheme) => family[scheme]?.value ?? ""),
+    );
+    // The Default pair plus every generated community family, light and dark.
+    await expect(variants).toEqual(
+      expect.arrayContaining([
+        ...BUILT_IN_THEME_DEFINITIONS.map((definition) => definition.value),
+        ...COMMUNITY_THEME_DEFINITIONS.map((definition) => definition.value),
+      ]),
+    );
+    const frames = [...canvasElement.querySelectorAll("iframe")];
+    await expect(frames).toHaveLength(variants.length);
+    // One frame per variant, each with its own accessible name.
+    await expect(new Set(frames.map((frame) => frame.title)).size).toBe(variants.length);
+    for (const variant of variants) {
+      await expect(
+        canvasElement.querySelector(`[data-theme-variant="${variant}"] iframe`),
+      ).not.toBeNull();
+    }
+  },
 };
 
 export const ShippingASubset: Story = {
@@ -724,7 +1107,7 @@ const THEME_ROUTES = [
   {
     title: "Scaffold a family by hand",
     when: "You want to author the token values yourself.",
-    how: 'In this repo: pnpm theme:new <slug> --label "Name" [--hue 0-360] [--only light|dark], then pnpm check --rule community-themes and pnpm gen.',
+    how: 'In this repo: pnpm theme:new <slug> --label "Name" [--hue 0-360] [--only light|dark] [--preset flat], then pnpm check --rule community-themes and pnpm gen.',
     link: { href: `${REPO_URL}/blob/main/themes/README.md`, label: "Authoring guide" },
   },
   {

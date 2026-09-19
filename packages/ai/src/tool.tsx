@@ -166,7 +166,7 @@ export const ToolInput = ({ className, input, ...props }: ToolInputProps) => {
   const { t } = useLocale();
   return (
     <div className={cn("space-y-2 overflow-hidden", className)} {...props}>
-      <h4 className="text-meta uppercase text-muted-foreground">
+      <h4 className="text-eyebrow uppercase text-muted-foreground">
         {t("ai.schemaDisplay.parameters")}
       </h4>
       <div className="rounded-md bg-muted/50">
@@ -250,7 +250,7 @@ export const ToolOutput = ({
 
   return (
     <div className={cn("space-y-2", className)} {...props}>
-      <h4 className="text-meta uppercase text-muted-foreground">
+      <h4 className="text-eyebrow uppercase text-muted-foreground">
         {showError ? t("ai.tool.error") : t("ai.tool.result")}
       </h4>
       {pending ? (

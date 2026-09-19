@@ -72,16 +72,37 @@ function scrollTriggerIntoStrip(trigger: HTMLElement, behavior: ScrollBehavior) 
  * first tab off the left edge once the set overflows; `safe` falls back to
  * start-alignment on overflow while staying visually identical when the
  * strip fits (see #344).
+ *
+ * Token-driven default (`--tabs-variant`, default `segmented`): when the
+ * caller passes NO `variant`, `TabsList`/`TabsTrigger` render with no
+ * `data-variant` attribute at all — the `segmented` cva branch below, plus
+ * these `tabs-underline:`-prefixed overrides, which the `tabs-underline`
+ * custom variant (`themes.css`) only activates via a container style query
+ * on an ancestor's `--tabs-variant`. An explicit `variant` prop always
+ * renders `data-variant`, which the same custom variant's `:not([data-variant])`
+ * guard excludes — so these overrides are inert on an explicit strip and its
+ * own `underline` branch (below) renders unchanged. Literal strings, not
+ * built via interpolation — see `badge.tsx`'s note on the same rule.
  */
+const TABS_UNDERLINE_LIST_OVERRIDE =
+  "tabs-underline:flex tabs-underline:h-auto tabs-underline:w-full tabs-underline:justify-start tabs-underline:rounded-none tabs-underline:bg-transparent tabs-underline:p-0 tabs-underline:border-b tabs-underline:border-rule";
+
+const TABS_UNDERLINE_TRIGGER_OVERRIDE =
+  "tabs-underline:h-12 tabs-underline:rounded-none tabs-underline:border-b-(length:--tabs-indicator-width) tabs-underline:border-transparent tabs-underline:px-4 tabs-underline:py-0 tabs-underline:hover:text-foreground tabs-underline:focus-ring-inset tabs-underline:focus-visible:ring-offset-0 tabs-underline:data-[state=active]:bg-transparent tabs-underline:data-[state=active]:shadow-none tabs-underline:data-[state=active]:border-primary";
+
 export const tabsListVariants = cva(
   "max-w-full items-center overflow-x-auto text-muted-foreground",
   {
     variants: {
       variant: {
-        // Recessed pill track with a raised active segment.
-        segmented: "inline-flex h-9 justify-center-safe rounded-lg bg-muted p-1",
+        // Recessed pill track with a raised active segment. Also the
+        // TOKEN-DRIVEN DEFAULT's base — see `TABS_UNDERLINE_LIST_OVERRIDE`.
+        segmented: cn(
+          "inline-flex h-9 justify-center-safe rounded-lg bg-muted p-1",
+          TABS_UNDERLINE_LIST_OVERRIDE,
+        ),
         // Line tabs: a transparent start-aligned row over a 1px rule; the active
-        // tab's 2px underline sits on top of it (see `tabsTriggerVariants`).
+        // tab's underline sits on top of it (see `tabsTriggerVariants`).
         underline: "flex w-full justify-start border-b border-rule",
       },
     },
@@ -94,6 +115,7 @@ export const tabsTriggerVariants = cva(
   {
     variants: {
       variant: {
+        // Also the TOKEN-DRIVEN DEFAULT's base — see `TABS_UNDERLINE_TRIGGER_OVERRIDE`.
         segmented: cn(
           "rounded-control px-3 py-1",
           // `ring-offset-1`, not `-2`: the compound indicator's reach is
@@ -104,6 +126,8 @@ export const tabsTriggerVariants = cva(
           // 9); at offset 1 it is exactly 4px and the loop closes.
           "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+          "data-[state=active]:font-tabs-active",
+          TABS_UNDERLINE_TRIGGER_OVERRIDE,
         ),
         underline: cn(
           // The underline is a bottom BORDER inside the fixed height, transparent
@@ -111,9 +135,10 @@ export const tabsTriggerVariants = cva(
           // overlap the list's rule: the list scrolls (`overflow-x-auto`), which
           // would clip anything hanging past its padding box. The strip has no
           // padding for an outer ring either, so the indicator is drawn inset.
-          "h-12 rounded-none border-b-2 border-transparent px-4 hover:text-foreground",
+          "h-12 rounded-none border-b-(length:--tabs-indicator-width) border-transparent px-4 hover:text-foreground",
           "focus-ring-inset",
           "data-[state=active]:border-primary data-[state=active]:text-foreground",
+          "data-[state=active]:font-tabs-active",
         ),
       },
     },
@@ -123,8 +148,14 @@ export const tabsTriggerVariants = cva(
 
 export type TabsVariant = NonNullable<VariantProps<typeof tabsListVariants>["variant"]>;
 
-// The list owns the variant; its triggers read it, so a strip never mixes two.
-const TabsVariantContext = createContext<TabsVariant>("segmented");
+/**
+ * The list owns the variant; its triggers read it, so a strip never mixes
+ * two. `undefined` = the caller passed no `variant` on `TabsList` — the
+ * token-driven default (`--tabs-variant`): neither the list nor its triggers
+ * render a `data-variant` attribute, so the `tabs-underline:` custom
+ * variant's container style query decides the look.
+ */
+const TabsVariantContext = createContext<TabsVariant | undefined>(undefined);
 
 export interface TabsListProps
   extends
@@ -133,7 +164,11 @@ export interface TabsListProps
 
 export const TabsList = forwardRef<ElementRef<typeof TabsPrimitive.List>, TabsListProps>(
   function TabsList({ className, variant, ...props }, ref) {
-    const resolved = variant ?? "segmented";
+    // cva's `VariantProps` types `variant` as possibly `null` (an explicit
+    // opt-out); normalize it to `undefined` so it matches `TabsVariant |
+    // undefined` — same DOM/CSS effect either way (no `data-variant`).
+    const explicitVariant = variant ?? undefined;
+    const resolved = explicitVariant ?? "segmented";
     const innerRef = useRef<HTMLDivElement | null>(null);
     const mergedRef = useMemo(() => mergeRefs(ref, innerRef), [ref]);
     // Honours the in-app tri-state motion preference on `ThemeProvider` as well
@@ -227,11 +262,14 @@ export const TabsList = forwardRef<ElementRef<typeof TabsPrimitive.List>, TabsLi
     }, [reducedMotion]);
 
     return (
-      <TabsVariantContext.Provider value={resolved}>
+      // The normalized `explicitVariant` (undefined when unset), not
+      // `resolved` — an undefined Provider value is what lets a
+      // variant-less `TabsTrigger` also omit its own `data-variant` below.
+      <TabsVariantContext.Provider value={explicitVariant}>
         <TabsPrimitive.List
           ref={mergedRef}
           data-slot="tabs-list"
-          data-variant={resolved}
+          data-variant={explicitVariant}
           className={cn(tabsListVariants({ variant: resolved }), className)}
           {...props}
         />
@@ -245,12 +283,14 @@ export const TabsTrigger = forwardRef<
   ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(function TabsTrigger({ className, ...props }, ref) {
   const variant = use(TabsVariantContext);
+  const resolved = variant ?? "segmented";
 
   return (
     <TabsPrimitive.Trigger
       ref={ref}
       data-slot="tabs-trigger"
-      className={cn(tabsTriggerVariants({ variant }), className)}
+      data-variant={variant}
+      className={cn(tabsTriggerVariants({ variant: resolved }), className)}
       {...props}
     />
   );

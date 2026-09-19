@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Ban, ShieldAlert } from "lucide-react";
 import { STATUSES, StatusBadge, StatusIcon } from "./status-badge";
@@ -42,6 +43,15 @@ const meta = {
     hideIcon: {
       description: "Render label-only — omits the status icon.",
       control: "boolean",
+      table: { category: "Appearance" },
+    },
+    appearance: {
+      description:
+        "Explicit fill/border/ink treatment override, meaningful only on the colour-bearing " +
+        "statuses (running/complete/awaiting-approval/failed). `solid` is never honoured on " +
+        "a CustomStatus tone — the out-of-vocabulary hatch stays calm-only.",
+      control: { type: "select" },
+      options: [undefined, "tint", "solid", "outline", "neutral"],
       table: { category: "Appearance" },
     },
     children: {
@@ -118,6 +128,49 @@ export const CustomVocabulary: Story = {
         status={{ label: "Not run", tone: "neutral", icon: Ban }}
         className="border-dashed"
       />
+    </div>
+  ),
+};
+
+/**
+ * The four explicit `appearance` overrides on every colour-bearing status —
+ * each renders a `data-appearance` attribute regardless of the ancestor
+ * `--badge-appearance` token. `pending`/`denied`/`skipped` are already
+ * neutral pills, so `appearance` has no additional effect there.
+ */
+export const Appearances: Story = {
+  render: () => (
+    <div className="flex flex-col gap-3">
+      {(["tint", "solid", "outline", "neutral"] as const).map((appearance) => (
+        <div key={appearance} className="flex flex-wrap items-center gap-2">
+          <span className="w-16 text-caption text-muted-foreground">{appearance}</span>
+          <StatusBadge appearance={appearance} status="running" />
+          <StatusBadge appearance={appearance} status="complete" />
+          <StatusBadge appearance={appearance} status="awaiting-approval" />
+          <StatusBadge appearance={appearance} status="failed" />
+        </div>
+      ))}
+    </div>
+  ),
+};
+
+/**
+ * With no explicit `appearance` prop, an ancestor's `--badge-appearance`
+ * token drives the treatment — including the out-of-vocabulary `tone` hatch,
+ * which never reaches `solid` even here (the calm-only integrity
+ * constraint), so its custom statuses stay on their tint wash.
+ */
+export const TokenDrivenAppearance: Story = {
+  render: () => (
+    <div
+      className="flex flex-wrap gap-2"
+      style={{ "--badge-appearance": "solid" } as CSSProperties}
+    >
+      <StatusBadge status="running" />
+      <StatusBadge status="complete" />
+      <StatusBadge status="awaiting-approval" />
+      <StatusBadge status="failed" />
+      <StatusBadge status={{ label: "Stopped (guardrail)", tone: "warning", icon: ShieldAlert }} />
     </div>
   ),
 };

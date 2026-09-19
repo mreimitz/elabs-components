@@ -171,7 +171,7 @@ export function StatePanel({
           KEEPS text-destructive: an icon is a mark, so the fill rung is
           correct there — do not "tidy" it onto -text too. */}
       {isError && (
-        <span className="text-meta font-semibold uppercase tracking-widest text-destructive-text">
+        <span className="text-eyebrow uppercase text-destructive-text">
           {t("ui.statePanel.errorEyebrow")}
         </span>
       )}

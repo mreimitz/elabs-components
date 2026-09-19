@@ -14,7 +14,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       className={cn(
         "flex h-control w-full rounded-control border border-input bg-input-background text-foreground px-3 py-1 text-body shadow-input transition-[color,background-color,border-color,box-shadow] duration-fast ease-standard",
         "placeholder:text-muted-foreground",
-        "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+        "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:border-input-focus",
         // One disabled mechanism (opacity fade), matching every `Button`
         // variant — `disabled:bg-muted` used to also fire here, stacking a
         // fill swap on top of the fade (#286); `disabled:border-border` stays,

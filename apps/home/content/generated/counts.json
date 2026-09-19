@@ -24,7 +24,7 @@
     "source": "themes/*/theme.ts"
   },
   "tokens": {
-    "value": 255,
+    "value": 285,
     "source": "brand-ui.manifest.json#tokenCount"
   },
   "skills": {

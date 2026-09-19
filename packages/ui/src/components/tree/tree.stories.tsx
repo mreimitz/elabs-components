@@ -530,7 +530,7 @@ export const RevealSelectedNode: Story = {
 /**
  * `surface="sidebar"` renders the selected row with the sidebar's own active-item
  * treatment (`bg-sidebar-accent` + `text-sidebar-accent-foreground` + `font-medium`),
- * matching `SidebarMenuButton`'s active state — because the default `bg-accent`
+ * matching `SidebarMenuButton`'s active state — because the default `bg-selection`
  * fill is near-invisible against `--sidebar`. No fill is ≥3:1 on a sidebar, so
  * (like the Sidebar itself) perceivability comes from the foreground/weight shift
  * plus `aria-selected`, not fill contrast alone.

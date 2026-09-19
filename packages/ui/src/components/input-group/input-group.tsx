@@ -28,8 +28,11 @@ export const inputGroupVariants = cva(
     variants: {
       variant: {
         // The form-field look: the strong `--input` boundary is the field's
-        // sole structural cue, so it stays on the strong rung.
-        outline: "border border-input shadow-input",
+        // sole structural cue, so it stays on the strong rung. Focus lands on
+        // the inner control, not this wrapper, so the border swap reads its
+        // `has-[:focus-visible]` state instead of its own `focus-visible`.
+        outline:
+          "border border-input shadow-input has-[[data-slot=input-group-control]:focus-visible]:border-input-focus",
         // The composer look (#194, research 08 §C.1/§D): a soft fill with the
         // focus-within ring carrying focus — NO hard border. Separation comes
         // from the fill (the chat footer already draws its own `border-t`).

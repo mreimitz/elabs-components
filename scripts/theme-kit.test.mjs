@@ -1,14 +1,25 @@
 // Self-test for the theme kit shipped with the brand-ui-create-theme / brand-ui-update-theme
 // plugin skills. It lives here (not beside the script) so `pnpm check:test` runs it and the
 // plugin does not ship it. The kit is zero-dependency and must agree with the repo's own
-// community-themes gate — the parity tests below pin that.
+// community-themes gate — the parity tests below pin that. The last section covers the
+// repo's own scaffolder (`pnpm theme:new`, scripts/new-community-theme.mjs) and its
+// `--preset` shapes, which feed the same gate.
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { contrast as repoContrast } from "./lib/community-themes.mjs";
+import {
+  auditFamily,
+  declarations,
+  readRootDeclarations,
+  readTokenNames,
+  contrast as repoContrast,
+  themeBlocks as repoThemeBlocks,
+} from "./lib/community-themes.mjs";
+import { TOKENS_SRC } from "./lib/theme-sources.mjs";
+import { PRESETS, presetOverrides, scaffoldCss, writeScaffold } from "./new-community-theme.mjs";
 import {
   applyTokens,
   auditTheme,
@@ -250,5 +261,106 @@ test("renderProposal refuses a draft that could break out of the style element",
         { light: '[data-theme="acme-light"] { --x: "</style><script>"; }' },
       ),
     /</,
+  );
+});
+
+// ── Scaffolder shape presets (`pnpm theme:new --preset <name>`) ─────────────────────────
+
+const SCHEMES = ["light", "dark"];
+const referenceCss = (scheme) => readFileSync(join(TOKENS_SRC, "themes", `${scheme}.css`), "utf8");
+/** The single theme block's declarations, whitespace collapsed so wrapped values compare. */
+const scaffoldDecls = (css) => {
+  const blocks = repoThemeBlocks(css);
+  assert.equal(blocks.length, 1);
+  return new Map(
+    [...declarations(blocks[0].body)].map(([token, value]) => [
+      token,
+      value.replace(/\s+/g, " ").replace(/\(\s+/g, "(").replace(/\s+\)/g, ")"),
+    ]),
+  );
+};
+
+test("the default scaffold copies every reference value unchanged", () => {
+  for (const scheme of SCHEMES) {
+    const reference = repoThemeBlocks(referenceCss(scheme)).find((b) => b.name === scheme);
+    const expected = scaffoldDecls(`[data-theme="x"] {${reference.body}\n}`);
+    const out = scaffoldCss(referenceCss(scheme), { slug: "acme", scheme, label: "Acme" });
+    assert.deepEqual(scaffoldDecls(out), expected, scheme);
+    assert.ok(!out.includes("preset"), "no preset note without --preset");
+  }
+});
+
+test("--preset flat changes exactly its shape tokens and nothing else", () => {
+  for (const scheme of SCHEMES) {
+    const plain = scaffoldDecls(
+      scaffoldCss(referenceCss(scheme), { slug: "acme", scheme, label: "Acme", hue: 200 }),
+    );
+    const flatCss = scaffoldCss(referenceCss(scheme), {
+      slug: "acme",
+      scheme,
+      label: "Acme",
+      hue: 200,
+      preset: "flat",
+    });
+    const flat = scaffoldDecls(flatCss);
+    const overrides = presetOverrides("flat", scheme);
+    assert.deepEqual([...flat.keys()], [...plain.keys()], "same tokens, same order");
+    for (const [token, value] of flat) {
+      assert.equal(value, overrides[token] ?? plain.get(token), `${scheme} ${token}`);
+    }
+    assert.match(flatCss, /Started from the "flat" shape preset/);
+  }
+  // The shape the preset promises.
+  const light = presetOverrides("flat", "light");
+  assert.equal(light["--card-shadow"], "none");
+  assert.equal(light["--card-border"], "var(--border)");
+  assert.equal(light["--radius-base"], "0.25rem");
+  assert.equal(light["--control-size"], "8");
+  assert.equal(light["--header-size"], "12");
+  assert.equal(light["--table-row-rule-width"], "1px");
+  assert.equal(light["--tabs-variant"], "underline");
+  assert.ok(Number(light["--shadow-strength"]) < 1, "light menus still float, cards do not");
+  assert.ok(Number(presetOverrides("flat", "dark")["--shadow-strength"]) < 2.2);
+});
+
+test("presets are shape only — no preset sets a colour", () => {
+  for (const [name, spec] of Object.entries(PRESETS)) {
+    for (const scheme of SCHEMES) {
+      for (const [token, value] of Object.entries({ ...spec.shared, ...spec[scheme] })) {
+        assert.doesNotMatch(value, /oklch|rgb|hsl|#[0-9a-f]{3}/i, `${name} ${token}`);
+      }
+    }
+  }
+});
+
+test("a flat scaffold passes the community-themes audit", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "theme-preset-"));
+  try {
+    await writeScaffold({
+      folder: join(dir, "flatprobe"),
+      slug: "flatprobe",
+      label: "Flat Probe",
+      hue: 200,
+      schemes: [...SCHEMES],
+      preset: "flat",
+    });
+    const { errors, variants } = auditFamily("flatprobe", {
+      dir,
+      tokenNames: readTokenNames(),
+      root: readRootDeclarations(),
+    });
+    assert.deepEqual(errors, []);
+    assert.equal(variants.length, 2);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("an unknown preset, or a preset token the reference lacks, fails the scaffold", () => {
+  assert.throws(() => presetOverrides("round", "light"), /unknown preset "round"/);
+  const partial = `[data-theme="light"] {\n  color-scheme: light;\n  --control-size: 9;\n}`;
+  assert.throws(
+    () => scaffoldCss(partial, { slug: "acme", scheme: "light", label: "Acme", preset: "flat" }),
+    /declares no --radius-base/,
   );
 });

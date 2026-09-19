@@ -391,9 +391,7 @@ export const CalcBlock = forwardRef<HTMLDivElement, CalcBlockProps>(function Cal
 
       {showTotal && resolvedTotal != null && !empty ? (
         <div className="flex items-center justify-between border-t border-border px-4 py-2">
-          <span className="text-meta font-medium uppercase tracking-wide text-muted-foreground">
-            {totalLabel}
-          </span>
+          <span className="text-eyebrow uppercase text-muted-foreground">{totalLabel}</span>
           <span className="font-mono text-code font-medium tabular-nums text-foreground">
             {totalDisplay}
           </span>

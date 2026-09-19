@@ -36,4 +36,24 @@ describe("cn", () => {
   it("still dedupes conflicting text-<color> utilities against each other", () => {
     expect(cn("text-red-500", "text-blue-500")).toBe("text-blue-500");
   });
+
+  it("keeps every type role beside a text colour, and lets a later role replace it", () => {
+    for (const role of ["eyebrow", "kpi-sm", "display-lg", "heading-xs", "table-header"]) {
+      expect(cn(`text-${role}`, "text-muted-foreground")).toBe(
+        `text-${role} text-muted-foreground`,
+      );
+      expect(cn(`text-${role}`, "text-caption")).toBe("text-caption");
+    }
+  });
+
+  it("lets a caller's utility replace a component-seam token default", () => {
+    expect(cn("shadow-card", "shadow-none")).toBe("shadow-none");
+    expect(cn("shadow-popover", "shadow-lg")).toBe("shadow-lg");
+    expect(cn("shadow-dialog", "shadow-none")).toBe("shadow-none");
+    expect(cn("rounded-badge", "rounded-md")).toBe("rounded-md");
+    expect(cn("font-tabs-active", "font-bold")).toBe("font-bold");
+    expect(cn("leading-(--card-title-leading)", "leading-tight")).toBe("leading-tight");
+    expect(cn("tracking-(--table-header-tracking)", "tracking-wide")).toBe("tracking-wide");
+    expect(cn("text-table-header-foreground", "text-foreground")).toBe("text-foreground");
+  });
 });

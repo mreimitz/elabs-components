@@ -49,7 +49,7 @@ export const CommandTrigger = forwardRef<HTMLButtonElement, CommandTriggerProps>
         aria-label={label}
         className={cn(
           "inline-flex h-8 items-center gap-2 rounded-md border border-input bg-background px-2 text-body text-muted-foreground",
-          "hover:bg-accent hover:text-accent-foreground focus-ring",
+          "hover:bg-accent hover:text-accent-foreground focus-ring focus-visible:border-input-focus",
           "sm:w-56 sm:justify-between sm:ps-2 sm:pe-1.5",
           className,
         )}

@@ -30,11 +30,7 @@ export function UseCaseCard({
             {icon}
           </div>
         ) : null}
-        {tag ? (
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {tag}
-          </span>
-        ) : null}
+        {tag ? <span className="text-eyebrow uppercase text-muted-foreground">{tag}</span> : null}
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         <p className="flex-1 text-sm text-muted-foreground">{description}</p>
         {/* #399 — footer copy is TEXT on the card, so it takes the on-surface

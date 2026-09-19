@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { CSSProperties } from "react";
+import { expect } from "storybook/test";
 import { Icon } from "./icon";
+import { BookmarkIcon } from "./sample-icons/bookmark";
 
 const meta = {
   title: "Icons/Icon",
@@ -102,4 +105,82 @@ export const StrokeWidths: Story = {
       ))}
     </div>
   ),
+};
+
+/**
+ * `variant="outline" | "solid"` forces the glyph on an icon `createIcon` gave
+ * a solid counterpart (here `BookmarkIcon`), regardless of the theme's
+ * `--icon-fill` token. An icon without a solid glyph always renders outline.
+ */
+export const Variants: Story = {
+  render: () => (
+    <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+        <BookmarkIcon size={32} variant="outline" title="Bookmark, outline" />
+        <span>outline</span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+        <BookmarkIcon size={32} variant="solid" title="Bookmark, solid" />
+        <span>solid</span>
+      </div>
+    </div>
+  ),
+};
+
+/**
+ * With `variant` omitted, an icon built with a solid glyph renders both glyph
+ * groups and the theme's `--icon-fill` token (set on an ancestor via CSS,
+ * defaulted to `outline` in every theme) picks between them — a theme can
+ * flip the whole surface to solid icons without touching a single call site.
+ * The base rule lives in `themes.css`, which Storybook's preview loads.
+ */
+export const FillToken: Story = {
+  render: () => (
+    <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+      <div
+        data-testid="default-wrapper"
+        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}
+      >
+        <BookmarkIcon size={32} title="Bookmark, theme default" />
+        <span>default theme (outline)</span>
+      </div>
+      <div
+        data-testid="solid-wrapper"
+        style={
+          {
+            "--icon-fill": "solid",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "8px",
+          } as CSSProperties
+        }
+      >
+        <BookmarkIcon size={32} title="Bookmark, --icon-fill: solid" />
+        <span>--icon-fill: solid</span>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    // Verifies the actual mechanism (a `@container style(--icon-fill: solid)`
+    // query in themes.css, matched against the ancestor `<div>`'s inline
+    // custom property) in a real browser — not just that both glyph groups
+    // exist in the DOM.
+    const getGlyphDisplay = (wrapperTestId: string, glyph: "outline" | "solid") => {
+      const el = canvasElement
+        .querySelector(`[data-testid="${wrapperTestId}"]`)
+        ?.querySelector(`[data-icon-glyph="${glyph}"]`);
+      if (!el) throw new Error(`missing [data-icon-glyph="${glyph}"] in ${wrapperTestId}`);
+      return getComputedStyle(el).display;
+    };
+
+    // Outside the token override, the theme's `--icon-fill: outline` default
+    // (themes.css) keeps the outline glyph painted and the solid one hidden.
+    await expect(getGlyphDisplay("default-wrapper", "outline")).not.toBe("none");
+    await expect(getGlyphDisplay("default-wrapper", "solid")).toBe("none");
+
+    // Inside `--icon-fill: solid`, the container style query flips both.
+    await expect(getGlyphDisplay("solid-wrapper", "outline")).toBe("none");
+    await expect(getGlyphDisplay("solid-wrapper", "solid")).not.toBe("none");
+  },
 };
