@@ -36,6 +36,8 @@ import {
   matchTemplates,
   matchCliVerbs,
 } from "../lib/core.mjs";
+import { renderDocsBrief, smallerCard } from "../lib/docs-brief.mjs";
+import { searchExports, renderComponentArm, NO_MATCH_GUIDANCE } from "../lib/search.mjs";
 import { writeContext, checkContext } from "../lib/context.mjs";
 import { resolveAllProps } from "../lib/docgen.mjs";
 import { scanText } from "../lib/audit.mjs";
@@ -296,19 +298,13 @@ function cmdSearch() {
       "search: no manifest (run inside the monorepo or install @elabs-ai/components-cli).",
     );
   if (!q) return console.error("usage: brand-ui search <query>");
-  const matches = flat(manifest).filter(
-    (r) => r.name.toLowerCase().includes(q) || r.pkg.toLowerCase().includes(q),
-  );
-  // #86 added `type`/`export` rows to flat() alongside `component`/`hook` rows.
-  // Keeping them in ONE list meant a type-heavy package (e.g. @elabs-ai/components-ai's
-  // many `*Props` types) could fill the truncation cap below and crowd real
-  // components out of the output entirely (a real regression: `search Button`
-  // stopped returning `Button` itself). Split into two independently-truncated
-  // buckets so a type/otherExport match can never displace a component/hook
-  // match — this keeps the component/hook arm byte-for-byte what it was before
-  // #86 (the brief's "purely additive" acceptance criterion).
-  const rows = matches.filter((r) => r.kind === "component" || r.kind === "hook");
-  const typeRows = matches.filter((r) => r.kind === "type" || r.kind === "export");
+  // Ranked, word-aware, vocabulary-bridged (lib/search.mjs) — a plain substring
+  // filter answered "date range picker" with "(none)" while DateRangePicker shipped.
+  // Components/hooks and types/exports/constants stay two independently-truncated
+  // buckets (#86) so a type-heavy package can never crowd a component out.
+  const result = searchExports(manifest, args.join(" "));
+  const rows = result.rows;
+  const typeRows = result.typeRows;
   const reg = manifest.registry.filter((r) =>
     (r.name + " " + r.title + " " + r.description).toLowerCase().includes(q),
   );
@@ -328,15 +324,15 @@ function cmdSearch() {
   if (json)
     return out({
       components: rows,
+      nearest: result.nearest,
+      ...(rows.length ? {} : { guidance: NO_MATCH_GUIDANCE }),
       types: typeRows,
       registry: reg,
       playbooks: books,
       templates,
       cliVerbs: verbs,
     });
-  console.log(`Components/hooks matching "${q}":`);
-  for (const r of rows.slice(0, 30)) console.log(`  ${r.name}  (${r.pkg} · ${r.kind})`);
-  if (!rows.length) console.log("  (none)");
+  for (const line of renderComponentArm(q, result, 30)) console.log(line);
   if (typeRows.length) {
     console.log(`\nTypes/other exports matching "${q}":`);
     for (const r of typeRows.slice(0, 30)) console.log(`  ${r.name}  (${r.pkg} · ${r.kind})`);
@@ -366,6 +362,21 @@ function cmdSearch() {
       console.log(`    ${v.does}`);
     }
   }
+}
+
+/**
+ * The "Next:" commands, in the package manager the caller is actually using.
+ * `npx … create` sets npm_config_user_agent to npm — printing only pnpm commands
+ * there stops a first-time user who has never installed pnpm. With no agent to
+ * read (a direct `node` run), pnpm leads and the npm line follows.
+ */
+function nextStepLines(dir, installed) {
+  const ua = process.env.npm_config_user_agent || "";
+  const pm = /^(pnpm|yarn|bun|npm)\b/.exec(ua)?.[1];
+  const line = (m) =>
+    `    cd ${dir}${installed ? "" : ` && ${m} install`} && ${m === "npm" ? "npm run dev" : `${m} dev`}`;
+  if (pm) return [line(pm)];
+  return [line("pnpm"), "    (no pnpm? the same with npm:)", line("npm")];
 }
 
 /** The first sentence of a description (up to the first `.`/`!`/`?`), for a
@@ -597,91 +608,99 @@ function cmdDocs() {
       records.push(docsJsonRecord(hit, extractProps(hit.module, hit.name)));
       continue;
     }
-    console.log(`# ${hit.name}  (${hit.pkg})`);
-    if (hit.importPath) console.log(`import from: ${hit.importPath}`);
-    console.log(`source: ${hit.module}`);
-    // Intent metadata (#80): purpose / relationships / state→token / anti-patterns.
-    // The agent-distinctive layer types can't encode — print it ABOVE the prop
-    // table so an agent reads "what's correct/wrong" before "what's possible".
-    const intent = hit.intent;
-    if (intent) {
-      if (intent.purpose)
-        console.log(`purpose: ${intent.purpose}${intent.category ? `  [${intent.category}]` : ""}`);
-      const rel = intent.relationships || {};
-      const relLines = [
-        rel.usedInside?.length && `used inside: ${rel.usedInside.join(", ")}`,
-        rel.contains?.length && `contains: ${rel.contains.join(", ")}`,
-        rel.pairsWith?.length && `pairs with: ${rel.pairsWith.join(", ")}`,
-        rel.avoidNextTo?.length && `avoid next to: ${rel.avoidNextTo.join(", ")}`,
-      ].filter(Boolean);
-      for (const l of relLines) console.log(`  ${l}`);
-      if (intent.stateTokens && Object.keys(intent.stateTokens).length) {
-        console.log("state → token:");
-        for (const [state, tok] of Object.entries(intent.stateTokens))
-          console.log(`  ${state}: ${tok}`);
-      }
-      if (intent.antiPatterns?.length) {
-        console.log("anti-patterns (avoid):");
-        for (const ap of intent.antiPatterns) console.log(`  ✗ ${ap}`);
-      }
-    }
-    // Resolved prop table (#79): own-declared props with optionality, type and
-    // TSDoc, plus the `extends` clause. When the docgen pass (ADR 0013) enriched
-    // this entry, own-declared props carry resolved defaults/descriptions and a
-    // `resolved` map holds the expanded INHERITED prop surface — printed below.
-    if (hit.props) {
-      if (hit.props.extends?.length) {
-        const note = hit.props.resolved
-          ? "inherited — expanded below"
-          : "inherited props — read source/types";
-        console.log(`extends: ${hit.props.extends.join(", ")}  (${note})`);
-      }
-      if (hit.props.props?.length) {
-        console.log("props (own-declared):");
-        for (const p of hit.props.props) {
-          const req = p.optional ? "?" : "";
-          const def = p.defaultValue !== undefined ? `  = ${p.defaultValue}` : "";
-          const desc = p.description ? `  — ${p.description}` : "";
-          console.log(`  ${p.name}${req}: ${p.type}${def}${desc}`);
-        }
-      }
-      // Resolved inherited props (react-docgen-typescript). Only present after
-      // `pnpm gen` ran with the devDep installed; absent → this is skipped.
-      const resolved = hit.props.resolved;
-      if (resolved && Object.keys(resolved).length) {
-        console.log("props (inherited, resolved):");
-        for (const name of Object.keys(resolved).sort((a, b) => a.localeCompare(b))) {
-          const r = resolved[name];
-          const req = r.optional === false ? "" : "?";
-          const type = r.type ? `: ${r.type}` : "";
-          const def = r.defaultValue !== undefined ? `  = ${r.defaultValue}` : "";
-          const desc = r.description ? `  — ${r.description}` : "";
-          console.log(`  ${name}${req}${type}${def}${desc}`);
-        }
-      }
-    }
-    const props = extractProps(hit.module, hit.name);
-    if (props?.snippets?.length) {
-      console.log("```ts");
-      console.log(props.snippets.join("\n\n"));
-      console.log("```");
-    } else if (!hit.props) {
-      console.log(`(read ${hit.module} for the full API — never guess props.)`);
-    }
-    if (hit.variants?.variants) {
-      console.log("variants (expanded from cva — these are the real values):");
-      for (const [group, values] of Object.entries(hit.variants.variants)) {
-        const def = hit.variants.defaultVariants?.[group];
-        const rendered = values.map((v) => (v === def ? `${v} (default)` : v)).join(" | ");
-        console.log(`  ${group}: ${rendered}`);
-      }
-    }
-    console.log("");
+    const full = renderCliDocs(hit);
+    // --brief: the smaller first read (lib/docs-brief.mjs); DataTable 29 KB → 6 KB.
+    // Where the brief card would not be smaller, print the full one.
+    console.log(`${flags.has("--brief") ? smallerCard(renderDocsBrief(hit), full) : full}\n`);
   }
   // A single query prints its record directly; multiple queries print an array
   // (one record per queried name, in the order given) — same convention as the
   // markdown loop, one entry per name.
   if (json) console.log(JSON.stringify(records.length === 1 ? records[0] : records, null, 2));
+}
+
+/** The full `docs` card for one manifest row, as text (the CLI's default output). */
+function renderCliDocs(hit) {
+  const out = [];
+  out.push(`# ${hit.name}  (${hit.pkg})`);
+  if (hit.importPath) out.push(`import from: ${hit.importPath}`);
+  out.push(`source: ${hit.module}`);
+  // Intent metadata (#80): purpose / relationships / state→token / anti-patterns.
+  // The agent-distinctive layer types can't encode — print it ABOVE the prop
+  // table so an agent reads "what's correct/wrong" before "what's possible".
+  const intent = hit.intent;
+  if (intent) {
+    if (intent.purpose)
+      out.push(`purpose: ${intent.purpose}${intent.category ? `  [${intent.category}]` : ""}`);
+    const rel = intent.relationships || {};
+    const relLines = [
+      rel.usedInside?.length && `used inside: ${rel.usedInside.join(", ")}`,
+      rel.contains?.length && `contains: ${rel.contains.join(", ")}`,
+      rel.pairsWith?.length && `pairs with: ${rel.pairsWith.join(", ")}`,
+      rel.avoidNextTo?.length && `avoid next to: ${rel.avoidNextTo.join(", ")}`,
+    ].filter(Boolean);
+    for (const l of relLines) out.push(`  ${l}`);
+    if (intent.stateTokens && Object.keys(intent.stateTokens).length) {
+      out.push("state → token:");
+      for (const [state, tok] of Object.entries(intent.stateTokens)) out.push(`  ${state}: ${tok}`);
+    }
+    if (intent.antiPatterns?.length) {
+      out.push("anti-patterns (avoid):");
+      for (const ap of intent.antiPatterns) out.push(`  ✗ ${ap}`);
+    }
+  }
+  // Resolved prop table (#79): own-declared props with optionality, type and
+  // TSDoc, plus the `extends` clause. When the docgen pass (ADR 0013) enriched
+  // this entry, own-declared props carry resolved defaults/descriptions and a
+  // `resolved` map holds the expanded INHERITED prop surface — printed below.
+  if (hit.props) {
+    if (hit.props.extends?.length) {
+      const note = hit.props.resolved
+        ? "inherited — expanded below"
+        : "inherited props — read source/types";
+      out.push(`extends: ${hit.props.extends.join(", ")}  (${note})`);
+    }
+    if (hit.props.props?.length) {
+      out.push("props (own-declared):");
+      for (const p of hit.props.props) {
+        const req = p.optional ? "?" : "";
+        const def = p.defaultValue !== undefined ? `  = ${p.defaultValue}` : "";
+        const desc = p.description ? `  — ${p.description}` : "";
+        out.push(`  ${p.name}${req}: ${p.type}${def}${desc}`);
+      }
+    }
+    // Resolved inherited props (react-docgen-typescript). Only present after
+    // `pnpm gen` ran with the devDep installed; absent → this is skipped.
+    const resolved = hit.props.resolved;
+    if (resolved && Object.keys(resolved).length) {
+      out.push("props (inherited, resolved):");
+      for (const name of Object.keys(resolved).sort((a, b) => a.localeCompare(b))) {
+        const r = resolved[name];
+        const req = r.optional === false ? "" : "?";
+        const type = r.type ? `: ${r.type}` : "";
+        const def = r.defaultValue !== undefined ? `  = ${r.defaultValue}` : "";
+        const desc = r.description ? `  — ${r.description}` : "";
+        out.push(`  ${name}${req}${type}${def}${desc}`);
+      }
+    }
+  }
+  const props = extractProps(hit.module, hit.name);
+  if (props?.snippets?.length) {
+    out.push("```ts");
+    out.push(props.snippets.join("\n\n"));
+    out.push("```");
+  } else if (!hit.props) {
+    out.push(`(read ${hit.module} for the full API — never guess props.)`);
+  }
+  if (hit.variants?.variants) {
+    out.push("variants (expanded from cva — these are the real values):");
+    for (const [group, values] of Object.entries(hit.variants.variants)) {
+      const def = hit.variants.defaultVariants?.[group];
+      const rendered = values.map((v) => (v === def ? `${v} (default)` : v)).join(" | ");
+      out.push(`  ${group}: ${rendered}`);
+    }
+  }
+  return out.join("\n");
 }
 
 // ---- static audit (token/style/anti-slop lint; the rendered + contrast pass lives in the skill) ----
@@ -975,7 +994,7 @@ function cmdCreate() {
   lines.push(
     "",
     "  Next:",
-    `    cd ${dir}${flags.has("--install") ? "" : " && pnpm install"} && pnpm dev`,
+    ...nextStepLines(dir, flags.has("--install")),
     "  Then tell your agent: `brand-ui info` (or the hosted MCP) before touching the UI —",
     "  the app ships a CLAUDE.md / AGENTS.md that already say so.",
   );
@@ -1120,6 +1139,9 @@ const GENERAL_HELP = `brand-ui <command>
                          (a whole-screen intent like "dashboard" routes to its playbook)
   docs <Component...>    Locate a component and print its real props from source
       [--json]           …or emit the same data as structured JSON
+      [--brief]          …or a smaller first read: import, purpose, anti-patterns,
+                         variants, own props with one-line descriptions (the full
+                         card where the brief one would not be smaller)
   chart-for "<shape>"    Rank @elabs-ai/components-charts chart containers for a data shape
       [--json]           ("weekday by hour ticket volume") — judge the shape first;
                          see skills/brand-ui/reference/chart-selection.md
@@ -1147,7 +1169,8 @@ const GENERAL_HELP = `brand-ui <command>
       [--write <dir>]    …and EMIT a RUNNABLE app: index.html, src/{App,main}.tsx,
       [--dry-run]        src/styles.css, vite.config.ts, tsconfig.json, app-spec.md,
       [--force]          CLAUDE.md, AGENTS.md, brand-ui-context.md, eslint.config.js,
-                         a CI workflow and package.json. Without --write nothing is
+                         a CI workflow and package.json (standalone: plus
+                         pnpm-workspace.yaml + .npmrc). Without --write nothing is
                          written; a target that already has some of these is
                          reported "partial" (exit 1), never a silent success.
   scan [path]            Read-only repo profile: framework, UI lib, styling, components (VP-03)

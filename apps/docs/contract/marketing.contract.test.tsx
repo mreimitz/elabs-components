@@ -169,6 +169,64 @@ describe("FeatureGrid contract (browser)", () => {
   }
 });
 
+// ── GatesBand (packages/marketing/src/gates-band/gates-band.tsx) ────────────────────────────────────────
+import * as stories_gates_band from "../../../packages/marketing/src/gates-band/gates-band.stories";
+describe("GatesBand contract (browser)", () => {
+  const meta = stories_gates_band.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_gates_band as { Default?: { args?: Record<string, unknown> } }).Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "marketing-gatesband--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "marketing-gatesband--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
 // ── LogoStrip (packages/marketing/src/logo-strip/logo-strip.tsx) ────────────────────────────────────────
 import * as stories_logo_strip from "../../../packages/marketing/src/logo-strip/logo-strip.stories";
 describe("LogoStrip contract (browser)", () => {

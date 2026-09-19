@@ -308,6 +308,17 @@ export function packagePeers(pkgName, { root, manifest } = {}) {
   );
 }
 
+/**
+ * This CLI's own version. Every distributable package publishes in lockstep
+ * (`fixed` group, .changeset/config.json), so outside the monorepo the CLI's
+ * version IS the release the scaffold must pin. Without it a `npx … create`
+ * app depended on "latest" for every @elabs-ai package — not reproducible, and
+ * a later major would land in an app generated against today's templates.
+ */
+function cliVersion() {
+  return readPkgJson(join(dirname(fileURLToPath(import.meta.url)), ".."))?.version ?? null;
+}
+
 /** The monorepo's own version — the release a standalone scaffold installs by default. */
 function repoVersion(root) {
   const pkg = root ? readPkgJson(root) : null;
@@ -352,7 +363,7 @@ export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}
   // caller asked for workspace:* on purpose) but cannot actually install —
   // planScaffold's summary must say so instead of reporting quiet success.
   const uninstallable = !standalone && !isThisRepo(root);
-  const release = spec.release || repoVersion(root) || null;
+  const release = spec.release || repoVersion(root) || cliVersion() || null;
 
   // Peer ranges come from the packages' own `peerDependencies` — so the app
   // installs the range the library actually supports (`@xyflow/react ^12.11.1`,
@@ -533,9 +544,9 @@ export function planScaffold(spec, { root, bundledDir } = {}) {
     contextFile: "brand-ui-context.md",
     contextFiles: ["CLAUDE.md", "AGENTS.md", "brand-ui-context.md"],
     install,
-    files: SCAFFOLD_FILES,
+    files: scaffoldFilesFor(install),
     notes: [
-      `Plan only. Run \`brand-ui scaffold <spec> --write <dir>\` to emit the ${SCAFFOLD_FILES.length} file(s) above.`,
+      `Plan only. Run \`brand-ui scaffold <spec> --write <dir>\` to emit the ${scaffoldFilesFor(install).length} file(s) above.`,
       `Template seed: ${templateFile ?? templateRel} (generated from the Storybook story) with the spec applied.`,
       install.standalone
         ? "Standalone: the install handoff (registry + deps + CSS) is in `install` — see docs/CONSUMING.md §1-4."
@@ -579,6 +590,50 @@ export const SCAFFOLD_FILES = [
   ".github/workflows/brand-ui.yml",
   "package.json",
 ];
+
+/**
+ * Package-manager config only a STANDALONE app gets — a nested
+ * `pnpm-workspace.yaml` inside this monorepo would split the workspace.
+ *
+ * pnpm 11 refuses to install while esbuild's install script (Vite's bundler) is
+ * unapproved, and re-runs install before every `pnpm dev`/`pnpm exec`, so without
+ * this a fresh app cannot even start. `allowBuilds` is the only switch pnpm 11
+ * reads; `onlyBuiltDependencies` is pnpm 10's. pnpm 9 rejects a workspace file
+ * without `packages`, and `packages` makes the app a workspace root, so
+ * `ignore-workspace-root-check` keeps a plain `pnpm add` working. npm ignores
+ * both files. Checked on pnpm 9.15, 10.34 and 11.8: install, add and build.
+ */
+export const STANDALONE_FILES = ["pnpm-workspace.yaml", ".npmrc"];
+
+/** The files a scaffold with this install plan writes, in write order. */
+export function scaffoldFilesFor(install) {
+  return install?.standalone ? [...SCAFFOLD_FILES, ...STANDALONE_FILES] : SCAFFOLD_FILES;
+}
+
+function buildPnpmWorkspace() {
+  return `# pnpm settings for this app (npm ignores this file). It is a one-package
+# workspace so every pnpm major accepts it.
+packages:
+  - "."
+# Vite's bundler, esbuild, needs its install script. pnpm 11 reads allowBuilds,
+# pnpm 10 reads onlyBuiltDependencies.
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild
+# Let \`pnpm add <pkg>\` work at the root of this one-package workspace.
+ignoreWorkspaceRootCheck: true
+`;
+}
+
+function buildNpmrc(install) {
+  const lines = [
+    "# pnpm 9 reads this setting from here; pnpm 10+ reads pnpm-workspace.yaml.",
+    "ignore-workspace-root-check=true",
+  ];
+  if (install.npmrc) lines.push(install.npmrc);
+  return `${lines.join("\n")}\n`;
+}
 
 /**
  * The files whose absence means the target is NOT a working app. Skipping any of
@@ -1331,6 +1386,9 @@ export function emitScaffold(
       tooling: toolingVersions(root),
       cliRange: install.standalone ? install.dependencyRange : "workspace:*",
     }),
+    ...(install.standalone
+      ? { "pnpm-workspace.yaml": buildPnpmWorkspace(), ".npmrc": buildNpmrc(install) }
+      : {}),
   };
 
   // The closing gate (#123 AC3): audit the bytes BEFORE they land. A scaffold that
@@ -1349,7 +1407,7 @@ export function emitScaffold(
   const targetAbs = resolve(target);
   const written = [];
   const skipped = [];
-  for (const rel of SCAFFOLD_FILES) {
+  for (const rel of scaffoldFilesFor(install)) {
     const abs = join(targetAbs, rel);
     if (!force && existsSync(abs)) {
       skipped.push(rel);

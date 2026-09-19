@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useState, type HTMLAttributes, type ReactNode } from "react";
+import { forwardRef, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 import { Download, EllipsisVertical, Maximize2 } from "lucide-react";
 import {
   Button,
@@ -55,6 +55,10 @@ export const DashboardTileMenu = forwardRef<HTMLDivElement, DashboardTileMenuPro
     ref,
   ) {
     const [detailsOpen, setDetailsOpen] = useState(false);
+    // Full screen hands focus to the expand modal, and the tile takes it back when the modal
+    // closes (`DashboardTile`'s `onExpandChange`). The menu's own close-focus runs after its
+    // exit animation, so a modal closed before then would lose focus to this trigger. Skip it.
+    const skipCloseFocus = useRef(false);
     const { t } = useLocale();
     const canExpand = api.features.includes("expand");
     const canTable = api.features.includes("table");
@@ -108,9 +112,22 @@ export const DashboardTileMenu = forwardRef<HTMLDivElement, DashboardTileMenuPro
                 </Button>
               </DropdownMenuTrigger>
             </PopoverAnchor>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent
+              align="end"
+              onCloseAutoFocus={(event) => {
+                if (skipCloseFocus.current) event.preventDefault();
+                skipCloseFocus.current = false;
+              }}
+            >
               {canExpand ? (
-                <DropdownMenuItem onSelect={api.expand}>{labels.fullScreen}</DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    skipCloseFocus.current = true;
+                    api.expand();
+                  }}
+                >
+                  {labels.fullScreen}
+                </DropdownMenuItem>
               ) : null}
               {hasDetails ? (
                 <DropdownMenuItem onSelect={() => setDetailsOpen(true)}>

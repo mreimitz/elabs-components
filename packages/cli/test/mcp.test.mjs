@@ -1,8 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { cpSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { PassThrough } from "node:stream";
 import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { handleMessage, runMcpServer, TOOLS, SERVER_INFO } from "../lib/mcp.mjs";
 import { findRepoRoot } from "../lib/core.mjs";
 
@@ -55,6 +58,8 @@ test("tools/call info|search|docs|tokens read real ground truth from the engine"
   if (!root) return t.skip("not inside the brand-ui monorepo");
   const info = call("tools/call", { name: "info", arguments: {} });
   assert.match(info.result.content[0].text, /packages \(\d+\)/, "info lists the package count");
+  // `endpoints:` is hosted-only (RM-100) — local/stdio info never prints it.
+  assert.doesNotMatch(info.result.content[0].text, /^endpoints:/m);
 
   const search = call("tools/call", { name: "search", arguments: { query: "button" } });
   assert.match(search.result.content[0].text, /Button/, "search finds Button");
@@ -63,6 +68,10 @@ test("tools/call info|search|docs|tokens read real ground truth from the engine"
   const text = docs.result.content[0].text;
   assert.match(text, /# Button/, "docs renders the component heading");
   assert.match(text, /variants/, "docs renders the expanded cva variants");
+  // Local/stdio is UNCHANGED by RM-100 — still the public docs site's `/?path=`
+  // deep link, never the hosted `/storybook/` route, and no `endpoints:` line
+  // (that is hosted-only, added to `info` below).
+  assert.match(text, /^story: https:\/\/elabs-ai\.com\/\?path=\/docs\/core-button--docs$/m);
 
   const tokens = call("tools/call", { name: "tokens", arguments: {} });
   assert.match(tokens.result.content[0].text, /themes \(\d+\)/, "tokens summarizes the themes");
@@ -157,4 +166,55 @@ test("a2ui tool: catalog lists types, validate reports problems with isError, ex
     call("tools/call", { name: "a2ui", arguments: { verb: "schema" } }).result.content[0].text,
   );
   assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
+});
+
+test("stdio server outside any repo answers from the manifest packed with the CLI", (t) => {
+  if (!root) return t.skip("not inside the monorepo — no manifest to pack");
+  // The shape `npx @elabs-ai/components-cli mcp` runs: bin/ + lib/ with the
+  // manifest beside them, started from an app that is not this monorepo. A
+  // private copy, so no other test's bundling step races this one.
+  const tmp = mkdtempSync(join(tmpdir(), "brand-ui-mcp-"));
+  t.after(() => rmSync(tmp, { recursive: true, force: true }));
+  const cli = join(tmp, "cli");
+  for (const d of ["bin", "lib"]) cpSync(join(here, "..", d), join(cli, d), { recursive: true });
+  cpSync(join(here, "..", "package.json"), join(cli, "package.json"));
+  cpSync(join(root, "brand-ui.manifest.json"), join(cli, "brand-ui.manifest.json"));
+  const app = join(tmp, "app");
+  mkdirSync(app);
+  const input =
+    [
+      { jsonrpc: "2.0", id: 1, method: "initialize", params: {} },
+      {
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: { name: "search", arguments: { query: "toast" } },
+      },
+      {
+        jsonrpc: "2.0",
+        id: 3,
+        method: "tools/call",
+        params: { name: "docs", arguments: { component: "Button", detail: "brief" } },
+      },
+    ]
+      .map((m) => JSON.stringify(m))
+      .join("\n") + "\n";
+  const r = spawnSync(process.execPath, [join(cli, "bin/brand-ui.mjs"), "mcp"], {
+    cwd: app,
+    input,
+    encoding: "utf8",
+  });
+  const replies = new Map(
+    r.stdout
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l))
+      .map((m) => [m.id, m]),
+  );
+  const search = replies.get(2).result;
+  assert.notEqual(search.isError, true, search.content[0].text);
+  assert.match(search.content[0].text, /Toaster/);
+  const docs = replies.get(3).result;
+  assert.notEqual(docs.isError, true, docs.content[0].text);
+  assert.match(docs.content[0].text, /Button/);
 });

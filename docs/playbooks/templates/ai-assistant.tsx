@@ -138,7 +138,7 @@ function AiAssistantTemplate() {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
-            <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
+            <NavUser user={{ name: "Avery Rao", email: "avery@example.com" }} />
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="flex min-w-0 flex-col overflow-hidden">

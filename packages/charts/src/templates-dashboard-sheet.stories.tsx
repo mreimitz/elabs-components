@@ -178,7 +178,7 @@ function DashboardSheetTemplate() {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <NavUser user={{ name: "Avery Rao", email: "avery@acme.co" }} />
+          <NavUser user={{ name: "Avery Rao", email: "avery@example.com" }} />
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="min-w-0">
@@ -213,10 +213,12 @@ export const Default: Story = {
     // selection bar, both docks and the sheet tiles.
     await expect(canvas.getByRole("heading", { name: "Dashboards" })).toBeInTheDocument();
     await expect(canvas.getByRole("radio", { name: "View" })).toBeInTheDocument();
-    await expect(canvas.getByText("Revenue by month")).toBeInTheDocument();
+    // The sheet draws its tiles once it has measured its own box, a moment after the chrome,
+    // and each tile body once it nears the viewport.
+    await expect(await canvas.findByText("Revenue by month")).toBeInTheDocument();
     // "Total revenue" appears twice by design (the tile's own chrome title, plus the
     // metric content's own label) — assert the metric's actual value instead, which is unique.
-    await expect(canvas.getByText("$45,000")).toBeInTheDocument();
+    await expect(await canvas.findByText("$45,000")).toBeInTheDocument();
 
     // Every tile root carries data-tile-kind (.claude/rules/dashboard.md), so the
     // starter spec 4 tiles are countable straight from the DOM with no hidden probe.

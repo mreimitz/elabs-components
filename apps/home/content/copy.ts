@@ -309,3 +309,303 @@ export const tourSurfaceCopy = {
       "You’re looking at it — this page is the marketing archetype, from the same components.",
   },
 } as const;
+
+// RM-099 — the "Ask your agent" live loop (concept §4.3, §5a choreography 4, §8 decision 4).
+// The honesty line is D5 (`docs/DECISIONS.md`): the site renders, it never owns a model call.
+export const agentLoopCopy = {
+  eyebrow: "For agents",
+  heading: "Ask your agent — and watch the calls",
+  lede: "Pick a prompt and run it. The page calls the same hosted MCP server your coding agent would, shows each call as a tool card, then renders the block the answer points to — in the theme you have on.",
+  promptLabel: "Example prompt",
+  promptPlaceholder: "Pick an example prompt above",
+  selectLabel: "Choose an example prompt",
+  onlyListedHint:
+    "Only the listed prompts run — you can edit the text, but the calls come from the prompt you picked.",
+  onlyListedTrigger: "Why only the listed prompts?",
+  run: "Run",
+  reset: "Reset",
+  traceHeading: "Tool calls",
+  traceIdle: "Run a prompt to see the MCP calls it makes.",
+  renderHeading: (title: string) => `Rendered: ${title}`,
+  renderIdle: "The rendered block appears here.",
+  recorded: "recorded",
+  recordedHint: "The live server was unreachable, so this card shows the recorded response.",
+  elapsed: (ms: number) => `${ms} ms`,
+  arguments: "Arguments",
+  result: "Result",
+  pending: "Calling…",
+  running: (prompt: string) => `Running “${prompt}”…`,
+  done: "Done — block rendered.",
+  loadingBlock: "Loading the block…",
+  surfaceTitles: {
+    "region-map": "Revenue by region",
+    "dashboard-sheet": "A four-tile dashboard sheet",
+  } as Record<string, string>,
+  regionMapLabel: "Revenue by region map",
+  honestyLine:
+    "brand-ui never owns model calls. This demo calls the same hosted MCP your agent would; the picking was done ahead of time.",
+  honestyLinkLabel: "Why: decision D5",
+  honestyLinkHref: `${shellCopy.links.github}/blob/main/docs/DECISIONS.md`,
+  /** Default `labels` for the copy-owned registry blocks the loop renders (site lint: every
+   * literal comes from copy). Wording is the blocks' own, moved here unchanged. */
+  blocks: {
+    asOf: {
+      asOf: (when: string, source?: string) =>
+        `As of ${when}${source ? ` · Source: ${source}` : ""}`,
+    },
+    movers: {
+      loading: "Loading movers cards…",
+      title: "Biggest movers this quarter",
+      scaleBefore: "Bars scaled to",
+      scaleAfter: "vs last quarter, zero at center.",
+    },
+    trendReference: {
+      loading: "Loading KPI cards…",
+      legendThisYear: "Solid: this year",
+      legendLastYear: "Faint: last year",
+      legendNormalRange: "Shaded: normal range",
+      legendTargetPace: "Dashed: target pace",
+      quarterToDate: "Quarter-to-date total",
+      weekly: "Weekly, last 13 weeks",
+    },
+    statusThreshold: {
+      loading: "Loading the KPI card…",
+      target: (value: string) => `${value} target`,
+    },
+    cohortRetention: {
+      loading: "Loading the cohort retention heatmap…",
+      heading: "Do customers stay?",
+      cohortsBadge: (count: number) => `${count} monthly cohorts`,
+      finding: (
+        cohort: string,
+        gapPp: number,
+        direction: string,
+        peerCount: number,
+        month: number,
+      ) =>
+        `${cohort} held ${gapPp}pp ${direction} retention than ${peerCount === 1 ? "its peer" : "its peers"} by month ${month}`,
+      retained: (highlightPct: number, peerAvgPct: number, peers: string, context: string) =>
+        `${highlightPct}% retained vs ${peerAvgPct}% for ${peers}, ${context}.`,
+      footnote:
+        "Each cell is the share of a cohort still active N months after signup; blank cells are months a cohort has not reached yet, not zero retention.",
+    },
+  },
+} as const;
+
+// RM-101
+/** "Let the agent emit the UI" — the A2UI and DashboardSpec live editors in the agents section. */
+export const emitUiCopy = {
+  eyebrow: "Let the agent emit the UI",
+  heading: "Edit what an agent would emit, and watch it validate and render",
+  lede: "Both editors run the library’s own validators on every pause in your typing. The errors below the editor are the validator’s, word for word.",
+  tabsLabel: "Spec format",
+  tabs: {
+    a2ui: {
+      label: "A2UI",
+      what: "A surface the agent designs at runtime, validated against the catalog, rendered by the library.",
+    },
+    dashboardSpec: {
+      label: "DashboardSpec",
+      what: "A serializable sheet an agent can emit and a person can rearrange.",
+    },
+  },
+  schemaLabel: "Copy schema",
+  schemaHosts: { cli: "Installed CLI", npx: "npx" },
+  schemaChip: {
+    copy: "Copy schema command",
+    copied: "Copied",
+    selectFallback: "Command selected — press Ctrl+C or ⌘C to copy",
+    chooseHost: "Run with",
+    menuLabel: "Run with",
+  },
+  monacoLabel: (format: string) => `${format} editor`,
+  /** Toast shown when a Button in the rendered A2UI surface fires its `on.click` action. */
+  action: (name: string) => `action: ${name}`,
+  /** Labels for the examples menu, by example id (`content/generated/emit-ui-examples.json`). */
+  examples: {
+    a2ui: {
+      "cli-example": "Order approval (brand-ui a2ui example)",
+      "kpi-grid": "KPI card grid",
+      form: "Form",
+    },
+    dashboardSpec: {
+      minimal: "Minimal (the golden spec)",
+      kpis: "Six-tile KPI sheet",
+    },
+  },
+  playground: {
+    a2ui: { editor: "A2UI surface (JSON)", preview: "Rendered A2UI surface" },
+    dashboardSpec: { editor: "DashboardSpec (JSON)", preview: "Rendered dashboard sheet" },
+    errors: "Validator errors",
+    loadExample: "Load example",
+    reset: "Reset",
+    valid: "Valid",
+    errorCount: (count: number) => (count === 1 ? "1 error" : `${count} errors`),
+    parseError: "Parse error",
+    showingLastValid: "Showing last valid",
+    nothingValid: "Nothing valid to render yet.",
+    line: (line: number) => `line ${line}`,
+  },
+  /** The six-tile example sheet over `fixtures/kpis.ts`. */
+  kpiSheet: {
+    title: "Ashgrove, this quarter",
+    arrTrend: "ARR, weekly",
+    backlogTrend: "Support backlog, weekly",
+  },
+};
+
+// RM-102 — "Works with your agent" matrix, install tabs and route cards. Source:
+// docs/review/2026-09-18-homepage-concept.md §2, §4.4, §4.6. The two senses of "AI" (the
+// agent building with brand-ui, and an agent-facing surface built WITH brand-ui) are kept
+// separate here: this section is about the FIRST sense only (concept §3).
+export const worksWithCopy = {
+  heading: "Works with your agent",
+  intro: "Six ways in, one spec — pick your host once and every command below matches it.",
+  hosts: [
+    { id: "claude-code", label: "Claude Code" },
+    { id: "cursor", label: "Cursor" },
+    { id: "vscode", label: "VS Code" },
+    { id: "codex", label: "Codex" },
+    { id: "other", label: "Other" },
+  ],
+  rows: {
+    hostedMcp: {
+      unit: "Hosted MCP",
+      gives: "A remote MCP server — nothing to run locally.",
+      action: "Add server",
+    },
+    localMcp: {
+      unit: "Local MCP + CLI",
+      gives: "The same tools from your machine, plus `audit --strict`.",
+      action: "Run locally",
+    },
+    plugin: {
+      unit: "Claude Code plugin",
+      gives: "11 skills your agent picks up automatically.",
+      action: "Add marketplace",
+      otherHostNote: "Claude-Code-specific — use the hosted MCP row for other hosts.",
+    },
+    llmsTxt: {
+      unit: "llms.txt",
+      gives: "A plain-text map of the docs for any agent that reads it.",
+      action: "Open",
+    },
+    registry: {
+      unit: "Registry",
+      gives: (blockCount: number) =>
+        `${blockCount} shadcn-compatible blocks, copy-owned into your app.`,
+      action: "Browse",
+    },
+    manifest: {
+      unit: "Manifest",
+      gives: "Every export, prop and gate, machine-readable.",
+      action: "Open",
+    },
+  },
+  routineHeading: "The daily routine",
+  /**
+   * Tooltip body per routine verb (`cli.routine`, split on " → ", supplies the ORDER — this
+   * supplies the PROSE, paraphrased from `packages/cli/bin/brand-ui.mjs`'s own `SUBCOMMAND_HELP`,
+   * which is not in `cli.json`). `audit`'s text covers the `--strict` form shown in the chip.
+   */
+  routineDoes: {
+    info: "Project context: packages, themes, tokens, registry, rules.",
+    search: "Finds a component, hook, registry item or archetype playbook by keyword.",
+    docs: "Locates a component and prints its real props, read from source.",
+    build: "Scaffolds a runnable app from a template — no interview.",
+    audit: "Static token/style + content lint; `--strict` fails the build on any finding.",
+  },
+} as const;
+
+export const installTabsCopy = {
+  heading: "Install it your way",
+  prompt: (mcpUrl: string) =>
+    `Use brand-ui — MCP at ${mcpUrl}, docs at /llms.txt — to build a screen for our support queue.`,
+} as const;
+
+export const routeCardsCopy = {
+  heading: "Where to next",
+  adopt: {
+    title: "Adopt",
+    description: "Start here — pick a path, run the commands.",
+    action: "Getting Started",
+    /** `Docs/Getting Started` — same id `SiteFooter` links to (`shellCopy.footer.gettingStartedDocId`). */
+    docId: "docs-getting-started--docs",
+  },
+  pointAgent: {
+    title: "Point your agent",
+    description: "Give your coding agent the matrix above.",
+    action: "Jump to the matrix",
+  },
+  rebrand: {
+    title: "Re-brand",
+    description: "Swap the theme, keep every component.",
+    action: "Theming guide",
+    /**
+     * `Foundations/Theming` — the closest live Storybook page to "the theme guide" (its
+     * "Bring your own theme" section); `themes/README.md` (community theme families) has no
+     * autodocs page of its own yet. Named as a substitution, not a stop, per the "closest
+     * existing" precedent (RM-089-decisions.md wave-3 ruling 12).
+     */
+    docId: "foundations-theming--docs",
+  },
+  readSource: {
+    title: "Read the source",
+    description: "It’s the same code you would import.",
+    action: "View on GitHub",
+  },
+} as const;
+
+// RM-103 — the "One token system" band (concept §4.5, §5a "Scroll choreography 5"): a curated
+// token row, the theme families as swatches, and the generated gate catalogue. The curated
+// token list and every label are authored HERE — `TokenSpotlight` (`@elabs-ai/components-ui`)
+// ships no default tokens or English copy of its own (wave-4 ruling 20/26, "no site strings
+// in ui"); the family and gate DATA come from `content/generated/*.json` through `lib/content`.
+export const tokenBandCopy = {
+  heading: "One token system",
+  intro:
+    "Hover a token to see every place it lands on this page — the ground behind it tints to match.",
+  tokens: [
+    { token: "--background", label: "Background" },
+    { token: "--foreground", label: "Foreground" },
+    { token: "--primary", label: "Primary" },
+    { token: "--surface-2", label: "Surface 2" },
+    { token: "--border", label: "Border" },
+    { token: "--chart-1", label: "Chart 1" },
+    { token: "--chart-2", label: "Chart 2" },
+    { token: "--chart-3", label: "Chart 3" },
+    { token: "--ring", label: "Ring" },
+    { token: "--radius", label: "Radius" },
+  ],
+} as const;
+
+export const themeSwatchesCopy = {
+  heading: "Nine families, none of them the menu",
+  intro: "Reference themes, ready to use as they are — or as a start for your own.",
+  use: "Use",
+  active: "Active",
+  /** `themes/qlik/README.md` §"Fonts": Source Sans 3 is self-hosted (vendored), not a CDN import. */
+  typefaceVendored: "Source Sans 3, vendored",
+  typefaceSystem: "System stack",
+  createTheme: {
+    heading: "Bring your own brand",
+    description:
+      "An agent with the create-theme skill turns a brand's own material — links, a style sheet, a logo — into a new family.",
+    hostLabel: "Agent host",
+  },
+} as const;
+
+export const gatesBandCopy = {
+  categoryLabels: {
+    stories: "Stories",
+    packages: "Packages",
+    components: "Components",
+    themes: "Themes",
+    repo: "Repo",
+    registry: "Registry",
+    external: "External commands",
+  },
+  footerPrefix: "The full list lives in",
+  footerLinkText: "docs/GATES.md",
+  footerSuffix: "on GitHub.",
+} as const;

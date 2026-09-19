@@ -27,6 +27,8 @@ import {
   resolveTasteProfile,
   tasteSearchDirs,
 } from "./core.mjs";
+import { renderDocsBrief, smallerCard } from "./docs-brief.mjs";
+import { searchExports, renderComponentArm } from "./search.mjs";
 import { scanText } from "./audit.mjs";
 import { matchChartFor, renderChartForText } from "./chart-for.mjs";
 import {
@@ -73,6 +75,16 @@ export const DOCS_SITE_URL = "https://elabs-ai.com";
 const RELEASE_TAG = `@elabs-ai/components-cli@${SERVER_INFO.version}`;
 const RAW_BASE = `https://raw.githubusercontent.com/mreimitz/elabs-components/${RELEASE_TAG}`;
 
+/**
+ * Where `npx shadcn@latest add <url>/<item>.json` resolves TODAY — the published GitHub Pages
+ * registry (`registry/registry.json`'s own `homepage`, kept fresh by `pnpm registry:publish`).
+ * A literal, not a runtime read of that file: this module ships inside the published
+ * `@elabs-ai/components-cli` package and must work with no monorepo checkout on disk
+ * (`npx @elabs-ai/components-cli mcp`), exactly like `DOCS_SITE_URL` above. Once the site's own
+ * `/r` route exists (RM-105), a caller with `siteRoutes: true` gets `<siteOrigin>/r` instead.
+ */
+export const REGISTRY_HOMEPAGE = "https://mreimitz.github.io/elabs-components/r";
+
 /** Playbook `template` paths are relative to the playbook folder. */
 const PLAYBOOK_DIR = "docs/playbooks";
 const templateRepoPath = (file) =>
@@ -82,8 +94,26 @@ const templateRepoPath = (file) =>
 const openablePath = (ctx, repoPath) =>
   ctx.hosted ? `${RAW_BASE}/${String(repoPath).replace(/^\/+/, "")}` : String(repoPath);
 
-/** The live Storybook docs page for a component, from the manifest's storyId. */
-const storyUrl = (storyId) => `${DOCS_SITE_URL}/?path=/docs/${storyId}`;
+/**
+ * The live Storybook docs page for a component, from the manifest's storyId.
+ *
+ * Until RM-105 moves the domain, `https://elabs-ai.com` IS the Storybook project — it has no
+ * `/storybook/` route, only `/?path=…` (which it answers directly, no redirect needed). So the
+ * DEFAULT link, hosted or not, is `<origin>/?path=/docs/<id>`; `ctx.siteRoutes` opts a caller
+ * into the SITE's own `/storybook/` route instead, for an instance that actually serves one
+ * (`apps/home`, once live). `siteOrigin` defaults to the production site and is overridable per
+ * request (hosted only — `ctx.siteOrigin`, sourced from the `SITE_ORIGIN` env var in the hosted
+ * HTTP handler) so a preview reports its own origin.
+ *
+ * Local (stdio) ignores both `siteOrigin` and `siteRoutes` — always the production `/?path=`
+ * link, byte-identical to before RM-100.
+ */
+const storyUrl = (storyId, ctx) => {
+  const origin = (ctx?.hosted && ctx.siteOrigin) || DOCS_SITE_URL;
+  return ctx?.hosted && ctx.siteRoutes
+    ? `${origin}/storybook/?path=/docs/${storyId}`
+    : `${origin}/?path=/docs/${storyId}`;
+};
 
 /**
  * The routine from the Storybook "Getting Started" page. `info` is the first
@@ -130,6 +160,12 @@ export const TOOLS = [
       type: "object",
       properties: {
         component: { type: "string", description: "Exact component name, e.g. Button." },
+        detail: {
+          type: "string",
+          enum: ["brief", "full"],
+          description:
+            '"full" is the default. On a large component, start with "brief" (DataTable: 14 KB → 6 KB): import line, purpose, anti-patterns, variants, own props with one-line descriptions. Where the brief card would not be smaller you get the full one.',
+        },
       },
       required: ["component"],
       additionalProperties: false,
@@ -201,10 +237,12 @@ const textContent = (text) => ({ content: [{ type: "text", text }] });
 
 /**
  * The manifest for a request: an injected one (the hosted server bundles it)
- * wins, otherwise it is read from the repo root.
+ * wins, otherwise `loadManifest` reads the repo root's copy or, with no repo
+ * root, the one packed alongside the CLI. Short-circuiting on a missing root
+ * made `npx … mcp` answer "No manifest." in every app outside this monorepo.
  * @param {{ root?: string|null, manifest?: object|null }} ctx
  */
-const manifestOf = (ctx) => ctx.manifest ?? (ctx.root ? loadManifest(ctx.root) : null);
+const manifestOf = (ctx) => ctx.manifest ?? loadManifest(ctx.root);
 
 // ── tool implementations (reuse the engine; render compact text) ─────────────
 
@@ -222,10 +260,17 @@ function toolInfo(ctx) {
     `radius: ${manifest.radius ?? "—"} · tokens: ${manifest.tokenCount ?? 0} · registry items: ${(manifest.registry || []).length}`,
     `taste profile [${taste.source}]: register ${taste.register} · density ${taste.density} · motion ${taste.motion} · expressiveness ${taste.expressiveness} (the --decoration dial)`,
   ];
-  if (ctx.hosted)
+  if (ctx.hosted) {
+    const origin = ctx.siteOrigin || DOCS_SITE_URL;
+    // Same today-vs-site-routes split as `storyUrl` above: this server has no `/storybook/`
+    // or `/r` of its own until the site's own routes opt in (`ctx.siteRoutes`, RM-105).
+    const storybookEndpoint = ctx.siteRoutes ? `${origin}/storybook/` : origin;
+    const registryEndpoint = ctx.siteRoutes ? `${origin}/r` : REGISTRY_HOMEPAGE;
     lines.push(
       "hosted server: the taste profile is the shipped default — it cannot read your project's brand-ui.config.json. Run `npx @elabs-ai/components-cli mcp` locally for your project's profile and the audit tool.",
+      `endpoints: mcp ${origin}/mcp · llms ${origin}/llms.txt · storybook ${storybookEndpoint} · registry ${registryEndpoint}`,
     );
+  }
   lines.push("", ...ROUTINE);
   return textContent(lines.join("\n"));
 }
@@ -245,14 +290,11 @@ function toolSearch(ctx, q) {
   if (!query) return { ...textContent("usage: search { query }"), isError: true };
   const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
-  const matches = flat(manifest).filter(
-    (r) => r.name.toLowerCase().includes(query) || r.pkg.toLowerCase().includes(query),
-  );
-  // Same fix as the CLI's cmdSearch() (fix round 1 for #86/#89): keep
-  // component/hook rows in their own independently-truncated bucket so a
-  // type/otherExport match can never crowd a real component out of the list.
-  const rows = matches.filter((r) => r.kind === "component" || r.kind === "hook");
-  const typeRows = matches.filter((r) => r.kind === "type" || r.kind === "export");
+  // Same ranked search as the CLI's cmdSearch() (lib/search.mjs); components/hooks
+  // and types/exports stay independently-truncated buckets (#86/#89).
+  const result = searchExports(manifest, String(q || ""));
+  const rows = result.rows;
+  const typeRows = result.typeRows;
   const reg = (manifest.registry || []).filter((r) =>
     `${r.name} ${r.title} ${r.description}`.toLowerCase().includes(query),
   );
@@ -265,9 +307,12 @@ function toolSearch(ctx, q) {
   // (RM-088 follow-up 1, validator FAIL #1: `search dashboard` must surface the
   // `dashboard-spec` verbs over MCP too, not just the CLI).
   const verbs = matchCliVerbs(manifest, query);
-  const lines = [`Components/hooks matching "${query}":`];
-  for (const r of rows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
-  if (!rows.length) lines.push("  (none)");
+  // A remote caller has no repo to open `docs <Name>` against first — give it
+  // the live story straight from search when the hit is a component with one
+  // (review §4.4/wave-3). Local/stdio is unchanged: `docs` is the story-link call.
+  const lines = renderComponentArm(query, result, 40, {
+    storyLink: ctx.hosted ? (r) => (r.storyId ? storyUrl(r.storyId, ctx) : null) : undefined,
+  });
   if (typeRows.length) {
     lines.push("", `Types/other exports matching "${query}":`);
     for (const r of typeRows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
@@ -303,7 +348,7 @@ function toolSearch(ctx, q) {
 }
 
 /** Compact docs rendering from the manifest entry (the same data `brand-ui docs` prints). */
-function renderDocsEntry(hit) {
+function renderDocsEntry(hit, ctx) {
   const lines = [`# ${hit.name}  (${hit.pkg})`];
   // The API without the usage was the gap: no import line, no link to the live
   // story (review §4.2.3). Both are printed for every caller — the loop only
@@ -311,7 +356,12 @@ function renderDocsEntry(hit) {
   if (hit.kind === "component" || hit.kind === "hook")
     lines.push(`import: import { ${hit.name} } from "${hit.importPath || hit.pkg}";`);
   else if (hit.importPath) lines.push(`import from: ${hit.importPath}`);
-  if (hit.storyId) lines.push(`story: ${storyUrl(hit.storyId)}`);
+  if (hit.storyId) lines.push(`story: ${storyUrl(hit.storyId, ctx)}`);
+  // A one-line usage snippet, ONLY when the manifest already carries one for
+  // this component (never fabricated — review §4.4/wave-3 "do not invent").
+  // No current manifest source populates `usage` yet; this is the read side
+  // of that future field.
+  if (hit.usage) lines.push(`usage: ${hit.usage}`);
   lines.push(`source: ${hit.module}`);
   const intent = hit.intent;
   if (intent) {
@@ -366,14 +416,19 @@ function renderDocsEntry(hit) {
   return lines.join("\n");
 }
 
-function toolDocs(ctx, component) {
+function toolDocs(ctx, component, detail = "full") {
   const name = String(component || "");
   if (!name) return { ...textContent("usage: docs { component }"), isError: true };
   const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
   const hit = flat(manifest).find((r) => r.name.toLowerCase() === name.toLowerCase());
   if (!hit) return textContent(`${name} not found. Try the search tool with "${name}".`);
-  return textContent(renderDocsEntry(hit));
+  const full = renderDocsEntry(hit, ctx);
+  if (detail === "brief")
+    return textContent(
+      smallerCard(renderDocsBrief(hit, { storyUrl: (id) => storyUrl(id, ctx) }), full),
+    );
+  return textContent(full);
 }
 
 function toolTokens(ctx) {
@@ -492,7 +547,7 @@ function callTool(ctx, name, argsObj = {}) {
     case "search":
       return toolSearch(ctx, argsObj.query);
     case "docs":
-      return toolDocs(ctx, argsObj.component);
+      return toolDocs(ctx, argsObj.component, argsObj.detail);
     case "tokens":
       return toolTokens(ctx);
     case "audit":
@@ -512,14 +567,21 @@ function callTool(ctx, name, argsObj = {}) {
  * exercise this — the stdio loop (`runMcpServer`) is a thin wrapper that only does
  * line framing + I/O. `root` is the repo root (the engine's data source);
  * `manifest` injects the manifest instead of reading it from `root`; `hosted`
- * drops the tools that need the caller's disk (LOCAL_ONLY_TOOLS).
- * @param {{ root?: string|null, manifest?: object|null, hosted?: boolean }} [opts]
+ * drops the tools that need the caller's disk (LOCAL_ONLY_TOOLS). `siteOrigin`
+ * is where a HOSTED caller's URLs (story links, `info`'s endpoints) point;
+ * `siteRoutes` opts those URLs into the `/storybook/` + `/r` forms for a caller
+ * whose site actually serves them (RM-105 — false today, no live site does yet).
+ * Both are unused when `hosted` is false, so the stdio server's output is unchanged.
+ * @param {{ root?: string|null, manifest?: object|null, hosted?: boolean, siteOrigin?: string|null, siteRoutes?: boolean }} [opts]
  * @returns {object|null}
  */
-export function handleMessage(msg, { root = null, manifest = null, hosted = false } = {}) {
+export function handleMessage(
+  msg,
+  { root = null, manifest = null, hosted = false, siteOrigin = null, siteRoutes = false } = {},
+) {
   if (!msg || typeof msg !== "object") return error(null, -32600, "Invalid Request");
   const { id, method, params } = msg;
-  const ctx = { root, manifest, hosted };
+  const ctx = { root, manifest, hosted, siteOrigin, siteRoutes };
   const isNotification = id === undefined || id === null;
 
   switch (method) {

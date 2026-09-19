@@ -22,9 +22,10 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Dashboards" })).toBeInTheDocument();
+    await expect(await canvas.findByRole("heading", { name: "Dashboards" })).toBeInTheDocument();
     await expect(canvas.getByRole("radio", { name: "View" })).toBeInTheDocument();
-    await expect(canvas.getByText("Orders by month")).toBeInTheDocument();
+    // The sheet draws its tiles once it has measured its own box, a moment after the chrome.
+    await expect(await canvas.findByText("Orders by month")).toBeInTheDocument();
     // "3 tiles on the starter sheet: a month filter, a revenue chart, an orders table".
     // Scoped to the sheet's own `data-slot="dashboard-tile"` wrapper — some tile kinds
     // (the built-in `filter`, this block's own `table`) also stamp `data-tile-kind` on

@@ -4,7 +4,7 @@ Project memory for Claude Code — lean by design; binding detail lives in `.cla
 
 ## Purpose
 
-`brand-ui` is an internal, **source-owned, token-driven** React component system for internal apps, prototypes, POCs, AI/chat clients, data grids, dashboards, React Flow canvases and presales demos.
+`brand-ui` is an open-source, **source-owned, token-driven** React component system built for coding agents and the people who work with them: apps, prototypes, POCs, AI/chat clients, data grids, dashboards, React Flow canvases and demos.
 Default look: modern enterprise SaaS, restrained and app-first, themeable to any brand. A reusable system, not an app.
 
 ## Tech stack

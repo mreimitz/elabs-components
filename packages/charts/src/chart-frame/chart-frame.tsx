@@ -819,6 +819,15 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
   );
 });
 
+/**
+ * Content boxes whose size sets the chart body's scroll size: a chart's own drawing (the
+ * outermost `<svg>`, not its parts), a canvas plot, the table view.
+ */
+const OVERFLOW_CONTENT_BOXES = "svg:not(svg svg), canvas, table";
+/** An added or removed node that may hold (or be) one of {@link OVERFLOW_CONTENT_BOXES}. */
+const isContentBox = (node: Node) =>
+  node instanceof HTMLElement || (node instanceof SVGSVGElement && !node.ownerSVGElement);
+
 // Inner component that consumes the context (avoids provider/consumer in the
 // same render function).
 interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
@@ -1040,11 +1049,28 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
       const next = el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight;
       setOverflowing((prev) => (prev === next ? prev : next));
     };
-    measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    if (el.firstElementChild) observer.observe(el.firstElementChild);
-    return () => observer.disconnect();
+    // The body and its wrapper are both 100% boxes, so neither resizes when only the
+    // content does: a chart redraws its <svg> at the new width a beat after the body
+    // shrank, and the overflow that measured true a moment earlier is gone with no resize
+    // to report it. Observe the content boxes that set the scroll size too — drawings,
+    // canvases, tables — and pick up new ones as the content mounts.
+    const watch = () => {
+      observer.disconnect();
+      observer.observe(el);
+      if (el.firstElementChild) observer.observe(el.firstElementChild);
+      for (const box of el.querySelectorAll(OVERFLOW_CONTENT_BOXES)) observer.observe(box);
+      measure();
+    };
+    watch();
+    const mutations = new MutationObserver((records) => {
+      if (records.some((r) => [...r.addedNodes, ...r.removedNodes].some(isContentBox))) watch();
+    });
+    mutations.observe(el, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      mutations.disconnect();
+    };
   }, [state.view, loading, children]);
 
   const body = (

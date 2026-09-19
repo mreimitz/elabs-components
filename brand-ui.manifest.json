@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T12:33:41.779Z",
+  "generatedAt": "2026-09-19T14:35:11.548Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29822,9 +29822,19 @@
           "module": "packages/marketing/src/cta-section/cta-section.tsx"
         },
         {
+          "name": "DEFAULT_GATES_BAND_LABELS",
+          "kind": "value",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
+        },
+        {
           "name": "FeatureGrid",
           "kind": "value",
           "module": "packages/marketing/src/feature-grid/feature-grid.tsx"
+        },
+        {
+          "name": "GatesBand",
+          "kind": "value",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
         },
         {
           "name": "Hero",
@@ -29865,6 +29875,18 @@
         {
           "name": "FeatureGridProps",
           "module": "packages/marketing/src/feature-grid/feature-grid.tsx"
+        },
+        {
+          "name": "GatesBandGate",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
+        },
+        {
+          "name": "GatesBandLabels",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
+        },
+        {
+          "name": "GatesBandProps",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
         },
         {
           "name": "HeroProps",
@@ -29946,6 +29968,45 @@
               "optional": true,
               "type": "boolean",
               "description": "Stagger the cells in on mount. Motion-gated. Defaults to true."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
+        "GatesBand": {
+          "extends": [],
+          "props": [
+            {
+              "name": "gates",
+              "optional": false,
+              "type": "readonly GatesBandGate[]",
+              "description": "Every gate to render, already carrying its real `category` — grouping never re-categorises."
+            },
+            {
+              "name": "count",
+              "optional": false,
+              "type": "number",
+              "description": "The header count. Passed separately from `gates.length` (`counts.json.gates`) so the header can never silently drift if a caller ever filters the list."
+            },
+            {
+              "name": "categoryLabels",
+              "optional": true,
+              "type": "Record<string, string>",
+              "description": "Category slug → display label (e.g. `{ stories: \"Stories\" }`); an unlisted category falls back to its own slug, never invented."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<GatesBandLabels>"
+            },
+            {
+              "name": "footer",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A footnote the host renders under the grid (e.g. a link to `docs/GATES.md` on GitHub) — this component embeds no URL of its own."
             },
             {
               "name": "className",
@@ -30159,6 +30220,7 @@
       "stories": {
         "CTASection": "marketing-ctasection--docs",
         "FeatureGrid": "marketing-featuregrid--docs",
+        "GatesBand": "marketing-gatesband--docs",
         "Hero": "marketing-hero--docs",
         "LogoStrip": "marketing-logostrip--docs",
         "StatsBand": "marketing-statsband--docs",
@@ -35602,9 +35664,24 @@
           "module": "packages/ui/src/components/command-chip/command-chip.tsx"
         },
         {
+          "name": "DEFAULT_INSTALL_TABS_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "DEFAULT_INTEGRATION_MATRIX_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
           "name": "DEFAULT_MESSAGES",
           "kind": "value",
           "module": "packages/ui/src/components/locale-provider/messages.ts"
+        },
+        {
+          "name": "DEFAULT_SPEC_PLAYGROUND_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
         },
         {
           "name": "DEFAULT_SURFACE_TOUR_ACTIONS_LABELS",
@@ -35615,6 +35692,11 @@
           "name": "DEFAULT_THEME_FAMILY_SWITCH_LABELS",
           "kind": "value",
           "module": "packages/ui/src/components/theme-family-switch/theme-family-switch.tsx"
+        },
+        {
+          "name": "DEFAULT_TOKEN_SPOTLIGHT_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
         },
         {
           "name": "Descriptions",
@@ -36000,6 +36082,16 @@
           "name": "InputOTPSlot",
           "kind": "value",
           "module": "packages/ui/src/components/input-otp/input-otp.tsx"
+        },
+        {
+          "name": "InstallTabs",
+          "kind": "value",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "IntegrationMatrix",
+          "kind": "value",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
         },
         {
           "name": "Kbd",
@@ -36737,6 +36829,11 @@
           "module": "packages/ui/src/components/slider-number/slider-number.tsx"
         },
         {
+          "name": "SpecPlayground",
+          "kind": "value",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
           "name": "Spinner",
           "kind": "value",
           "module": "packages/ui/src/components/spinner/spinner.tsx"
@@ -36940,6 +37037,16 @@
           "name": "ToggleGroupItem",
           "kind": "value",
           "module": "packages/ui/src/components/toggle-group/toggle-group.tsx"
+        },
+        {
+          "name": "TOKEN_SPOTLIGHT_SCAN_LIMIT",
+          "kind": "value",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
+          "name": "TokenSpotlight",
+          "kind": "value",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
         },
         {
           "name": "Toolbar",
@@ -37616,8 +37723,48 @@
           "module": "packages/ui/src/components/mention-input/mention-value.ts"
         },
         {
+          "name": "InstallTabsHostTab",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "InstallTabsLabels",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "InstallTabsProps",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
+          "name": "InstallTabsSelectOption",
+          "module": "packages/ui/src/components/install-tabs/install-tabs.tsx"
+        },
+        {
           "name": "IntegerFieldSpec",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "IntegrationMatrixAction",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixHost",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixLabels",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixProps",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixRoutineStep",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
+        },
+        {
+          "name": "IntegrationMatrixRow",
+          "module": "packages/ui/src/components/integration-matrix/integration-matrix.tsx"
         },
         {
           "name": "KeyboardShortcutsProps",
@@ -38044,6 +38191,30 @@
           "module": "packages/ui/src/components/slider/slider.tsx"
         },
         {
+          "name": "SpecPlaygroundError",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundExample",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundLabels",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundProps",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundStatus",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
+          "name": "SpecPlaygroundValidation",
+          "module": "packages/ui/src/components/spec-playground/spec-playground.tsx"
+        },
+        {
           "name": "SpinnerProps",
           "module": "packages/ui/src/components/spinner/spinner.tsx"
         },
@@ -38202,6 +38373,18 @@
         {
           "name": "ToasterProps",
           "module": "packages/ui/src/components/sonner/sonner.tsx"
+        },
+        {
+          "name": "TokenSpotlightLabels",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
+          "name": "TokenSpotlightProps",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
+          "name": "TokenSpotlightToken",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
         },
         {
           "name": "ToolbarButtonProps",
@@ -38662,12 +38845,24 @@
           "module": "packages/ui/src/lib/file-kind.ts"
         },
         {
+          "name": "resolveTokenDisplayValue",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
+          "name": "resolveTokenMatchValue",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
           "name": "revealVariants",
           "module": "packages/ui/src/components/reveal/reveal.tsx"
         },
         {
           "name": "revisionTimelineVariants",
           "module": "packages/ui/src/components/revision-timeline/revision-timeline.tsx"
+        },
+        {
+          "name": "scanForConsumers",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
         },
         {
           "name": "serializeMentions",
@@ -40609,6 +40804,143 @@
           ],
           "props": []
         },
+        "InstallTabs": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "packageOptions",
+              "optional": false,
+              "type": "InstallTabsSelectOption[]",
+              "description": "The `pnpm add` tab's per-archetype options; the first is the default selection."
+            },
+            {
+              "name": "blockOptions",
+              "optional": false,
+              "type": "InstallTabsSelectOption[]",
+              "description": "The `Copy-own` tab's per-block options; the first is the default selection."
+            },
+            {
+              "name": "hostTabs",
+              "optional": false,
+              "type": "InstallTabsHostTab[]",
+              "description": "One tab per host, in order, between `Copy-own` and `Prompt`."
+            },
+            {
+              "name": "prompt",
+              "optional": false,
+              "type": "string",
+              "description": "The multi-line agent prompt shown (read-only) on the `Prompt` tab."
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "Selected tab id (controlled): `\"packages\"`, `\"copy-own\"`, a host id, or `\"prompt\"`."
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string",
+              "description": "Initially selected tab id (uncontrolled). Default: `\"packages\"`."
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "packageValue",
+              "optional": true,
+              "type": "string",
+              "description": "Selected `pnpm add` archetype id (controlled)."
+            },
+            {
+              "name": "onPackageValueChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "blockValue",
+              "optional": true,
+              "type": "string",
+              "description": "Selected `Copy-own` block id (controlled)."
+            },
+            {
+              "name": "onBlockValueChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "onCommandCopy",
+              "optional": true,
+              "type": "(command: string, copied: boolean) => void"
+            },
+            {
+              "name": "onPromptCopy",
+              "optional": true,
+              "type": "(copied: boolean) => void"
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<InstallTabsLabels>"
+            }
+          ]
+        },
+        "IntegrationMatrix": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "hosts",
+              "optional": false,
+              "type": "IntegrationMatrixHost[]"
+            },
+            {
+              "name": "rows",
+              "optional": false,
+              "type": "IntegrationMatrixRow[]"
+            },
+            {
+              "name": "routine",
+              "optional": true,
+              "type": "IntegrationMatrixRoutineStep[]",
+              "description": "The routine strip below the matrix; omitted entirely when empty."
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "Selected host id (controlled)."
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string",
+              "description": "Initially selected host id (uncontrolled). Default: the first host."
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void",
+              "description": "Fires when the visitor picks another host."
+            },
+            {
+              "name": "onCopyAction",
+              "optional": true,
+              "type": "(rowId: string, actionLabel: string, text: string, copied: boolean) => void",
+              "description": "Fires after a copy attempt with the row id, the action label and the text."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<IntegrationMatrixLabels>"
+            }
+          ]
+        },
         "KeyboardShortcuts": {
           "extends": [
             "Omit<ComponentProps<\"div\">, \"onChange\">"
@@ -42324,6 +42656,72 @@
             }
           ]
         },
+        "SpecPlayground": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onChange\" | \"defaultValue\"\n>"
+          ],
+          "props": [
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "The JSON text (controlled)."
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string",
+              "description": "Initial JSON text (uncontrolled); also what `Reset` restores. Default: the first example."
+            },
+            {
+              "name": "onChange",
+              "optional": true,
+              "type": "(value: string) => void",
+              "description": "Called with the new text on every edit, example load and reset."
+            },
+            {
+              "name": "validate",
+              "optional": false,
+              "type": "(json: unknown) => SpecPlaygroundValidation<TSpec>",
+              "description": "Checks the parsed JSON; the errors shown are exactly the ones it returns."
+            },
+            {
+              "name": "render",
+              "optional": false,
+              "type": "(spec: TSpec) => ReactNode",
+              "description": "Renders a validated spec."
+            },
+            {
+              "name": "examples",
+              "optional": true,
+              "type": "readonly SpecPlaygroundExample[]",
+              "description": "Entries of the `Load example` menu (the menu is hidden without any)."
+            },
+            {
+              "name": "editor",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The editor. Bind it to `value`/`onChange` yourself. Default: a `Textarea`, so the playground works without a code editor."
+            },
+            {
+              "name": "onErrorSelect",
+              "optional": true,
+              "type": "(error: SpecPlaygroundError, line: number | undefined) => void",
+              "description": "Called when an error is chosen, with the editor line its path resolves to — move a custom editor's caret there. The default textarea handles this itself."
+            },
+            {
+              "name": "debounceMs",
+              "optional": true,
+              "type": "number",
+              "description": "Milliseconds between the last edit and validation. Default 250."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<SpecPlaygroundLabels>"
+            }
+          ]
+        },
         "Spinner": {
           "extends": [
             "React.SVGProps<SVGSVGElement>"
@@ -42852,6 +43250,36 @@
             "React.ComponentProps<typeof SonnerToaster>"
           ],
           "props": []
+        },
+        "TokenSpotlight": {
+          "extends": [
+            "Omit<\n  React.HTMLAttributes<HTMLDivElement>,\n  \"onSelect\"\n>"
+          ],
+          "props": [
+            {
+              "name": "tokens",
+              "optional": false,
+              "type": "readonly TokenSpotlightToken[]",
+              "description": "Chips to render, in order."
+            },
+            {
+              "name": "onSpotlight",
+              "optional": true,
+              "type": "(token: string | null) => void",
+              "description": "Fires with the token on hover/focus, and `null` when the spotlight clears."
+            },
+            {
+              "name": "scanLimit",
+              "optional": true,
+              "type": "number",
+              "description": "Upper bound on elements a scan pass examines. Default {@link TOKEN_SPOTLIGHT_SCAN_LIMIT}."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<TokenSpotlightLabels>"
+            }
+          ]
         },
         "Toolbar": {
           "extends": [
@@ -43973,6 +44401,8 @@
         "Input": "core-input--docs",
         "InputGroup": "forms-inputgroup--docs",
         "InputOTP": "forms-inputotp--docs",
+        "InstallTabs": "display-installtabs--docs",
+        "IntegrationMatrix": "display-integrationmatrix--docs",
         "Kbd": "display-kbd--docs",
         "KeyValueEditor": "forms-keyvalueeditor--docs",
         "KeyboardShortcuts": "disclosure-keyboardshortcuts--docs",
@@ -44012,6 +44442,7 @@
         "SkipLink": "navigation-skiplink--docs",
         "Slider": "forms-slider--docs",
         "SliderNumber": "forms-slidernumber--docs",
+        "SpecPlayground": "display-specplayground--docs",
         "Spinner": "display-spinner--docs",
         "SplitPanel": "layout-splitpanel--docs",
         "StatePanel": "states-statepanel--docs",
@@ -44029,6 +44460,7 @@
         "Toaster": "feedback-toast--docs",
         "Toggle": "forms-toggle--docs",
         "ToggleGroup": "forms-togglegroup--docs",
+        "TokenSpotlight": "display-tokenspotlight--docs",
         "Toolbar": "layout-toolbar--docs",
         "Tooltip": "overlays-tooltip--docs",
         "Transfer": "forms-transfer--docs",

@@ -241,6 +241,16 @@ function makeRoot({ decisionBody } = {}) {
   );
   // The human playbook index (#84) — a generated table inside hand-written prose.
   writeFileSync(join(root, "docs/playbooks/README.md"), docWithRegion("playbooks"));
+  // The README counts region — components per package, the token contract, ADRs.
+  mkdirSync(join(root, "packages/tokens/src"), { recursive: true });
+  mkdirSync(join(root, "docs/ADR"), { recursive: true });
+  writeFileSync(
+    join(root, "packages/tokens/src/theme-token-names.generated.ts"),
+    'export const THEME_TOKEN_NAMES = ["--background", "--foreground", "--primary"] as const;\n',
+  );
+  writeFileSync(join(root, "docs/ADR/0001-first.md"), "# ADR 0001\n");
+  writeFileSync(join(root, "docs/ADR/README.md"), "# ADRs\n");
+  writeFileSync(join(root, "README.md"), docWithRegion("counts"));
   return root;
 }
 
@@ -275,6 +285,20 @@ test("IDEMPOTENT: write → check clean → re-write no-op", async () => {
     await writeGen(root);
     const snap2 = (await computeGen(root)).map(({ file }) => readFileSync(file, "utf8"));
     assert.deepEqual(snap2, snap, "a second write must produce byte-identical files");
+  } finally {
+    cleanup(root);
+  }
+});
+
+test("README COUNTS: components per package, token contract and ADRs are generated", async () => {
+  const root = makeRoot();
+  try {
+    await writeGen(root);
+    const readme = readFileSync(join(root, "README.md"), "utf8");
+    assert.match(readme, /\*\*By the numbers:\*\* \d+ components across \d+ packages/);
+    assert.match(readme, /\(`THEME_TOKEN_NAMES`\) has 3 tokens/);
+    // docs/ADR/README.md is not a decision record; 0001-first.md is.
+    assert.match(readme, /and 1 architecture decision records/);
   } finally {
     cleanup(root);
   }

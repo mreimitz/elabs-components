@@ -536,6 +536,7 @@
     "packages/ui/src/components/sidebar/sidebar.tsx": 1,
     "packages/ui/src/components/skeleton/skeleton.tsx": 1
   },
+  "home-bundle": { "apps/home/.next/server/app/index.html": 979202 },
   "i18n-strings": {
     "packages/ai/src/_chat-shell-rail.tsx": 3,
     "packages/ai/src/confirmation.tsx": 2,

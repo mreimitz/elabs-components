@@ -7,7 +7,11 @@ import {
   renderContextBlock,
   packageRows,
   orderedPackages,
+  renderReadmeCounts,
 } from "../lib/render-docs.mjs";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { findRepoRoot, loadManifest } from "../lib/core.mjs";
 
 /** A tiny fixture manifest covering the shapes the renderers must handle. */
 const FIXTURE = {
@@ -108,14 +112,68 @@ test("renderLlmsHub routes to per-package spokes and lists themes + entry points
   // old copy pointed at ("GitHub Packages") no longer exists (2026-09-17 review).
   assert.match(hub, /https:\/\/elabs-ai\.com\/mcp/, "hosted MCP endpoint");
   assert.doesNotMatch(hub, /GitHub Packages/, "no dead private-registry instructions");
-  const entryPoints = hub.slice(hub.indexOf("## Entry points"));
-  assert.ok(
-    entryPoints.indexOf("elabs-ai.com/mcp") < entryPoints.indexOf("localhost:6006"),
-    "the hosted endpoint is listed before the contributor-only dev server",
-  );
+  // No local dev URL in a PUBLIC artifact (wave-3 ruling): the hosted endpoint
+  // is the only MCP address this file names.
+  assert.doesNotMatch(hub, /localhost/, "no local dev server address");
+  // The hosted MCP line sits within the first 20 lines (RM-100 acceptance).
+  const first20 = hub.split("\n").slice(0, 20).join("\n");
+  assert.match(first20, /https:\/\/elabs-ai\.com\/mcp/, "hosted MCP within the first 20 lines");
   assert.match(hub, /npx -y @elabs-ai\/components-cli mcp/);
   assert.match(hub, /pnpm exec brand-ui info/);
   assert.match(hub, /tokens → ui\/icons → data/);
+  // DEFAULT (no siteRoutes): https://elabs-ai.com is still the Storybook project until
+  // RM-105 moves the domain — no /storybook/ route exists there, so the docs-site link is
+  // the bare origin (root IS Storybook) and the registry is the published GitHub Pages one,
+  // never a same-origin `/r` that would 404 (wave-3 ruling 18).
+  assert.match(
+    hub,
+    /- Docs site: https:\/\/elabs-ai\.com \(Storybook/,
+    "docs site is the bare origin by default",
+  );
+  assert.doesNotMatch(hub, /elabs-ai\.com\/storybook\//, "no /storybook/ link by default");
+  assert.match(
+    hub,
+    /npx shadcn@latest add https:\/\/mreimitz\.github\.io\/elabs-components\/r\/<item>\.json/,
+    "registry defaults to the published GitHub Pages registry",
+  );
+  assert.match(
+    hub,
+    /\/plugin marketplace add mreimitz\/elabs-components/,
+    "the plugin marketplace command",
+  );
+});
+
+test("renderLlmsHub's siteRoutes opts a real site's own /storybook/ and /r routes back in", () => {
+  const hub = renderLlmsHub(FIXTURE, { siteRoutes: true });
+  assert.match(
+    hub,
+    /- Docs site: https:\/\/elabs-ai\.com\/storybook\//,
+    "docs site under /storybook/",
+  );
+  assert.match(
+    hub,
+    /npx shadcn@latest add https:\/\/elabs-ai\.com\/r\/<item>\.json/,
+    "registry under the site's own /r",
+  );
+});
+
+test("renderLlmsHub takes a siteOrigin override so a preview reports itself", () => {
+  const hub = renderLlmsHub(FIXTURE, { siteOrigin: "https://rm-100.vercel.app" });
+  assert.match(hub, /https:\/\/rm-100\.vercel\.app\/mcp/);
+  // Still the default form (no siteRoutes) — a preview origin does not imply that origin
+  // serves /storybook/ or /r.
+  assert.match(hub, /- Docs site: https:\/\/rm-100\.vercel\.app \(Storybook/);
+  assert.doesNotMatch(hub, /elabs-ai\.com/, "no leftover production origin");
+});
+
+test("renderLlmsHub combines siteOrigin + siteRoutes for a real preview of the site", () => {
+  const hub = renderLlmsHub(FIXTURE, {
+    siteOrigin: "https://rm-100.vercel.app",
+    siteRoutes: true,
+  });
+  assert.match(hub, /https:\/\/rm-100\.vercel\.app\/mcp/);
+  assert.match(hub, /- Docs site: https:\/\/rm-100\.vercel\.app\/storybook\//);
+  assert.match(hub, /npx shadcn@latest add https:\/\/rm-100\.vercel\.app\/r\/<item>\.json/);
 });
 
 test("renderLlmsSpoke shows a package's components, variants and anti-patterns", () => {
@@ -153,4 +211,20 @@ test("renderers tolerate a manifest with empty/missing buckets", () => {
   assert.doesNotThrow(() => renderLlmsHub(empty));
   assert.doesNotThrow(() => renderContextBlock(empty));
   assert.doesNotThrow(() => renderLlmsSpoke(empty, "@elabs-ai/components-ui"));
+});
+
+test("README counts and llms.txt count components the same way (one definition)", (t) => {
+  const root = findRepoRoot(dirname(fileURLToPath(import.meta.url)));
+  if (!root) return t.skip("not inside the monorepo");
+  const manifest = loadManifest(root);
+  const readme = renderReadmeCounts(manifest, root);
+  const hub = renderLlmsHub(manifest);
+  for (const name of orderedPackages(manifest)) {
+    const short = name.replace(/^@elabs-ai\/components-/, "");
+    const inReadme = readme.match(new RegExp(`(?:— | · )${short} (\\d+)`))?.[1];
+    const inLlms = hub.match(new RegExp(`\\[${name}\\][^\\n]*\\((\\d+) components`))?.[1];
+    assert.ok(inReadme && inLlms, `${short}: README ${inReadme}, llms ${inLlms}`);
+    assert.equal(inReadme, inLlms, short);
+  }
+  assert.match(readme, /The theme token contract \(`THEME_TOKEN_NAMES`\) has \d+ tokens/);
 });

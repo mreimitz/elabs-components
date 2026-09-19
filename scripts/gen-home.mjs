@@ -12,6 +12,10 @@
  * Writes nine files under `apps/home/content/generated/`:
  *   packages.json, counts.json, themes.json, gates.json, cli.json, blocks.json,
  *   playbooks.json, story-ids.json, install.json
+ * …plus `agent-loop-recorded.json` (RM-099): the hosted MCP's answers to every call in the
+ * hand-authored `apps/home/content/agent-loop.json`, the agent loop's offline fallback.
+ * …plus `emit-ui-examples.json` (RM-101): the A2UI / DashboardSpec editors' example menus,
+ * from the CLI's `a2ui example`, the dashboard golden `minimal.json` and `content/examples/`.
  * …plus one static asset outside that directory (RM-093): `apps/home/public/.well-known/
  * mcp.json`, MCP discovery metadata — served byte-for-byte, so it cannot go through
  * `apps/home/lib/content.ts` the way the nine files above do.
@@ -44,6 +48,10 @@ import {
 import { indexStoryDocsPages } from "../packages/cli/lib/story-ids.mjs";
 import { handleMessage, LOCAL_ONLY_TOOLS, SERVER_INFO, TOOLS } from "../packages/cli/lib/mcp.mjs";
 import { HOSTED_MCP_URL } from "../packages/cli/lib/render-docs.mjs";
+import { HOME_MCP_OPTIONS } from "../apps/home/lib/mcp-site-options.mjs";
+// RM-101
+import { A2UI_EXAMPLE, validateSurface } from "../packages/cli/lib/a2ui.mjs";
+import { validateSpec } from "../packages/cli/lib/dashboard-spec.mjs";
 
 export const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 export const OUT_DIR = join(REPO_ROOT, "apps/home/content/generated");
@@ -369,6 +377,140 @@ export function buildWellKnownMcp(cli) {
 
 // ────────────────────────────────────── main ──────────────────────────────────
 
+// ─────────────────────── agent-loop-recorded.json (RM-099) ────────────────────
+/**
+ * The "Ask your agent" loop's offline fallback (RM-099, wave-3 ruling 12): for every call in
+ * the hand-authored prompt map `apps/home/content/agent-loop.json`, the answer the SITE's own
+ * `/mcp` gives — produced in-process through the SAME `handleMessage` that route wraps, with
+ * the SAME `HOME_MCP_OPTIONS` (`hosted: true, siteRoutes: true`) `apps/home/app/mcp/route.ts`
+ * passes to `createMcpHttpHandler`, imported from the one shared module so the two can never
+ * diverge (wave-3 ruling 8, W3-M1). Regenerated with the manifest, so the recorded responses
+ * never drift from what the live server says. Output: `{ [promptId]: [{ tool, args, result }] }`,
+ * calls in map order.
+ */
+export function buildAgentLoopRecorded(manifest, map = json("apps/home/content/agent-loop.json")) {
+  return Object.fromEntries(
+    map.prompts.map((prompt) => [
+      prompt.id,
+      prompt.calls.map(({ tool, args }, index) => {
+        const res = handleMessage(
+          {
+            jsonrpc: "2.0",
+            id: index + 1,
+            method: "tools/call",
+            params: { name: tool, arguments: args },
+          },
+          { manifest, ...HOME_MCP_OPTIONS },
+        );
+        if (!res || res.error) {
+          throw new Error(
+            `agent-loop.json: ${prompt.id} → ${tool} failed: ${res?.error?.message ?? "no response"}`,
+          );
+        }
+        return { tool, args, result: res.result };
+      }),
+    ]),
+  );
+}
+
+// ─────────────────────── emit-ui-examples.json (RM-101) ───────────────────────
+/**
+ * The "Let the agent emit the UI" editors' example menus (RM-101), so a catalog or spec change
+ * reaches the site through `gen:check` instead of drifting. A2UI: the CLI's own
+ * `brand-ui a2ui example` output, then every hand-authored `apps/home/content/examples/
+ * a2ui-*.json`. DashboardSpec: the dashboard track's golden `minimal.json`, then every
+ * `apps/home/content/examples/dashboard-spec-*.json`. Each is checked with the CLI's
+ * validator (`a2ui validate` / `dashboard-spec validate`); an invalid one fails the gen.
+ * Output: `{ a2ui: [{ id, source, value }], dashboardSpec: [{ id, source, value }] }`.
+ */
+export const DASHBOARD_GOLDEN_MINIMAL =
+  "packages/charts/src/dashboard/core/__fixtures__/minimal.json";
+export const SITE_EXAMPLES_DIR = "apps/home/content/examples";
+
+export function buildEmitUiExamples({ repoRoot = REPO_ROOT } = {}) {
+  const siteFiles = (prefix) =>
+    existsSync(join(repoRoot, SITE_EXAMPLES_DIR))
+      ? readdirSync(join(repoRoot, SITE_EXAMPLES_DIR))
+          .filter((name) => name.startsWith(prefix) && name.endsWith(".json"))
+          .sort()
+          .map((name) => `${SITE_EXAMPLES_DIR}/${name}`)
+      : [];
+  const load = (path) => JSON.parse(readFileSync(join(repoRoot, path), "utf8"));
+  const checked = (entry, validate) => {
+    const result = validate(entry.value);
+    if (!result.ok) {
+      const first = result.errors[0];
+      throw new Error(`${entry.source}: invalid — ${first.path} ${first.code} ${first.message}`);
+    }
+    return entry;
+  };
+  const idOf = (path, prefix) =>
+    path.slice(path.lastIndexOf("/") + 1 + prefix.length, -".json".length);
+  return {
+    a2ui: [
+      { id: "cli-example", source: "brand-ui a2ui example", value: A2UI_EXAMPLE },
+      ...siteFiles("a2ui-").map((path) => ({
+        id: idOf(path, "a2ui-"),
+        source: path,
+        value: load(path),
+      })),
+    ].map((entry) => checked(entry, validateSurface)),
+    dashboardSpec: [
+      { id: "minimal", source: DASHBOARD_GOLDEN_MINIMAL, value: load(DASHBOARD_GOLDEN_MINIMAL) },
+      ...siteFiles("dashboard-spec-").map((path) => ({
+        id: idOf(path, "dashboard-spec-"),
+        source: path,
+        value: load(path),
+      })),
+    ].map((entry) => checked(entry, validateSpec)),
+  };
+}
+
+// ─────────────────────── create-theme.json (RM-103) ────────────────────────────
+/**
+ * The "One token system" band's closing chip (RM-103, wave-4 ruling 23; W4-M1): there is no
+ * `create-theme` CLI verb — re-branding goes through the plugin skill `brand-ui-create-theme`,
+ * invoked by name as a slash command exactly like `/brand-ui-start`/`/brand-ui-new-app`
+ * (docs/CONSUMING.md, docs/SKILLS.md) — never the maintainer-only `/create-theme` shortcut that
+ * only exists inside this repo. Derived from that skill's own `SKILL.md` frontmatter (name +
+ * `user-invocable`) so the chip can never hand-type a skill name, argument hint or invocation the
+ * skill doesn't actually have; throws if the skill's shape changes underneath it instead of
+ * silently going stale.
+ */
+export const CREATE_THEME_SKILL_DIR = "skills/brand-ui-create-theme";
+
+/** Minimal YAML frontmatter reader — the same shape `scripts/check/rules/plugin-manifest.mjs`
+ * uses for skill `SKILL.md` files, kept local so this module adds no new cross-file coupling. */
+export function parseSkillFrontmatter(text) {
+  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const fm = {};
+  if (!m) return fm;
+  for (const line of m[1].split(/\r?\n/)) {
+    const kv = line.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+    if (kv) fm[kv[1]] = kv[2].trim().replace(/^["']|["']$/g, "");
+  }
+  return fm;
+}
+
+export function buildCreateThemeSkill({ repoRoot = REPO_ROOT } = {}) {
+  const text = readFileSync(join(repoRoot, CREATE_THEME_SKILL_DIR, "SKILL.md"), "utf8");
+  const fm = parseSkillFrontmatter(text);
+  if (fm.name !== "brand-ui-create-theme" || fm["user-invocable"] !== "true") {
+    throw new Error(
+      "gen-home: skills/brand-ui-create-theme/SKILL.md frontmatter changed shape — " +
+        "update buildCreateThemeSkill (scripts/gen-home.mjs).",
+    );
+  }
+  const slashCommand = `/${fm.name}`;
+  const argumentHint = fm["argument-hint"] ?? "";
+  return {
+    skill: fm.name,
+    slashCommand,
+    argumentHint,
+    invocation: argumentHint ? `${slashCommand} ${argumentHint}` : slashCommand,
+  };
+}
+
 async function buildAll() {
   const manifest = json("brand-ui.manifest.json");
   const registry = json("registry/registry.json");
@@ -408,6 +550,12 @@ async function buildAll() {
     "playbooks.json": buildPlaybooks(manifest),
     "story-ids.json": buildStoryIds(),
     "install.json": buildInstall(manifest, registry, cli),
+    // RM-099
+    "agent-loop-recorded.json": buildAgentLoopRecorded(manifest),
+    // RM-101
+    "emit-ui-examples.json": buildEmitUiExamples(),
+    // RM-103
+    "create-theme.json": buildCreateThemeSkill(),
   };
 }
 

@@ -6,6 +6,7 @@ pnpm-lock.yaml
 registry/__output
 .turbo
 .next
+apps/home/public/r/
 *.min.*
 # Generated artifact — the brand-ui CLI is its single source of truth (WP-10 #85).
 # Excluded so the stale-gate diffs the generator's exact output, not Prettier's.

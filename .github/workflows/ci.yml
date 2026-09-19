@@ -42,6 +42,13 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      - name: Keep the Storybook build for the website job (/storybook/ smoke)
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: apps/docs/storybook-static/
+          if-no-files-found: ignore
+          retention-days: 1
       - name: Built-output checks (CSS assets, optional-peer types)
         run: |
           node scripts/check-css-assets.mjs
@@ -77,3 +84,86 @@ jobs:
       - name: Contract tests (axe + overflow, every theme and width)
         if: matrix.theme == 'light'
         run: pnpm --filter @elabs-ai/components-docs test-contract
+
+  changes:
+    name: Website paths changed?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      home: ${{ steps.diff.outputs.home }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Diff against the base
+        id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # The website job runs only when a path the site is built from changed (RM-104).
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "home=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$BASE" "$GITHUB_SHA" \
+            | grep -qE '^(apps/home/|packages/marketing/|packages/tokens/|registry/|scripts/gen-home\.mjs$|scripts/check/rules/home-bundle\.mjs$|\.github/workflows/ci\.yml$)'; then
+            echo "home=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "home=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  home:
+    name: Website gates (e2e, Lighthouse, bundle)
+    needs: [changes, quality]
+    # Runs even when Quality fails, so the site gates report on their own; the Storybook
+    # artifact is then simply absent and the /storybook/ smoke skips with a reason.
+    if: ${{ always() && needs.changes.outputs.home == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Storybook build from the Quality job
+        id: storybook
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: storybook-static
+          path: storybook-static
+      - name: Serve Storybook for the /storybook/ rewrite
+        if: steps.storybook.outcome == 'success'
+        run: |
+          nohup python3 -m http.server 6006 --directory storybook-static > /dev/null 2>&1 &
+          echo "STORYBOOK_ORIGIN=http://localhost:6006" >> "$GITHUB_ENV"
+      - name: Generated artifacts are fresh
+        run: pnpm gen:check
+      - name: Build the site
+        run: pnpm --filter @elabs-ai/home build
+      - name: Bundle budget (/ initial JS, per-section engines stay lazy)
+        env:
+          HOME_BUNDLE_REQUIRED: "1"
+        run: |
+          pnpm check --rule home-bundle
+          pnpm --filter @elabs-ai/home bundle-budget
+      - name: Install Playwright browsers
+        run: pnpm --filter @elabs-ai/home exec playwright install --with-deps chromium firefox webkit
+      - name: Playwright (smoke on three engines, theme sweep, a11y, keyboard, JS-off, motion)
+        run: pnpm --filter @elabs-ai/home e2e
+      - name: Lighthouse CI (desktop gate, mobile warning)
+        run: pnpm --filter @elabs-ai/home lhci
+      - name: Upload site reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: home-reports
+          path: |
+            apps/home/e2e/test-results/
+            apps/home/e2e/playwright-report/
+            apps/home/.next/.lighthouseci/
+            apps/home/.next/bundle-budget.json
+          if-no-files-found: ignore
+          retention-days: 14

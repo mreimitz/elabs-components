@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act, within } from "@testing-library/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { render, screen, fireEvent, act, within, waitFor } from "@testing-library/react";
 import { ChartFrame, type ChartFrameProps } from "./chart-frame";
 import { useOptionalChartFrame } from "./chart-frame-context";
 import { InlineChip } from "./inline-chip";
@@ -786,17 +786,21 @@ describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
   // Every observer's callback: the frame body also carries the ADR 0039
   // breakpoint observer, so "the last one constructed" is not the overflow one.
   let capturedCallbacks: ResizeObserverCallback[] = [];
+  let observed = new Set<Element>();
   const capturedCallback = (entries: ResizeObserverEntry[], observer: ResizeObserver) => {
     for (const cb of capturedCallbacks) cb(entries, observer);
   };
 
   beforeEach(() => {
     capturedCallbacks = [];
+    observed = new Set();
     class CapturingResizeObserver {
       constructor(callback: ResizeObserverCallback) {
         capturedCallbacks.push(callback);
       }
-      observe() {}
+      observe(target: Element) {
+        observed.add(target);
+      }
       unobserve() {}
       disconnect() {}
     }
@@ -877,6 +881,36 @@ describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
     expect(body).not.toHaveAttribute("tabindex");
     expect(body).not.toHaveAttribute("aria-label");
     expect(body).not.toHaveAttribute("role");
+  });
+
+  // The body and its wrapper are 100% boxes: when a chart redraws its <svg> narrower a beat
+  // after the body shrank, neither resizes, so the frame must watch the drawing itself — also
+  // one that mounts after the frame (charts draw once they have measured their box).
+  it("watches the chart's own drawing, including one that mounts later", async () => {
+    function LateDrawing() {
+      const [drawn, setDrawn] = useState(false);
+      useEffect(() => {
+        const id = setTimeout(() => setDrawn(true), 0);
+        return () => clearTimeout(id);
+      }, []);
+      return (
+        <div>
+          <svg data-testid="first" width={10} height={10}>
+            <rect width={10} height={10} />
+          </svg>
+          {drawn ? <svg data-testid="late" width={10} height={10} /> : null}
+        </div>
+      );
+    }
+    render(
+      <ChartFrame title="Orders" chrome="tile" data={sampleData}>
+        <LateDrawing />
+      </ChartFrame>,
+    );
+    expect(observed.has(screen.getByTestId("first"))).toBe(true);
+    expect(observed.has(screen.getByTestId("first").querySelector("rect")!)).toBe(false);
+    const late = await screen.findByTestId("late");
+    await waitFor(() => expect(observed.has(late)).toBe(true));
   });
 });
 
