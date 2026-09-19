@@ -350,10 +350,14 @@ test("parseSkillFrontmatter: no frontmatter block is an empty object, never a th
   assert.deepEqual(parseSkillFrontmatter("# just a heading\n"), {});
 });
 
-test("buildCreateThemeSkill: derives the real skill name and its slash form from SKILL.md, never hand-typed", () => {
+test("buildCreateThemeSkill: derives the plugin skill's own slash form from SKILL.md, never the in-repo maintainer shortcut", () => {
   const derived = buildCreateThemeSkill();
   assert.equal(derived.skill, "brand-ui-create-theme");
-  assert.equal(derived.slashCommand, "/create-theme");
+  // A site visitor installs the plugin and invokes its skill by name — the same way the docs
+  // give `/brand-ui-start`/`/brand-ui-new-app` — never `/create-theme`, the maintainer-only
+  // shortcut that exists solely inside this repo (`.claude/commands/create-theme.md`).
+  assert.equal(derived.slashCommand, "/brand-ui-create-theme");
+  assert.notEqual(derived.slashCommand, "/create-theme");
   assert.ok(
     derived.argumentHint.length > 0,
     "argumentHint should come from the skill's own frontmatter",
