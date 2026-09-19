@@ -391,3 +391,65 @@ export const agentLoopCopy = {
     },
   },
 } as const;
+
+// RM-101
+/** "Let the agent emit the UI" — the A2UI and DashboardSpec live editors in the agents section. */
+export const emitUiCopy = {
+  eyebrow: "Let the agent emit the UI",
+  heading: "Edit what an agent would emit, and watch it validate and render",
+  lede: "Both editors run the library’s own validators on every pause in your typing. The errors below the editor are the validator’s, word for word.",
+  tabsLabel: "Spec format",
+  tabs: {
+    a2ui: {
+      label: "A2UI",
+      what: "A surface the agent designs at runtime, validated against the catalog, rendered by the library.",
+    },
+    dashboardSpec: {
+      label: "DashboardSpec",
+      what: "A serializable sheet an agent can emit and a person can rearrange.",
+    },
+  },
+  schemaLabel: "Copy schema",
+  schemaHosts: { cli: "Installed CLI", npx: "npx" },
+  schemaChip: {
+    copy: "Copy schema command",
+    copied: "Copied",
+    selectFallback: "Command selected — press Ctrl+C or ⌘C to copy",
+    chooseHost: "Run with",
+    menuLabel: "Run with",
+  },
+  monacoLabel: (format: string) => `${format} editor`,
+  /** Toast shown when a Button in the rendered A2UI surface fires its `on.click` action. */
+  action: (name: string) => `action: ${name}`,
+  /** Labels for the examples menu, by example id (`content/generated/emit-ui-examples.json`). */
+  examples: {
+    a2ui: {
+      "cli-example": "Order approval (brand-ui a2ui example)",
+      "kpi-grid": "KPI card grid",
+      form: "Form",
+    },
+    dashboardSpec: {
+      minimal: "Minimal (the golden spec)",
+      kpis: "Six-tile KPI sheet",
+    },
+  },
+  playground: {
+    a2ui: { editor: "A2UI surface (JSON)", preview: "Rendered A2UI surface" },
+    dashboardSpec: { editor: "DashboardSpec (JSON)", preview: "Rendered dashboard sheet" },
+    errors: "Validator errors",
+    loadExample: "Load example",
+    reset: "Reset",
+    valid: "Valid",
+    errorCount: (count: number) => (count === 1 ? "1 error" : `${count} errors`),
+    parseError: "Parse error",
+    showingLastValid: "Showing last valid",
+    nothingValid: "Nothing valid to render yet.",
+    line: (line: number) => `line ${line}`,
+  },
+  /** The six-tile example sheet over `fixtures/kpis.ts`. */
+  kpiSheet: {
+    title: "Ashgrove, this quarter",
+    arrTrend: "ARR, weekly",
+    backlogTrend: "Support backlog, weekly",
+  },
+};
