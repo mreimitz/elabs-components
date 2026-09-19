@@ -1048,7 +1048,7 @@ function ChoroplethKey({
         "flex gap-3",
         corner
           ? cn(
-              "absolute max-h-[calc(100%-1rem)] w-56 max-w-[calc(100%-1rem)] flex-col overflow-hidden rounded-md bg-background p-2",
+              "absolute max-h-[calc(100%-1rem)] w-64 max-w-[calc(100%-1rem)] flex-col overflow-hidden rounded-md bg-background p-2",
               LEGEND_CORNER_CLASS[placement],
             )
           : cn("w-full flex-row flex-wrap items-end", placement === "above" ? "mb-2" : "mt-2"),
@@ -1057,7 +1057,7 @@ function ChoroplethKey({
       data-slot="choropleth-legend"
     >
       {parts.map((part) => (
-        <div className={cn("min-w-0", corner ? "w-full" : "w-56 max-w-full")} key={part.id}>
+        <div className={cn("min-w-0", corner ? "w-full" : "w-64 max-w-full")} key={part.id}>
           {part.node}
         </div>
       ))}

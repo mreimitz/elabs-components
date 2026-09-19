@@ -392,21 +392,23 @@ const COOLING_DEGREE_DAYS: Record<string, number> = {
 
 /**
  * The world fixture with cooling values on Europe. France's overseas
- * polygons (French Guiana) are trimmed so `fitToData` frames the continent.
+ * polygons (French Guiana) and Norway's Svalbard are trimmed so `fitToData`
+ * frames the continent.
  */
+type Ring = MultiPolygon["coordinates"][number];
+const TRIM: Record<string, (polygon: Ring) => boolean> = {
+  "250": (polygon) => (polygon[0]?.[0]?.[0] ?? 0) > -30, // France without French Guiana
+  "578": (polygon) => (polygon[0]?.[0]?.[1] ?? 0) < 72, // Norway without Svalbard
+};
+
 const europeCooling: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
   type: "FeatureCollection",
   features: worldFeatureCollection().features.map((f) => {
     const value = COOLING_DEGREE_DAYS[f.properties.id];
-    const geometry: MultiPolygon =
-      f.properties.id === "250"
-        ? {
-            type: "MultiPolygon",
-            coordinates: f.geometry.coordinates.filter(
-              (polygon) => (polygon[0]?.[0]?.[0] ?? 0) > -30,
-            ),
-          }
-        : f.geometry;
+    const trim = TRIM[f.properties.id];
+    const geometry: MultiPolygon = trim
+      ? { type: "MultiPolygon", coordinates: f.geometry.coordinates.filter(trim) }
+      : f.geometry;
     return { ...f, geometry, properties: { ...f.properties, value } };
   }),
 };

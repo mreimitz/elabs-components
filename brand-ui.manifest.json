@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T21:07:30.345Z",
+  "generatedAt": "2026-09-19T21:44:59.104Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13617,6 +13617,16 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
+          "name": "DEFAULT_CHOROPLETH_LEGEND_POSITION",
+          "kind": "value",
+          "module": "packages/charts/src/charts/choropleth/choropleth-chart.tsx"
+        },
+        {
+          "name": "DEFAULT_CHOROPLETH_ZOOM_LABELS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/choropleth/zoom-controls.tsx"
+        },
+        {
           "name": "DEFAULT_CIRCULAR_CURVENESS",
           "kind": "value",
           "module": "packages/charts/src/charts/network/index.ts"
@@ -13655,6 +13665,11 @@
           "name": "DEFAULT_SCATTER_SIZE_RANGE",
           "kind": "value",
           "module": "packages/charts/src/charts/scatter-encodings.ts"
+        },
+        {
+          "name": "DEFAULT_SYMBOL_MAX_SIZE",
+          "kind": "value",
+          "module": "packages/charts/src/charts/choropleth/symbol-layer.tsx"
         },
         {
           "name": "DEFAULT_WHISKER_MULTIPLIER",
@@ -13925,6 +13940,11 @@
           "name": "MarkerTooltipContent",
           "kind": "value",
           "module": "packages/charts/src/charts/markers/index.ts"
+        },
+        {
+          "name": "MAX_PLACE_LABELS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/choropleth/place-labels.tsx"
         },
         {
           "name": "MetricCard",
@@ -15187,6 +15207,10 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "ChoroplethCorner",
+          "module": "packages/charts/src/charts/choropleth/inset-map.tsx"
+        },
+        {
           "name": "ChoroplethFeature",
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
@@ -15199,8 +15223,48 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "ChoroplethFitToData",
+          "module": "packages/charts/src/charts/choropleth/fit-to-data.ts"
+        },
+        {
+          "name": "ChoroplethFitToDataOptions",
+          "module": "packages/charts/src/charts/choropleth/fit-to-data.ts"
+        },
+        {
           "name": "ChoroplethGraticuleProps",
           "module": "packages/charts/src/charts/choropleth/index.ts"
+        },
+        {
+          "name": "ChoroplethInsetConfig",
+          "module": "packages/charts/src/charts/choropleth/inset-map.tsx"
+        },
+        {
+          "name": "ChoroplethLegendConfig",
+          "module": "packages/charts/src/charts/choropleth/choropleth-chart.tsx"
+        },
+        {
+          "name": "ChoroplethLegendPosition",
+          "module": "packages/charts/src/charts/choropleth/choropleth-chart.tsx"
+        },
+        {
+          "name": "ChoroplethOverlayConfig",
+          "module": "packages/charts/src/charts/choropleth/choropleth-context.tsx"
+        },
+        {
+          "name": "ChoroplethPlaceLabelsConfig",
+          "module": "packages/charts/src/charts/choropleth/place-labels.tsx"
+        },
+        {
+          "name": "ChoroplethScaleSpec",
+          "module": "packages/charts/src/charts/choropleth/choropleth-chart.tsx"
+        },
+        {
+          "name": "ChoroplethSymbolPoint",
+          "module": "packages/charts/src/charts/choropleth/symbol-layer.tsx"
+        },
+        {
+          "name": "ChoroplethSymbolsConfig",
+          "module": "packages/charts/src/charts/choropleth/symbol-layer.tsx"
         },
         {
           "name": "ChoroplethTooltipData",
@@ -15209,6 +15273,10 @@
         {
           "name": "ChoroplethTooltipProps",
           "module": "packages/charts/src/charts/choropleth/index.ts"
+        },
+        {
+          "name": "ChoroplethZoomLabels",
+          "module": "packages/charts/src/charts/choropleth/zoom-controls.tsx"
         },
         {
           "name": "CircularLayoutOptions",
@@ -17119,6 +17187,10 @@
         {
           "name": "startOfIsoWeek",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "symbolShrink",
+          "module": "packages/charts/src/charts/choropleth/symbol-layer.tsx"
         },
         {
           "name": "thinToDensity",
