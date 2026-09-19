@@ -80,6 +80,7 @@ import {
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
+import { useChartFrameChrome } from "../chart-frame/chart-frame-context";
 import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
 import type { XAxisProps } from "../charts/x-axis";
@@ -424,7 +425,10 @@ function renderChart(
           nulls={nulls}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
+          accessibleDescription={withAnnotationDescription(
+            spec.description ?? spec.altText,
+            spec.annotations,
+          )}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -469,7 +473,10 @@ function renderChart(
           offset={type === "stream" ? "wiggle" : stacked ? "none" : undefined}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
+          accessibleDescription={withAnnotationDescription(
+            spec.description ?? spec.altText,
+            spec.annotations,
+          )}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -515,7 +522,10 @@ function renderChart(
           stacked={stacked ?? false}
           orientation={orientation ?? "vertical"}
           accessibleLabel={spec.title}
-          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
+          accessibleDescription={withAnnotationDescription(
+            spec.description ?? spec.altText,
+            spec.annotations,
+          )}
           copyValueOnActivate={copyValueOnActivate}
           // BarChart — RM-113
           {...barRichnessProps(spec)}
@@ -567,7 +577,7 @@ function renderChart(
           data={pieData}
           innerRadius={innerRadius}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           // pieLabels/groupSmall/pieSort/half — RM-114
           labels={pieLabels}
@@ -600,7 +610,7 @@ function renderChart(
           xDataKey={x}
           xScale={spec.xType === "number" ? "linear" : "time"}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {spec.shapes && spec.shapes.length > 0 ? <CustomShapes shapes={spec.shapes} /> : null}
@@ -665,7 +675,7 @@ function renderChart(
           data={radarData}
           metrics={metrics}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
         >
           <RadarGrid />
           <RadarAxis />
@@ -693,7 +703,7 @@ function renderChart(
           orientation={(orientation as "horizontal" | "vertical" | undefined) ?? "horizontal"}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
         />
@@ -726,7 +736,7 @@ function renderChart(
           xDataKey="date"
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           <Candlestick />
@@ -760,7 +770,7 @@ function renderChart(
           variant={type === "calendar" ? "calendar" : "matrix"}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
         />
       );
@@ -785,7 +795,7 @@ function renderChart(
           orientation={orientation ?? "vertical"}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
           // WaterfallChart types its handler on its own `WaterfallStep` datum; the spec-driven
@@ -820,7 +830,7 @@ function renderChart(
           orientation={orientation ?? "horizontal"}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
           variant={variant}
@@ -850,7 +860,7 @@ function renderChart(
           layout="waffle"
           style={fixedHeight === undefined ? undefined : { height: fixedHeight }}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
         />
       );
@@ -883,7 +893,7 @@ function renderChart(
           style={fixedHeight === undefined ? undefined : { minHeight: fixedHeight }}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
         />
       );
@@ -906,7 +916,7 @@ function renderChart(
           valueFormat={spec.valueFormat}
           currency={spec.currency}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
         />
@@ -929,7 +939,7 @@ function renderChart(
           valueKey={isRank ? undefined : measure}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
         />
@@ -954,7 +964,7 @@ function renderChart(
             xDataKey={x}
             orientation="horizontal"
             accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
+            accessibleDescription={spec.description ?? spec.altText}
             copyValueOnActivate={copyValueOnActivate}
             {...barRichnessProps(spec)}
             stacked="diverging"
@@ -980,7 +990,7 @@ function renderChart(
           xDataKey={x}
           orientation={orientation ?? "vertical"}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
         >
           <Grid horizontal mode={axisProps.gridMode} />
@@ -1170,6 +1180,9 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   ref,
 ) {
   const { t } = useLocale();
+  // RM-117: inside a ChartFrame, the spec's notes, byline and source join the
+  // frame's footer (the frame's own props win). No-op outside a frame.
+  useChartFrameChrome({ notes: spec.notes, byline: spec.byline, source: spec.source });
   // `height` is the deprecated alias; `plotHeight` wins when both are set.
   if (height !== undefined) {
     warnChartOnce(

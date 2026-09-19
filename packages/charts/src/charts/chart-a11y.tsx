@@ -36,7 +36,15 @@
  */
 
 import { useLocale } from "@elabs-ai/components-ui";
-import { Children, isValidElement, type ReactNode, useId, useMemo } from "react";
+import {
+  Children,
+  createContext,
+  isValidElement,
+  type ReactNode,
+  use,
+  useId,
+  useMemo,
+} from "react";
 import { makeValueSetFmt } from "./chart-formatters";
 import { pickNotableIndices } from "./labels/use-chart-labels";
 import type { ChartValueFormat } from "./value-format";
@@ -314,10 +322,17 @@ export interface ChartAutoSummaryInput {
 }
 
 /**
+ * The enclosing `ChartFrame`'s `altText` (RM-117). Provided by the frame around
+ * its chart body; read only by {@link useChartAutoSummary}. Not exported from
+ * the package — the frame is its one provider.
+ */
+export const ChartFrameAltTextContext = createContext<string | undefined>(undefined);
+
+/**
  * The chart's description: the caller's `accessibleDescription`, else — on a
- * labelled chart (`role="figure"`) — the auto summary from
- * {@link describeSeries}. An unlabelled chart gets nothing, so its DOM is
- * unchanged.
+ * labelled chart (`role="figure"`) — the enclosing frame's `altText`, else the
+ * auto summary from {@link describeSeries}. Author text always wins over the
+ * generated summary. An unlabelled chart gets nothing, so its DOM is unchanged.
  */
 export function useChartAutoSummary(
   kind: AutoSummaryKind,
@@ -325,7 +340,9 @@ export function useChartAutoSummary(
 ): string | undefined {
   const { locale } = useLocale();
   const { accessibleLabel, accessibleDescription, data, children, xDataKey } = input;
-  const wanted = Boolean(accessibleLabel) && !accessibleDescription;
+  const frameAltText = use(ChartFrameAltTextContext);
+  const authored = accessibleDescription || (accessibleLabel ? frameAltText : undefined);
+  const wanted = Boolean(accessibleLabel) && !authored;
   const summary = useMemo(() => {
     if (!wanted) return undefined;
     const rows = data as readonly Record<string, unknown>[];
@@ -345,5 +362,5 @@ export function useChartAutoSummary(
       formatShare: (v) => new Intl.NumberFormat(locale, { style: "percent" }).format(v),
     });
   }, [wanted, data, kind, children, xDataKey, locale]);
-  return accessibleDescription || summary;
+  return authored || summary;
 }

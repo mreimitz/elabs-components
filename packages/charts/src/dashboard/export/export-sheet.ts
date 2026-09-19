@@ -30,6 +30,7 @@ import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 
 import { buildExportSvg, composeSvg, findChartSvg, type ComposeSvgPart } from "../../chart-frame";
+import { measureChartExportLayer } from "../../chart-frame/export-layer";
 import { compileCondition } from "../core/expression";
 import { cellRect } from "../core/layout";
 import type { TileSpec } from "../core/spec";
@@ -215,8 +216,14 @@ export async function buildSheetExportSvg(
       if (!el) continue;
       const rect = cellRect(tile.layout, spec.grid, { width, height });
       const chartSvg = findChartSvg(el);
+      // RM-117: the tile's HTML axis labels and keys that sit over the chart
+      // come along as the export layer, measured in the chart's own box — the
+      // part keeps its exact size, marks and position.
       const built = chartSvg
-        ? buildExportSvg(chartSvg, { backgroundColor })
+        ? buildExportSvg(chartSvg, {
+            backgroundColor,
+            layer: measureChartExportLayer(el, { svg: chartSvg }),
+          })
         : placeholderPart(el, rect, resolvedBackgroundColor(el));
       parts.push({
         svg: built,

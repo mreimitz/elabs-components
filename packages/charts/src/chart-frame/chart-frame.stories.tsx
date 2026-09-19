@@ -9,7 +9,13 @@ import { PieCenter } from "../charts/pie-center";
 import { PieChart } from "../charts/pie-chart";
 import { PieSlice } from "../charts/pie-slice";
 import { ChartTooltip } from "../charts/tooltip";
+import { ChartLegend } from "../charts/chart-legend";
+import { Line } from "../charts/line";
+import { LineChart } from "../charts/line-chart";
+import { XAxis } from "../charts/x-axis";
+import { YAxis } from "../charts/y-axis";
 import { ChartFrame } from "./chart-frame";
+import { InlineChip } from "./inline-chip";
 
 const meta = {
   title: "Charts/ChartFrame",
@@ -653,5 +659,265 @@ export const OverflowingBody: Story = {
     });
     expect(body).toHaveAttribute("role", "group");
     expect(body).toHaveAccessibleName("Scrollable chart: Tall content");
+  },
+};
+
+// ── RM-117: editorial chrome and a complete export ───────────────────────────
+
+const ramPrices = [
+  { date: new Date(2025, 0, 1), ram: 2.1, flash: 0.9 },
+  { date: new Date(2025, 1, 1), ram: 2.4, flash: 0.95 },
+  { date: new Date(2025, 2, 1), ram: 2.9, flash: 1.0 },
+  { date: new Date(2025, 3, 1), ram: 3.3, flash: 1.02 },
+  { date: new Date(2025, 4, 1), ram: 3.8, flash: 1.1 },
+  { date: new Date(2025, 5, 1), ram: 4.3, flash: 1.12 },
+];
+
+const ramColumns = [
+  { key: "date", header: "Month" },
+  { key: "ram", header: "RAM (USD/GB)" },
+  { key: "flash", header: "Flash (USD/GB)" },
+];
+
+const ramLegend = [
+  { label: "Short-term RAM", value: 4.3, color: "var(--chart-1)" },
+  { label: "Flash storage", value: 1.12, color: "var(--chart-2)" },
+];
+
+const chromeExportSpy = fn();
+
+function RamChart() {
+  return (
+    <>
+      <LineChart data={ramPrices} xDataKey="date" animationDuration={0}>
+        <Grid horizontal />
+        <Line dataKey="ram" name="Short-term RAM" stroke="var(--chart-1)" />
+        <Line dataKey="flash" name="Flash storage" stroke="var(--chart-2)" />
+        <XAxis />
+        <YAxis title="USD per GB" />
+      </LineChart>
+      <ChartLegend items={ramLegend} showValue={false} />
+    </>
+  );
+}
+
+/** Every text run an export layer painted, grouped by role. */
+async function exportedText(blob: Blob) {
+  const doc = new DOMParser().parseFromString(await blob.text(), "image/svg+xml");
+  const texts = [...doc.querySelectorAll('[data-slot="chart-export-layer"] text')];
+  return {
+    all: texts.map((t) => t.textContent ?? "").join(" "),
+    byRole: (role: string) =>
+      texts.filter((t) => t.getAttribute("data-export-role") === role).map((t) => t.textContent),
+  };
+}
+
+/** Text of the painted (not `sr-only`) spans inside an axis. */
+function paintedTicks(root: Element, slot: string): string[] {
+  return [...root.querySelectorAll(`[data-slot="${slot}"] span`)]
+    .filter((el) => !el.closest(".sr-only") && el.children.length === 0)
+    .filter((el) => el.getBoundingClientRect().width > 1)
+    .map((el) => el.textContent ?? "")
+    .filter(Boolean);
+}
+
+/**
+ * Datawrapper’s chrome: a title that states the finding, a description whose
+ * colour chips replace the legend, italic notes, and the footer “Chart: Author
+ * • Source: Name (linked) • Get the data • Download image”. The SVG export
+ * carries the title, every painted tick label, the axis title, the legend and
+ * the source row; the PNG is 3× the frame’s CSS width.
+ */
+export const EditorialChrome: Story = {
+  render: () => (
+    <div className="w-full max-w-[720px]">
+      <ChartFrame
+        title="RAM prices doubled in six months"
+        description={
+          <>
+            <InlineChip series="ram">Short-term RAM</InlineChip> rose <strong>105%</strong> while{" "}
+            <InlineChip series="flash">flash storage</InlineChip> barely moved.
+          </>
+        }
+        notes="Contract prices in USD per GB, not adjusted for inflation."
+        byline={{ author: "Data desk" }}
+        source={{ name: "DRAMeXchange", href: "https://example.com/dramexchange" }}
+        actions={["data", "png"]}
+        altText="Two lines from January to June 2025: RAM climbs from 2.1 to 4.3 USD per GB; flash stays near 1."
+        data={ramPrices}
+        columns={ramColumns}
+        exportOptions={{ scale: 3 }}
+        onExport={chromeExportSpy}
+      >
+        <RamChart />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    chromeExportSpy.mockClear();
+    const canvas = within(canvasElement);
+    const frame = canvasElement.querySelector<HTMLElement>("[data-chart-breakpoint]")!;
+    const title = canvas.getByText("RAM prices doubled in six months");
+    const notes = canvas.getByText("Contract prices in USD per GB, not adjusted for inflation.");
+    const footer = canvasElement.querySelector('[data-slot="chart-frame-footer"]')!;
+    // The ram line's own path (toolbar icons are `<svg>`s too).
+    const ramPath = await waitFor(() => {
+      const path = canvasElement.querySelector('path[stroke^="url(#line-gradient-ram"]');
+      expect(path).not.toBeNull();
+      return path!;
+    });
+    const chartSvg = ramPath.closest("svg")!;
+    const description = canvas.getByText("105%").closest("p, div")!;
+    const order = [title, description, chartSvg, notes, footer];
+    for (let i = 1; i < order.length; i++) {
+      await expect(
+        order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+    await expect(footer.textContent).toBe(
+      "Chart: Data desk•Source: DRAMeXchange•Get the data•Download image",
+    );
+    await expect(canvas.getByRole("link", { name: "DRAMeXchange" })).toHaveAttribute(
+      "href",
+      "https://example.com/dramexchange",
+    );
+
+    // altText: the chart renders no figure of its own, so the body is one.
+    await waitFor(() =>
+      expect(
+        canvas.getByRole("figure", { name: "RAM prices doubled in six months" }),
+      ).toHaveAccessibleDescription(
+        "Two lines from January to June 2025: RAM climbs from 2.1 to 4.3 USD per GB; flash stays near 1.",
+      ),
+    );
+
+    // InlineChip ink === the series stroke.
+    const chip = await waitFor(() => {
+      const el = canvas.getByRole("img", { name: "ram" });
+      expect(el.style.backgroundColor).toBe("var(--chart-1)");
+      return el;
+    });
+    // The line paints through a fade gradient whose stops carry the series ink.
+    const gradientId = ramPath.getAttribute("stroke")!.slice(5, -1);
+    const stop = chartSvg.querySelector(`[id="${gradientId}"] stop`)!;
+    await expect(getComputedStyle(chip).backgroundColor).toBe(getComputedStyle(stop).stopColor);
+
+    // The SVG export carries the whole picture.
+    await waitFor(() => expect(canvas.getByLabelText("Export as SVG")).toBeInTheDocument());
+    await userEvent.click(canvas.getByLabelText("Export as SVG"));
+    await waitFor(() =>
+      expect(chromeExportSpy).toHaveBeenCalledWith(
+        "svg",
+        expect.any(Blob),
+        "ram-prices-doubled-in-six-months.svg",
+      ),
+    );
+    const svgBlob = chromeExportSpy.mock.calls.find((c) => c[0] === "svg")![1] as Blob;
+    const text = await exportedText(svgBlob);
+    await expect(text.byRole("title")).toEqual(["RAM prices doubled in six months"]);
+    const ticks = [...paintedTicks(frame, "x-axis"), ...paintedTicks(frame, "y-axis")];
+    await expect(ticks.length).toBeGreaterThan(3);
+    for (const tick of ticks) await expect(text.all).toContain(tick);
+    await expect(text.byRole("axis-title")).toEqual(["USD per GB"]);
+    await expect(text.all).toContain("Short-term RAM");
+    await expect(text.all).toContain("Flash storage");
+    await expect(text.byRole("notes").join(" ")).toContain("Contract prices");
+    const footerRuns = text.byRole("footer");
+    for (const word of ["Chart", "Data desk", "Source", "DRAMeXchange"]) {
+      await expect(footerRuns).toContain(word);
+    }
+    await expect(text.all).not.toContain("Get the data");
+    await expect(await svgBlob.text()).not.toContain("var(");
+
+    // PNG at scale 3 is 3× the frame's CSS width.
+    await userEvent.click(canvas.getByRole("button", { name: "Download image" }));
+    await waitFor(() =>
+      expect(chromeExportSpy).toHaveBeenCalledWith(
+        "png",
+        expect.any(Blob),
+        expect.stringContaining(".png"),
+      ),
+    );
+    const pngBlob = chromeExportSpy.mock.calls.find((c) => c[0] === "png")![1] as Blob;
+    const bitmap = await createImageBitmap(pngBlob);
+    await expect(bitmap.width).toBe(Math.round(frame.getBoundingClientRect().width * 3));
+  },
+};
+
+const plainExportSpy = fn();
+
+/** `exportOptions={{ plain: true }}`: the picture without header or footer text. */
+export const PlainExport: Story = {
+  render: () => (
+    <div className="w-full max-w-[720px]">
+      <ChartFrame
+        title="RAM prices doubled in six months"
+        description="Short-term RAM rose 105% while flash storage barely moved."
+        notes="Contract prices in USD per GB, not adjusted for inflation."
+        byline={{ author: "Data desk" }}
+        source={{ name: "DRAMeXchange", href: "https://example.com/dramexchange" }}
+        data={ramPrices}
+        columns={ramColumns}
+        exportOptions={{ plain: true }}
+        onExport={plainExportSpy}
+      >
+        <RamChart />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    plainExportSpy.mockClear();
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvas.getByLabelText("Export as SVG")).toBeInTheDocument());
+    await userEvent.click(canvas.getByLabelText("Export as SVG"));
+    await waitFor(() => expect(plainExportSpy).toHaveBeenCalled());
+    const text = await exportedText(plainExportSpy.mock.calls[0]![1] as Blob);
+    for (const role of ["title", "description", "notes", "footer"]) {
+      await expect(text.byRole(role)).toEqual([]);
+    }
+    await expect(text.all).not.toContain("RAM prices doubled");
+    await expect(text.all).not.toContain("DRAMeXchange");
+    await expect(text.byRole("axis-title")).toEqual(["USD per GB"]);
+  },
+};
+
+const LABELLED_ALT_TEXT =
+  "RAM climbs from 2.1 to 4.3 USD per GB between January and June 2025; flash stays near 1.";
+
+/**
+ * A labelled chart (`accessibleLabel`) inside the frame takes the frame's
+ * `altText` as its description, ahead of the summary it would otherwise
+ * generate. Its own `accessibleDescription` would still win.
+ */
+export const AltTextOnLabelledChart: Story = {
+  render: () => (
+    <div className="w-full max-w-[720px]">
+      <ChartFrame
+        title="RAM prices doubled in six months"
+        altText={LABELLED_ALT_TEXT}
+        data={ramPrices}
+        columns={ramColumns}
+      >
+        <LineChart
+          data={ramPrices}
+          xDataKey="date"
+          accessibleLabel="RAM and flash prices, January to June 2025"
+          animationDuration={0}
+        >
+          <Grid horizontal />
+          <Line dataKey="ram" name="Short-term RAM" stroke="var(--chart-1)" />
+          <Line dataKey="flash" name="Flash storage" stroke="var(--chart-2)" />
+          <XAxis />
+          <YAxis title="USD per GB" />
+        </LineChart>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const figure = await canvas.findByRole("figure", {
+      name: "RAM and flash prices, January to June 2025",
+    });
+    await expect(figure).toHaveAccessibleDescription(LABELLED_ALT_TEXT);
   },
 };

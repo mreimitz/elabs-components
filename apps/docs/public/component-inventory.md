@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 215 | 40 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 216 | 40 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 7 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1188,6 +1188,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | HairlineFloor | component |  | `@elabs-ai/components-charts` | One tick per calendar period along the foot of a plot, every n-th drawn longer — the passage of time in 0.55px of ink, with nothing to read. |
 | HaloText | component |  | `@elabs-ai/components-charts` | SVG text that punches a plot-ground halo out from behind itself, so a label stays readable directly ON a mark instead of beside it. |
 | HeatmapChart | component |  | `@elabs-ai/components-charts` | Two discrete dimensions × one value — weekday × hour, product × region, or a year of days. |
+| InlineChip | component |  | `@elabs-ai/components-charts` |  |
 | KDE_GRID_POINTS | component |  | `@elabs-ai/components-charts` |  |
 | KDE_TAPER | component |  | `@elabs-ai/components-charts` |  |
 | Leader | component |  | `@elabs-ai/components-charts` | The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms. |

@@ -353,6 +353,15 @@ export interface ChartSpec {
   overlays?: BarOverlay[];
   /** A muted prior-period column behind each bar; `labels.comparison` picks its grey label. */
   comparison?: BarComparison;
+  // Frame chrome — RM-117
+  /** Italic notes under the chart when the AutoChart sits in a `ChartFrame` (RM-117). */
+  notes?: string;
+  /** "Chart: Author" at the start of an enclosing `ChartFrame`'s footer (RM-117). */
+  byline?: { kind?: "chart" | "map" | "table"; author: string };
+  /** Attribution for an enclosing `ChartFrame`'s footer — text, or a named link (RM-117). */
+  source?: string | { name: string; href?: string };
+  /** Text alternative for the picture; the chart's description when `description` is unset (RM-117). */
+  altText?: string;
 }
 
 // Pie/donut grouping, sort, half preset — RM-114
