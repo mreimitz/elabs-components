@@ -14,7 +14,9 @@ import { createMcpHttpHandler } from "@elabs-ai/components-cli/lib/mcp-http.mjs"
 // The committed, `pnpm gen`-fresh manifest at the repo root: data, not code.
 import manifest from "../../../../brand-ui.manifest.json";
 
-const handler = createMcpHttpHandler({ manifest, hosted: true });
+// This site's own /storybook/ rewrite and (once RM-105 ships it) /r route are real, so its
+// hosted URLs use them — unlike apps/docs/api/mcp.mjs's handler, which has neither yet.
+const handler = createMcpHttpHandler({ manifest, hosted: true, siteRoutes: true });
 
 export { handler as GET, handler as POST, handler as OPTIONS };
 export const runtime = "nodejs";
