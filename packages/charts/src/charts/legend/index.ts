@@ -15,3 +15,23 @@ export { LegendLabel, type LegendLabelProps } from "./legend-label";
 export { LegendMarker, type LegendMarkerProps } from "./legend-marker";
 export { LegendProgress, type LegendProgressProps } from "./legend-progress";
 export { LegendValue, type LegendValueProps } from "./legend-value";
+
+// Legend engine (RM-118): position/layout/toggle, a ramp key and a size key.
+export {
+  RampLegend,
+  rampPositionOf,
+  type RampLegendLabelMode,
+  type RampLegendProps,
+  type RampLegendScale,
+} from "./ramp-legend";
+export { SizeLegend, type SizeLegendProps } from "./size-legend";
+export {
+  useContainerLegend,
+  type ContainerLegendConfig,
+  type ContainerLegendInteractive,
+  type ContainerLegendLayoutMode,
+  type ContainerLegendPosition,
+  type ContainerLegendProp,
+  type ContainerLegendResult,
+  type UseContainerLegendOptions,
+} from "./use-container-legend";

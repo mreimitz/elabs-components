@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
@@ -26,6 +26,7 @@ import { Bar, type BarShowValues } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
+import { ChartConfigProvider } from "./chart-config-context";
 import { resolvePalette, useChart } from "./chart-context";
 import { Grid } from "./grid";
 import { YAxis } from "./y-axis";
@@ -1001,5 +1002,213 @@ describe("BarChart richness (RM-113)", () => {
     const sorted = noteY("desc");
     expect(Number.isFinite(unsorted) && Number.isFinite(sorted)).toBe(true);
     expect(sorted).toBeGreaterThan(unsorted);
+  });
+});
+
+// Legend engine (RM-118): `legend` prop → `useContainerLegend`.
+describe("BarChart legend (RM-118)", () => {
+  const twoSeriesData = [
+    { name: "Jan", a: 100, b: 40 },
+    { name: "Feb", a: 60, b: 90 },
+    { name: "Mar", a: 80, b: 30 },
+  ];
+
+  it("an unset legend renders no legend, even with more than one series (R1 default)", () => {
+    const { container } = render(
+      <BarChart data={twoSeriesData} xDataKey="name">
+        <Bar animate={false} dataKey="a" fill="var(--chart-1)" />
+        <Bar animate={false} dataKey="b" fill="var(--chart-2)" />
+      </BarChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+    expect(container.querySelector(".legend-container")).toBeNull();
+  });
+
+  it("legend={true} lists both series", () => {
+    const { container } = render(
+      <BarChart data={twoSeriesData} legend xDataKey="name">
+        <Bar animate={false} dataKey="a" fill="var(--chart-1)" />
+        <Bar animate={false} dataKey="b" fill="var(--chart-2)" />
+      </BarChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("a");
+    expect(legend?.textContent).toContain("b");
+  });
+
+  it('interactive: "toggle" on grouped bars hides the clicked series, flips aria-pressed, recomputes the zero-based y-domain from the visible series, and is keyboard-operable', async () => {
+    let latestDomain: readonly number[] = [];
+    function DomainProbe() {
+      latestDomain = useChart().yScale.domain() as number[];
+      return null;
+    }
+    const { container } = render(
+      <BarChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="name"
+      >
+        <Bar animate={false} dataKey="a" fill="var(--chart-1)" />
+        <Bar animate={false} dataKey="b" fill="var(--chart-2)" />
+        <DomainProbe />
+      </BarChart>,
+    );
+
+    const rectsA = () => container.querySelectorAll('rect[fill="var(--chart-1)"]');
+    const rectsB = () => container.querySelectorAll('rect[fill="var(--chart-2)"]');
+    expect(rectsA()).toHaveLength(3);
+    expect(rectsB()).toHaveLength(3);
+    // "a" (max 100) is the max series driving today's domain.
+    const domainBefore = latestDomain[1] as number;
+    expect(latestDomain[0]).toBe(0);
+    expect(domainBefore).toBeGreaterThanOrEqual(100);
+
+    // Real <button aria-pressed> — a native element is keyboard-operable by
+    // construction (Enter/Space), no extra wiring on this end.
+    const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+    expect(buttons).toHaveLength(2);
+    const buttonA = buttons[0] as HTMLButtonElement;
+    expect(buttonA.getAttribute("aria-pressed")).toBe("true");
+
+    fireEvent.click(buttonA);
+
+    await waitFor(() => {
+      expect(buttonA.getAttribute("aria-pressed")).toBe("false");
+      // The toggled-off series' <Bar> no longer mounts at all.
+      expect(rectsA()).toHaveLength(0);
+    });
+    // The remaining (visible) series is untouched.
+    expect(rectsB()).toHaveLength(3);
+    // The value domain recomputes from the visible series only ("b", max
+    // 90) and stays zero-based through `resolveBarValueDomain`
+    // (charts-honesty) — never the stale, still-includes-"a" domain.
+    expect(latestDomain[0]).toBe(0);
+    expect(latestDomain[1]).toBeLessThan(domainBefore);
+    expect(latestDomain[1]).toBeGreaterThanOrEqual(90);
+
+    // WCAG 1.4.1: hidden reads via a struck-through label, not colour alone.
+    expect(buttonA.querySelector("span.line-through")).not.toBeNull();
+
+    fireEvent.click(buttonA);
+    await waitFor(() => {
+      expect(buttonA.getAttribute("aria-pressed")).toBe("true");
+      expect(rectsA()).toHaveLength(3);
+      expect(latestDomain[1]).toBe(domainBefore);
+    });
+  });
+
+  it('interactive: "toggle" on a stacked bar drops the hidden segment, keeps the sibling series, and stays zero-based', async () => {
+    let latestDomain: readonly number[] = [];
+    function DomainProbe() {
+      latestDomain = useChart().yScale.domain() as number[];
+      return null;
+    }
+    const { container } = render(
+      <BarChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        stacked
+        xDataKey="name"
+      >
+        <Bar animate={false} dataKey="a" fill="var(--chart-1)" />
+        <Bar animate={false} dataKey="b" fill="var(--chart-2)" />
+        <DomainProbe />
+      </BarChart>,
+    );
+    expect(container.querySelectorAll('rect[fill="var(--chart-1)"]')).toHaveLength(3);
+    expect(container.querySelectorAll('rect[fill="var(--chart-2)"]')).toHaveLength(3);
+    expect(latestDomain[0]).toBe(0);
+
+    const buttonB = container.querySelectorAll(".legend-container button[aria-pressed]")[1];
+    fireEvent.click(buttonB as Element);
+
+    await waitFor(() => {
+      expect((buttonB as HTMLButtonElement).getAttribute("aria-pressed")).toBe("false");
+      // The toggled-off segment no longer mounts at all…
+      expect(container.querySelectorAll('rect[fill="var(--chart-2)"]')).toHaveLength(0);
+    });
+    // …the sibling series is untouched, and the domain is still zero-based.
+    expect(container.querySelectorAll('rect[fill="var(--chart-1)"]')).toHaveLength(3);
+    expect(latestDomain[0]).toBe(0);
+  });
+
+  it("hovering a legend item dims every other series via Bar's existing ChartLegendHoverProvider seam", async () => {
+    const { container } = render(
+      <BarChart animationDuration={0} data={twoSeriesData} legend xDataKey="name">
+        <Bar animate={false} dataKey="a" fill="var(--chart-1)" />
+        <Bar animate={false} dataKey="b" fill="var(--chart-2)" />
+      </BarChart>,
+    );
+    // A static, non-animated positive bar renders as a bare `<rect
+    // opacity=…>` (no wrapping `<g>`) — read the rect's own attribute.
+    const rectOpacity = (fill: string) =>
+      container.querySelector(`rect[fill="${fill}"]`)?.getAttribute("opacity");
+    expect(rectOpacity("var(--chart-1)")).toBe("1");
+    expect(rectOpacity("var(--chart-2)")).toBe("1");
+
+    const legendItems = container.querySelectorAll(".legend-container > div");
+    expect(legendItems.length).toBeGreaterThanOrEqual(2);
+    fireEvent.mouseEnter(legendItems[1] as Element);
+
+    await waitFor(() => {
+      expect(rectOpacity("var(--chart-2)")).toBe("1");
+      expect(rectOpacity("var(--chart-1)")).toBe("0.3");
+    });
+
+    fireEvent.mouseLeave(legendItems[1] as Element);
+    await waitFor(() => {
+      expect(rectOpacity("var(--chart-1)")).toBe("1");
+    });
+  });
+
+  it("colorBy's own key wins: the container legend yields (renders nothing, no toggle) — R4", () => {
+    const data = [
+      { name: "a", v: 10, region: "North" },
+      { name: "b", v: 40, region: "South" },
+    ];
+    const { container } = render(
+      <BarChart
+        colorBy={{ key: "region" }}
+        data={data}
+        legend={{ interactive: "toggle" }}
+        xDataKey="name"
+      >
+        <Bar animate={false} dataKey="v" />
+      </BarChart>,
+    );
+    // colorBy's own key still renders…
+    expect(container.querySelector('[data-slot="bar-chart-color-key"]')).not.toBeNull();
+    // …but the container legend engine yields — nothing new mounts, so
+    // there is no toggle affordance in this mode either.
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+    expect(container.querySelector(".legend-container")).toBeNull();
+  });
+
+  it("density xs still hides the legend; density sm renders stack layout only", () => {
+    const stacked1 = render(
+      <ChartConfigProvider value={{ density: "xs" }}>
+        <BarChart data={twoSeriesData} legend xDataKey="name">
+          <Bar animate={false} dataKey="a" fill="var(--chart-1)" />
+          <Bar animate={false} dataKey="b" fill="var(--chart-2)" />
+        </BarChart>
+      </ChartConfigProvider>,
+    );
+    expect(stacked1.container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+    cleanup();
+
+    const stacked2 = render(
+      <ChartConfigProvider value={{ density: "sm" }}>
+        <BarChart data={twoSeriesData} legend xDataKey="name">
+          <Bar animate={false} dataKey="a" fill="var(--chart-1)" />
+          <Bar animate={false} dataKey="b" fill="var(--chart-2)" />
+        </BarChart>
+      </ChartConfigProvider>,
+    );
+    expect(
+      stacked2.container.querySelector('[data-container-legend-layout="stack"]'),
+    ).not.toBeNull();
   });
 });

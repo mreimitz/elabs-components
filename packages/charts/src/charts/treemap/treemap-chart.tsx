@@ -15,6 +15,7 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
+import type { ChartLegendEntry } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -28,6 +29,8 @@ import {
 import { useChartValueFormatter, useChartValueSetFormatter } from "../chart-formatters";
 import type { ChartValueFormat } from "../value-format";
 import { CATEGORY_AXIS_ELLIPSIS, ellipsize } from "../category-axis-plan";
+import { type ContainerLegendProp, useContainerLegend } from "../legend/use-container-legend";
+import { RampLegend } from "../legend/ramp-legend";
 import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { useHighDecorationOf } from "../use-high-decoration";
 import { useTextMeasurerOf } from "../use-text-measurer";
@@ -67,6 +70,8 @@ const MIN_VALUE_LABEL_HEIGHT = 36;
 const VALUE_LINE_OFFSET = 8;
 /** So `showValues={false}` never re-resolves a set formatter per render. */
 const NO_VALUES: readonly number[] = [];
+/** Opacity a group's tiles fade to when a DIFFERENT legend row is hovered (RM-118 R3). */
+const LEGEND_DIM_OPACITY = 0.35;
 
 export interface TreemapChartProps extends ChartSelectionProps, ChartInteractionProps {
   /** The hierarchy. A leaf needs a `value`; a parent's explicit `value` (if any)
@@ -148,6 +153,23 @@ export interface TreemapChartProps extends ChartSelectionProps, ChartInteraction
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT. */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Renders a legend (RM-118). What it shows depends on `palette`:
+   *
+   * - `"categorical"` — one row per top-level GROUP, via `useContainerLegend`
+   *   (placement + hover only, R3): hovering a row dims every OTHER group's
+   *   tiles, never hides one. `depth: 2`'s title bands already NAME each
+   *   group on the tile itself — this adds the colour key, not a second name.
+   * - `"sequential"` — leaf shade encodes a continuous VALUE, not a discrete
+   *   category, so this renders `RampLegend` (the shared ramp key every
+   *   sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with
+   *   its marker following the hovered leaf's value.
+   * - `"mono"` (default) — every leaf is the SAME shade; there is nothing to
+   *   key, so a truthy `legend` renders nothing.
+   *
+   * Unset renders nothing (R1).
+   */
+  legend?: ContainerLegendProp;
 }
 
 interface TooltipState {
@@ -197,6 +219,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     plotHeight,
     accessibleLabel,
     accessibleDescription,
+    legend,
     onDatapointClick: _onDatapointClick,
     copyValueOnActivate: _copyValueOnActivate,
     datapointLabel: _datapointLabel,
@@ -354,6 +377,60 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
 
   // Tooltip (hover only — keyboard activation goes through ChartDatapointLayer).
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+
+  // Legend engine (RM-118), hover only. `palette: "categorical"` is the only
+  // shape `useContainerLegend` gets: one row per top-level GROUP, the same
+  // groups `activeLayout.groups`/the title bands already draw. `"sequential"`
+  // and `"mono"` pass empty `items`, so `visible` (and `wrap`) is a no-op —
+  // see the `legend` prop's own doc for why each palette differs.
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      palette === "categorical"
+        ? baseLayout.groups.map((group) => ({
+            key: group.id,
+            label: group.name,
+            color: group.color,
+            kind: "color" as const,
+          }))
+        : [],
+    [palette, baseLayout.groups],
+  );
+  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+  const handleLegendHoverChange = useCallback((index: number | null) => {
+    setLegendHoveredIndex(index);
+  }, []);
+  const containerLegend = useContainerLegend({
+    legend,
+    items: legendItems,
+    hoveredIndex: legendHoveredIndex,
+    onHoverChange: handleLegendHoverChange,
+    maxInteractive: "hover",
+  });
+  // R3 hover: a hovered legend row dims every OTHER group's tiles (never
+  // hides one — Treemap has no per-group hide). `null` group index (no
+  // group data, e.g. `depth: 1` with no `groupIndex`) never matches, so
+  // nothing dims when the legend itself is not shown.
+  const isGroupDimmed = (groupIndex: number | undefined) =>
+    legendHoveredIndex !== null && groupIndex !== legendHoveredIndex;
+
+  // `palette: "sequential"` has no discrete items — it renders `RampLegend`
+  // (the shared ramp key) instead, keyed to the CURRENT leaf value domain,
+  // with the marker following whichever leaf the pointer is over.
+  const showRampLegend = palette === "sequential" && Boolean(legend);
+  const rampLegendConfig = typeof legend === "object" ? legend : undefined;
+  const leafValueDomain = useMemo<[number, number]>(() => {
+    if (activeLayout.leaves.length === 0) {
+      return [0, 0];
+    }
+    let lo = Number.POSITIVE_INFINITY;
+    let hi = Number.NEGATIVE_INFINITY;
+    for (const leaf of activeLayout.leaves) {
+      if (leaf.value < lo) lo = leaf.value;
+      if (leaf.value > hi) hi = leaf.value;
+    }
+    return [lo, hi];
+  }, [activeLayout.leaves]);
+
   const formatValue = useChartValueFormatter(valueFormat);
   const formatShare = useChartValueFormatter("percent");
   // One scale, one notation (#250): tile values are a SET, so compaction is
@@ -437,7 +514,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
 
   const rootLabel = data.name;
 
-  return (
+  const plot = containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: "16 / 9" }}
       aria-describedby={ariaDescribedby}
@@ -473,7 +550,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
             )}
             <rect fill="var(--chart-background)" height={sz.h} width={sz.w} x={0} y={0} />
             {depth === 2 &&
-              activeLayout.groups.map((group) => {
+              activeLayout.groups.map((group, groupIndex) => {
                 const box = rectStyle(group);
                 const bandWidth = box.width;
                 // Canvas measuring ignores CSS `uppercase`, so measure the cased text.
@@ -482,7 +559,14 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                     ? fitLabel(group.name.toUpperCase(), bandWidth, measureGroupLabel)
                     : null;
                 return (
-                  <g data-slot="treemap-group" key={group.id}>
+                  <g
+                    data-slot="treemap-group"
+                    key={group.id}
+                    // `undefined` (never a literal `1`) keeps the DOM byte-identical to
+                    // before RM-118 when no legend row is hovered — React omits an
+                    // `undefined`-valued attribute entirely rather than printing it.
+                    opacity={isGroupDimmed(groupIndex) ? LEGEND_DIM_OPACITY : undefined}
+                  >
                     <motion.rect
                       animate={{ x: box.x, y: box.y, width: bandWidth, height: group.bandHeight }}
                       fill={group.color}
@@ -539,7 +623,12 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                 seriesKey: leaf.groupName ?? undefined,
               });
               const leafNode = (
-                <g data-slot="treemap-leaf" key={leaf.id}>
+                <g
+                  data-slot="treemap-leaf"
+                  key={leaf.id}
+                  // Same `undefined`-when-not-dimmed reasoning as the group `<g>` above.
+                  opacity={isGroupDimmed(leaf.groupIndex) ? LEGEND_DIM_OPACITY : undefined}
+                >
                   <motion.rect
                     animate={{ x: box.x, y: box.y, width: box.width, height: box.height }}
                     className={cn(isActive && "cursor-pointer")}
@@ -684,7 +773,26 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
           <ChartDatapointLayer />
         </>
       )}
-    </ChartPlotRoot>
+    </ChartPlotRoot>,
+  );
+
+  if (!showRampLegend) {
+    return plot;
+  }
+  // `palette: "sequential"` has no discrete `useContainerLegend` items
+  // (`containerLegend.wrap` above is a no-op for it) — the ramp key renders
+  // as its own footer instead, marker following whichever leaf is hovered.
+  return (
+    <div className="flex flex-col gap-4">
+      {plot}
+      <RampLegend
+        hover={tooltip?.leaf.value ?? null}
+        scale={{ domain: leafValueDomain, type: "continuous" }}
+        title={typeof rampLegendConfig?.title === "string" ? rampLegendConfig.title : undefined}
+        tone="sequential"
+        valueFormat={valueFormat}
+      />
+    </div>
   );
 });
 

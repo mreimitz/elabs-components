@@ -21,6 +21,8 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING } from "./animation";
+import { useChartFacetScope } from "./chart-config-context"; // ChartMultiples — RM-120
+import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
 import type { BarProps } from "./bar";
 import {
   type CategoryAxisFit,
@@ -37,6 +39,7 @@ import { useChartAutoSummary } from "./chart-a11y";
 import {
   chartCssVars,
   type ChartColorBy,
+  type ChartLegendEntry,
   type ChartPalette,
   ChartProvider,
   type LineConfig,
@@ -46,6 +49,9 @@ import {
   type TooltipData,
 } from "./chart-context";
 import { arrangeBarGroups, BarGroupLayer, isBarGroupHeaderRow } from "./bar-groups";
+import { ChartLegendHoverProvider } from "./chart-legend-hover";
+// Legend engine — RM-118
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import {
   type BarComparison,
   type BarComparisonLabel,
@@ -198,6 +204,12 @@ export interface BarChartProps extends ChartSelectionProps {
   /**
    * Colour each bar by another column through `resolvePalette` (six hues,
    * then the neutral ladder with a dev warning) and show a colour key.
+   *
+   * One key per chart (RM-118 R4): whenever this produces a non-empty
+   * colour key, the `legend` container legend below YIELDS and renders
+   * nothing — `colorBy`'s own key already covers the same job, and
+   * `interactive: "toggle"` has no effect in that mode (there is no
+   * container legend to press).
    */
   colorBy?: ChartColorBy;
   /** Paint a `--chart-mono-2` track behind each bar to the axis maximum ("to 100 %"). Default: false */
@@ -244,9 +256,30 @@ export interface BarChartProps extends ChartSelectionProps {
    * chart with a single unfilled `Bar` keeps today's `--chart-line-primary`.
    */
   palette?: ChartPalette;
+  /**
+   * Legend engine (RM-118): `true` or a config object mounts `ChartLegend`
+   * beside the plot via `useContainerLegend`; `{ interactive: "toggle" }`
+   * turns each item into a real `aria-pressed` button that hides a series
+   * on grouped OR stacked bars — the value domain (`resolveBarValueDomain`,
+   * always zero-based) recomputes from the VISIBLE series only, and the
+   * hidden series' `<Bar>` never mounts, so it drops out of the datapoint
+   * layer too. `interactive: "hover"` (default) dims the other series via
+   * the existing `ChartLegendHoverProvider` seam `Bar` already reads.
+   * Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its
+   * doc (R4, one key per chart).
+   */
+  legend?: ContainerLegendProp;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
+
+/** Stable "nothing hidden" default so an unset `hiddenKeys` never allocates. */
+const EMPTY_HIDDEN_KEYS: ReadonlySet<string> = new Set();
+
+/** `ChartLegendHoverProvider` needs a stable `onHoverChange` — bars never originate hover themselves. */
+function noopLegendHoverChange(): void {
+  /* Bar dimming is driven one-way, from the container legend down — bars never call this back. */
+}
 
 /** Shared "is this child a `<Bar>`" predicate — component name OR a `dataKey` prop. */
 function isBarChild(child: ReactNode): child is ReactElement<BarProps> {
@@ -591,6 +624,10 @@ interface ChartInnerProps {
   maxInteractiveDatapoints?: number;
   onPhaseChange?: (phase: ChartPhase) => void;
   palette?: ChartPalette;
+  /** Toggled-off series keys (RM-118) — see `BarChartProps.legend`'s doc. */
+  hiddenKeys?: ReadonlySet<string>;
+  /** The legend item currently hovered or keyboard-focused (RM-118) — dims every other series via `ChartLegendHoverProvider`. */
+  legendHoveredKey?: string | null;
 }
 
 function ChartInner(props: ChartInnerProps) {
@@ -657,6 +694,8 @@ const ChartCore = memo(function ChartCore({
   loadingLabel,
   onPhaseChange,
   palette,
+  hiddenKeys = EMPTY_HIDDEN_KEYS,
+  legendHoveredKey = null,
 }: ChartInnerProps) {
   const { tooltipData, setTooltipData, scheduleTooltip, clearTooltip } =
     useScheduledTooltip<TooltipData>();
@@ -681,9 +720,12 @@ const ChartCore = memo(function ChartCore({
     Boolean(overlays && overlays.length > 0) ||
     Boolean(comparison) ||
     track;
+  // ChartMultiples — RM-120: a facet panel's value ticks / axis visibility (no baseline on bars).
+  const facet = useChartFacetScope();
+  const scopedChildren = useFacetScopedChildren(childrenProp, { baseline: false });
   const children = useMemo(
-    () => applyPercentAxisFormat(applyBarPalette(childrenProp, palette), stackMode === "percent"),
-    [childrenProp, palette, stackMode],
+    () => applyPercentAxisFormat(applyBarPalette(scopedChildren, palette), stackMode === "percent"),
+    [scopedChildren, palette, stackMode],
   );
 
   // Extract bar configs synchronously from children. `children` gets a new
@@ -691,7 +733,22 @@ const ChartCore = memo(function ChartCore({
   // changed; `useStableValue` collapses the extracted result back to its
   // previous reference when the content is unchanged, so `contextValue`
   // below (and the scales it drives) don't rebuild on an unrelated re-render.
-  const lines = useStableValue(useMemo(() => extractBarConfigs(children), [children]));
+  const allLines = useStableValue(useMemo(() => extractBarConfigs(children), [children]));
+  // RM-118 toggle: every calculation BELOW this point (row order, stack
+  // layout, the value domain, per-axis scales, tooltip positions and the
+  // context `lines` `Bar` itself reads for its own `seriesIndex`) reads
+  // `lines` — reassigned here to the VISIBLE subset so the whole pipeline
+  // recomputes from the visible series only with no further touch points.
+  // `legendItems` below is the one deliberate exception: it reads
+  // `allLines` so a toggled-off series stays listed (struck through, still
+  // pressable) rather than disappearing from its own legend.
+  const lines = useStableValue(
+    useMemo(
+      () =>
+        hiddenKeys.size === 0 ? allLines : allLines.filter((line) => !hiddenKeys.has(line.dataKey)),
+      [allLines, hiddenKeys],
+    ),
+  );
   const zeroLineSetting = useStableValue(
     useMemo(() => extractZeroLineSetting(children), [children]),
   );
@@ -754,12 +811,12 @@ const ChartCore = memo(function ChartCore({
   const legendItems = useMemo(
     () =>
       buildBarLegendItems({
-        lines,
+        lines: allLines,
         colorKey: colorResolution?.items,
         comparison,
         overlays,
       }),
-    [colorResolution, comparison, lines, overlays],
+    [allLines, colorResolution, comparison, overlays],
   );
 
   // The margins the caller asked for, squeezed to whatever box the chart was
@@ -966,7 +1023,15 @@ const ChartCore = memo(function ChartCore({
   // `lengthEncoding: true`: the upper bound is honoured, a lower bound above 0
   // is widened back to 0, and any non-linear scale falls back to linear — each
   // with a dev warning (charts-honesty). No request → the pre-RM-108 path.
-  const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
+  const facetYDomain = isHorizontal ? undefined : facet?.yDomain;
+  const valueAxisConfigs = useMemo(() => {
+    const configs = collectValueAxisConfigs(children);
+    // ChartMultiples — RM-120: the panel's domain, unless `YAxis domain` pins one.
+    if (facetYDomain && !configs[DEFAULT_Y_AXIS_ID]?.domain) {
+      configs[DEFAULT_Y_AXIS_ID] = { ...configs[DEFAULT_Y_AXIS_ID], domain: facetYDomain };
+    }
+    return configs;
+  }, [children, facetYDomain]);
   const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
   const primaryValueAxis = useMemo(() => {
     const config = valueAxisConfigs[DEFAULT_Y_AXIS_ID];
@@ -1305,6 +1370,13 @@ const ChartCore = memo(function ChartCore({
       return;
     }
 
+    // RM-118 toggle: a hidden series' `<Bar>` never mounts at all — no
+    // geometry, no datapoint targets, nothing for `seriesIndex` to
+    // misresolve against the now-shorter `lines` context value above.
+    if (isBarChild(child) && hiddenKeys.has((child.props as BarProps).dataKey)) {
+      return;
+    }
+
     const annotationLayers = splitChartAnnotationsChild(child, index);
     if (annotationLayers) {
       annotationBackChildren.push(annotationLayers[0]);
@@ -1461,20 +1533,39 @@ const ChartCore = memo(function ChartCore({
     </svg>
   );
 
+  // RM-118 hover: `Bar` already reads `ChartLegendHoverProvider` for its own
+  // dimming (`isLegendDimmed`, built ahead of this RM) — the index has to
+  // match the SAME (visible-only) `lines` `seriesIndex` resolves against,
+  // not the legend's own full listing, or a series after a hidden one would
+  // dim the wrong bar. `legendHoveredKey` not found among `lines` (e.g. the
+  // hovered item is itself hidden) dims nothing rather than guessing.
+  const legendHoveredIndexForBars = useMemo(() => {
+    if (legendHoveredKey == null) {
+      return null;
+    }
+    const idx = lines.findIndex((line) => line.dataKey === legendHoveredKey);
+    return idx >= 0 ? idx : null;
+  }, [legendHoveredKey, lines]);
+
   return (
-    <ChartProvider value={contextValue}>
-      {datapointsEnabled || colorKey ? (
-        // Positioned SIBLING of the aria-hidden <svg>, never a child of it —
-        // a focusable inside aria-hidden is the axe `aria-hidden-focus` failure.
-        <div className="relative" style={{ width, height }}>
-          {svg}
-          {colorKey}
-          {datapointsEnabled ? <ChartDatapointLayer /> : null}
-        </div>
-      ) : (
-        svg
-      )}
-    </ChartProvider>
+    <ChartLegendHoverProvider
+      hoveredIndex={legendHoveredIndexForBars}
+      onHoverChange={noopLegendHoverChange}
+    >
+      <ChartProvider value={contextValue}>
+        {datapointsEnabled || colorKey ? (
+          // Positioned SIBLING of the aria-hidden <svg>, never a child of it —
+          // a focusable inside aria-hidden is the axe `aria-hidden-focus` failure.
+          <div className="relative" style={{ width, height }}>
+            {svg}
+            {colorKey}
+            {datapointsEnabled ? <ChartDatapointLayer /> : null}
+          </div>
+        ) : (
+          svg
+        )}
+      </ChartProvider>
+    </ChartLegendHoverProvider>
   );
 });
 
@@ -1521,11 +1612,66 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     palette,
     selectionStates,
     dimExcluded,
+    legend,
   },
   ref,
 ) {
   // Internal ref anchors tooltips; merge with the forwarded ref via a callback ref.
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Legend engine (RM-118). `children` is walked a second time here (cheap —
+  // the same small tree `ChartInner` below also walks) so the legend items
+  // and the container's own width measurement are both available BEFORE
+  // `ParentSize` mounts, at the level the legend needs to sit beside the
+  // plot. Runs the SAME default-fill assignment (`applyBarPalette`) the
+  // inner core runs so an unfilled multi-series chart's legend swatches
+  // match the painted bars instead of every item reading the one fallback
+  // colour.
+  const childrenForLegend = useMemo(() => applyBarPalette(children, palette), [children, palette]);
+  const barConfigsForLegend = useStableValue(
+    useMemo(() => extractBarConfigs(childrenForLegend), [childrenForLegend]),
+  );
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      barConfigsForLegend.map((line) => ({
+        key: line.dataKey,
+        label: line.dataKey,
+        color: line.stroke || "var(--chart-line-primary)",
+        kind: "series" as const,
+      })),
+    [barConfigsForLegend],
+  );
+  // R4: `colorBy`'s own key is ONE key per chart — whenever it would
+  // actually paint (a non-empty resolution), the container legend below
+  // yields by never seeing a `legend` prop, however the caller set it.
+  const colorKeyShowing = useMemo(
+    () =>
+      Boolean(colorBy) &&
+      resolveColorBy(
+        data.filter((row) => !isBarGroupHeaderRow(row)),
+        colorBy as ChartColorBy,
+      ).items.length > 0,
+    [colorBy, data],
+  );
+  const effectiveLegend: ContainerLegendProp | undefined = colorKeyShowing ? undefined : legend;
+  // R1 (moved into the engine): `useContainerLegend` itself treats an unset
+  // `legend` as "off", so `BarChart` forwards `effectiveLegend` straight
+  // through with no extra guard.
+  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+  const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  const handleLegendHoverChange = useCallback(
+    (index: number | null) => {
+      setLegendHoveredIndex(index);
+      setLegendHoveredKey(index == null ? null : (legendItems[index]?.key ?? null));
+    },
+    [legendItems],
+  );
+  const containerLegend = useContainerLegend({
+    legend: effectiveLegend,
+    items: legendItems,
+    hoveredIndex: legendHoveredIndex,
+    onHoverChange: handleLegendHoverChange,
+  });
 
   const mergedRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -1568,7 +1714,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
 
   const showLoadingLabel = Boolean(loadingLabel?.trim() && chartPhase === "loading");
 
-  return (
+  return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
@@ -1593,6 +1739,8 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
               datapointLabel={datapointLabel}
               enterTransition={enterTransition}
               height={height}
+              hiddenKeys={containerLegend.hiddenKeys}
+              legendHoveredKey={legendHoveredKey}
               loadingLabel={loadingLabel}
               margin={margin}
               maxInteractiveDatapoints={maxInteractiveDatapoints}
@@ -1626,7 +1774,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
         </ParentSize>
       </ChartSelectionProvider>
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}
-    </ChartPlotRoot>
+    </ChartPlotRoot>,
   );
 });
 

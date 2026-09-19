@@ -13,7 +13,7 @@
  * Real render, animation, interaction, and a11y are covered by the Storybook
  * tests (area-chart story, every theme).
  */
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock @visx/responsive so ParentSize renders its child with a fixed size
@@ -135,6 +135,57 @@ describe("AreaChart", () => {
     expect(root.getAttribute("role")).toBeNull();
     expect(root.getAttribute("aria-label")).toBeNull();
     expect(root.getAttribute("tabindex")).toBeNull();
+  });
+});
+
+// Legend engine (RM-118): `legend` prop → `useContainerLegend`. `Area` is
+// mocked to `() => null` above, so this covers the container-level wiring
+// (visibility default, toggle mechanics) — the shared `hiddenKeys` seam
+// itself (dropping a hidden series from the y-domain) is proven once,
+// container-agnostically, in `time-series-chart-shell.test.tsx`.
+describe("AreaChart legend (RM-118)", () => {
+  const twoBandData = [
+    { date: new Date("2024-01-01"), desktop: 100, mobile: 40 },
+    { date: new Date("2024-02-01"), desktop: 120, mobile: 60 },
+  ];
+
+  it("an unset legend renders no legend, even with more than one band (R1 default)", () => {
+    const { container } = render(
+      <AreaChart data={twoBandData}>
+        <Area dataKey="desktop" />
+        <Area dataKey="mobile" />
+      </AreaChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+  });
+
+  it("legend={true} renders both bands as legend entries", () => {
+    const { container } = render(
+      <AreaChart data={twoBandData} legend>
+        <Area dataKey="desktop" />
+        <Area dataKey="mobile" />
+      </AreaChart>,
+    );
+    const legend = container.querySelector(".legend-container");
+    expect(legend).not.toBeNull();
+    expect(legend?.textContent).toContain("desktop");
+    expect(legend?.textContent).toContain("mobile");
+  });
+
+  it('interactive: "toggle" flips aria-pressed and strikes the label through', () => {
+    const { container } = render(
+      <AreaChart data={twoBandData} legend={{ interactive: "toggle" }}>
+        <Area dataKey="desktop" />
+        <Area dataKey="mobile" />
+      </AreaChart>,
+    );
+    const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+    expect(buttons).toHaveLength(2);
+    const button = buttons[0] as HTMLButtonElement;
+    expect(button.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(button);
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+    expect(button.querySelector("span.line-through")).not.toBeNull();
   });
 });
 

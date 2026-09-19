@@ -733,3 +733,275 @@ export const UnitInferred: Story = inferenceStory(
   "unit",
   "waffle",
 );
+
+/**
+ * A series known only by its column key (no `label`) is NOT end-labelled
+ * (RM-110), so the legend engine's default shows a legend — forwarded
+ * through `spec.legend` into `LineChart`'s own `legend` prop
+ * (`LEGEND_ENGINE_TYPES`), never a second, `AutoChart`-owned implementation.
+ * The rendered `.legend-container` is byte-identical to an explicit
+ * `<LineChart legend>` built from the same normalized series (see
+ * `auto-chart.test.tsx`'s "renders the identical legend DOM…" test, and
+ * `LineChart`'s own `LegendToggle` story for the equivalent explicit call).
+ */
+export const LineLegendFromColumnKeys: Story = {
+  args: {
+    spec: {
+      type: "line",
+      data: [
+        { date: "2024-01-01", ebikes: 10, cargo: 4 },
+        { date: "2024-02-01", ebikes: 14, cargo: 6 },
+        { date: "2024-03-01", ebikes: 19, cargo: 9 },
+      ],
+      x: "date",
+      series: [{ key: "ebikes" }, { key: "cargo" }],
+    } satisfies ChartSpec,
+    height: 280,
+  },
+};
+
+/**
+ * `ChartSpec.facet` (RM-120) splits one line spec into a grid, one panel per
+ * `region` — and `legend: true` (RM-118) shows ONE shared `Chart legend`
+ * above the whole grid, not one per panel and not the old per-chart
+ * `AutoLegend` a faceted spec briefly lost across the wave-2 branch merge.
+ */
+export const LineFacetedLegend: Story = {
+  args: {
+    spec: {
+      type: "line",
+      data: [
+        { date: "2024-01-01", region: "North", revenue: 12000, expenses: 8500 },
+        { date: "2024-02-01", region: "North", revenue: 15200, expenses: 9100 },
+        { date: "2024-03-01", region: "North", revenue: 14100, expenses: 8800 },
+        { date: "2024-01-01", region: "South", revenue: 9000, expenses: 6200 },
+        { date: "2024-02-01", region: "South", revenue: 10400, expenses: 6800 },
+        { date: "2024-03-01", region: "South", revenue: 9700, expenses: 6500 },
+      ],
+      x: "date",
+      series: [{ key: "revenue" }, { key: "expenses" }],
+      facet: { by: "region" },
+      legend: true,
+    } satisfies ChartSpec,
+    height: 280,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const groups = await waitFor(() => canvas.getAllByRole("group", { name: "Chart legend" }));
+    await expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    await expect(within(legend).getByText("revenue")).toBeInTheDocument();
+    await expect(within(legend).getByText("expenses")).toBeInTheDocument();
+
+    // Browser proof (RM-118 x RM-120 regression fix): the legend box sits
+    // above the grid box, not beside or inside it.
+    const grid = canvasElement.querySelector('[data-slot="chart-multiples"]');
+    if (!grid) throw new Error("expected the ChartMultiples grid to be present");
+    const legendBox = legend.getBoundingClientRect();
+    const gridBox = grid.getBoundingClientRect();
+    console.log(
+      "[RM-118 facet legend proof]",
+      JSON.stringify({
+        legendRootCount: groups.length,
+        itemTexts: Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent),
+        legendBox: { top: legendBox.top, bottom: legendBox.bottom, height: legendBox.height },
+        gridBox: { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height },
+      }),
+    );
+    await expect(legendBox.bottom).toBeLessThanOrEqual(gridBox.top);
+  },
+};
+
+/**
+ * RM-118 Part B × RM-120, sitting 2: `bar` joined `LEGEND_ENGINE_TYPES` this
+ * wave, so a faceted bar spec gets the same fix as `LineFacetedLegend` above —
+ * ONE shared `Chart legend` over the whole grid, never one per panel.
+ */
+export const BarFacetedLegend: Story = {
+  args: {
+    spec: {
+      type: "bar",
+      data: [
+        { quarter: "Q1", region: "North", revenue: 40, profit: 12 },
+        { quarter: "Q2", region: "North", revenue: 44, profit: 14 },
+        { quarter: "Q3", region: "North", revenue: 47, profit: 15 },
+        { quarter: "Q1", region: "South", revenue: 30, profit: 9 },
+        { quarter: "Q2", region: "South", revenue: 33, profit: 10 },
+        { quarter: "Q3", region: "South", revenue: 35, profit: 11 },
+      ],
+      x: "quarter",
+      series: [{ key: "revenue" }, { key: "profit" }],
+      facet: { by: "region" },
+      legend: true,
+    } satisfies ChartSpec,
+    height: 280,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const groups = await waitFor(() => canvas.getAllByRole("group", { name: "Chart legend" }));
+    await expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    await expect(within(legend).getByText("revenue")).toBeInTheDocument();
+    await expect(within(legend).getByText("profit")).toBeInTheDocument();
+
+    // Browser proof: the legend box sits above the grid box, not beside,
+    // inside, or duplicated per panel.
+    const grid = canvasElement.querySelector('[data-slot="chart-multiples"]');
+    if (!grid) throw new Error("expected the ChartMultiples grid to be present");
+    const legendBox = legend.getBoundingClientRect();
+    const gridBox = grid.getBoundingClientRect();
+    console.log(
+      "[RM-118 Part B facet legend proof]",
+      JSON.stringify({
+        legendRootCount: groups.length,
+        itemTexts: Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent),
+        legendBox: { top: legendBox.top, bottom: legendBox.bottom, height: legendBox.height },
+        gridBox: { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height },
+      }),
+    );
+    await expect(legendBox.bottom).toBeLessThanOrEqual(gridBox.top);
+    await expect(grid.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(
+      0,
+    );
+  },
+};
+
+/**
+ * RM-118 Part B × RM-120, sitting 2 (fix round 1, item 3): the pie half of
+ * `BarFacetedLegend` above — same ONE-shared-`Chart legend`-over-the-grid
+ * treatment, but the items must be the slice CATEGORIES (deduped across
+ * panels via `pieRows`, the same source the retired `<AutoLegend>` used),
+ * never the value column and never one legend per panel. This is the exact
+ * regression class the sitting-2 `legendItems`-not-`series` fix in
+ * `auto-chart.tsx` guards — see the matching unit tests in
+ * `auto-chart.test.tsx`'s "AutoChart faceted pie legend" block.
+ */
+export const PieFacetedLegend: Story = {
+  args: {
+    spec: {
+      type: "pie",
+      data: [
+        { region: "North", channel: "Direct", share: 42 },
+        { region: "North", channel: "Organic", share: 33 },
+        { region: "North", channel: "Referral", share: 25 },
+        { region: "South", channel: "Direct", share: 38 },
+        { region: "South", channel: "Organic", share: 36 },
+        { region: "South", channel: "Referral", share: 26 },
+      ],
+      x: "channel",
+      series: ["share"],
+      facet: { by: "region" },
+      legend: true,
+    } satisfies ChartSpec,
+    height: 280,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const groups = await waitFor(() => canvas.getAllByRole("group", { name: "Chart legend" }));
+    await expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    await expect(within(legend).getByText("Direct")).toBeInTheDocument();
+    await expect(within(legend).getByText("Organic")).toBeInTheDocument();
+    await expect(within(legend).getByText("Referral")).toBeInTheDocument();
+    // Never the value column, and never one row per panel (would be 6, not 3).
+    await expect(within(legend).queryByText("share")).not.toBeInTheDocument();
+    await expect(legend.querySelectorAll(":scope > *")).toHaveLength(3);
+
+    // Browser proof: the legend box sits above the grid box, not beside,
+    // inside, or duplicated per panel.
+    const grid = canvasElement.querySelector('[data-slot="chart-multiples"]');
+    if (!grid) throw new Error("expected the ChartMultiples grid to be present");
+    const legendBox = legend.getBoundingClientRect();
+    const gridBox = grid.getBoundingClientRect();
+    console.log(
+      "[RM-118 Part B pie facet legend proof]",
+      JSON.stringify({
+        legendRootCount: groups.length,
+        itemTexts: Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent),
+        legendBox: { top: legendBox.top, bottom: legendBox.bottom, height: legendBox.height },
+        gridBox: { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height },
+      }),
+    );
+    await expect(legendBox.bottom).toBeLessThanOrEqual(gridBox.top);
+    await expect(grid.querySelectorAll('[role="group"][aria-label="Chart legend"]')).toHaveLength(
+      0,
+    );
+  },
+};
+
+// Dual-axis — RM-121
+const dualAxisSpecData = [
+  { month: "2024-01-01", orders: 182, conversion: 2.4 },
+  { month: "2024-02-01", orders: 236, conversion: 3.1 },
+  { month: "2024-03-01", orders: 311, conversion: 3.6 },
+  { month: "2024-04-01", orders: 287, conversion: 4.2 },
+  { month: "2024-05-01", orders: 402, conversion: 5.3 },
+  { month: "2024-06-01", orders: 468, conversion: 6.1 },
+];
+
+/** Tick label rows (px, from each tick's own `top`) of the value axis on `side`. */
+function dualAxisTickRows(root: HTMLElement, side: "left" | "right"): number[] {
+  const axis = Array.from(root.querySelectorAll<HTMLElement>('[data-slot="y-axis"]')).find((el) => {
+    const column = el.firstElementChild as HTMLElement | null;
+    return side === "left" ? column?.style.left === "0px" : column?.style.right === "0px";
+  });
+  return Array.from(axis?.querySelectorAll<HTMLElement>(":scope > div > div") ?? []).map((tick) =>
+    Math.round(Number.parseFloat(tick.style.top)),
+  );
+}
+
+/**
+ * `type: "dual-axis"`: order counts as columns on the left scale, the
+ * conversion rate as a line on the right. `axes.y2.align: "ticks"` puts both
+ * scales on the same gridlines; the legend splits by side and the tooltip is
+ * a table with a header per axis.
+ */
+export const DualAxisSpec: Story = {
+  args: {
+    spec: {
+      type: "dual-axis",
+      data: dualAxisSpecData,
+      x: "month",
+      series: [
+        { key: "orders", label: "Orders", mark: "column" },
+        { key: "conversion", label: "Conversion", axis: "right" },
+      ],
+      axes: { y2: { align: "ticks", title: "Conversion rate, %" } },
+      title: "Orders and conversion rate",
+      description:
+        "Monthly orders (left scale) and conversion rate in percent (right scale), January to June 2024.",
+    } satisfies ChartSpec,
+    plotHeight: 280,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const left = dualAxisTickRows(canvasElement, "left");
+      expect(left.length).toBeGreaterThanOrEqual(3);
+      expect(dualAxisTickRows(canvasElement, "right")).toEqual(left);
+    });
+    const rows = canvasElement.querySelectorAll('[data-slot="chart-legend-split-row"]');
+    await expect(rows).toHaveLength(2);
+    await expect(rows[0]).toHaveTextContent("Left scale");
+    await expect(rows[1]).toHaveTextContent("Right scale");
+  },
+};
+
+/** A dual-axis spec with no line series cannot be drawn honestly: `ChartFallback` says so. */
+export const DualAxisSpecWithoutLine: Story = {
+  args: {
+    spec: {
+      type: "dual-axis",
+      data: dualAxisSpecData,
+      x: "month",
+      series: [
+        { key: "orders", label: "Orders", mark: "column" },
+        { key: "conversion", label: "Conversion", mark: "area", axis: "right" },
+      ],
+      title: "Orders and conversion rate",
+    } satisfies ChartSpec,
+    plotHeight: 280,
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+  },
+};

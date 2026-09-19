@@ -66,3 +66,44 @@ describe("ChartLegend — locale-aware formatting (review: was host-locale-blind
     expect(screen.getByText("$42")).toBeInTheDocument();
   });
 });
+
+describe("ChartLegend — layout prop (RM-118, sitting 3 bug fix)", () => {
+  const twoItems: LegendItem[] = [
+    { color: "var(--chart-1)", label: "Revenue", value: 100, key: "revenue" },
+    { color: "var(--chart-2)", label: "Cost", value: 50, key: "cost" },
+  ];
+
+  it("defaults to stack — byte-identical to every caller before `layout` existed", () => {
+    const { container } = render(<ChartLegend items={twoItems} />);
+    const root = container.querySelector(".legend-container");
+    expect(root?.className).toContain("flex-col");
+    expect(root?.className).not.toContain("flex-row");
+  });
+
+  it('layout="row" wraps items left-to-right instead of stacking them', () => {
+    const { container } = render(<ChartLegend items={twoItems} layout="row" />);
+    const root = container.querySelector(".legend-container");
+    expect(root?.className).toContain("flex-row");
+    expect(root?.className).toContain("flex-wrap");
+    expect(root?.className).not.toContain("flex-col");
+  });
+
+  it('layout="row" drops the w-full an interactive item otherwise gets, so items can sit side by side', () => {
+    const { container } = render(
+      <ChartLegend hiddenKeys={new Set()} items={twoItems} layout="row" onToggleKey={() => {}} />,
+    );
+    const buttons = container.querySelectorAll(".legend-container button");
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) {
+      expect(button.className).not.toContain("w-full");
+    }
+  });
+
+  it('layout="stack" (default) keeps w-full on an interactive item', () => {
+    const { container } = render(
+      <ChartLegend hiddenKeys={new Set()} items={twoItems} onToggleKey={() => {}} />,
+    );
+    const button = container.querySelector(".legend-container button");
+    expect(button?.className).toContain("w-full");
+  });
+});

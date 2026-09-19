@@ -50,8 +50,14 @@ import { categoryValueScales } from "./annotations/resolve-annotation-position";
 import { useAnnotatedChart, useChartAnnotationLayers } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ellipsize } from "./category-axis-plan";
-import { type ChartPalette, type Margin, resolvePalette } from "./chart-context";
+import {
+  type ChartLegendEntry,
+  type ChartPalette,
+  type Margin,
+  resolvePalette,
+} from "./chart-context";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import {
   arrowHeadPath,
   arrowHeadPoints,
@@ -287,9 +293,30 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
    * still lands on the right row after `sortBy`/`groupBy` reorders it.
    */
   annotations?: readonly ChartAnnotation[];
+  /**
+   * Renders a legend (RM-118) for `variant="dots"` only — one row per
+   * `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3:
+   * hovering/focusing a row dims every OTHER dot key's dots, on every row,
+   * never hides one — a dumbbell row is a CATEGORY, not a series, so there is
+   * nothing per-key to hide). REPLACES the pre-existing, unconditional corner
+   * dot-key badge (`data-slot="dumbbell-chart-dot-legend"`, RM-116) when set;
+   * unset (default) keeps that badge exactly as it always rendered — it
+   * predates the shared legend engine and R1 ("unset renders nothing new")
+   * only governs what THIS prop adds, not existing UI.
+   *
+   * Every other variant (`"dumbbell"`, `"slope"`, `"arrow"`) has no discrete
+   * key shared across rows to legend — each row IS its own category, already
+   * labelled beside its own mark — so a truthy `legend` renders nothing there.
+   */
+  legend?: ContainerLegendProp;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
+
+/** Opacity applied to every OTHER dot key's marks while a legend row is
+ *  hovered/focused (RM-118 R3) — matches the ramp every other hover-dim
+ *  family in this initiative uses (see e.g. `treemap-chart.tsx`). */
+const LEGEND_DIM_OPACITY = 0.35;
 
 const DEFAULT_MARKERS: DumbbellMarkerStyle = { start: "hollow", end: "filled" };
 // Pre-measurement floors, never below what `deriveDumbbellMargin` grows past
@@ -737,6 +764,13 @@ interface PlotProps {
   measure: (text: string) => number;
   /** Resolved line height of the label font, in px — feeds `SLOPE_LABEL_GAP_RATIO`. */
   lineHeightPx: number;
+  /**
+   * `variant="dots"` only (RM-118): the `valueKeys` index a legend row is
+   * hovered/focused on, `null` when none is. Dims every OTHER dot key's
+   * marks (`LEGEND_DIM_OPACITY`) — independent of the pre-existing per-ROW
+   * `hoveredIndex` fade above, which dims a whole other CATEGORY instead.
+   */
+  legendHoveredDotIndex?: number | null;
 }
 
 /**
@@ -816,6 +850,7 @@ function DumbbellPlot({
   containerRef,
   measure,
   lineHeightPx,
+  legendHoveredDotIndex = null,
 }: PlotProps) {
   const instanceKeyRef = useRef({});
   const innerWidth = Math.max(width - margin.left - margin.right, 0);
@@ -1388,9 +1423,19 @@ function DumbbellPlot({
                           <circle
                             cx={dotPositions[dotIndex]}
                             cy={crossCenter}
+                            data-dot-key={valueKeys?.[dotIndex]}
                             data-slot="dumbbell-chart-dot"
                             fill={dotKeyColors[dotIndex % dotKeyColors.length]}
                             key={`dot:${row.index}:${dotIndex}`}
+                            // `undefined` (never a literal `1`) when not dimmed — keeps
+                            // the DOM byte-identical to before RM-118 for every render
+                            // where no legend row is hovered (React omits an
+                            // `undefined`-valued attribute rather than printing it).
+                            opacity={
+                              legendHoveredDotIndex !== null && legendHoveredDotIndex !== dotIndex
+                                ? LEGEND_DIM_OPACITY
+                                : undefined
+                            }
                             r={DOT_RADIUS}
                             stroke="var(--chart-background)"
                             strokeWidth={1}
@@ -1721,6 +1766,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     copyValueOnActivate = false,
     datapointLabel,
     maxInteractiveDatapoints,
+    legend,
   },
   forwardedRef,
 ) {
@@ -1771,6 +1817,37 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     const sorted = sortDumbbellRows(built, sortBy);
     return reverse ? [...sorted].reverse() : sorted;
   }, [data, category, effectiveStartKey, effectiveEndKey, effectiveExtraKeys, sortBy, reverse]);
+
+  // Legend (RM-118): one row per dot KEY, `variant="dots"` only — every other
+  // variant has no discrete key shared across rows to legend (see the prop
+  // docblock). Colours mirror `dotKeyColors` in `DumbbellPlot` exactly (same
+  // `resolvePalette("categorical", …, { explicit: true })` call) so the
+  // legend swatch and the dot it keys are always the same colour.
+  const legendItems: ChartLegendEntry[] = useMemo(() => {
+    if (variant !== "dots" || !valueKeys || valueKeys.length === 0) {
+      return [];
+    }
+    const colors = resolvePalette("categorical", Math.max(valueKeys.length, 1), {
+      explicit: true,
+    });
+    return valueKeys.map((key, i) => ({
+      key: `${key}-${i}`,
+      label: key,
+      color: colors[i % colors.length] as string,
+      kind: "color" as const,
+    }));
+  }, [variant, valueKeys]);
+  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+  const handleLegendHoverChange = useCallback((index: number | null) => {
+    setLegendHoveredIndex(index);
+  }, []);
+  const containerLegend = useContainerLegend({
+    legend,
+    items: legendItems,
+    hoveredIndex: legendHoveredIndex,
+    onHoverChange: handleLegendHoverChange,
+    maxInteractive: "hover",
+  });
 
   const width = bounds.width ?? 0;
   const height = bounds.height ?? 0;
@@ -1833,7 +1910,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     }
   }
 
-  return (
+  return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
@@ -1855,7 +1932,9 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
           {beads.label ?? `1 dot = ${beads.unit}`}
         </div>
       ) : null}
-      {variant === "dots" && valueKeys && valueKeys.length > 0 ? (
+      {/* RM-116's original corner badge — only while the new `legend` prop
+          (RM-118) is unset, so a caller who opts in never sees the key twice. */}
+      {variant === "dots" && valueKeys && valueKeys.length > 0 && legend === undefined ? (
         <div
           className="pointer-events-none absolute end-2 top-2 z-10 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted-foreground"
           data-slot="dumbbell-chart-dot-legend"
@@ -1888,6 +1967,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
           extraKeys={extraKeys}
           groupBy={groupBy}
           height={height}
+          legendHoveredDotIndex={legendHoveredIndex}
           lineHeightPx={lineHeightPx}
           margin={margin}
           markers={markers}
@@ -1912,7 +1992,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
           width={width}
         />
       ) : null}
-    </ChartPlotRoot>
+    </ChartPlotRoot>,
   );
 });
 

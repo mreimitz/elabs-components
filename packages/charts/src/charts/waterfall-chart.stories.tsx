@@ -192,3 +192,132 @@ export const HighDecoration: Story = {
     );
   },
 };
+
+// Same bridge as `grossToNet`, but every row states the running total
+// reached at that point instead of the delta — `dataFormat="runningTotals"`.
+const grossToNetRunningTotals: WaterfallDatum[] = [
+  { kind: "total", label: "Gross", value: 1000 },
+  { label: "Refunds", value: 900 },
+  { label: "COGS", value: 600 },
+  { label: "Ops", value: 400 },
+  { kind: "total", label: "Net", value: 400 },
+];
+
+/** `dataFormat="runningTotals"` reads every row as the running total reached
+ * at that point instead of a signed delta — the same bridge as `Default`,
+ * converted once on the way in. */
+export const RunningTotals: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <WaterfallChart
+        accessibleLabel="Gross to net revenue bridge, running totals input"
+        data={grossToNetRunningTotals}
+        dataFormat="runningTotals"
+      />
+    </div>
+  ),
+};
+
+// Six months across two quarters — subtotalBy groups by adjacency.
+const monthsByQuarter: WaterfallDatum[] = [
+  { kind: "total", label: "Opening", value: 1000 },
+  { label: "Jan", quarter: "Q1", value: 50 },
+  { label: "Feb", quarter: "Q1", value: 30 },
+  { label: "Mar", quarter: "Q1", value: -10 },
+  { label: "Apr", quarter: "Q2", value: 20 },
+  { label: "May", quarter: "Q2", value: -5 },
+  { kind: "total", label: "Closing", value: 1085 },
+];
+
+/** `subtotalBy` auto-inserts a subtotal checkpoint after each run of rows
+ * sharing that row field's value — here, one after every quarter's months. */
+export const QuarterlySubtotals: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[720px]">
+      <WaterfallChart
+        accessibleLabel="Opening to closing balance by month, with quarterly subtotals"
+        data={monthsByQuarter}
+        subtotalBy="quarter"
+      />
+    </div>
+  ),
+};
+
+/** `sort="decreasesFirst"` reorders the steps WITHIN each subtotal- or
+ * total-bounded group — the checkpoints themselves never move. */
+export const SortedDecreasesFirst: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <WaterfallChart
+        accessibleLabel="Gross to net revenue bridge, decreases sorted first"
+        data={grossToNet}
+        sort="decreasesFirst"
+      />
+    </div>
+  ),
+};
+
+// Opening/closing sit near 1,000,000; the steps swing by only a few thousand
+// around it — the shape `zoomToDifferences` targets.
+const largeBalanceBridge: WaterfallDatum[] = [
+  { kind: "total", label: "Opening", value: 1_000_000 },
+  { label: "New", value: 4_500 },
+  { label: "Upsell", value: 3_000 },
+  { label: "Churn", value: -3_800 },
+  { kind: "total", label: "Closing", value: 1_003_700 },
+];
+
+/**
+ * `zoomToDifferences` drops the zero baseline when a checkpoint sits far
+ * above the steps' own swing — a `"total"`/`"subtotal"` row can no longer
+ * honestly draw as a zero-based bar once zero is off-screen, so it renders
+ * as a point on a dashed stem instead; the steps themselves stay ordinary
+ * bars, since a delta's length is proportional under any linear domain.
+ */
+export const ZoomedToDifferences: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <WaterfallChart
+        accessibleDescription="Opening and closing balances render as points once the zero baseline drops out of view."
+        accessibleLabel="Opening to closing balance, zoomed to the differences"
+        data={largeBalanceBridge}
+        zoomToDifferences
+      />
+    </div>
+  ),
+};
+
+/** `labels` with `differences: "percent"` reads each step as a signed
+ * percent of the running total it left off, instead of its absolute value —
+ * `matchColor` paints each label in its own row's ink (through
+ * `seriesLabelInk`, never the raw fill, #544) instead of the neutral halo
+ * ink; the mixed increase/decrease/subtotal rows exercise the `layoutLabels`
+ * collision pass (RM-122) against both the annotation and axis obstacles. */
+export const PercentDifferenceLabels: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[720px]">
+      <WaterfallChart
+        accessibleDescription="March gives back most of Q1's gains."
+        accessibleLabel="Opening to closing balance by month, percent difference labels"
+        callouts={[{ label: "Mar", note: "Gives back most of Q1" }]}
+        data={monthsByQuarter}
+        labels={{ differences: "percent", matchColor: true, totals: "all" }}
+        margin={{ top: 64 }}
+        subtotalBy="quarter"
+      />
+    </div>
+  ),
+};
+
+/** `connectors="thick"` weights the hand-off hairlines for a bolder read. */
+export const ThickConnectors: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <WaterfallChart
+        accessibleLabel="Gross to net revenue bridge, thick connectors"
+        connectors="thick"
+        data={grossToNet}
+      />
+    </div>
+  ),
+};

@@ -411,3 +411,146 @@ describe("WaterfallChart decoration pattern channel (ADR 0011, #257)", () => {
     expect(refunds?.getAttribute("fill")).toBe("var(--destructive)");
   });
 });
+
+// RM-122 — dataFormat, subtotalBy, sort, start/end, zoomToDifferences, labels.
+describe("WaterfallChart RM-122", () => {
+  it("renders the same bars from a runningTotals fixture as its differences twin", () => {
+    const runningTotals: WaterfallDatum[] = [
+      { kind: "total", label: "Gross", value: 1000 },
+      { label: "Refunds", value: 900 },
+      { label: "COGS", value: 600 },
+      { label: "Ops", value: 400 },
+      { kind: "total", label: "Net", value: 400 },
+    ];
+    const a = render(<WaterfallChart data={grossToNet} />);
+    const aPaths = [...a.container.querySelectorAll('[data-slot="waterfall-chart-step"]')].map(
+      (el) => el.getAttribute("d"),
+    );
+    a.unmount();
+    const b = render(<WaterfallChart data={runningTotals} dataFormat="runningTotals" />);
+    const bPaths = [...b.container.querySelectorAll('[data-slot="waterfall-chart-step"]')].map(
+      (el) => el.getAttribute("d"),
+    );
+    expect(bPaths).toEqual(aPaths);
+  });
+
+  it("subtotalBy inserts a checkpoint per group, filled like a total", () => {
+    const quarters: WaterfallDatum[] = [
+      { kind: "total", label: "Opening", value: 1000 },
+      { label: "Jan", quarter: "Q1", value: 50 },
+      { label: "Feb", quarter: "Q1", value: 30 },
+      { label: "Apr", quarter: "Q2", value: 20 },
+      { label: "May", quarter: "Q2", value: -5 },
+      { kind: "total", label: "Closing", value: 1095 },
+    ];
+    const { container } = render(<WaterfallChart data={quarters} subtotalBy="quarter" />);
+    const steps = container.querySelectorAll('[data-slot="waterfall-chart-step"]');
+    // 6 data rows + 2 auto-inserted subtotals.
+    expect(steps).toHaveLength(8);
+    const totalFillSteps = [...steps].filter(
+      (el) => el.getAttribute("fill") === "var(--chart-foreground)",
+    );
+    // Opening + Closing + Q1 subtotal + Q2 subtotal.
+    expect(totalFillSteps).toHaveLength(4);
+  });
+
+  it("sort=decreasesFirst reorders steps within the group", () => {
+    const mixed: WaterfallDatum[] = [
+      { kind: "total", label: "Start", value: 100 },
+      { label: "A", value: 10 },
+      { label: "B", value: -5 },
+      { kind: "total", label: "End", value: 105 },
+    ];
+    render(<WaterfallChart data={mixed} onDatapointClick={() => {}} sort="decreasesFirst" />);
+    // Keyboard datapoint targets register in ROW order — the reordering
+    // `sortWaterfallSteps` (unit-tested directly) applies before
+    // `computeWaterfallRows` ever runs.
+    const group = screen.getByRole("group", { name: /chart data points/i });
+    const targets = within(group).getAllByRole("button");
+    const order = targets
+      .map((t) => t.getAttribute("aria-label") ?? "")
+      .map((label) => ["Start", "A", "B", "End"].find((name) => label.includes(name)));
+    expect(order).toEqual(["Start", "B", "A", "End"]);
+  });
+
+  it("start/end show=false drops the endpoint row", () => {
+    const { container } = render(
+      <WaterfallChart data={grossToNet} end={{ show: false }} start={{ show: false }} />,
+    );
+    const steps = container.querySelectorAll('[data-slot="waterfall-chart-step"]');
+    expect(steps).toHaveLength(grossToNet.length - 2);
+  });
+
+  it("start/end label overrides the endpoint's own label", () => {
+    render(
+      <WaterfallChart
+        data={grossToNet}
+        end={{ label: "Ending balance" }}
+        orientation="horizontal"
+        start={{ label: "Starting balance" }}
+      />,
+    );
+    expect(screen.getByText("Starting balance")).toBeInTheDocument();
+    expect(screen.getByText("Ending balance")).toBeInTheDocument();
+  });
+
+  it("zoomToDifferences renders a large total as a point, never a bar, and keeps step bars", () => {
+    const large: WaterfallDatum[] = [
+      { kind: "total", label: "Opening", value: 1_000_000 },
+      { label: "New", value: 4_500 },
+      { label: "Upsell", value: 3_000 },
+      { label: "Churn", value: -3_800 },
+      { kind: "total", label: "Closing", value: 1_003_700 },
+    ];
+    const { container } = render(<WaterfallChart data={large} zoomToDifferences />);
+    const points = container.querySelectorAll('[data-slot="waterfall-chart-total-point"]');
+    expect(points).toHaveLength(2); // Opening + Closing.
+    const bars = container.querySelectorAll('[data-slot="waterfall-chart-step"]');
+    expect(bars).toHaveLength(3); // New, Upsell, Churn only.
+  });
+
+  it("zoomToDifferences is a no-op (no points) on an ordinary small-total fixture", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} zoomToDifferences />);
+    expect(container.querySelectorAll('[data-slot="waterfall-chart-total-point"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-slot="waterfall-chart-step"]')).toHaveLength(
+      grossToNet.length,
+    );
+  });
+
+  it("charts-honesty passes for the pure zoom domain — every checkpoint sits above the zoomed max", () => {
+    // charts-honesty itself is asserted by `pnpm check --rule charts-honesty`
+    // (a static gate); this is the runtime half — the geometry the gate's
+    // exemption depends on actually holds.
+    const large: WaterfallDatum[] = [
+      { kind: "total", label: "Opening", value: 1_000_000 },
+      { label: "New", value: 4_500 },
+      { label: "Upsell", value: 3_000 },
+      { label: "Churn", value: -3_800 },
+      { kind: "total", label: "Closing", value: 1_003_700 },
+    ];
+    const { container } = render(<WaterfallChart data={large} zoomToDifferences />);
+    for (const step of container.querySelectorAll('[data-slot="waterfall-chart-step"]')) {
+      expect(step.getAttribute("d")).not.toContain("NaN");
+    }
+  });
+
+  it("labels.differences percent paints a signed percent-of-before label", () => {
+    render(
+      <WaterfallChart
+        data={grossToNet}
+        labels={{ differences: "percent", totals: "all" }}
+        valueFormat="number"
+      />,
+    );
+    // Refunds: -100 off a before of 1000 → -10 %.
+    expect(screen.getByText("−10.0 %")).toBeInTheDocument();
+  });
+
+  it("labels.totals totalsOnly hides step labels, keeps checkpoint labels", () => {
+    render(
+      <WaterfallChart data={grossToNet} labels={{ totals: "totalsOnly" }} valueFormat="number" />,
+    );
+    expect(screen.queryByText("−100")).toBeNull();
+    expect(screen.getByText("1,000")).toBeInTheDocument();
+  });
+});

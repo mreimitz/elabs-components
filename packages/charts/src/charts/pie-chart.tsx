@@ -22,6 +22,9 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+import type { ChartLegendEntry } from "./chart-context";
+// Legend engine — RM-118
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
 import {
@@ -264,6 +267,23 @@ export interface PieChartProps extends ChartSelectionProps {
    * renders nothing extra (today's behavior).
    */
   labels?: PieChartLabelsConfig;
+  /**
+   * Container legend (RM-118): one swatch per slice, mounted outside the
+   * plot via `useContainerLegend`. Unset renders nothing (R1) — today's
+   * behavior. Pie has no competing on-chart key the way `colorBy` (Bar) or
+   * RM-115's colour/shape key (Scatter) do, so R4's "one key per chart"
+   * never applies here.
+   *
+   * Hover-only (R3): hovering or focusing a legend item reuses Pie's own
+   * existing single-slice hover state — the SAME one a pointer hovering a
+   * slice already writes into (`hoveredIndex`/`onHoverChange` above) — so a
+   * legend hover and a pointer hover dim every other slice identically. An
+   * `interactive: "toggle"` request downgrades to `"hover"`: Pie has no
+   * hide-a-slice wiring yet (a hidden slice would silently change every
+   * other slice's percentage, which needs its own design pass — tracked as
+   * a follow-up, not built here).
+   */
+  legend?: ContainerLegendProp;
   /**
    * Fold the smallest slices into one trailing "Other" slice (RM-114,
    * `pie-grouping.ts`). **Setting this hands slice rendering to `PieChart`
@@ -923,8 +943,8 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     startAngle = -Math.PI / 2,
     endAngle = (3 * Math.PI) / 2,
     className = "",
-    hoveredIndex,
-    onHoverChange,
+    hoveredIndex: hoveredIndexProp,
+    onHoverChange: onHoverChangeProp,
     hoverOffset = DEFAULT_HOVER_OFFSET,
     enterTransition,
     enterStaggerScale = 1,
@@ -933,6 +953,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     referenceRings,
     seams = 0,
     labels,
+    legend,
     groupSmall,
     sort: sortProp,
     half = false,
@@ -988,6 +1009,52 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     ];
   }, [groupSmall, children, groupedData]);
 
+  // Legend engine — RM-118. One swatch per (post-groupSmall) slice, in data
+  // order — `<PieSlice index={i}>` and d3-shape's `arcs[i]` both key on that
+  // SAME order regardless of `sort` (see `effectiveSort`'s docblock above),
+  // so a legend-hover index maps onto a slice index with no translation.
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      groupedData.map((d, i) => ({
+        key: `${d.label}-${i}`,
+        label: d.label,
+        color: d.color ?? (defaultPieColors[i % defaultPieColors.length] as string),
+        kind: "color" as const,
+      })),
+    [groupedData],
+  );
+
+  // One hover state, two sources: a pointer over a slice (PieSlice → the
+  // context's `setHoveredIndex`, wired below) and a legend item (hover or
+  // focus). Lifting the controlled/uncontrolled merge PieChartCore already
+  // did up to this level means both sources write into the exact same
+  // value, so a legend hover dims every other slice identically to a
+  // pointer hover — Pie's existing hover seam, reused rather than doubled.
+  const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
+  const hoverIsControlled = hoveredIndexProp !== undefined;
+  const effectiveHoveredIndex = hoverIsControlled
+    ? (hoveredIndexProp as number | null)
+    : internalHoveredIndex;
+  const handleHoverChange = useCallback(
+    (index: number | null) => {
+      if (hoverIsControlled) {
+        onHoverChangeProp?.(index);
+      } else {
+        setInternalHoveredIndex(index);
+      }
+    },
+    [hoverIsControlled, onHoverChangeProp],
+  );
+
+  const containerLegend = useContainerLegend({
+    legend,
+    items: legendItems,
+    hoveredIndex: effectiveHoveredIndex,
+    onHoverChange: handleHoverChange,
+    // Pie has no hide-a-slice wiring yet (R3) — see the `legend` prop's JSDoc.
+    maxInteractive: "hover",
+  });
+
   // containerRef anchors tooltips; merged with the forwarded ref via callback ref
   const containerRef = useRef<HTMLDivElement>(null);
   const mergedRef = useCallback(
@@ -1036,7 +1103,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     );
 
   if (fixedSize) {
-    return (
+    return containerLegend.wrap(
       <ChartPlotRoot
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
@@ -1058,11 +1125,11 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
             geometryScrubbing={geometryScrubbing}
             half={half}
             height={fixedSize}
-            hoveredIndexProp={hoveredIndex}
+            hoveredIndexProp={effectiveHoveredIndex}
             hoverOffset={hoverOffset}
             innerRadius={innerRadius}
             labels={labels}
-            onHoverChange={onHoverChange}
+            onHoverChange={handleHoverChange}
             padAngle={padAngle}
             radiusKey={radiusKey}
             referenceRings={referenceRings}
@@ -1074,12 +1141,12 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
             {effectiveChildren}
           </PieChartInner>,
         )}
-      </ChartPlotRoot>
+      </ChartPlotRoot>,
     );
   }
 
   // Otherwise use ParentSize for responsive sizing
-  return (
+  return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
       aria-describedby={ariaDescribedby}
@@ -1103,11 +1170,11 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
               geometryScrubbing={geometryScrubbing}
               half={half}
               height={height}
-              hoveredIndexProp={hoveredIndex}
+              hoveredIndexProp={effectiveHoveredIndex}
               hoverOffset={hoverOffset}
               innerRadius={innerRadius}
               labels={labels}
-              onHoverChange={onHoverChange}
+              onHoverChange={handleHoverChange}
               padAngle={padAngle}
               radiusKey={radiusKey}
               referenceRings={referenceRings}
@@ -1121,7 +1188,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
           )
         }
       </ParentSize>
-    </ChartPlotRoot>
+    </ChartPlotRoot>,
   );
 });
 

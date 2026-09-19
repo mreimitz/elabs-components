@@ -741,6 +741,8 @@ var CHART_TYPES = [
   "bump",
   "stream",
   "diverging-bar",
+  // Dual-axis — RM-121
+  "dual-axis",
 ];
 var VALUE_FORMATS = ["number", "compact", "currency", "percent"];
 var str = (description) => ({ type: "string", description });

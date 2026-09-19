@@ -97,6 +97,38 @@ describe("HeatmapChart", () => {
     );
   });
 
+  describe("legendLabels (RM-118)", () => {
+    it("defaults to endpoints — lo/hi bracket the strip, no per-swatch range labels", () => {
+      const { container } = render(
+        <HeatmapChart data={punchCard} steps={5} valueKey="count" x="hour" y="day" />,
+      );
+      const legend = container.querySelector('[data-slot="heatmap-legend"]');
+      expect(legend?.querySelectorAll('[data-slot="heatmap-legend-step"]')).toHaveLength(5);
+      expect(legend?.querySelectorAll('[data-slot="heatmap-legend-range-label"]')).toHaveLength(0);
+    });
+
+    it('"ranges" prints one range label per swatch, matching the swatch count', () => {
+      const { container } = render(
+        <HeatmapChart
+          data={punchCard}
+          legendLabels="ranges"
+          steps={5}
+          valueKey="count"
+          x="hour"
+          y="day"
+        />,
+      );
+      const legend = container.querySelector('[data-slot="heatmap-legend"]');
+      const swatches = legend?.querySelectorAll('[data-slot="heatmap-legend-step"]');
+      const rangeLabels = legend?.querySelectorAll('[data-slot="heatmap-legend-range-label"]');
+      expect(swatches).toHaveLength(5);
+      expect(rangeLabels).toHaveLength(5);
+      // The first range label starts at the domain floor, the last ends at the ceiling.
+      expect(rangeLabels?.[0]?.textContent).toMatch(/^0–/);
+      expect(rangeLabels?.[4]?.textContent).toMatch(/–12$/);
+    });
+  });
+
   describe("empty state is a state of the region, not an exit from it (#256)", () => {
     /** The element carrying the plot box's inline aspect ratio. */
     const plotBox = (container: HTMLElement) =>
