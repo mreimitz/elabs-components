@@ -880,3 +880,44 @@ export const PlainExport: Story = {
     await expect(text.byRole("axis-title")).toEqual(["USD per GB"]);
   },
 };
+
+const LABELLED_ALT_TEXT =
+  "RAM climbs from 2.1 to 4.3 USD per GB between January and June 2025; flash stays near 1.";
+
+/**
+ * A labelled chart (`accessibleLabel`) inside the frame takes the frame's
+ * `altText` as its description, ahead of the summary it would otherwise
+ * generate. Its own `accessibleDescription` would still win.
+ */
+export const AltTextOnLabelledChart: Story = {
+  render: () => (
+    <div className="w-full max-w-[720px]">
+      <ChartFrame
+        title="RAM prices doubled in six months"
+        altText={LABELLED_ALT_TEXT}
+        data={ramPrices}
+        columns={ramColumns}
+      >
+        <LineChart
+          data={ramPrices}
+          xDataKey="date"
+          accessibleLabel="RAM and flash prices, January to June 2025"
+          animationDuration={0}
+        >
+          <Grid horizontal />
+          <Line dataKey="ram" name="Short-term RAM" stroke="var(--chart-1)" />
+          <Line dataKey="flash" name="Flash storage" stroke="var(--chart-2)" />
+          <XAxis />
+          <YAxis title="USD per GB" />
+        </LineChart>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const figure = await canvas.findByRole("figure", {
+      name: "RAM and flash prices, January to June 2025",
+    });
+    await expect(figure).toHaveAccessibleDescription(LABELLED_ALT_TEXT);
+  },
+};

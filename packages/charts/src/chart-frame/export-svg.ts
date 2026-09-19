@@ -220,6 +220,17 @@ export function buildExportSvg(
 
   const layer = options.layer;
   if (!layer) return clone;
+  if (layer.userSpace !== undefined) {
+    // Measured against the <svg> itself (a dashboard part): the layer joins the
+    // clone in the svg's own user space, so the part's size, viewBox and marks
+    // stay exactly as they were. An empty layer adds nothing at all.
+    if (layer.runs.length > 0 || layer.swatches.length > 0) {
+      const group = renderChartExportLayer(layer);
+      group.setAttribute("transform", layer.userSpace);
+      clone.append(group);
+    }
+    return clone;
+  }
   const inPlace =
     layer.chart.x === 0 &&
     layer.chart.y === 0 &&

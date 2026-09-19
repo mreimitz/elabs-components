@@ -213,4 +213,42 @@ describe("buildExportSvg with an export layer (RM-117)", () => {
     expect(built.getAttribute("viewBox")).toBe(before.getAttribute("viewBox"));
     expect(built.lastElementChild?.getAttribute("data-slot")).toBe("chart-export-layer");
   });
+
+  it("maps a layer measured in the svg's own box into its user space, untouched otherwise", () => {
+    const svg = fakeChartSvg(2);
+    const before = buildExportSvg(svg);
+    // A part drawn at 98.4 % of its viewBox: CSS pixels need scaling back up.
+    const measured: ChartExportLayerModel = {
+      ...layer,
+      width: 98.4,
+      height: 59.04,
+      chart: { x: 0, y: 0, width: 98.4, height: 59.04 },
+      userSpace: "matrix(1.01626 0 0 1.01626 0 0)",
+    };
+    const built = buildExportSvg(svg, { layer: measured });
+    expect(built.getAttribute("width")).toBe(before.getAttribute("width"));
+    expect(built.getAttribute("height")).toBe(before.getAttribute("height"));
+    expect(built.getAttribute("viewBox")).toBe(before.getAttribute("viewBox"));
+    const group = built.lastElementChild;
+    expect(group?.getAttribute("data-slot")).toBe("chart-export-layer");
+    expect(group?.getAttribute("transform")).toBe("matrix(1.01626 0 0 1.01626 0 0)");
+    // Everything but the layer is the plain export, byte for byte.
+    group?.remove();
+    expect(serializeSvg(built)).toBe(serializeSvg(before));
+  });
+
+  it("adds nothing for an empty layer measured in the svg's own box", () => {
+    const svg = fakeChartSvg(2);
+    const empty: ChartExportLayerModel = {
+      width: 100,
+      height: 60,
+      chart: { x: 0, y: 0, width: 100, height: 60 },
+      runs: [],
+      swatches: [],
+      userSpace: "matrix(1 0 0 1 0 0)",
+    };
+    expect(serializeSvg(buildExportSvg(svg, { layer: empty }))).toBe(
+      serializeSvg(buildExportSvg(svg)),
+    );
+  });
 });

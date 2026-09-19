@@ -73,6 +73,14 @@ export interface ChartExportLayerModel {
   chart: { x: number; y: number; width: number; height: number };
   runs: ChartExportTextRun[];
   swatches: ChartExportSwatch[];
+  /**
+   * Set only when the layer was measured against the `<svg>`'s own box (no
+   * `box` option — a dashboard part): the SVG `transform` that maps the
+   * measured CSS pixels into the svg's user space (its `viewBox` units), so
+   * `buildExportSvg` can add the layer inside the clone without touching the
+   * part's size, viewBox or marks.
+   */
+  userSpace?: string;
 }
 
 export interface MeasureChartExportLayerOptions {
@@ -185,6 +193,17 @@ export function measureChartExportLayer(
   const range = document.createRange();
   // No layout engine (jsdom): nothing is painted, so there is nothing to measure.
   if (typeof range.getBoundingClientRect !== "function") return model;
+  if (!options.box) {
+    const ctm = options.svg.getScreenCTM();
+    if (ctm) {
+      // `getScreenCTM()` is an SVGMatrix in Chromium; copy it into a DOMMatrix.
+      const m = new DOMMatrix([ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f])
+        .inverse()
+        .translate(origin.left, origin.top);
+      const n = (v: number) => Number(v.toFixed(5));
+      model.userSpace = `matrix(${[m.a, m.b, m.c, m.d, m.e, m.f].map(n).join(" ")})`;
+    }
+  }
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const el = node as Element;
