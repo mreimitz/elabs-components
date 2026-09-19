@@ -16,6 +16,7 @@
  * The stale-gate for each surface is "regenerate, compare to disk, fail on diff"
  * — the same contract as `pnpm gen:check`.
  */
+import { isConstantName } from "./search.mjs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -235,6 +236,21 @@ export function renderInventory(manifest) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Honest counts for a package. The manifest's `components` bucket holds every
+ * Capitalised value export — compound parts (`DialogContent`) and constants
+ * (`CALENDAR_ROWS`) included — so its length said "ui: 390 components" where the
+ * README says ~100. A COMPONENT here is a source module that exports at least
+ * one renderable; EXPORTS is what you can import, constants excluded.
+ */
+export function componentCounts(info) {
+  const renderable = (info.components || []).filter((c) => !isConstantName(c.name));
+  return {
+    components: new Set(renderable.map((c) => c.module || c.name)).size,
+    exports: renderable.length,
+  };
+}
+
+/**
  * The root `llms.txt` hub — purpose, package routing map, themes, entry points.
  * @param {object} manifest
  * @param {{ siteOrigin?: string, siteRoutes?: boolean }} [opts]
@@ -255,9 +271,10 @@ export function renderLlmsHub(manifest, { siteOrigin = HOSTED_DOCS_URL, siteRout
   lines.push("# brand-ui");
   lines.push("");
   lines.push(
-    "> Source-owned, token-driven React component system for internal apps, dashboards, " +
-      "AI/chat clients, data grids, React Flow canvases and presales demos. Default look: " +
-      "modern enterprise SaaS, themeable to any brand. Tailwind v4 (CSS-variable tokens) + Radix + React 19.",
+    "> Open-source, source-owned, token-driven React component system built for coding agents " +
+      "and the people who work with them: dashboards, data grids, AI/chat clients, React Flow " +
+      "canvases, maps, editors and the marketing page in front of them. Default look: modern " +
+      "enterprise SaaS, themeable to any brand. Tailwind v4 (CSS-variable tokens) + Radix + React 19.",
   );
   lines.push("");
   lines.push(
@@ -276,19 +293,27 @@ export function renderLlmsHub(manifest, { siteOrigin = HOSTED_DOCS_URL, siteRout
   lines.push("- Visible focus ring on every interactive element; must read in every theme.");
   lines.push("- One-way dependency: `tokens → ui/icons → data/ai/flow/charts/marketing/editor`.");
   lines.push("");
-  lines.push(`## Themes (${(manifest.themes || []).length})`);
+  // These are the MODES every theme family implements — not the list of looks.
+  // The old heading "Themes (2)" read as "this library has two themes".
+  lines.push(`## Theme modes (${(manifest.themes || []).length})`);
   lines.push("");
   lines.push(themeLine(manifest));
+  lines.push("");
+  lines.push(
+    "Theming is open: a theme is a stylesheet of semantic tokens, registered with " +
+      "`ThemeProvider` — no fork. Downloadable brand theme families live in the repo's " +
+      "`themes/` directory (each implements every mode above); `themes/README.md` lists them.",
+  );
   lines.push("");
   lines.push("## Packages (which package for what)");
   lines.push("");
   for (const pkg of orderedPackages(manifest)) {
     const info = manifest.packages[pkg];
-    const comps = (info.components || []).length;
+    const { components: comps, exports: parts } = componentCounts(info);
     const hooks = (info.hooks || []).length;
     lines.push(
       `- [${pkg}](./llms/${pkg.replace("@elabs-ai/components-", "")}.txt) — ${PKG_PURPOSE[pkg] || ""} ` +
-        `(${comps} components, ${hooks} hooks)`,
+        `(${comps} components · ${parts} exports with their parts, ${hooks} hooks)`,
     );
   }
   lines.push("");

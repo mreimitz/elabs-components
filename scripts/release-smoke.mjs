@@ -416,6 +416,85 @@ export async function smokeStories({
 }
 
 // ──────────────────────────────── CLI ─────────────────────────────────────────
+// ── The advertised surface (2026-09-18 review) ──────────────────────────────────
+// Two failures this pipeline could not see, both measured on the live system:
+//   - llms.txt / README on `main` advertised `npx -y @elabs-ai/components-cli create`
+//     while the PUBLISHED 4.2.0 CLI answered "Unknown command: create";
+//   - https://elabs-ai.com/llms.txt still told agents to install from GitHub
+//     Packages, days after the generator was fixed, because the site deploys on
+//     release and nothing compared what is served with what was released.
+// An agent follows the front door literally. So: every verb the front door
+// advertises must exist in the published CLI, and the deployed front door must be
+// byte-identical to the one this release generated.
+
+/** CLI verbs a document tells a reader to run — read from code spans and fences only,
+ *  so prose like "brand-ui ships …" never counts. */
+export function advertisedVerbs(text) {
+  const code = [
+    ...String(text).matchAll(/```[\s\S]*?```/g),
+    ...String(text).matchAll(/`[^`\n]+`/g),
+  ].map((m) => m[0]);
+  const verbs = new Set();
+  for (const span of code)
+    for (const m of span.matchAll(
+      /(?:components-cli(?:@[\w.^~-]+)?|(?<![\w/@-])brand-ui)[ \t]+([a-z][a-z0-9-]*)(?![\w:./@-])/g,
+    ))
+      verbs.add(m[1]);
+  return [...verbs].sort();
+}
+
+/** The verbs a CLI's own `--help` lists (two-space indented first column). */
+export function helpVerbs(helpText) {
+  return [
+    ...new Set([...String(helpText).matchAll(/^ {2}([a-z][a-z0-9-]*)\b/gm)].map((m) => m[1])),
+  ].sort();
+}
+
+/** Advertised-but-missing verbs. `help` is always available. */
+export function missingVerbs(advertised, available) {
+  const have = new Set([...available, "help"]);
+  return advertised.filter((v) => !have.has(v));
+}
+
+/** The files whose commands a newcomer or an agent runs verbatim. */
+export const FRONT_DOOR_FILES = [
+  "README.md",
+  "apps/docs/public/llms.txt",
+  "packages/cli/README.md",
+];
+
+/**
+ * Post-deploy: is the served front door the one this release generated?
+ * @returns {Promise<string[]>} failures
+ */
+export async function smokeFrontDoor({ root, base, fetchImpl = globalThis.fetch }) {
+  const failures = [];
+  const origin = String(base).replace(/\/+$/, "");
+  const local = join(root, "apps", "docs", "public", "llms.txt");
+  try {
+    const res = await fetchImpl(`${origin}/llms.txt`);
+    if (!res.ok) failures.push(`${origin}/llms.txt → HTTP ${res.status}`);
+    else if (existsSync(local) && (await res.text()).trim() !== readFileSync(local, "utf8").trim())
+      failures.push(
+        `${origin}/llms.txt differs from apps/docs/public/llms.txt at this release — ` +
+          "agents are reading a stale front door (deploy did not pick up the generated file)",
+      );
+  } catch (err) {
+    failures.push(`${origin}/llms.txt → ${err.message}`);
+  }
+  for (const path of ["/.well-known/mcp.json"]) {
+    if (!existsSync(join(root, "apps", "docs", "public", ...path.split("/").filter(Boolean))))
+      continue;
+    try {
+      const res = await fetchImpl(`${origin}${path}`);
+      if (!res.ok) failures.push(`${origin}${path} → HTTP ${res.status} (llms.txt advertises it)`);
+    } catch (err) {
+      failures.push(`${origin}${path} → ${err.message}`);
+    }
+  }
+  return failures;
+}
+
 function argValue(argv, flag) {
   const i = argv.indexOf(flag);
   return i >= 0 ? argv[i + 1] : undefined;
@@ -463,11 +542,16 @@ async function main(argv) {
   // Belongs to the docs job: it looks at the Storybook that was just deployed,
   // which is the artefact no other step in this pipeline had ever opened.
   if (argv.includes("--stories-only")) {
-    return smokeStories({
+    const base = argValue(argv, "--stories") ?? DEFAULT_STORIES_URL;
+    const doorFailures = await smokeFrontDoor({ root, base });
+    for (const f of doorFailures) console.error(`  ✖  ${f}`);
+    if (!doorFailures.length) console.log(`  ok  ${base}/llms.txt is this release's front door`);
+    const crawl = await smokeStories({
       root,
-      base: argValue(argv, "--stories") ?? DEFAULT_STORIES_URL,
+      base,
       concurrency: Number(argValue(argv, "--concurrency") ?? 8),
     });
+    return doorFailures.length ? 1 : crawl;
   }
 
   // The package set is DERIVED, never retyped: the workspace's distributables by
@@ -543,6 +627,29 @@ async function main(argv) {
           console.log(`  ok  import ${cli}/lib/core.mjs`);
         } catch (err) {
           failures.push(`${cli}: importing the published module failed — ${err.message}`);
+        }
+        // Every verb the front door tells a reader to run must exist in the CLI
+        // that was just PUBLISHED — not merely in this checkout.
+        try {
+          const help = execFileSync("node", [bin, "--help"], { cwd: scratch, encoding: "utf8" });
+          const advertised = advertisedVerbs(
+            FRONT_DOOR_FILES.map((f) => join(root, f))
+              .filter((f) => existsSync(f))
+              .map((f) => readFileSync(f, "utf8"))
+              .join("\n"),
+          );
+          const missing = missingVerbs(advertised, helpVerbs(help));
+          if (missing.length)
+            failures.push(
+              `${cli}: the front door advertises \`brand-ui ${missing.join("`, `brand-ui ")}\` ` +
+                "but the published CLI has no such command",
+            );
+          else
+            console.log(
+              `  ok  all ${advertised.length} advertised CLI verbs exist in the published CLI`,
+            );
+        } catch (err) {
+          failures.push(`${cli}: \`brand-ui --help\` failed — ${err.message}`);
         }
         for (const probe of [
           ["info", "--json"],

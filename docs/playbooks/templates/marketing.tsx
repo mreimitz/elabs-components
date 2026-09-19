@@ -68,7 +68,7 @@ const stats: Stat[] = [
   { value: "38,000+", label: "customers worldwide" },
   { value: "100B+", label: "queries per month" },
   { value: "60%", label: "faster time to insight" },
-  { value: "99.9%", label: "platform uptime" },
+  { value: "99.95%", label: "uptime, trailing 12 months" },
 ];
 
 const features: Feature[] = [
@@ -159,7 +159,7 @@ function MarketingLandingTemplate() {
             <span className="grid size-7 place-items-center rounded bg-primary text-primary-foreground [&_svg]:size-4">
               <Glyph d={GLYPHS.sparkles} />
             </span>
-            Acme Analytics
+            Your Product
           </a>
           <div className="hidden items-center gap-6 text-body sm:flex">
             <a className="text-muted-foreground hover:text-foreground" href="#features">
@@ -246,7 +246,7 @@ function MarketingLandingTemplate() {
       </main>
 
       <footer className="border-t py-8 text-center text-body text-muted-foreground">
-        © Acme Analytics — sample presales landing page.
+        © Your Product — sample presales landing page.
       </footer>
     </div>
   );

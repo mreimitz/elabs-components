@@ -659,6 +659,13 @@ const INTENT_STOPWORDS = new Set([
  * ("admin console"), then a single-token hit; ties keep manifest order.
  * @returns {object[]}
  */
+/** A query token hits a haystack on WORD starts, not anywhere: "form" must not
+ *  match con-FORM-ance, "log" must not match LOGin (`search "login form"` used to
+ *  route to the process-explorer playbook that way). */
+function tokenHitsWords(hay, token) {
+  return hay.split(/[^a-z0-9]+/).some((w) => w.startsWith(token));
+}
+
 export function matchPlaybooks(manifest, query) {
   const q = String(query || "")
     .toLowerCase()
@@ -671,7 +678,7 @@ export function matchPlaybooks(manifest, query) {
     let score = 0;
     if (p.archetype.toLowerCase() === q) score = 3;
     else if (hay.includes(q)) score = 2;
-    else if (tokens.some((t) => hay.includes(t))) score = 1;
+    else if (tokens.some((t) => tokenHitsWords(hay, t))) score = 1;
     return { p, score, i };
   });
   return scored
@@ -706,7 +713,7 @@ export function matchTemplates(manifest, query) {
     let score = 0;
     if (tmpl.name.toLowerCase() === q) score = 3;
     else if (hay.includes(q)) score = 2;
-    else if (tokens.some((t) => hay.includes(t))) score = 1;
+    else if (tokens.some((t) => tokenHitsWords(hay, t))) score = 1;
     return { tmpl, score, i };
   });
   return scored

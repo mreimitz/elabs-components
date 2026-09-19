@@ -27,6 +27,8 @@ import {
   resolveTasteProfile,
   tasteSearchDirs,
 } from "./core.mjs";
+import { renderDocsBrief } from "./docs-brief.mjs";
+import { searchExports, renderComponentArm } from "./search.mjs";
 import { scanText } from "./audit.mjs";
 import { matchChartFor, renderChartForText } from "./chart-for.mjs";
 import {
@@ -158,6 +160,12 @@ export const TOOLS = [
       type: "object",
       properties: {
         component: { type: "string", description: "Exact component name, e.g. Button." },
+        detail: {
+          type: "string",
+          enum: ["brief", "full"],
+          description:
+            'Start with "brief" (about a tenth of the tokens: import line, purpose, anti-patterns, variants, own props with one-line descriptions). Ask for "full" (the default) only when you need inherited props, the state→token map or a prop\'s whole description.',
+        },
       },
       required: ["component"],
       additionalProperties: false,
@@ -229,10 +237,12 @@ const textContent = (text) => ({ content: [{ type: "text", text }] });
 
 /**
  * The manifest for a request: an injected one (the hosted server bundles it)
- * wins, otherwise it is read from the repo root.
+ * wins, otherwise `loadManifest` reads the repo root's copy or, with no repo
+ * root, the one packed alongside the CLI. Short-circuiting on a missing root
+ * made `npx … mcp` answer "No manifest." in every app outside this monorepo.
  * @param {{ root?: string|null, manifest?: object|null }} ctx
  */
-const manifestOf = (ctx) => ctx.manifest ?? (ctx.root ? loadManifest(ctx.root) : null);
+const manifestOf = (ctx) => ctx.manifest ?? loadManifest(ctx.root);
 
 // ── tool implementations (reuse the engine; render compact text) ─────────────
 
@@ -280,14 +290,11 @@ function toolSearch(ctx, q) {
   if (!query) return { ...textContent("usage: search { query }"), isError: true };
   const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
-  const matches = flat(manifest).filter(
-    (r) => r.name.toLowerCase().includes(query) || r.pkg.toLowerCase().includes(query),
-  );
-  // Same fix as the CLI's cmdSearch() (fix round 1 for #86/#89): keep
-  // component/hook rows in their own independently-truncated bucket so a
-  // type/otherExport match can never crowd a real component out of the list.
-  const rows = matches.filter((r) => r.kind === "component" || r.kind === "hook");
-  const typeRows = matches.filter((r) => r.kind === "type" || r.kind === "export");
+  // Same ranked search as the CLI's cmdSearch() (lib/search.mjs); components/hooks
+  // and types/exports stay independently-truncated buckets (#86/#89).
+  const result = searchExports(manifest, String(q || ""));
+  const rows = result.rows;
+  const typeRows = result.typeRows;
   const reg = (manifest.registry || []).filter((r) =>
     `${r.name} ${r.title} ${r.description}`.toLowerCase().includes(query),
   );
@@ -300,15 +307,12 @@ function toolSearch(ctx, q) {
   // (RM-088 follow-up 1, validator FAIL #1: `search dashboard` must surface the
   // `dashboard-spec` verbs over MCP too, not just the CLI).
   const verbs = matchCliVerbs(manifest, query);
-  const lines = [`Components/hooks matching "${query}":`];
-  for (const r of rows.slice(0, 40)) {
-    lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
-    // A remote caller has no repo to open `docs <Name>` against first — give it
-    // the live story straight from search when the hit is a component with one
-    // (review §4.4/wave-3). Local/stdio is unchanged: `docs` is the story-link call.
-    if (ctx.hosted && r.storyId) lines.push(`    story: ${storyUrl(r.storyId, ctx)}`);
-  }
-  if (!rows.length) lines.push("  (none)");
+  // A remote caller has no repo to open `docs <Name>` against first — give it
+  // the live story straight from search when the hit is a component with one
+  // (review §4.4/wave-3). Local/stdio is unchanged: `docs` is the story-link call.
+  const lines = renderComponentArm(query, result, 40, {
+    storyLink: ctx.hosted ? (r) => (r.storyId ? storyUrl(r.storyId, ctx) : null) : undefined,
+  });
   if (typeRows.length) {
     lines.push("", `Types/other exports matching "${query}":`);
     for (const r of typeRows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
@@ -412,13 +416,15 @@ function renderDocsEntry(hit, ctx) {
   return lines.join("\n");
 }
 
-function toolDocs(ctx, component) {
+function toolDocs(ctx, component, detail = "full") {
   const name = String(component || "");
   if (!name) return { ...textContent("usage: docs { component }"), isError: true };
   const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
   const hit = flat(manifest).find((r) => r.name.toLowerCase() === name.toLowerCase());
   if (!hit) return textContent(`${name} not found. Try the search tool with "${name}".`);
+  if (detail === "brief")
+    return textContent(renderDocsBrief(hit, { storyUrl: (id) => storyUrl(id, ctx) }));
   return textContent(renderDocsEntry(hit, ctx));
 }
 
@@ -538,7 +544,7 @@ function callTool(ctx, name, argsObj = {}) {
     case "search":
       return toolSearch(ctx, argsObj.query);
     case "docs":
-      return toolDocs(ctx, argsObj.component);
+      return toolDocs(ctx, argsObj.component, argsObj.detail);
     case "tokens":
       return toolTokens(ctx);
     case "audit":

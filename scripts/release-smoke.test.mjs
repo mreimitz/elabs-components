@@ -620,3 +620,61 @@ test("a crawl that finds a broken story exits non-zero", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+// ── the advertised surface (2026-09-18) ──────────────────────────────────────────
+{
+  const { advertisedVerbs, helpVerbs, missingVerbs, smokeFrontDoor } =
+    await import("./release-smoke.mjs");
+
+  test("advertisedVerbs reads commands from code, never from prose", () => {
+    const md = [
+      "brand-ui ships the hard parts and brand-ui is source you edit.",
+      "Run `npx -y @elabs-ai/components-cli create my-app --template dashboard`.",
+      "```bash",
+      "pnpm exec brand-ui docs Button",
+      "claude mcp add --transport http brand-ui https://elabs-ai.com/mcp",
+      "```",
+      "See `brand-ui.manifest.json`, `/plugin install brand-ui@brand-ui` and `brand-ui-context.md`.",
+    ].join("\n");
+    assert.deepEqual(advertisedVerbs(md), ["create", "docs"]);
+  });
+
+  test("a verb the front door advertises but the published CLI lacks is reported", () => {
+    const help =
+      "brand-ui <command>\n\n  info [--json]   Project context\n  docs <C>        props\n      [--json]    nested option, not a verb\n";
+    assert.deepEqual(helpVerbs(help), ["docs", "info"]);
+    assert.deepEqual(missingVerbs(["create", "docs", "help"], helpVerbs(help)), ["create"]);
+  });
+
+  test("smokeFrontDoor fails a stale or missing deployed llms.txt", async () => {
+    const root = mkdtempSync(join(tmpdir(), "front-door-"));
+    try {
+      mkdirSync(join(root, "apps", "docs", "public", ".well-known"), { recursive: true });
+      writeFileSync(join(root, "apps", "docs", "public", "llms.txt"), "# brand-ui\nfresh\n");
+      writeFileSync(join(root, "apps", "docs", "public", ".well-known", "mcp.json"), "{}");
+      const serve = (pages) => async (url) => {
+        const body = pages[new URL(url).pathname];
+        return {
+          ok: body !== undefined,
+          status: body === undefined ? 404 : 200,
+          text: async () => body,
+        };
+      };
+      const fresh = { "/llms.txt": "# brand-ui\nfresh\n", "/.well-known/mcp.json": "{}" };
+      assert.deepEqual(
+        await smokeFrontDoor({ root, base: "https://x.test/", fetchImpl: serve(fresh) }),
+        [],
+      );
+      const stale = await smokeFrontDoor({
+        root,
+        base: "https://x.test",
+        fetchImpl: serve({ "/llms.txt": "# brand-ui\ninstall from GitHub Packages\n" }),
+      });
+      assert.equal(stale.length, 2);
+      assert.match(stale[0], /stale front door/);
+      assert.match(stale[1], /mcp\.json → HTTP 404/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+}
