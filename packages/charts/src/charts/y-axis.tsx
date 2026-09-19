@@ -130,18 +130,14 @@ export interface YAxisProps {
  */
 export const DualAxisContext = createContext(false);
 
-const SIDE_LABEL_FALLBACK = { left: "Left scale", right: "Right scale" } as const;
-
-/** Resolve `sideLabel="auto"` through the locale seam, falling back to English. Internal. */
+/** Resolve `sideLabel="auto"` through the locale seam. Internal. */
 export function useSideLabel(
   sideLabel: ReactNode | "auto" | undefined,
   orientation: YAxisOrientation,
 ): ReactNode {
   const { t } = useLocale();
   if (sideLabel !== "auto") return sideLabel;
-  const key = orientation === "right" ? "charts.axis.rightScale" : "charts.axis.leftScale";
-  const translated = t(key);
-  return translated === key ? SIDE_LABEL_FALLBACK[orientation] : translated;
+  return orientation === "right" ? t("charts.axis.rightScale") : t("charts.axis.leftScale");
 }
 
 export function YAxis(props: YAxisProps) {
