@@ -288,14 +288,22 @@ export const ZoomedToDifferences: Story = {
 };
 
 /** `labels` with `differences: "percent"` reads each step as a signed
- * percent of the running total it left off, instead of its absolute value. */
+ * percent of the running total it left off, instead of its absolute value —
+ * `matchColor` paints each label in its own row's ink (through
+ * `seriesLabelInk`, never the raw fill, #544) instead of the neutral halo
+ * ink; the mixed increase/decrease/subtotal rows exercise the `layoutLabels`
+ * collision pass (RM-122) against both the annotation and axis obstacles. */
 export const PercentDifferenceLabels: Story = {
   render: () => (
-    <div className="h-72 w-full max-w-[560px]">
+    <div className="h-72 w-full max-w-[720px]">
       <WaterfallChart
-        accessibleLabel="Gross to net revenue bridge, percent difference labels"
-        data={grossToNet}
-        labels={{ differences: "percent", totals: "all" }}
+        accessibleDescription="March gives back most of Q1's gains."
+        accessibleLabel="Opening to closing balance by month, percent difference labels"
+        callouts={[{ label: "Mar", note: "Gives back most of Q1" }]}
+        data={monthsByQuarter}
+        labels={{ differences: "percent", matchColor: true, totals: "all" }}
+        margin={{ top: 64 }}
+        subtotalBy="quarter"
       />
     </div>
   ),
