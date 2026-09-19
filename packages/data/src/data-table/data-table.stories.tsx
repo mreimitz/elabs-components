@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, waitFor } from "storybook/test";
+import { expect, fn, waitFor, within } from "storybook/test";
 import { Badge, Button } from "@elabs-ai/components-ui";
 import type {
   ColumnDef,
@@ -1345,5 +1345,668 @@ export const RowReorderWholeRow: Story = {
       const cells = canvas.getAllByRole("cell");
       expect(cells[0]).toHaveTextContent("billing");
     });
+  },
+};
+// ─── Presentation layer: in-cell visuals, format, colour, layout ─────────────
+// (Datawrapper-parity presentation layer; the stories below never change a
+// default — every one opts into its prop explicitly.)
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const HOURS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, "0")}:00`);
+
+interface HourlyRides {
+  month: string;
+  [hour: string]: number | string;
+}
+
+/** Deterministic rides per hour: a commute double-peak, busier in summer. */
+const hourlyRides: HourlyRides[] = MONTHS.map((month, m) => {
+  const season = 1 + 0.5 * Math.sin(((m - 3) / 12) * 2 * Math.PI);
+  const row: HourlyRides = { month };
+  HOURS.forEach((hour, h) => {
+    const commute = Math.exp(-((h - 8) ** 2) / 4) + 0.9 * Math.exp(-((h - 17) ** 2) / 5);
+    const day = h >= 6 && h <= 22 ? 0.35 : 0.05;
+    row[hour] = Math.round(season * (day + commute) * 400);
+  });
+  return row;
+});
+
+const heatmapScale = { type: "stepped", steps: 5 } as const;
+const heatmapColumns: ColumnDef<HourlyRides>[] = [
+  { accessorKey: "month", header: "Month", meta: { width: 12 } },
+  ...HOURS.map(
+    (hour, h): ColumnDef<HourlyRides> => ({
+      accessorKey: hour,
+      header: hour,
+      enableSorting: true,
+      meta: {
+        // Percent widths let the 24 hour columns shrink proportionally with the
+        // table instead of flooring at their content width.
+        width: 88 / 24,
+        numeric: true,
+        visual: {
+          kind: "heatmap",
+          scale: heatmapScale,
+          hideValue: true,
+          // The 24 columns share ONE scale; the key is printed once.
+          legend: h === 0 ? "Rides per hour" : false,
+        },
+      },
+    }),
+  ),
+];
+
+/**
+ * A 12 × 24 heatmap: one scale shared by every hour column, values hidden
+ * visually (still read by screen readers, copy and sort), the header row hidden,
+ * and one colour key. Cells have no minimum width, so they shrink with the table.
+ * With the header hidden there is no band to click: tab to a column's sort button
+ * (it shows itself on focus) and press Enter.
+ */
+export const HeatmapCells: Story = {
+  render: () => (
+    <div className="w-full max-w-[900px]">
+      <DataTable
+        columns={heatmapColumns}
+        data={hourlyRides}
+        getRowId={(row) => row.month}
+        hideHeader
+        density="compact"
+        caption="Bike rides per hour of the day, by month"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement, canvas, userEvent }) => {
+    const cells = [...canvasElement.querySelectorAll<HTMLElement>('[data-slot="heatmap-cell"]')];
+    await expect(cells).toHaveLength(12 * 24);
+    for (const cell of cells) {
+      await expect(cell).toHaveClass("sr-only");
+      await expect(cell.closest("td")?.style.backgroundColor).toMatch(/^var\(--chart-seq-\d\)$/);
+    }
+    await expect(canvas.getByRole("group", { name: "Rides per hour" })).toBeInTheDocument();
+    // The header is hidden, not gone: its sort buttons still take focus and sort.
+    const sort = canvas.getByRole("button", { name: /^Sort by 08:00/ });
+    sort.focus();
+    await expect(sort).toHaveFocus();
+    // The reveal can land a frame after focus, so the key press is retried.
+    await waitFor(async () => {
+      if (sort.getAttribute("aria-label")?.includes("not sorted")) {
+        sort.focus();
+        await userEvent.keyboard("{Enter}");
+      }
+      await expect(sort).toHaveAccessibleName("Sort by 08:00, descending");
+    });
+    const column = [...canvasElement.querySelectorAll("tbody tr")].map((tr) =>
+      Number(tr.querySelectorAll("td")[9]?.textContent),
+    );
+    await expect(column).toEqual([...column].sort((a, b) => b - a));
+  },
+};
+
+interface CityStat {
+  city: string;
+  region: "North" | "South" | "East";
+  rides: number;
+  change: number;
+  share: number;
+  q1: number;
+  q2: number;
+  q3: number;
+  q4: number;
+  note: string;
+}
+
+const cityStats: CityStat[] = [
+  {
+    city: "Oslo",
+    region: "North",
+    rides: 1840,
+    change: 12.5,
+    share: 0.21,
+    q1: 320,
+    q2: 510,
+    q3: 640,
+    q4: 370,
+    note: "**Record** summer",
+  },
+  {
+    city: "Lyon",
+    region: "South",
+    rides: 2410,
+    change: -4.2,
+    share: 0.27,
+    q1: 480,
+    q2: 640,
+    q3: 700,
+    q4: 590,
+    note: "Station works in *Q1*",
+  },
+  {
+    city: "Graz",
+    region: "East",
+    rides: 920,
+    change: 3.1,
+    share: 0.1,
+    q1: 150,
+    q2: 260,
+    q3: 310,
+    q4: 200,
+    note: "See [method notes](#method)",
+  },
+  {
+    city: "Porto",
+    region: "South",
+    rides: 1260,
+    change: -9.8,
+    share: 0.14,
+    q1: 210,
+    q2: 300,
+    q3: 460,
+    q4: 290,
+    note: "`pedelec` share up",
+  },
+  {
+    city: "Turku",
+    region: "North",
+    rides: 610,
+    change: 0.4,
+    share: 0.07,
+    q1: 90,
+    q2: 170,
+    q3: 700,
+    q4: 110,
+    note: "Festival week",
+  },
+  {
+    city: "Brno",
+    region: "East",
+    rides: 1780,
+    change: 7.9,
+    share: 0.2,
+    q1: 300,
+    q2: 480,
+    q3: 620,
+    q4: 380,
+    note: "CO~2~ saved: 41 t",
+  },
+];
+
+/**
+ * In-cell bars. `range: "column"` sizes every bar against the column's own
+ * maximum (the largest value fills the track); `track` paints the remainder;
+ * a negative value grows left of the zero rule in the negative token.
+ */
+export const BarCells: Story = {
+  render: () => (
+    <div className="w-full max-w-[720px]">
+      <DataTable<CityStat, unknown>
+        columns={[
+          { accessorKey: "city", header: "City" },
+          {
+            accessorKey: "rides",
+            header: "Rides",
+            enableSorting: true,
+            meta: {
+              numeric: true,
+              visual: { kind: "bar", range: "column", track: true },
+            },
+          },
+          {
+            accessorKey: "change",
+            header: "Change",
+            meta: {
+              numeric: true,
+              format: { sign: "always", suffix: " %" },
+              visual: { kind: "bar" },
+            },
+          },
+          {
+            accessorKey: "share",
+            header: "Share",
+            meta: {
+              format: { style: "percent", decimals: 0 },
+              visual: {
+                kind: "bar",
+                style: "slim",
+                range: [0, 1],
+                colorBy: "region",
+              },
+            },
+          },
+        ]}
+        data={cityStats}
+        getRowId={(row) => row.city}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const bars = (col: number) =>
+      [
+        ...canvasElement.querySelectorAll<HTMLElement>(
+          `tbody td:nth-child(${col}) [data-slot="bar-cell-bar"]`,
+        ),
+      ].map((bar) => bar.style);
+    // Lyon (2,410) is the column max: its bar fills the track.
+    const rides = bars(2).map((s) => Number.parseFloat(s.width));
+    await expect(Math.max(...rides)).toBe(100);
+    await expect(rides[0]).toBeCloseTo((1840 / 2410) * 100, 1);
+    // Bars compare DOWN the column, in pixels: every track in a column is the
+    // same length (the value box is a column-wide reservation), so a rendered
+    // bar's share of the longest bar equals its share of the column max.
+    const rects = (selector: string) =>
+      [...canvasElement.querySelectorAll<HTMLElement>(`tbody td:nth-child(2) ${selector}`)].map(
+        (el) => el.getBoundingClientRect(),
+      );
+    const tracks = rects('[data-slot="bar-cell-track"]').map((r) => Math.round(r.width));
+    await expect(new Set(tracks).size).toBe(1);
+    const drawn = rects('[data-slot="bar-cell-bar"]').map((r) => r.width);
+    const longest = Math.max(...drawn);
+    for (const [i, value] of [1840, 2410, 920, 1260, 610, 1780].entries()) {
+      await expect(drawn[i]! / longest).toBeCloseTo(value / 2410, 2);
+    }
+    // The same reservation keeps the diverging column's zero rule on one x.
+    const zeros = [
+      ...canvasElement.querySelectorAll<HTMLElement>(
+        'tbody td:nth-child(3) [data-slot="bar-cell-zero"]',
+      ),
+    ].map((el) => Math.round(el.getBoundingClientRect().x));
+    await expect(new Set(zeros).size).toBe(1);
+    const [, lyon] = bars(3);
+    await expect(lyon?.backgroundColor).toBe("var(--chart-div-neg-2)");
+    await expect(
+      canvasElement.querySelector('tbody td:nth-child(3) [data-slot="bar-cell-zero"]'),
+    ).not.toBeNull();
+    await expect(
+      canvasElement.querySelector("tbody tr:nth-child(2) td:nth-child(3)"),
+    ).toHaveTextContent("-4.2 %");
+  },
+};
+
+/**
+ * Sparklines and mini columns from the quarter columns. With `range: "column"`
+ * every row shares one y scale, so Lyon's and Turku's 700 peaks sit at the same
+ * height; the values stay readable to screen readers.
+ */
+export const SparklineAndColumnCells: Story = {
+  render: () => (
+    <div className="w-full max-w-[720px]">
+      <DataTable<CityStat, unknown>
+        columns={[
+          { accessorKey: "city", header: "City" },
+          {
+            id: "trend",
+            header: "Quarterly trend",
+            meta: {
+              visual: {
+                kind: "sparkline",
+                keys: ["q1", "q2", "q3", "q4"],
+                range: "column",
+                labels: "ends",
+              },
+            },
+          },
+          {
+            id: "quarters",
+            header: "By quarter",
+            meta: {
+              visual: {
+                kind: "columns",
+                keys: ["q1", "q2", "q3", "q4"],
+                range: "column",
+              },
+            },
+          },
+        ]}
+        data={cityStats}
+        getRowId={(row) => row.city}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement, canvas }) => {
+    const maxes = [
+      ...canvasElement.querySelectorAll(
+        '[data-slot="sparkline-cell-svg"], [data-slot="columns-cell-svg"]',
+      ),
+    ].map((svg) => svg.getAttribute("data-y-max"));
+    await expect(new Set(maxes)).toEqual(new Set(["700"]));
+    // The printed end labels get a column-wide box, so every row's drawing is
+    // the same width: the lines share the x scale as well as the y scale.
+    const widths = [
+      ...canvasElement.querySelectorAll<SVGElement>('[data-slot="sparkline-cell-svg"]'),
+    ].map((svg) => Math.round(svg.getBoundingClientRect().width));
+    await expect(new Set(widths).size).toBe(1);
+    const lyon = canvas.getByRole("row", { name: /Lyon/ });
+    await expect(lyon).toHaveTextContent(/480.*640.*700.*590/);
+  },
+};
+
+/**
+ * `colorBy` washes a row (or a cell's text) by a category, from the shared
+ * categorical palette. The category is printed too — colour is never the only cue.
+ */
+export const CategoryColouring: Story = {
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <DataTable<CityStat, unknown>
+        columns={[
+          {
+            accessorKey: "city",
+            header: "City",
+            meta: {
+              colorBy: { key: "region", target: "background", scope: "row" },
+            },
+          },
+          {
+            accessorKey: "region",
+            header: "Region",
+            meta: { colorBy: { key: "region", target: "text" } },
+          },
+          {
+            accessorKey: "rides",
+            header: "Rides",
+            meta: { numeric: true, format: { abbreviate: false, decimals: 0 } },
+          },
+        ]}
+        data={cityStats}
+        getRowId={(row) => row.city}
+      />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    const oslo = canvas.getByRole("row", { name: /Oslo/ });
+    const lyon = canvas.getByRole("row", { name: /Lyon/ });
+    await expect(oslo.style.backgroundColor).toMatch(/color-mix/);
+    await expect(oslo.style.backgroundColor).not.toBe(lyon.style.backgroundColor);
+    await expect(canvas.getByRole("row", { name: /Turku/ }).style.backgroundColor).toBe(
+      oslo.style.backgroundColor,
+    );
+  },
+};
+
+/**
+ * `meta.markdown` renders a safe inline subset (bold, italics, code, links,
+ * superscript and subscript) as elements — never as HTML.
+ */
+export const MarkdownCells: Story = {
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <DataTable<CityStat, unknown>
+        columns={[
+          { accessorKey: "city", header: "City" },
+          { accessorKey: "note", header: "Note", meta: { markdown: true } },
+        ]}
+        data={cityStats}
+        getRowId={(row) => row.city}
+      />
+    </div>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    await expect(canvas.getByText("Record").tagName).toBe("STRONG");
+    await expect(canvas.getByRole("link", { name: "method notes" })).toHaveAttribute(
+      "href",
+      "#method",
+    );
+    await expect(canvasElement.querySelector("code")).toHaveTextContent("pedelec");
+  },
+};
+
+const responsiveColumns: ColumnDef<CityStat>[] = [
+  { accessorKey: "city", header: "City", enableSorting: true },
+  {
+    accessorKey: "region",
+    header: "Region",
+    meta: { showAt: { base: true, narrow: false } },
+  },
+  {
+    accessorKey: "rides",
+    header: "Rides",
+    enableSorting: true,
+    meta: { numeric: true, visual: { kind: "bar", track: true } },
+  },
+  {
+    accessorKey: "change",
+    header: "Change",
+    enableSorting: true,
+    meta: { numeric: true, format: { sign: "always", suffix: " %" } },
+  },
+];
+
+/**
+ * `layout="auto"`: a `<table>` at 450 px and wider, one `<dl>` card per row
+ * below it. "Region" sets `showAt={{ base: true, narrow: false }}`, so it drops
+ * out under 450 px. Resize the canvas (or use the viewport toolbar) to switch.
+ */
+export const CardLayoutAuto: Story = {
+  render: () => (
+    <div className="w-full max-w-[900px]">
+      <DataTable
+        columns={responsiveColumns}
+        data={cityStats}
+        getRowId={(row) => row.city}
+        layout="auto"
+        caption="Rides by city"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement, canvas }) => {
+    const root = canvasElement.querySelector("[data-layout]");
+    if (root?.getAttribute("data-layout") === "cards") {
+      await expect(canvasElement.querySelector("table")).toBeNull();
+      await expect(canvasElement.querySelectorAll('[data-slot="data-table-card"] dl')).toHaveLength(
+        cityStats.length,
+      );
+      await expect(canvas.queryByRole("term", { name: "Region" })).toBeNull();
+    } else {
+      await expect(canvas.getByRole("table")).toBeInTheDocument();
+      await expect(canvas.getByRole("columnheader", { name: /Region/ })).toBeInTheDocument();
+    }
+  },
+};
+
+/**
+ * `layout="cards"` at every width, with selection. Sorting moves to a sort bar
+ * above the cards and works from the keyboard.
+ */
+export const CardLayout: Story = {
+  render: () => (
+    <div className="w-full max-w-[420px]">
+      <DataTable
+        columns={[createSelectionColumn<CityStat>(), ...responsiveColumns]}
+        data={cityStats}
+        getRowId={(row) => row.city}
+        layout="cards"
+        caption="Rides by city"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement, canvas, userEvent }) => {
+    const firstCity = () =>
+      canvasElement.querySelector('[data-slot="data-table-card"] dd')?.textContent ?? "";
+    await expect(firstCity()).toBe("Oslo");
+    canvas.getByRole("button", { name: "Sort by City, not sorted" }).focus();
+    await userEvent.keyboard("{Enter}");
+    await expect(firstCity()).toBe("Brno");
+    const firstCard = canvasElement.querySelector<HTMLElement>('[data-slot="data-table-card"]')!;
+    await userEvent.click(within(firstCard).getByRole("checkbox"));
+    await expect(canvasElement.querySelector('[data-slot="data-table-card"]')).toHaveAttribute(
+      "data-state",
+      "selected",
+    );
+  },
+};
+
+const manyCities: CityStat[] = Array.from({ length: 2000 }, (_, i) => {
+  const base = cityStats[i % cityStats.length]!;
+  return {
+    ...base,
+    city: `${base.city} ${Math.floor(i / cityStats.length) + 1}`,
+  };
+});
+
+/** Cards stay windowed under `enableRowVirtualization` — only the visible cards mount. */
+export const CardLayoutVirtualized: Story = {
+  render: () => (
+    <div className="w-full max-w-[420px]">
+      <DataTable
+        columns={responsiveColumns}
+        data={manyCities}
+        getRowId={(row) => row.city}
+        layout="cards"
+        enableRowVirtualization
+        estimateRowHeight={140}
+        maxBodyHeight="28rem"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const cards = () => canvasElement.querySelectorAll('[data-slot="data-table-card"]').length;
+    await waitFor(() => expect(cards()).toBeGreaterThan(0));
+    await expect(cards()).toBeLessThan(60);
+  },
+};
+
+const withAverage: CityStat[] = [
+  ...cityStats,
+  {
+    city: "Average",
+    region: "North",
+    rides: 1470,
+    change: 1.7,
+    share: 0.17,
+    q1: 258,
+    q2: 393,
+    q3: 572,
+    q4: 323,
+    note: "",
+  },
+];
+
+/**
+ * `stickyRows` keeps the "Average" row at the bottom of every page and after
+ * every sort; `showRanks` numbers the ordinary rows 1…n in data order, and the
+ * rank travels with its row when the table is re-sorted.
+ */
+export const StickyRowsAndRanks: Story = {
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <DataTable<CityStat, unknown>
+        columns={responsiveColumns.filter((c) => c.header !== "Region")}
+        data={withAverage}
+        getRowId={(row) => row.city}
+        enablePagination
+        pageSize={4}
+        stickyRows={(row) => (row.city === "Average" ? "bottom" : undefined)}
+        showRanks
+      />
+    </div>
+  ),
+  play: async ({ canvasElement, canvas, userEvent }) => {
+    const lastRow = () => [...canvasElement.querySelectorAll("tbody tr")].at(-1);
+    await expect(lastRow()).toHaveTextContent("Average");
+    await userEvent.click(canvas.getByRole("button", { name: /Next/i }));
+    await expect(lastRow()).toHaveTextContent("Average");
+    await userEvent.click(canvas.getByRole("button", { name: /Previous/i }));
+    await userEvent.click(canvas.getByRole("button", { name: "Sort by Rides, not sorted" }));
+    await expect(lastRow()).toHaveTextContent("Average");
+    const first = canvasElement.querySelector("tbody tr");
+    // Lyon has the most rides; it is 2nd in the data, so its rank stays 2.
+    await expect(first).toHaveTextContent("Lyon");
+    await expect(first?.querySelector('[data-slot="data-table-rank-cell"]')).toHaveTextContent("2");
+  },
+};
+
+/**
+ * `mergeEmptyHeaders` spans an ungrouped column's header down through the
+ * empty group row, so a two-row header reads as one block.
+ */
+export const DoubleHeader: Story = {
+  render: () => (
+    <div className="w-full max-w-[720px]">
+      <DataTable<CityStat, unknown>
+        columns={[
+          { accessorKey: "city", header: "City" },
+          {
+            id: "h1",
+            header: "First half",
+            columns: [
+              { accessorKey: "q1", header: "Q1", meta: { numeric: true } },
+              { accessorKey: "q2", header: "Q2", meta: { numeric: true } },
+            ],
+          },
+          {
+            id: "h2",
+            header: "Second half",
+            columns: [
+              { accessorKey: "q3", header: "Q3", meta: { numeric: true } },
+              { accessorKey: "q4", header: "Q4", meta: { numeric: true } },
+            ],
+          },
+        ]}
+        data={cityStats}
+        getRowId={(row) => row.city}
+        mergeEmptyHeaders
+      />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("columnheader", { name: "City" })).toHaveAttribute(
+      "rowspan",
+      "2",
+    );
+    await expect(canvas.getByRole("columnheader", { name: "First half" })).toHaveAttribute(
+      "colspan",
+      "2",
+    );
+  },
+};
+
+/** `density="compact"` tightens the header and row padding for dense tables. */
+export const Compact: Story = {
+  render: () => (
+    <div className="w-full max-w-[640px]">
+      <DataTable
+        columns={responsiveColumns}
+        data={cityStats}
+        getRowId={(row) => row.city}
+        density="compact"
+      />
+    </div>
+  ),
+};
+
+function ExactSearchDemo() {
+  const [search, setSearch] = useState("");
+  return (
+    <div className="w-full max-w-[640px]">
+      <DataTable
+        columns={responsiveColumns}
+        data={cityStats}
+        getRowId={(row) => row.city}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchMode="exact"
+        toolbar={() => (
+          <FilterBar>
+            <SearchInput value={search} onValueChange={setSearch} placeholder="Exact city…" />
+          </FilterBar>
+        )}
+      />
+    </div>
+  );
+}
+
+/**
+ * `searchMode="exact"` matches a whole cell value (case-insensitive) instead of
+ * a substring: "lyon" finds Lyon, "ly" finds nothing.
+ */
+export const ExactSearch: Story = {
+  render: () => <ExactSearchDemo />,
+  play: async ({ canvasElement, canvas, userEvent }) => {
+    const input = canvas.getByPlaceholderText("Exact city…");
+    await userEvent.type(input, "ly");
+    await waitFor(() => expect(canvas.getByText("No results.")).toBeInTheDocument());
+    await userEvent.type(input, "on");
+    await waitFor(() => expect(canvasElement.querySelectorAll("tbody tr")).toHaveLength(1));
+    await expect(canvasElement.querySelector("tbody tr")).toHaveTextContent("Lyon");
   },
 };

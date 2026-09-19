@@ -26,6 +26,41 @@ paths:
 - Accessibility: real `<table>` semantics, sortable headers are `<button>`s with `aria-sort`;
   virtualized rows carry `aria-rowcount`/`aria-rowindex`, spacer rows `aria-hidden`.
 
+## DataTable presentation layer (per-column `meta`)
+
+- **Cell visuals live in `data` and never import `charts`.** `meta.visual` (`bar`,
+  `sparkline`, `columns`, `heatmap`), `meta.format`, `meta.colorBy`, `meta.markdown` are
+  drawn by `data`'s own cells (`cells/`); colours come from `colorScaleFor`
+  (`@elabs-ai/components-ui`, shared with `charts`/`maps`) as `var(--chart-…)` tokens.
+  Scales are computed once over ALL rows (never the page), so a colour or bar length
+  means the same thing on every page and after every sort.
+- Every visual cell keeps its value in the accessible tree (printed, or `sr-only` with
+  `hideValue`); the SVG/bar is `aria-hidden`. Sort reads the raw value, never the visual.
+- **One printed-label box per COLUMN, never per row** (`labelBoxCh`, in `ch`, over all
+  rows). A visual draws in what its value text leaves over, so a per-row box gives the row
+  with the shorter number the longer track — it then draws a longer bar for a smaller
+  value, and a diverging column's zero rule lands on a different x in every row.
+- **The table breakpoint is a deliberate copy** of charts' `useMeasuredChartBreakpoint`
+  (`use-table-breakpoint.ts`), because `data` may not import `charts`. It measures the
+  table's own box, not the viewport. Keep this thresholds table and the one in the file
+  equal:
+
+  | Tier     | Container width |
+  | -------- | --------------- |
+  | `narrow` | < 450 px        |
+  | `wide`   | ≥ 450 px        |
+
+  `meta.showAt` and `layout="auto"` (cards under `narrow`) read it. `layout` defaults to
+  `"table"` — no default changes.
+
+- Cards (`layout="cards"`/`"auto"`) are a `<ul>` of `<li><dl>` rows on the SAME TanStack
+  instance: sorting (a sort bar), selection and row click keep working; row reorder is
+  table-only.
+- `stickyRows` pins rows through TanStack row pinning and takes them out of the
+  sorted/paged/filtered flow; `showRanks` numbers the other rows 1…n in data order.
+- **The charts `Sparkline` in a cell is a registry block** (`table-with-sparklines`), not
+  a `data` feature: copy-own blocks may compose sibling packages, `data` may not.
+
 ## Process mining (`@elabs-ai/components-process`) — the one layer-3 package (ADR 0034)
 
 - **Primitives go DOWN, compositions go UP.** The package never contains a generic
