@@ -44,10 +44,10 @@ for (const family of THEME_FAMILIES) {
         await target.scrollIntoViewIfNeeded();
         await page.waitForLoadState("networkidle");
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
-        // Ruling 38: the GatesBand rule grid inside #tokens is generated text already asserted
-        // by the gates test, so it is masked out of the pixel comparison (not the DOM) here.
-        const mask = region === "tokens" ? [target.locator('[data-slot="gates-band"]')] : undefined;
-        await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo, { mask });
+        // Ruling 46 lifts ruling 38's GatesBand mask: the band now renders collapsed (one
+        // category label + rule count per group, the rules behind closed <details>), so a new
+        // check rule changes a digit or two, well inside `maxDiffPixelRatio`, not the layout.
+        await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo);
       }
     });
   }
