@@ -40,8 +40,7 @@ import type { RiveParameters } from "@rive-app/react-webgl2";
 // below to `undefined`, and the guard turns that into the render-phase throw
 // `LazyEngineBoundary` (see `persona.tsx`) already catches.
 import * as RiveModule from "@rive-app/react-webgl2";
-import type { ReactNode } from "react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AssertAssignable } from "./_lazy-boundary-conformance";
 import type { PersonaRiveEventCallback } from "./persona";
@@ -131,39 +130,6 @@ const useTheme = (enabled: boolean) => {
 
   return theme;
 };
-
-interface PersonaWithModelProps {
-  rive: ReturnType<typeof useRive>["rive"];
-  source: PersonaSource;
-  children: ReactNode;
-}
-
-const PersonaWithModel = memo(({ rive, source, children }: PersonaWithModelProps) => {
-  const theme = useTheme(source.dynamicColor);
-  const viewModel = useViewModel(rive, { useDefault: true });
-  const viewModelInstance = useViewModelInstance(viewModel, {
-    rive,
-    useDefault: true,
-  });
-  const viewModelInstanceColor = useViewModelInstanceColor("color", viewModelInstance);
-
-  useEffect(() => {
-    if (!(viewModelInstanceColor && source.dynamicColor)) {
-      return;
-    }
-
-    const [r, g, b] = theme === "dark" ? [255, 255, 255] : [0, 0, 0];
-    viewModelInstanceColor.setRgb(r, g, b);
-  }, [viewModelInstanceColor, theme, source.dynamicColor]);
-
-  return children;
-});
-
-PersonaWithModel.displayName = "PersonaWithModel";
-
-const PersonaWithoutModel = memo(({ children }: { children: ReactNode }) => children);
-
-PersonaWithoutModel.displayName = "PersonaWithoutModel";
 
 export interface PersonaRiveProps {
   className?: string;
@@ -268,13 +234,33 @@ const PersonaRive = ({
     }
   }, [state, listeningInput, thinkingInput, speakingInput, asleepInput]);
 
-  const Wrapper = source.hasModel ? PersonaWithModel : PersonaWithoutModel;
+  // The view-model hooks run here rather than in a child that takes `rive` as
+  // a prop. React 19.2's development build logs each re-render's changed props
+  // to the browser's performance track by walking every object prop a few
+  // levels deep. That walk never finished on a loaded Rive instance: handing
+  // one to a component as a prop froze the tab until it ran out of memory, in
+  // development builds only. Keep the instance out of props. Each hook accepts
+  // `null`, which is how a source without a view model opts out.
+  const modelRive = source.hasModel ? rive : null;
+  const dynamicColor = source.hasModel && source.dynamicColor;
+  const theme = useTheme(dynamicColor);
+  const viewModel = useViewModel(modelRive, { useDefault: true });
+  const viewModelInstance = useViewModelInstance(viewModel, {
+    rive: modelRive,
+    useDefault: true,
+  });
+  const viewModelInstanceColor = useViewModelInstanceColor("color", viewModelInstance);
 
-  return (
-    <Wrapper rive={rive} source={source}>
-      <RiveComponent className={cn("size-16 shrink-0", className)} />
-    </Wrapper>
-  );
+  useEffect(() => {
+    if (!(viewModelInstanceColor && dynamicColor)) {
+      return;
+    }
+
+    const [r, g, b] = theme === "dark" ? [255, 255, 255] : [0, 0, 0];
+    viewModelInstanceColor.setRgb(r, g, b);
+  }, [viewModelInstanceColor, theme, dynamicColor]);
+
+  return <RiveComponent className={cn("size-16 shrink-0", className)} />;
 };
 
 export default PersonaRive;
