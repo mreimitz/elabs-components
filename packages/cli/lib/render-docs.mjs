@@ -226,8 +226,17 @@ export function renderInventory(manifest) {
 // #156 / #82 — llms.txt HUB + per-package SPOKES
 // ---------------------------------------------------------------------------
 
-/** The root `llms.txt` hub — purpose, package routing map, themes, entry points. */
-export function renderLlmsHub(manifest) {
+/**
+ * The root `llms.txt` hub — purpose, package routing map, themes, entry points.
+ * @param {object} manifest
+ * @param {{ siteOrigin?: string }} [opts] Where this instance's own URLs point
+ *   (the hosted MCP, the docs site, `.well-known/mcp.json`, …). Defaults to the
+ *   production site so the CLI's generated `llms.txt` and the site's own
+ *   `/llms.txt` route agree byte-for-byte; a preview deployment can pass its
+ *   own origin so it reports itself (RM-100, no live preview exists yet).
+ */
+export function renderLlmsHub(manifest, { siteOrigin = HOSTED_DOCS_URL } = {}) {
+  const mcpUrl = `${siteOrigin}/mcp`;
   const lines = [];
   lines.push("# brand-ui");
   lines.push("");
@@ -240,7 +249,7 @@ export function renderLlmsHub(manifest) {
   lines.push(
     "This file is generated from `brand-ui.manifest.json` — the anti-hallucination ground " +
       "truth. Never hand-edit it. For the live, queryable API, connect the hosted brand-ui " +
-      `MCP at \`${HOSTED_MCP_URL}\` (nothing to install) and call \`info\` · \`search <q>\` · ` +
+      `MCP at \`${mcpUrl}\` (nothing to install) and call \`info\` · \`search <q>\` · ` +
       "`docs <Component>`; the same tools run locally over stdio with " +
       "`npx -y @elabs-ai/components-cli mcp`.",
   );
@@ -272,13 +281,17 @@ export function renderLlmsHub(manifest) {
   lines.push("## Entry points");
   lines.push("");
   lines.push(
-    `- Hosted MCP (no install): \`claude mcp add --transport http brand-ui ${HOSTED_MCP_URL}\` ` +
+    `- Hosted MCP (no install): \`claude mcp add --transport http brand-ui ${mcpUrl}\` ` +
       "— Streamable HTTP, tools `info` · `search <q>` · `docs <Component>` · `tokens` · `chart_for` · `a2ui`",
   );
   lines.push(
     "- CLI over stdio: `npx -y @elabs-ai/components-cli mcp`, or `pnpm add -D " +
       "@elabs-ai/components-cli` then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>` " +
       "(the local CLI also has `audit`, which the hosted server cannot run)",
+  );
+  lines.push(
+    "- Claude Code / Cowork plugin (skills, tracks the repo): `/plugin marketplace add " +
+      "mreimitz/elabs-components` then `/plugin install brand-ui`",
   );
   lines.push(
     "- New app in one command: `npx -y @elabs-ai/components-cli create <dir> --template dashboard` " +
@@ -290,16 +303,14 @@ export function renderLlmsHub(manifest) {
       "(`npx -y @elabs-ai/components-cli a2ui catalog`, `… a2ui validate <file>`, or the MCP `a2ui` tool) — " +
       "and render it with `<A2uiSurface surface onAction />` from `@elabs-ai/components-ai`",
   );
-  lines.push(`- Docs site: ${HOSTED_DOCS_URL} (Storybook — every component, live, in every theme)`);
-  lines.push(`- Discovery: ${HOSTED_DOCS_URL}/.well-known/mcp.json`);
+  lines.push(
+    `- Docs site: ${siteOrigin}/storybook/ (Storybook — every component, live, in every theme)`,
+  );
+  lines.push(`- Discovery: ${siteOrigin}/.well-known/mcp.json`);
   lines.push("- Manifest: `brand-ui.manifest.json` (machine-readable ground truth)");
   lines.push(
-    "- Contributors only: the Storybook dev MCP at `http://localhost:6006/mcp`, available " +
-      "while `pnpm storybook` runs in this repo",
-  );
-  lines.push(
-    "- Registry (copy-own): self-hosted registry JSON — `pnpm registry:build`, then " +
-      "`npx shadcn@latest add <your-host>/<item>.json` (or copy from `registry/blocks/<name>/`)",
+    `- Registry (copy-own): \`npx shadcn@latest add ${siteOrigin}/r/<item>.json\` ` +
+      "(or self-host — `pnpm registry:build`, or copy from `registry/blocks/<name>/`)",
   );
   lines.push("");
   return lines.join("\n");

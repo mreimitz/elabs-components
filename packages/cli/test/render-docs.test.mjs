@@ -108,14 +108,30 @@ test("renderLlmsHub routes to per-package spokes and lists themes + entry points
   // old copy pointed at ("GitHub Packages") no longer exists (2026-09-17 review).
   assert.match(hub, /https:\/\/elabs-ai\.com\/mcp/, "hosted MCP endpoint");
   assert.doesNotMatch(hub, /GitHub Packages/, "no dead private-registry instructions");
-  const entryPoints = hub.slice(hub.indexOf("## Entry points"));
-  assert.ok(
-    entryPoints.indexOf("elabs-ai.com/mcp") < entryPoints.indexOf("localhost:6006"),
-    "the hosted endpoint is listed before the contributor-only dev server",
-  );
+  // No local dev URL in a PUBLIC artifact (wave-3 ruling): the hosted endpoint
+  // is the only MCP address this file names.
+  assert.doesNotMatch(hub, /localhost/, "no local dev server address");
+  // The hosted MCP line sits within the first 20 lines (RM-100 acceptance).
+  const first20 = hub.split("\n").slice(0, 20).join("\n");
+  assert.match(first20, /https:\/\/elabs-ai\.com\/mcp/, "hosted MCP within the first 20 lines");
   assert.match(hub, /npx -y @elabs-ai\/components-cli mcp/);
   assert.match(hub, /pnpm exec brand-ui info/);
   assert.match(hub, /tokens → ui\/icons → data/);
+  // Storybook is reached through the site's own /storybook/ route (ADR 0038),
+  // never the bare docs-site origin.
+  assert.match(hub, /https:\/\/elabs-ai\.com\/storybook\//, "docs site under /storybook/");
+  assert.match(
+    hub,
+    /\/plugin marketplace add mreimitz\/elabs-components/,
+    "the plugin marketplace command",
+  );
+});
+
+test("renderLlmsHub takes a siteOrigin override so a preview reports itself", () => {
+  const hub = renderLlmsHub(FIXTURE, { siteOrigin: "https://rm-100.vercel.app" });
+  assert.match(hub, /https:\/\/rm-100\.vercel\.app\/mcp/);
+  assert.match(hub, /https:\/\/rm-100\.vercel\.app\/storybook\//);
+  assert.doesNotMatch(hub, /elabs-ai\.com/, "no leftover production origin");
 });
 
 test("renderLlmsSpoke shows a package's components, variants and anti-patterns", () => {
