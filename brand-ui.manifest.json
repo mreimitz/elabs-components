@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T01:02:41.441Z",
+  "generatedAt": "2026-09-19T02:21:12.898Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13502,6 +13502,16 @@
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
+          "name": "ChartTooltipInline",
+          "kind": "value",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "ChartTooltipTable",
+          "kind": "value",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
           "name": "ChoroplethChart",
           "kind": "value",
           "module": "packages/charts/src/charts/choropleth/index.ts"
@@ -14369,6 +14379,11 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "useChartTooltipValueFormat",
+          "kind": "value",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
           "name": "useChartValueSetFormatter",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-formatters.ts"
@@ -14492,6 +14507,11 @@
           "name": "useStaticChartPreview",
           "kind": "value",
           "module": "packages/charts/src/charts/static-chart-preview-context.tsx"
+        },
+        {
+          "name": "useTooltipPin",
+          "kind": "value",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
           "name": "useYScale",
@@ -15005,7 +15025,19 @@
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
+          "name": "ChartTooltipInlineProps",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
           "name": "ChartTooltipProps",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "ChartTooltipTableProps",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "ChartTooltipVariant",
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
@@ -15993,6 +16025,10 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "TooltipPinControls",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
           "name": "TooltipRow",
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
@@ -16111,6 +16147,10 @@
         {
           "name": "UseCanvasDrawResult",
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "UseTooltipPinOptions",
+          "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
           "name": "ValueFormat",
@@ -23921,6 +23961,7 @@
         "ChartCard": "charts-chartcard--docs",
         "ChartFrame": "charts-chartframe--docs",
         "ChartLegend": "charts-chartlegend--docs",
+        "ChartTooltip": "charts-tooltip-presets--docs",
         "ChoroplethChart": "charts-choroplethchart--docs",
         "ComposedChart": "charts-composedchart--docs",
         "DashboardInteractionsEditor": "dashboard-interactions--docs",

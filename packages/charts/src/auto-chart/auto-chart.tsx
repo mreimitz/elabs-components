@@ -374,6 +374,16 @@ function annotationLayer(spec: ChartSpec): ReactNode {
 /** Families whose container paints `ChartSpec.annotations` (the cartesian chart context). */
 const ANNOTATED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "stream", "bar"]);
 
+// Tooltip presets — RM-119
+/** `spec.tooltip`, forwarded 1:1 onto the `<ChartTooltip>` every cartesian family renders. */
+function tooltipSpecProps(spec: ChartSpec) {
+  return {
+    variant: spec.tooltip?.variant,
+    focus: spec.tooltip?.focus,
+    pin: spec.tooltip?.pin,
+  };
+}
+
 function renderChart(
   type: ChartType,
   spec: ChartSpec,
@@ -431,6 +441,10 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
+          // Tooltip presets — RM-119: `ChartTooltip focus` only decides WHICH
+          // series is nearest; `focusOnHover` here is what actually gates
+          // `SeriesHoverDim`'s dim.
+          focusOnHover={spec.tooltip?.focus}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
@@ -449,7 +463,7 @@ function renderChart(
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           {annotationLayer(spec)}
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </LineChart>
       );
     }
@@ -476,6 +490,8 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
+          // Tooltip presets — RM-119 (see the `LineChart` case above).
+          focusOnHover={spec.tooltip?.focus}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
@@ -495,7 +511,7 @@ function renderChart(
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           {annotationLayer(spec)}
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </AreaChart>
       );
     }
@@ -541,7 +557,7 @@ function renderChart(
             <YAxis formatValue={stacked === "percent" ? undefined : yFormat} {...axisProps.y} />
           )}
           {annotationLayer(spec)}
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </BarChart>
       );
     }
@@ -622,7 +638,7 @@ function renderChart(
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </ScatterChart>
       );
     }
@@ -732,7 +748,7 @@ function renderChart(
           <Candlestick />
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </CandlestickChart>
       );
     }
@@ -964,7 +980,7 @@ function renderChart(
               <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="butt" />
             ))}
             <BarYAxis />
-            <ChartTooltip />
+            <ChartTooltip {...tooltipSpecProps(spec)} />
           </BarChart>
         );
       }
@@ -987,7 +1003,7 @@ function renderChart(
           <Bar dataKey={valueKey} fill={color} lineCap="round" showValues zeroLine />
           <BarXAxis />
           <YAxis formatValue={yFormat} {...axisProps.y} />
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </BarChart>
       );
     }

@@ -99,6 +99,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - ChartTooltipContent
 - ChartTooltipDot
 - ChartTooltipIndicator
+- ChartTooltipInline
+- ChartTooltipTable
 - ChoroplethChart — Region-shaded map for a measure that is defined per geographic area.
   - avoid: Shading raw counts instead of a rate — area size becomes the story and the map lies.
   - avoid: A rainbow ramp for a sequential measure — use one ordered ramp so darker always means more.
@@ -388,6 +390,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useChartLegendHover
 - useChartSeriesKey
 - useChartStable
+- useChartTooltipValueFormat
 - useChartValueSetFormatter
 - useChoropleth
 - useChoroplethZoom
@@ -413,6 +416,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useRingStable
 - useSankey
 - useStaticChartPreview
+- useTooltipPin
 - useYScale
 
 ## Subpath exports

@@ -139,6 +139,9 @@ export {
   ChartTooltipContent,
   ChartTooltipDot,
   ChartTooltipIndicator,
+  // Tooltip presets — RM-119
+  ChartTooltipInline,
+  ChartTooltipTable,
   ChoroplethFeatureComponent,
   ChoroplethGraticule,
   ChoroplethProvider,
