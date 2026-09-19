@@ -1843,6 +1843,65 @@ describe("SliderNumber contract (browser)", () => {
   }
 });
 
+// ── SpecPlayground (packages/ui/src/components/spec-playground/spec-playground.tsx) ────────────────────────────────────────
+import * as stories_spec_playground from "../../../packages/ui/src/components/spec-playground/spec-playground.stories";
+describe("SpecPlayground contract (browser)", () => {
+  const meta = stories_spec_playground.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_spec_playground as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "launch-checklist--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "launch-checklist--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
 // ── StatusBadge (packages/ui/src/components/status-badge/status-badge.tsx) ────────────────────────────────────────
 import * as stories_status_badge from "../../../packages/ui/src/components/status-badge/status-badge.stories";
 describe("StatusBadge contract (browser)", () => {

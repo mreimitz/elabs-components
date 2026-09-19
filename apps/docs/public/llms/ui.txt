@@ -133,6 +133,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DateRangePicker
 - DEFAULT_COMMAND_CHIP_LABELS
 - DEFAULT_MESSAGES
+- DEFAULT_SPEC_PLAYGROUND_LABELS
 - DEFAULT_SURFACE_TOUR_ACTIONS_LABELS
 - DEFAULT_THEME_FAMILY_SWITCH_LABELS
 - Descriptions
@@ -384,6 +385,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - SkipLink
 - Slider
 - SliderNumber
+- SpecPlayground
 - Spinner
 - SplitPanel
 - StatePanel (kind=empty*|error|loading)
