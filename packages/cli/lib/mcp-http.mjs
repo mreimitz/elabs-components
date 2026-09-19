@@ -18,6 +18,12 @@
  * `endpoints`): the explicit option wins, then the `SITE_ORIGIN` env var, then
  * mcp.mjs's production default — so a preview deployment (no fixed domain yet,
  * ADR 0038 §3) reports itself instead of always naming production (RM-100).
+ *
+ * `siteRoutes` (default false) opts those URLs into the `/storybook/` + `/r` forms —
+ * only for a caller whose site actually serves them. `https://elabs-ai.com` is still the
+ * Storybook project until RM-105 moves the domain: it has no `/storybook/` and no `/r`, so
+ * every instance defaults to the links that work there today (`/?path=…`, the published
+ * registry). `apps/home/app/mcp/route.ts` passes `siteRoutes: true` for its own real routes.
  */
 import { handleMessage } from "./mcp.mjs";
 
@@ -37,7 +43,7 @@ const json = (body, status = 200) =>
 
 /**
  * Build a Fetch-API handler for the brand-ui MCP server.
- * @param {{ manifest?: object|null, root?: string|null, hosted?: boolean, siteOrigin?: string }} [opts]
+ * @param {{ manifest?: object|null, root?: string|null, hosted?: boolean, siteOrigin?: string, siteRoutes?: boolean }} [opts]
  * @returns {(request: Request) => Promise<Response>}
  */
 export function createMcpHttpHandler({
@@ -47,8 +53,9 @@ export function createMcpHttpHandler({
   // `process` is absent on some Fetch-API runtimes (the module doc's Deno/Bun
   // case) — never reference it unguarded at the top level.
   siteOrigin = (typeof process !== "undefined" && process.env?.SITE_ORIGIN) || undefined,
+  siteRoutes = false,
 } = {}) {
-  const opts = { manifest, root, hosted, siteOrigin };
+  const opts = { manifest, root, hosted, siteOrigin, siteRoutes };
   return async function handleMcpHttp(request) {
     if (request.method === "OPTIONS")
       return new Response(null, { status: 204, headers: CORS_HEADERS });

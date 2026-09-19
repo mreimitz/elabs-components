@@ -73,6 +73,16 @@ export const DOCS_SITE_URL = "https://elabs-ai.com";
 const RELEASE_TAG = `@elabs-ai/components-cli@${SERVER_INFO.version}`;
 const RAW_BASE = `https://raw.githubusercontent.com/mreimitz/elabs-components/${RELEASE_TAG}`;
 
+/**
+ * Where `npx shadcn@latest add <url>/<item>.json` resolves TODAY — the published GitHub Pages
+ * registry (`registry/registry.json`'s own `homepage`, kept fresh by `pnpm registry:publish`).
+ * A literal, not a runtime read of that file: this module ships inside the published
+ * `@elabs-ai/components-cli` package and must work with no monorepo checkout on disk
+ * (`npx @elabs-ai/components-cli mcp`), exactly like `DOCS_SITE_URL` above. Once the site's own
+ * `/r` route exists (RM-105), a caller with `siteRoutes: true` gets `<siteOrigin>/r` instead.
+ */
+export const REGISTRY_HOMEPAGE = "https://mreimitz.github.io/elabs-components/r";
+
 /** Playbook `template` paths are relative to the playbook folder. */
 const PLAYBOOK_DIR = "docs/playbooks";
 const templateRepoPath = (file) =>
@@ -85,21 +95,23 @@ const openablePath = (ctx, repoPath) =>
 /**
  * The live Storybook docs page for a component, from the manifest's storyId.
  *
- * Hosted (a remote caller, review §4.4/wave-3): the SITE's own `/storybook/`
- * route, so a plain `curl -sI` on the URL this tool just returned answers 200
- * directly — no redirect to follow. `siteOrigin` defaults to the production
- * site and is overridable per request (`ctx.siteOrigin`, itself sourced from
- * the `SITE_ORIGIN` env var in the hosted HTTP handler) so a preview reports
- * its own origin.
+ * Until RM-105 moves the domain, `https://elabs-ai.com` IS the Storybook project — it has no
+ * `/storybook/` route, only `/?path=…` (which it answers directly, no redirect needed). So the
+ * DEFAULT link, hosted or not, is `<origin>/?path=/docs/<id>`; `ctx.siteRoutes` opts a caller
+ * into the SITE's own `/storybook/` route instead, for an instance that actually serves one
+ * (`apps/home`, once live). `siteOrigin` defaults to the production site and is overridable per
+ * request (hosted only — `ctx.siteOrigin`, sourced from the `SITE_ORIGIN` env var in the hosted
+ * HTTP handler) so a preview reports its own origin.
  *
- * Local (stdio): unchanged — the public docs site's `/?path=` deep link,
- * which the site 308-redirects into `/storybook/` (ADR 0038 §2). Left as-is
- * on purpose; only the hosted branch changes (RM-100).
+ * Local (stdio) ignores both `siteOrigin` and `siteRoutes` — always the production `/?path=`
+ * link, byte-identical to before RM-100.
  */
-const storyUrl = (storyId, ctx) =>
-  ctx?.hosted
-    ? `${ctx.siteOrigin || DOCS_SITE_URL}/storybook/?path=/docs/${storyId}`
-    : `${DOCS_SITE_URL}/?path=/docs/${storyId}`;
+const storyUrl = (storyId, ctx) => {
+  const origin = (ctx?.hosted && ctx.siteOrigin) || DOCS_SITE_URL;
+  return ctx?.hosted && ctx.siteRoutes
+    ? `${origin}/storybook/?path=/docs/${storyId}`
+    : `${origin}/?path=/docs/${storyId}`;
+};
 
 /**
  * The routine from the Storybook "Getting Started" page. `info` is the first
@@ -240,9 +252,13 @@ function toolInfo(ctx) {
   ];
   if (ctx.hosted) {
     const origin = ctx.siteOrigin || DOCS_SITE_URL;
+    // Same today-vs-site-routes split as `storyUrl` above: this server has no `/storybook/`
+    // or `/r` of its own until the site's own routes opt in (`ctx.siteRoutes`, RM-105).
+    const storybookEndpoint = ctx.siteRoutes ? `${origin}/storybook/` : origin;
+    const registryEndpoint = ctx.siteRoutes ? `${origin}/r` : REGISTRY_HOMEPAGE;
     lines.push(
       "hosted server: the taste profile is the shipped default — it cannot read your project's brand-ui.config.json. Run `npx @elabs-ai/components-cli mcp` locally for your project's profile and the audit tool.",
-      `endpoints: mcp ${origin}/mcp · llms ${origin}/llms.txt · storybook ${origin}/storybook/ · registry ${origin}/r`,
+      `endpoints: mcp ${origin}/mcp · llms ${origin}/llms.txt · storybook ${storybookEndpoint} · registry ${registryEndpoint}`,
     );
   }
   lines.push("", ...ROUTINE);
@@ -543,18 +559,20 @@ function callTool(ctx, name, argsObj = {}) {
  * line framing + I/O. `root` is the repo root (the engine's data source);
  * `manifest` injects the manifest instead of reading it from `root`; `hosted`
  * drops the tools that need the caller's disk (LOCAL_ONLY_TOOLS). `siteOrigin`
- * is where a HOSTED caller's URLs (story links, `info`'s endpoints) point —
- * unused when `hosted` is false, so the stdio server's output is unchanged.
- * @param {{ root?: string|null, manifest?: object|null, hosted?: boolean, siteOrigin?: string|null }} [opts]
+ * is where a HOSTED caller's URLs (story links, `info`'s endpoints) point;
+ * `siteRoutes` opts those URLs into the `/storybook/` + `/r` forms for a caller
+ * whose site actually serves them (RM-105 — false today, no live site does yet).
+ * Both are unused when `hosted` is false, so the stdio server's output is unchanged.
+ * @param {{ root?: string|null, manifest?: object|null, hosted?: boolean, siteOrigin?: string|null, siteRoutes?: boolean }} [opts]
  * @returns {object|null}
  */
 export function handleMessage(
   msg,
-  { root = null, manifest = null, hosted = false, siteOrigin = null } = {},
+  { root = null, manifest = null, hosted = false, siteOrigin = null, siteRoutes = false } = {},
 ) {
   if (!msg || typeof msg !== "object") return error(null, -32600, "Invalid Request");
   const { id, method, params } = msg;
-  const ctx = { root, manifest, hosted, siteOrigin };
+  const ctx = { root, manifest, hosted, siteOrigin, siteRoutes };
   const isNotification = id === undefined || id === null;
 
   switch (method) {
