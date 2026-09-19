@@ -612,3 +612,16 @@ export function explainChartType(spec: ChartSpec): ChartTypeExplanation {
 export function inferChartType(spec: ChartSpec): ChartType {
   return explainChartType(spec).type;
 }
+
+// Facet hint — RM-120
+/** Series count from which a line spec reads as spaghetti (the Datawrapper rule). */
+export const FACET_HINT_MIN_SERIES = 6;
+
+/**
+ * The dev hint for a `line` spec with ≥ {@link FACET_HINT_MIN_SERIES} series and
+ * no `facet`, or `null`. Advice only — it never changes the inferred type.
+ */
+export function facetHint(spec: ChartSpec, type: ChartType): string | null {
+  if (type !== "line" || spec.facet || spec.series.length < FACET_HINT_MIN_SERIES) return null;
+  return `[AutoChart] ${spec.series.length} line series read as spaghetti — consider small multiples: set "facet" (e.g. { by: { series: true } }).`;
+}

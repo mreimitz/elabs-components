@@ -2,6 +2,7 @@
 
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { resolveResponsive, type ChartBreakpoint, type Responsive } from "./chart-breakpoint";
+import type { ChartHoverCategory } from "./chart-hover-link"; // Facet scope — RM-120
 
 export interface SpringConfig {
   stiffness: number;
@@ -157,4 +158,60 @@ export function ChartConfigValueProvider({
 
 export function useChartConfig(): ChartConfigValue {
   return useContext(ChartConfigContext) ?? DEFAULT_CHART_CONFIG;
+}
+
+// Facet scope — RM-120
+
+/**
+ * What a `ChartMultiples` panel hands the chart inside it (RM-120). A chart
+ * container reads it through {@link useChartFacetScope}; outside a panel it is
+ * `null` and nothing changes. Every field is a DEFAULT — the child's own
+ * explicit prop (`YAxis domain`, `hoverCategory`, …) always wins.
+ */
+export interface ChartFacetScopeValue {
+  /** The panel's key (the facet value). */
+  panelKey: string;
+  /** 0-based grid position and grid size of the panel. */
+  column: number;
+  row: number;
+  columns: number;
+  rows: number;
+  /** No panel below this one in its column (the bottom row of an incomplete grid included). */
+  bottom: boolean;
+  /** Shared y: only the outer column paints value-axis labels (first for a left axis, last for a right one). */
+  sharedY: boolean;
+  /** Shared x: only the bottom panel of each column paints category-axis labels. */
+  sharedX: boolean;
+  /** The primary value axis' domain for this panel (shared, or range-rounded). */
+  yDomain?: [number, number];
+  /** Explicit value ticks (range rounding): gridlines land on the same rows in every panel. */
+  yTicks?: number[];
+  /** The x extent every panel shares (time x only), when the panels' own extents differ. */
+  xDomain?: [Date, Date];
+  /** Row key drawn as a muted baseline series behind the panel's own series. */
+  baselineKey?: string;
+  /** Synced hover: the category hovered in ANY panel, `null` when none. Unset → not synced. */
+  hoverCategory?: ChartHoverCategory;
+  /** Reports this panel's hovered category (move → category, leave → `null`). */
+  onHoverCategory?: (category: ChartHoverCategory) => void;
+}
+
+const ChartFacetScopeContext = createContext<ChartFacetScopeValue | null>(null);
+
+/** Internal: mounted by `ChartMultiples` around each panel's chart. */
+export function ChartFacetScopeProvider({
+  value,
+  children,
+}: {
+  value: ChartFacetScopeValue;
+  children?: ReactNode;
+}) {
+  return (
+    <ChartFacetScopeContext.Provider value={value}>{children}</ChartFacetScopeContext.Provider>
+  );
+}
+
+/** The enclosing `ChartMultiples` panel's scope, or `null` outside one. */
+export function useChartFacetScope(): ChartFacetScopeValue | null {
+  return useContext(ChartFacetScopeContext);
 }

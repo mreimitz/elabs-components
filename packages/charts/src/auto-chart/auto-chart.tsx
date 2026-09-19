@@ -80,6 +80,7 @@ import {
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
+import { useChartFrameChrome } from "../chart-frame/chart-frame-context";
 import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
 import type { ContainerLegendProp } from "../charts/legend/use-container-legend";
@@ -100,8 +101,11 @@ import type {
   ChartSpec,
   ChartSeriesSpec,
   ChartType,
+  FacetSpec,
 } from "./chart-spec";
+import { ChartMultiples } from "../multiples/chart-multiples"; // ChartMultiples — RM-120
 import {
+  facetHint,
   inferChartType,
   isChartSpecPalette,
   isChartType,
@@ -383,6 +387,16 @@ function annotationLayer(spec: ChartSpec): ReactNode {
 /** Families whose container paints `ChartSpec.annotations` (the cartesian chart context). */
 const ANNOTATED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "stream", "bar"]);
 
+// Tooltip presets — RM-119
+/** `spec.tooltip`, forwarded 1:1 onto the `<ChartTooltip>` every cartesian family renders. */
+function tooltipSpecProps(spec: ChartSpec) {
+  return {
+    variant: spec.tooltip?.variant,
+    focus: spec.tooltip?.focus,
+    pin: spec.tooltip?.pin,
+  };
+}
+
 function renderChart(
   type: ChartType,
   spec: ChartSpec,
@@ -442,7 +456,10 @@ function renderChart(
           plotHeight={plotHeight}
           legend={containerLegend}
           accessibleLabel={spec.title}
-          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
+          accessibleDescription={withAnnotationDescription(
+            spec.description ?? spec.altText,
+            spec.annotations,
+          )}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -467,7 +484,7 @@ function renderChart(
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           {annotationLayer(spec)}
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </LineChart>
       );
     }
@@ -488,7 +505,10 @@ function renderChart(
           plotHeight={plotHeight}
           legend={containerLegend}
           accessibleLabel={spec.title}
-          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
+          accessibleDescription={withAnnotationDescription(
+            spec.description ?? spec.altText,
+            spec.annotations,
+          )}
           copyValueOnActivate={copyValueOnActivate}
           hoverCategory={links.hoverCategory}
           onHoverCategory={links.onHoverCategory}
@@ -514,7 +534,7 @@ function renderChart(
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           {annotationLayer(spec)}
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </AreaChart>
       );
     }
@@ -534,7 +554,10 @@ function renderChart(
           stacked={stacked ?? false}
           orientation={orientation ?? "vertical"}
           accessibleLabel={spec.title}
-          accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
+          accessibleDescription={withAnnotationDescription(
+            spec.description ?? spec.altText,
+            spec.annotations,
+          )}
           copyValueOnActivate={copyValueOnActivate}
           // BarChart — RM-113
           {...barRichnessProps(spec)}
@@ -560,7 +583,7 @@ function renderChart(
             <YAxis formatValue={stacked === "percent" ? undefined : yFormat} {...axisProps.y} />
           )}
           {annotationLayer(spec)}
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </BarChart>
       );
     }
@@ -586,7 +609,7 @@ function renderChart(
           data={pieData}
           innerRadius={innerRadius}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           // pieLabels/groupSmall/pieSort/half — RM-114
           labels={pieLabels}
@@ -619,7 +642,7 @@ function renderChart(
           xDataKey={x}
           xScale={spec.xType === "number" ? "linear" : "time"}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {spec.shapes && spec.shapes.length > 0 ? <CustomShapes shapes={spec.shapes} /> : null}
@@ -641,7 +664,7 @@ function renderChart(
           ))}
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </ScatterChart>
       );
     }
@@ -684,7 +707,7 @@ function renderChart(
           data={radarData}
           metrics={metrics}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
         >
           <RadarGrid />
           <RadarAxis />
@@ -712,7 +735,7 @@ function renderChart(
           orientation={(orientation as "horizontal" | "vertical" | undefined) ?? "horizontal"}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
         />
@@ -745,13 +768,13 @@ function renderChart(
           xDataKey="date"
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           <Candlestick />
           <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
           <YAxis formatValue={yFormat} {...axisProps.y} />
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </CandlestickChart>
       );
     }
@@ -779,7 +802,7 @@ function renderChart(
           variant={type === "calendar" ? "calendar" : "matrix"}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
         />
       );
@@ -795,18 +818,35 @@ function renderChart(
           value: numberAt(row, valueKey),
           // Same classifier the `waterfall` rule used to recognise the shape.
           kind: readsAsTotalRow(label) ? "total" : "step",
+          // RM-122: `spec.groupBy` (the one shared grouping field, D-rules
+          // "one ChartSpec field per concept") carries the row's own group
+          // value through so `WaterfallChart subtotalBy` — reading it
+          // generically off every datum — can group by it. A no-op when
+          // `spec.groupBy` is unset.
+          ...(spec.groupBy ? { [spec.groupBy]: row[spec.groupBy] } : null),
         };
       });
+      // `spec.sort` is `BarSort | DumbbellSortBy | WaterfallSort` (see
+      // chart-spec.ts) — in the waterfall branch it is only ever authored as
+      // a `WaterfallSort` literal.
+      const waterfallSort =
+        spec.sort === "data" || spec.sort === "increasesFirst" || spec.sort === "decreasesFirst"
+          ? spec.sort
+          : undefined;
       return (
         <WaterfallChart
           data={steps}
+          dataFormat={spec.dataFormat}
           plotHeight={plotHeight}
           orientation={orientation ?? "vertical"}
+          sort={waterfallSort}
+          subtotalBy={spec.groupBy}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
+          zoomToDifferences={spec.zoomToDifferences}
           // WaterfallChart types its handler on its own `WaterfallStep` datum; the spec-driven
           // link is family-agnostic, so it is cast the same way `WaterfallChart` itself casts
           // an internal handler (see its own `onDatapointClick={onDatapointClick as
@@ -839,7 +879,7 @@ function renderChart(
           orientation={orientation ?? "horizontal"}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
           variant={variant}
@@ -869,7 +909,7 @@ function renderChart(
           layout="waffle"
           style={fixedHeight === undefined ? undefined : { height: fixedHeight }}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
         />
       );
@@ -902,7 +942,7 @@ function renderChart(
           style={fixedHeight === undefined ? undefined : { minHeight: fixedHeight }}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
         />
       );
@@ -925,7 +965,7 @@ function renderChart(
           valueFormat={spec.valueFormat}
           currency={spec.currency}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
         />
@@ -948,7 +988,7 @@ function renderChart(
           valueKey={isRank ? undefined : measure}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
         />
@@ -973,7 +1013,7 @@ function renderChart(
             xDataKey={x}
             orientation="horizontal"
             accessibleLabel={spec.title}
-            accessibleDescription={spec.description}
+            accessibleDescription={spec.description ?? spec.altText}
             copyValueOnActivate={copyValueOnActivate}
             {...barRichnessProps(spec)}
             stacked="diverging"
@@ -983,7 +1023,7 @@ function renderChart(
               <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="butt" />
             ))}
             <BarYAxis />
-            <ChartTooltip />
+            <ChartTooltip {...tooltipSpecProps(spec)} />
           </BarChart>
         );
       }
@@ -999,14 +1039,14 @@ function renderChart(
           xDataKey={x}
           orientation={orientation ?? "vertical"}
           accessibleLabel={spec.title}
-          accessibleDescription={spec.description}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           <Bar dataKey={valueKey} fill={color} lineCap="round" showValues zeroLine />
           <BarXAxis />
           <YAxis formatValue={yFormat} {...axisProps.y} />
-          <ChartTooltip />
+          <ChartTooltip {...tooltipSpecProps(spec)} />
         </BarChart>
       );
     }
@@ -1189,6 +1229,9 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   ref,
 ) {
   const { t } = useLocale();
+  // RM-117: inside a ChartFrame, the spec's notes, byline and source join the
+  // frame's footer (the frame's own props win). No-op outside a frame.
+  useChartFrameChrome({ notes: spec.notes, byline: spec.byline, source: spec.source });
   // `height` is the deprecated alias; `plotHeight` wins when both are set.
   if (height !== undefined) {
     warnChartOnce(
@@ -1288,6 +1331,9 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   } else {
     type = inferChartType(spec);
   }
+  // Facet hint — RM-120: ≥ 6 line series → suggest small multiples (dev only, never a switch).
+  const spaghetti = isUnsupported ? null : facetHint(spec, type);
+  if (spaghetti) warnChartOnce("AutoChart.facet-hint", spaghetti);
 
   if (isUnsupported) {
     warnUnsupportedChartType(spec.type);
@@ -1306,9 +1352,18 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // Pie/donut slices are colored by DATA ROW (the `x` value), not by series, so
   // the legend must map each slice label to its palette color. Every other chart
   // type colors by series, so the normalized series ARE the legend items.
+  const pieRows =
+    type === "pie" && spec.facet && typeof spec.facet.by === "string"
+      ? // ChartMultiples — RM-120: multiple pies share slice labels; key each label once.
+        spec.data.filter(
+          (row, i) =>
+            spec.data.findIndex((other) => other[spec.x] === row[spec.x]) === i &&
+            row[spec.x] != null,
+        )
+      : spec.data;
   const legendItems: NormalizedSeries[] =
     type === "pie"
-      ? spec.data.map((row, i) => ({
+      ? pieRows.map((row, i) => ({
           key: `${String(row[spec.x] ?? i)}-${i}`,
           label: String(row[spec.x] ?? `Slice ${i + 1}`),
           color: paletteColor(i),
@@ -1334,18 +1389,30 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // ── Render ────────────────────────────────────────────────────────────────
   let chartNode: ReactNode = null;
   try {
-    chartNode = renderChart(
-      type,
-      spec,
-      series,
-      spec.data,
-      timeCoercedData,
-      effectivePlotHeight,
-      yFormat,
-      copyValueOnActivate,
-      links,
-      LEGEND_ENGINE_TYPES.has(type) ? showLegend : undefined,
-    );
+    chartNode =
+      spec.facet && FACETED_CHART_TYPES.has(type)
+        ? renderFacetedChart(
+            type,
+            spec,
+            spec.facet,
+            series,
+            timeCoercedData,
+            yFormat,
+            copyValueOnActivate,
+            links,
+          )
+        : renderChart(
+            type,
+            spec,
+            series,
+            spec.data,
+            timeCoercedData,
+            effectivePlotHeight,
+            yFormat,
+            copyValueOnActivate,
+            links,
+            LEGEND_ENGINE_TYPES.has(type) ? showLegend : undefined,
+          );
   } catch {
     return (
       <ChartFallback
@@ -1405,6 +1472,56 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     </div>
   );
 });
+
+// ChartMultiples — RM-120
+/** Spec types `ChartSpec.facet` applies to (the rest ignore it). */
+const FACETED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "bar", "pie"]);
+
+/**
+ * `ChartSpec.facet` → `ChartMultiples`: one `renderChart` per panel, with the
+ * panel's rows and title (its accessible label). `{ series: true }` keeps one
+ * series per panel. The spec's `title` and legend stay outside the grid.
+ */
+function renderFacetedChart(
+  type: ChartType,
+  spec: ChartSpec,
+  facet: FacetSpec,
+  series: NormalizedSeries[],
+  timeCoercedData: Record<string, unknown>[],
+  yFormat: (value: number) => string,
+  copyValueOnActivate: boolean,
+  links: AutoChartLinkProps,
+): ReactNode {
+  const bySeries = typeof facet.by !== "string";
+  const data = type === "line" || type === "area" ? timeCoercedData : spec.data;
+  return (
+    <ChartMultiples
+      baseline={facet.baseline}
+      by={facet.by}
+      columns={facet.columns}
+      data={data}
+      dataKeys={series.map((s) => s.key)}
+      panelHeight={facet.panelHeight}
+      scales={{ ...facet.scales, yDomain: spec.axes?.y?.domain }}
+      sort={facet.sort}
+      xDataKey={spec.x}
+    >
+      {(panel) =>
+        renderChart(
+          type,
+          { ...spec, data: panel.data, facet: undefined, title: panel.title },
+          bySeries ? series.filter((s) => s.key === panel.key) : series,
+          panel.data,
+          panel.data,
+          undefined,
+          yFormat,
+          copyValueOnActivate,
+          links,
+        )
+      }
+    </ChartMultiples>
+  );
+}
 
 // BarChart — RM-113
 /** The `ChartSpec` bar-richness fields, as `BarChart` props (unset stays unset). */

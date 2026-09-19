@@ -48,6 +48,8 @@
   "ChartFrame": "charts-chartframe--docs",
   "ChartFrameDataBlock": "patterns-blocks-chartframe-datatable--docs",
   "ChartLegend": "charts-chartlegend--docs",
+  "ChartMultiples": "charts-chartmultiples--docs",
+  "ChartTooltip": "charts-tooltip-presets--docs",
   "ChatGreeting": "ai-chatgreeting--docs",
   "ChatTileDemo": "dashboard-recipes-tile-chat--docs",
   "Checkbox": "forms-checkbox--docs",

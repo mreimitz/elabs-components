@@ -21,7 +21,13 @@ import {
 import { useLocale } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { useChartBreakpoint } from "./chart-breakpoint";
-import { useChartConfig } from "./chart-config-context";
+import { useChartConfig, useChartFacetScope } from "./chart-config-context";
+import {
+  ChartHoverLinkIndicator,
+  ChartHoverLinkProvider,
+  useChartHoverLink,
+} from "./chart-hover-link"; // ChartMultiples — RM-120
+import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
 import { makeValueSetFmt } from "./chart-formatters";
 import { useAreaStacked } from "./area";
 import { SeriesEndLabels, SeriesKeyRow } from "./labels/series-end-labels";
@@ -343,11 +349,21 @@ export type NullsMode = "gap" | "zero" | "connect";
 interface ChartSeriesModeValue {
   /** Container-level `nulls` default; a `Line`/`Area`'s own `nulls` prop wins. */
   nulls: NullsMode | undefined;
-  /** `LineChart`/`AreaChart` `focusOnHover` — dim every series but the hovered one. */
+  /**
+   * `LineChart`/`AreaChart` `focusOnHover` OR'd with a `<ChartTooltip focus>`
+   * that registered itself via {@link ChartSeriesModeValue.setFocusRequested}
+   * (RM-119) — dim every series but the hovered one.
+   */
   focusOnHover: boolean;
   /** `dataKey` of the series currently hovered/tapped, or `null`. */
   hoveredKey: string | null;
   setHoveredKey: (key: string | null) => void;
+  /**
+   * RM-119: a `<ChartTooltip focus>` calls this so the hover dim works with
+   * no `focusOnHover` on the container — `focusOnHover` above becomes
+   * `focusOnHoverProp || focusRequested`. Outside a provider this is a noop.
+   */
+  setFocusRequested: (requested: boolean) => void;
 }
 
 const ChartSeriesModeContext = createContext<ChartSeriesModeValue | undefined>(undefined);
@@ -383,18 +399,23 @@ export interface ChartSeriesModeProviderProps {
  */
 export function ChartSeriesModeProvider({
   nulls,
-  focusOnHover = false,
+  focusOnHover: focusOnHoverProp = false,
   legendHoveredKey = null,
   children,
 }: ChartSeriesModeProviderProps) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
   const effectiveHoveredKey = legendHoveredKey ?? hoveredKey;
+  // RM-119: a `<ChartTooltip focus>` registers itself here — `focus` alone,
+  // with no `focusOnHover` prop on the container, still produces the dim.
+  const [focusRequested, setFocusRequested] = useState(false);
+  const focusOnHover = focusOnHoverProp || focusRequested;
   const value = useMemo<ChartSeriesModeValue>(
     () => ({
       nulls,
       focusOnHover,
       hoveredKey: focusOnHover ? effectiveHoveredKey : null,
       setHoveredKey,
+      setFocusRequested,
     }),
     [nulls, focusOnHover, effectiveHoveredKey],
   );
@@ -408,6 +429,9 @@ const DEFAULT_SERIES_MODE: ChartSeriesModeValue = {
   focusOnHover: false,
   hoveredKey: null,
   setHoveredKey: () => {
+    /* noop outside ChartSeriesModeProvider */
+  },
+  setFocusRequested: () => {
     /* noop outside ChartSeriesModeProvider */
   },
 };
@@ -436,7 +460,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   animationEasing = DEFAULT_ANIMATION_EASING,
   enterTransition,
   revealSignature = "",
-  children,
+  children: childrenProp,
   containerRef,
   lines: linesProp,
   hiddenKeys,
@@ -454,7 +478,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   loadingLabel,
   yDomainTween = true,
   yDomainTweenDuration = DEFAULT_Y_DOMAIN_TWEEN_MS,
-  xDomain,
+  xDomain: xDomainProp,
   xDomainSlotCount,
   tweenYDomainOnXDomainChange = false,
   onPhaseChange,
@@ -462,6 +486,27 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   replayOnClick = false,
 }: TimeSeriesChartInnerProps) {
   const staticPreview = useStaticChartPreview();
+
+  // ChartMultiples — RM-120: a facet panel supplies DEFAULTS — the shared x
+  // extent, the panel's value domain/ticks, axis visibility, a muted baseline
+  // and synced hover. An explicit prop on this chart or its children wins.
+  const facet = useChartFacetScope();
+  const hoverLink = useChartHoverLink();
+  const facetHoverLinked = facet?.onHoverCategory != null && hoverLink === null;
+  const scopedChildren = useFacetScopedChildren(childrenProp);
+  const children = useMemo(
+    () =>
+      facetHoverLinked ? (
+        <>
+          {scopedChildren}
+          <ChartHoverLinkIndicator />
+        </>
+      ) : (
+        scopedChildren
+      ),
+    [facetHoverLinked, scopedChildren],
+  );
+  const xDomain = xDomainProp ?? facet?.xDomain;
 
   // RM-110 label engine, reserve half: decide each series' end-label / key
   // mode for this breakpoint and grow the margin ONCE for what they need,
@@ -687,7 +732,15 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   // Applied AFTER the domain tween so pinned ends stay put while `"auto"` ends
   // keep animating; a log axis resolves from the data extent and never tweens
   // through zero.
-  const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
+  const facetYDomain = facet?.yDomain;
+  const valueAxisConfigs = useMemo(() => {
+    const configs = collectValueAxisConfigs(children);
+    // ChartMultiples — RM-120: the panel's domain, unless `YAxis domain` pins one.
+    if (facetYDomain && !configs[DEFAULT_Y_AXIS_ID]?.domain) {
+      configs[DEFAULT_Y_AXIS_ID] = { ...configs[DEFAULT_Y_AXIS_ID], domain: facetYDomain };
+    }
+    return configs;
+  }, [children, facetYDomain]);
   const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
   const hasComposedBars = (composedBarDataKeys?.length ?? 0) > 0;
   const valueAxisData = xDomain ? visiblePlotData : data;
@@ -1228,7 +1281,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       </g>
     </svg>
   );
-  return (
+  const body = (
     <ChartSeriesKeyProvider value={labelReserve.keyItems}>
       <UnpaintedLabelsProvider store={unpaintedStore}>
         <ChartProvider value={contextValue}>
@@ -1249,5 +1302,16 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
         </ChartProvider>
       </UnpaintedLabelsProvider>
     </ChartSeriesKeyProvider>
+  );
+  // ChartMultiples — RM-120: synced hover through the existing shared-crosshair seam.
+  return facetHoverLinked ? (
+    <ChartHoverLinkProvider
+      hoverCategory={facet?.hoverCategory ?? null}
+      onHoverCategory={facet?.onHoverCategory}
+    >
+      {body}
+    </ChartHoverLinkProvider>
+  ) : (
+    body
   );
 });
