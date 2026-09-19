@@ -82,6 +82,7 @@ import {
 import { ChartFallback } from "../charts/chart-fallback";
 import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
+import type { ContainerLegendProp } from "../charts/legend/use-container-legend";
 import type { XAxisProps } from "../charts/x-axis";
 import type { YAxisProps } from "../charts/y-axis";
 import {
@@ -269,6 +270,14 @@ function everySeriesEndLabelled(
 // AutoLegend
 // ---------------------------------------------------------------------------
 
+/**
+ * Chart types whose container renders its own legend via `useContainerLegend`
+ * (RM-118). `AutoChart` forwards the SAME show/hide decision `AutoLegend`
+ * used to make into that container's own `legend` prop instead of rendering
+ * `AutoLegend` below it — one legend per chart, never two.
+ */
+const LEGEND_ENGINE_TYPES = new Set<ChartType>(["line", "area", "stream"]);
+
 interface AutoLegendProps {
   series: NormalizedSeries[];
 }
@@ -395,6 +404,14 @@ function renderChart(
   /** Put the exact value on the clipboard when a datapoint is activated. */
   copyValueOnActivate: boolean,
   links: AutoChartLinkProps = {},
+  /**
+   * RM-118: the SAME show/hide decision `AutoLegend` below used to render
+   * itself with (`spec.legend` if set, else "more than one series and not
+   * every series end-labelled") — forwarded, unchanged, into `LineChart`'s/
+   * `AreaChart`'s own `legend` prop for the families wired to
+   * `useContainerLegend` internally. `AutoChart` itself never calls that hook.
+   */
+  containerLegend?: ContainerLegendProp,
 ): ReactNode {
   // `groupSmall`/`half` (RM-114) — pie/donut only, ignored elsewhere. Slice
   // labels live under the shared label engine's `labels.slices` (RM-110's
@@ -423,6 +440,7 @@ function renderChart(
           xDataKey={x}
           nulls={nulls}
           plotHeight={plotHeight}
+          legend={containerLegend}
           accessibleLabel={spec.title}
           accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
@@ -468,6 +486,7 @@ function renderChart(
           nulls={nulls}
           offset={type === "stream" ? "wiggle" : stacked ? "none" : undefined}
           plotHeight={plotHeight}
+          legend={containerLegend}
           accessibleLabel={spec.title}
           accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
@@ -1325,6 +1344,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       yFormat,
       copyValueOnActivate,
       links,
+      LEGEND_ENGINE_TYPES.has(type) ? showLegend : undefined,
     );
   } catch {
     return (
@@ -1381,7 +1401,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       ) : (
         chartBody
       )}
-      {showLegend ? <AutoLegend series={legendItems} /> : null}
+      {showLegend && !LEGEND_ENGINE_TYPES.has(type) ? <AutoLegend series={legendItems} /> : null}
     </div>
   );
 });

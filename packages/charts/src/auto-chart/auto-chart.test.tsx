@@ -83,6 +83,7 @@ import {
 } from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
 import { ChartFrame } from "../chart-frame/chart-frame";
+import { Line, LineChart } from "../charts";
 
 afterEach(cleanup);
 
@@ -1234,8 +1235,11 @@ describe("AutoChart inside a fill-host tile", () => {
   });
 });
 
-// Labels — RM-110 (maintainer decision 7): the AutoLegend steps aside for a
+// Labels — RM-110 (maintainer decision 7): the legend steps aside for a
 // line/area spec only when every series gets an end label under the default.
+// RM-118: `line`/`area` now render their legend through `useContainerLegend`
+// (`LineChart`/`AreaChart`'s own `legend` prop, forwarded from `spec.legend`)
+// instead of the plain-`<ul>` `AutoLegend` — same show/hide decision, new root.
 describe("AutoChart legend vs series end labels", () => {
   const trend = [
     { date: "2024-01-01", ebikes: 10, cargo: 4 },
@@ -1244,7 +1248,7 @@ describe("AutoChart legend vs series end labels", () => {
   ];
   const legendOf = (spec: ChartSpec) =>
     render(<AutoChart spec={spec} height={280} />).container.querySelector(
-      'ul[aria-label="Chart legend"]',
+      '[data-slot="container-legend-root"]',
     );
 
   it("hides the legend when every line series has a real name", () => {
@@ -1275,6 +1279,42 @@ describe("AutoChart legend vs series end labels", () => {
     expect(legendOf({ ...base, labels: { series: "none" } })).not.toBeNull();
     cleanup();
     expect(legendOf({ ...base, labels: { series: "end" } })).toBeNull();
+  });
+
+  // Acceptance-4 (RM-118, orchestrator ruling): AutoChart never calls
+  // `useContainerLegend` itself — it only forwards `spec.legend` into
+  // `LineChart`'s own `legend` prop. Proving DOM equality of the rendered
+  // legend (not the plot, which AutoChart and this comparison compose from
+  // different children — `Grid`, `ChartTooltip`, axes — on purpose) against a
+  // `LineChart` built by hand with the SAME normalized series (key-only
+  // labels → `var(--chart-N)` palette colors, same order) is proof that
+  // forwarding, not a second implementation, is what produces the legend.
+  it("renders the identical legend DOM as calling LineChart directly with the same series (Acceptance-4)", () => {
+    const spec: ChartSpec = {
+      type: "line",
+      data: trend,
+      x: "date",
+      series: [{ key: "ebikes" }, { key: "cargo" }],
+    };
+    const auto = render(<AutoChart spec={spec} height={280} />);
+    const autoLegend = auto.container.querySelector(
+      '[data-slot="container-legend-root"] .legend-container',
+    );
+    expect(autoLegend).not.toBeNull();
+    cleanup();
+
+    const explicit = render(
+      <LineChart data={trend} xDataKey="date" legend>
+        <Line dataKey="ebikes" name="ebikes" stroke="var(--chart-1)" />
+        <Line dataKey="cargo" name="cargo" stroke="var(--chart-2)" />
+      </LineChart>,
+    );
+    const explicitLegend = explicit.container.querySelector(
+      '[data-slot="container-legend-root"] .legend-container',
+    );
+    expect(explicitLegend).not.toBeNull();
+
+    expect(autoLegend?.outerHTML).toBe(explicitLegend?.outerHTML);
   });
 });
 
