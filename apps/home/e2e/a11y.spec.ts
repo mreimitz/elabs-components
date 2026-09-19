@@ -1,8 +1,8 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { HOME, THEME_FAMILIES, gotoHome, selectTheme } from "./helpers";
+import { HOME, THEME_FAMILIES, gotoHome, selectTheme, settle } from "./helpers";
 
 // axe on the whole page with the tour's first tab open and the agent loop rendered.
 // serious/critical must be 0. Ruling 30: a library- or theme-owned serious finding that is
@@ -40,12 +40,21 @@ for (const { slug, mode } of CASES) {
     }
     await expect(page.locator('#tour [role="tabpanel"][data-state="active"]')).toBeVisible();
     await expect(page.locator('[data-slot="agent-loop"]')).toBeVisible();
+    // axe samples colours as painted: a crossfade caught mid-way (the tour's affordance hint
+    // fading in, a status badge's `transition-colors`) reads as a false contrast failure.
+    await settle(page);
 
     const { violations } = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
       .analyze();
     const nodes = violations.flatMap((v) =>
-      v.nodes.map((n) => ({ rule: v.id, impact: v.impact, selector: n.target.join(" ") })),
+      v.nodes.map((n) => ({
+        rule: v.id,
+        impact: v.impact,
+        selector: n.target.join(" "),
+        html: n.html.slice(0, 240),
+        summary: (n.failureSummary ?? "").replace(/\s+/g, " ").slice(0, 240),
+      })),
     );
     const excluded = (n: { rule: string; selector: string }) =>
       ratchet.exclusions.some((e) => e.rule === n.rule && e.selector === n.selector);
@@ -60,6 +69,9 @@ for (const { slug, mode } of CASES) {
       type: "axe",
       description: `${nodes.length} node(s): ${blocking.length} blocking, ${moderate.length} moderate (${newModerate.length} new), ${nodes.filter(excluded).length} excluded`,
     });
+    const evidence = testInfo.outputPath("axe-nodes.json");
+    writeFileSync(evidence, JSON.stringify(nodes, null, 2));
+    await testInfo.attach("axe-nodes.json", { path: evidence, contentType: "application/json" });
     expect(blocking, "serious/critical axe violations").toEqual([]);
     expect(newModerate, "moderate violations not in the ratchet baseline").toEqual([]);
   });

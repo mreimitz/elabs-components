@@ -62,12 +62,19 @@ test("dashboard: dragging a tile changes the spec", async ({ page }) => {
   await expect.poll(layout).not.toEqual(before);
 });
 
-test("data app: a search filters the row count", async ({ page }) => {
+test("data app: a search filters the order count", async ({ page }) => {
   await openTab(page, tourCopy.tabs["data-app"].label);
-  const rows = panel(page).locator("tbody tr");
-  const before = await rows.count();
+  const count = async () => {
+    const text =
+      (await panel(page)
+        .getByText(/^[\d,.\s]+ orders$/)
+        .first()
+        .textContent()) ?? "";
+    return Number(text.replace(/\D/g, ""));
+  };
+  const before = await count();
   await panel(page).getByRole("textbox").first().fill("EMEA");
-  await expect.poll(() => rows.count()).toBeLessThan(before);
+  await expect.poll(count).toBeLessThan(before);
 });
 
 test("settings: delete is guarded by a confirmation", async ({ page }) => {

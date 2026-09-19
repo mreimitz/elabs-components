@@ -1,10 +1,27 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import { REGIONS, THEME_FAMILIES, gotoHome, selectTheme } from "./helpers";
+import { HOME, REGIONS, THEME_FAMILIES, gotoHome, selectTheme } from "./helpers";
+
+interface KnownMotion {
+  selector: string;
+  property: string;
+  duration: number;
+  owner: string;
+  issue: string | null;
+  finding: string;
+}
+const KNOWN = (
+  JSON.parse(readFileSync(join(HOME, "e2e/reduced-motion-known.json"), "utf8")) as {
+    known: KnownMotion[];
+  }
+).known;
 
 // `prefers-reduced-motion: reduce` removes parallax, drift, count-ups and staggers and keeps
-// opacity crossfades (standing rule). Ruling 29: some Animation objects legitimately stay
-// `running` — collapsed (~0 ms) crossfades — so the gate counts only REAL motion: an animation
-// longer than 1 ms, one touching anything but `opacity`, or one that never ends.
+// opacity crossfades (standing rule). Rulings 29 + 37: an Animation is REAL motion only when it
+// lasts > 1 ms (or never ends) AND animates something other than `opacity`; collapsed ≤ 1 ms
+// transitions are not motion. Known real motion is listed in `reduced-motion-known.json`, a
+// shrink-only ratchet: an unlisted entry fails, and so does a listed entry that no longer occurs.
 test.use({ contextOptions: { reducedMotion: "reduce" } });
 
 interface Motion {
@@ -45,7 +62,8 @@ function motionOf(page: Page) {
       })
       .filter(
         (m) =>
-          m.duration > 1 || m.iterations === Infinity || m.properties.some((p) => p !== "opacity"),
+          (m.duration > 1 || m.iterations === Infinity) &&
+          m.properties.some((p) => p !== "opacity"),
       );
     return { total: all.length, running: running.length, real };
   });
@@ -65,8 +83,20 @@ test("no real motion after load or after a theme switch", async ({ page }, testI
     type: "getAnimations",
     description: `load: ${afterLoad.total} total / ${afterLoad.running} running; after switch to ${other.slug}-dark: ${afterSwitch.total} total / ${afterSwitch.running} running`,
   });
-  expect(afterLoad.real, "real motion after load").toEqual([]);
-  expect(afterSwitch.real, "real motion after a theme switch").toEqual([]);
+  const seen = [...afterLoad.real, ...afterSwitch.real];
+  const listed = (m: Motion["real"][number]) =>
+    KNOWN.some((k) => k.selector === m.target && m.properties.includes(k.property));
+  expect(KNOWN.length, "more than 3 known-motion entries is stop-and-report").toBeLessThanOrEqual(
+    3,
+  );
+  expect(
+    seen.filter((m) => !listed(m)),
+    "real motion not in reduced-motion-known.json",
+  ).toEqual([]);
+  const stale = KNOWN.filter(
+    (k) => !seen.some((m) => m.target === k.selector && m.properties.includes(k.property)),
+  );
+  expect(stale, "stale reduced-motion-known.json entries (remove them)").toEqual([]);
 });
 
 test("parallax planes stay put while scrolling", async ({ page }) => {
@@ -84,13 +114,14 @@ test("parallax planes stay put while scrolling", async ({ page }) => {
 test("the hero shows its final values at first paint", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const scene = page.locator(`${REGIONS.hero} [role="region"]`).first();
-  // Text outside SVG: chart axis ticks are laid out after the first measure, not streamed in.
+  // Values outside SVG and the x-axis: axis ticks are laid out after the first measure (a
+  // container width), not streamed in.
   const values = () =>
     scene.evaluate((root) => {
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
       const out: string[] = [];
       for (let n = walker.nextNode(); n; n = walker.nextNode())
-        if (!n.parentElement?.closest("svg") && n.textContent?.trim())
+        if (!n.parentElement?.closest('svg, [data-slot^="x-axis"]') && n.textContent?.trim())
           out.push(n.textContent.trim());
       return out.join("\n");
     });

@@ -97,3 +97,26 @@ export async function gotoHome(page: Page, query = "") {
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   return response;
 }
+
+/**
+ * Wait until every finite animation/transition has finished (infinite ones are ignored), so a
+ * check reads SETTLED colours, never a crossfade's intermediate blend.
+ */
+export async function settle(page: Page) {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            document
+              .getAnimations()
+              .filter(
+                (a) =>
+                  a.playState === "running" &&
+                  Number(a.effect?.getComputedTiming().iterations ?? 1) !== Infinity,
+              ).length,
+        ),
+      { timeout: 10_000 },
+    )
+    .toBe(0);
+}
