@@ -46,10 +46,13 @@ export default defineConfig({
           // waitFor budgets — this ceiling is only what a genuinely hung story
           // pays.
           testTimeout: 60_000,
-          // No setup file needed: since Storybook 10.3 `@storybook/addon-vitest`
-          // auto-applies the preview annotations (theme decorator + token/React
-          // Flow CSS imports from `.storybook/preview.tsx`), so stories render
-          // fully styled.
+          // Since Storybook 10.3 `@storybook/addon-vitest` auto-applies the
+          // preview annotations (theme decorator + token/React Flow CSS imports
+          // from `.storybook/preview.tsx`), so stories render fully styled with
+          // no setup of their own. This one only frees each finished story
+          // file's iframe before the next file starts: without it a tab on a
+          // 4-core CI runner can run out of memory and crash the whole run.
+          setupFiles: [join(dirName, ".storybook/vitest-free-frames.ts")],
           browser: {
             enabled: true,
             headless: true,
@@ -74,7 +77,14 @@ export default defineConfig({
             // actually took, so it cannot silently stop working. A story that
             // needs full motion opts back in per-story
             // (`globals: { motionPref: "full" }` for the CSS gate).
-            instances: [{ browser: "chromium", context: { reducedMotion: "reduce" } }],
+            instances: [
+              {
+                browser: "chromium",
+                context: { reducedMotion: "reduce" },
+                // Exposes `gc()` to the setup file above.
+                launch: { args: ["--js-flags=--expose-gc"] },
+              },
+            ],
           },
         },
       },
