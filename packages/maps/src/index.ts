@@ -24,6 +24,31 @@ export * from "./map-arc";
 export * from "./map-geojson";
 export * from "./map-cluster-layer";
 
+// Locator furniture — RM-125: responsive tiers (a documented copy of the
+// `charts` helper), legend, scale bar, north arrow, inset, annotations.
+export type { MapProjectionOption } from "./map-canvas/map-canvas";
+export type { MapMarkerLabelSpec } from "./map-marker/map-marker";
+export type { MapGeoJSONPattern, MapGeoJSONVignette } from "./map-geojson/map-geojson";
+export {
+  DEFAULT_MAP_HEIGHT,
+  MAP_BREAKPOINTS,
+  MAP_BREAKPOINT_THRESHOLDS,
+  isMapResponsiveByBreakpoint,
+  mapBreakpointForWidth,
+  resolveMapResponsive,
+  useMapBreakpoint,
+  useMapResponsive,
+  type MapBreakpoint,
+  type MapHeight,
+  type MapResponsive,
+  type MapResponsiveByBreakpoint,
+} from "./lib/use-map-breakpoint";
+export * from "./map-legend";
+export * from "./map-scale-bar";
+export * from "./map-north-arrow";
+export * from "./map-inset";
+export * from "./map-annotation";
+
 // Convenience re-exports so consumers can type map work without a direct
 // maplibre-gl dependency.
 export type {

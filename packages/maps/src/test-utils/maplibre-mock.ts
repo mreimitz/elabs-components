@@ -13,6 +13,19 @@
 
 type Handler = (...args: any[]) => void;
 
+export class MockHandler {
+  enabled = true;
+  enable() {
+    this.enabled = true;
+  }
+  disable() {
+    this.enabled = false;
+  }
+  isEnabled() {
+    return this.enabled;
+  }
+}
+
 export class MockMap {
   static instances: MockMap[] = [];
 
@@ -22,7 +35,25 @@ export class MockMap {
   sources = new Map<string, any>();
   layers = new Map<string, any>();
   canvas = document.createElement("canvas");
+  /** Starts with MapLibre's interactive class, as a real interactive map's does. */
+  canvasContainer = Object.assign(document.createElement("div"), {
+    className: "maplibregl-canvas-container maplibregl-interactive",
+  });
   zoomToCalls: unknown[] = [];
+  images = new Map<string, unknown>();
+  center = { lng: 0, lat: 0 };
+  zoom = 1;
+  bearing = 0;
+
+  /** Gesture handlers, each with an `enabled` flag static mode flips. */
+  scrollZoom = new MockHandler();
+  boxZoom = new MockHandler();
+  dragRotate = new MockHandler();
+  dragPan = new MockHandler();
+  keyboard = new MockHandler();
+  doubleClickZoom = new MockHandler();
+  touchZoomRotate = new MockHandler();
+  touchPitch = new MockHandler();
 
   /** The full options object the component constructed the map with. */
   options: Record<string, any>;
@@ -30,6 +61,8 @@ export class MockMap {
   constructor(options: { container: HTMLElement } & Record<string, any>) {
     this.container = options.container;
     this.options = options;
+    // What MapLibre would measure: the box's height rule at construction time.
+    this.aspectAtConstruction = options.container.style.aspectRatio;
     MockMap.instances.push(this);
   }
 
@@ -67,13 +100,25 @@ export class MockMap {
   }
 
   getCenter() {
-    return { lng: 0, lat: 0 };
+    return this.center;
   }
   getZoom() {
-    return 1;
+    return this.zoom;
   }
   getBearing() {
-    return 0;
+    return this.bearing;
+  }
+  /** A flat equirectangular stand-in: 1° = 10 px from the container's top-left. */
+  project(lngLat: [number, number]) {
+    return { x: (lngLat[0] + 180) * 10, y: (90 - lngLat[1]) * 10 };
+  }
+  getBounds() {
+    return {
+      getWest: () => -10,
+      getSouth: () => -10,
+      getEast: () => 10,
+      getNorth: () => 10,
+    };
   }
   getPitch() {
     return 0;
@@ -95,6 +140,24 @@ export class MockMap {
   }
   getCanvas() {
     return this.canvas;
+  }
+  aspectAtConstruction = "";
+  resizeCount = 0;
+  resize() {
+    this.resizeCount += 1;
+    return this;
+  }
+  getCanvasContainer() {
+    return this.canvasContainer;
+  }
+  addImage(id: string, image: unknown) {
+    this.images.set(id, image);
+  }
+  hasImage(id: string) {
+    return this.images.has(id);
+  }
+  removeImage(id: string) {
+    this.images.delete(id);
   }
   addSource(id: string, source: any) {
     this.sources.set(id, source);

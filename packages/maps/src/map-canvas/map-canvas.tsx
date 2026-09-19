@@ -18,6 +18,21 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 import { MapContext, type BasemapTheme } from "./map-context";
 import { useResolvedBasemapTheme } from "./use-resolved-basemap-theme";
+import {
+  MapFrameContext,
+  type MapFrameContextValue,
+  type MapFrameSide,
+  type MapHeight,
+  type MapResponsive,
+  mapBreakpointForWidth,
+  resolveMapHeightStyle,
+  useMeasuredMapBreakpoint,
+} from "../lib/use-map-breakpoint";
+import {
+  MapAnnotationKey,
+  MapAnnotationRegistryProvider,
+  useMapAnnotationRegistry,
+} from "../map-annotation/map-annotation";
 
 /**
  * Default basemaps: Carto's free light/dark GL styles. These serve ODbL-licensed
@@ -59,6 +74,47 @@ export interface MapViewport {
 
 export type MapStyleOption = string | MapLibreGL.StyleSpecification;
 
+/** `"mercator"` / `"globe"`, or a full MapLibre projection spec. */
+export type MapProjectionOption = "mercator" | "globe" | MapLibreGL.ProjectionSpecification;
+
+/** The gesture handlers static mode switches off (tooltips and hover keep working). */
+const GESTURE_HANDLERS = [
+  "scrollZoom",
+  "boxZoom",
+  "dragRotate",
+  "dragPan",
+  "keyboard",
+  "doubleClickZoom",
+  "touchZoomRotate",
+  "touchPitch",
+] as const;
+
+type GestureHandlerKey = (typeof GESTURE_HANDLERS)[number];
+
+const STATIC_HANDLER_OPTIONS = Object.fromEntries(
+  GESTURE_HANDLERS.map((key) => [key, false]),
+) as Record<GestureHandlerKey, false>;
+
+let warnedProjection = false;
+
+/**
+ * Apply a projection when this MapLibre build supports switching one
+ * (`setProjection`, MapLibre 5+); otherwise leave the map as it is and say so
+ * once — a globe is an extra, never a requirement.
+ */
+function applyProjection(map: MapLibreGL.Map, projection: MapLibreGL.ProjectionSpecification) {
+  if (typeof map.setProjection !== "function") {
+    if (!warnedProjection) {
+      warnedProjection = true;
+      console.warn(
+        "[@elabs-ai/components-maps] This MapLibre build cannot switch projections; `projection` is ignored.",
+      );
+    }
+    return;
+  }
+  map.setProjection(projection);
+}
+
 /** The imperative handle exposed by `<MapCanvas ref>`: the MapLibre map itself. */
 export type MapCanvasRef = MapLibreGL.Map;
 
@@ -84,8 +140,29 @@ export type MapCanvasProps = {
    * visualizations. Ignored when an explicit `styles` prop is provided.
    */
   blank?: boolean;
-  /** Map projection type. Use `{ type: "globe" }` for a 3D globe view. */
-  projection?: MapLibreGL.ProjectionSpecification;
+  /**
+   * Map projection: `"mercator"` (MapLibre's default) or `"globe"` for a 3D
+   * globe view, or a full MapLibre projection spec. Feature-detected: a
+   * MapLibre build that cannot switch projections ignores it (with a console
+   * note).
+   */
+  projection?: MapProjectionOption;
+  /**
+   * `false` makes the map STATIC — the editorial / locator default: no zoom,
+   * pan, rotate or keyboard handlers, the default cursor and no tab stop
+   * (leave `<MapControls>` out of a static map). Hover and click still reach
+   * layers and markers, so tooltips keep working. The viewport can still be set in code
+   * (`viewport`, the ref). Default `true`.
+   */
+  interactive?: boolean;
+  /**
+   * The map's height: CSS px, or `{ aspect }` (width ÷ height), optionally per
+   * tier — `{ base: { aspect: 1.6 }, narrow: { aspect: 1 } }`. Tiers are
+   * measured on the map's own width (`narrow` < 480 px, `medium` < 768 px).
+   * Unset, the map fills its parent as before; a parent with no height of its
+   * own gets `DEFAULT_MAP_HEIGHT` (1.6 : 1, square at `narrow`) instead of 0.
+   */
+  height?: MapResponsive<MapHeight>;
   /**
    * Controlled viewport. When provided together with `onViewportChange`, the
    * map becomes controlled and the viewport is driven by this prop.
@@ -99,7 +176,7 @@ export type MapCanvasProps = {
   onViewportChange?: (viewport: MapViewport) => void;
   /** Show a loading overlay on the map (e.g. while the app fetches map data). */
   loading?: boolean;
-} & Omit<MapLibreGL.MapOptions, "container" | "style">;
+} & Omit<MapLibreGL.MapOptions, "container" | "style" | "interactive">;
 
 function MapLoadingOverlay() {
   return (
@@ -134,16 +211,25 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     theme: themeProp,
     styles,
     blank = false,
-    projection,
+    projection: projectionProp,
     viewport,
     onViewportChange,
     loading = false,
+    interactive,
+    height,
     ...props
   },
   ref,
 ) {
   const { t } = useLocale();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerNode, setContainerNode] = useState<HTMLDivElement | null>(null);
+  const setContainer = useCallback((node: HTMLDivElement | null) => {
+    containerRef.current = node;
+    setContainerNode(node);
+  }, []);
+  const breakpoint = useMeasuredMapBreakpoint(containerNode);
+  const isStatic = interactive === false;
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
   const [initFailed, setInitFailed] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -157,6 +243,13 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
 
   const onViewportChangeRef = useRef(onViewportChange);
   onViewportChangeRef.current = onViewportChange;
+
+  // A string shorthand becomes a stable spec object; a spec object passes
+  // through as given.
+  const projection = useMemo<MapLibreGL.ProjectionSpecification | undefined>(
+    () => (typeof projectionProp === "string" ? { type: projectionProp } : projectionProp),
+    [projectionProp],
+  );
 
   // Read from the mount-only `styledata` handler below so a `projection` prop
   // change after mount isn't reapplied with the value captured at mount time.
@@ -188,9 +281,24 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     }
   }, []);
 
+  const heightRef = useRef(height);
+  heightRef.current = height;
+
   // Initialize the map.
   useEffect(() => {
     if (!containerRef.current) return;
+
+    // The tier is measured in a layout effect whose re-render lands AFTER this
+    // effect, so the box may still carry the wide-tier height here. Size it for
+    // its real tier first: MapLibre sizes its canvas (and fits `bounds`) from
+    // the box at construction, and drops the first resize it observes.
+    Object.assign(
+      containerRef.current.style,
+      resolveMapHeightStyle(
+        heightRef.current,
+        mapBreakpointForWidth(containerRef.current.getBoundingClientRect().width),
+      ),
+    );
 
     const initialStyle = resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
     currentStyleRef.current = initialStyle;
@@ -212,6 +320,9 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
         attributionControl: false,
         ...props,
         ...viewport,
+        // Static mode: gestures off, but MapLibre's own `interactive` stays on —
+        // it would detach EVERY listener, tooltips and hover included.
+        ...(isStatic ? STATIC_HANDLER_OPTIONS : {}),
       });
     } catch {
       // MapLibre throws at construction when WebGL is unavailable (headless
@@ -228,7 +339,7 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
       styleTimeoutRef.current = setTimeout(() => {
         setIsStyleLoaded(true);
         if (projectionRef.current) {
-          map.setProjection(projectionRef.current);
+          applyProjection(map, projectionRef.current);
         }
       }, 100);
     };
@@ -317,8 +428,60 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
   // Sync projection when the prop changes after mount.
   useEffect(() => {
     if (!mapInstance || !isStyleLoaded || !projection) return;
-    mapInstance.setProjection(projection);
+    applyProjection(mapInstance, projection);
   }, [mapInstance, isStyleLoaded, projection]);
+
+  // Static mode on / off after mount. Untouched until the map is first made
+  // static, so an interactive map keeps MapLibre's own setup exactly.
+  const handlerOptionsRef = useRef<Partial<Record<GestureHandlerKey, unknown>>>(props);
+  handlerOptionsRef.current = props;
+  const wasStaticRef = useRef(false);
+  useEffect(() => {
+    if (!mapInstance) return;
+    if (!isStatic && !wasStaticRef.current) return;
+    wasStaticRef.current = true;
+    for (const key of GESTURE_HANDLERS) {
+      const handler = mapInstance[key] as { enable?: () => void; disable?: () => void } | undefined;
+      if (isStatic) handler?.disable?.();
+      else if (handlerOptionsRef.current[key] !== false) handler?.enable?.();
+    }
+    // MapLibre's grab cursor hangs off this class; a static map keeps the
+    // default arrow (a layer's hover still sets its own pointer on the canvas).
+    mapInstance.getCanvasContainer().classList.toggle("maplibregl-interactive", !isStatic);
+    mapInstance.getCanvas().tabIndex = isStatic ? -1 : 0;
+  }, [mapInstance, isStatic]);
+
+  // A tier change can swap the box's height (the default goes square at
+  // `narrow`); resize straight away rather than wait on MapLibre's observer.
+  const heightStyle = resolveMapHeightStyle(height, breakpoint);
+  const heightKey = `${heightStyle.height ?? ""}|${heightStyle.aspectRatio ?? ""}`;
+  useEffect(() => {
+    mapInstance?.resize();
+  }, [mapInstance, heightKey]);
+
+  // Furniture outside the map box (legends `above` / `below`, the narrow
+  // annotation key) portals into strips rendered only while something asks.
+  const [slotRequests, setSlotRequests] = useState<Record<MapFrameSide, number>>({
+    above: 0,
+    below: 0,
+  });
+  const [aboveEl, setAboveEl] = useState<HTMLDivElement | null>(null);
+  const [belowEl, setBelowEl] = useState<HTMLDivElement | null>(null);
+  const requestSlot = useCallback((side: MapFrameSide) => {
+    setSlotRequests((prev) => ({ ...prev, [side]: prev[side] + 1 }));
+    return () => setSlotRequests((prev) => ({ ...prev, [side]: Math.max(0, prev[side] - 1) }));
+  }, []);
+  const frameValue = useMemo<MapFrameContextValue>(
+    () => ({
+      breakpoint,
+      interactive: !isStatic,
+      slots: { above: aboveEl, below: belowEl },
+      requestSlot,
+    }),
+    [breakpoint, isStatic, aboveEl, belowEl, requestSlot],
+  );
+  const annotations = useMapAnnotationRegistry(breakpoint);
+  const showBelow = slotRequests.below > 0 || annotations.rows.length > 0;
 
   const contextValue = useMemo(
     () => ({
@@ -345,11 +508,31 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
 
   return (
     <MapContext.Provider value={contextValue}>
-      <div ref={containerRef} className={cn("relative h-full w-full", className)}>
-        {(!isLoaded || loading) && <MapLoadingOverlay />}
-        {/* SSR-safe: children render only when the map exists on the client. */}
-        {mapInstance && children}
-      </div>
+      <MapFrameContext.Provider value={frameValue}>
+        <MapAnnotationRegistryProvider value={annotations.value}>
+          {slotRequests.above > 0 && (
+            <div ref={setAboveEl} data-slot="map-canvas-above" className="pb-2" />
+          )}
+          <div
+            ref={setContainer}
+            data-slot="map-canvas"
+            data-map-breakpoint={breakpoint}
+            data-interactive={isStatic ? "false" : undefined}
+            className={cn("relative h-full w-full", className)}
+            style={heightStyle}
+          >
+            {(!isLoaded || loading) && <MapLoadingOverlay />}
+            {/* SSR-safe: children render only when the map exists on the client. */}
+            {mapInstance && children}
+          </div>
+          {showBelow && (
+            <div data-slot="map-canvas-below" className="flex flex-col gap-2 pt-2">
+              <div ref={setBelowEl} data-slot="map-canvas-below-furniture" className="contents" />
+              {annotations.rows.length > 0 && <MapAnnotationKey rows={annotations.rows} />}
+            </div>
+          )}
+        </MapAnnotationRegistryProvider>
+      </MapFrameContext.Provider>
     </MapContext.Provider>
   );
 });

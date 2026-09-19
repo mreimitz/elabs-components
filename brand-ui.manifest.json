@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T23:04:24.985Z",
+  "generatedAt": "2026-09-19T23:13:49.559Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29541,6 +29541,41 @@
       },
       "components": [
         {
+          "name": "DEFAULT_MAP_HEIGHT",
+          "kind": "value",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "MAP_BREAKPOINT_THRESHOLDS",
+          "kind": "value",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "MAP_BREAKPOINTS",
+          "kind": "value",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "MAP_CORNERS",
+          "kind": "value",
+          "module": "packages/maps/src/map-legend/map-corner.ts"
+        },
+        {
+          "name": "MAP_LABEL_ANCHORS",
+          "kind": "value",
+          "module": "packages/maps/src/map-annotation/anchor.ts"
+        },
+        {
+          "name": "MapAnnotation",
+          "kind": "value",
+          "module": "packages/maps/src/map-annotation/map-annotation.tsx"
+        },
+        {
+          "name": "MapAnnotationKey",
+          "kind": "value",
+          "module": "packages/maps/src/map-annotation/map-annotation.tsx"
+        },
+        {
           "name": "MapArc",
           "kind": "value",
           "module": "packages/maps/src/map-arc/map-arc.tsx"
@@ -29564,6 +29599,16 @@
           "name": "MapGeoJSON",
           "kind": "value",
           "module": "packages/maps/src/map-geojson/map-geojson.tsx"
+        },
+        {
+          "name": "MapInset",
+          "kind": "value",
+          "module": "packages/maps/src/map-inset/map-inset.tsx"
+        },
+        {
+          "name": "MapLegend",
+          "kind": "value",
+          "module": "packages/maps/src/map-legend/map-legend.tsx"
         },
         {
           "name": "MapMarker",
@@ -29591,6 +29636,11 @@
           "module": "packages/maps/src/map-marker/map-marker.tsx"
         },
         {
+          "name": "MapNorthArrow",
+          "kind": "value",
+          "module": "packages/maps/src/map-north-arrow/map-north-arrow.tsx"
+        },
+        {
           "name": "MapPopup",
           "kind": "value",
           "module": "packages/maps/src/map-popup/map-popup.tsx"
@@ -29599,6 +29649,11 @@
           "name": "MapRoute",
           "kind": "value",
           "module": "packages/maps/src/map-route/map-route.tsx"
+        },
+        {
+          "name": "MapScaleBar",
+          "kind": "value",
+          "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
         }
       ],
       "hooks": [
@@ -29606,6 +29661,16 @@
           "name": "useMap",
           "kind": "value",
           "module": "packages/maps/src/map-canvas/map-context.ts"
+        },
+        {
+          "name": "useMapBreakpoint",
+          "kind": "value",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "useMapResponsive",
+          "kind": "value",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
         }
       ],
       "types": [
@@ -29620,6 +29685,26 @@
         {
           "name": "LngLatLike",
           "module": "packages/maps/src/index.ts"
+        },
+        {
+          "name": "MapAnchorGeometry",
+          "module": "packages/maps/src/map-annotation/anchor.ts"
+        },
+        {
+          "name": "MapAnnotationConnector",
+          "module": "packages/maps/src/map-annotation/map-annotation.tsx"
+        },
+        {
+          "name": "MapAnnotationKeyProps",
+          "module": "packages/maps/src/map-annotation/map-annotation.tsx"
+        },
+        {
+          "name": "MapAnnotationKeyRow",
+          "module": "packages/maps/src/map-annotation/map-annotation.tsx"
+        },
+        {
+          "name": "MapAnnotationProps",
+          "module": "packages/maps/src/map-annotation/map-annotation.tsx"
         },
         {
           "name": "MapArcDatum",
@@ -29642,6 +29727,10 @@
           "module": "packages/maps/src/map-arc/map-arc.tsx"
         },
         {
+          "name": "MapBreakpoint",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
           "name": "MapCanvasProps",
           "module": "packages/maps/src/map-canvas/map-canvas.tsx"
         },
@@ -29662,6 +29751,10 @@
           "module": "packages/maps/src/map-controls/map-controls.tsx"
         },
         {
+          "name": "MapCorner",
+          "module": "packages/maps/src/map-legend/map-corner.ts"
+        },
+        {
           "name": "MapFillPaint",
           "module": "packages/maps/src/map-geojson/map-geojson.tsx"
         },
@@ -29678,12 +29771,60 @@
           "module": "packages/maps/src/map-geojson/map-geojson.tsx"
         },
         {
+          "name": "MapGeoJSONPattern",
+          "module": "packages/maps/src/map-geojson/map-geojson.tsx"
+        },
+        {
           "name": "MapGeoJSONProps",
           "module": "packages/maps/src/map-geojson/map-geojson.tsx"
         },
         {
+          "name": "MapGeoJSONVignette",
+          "module": "packages/maps/src/map-geojson/map-geojson.tsx"
+        },
+        {
+          "name": "MapHeight",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "MapInsetKind",
+          "module": "packages/maps/src/map-inset/map-inset.tsx"
+        },
+        {
+          "name": "MapInsetProps",
+          "module": "packages/maps/src/map-inset/map-inset.tsx"
+        },
+        {
+          "name": "MapLabelAnchor",
+          "module": "packages/maps/src/map-annotation/anchor.ts"
+        },
+        {
           "name": "MapLayerMouseEvent",
           "module": "packages/maps/src/index.ts"
+        },
+        {
+          "name": "MapLegendItem",
+          "module": "packages/maps/src/map-legend/map-legend.tsx"
+        },
+        {
+          "name": "MapLegendLayout",
+          "module": "packages/maps/src/map-legend/map-legend.tsx"
+        },
+        {
+          "name": "MapLegendPosition",
+          "module": "packages/maps/src/map-legend/map-legend.tsx"
+        },
+        {
+          "name": "MapLegendProps",
+          "module": "packages/maps/src/map-legend/map-legend.tsx"
+        },
+        {
+          "name": "MapLegendScale",
+          "module": "packages/maps/src/map-legend/map-legend.tsx"
+        },
+        {
+          "name": "MapLegendShape",
+          "module": "packages/maps/src/map-legend/map-legend.tsx"
         },
         {
           "name": "MapLinePaint",
@@ -29695,6 +29836,10 @@
         },
         {
           "name": "MapMarkerLabelProps",
+          "module": "packages/maps/src/map-marker/map-marker.tsx"
+        },
+        {
+          "name": "MapMarkerLabelSpec",
           "module": "packages/maps/src/map-marker/map-marker.tsx"
         },
         {
@@ -29714,6 +29859,10 @@
           "module": "packages/maps/src/index.ts"
         },
         {
+          "name": "MapNorthArrowProps",
+          "module": "packages/maps/src/map-north-arrow/map-north-arrow.tsx"
+        },
+        {
           "name": "MapOptions",
           "module": "packages/maps/src/index.ts"
         },
@@ -29722,8 +29871,32 @@
           "module": "packages/maps/src/map-popup/map-popup.tsx"
         },
         {
+          "name": "MapProjectionOption",
+          "module": "packages/maps/src/map-canvas/map-canvas.tsx"
+        },
+        {
+          "name": "MapResponsive",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "MapResponsiveByBreakpoint",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
           "name": "MapRouteProps",
           "module": "packages/maps/src/map-route/map-route.tsx"
+        },
+        {
+          "name": "MapScale",
+          "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
+        },
+        {
+          "name": "MapScaleBarProps",
+          "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
+        },
+        {
+          "name": "MapScaleUnit",
+          "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
         },
         {
           "name": "MapStyleOption",
@@ -29746,9 +29919,103 @@
         {
           "name": "buildArcCoordinates",
           "module": "packages/maps/src/lib/arc-math.ts"
+        },
+        {
+          "name": "computeMapScale",
+          "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
+        },
+        {
+          "name": "isMapResponsiveByBreakpoint",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "mapAnchorGeometry",
+          "module": "packages/maps/src/map-annotation/anchor.ts"
+        },
+        {
+          "name": "mapAnchorTransform",
+          "module": "packages/maps/src/map-annotation/anchor.ts"
+        },
+        {
+          "name": "mapBreakpointForWidth",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "metresPerPixel",
+          "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
+        },
+        {
+          "name": "niceDistance",
+          "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
+        },
+        {
+          "name": "resolveMapResponsive",
+          "module": "packages/maps/src/lib/use-map-breakpoint.ts"
         }
       ],
       "props": {
+        "MapAnnotation": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "longitude",
+              "optional": false,
+              "type": "number",
+              "description": "Longitude of the point the note is about."
+            },
+            {
+              "name": "latitude",
+              "optional": false,
+              "type": "number",
+              "description": "Latitude of the point the note is about."
+            },
+            {
+              "name": "text",
+              "optional": false,
+              "type": "ReactNode",
+              "description": "The note. Plain text reads best; it moves into the key at `narrow`."
+            },
+            {
+              "name": "anchor",
+              "optional": true,
+              "type": "MapLabelAnchor",
+              "description": "Where the text sits relative to the point (default `\"top-right\"`)."
+            },
+            {
+              "name": "connector",
+              "optional": true,
+              "type": "MapAnnotationConnector | false",
+              "description": "The leader line from the point to the text (default: a plain line). Pass `false` to set the text right beside the point with no line."
+            },
+            {
+              "name": "showAt",
+              "optional": true,
+              "type": "MapResponsive<boolean>",
+              "description": "Whether the note shows at a tier (default `true` everywhere). A hidden note takes no number, so the key stays gap-free."
+            },
+            {
+              "name": "priority",
+              "optional": true,
+              "type": "number",
+              "description": "Paint order among annotations: a higher one paints on top (0–8, default 0)."
+            }
+          ]
+        },
+        "MapAnnotationKey": {
+          "extends": [
+            "HTMLAttributes<HTMLOListElement>"
+          ],
+          "props": [
+            {
+              "name": "rows",
+              "optional": false,
+              "type": "readonly MapAnnotationKeyRow[]",
+              "description": "The rows, in reading order."
+            }
+          ]
+        },
         "MapArc": {
           "extends": [],
           "props": [
@@ -29822,7 +30089,7 @@
         },
         "MapCanvas": {
           "extends": [
-            "Omit<MapLibreGL.MapOptions, \"container\" | \"style\">"
+            "Omit<MapLibreGL.MapOptions, \"container\" | \"style\" | \"interactive\">"
           ],
           "props": [
             {
@@ -29857,8 +30124,20 @@
             {
               "name": "projection",
               "optional": true,
-              "type": "MapLibreGL.ProjectionSpecification",
-              "description": "Map projection type. Use `{ type: \"globe\" }` for a 3D globe view."
+              "type": "MapProjectionOption",
+              "description": "Map projection: `\"mercator\"` (MapLibre's default) or `\"globe\"` for a 3D globe view, or a full MapLibre projection spec. Feature-detected: a MapLibre build that cannot switch projections ignores it (with a console note)."
+            },
+            {
+              "name": "interactive",
+              "optional": true,
+              "type": "boolean",
+              "description": "`false` makes the map STATIC — the editorial / locator default: no zoom, pan, rotate or keyboard handlers, the default cursor and no tab stop (leave `<MapControls>` out of a static map). Hover and click still reach layers and markers, so tooltips keep working. The viewport can still be set in code (`viewport`, the ref). Default `true`."
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "MapResponsive<MapHeight>",
+              "description": "The map's height: CSS px, or `{ aspect }` (width ÷ height), optionally per tier — `{ base: { aspect: 1.6 }, narrow: { aspect: 1 } }`. Tiers are measured on the map's own width (`narrow` < 480 px, `medium` < 768 px). Unset, the map fills its parent as before; a parent with no height of its own gets `DEFAULT_MAP_HEIGHT` (1.6 : 1, square at `narrow`) instead of 0."
             },
             {
               "name": "viewport",
@@ -30026,6 +30305,24 @@
               "description": "Paint merged onto the fill layer for the feature under the cursor, applied as a `case` expression keyed on hover feature-state. Requires `promoteId`."
             },
             {
+              "name": "fillOpacity",
+              "optional": true,
+              "type": "number",
+              "description": "The fill layer's opacity, 0–1 — shorthand for `fillPaint[\"fill-opacity\"]` (which wins when both are set). Default 1, or 0.25 with a `pattern`, so the stripes read over a tint of the same colour."
+            },
+            {
+              "name": "pattern",
+              "optional": true,
+              "type": "MapGeoJSONPattern",
+              "description": "Hatch the areas with stripes (see {@link MapGeoJSONPattern})."
+            },
+            {
+              "name": "vignette",
+              "optional": true,
+              "type": "MapGeoJSONVignette",
+              "description": "Glow around the areas' edges (see {@link MapGeoJSONVignette})."
+            },
+            {
               "name": "onClick",
               "optional": true,
               "type": "(e: MapGeoJSONEvent<P>) => void",
@@ -30051,6 +30348,86 @@
             }
           ]
         },
+        "MapInset": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "kind",
+              "optional": true,
+              "type": "MapInsetKind",
+              "description": "Default `\"globe\"`."
+            },
+            {
+              "name": "position",
+              "optional": true,
+              "type": "MapCorner",
+              "description": "Corner of the main map (default `\"top-right\"`)."
+            },
+            {
+              "name": "size",
+              "optional": true,
+              "type": "MapResponsive<number>",
+              "description": "Side length in CSS px, optionally per tier (default `{ base: 128, narrow: 88 }`). Never more than 40 % of the main map's width."
+            },
+            {
+              "name": "styles",
+              "optional": true,
+              "type": "MapCanvasProps[\"styles\"]",
+              "description": "Basemap styles for the inset (default: the main map's defaults)."
+            },
+            {
+              "name": "blank",
+              "optional": true,
+              "type": "boolean",
+              "description": "A tile-less inset — pair it with your own layers via `styles`."
+            }
+          ]
+        },
+        "MapLegend": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"title\">"
+          ],
+          "props": [
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A heading for the key."
+            },
+            {
+              "name": "items",
+              "optional": true,
+              "type": "readonly MapLegendItem[]",
+              "description": "Marker key rows."
+            },
+            {
+              "name": "scale",
+              "optional": true,
+              "type": "MapLegendScale",
+              "description": "A colour ramp (continuous / stepped) or category key, from `colorScaleFor`."
+            },
+            {
+              "name": "layout",
+              "optional": true,
+              "type": "MapLegendLayout",
+              "description": "Default `\"list\"`."
+            },
+            {
+              "name": "position",
+              "optional": true,
+              "type": "MapResponsive<MapLegendPosition>",
+              "description": "Where the key sits, optionally per tier — for example `{ base: \"top-left\", narrow: \"below\" }` so it stops covering a phone-width map. Default `\"above\"`."
+            },
+            {
+              "name": "formatValue",
+              "optional": true,
+              "type": "(value: number) => string",
+              "description": "Formats a ramp's tick values (default: the locale's number format)."
+            }
+          ]
+        },
         "MapMarker": {
           "extends": [
             "Omit<MarkerOptions, \"element\">"
@@ -30070,9 +30447,21 @@
             },
             {
               "name": "children",
-              "optional": false,
+              "optional": true,
               "type": "ReactNode",
-              "description": "Marker sub-components (MapMarkerContent, MapMarkerPopup, MapMarkerTooltip, MapMarkerLabel)."
+              "description": "Marker sub-components (MapMarkerContent, MapMarkerPopup, MapMarkerTooltip, MapMarkerLabel). Optional when `label` alone marks the place — an inline area label, for example."
+            },
+            {
+              "name": "showAt",
+              "optional": true,
+              "type": "MapResponsive<boolean>",
+              "description": "Whether the marker shows at a tier (default `true` everywhere): `{ base: true, narrow: false }` drops it from a phone-width map. The Datawrapper advice applies — duplicate a marker with a shorter label and the opposite `showAt` rather than cramming one label into both."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "MapMarkerLabelSpec",
+              "description": "A text label drawn with the marker (see {@link MapMarkerLabelSpec})."
             },
             {
               "name": "onClick",
@@ -30196,6 +30585,25 @@
             }
           ]
         },
+        "MapNorthArrow": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "position",
+              "optional": true,
+              "type": "MapCorner",
+              "description": "Corner of the map (default `\"top-left\"`)."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "The arrow's accessible name (default `\"North\"`)."
+            }
+          ]
+        },
         "MapPopup": {
           "extends": [
             "Omit<PopupOptions, \"className\" | \"closeButton\">"
@@ -30303,6 +30711,25 @@
               "description": "Whether the route is interactive — shows a pointer cursor on hover (default: true)."
             }
           ]
+        },
+        "MapScaleBar": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "MapScaleUnit",
+              "description": "`km` (default) or `mi`."
+            },
+            {
+              "name": "position",
+              "optional": true,
+              "type": "MapCorner",
+              "description": "Corner of the map (default `\"bottom-left\"`)."
+            }
+          ]
         }
       },
       "intent": {
@@ -30387,13 +30814,18 @@
         }
       },
       "stories": {
+        "MapAnnotation": "maps-mapannotation--docs",
         "MapArc": "maps-maparc--docs",
         "MapCanvas": "maps-mapcanvas--docs",
         "MapClusterLayer": "maps-mapclusterlayer--docs",
         "MapControls": "maps-mapcontrols--docs",
         "MapGeoJSON": "maps-mapgeojson--docs",
+        "MapInset": "maps-mapinset--docs",
+        "MapLegend": "maps-maplegend--docs",
         "MapMarker": "maps-mapmarker--docs",
-        "MapRoute": "maps-maproute--docs"
+        "MapNorthArrow": "maps-mapnortharrow--docs",
+        "MapRoute": "maps-maproute--docs",
+        "MapScaleBar": "maps-mapscalebar--docs"
       }
     },
     "@elabs-ai/components-marketing": {

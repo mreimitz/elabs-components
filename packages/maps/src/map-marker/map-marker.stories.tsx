@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { MapPin } from "lucide-react";
+import { expect, waitFor } from "storybook/test";
 
 import { MapCanvas } from "../map-canvas";
+import { MAP_LABEL_ANCHORS } from "../map-annotation";
+import { LOCATOR_BOUNDS, LOCATOR_PLACES } from "../test-utils/locator-fixture";
 import {
   MapMarker,
   MapMarkerContent,
@@ -68,4 +71,72 @@ export const Draggable: Story = {
       </MapCanvas>
     </div>
   ),
+};
+
+const LABEL_SPOTS = [
+  { longitude: -79.6, latitude: 44.05 },
+  { longitude: -78.6, latitude: 44.05 },
+  { longitude: -77.6, latitude: 44.05 },
+  { longitude: -76.6, latitude: 44.05 },
+  { longitude: -79.6, latitude: 43.45 },
+  { longitude: -78.6, latitude: 43.45 },
+  { longitude: -77.6, latitude: 43.45 },
+  { longitude: -76.6, latitude: 43.45 },
+] as const;
+
+/**
+ * A marker's own label, at each of the eight positions around its point;
+ * the lower row adds a box (a plate that keeps the text readable over busy
+ * ground) and a callout line.
+ */
+export const LabelPositions: Story = {
+  render: () => (
+    <div className="w-full p-4">
+      <MapCanvas interactive={false} bounds={LOCATOR_BOUNDS} fitBoundsOptions={{ padding: 48 }}>
+        {MAP_LABEL_ANCHORS.map((position, index) => (
+          <MapMarker
+            key={position}
+            {...LABEL_SPOTS[index]!}
+            label={{ text: position, position, box: index >= 4, callout: index >= 4 }}
+          >
+            <MapMarkerContent />
+          </MapMarker>
+        ))}
+      </MapCanvas>
+    </div>
+  ),
+};
+
+/**
+ * A label with no marker glyph — text placed on the map (a lake or region
+ * name) — plus a marker that only shows from `medium` up.
+ */
+export const LabelOnlyAndShowAt: Story = {
+  render: () => (
+    <div className="w-full p-4">
+      <MapCanvas interactive={false} bounds={LOCATOR_BOUNDS} fitBoundsOptions={{ padding: 48 }}>
+        <MapMarker {...LOCATOR_PLACES.lakeLabel} label={{ text: "Lake Ontario", box: true }} />
+        <MapMarker {...LOCATOR_PLACES.toronto} label={{ text: "Toronto", position: "top-left" }}>
+          <MapMarkerContent />
+        </MapMarker>
+        <MapMarker
+          {...LOCATOR_PLACES.rochester}
+          showAt={{ base: true, narrow: false }}
+          label={{ text: "Rochester, NY", position: "right" }}
+        >
+          <MapMarkerContent />
+        </MapMarker>
+      </MapCanvas>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const map = canvasElement.querySelector<HTMLElement>('[data-slot="map-canvas"]');
+    if (!map || !canvasElement.querySelector(".maplibregl-canvas")) return;
+    const narrow = map.getAttribute("data-map-breakpoint") === "narrow";
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-slot="map-marker-label"]')).toHaveLength(
+        narrow ? 2 : 3,
+      ),
+    );
+  },
 };

@@ -36,6 +36,20 @@ Decoration dial policy → `conventions.md` (tokens-level, not specific to these
   or change the tile source before going public. Locked by `map-canvas.test.tsx`.
 - MapLibre can't render in jsdom — unit tests mock the engine; real rendering/a11y from
   Storybook story tests, both themes.
+- **Editorial/locator maps default to `interactive={false}`** — a static map in an
+  article must not steal the page's scroll. Static disables the gesture handlers only;
+  MapLibre's `interactive:false` is never passed (it drops the listeners, killing
+  tooltips/popups). A static map sizes itself: `height` default is `{base:{aspect:1.6},
+narrow:{aspect:1}}` via CSS `aspect-ratio`, which a parent with a definite height wins.
+- **Furniture** (`MapLegend`, `MapScaleBar`, `MapNorthArrow`, `MapInset`,
+  `MapAnnotation`) is composed as MapCanvas children. Anything outside the map box
+  (legend `above`/`below`, the narrow annotation key) portals into the frame's strips via
+  `useMapFrameSlot` — never a sibling wrapper. Corners use logical `start-`/`end-`
+  classes; legend ramps are `var(--chart-seq-*)` refs from `colorScaleFor` (ui), never a
+  resolved colour. Hide-at-tier = `showAt` resolved through `useMapResponsive`.
+- `lib/use-map-breakpoint.ts` is a deliberate COPY of the charts tier thresholds
+  (narrow < 480, medium < 768, container-measured; ADR 0039) — maps may not import
+  charts (sideways dep). Change both together; never import one from the other.
 
 ## Editor (@elabs-ai/components-editor)
 

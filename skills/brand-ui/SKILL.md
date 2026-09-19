@@ -52,7 +52,7 @@ connected they answer the same without a shell. Examples below say `brand-ui`.
 <!-- brand-ui:gen:catalogue:start -->
 <!-- Generated from the manifest by `pnpm gen`; package purposes are PKG_PURPOSE in the CLI. -->
 
-**Themes (2):** dark, light (default) · **Tokens:** 285 · **Registry blocks:** 65 · **Components:** 440 in 13 packages
+**Themes (2):** dark, light (default) · **Tokens:** 285 · **Registry blocks:** 65 · **Components:** 445 in 13 packages
 
 - `@elabs-ai/components-tokens` (2): Semantic CSS-variable themes + ThemeProvider/useTheme.
 - `@elabs-ai/components-icons` (32): Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).
@@ -60,7 +60,7 @@ connected they answer the same without a shell. Examples below say `brand-ui`.
 - `@elabs-ai/components-data` (13): TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.
 - `@elabs-ai/components-ai` (75): ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.
 - `@elabs-ai/components-flow` (19): Branded React Flow canvas, nodes, edges, controls, inspector.
-- `@elabs-ai/components-maps` (8): MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.
+- `@elabs-ai/components-maps` (13): MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.
 - `@elabs-ai/components-charts` (96): MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).
 - `@elabs-ai/components-marketing` (8): Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.
 - `@elabs-ai/components-editor` (7): Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.
