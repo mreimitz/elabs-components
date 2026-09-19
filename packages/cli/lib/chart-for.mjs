@@ -29,9 +29,14 @@
  *   A role point is 1 when the shape names the role outright ("time", "measure"),
  *   0.75 when it only implies it ("periods", "metric") — general charts lead,
  *   specialists follow.
- *   One structural rule: when the query has a time dimension and a shape has
- *   none, that candidate is scaled by 0.75 — a chart that cannot show time
- *   should not outrank one that can.
+ *   Two structural rules:
+ *   - when the query has a time dimension and a shape has none, that candidate
+ *     is scaled by 0.75 — a chart that cannot show time should not outrank one
+ *     that can;
+ *   - when the query reads as measure × time, a shape whose own statement NAMES
+ *     both ("measures over continuous time") is the general time-series chart
+ *     and earns +0.5, so it leads the specialists it would otherwise tie with
+ *     (two time points per category, a calendar grid).
  * The roles read out of the query are printed ("read as: …") so the ranking is
  * never a black box.
  *
@@ -154,6 +159,17 @@ function overlapScore(queryTokens, shapeText) {
     !shapeRoles.has("time")
   )
     score *= 0.75;
+  // The general time-series rule (module docblock): measure × time in the query,
+  // and a shape that names both outright.
+  const asked = rolesOf([...new Set(queryTokens)]);
+  if (
+    score &&
+    asked.has("measure") &&
+    asked.has("time") &&
+    headTokens.includes("measure") &&
+    headTokens.includes("time")
+  )
+    score += 0.5;
   return { score, density: score / Math.max(shapeList.length, 1) };
 }
 

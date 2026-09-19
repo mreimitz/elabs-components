@@ -13,6 +13,16 @@
  * get the rest. Pure over a `flat()` row; no I/O.
  */
 
+/**
+ * The brief card when it is actually smaller, otherwise the full one. A small
+ * component or a constant has nothing to trim, and the brief's footer would make
+ * its card LONGER than the full entry — so `--brief` / `detail: "brief"` never
+ * costs more than the full read, and on those entries returns the full card.
+ */
+export function smallerCard(brief, full) {
+  return Buffer.byteLength(brief) < Buffer.byteLength(full) ? brief : full;
+}
+
 const MAX_DESC = 140;
 const MAX_TYPE = 90;
 
