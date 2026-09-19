@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T08:56:03.338Z",
+  "generatedAt": "2026-09-19T10:25:38.436Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29291,9 +29291,19 @@
           "module": "packages/marketing/src/cta-section/cta-section.tsx"
         },
         {
+          "name": "DEFAULT_GATES_BAND_LABELS",
+          "kind": "value",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
+        },
+        {
           "name": "FeatureGrid",
           "kind": "value",
           "module": "packages/marketing/src/feature-grid/feature-grid.tsx"
+        },
+        {
+          "name": "GatesBand",
+          "kind": "value",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
         },
         {
           "name": "Hero",
@@ -29334,6 +29344,18 @@
         {
           "name": "FeatureGridProps",
           "module": "packages/marketing/src/feature-grid/feature-grid.tsx"
+        },
+        {
+          "name": "GatesBandGate",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
+        },
+        {
+          "name": "GatesBandLabels",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
+        },
+        {
+          "name": "GatesBandProps",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
         },
         {
           "name": "HeroProps",
@@ -29415,6 +29437,45 @@
               "optional": true,
               "type": "boolean",
               "description": "Stagger the cells in on mount. Motion-gated. Defaults to true."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
+        "GatesBand": {
+          "extends": [],
+          "props": [
+            {
+              "name": "gates",
+              "optional": false,
+              "type": "readonly GatesBandGate[]",
+              "description": "Every gate to render, already carrying its real `category` — grouping never re-categorises."
+            },
+            {
+              "name": "count",
+              "optional": false,
+              "type": "number",
+              "description": "The header count. Passed separately from `gates.length` (`counts.json.gates`) so the header can never silently drift if a caller ever filters the list."
+            },
+            {
+              "name": "categoryLabels",
+              "optional": true,
+              "type": "Record<string, string>",
+              "description": "Category slug → display label (e.g. `{ stories: \"Stories\" }`); an unlisted category falls back to its own slug, never invented."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<GatesBandLabels>"
+            },
+            {
+              "name": "footer",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A footnote the host renders under the grid (e.g. a link to `docs/GATES.md` on GitHub) — this component embeds no URL of its own."
             },
             {
               "name": "className",
@@ -29628,6 +29689,7 @@
       "stories": {
         "CTASection": "marketing-ctasection--docs",
         "FeatureGrid": "marketing-featuregrid--docs",
+        "GatesBand": "marketing-gatesband--docs",
         "Hero": "marketing-hero--docs",
         "LogoStrip": "marketing-logostrip--docs",
         "StatsBand": "marketing-statsband--docs",
@@ -35101,6 +35163,11 @@
           "module": "packages/ui/src/components/theme-family-switch/theme-family-switch.tsx"
         },
         {
+          "name": "DEFAULT_TOKEN_SPOTLIGHT_LABELS",
+          "kind": "value",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
           "name": "Descriptions",
           "kind": "value",
           "module": "packages/ui/src/components/descriptions/descriptions.tsx"
@@ -36441,6 +36508,16 @@
           "module": "packages/ui/src/components/toggle-group/toggle-group.tsx"
         },
         {
+          "name": "TOKEN_SPOTLIGHT_SCAN_LIMIT",
+          "kind": "value",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
+          "name": "TokenSpotlight",
+          "kind": "value",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
           "name": "Toolbar",
           "kind": "value",
           "module": "packages/ui/src/components/toolbar/toolbar.tsx"
@@ -37767,6 +37844,18 @@
           "module": "packages/ui/src/components/sonner/sonner.tsx"
         },
         {
+          "name": "TokenSpotlightLabels",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
+          "name": "TokenSpotlightProps",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
+          "name": "TokenSpotlightToken",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
           "name": "ToolbarButtonProps",
           "module": "packages/ui/src/components/toolbar/toolbar.tsx"
         },
@@ -38225,12 +38314,24 @@
           "module": "packages/ui/src/lib/file-kind.ts"
         },
         {
+          "name": "resolveTokenDisplayValue",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
+          "name": "resolveTokenMatchValue",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
+        },
+        {
           "name": "revealVariants",
           "module": "packages/ui/src/components/reveal/reveal.tsx"
         },
         {
           "name": "revisionTimelineVariants",
           "module": "packages/ui/src/components/revision-timeline/revision-timeline.tsx"
+        },
+        {
+          "name": "scanForConsumers",
+          "module": "packages/ui/src/components/token-spotlight/token-spotlight.tsx"
         },
         {
           "name": "serializeMentions",
@@ -42619,6 +42720,36 @@
           ],
           "props": []
         },
+        "TokenSpotlight": {
+          "extends": [
+            "Omit<\n  React.HTMLAttributes<HTMLDivElement>,\n  \"onSelect\"\n>"
+          ],
+          "props": [
+            {
+              "name": "tokens",
+              "optional": false,
+              "type": "readonly TokenSpotlightToken[]",
+              "description": "Chips to render, in order."
+            },
+            {
+              "name": "onSpotlight",
+              "optional": true,
+              "type": "(token: string | null) => void",
+              "description": "Fires with the token on hover/focus, and `null` when the spotlight clears."
+            },
+            {
+              "name": "scanLimit",
+              "optional": true,
+              "type": "number",
+              "description": "Upper bound on elements a scan pass examines. Default {@link TOKEN_SPOTLIGHT_SCAN_LIMIT}."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "Partial<TokenSpotlightLabels>"
+            }
+          ]
+        },
         "Toolbar": {
           "extends": [
             "Omit<ComponentPropsWithoutRef<typeof ToolbarPrimitive.Root>, \"orientation\">",
@@ -43798,6 +43929,7 @@
         "Toaster": "feedback-toast--docs",
         "Toggle": "forms-toggle--docs",
         "ToggleGroup": "forms-togglegroup--docs",
+        "TokenSpotlight": "display-tokenspotlight--docs",
         "Toolbar": "layout-toolbar--docs",
         "Tooltip": "overlays-tooltip--docs",
         "Transfer": "forms-transfer--docs",

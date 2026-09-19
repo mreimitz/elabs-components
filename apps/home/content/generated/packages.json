@@ -68,7 +68,7 @@
     "description": "Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.",
     "path": "packages/marketing",
     "layer": 2,
-    "exportCount": 7,
+    "exportCount": 9,
     "engines": []
   },
   {
@@ -104,7 +104,7 @@
     "description": "Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).",
     "path": "packages/ui",
     "layer": 1,
-    "exportCount": 409,
+    "exportCount": 412,
     "engines": []
   },
   {
