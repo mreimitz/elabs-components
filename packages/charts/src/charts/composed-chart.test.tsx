@@ -426,3 +426,50 @@ describe('ComposedChart stacked="percent" (RM-121)', () => {
     expect(plain.getByTestId("tooltip").getAttribute("data-format")).toBe("");
   });
 });
+
+// Dual-axis — RM-121: tooltip units per axis
+describe("ComposedChart yAxes tooltip rows (RM-121)", () => {
+  function FakeBar({ dataKey }: { dataKey: string }) {
+    return <g data-testid={`bar-${dataKey}`} />;
+  }
+  FakeBar.displayName = "SeriesBar";
+  function FakeLine({ dataKey }: { dataKey: string; yAxisId?: string }) {
+    return <g data-testid={`line-${dataKey}`} />;
+  }
+  FakeLine.displayName = "Line";
+  function FakeYAxis(_: { yAxisId?: string; unit?: string }) {
+    return null;
+  }
+  FakeYAxis.displayName = "YAxis";
+  function FakeTooltip({
+    rows,
+  }: {
+    rows?: (point: Record<string, unknown>) => Array<{ label: string; unit?: string }>;
+  }) {
+    const built = rows?.({ orders: 287, rate: 4.2 }) ?? [];
+    return (
+      <g
+        data-rows={built.map((r) => `${r.label}:${r.unit ?? ""}`).join(",")}
+        data-testid="tooltip"
+      />
+    );
+  }
+  FakeTooltip.displayName = "ChartTooltip";
+
+  it("gives each row its own axis' unit, only in dual mode", () => {
+    const tree = (yAxes?: ComposedChartProps["yAxes"]) => (
+      <ComposedChart data={[{ date: new Date(2024, 0, 1), orders: 287, rate: 4.2 }]} yAxes={yAxes}>
+        <FakeBar dataKey="orders" />
+        <FakeLine dataKey="rate" yAxisId="right" />
+        <FakeYAxis />
+        <FakeYAxis unit="%" yAxisId="right" />
+        <FakeTooltip />
+      </ComposedChart>
+    );
+    const dual = render(tree({ align: "ticks" }));
+    expect(dual.getByTestId("tooltip").getAttribute("data-rows")).toBe("orders:,rate:%");
+    dual.unmount();
+    const single = render(tree());
+    expect(single.getByTestId("tooltip").getAttribute("data-rows")).toBe("");
+  });
+});

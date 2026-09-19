@@ -4,6 +4,8 @@ import { ParentSize } from "@visx/responsive";
 import { useChartConfig } from "./chart-config-context";
 import type { GridProps } from "./grid";
 import { tickTargetForHeight } from "./tick-targets";
+import type { ChartTooltipProps } from "./tooltip/chart-tooltip";
+import type { TooltipRow } from "./tooltip/tooltip-content";
 import {
   type ChartTooltipTableAxisGroup,
   ChartTooltipTableAxisGroupsContext,
@@ -433,6 +435,40 @@ function applyDualAxisPlan(children: ReactNode, plan: DualAxisPlan): ReactNode {
   });
 }
 
+// Dual-axis — RM-121
+/**
+ * A default `ChartTooltip` borrows ONE `YAxis unit` for every row (RM-109),
+ * so on two axes the right axis' "%" would land on the left series too. In
+ * dual mode a tooltip that set no `rows`/`content`/`unit` gets a row builder
+ * whose rows each carry their OWN axis' unit.
+ */
+function withDualAxisTooltipRows(
+  children: ReactNode,
+  lines: LineConfig[],
+  hiddenKeys: ReadonlySet<string> | undefined,
+): ReactNode {
+  const unitByAxis = new Map<string, string | undefined>();
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child) || getChildComponentName(child) !== "YAxis") return;
+    const props = child.props as YAxisProps;
+    unitByAxis.set(normalizeYAxisId(props.yAxisId), props.unit);
+  });
+  const visible = lines.filter((line) => !hiddenKeys?.has(line.dataKey));
+  const rows = (point: Record<string, unknown>): TooltipRow[] =>
+    visible.map((line) => ({
+      color: line.stroke,
+      label: line.dataKey,
+      value: (point[line.dataKey] as number) ?? 0,
+      unit: unitByAxis.get(normalizeYAxisId(line.yAxisId)),
+    }));
+  return Children.map(children, (child) => {
+    if (!isValidElement(child) || getChildComponentName(child) !== "ChartTooltip") return child;
+    const props = child.props as ChartTooltipProps;
+    if (props.rows || props.content || props.unit != null) return child;
+    return cloneElement(child as ReactElement<ChartTooltipProps>, { rows });
+  });
+}
+
 // Percent stacking — RM-121
 /**
  * `stacked="percent"`: the bars draw in fraction space, so the primary
@@ -581,6 +617,10 @@ function ChartInner({
   const { lines, barDataKeys } = useStableValue(
     useMemo(() => extractComposedSeries(children), [children]),
   );
+  const shellChildren = useMemo(
+    () => (dualPlan ? withDualAxisTooltipRows(plotChildren, lines, hiddenKeys) : plotChildren),
+    [dualPlan, plotChildren, lines, hiddenKeys],
+  );
 
   // Percent stacking — RM-121: each x's segments as shares of its positive total.
   const percentLayout = useMemo(
@@ -671,7 +711,7 @@ function ChartInner({
         yDomainTweenDuration={yDomainTweenDuration}
         yScaleDomainMax={yScaleDomainMax}
       >
-        {plotChildren}
+        {shellChildren}
       </TimeSeriesChartInner>
     </ChartSeriesModeProvider>
   );
