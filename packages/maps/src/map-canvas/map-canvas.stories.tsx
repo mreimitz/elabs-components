@@ -169,9 +169,12 @@ export const StaticLocator: Story = {
     );
     const legend = canvasElement.querySelector('[data-slot="map-legend"]');
     if (tier === "narrow") {
-      // Square at narrow; the key sits under the map.
-      const box = map.getBoundingClientRect();
-      await expect(box.height).toBeGreaterThanOrEqual(box.width - 1);
+      // Square at narrow; the key sits under the map. The tier is measured
+      // after mount, so wait for the box rather than reading it once.
+      await waitFor(() => {
+        const box = map.getBoundingClientRect();
+        expect(box.height).toBeGreaterThanOrEqual(box.width - 1);
+      });
       await expect(canvasElement.querySelector('[data-slot="map-canvas-below"]')).not.toBeNull();
       await expect(map.contains(legend)).toBe(false);
     } else {
