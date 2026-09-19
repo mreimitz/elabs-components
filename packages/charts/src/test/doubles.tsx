@@ -63,6 +63,28 @@ export { ChartFrame } from "../chart-frame/chart-frame";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";
 export { Sparkline } from "../sparkline/sparkline";
 export type { SparklineLabels, SparklineProps } from "../sparkline/sparkline";
+// Legend engine — RM-118. `RampLegend`/`SizeLegend` touch only react,
+// `@elabs-ai/components-ui`, `chart-formatters` and (`SizeLegend`) the pure
+// `areaRadius` helper — zero `@visx`/`d3`/`motion` at runtime, so re-exporting
+// the real implementation is zero drift risk, same as the five above.
+//
+// `ChartLegend`/`useContainerLegend` are NOT re-exported here: `ChartLegend`
+// reaches `series-pattern.tsx`/`use-high-decoration.ts`, both of which import
+// `chart-context.tsx`'s `DEFAULT_Y_AXIS_ID`/`useChartStable` AS VALUES, and
+// `chart-context.tsx` itself imports `y-axis-scales.ts`, which imports
+// `@visx/scale` at runtime (`pnpm check --rule charts-test-double` catches
+// this: it fails "engine-isolation" the moment `ChartLegend` is added here).
+// `ChartLegend` was already outside the test double before this item — this
+// only documents why it stays there; giving it one costs a hand-written fake
+// double, out of `touches`.
+export {
+  RampLegend,
+  rampPositionOf,
+  type RampLegendLabelMode,
+  type RampLegendProps,
+  type RampLegendScale,
+} from "../charts/legend/ramp-legend";
+export { SizeLegend, type SizeLegendProps } from "../charts/legend/size-legend";
 
 // ── The per-family contract specs (the flat, auditable list) ────────────────
 
