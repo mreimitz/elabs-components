@@ -776,18 +776,33 @@ function renderChart(
           value: numberAt(row, valueKey),
           // Same classifier the `waterfall` rule used to recognise the shape.
           kind: readsAsTotalRow(label) ? "total" : "step",
+          // RM-122 `subtotalBy`: carry the row's own group field through so
+          // `WaterfallChart subtotalBy` (reading it generically off every
+          // datum) can group by it — a no-op when `spec.subtotalBy` is unset.
+          ...(spec.subtotalBy ? { [spec.subtotalBy]: row[spec.subtotalBy] } : null),
         };
       });
+      // `spec.sort` is `BarSort | DumbbellSortBy | WaterfallSort` (see
+      // chart-spec.ts) — in the waterfall branch it is only ever authored as
+      // a `WaterfallSort` literal.
+      const waterfallSort =
+        spec.sort === "data" || spec.sort === "increasesFirst" || spec.sort === "decreasesFirst"
+          ? spec.sort
+          : undefined;
       return (
         <WaterfallChart
           data={steps}
+          dataFormat={spec.dataFormat}
           plotHeight={plotHeight}
           orientation={orientation ?? "vertical"}
+          sort={waterfallSort}
+          subtotalBy={spec.subtotalBy}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
+          zoomToDifferences={spec.zoomToDifferences}
           // WaterfallChart types its handler on its own `WaterfallStep` datum; the spec-driven
           // link is family-agnostic, so it is cast the same way `WaterfallChart` itself casts
           // an internal handler (see its own `onDatapointClick={onDatapointClick as

@@ -21,6 +21,7 @@ import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/ba
 import type { BarSort } from "../charts/bar-stacking";
 import type { ChartColorBy } from "../charts/chart-context";
 import type { DumbbellSortBy } from "../charts/dumbbell-layout";
+import type { WaterfallDataFormat, WaterfallSort } from "../charts/waterfall-steps"; // RM-122
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -335,11 +336,13 @@ export interface ChartSpec {
    * `"desc"` (largest first) or `"none"` (data order, the default — matches
    * `PieChart`'s own default, kept so an existing spec renders
    * byte-identical wedges) are honoured; any other value (an object form,
-   * `"asc"`, a dumbbell literal) is ignored for pie. The union covers every
-   * family; `auto-chart.tsx` narrows before handing it to a component's own
-   * `sort`/`sortBy` prop.
+   * `"asc"`, a dumbbell literal) is ignored for pie. Waterfall (`type:
+   * "waterfall"`, RM-122): its own `WaterfallSort` (`"data"|"increasesFirst"|
+   * "decreasesFirst"`, default `"data"` — spreadsheet order, within each
+   * subtotal group). The union covers every family; `auto-chart.tsx` narrows
+   * before handing it to a component's own `sort`/`sortBy` prop.
    */
-  sort?: BarSort | DumbbellSortBy;
+  sort?: BarSort | DumbbellSortBy | WaterfallSort;
   /** Gather rows by this column, with a header per group — `BarChart` (RM-113) and `DumbbellChart` (RM-116) both read this. */
   groupBy?: string;
   /**
@@ -353,6 +356,20 @@ export interface ChartSpec {
   overlays?: BarOverlay[];
   /** A muted prior-period column behind each bar; `labels.comparison` picks its grey label. */
   comparison?: BarComparison;
+
+  // WaterfallChart — RM-122
+  /** `type: "waterfall"` only: `"differences"` (default, signed deltas) or
+   * `"runningTotals"` (every row's value is the running total at that row,
+   * converted once). See `WaterfallChart dataFormat`. */
+  dataFormat?: WaterfallDataFormat;
+  /** `type: "waterfall"` only: auto-inserts a subtotal checkpoint after each
+   * run of rows sharing this row field's value. See `WaterfallChart
+   * subtotalBy`. */
+  subtotalBy?: string;
+  /** `type: "waterfall"` only: drops the zero baseline when a checkpoint
+   * sits far above the steps' own swing, drawing totals as points instead of
+   * bars. See `WaterfallChart zoomToDifferences`. Default `false`. */
+  zoomToDifferences?: boolean;
 }
 
 // Pie/donut grouping, sort, half preset — RM-114
