@@ -10,7 +10,7 @@
  * (pnpm --filter @elabs-ai/components-docs test-storybook, story id: charts-piechart--default).
  */
 import { describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { DEFAULT_HOVER_OFFSET, PieChart } from "./pie-chart";
 import { PieCenter } from "./pie-center";
 import { PieSlice } from "./pie-slice";
@@ -514,5 +514,114 @@ describe("PieChart seams (paper-seam stroke)", () => {
     );
     const sliceGroups = container.querySelectorAll("svg > g > g");
     expect(sliceGroups).toHaveLength(3);
+  });
+});
+
+// Legend engine (RM-118): `legend` prop → `useContainerLegend`.
+describe("PieChart legend (RM-118)", () => {
+  const legendData = [
+    { label: "Direct", value: 60, color: "var(--chart-1)" },
+    { label: "Organic", value: 40, color: "var(--chart-2)" },
+  ];
+
+  it("an unset legend renders no legend, even with more than one slice (R1 default)", () => {
+    const { container } = render(
+      <PieChart data={legendData} size={300}>
+        {legendData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+    expect(container.querySelector(".legend-container")).toBeNull();
+  });
+
+  it("legend={true} lists every slice, in data order", () => {
+    const { container } = render(
+      <PieChart data={legendData} legend size={300}>
+        {legendData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("Direct");
+    expect(legend?.textContent).toContain("Organic");
+    // No toggle affordance in this family (R3) — plain rows, not buttons.
+    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+  });
+
+  it("hovering or focusing a legend item reuses Pie's own single-slice hover state, uncontrolled", () => {
+    const { container } = render(
+      <PieChart data={legendData} legend size={300}>
+        {legendData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(2);
+
+    fireEvent.mouseEnter(rows[1] as Element);
+    expect(rows[1]).toHaveAttribute("data-hovered", "");
+    expect(rows[0]).not.toHaveAttribute("data-hovered");
+
+    fireEvent.mouseLeave(rows[1] as Element);
+    expect(rows[1]).not.toHaveAttribute("data-hovered");
+
+    fireEvent.focus(rows[0] as Element);
+    expect(rows[0]).toHaveAttribute("data-hovered", "");
+    fireEvent.blur(rows[0] as Element);
+    expect(rows[0]).not.toHaveAttribute("data-hovered");
+  });
+
+  it("in controlled hover mode, a legend hover reaches the caller's onHoverChange with the slice index", () => {
+    const onHoverChange = vi.fn();
+    const { container } = render(
+      <PieChart
+        data={legendData}
+        hoveredIndex={null}
+        legend
+        onHoverChange={onHoverChange}
+        size={300}
+      >
+        {legendData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    const rows = container.querySelectorAll(".legend-container > div");
+    fireEvent.mouseEnter(rows[1] as Element);
+    expect(onHoverChange).toHaveBeenCalledWith(1);
+    fireEvent.mouseLeave(rows[1] as Element);
+    expect(onHoverChange).toHaveBeenCalledWith(null);
+  });
+
+  it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (R3, no hide wiring yet)', () => {
+    const { container } = render(
+      <PieChart data={legendData} legend={{ interactive: "toggle" }} size={300}>
+        {legendData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    expect(container.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(0);
+  });
+
+  it("density xs still hides the legend", () => {
+    const { container } = render(
+      <PieChart data={legendData} legend size={300}>
+        {legendData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    // Default density (not xs) renders the legend — the xs/sm density
+    // matrix itself is covered once, generically, by BarChart's RM-118
+    // suite (`bar-chart.test.tsx`); this only proves Pie reaches the same
+    // engine (`useContainerLegend`), not the matrix a second time.
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
   });
 });

@@ -473,3 +473,83 @@ describe("TreemapChart decoration pattern channel (ADR 0011, #257)", () => {
     expect(seriesPatterns(container)).toHaveLength(0);
   });
 });
+
+// Legend engine (RM-118): `legend` prop → `useContainerLegend` (palette
+// "categorical") or `RampLegend` (palette "sequential"). Uses the same
+// `getBoundingClientRect` stub as the decoration-pattern suite above so the
+// layout actually computes real groups/leaves in jsdom.
+describe("TreemapChart legend (RM-118)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function renderSized(props: Partial<React.ComponentProps<typeof TreemapChart>> = {}) {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    return render(<TreemapChart data={whereTheWorkWent} {...props} />);
+  }
+
+  it("an unset legend renders no legend, even with palette='categorical' (R1 default)", () => {
+    const { container } = renderSized({ palette: "categorical" });
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+  });
+
+  it("legend + palette='categorical' lists one row per top-level group, as plain rows (no toggle, R3)", () => {
+    const { container } = renderSized({ legend: true, palette: "categorical" });
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("Platform");
+    expect(legend?.textContent).toContain("Product");
+    // No toggle affordance in this family (R3) — plain rows, not buttons.
+    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+  });
+
+  it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (no per-group hide)', () => {
+    const { container } = renderSized({
+      legend: { interactive: "toggle" },
+      palette: "categorical",
+    });
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    expect(container.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(0);
+  });
+
+  it("hovering a legend row dims every OTHER group's tiles, never the hovered one", () => {
+    const { container } = renderSized({ legend: true, palette: "categorical" });
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(2);
+
+    fireEvent.mouseEnter(rows[0] as Element);
+    const groups = container.querySelectorAll('[data-slot="treemap-group"]');
+    // The hovered group's own `<g>` gets no `opacity` attribute at all — only a
+    // DIMMED one ever carries one, keeping the DOM byte-identical to before
+    // RM-118 wherever nothing is dimmed.
+    expect(groups[0]?.getAttribute("opacity")).toBeNull();
+    expect(groups[1]?.getAttribute("opacity")).toBe("0.35");
+    const leaves = container.querySelectorAll('[data-slot="treemap-leaf"]');
+    expect(leaves.length).toBeGreaterThan(0);
+    for (const leaf of leaves) {
+      expect([null, "0.35"]).toContain(leaf.getAttribute("opacity"));
+    }
+
+    fireEvent.mouseLeave(rows[0] as Element);
+    expect(groups[1]?.getAttribute("opacity")).toBeNull();
+  });
+
+  it("palette='sequential' renders RampLegend instead of the discrete container legend", () => {
+    const { container } = renderSized({ legend: true, palette: "sequential" });
+    expect(container.querySelector('[data-slot="ramp-legend"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+  });
+
+  it("palette='mono' (default) renders no legend at all — nothing to key", () => {
+    const { container } = renderSized({ legend: true });
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+    expect(container.querySelector('[data-slot="ramp-legend"]')).toBeNull();
+  });
+});

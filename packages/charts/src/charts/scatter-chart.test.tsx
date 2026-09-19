@@ -1,4 +1,4 @@
-import { cleanup, render, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // react-use-measure uses ResizeObserver for layout measurement, which jsdom
@@ -820,5 +820,101 @@ describe("Scatter — sizeKey defaults label priority (RM-115 × RM-110)", () =>
       expect(allIds).toContain(name);
       expect(painted).not.toContain(name);
     }
+  });
+});
+
+// Legend engine (RM-118): `legend` prop → `useContainerLegend`.
+describe("ScatterChart legend (RM-118)", () => {
+  it("an unset legend renders no legend, even with more than one series (R1 default)", () => {
+    const { container } = render(
+      <ScatterChart data={chartData}>
+        <Scatter animate={false} dataKey="sessions" />
+        <Scatter animate={false} dataKey="conversions" />
+      </ScatterChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+  });
+
+  it("legend={true} lists every series' dataKey, in data order, as plain rows (no toggle, R3)", () => {
+    const { container } = render(
+      <ScatterChart data={chartData} legend>
+        <Scatter animate={false} dataKey="sessions" />
+        <Scatter animate={false} dataKey="conversions" />
+      </ScatterChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("sessions");
+    expect(legend?.textContent).toContain("conversions");
+    // No toggle affordance in this family (R3) — plain rows, not buttons.
+    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+  });
+
+  it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (no hide wiring)', () => {
+    const { container } = render(
+      <ScatterChart data={chartData} legend={{ interactive: "toggle" }}>
+        <Scatter animate={false} dataKey="sessions" />
+      </ScatterChart>,
+    );
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    expect(container.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(0);
+  });
+
+  it("hovering or focusing a legend row sets data-hovered, uncontrolled", () => {
+    const { container } = render(
+      <ScatterChart data={chartData} legend>
+        <Scatter animate={false} dataKey="sessions" />
+        <Scatter animate={false} dataKey="conversions" />
+      </ScatterChart>,
+    );
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(2);
+
+    fireEvent.mouseEnter(rows[1] as Element);
+    expect(rows[1]).toHaveAttribute("data-hovered", "");
+    expect(rows[0]).not.toHaveAttribute("data-hovered");
+
+    fireEvent.mouseLeave(rows[1] as Element);
+    expect(rows[1]).not.toHaveAttribute("data-hovered");
+
+    fireEvent.focus(rows[0] as Element);
+    expect(rows[0]).toHaveAttribute("data-hovered", "");
+    fireEvent.blur(rows[0] as Element);
+    expect(rows[0]).not.toHaveAttribute("data-hovered");
+  });
+
+  const colorByData = [
+    { region: "EU", value: 10, x: 1 },
+    { region: "US", value: 20, x: 2 },
+    { region: "EU", value: 15, x: 3 },
+    { region: "APAC", value: 30, x: 4 },
+  ];
+
+  it("a colorBy child's colour key replaces the per-series legend (R4, one key per chart)", () => {
+    const { container } = render(
+      <ScatterChart data={colorByData} legend xDataKey="x" xScale="linear">
+        <Scatter animate={false} colorBy={{ key: "region" }} dataKey="value" />
+      </ScatterChart>,
+    );
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("EU");
+    expect(legend?.textContent).toContain("US");
+    expect(legend?.textContent).toContain("APAC");
+    // The plain per-series row ("value", the dataKey) does not ALSO show —
+    // only the colour key (one key per chart, R4).
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(3);
+  });
+
+  it("without colorBy, the legend falls back to the plain per-series dataKey row", () => {
+    const { container } = render(
+      <ScatterChart data={colorByData} legend xDataKey="x" xScale="linear">
+        <Scatter animate={false} dataKey="value" />
+      </ScatterChart>,
+    );
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("value");
+    const rows = container.querySelectorAll(".legend-container > div");
+    expect(rows).toHaveLength(1);
   });
 });

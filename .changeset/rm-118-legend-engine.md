@@ -16,3 +16,26 @@ positioning math) and `labelMode: "ranges"` (one from–to label per swatch inst
 bookends) — both additive and off by default. `ChartSpec.legend` widens to also accept the
 `useContainerLegend` config object (containers that wire the hook read it; `AutoChart` still
 reads only the boolean form for now).
+
+`BarChart` mounts the engine with full toggle interactivity (`legend`, hiding a series on click).
+`PieChart`, `ScatterChart`, `TreemapChart` and `DumbbellChart` mount it too, capped at hover-only
+(`maxInteractive: "hover"`) — a legend row highlights on hover/focus but never hides anything,
+since none of these families has a per-item show/hide. `ScatterChart` lists a `colorBy`-resolved
+colour key in place of the plain per-series rows when one is set. `TreemapChart` lists one row per
+top-level group for `palette="categorical"` (real hover-dim on the group's tiles) and renders
+`RampLegend` instead for `palette="sequential"` (nothing for `"mono"`). `DumbbellChart` lists one
+row per `valueKeys` entry for `variant="dots"` (real hover-dim on that key's dots across every
+row), replacing its own pre-existing, always-on corner colour-key badge when `legend` is set (that
+badge is unchanged when `legend` stays unset). `AutoChart` forwards `spec.legend` to `bar`, `pie`,
+`scatter` and `treemap`, retiring its own `AutoLegend` fallback for those four. `dumbbell` stays on
+`AutoLegend`: `ChartSpec` has no `valueKeys`/`variant` field, so `DumbbellChart`'s own `legend`
+(dots-only) would render nothing for any AutoChart-driven spec today — wiring it in would have
+silently dropped the existing before/after key on every multi-series AutoChart dumbbell.
+`AutoLegend` itself stays for the rest, since `radar`/`funnel`/`waterfall`, `dumbbell` and the
+other families outside this wave can still reach it through a multi-series spec.
+
+Sitting 2 (integration with RM-120 small multiples): once `bar` and `pie` join the engine, a
+faceted `AutoChart` spec (`ChartSpec.facet`) of either type whose legend is shown now gets the same
+ONE-shared-`ChartLegend`-above-the-grid treatment RM-120's own wave-2 merge already restored for
+faceted `line`/`area` — never one legend per panel. A faceted pie's shared legend lists the slice
+categories (deduped across panels), the same items `AutoLegend` listed before this engine existed.

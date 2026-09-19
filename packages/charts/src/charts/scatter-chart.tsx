@@ -1,16 +1,32 @@
 "use client";
 
 import type { Transition } from "motion/react";
-import { Children, forwardRef, isValidElement, type ReactNode, useMemo, useRef } from "react";
+import {
+  Children,
+  forwardRef,
+  isValidElement,
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import useMeasure from "react-use-measure";
 import { cn } from "@elabs-ai/components-ui";
 import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
-import { defaultScatterColors, type LineConfig, type Margin } from "./chart-context";
+import {
+  defaultScatterColors,
+  type ChartLegendEntry,
+  type LineConfig,
+  type Margin,
+} from "./chart-context";
 import type { ChartPhase } from "./chart-phase";
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { Scatter, type ScatterProps } from "./scatter";
+import { resolveColorBy, type ScatterColorByConfig } from "./scatter-encodings";
 import {
   resolveScatterXScaleType,
   ScatterChartInner,
@@ -63,6 +79,24 @@ export interface ScatterChartProps extends ChartSelectionProps {
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. series names + value range). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Renders a legend beside the plot via `useContainerLegend` (RM-118).
+   * Unset renders nothing (R1). `true` uses the default placement/layout;
+   * `{ position, layout, values, title }` refines it — `interactive` is
+   * capped at `"hover"` (a legend row highlights on hover/focus but never
+   * toggles a series' visibility — Scatter has no per-series hide, unlike
+   * `BarChart`).
+   *
+   * One key per chart (RM-118 R4): when any `<Scatter colorBy>` child
+   * resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts`
+   * — the same categorical/sequential/diverging stops the points themselves
+   * draw), the legend lists THAT key instead of the plain per-series
+   * (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are
+   * not represented here — the legend engine has no shape-swatch marker yet
+   * (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart
+   * keeps the plain per-series legend.
+   */
+  legend?: ContainerLegendProp;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -111,6 +145,26 @@ function extractScatterConfigs(children: ReactNode): LineConfig[] {
   });
 
   return configs;
+}
+
+/**
+ * The first `<Scatter colorBy>` child's config (RM-118 R4: one colour key per
+ * chart — a second `colorBy` child, if a caller ever added one, is ignored
+ * here the same way `extractScatterConfigs` only reads the first `dataKey`
+ * per `Scatter`).
+ */
+function extractScatterColorBy(children: ReactNode): ScatterColorByConfig | undefined {
+  let found: ScatterColorByConfig | undefined;
+  Children.forEach(children, (child) => {
+    if (found || !isValidElement(child)) {
+      return;
+    }
+    const props = child.props as ScatterProps | undefined;
+    if (props?.colorBy) {
+      found = props.colorBy;
+    }
+  });
+  return found;
 }
 
 /**
@@ -240,12 +294,60 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
     onPhaseChange,
     accessibleLabel,
     accessibleDescription,
+    legend,
   },
   forwardedRef,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
   const [measureRef, bounds] = useMeasure({ debounce: 10 });
+
+  // Legend engine (RM-118), hover only — Scatter has no per-series hide, so
+  // `maxInteractive: "hover"` downgrades a caller's `interactive: "toggle"`
+  // request instead of rendering dead `aria-pressed` buttons (mirrors Pie).
+  // Computed here (not inside `ChartInner`) so it is ready before the plot
+  // mounts, same reasoning `BarChart` documents at its own call site.
+  const scatterConfigsForLegend = useStableValue(
+    useMemo(() => extractScatterConfigs(children), [children]),
+  );
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      scatterConfigsForLegend.map((line) => ({
+        key: line.dataKey,
+        label: line.dataKey,
+        color: line.stroke || "var(--chart-line-primary)",
+        kind: "series" as const,
+      })),
+    [scatterConfigsForLegend],
+  );
+  // R4: a `<Scatter colorBy>` child's own colour key is ONE key per chart —
+  // when it resolves a non-empty legend, it REPLACES the plain per-series
+  // rows above (never both at once). See the `legend` prop's own doc.
+  const colorByConfig = useMemo(() => extractScatterColorBy(children), [children]);
+  const colorByLegendItems: ChartLegendEntry[] = useMemo(() => {
+    if (!colorByConfig) {
+      return [];
+    }
+    return resolveColorBy(data, colorByConfig).legend.map((item, i) => ({
+      key: `${item.label}-${i}`,
+      label: item.label,
+      color: item.color ?? "var(--chart-1)",
+      kind: "color" as const,
+    }));
+  }, [colorByConfig, data]);
+  const effectiveLegendItems = colorByLegendItems.length > 0 ? colorByLegendItems : legendItems;
+  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+  const handleLegendHoverChange = useCallback((index: number | null) => {
+    setLegendHoveredIndex(index);
+  }, []);
+  const containerLegend = useContainerLegend({
+    legend,
+    items: effectiveLegendItems,
+    hoveredIndex: legendHoveredIndex,
+    onHoverChange: handleLegendHoverChange,
+    maxInteractive: "hover",
+  });
+
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
   const description = useChartAutoSummary("scatter", {
     accessibleLabel,
@@ -295,7 +397,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
   const width = bounds.width ?? 0;
   const height = bounds.height ?? 0;
 
-  return (
+  return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
@@ -325,7 +427,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
           {children}
         </ChartInner>
       ) : null}
-    </ChartPlotRoot>
+    </ChartPlotRoot>,
   );
 });
 

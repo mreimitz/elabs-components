@@ -61,6 +61,11 @@ export type ContainerLegendProp = boolean | ContainerLegendConfig;
 const DEFAULT_POSITION: Responsive<ContainerLegendPosition> = { base: "top", narrow: "top" };
 const DEFAULT_LAYOUT: Responsive<ContainerLegendLayoutMode> = { base: "row", narrow: "stack" };
 const DEFAULT_INTERACTIVE: ContainerLegendInteractive = "hover";
+const INTERACTIVE_RANK: Record<ContainerLegendInteractive, number> = {
+  none: 0,
+  hover: 1,
+  toggle: 2,
+};
 
 export interface UseContainerLegendOptions {
   /** The container's own `legend` prop, verbatim. */
@@ -75,6 +80,14 @@ export interface UseContainerLegendOptions {
   onToggleKey?: (key: string) => void;
   valueFormat?: ChartValueFormat;
   currency?: string;
+  /**
+   * Caps the resolved interactivity (RM-118 Part B, R3). A family with no
+   * hide/toggle wiring of its own — Pie, Scatter, Treemap, Dumbbell all
+   * pass `"hover"` — downgrades an `interactive: "toggle"` request instead
+   * of rendering `aria-pressed` buttons that would flip and strike through
+   * but never actually hide anything. Omit for no cap (Bar, Line, Area).
+   */
+  maxInteractive?: ContainerLegendInteractive;
 }
 
 export interface ContainerLegendResult {
@@ -111,6 +124,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     onToggleKey: onToggleKeyProp,
     valueFormat,
     currency,
+    maxInteractive,
   } = options;
   const resolvedItems = useMemo(() => items ?? [], [items]);
 
@@ -160,7 +174,11 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
   // the only density this engine hides at; see `ChartLegend`'s
   // `hideAtDensity` below).
   if (density === "sm") layout = "stack";
-  const interactive = configProp?.interactive ?? DEFAULT_INTERACTIVE;
+  const requestedInteractive = configProp?.interactive ?? DEFAULT_INTERACTIVE;
+  const interactive =
+    maxInteractive && INTERACTIVE_RANK[requestedInteractive] > INTERACTIVE_RANK[maxInteractive]
+      ? maxInteractive
+      : requestedInteractive;
 
   const visible = wants && density !== "xs" && position !== "none" && resolvedItems.length > 0;
 
@@ -209,6 +227,17 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         // `sm` (charts.md "Responsive"). A caller using bare `<ChartLegend>`
         // directly (outside this engine) keeps the old `["xs","sm"]` default.
         hideAtDensity: ["xs"],
+        // Fix round 1 (RM-118 validator FAIL #1): every container legend row
+        // must reach the `text-meta` type ROLE, the same one the retired
+        // `<AutoLegend>` `<li>` carried (`text-muted-foreground text-meta`,
+        // `auto-chart.tsx`), never `ChartLegend`'s own bare-caller default
+        // for this prop — a raw font-size utility paired with a weight
+        // class, not a type role, and the density dial can't see it
+        // (styling-and-tokens.md "Type is a role, not a size"). This
+        // overrides the default ONLY for legends this engine mounts; a
+        // direct `<ChartLegend>` caller (its own stories included) is
+        // untouched, since it never sets `labelClassName` here.
+        labelClassName: "text-meta",
         className: isSide ? "w-40 shrink-0" : "w-full",
       } as Parameters<typeof ChartLegend>[0])
     : null;
