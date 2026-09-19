@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T03:21:42.390Z",
+  "generatedAt": "2026-09-19T05:11:32.023Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17395,6 +17395,12 @@
               "optional": true,
               "type": "boolean",
               "description": "Hovering (or, on touch, tapping) one series dims every other series to the shared selection-excluded opacity (RM-112, `dw-river.md` §2.3). Default false — today's behaviour."
+            },
+            {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a band and re-tweens the y-domain. Unset (default) renders NOTHING new — RM-110's end labels stay the default multi-series key for `AreaChart`, unlike `useContainerLegend`'s generic \"on when there's more than one item\" default."
             }
           ]
         },
@@ -20582,6 +20588,12 @@
               "optional": true,
               "type": "boolean",
               "description": "Hovering (or, on touch, tapping) one series dims every other series to the shared selection-excluded opacity (RM-112, `dw-river.md` §2.3). Default false — today's behaviour."
+            },
+            {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new — RM-110's end labels stay the default multi-series key for `LineChart`, unlike `useContainerLegend`'s generic \"on when there's more than one item\" default."
             }
           ]
         },
