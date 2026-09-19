@@ -24,6 +24,7 @@ import type { DumbbellSortBy } from "../charts/dumbbell-layout";
 import type { ChartTooltipVariant } from "../charts/tooltip/chart-tooltip";
 import type { ChartPlotHeight } from "../charts/chart-breakpoint"; // Facet — RM-120
 import type { FacetSort } from "../multiples/facet-sort"; // Facet — RM-120
+import type { WaterfallDataFormat, WaterfallSort } from "../charts/waterfall-steps"; // RM-122
 
 /**
  * Every chart shape `AutoChart` can render from a spec (RM-038).
@@ -338,12 +339,17 @@ export interface ChartSpec {
    * `"desc"` (largest first) or `"none"` (data order, the default — matches
    * `PieChart`'s own default, kept so an existing spec renders
    * byte-identical wedges) are honoured; any other value (an object form,
-   * `"asc"`, a dumbbell literal) is ignored for pie. The union covers every
-   * family; `auto-chart.tsx` narrows before handing it to a component's own
-   * `sort`/`sortBy` prop.
+   * `"asc"`, a dumbbell literal) is ignored for pie. Waterfall (`type:
+   * "waterfall"`, RM-122): its own `WaterfallSort` (`"data"|"increasesFirst"|
+   * "decreasesFirst"`, default `"data"` — spreadsheet order, within each
+   * subtotal group). The union covers every family; `auto-chart.tsx` narrows
+   * before handing it to a component's own `sort`/`sortBy` prop.
    */
-  sort?: BarSort | DumbbellSortBy;
-  /** Gather rows by this column, with a header per group — `BarChart` (RM-113) and `DumbbellChart` (RM-116) both read this. */
+  sort?: BarSort | DumbbellSortBy | WaterfallSort;
+  /** Gather rows by this column, with a header per group — `BarChart`
+   * (RM-113) and `DumbbellChart` (RM-116) both read this; waterfall
+   * (`type: "waterfall"`, RM-122): a subtotal after each group, mapped to
+   * `WaterfallChart subtotalBy`. */
   groupBy?: string;
   /**
    * Colour marks by another column (categorical ≤ 6 hues, or a sequential /
@@ -377,6 +383,16 @@ export interface ChartSpec {
   // Facet — RM-120
   /** Small multiples for `line`/`area`/`bar`/`pie`: one panel per `by` column value, or per series with `{ series: true }` — see {@link FacetSpec}. */
   facet?: FacetSpec;
+
+  // WaterfallChart — RM-122
+  /** `type: "waterfall"` only: `"differences"` (default, signed deltas) or
+   * `"runningTotals"` (every row's value is the running total at that row,
+   * converted once). See `WaterfallChart dataFormat`. */
+  dataFormat?: WaterfallDataFormat;
+  /** `type: "waterfall"` only: drops the zero baseline when a checkpoint
+   * sits far above the steps' own swing, drawing totals as points instead of
+   * bars. See `WaterfallChart zoomToDifferences`. Default `false`. */
+  zoomToDifferences?: boolean;
 }
 
 /**

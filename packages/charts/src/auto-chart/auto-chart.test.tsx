@@ -1388,3 +1388,54 @@ describe("AutoChart bar comparison labels", () => {
     ).toHaveLength(0);
   });
 });
+
+// RM-122 — `ChartSpec.groupBy` (the one shared grouping field) maps to
+// `WaterfallChart subtotalBy` for `type: "waterfall"`; there is no separate
+// `ChartSpec.subtotalBy` (one field per concept).
+describe("AutoChart waterfall groupBy → subtotalBy (RM-122)", () => {
+  // AutoChart's own `kind` classifier (`readsAsTotalRow`) is regex-based on
+  // the label text — it never reads a `kind` field off the raw spec row — so
+  // "Opening"/"Closing" render as plain steps here, same as any other row.
+  const quarters = [
+    { stage: "Opening", value: 1000 },
+    { stage: "Jan", value: 50, quarter: "Q1" },
+    { stage: "Feb", value: 30, quarter: "Q1" },
+    { stage: "Apr", value: 20, quarter: "Q2" },
+    { stage: "May", value: -5, quarter: "Q2" },
+    { stage: "Closing", value: 1095 },
+  ];
+
+  it("groupBy auto-inserts a subtotal checkpoint per group, filled like a total", () => {
+    const spec: ChartSpec = {
+      type: "waterfall",
+      data: quarters,
+      x: "stage",
+      series: ["value"],
+      groupBy: "quarter",
+    };
+    const { container } = render(<AutoChart spec={spec} />);
+    const steps = container.querySelectorAll('[data-slot="waterfall-chart-step"]');
+    // 6 data rows + Q1/Q2 auto-inserted subtotals.
+    expect(steps).toHaveLength(8);
+    const totalFillSteps = [...steps].filter(
+      (el) => el.getAttribute("fill") === "var(--chart-foreground)",
+    );
+    // Only the Q1/Q2 auto-inserted subtotals read as totals — "Opening" and
+    // "Closing" don't match the total-label regex, so they stay plain steps.
+    expect(totalFillSteps).toHaveLength(2);
+  });
+
+  it("without groupBy, no subtotal is inserted", () => {
+    const spec: ChartSpec = {
+      type: "waterfall",
+      data: quarters,
+      x: "stage",
+      series: ["value"],
+    };
+    const { container } = render(<AutoChart spec={spec} />);
+    // One step per row, no auto-inserted subtotal.
+    expect(container.querySelectorAll('[data-slot="waterfall-chart-step"]')).toHaveLength(
+      quarters.length,
+    );
+  });
+});
