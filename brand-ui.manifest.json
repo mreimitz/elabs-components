@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T01:02:41.441Z",
+  "generatedAt": "2026-09-19T05:13:48.917Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22515,8 +22515,56 @@
             {
               "name": "connectors",
               "optional": true,
+              "type": "boolean | \"thin\" | \"thick\"",
+              "description": "Dashed hand-off hairline between each step's end and the next step's start: `false` draws none, `true`/`\"thin\"` the default weight, `\"thick\"` a heavier one (RM-122). Default `true`."
+            },
+            {
+              "name": "dataFormat",
+              "optional": true,
+              "type": "WaterfallDataFormat",
+              "description": "`\"differences\"` (default): `data` values are signed deltas. `\"runningTotals\"`: every row's `value` is the running total AT that row — converted once, up front (RM-122 `waterfall-steps.ts`)."
+            },
+            {
+              "name": "subtotalBy",
+              "optional": true,
+              "type": "string",
+              "description": "Auto-inserts a `kind: \"subtotal\"` checkpoint after each run of rows sharing this field's value (RM-122) — e.g. `subtotalBy=\"quarter\"` with `{ label, value, quarter: \"Q1\" }` rows. Off by default."
+            },
+            {
+              "name": "subtotalLabel",
+              "optional": true,
+              "type": "string",
+              "description": "The inserted subtotal row's label — a `\"{group}\"` template. Default `\"{group} subtotal\"`. Ignored without `subtotalBy`."
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "WaterfallSort",
+              "description": "Reorders `\"step\"` rows within each subtotal group (RM-122). Default `\"data\"` (spreadsheet order)."
+            },
+            {
+              "name": "start",
+              "optional": true,
+              "type": "WaterfallEndpointOptions",
+              "description": "Show/relabel the chart's own first row (RM-122, \"start column\")."
+            },
+            {
+              "name": "end",
+              "optional": true,
+              "type": "WaterfallEndpointOptions",
+              "description": "Show/relabel the chart's own last row (RM-122, \"end column\")."
+            },
+            {
+              "name": "zoomToDifferences",
+              "optional": true,
               "type": "boolean",
-              "description": "Dashed hand-off hairline between each step's end and the next step's start. Default `true`."
+              "description": "Drops the zero baseline when a checkpoint sits far above the steps' own swing, drawing `\"total\"`/`\"subtotal\"` rows as points instead of bars (RM-122; see `computeWaterfallZoomDomain`). Default `false`."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "WaterfallLabelsConfig",
+              "description": "Per-row value-label control (RM-122) — replaces `showValues`'s plain signed reading when given. See {@link WaterfallLabelsConfig}."
             },
             {
               "name": "grid",
