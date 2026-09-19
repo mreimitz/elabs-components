@@ -60,7 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         theme: [light, dark]
-        rep: [1, 2]
+        rep: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
