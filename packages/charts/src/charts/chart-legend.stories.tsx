@@ -63,6 +63,46 @@ export const Interactive: Story = {
   },
 };
 
+// RM-118: `interactive: "toggle"` containers (via `useContainerLegend`) pass
+// `hiddenKeys`/`onToggleKey` — each row becomes a real <button aria-pressed>
+// that hides its series. The hidden state is never colour alone (WCAG
+// 1.4.1): it dims AND strikes the label through.
+function ToggleLegendDemo() {
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
+  return (
+    <ChartLegend
+      hiddenKeys={hidden}
+      items={items}
+      onToggleKey={(key) =>
+        setHidden((prev) => {
+          const next = new Set(prev);
+          if (next.has(key)) {
+            next.delete(key);
+          } else {
+            next.add(key);
+          }
+          return next;
+        })
+      }
+      title="Series"
+    />
+  );
+}
+
+/** Toggle a series off (Click, or Tab + Enter/Space) — `aria-pressed` flips, the label dims and strikes through. */
+export const Toggle: Story = {
+  args: { items },
+  render: () => <ToggleLegendDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole("button", { name: /Profit/ });
+    await expect(button).toHaveAttribute("aria-pressed", "true");
+    button.focus();
+    await userEvent.keyboard("{Enter}");
+    await expect(button).toHaveAttribute("aria-pressed", "false");
+  },
+};
+
 /**
  * #394: the percentage span reads the `text-meta` ROLE (was the raw `text‑xs`
  * utility, which `data-density`/#340 cannot reach). Two columns pin
