@@ -276,7 +276,14 @@ function everySeriesEndLabelled(
  * used to make into that container's own `legend` prop instead of rendering
  * `AutoLegend` below it — one legend per chart, never two.
  */
-const LEGEND_ENGINE_TYPES = new Set<ChartType>(["line", "area", "stream"]);
+const LEGEND_ENGINE_TYPES = new Set<ChartType>([
+  "line",
+  "area",
+  "stream",
+  // RM-118 Part B
+  "bar",
+  "pie",
+]);
 
 interface AutoLegendProps {
   series: NormalizedSeries[];
@@ -533,6 +540,7 @@ function renderChart(
           xDataKey={x}
           stacked={stacked ?? false}
           orientation={orientation ?? "vertical"}
+          legend={containerLegend}
           accessibleLabel={spec.title}
           accessibleDescription={withAnnotationDescription(spec.description, spec.annotations)}
           copyValueOnActivate={copyValueOnActivate}
@@ -585,6 +593,7 @@ function renderChart(
           onDatapointClick={links.onDatapointClick}
           data={pieData}
           innerRadius={innerRadius}
+          legend={containerLegend}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
           copyValueOnActivate={copyValueOnActivate}

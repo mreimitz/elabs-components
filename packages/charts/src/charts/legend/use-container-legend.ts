@@ -61,6 +61,11 @@ export type ContainerLegendProp = boolean | ContainerLegendConfig;
 const DEFAULT_POSITION: Responsive<ContainerLegendPosition> = { base: "top", narrow: "top" };
 const DEFAULT_LAYOUT: Responsive<ContainerLegendLayoutMode> = { base: "row", narrow: "stack" };
 const DEFAULT_INTERACTIVE: ContainerLegendInteractive = "hover";
+const INTERACTIVE_RANK: Record<ContainerLegendInteractive, number> = {
+  none: 0,
+  hover: 1,
+  toggle: 2,
+};
 
 export interface UseContainerLegendOptions {
   /** The container's own `legend` prop, verbatim. */
@@ -75,6 +80,14 @@ export interface UseContainerLegendOptions {
   onToggleKey?: (key: string) => void;
   valueFormat?: ChartValueFormat;
   currency?: string;
+  /**
+   * Caps the resolved interactivity (RM-118 Part B, R3). A family with no
+   * hide/toggle wiring of its own — Pie, Scatter, Treemap, Dumbbell all
+   * pass `"hover"` — downgrades an `interactive: "toggle"` request instead
+   * of rendering `aria-pressed` buttons that would flip and strike through
+   * but never actually hide anything. Omit for no cap (Bar, Line, Area).
+   */
+  maxInteractive?: ContainerLegendInteractive;
 }
 
 export interface ContainerLegendResult {
@@ -111,6 +124,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     onToggleKey: onToggleKeyProp,
     valueFormat,
     currency,
+    maxInteractive,
   } = options;
   const resolvedItems = useMemo(() => items ?? [], [items]);
 
@@ -160,7 +174,11 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
   // the only density this engine hides at; see `ChartLegend`'s
   // `hideAtDensity` below).
   if (density === "sm") layout = "stack";
-  const interactive = configProp?.interactive ?? DEFAULT_INTERACTIVE;
+  const requestedInteractive = configProp?.interactive ?? DEFAULT_INTERACTIVE;
+  const interactive =
+    maxInteractive && INTERACTIVE_RANK[requestedInteractive] > INTERACTIVE_RANK[maxInteractive]
+      ? maxInteractive
+      : requestedInteractive;
 
   const visible = wants && density !== "xs" && position !== "none" && resolvedItems.length > 0;
 

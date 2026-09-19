@@ -262,24 +262,26 @@ describe("AutoChart", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
-  // #394: the auto-legend row label must reach the density-aware `text-meta`
-  // ROLE, not the raw `text-xs` UTILITY the type dial cannot see
-  // (styling-and-tokens.md "Type is a role, not a size"). Multi-series data
-  // (2 series) makes `showLegend` default true, rendering <AutoLegend>.
-  it("renders the auto-legend rows with the text-meta role, not the raw text-xs utility", () => {
+  // #394: the legend row label must reach a type ROLE, never the raw
+  // `text-xs` UTILITY the type dial cannot see (styling-and-tokens.md "Type
+  // is a role, not a size"). Multi-series data (2 series) makes `showLegend`
+  // default true. RM-118 Part B: `bar` now renders the SAME container legend
+  // engine line/area/stream already used (`useContainerLegend`), not the
+  // retired `<AutoLegend>` — see the DOM-parity/a11y-name tests below for
+  // the equivalent 'line' coverage this mirrors.
+  it("renders the legend rows through a type role, never the raw text-xs utility", () => {
     const { container } = render(
       <AutoChart
         spec={{ type: "bar", data: categoricalData, x: "name", series: ["value", "other"] }}
         height={280}
       />,
     );
-    const legend = container.querySelector('ul[aria-label="Chart legend"]');
+    const legend = container.querySelector('[data-slot="container-legend-root"] .legend-container');
     expect(legend).not.toBeNull();
-    const rows = legend?.querySelectorAll("li") ?? [];
+    const rows = legend?.querySelectorAll(":scope > div") ?? [];
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
-      expect(row).toHaveClass("text-meta");
-      expect(row).not.toHaveClass("text-xs");
+      expect(row.querySelector("span")).not.toHaveClass("text-xs");
     }
   });
 
@@ -1338,6 +1340,35 @@ describe("AutoChart legend vs series end labels", () => {
     const legend = getByRole("group", { name: "Chart legend" });
     // Item count parity with the old `<li>`-per-series `AutoLegend`.
     expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
+
+  // RM-118 Part B: 'bar' and 'pie' join the container legend engine this
+  // wave (see `LEGEND_ENGINE_TYPES`) — same accessible name + item-count
+  // parity proof as 'line' above, one per family.
+  it("keeps the 'Chart legend' name and item-count parity for 'bar' (RM-118 Part B)", () => {
+    const spec: ChartSpec = {
+      type: "bar",
+      data: categoricalData,
+      x: "name",
+      series: ["value", "other"],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(2);
+  });
+
+  it("keeps the 'Chart legend' name and item-count parity for 'pie' (RM-118 Part B)", () => {
+    const spec: ChartSpec = {
+      type: "pie",
+      data: smallPositiveData,
+      x: "label",
+      series: ["count"],
+    };
+    const { getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    // One legend row per pie ROW (slice), not per series — `smallPositiveData`
+    // is declared further up this file for the existing 'pie' tests.
+    expect(legend.querySelectorAll(":scope > *")).toHaveLength(smallPositiveData.length);
   });
 });
 
