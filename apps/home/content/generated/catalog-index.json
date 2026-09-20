@@ -3459,6 +3459,19 @@
   },
   {
     "section": "components",
+    "slug": "draftingmarks",
+    "name": "DraftingMarks",
+    "group": "Foundations",
+    "package": "ui",
+    "component": "DraftingMarks",
+    "summary": "",
+    "question": "",
+    "block": null,
+    "stories": 4,
+    "first": "foundations-draftingmarks--default"
+  },
+  {
+    "section": "components",
     "slug": "drawer",
     "name": "Drawer",
     "group": "Overlays",

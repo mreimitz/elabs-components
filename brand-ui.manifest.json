@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T20:21:57.335Z",
+  "generatedAt": "2026-09-20T21:56:22.377Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 302,
+  "tokenCount": 312,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -200,6 +200,8 @@
     "--deco-fade-bottom",
     "--deco-fade-edges",
     "--deco-fade-center",
+    "--deco-fade-corner",
+    "--deco-fade-corner-tight",
     "--deco-fade",
     "--paper-fade",
     "--hairline-ink",
@@ -219,6 +221,14 @@
     "--hairline-tick-size",
     "--hairline-rail-width",
     "--hairline-rail-gutter",
+    "--hairline-rail-reach",
+    "--hairline-cross-size",
+    "--hairline-stripe-ink",
+    "--hairline-stripe-pitch",
+    "--hairline-stripe-weight",
+    "--hairline-stripe-angle",
+    "--hairline-stripe-origin",
+    "--hairline-stripe-reach",
     "--duration-fast",
     "--duration-base",
     "--duration-slow",
@@ -38411,6 +38421,21 @@
           "module": "packages/ui/src/lib/document-address.ts"
         },
         {
+          "name": "DRAFTING_MARKS_HEIGHT",
+          "kind": "value",
+          "module": "packages/ui/src/components/drafting-marks/drafting-marks.tsx"
+        },
+        {
+          "name": "DRAFTING_MARKS_WIDTH",
+          "kind": "value",
+          "module": "packages/ui/src/components/drafting-marks/drafting-marks.tsx"
+        },
+        {
+          "name": "DraftingMarks",
+          "kind": "value",
+          "module": "packages/ui/src/components/drafting-marks/drafting-marks.tsx"
+        },
+        {
           "name": "Drawer",
           "kind": "value",
           "module": "packages/ui/src/components/drawer/drawer.tsx"
@@ -40242,6 +40267,14 @@
         {
           "name": "DocumentRect",
           "module": "packages/ui/src/lib/document-address.ts"
+        },
+        {
+          "name": "DraftingMarksAnchor",
+          "module": "packages/ui/src/components/drafting-marks/drafting-marks.tsx"
+        },
+        {
+          "name": "DraftingMarksProps",
+          "module": "packages/ui/src/components/drafting-marks/drafting-marks.tsx"
         },
         {
           "name": "EffortLevel",
@@ -43134,6 +43167,25 @@
               "optional": true,
               "type": "ReactNode",
               "description": "Section-scoped actions, aligned to the inline end of the heading row."
+            }
+          ]
+        },
+        "DraftingMarks": {
+          "extends": [
+            "Omit<React.SVGAttributes<SVGSVGElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "anchor",
+              "optional": true,
+              "type": "DraftingMarksAnchor",
+              "description": "The corner the construction grows out of, and fades away from. Default `\"top-start\"`."
+            },
+            {
+              "name": "accent",
+              "optional": true,
+              "type": "boolean",
+              "description": "Ink the two small accents — a `--primary` station point and a `--chart-2` tinted plate. `false` keeps the whole drawing in rule ink. Default `true`."
             }
           ]
         },
@@ -47190,6 +47242,7 @@
         "DateRangePicker": "forms-daterangepicker--docs",
         "Descriptions": "layout-descriptions--docs",
         "Dialog": "overlays-dialog--docs",
+        "DraftingMarks": "foundations-draftingmarks--docs",
         "Drawer": "overlays-drawer--docs",
         "DropdownMenu": "overlays-dropdownmenu--docs",
         "EmptyState": "states-emptystate--docs",

@@ -148,6 +148,7 @@
   "DocumentOutline": "editor-documentoutline--docs",
   "DocumentReview": "patterns-blocks-documents-document-review--docs",
   "DottedChart": "process-dottedchart--docs",
+  "DraftingMarks": "foundations-draftingmarks--docs",
   "Drawer": "overlays-drawer--docs",
   "DropdownMenu": "overlays-dropdownmenu--docs",
   "DumbbellChart": "charts-dumbbellchart--docs",

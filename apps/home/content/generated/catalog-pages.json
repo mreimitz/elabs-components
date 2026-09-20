@@ -28760,7 +28760,69 @@
       {
         "id": "foundations-decoration--hairlines",
         "name": "Hairlines",
-        "description": "THE HAIRLINE FAMILY — the quiet line-work of a calm product page, as opt-in utilities (`packages/tokens`, the `--hairline-*` block). Like the paper grounds it is NOT on the dial: you ask for one gesture on one element and get it at any decoration level, in any theme. Lines take the theme's own rule ink (`--rule` / `--rule-strong`); the hatch is a translucent tint of `--foreground`, so a brand re-tints all of it by doing nothing. | utility | the gesture | | --- | --- | | `bg-hairline-hatch` | a faded diagonal hatch — the recessed WELL behind media (`CardMedia` default) | | `hairline-stack` | two sheet edges stacked under a card (`<Card stacked>`) | | `hairline-slot` | a dashed placeholder outline | | `hairline-frame` | dashed rails that run past a box's corners and fade | | `hairline-rails` | the same for a full-bleed section: rails down the content column | | `hairline-corners` | crop marks on the focal item | | `hairline-ticks-y` / `-x` | a tick ruler along an edge | | `hairline-rule` / `-y` | a dashed separator | Surfaces and the space between them only — never a control. One focal gesture per region; each utility owns its host's pseudo-elements, so nest a wrapper to combine two."
+        "description": "THE HAIRLINE FAMILY — the quiet line-work of a calm product page, as opt-in utilities (`packages/tokens`, the `--hairline-*` block). Like the paper grounds it is NOT on the dial: you ask for one gesture on one element and get it at any decoration level, in any theme. Lines take the theme's own rule ink (`--rule` / `--rule-strong`); the hatch is a translucent tint of `--foreground`, so a brand re-tints all of it by doing nothing. | utility | the gesture | | --- | --- | | `bg-hairline-hatch` | a faded diagonal hatch — the recessed WELL behind media (`CardMedia` default) | | `bg-hairline-stripes` | stripes streaming out of one corner, thinning as they fade — a hero / header ground | | `hairline-stack` | two sheet edges stacked under a card (`<Card stacked>`) | | `hairline-slot` | a dashed placeholder outline | | `hairline-frame` | dashed rails that run past a box's corners and fade | | `hairline-rails` | the same for a full-bleed section: rails down the content column, inked only near the corners (`hairline-rails-full` for whole lines) | | `hairline-corners` | crop marks on the focal item | | `hairline-ticks-y` / `-x` | a tick ruler along an edge | | `hairline-rule` / `-y` | a dashed separator | Surfaces and the space between them only — never a control. One focal gesture per region; each utility owns its host's pseudo-elements, so nest a wrapper to combine two."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/ui/draftingmarks": {
+    "section": "components",
+    "slug": "draftingmarks",
+    "name": "DraftingMarks",
+    "title": "Foundations/DraftingMarks",
+    "group": "Foundations",
+    "package": "ui",
+    "component": "DraftingMarks",
+    "importFrom": "@elabs-ai/components-ui",
+    "docsId": "foundations-draftingmarks--docs",
+    "file": "packages/ui/src/components/drafting-marks/drafting-marks.stories.tsx",
+    "summary": "",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "DraftingMarks",
+        "extends": ["Omit<React.SVGAttributes<SVGSVGElement>, \"children\">"],
+        "props": [
+          {
+            "name": "anchor",
+            "optional": true,
+            "type": "DraftingMarksAnchor",
+            "description": "The corner the construction grows out of, and fades away from. Default `\"top-start\"`."
+          },
+          {
+            "name": "accent",
+            "optional": true,
+            "type": "boolean",
+            "description": "Ink the two small accents — a `--primary` station point and a `--chart-2` tinted plate. `false` keeps the whole drawing in rule ink. Default `true`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "foundations-draftingmarks--default",
+        "name": "Default",
+        "description": "One drawing, in the corner the header's content leaves empty."
+      },
+      {
+        "id": "foundations-draftingmarks--with-corner-stripes",
+        "name": "With Corner Stripes",
+        "description": "Paired with the corner stripes: drawing at one end of the band, stripes at the other."
+      },
+      {
+        "id": "foundations-draftingmarks--rule-ink-only",
+        "name": "Rule Ink Only",
+        "description": "`accent={false}` — rule ink only, for a band that already carries colour."
+      },
+      {
+        "id": "foundations-draftingmarks--anchors",
+        "name": "Anchors",
+        "description": "All four anchors are the same drawing, mirrored."
       }
     ],
     "block": null,

@@ -7,7 +7,7 @@
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
 **Themes (2):** dark, light (default)
-**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 302
+**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 312
 
 ## Packages
 
@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 406 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 409 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 18 | 1 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 448 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 40 | 8 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -232,6 +232,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DialogTitle | component |  | `@elabs-ai/components-ui` |  |
 | DialogTrigger | component |  | `@elabs-ai/components-ui` |  |
 | DOCUMENT_ADDRESS_KINDS | component |  | `@elabs-ai/components-ui` |  |
+| DRAFTING_MARKS_HEIGHT | component |  | `@elabs-ai/components-ui` |  |
+| DRAFTING_MARKS_WIDTH | component |  | `@elabs-ai/components-ui` |  |
+| DraftingMarks | component |  | `@elabs-ai/components-ui` |  |
 | Drawer | component |  | `@elabs-ai/components-ui` |  |
 | DrawerClose | component |  | `@elabs-ai/components-ui` |  |
 | DrawerContent | component |  | `@elabs-ai/components-ui` |  |

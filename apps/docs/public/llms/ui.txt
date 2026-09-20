@@ -158,6 +158,9 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DialogTitle
 - DialogTrigger
 - DOCUMENT_ADDRESS_KINDS
+- DRAFTING_MARKS_HEIGHT
+- DRAFTING_MARKS_WIDTH
+- DraftingMarks
 - Drawer
 - DrawerClose
 - DrawerContent

@@ -213,6 +213,7 @@
   "Forms/Transfer": {"name":"Transfer","package":"@elabs-ai/components-ui","storyId":"forms-transfer--docs"},
   "Forms/TreeSelect": {"name":"TreeSelect","package":"@elabs-ai/components-ui","storyId":"forms-treeselect--docs"},
   "Forms/VirtualSelect": {"name":"VirtualSelect","package":"@elabs-ai/components-ui","storyId":"forms-virtualselect--docs"},
+  "Foundations/DraftingMarks": {"name":"DraftingMarks","package":"@elabs-ai/components-ui","storyId":"foundations-draftingmarks--docs"},
   "Foundations/Localization": {"name":"LocaleProvider","package":"@elabs-ai/components-ui","storyId":"foundations-localization--docs"},
   "Foundations/Typography": {"name":"Text","package":"@elabs-ai/components-ui","storyId":"foundations-typography--docs"},
   "Icons/AppIcon": {"name":"AppIcon","package":"@elabs-ai/components-icons","storyId":"icons-appicon--docs","purpose":"The standard app/brand mark for app chrome — theme-aware, morphs mark↔lockup on sidebar collapse.","category":"display","relationships":{"usedInside":["Sidebar","AppShell"],"contains":["BrandLogo"]},"antiPatterns":["Hand-rolling BrandLogo plus a lucide box in app chrome — AppIcon is the standard app mark.","Using AppIcon as a brand-neutral scaffold placeholder or a multi-tenant team switcher — it is the product's own mark."],"stateTokens":{"collapsed":"mark only; expanded: full lockup"}},
