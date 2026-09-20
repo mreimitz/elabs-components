@@ -562,7 +562,10 @@ test("the crawl fails when the deployed index cannot be read at all", async () =
       error: (m) => errors.push(m),
     });
     assert.equal(code, 1);
-    assert.match(errors.join("\n"), /cannot read https:\/\/elabs-ai\.com\/index\.json — HTTP 503/);
+    assert.match(
+      errors.join("\n"),
+      /cannot read https:\/\/storybook\.elabs-ai\.com\/index\.json — HTTP 503/,
+    );
   } finally {
     globalThis.fetch = originalFetch;
   }

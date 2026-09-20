@@ -20,7 +20,11 @@ on:
   workflow_dispatch: # manual rerun, e.g. after adding a missing secret
     inputs:
       deploy-docs:
-        description: Redeploy the LATEST RELEASED docs + hosted MCP to Vercel production
+        description: Redeploy the LATEST RELEASED Storybook to Vercel production
+        type: boolean
+        default: false
+      deploy-home:
+        description: Redeploy the LATEST RELEASED website + hosted MCP to Vercel production
         type: boolean
         default: false
 
@@ -230,32 +234,47 @@ jobs:
       - name: Publish to gh-pages
         run: pnpm registry:publish
 
-  # ── deploy the released Storybook + hosted MCP to Vercel production ────────
+  # ── deploy the released Storybook to Vercel production ─────────────────────
   #
-  # Vercel's Git integration is OFF for this project (`git.deploymentEnabled:
-  # false` in apps/docs/vercel.json), so a push to `main` never deploys: production
+  # TWO Vercel projects, one repo (ADR 0038 § operations):
+  #
+  #   elabs-storybook  root apps/docs  →  storybook.elabs-ai.com   (this job)
+  #   elabs-components root apps/home  →  elabs-components.vercel.app
+  #                                       + elabs-ai.com           (deploy-home)
+  #
+  # The WEBSITE owns the public addresses and reaches Storybook by rewriting
+  # /storybook/:path* to storybook.elabs-ai.com, so this job must land BEFORE
+  # deploy-home — otherwise the site's /storybook would serve the previous release
+  # for as long as the two deploys are apart.
+  #
+  # Vercel's Git integration is OFF for both projects (`git.deploymentEnabled:
+  # false` in each app's vercel.json), so a push to `main` never deploys: production
   # only ever serves a released version, and keeps the previous one until the next
   # release. This job deploys the newest `@elabs-ai/components-cli@<version>` tag —
   # the release commit itself — so an unreleased commit on `main` cannot ride along.
   # The build runs on Vercel with the project's settings (root apps/docs).
   #
+  # `.vercelignore` at the repo root is load-bearing for both jobs: the CLI uploads
+  # from the repo root and does NOT read .gitignore, and without it the deployment's
+  # file manifest — one request, 10 MB limit — is rejected outright.
+  #
   # Runs after a successful npm publish (same `!cancelled()` reasoning as
   # publish-registry), or from a manual run with the `deploy-docs` input.
   deploy-docs:
-    name: Deploy docs + hosted MCP to Vercel
+    name: Deploy Storybook to Vercel
     needs: release
     if: ${{ !cancelled() && (needs.release.outputs.published == 'true' || inputs.deploy-docs) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       VERCEL_ORG_ID: team_CREpBGwTjqJ21Rj1cpNRTPCv # elabs-ai (not a secret)
-      VERCEL_PROJECT_ID: prj_vAhDf9Ako9r9kiLJQqCQQXOPdTp8 # elabs-components (not a secret)
+      VERCEL_PROJECT_ID: prj_D84K8BP6ySAwJHFmNEeaX2lbwpBj # elabs-storybook (not a secret)
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Verify Vercel deploy credential
         run: |
           if [ -z "${VERCEL_TOKEN}" ]; then
-            echo "::error::secrets.VERCEL_TOKEN is empty — the released docs and hosted MCP cannot be" >&2
+            echo "::error::secrets.VERCEL_TOKEN is empty — the released Storybook cannot be" >&2
             echo "deployed. Create a token scoped to the elabs-ai team (vercel.com/account/tokens)" >&2
             echo "and add it as the VERCEL_TOKEN repository secret, then re-run with deploy-docs." >&2
             exit 1
@@ -287,12 +306,15 @@ jobs:
           echo "deployed: $url"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
-      # The public production address must now serve the hosted MCP at the version
-      # just released. (The per-deployment URL can sit behind Vercel Deployment
-      # Protection; `deploy --prod` returns only after the alias points here.)
+      # The Storybook project carries its own copy of the hosted MCP (apps/docs/api/mcp.mjs),
+      # which is what proves the deployment that just went live is built from the release
+      # tag rather than left over from the previous one. The MCP a consumer is told to add
+      # is the WEBSITE's (`elabs-ai.com/mcp`); deploy-home asserts that one.
+      # (The per-deployment URL can sit behind Vercel Deployment Protection;
+      # `deploy --prod` returns only after the alias points here.)
       - name: Smoke the hosted MCP
         env:
-          PRODUCTION_URL: https://elabs-ai.com
+          PRODUCTION_URL: https://storybook.elabs-ai.com
         run: |
           expected="${{ steps.tag.outputs.tag }}"; expected="${expected##*@}"
           body="$(curl -fsS --retry 3 --retry-delay 10 -X POST "${PRODUCTION_URL}/mcp" \
@@ -323,4 +345,93 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter @elabs-ai/components-docs exec playwright install --with-deps chromium
       - name: Smoke the published stories
-        run: node scripts/release-smoke.mjs --stories-only --stories https://elabs-ai.com
+        run: node scripts/release-smoke.mjs --stories-only --stories https://storybook.elabs-ai.com
+
+  # ── deploy the released website + hosted MCP to Vercel production ───────────
+  #
+  # The website owns both public addresses (`elabs-components.vercel.app` and
+  # `elabs-ai.com`), serves `/mcp` from its own route, and reaches Storybook by
+  # rewriting `/storybook/:path*` to the Storybook project — so it must go out AFTER
+  # deploy-docs, or the site's `/storybook` would serve the previous release for as
+  # long as the two deploys are apart. `needs` therefore lists deploy-docs, and
+  # `!cancelled()` lets this run even when deploy-docs failed: a website that is a
+  # release behind on Storybook is still better than one that is a release behind
+  # everywhere.
+  #
+  # Nothing in either build log can tell whether the arrangement actually holds —
+  # a rewrite pointing at a dead origin, a project whose Root Directory was never
+  # switched, and a domain still aliased to the old deployment all deploy GREEN and
+  # answer 200. `scripts/site-smoke.mjs` is the check that can tell, and it runs
+  # against BOTH public addresses because the two must behave identically.
+  deploy-home:
+    name: Deploy the website + hosted MCP to Vercel
+    needs: [release, deploy-docs]
+    if: ${{ !cancelled() && (needs.release.outputs.published == 'true' || inputs.deploy-home) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERCEL_ORG_ID: team_CREpBGwTjqJ21Rj1cpNRTPCv # elabs-ai (not a secret)
+      VERCEL_PROJECT_ID: prj_vAhDf9Ako9r9kiLJQqCQQXOPdTp8 # elabs-components (not a secret)
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Verify Vercel deploy credential
+        run: |
+          if [ -z "${VERCEL_TOKEN}" ]; then
+            echo "::error::secrets.VERCEL_TOKEN is empty — the released website and hosted MCP cannot" >&2
+            echo "be deployed. Create a token scoped to the elabs-ai team (vercel.com/account/tokens)" >&2
+            echo "and add it as the VERCEL_TOKEN repository secret, then re-run with deploy-home." >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out the latest release tag
+        id: tag
+        run: |
+          git fetch --tags --force
+          tag="$(git tag -l '@elabs-ai/components-cli@*' --sort=-v:refname | head -1)"
+          if [ -z "$tag" ]; then
+            echo "::error::no @elabs-ai/components-cli@<version> tag — nothing released to deploy." >&2
+            exit 1
+          fi
+          git checkout --quiet "$tag"
+          echo "deploying $tag ($(git rev-parse --short HEAD))"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag##*@}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to production
+        id: deploy
+        run: |
+          url="$(npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" \
+            --meta releaseTag="${{ steps.tag.outputs.tag }}")"
+          echo "deployed: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # The smoke needs a toolchain (Playwright is apps/docs's devDependency); the
+      # deploy itself ran on Vercel, so this job had none until here.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm --filter @elabs-ai/components-docs exec playwright install --with-deps chromium
+
+      # Both addresses, same expectations, sampled story crawl through the rewrite on
+      # the canonical one. A failure here means the site a consumer opens is wrong,
+      # whatever the deploy said.
+      - name: Smoke the Vercel address
+        run: |
+          node scripts/site-smoke.mjs https://elabs-components.vercel.app \
+            --version "${{ steps.tag.outputs.version }}"
+      - name: Smoke the custom domain
+        run: |
+          node scripts/site-smoke.mjs https://elabs-ai.com \
+            --version "${{ steps.tag.outputs.version }}" --stories 30

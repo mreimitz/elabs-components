@@ -78,7 +78,7 @@
  *   --pointer-only    run ONLY the marketplace-pointer assertion (no install, no
  *                     package list needed) — the pre-publish preflight
  *   --stories-only    run ONLY the published-story crawl (no install, no registry)
- *   --stories <url>   the Storybook to crawl (default: https://elabs-ai.com)
+ *   --stories <url>   the Storybook to crawl (default: https://storybook.elabs-ai.com)
  *   --concurrency <n> pages open at once during the crawl (default: 8)
  *   --version <v>     released version (default: the root package.json version)
  *   --manifest <p>    JSON package list to install instead of the derived distributables
@@ -314,7 +314,11 @@ export function judgeMarketplacePointer({ pointer, version, repo, ci = Boolean(p
 }
 
 /** The Storybook a release deploys — the address a customer opens. */
-export const DEFAULT_STORIES_URL = "https://elabs-ai.com";
+// Storybook has its own Vercel project and its own host; the WEBSITE reaches it at
+// /storybook/ through a rewrite (ADR 0038 § operations). The full crawl opens the
+// Storybook host directly — a rewrite hop per asset, 1958 stories deep, is the
+// website's problem and is covered by `site-smoke.mjs --stories` instead.
+export const DEFAULT_STORIES_URL = "https://storybook.elabs-ai.com";
 
 /**
  * The one-line verdict of a story crawl. Pure, so the wording is pinned by the

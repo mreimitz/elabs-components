@@ -5,10 +5,13 @@ paths:
 
 # The website (`apps/home`, ADR 0038)
 
-`apps/home` is the elabs-ai.com site: a Next.js App Router app that consumes the library exactly
-as a customer would. Storybook stays its own project, reached at `/storybook/` through a rewrite;
-`/mcp` is served by `app/mcp/route.ts`. Read `docs/ADR/0038-home-site-in-apps-home.md` before
-changing routing, the rewrite or the deploy.
+`apps/home` is the site behind `elabs-ai.com` AND `elabs-components.vercel.app` — the same Vercel
+project, and both addresses must behave identically. It is a Next.js App Router app that consumes
+the library exactly as a customer would. Storybook is its own Vercel project on
+`storybook.elabs-ai.com`, reached at `/storybook/` through a rewrite; `/mcp` is served by
+`app/mcp/route.ts`. Read `docs/ADR/0038-home-site-in-apps-home.md` (§2 and § Operations) before
+changing routing, the rewrite or the deploy, and prove a deploy with
+`node scripts/site-smoke.mjs <base-url>` on BOTH addresses.
 
 ## Standing rules
 

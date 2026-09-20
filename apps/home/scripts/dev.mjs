@@ -32,7 +32,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const APP = join(HERE, "..");
 const REPO = join(APP, "..", "..");
 const STATIC_DIR = join(REPO, "apps", "docs", "storybook-static");
-const DEPLOYED = "https://elabs-components.vercel.app";
+const DEPLOYED = "https://storybook.elabs-ai.com";
 const FIRST_PORT = 6106;
 
 const MIME = {

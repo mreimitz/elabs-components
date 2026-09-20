@@ -76,7 +76,7 @@ test("/mcp answers initialize over POST", async ({ request }) => {
 });
 
 test("/storybook/ serves the Storybook manager", async ({ request }) => {
-  const origin = (process.env.STORYBOOK_ORIGIN ?? "https://elabs-components.vercel.app").replace(
+  const origin = (process.env.STORYBOOK_ORIGIN ?? "https://storybook.elabs-ai.com").replace(
     /\/+$/,
     "",
   );

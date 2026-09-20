@@ -53,15 +53,29 @@ Merging the Version PR leaves no pending changesets, so the next run publishes:
    (`r/<version>/` + `r/latest/`). Needs `secrets.PAGES_DEPLOY_TOKEN`: a push with the
    default `GITHUB_TOKEN` does not trigger a Pages build. Runs whenever the npm publish
    succeeded, even if a later step of the release job failed.
-7. **`deploy-docs`** — deploys the Storybook and the hosted MCP (`/mcp`) to Vercel
-   production from the newest `@elabs-ai/components-cli@<version>` tag, then checks that
-   `/mcp` reports that version and **crawls every story the deployed site serves**
-   (`node scripts/release-smoke.mjs --stories-only`), failing on a visible error
-   overlay, an uncaught page error, or a chart that measured to nothing. Vercel's Git integration is off (`git.deploymentEnabled:
-false` in `apps/docs/vercel.json`), so pushes to `main` never deploy: production keeps
-   the previous release until this job replaces it. Needs `secrets.VERCEL_TOKEN` (a token
-   scoped to the `elabs-ai` Vercel team). Redeploy the current release by hand: run the
-   Release workflow with **deploy-docs** ticked.
+7. **`deploy-docs`** — deploys **Storybook** to its own Vercel project
+   (`storybook.elabs-ai.com`) from the newest `@elabs-ai/components-cli@<version>` tag,
+   then checks that its `/mcp` reports that version and **crawls every story the
+   deployed Storybook serves** (`node scripts/release-smoke.mjs --stories-only`),
+   failing on a visible error overlay, an uncaught page error, or a chart that measured
+   to nothing.
+8. **`deploy-home`** — deploys the **website** to the project that owns the public
+   addresses, then runs `node scripts/site-smoke.mjs` against **both**
+   `https://elabs-components.vercel.app` and `https://elabs-ai.com`: every path a
+   consumer or an agent opens, on each address, plus 30 sampled stories crawled through
+   `/storybook/` on the canonical one. It runs after `deploy-docs` on purpose — the site
+   reaches Storybook by rewriting `/storybook`, so the other order leaves the previous
+   release's Storybook behind the current site.
+
+   Vercel's Git integration is off in both projects (`git.deploymentEnabled: false` in
+   each app's `vercel.json`), so pushes to `main` never deploy: production keeps the
+   previous release until these jobs replace it. Both need `secrets.VERCEL_TOKEN` (a
+   token scoped to the `elabs-ai` Vercel team). Redeploy the current release by hand: run
+   the Release workflow with **deploy-docs** and/or **deploy-home** ticked.
+
+   Which project is which, and what each address serves, is the operations table in
+   [ADR 0038](./ADR/0038-home-site-in-apps-home.md) — including why `.vercelignore` at the
+   repo root is what makes a CLI deploy possible at all.
 
 Watch with `gh run list --workflow=Release`. Confirm: `npm view @elabs-ai/components-ui@<v>`,
 or re-run the smoke from a checkout: `GITHUB_REPOSITORY=mreimitz/elabs-components pnpm release:smoke`.
@@ -82,7 +96,8 @@ Two halves fix it, and only one of them lives in this repo:
   `ci.yml`, deliberately duplicated: it is the one job whose failure must stop a
   publish, with no repository setting in the loop. The post-deploy story crawl in
   `deploy-docs` is the second half of the same idea, aimed at the artefact rather than
-  the source.
+  the source, and `deploy-home`'s two `site-smoke` runs are the third: they open the
+  addresses a consumer opens, which is the one thing neither build log can report.
 - **In repository settings (for a maintainer).** Make the CI jobs required on `main`, so
   a red run also stops the merge and not only the publish:
 

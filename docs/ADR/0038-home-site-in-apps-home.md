@@ -91,14 +91,22 @@ the exact shape a Next.js App Router route handler exports. The transport moves 
 
 ### 2. Two Vercel projects; Storybook reached at `/storybook` through a rewrite
 
-- **`elabs-home`** (new project, root directory `apps/home`, framework Next.js) owns
-  `elabs-ai.com`. `apps/home/vercel.json` is `{ "git": { "deploymentEnabled": false } }` — deploy
-  on release only, like today.
-- **`elabs-components`** (existing project, root `apps/docs`) keeps building the Storybook static
-  output. It stops owning the apex domain and is reached through the site:
-  `/storybook/:path*` → `${STORYBOOK_ORIGIN}/:path*`, with `STORYBOOK_ORIGIN` read from the
-  environment (default `https://elabs-components.vercel.app`, the project's production URL).
+- **`elabs-components`** (the EXISTING project, Root Directory switched to `apps/home`, framework
+  Next.js) owns every public address: `elabs-components.vercel.app` and `elabs-ai.com`.
+  `apps/home/vercel.json` pins `framework: "nextjs"` and `{ "git": { "deploymentEnabled": false } }`
+  — deploy on release only, like today.
+- **`elabs-storybook`** (the NEW project, root `apps/docs`) builds the Storybook static output. It
+  owns no public address of its own beyond `storybook.elabs-ai.com`, and is reached through the
+  site: `/storybook/:path*` → `${STORYBOOK_ORIGIN}/:path*`, with `STORYBOOK_ORIGIN` read from the
+  environment (default `https://storybook.elabs-ai.com`).
 - Each project keeps its own deploy; both deploy from the release tag.
+
+**Which project keeps which name is not cosmetic.** A `*.vercel.app` address is derived from the
+project's NAME and cannot be reassigned to a sibling project, so the project that must answer on
+`elabs-components.vercel.app` is the one named `elabs-components` — and that is why the public
+build was moved INTO the existing project rather than the domain being moved out of it. It also
+means no domain was ever detached: both addresses kept answering throughout, serving the previous
+Storybook deployment until the first website deployment replaced it.
 
 **Storybook's assets work under a sub-path as built — no base-path flag, no subdomain needed —
 provided the URL ends in a slash.** Evidence:
@@ -148,10 +156,12 @@ which 404s, and the manager renders blank. Next.js by default (`trailingSlash: f
 **Not verified while drafting:** (a) a browser run of Storybook under the rewrite — that is RM-089's
 phase-B acceptance, with a story open and screenshots; (b) the live production HTML (not fetched —
 no network in the drafting session; the evidence above is the local 10.4.2 build and the builder
-source); (c) whether `https://elabs-components.vercel.app` is publicly reachable. If Vercel
-Deployment Protection covers that URL, the rewrite would proxy a login page. The fallback then is
-to give the Storybook project a custom subdomain (e.g. `storybook.elabs-ai.com`) and use it as
-`STORYBOOK_ORIGIN`; the public address stays `/storybook`.
+source); (c) whether a `*.vercel.app` origin is publicly reachable. If Vercel
+Deployment Protection covers that URL, the rewrite would proxy a login page. **Settled at
+build time (2026-09-20): the subdomain is the origin, not the fallback** — `storybook.elabs-ai.com`
+is used as `STORYBOOK_ORIGIN` outright, because a provider-generated address is derived from the
+project name and would break the site's Storybook section the moment that project is renamed. The
+public address stays `/storybook`.
 
 ### 3. The domain moves from `elabs-components` to `elabs-home` — cut-over order (RM-105)
 
@@ -270,3 +280,52 @@ The maintainer confirmed each proposal as drafted, in chat to the orchestrator, 
   one project.
 - **A non-library UI dependency** added to `apps/home` "just for the homepage" — `home-imports`
   exists to fail it; the answer is a `marketing` component or a registry block.
+
+## Operations (as built, 2026-09-20)
+
+What is actually deployed, so nobody has to read it out of a dashboard. None of these ids is a
+secret; the deploy token is.
+
+|                | website                                       | Storybook                          |
+| -------------- | --------------------------------------------- | ---------------------------------- |
+| Vercel project | `elabs-components`                            | `elabs-storybook`                  |
+| project id     | `prj_vAhDf9Ako9r9kiLJQqCQQXOPdTp8`            | `prj_D84K8BP6ySAwJHFmNEeaX2lbwpBj` |
+| Root Directory | `apps/home`                                   | `apps/docs`                        |
+| framework      | Next.js                                       | Vite (Storybook static)            |
+| addresses      | `elabs-components.vercel.app`, `elabs-ai.com` | `storybook.elabs-ai.com`           |
+| release job    | `deploy-home`                                 | `deploy-docs`                      |
+
+Vercel team `elabs-ai` (`team_CREpBGwTjqJ21Rj1cpNRTPCv`). Git deployments are off in both projects,
+so only a release changes production. `deploy-docs` runs first: the website rewrites `/storybook`
+to the Storybook project, so deploying the website first would leave the previous release's
+Storybook behind the current site for as long as the two jobs are apart.
+
+**What each public address serves.** Both behave identically, and `scripts/site-smoke.mjs <base>`
+asserts exactly this list on either one:
+
+| path                                                                               | served by                                                     |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `/` and every site page                                                            | the website's own Next.js build                               |
+| `/storybook/…`                                                                     | the Storybook project, through the rewrite (never a redirect) |
+| `/mcp`                                                                             | the website's own route (`apps/home/app/mcp/route.ts`)        |
+| `/llms.txt`, `/llms/<pkg>`                                                         | the website's own routes                                      |
+| `/.well-known/mcp.json`, `/r/*`, `/robots.txt`, `/sitemap.xml`, `/opengraph-image` | the website                                                   |
+| `/?path=…`, `/iframe.html`                                                         | redirect (308) into `/storybook/`                             |
+
+**`.vercelignore` at the repo root is load-bearing.** Both projects are deployed with
+`vercel deploy` from the repo root and let each project's Root Directory pick the app, so the CLI
+walks the whole repo — and it does NOT read `.gitignore`. Without that file the transient agent
+worktrees under `.claude` (108k files, 40 GB on the machine this was set up from) are walked too,
+and the deployment's file manifest, which travels as ONE request with a 10 MB limit, is rejected
+with `Request body too large. Limit: 10mb`. That is a deploy that never starts, with no build log
+to read.
+
+**Rollback** is per project and needs no domain change: promote the previous production deployment
+in the Vercel dashboard, or re-run Release with `deploy-docs` / `deploy-home` ticked at an older
+tag. Moving an address between projects is never part of a rollback.
+
+**Still duplicated on purpose:** `apps/docs/api/mcp.mjs` and the `/mcp` rewrite in
+`apps/docs/vercel.json` keep the Storybook project answering `/mcp` at
+`storybook.elabs-ai.com/mcp`. It is what `deploy-docs` smokes to prove the deployment that just
+went live is built from the release tag. The MCP endpoint consumers are told to add is the
+website's.

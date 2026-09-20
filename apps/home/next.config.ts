@@ -4,9 +4,10 @@ import type { NextConfig } from "next";
  * The website (ADR 0038). Storybook is its own Vercel project, reached at /storybook/ through a
  * rewrite; set STORYBOOK_ORIGIN=http://localhost:6006 to point it at a local Storybook.
  */
-const STORYBOOK_ORIGIN = (
-  process.env.STORYBOOK_ORIGIN ?? "https://elabs-components.vercel.app"
-).replace(/\/+$/, "");
+const STORYBOOK_ORIGIN = (process.env.STORYBOOK_ORIGIN ?? "https://storybook.elabs-ai.com").replace(
+  /\/+$/,
+  "",
+);
 
 // Workspace packages export their TypeScript source, so Next compiles them.
 const WORKSPACE_PACKAGES = [

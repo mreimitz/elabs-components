@@ -1,0 +1,30 @@
+# What Vercel may NOT upload.
+#
+# Both Vercel projects are deployed with `vercel deploy` from the REPO ROOT and let the
+# project's own Root Directory (apps/docs for Storybook, apps/home for the website) pick
+# the app. That means the CLI walks the whole repo, and it does NOT read .gitignore — so
+# without this file the transient agent worktrees under .claude (108k files, 40 GB) are
+# walked too and the deployment's file manifest, which travels as ONE request with a
+# 10 MB limit, is rejected with "Request body too large. Limit: 10mb".
+#
+# Keep this list to things that are generated, transient or machine-local. Anything a
+# build needs must stay uploadable.
+
+# Agent scratch space and isolation worktrees (.gitignore:62)
+.claude
+# repo-cleanup audit output (.gitignore:88)
+.repo-cleanup
+# Editor-local state, including debug-profile Chrome data
+.vscode
+# Git history — Vercel builds from the uploaded tree, not from git
+.git
+
+# Build and cache output; every one of these is regenerated on Vercel
+**/node_modules
+**/.next
+**/.turbo
+**/storybook-static
+**/dist
+**/test-results
+**/playwright-report
+**/coverage

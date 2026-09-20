@@ -23,7 +23,9 @@ system is legible to coding agents through a CLI, an MCP server and a generated 
 
 ## Docs & hosted MCP
 
-- **Docs site:** **[elabs-ai.com](https://elabs-ai.com)** — the Storybook build. Every
+- **Website:** **[elabs-ai.com](https://elabs-ai.com)** — the packages, the blocks, the
+  templates and the charts, built from nothing but brand-ui itself.
+- **Storybook:** **[elabs-ai.com/storybook](https://elabs-ai.com/storybook)** — every
   component, every variant, live, in every theme, with a props table per component.
 - **Hosted MCP (nothing to install):** point any MCP host at
   `https://elabs-ai.com/mcp` and it can look up real props, variants, intent, tokens and
@@ -39,6 +41,12 @@ system is legible to coding agents through a CLI, an MCP server and a generated 
 - **For agents without MCP:** **[elabs-ai.com/llms.txt](https://elabs-ai.com/llms.txt)** —
   a generated hub with the package routing map, the rules of the road and per-package
   spokes at `/llms/<package>.txt`.
+- **Copy-own blocks:** the shadcn-compatible registry is served from the same host at
+  `/r/registry.json`.
+
+Everything above answers identically on
+**[elabs-components.vercel.app](https://elabs-components.vercel.app)**, the same
+deployment under its provider address.
 
 ## Scope
 
