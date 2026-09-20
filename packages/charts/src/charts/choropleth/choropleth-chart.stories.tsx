@@ -96,7 +96,7 @@ type Story = StoryObj<typeof meta>;
 /** World choropleth with default chart token colors and a value tooltip. */
 export const Default: Story = {
   render: () => (
-    <div className="h-72 w-[560px]">
+    <div className="h-72 w-full max-w-[560px]">
       <ChoroplethChart data={worldData} aspectRatio="16 / 9">
         <ChoroplethFeatureComponent />
         <ChoroplethTooltip getFeatureValue={getFeatureValue} valueLabel="Score" />
@@ -108,7 +108,7 @@ export const Default: Story = {
 /** Zoom and pan enabled. */
 export const ZoomEnabled: Story = {
   render: () => (
-    <div className="h-72 w-[560px]">
+    <div className="h-72 w-full max-w-[560px]">
       <ChoroplethChart data={worldData} aspectRatio="16 / 9" zoomEnabled>
         <ChoroplethFeatureComponent />
         <ChoroplethTooltip getFeatureValue={getFeatureValue} valueLabel="Score" />
@@ -131,7 +131,7 @@ export const ZoomEnabled: Story = {
  */
 export const AccessibleName: Story = {
   render: () => (
-    <div className="h-72 w-[560px]">
+    <div className="h-72 w-full max-w-[560px]">
       <ChoroplethChart
         data={worldData}
         aspectRatio="16 / 9"
@@ -181,7 +181,7 @@ const tableRows = worldData.features
  */
 export const DataTableFallback: Story = {
   render: () => (
-    <div className="w-[560px] space-y-4">
+    <div className="w-full max-w-[560px] space-y-4">
       <ChoroplethChart
         data={worldData}
         aspectRatio="16 / 9"
@@ -271,7 +271,7 @@ function getStateValue(f: { properties: ChoroplethFeatureProperties }): number |
 export const NoDataHatchAndTopLabels: Story = {
   name: "No-data hatch + top-5 labels (M1/M2)",
   render: () => (
-    <div className="h-80 w-[640px]">
+    <div className="h-80 w-full max-w-[640px]">
       {/* scale/translate reframed so all 50 schematic states fit the
           640x360 plot with margin — #236 measured the collection's bounds
           at these parameters as [87.4, 46.6] -> [611.3, 356.6] inside this
@@ -295,7 +295,7 @@ export const NoDataHatchAndTopLabels: Story = {
 /** `noDataFill="muted"` — the flat `var(--muted)` alternative to the hatch pattern. */
 export const NoDataMuted: Story = {
   render: () => (
-    <div className="h-80 w-[640px]">
+    <div className="h-80 w-full max-w-[640px]">
       <ChoroplethChart
         data={usStatesData}
         aspectRatio="16 / 9"

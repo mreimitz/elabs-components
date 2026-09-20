@@ -174,30 +174,51 @@ function AtmPanelTitle(panel: ChartMultiplesPanel<AtmRow>, hovered?: ChartMultip
  */
 export const ColumnMultiplesValueInTitle: Story = {
   render: () => (
-    <ChartMultiples<AtmRow>
-      by="country"
-      columns={{ base: 3, medium: 2, narrow: 1 }}
-      data={ATM_ROWS}
-      dataKeys={["atms"]}
-      panelHeight={140}
-      panelTitle={AtmPanelTitle}
-      scales={{ y: "shared" }}
-      sort="end"
-      xDataKey="year"
-    >
-      {(panel) => (
-        <BarChart
-          accessibleLabel={`Cash machines in ${panel.title}`}
-          data={panel.data}
-          xDataKey="year"
-        >
-          <Grid horizontal />
-          <Bar dataKey="atms" name={panel.title} />
-          <BarXAxis />
-          <YAxis />
-        </BarChart>
-      )}
-    </ChartMultiples>
+    // a-9: the six numbers in the panel titles are the LATEST year's count,
+    // not each country's maximum — without a grid title naming the quantity,
+    // the unit and the year, "Ostmark 1,104" beside a 1.2K-tall column reads
+    // as that column's value. The spec sibling below carries the same title.
+    <section aria-labelledby="atm-multiples-title" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <h3 className="text-subtitle font-medium text-foreground" id="atm-multiples-title">
+          Cash machines per country, {ATM_LATEST_YEAR}
+        </h3>
+        <p className="text-caption text-muted-foreground">
+          Each panel prints its {ATM_LATEST_YEAR} count; hover a year to read that year instead.
+        </p>
+      </div>
+      <ChartMultiples<AtmRow>
+        by="country"
+        columns={{ base: 3, medium: 2, narrow: 1 }}
+        data={ATM_ROWS}
+        dataKeys={["atms"]}
+        panelHeight={140}
+        panelTitle={AtmPanelTitle}
+        scales={{ y: "shared" }}
+        sort="end"
+        xDataKey="year"
+      >
+        {(panel) => (
+          <BarChart
+            // a-9: the auto summary named each country's PEAK ("Ostmark peaks at
+            // 1.2K in 2020"), a different quantity from the number printed in
+            // the panel title — a screen-reader user heard one and a sighted
+            // reader saw the other.
+            accessibleDescription={`${
+              panel.stats.end == null ? "No" : atmCount.format(panel.stats.end)
+            } cash machines in ${ATM_LATEST_YEAR}, the number printed in this panel’s title.`}
+            accessibleLabel={`Cash machines in ${panel.title}`}
+            data={panel.data}
+            xDataKey="year"
+          >
+            <Grid horizontal />
+            <Bar dataKey="atms" name={panel.title} />
+            <BarXAxis />
+            <YAxis />
+          </BarChart>
+        )}
+      </ChartMultiples>
+    </section>
   ),
   play: async ({ canvasElement }) => {
     await waitFor(() =>
@@ -211,6 +232,22 @@ export const ColumnMultiplesValueInTitle: Story = {
       canvasElement.querySelectorAll('[data-slot="chart-multiples-panel"]').length,
     );
     await expect(values[0]?.textContent).not.toBe("—");
+    // a-9: the grid says what the six numbers are, and the sr-only
+    // restatement names the printed value rather than the peak.
+    await expect(canvasElement.querySelector("#atm-multiples-title")?.textContent).toBe(
+      `Cash machines per country, ${ATM_LATEST_YEAR}`,
+    );
+    const firstPanel = canvasElement.querySelector('[data-slot="chart-multiples-panel"]');
+    const printed = firstPanel?.querySelector(
+      '[data-slot="chart-multiples-panel-value"]',
+    )?.textContent;
+    const figure = firstPanel?.querySelector('[role="figure"]');
+    const describedBy = figure?.getAttribute("aria-describedby");
+    const description = describedBy
+      ? canvasElement.ownerDocument.getElementById(describedBy)?.textContent
+      : null;
+    await expect(printed).toBeTruthy();
+    await expect(description).toContain(printed as string);
   },
 };
 
