@@ -40,6 +40,18 @@
     "Patterns/Blocks/Stat Cards/Choropleth Stat": "Patterns/Blocks/Stat Card (Choropleth)",
     "Patterns/Blocks/Stat Cards/Line Stat": "Patterns/Blocks/Stat Card (Line)",
     "Patterns/Blocks/Stat Cards/Stat Grid": "Patterns/Blocks/Stat Cards",
-    "Patterns/Blocks/Stat Cards/Stat List": "Patterns/Blocks/Stat List"
+    "Patterns/Blocks/Stat Cards/Stat List": "Patterns/Blocks/Stat List",
+    "Patterns/Templates/AI Products/Terminal Agent Session": "Patterns/Templates/Terminal Agent Session",
+    "Patterns/Templates/Operations/Process Explorer": "Patterns/Templates/Process Explorer",
+    "Patterns/Templates/Starters/AI Assistant": "Patterns/Templates/AI Assistant",
+    "Patterns/Templates/Starters/Dashboard": "Patterns/Templates/Dashboard",
+    "Patterns/Templates/Starters/Dashboard Sheet": "Patterns/Templates/Dashboard Sheet",
+    "Patterns/Templates/Starters/Data App": "Patterns/Templates/Data App",
+    "Patterns/Templates/Starters/Enterprise Admin Console": "Patterns/Templates/Enterprise Admin Console",
+    "Patterns/Templates/Starters/Flow Workspace": "Patterns/Templates/Flow Workspace",
+    "Patterns/Templates/Starters/Marketing": "Patterns/Templates/Marketing",
+    "Patterns/Templates/Starters/Object Detail Hub": "Patterns/Templates/Object Detail Hub",
+    "Patterns/Templates/Starters/Screen States": "Patterns/Templates/Screen States",
+    "Patterns/Templates/Starters/Settings": "Patterns/Templates/Settings"
   }
 }

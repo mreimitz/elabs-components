@@ -266,7 +266,7 @@ function CustomersScreen({ state = "ready" }: { state?: ScreenState }) {
 /* -------------------------------------------------------------------------- */
 
 const meta = {
-  title: "Patterns/Templates/Screen States",
+  title: "Patterns/Templates/Starters/Screen States",
   component: CustomersScreen,
   parameters: {
     layout: "fullscreen",

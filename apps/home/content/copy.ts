@@ -867,6 +867,20 @@ export const galleryCopy = {
 // The catalogue: sidebar, search, and the generated detail pages for components, charts, blocks
 // and templates. Names, purposes, props and examples come from `catalog-*.json`; these are the
 // labels around them.
+/** One line per template family, in the words of the team that would build it. */
+export const templateFamilyCopy: Record<string, string> = {
+  Analytics:
+    "Workspaces for revenue, finance and BI teams: a desk of numbers with the table that explains them.",
+  Operations:
+    "Screens that stay open all day: control towers, incident rooms and process explorers, where a selection drives everything else.",
+  Customers: "Account and service products: the record before the call, the queue during it.",
+  "Product Teams": "Tools a team runs its own work in: projects, the board, who is carrying what.",
+  "AI Products":
+    "Products with a model inside: an agentic workspace, an operations center for a fleet of agents, a terminal session.",
+  Starters:
+    "The archetypes `brand-ui create` scaffolds. Plain on purpose: the shape of a screen, ready for your content.",
+};
+
 /** One line per block family, in the words of the person choosing between them. */
 export const blockFamilyCopy: Record<string, string> = {
   "KPI Cards": "One number, one question. Pick the card by what the reader is asking of it.",
@@ -882,7 +896,14 @@ export const blockFamilyCopy: Record<string, string> = {
   "Agent Ops": "What an agent did, what it cost, where it failed and where a human decides.",
   "AI and Terminal": "Chat, code and console surfaces for working with a model.",
   "Forms and Setup": "Multi-step forms and the screens that connect a product to others.",
-  Marketing: "The top of a landing page.",
+  Application:
+    "The screens every product needs and nobody wants to design twice: boards, lists, checklists, empty states.",
+  Authentication:
+    "The way in: sign in, sign up, reset, verify. Real validation, real states, and no server call of their own.",
+  "Account and Settings":
+    "Profile, members, notifications and billing, with the edge cases handled.",
+  Commerce: "From the product grid to the receipt, with stock, totals and delivery that add up.",
+  Marketing: "A landing page in sections, from the navbar to the footer.",
 };
 
 export const catalogCopy = {
@@ -894,7 +915,7 @@ export const catalogCopy = {
   },
   sectionLead: {
     templates:
-      "Full screens, one per kind of product. Start from the one closest to what you are building, then swap its blocks and components.",
+      "Whole products, not page outlines. The use-case templates are built from the registry's blocks inside the workspace shell, with every control wired; the starters are the plain archetypes the CLI scaffolds.",
     blocks:
       "Copy-own compositions from the registry, grouped by what they are for: numbers, arguments, command centers, maps, process, agent operations. One command puts the source in your repo.",
     charts:
@@ -937,6 +958,14 @@ export const catalogCopy = {
     docs: "Storybook docs",
     source: "Source on GitHub",
     pending: "This example ships with the next Storybook release.",
+    missingTitle: (n: number, total: number) =>
+      n === total
+        ? `${total === 1 ? "The example" : `All ${total} examples`} here ${total === 1 ? "is" : "are"} newer than the published Storybook`
+        : `${n} of ${total} examples here are newer than the published Storybook`,
+    missingBody: (names: string) => `Live with its next release: ${names}.`,
+    missingLocal: "Working from the repository? Build them now with",
+    missingCommand: "pnpm site:stories",
+    missingLocalTail: "and start the site again.",
     previewOf: (name: string) => `Live example: ${name}`,
   },
   detail: {

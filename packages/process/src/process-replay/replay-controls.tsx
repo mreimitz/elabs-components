@@ -111,26 +111,30 @@ export const ReplayControls = forwardRef<HTMLDivElement, ReplayControlsProps>(
             if (next !== undefined) onTimeChange(Math.min(next, duration));
           }}
         />
-        <Select
-          value={String(speed)}
-          disabled={disabled}
-          onValueChange={(value) => onSpeedChange(Number(value))}
-        >
-          <SelectTrigger
-            data-slot="replay-controls-speed"
-            className="min-w-20"
-            aria-label={labels.speed}
+        {/* A `SelectTrigger` is full-width by default, which in this wrapping row claimed a
+            line of its own — a speed picker as wide as the map. Its box is the speed, no more. */}
+        <div className="w-24 shrink-0">
+          <Select
+            value={String(speed)}
+            disabled={disabled}
+            onValueChange={(value) => onSpeedChange(Number(value))}
           >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {REPLAY_SPEEDS.map((option) => (
-              <SelectItem key={option} value={String(option)}>
-                {fillLabel(labels.speedOption, { speed: formatNumber(option) })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              data-slot="replay-controls-speed"
+              className="min-w-20"
+              aria-label={labels.speed}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REPLAY_SPEEDS.map((option) => (
+                <SelectItem key={option} value={String(option)}>
+                  {fillLabel(labels.speedOption, { speed: formatNumber(option) })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <p
           data-slot="replay-controls-readout"
           className="text-meta text-muted-foreground tabular-nums"

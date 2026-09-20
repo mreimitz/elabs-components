@@ -527,6 +527,9 @@ const preview: Preview = {
           "Patterns",
           [
             "Templates",
+            // Use-case templates by who builds them, then the archetype starters
+            // `brand-ui create` scaffolds.
+            ["Analytics", "Operations", "Customers", "Product Teams", "AI Products", "Starters"],
             "Scenarios",
             "Blocks",
             // Reading order of the copy-own block families: numbers first, then the
@@ -542,7 +545,11 @@ const preview: Preview = {
               "Data Surfaces",
               "Agent Ops",
               "AI and Terminal",
+              "Application",
               "Forms and Setup",
+              "Authentication",
+              "Account and Settings",
+              "Commerce",
               "Marketing",
             ],
           ],

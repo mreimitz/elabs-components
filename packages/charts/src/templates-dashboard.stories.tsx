@@ -204,7 +204,7 @@ function DashboardTemplate() {
 }
 
 const meta = {
-  title: "Patterns/Templates/Dashboard",
+  title: "Patterns/Templates/Starters/Dashboard",
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],
 } satisfies Meta;

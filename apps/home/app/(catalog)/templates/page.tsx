@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { EntryGrid, IndexHeader } from "../../../components/catalog/entry-grid";
-import { entriesOf } from "../../../lib/catalog";
-import { catalogCopy } from "../../../content/copy";
+import { Badge } from "@elabs-ai/components-ui";
+import { EntryGrid, GroupHeading, IndexHeader } from "../../../components/catalog/entry-grid";
+import { TEMPLATE_FAMILY_ORDER } from "../../../components/catalog/nav-model";
+import { entriesOf, grouped } from "../../../lib/catalog";
+import { catalogCopy, templateFamilyCopy, tourCopy } from "../../../content/copy";
 
 export const metadata: Metadata = {
   title: catalogCopy.sections.templates,
@@ -9,16 +11,58 @@ export const metadata: Metadata = {
   alternates: { canonical: "/templates" },
 };
 
+const anchorOf = (family: string) => family.toLowerCase().replace(/\s+/g, "-");
+
 export default function TemplatesPage() {
-  const all = entriesOf("templates");
+  // A starter's card says what you would build from it (the tour's use case), since a plain
+  // archetype has no summary of its own.
+  const useCases = tourCopy.tabs as Record<string, { useCase: string } | undefined>;
+  const all = entriesOf("templates").map((entry) => ({
+    ...entry,
+    summary: entry.summary || useCases[entry.slug]?.useCase || "",
+  }));
+  const families = grouped(all, TEMPLATE_FAMILY_ORDER);
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10">
-      <IndexHeader
-        title={catalogCopy.sections.templates}
-        lead={catalogCopy.sectionLead.templates}
-        count={all.length}
-      />
-      <EntryGrid entries={all} columns="wide" thumbWidth={1440} />
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 py-10">
+      <div className="flex flex-col gap-6">
+        <IndexHeader
+          title={catalogCopy.sections.templates}
+          lead={catalogCopy.sectionLead.templates}
+          count={all.length}
+        />
+        <nav aria-label={catalogCopy.sections.templates}>
+          <ul className="flex flex-wrap gap-2">
+            {families.map(([family, list]) => (
+              <li key={family}>
+                <a
+                  href={`#${anchorOf(family)}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-meta font-medium text-card-foreground hover:bg-accent focus-ring"
+                >
+                  {family}
+                  <Badge variant="secondary">{list.length}</Badge>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+      {families.map(([family, list]) => (
+        <section key={family} className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1.5">
+            <GroupHeading id={anchorOf(family)} label={family} count={list.length} />
+            {templateFamilyCopy[family] ? (
+              <p className="max-w-prose text-body text-muted-foreground">
+                {templateFamilyCopy[family]}
+              </p>
+            ) : null}
+          </div>
+          <EntryGrid
+            entries={list}
+            columns={family === "Starters" ? "default" : "wide"}
+            thumbWidth={1440}
+          />
+        </section>
+      ))}
     </div>
   );
 }

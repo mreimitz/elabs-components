@@ -93,6 +93,24 @@ export const WithTrends: Story = {
 };
 
 /**
+ * `layout="inline"`: the same six numbers as one dense ribbon, for a workspace whose height
+ * belongs to the process map. Cells are divided by hairlines and the ribbon scrolls sideways
+ * when it runs out of room.
+ */
+export const Inline: Story = {
+  args: { ...WithTrends.args, layout: "inline" },
+  play: async ({ canvasElement }) => {
+    const strip = canvasElement.querySelector<HTMLElement>('[data-slot="process-kpi-strip"]');
+    await expect(strip).toHaveAttribute("data-layout", "inline");
+    await expect(
+      canvasElement.querySelectorAll('[data-slot="process-kpi-strip-cell"]').length,
+    ).toBe(6);
+    // One row: the ribbon is no taller than a single card line.
+    await expect(strip!.getBoundingClientRect().height).toBeLessThan(80);
+  },
+};
+
+/**
  * RM-062: the conformance tile reads a token-replay result directly (its mean fitness) and
  * plots `conformanceRateSeries` as its sparkline.
  */

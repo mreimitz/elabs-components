@@ -2160,7 +2160,7 @@
    that also carries `transition-colors` — every `sidebar-menu-button`, the flow
    `zoom-controls` — the ring used to snap in while the contour animated from
    `outline-color`'s initial `currentColor`: measured on
-   `patterns-templates-enterprise-admin-console--default` [light] immediately
+   `patterns-templates-starters-enterprise-admin-console--default` [light] immediately
    after `Tab`, the contour resolved to `oklch(0.3 0.021 257)` (the element's own
    text ink) and only reached `oklch(0.4 0.06 116.5)` a `duration-fast` later, so
    the first frames of every focus move painted a dark-grey hairline around a

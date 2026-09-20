@@ -195,3 +195,31 @@ test("computeTemplates emits an index.json entry with the documented shape", asy
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("rewrites `./core` to the package's `/core` subpath, every other relative import to its root", () => {
+  const story = [
+    'import type { Meta, StoryObj } from "@storybook/react-vite";',
+    'import { Widget } from "./widget/widget";',
+    'import { thing } from "./index";',
+    'import { pure } from "./core";',
+    'import { deep } from "./core/index";',
+    'import { notCore } from "./core-values/x";',
+    "export function DemoTemplate() {",
+    "  return <Widget />;",
+    "}",
+    'const meta = { title: "Patterns/Templates/Demo" } satisfies Meta;',
+    "export default meta;",
+    "type Story = StoryObj<typeof meta>;",
+    "export const Default: Story = { render: () => <DemoTemplate /> };",
+    "",
+  ].join("\n");
+  const { code: source } = transformStory({
+    src: story,
+    pkgName: "@elabs-ai/components-demo",
+    name: "demo",
+    relFile: "packages/demo/src/templates-demo.stories.tsx",
+  });
+  assert.match(source, /from "@elabs-ai\/components-demo\/core";/);
+  assert.equal(source.match(/from "@elabs-ai\/components-demo\/core";/g)?.length, 2);
+  assert.equal(source.match(/from "@elabs-ai\/components-demo";/g)?.length, 3);
+});

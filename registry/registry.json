@@ -768,7 +768,7 @@
       "name": "process-explorer-page",
       "type": "registry:block",
       "title": "Process explorer page",
-      "description": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree.",
+      "description": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree.",
       "dependencies": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-data",
@@ -1903,6 +1903,869 @@
         }
       ],
       "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "workspace-shell",
+      "type": "registry:block",
+      "title": "Workspace shell",
+      "description": "The frame every full-screen template sits in: the flagship app shell with its data turned into props — navigation groups with badges, the signed-in user, the trail, top-bar actions and a summoned dock — plus a docked assistant with a briefing, suggested questions and a conversation. frame=\"container\" renders the whole app inside a box.",
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/workspace-shell/workspace-assistant.tsx",
+          "type": "registry:component",
+          "target": "components/workspace-shell/workspace-assistant.tsx"
+        },
+        {
+          "path": "registry/blocks/workspace-shell/workspace-shell.tsx",
+          "type": "registry:component",
+          "target": "components/workspace-shell/workspace-shell.tsx"
+        }
+      ],
+      "categories": ["app-shell"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "revenue-ops-page",
+      "type": "registry:block",
+      "title": "Template — Revenue operations",
+      "description": "An analytics workspace for revenue, finance and BI teams: the workspace shell with a summoned analyst, a page header whose period and region controls re-slice the charts and the pipeline, the revenue command center as the body, and a pipeline DataTable with a win-probability Meter, an activity Sparkline, a computed Stalled flag and row selection feeding a bulk action.",
+      "registryDependencies": ["command-center-revenue-01", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/revenue-ops-page/data/deals.ts",
+          "type": "registry:component",
+          "target": "components/revenue-ops-page/data/deals.ts"
+        },
+        {
+          "path": "registry/blocks/revenue-ops-page/revenue-ops-page.tsx",
+          "type": "registry:component",
+          "target": "components/revenue-ops-page/revenue-ops-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "control-tower-page",
+      "type": "registry:block",
+      "title": "Template — Logistics control tower",
+      "description": "The screen an operations team keeps open all day: a headline computed from the exceptions, the network and fleet map blocks behind tabs, and an exceptions DataTable sorted by the closest promise whose row click summons the dock with the shipment's Descriptions, the recommended next step and its journey as a Timeline. The controlled-dock master-detail pattern for the workspace shell.",
+      "registryDependencies": ["geo-fleet-tracker-01", "geo-network-map-01", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/control-tower-page/control-tower-page.tsx",
+          "type": "registry:component",
+          "target": "components/control-tower-page/control-tower-page.tsx"
+        },
+        {
+          "path": "registry/blocks/control-tower-page/data/exceptions.ts",
+          "type": "registry:component",
+          "target": "components/control-tower-page/data/exceptions.ts"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "agent-ops-center-page",
+      "type": "registry:block",
+      "title": "Template — Agent operations center",
+      "description": "The control room for a fleet of AI agents: the agent-ops block family as one product across four tabs — insight feed, spend against limit and the escalation boundary; the trace waterfall and handoff inspector; a run review and a decision record; the audit log — with every block callback wired and the review count reflected in the navigation, the tab and the header.",
+      "registryDependencies": [
+        "agent-run-review-01",
+        "agent-trace-waterfall-01",
+        "audit-log-01",
+        "decision-record-01",
+        "escalation-boundary-01",
+        "handoff-inspector-01",
+        "insight-feed-01",
+        "spend-against-limit-01",
+        "workspace-shell"
+      ],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/agent-ops-center-page/agent-ops-center-page.tsx",
+          "type": "registry:component",
+          "target": "components/agent-ops-center-page/agent-ops-center-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "customer-360-page",
+      "type": "registry:block",
+      "title": "Template — Customer 360",
+      "description": "One account before the call: a record header, four MetricCards (one with a commitment-marked Meter), usage against the contract as a LineChart with a labelled rule, a self-explaining health score, a RadarChart against peers, next actions completed in place, an activity Timeline and the people with the relationship gap stated in the title, plus a docked account brief.",
+      "registryDependencies": ["score-explanation-01", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/customer-360-page/customer-360-page.tsx",
+          "type": "registry:component",
+          "target": "components/customer-360-page/customer-360-page.tsx"
+        },
+        {
+          "path": "registry/blocks/customer-360-page/data/account.ts",
+          "type": "registry:component",
+          "target": "components/customer-360-page/data/account.ts"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "support-desk-page",
+      "type": "registry:block",
+      "title": "Template — Support desk",
+      "description": "Queue, conversation, context: a three-pane surface in the workspace shell laid out by container queries, a queue sorted by the promise that breaks first with a Meter per row, a conversation from the ai package's Message parts, a copilot draft grounded in named past tickets that you send or discard, and a context pane with the promise, the customer and what solved it before. Sending a reply restarts the clock and re-sorts the queue.",
+      "registryDependencies": ["workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/support-desk-page/data/tickets.ts",
+          "type": "registry:component",
+          "target": "components/support-desk-page/data/tickets.ts"
+        },
+        {
+          "path": "registry/blocks/support-desk-page/support-desk-page.tsx",
+          "type": "registry:component",
+          "target": "components/support-desk-page/support-desk-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "incident-command-page",
+      "type": "registry:block",
+      "title": "Template — Incident command",
+      "description": "One live incident run from one screen: severity, impact and commander in the header, a streaming LiveLineChart of the error rate, an AreaChart with the SLO as a labelled rule, the dependency-web block for blast radius, and a runbook whose steps print into a Terminal, tick off, move a Meter and write the incident log. Steps run in order; the last one settles the stream and unlocks Resolve.",
+      "registryDependencies": ["infographic-dependency-web-01", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-terminal",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/incident-command-page/data/incident.ts",
+          "type": "registry:component",
+          "target": "components/incident-command-page/data/incident.ts"
+        },
+        {
+          "path": "registry/blocks/incident-command-page/incident-command-page.tsx",
+          "type": "registry:component",
+          "target": "components/incident-command-page/incident-command-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "market-desk-page",
+      "type": "registry:block",
+      "title": "Template — Market desk",
+      "description": "Watch the market, then act on it: the market-tape command center as the read side, a watchlist DataTable whose row click pre-fills the ticket, and a docked order ticket that is a real form — FieldRoot validation in the trader's terms, a NumberInput, a computed commitment checked against a limit, a review step before anything is placed, and a blotter that fills as orders go in.",
+      "registryDependencies": ["command-center-market-tape-01", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/market-desk-page/market-desk-page.tsx",
+          "type": "registry:component",
+          "target": "components/market-desk-page/market-desk-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "auth-parts",
+      "type": "registry:block",
+      "title": "Auth parts",
+      "description": "What every sign-in screen in this registry shares: the AuthCard frame with the brand mark, a PasswordInput with a show/hide toggle, a PasswordStrength meter that names the rules still unmet, the email validator and the useAuthSubmit lifecycle (pending, server message, done).",
+      "dependencies": [
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/auth-parts/auth-card.tsx",
+          "type": "registry:component",
+          "target": "components/auth-parts/auth-card.tsx"
+        },
+        {
+          "path": "registry/blocks/auth-parts/use-auth-submit.ts",
+          "type": "registry:component",
+          "target": "components/auth-parts/use-auth-submit.ts"
+        }
+      ],
+      "categories": ["authentication"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "login-01",
+      "type": "registry:block",
+      "title": "Login",
+      "description": "Sign in with email and password plus brand-neutral other ways in. Field errors after the first attempt, a revealable password, a pending button and the server's answer as an alert; hands the values to onSubmit and never calls a server itself.",
+      "registryDependencies": ["auth-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/login-01/login-form.tsx",
+          "type": "registry:component",
+          "target": "components/login-01/login-form.tsx"
+        }
+      ],
+      "categories": ["authentication"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "login-02",
+      "type": "registry:block",
+      "title": "Login, split",
+      "description": "The sign-in form beside a brand panel painted with the primary pair. Container-query layout: the panel stands down when narrow.",
+      "registryDependencies": ["auth-parts", "login-01"],
+      "dependencies": ["@elabs-ai/components-icons", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/login-02/login-split.tsx",
+          "type": "registry:component",
+          "target": "components/login-02/login-split.tsx"
+        }
+      ],
+      "categories": ["authentication"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "register-01",
+      "type": "registry:block",
+      "title": "Register",
+      "description": "Create an account: name, work email, a password with a strength meter that names the unmet rules, and explicit consent. Errors appear after the first attempt.",
+      "registryDependencies": ["auth-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/register-01/register-form.tsx",
+          "type": "registry:component",
+          "target": "components/register-01/register-form.tsx"
+        }
+      ],
+      "categories": ["authentication"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "forgot-password-01",
+      "type": "registry:block",
+      "title": "Forgot password",
+      "description": "Asks for the email and answers the same way whether or not the account exists; the confirmation names the address, the link's lifetime and the way back.",
+      "registryDependencies": ["auth-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/forgot-password-01/forgot-password.tsx",
+          "type": "registry:component",
+          "target": "components/forgot-password-01/forgot-password.tsx"
+        }
+      ],
+      "categories": ["authentication"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "reset-password-01",
+      "type": "registry:block",
+      "title": "Reset password",
+      "description": "Choose a new password: whose account, strength explained, the two entries compared, and an end state that says other sessions were signed out.",
+      "registryDependencies": ["auth-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/reset-password-01/reset-password.tsx",
+          "type": "registry:component",
+          "target": "components/reset-password-01/reset-password.tsx"
+        }
+      ],
+      "categories": ["authentication"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "two-factor-01",
+      "type": "registry:block",
+      "title": "Two-factor verification",
+      "description": "Six digits in one InputOTP that submits itself when full, a resend that counts down, and a recovery-code way out.",
+      "registryDependencies": ["auth-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/two-factor-01/two-factor.tsx",
+          "type": "registry:component",
+          "target": "components/two-factor-01/two-factor.tsx"
+        }
+      ],
+      "categories": ["authentication"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "verify-email-01",
+      "type": "registry:block",
+      "title": "Verify email",
+      "description": "The waiting room after sign-up: which address, what to do, a counting-down resend and the way back for a mistyped address.",
+      "registryDependencies": ["auth-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/verify-email-01/verify-email.tsx",
+          "type": "registry:component",
+          "target": "components/verify-email-01/verify-email.tsx"
+        }
+      ],
+      "categories": ["authentication"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-navbar-01",
+      "type": "registry:block",
+      "title": "Marketing — Navbar",
+      "description": "Site navigation: links inline when there is room and in a Sheet when there is not, aria-current on the active route, container-query layout.",
+      "dependencies": [
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-navbar-01/marketing-navbar.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-navbar-01/marketing-navbar.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-features-01",
+      "type": "registry:block",
+      "title": "Marketing — Features",
+      "description": "A SectionHeader plus a FeatureGrid of six outcome-led reasons.",
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-features-01/marketing-features.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-features-01/marketing-features.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-stats-01",
+      "type": "registry:block",
+      "title": "Marketing — Stats and logos",
+      "description": "A StatsBand of the numbers over a LogoStrip of who stands behind them.",
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-stats-01/marketing-stats.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-stats-01/marketing-stats.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-bento-01",
+      "type": "registry:block",
+      "title": "Marketing — Bento",
+      "description": "A BentoGrid of product proof where each tile shows the thing: a live AreaChart, a Meter, a Sparkline, status badges.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-bento-01/marketing-bento.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-bento-01/marketing-bento.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-pricing-01",
+      "type": "registry:block",
+      "title": "Marketing — Pricing",
+      "description": "Three plans named for who they are for, a billing toggle that recomputes every price, locale-aware currency and a featured plan marked in words.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-pricing-01/marketing-pricing.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-pricing-01/marketing-pricing.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-testimonials-01",
+      "type": "registry:block",
+      "title": "Marketing — Testimonials",
+      "description": "A masonry wall of quotes with name, role and a read-only Rating.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-testimonials-01/marketing-testimonials.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-testimonials-01/marketing-testimonials.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-faq-01",
+      "type": "registry:block",
+      "title": "Marketing — FAQ",
+      "description": "An Accordion of pre-sale questions beside a person to ask.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-faq-01/marketing-faq.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-faq-01/marketing-faq.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-cta-01",
+      "type": "registry:block",
+      "title": "Marketing — Call to action",
+      "description": "The closing ask: one primary action, one quieter alternative and what trying it costs.",
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-cta-01/marketing-cta.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-cta-01/marketing-cta.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-newsletter-01",
+      "type": "registry:block",
+      "title": "Marketing — Newsletter",
+      "description": "One field, a promise about frequency, validation and a confirmation that names the address.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-newsletter-01/marketing-newsletter.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-newsletter-01/marketing-newsletter.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-contact-01",
+      "type": "registry:block",
+      "title": "Marketing — Contact",
+      "description": "A short validated contact form with a topic Select, a personal confirmation and the other ways to reach the team.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-contact-01/marketing-contact.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-contact-01/marketing-contact.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-team-01",
+      "type": "registry:block",
+      "title": "Marketing — Team",
+      "description": "Names, roles and one line about each person; container-query columns.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-team-01/marketing-team.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-team-01/marketing-team.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-footer-01",
+      "type": "registry:block",
+      "title": "Marketing — Footer",
+      "description": "One-line positioning, three labelled nav columns and the legal row.",
+      "dependencies": [
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-footer-01/marketing-footer.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-footer-01/marketing-footer.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "settings-profile-01",
+      "type": "registry:block",
+      "title": "Settings — Profile",
+      "description": "A profile form with dirty tracking (the save bar appears only when something changed), validation on save, a counted bio and a danger zone behind a ConfirmDialog that names what is lost.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/settings-profile-01/settings-profile.tsx",
+          "type": "registry:component",
+          "target": "components/settings-profile-01/settings-profile.tsx"
+        }
+      ],
+      "categories": ["settings"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "settings-members-01",
+      "type": "registry:block",
+      "title": "Settings — Members",
+      "description": "Members with in-place role changes, a protected owner, an invite dialog that checks address, duplicates and seats, pending invites in the same list and a confirming remove.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/settings-members-01/settings-members.tsx",
+          "type": "registry:component",
+          "target": "components/settings-members-01/settings-members.tsx"
+        }
+      ],
+      "categories": ["settings"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "settings-notifications-01",
+      "type": "registry:block",
+      "title": "Settings — Notifications",
+      "description": "An events-by-channels matrix as a real table of Switches with full accessible names, locked cells that say why, and a count of events that reach you nowhere.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/settings-notifications-01/settings-notifications.tsx",
+          "type": "registry:component",
+          "target": "components/settings-notifications-01/settings-notifications.tsx"
+        }
+      ],
+      "categories": ["settings"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "settings-billing-01",
+      "type": "registry:block",
+      "title": "Settings — Billing",
+      "description": "Plan and renewal, usage Meters with an included-amount marker and overage in words, the card by its last four digits, and an invoices Table.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/settings-billing-01/settings-billing.tsx",
+          "type": "registry:component",
+          "target": "components/settings-billing-01/settings-billing.tsx"
+        }
+      ],
+      "categories": ["settings"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "empty-states-01",
+      "type": "registry:block",
+      "title": "Empty states",
+      "description": "Six empty and error states on StatePanel with the library's illustrations — first run, no results, an empty list that is good news, error, offline, no access — each saying what happened, whether anything is lost and the way out.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/empty-states-01/empty-states.tsx",
+          "type": "registry:component",
+          "target": "components/empty-states-01/empty-states.tsx"
+        }
+      ],
+      "categories": ["application"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "onboarding-checklist-01",
+      "type": "registry:block",
+      "title": "Onboarding checklist",
+      "description": "A getting-started checklist that opens on the next step, says how long each takes, counts the minutes left on a Meter and ends with a closing state.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/onboarding-checklist-01/onboarding-checklist.tsx",
+          "type": "registry:component",
+          "target": "components/onboarding-checklist-01/onboarding-checklist.tsx"
+        }
+      ],
+      "categories": ["application"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "todo-list-01",
+      "type": "registry:block",
+      "title": "Todo list",
+      "description": "Add with Enter, tick to complete, filter, clear completed; the header counts open and overdue tasks and every control names the task it acts on.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/todo-list-01/todo-list.tsx",
+          "type": "registry:component",
+          "target": "components/todo-list-01/todo-list.tsx"
+        }
+      ],
+      "categories": ["application"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "kanban-board-01",
+      "type": "registry:block",
+      "title": "Kanban board",
+      "description": "Drag cards between columns or use each card's Move menu (keyboard, screen reader and touch), with a live-region announcement, per-column points and WIP-limit warnings in words.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/kanban-board-01/data/issues.ts",
+          "type": "registry:component",
+          "target": "components/kanban-board-01/data/issues.ts"
+        },
+        {
+          "path": "registry/blocks/kanban-board-01/kanban-board.tsx",
+          "type": "registry:component",
+          "target": "components/kanban-board-01/kanban-board.tsx"
+        }
+      ],
+      "categories": ["application"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "project-cards-01",
+      "type": "registry:block",
+      "title": "Project cards",
+      "description": "Projects as cards with progress against time on one Meter (marker = today), a derived health word, team avatars, due date and a counted state filter.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/project-cards-01/data/projects.ts",
+          "type": "registry:component",
+          "target": "components/project-cards-01/data/projects.ts"
+        },
+        {
+          "path": "registry/blocks/project-cards-01/project-cards.tsx",
+          "type": "registry:component",
+          "target": "components/project-cards-01/project-cards.tsx"
+        }
+      ],
+      "categories": ["application"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "commerce-parts",
+      "type": "registry:block",
+      "title": "Commerce parts",
+      "description": "The commerce blocks' shared vocabulary: a sample catalogue, a token-painted stand-in for product photography and one money formatter.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/commerce-parts/catalog.tsx",
+          "type": "registry:component",
+          "target": "components/commerce-parts/catalog.tsx"
+        }
+      ],
+      "categories": ["commerce"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "product-grid-01",
+      "type": "registry:block",
+      "title": "Product grid",
+      "description": "A product listing with a category filter, sorting and cards that state markdowns and stock in words; sold-out products cannot be added.",
+      "registryDependencies": ["commerce-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/product-grid-01/product-grid.tsx",
+          "type": "registry:component",
+          "target": "components/product-grid-01/product-grid.tsx"
+        }
+      ],
+      "categories": ["commerce"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "product-detail-01",
+      "type": "registry:block",
+      "title": "Product detail",
+      "description": "A product page with required options (the button names the missing one), a stock-capped quantity, delivery promises, a Rating and details in an Accordion.",
+      "registryDependencies": ["commerce-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/product-detail-01/product-detail.tsx",
+          "type": "registry:component",
+          "target": "components/product-detail-01/product-detail.tsx"
+        }
+      ],
+      "categories": ["commerce"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "shopping-cart-01",
+      "type": "registry:block",
+      "title": "Shopping cart",
+      "description": "Stock-capped quantities, remove with undo, a discount code that answers either way, progress to free delivery on a Meter and totals that add up.",
+      "registryDependencies": ["commerce-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/shopping-cart-01/shopping-cart.tsx",
+          "type": "registry:component",
+          "target": "components/shopping-cart-01/shopping-cart.tsx"
+        }
+      ],
+      "categories": ["commerce"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "checkout-01",
+      "type": "registry:block",
+      "title": "Checkout",
+      "description": "One-page checkout with autocomplete on every field, errors after the first attempt with focus moved to the first, a delivery RadioGroup that changes the total, and a slot for the payment provider's hosted card field.",
+      "registryDependencies": ["commerce-parts", "shopping-cart-01"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/checkout-01/checkout.tsx",
+          "type": "registry:component",
+          "target": "components/checkout-01/checkout.tsx"
+        }
+      ],
+      "categories": ["commerce"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "order-receipt-01",
+      "type": "registry:block",
+      "title": "Order receipt",
+      "description": "The confirmation page: order number, arrival, address, lines and what happens next as a Timeline.",
+      "registryDependencies": ["commerce-parts", "shopping-cart-01"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/order-receipt-01/order-receipt.tsx",
+          "type": "registry:component",
+          "target": "components/order-receipt-01/order-receipt.tsx"
+        }
+      ],
+      "categories": ["commerce"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "project-hub-page",
+      "type": "registry:block",
+      "title": "Template — Project hub",
+      "description": "Projects, the issue board, team load and members as one product: the workspace shell's navigation swaps views in place, the project-cards, kanban-board and settings-members blocks do the work, one dock explains the project or issue last opened, and every view reads the same issues so a move on the board changes the load, the overview and the navigation counts.",
+      "registryDependencies": [
+        "kanban-board-01",
+        "project-cards-01",
+        "settings-members-01",
+        "workspace-shell"
+      ],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/project-hub-page/project-hub-page.tsx",
+          "type": "registry:component",
+          "target": "components/project-hub-page/project-hub-page.tsx"
+        }
+      ],
+      "categories": ["template"]
     }
   ]
 }

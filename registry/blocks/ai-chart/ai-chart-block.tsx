@@ -119,7 +119,7 @@ export function AiChartBlock() {
             </Tool>
 
             {/* Assistant text summary after the chart */}
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               Revenue peaked in June at <span className="font-medium text-foreground">$21,200</span>{" "}
               with a corresponding profit of{" "}
               <span className="font-medium text-foreground">$8,800</span>. Overall the trend is

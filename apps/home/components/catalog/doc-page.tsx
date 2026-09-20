@@ -21,6 +21,7 @@ import { install } from "../../lib/content";
 import { catalogCopy, heroCopy } from "../../content/copy";
 import { BlockHero } from "./block-renders";
 import type { NativeBlockName } from "./block-render-meta";
+import { LiveExample, LiveExamplesCount, LiveSection, MissingExamples } from "./story-availability";
 import { StoryFrame, type StoryFrameSize } from "./story-frame";
 import type { StoryExpandDetail } from "./story-expand";
 
@@ -241,9 +242,11 @@ export function DocPage({
           {page.question ? <p className="text-title text-balance">{page.question}</p> : null}
           {lead ? <p className="max-w-prose text-subtitle text-muted-foreground">{lead}</p> : null}
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm">
-              <a href={`/storybook/?path=/docs/${page.docsId}`}>{copy.storybook}</a>
-            </Button>
+            <LiveExample id={page.docsId}>
+              <Button asChild variant="outline" size="sm">
+                <a href={`/storybook/?path=/docs/${page.docsId}`}>{copy.storybook}</a>
+              </Button>
+            </LiveExample>
             <Button asChild variant="ghost" size="sm">
               <a href={`${REPO}/blob/main/${page.file}`}>{copy.source}</a>
             </Button>
@@ -262,8 +265,12 @@ export function DocPage({
               {hero}
             </div>
           ) : first ? (
-            <StoryFrame id={first.id} name={first.name} size={frameSize} detail={expandDetail} />
+            <LiveExample id={first.id}>
+              <StoryFrame id={first.id} name={first.name} size={frameSize} detail={expandDetail} />
+            </LiveExample>
           ) : null}
+          {/* A natively rendered block is on the page already; only embedded pages owe a note. */}
+          {nativeBlock ? null : <MissingExamples stories={page.stories} />}
           {importLine || installLine ? (
             <div className="grid gap-3 md:grid-cols-2">
               {installLine ? <Copyable label={copy.install} command={installLine} /> : null}
@@ -340,39 +347,43 @@ export function DocPage({
         ) : null}
 
         {examples.length > 0 ? (
-          <section className="flex flex-col gap-8">
-            <div className="flex items-baseline justify-between gap-4">
-              <h2 id="examples" className="scroll-mt-24 text-title">
-                {copy.examples}
-              </h2>
-              <span className="text-meta text-muted-foreground">
-                {copy.examplesCount(page.stories.length)}
-              </span>
-            </div>
-            {examples.map((story) => (
-              <div key={story.id} className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1">
-                  <h3
-                    id={`example-${anchor(story.id.split("--")[1] ?? story.id)}`}
-                    className="scroll-mt-24 text-subtitle font-semibold"
-                  >
-                    {story.name}
-                  </h3>
-                  {story.description ? (
-                    <p className="max-w-prose text-body text-muted-foreground">
-                      {story.description}
-                    </p>
-                  ) : null}
-                </div>
-                <StoryFrame
-                  id={story.id}
-                  name={story.name}
-                  size={frameSize}
-                  detail={expandDetail}
-                />
+          <LiveSection ids={examples.map((story) => story.id)}>
+            <section className="flex flex-col gap-8">
+              <div className="flex items-baseline justify-between gap-4">
+                <h2 id="examples" className="scroll-mt-24 text-title">
+                  {copy.examples}
+                </h2>
+                <span className="text-meta text-muted-foreground">
+                  <LiveExamplesCount ids={page.stories.map((story) => story.id)} />
+                </span>
               </div>
-            ))}
-          </section>
+              {examples.map((story) => (
+                <LiveExample key={story.id} id={story.id}>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1">
+                      <h3
+                        id={`example-${anchor(story.id.split("--")[1] ?? story.id)}`}
+                        className="scroll-mt-24 text-subtitle font-semibold"
+                      >
+                        {story.name}
+                      </h3>
+                      {story.description ? (
+                        <p className="max-w-prose text-body text-muted-foreground">
+                          {story.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    <StoryFrame
+                      id={story.id}
+                      name={story.name}
+                      size={frameSize}
+                      detail={expandDetail}
+                    />
+                  </div>
+                </LiveExample>
+              ))}
+            </section>
+          </LiveSection>
         ) : null}
 
         {page.api.length > 0 ? (
@@ -427,14 +438,19 @@ export function DocPage({
           <ul className="flex flex-col gap-1.5 text-meta">
             {uses.length > 0 ? <TocLink href="#use-it-for" label={copy.useFor} /> : null}
             {avoid.length > 0 ? <TocLink href="#avoid" label={copy.avoid} /> : null}
-            {examples.length > 0 ? <TocLink href="#examples" label={copy.examples} /> : null}
+            {examples.length > 0 ? (
+              <LiveSection ids={examples.map((story) => story.id)}>
+                <TocLink href="#examples" label={copy.examples} />
+              </LiveSection>
+            ) : null}
             {examples.map((story) => (
-              <TocLink
-                key={story.id}
-                href={`#example-${anchor(story.id.split("--")[1] ?? story.id)}`}
-                label={story.name}
-                nested
-              />
+              <LiveExample key={story.id} id={story.id}>
+                <TocLink
+                  href={`#example-${anchor(story.id.split("--")[1] ?? story.id)}`}
+                  label={story.name}
+                  nested
+                />
+              </LiveExample>
             ))}
             {page.api.length > 0 ? <TocLink href="#api" label={copy.api} /> : null}
             {page.api.map((api) => (

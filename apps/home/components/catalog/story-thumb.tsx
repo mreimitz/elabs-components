@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@elabs-ai/components-ui";
 import { useTheme } from "@elabs-ai/components-tokens";
 import { useStoryId } from "../../lib/story-alias";
+import { whenStoryRendered, type StoryOutcome } from "../../lib/story-ready";
+import { reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
 import { storySrc } from "./story-frame";
 
 export function StoryThumb({
@@ -25,8 +27,12 @@ export function StoryThumb({
   const { theme } = useTheme();
   const [near, setNear] = useState(false);
   const [scale, setScale] = useState(0);
-  const [loaded, setLoaded] = useState(false);
+  // `null` while Storybook is still preparing the story: the frame stays hidden behind the
+  // skeleton, so its white loading page never shows through a dark theme.
+  const [outcome, setOutcome] = useState<StoryOutcome | null>(null);
+  const cancel = useRef<() => void>(undefined);
   const liveId = useStoryId(id);
+  const storyTheme = useStoryTheme(theme);
 
   useEffect(() => {
     const el = holder.current;
@@ -55,7 +61,10 @@ export function StoryThumb({
     };
   }, [width]);
 
-  useEffect(() => setLoaded(false), [theme, id]);
+  useEffect(() => {
+    setOutcome(null);
+    return () => cancel.current?.();
+  }, [storyTheme, id]);
 
   return (
     <div
@@ -65,15 +74,27 @@ export function StoryThumb({
       className="pointer-events-none relative w-full overflow-hidden bg-background"
       style={{ aspectRatio: `1 / ${ratio}` }}
     >
-      {!loaded ? <Skeleton className="absolute inset-0 rounded-none" /> : null}
+      {outcome !== "ready" ? (
+        <Skeleton
+          className={`absolute inset-0 rounded-none ${outcome === "missing" ? "animate-none" : ""}`}
+        />
+      ) : null}
       {near && scale > 0 && liveId ? (
         <iframe
-          src={storySrc(liveId, theme)}
+          src={storySrc(liveId, storyTheme)}
           title=""
           tabIndex={-1}
           loading="lazy"
-          onLoad={() => setLoaded(true)}
-          className={`absolute start-0 top-0 origin-top-left border-0 ${loaded ? "opacity-100" : "opacity-0"}`}
+          onLoad={(event) => {
+            cancel.current?.();
+            const frame = event.currentTarget;
+            cancel.current = whenStoryRendered(frame, (result) => {
+              // A story rendered in the wrong theme is swapped before it is ever shown.
+              if (result === "ready" && reportStoryTheme(storyTheme, frame.contentDocument)) return;
+              setOutcome(result);
+            });
+          }}
+          className={`absolute start-0 top-0 origin-top-left border-0 ${outcome === "ready" ? "opacity-100" : "opacity-0"}`}
           style={{ width, height: width * ratio, transform: `scale(${scale})` }}
         />
       ) : null}

@@ -102,7 +102,7 @@ Foundations.
 ## Naming
 
 - Titles are `Group/ComponentName` (two levels). Use a third level only for a real
-  sub-family (`Editor/MarkdownPreview/Academic`, `Patterns/Templates/Settings`,
+  sub-family (`Editor/MarkdownPreview/Academic`, `Patterns/Templates/Starters/Settings`,
   `Layout/App Shell/Mail`, `AI/Composer/PromptInput`).
 - **A sub-family nests under the whole it is part of, and the parent keeps its own
   page.** `AI/Composer` is both a component page and the parent node: the four pages
@@ -120,12 +120,17 @@ Foundations.
 - **Every block sits in a family, under a short name.** `Patterns/Blocks/<Family>/<Name>`
   — the family is one of the reading-order entries in `preview.tsx`'s `storySort`
   (KPI Cards, Stat Cards, Infographics, Editorial Charts, Command Centers, Maps and Geo,
-  Process and Flow, Data Surfaces, Agent Ops, AI and Terminal, Forms and Setup, Marketing),
+  Process and Flow, Data Surfaces, Agent Ops, AI and Terminal, Application, Forms and Setup,
+  Authentication, Account and Settings, Commerce, Marketing),
   and the
   name is the two or three words a sidebar can show on one line (`Agent Ops/Trace
 Waterfall`). The question a block answers ("Where did the run fail?") goes in
   `parameters.docs.subtitle`, never in the title: the docs page prints it under the
   heading and the website's catalogue prints it on the card.
+- **Every template sits in a family.** `Patterns/Templates/<Family>/<Name>`, the family being
+  who builds that kind of product (Analytics, Operations, Customers, Product Teams, AI Products) or
+  `Starters` for the archetypes `brand-ui create` scaffolds. `parameters.docs.subtitle` says
+  who it is for ("For support, service and helpdesk products").
 - The component segment is PascalCase with no spaces: `AI/ChatShell`, not
   `AI/Chat Shell`. Match the exported component name where possible.
 - **No implementation leakage in titles.** The public name is the concept, not the

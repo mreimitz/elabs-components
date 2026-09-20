@@ -21,6 +21,32 @@ function liveIds(): Promise<Set<string> | null> {
   return live;
 }
 
+function has(ids: Set<string>, id: string): boolean {
+  const alias = ALIASES[id];
+  return ids.has(id) || (alias !== undefined && ids.has(alias));
+}
+
+/**
+ * Which of `ids` the live Storybook does not have (a working tree ahead of the last release).
+ * `null` until the index answers; an unreachable index reports nothing missing, so each frame
+ * decides for itself.
+ */
+export function useMissingStories(ids: readonly string[]): string[] | null {
+  const key = ids.join("\n");
+  const [missing, setMissing] = useState<string[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void liveIds().then((index) => {
+      if (cancelled) return;
+      setMissing(index ? key.split("\n").filter((id) => id && !has(index, id)) : []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [key]);
+  return missing;
+}
+
 /** The id to embed, or `null` for the moment an aliased id is still being resolved. */
 export function useStoryId(id: string): string | null {
   const alias = ALIASES[id];

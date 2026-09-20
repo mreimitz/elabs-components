@@ -7,18 +7,33 @@ is reached at `/storybook/`.
 ## Run
 
 ```bash
-pnpm --filter @elabs-ai/home dev      # http://localhost:3000
+pnpm site                             # http://localhost:3000 (same as --filter @elabs-ai/home dev)
 pnpm --filter @elabs-ai/home build
 pnpm --filter @elabs-ai/home start
 ```
 
 ## `/storybook/` locally
 
-`next.config.ts` rewrites `/storybook/:path*` to `STORYBOOK_ORIGIN` (default: the production
-Storybook project). To use a local Storybook, run it on port 6006 (`pnpm storybook`) and start
-the site with `STORYBOOK_ORIGIN=http://localhost:6006`. Keep the trailing slash: Storybook loads
-its files by relative URL, so `/storybook` redirects to `/storybook/`, and old `/?path=…` links
-redirect there too.
+Every live example on the site is a Storybook story embedded through `/storybook/`, which
+`next.config.ts` rewrites to `STORYBOOK_ORIGIN`. The deployed Storybook only moves on a release, so
+a working tree that is ahead of it has stories the release cannot serve. `pnpm site` (the `dev`
+script, `scripts/dev.mjs`) handles that:
+
+- It counts how many embedded stories the local static build (`apps/docs/storybook-static`) and
+  the deployed Storybook each lack, serves whichever lacks fewer, and prints the count.
+- `pnpm site:stories` rebuilds the local Storybook (a few minutes). Run it after adding or
+  renaming stories, then start the site again.
+- `STORYBOOK_ORIGIN=<url>` set by you always wins. `pnpm --filter @elabs-ai/home dev:next` is plain
+  `next dev` against the deployed Storybook.
+
+It has to be a static build: `storybook dev` loads its modules by root-absolute URL, which cannot
+sit behind the `/storybook/` sub-path. Keep the trailing slash: Storybook loads its files by
+relative URL, so `/storybook` redirects to `/storybook/`, and old `/?path=…` links redirect there
+too.
+
+A page never shows one placeholder per missing story. Registry blocks and templates render from
+the site's own copy (`components/catalog/block-render-meta.ts`); other pages drop the examples the
+live Storybook lacks and say so once (`components/catalog/story-availability.tsx`).
 
 ## `/mcp`
 

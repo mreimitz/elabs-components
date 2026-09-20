@@ -83,7 +83,9 @@ const slugOf = (title) => sanitizeStorySegment(title.split("/").at(-1));
 /** Which part of the site a docs page belongs to, from its Storybook title. */
 function sectionOf(title) {
   if (title.startsWith("Patterns/Blocks/")) return "blocks";
-  if (title.startsWith("Patterns/Templates/")) return "templates";
+  // A scenario is a full screen too; the site lists both as templates.
+  if (title.startsWith("Patterns/Templates/") || title.startsWith("Patterns/Scenarios/"))
+    return "templates";
   if (title.startsWith("Charts/")) return "charts";
   return "components";
 }
@@ -140,11 +142,14 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
     const parts = page.title.split("/");
     const group =
       section === "blocks" || section === "templates"
-        ? parts.length > 3
-          ? parts[2]
-          : section === "blocks"
-            ? "Compositions"
-            : "Templates"
+        ? parts[1] === "Scenarios"
+          ? // Both scenarios the library ships are AI products (an agentic workspace, a chat).
+            "AI Products"
+          : parts.length > 3
+            ? parts[2]
+            : section === "blocks"
+              ? "Compositions"
+              : "Templates"
         : parts[0];
     const intent = page.component ? lookup("intent", page.component) : null;
 
@@ -190,7 +195,15 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
           .at(-1)
           .replace(/\.stories\.tsx$/, "")
       : null;
-    const block = blockName ? (registryByName.get(blockName) ?? null) : null;
+    // A full-screen template that ships as a registry page names its item in the story's own
+    // import: `@/components/<item>/…` with an item ending in `-page`.
+    const pageItem = src.match(/from "@\/components\/([a-z0-9-]+-page)\//)?.[1] ?? null;
+    // An archetype starter (`packages/<pkg>/src/templates-<name>.stories.tsx`) whose screen also
+    // ships as the copy-own registry page `<name>-page` is that page.
+    const starterItem = page.file.match(/\/templates-([a-z0-9-]+)\.stories\.tsx$/)?.[1];
+    const block =
+      registryByName.get(blockName ?? pageItem ?? (starterItem ? `${starterItem}-page` : "")) ??
+      null;
     const template =
       section === "templates"
         ? ((manifest.templates ?? []).find((t) => t.title === page.title) ?? null)
@@ -202,10 +215,23 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
       for (const story of stories)
         aliases[story.id] = `${sanitizeStorySegment(oldTitle)}--${story.id.split("--")[1]}`;
     const name = parts.at(-1);
-    const summary = intent?.purpose ?? block?.description ?? "";
+    // A full screen with no component intent and no registry item still says what it is in its
+    // docs description; its first sentence is the card's summary.
+    const docsLead =
+      section === "templates"
+        ? (src
+            .match(/description:\s*\{\s*component:\s*\n?\s*"((?:\\.|[^"\\])*)"/)?.[1]
+            ?.replace(/\\n[\s\S]*$/, "")
+            .replace(/\\(.)/g, "$1")
+            .replace(/`/g, "")
+            .split(/(?<=\.)\s/)[0] ?? "")
+        : "";
+    const summary = intent?.purpose ?? block?.description ?? docsLead;
     // The question a block answers, authored once as the docs page's subtitle.
     const question =
-      src.match(/\bsubtitle:\s*(["'`])((?:\\.|(?!\1).)*)\1/)?.[2]?.replace(/\\(.)/g, "$1") ?? "";
+      src
+        .match(/\bdocs:\s*\{\s*subtitle:\s*(["'`])((?:\\.|(?!\1).)*)\1/)?.[2]
+        ?.replace(/\\(.)/g, "$1") ?? "";
 
     pages[`${section}/${section === "components" ? `${pkgShort}/` : ""}${slug}`] = {
       section,

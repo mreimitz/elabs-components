@@ -142,3 +142,32 @@ describe("ProcessKpiStrip — conformance from a replay result (RM-062)", () => 
     );
   });
 });
+
+describe('ProcessKpiStrip — layout="inline"', () => {
+  it("renders the same six KPIs as one ribbon of cells, with no card grid", () => {
+    const { container } = render(
+      <ProcessKpiStrip kpis={kpis} conformance={0.91} layout="inline" />,
+    );
+    const strip = container.querySelector('[data-slot="process-kpi-strip"]');
+    expect(strip).toHaveAttribute("data-layout", "inline");
+    expect(container.querySelectorAll('[data-slot="process-kpi-strip-cell"]')).toHaveLength(6);
+    expect(container.querySelector('[data-slot="metric-card"]')).toBeNull();
+    expect(screen.getByText("240")).toBeInTheDocument();
+    expect(screen.getByText("18%")).toBeInTheDocument();
+    expect(screen.getByText("91%")).toBeInTheDocument();
+    expect(screen.getByText("3.0 d")).toBeInTheDocument();
+  });
+
+  it("keeps the honest 'not available' state and never prints a fabricated 0%", () => {
+    render(<ProcessKpiStrip kpis={kpis} conformance={null} layout="inline" />);
+    expect(screen.getByText("Not available")).toBeInTheDocument();
+    expect(screen.queryByText("0%")).not.toBeInTheDocument();
+  });
+
+  it("the default layout is unchanged: no data-layout attribute, six metric cards", () => {
+    const { container } = render(<ProcessKpiStrip kpis={kpis} conformance={0.91} />);
+    expect(container.querySelector('[data-slot="process-kpi-strip"]')).not.toHaveAttribute(
+      "data-layout",
+    );
+  });
+});

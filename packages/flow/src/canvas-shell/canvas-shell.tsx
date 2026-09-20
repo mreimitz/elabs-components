@@ -15,6 +15,7 @@ import {
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { HelperLines } from "../helper-lines/helper-lines";
 import { useHelperLines } from "../helper-lines/use-helper-lines";
+import { clampedFitOffset } from "./clamped-fit-offset";
 import { useMeasuredNodes } from "./use-measured-nodes";
 
 export interface CanvasShellProps<
@@ -52,6 +53,15 @@ export interface CanvasShellProps<
   fitViewKey?: string | number;
   /** Options for the {@link fitViewKey} re-fit. Ignored without one. */
   fitViewKeyOptions?: FitViewOptions;
+  /**
+   * Which nodes a CLAMPED {@link fitViewKey} re-fit keeps in view — typically where the
+   * diagram begins. A fit that cannot shrink far enough (a `minZoom` floor) is pinned to the
+   * content's top-left corner by default, which is where a top-down layout starts; a
+   * left-to-right layout starts at the left edge but at mid-height, so pinning to the top
+   * opens on an empty corner. With anchors, each overflowing axis centres the anchor nodes
+   * instead, without ever scrolling past the content's own edge. Unset: today's corner pin.
+   */
+  fitViewAnchorNodeIds?: readonly string[];
   /** Overlays rendered inside the flow (ZoomControls, Legend, Panels). */
   children?: ReactNode;
   className?: string;
@@ -120,6 +130,7 @@ function CanvasShellBase<NodeType extends Node, EdgeType extends Edge>({
   onNodesChange,
   fitViewKey,
   fitViewKeyOptions,
+  fitViewAnchorNodeIds,
   ...props
 }: CanvasShellInnerProps<NodeType, EdgeType>) {
   const measured = useMeasuredNodes<NodeType>(nodes, onNodesChange);
@@ -135,7 +146,11 @@ function CanvasShellBase<NodeType extends Node, EdgeType extends Edge>({
       >
         {background ? <Background gap={20} size={1} color="var(--canvas-grid)" /> : null}
         {fitViewKey === undefined ? null : (
-          <FitViewOnKey fitViewKey={fitViewKey} options={fitViewKeyOptions} />
+          <FitViewOnKey
+            fitViewKey={fitViewKey}
+            options={fitViewKeyOptions}
+            anchorNodeIds={fitViewAnchorNodeIds}
+          />
         )}
         {children}
       </ReactFlow>
@@ -152,9 +167,11 @@ function CanvasShellBase<NodeType extends Node, EdgeType extends Edge>({
 function FitViewOnKey({
   fitViewKey,
   options,
+  anchorNodeIds,
 }: {
   fitViewKey: string | number;
   options?: FitViewOptions;
+  anchorNodeIds?: readonly string[];
 }) {
   const { fitView, getNodes, getNodesBounds, setViewport } = useReactFlow();
   const store = useStoreApi();
@@ -162,7 +179,14 @@ function FitViewOnKey({
   useEffect(() => {
     if (!nodesInitialized) return;
     void fitView(options).then(() =>
-      anchorToStartWhenClamped(store, setViewport, getNodesBounds, getNodes(), options),
+      anchorToStartWhenClamped(
+        store,
+        setViewport,
+        getNodesBounds,
+        getNodes(),
+        options,
+        anchorNodeIds,
+      ),
     );
     // `options` is deliberately absent: an inline object literal would re-fit on every
     // render, which is a viewport jump under the reader's cursor. The key is the trigger.
@@ -196,6 +220,7 @@ function anchorToStartWhenClamped(
   getNodesBounds: ReturnType<typeof useReactFlow>["getNodesBounds"],
   nodes: Node[],
   options: FitViewOptions | undefined,
+  anchorNodeIds?: readonly string[],
 ): void {
   if (nodes.length === 0) return;
   const { width, height, transform, panZoom } = store.getState();
@@ -213,9 +238,31 @@ function anchorToStartWhenClamped(
   const overflowsY = bounds.height * zoom > height - padY * 2 + 1;
   if (!overflowsX && !overflowsY) return;
 
+  // With anchors: centre them on an overflowing axis, but never scroll past the content's
+  // own start or end. On the axis the diagram runs along, the anchors sit at the content's
+  // start, so this lands exactly where the corner pin does; on the cross axis it keeps the
+  // first rank in view instead of opening on whatever happens to be top-most.
+  const anchors = anchorNodeIds?.length
+    ? nodes.filter((node) => anchorNodeIds.includes(node.id))
+    : [];
+  const anchor = anchors.length > 0 ? getNodesBounds(anchors) : null;
+  const along = (size: number, pad: number, start: number, extent: number, centre: number) =>
+    clampedFitOffset({
+      size,
+      pad,
+      start,
+      extent,
+      zoom,
+      anchorCentre: anchor === null ? undefined : centre,
+    });
+
   const next = {
-    x: overflowsX ? padX - bounds.x * zoom : x,
-    y: overflowsY ? padY - bounds.y * zoom : y,
+    x: overflowsX
+      ? along(width, padX, bounds.x, bounds.width, (anchor?.x ?? 0) + (anchor?.width ?? 0) / 2)
+      : x,
+    y: overflowsY
+      ? along(height, padY, bounds.y, bounds.height, (anchor?.y ?? 0) + (anchor?.height ?? 0) / 2)
+      : y,
     zoom,
   };
   // `setViewport` is a no-op before the pan/zoom instance exists (the very first commit).

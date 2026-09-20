@@ -216,7 +216,7 @@ function AiAssistantTemplate() {
 }
 
 const meta = {
-  title: "Patterns/Templates/AI Assistant",
+  title: "Patterns/Templates/Starters/AI Assistant",
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],
 } satisfies Meta;

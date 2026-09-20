@@ -10,9 +10,10 @@ const meta = {
   parameters: {
     layout: "fullscreen",
     docs: {
+      subtitle: "Where does the process really go, and where does it wait?",
       description: {
         component:
-          "The process-explorer screen: a KPI strip, a filter bar fed by what you select, a process map with an accessible table twin, a variant rail that filters the map, and a case table that opens one case's timeline. One `useProcessExplorer` instance drives every view, so the last interaction wins everywhere.\n\nCopy-own it: `npx shadcn add process-explorer-page`.",
+          "A map-first process-mining workspace. The six KPIs are one ribbon and every control lives in a toolbar, so the height of the screen belongs to the process map and nothing floats over it. Beside the map: statistical insights (throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel), the variants as colour strips, the selected element with the distribution behind its median, and deviations from the reference model. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; Replay animates every order as a token. One `useProcessExplorer` instance drives every view, so the last interaction wins everywhere.\n\nCopy-own it: `npx shadcn add process-explorer-page`.",
       },
     },
   },
@@ -22,5 +23,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The sample order-to-cash log: select an activity, a transition or a variant and every view follows. */
-export const Default: Story = {};
+/** A quarter of order to cash: select an activity, a hand-over, a variant or a deviation and every view follows. */
+export const Default: Story = {
+  render: () => (
+    <div className="h-svh">
+      <ProcessExplorerPage />
+    </div>
+  ),
+};

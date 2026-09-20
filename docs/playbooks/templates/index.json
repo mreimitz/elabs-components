@@ -1,7 +1,7 @@
 [
   {
     "name": "ai-assistant",
-    "title": "Patterns/Templates/AI Assistant",
+    "title": "Patterns/Templates/Starters/AI Assistant",
     "description": "AI assistant template — the canonical full-screen AI assistant composition: app-shell nav, an immersive `ChatShell` (transcript scrolls behind a floating `Composer`, one centred reading column) and the `ContextPanel` right rail. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/ai-assistant.tsx`) from it. Verify across both themes with globals=theme:<slug>.",
     "packages": [
       "@elabs-ai/components-ai",
@@ -13,7 +13,7 @@
   },
   {
     "name": "dashboard",
-    "title": "Patterns/Templates/Dashboard",
+    "title": "Patterns/Templates/Starters/Dashboard",
     "description": "Dashboard template — the canonical full-screen dashboard composition (app-shell + MetricGrid + MetricCard). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/dashboard.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
     "packages": [
       "@elabs-ai/components-charts",
@@ -25,7 +25,7 @@
   },
   {
     "name": "dashboard-sheet",
-    "title": "Patterns/Templates/Dashboard Sheet",
+    "title": "Patterns/Templates/Starters/Dashboard Sheet",
     "description": "Dashboard sheet template — the canonical full-screen, user-editable dashboard (docs/playbooks/dashboard.md’s “editable dashboard sheet” archetype): app nav + `DashboardToolbar` (mode switch, undo/redo, add, save) + `DashboardSelectionBar` + `DashboardAssetPanel` / `DashboardPropertiesPanel` + `DashboardSheet`, all sharing one `DashboardProvider`. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/dashboard-sheet.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
     "packages": [
       "@elabs-ai/components-charts",
@@ -37,7 +37,7 @@
   },
   {
     "name": "data-app",
-    "title": "Patterns/Templates/Data App",
+    "title": "Patterns/Templates/Starters/Data App",
     "description": "Data app template — the canonical full-screen data-app composition (app-shell + DataTable with toolbar). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/data-app.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
     "packages": [
       "@elabs-ai/components-data",
@@ -49,7 +49,7 @@
   },
   {
     "name": "flow-workspace",
-    "title": "Patterns/Templates/Flow Workspace",
+    "title": "Patterns/Templates/Starters/Flow Workspace",
     "description": "Flow workspace template — the canonical full-screen flow-workspace composition (app-shell + branded React Flow canvas). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/flow-workspace.tsx`) from it. Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
     "packages": [
       "@elabs-ai/components-flow",
@@ -61,7 +61,7 @@
   },
   {
     "name": "marketing",
-    "title": "Patterns/Templates/Marketing",
+    "title": "Patterns/Templates/Starters/Marketing",
     "description": "Marketing landing template — the canonical full-screen presales/landing composition: sticky nav + Hero + StatsBand + FeatureGrid + UseCaseCard row + LogoStrip + CTASection + footer (the standard section order). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/marketing.tsx`) from it. Verify across both themes with globals=theme:<slug> (light | dark). The marketing package ships no icons by design (sections take `icon?: ReactNode` from the consumer), so this story passes inline currentColor glyphs — the same way a consumer would hand in Lucide / @elabs-ai/components-icons.",
     "packages": ["@elabs-ai/components-marketing", "@elabs-ai/components-ui"],
     "sourceStory": "packages/marketing/src/templates-marketing.stories.tsx",
@@ -69,7 +69,7 @@
   },
   {
     "name": "object-detail-hub",
-    "title": "Patterns/Templates/Object Detail Hub",
+    "title": "Patterns/Templates/Starters/Object Detail Hub",
     "description": "Object Detail Hub — the master-detail screen the library was missing. The single most common enterprise screen: a list of objects on the left drives a rich DETAIL HUB on the right. It demonstrates the structural choices the enterprise rulebook insists on, so an end-user copies the right anatomy instead of dumping everything on one page or stacking detail *below* the list: • SplitPanel master-detail (list drives detail — never detail below list). • A detail hub = sticky SectionHeader (identity + status) + a ButtonGroup toolbar + Tabs for the object's sections (Overview / Activity / Settings). • Descriptions for the object's attributes; a related list for its children. • A high-value task (Run) promoted to its own focused Dialog surface. • A real empty state (StatePanel kind=\"empty\") when nothing is selected. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in light AND dark. Verify with globals=theme:<slug>.",
     "packages": ["@elabs-ai/components-ui"],
     "sourceStory": "packages/ui/src/templates-object-detail-hub.stories.tsx",
@@ -77,10 +77,10 @@
   },
   {
     "name": "process-explorer",
-    "title": "Patterns/Templates/Process Explorer",
-    "description": "Process explorer template — the canonical full-screen `process-explorer` archetype (RM-057, issue #206): KPI strip on top, a filter bar above the map, the map centred with its accessible table twin, a variant rail on the right, and a case table that opens a single case's timeline in a bottom sheet. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/process-explorer.tsx`) and the copy-own registry block (`registry/blocks/process-explorer-page/`) from it. One `useProcessExplorer` instance drives every panel, so the map, the filter chips, the KPI numbers and the variant rail can never disagree about what is currently in scope (see `useProcessExplorer`'s own module docblock, Invariant F: filtering re-inks, it never removes). Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
+    "title": "Patterns/Templates/Operations/Process Explorer",
+    "description": "Process explorer template — the canonical full-screen `process-explorer` archetype: a map-first process-mining workspace over one order-to-cash event log. - a slim header with the scope, and the six KPIs as ONE ribbon (`layout=\"inline\"`), so the height of the screen belongs to the process map; - a toolbar that owns every control — metric layer, deviations, detail sliders, the active filters, layout direction, table twin — so nothing floats over the map; - the map on the left, top-down so the whole process fits a pane of any width, and beside it a panel of statistical insights (throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel), the variants as colour strips, the selected element, and deviations; - a dock for the wide, time-based views — dotted chart, performance spectrum, workload heatmap, case table — that stays a tab strip until one of them is asked for. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/process-explorer.tsx`) from it, and the copy-own registry block (`registry/blocks/process-explorer-page/`) mirrors it. One `useProcessExplorer` instance drives every panel, so the map, the chips, the KPIs, the variants and every chart always describe the same set of cases (Invariant F: filtering re-inks, it never removes). Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
     "packages": [
-      "@elabs-ai/components-flow",
+      "@elabs-ai/components-charts",
       "@elabs-ai/components-process",
       "@elabs-ai/components-ui"
     ],
@@ -89,7 +89,7 @@
   },
   {
     "name": "screen-states",
-    "title": "Patterns/Templates/Screen States",
+    "title": "Patterns/Templates/Starters/Screen States",
     "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in every theme. Verify with globals=theme:<slug>.",
     "packages": ["@elabs-ai/components-ui"],
     "sourceStory": "packages/ui/src/templates-screen-states.stories.tsx",
@@ -97,7 +97,7 @@
   },
   {
     "name": "settings",
-    "title": "Patterns/Templates/Settings",
+    "title": "Patterns/Templates/Starters/Settings",
     "description": "Settings template — the canonical full-screen settings composition (app-shell + Descriptions + Wizard). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/settings.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
     "packages": ["@elabs-ai/components-ui"],
     "sourceStory": "packages/ui/src/templates-settings.stories.tsx",

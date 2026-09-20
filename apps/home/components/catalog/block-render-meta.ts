@@ -4,9 +4,9 @@
  * renders themselves live in `block-renders.tsx`.
  *
  * `stage` says how the block wants its box: `flow` takes its own height, `fill` needs one
- * (a map, a canvas, a wall).
+ * (a map, a canvas, a wall), `screen` is a whole app frame rendered inside the box.
  */
-export type BlockStage = "flow" | "fill";
+export type BlockStage = "flow" | "fill" | "screen";
 
 const BLOCKS = {
   "command-center-revenue-01": "flow",
@@ -19,6 +19,66 @@ const BLOCKS = {
   "infographic-profile-compare-01": "flow",
   "infographic-dependency-web-01": "flow",
   "agent-run-review-01": "flow",
+  "revenue-ops-page": "screen",
+  "control-tower-page": "screen",
+  "agent-ops-center-page": "screen",
+  "customer-360-page": "screen",
+  "support-desk-page": "screen",
+  "incident-command-page": "screen",
+  "market-desk-page": "screen",
+  "login-01": "flow",
+  "login-02": "fill",
+  "register-01": "flow",
+  "forgot-password-01": "flow",
+  "reset-password-01": "flow",
+  "two-factor-01": "flow",
+  "verify-email-01": "flow",
+  "marketing-navbar-01": "flow",
+  "marketing-features-01": "flow",
+  "marketing-stats-01": "flow",
+  "marketing-bento-01": "flow",
+  "marketing-pricing-01": "flow",
+  "marketing-testimonials-01": "flow",
+  "marketing-faq-01": "flow",
+  "marketing-cta-01": "flow",
+  "marketing-newsletter-01": "flow",
+  "marketing-contact-01": "flow",
+  "marketing-team-01": "flow",
+  "marketing-footer-01": "flow",
+  "settings-profile-01": "flow",
+  "settings-members-01": "flow",
+  "settings-notifications-01": "flow",
+  "settings-billing-01": "flow",
+  "empty-states-01": "flow",
+  "onboarding-checklist-01": "flow",
+  "todo-list-01": "flow",
+  "kanban-board-01": "flow",
+  "project-cards-01": "flow",
+  "product-grid-01": "flow",
+  "product-detail-01": "flow",
+  "shopping-cart-01": "flow",
+  "checkout-01": "flow",
+  "order-receipt-01": "flow",
+  "project-hub-page": "screen",
+  "audit-log-01": "flow",
+  "decision-record-01": "flow",
+  "escalation-boundary-01": "flow",
+  "finding-cards-01": "flow",
+  "handoff-inspector-01": "flow",
+  "insight-feed-01": "flow",
+  "kpi-provenance-strip-01": "flow",
+  "provenance-record-01": "flow",
+  "score-explanation-01": "flow",
+  "spend-against-limit-01": "flow",
+  "agent-trace-waterfall-01": "flow",
+  "verdict-side-by-side-01": "flow",
+  "ai-chart": "flow",
+  "code-workspace": "flow",
+  "data-table": "flow",
+  "marketing-hero": "flow",
+  "flow-builder": "flow",
+  "flow-canvas": "flow",
+  "process-explorer-page": "screen",
 } as const satisfies Record<string, BlockStage>;
 
 export type NativeBlockName = keyof typeof BLOCKS;
@@ -26,3 +86,19 @@ export const NATIVE_BLOCKS: Record<NativeBlockName, BlockStage> = BLOCKS;
 
 export const isNativeBlock = (name: string | null | undefined): name is NativeBlockName =>
   Boolean(name && name in NATIVE_BLOCKS);
+
+/**
+ * Blocks that are a single narrow card (a sign-in form, a checklist): their thumbnail is drawn
+ * at a smaller virtual width so the card reads on the tile instead of floating in it.
+ */
+export const NARROW_BLOCKS: readonly string[] = [
+  "login-01",
+  "register-01",
+  "forgot-password-01",
+  "reset-password-01",
+  "two-factor-01",
+  "verify-email-01",
+  "onboarding-checklist-01",
+  "todo-list-01",
+  "order-receipt-01",
+];

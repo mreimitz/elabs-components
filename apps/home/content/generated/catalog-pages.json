@@ -1581,7 +1581,7 @@
     "docsId": "ai-chatgreeting--docs",
     "file": "packages/ai/src/chat-greeting.stories.tsx",
     "summary": "The centered, display-scale first-run greeting for an empty chat scene — a headline, not a status message.",
-    "question": "How can I",
+    "question": "",
     "about": "",
     "intent": {
       "purpose": "The centered, display-scale first-run greeting for an empty chat scene — a headline, not a status message.",
@@ -7704,6 +7704,12 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved gutter. The regression escape hatch. Default: `\"auto\"`."
+          },
+          {
+            "name": "maxWidth",
+            "optional": true,
+            "type": "number",
+            "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
           }
         ],
         "variants": null,
@@ -7870,6 +7876,11 @@
         "id": "charts-barchart--horizontal",
         "name": "Horizontal",
         "description": "Horizontal orientation — bars grow left-to-right."
+      },
+      {
+        "id": "charts-barchart--horizontal-long-labels",
+        "name": "Horizontal Long Labels",
+        "description": "`BarYAxis maxWidth`: rows whose names ARE the content. The label gutter is measured and capped at 112 px by default, which ellipsises \"Send Invoice → Payment Reminder\"; raising the cap lets the gutter grow to what the labels need, and the plot keeps its own minimum."
       },
       {
         "id": "charts-barchart--long-category-labels",
@@ -16350,6 +16361,12 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved gutter. The regression escape hatch. Default: `\"auto\"`."
+          },
+          {
+            "name": "maxWidth",
+            "optional": true,
+            "type": "number",
+            "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
           }
         ],
         "variants": null,
@@ -17852,6 +17869,12 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved gutter. The regression escape hatch. Default: `\"auto\"`."
+          },
+          {
+            "name": "maxWidth",
+            "optional": true,
+            "type": "number",
+            "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
           }
         ],
         "variants": null,
@@ -24100,7 +24123,7 @@
     "docsId": "flow-canvasshell--docs",
     "file": "packages/flow/src/canvas-shell/canvas-shell.stories.tsx",
     "summary": "Branded React Flow canvas wrapper with token-driven background + sane defaults.",
-    "question": "orders",
+    "question": "",
     "about": "",
     "intent": {
       "purpose": "Branded React Flow canvas wrapper with token-driven background + sane defaults.",
@@ -24151,6 +24174,12 @@
             "optional": true,
             "type": "FitViewOptions",
             "description": "Options for the {@link fitViewKey} re-fit. Ignored without one."
+          },
+          {
+            "name": "fitViewAnchorNodeIds",
+            "optional": true,
+            "type": "readonly string[]",
+            "description": "Which nodes a CLAMPED {@link fitViewKey} re-fit keeps in view — typically where the diagram begins. A fit that cannot shrink far enough (a `minZoom` floor) is pinned to the content's top-left corner by default, which is where a top-down layout starts; a left-to-right layout starts at the left edge but at mid-height, so pinning to the top opens on an empty corner. With anchors, each overflowing axis centres the anchor nodes instead, without ever scrolling past the content's own edge. Unset: today's corner pin."
           },
           {
             "name": "children",
@@ -24208,7 +24237,7 @@
     "docsId": "flow-flowbuttonedge--docs",
     "file": "packages/flow/src/flow-button-edge/flow-button-edge.stories.tsx",
     "summary": "",
-    "question": "Raw data in",
+    "question": "",
     "about": "",
     "intent": null,
     "api": [],
@@ -24399,7 +24428,7 @@
     "docsId": "flow-flowlayout--docs",
     "file": "packages/flow/src/flow-layout/flow-layout.stories.tsx",
     "summary": "",
-    "question": "Raw data in",
+    "question": "",
     "about": "",
     "intent": null,
     "api": [],
@@ -24486,7 +24515,7 @@
     "docsId": "flow-flowminimap--docs",
     "file": "packages/flow/src/flow-mini-map/flow-mini-map.stories.tsx",
     "summary": "",
-    "question": "orders",
+    "question": "",
     "about": "",
     "intent": null,
     "api": [
@@ -24520,7 +24549,7 @@
     "docsId": "flow-flownode--docs",
     "file": "packages/flow/src/flow-node/flow-node.stories.tsx",
     "summary": "Branded custom React Flow node (title/subtitle/kind/icon/tone).",
-    "question": "orders table",
+    "question": "",
     "about": "",
     "intent": {
       "purpose": "Branded custom React Flow node (title/subtitle/kind/icon/tone).",
@@ -24581,7 +24610,7 @@
     "docsId": "flow-flowplaceholdernode--docs",
     "file": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.stories.tsx",
     "summary": "",
-    "question": "onto empty canvas",
+    "question": "",
     "about": "",
     "intent": null,
     "api": [],
@@ -24740,7 +24769,7 @@
     "docsId": "flow-helperlines--docs",
     "file": "packages/flow/src/helper-lines/helper-lines.stories.tsx",
     "summary": "",
-    "question": "orders",
+    "question": "",
     "about": "",
     "intent": null,
     "api": [
@@ -24984,7 +25013,7 @@
     "docsId": "flow-zoomcontrols--docs",
     "file": "packages/flow/src/zoom-controls/zoom-controls.stories.tsx",
     "summary": "",
-    "question": "orders",
+    "question": "",
     "about": "",
     "intent": null,
     "api": [
@@ -28240,7 +28269,7 @@
       {
         "id": "foundations-decoration--fade",
         "name": "Fade",
-        "description": "The GROUND FADE (`data-decoration-fade`) — an opt-in region gesture that fades the ambient graph paper out instead of ruling a region edge to edge. It paints the SAME `--deco-grid` on a decorative `::before` layer and masks THAT, so the ink still rides the dial (inert at decoration 0) and the region's own content is never masked — the text in each panel stays at full opacity. The fade OWNS its region's ground. Opaque surfaces are never ruled themselves — the ambient sheet is painted once, behind the page — so a nested surface can't punch a crisp, full-strength rectangle into the field that was just faded out (the third panel below nests a `bg-card`). Budget: it spends the region's one focal drafting gesture. For a one-off fade on a single element, use Tailwind's own `mask-t-from-*` / `mask-radial-*` utilities. Shipped in anger on `Patterns/Templates/Marketing`, whose hero band carries `data-decoration-fade=\"top\"` so the sheet fades in behind the headline instead of starting on a hard ruled edge — that template, not this matrix, is the surface to judge the gesture on. Sweep it with the **Decoration** toolbar (this story pins the dial to 10 so the gesture is visible on every theme; at 0 the mask has nothing to reveal)."
+        "description": "The GROUND FADE (`data-decoration-fade`) — an opt-in region gesture that fades the ambient graph paper out instead of ruling a region edge to edge. It paints the SAME `--deco-grid` on a decorative `::before` layer and masks THAT, so the ink still rides the dial (inert at decoration 0) and the region's own content is never masked — the text in each panel stays at full opacity. The fade OWNS its region's ground. Opaque surfaces are never ruled themselves — the ambient sheet is painted once, behind the page — so a nested surface can't punch a crisp, full-strength rectangle into the field that was just faded out (the third panel below nests a `bg-card`). Budget: it spends the region's one focal drafting gesture. For a one-off fade on a single element, use Tailwind's own `mask-t-from-*` / `mask-radial-*` utilities. Shipped in anger on `Patterns/Templates/Starters/Marketing`, whose hero band carries `data-decoration-fade=\"top\"` so the sheet fades in behind the headline instead of starting on a hard ruled edge — that template, not this matrix, is the surface to judge the gesture on. Sweep it with the **Decoration** toolbar (this story pins the dial to 10 so the gesture is visible on every theme; at 0 the mask has nothing to reveal)."
       },
       {
         "id": "foundations-decoration--ambient-ground",
@@ -33854,6 +33883,143 @@
     "block": null,
     "template": null
   },
+  "blocks/account-and-settings-billing": {
+    "section": "blocks",
+    "slug": "account-and-settings-billing",
+    "name": "Billing",
+    "title": "Patterns/Blocks/Account and Settings/Billing",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsBilling",
+    "importFrom": null,
+    "docsId": "patterns-blocks-account-and-settings-billing--docs",
+    "file": "apps/docs/stories/blocks/settings-billing-01.stories.tsx",
+    "summary": "Plan and renewal, usage Meters with an included-amount marker and overage in words, the card by its last four digits, and an invoices Table.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-account-and-settings-billing--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "settings-billing-01",
+      "title": "Settings — Billing",
+      "description": "Plan and renewal, usage Meters with an included-amount marker and overage in words, the card by its last four digits, and an invoices Table.",
+      "categories": ["settings"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/account-and-settings-members": {
+    "section": "blocks",
+    "slug": "account-and-settings-members",
+    "name": "Members",
+    "title": "Patterns/Blocks/Account and Settings/Members",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsMembers",
+    "importFrom": null,
+    "docsId": "patterns-blocks-account-and-settings-members--docs",
+    "file": "apps/docs/stories/blocks/settings-members-01.stories.tsx",
+    "summary": "Members with in-place role changes, a protected owner, an invite dialog that checks address, duplicates and seats, pending invites in the same list and a confirming remove.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-account-and-settings-members--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-account-and-settings-members--seats-full",
+        "name": "Seats Full",
+        "description": "Every seat is taken: inviting is disabled and the header says where to add seats."
+      }
+    ],
+    "block": {
+      "name": "settings-members-01",
+      "title": "Settings — Members",
+      "description": "Members with in-place role changes, a protected owner, an invite dialog that checks address, duplicates and seats, pending invites in the same list and a confirming remove.",
+      "categories": ["settings"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/account-and-settings-notifications": {
+    "section": "blocks",
+    "slug": "account-and-settings-notifications",
+    "name": "Notifications",
+    "title": "Patterns/Blocks/Account and Settings/Notifications",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsNotifications",
+    "importFrom": null,
+    "docsId": "patterns-blocks-account-and-settings-notifications--docs",
+    "file": "apps/docs/stories/blocks/settings-notifications-01.stories.tsx",
+    "summary": "An events-by-channels matrix as a real table of Switches with full accessible names, locked cells that say why, and a count of events that reach you nowhere.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-account-and-settings-notifications--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "settings-notifications-01",
+      "title": "Settings — Notifications",
+      "description": "An events-by-channels matrix as a real table of Switches with full accessible names, locked cells that say why, and a count of events that reach you nowhere.",
+      "categories": ["settings"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/account-and-settings-profile": {
+    "section": "blocks",
+    "slug": "account-and-settings-profile",
+    "name": "Profile",
+    "title": "Patterns/Blocks/Account and Settings/Profile",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsProfile",
+    "importFrom": null,
+    "docsId": "patterns-blocks-account-and-settings-profile--docs",
+    "file": "apps/docs/stories/blocks/settings-profile-01.stories.tsx",
+    "summary": "A profile form with dirty tracking (the save bar appears only when something changed), validation on save, a counted bio and a danger zone behind a ConfirmDialog that names what is lost.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-account-and-settings-profile--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "settings-profile-01",
+      "title": "Settings — Profile",
+      "description": "A profile form with dirty tracking (the save bar appears only when something changed), validation on save, a counted bio and a danger zone behind a ConfirmDialog that names what is lost.",
+      "categories": ["settings"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/agent-ops-audit-log": {
     "section": "blocks",
     "slug": "agent-ops-audit-log",
@@ -34625,6 +34791,437 @@
     },
     "template": null
   },
+  "blocks/application-empty-states": {
+    "section": "blocks",
+    "slug": "application-empty-states",
+    "name": "Empty States",
+    "title": "Patterns/Blocks/Application/Empty States",
+    "group": "Application",
+    "package": "patterns",
+    "component": "EmptyStates",
+    "importFrom": null,
+    "docsId": "patterns-blocks-application-empty-states--docs",
+    "file": "apps/docs/stories/blocks/empty-states-01.stories.tsx",
+    "summary": "Six empty and error states on StatePanel with the library's illustrations — first run, no results, an empty list that is good news, error, offline, no access — each saying what happened, whether anything is lost and the way out.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-application-empty-states--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "empty-states-01",
+      "title": "Empty states",
+      "description": "Six empty and error states on StatePanel with the library's illustrations — first run, no results, an empty list that is good news, error, offline, no access — each saying what happened, whether anything is lost and the way out.",
+      "categories": ["application"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/application-kanban-board": {
+    "section": "blocks",
+    "slug": "application-kanban-board",
+    "name": "Kanban Board",
+    "title": "Patterns/Blocks/Application/Kanban Board",
+    "group": "Application",
+    "package": "patterns",
+    "component": "KanbanBoard",
+    "importFrom": null,
+    "docsId": "patterns-blocks-application-kanban-board--docs",
+    "file": "apps/docs/stories/blocks/kanban-board-01.stories.tsx",
+    "summary": "Drag cards between columns or use each card's Move menu (keyboard, screen reader and touch), with a live-region announcement, per-column points and WIP-limit warnings in words.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-application-kanban-board--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "kanban-board-01",
+      "title": "Kanban board",
+      "description": "Drag cards between columns or use each card's Move menu (keyboard, screen reader and touch), with a live-region announcement, per-column points and WIP-limit warnings in words.",
+      "categories": ["application"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/application-onboarding-checklist": {
+    "section": "blocks",
+    "slug": "application-onboarding-checklist",
+    "name": "Onboarding Checklist",
+    "title": "Patterns/Blocks/Application/Onboarding Checklist",
+    "group": "Application",
+    "package": "patterns",
+    "component": "OnboardingChecklist",
+    "importFrom": null,
+    "docsId": "patterns-blocks-application-onboarding-checklist--docs",
+    "file": "apps/docs/stories/blocks/onboarding-checklist-01.stories.tsx",
+    "summary": "A getting-started checklist that opens on the next step, says how long each takes, counts the minutes left on a Meter and ends with a closing state.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-application-onboarding-checklist--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "onboarding-checklist-01",
+      "title": "Onboarding checklist",
+      "description": "A getting-started checklist that opens on the next step, says how long each takes, counts the minutes left on a Meter and ends with a closing state.",
+      "categories": ["application"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/application-project-cards": {
+    "section": "blocks",
+    "slug": "application-project-cards",
+    "name": "Project Cards",
+    "title": "Patterns/Blocks/Application/Project Cards",
+    "group": "Application",
+    "package": "patterns",
+    "component": "ProjectCards",
+    "importFrom": null,
+    "docsId": "patterns-blocks-application-project-cards--docs",
+    "file": "apps/docs/stories/blocks/project-cards-01.stories.tsx",
+    "summary": "Projects as cards with progress against time on one Meter (marker = today), a derived health word, team avatars, due date and a counted state filter.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-application-project-cards--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "project-cards-01",
+      "title": "Project cards",
+      "description": "Projects as cards with progress against time on one Meter (marker = today), a derived health word, team avatars, due date and a counted state filter.",
+      "categories": ["application"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/application-todo-list": {
+    "section": "blocks",
+    "slug": "application-todo-list",
+    "name": "Todo List",
+    "title": "Patterns/Blocks/Application/Todo List",
+    "group": "Application",
+    "package": "patterns",
+    "component": "TodoList",
+    "importFrom": null,
+    "docsId": "patterns-blocks-application-todo-list--docs",
+    "file": "apps/docs/stories/blocks/todo-list-01.stories.tsx",
+    "summary": "Add with Enter, tick to complete, filter, clear completed; the header counts open and overdue tasks and every control names the task it acts on.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-application-todo-list--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "todo-list-01",
+      "title": "Todo list",
+      "description": "Add with Enter, tick to complete, filter, clear completed; the header counts open and overdue tasks and every control names the task it acts on.",
+      "categories": ["application"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/authentication-forgot-password": {
+    "section": "blocks",
+    "slug": "authentication-forgot-password",
+    "name": "Forgot Password",
+    "title": "Patterns/Blocks/Authentication/Forgot Password",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "ForgotPassword",
+    "importFrom": null,
+    "docsId": "patterns-blocks-authentication-forgot-password--docs",
+    "file": "apps/docs/stories/blocks/forgot-password-01.stories.tsx",
+    "summary": "Asks for the email and answers the same way whether or not the account exists; the confirmation names the address, the link's lifetime and the way back.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-authentication-forgot-password--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "forgot-password-01",
+      "title": "Forgot password",
+      "description": "Asks for the email and answers the same way whether or not the account exists; the confirmation names the address, the link's lifetime and the way back.",
+      "categories": ["authentication"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["auth-parts"]
+    },
+    "template": null
+  },
+  "blocks/authentication-login": {
+    "section": "blocks",
+    "slug": "authentication-login",
+    "name": "Login",
+    "title": "Patterns/Blocks/Authentication/Login",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "LoginForm",
+    "importFrom": null,
+    "docsId": "patterns-blocks-authentication-login--docs",
+    "file": "apps/docs/stories/blocks/login-01.stories.tsx",
+    "summary": "Sign in with email and password plus brand-neutral other ways in. Field errors after the first attempt, a revealable password, a pending button and the server's answer as an alert; hands the values to onSubmit and never calls a server itself.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-authentication-login--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-authentication-login--wrong-password",
+        "name": "Wrong Password",
+        "description": "The server said no: whatever `onSubmit` returns is shown as the form error."
+      },
+      {
+        "id": "patterns-blocks-authentication-login--slow-server",
+        "name": "Slow Server",
+        "description": "A slow server: the button says what is happening and cannot be pressed twice."
+      },
+      {
+        "id": "patterns-blocks-authentication-login--no-providers",
+        "name": "No Providers",
+        "description": "Email and password only."
+      }
+    ],
+    "block": {
+      "name": "login-01",
+      "title": "Login",
+      "description": "Sign in with email and password plus brand-neutral other ways in. Field errors after the first attempt, a revealable password, a pending button and the server's answer as an alert; hands the values to onSubmit and never calls a server itself.",
+      "categories": ["authentication"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["auth-parts"]
+    },
+    "template": null
+  },
+  "blocks/authentication-login-split": {
+    "section": "blocks",
+    "slug": "authentication-login-split",
+    "name": "Login Split",
+    "title": "Patterns/Blocks/Authentication/Login Split",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "LoginSplit",
+    "importFrom": null,
+    "docsId": "patterns-blocks-authentication-login-split--docs",
+    "file": "apps/docs/stories/blocks/login-02.stories.tsx",
+    "summary": "The sign-in form beside a brand panel painted with the primary pair. Container-query layout: the panel stands down when narrow.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-authentication-login-split--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "login-02",
+      "title": "Login, split",
+      "description": "The sign-in form beside a brand panel painted with the primary pair. Container-query layout: the panel stands down when narrow.",
+      "categories": ["authentication"],
+      "dependencies": ["@elabs-ai/components-icons", "lucide-react"],
+      "registryDependencies": ["auth-parts", "login-01"]
+    },
+    "template": null
+  },
+  "blocks/authentication-register": {
+    "section": "blocks",
+    "slug": "authentication-register",
+    "name": "Register",
+    "title": "Patterns/Blocks/Authentication/Register",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "RegisterForm",
+    "importFrom": null,
+    "docsId": "patterns-blocks-authentication-register--docs",
+    "file": "apps/docs/stories/blocks/register-01.stories.tsx",
+    "summary": "Create an account: name, work email, a password with a strength meter that names the unmet rules, and explicit consent. Errors appear after the first attempt.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-authentication-register--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-authentication-register--email-taken",
+        "name": "Email Taken",
+        "description": "The email is taken: the server answer becomes the form error."
+      }
+    ],
+    "block": {
+      "name": "register-01",
+      "title": "Register",
+      "description": "Create an account: name, work email, a password with a strength meter that names the unmet rules, and explicit consent. Errors appear after the first attempt.",
+      "categories": ["authentication"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["auth-parts"]
+    },
+    "template": null
+  },
+  "blocks/authentication-reset-password": {
+    "section": "blocks",
+    "slug": "authentication-reset-password",
+    "name": "Reset Password",
+    "title": "Patterns/Blocks/Authentication/Reset Password",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "ResetPassword",
+    "importFrom": null,
+    "docsId": "patterns-blocks-authentication-reset-password--docs",
+    "file": "apps/docs/stories/blocks/reset-password-01.stories.tsx",
+    "summary": "Choose a new password: whose account, strength explained, the two entries compared, and an end state that says other sessions were signed out.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-authentication-reset-password--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-authentication-reset-password--expired-link",
+        "name": "Expired Link",
+        "description": "The link is too old: the server answer lands on the form."
+      }
+    ],
+    "block": {
+      "name": "reset-password-01",
+      "title": "Reset password",
+      "description": "Choose a new password: whose account, strength explained, the two entries compared, and an end state that says other sessions were signed out.",
+      "categories": ["authentication"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["auth-parts"]
+    },
+    "template": null
+  },
+  "blocks/authentication-two-factor": {
+    "section": "blocks",
+    "slug": "authentication-two-factor",
+    "name": "Two Factor",
+    "title": "Patterns/Blocks/Authentication/Two Factor",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "TwoFactor",
+    "importFrom": null,
+    "docsId": "patterns-blocks-authentication-two-factor--docs",
+    "file": "apps/docs/stories/blocks/two-factor-01.stories.tsx",
+    "summary": "Six digits in one InputOTP that submits itself when full, a resend that counts down, and a recovery-code way out.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-authentication-two-factor--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-authentication-two-factor--wrong-code",
+        "name": "Wrong Code",
+        "description": "A wrong code: the message is announced and the input is marked invalid."
+      },
+      {
+        "id": "patterns-blocks-authentication-two-factor--by-sms",
+        "name": "By Sms",
+        "description": "A code sent by text message, with no wait before resending."
+      }
+    ],
+    "block": {
+      "name": "two-factor-01",
+      "title": "Two-factor verification",
+      "description": "Six digits in one InputOTP that submits itself when full, a resend that counts down, and a recovery-code way out.",
+      "categories": ["authentication"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": ["auth-parts"]
+    },
+    "template": null
+  },
+  "blocks/authentication-verify-email": {
+    "section": "blocks",
+    "slug": "authentication-verify-email",
+    "name": "Verify Email",
+    "title": "Patterns/Blocks/Authentication/Verify Email",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "VerifyEmail",
+    "importFrom": null,
+    "docsId": "patterns-blocks-authentication-verify-email--docs",
+    "file": "apps/docs/stories/blocks/verify-email-01.stories.tsx",
+    "summary": "The waiting room after sign-up: which address, what to do, a counting-down resend and the way back for a mistyped address.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-authentication-verify-email--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "verify-email-01",
+      "title": "Verify email",
+      "description": "The waiting room after sign-up: which address, what to do, a counting-down resend and the way back for a mistyped address.",
+      "categories": ["authentication"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["auth-parts"]
+    },
+    "template": null
+  },
   "blocks/command-centers-launch-plan": {
     "section": "blocks",
     "slug": "command-centers-launch-plan",
@@ -34806,6 +35403,176 @@
         "@elabs-ai/components-ui"
       ],
       "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/commerce-checkout": {
+    "section": "blocks",
+    "slug": "commerce-checkout",
+    "name": "Checkout",
+    "title": "Patterns/Blocks/Commerce/Checkout",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "Checkout",
+    "importFrom": null,
+    "docsId": "patterns-blocks-commerce-checkout--docs",
+    "file": "apps/docs/stories/blocks/checkout-01.stories.tsx",
+    "summary": "One-page checkout with autocomplete on every field, errors after the first attempt with focus moved to the first, a delivery RadioGroup that changes the total, and a slot for the payment provider's hosted card field.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-commerce-checkout--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "checkout-01",
+      "title": "Checkout",
+      "description": "One-page checkout with autocomplete on every field, errors after the first attempt with focus moved to the first, a delivery RadioGroup that changes the total, and a slot for the payment provider's hosted card field.",
+      "categories": ["commerce"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["commerce-parts", "shopping-cart-01"]
+    },
+    "template": null
+  },
+  "blocks/commerce-order-receipt": {
+    "section": "blocks",
+    "slug": "commerce-order-receipt",
+    "name": "Order Receipt",
+    "title": "Patterns/Blocks/Commerce/Order Receipt",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "OrderReceipt",
+    "importFrom": null,
+    "docsId": "patterns-blocks-commerce-order-receipt--docs",
+    "file": "apps/docs/stories/blocks/order-receipt-01.stories.tsx",
+    "summary": "The confirmation page: order number, arrival, address, lines and what happens next as a Timeline.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-commerce-order-receipt--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "order-receipt-01",
+      "title": "Order receipt",
+      "description": "The confirmation page: order number, arrival, address, lines and what happens next as a Timeline.",
+      "categories": ["commerce"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["commerce-parts", "shopping-cart-01"]
+    },
+    "template": null
+  },
+  "blocks/commerce-product-detail": {
+    "section": "blocks",
+    "slug": "commerce-product-detail",
+    "name": "Product Detail",
+    "title": "Patterns/Blocks/Commerce/Product Detail",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ProductDetail",
+    "importFrom": null,
+    "docsId": "patterns-blocks-commerce-product-detail--docs",
+    "file": "apps/docs/stories/blocks/product-detail-01.stories.tsx",
+    "summary": "A product page with required options (the button names the missing one), a stock-capped quantity, delivery promises, a Rating and details in an Accordion.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-commerce-product-detail--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "product-detail-01",
+      "title": "Product detail",
+      "description": "A product page with required options (the button names the missing one), a stock-capped quantity, delivery promises, a Rating and details in an Accordion.",
+      "categories": ["commerce"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["commerce-parts"]
+    },
+    "template": null
+  },
+  "blocks/commerce-product-grid": {
+    "section": "blocks",
+    "slug": "commerce-product-grid",
+    "name": "Product Grid",
+    "title": "Patterns/Blocks/Commerce/Product Grid",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ProductGrid",
+    "importFrom": null,
+    "docsId": "patterns-blocks-commerce-product-grid--docs",
+    "file": "apps/docs/stories/blocks/product-grid-01.stories.tsx",
+    "summary": "A product listing with a category filter, sorting and cards that state markdowns and stock in words; sold-out products cannot be added.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-commerce-product-grid--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "product-grid-01",
+      "title": "Product grid",
+      "description": "A product listing with a category filter, sorting and cards that state markdowns and stock in words; sold-out products cannot be added.",
+      "categories": ["commerce"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": ["commerce-parts"]
+    },
+    "template": null
+  },
+  "blocks/commerce-shopping-cart": {
+    "section": "blocks",
+    "slug": "commerce-shopping-cart",
+    "name": "Shopping Cart",
+    "title": "Patterns/Blocks/Commerce/Shopping Cart",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ShoppingCart",
+    "importFrom": null,
+    "docsId": "patterns-blocks-commerce-shopping-cart--docs",
+    "file": "apps/docs/stories/blocks/shopping-cart-01.stories.tsx",
+    "summary": "Stock-capped quantities, remove with undo, a discount code that answers either way, progress to free delivery on a Meter and totals that add up.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-commerce-shopping-cart--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-commerce-shopping-cart--empty",
+        "name": "Empty",
+        "description": "Nothing in it: the summary stays and the checkout button is disabled."
+      }
+    ],
+    "block": {
+      "name": "shopping-cart-01",
+      "title": "Shopping cart",
+      "description": "Stock-capped quantities, remove with undo, a discount code that answers either way, progress to free delivery on a Meter and totals that add up.",
+      "categories": ["commerce"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["commerce-parts"]
     },
     "template": null
   },
@@ -36345,6 +37112,226 @@
     },
     "template": null
   },
+  "blocks/marketing-bento": {
+    "section": "blocks",
+    "slug": "marketing-bento",
+    "name": "Bento",
+    "title": "Patterns/Blocks/Marketing/Bento",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingBento",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-bento--docs",
+    "file": "apps/docs/stories/blocks/marketing-bento-01.stories.tsx",
+    "summary": "A BentoGrid of product proof where each tile shows the thing: a live AreaChart, a Meter, a Sparkline, status badges.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-bento--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "marketing-bento-01",
+      "title": "Marketing — Bento",
+      "description": "A BentoGrid of product proof where each tile shows the thing: a live AreaChart, a Meter, a Sparkline, status badges.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-call-to-action": {
+    "section": "blocks",
+    "slug": "marketing-call-to-action",
+    "name": "Call to Action",
+    "title": "Patterns/Blocks/Marketing/Call to Action",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCta",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-call-to-action--docs",
+    "file": "apps/docs/stories/blocks/marketing-cta-01.stories.tsx",
+    "summary": "The closing ask: one primary action, one quieter alternative and what trying it costs.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-call-to-action--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "marketing-cta-01",
+      "title": "Marketing — Call to action",
+      "description": "The closing ask: one primary action, one quieter alternative and what trying it costs.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-contact": {
+    "section": "blocks",
+    "slug": "marketing-contact",
+    "name": "Contact",
+    "title": "Patterns/Blocks/Marketing/Contact",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingContact",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-contact--docs",
+    "file": "apps/docs/stories/blocks/marketing-contact-01.stories.tsx",
+    "summary": "A short validated contact form with a topic Select, a personal confirmation and the other ways to reach the team.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-contact--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "marketing-contact-01",
+      "title": "Marketing — Contact",
+      "description": "A short validated contact form with a topic Select, a personal confirmation and the other ways to reach the team.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-faq": {
+    "section": "blocks",
+    "slug": "marketing-faq",
+    "name": "FAQ",
+    "title": "Patterns/Blocks/Marketing/FAQ",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFaq",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-faq--docs",
+    "file": "apps/docs/stories/blocks/marketing-faq-01.stories.tsx",
+    "summary": "An Accordion of pre-sale questions beside a person to ask.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-faq--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "marketing-faq-01",
+      "title": "Marketing — FAQ",
+      "description": "An Accordion of pre-sale questions beside a person to ask.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-features": {
+    "section": "blocks",
+    "slug": "marketing-features",
+    "name": "Features",
+    "title": "Patterns/Blocks/Marketing/Features",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFeatures",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-features--docs",
+    "file": "apps/docs/stories/blocks/marketing-features-01.stories.tsx",
+    "summary": "A SectionHeader plus a FeatureGrid of six outcome-led reasons.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-features--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-features--two-columns",
+        "name": "Two Columns",
+        "description": "Four reasons in two columns."
+      }
+    ],
+    "block": {
+      "name": "marketing-features-01",
+      "title": "Marketing — Features",
+      "description": "A SectionHeader plus a FeatureGrid of six outcome-led reasons.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-footer": {
+    "section": "blocks",
+    "slug": "marketing-footer",
+    "name": "Footer",
+    "title": "Patterns/Blocks/Marketing/Footer",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFooter",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-footer--docs",
+    "file": "apps/docs/stories/blocks/marketing-footer-01.stories.tsx",
+    "summary": "One-line positioning, three labelled nav columns and the legal row.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-footer--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "marketing-footer-01",
+      "title": "Marketing — Footer",
+      "description": "One-line positioning, three labelled nav columns and the legal row.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/marketing-hero": {
     "section": "blocks",
     "slug": "marketing-hero",
@@ -36378,6 +37365,233 @@
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui"
       ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-navbar": {
+    "section": "blocks",
+    "slug": "marketing-navbar",
+    "name": "Navbar",
+    "title": "Patterns/Blocks/Marketing/Navbar",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingNavbar",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-navbar--docs",
+    "file": "apps/docs/stories/blocks/marketing-navbar-01.stories.tsx",
+    "summary": "Site navigation: links inline when there is room and in a Sheet when there is not, aria-current on the active route, container-query layout.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-navbar--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-navbar--active-link",
+        "name": "Active Link",
+        "description": "On the Pricing page: the link is marked current."
+      },
+      {
+        "id": "patterns-blocks-marketing-navbar--narrow",
+        "name": "Narrow",
+        "description": "In a narrow column the links move into the menu."
+      }
+    ],
+    "block": {
+      "name": "marketing-navbar-01",
+      "title": "Marketing — Navbar",
+      "description": "Site navigation: links inline when there is room and in a Sheet when there is not, aria-current on the active route, container-query layout.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-newsletter": {
+    "section": "blocks",
+    "slug": "marketing-newsletter",
+    "name": "Newsletter",
+    "title": "Patterns/Blocks/Marketing/Newsletter",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingNewsletter",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-newsletter--docs",
+    "file": "apps/docs/stories/blocks/marketing-newsletter-01.stories.tsx",
+    "summary": "One field, a promise about frequency, validation and a confirmation that names the address.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-newsletter--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-newsletter--rejected",
+        "name": "Rejected",
+        "description": "The list refused the address: the message lands on the field."
+      }
+    ],
+    "block": {
+      "name": "marketing-newsletter-01",
+      "title": "Marketing — Newsletter",
+      "description": "One field, a promise about frequency, validation and a confirmation that names the address.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-pricing": {
+    "section": "blocks",
+    "slug": "marketing-pricing",
+    "name": "Pricing",
+    "title": "Patterns/Blocks/Marketing/Pricing",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingPricing",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-pricing--docs",
+    "file": "apps/docs/stories/blocks/marketing-pricing-01.stories.tsx",
+    "summary": "Three plans named for who they are for, a billing toggle that recomputes every price, locale-aware currency and a featured plan marked in words.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-pricing--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-pricing--euro",
+        "name": "Euro",
+        "description": "Euro prices with a smaller yearly discount."
+      }
+    ],
+    "block": {
+      "name": "marketing-pricing-01",
+      "title": "Marketing — Pricing",
+      "description": "Three plans named for who they are for, a billing toggle that recomputes every price, locale-aware currency and a featured plan marked in words.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-stats-and-logos": {
+    "section": "blocks",
+    "slug": "marketing-stats-and-logos",
+    "name": "Stats and Logos",
+    "title": "Patterns/Blocks/Marketing/Stats and Logos",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingStats",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-stats-and-logos--docs",
+    "file": "apps/docs/stories/blocks/marketing-stats-01.stories.tsx",
+    "summary": "A StatsBand of the numbers over a LogoStrip of who stands behind them.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-stats-and-logos--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "marketing-stats-01",
+      "title": "Marketing — Stats and logos",
+      "description": "A StatsBand of the numbers over a LogoStrip of who stands behind them.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-team": {
+    "section": "blocks",
+    "slug": "marketing-team",
+    "name": "Team",
+    "title": "Patterns/Blocks/Marketing/Team",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTeam",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-team--docs",
+    "file": "apps/docs/stories/blocks/marketing-team-01.stories.tsx",
+    "summary": "Names, roles and one line about each person; container-query columns.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-team--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "marketing-team-01",
+      "title": "Marketing — Team",
+      "description": "Names, roles and one line about each person; container-query columns.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-testimonials": {
+    "section": "blocks",
+    "slug": "marketing-testimonials",
+    "name": "Testimonials",
+    "title": "Patterns/Blocks/Marketing/Testimonials",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTestimonials",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-testimonials--docs",
+    "file": "apps/docs/stories/blocks/marketing-testimonials-01.stories.tsx",
+    "summary": "A masonry wall of quotes with name, role and a read-only Rating.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-testimonials--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "marketing-testimonials-01",
+      "title": "Marketing — Testimonials",
+      "description": "A masonry wall of quotes with name, role and a read-only Rating.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
       "registryDependencies": []
     },
     "template": null
@@ -36470,8 +37684,8 @@
     "importFrom": null,
     "docsId": "patterns-blocks-process-and-flow-process-explorer--docs",
     "file": "apps/docs/stories/blocks/process-explorer-page.stories.tsx",
-    "summary": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree.",
-    "question": "",
+    "summary": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree.",
+    "question": "Where does the process really go, and where does it wait?",
     "about": "",
     "intent": null,
     "api": [],
@@ -36479,13 +37693,13 @@
       {
         "id": "patterns-blocks-process-and-flow-process-explorer--default",
         "name": "Default",
-        "description": "The sample order-to-cash log: select an activity, a transition or a variant and every view follows."
+        "description": "A quarter of order to cash: select an activity, a hand-over, a variant or a deviation and every view follows."
       }
     ],
     "block": {
       "name": "process-explorer-page",
       "title": "Process explorer page",
-      "description": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree.",
+      "description": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree.",
       "categories": [],
       "dependencies": [
         "@elabs-ai/components-charts",
@@ -36725,16 +37939,480 @@
     },
     "template": null
   },
+  "templates/agentic-ai-workspace": {
+    "section": "templates",
+    "slug": "agentic-ai-workspace",
+    "name": "Agentic AI Workspace",
+    "title": "Patterns/Scenarios/Agentic AI Workspace",
+    "group": "AI Products",
+    "package": "ai",
+    "component": "AgenticWorkspace",
+    "importFrom": null,
+    "docsId": "patterns-scenarios-agentic-ai-workspace--docs",
+    "file": "packages/ai/src/agentic-workspace.stories.tsx",
+    "summary": "A full-page demo scenario composed from the @elabs-ai/components-* grammar: a double-sided application shell (collapsible left nav + the real ContextPanel right rail with animated collapse and asset drill-in) wrapping a complete agentic AI interaction — reasoning, a plan, the AgentTimeline execution rail, tools with JSON behind disclosure, a ToolResultCard chart headline, an ApprovalCard decision, a task summary, a checkpoint, and a grounded AgentMessage answer with an EvidenceChip and a SourceList.",
+    "question": "For copilots and agentic products",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-scenarios-agentic-ai-workspace--default",
+        "name": "Default",
+        "description": "The full double-sided agentic workspace."
+      },
+      {
+        "id": "patterns-scenarios-agentic-ai-workspace--collapsed-nav",
+        "name": "Collapsed Nav",
+        "description": "Same scenario with the left navigation collapsed to an icon rail."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "templates/agent-operations-center": {
+    "section": "templates",
+    "slug": "agent-operations-center",
+    "name": "Agent Operations Center",
+    "title": "Patterns/Templates/AI Products/Agent Operations Center",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "AgentOpsCenterPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-ai-products-agent-operations-center--docs",
+    "file": "apps/docs/stories/templates-agent-ops-center.stories.tsx",
+    "summary": "The control room for a fleet of AI agents: the agent-ops block family as one product across four tabs — insight feed, spend against limit and the escalation boundary; the trace waterfall and handoff inspector; a run review and a decision record; the audit log — with every block callback wired and the review count reflected in the navigation, the tab and the header.",
+    "question": "For teams running AI agents in production",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-ai-products-agent-operations-center--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-templates-ai-products-agent-operations-center--review-queue",
+        "name": "Review Queue",
+        "description": "Opened on the review queue — the two things that wait for a human."
+      },
+      {
+        "id": "patterns-templates-ai-products-agent-operations-center--failed-run",
+        "name": "Failed Run",
+        "description": "Opened on a failed run: the waterfall and the handoff that dropped a field."
+      }
+    ],
+    "block": {
+      "name": "agent-ops-center-page",
+      "title": "Template — Agent operations center",
+      "description": "The control room for a fleet of AI agents: the agent-ops block family as one product across four tabs — insight feed, spend against limit and the escalation boundary; the trace waterfall and handoff inspector; a run review and a decision record; the audit log — with every block callback wired and the review count reflected in the navigation, the tab and the header.",
+      "categories": ["template"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": [
+        "agent-run-review-01",
+        "agent-trace-waterfall-01",
+        "audit-log-01",
+        "decision-record-01",
+        "escalation-boundary-01",
+        "handoff-inspector-01",
+        "insight-feed-01",
+        "spend-against-limit-01",
+        "workspace-shell"
+      ]
+    },
+    "template": null
+  },
+  "templates/terminal-agent-session": {
+    "section": "templates",
+    "slug": "terminal-agent-session",
+    "name": "Terminal Agent Session",
+    "title": "Patterns/Templates/AI Products/Terminal Agent Session",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "AgentSessionScreen",
+    "importFrom": null,
+    "docsId": "patterns-templates-ai-products-terminal-agent-session--docs",
+    "file": "apps/docs/stories/templates-terminal-agent-session.stories.tsx",
+    "summary": "The coding-agent CLI look-alike family (@elabs-ai/components-terminal, #117) ",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-ai-products-terminal-agent-session--default",
+        "name": "Default",
+        "description": "Mid-turn: the agent is working, a diff is proposed, todos are partially done."
+      },
+      {
+        "id": "patterns-templates-ai-products-terminal-agent-session--idle",
+        "name": "Idle",
+        "description": "A settled session: no working line, composer ready, an empty-ish transcript with just the banner."
+      },
+      {
+        "id": "patterns-templates-ai-products-terminal-agent-session--awaiting-permission",
+        "name": "Awaiting Permission",
+        "description": "A pending permission box is the focal element; the composer is not where attention goes."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "templates/market-desk": {
+    "section": "templates",
+    "slug": "market-desk",
+    "name": "Market Desk",
+    "title": "Patterns/Templates/Analytics/Market Desk",
+    "group": "Analytics",
+    "package": "patterns",
+    "component": "MarketDeskPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-analytics-market-desk--docs",
+    "file": "apps/docs/stories/templates-market-desk.stories.tsx",
+    "summary": "Watch the market, then act on it: the market-tape command center as the read side, a watchlist DataTable whose row click pre-fills the ticket, and a docked order ticket that is a real form — FieldRoot validation in the trader's terms, a NumberInput, a computed commitment checked against a limit, a review step before anything is placed, and a blotter that fills as orders go in.",
+    "question": "For pricing, trading and treasury products",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-analytics-market-desk--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "market-desk-page",
+      "title": "Template — Market desk",
+      "description": "Watch the market, then act on it: the market-tape command center as the read side, a watchlist DataTable whose row click pre-fills the ticket, and a docked order ticket that is a real form — FieldRoot validation in the trader's terms, a NumberInput, a computed commitment checked against a limit, a review step before anything is placed, and a blotter that fills as orders go in.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["command-center-market-tape-01", "workspace-shell"]
+    },
+    "template": null
+  },
+  "templates/revenue-operations": {
+    "section": "templates",
+    "slug": "revenue-operations",
+    "name": "Revenue Operations",
+    "title": "Patterns/Templates/Analytics/Revenue Operations",
+    "group": "Analytics",
+    "package": "patterns",
+    "component": "RevenueOpsPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-analytics-revenue-operations--docs",
+    "file": "apps/docs/stories/templates-revenue-ops.stories.tsx",
+    "summary": "An analytics workspace for revenue, finance and BI teams: the workspace shell with a summoned analyst, a page header whose period and region controls re-slice the charts and the pipeline, the revenue command center as the body, and a pipeline DataTable with a win-probability Meter, an activity Sparkline, a computed Stalled flag and row selection feeding a bulk action.",
+    "question": "For revenue, finance and BI teams",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-analytics-revenue-operations--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "revenue-ops-page",
+      "title": "Template — Revenue operations",
+      "description": "An analytics workspace for revenue, finance and BI teams: the workspace shell with a summoned analyst, a page header whose period and region controls re-slice the charts and the pipeline, the revenue command center as the body, and a pipeline DataTable with a win-probability Meter, an activity Sparkline, a computed Stalled flag and row selection feeding a bulk action.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["command-center-revenue-01", "workspace-shell"]
+    },
+    "template": null
+  },
+  "templates/customer-360": {
+    "section": "templates",
+    "slug": "customer-360",
+    "name": "Customer 360",
+    "title": "Patterns/Templates/Customers/Customer 360",
+    "group": "Customers",
+    "package": "patterns",
+    "component": "Customer360Page",
+    "importFrom": null,
+    "docsId": "patterns-templates-customers-customer-360--docs",
+    "file": "apps/docs/stories/templates-customer-360.stories.tsx",
+    "summary": "One account before the call: a record header, four MetricCards (one with a commitment-marked Meter), usage against the contract as a LineChart with a labelled rule, a self-explaining health score, a RadarChart against peers, next actions completed in place, an activity Timeline and the people with the relationship gap stated in the title, plus a docked account brief.",
+    "question": "For account, success and CRM products",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-customers-customer-360--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "customer-360-page",
+      "title": "Template — Customer 360",
+      "description": "One account before the call: a record header, four MetricCards (one with a commitment-marked Meter), usage against the contract as a LineChart with a labelled rule, a self-explaining health score, a RadarChart against peers, next actions completed in place, an activity Timeline and the people with the relationship gap stated in the title, plus a docked account brief.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["score-explanation-01", "workspace-shell"]
+    },
+    "template": null
+  },
+  "templates/support-desk": {
+    "section": "templates",
+    "slug": "support-desk",
+    "name": "Support Desk",
+    "title": "Patterns/Templates/Customers/Support Desk",
+    "group": "Customers",
+    "package": "patterns",
+    "component": "SupportDeskPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-customers-support-desk--docs",
+    "file": "apps/docs/stories/templates-support-desk.stories.tsx",
+    "summary": "Queue, conversation, context: a three-pane surface in the workspace shell laid out by container queries, a queue sorted by the promise that breaks first with a Meter per row, a conversation from the ai package's Message parts, a copilot draft grounded in named past tickets that you send or discard, and a context pane with the promise, the customer and what solved it before. Sending a reply restarts the clock and re-sorts the queue.",
+    "question": "For support, service and helpdesk products",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-customers-support-desk--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "support-desk-page",
+      "title": "Template — Support desk",
+      "description": "Queue, conversation, context: a three-pane surface in the workspace shell laid out by container queries, a queue sorted by the promise that breaks first with a Meter per row, a conversation from the ai package's Message parts, a copilot draft grounded in named past tickets that you send or discard, and a context pane with the promise, the customer and what solved it before. Sending a reply restarts the clock and re-sorts the queue.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["workspace-shell"]
+    },
+    "template": null
+  },
+  "templates/incident-command": {
+    "section": "templates",
+    "slug": "incident-command",
+    "name": "Incident Command",
+    "title": "Patterns/Templates/Operations/Incident Command",
+    "group": "Operations",
+    "package": "patterns",
+    "component": "IncidentCommandPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-operations-incident-command--docs",
+    "file": "apps/docs/stories/templates-incident-command.stories.tsx",
+    "summary": "One live incident run from one screen: severity, impact and commander in the header, a streaming LiveLineChart of the error rate, an AreaChart with the SLO as a labelled rule, the dependency-web block for blast radius, and a runbook whose steps print into a Terminal, tick off, move a Meter and write the incident log. Steps run in order; the last one settles the stream and unlocks Resolve.",
+    "question": "For reliability, observability and platform teams",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-operations-incident-command--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "incident-command-page",
+      "title": "Template — Incident command",
+      "description": "One live incident run from one screen: severity, impact and commander in the header, a streaming LiveLineChart of the error rate, an AreaChart with the SLO as a labelled rule, the dependency-web block for blast radius, and a runbook whose steps print into a Terminal, tick off, move a Meter and write the incident log. Steps run in order; the last one settles the stream and unlocks Resolve.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-terminal",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["infographic-dependency-web-01", "workspace-shell"]
+    },
+    "template": null
+  },
+  "templates/logistics-control-tower": {
+    "section": "templates",
+    "slug": "logistics-control-tower",
+    "name": "Logistics Control Tower",
+    "title": "Patterns/Templates/Operations/Logistics Control Tower",
+    "group": "Operations",
+    "package": "patterns",
+    "component": "ControlTowerPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-operations-logistics-control-tower--docs",
+    "file": "apps/docs/stories/templates-control-tower.stories.tsx",
+    "summary": "The screen an operations team keeps open all day: a headline computed from the exceptions, the network and fleet map blocks behind tabs, and an exceptions DataTable sorted by the closest promise whose row click summons the dock with the shipment's Descriptions, the recommended next step and its journey as a Timeline. The controlled-dock master-detail pattern for the workspace shell.",
+    "question": "For supply-chain, fleet and field-operations teams",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-operations-logistics-control-tower--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "control-tower-page",
+      "title": "Template — Logistics control tower",
+      "description": "The screen an operations team keeps open all day: a headline computed from the exceptions, the network and fleet map blocks behind tabs, and an exceptions DataTable sorted by the closest promise whose row click summons the dock with the shipment's Descriptions, the recommended next step and its journey as a Timeline. The controlled-dock master-detail pattern for the workspace shell.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["geo-fleet-tracker-01", "geo-network-map-01", "workspace-shell"]
+    },
+    "template": null
+  },
+  "templates/process-explorer": {
+    "section": "templates",
+    "slug": "process-explorer",
+    "name": "Process Explorer",
+    "title": "Patterns/Templates/Operations/Process Explorer",
+    "group": "Operations",
+    "package": "process",
+    "component": null,
+    "importFrom": null,
+    "docsId": "patterns-templates-operations-process-explorer--docs",
+    "file": "packages/process/src/templates-process-explorer.stories.tsx",
+    "summary": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree.",
+    "question": "For process-mining and operations-excellence tools",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-operations-process-explorer--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "process-explorer-page",
+      "title": "Process explorer page",
+      "description": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree.",
+      "categories": [],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-process",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@xyflow/react",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": {
+      "name": "process-explorer",
+      "description": "Process explorer template — the canonical full-screen `process-explorer` archetype: a map-first process-mining workspace over one order-to-cash event log.",
+      "packages": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-process",
+        "@elabs-ai/components-ui"
+      ]
+    }
+  },
+  "templates/project-hub": {
+    "section": "templates",
+    "slug": "project-hub",
+    "name": "Project Hub",
+    "title": "Patterns/Templates/Product Teams/Project Hub",
+    "group": "Product Teams",
+    "package": "patterns",
+    "component": "ProjectHubPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-product-teams-project-hub--docs",
+    "file": "apps/docs/stories/templates-project-hub.stories.tsx",
+    "summary": "Projects, the issue board, team load and members as one product: the workspace shell's navigation swaps views in place, the project-cards, kanban-board and settings-members blocks do the work, one dock explains the project or issue last opened, and every view reads the same issues so a move on the board changes the load, the overview and the navigation counts.",
+    "question": "For project, issue-tracking and delivery tools",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-product-teams-project-hub--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-templates-product-teams-project-hub--issues",
+        "name": "Issues",
+        "description": "Opened on the issue board."
+      },
+      {
+        "id": "patterns-templates-product-teams-project-hub--team-load",
+        "name": "Team Load",
+        "description": "Opened on the team's load."
+      },
+      {
+        "id": "patterns-templates-product-teams-project-hub--overview",
+        "name": "Overview",
+        "description": "Opened on the overview."
+      }
+    ],
+    "block": {
+      "name": "project-hub-page",
+      "title": "Template — Project hub",
+      "description": "Projects, the issue board, team load and members as one product: the workspace shell's navigation swaps views in place, the project-cards, kanban-board and settings-members blocks do the work, one dock explains the project or issue last opened, and every view reads the same issues so a move on the board changes the load, the overview and the navigation counts.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "kanban-board-01",
+        "project-cards-01",
+        "settings-members-01",
+        "workspace-shell"
+      ]
+    },
+    "template": null
+  },
   "templates/ai-assistant": {
     "section": "templates",
     "slug": "ai-assistant",
     "name": "AI Assistant",
-    "title": "Patterns/Templates/AI Assistant",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/AI Assistant",
+    "group": "Starters",
     "package": "ai",
     "component": null,
     "importFrom": null,
-    "docsId": "patterns-templates-ai-assistant--docs",
+    "docsId": "patterns-templates-starters-ai-assistant--docs",
     "file": "packages/ai/src/templates-ai-assistant.stories.tsx",
     "summary": "",
     "question": "",
@@ -36743,7 +38421,7 @@
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-ai-assistant--default",
+        "id": "patterns-templates-starters-ai-assistant--default",
         "name": "Default",
         "description": ""
       }
@@ -36763,12 +38441,12 @@
     "section": "templates",
     "slug": "dashboard",
     "name": "Dashboard",
-    "title": "Patterns/Templates/Dashboard",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/Dashboard",
+    "group": "Starters",
     "package": "charts",
     "component": null,
     "importFrom": null,
-    "docsId": "patterns-templates-dashboard--docs",
+    "docsId": "patterns-templates-starters-dashboard--docs",
     "file": "packages/charts/src/templates-dashboard.stories.tsx",
     "summary": "",
     "question": "",
@@ -36777,7 +38455,7 @@
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-dashboard--default",
+        "id": "patterns-templates-starters-dashboard--default",
         "name": "Default",
         "description": ""
       }
@@ -36797,12 +38475,12 @@
     "section": "templates",
     "slug": "dashboard-sheet",
     "name": "Dashboard Sheet",
-    "title": "Patterns/Templates/Dashboard Sheet",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/Dashboard Sheet",
+    "group": "Starters",
     "package": "charts",
     "component": null,
     "importFrom": null,
-    "docsId": "patterns-templates-dashboard-sheet--docs",
+    "docsId": "patterns-templates-starters-dashboard-sheet--docs",
     "file": "packages/charts/src/templates-dashboard-sheet.stories.tsx",
     "summary": "",
     "question": "",
@@ -36811,7 +38489,7 @@
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-dashboard-sheet--default",
+        "id": "patterns-templates-starters-dashboard-sheet--default",
         "name": "Default",
         "description": ""
       }
@@ -36831,12 +38509,12 @@
     "section": "templates",
     "slug": "data-app",
     "name": "Data App",
-    "title": "Patterns/Templates/Data App",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/Data App",
+    "group": "Starters",
     "package": "data",
     "component": null,
     "importFrom": null,
-    "docsId": "patterns-templates-data-app--docs",
+    "docsId": "patterns-templates-starters-data-app--docs",
     "file": "packages/data/src/templates-data-app.stories.tsx",
     "summary": "",
     "question": "",
@@ -36845,12 +38523,12 @@
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-data-app--default",
+        "id": "patterns-templates-starters-data-app--default",
         "name": "Default",
         "description": ""
       },
       {
-        "id": "patterns-templates-data-app--loading",
+        "id": "patterns-templates-starters-data-app--loading",
         "name": "Loading",
         "description": ""
       }
@@ -36870,26 +38548,26 @@
     "section": "templates",
     "slug": "enterprise-admin-console",
     "name": "Enterprise Admin Console",
-    "title": "Patterns/Templates/Enterprise Admin Console",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/Enterprise Admin Console",
+    "group": "Starters",
     "package": "patterns",
     "component": "AdminConsole",
     "importFrom": null,
-    "docsId": "patterns-templates-enterprise-admin-console--docs",
+    "docsId": "patterns-templates-starters-enterprise-admin-console--docs",
     "file": "apps/docs/stories/templates-admin-console.stories.tsx",
-    "summary": "",
+    "summary": "The baseline-complete archetype-B console — the recommended starting point for a professional brand-ui app.",
     "question": "",
     "about": "",
     "intent": null,
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-enterprise-admin-console--default",
+        "id": "patterns-templates-starters-enterprise-admin-console--default",
         "name": "Default",
         "description": "The full baseline-complete console."
       },
       {
-        "id": "patterns-templates-enterprise-admin-console--collapsed-nav",
+        "id": "patterns-templates-starters-enterprise-admin-console--collapsed-nav",
         "name": "Collapsed Nav",
         "description": "Same console with the primary navigation collapsed to the icon rail."
       }
@@ -36901,21 +38579,21 @@
     "section": "templates",
     "slug": "flow-workspace",
     "name": "Flow Workspace",
-    "title": "Patterns/Templates/Flow Workspace",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/Flow Workspace",
+    "group": "Starters",
     "package": "flow",
     "component": null,
     "importFrom": null,
-    "docsId": "patterns-templates-flow-workspace--docs",
+    "docsId": "patterns-templates-starters-flow-workspace--docs",
     "file": "packages/flow/src/templates-flow-workspace.stories.tsx",
     "summary": "",
-    "question": "Raw data in",
+    "question": "",
     "about": "",
     "intent": null,
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-flow-workspace--default",
+        "id": "patterns-templates-starters-flow-workspace--default",
         "name": "Default",
         "description": ""
       }
@@ -36935,12 +38613,12 @@
     "section": "templates",
     "slug": "marketing",
     "name": "Marketing",
-    "title": "Patterns/Templates/Marketing",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/Marketing",
+    "group": "Starters",
     "package": "marketing",
     "component": null,
     "importFrom": null,
-    "docsId": "patterns-templates-marketing--docs",
+    "docsId": "patterns-templates-starters-marketing--docs",
     "file": "packages/marketing/src/templates-marketing.stories.tsx",
     "summary": "",
     "question": "",
@@ -36949,7 +38627,7 @@
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-marketing--default",
+        "id": "patterns-templates-starters-marketing--default",
         "name": "Default",
         "description": ""
       }
@@ -36965,26 +38643,26 @@
     "section": "templates",
     "slug": "object-detail-hub",
     "name": "Object Detail Hub",
-    "title": "Patterns/Templates/Object Detail Hub",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/Object Detail Hub",
+    "group": "Starters",
     "package": "ui",
     "component": "ObjectDetailHub",
     "importFrom": null,
-    "docsId": "patterns-templates-object-detail-hub--docs",
+    "docsId": "patterns-templates-starters-object-detail-hub--docs",
     "file": "packages/ui/src/templates-object-detail-hub.stories.tsx",
-    "summary": "",
+    "summary": "The canonical master-detail enterprise screen: a searchable object list (SplitPanel start) drives a detail HUB (end) with a sticky SectionHeader identity + status, a ButtonGroup toolbar, Tabs for the object's sections (Overview / Activity / Settings), Descriptions for attributes, a related-runs list, and a high-value Run task promoted to its own Dialog.",
     "question": "",
     "about": "",
     "intent": null,
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-object-detail-hub--default",
+        "id": "patterns-templates-starters-object-detail-hub--default",
         "name": "Default",
         "description": "Master-detail with the first object selected (the common entry state)."
       },
       {
-        "id": "patterns-templates-object-detail-hub--no-selection",
+        "id": "patterns-templates-starters-object-detail-hub--no-selection",
         "name": "No Selection",
         "description": "The unselected state — the detail pane shows a real empty state."
       }
@@ -36996,50 +38674,16 @@
       "packages": ["@elabs-ai/components-ui"]
     }
   },
-  "templates/process-explorer": {
-    "section": "templates",
-    "slug": "process-explorer",
-    "name": "Process Explorer",
-    "title": "Patterns/Templates/Process Explorer",
-    "group": "Templates",
-    "package": "process",
-    "component": null,
-    "importFrom": null,
-    "docsId": "patterns-templates-process-explorer--docs",
-    "file": "packages/process/src/templates-process-explorer.stories.tsx",
-    "summary": "",
-    "question": "",
-    "about": "",
-    "intent": null,
-    "api": [],
-    "stories": [
-      {
-        "id": "patterns-templates-process-explorer--default",
-        "name": "Default",
-        "description": ""
-      }
-    ],
-    "block": null,
-    "template": {
-      "name": "process-explorer",
-      "description": "Process explorer template — the canonical full-screen `process-explorer` archetype (RM-057, issue #206): KPI strip on top, a filter bar above the map, the map centred with its accessible table twin, a variant rail on the right, and a case table that opens a single case's timeline in a bottom sheet.",
-      "packages": [
-        "@elabs-ai/components-flow",
-        "@elabs-ai/components-process",
-        "@elabs-ai/components-ui"
-      ]
-    }
-  },
   "templates/screen-states": {
     "section": "templates",
     "slug": "screen-states",
     "name": "Screen States",
-    "title": "Patterns/Templates/Screen States",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/Screen States",
+    "group": "Starters",
     "package": "ui",
     "component": "CustomersScreen",
     "importFrom": null,
-    "docsId": "patterns-templates-screen-states--docs",
+    "docsId": "patterns-templates-starters-screen-states--docs",
     "file": "packages/ui/src/templates-screen-states.stories.tsx",
     "summary": "",
     "question": "",
@@ -37048,27 +38692,27 @@
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-screen-states--ready",
+        "id": "patterns-templates-starters-screen-states--ready",
         "name": "Ready",
         "description": "Populated happy path."
       },
       {
-        "id": "patterns-templates-screen-states--loading",
+        "id": "patterns-templates-starters-screen-states--loading",
         "name": "Loading",
         "description": "In-flight load — Skeleton rows, not a bare spinner."
       },
       {
-        "id": "patterns-templates-screen-states--empty",
+        "id": "patterns-templates-starters-screen-states--empty",
         "name": "Empty",
         "description": "A search/filter returned nothing — a real empty state with a way out."
       },
       {
-        "id": "patterns-templates-screen-states--errored",
+        "id": "patterns-templates-starters-screen-states--errored",
         "name": "Errored",
         "description": "Recoverable failure — StatePanel kind=\"error\" (role=\"alert\") + retry."
       },
       {
-        "id": "patterns-templates-screen-states--first-run",
+        "id": "patterns-templates-starters-screen-states--first-run",
         "name": "First Run",
         "description": "Never-used screen — onboarding empty with one primary action."
       }
@@ -37084,12 +38728,12 @@
     "section": "templates",
     "slug": "settings",
     "name": "Settings",
-    "title": "Patterns/Templates/Settings",
-    "group": "Templates",
+    "title": "Patterns/Templates/Starters/Settings",
+    "group": "Starters",
     "package": "ui",
     "component": null,
     "importFrom": null,
-    "docsId": "patterns-templates-settings--docs",
+    "docsId": "patterns-templates-starters-settings--docs",
     "file": "packages/ui/src/templates-settings.stories.tsx",
     "summary": "",
     "question": "",
@@ -37098,7 +38742,7 @@
     "api": [],
     "stories": [
       {
-        "id": "patterns-templates-settings--default",
+        "id": "patterns-templates-starters-settings--default",
         "name": "Default",
         "description": ""
       }
@@ -37109,42 +38753,6 @@
       "description": "Settings template — the canonical full-screen settings composition (app-shell + Descriptions + Wizard).",
       "packages": ["@elabs-ai/components-ui"]
     }
-  },
-  "templates/terminal-agent-session": {
-    "section": "templates",
-    "slug": "terminal-agent-session",
-    "name": "Terminal Agent Session",
-    "title": "Patterns/Templates/Terminal Agent Session",
-    "group": "Templates",
-    "package": "patterns",
-    "component": "AgentSessionScreen",
-    "importFrom": null,
-    "docsId": "patterns-templates-terminal-agent-session--docs",
-    "file": "apps/docs/stories/templates-terminal-agent-session.stories.tsx",
-    "summary": "",
-    "question": "",
-    "about": "",
-    "intent": null,
-    "api": [],
-    "stories": [
-      {
-        "id": "patterns-templates-terminal-agent-session--default",
-        "name": "Default",
-        "description": "Mid-turn: the agent is working, a diff is proposed, todos are partially done."
-      },
-      {
-        "id": "patterns-templates-terminal-agent-session--idle",
-        "name": "Idle",
-        "description": "A settled session: no working line, composer ready, an empty-ish transcript with just the banner."
-      },
-      {
-        "id": "patterns-templates-terminal-agent-session--awaiting-permission",
-        "name": "Awaiting Permission",
-        "description": "A pending permission box is the focal element; the composer is not where attention goes."
-      }
-    ],
-    "block": null,
-    "template": null
   },
   "components/process/abstractioncontrols": {
     "section": "components",
@@ -38248,6 +39856,12 @@
             "name": "loading",
             "optional": true,
             "type": "boolean"
+          },
+          {
+            "name": "layout",
+            "optional": true,
+            "type": "\"grid\" | \"inline\"",
+            "description": "How the six numbers are laid out. `\"grid\"` (default) is the card grid a dashboard page opens with. `\"inline\"` is one dense ribbon — label, value and sparkline per cell, divided by hairlines, scrolling sideways when it runs out of room — for a workspace whose height belongs to the process map, not to its KPIs. Same numbers, same formats, same sparkline text alternatives in both."
           }
         ],
         "variants": null,
@@ -38269,6 +39883,11 @@
         "id": "process-processkpistrip--with-trends",
         "name": "With Trends",
         "description": "Every tile carries a trend sparkline alongside its headline number (#359: all six, not five — a missing `medianThroughput` series used to leave that one tile with no mark)."
+      },
+      {
+        "id": "process-processkpistrip--inline",
+        "name": "Inline",
+        "description": "`layout=\"inline\"`: the same six numbers as one dense ribbon, for a workspace whose height belongs to the process map. Cells are divided by hairlines and the ribbon scrolls sideways when it runs out of room."
       },
       {
         "id": "process-processkpistrip--conformance-from-replay",
@@ -38442,6 +40061,24 @@
             "optional": true,
             "type": "string",
             "description": "Accessible name for the canvas region. Defaults to the localized `process.map.label` message."
+          },
+          {
+            "name": "fitMinZoom",
+            "optional": true,
+            "type": "number",
+            "description": "The smallest zoom the OPENING fit may use. The default keeps activity names legible and, when the process does not fit at that size, opens on its start. A workspace that would rather open on the whole picture — a wide canvas, a reader who zooms in on what matters — lowers it. The reader can always zoom out further by hand. @default PROCESS_MAP_LEGIBLE_ZOOM"
+          },
+          {
+            "name": "fitPadding",
+            "optional": true,
+            "type": "number",
+            "description": "The fraction of the pane the opening fit keeps clear on every side. The default is generous because transition pills are drawn outside the fitted bounds; a pane that is short on the axis the process runs along can trade some of it for a larger picture. @default 0.15"
+          },
+          {
+            "name": "refitKey",
+            "optional": true,
+            "type": "string | number",
+            "description": "Re-frames the map whenever this value changes. The map already re-fits when its own structure or direction changes; it cannot know that the pane around it just changed shape — a dock opened, a side panel closed. Pass anything that changes when that happens. Unset: no extra re-fits, the reader's viewport is left alone."
           },
           {
             "name": "layoutEngine",
@@ -38793,6 +40430,12 @@
             "description": "\"Variant DNA\" strip: two-character codes instead of full activity labels."
           },
           {
+            "name": "sequenceDisplay",
+            "optional": true,
+            "type": "\"text\" | \"swatch\"",
+            "description": "`\"swatch\"`: each step is one identity block with no text — the densest strip, for a narrow rail. The strip keeps its accessible name and every block its `title`. @default \"text\""
+          },
+          {
             "name": "tableView",
             "optional": true,
             "type": "boolean",
@@ -38825,6 +40468,11 @@
         "id": "process-variantexplorer--dna-strip",
         "name": "Dna Strip",
         "description": "\"Variant DNA\": two-letter chips so long sequences fit; full names stay in the accessible name. A loan-application log with more than eleven activities, so the rarer activities share the hatched \"other\" swatch."
+      },
+      {
+        "id": "process-variantexplorer--swatch-strip",
+        "name": "Swatch Strip",
+        "description": "`sequenceDisplay=\"swatch\"`: every step is one identity block with no text — the densest strip, for a rail too narrow for codes. Hover a block for its activity; the strip's accessible name still lists the full sequence."
       },
       {
         "id": "process-variantexplorer--coverage-slider",

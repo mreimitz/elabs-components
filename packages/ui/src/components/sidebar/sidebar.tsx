@@ -18,7 +18,7 @@ import { PanelLeftIcon } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { useIsMobile } from "../../lib/use-mobile";
 import { Button } from "../button";
-import { useCollapsiblePanel } from "../collapsible-panel";
+import { useCollapsiblePanel, type CollapsiblePanelContainerPosition } from "../collapsible-panel";
 import { Input } from "../input";
 import { useLocale } from "../locale-provider";
 import { Separator } from "../separator";
@@ -232,9 +232,27 @@ export const Sidebar = forwardRef<
     side?: "left" | "right";
     variant?: "sidebar" | "floating" | "inset";
     collapsible?: "offcanvas" | "icon" | "none";
+    /**
+     * Where the rail's container pins itself. Default `"viewport"` (`fixed` to the window
+     * edge — today's behaviour, byte-identical). `"inset"` pins to the rail's own place in
+     * the layout instead (`absolute` against a `relative` wrapper this component provides),
+     * for a whole app frame rendered INSIDE a box — a preview pane, a docs page, a
+     * dashboard tile — where a `fixed` rail would escape to the window. Same seam as
+     * `SideDock`'s `containerPosition`. No effect on the mobile `Sheet` or on
+     * `collapsible="none"`.
+     */
+    containerPosition?: CollapsiblePanelContainerPosition;
   }
 >(function Sidebar(
-  { side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props },
+  {
+    side = "left",
+    variant = "sidebar",
+    collapsible = "offcanvas",
+    containerPosition = "viewport",
+    className,
+    children,
+    ...props
+  },
   ref,
 ) {
   const { isMobile, openMobile, setOpenMobile, open, setOpen } = useSidebar();
@@ -248,6 +266,7 @@ export const Sidebar = forwardRef<
     side,
     open,
     onOpenChange: setOpen,
+    containerPosition,
     widthClassName: "w-(--sidebar-width)",
     spacerCollapsedClassName: "group-data-[collapsible=offcanvas]:w-0",
     containerSlideClassNames: {
@@ -296,7 +315,11 @@ export const Sidebar = forwardRef<
   return (
     <div
       ref={ref}
-      className="group peer hidden text-sidebar-foreground md:block"
+      className={cn(
+        "group peer hidden text-sidebar-foreground md:block",
+        // The `absolute` container needs a positioned ancestor of the rail's own height.
+        containerPosition === "inset" && "relative h-full",
+      )}
       data-state={panel.attrs["data-state"]}
       data-collapsible={panel.state === "collapsed" ? collapsible : ""}
       data-variant={variant}

@@ -1042,9 +1042,11 @@ function AgenticWorkspace({ defaultSidebarOpen = true }: { defaultSidebarOpen?: 
 const meta = {
   title: "Patterns/Scenarios/Agentic AI Workspace",
   component: AgenticWorkspace,
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
     docs: {
+      subtitle: "For copilots and agentic products",
       description: {
         component:
           "A full-page demo scenario composed from the @elabs-ai/components-* grammar: a double-sided application shell (collapsible left nav + the real ContextPanel right rail with animated collapse and asset drill-in) wrapping a complete agentic AI interaction — reasoning, a plan, the AgentTimeline execution rail, tools with JSON behind disclosure, a ToolResultCard chart headline, an ApprovalCard decision, a task summary, a checkpoint, and a grounded AgentMessage answer with an EvidenceChip and a SourceList.",

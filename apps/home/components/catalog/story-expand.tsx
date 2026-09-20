@@ -22,6 +22,7 @@ import {
 import { useTheme } from "@elabs-ai/components-tokens";
 import { catalogCopy, heroCopy } from "../../content/copy";
 import { useStoryId } from "../../lib/story-alias";
+import { reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
 
 const copy = catalogCopy.frame;
 
@@ -104,7 +105,8 @@ export function StoryExpand({
   name: string;
   detail?: StoryExpandDetail;
 }) {
-  const { theme } = useTheme();
+  const { theme: siteTheme } = useTheme();
+  const theme = useStoryTheme(siteTheme);
   const [open, setOpen] = useState(false);
   const stories = detail?.stories?.length ? detail.stories : [{ id, name }];
   const startAt = Math.max(
@@ -249,6 +251,7 @@ export function StoryExpand({
                   if (!mounted && tries++ < 40) return void window.setTimeout(settle, 120);
                   // One more beat so self-measuring content (charts) has taken its size.
                   window.setTimeout(() => {
+                    if (reportStoryTheme(theme, frame.contentDocument)) return;
                     if (frame.contentDocument) fitStory(frame.contentDocument);
                     setLoaded(true);
                   }, 250);

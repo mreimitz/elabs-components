@@ -92,6 +92,32 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-bento",
+    "name": "Bento",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingBento",
+    "summary": "A BentoGrid of product proof where each tile shows the thing: a live AreaChart, a Meter, a Sparkline, status badges.",
+    "question": "",
+    "block": "marketing-bento-01",
+    "stories": 1,
+    "first": "patterns-blocks-marketing-bento--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-billing",
+    "name": "Billing",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsBilling",
+    "summary": "Plan and renewal, usage Meters with an included-amount marker and overage in words, the card by its last four digits, and an invoices Table.",
+    "question": "",
+    "block": "settings-billing-01",
+    "stories": 1,
+    "first": "patterns-blocks-account-and-settings-billing--default"
+  },
+  {
+    "section": "blocks",
     "slug": "editorial-charts-bubble-almanac",
     "name": "Bubble Almanac",
     "group": "Editorial Charts",
@@ -102,6 +128,19 @@
     "block": "chart-editorial-almanac",
     "stories": 1,
     "first": "patterns-blocks-editorial-charts-bubble-almanac--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-call-to-action",
+    "name": "Call to Action",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCta",
+    "summary": "The closing ask: one primary action, one quieter alternative and what trying it costs.",
+    "question": "",
+    "block": "marketing-cta-01",
+    "stories": 1,
+    "first": "patterns-blocks-marketing-call-to-action--default"
   },
   {
     "section": "blocks",
@@ -128,6 +167,19 @@
     "block": "chart-card-kpi-01",
     "stories": 1,
     "first": "patterns-blocks-stat-cards-chart-card--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-checkout",
+    "name": "Checkout",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "Checkout",
+    "summary": "One-page checkout with autocomplete on every field, errors after the first attempt with focus moved to the first, a delivery RadioGroup that changes the total, and a slot for the payment provider's hosted card field.",
+    "question": "",
+    "block": "checkout-01",
+    "stories": 1,
+    "first": "patterns-blocks-commerce-checkout--default"
   },
   {
     "section": "blocks",
@@ -196,6 +248,19 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-contact",
+    "name": "Contact",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingContact",
+    "summary": "A short validated contact form with a topic Select, a personal confirmation and the other ways to reach the team.",
+    "question": "",
+    "block": "marketing-contact-01",
+    "stories": 1,
+    "first": "patterns-blocks-marketing-contact--default"
+  },
+  {
+    "section": "blocks",
     "slug": "data-surfaces-data-table",
     "name": "Data Table",
     "group": "Data Surfaces",
@@ -248,6 +313,19 @@
   },
   {
     "section": "blocks",
+    "slug": "application-empty-states",
+    "name": "Empty States",
+    "group": "Application",
+    "package": "patterns",
+    "component": "EmptyStates",
+    "summary": "Six empty and error states on StatePanel with the library's illustrations — first run, no results, an empty list that is good news, error, offline, no access — each saying what happened, whether anything is lost and the way out.",
+    "question": "",
+    "block": "empty-states-01",
+    "stories": 1,
+    "first": "patterns-blocks-application-empty-states--default"
+  },
+  {
+    "section": "blocks",
     "slug": "agent-ops-escalation-boundary",
     "name": "Escalation Boundary",
     "group": "Agent Ops",
@@ -258,6 +336,32 @@
     "block": "escalation-boundary-01",
     "stories": 3,
     "first": "patterns-blocks-agent-ops-escalation-boundary--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-faq",
+    "name": "FAQ",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFaq",
+    "summary": "An Accordion of pre-sale questions beside a person to ask.",
+    "question": "",
+    "block": "marketing-faq-01",
+    "stories": 1,
+    "first": "patterns-blocks-marketing-faq--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-features",
+    "name": "Features",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFeatures",
+    "summary": "A SectionHeader plus a FeatureGrid of six outcome-led reasons.",
+    "question": "",
+    "block": "marketing-features-01",
+    "stories": 2,
+    "first": "patterns-blocks-marketing-features--default"
   },
   {
     "section": "blocks",
@@ -313,6 +417,19 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-footer",
+    "name": "Footer",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFooter",
+    "summary": "One-line positioning, three labelled nav columns and the legal row.",
+    "question": "",
+    "block": "marketing-footer-01",
+    "stories": 1,
+    "first": "patterns-blocks-marketing-footer--default"
+  },
+  {
+    "section": "blocks",
     "slug": "kpi-cards-forecast",
     "name": "Forecast",
     "group": "KPI Cards",
@@ -323,6 +440,19 @@
     "block": "kpi-forecast-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-forecast--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-forgot-password",
+    "name": "Forgot Password",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "ForgotPassword",
+    "summary": "Asks for the email and answers the same way whether or not the account exists; the confirmation names the address, the link's lifetime and the way back.",
+    "question": "",
+    "block": "forgot-password-01",
+    "stories": 1,
+    "first": "patterns-blocks-authentication-forgot-password--default"
   },
   {
     "section": "blocks",
@@ -443,6 +573,19 @@
   },
   {
     "section": "blocks",
+    "slug": "application-kanban-board",
+    "name": "Kanban Board",
+    "group": "Application",
+    "package": "patterns",
+    "component": "KanbanBoard",
+    "summary": "Drag cards between columns or use each card's Move menu (keyboard, screen reader and touch), with a live-region announcement, per-column points and WIP-limit warnings in words.",
+    "question": "",
+    "block": "kanban-board-01",
+    "stories": 1,
+    "first": "patterns-blocks-application-kanban-board--default"
+  },
+  {
+    "section": "blocks",
     "slug": "agent-ops-kpi-provenance-strip",
     "name": "KPI Provenance Strip",
     "group": "Agent Ops",
@@ -495,6 +638,32 @@
   },
   {
     "section": "blocks",
+    "slug": "authentication-login",
+    "name": "Login",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "LoginForm",
+    "summary": "Sign in with email and password plus brand-neutral other ways in. Field errors after the first attempt, a revealable password, a pending button and the server's answer as an alert; hands the values to onSubmit and never calls a server itself.",
+    "question": "",
+    "block": "login-01",
+    "stories": 4,
+    "first": "patterns-blocks-authentication-login--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-login-split",
+    "name": "Login Split",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "LoginSplit",
+    "summary": "The sign-in form beside a brand panel painted with the primary pair. Container-query layout: the panel stands down when narrow.",
+    "question": "",
+    "block": "login-02",
+    "stories": 1,
+    "first": "patterns-blocks-authentication-login-split--default"
+  },
+  {
+    "section": "blocks",
     "slug": "command-centers-market-tape",
     "name": "Market Tape",
     "group": "Command Centers",
@@ -505,6 +674,19 @@
     "block": "command-center-market-tape-01",
     "stories": 2,
     "first": "patterns-blocks-command-centers-market-tape--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-members",
+    "name": "Members",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsMembers",
+    "summary": "Members with in-place role changes, a protected owner, an invite dialog that checks address, duplicates and seats, pending invites in the same list and a confirming remove.",
+    "question": "",
+    "block": "settings-members-01",
+    "stories": 2,
+    "first": "patterns-blocks-account-and-settings-members--default"
   },
   {
     "section": "blocks",
@@ -534,6 +716,19 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-navbar",
+    "name": "Navbar",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingNavbar",
+    "summary": "Site navigation: links inline when there is room and in a Sheet when there is not, aria-current on the active route, container-query layout.",
+    "question": "",
+    "block": "marketing-navbar-01",
+    "stories": 3,
+    "first": "patterns-blocks-marketing-navbar--default"
+  },
+  {
+    "section": "blocks",
     "slug": "maps-and-geo-network-map",
     "name": "Network Map",
     "group": "Maps and Geo",
@@ -544,6 +739,58 @@
     "block": "geo-network-map-01",
     "stories": 3,
     "first": "patterns-blocks-maps-and-geo-network-map--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-newsletter",
+    "name": "Newsletter",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingNewsletter",
+    "summary": "One field, a promise about frequency, validation and a confirmation that names the address.",
+    "question": "",
+    "block": "marketing-newsletter-01",
+    "stories": 2,
+    "first": "patterns-blocks-marketing-newsletter--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-notifications",
+    "name": "Notifications",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsNotifications",
+    "summary": "An events-by-channels matrix as a real table of Switches with full accessible names, locked cells that say why, and a count of events that reach you nowhere.",
+    "question": "",
+    "block": "settings-notifications-01",
+    "stories": 1,
+    "first": "patterns-blocks-account-and-settings-notifications--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "application-onboarding-checklist",
+    "name": "Onboarding Checklist",
+    "group": "Application",
+    "package": "patterns",
+    "component": "OnboardingChecklist",
+    "summary": "A getting-started checklist that opens on the next step, says how long each takes, counts the minutes left on a Meter and ends with a closing state.",
+    "question": "",
+    "block": "onboarding-checklist-01",
+    "stories": 1,
+    "first": "patterns-blocks-application-onboarding-checklist--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-order-receipt",
+    "name": "Order Receipt",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "OrderReceipt",
+    "summary": "The confirmation page: order number, arrival, address, lines and what happens next as a Timeline.",
+    "question": "",
+    "block": "order-receipt-01",
+    "stories": 1,
+    "first": "patterns-blocks-commerce-order-receipt--default"
   },
   {
     "section": "blocks",
@@ -573,16 +820,68 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-pricing",
+    "name": "Pricing",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingPricing",
+    "summary": "Three plans named for who they are for, a billing toggle that recomputes every price, locale-aware currency and a featured plan marked in words.",
+    "question": "",
+    "block": "marketing-pricing-01",
+    "stories": 2,
+    "first": "patterns-blocks-marketing-pricing--default"
+  },
+  {
+    "section": "blocks",
     "slug": "process-and-flow-process-explorer",
     "name": "Process Explorer",
     "group": "Process and Flow",
     "package": "patterns",
     "component": "ProcessExplorerPage",
-    "summary": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree.",
-    "question": "",
+    "summary": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree.",
+    "question": "Where does the process really go, and where does it wait?",
     "block": "process-explorer-page",
     "stories": 1,
     "first": "patterns-blocks-process-and-flow-process-explorer--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-product-detail",
+    "name": "Product Detail",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ProductDetail",
+    "summary": "A product page with required options (the button names the missing one), a stock-capped quantity, delivery promises, a Rating and details in an Accordion.",
+    "question": "",
+    "block": "product-detail-01",
+    "stories": 1,
+    "first": "patterns-blocks-commerce-product-detail--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-product-grid",
+    "name": "Product Grid",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ProductGrid",
+    "summary": "A product listing with a category filter, sorting and cards that state markdowns and stock in words; sold-out products cannot be added.",
+    "question": "",
+    "block": "product-grid-01",
+    "stories": 1,
+    "first": "patterns-blocks-commerce-product-grid--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-profile",
+    "name": "Profile",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsProfile",
+    "summary": "A profile form with dirty tracking (the save bar appears only when something changed), validation on save, a counted bio and a danger zone behind a ConfirmDialog that names what is lost.",
+    "question": "",
+    "block": "settings-profile-01",
+    "stories": 1,
+    "first": "patterns-blocks-account-and-settings-profile--default"
   },
   {
     "section": "blocks",
@@ -596,6 +895,19 @@
     "block": "infographic-profile-compare-01",
     "stories": 2,
     "first": "patterns-blocks-infographics-profile-compare--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "application-project-cards",
+    "name": "Project Cards",
+    "group": "Application",
+    "package": "patterns",
+    "component": "ProjectCards",
+    "summary": "Projects as cards with progress against time on one Meter (marker = today), a derived health word, team avatars, due date and a counted state filter.",
+    "question": "",
+    "block": "project-cards-01",
+    "stories": 1,
+    "first": "patterns-blocks-application-project-cards--default"
   },
   {
     "section": "blocks",
@@ -638,6 +950,32 @@
   },
   {
     "section": "blocks",
+    "slug": "authentication-register",
+    "name": "Register",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "RegisterForm",
+    "summary": "Create an account: name, work email, a password with a strength meter that names the unmet rules, and explicit consent. Errors appear after the first attempt.",
+    "question": "",
+    "block": "register-01",
+    "stories": 2,
+    "first": "patterns-blocks-authentication-register--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-reset-password",
+    "name": "Reset Password",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "ResetPassword",
+    "summary": "Choose a new password: whose account, strength explained, the two entries compared, and an end state that says other sessions were signed out.",
+    "question": "",
+    "block": "reset-password-01",
+    "stories": 2,
+    "first": "patterns-blocks-authentication-reset-password--default"
+  },
+  {
+    "section": "blocks",
     "slug": "command-centers-revenue-desk",
     "name": "Revenue Desk",
     "group": "Command Centers",
@@ -674,6 +1012,19 @@
     "block": "infographic-scorecard-01",
     "stories": 3,
     "first": "patterns-blocks-infographics-scorecard--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-shopping-cart",
+    "name": "Shopping Cart",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ShoppingCart",
+    "summary": "Stock-capped quantities, remove with undo, a discount code that answers either way, progress to free delivery on a Meter and totals that add up.",
+    "question": "",
+    "block": "shopping-cart-01",
+    "stories": 2,
+    "first": "patterns-blocks-commerce-shopping-cart--default"
   },
   {
     "section": "blocks",
@@ -729,6 +1080,19 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-stats-and-logos",
+    "name": "Stats and Logos",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingStats",
+    "summary": "A StatsBand of the numbers over a LogoStrip of who stands behind them.",
+    "question": "",
+    "block": "marketing-stats-01",
+    "stories": 1,
+    "first": "patterns-blocks-marketing-stats-and-logos--default"
+  },
+  {
+    "section": "blocks",
     "slug": "kpi-cards-status-threshold",
     "name": "Status Threshold",
     "group": "KPI Cards",
@@ -768,6 +1132,19 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-team",
+    "name": "Team",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTeam",
+    "summary": "Names, roles and one line about each person; container-query columns.",
+    "question": "",
+    "block": "marketing-team-01",
+    "stories": 1,
+    "first": "patterns-blocks-marketing-team--default"
+  },
+  {
+    "section": "blocks",
     "slug": "ai-and-terminal-terminal-session-idle",
     "name": "Terminal Session Idle",
     "group": "AI and Terminal",
@@ -791,6 +1168,32 @@
     "block": "terminal-session-mid-turn",
     "stories": 2,
     "first": "patterns-blocks-ai-and-terminal-terminal-session-mid-turn--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-testimonials",
+    "name": "Testimonials",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTestimonials",
+    "summary": "A masonry wall of quotes with name, role and a read-only Rating.",
+    "question": "",
+    "block": "marketing-testimonials-01",
+    "stories": 1,
+    "first": "patterns-blocks-marketing-testimonials--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "application-todo-list",
+    "name": "Todo List",
+    "group": "Application",
+    "package": "patterns",
+    "component": "TodoList",
+    "summary": "Add with Enter, tick to complete, filter, clear completed; the header counts open and overdue tasks and every control names the task it acts on.",
+    "question": "",
+    "block": "todo-list-01",
+    "stories": 1,
+    "first": "patterns-blocks-application-todo-list--default"
   },
   {
     "section": "blocks",
@@ -820,6 +1223,19 @@
   },
   {
     "section": "blocks",
+    "slug": "authentication-two-factor",
+    "name": "Two Factor",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "TwoFactor",
+    "summary": "Six digits in one InputOTP that submits itself when full, a resend that counts down, and a recovery-code way out.",
+    "question": "",
+    "block": "two-factor-01",
+    "stories": 3,
+    "first": "patterns-blocks-authentication-two-factor--default"
+  },
+  {
+    "section": "blocks",
     "slug": "infographics-variance-bridge",
     "name": "Variance Bridge",
     "group": "Infographics",
@@ -843,6 +1259,19 @@
     "block": "verdict-side-by-side-01",
     "stories": 2,
     "first": "patterns-blocks-agent-ops-verdict-side-by-side--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-verify-email",
+    "name": "Verify Email",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "VerifyEmail",
+    "summary": "The waiting room after sign-up: which address, what to do, a counting-down resend and the way back for a mistyped address.",
+    "question": "",
+    "block": "verify-email-01",
+    "stories": 1,
+    "first": "patterns-blocks-authentication-verify-email--default"
   },
   {
     "section": "charts",
@@ -906,7 +1335,7 @@
     "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
     "question": "",
     "block": null,
-    "stories": 35,
+    "stories": 36,
     "first": "charts-barchart--default"
   },
   {
@@ -1918,7 +2347,7 @@
     "package": "flow",
     "component": "CanvasShell",
     "summary": "Branded React Flow canvas wrapper with token-driven background + sane defaults.",
-    "question": "orders",
+    "question": "",
     "block": null,
     "stories": 1,
     "first": "flow-canvasshell--pipeline"
@@ -1996,7 +2425,7 @@
     "package": "ai",
     "component": "ChatGreeting",
     "summary": "The centered, display-scale first-run greeting for an empty chat scene — a headline, not a status message.",
-    "question": "How can I",
+    "question": "",
     "block": null,
     "stories": 6,
     "first": "ai-chatgreeting--default"
@@ -2724,7 +3153,7 @@
     "package": "flow",
     "component": "FlowButtonEdge",
     "summary": "",
-    "question": "Raw data in",
+    "question": "",
     "block": null,
     "stories": 2,
     "first": "flow-flowbuttonedge--default"
@@ -2789,7 +3218,7 @@
     "package": "flow",
     "component": null,
     "summary": "",
-    "question": "Raw data in",
+    "question": "",
     "block": null,
     "stories": 6,
     "first": "flow-flowlayout--default"
@@ -2815,7 +3244,7 @@
     "package": "flow",
     "component": "FlowMiniMap",
     "summary": "",
-    "question": "orders",
+    "question": "",
     "block": null,
     "stories": 1,
     "first": "flow-flowminimap--default"
@@ -2828,7 +3257,7 @@
     "package": "flow",
     "component": "FlowNode",
     "summary": "Branded custom React Flow node (title/subtitle/kind/icon/tone).",
-    "question": "orders table",
+    "question": "",
     "block": null,
     "stories": 6,
     "first": "flow-flownode--default"
@@ -2841,7 +3270,7 @@
     "package": "flow",
     "component": "FlowPlaceholderNode",
     "summary": "",
-    "question": "onto empty canvas",
+    "question": "",
     "block": null,
     "stories": 3,
     "first": "flow-flowplaceholdernode--default"
@@ -2971,7 +3400,7 @@
     "package": "flow",
     "component": "HelperLines",
     "summary": "",
-    "question": "orders",
+    "question": "",
     "block": null,
     "stories": 2,
     "first": "flow-helperlines--default"
@@ -3870,7 +4299,7 @@
     "summary": "",
     "question": "",
     "block": null,
-    "stories": 6,
+    "stories": 7,
     "first": "process-processkpistrip--default"
   },
   {
@@ -5014,7 +5443,7 @@
     "summary": "",
     "question": "",
     "block": null,
-    "stories": 8,
+    "stories": 9,
     "first": "process-variantexplorer--top-ten"
   },
   {
@@ -5103,165 +5532,282 @@
     "package": "flow",
     "component": "ZoomControls",
     "summary": "",
-    "question": "orders",
+    "question": "",
     "block": null,
     "stories": 3,
     "first": "flow-zoomcontrols--default"
   },
   {
     "section": "templates",
+    "slug": "agent-operations-center",
+    "name": "Agent Operations Center",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "AgentOpsCenterPage",
+    "summary": "The control room for a fleet of AI agents: the agent-ops block family as one product across four tabs — insight feed, spend against limit and the escalation boundary; the trace waterfall and handoff inspector; a run review and a decision record; the audit log — with every block callback wired and the review count reflected in the navigation, the tab and the header.",
+    "question": "For teams running AI agents in production",
+    "block": "agent-ops-center-page",
+    "stories": 3,
+    "first": "patterns-templates-ai-products-agent-operations-center--default"
+  },
+  {
+    "section": "templates",
+    "slug": "agentic-ai-workspace",
+    "name": "Agentic AI Workspace",
+    "group": "AI Products",
+    "package": "ai",
+    "component": "AgenticWorkspace",
+    "summary": "A full-page demo scenario composed from the @elabs-ai/components-* grammar: a double-sided application shell (collapsible left nav + the real ContextPanel right rail with animated collapse and asset drill-in) wrapping a complete agentic AI interaction — reasoning, a plan, the AgentTimeline execution rail, tools with JSON behind disclosure, a ToolResultCard chart headline, an ApprovalCard decision, a task summary, a checkpoint, and a grounded AgentMessage answer with an EvidenceChip and a SourceList.",
+    "question": "For copilots and agentic products",
+    "block": null,
+    "stories": 2,
+    "first": "patterns-scenarios-agentic-ai-workspace--default"
+  },
+  {
+    "section": "templates",
     "slug": "ai-assistant",
     "name": "AI Assistant",
-    "group": "Templates",
+    "group": "Starters",
     "package": "ai",
     "component": null,
     "summary": "",
     "question": "",
     "block": null,
     "stories": 1,
-    "first": "patterns-templates-ai-assistant--default"
+    "first": "patterns-templates-starters-ai-assistant--default"
+  },
+  {
+    "section": "templates",
+    "slug": "customer-360",
+    "name": "Customer 360",
+    "group": "Customers",
+    "package": "patterns",
+    "component": "Customer360Page",
+    "summary": "One account before the call: a record header, four MetricCards (one with a commitment-marked Meter), usage against the contract as a LineChart with a labelled rule, a self-explaining health score, a RadarChart against peers, next actions completed in place, an activity Timeline and the people with the relationship gap stated in the title, plus a docked account brief.",
+    "question": "For account, success and CRM products",
+    "block": "customer-360-page",
+    "stories": 1,
+    "first": "patterns-templates-customers-customer-360--default"
   },
   {
     "section": "templates",
     "slug": "dashboard",
     "name": "Dashboard",
-    "group": "Templates",
+    "group": "Starters",
     "package": "charts",
     "component": null,
     "summary": "",
     "question": "",
     "block": null,
     "stories": 1,
-    "first": "patterns-templates-dashboard--default"
+    "first": "patterns-templates-starters-dashboard--default"
   },
   {
     "section": "templates",
     "slug": "dashboard-sheet",
     "name": "Dashboard Sheet",
-    "group": "Templates",
+    "group": "Starters",
     "package": "charts",
     "component": null,
     "summary": "",
     "question": "",
     "block": null,
     "stories": 1,
-    "first": "patterns-templates-dashboard-sheet--default"
+    "first": "patterns-templates-starters-dashboard-sheet--default"
   },
   {
     "section": "templates",
     "slug": "data-app",
     "name": "Data App",
-    "group": "Templates",
+    "group": "Starters",
     "package": "data",
     "component": null,
     "summary": "",
     "question": "",
     "block": null,
     "stories": 2,
-    "first": "patterns-templates-data-app--default"
+    "first": "patterns-templates-starters-data-app--default"
   },
   {
     "section": "templates",
     "slug": "enterprise-admin-console",
     "name": "Enterprise Admin Console",
-    "group": "Templates",
+    "group": "Starters",
     "package": "patterns",
     "component": "AdminConsole",
-    "summary": "",
+    "summary": "The baseline-complete archetype-B console — the recommended starting point for a professional brand-ui app.",
     "question": "",
     "block": null,
     "stories": 2,
-    "first": "patterns-templates-enterprise-admin-console--default"
+    "first": "patterns-templates-starters-enterprise-admin-console--default"
   },
   {
     "section": "templates",
     "slug": "flow-workspace",
     "name": "Flow Workspace",
-    "group": "Templates",
+    "group": "Starters",
     "package": "flow",
     "component": null,
     "summary": "",
-    "question": "Raw data in",
+    "question": "",
     "block": null,
     "stories": 1,
-    "first": "patterns-templates-flow-workspace--default"
+    "first": "patterns-templates-starters-flow-workspace--default"
+  },
+  {
+    "section": "templates",
+    "slug": "incident-command",
+    "name": "Incident Command",
+    "group": "Operations",
+    "package": "patterns",
+    "component": "IncidentCommandPage",
+    "summary": "One live incident run from one screen: severity, impact and commander in the header, a streaming LiveLineChart of the error rate, an AreaChart with the SLO as a labelled rule, the dependency-web block for blast radius, and a runbook whose steps print into a Terminal, tick off, move a Meter and write the incident log. Steps run in order; the last one settles the stream and unlocks Resolve.",
+    "question": "For reliability, observability and platform teams",
+    "block": "incident-command-page",
+    "stories": 1,
+    "first": "patterns-templates-operations-incident-command--default"
+  },
+  {
+    "section": "templates",
+    "slug": "logistics-control-tower",
+    "name": "Logistics Control Tower",
+    "group": "Operations",
+    "package": "patterns",
+    "component": "ControlTowerPage",
+    "summary": "The screen an operations team keeps open all day: a headline computed from the exceptions, the network and fleet map blocks behind tabs, and an exceptions DataTable sorted by the closest promise whose row click summons the dock with the shipment's Descriptions, the recommended next step and its journey as a Timeline. The controlled-dock master-detail pattern for the workspace shell.",
+    "question": "For supply-chain, fleet and field-operations teams",
+    "block": "control-tower-page",
+    "stories": 1,
+    "first": "patterns-templates-operations-logistics-control-tower--default"
+  },
+  {
+    "section": "templates",
+    "slug": "market-desk",
+    "name": "Market Desk",
+    "group": "Analytics",
+    "package": "patterns",
+    "component": "MarketDeskPage",
+    "summary": "Watch the market, then act on it: the market-tape command center as the read side, a watchlist DataTable whose row click pre-fills the ticket, and a docked order ticket that is a real form — FieldRoot validation in the trader's terms, a NumberInput, a computed commitment checked against a limit, a review step before anything is placed, and a blotter that fills as orders go in.",
+    "question": "For pricing, trading and treasury products",
+    "block": "market-desk-page",
+    "stories": 1,
+    "first": "patterns-templates-analytics-market-desk--default"
   },
   {
     "section": "templates",
     "slug": "marketing",
     "name": "Marketing",
-    "group": "Templates",
+    "group": "Starters",
     "package": "marketing",
     "component": null,
     "summary": "",
     "question": "",
     "block": null,
     "stories": 1,
-    "first": "patterns-templates-marketing--default"
+    "first": "patterns-templates-starters-marketing--default"
   },
   {
     "section": "templates",
     "slug": "object-detail-hub",
     "name": "Object Detail Hub",
-    "group": "Templates",
+    "group": "Starters",
     "package": "ui",
     "component": "ObjectDetailHub",
-    "summary": "",
+    "summary": "The canonical master-detail enterprise screen: a searchable object list (SplitPanel start) drives a detail HUB (end) with a sticky SectionHeader identity + status, a ButtonGroup toolbar, Tabs for the object's sections (Overview / Activity / Settings), Descriptions for attributes, a related-runs list, and a high-value Run task promoted to its own Dialog.",
     "question": "",
     "block": null,
     "stories": 2,
-    "first": "patterns-templates-object-detail-hub--default"
+    "first": "patterns-templates-starters-object-detail-hub--default"
   },
   {
     "section": "templates",
     "slug": "process-explorer",
     "name": "Process Explorer",
-    "group": "Templates",
+    "group": "Operations",
     "package": "process",
     "component": null,
-    "summary": "",
-    "question": "",
-    "block": null,
+    "summary": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree.",
+    "question": "For process-mining and operations-excellence tools",
+    "block": "process-explorer-page",
     "stories": 1,
-    "first": "patterns-templates-process-explorer--default"
+    "first": "patterns-templates-operations-process-explorer--default"
+  },
+  {
+    "section": "templates",
+    "slug": "project-hub",
+    "name": "Project Hub",
+    "group": "Product Teams",
+    "package": "patterns",
+    "component": "ProjectHubPage",
+    "summary": "Projects, the issue board, team load and members as one product: the workspace shell's navigation swaps views in place, the project-cards, kanban-board and settings-members blocks do the work, one dock explains the project or issue last opened, and every view reads the same issues so a move on the board changes the load, the overview and the navigation counts.",
+    "question": "For project, issue-tracking and delivery tools",
+    "block": "project-hub-page",
+    "stories": 4,
+    "first": "patterns-templates-product-teams-project-hub--default"
+  },
+  {
+    "section": "templates",
+    "slug": "revenue-operations",
+    "name": "Revenue Operations",
+    "group": "Analytics",
+    "package": "patterns",
+    "component": "RevenueOpsPage",
+    "summary": "An analytics workspace for revenue, finance and BI teams: the workspace shell with a summoned analyst, a page header whose period and region controls re-slice the charts and the pipeline, the revenue command center as the body, and a pipeline DataTable with a win-probability Meter, an activity Sparkline, a computed Stalled flag and row selection feeding a bulk action.",
+    "question": "For revenue, finance and BI teams",
+    "block": "revenue-ops-page",
+    "stories": 1,
+    "first": "patterns-templates-analytics-revenue-operations--default"
   },
   {
     "section": "templates",
     "slug": "screen-states",
     "name": "Screen States",
-    "group": "Templates",
+    "group": "Starters",
     "package": "ui",
     "component": "CustomersScreen",
     "summary": "",
     "question": "",
     "block": null,
     "stories": 5,
-    "first": "patterns-templates-screen-states--ready"
+    "first": "patterns-templates-starters-screen-states--ready"
   },
   {
     "section": "templates",
     "slug": "settings",
     "name": "Settings",
-    "group": "Templates",
+    "group": "Starters",
     "package": "ui",
     "component": null,
     "summary": "",
     "question": "",
     "block": null,
     "stories": 1,
-    "first": "patterns-templates-settings--default"
+    "first": "patterns-templates-starters-settings--default"
+  },
+  {
+    "section": "templates",
+    "slug": "support-desk",
+    "name": "Support Desk",
+    "group": "Customers",
+    "package": "patterns",
+    "component": "SupportDeskPage",
+    "summary": "Queue, conversation, context: a three-pane surface in the workspace shell laid out by container queries, a queue sorted by the promise that breaks first with a Meter per row, a conversation from the ai package's Message parts, a copilot draft grounded in named past tickets that you send or discard, and a context pane with the promise, the customer and what solved it before. Sending a reply restarts the clock and re-sorts the queue.",
+    "question": "For support, service and helpdesk products",
+    "block": "support-desk-page",
+    "stories": 1,
+    "first": "patterns-templates-customers-support-desk--default"
   },
   {
     "section": "templates",
     "slug": "terminal-agent-session",
     "name": "Terminal Agent Session",
-    "group": "Templates",
+    "group": "AI Products",
     "package": "patterns",
     "component": "AgentSessionScreen",
-    "summary": "",
+    "summary": "The coding-agent CLI look-alike family (@elabs-ai/components-terminal, #117) ",
     "question": "",
     "block": null,
     "stories": 3,
-    "first": "patterns-templates-terminal-agent-session--default"
+    "first": "patterns-templates-ai-products-terminal-agent-session--default"
   }
 ]

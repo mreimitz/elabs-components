@@ -240,7 +240,7 @@ function SettingsTemplate() {
 }
 
 const meta = {
-  title: "Patterns/Templates/Settings",
+  title: "Patterns/Templates/Starters/Settings",
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],
 } satisfies Meta;

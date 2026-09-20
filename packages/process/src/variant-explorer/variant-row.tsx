@@ -40,6 +40,7 @@ export interface VariantRowProps extends Omit<HTMLAttributes<HTMLDivElement>, "o
   selectionState: ProcessSelectionState;
   colorScale: ActivityColorScale;
   abbreviate: boolean;
+  sequenceDisplay?: "text" | "swatch";
   columns: readonly VariantExplorerColumn[];
   text: VariantRowText;
   /** Whether this row's checkbox is the list's single tab stop. */
@@ -57,6 +58,7 @@ export const VariantRow = forwardRef<HTMLDivElement, VariantRowProps>(function V
     selectionState,
     colorScale,
     abbreviate,
+    sequenceDisplay,
     columns,
     text,
     tabbable,
@@ -109,6 +111,7 @@ export const VariantRow = forwardRef<HTMLDivElement, VariantRowProps>(function V
         sequence={variant.sequence}
         colorScale={colorScale}
         abbreviate={abbreviate}
+        display={sequenceDisplay}
         label={text.sequence}
       />
       {columns.includes("cases") ? (

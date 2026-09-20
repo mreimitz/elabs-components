@@ -442,7 +442,7 @@ function ObjectDetailHub({ startSelected = "rev" }: { startSelected?: string | n
 /* -------------------------------------------------------------------------- */
 
 const meta = {
-  title: "Patterns/Templates/Object Detail Hub",
+  title: "Patterns/Templates/Starters/Object Detail Hub",
   component: ObjectDetailHub,
   parameters: {
     layout: "fullscreen",

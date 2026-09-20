@@ -10,13 +10,21 @@ export default [
     // the block's own sample content, authored and edited in `registry/blocks/**`. A copy that
     // is adapted for the site moves its words to `content/copy.ts` and needs no exemption.
     files: ["components/blocks/**/*.{ts,tsx}"],
-    rules: { "conventions/i18n-strings": "off" },
+    // Likewise the library-authoring conventions: a verbatim copy is fixed at its source, in
+    // `registry/blocks/**`, never patched here (the next sync would undo it).
+    rules: { "conventions/i18n-strings": "off", "conventions/forward-ref-required": "off" },
   },
   {
     files: ["scripts/**/*.mjs", "scripts/**/*.js"],
     languageOptions: {
       sourceType: "module",
-      globals: { process: "readonly", console: "readonly" },
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        AbortSignal: "readonly",
+        URL: "readonly",
+      },
     },
   },
 ];

@@ -15,6 +15,7 @@ import { Button, Skeleton } from "@elabs-ai/components-ui";
 import { useTheme } from "@elabs-ai/components-tokens";
 import { catalogCopy } from "../../content/copy";
 import { useStoryId } from "../../lib/story-alias";
+import { reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
 import { StoryExpand, type StoryExpandDetail } from "./story-expand";
 
 const copy = catalogCopy.frame;
@@ -49,6 +50,7 @@ export function StoryFrame({
   const holder = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const { theme } = useTheme();
+  const storyTheme = useStoryTheme(theme);
   const [near, setNear] = useState(false);
   const [state, setState] = useState<"loading" | "ready" | "pending">("loading");
   const [height, setHeight] = useState(size === "auto" ? 240 : FIXED_HEIGHT[size]);
@@ -71,7 +73,7 @@ export function StoryFrame({
   }, [near]);
 
   // A theme switch reloads the frame with the new global; show the skeleton while it does.
-  useEffect(() => setState("loading"), [theme, id]);
+  useEffect(() => setState("loading"), [storyTheme, id]);
 
   function onLoad() {
     const doc = frame.current?.contentDocument;
@@ -87,6 +89,7 @@ export function StoryFrame({
       const rendered = (doc.getElementById("storybook-root")?.childElementCount ?? 0) > 0;
       if (missing) return setState("pending");
       if (!rendered && tries++ < 40) return void window.setTimeout(settle, 150);
+      if (reportStoryTheme(storyTheme, doc)) return;
       setState("ready");
       if (size !== "auto") return;
       const measure = () => {
@@ -113,7 +116,7 @@ export function StoryFrame({
   }
 
   const liveId = useStoryId(id);
-  const src = liveId ? storySrc(liveId, theme) : null;
+  const src = liveId ? storySrc(liveId, storyTheme) : null;
   return (
     <div
       ref={holder}

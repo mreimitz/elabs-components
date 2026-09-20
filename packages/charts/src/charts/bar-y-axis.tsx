@@ -33,6 +33,13 @@ export interface BarYAxisProps {
    * Default: `"auto"`.
    */
   fit?: CategoryAxisFit;
+  /**
+   * The widest the label gutter may grow, in px. The gutter is measured from the labels and
+   * capped so a long name cannot eat the plot; the default cap suits one or two words. Raise
+   * it for rows whose names ARE the content — "Send Invoice → Payment Reminder" — and the
+   * chart still keeps its own minimum plot width. Default: 112.
+   */
+  maxWidth?: number;
 }
 
 interface BarYAxisLabelProps {

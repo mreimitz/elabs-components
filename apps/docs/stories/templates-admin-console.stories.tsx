@@ -628,7 +628,7 @@ function resolvedBackgroundColor(el: Element): string {
 }
 
 const meta = {
-  title: "Patterns/Templates/Enterprise Admin Console",
+  title: "Patterns/Templates/Starters/Enterprise Admin Console",
   component: AdminConsole,
   // <ThemeSwitcher /> reads the @elabs-ai/components-tokens React context, so the screen needs
   // a real <ThemeProvider> (the global decorator only sets the data-theme

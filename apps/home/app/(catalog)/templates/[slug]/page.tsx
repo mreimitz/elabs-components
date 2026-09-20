@@ -1,3 +1,4 @@
+import { isNativeBlock } from "../../../../components/catalog/block-render-meta";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Badge, CommandChip } from "@elabs-ai/components-ui";
@@ -44,7 +45,12 @@ export default async function TemplatePage({ params }: { params: Promise<Params>
       page={page}
       frameSize="screen"
       wide
-      lead={useCase ?? playbook?.intent ?? firstSentence(page.template?.description ?? "")}
+      nativeBlock={isNativeBlock(page.block?.name) ? page.block.name : undefined}
+      lead={
+        useCase ??
+        playbook?.intent ??
+        (firstSentence(page.template?.description ?? "") || undefined)
+      }
       useFor={[playbook?.intent].filter((line): line is string => Boolean(line))}
       trail={[{ href: "/templates", label: catalogCopy.sections.templates }]}
     >

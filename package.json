@@ -29,6 +29,8 @@
     "release:smoke": "node scripts/release-smoke.mjs",
     "skills:build": "node scripts/build-skills.mjs",
     "storybook": "pnpm --filter @elabs-ai/components-docs dev",
+    "site": "pnpm --filter @elabs-ai/home dev",
+    "site:stories": "node apps/home/scripts/dev.mjs --stories-only",
     "surface:preview": "node scripts/build-surface-preview.mjs",
     "test": "turbo run test --concurrency=1",
     "theme:new": "node scripts/new-community-theme.mjs",

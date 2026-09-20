@@ -94,7 +94,7 @@ const FADES = ["top", "bottom", "edges", "center"] as const;
  * Budget: it spends the region's one focal drafting gesture. For a one-off fade on
  * a single element, use Tailwind's own `mask-t-from-*` / `mask-radial-*` utilities.
  *
- * Shipped in anger on `Patterns/Templates/Marketing`, whose hero band carries
+ * Shipped in anger on `Patterns/Templates/Starters/Marketing`, whose hero band carries
  * `data-decoration-fade="top"` so the sheet fades in behind the headline instead of
  * starting on a hard ruled edge — that template, not this matrix, is the surface to
  * judge the gesture on.

@@ -110,3 +110,33 @@ describe("SidebarProvider", () => {
     removeSpy.mockRestore();
   });
 });
+
+describe("Sidebar containerPosition", () => {
+  const frame = (position?: "viewport" | "inset") =>
+    render(
+      <SidebarProvider>
+        <Sidebar containerPosition={position}>
+          <span>chrome</span>
+        </Sidebar>
+        <SidebarInset>
+          <p>canvas</p>
+        </SidebarInset>
+      </SidebarProvider>,
+    ).container;
+
+  it("pins the rail to the window by default — today's behaviour, unchanged", () => {
+    const container = frame().querySelector('[data-slot="sidebar-container"]');
+    expect(container?.className).toContain("fixed");
+    expect(container?.className).not.toContain("absolute");
+    expect(frame().querySelector('[data-slot="sidebar"]')?.className).not.toContain("relative");
+  });
+
+  it('pins the rail to its own place in the layout with containerPosition="inset"', () => {
+    const root = frame("inset");
+    const container = root.querySelector('[data-slot="sidebar-container"]');
+    expect(container?.className).toContain("absolute");
+    expect(container?.className).not.toContain("fixed");
+    // The absolute container needs a positioned ancestor of the rail's own height.
+    expect(root.querySelector('[data-slot="sidebar"]')?.className).toContain("relative");
+  });
+});

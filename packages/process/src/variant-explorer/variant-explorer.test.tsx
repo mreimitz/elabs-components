@@ -120,6 +120,26 @@ describe("VariantExplorer — rows", () => {
     );
   });
 
+  it('sequenceDisplay="swatch" draws text-free identity blocks that still name their activity', () => {
+    render(
+      <VariantExplorer
+        variants={variants}
+        colorScale={scale}
+        onSelect={() => {}}
+        sequenceDisplay="swatch"
+      />,
+    );
+    const firstActivity = variants[0]!.sequence[0]!;
+    const strip = document.querySelector('[data-slot="variant-explorer-sequence"]')!;
+    expect(strip).toHaveAttribute("data-display", "swatch");
+    const chip = strip.querySelector('[data-slot="variant-explorer-chip"]')!;
+    expect(chip).toHaveTextContent("");
+    expect(chip).toHaveAttribute("title", scale.labelFor(firstActivity));
+    expect(chip).toHaveAttribute("data-activity", firstActivity);
+    // Colour is not the only channel: the strip's accessible name lists the full sequence.
+    expect(strip).toHaveAccessibleName(expect.stringContaining(scale.labelFor(firstActivity)));
+  });
+
   it("reflects selectionStates.variants on the checkbox and the row", () => {
     const id = variants[0]!.id;
     render(

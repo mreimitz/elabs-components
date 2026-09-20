@@ -62,8 +62,22 @@ export const BLOCK_FAMILY_ORDER = [
   "Data Surfaces",
   "Agent Ops",
   "AI and Terminal",
+  "Application",
   "Forms and Setup",
+  "Authentication",
+  "Account and Settings",
+  "Commerce",
   "Marketing",
+];
+
+/** Template families: use-case templates by who builds them, then the archetype starters. */
+export const TEMPLATE_FAMILY_ORDER = [
+  "Analytics",
+  "Operations",
+  "Customers",
+  "Product Teams",
+  "AI Products",
+  "Starters",
 ];
 
 /** Sort by a known reading order first, alphabetically after it. */
@@ -98,7 +112,14 @@ export function buildNav(sectionLabels: Record<CatalogSection, string>): NavBran
         id: section,
         label: sectionLabels[section],
         href: `/${section}`,
-        groups: groupsOf(entries, section === "blocks" ? BLOCK_FAMILY_ORDER : []),
+        groups: groupsOf(
+          entries,
+          section === "blocks"
+            ? BLOCK_FAMILY_ORDER
+            : section === "templates"
+              ? TEMPLATE_FAMILY_ORDER
+              : [],
+        ),
         count: entries.length,
       });
       continue;

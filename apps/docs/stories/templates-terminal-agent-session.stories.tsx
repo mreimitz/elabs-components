@@ -526,7 +526,7 @@ function AgentSessionScreen({ state }: { state: SessionState }) {
 /* -------------------------------------------------------------------------- */
 
 const meta = {
-  title: "Patterns/Templates/Terminal Agent Session",
+  title: "Patterns/Templates/AI Products/Terminal Agent Session",
   component: AgentSessionScreen,
   parameters: {
     layout: "fullscreen",

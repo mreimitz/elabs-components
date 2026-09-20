@@ -142,15 +142,25 @@ export function BlocksSection() {
 const USE_CASES = tourCopy.tabs as Record<string, { useCase: string } | undefined>;
 const firstSentence = (text: string) => text.split(/(?<=\.)\s/)[0] ?? text;
 
+const HOME_TEMPLATES = [
+  "agentic-ai-workspace",
+  "revenue-operations",
+  "logistics-control-tower",
+  "customer-360",
+  "support-desk",
+  "incident-command",
+];
+
 /** "What are you building?" — every template as a live thumbnail with the use case it serves. */
 export function UseCasesSection() {
   const entries = entriesOf("templates").map((entry) => ({
     ...entry,
     summary: USE_CASES[entry.slug]?.useCase ?? firstSentence(entry.summary),
   }));
-  // The archetypes a playbook exists for lead; the remaining templates follow.
-  const lead = entries.filter((e) => USE_CASES[e.slug]);
-  const rest = entries.filter((e) => !USE_CASES[e.slug]);
+  // The use-case templates lead — whole products built from the blocks — in this order.
+  const shown = HOME_TEMPLATES.map((slug) => entries.find((e) => e.slug === slug)).filter(
+    (e): e is NonNullable<typeof e> => Boolean(e),
+  );
   return (
     <section id="use-cases" aria-labelledby="use-cases-title" className={SECTION}>
       <SectionHeader
@@ -162,7 +172,7 @@ export function UseCasesSection() {
           </Button>
         }
       />
-      <EntryGrid entries={[...lead, ...rest]} thumbWidth={1440} />
+      <EntryGrid entries={shown} thumbWidth={1440} />
     </section>
   );
 }

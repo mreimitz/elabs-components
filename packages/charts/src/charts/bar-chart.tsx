@@ -504,6 +504,8 @@ interface CategoryAxisChildConfig {
   fit?: CategoryAxisFit;
   maxLabels?: number;
   showAllLabels?: boolean;
+  /** `BarYAxis maxWidth`: the caller's cap on the left gutter, replacing the default. */
+  maxWidth?: number;
 }
 
 /**
@@ -541,6 +543,7 @@ function extractCategoryAxisConfig(children: ReactNode): CategoryAxisChildConfig
       fit: props?.fit,
       maxLabels: props?.maxLabels,
       showAllLabels: props?.showAllLabels,
+      maxWidth: placement === "left" ? props?.maxWidth : undefined,
     });
   });
 
@@ -898,10 +901,10 @@ const ChartCore = memo(function ChartCore({
     if (!categoryAxisConfig) {
       return undefined;
     }
-    const { placement, fit, maxLabels, showAllLabels } = categoryAxisConfig;
+    const { placement, fit, maxLabels, showAllLabels, maxWidth } = categoryAxisConfig;
     const isLeft = placement === "left";
     const maxExtent = Math.min(
-      isLeft ? MAX_CATEGORY_AXIS_EXTENT_LEFT : MAX_CATEGORY_AXIS_EXTENT_BOTTOM,
+      isLeft ? (maxWidth ?? MAX_CATEGORY_AXIS_EXTENT_LEFT) : MAX_CATEGORY_AXIS_EXTENT_BOTTOM,
       // The plot floor is enforced HERE, by capping what the axis may ask for,
       // so the cascade trims/hides to fit instead of the chart overflowing.
       isLeft
