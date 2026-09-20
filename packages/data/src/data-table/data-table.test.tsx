@@ -3315,4 +3315,18 @@ describe("DataTable — presentation layer", () => {
       screen.getByRole("button", { name: "Sort by Name, not sorted" }).closest("span"),
     ).toHaveClass("sr-only");
   });
+
+  // RM-127 (a-5): WCAG 2.2 target size (2.5.8). The sort button is 16–20 px of
+  // text and used to clear the rule only through the space AROUND it — which
+  // `hideHeader` (`h-0 p-0`, 16 px between neighbours) and the card sort bar
+  // (`gap-y-1`, 4 px) both take away. Measured in Chromium at 380 px: the
+  // 11 card-bar buttons were 52.4 x 16 and axe reported 6 serious
+  // `target-size` nodes; they are 24 px tall now and axe passes on all 11.
+  it("sizes every sort button to the 24 px target floor, hidden header or card bar", () => {
+    const { unmount } = render(<DataTable columns={columns} data={data} />);
+    expect(screen.getByRole("button", { name: "Sort by Name, not sorted" })).toHaveClass("min-h-6");
+    unmount();
+    render(<DataTable columns={columns} data={data} hideHeader />);
+    expect(screen.getByRole("button", { name: "Sort by Name, not sorted" })).toHaveClass("min-h-6");
+  });
 });

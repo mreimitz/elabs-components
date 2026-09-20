@@ -140,5 +140,18 @@ export const HeatmapTableHiddenHeader: Story = {
       await expect(thead?.className).toContain("[&_th]:h-0");
       await expect(canvasElement.querySelector("thead th")).not.toBeNull();
     }
+    // RM-127 (a-5): the hidden header and the card sort bar both strip the
+    // space around a sort button, so the button's OWN box has to clear WCAG
+    // 2.2's 24 x 24 floor (2.5.8). Measured, not argued — at 380 px these were
+    // 52.4 x 16 and axe reported six serious `target-size` nodes.
+    const sortButtons = [
+      ...canvasElement.querySelectorAll<HTMLElement>('button[aria-label^="Sort by"]'),
+    ];
+    await expect(sortButtons.length).toBeGreaterThan(0);
+    for (const button of sortButtons) {
+      const box = button.getBoundingClientRect();
+      await expect(box.height).toBeGreaterThanOrEqual(24);
+      await expect(box.width).toBeGreaterThanOrEqual(24);
+    }
   },
 };

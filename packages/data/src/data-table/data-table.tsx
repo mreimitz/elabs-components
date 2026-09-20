@@ -2135,7 +2135,15 @@ function DataTableInner<TData, TValue>(
         // from the cell's trailing edge) sits entirely outside
         // this button's box (which ends at the same 12px inset
         // as the body), so dragging is unaffected.
-        className="relative z-10 inline-flex items-center gap-1 rounded-sm transition-colors duration-fast ease-standard hover:text-foreground focus-ring"
+        // RM-127 (a-5): `min-h-6` is the WCAG 2.2 target-size floor (2.5.8).
+        // A sort button is 16–20 px of text, which only cleared the rule
+        // through the "safe clickable space" around it — and two layouts have
+        // no such space: `hideHeader` collapses the row to `h-0 p-0` (16 px
+        // between neighbours) and the card sort bar packs the same buttons at
+        // `gap-y-1` (4 px). The box is the target now, everywhere, rather than
+        // the room that happens to be left beside it. No visual change in a
+        // normal header, whose row is already taller than 24 px.
+        className="relative z-10 inline-flex min-h-6 items-center gap-1 rounded-sm transition-colors duration-fast ease-standard hover:text-foreground focus-ring"
       >
         {flexRender(header.column.columnDef.header, header.getContext())}
         <SortIcon
