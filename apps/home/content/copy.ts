@@ -895,7 +895,11 @@ export const blockFamilyCopy: Record<string, string> = {
   "Maps and Geo": "Networks, routes and fleets on the map they run on.",
   "Process and Flow": "Canvases you build on and process maps you explore.",
   "Data Surfaces": "Tables with the toolbar, the chart and the comparison already wired.",
+  Documents:
+    "Files in the product: a library with a preview, an answer you can check against its sources, a review that points at the clause.",
   "Agent Ops": "What an agent did, what it cost, where it failed and where a human decides.",
+  "Generative UI":
+    "Screens an agent designs as data (A2UI): validated against a catalog, streamed in, and wired to actions the app owns.",
   "AI and Terminal": "Chat, code and console surfaces for working with a model.",
   "Forms and Setup": "Multi-step forms and the screens that connect a product to others.",
   Application:

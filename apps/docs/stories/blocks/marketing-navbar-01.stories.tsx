@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { MarketingNavbar } from "@/components/marketing-navbar-01/marketing-navbar";
 
 /**
@@ -17,6 +18,18 @@ const meta = {
     },
   },
   tags: ["autodocs"],
+  // The navbar's <ThemeSwitcher /> reads the @elabs-ai/components-tokens React
+  // context, so the screen needs a real provider — the global preview decorator
+  // only writes the `data-theme` attribute. In a consuming app this sits at the
+  // root. It mounts DEEPER than the preview's own theme boundary, so a
+  // `STORYBOOK_THEME=<slug>` sweep still wins (child effects flush first).
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
 } satisfies Meta<typeof MarketingNavbar>;
 
 export default meta;

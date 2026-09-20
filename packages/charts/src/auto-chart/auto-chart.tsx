@@ -1657,8 +1657,18 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // doesn't change `spec.series`/`spec.data`/`spec.x` (e.g. a `height` or
   // `className` change from the caller) doesn't re-walk + re-allocate either —
   // both were previously recomputed unconditionally on every render.
-  const series = useMemo(() => normalizeSeries(spec.series), [spec.series]);
-  const timeCoercedData = useMemo(() => coerceDatesToDate(spec.data, spec.x), [spec.data, spec.x]);
+  //
+  // A spec that is still ARRIVING (an agent streaming an A2UI surface) has `data` before it has
+  // `series`, or neither yet. These run above the guards below, so they must take a partial spec
+  // without throwing; the guards then draw the empty box until the rest lands.
+  const series = useMemo(
+    () => normalizeSeries(Array.isArray(spec.series) ? spec.series : []),
+    [spec.series],
+  );
+  const timeCoercedData = useMemo(
+    () => coerceDatesToDate(Array.isArray(spec.data) ? spec.data : [], spec.x),
+    [spec.data, spec.x],
+  );
 
   // ── Loading vs ready ───────────────────────────────────────────────────────
   // Same box shape as ChartFallback, but a skeleton instead of message text —
@@ -1684,7 +1694,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // pair is correct there rather than a missing dataset.
   const readsHierarchy = Boolean(spec.hierarchy);
 
-  if (!readsHierarchy && (!spec.data || spec.data.length === 0)) {
+  if (!readsHierarchy && (!Array.isArray(spec.data) || spec.data.length === 0)) {
     return (
       <ChartFallback
         ref={ref}
@@ -1696,7 +1706,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     );
   }
 
-  if (!readsHierarchy && (!spec.series || spec.series.length === 0)) {
+  if (!readsHierarchy && (!Array.isArray(spec.series) || spec.series.length === 0)) {
     return (
       <ChartFallback
         ref={ref}

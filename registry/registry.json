@@ -3455,6 +3455,165 @@
         }
       ],
       "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "a2ui-parts",
+      "type": "registry:block",
+      "title": "A2UI showcase parts",
+      "description": "Shared by every A2UI block: the merged ui + charts catalog, the validated example surfaces, a streamed-surface hook, the surface stage, the wire-JSON pane and the host action log.",
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/a2ui-parts/action-log.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-parts/action-log.tsx"
+        },
+        {
+          "path": "registry/blocks/a2ui-parts/catalog.ts",
+          "type": "registry:component",
+          "target": "components/a2ui-parts/catalog.ts"
+        },
+        {
+          "path": "registry/blocks/a2ui-parts/json-pane.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-parts/json-pane.tsx"
+        },
+        {
+          "path": "registry/blocks/a2ui-parts/scenarios.ts",
+          "type": "registry:component",
+          "target": "components/a2ui-parts/scenarios.ts"
+        },
+        {
+          "path": "registry/blocks/a2ui-parts/surface-stage.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-parts/surface-stage.tsx"
+        },
+        {
+          "path": "registry/blocks/a2ui-parts/surfaces.ts",
+          "type": "registry:component",
+          "target": "components/a2ui-parts/surfaces.ts"
+        },
+        {
+          "path": "registry/blocks/a2ui-parts/use-streamed-surface.ts",
+          "type": "registry:component",
+          "target": "components/a2ui-parts/use-streamed-surface.ts"
+        }
+      ],
+      "categories": ["generative-ui"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "a2ui-decision-01",
+      "type": "registry:block",
+      "title": "Agent asks for a decision",
+      "description": "An agent-designed approval screen (facts, the policy exception, a note, three ways out) rendered from A2UI data. Buttons name host actions; the app answers each one with the agent's next surface, and logs what it received.",
+      "registryDependencies": ["a2ui-parts"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/a2ui-decision-01/a2ui-decision.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-decision-01/a2ui-decision.tsx"
+        }
+      ],
+      "categories": ["generative-ui"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "a2ui-insight-01",
+      "type": "registry:block",
+      "title": "Analytics answer with charts",
+      "description": "An A2UI answer composed by the agent: a headline, KPI tiles with sparklines, two AutoChart figures titled with their findings, the method and follow-up actions. A click on the chart drills into the next surface.",
+      "registryDependencies": ["a2ui-parts"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/a2ui-insight-01/a2ui-insight.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-insight-01/a2ui-insight.tsx"
+        }
+      ],
+      "categories": ["generative-ui"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "a2ui-form-01",
+      "type": "registry:block",
+      "title": "Agent-built form",
+      "description": "A form the agent pre-filled from an alert: inputs, selects, radios, a slider and switches from the catalog. Every change is a named action the host folds into one draft, shown live; submit hands the draft over and the agent answers with a timeline.",
+      "registryDependencies": ["a2ui-parts"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/a2ui-form-01/a2ui-form.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-form-01/a2ui-form.tsx"
+        }
+      ],
+      "categories": ["generative-ui"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "a2ui-streaming-01",
+      "type": "registry:block",
+      "title": "Streaming surface",
+      "description": "The wire JSON beside the surface it becomes: A2uiSurface takes the streamed prefix, closes open brackets, prunes nodes that do not validate yet and paints the rest, with progress and replay.",
+      "registryDependencies": ["a2ui-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/a2ui-streaming-01/a2ui-streaming.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-streaming-01/a2ui-streaming.tsx"
+        }
+      ],
+      "categories": ["generative-ui"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "a2ui-guardrail-01",
+      "type": "registry:block",
+      "title": "Catalog guardrail",
+      "description": "A surface that tries custom styles, an iframe, an inline handler and an unknown event, refused with every problem and its path, next to the repaired surface the agent sent after reading that list.",
+      "registryDependencies": ["a2ui-parts"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/a2ui-guardrail-01/a2ui-guardrail.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-guardrail-01/a2ui-guardrail.tsx"
+        }
+      ],
+      "categories": ["generative-ui"]
     }
   ]
 }

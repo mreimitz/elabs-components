@@ -1,5 +1,75 @@
 [
   {
+    "name": "a2ui-decision-01",
+    "title": "Agent asks for a decision",
+    "categories": ["generative-ui"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "a2ui-form-01",
+    "title": "Agent-built form",
+    "categories": ["generative-ui"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "a2ui-guardrail-01",
+    "title": "Catalog guardrail",
+    "categories": ["generative-ui"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "a2ui-insight-01",
+    "title": "Analytics answer with charts",
+    "categories": ["generative-ui"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "a2ui-parts",
+    "title": "A2UI showcase parts",
+    "categories": ["generative-ui"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "a2ui-streaming-01",
+    "title": "Streaming surface",
+    "categories": ["generative-ui"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "agent-ops-center-page",
     "title": "Template — Agent operations center",
     "categories": ["template"],

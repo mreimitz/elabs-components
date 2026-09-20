@@ -87,27 +87,6 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
-  "plan-office-floor-01": dynamic(
-    () => import("../blocks/plan-office-floor-01/office-floor-plan").then((m) => m.OfficeFloorPlan),
-    {
-      ssr: false,
-      loading: pending,
-    },
-  ),
-  "plan-factory-layout-01": dynamic(
-    () => import("../blocks/plan-factory-layout-01/factory-layout").then((m) => m.FactoryLayout),
-    {
-      ssr: false,
-      loading: pending,
-    },
-  ),
-  "plan-seat-map-01": dynamic(
-    () => import("../blocks/plan-seat-map-01/train-seat-map").then((m) => m.TrainSeatMap),
-    {
-      ssr: false,
-      loading: pending,
-    },
-  ),
   "infographic-journey-flow-01": dynamic(
     () =>
       import("../blocks/infographic-journey-flow-01/infographic-journey-flow").then(
@@ -864,6 +843,41 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       import("../blocks/chart-story-heat-table-01/chart-story-heat-table").then(
         (m) => m.ChartStoryHeatTable,
       ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "a2ui-decision-01": dynamic(
+    () => import("../blocks/a2ui-decision-01/a2ui-decision").then((m) => m.A2uiDecision),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "a2ui-insight-01": dynamic(
+    () => import("../blocks/a2ui-insight-01/a2ui-insight").then((m) => m.A2uiInsight),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "a2ui-form-01": dynamic(
+    () => import("../blocks/a2ui-form-01/a2ui-form").then((m) => m.A2uiForm),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "a2ui-streaming-01": dynamic(
+    () => import("../blocks/a2ui-streaming-01/a2ui-streaming").then((m) => m.A2uiStreaming),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "a2ui-guardrail-01": dynamic(
+    () => import("../blocks/a2ui-guardrail-01/a2ui-guardrail").then((m) => m.A2uiGuardrail),
     {
       ssr: false,
       loading: pending,

@@ -1,4 +1,9 @@
 {
+  "A2uiDecision": "patterns-blocks-generative-ui-agent-asks-for-a-decision--docs",
+  "A2uiForm": "patterns-blocks-generative-ui-agent-built-form--docs",
+  "A2uiGuardrail": "patterns-blocks-generative-ui-catalog-guardrail--docs",
+  "A2uiInsight": "patterns-blocks-generative-ui-analytics-answer-with-charts--docs",
+  "A2uiStreaming": "patterns-blocks-generative-ui-streaming-surface--docs",
   "A2uiSurface": "ai-a2ui-agent-ops--docs",
   "AbstractionControls": "process-abstractioncontrols--docs",
   "Accordion": "disclosure-accordion--docs",
