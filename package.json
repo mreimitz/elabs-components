@@ -23,7 +23,6 @@
     "lint": "turbo run lint",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "registry:build": "pnpm dlx shadcn@latest build registry/registry.json --output registry/__output",
-    "registry:publish": "node scripts/publish-registry-pages.mjs",
     "release:agent-kit": "node scripts/gen.mjs --only templates,registry,manifest,llms && node scripts/build-agent-kit.mjs",
     "release:plugin": "node scripts/build-plugin.mjs",
     "release:smoke": "node scripts/release-smoke.mjs",

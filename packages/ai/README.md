@@ -44,7 +44,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-449 exported components — including `A2UI_CATALOG_SCHEMA`, `A2UI_CATALOG_VERSION`, `A2UI_COMMON_PROPS`, `A2UI_SURFACE_SCHEMA_ID`, `A2UI_VERSION`.
+448 exported components — including `A2UI_CATALOG_SCHEMA`, `A2UI_CATALOG_VERSION`, `A2UI_COMMON_PROPS`, `A2UI_SURFACE_SCHEMA_ID`, `A2UI_VERSION`.
 
 Don't guess the API — ask the CLI:
 

@@ -1,26 +1,20 @@
 /**
  * lib/registry-homepage.mjs — shared `registry.json` `homepage` validator.
  *
- * Extracted from validate-registry.mjs (#31) so a SECOND gate
- * (check-registry-published.mjs) can reuse the same placeholder/shape rules
- * without importing validate-registry.mjs itself. That module is a
- * top-level-executing CLI script (no `main()` guard) — importing it for one
- * helper would re-run its ENTIRE validation pass (and its own `process.exit`)
- * as a side effect of the import. Pulling the pure function out here keeps
- * both gates' failure modes independent and their own to report.
+ * A pure function in its own module rather than a helper inside
+ * validate-registry.mjs: that module is a top-level-executing CLI script (no
+ * `main()` guard), so importing it for one helper would re-run its ENTIRE
+ * validation pass, and its own `process.exit`, as a side effect of the import.
  *
  * ## Why `homepage` is required in practice, though still optional in shape
  *
- * `registry.json`'s `homepage` used to have nothing to point at — this repo
- * had no hosted registry endpoint, so a value here could only ever be a
- * placeholder. #31 fixed that: the registry is hosted on GitHub Pages
- * (`scripts/publish-registry-pages.mjs`), and `homepage` now names that real
- * base URL — both because `pnpm registry:build` (shadcn) refuses to run
- * without one on a root registry, and because it is the value
- * `check-registry-published.mjs` builds every hosted URL from. This
- * validator still treats an ABSENT `homepage` as fine (a private fork with no
- * public host is a legitimate configuration), and still rejects a PRESENT
- * one that is empty, non-https, or a recognizable placeholder host.
+ * `homepage` is the base URL every `npx shadcn@latest add …` command in the docs
+ * is built from, and `pnpm registry:build` (shadcn) refuses to run without one on
+ * a root registry. It names the website's own `/r` route, which is the only place
+ * the registry is served. This validator still treats an ABSENT `homepage` as fine
+ * (a private fork with no public host is a legitimate configuration), and still
+ * rejects a PRESENT one that is empty, non-https, or a recognizable placeholder
+ * host.
  */
 
 const PLACEHOLDER_HOMEPAGE_RE =

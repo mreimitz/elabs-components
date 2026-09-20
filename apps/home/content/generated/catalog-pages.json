@@ -6687,12 +6687,6 @@
             "description": "`\"outside\"` (default) — tick labels in the margin beside the plot; `\"inside\"` — labels sit just above their grid line inside the plot."
           },
           {
-            "name": "formatLargeNumbers",
-            "optional": true,
-            "type": "boolean",
-            "description": "@deprecated Superseded by `valueFormat` (see `charts/value-format.ts`), which knows about millions as well as thousands — the old implementation rendered 1 500 000 as `1500k`. `false` still works and is equivalent to `valueFormat=\"number\"`; `true` is now the default behaviour and can be dropped. Removed in the next major (`docs/DEPRECATION.md` §1)."
-          },
-          {
             "name": "valueFormat",
             "optional": true,
             "type": "ChartValueFormat",
@@ -6853,7 +6847,7 @@
             "name": "height",
             "optional": true,
             "type": "number",
-            "description": "@deprecated Use `plotHeight`. Removed in 5.0.0. Until then it is read as `plotHeight` and logs one development warning per page."
+            "description": "@deprecated Use `plotHeight`. Removed in 6.0.0. Until then it is read as `plotHeight` and logs one development warning per page."
           },
           {
             "name": "loading",
@@ -7166,12 +7160,6 @@
             "optional": true,
             "type": "AxisLabelPlacement",
             "description": "`\"outside\"` (default) — tick labels in the margin beside the plot; `\"inside\"` — labels sit just above their grid line inside the plot."
-          },
-          {
-            "name": "formatLargeNumbers",
-            "optional": true,
-            "type": "boolean",
-            "description": "@deprecated Superseded by `valueFormat` (see `charts/value-format.ts`), which knows about millions as well as thousands — the old implementation rendered 1 500 000 as `1500k`. `false` still works and is equivalent to `valueFormat=\"number\"`; `true` is now the default behaviour and can be dropped. Removed in the next major (`docs/DEPRECATION.md` §1)."
           },
           {
             "name": "valueFormat",
@@ -9272,7 +9260,7 @@
             "name": "height",
             "optional": true,
             "type": "number",
-            "description": "@deprecated Use `plotHeight` — it sets the chart's own height, and the title, legend and notes are added around it. `height={n}` is now an alias for `plotHeight={n}` (it no longer fixes the body); removed in 5.0.0."
+            "description": "@deprecated Use `plotHeight` — it sets the chart's own height, and the title, legend and notes are added around it. `height={n}` is now an alias for `plotHeight={n}` (it no longer fixes the body); removed in 6.0.0."
           },
           {
             "name": "loading",
@@ -10353,12 +10341,6 @@
             "optional": true,
             "type": "AxisLabelPlacement",
             "description": "`\"outside\"` (default) — tick labels in the margin beside the plot; `\"inside\"` — labels sit just above their grid line inside the plot."
-          },
-          {
-            "name": "formatLargeNumbers",
-            "optional": true,
-            "type": "boolean",
-            "description": "@deprecated Superseded by `valueFormat` (see `charts/value-format.ts`), which knows about millions as well as thousands — the old implementation rendered 1 500 000 as `1500k`. `false` still works and is equivalent to `valueFormat=\"number\"`; `true` is now the default behaviour and can be dropped. Removed in the next major (`docs/DEPRECATION.md` §1)."
           },
           {
             "name": "valueFormat",
@@ -13195,12 +13177,6 @@
             "description": "`\"outside\"` (default) — tick labels in the margin beside the plot; `\"inside\"` — labels sit just above their grid line inside the plot."
           },
           {
-            "name": "formatLargeNumbers",
-            "optional": true,
-            "type": "boolean",
-            "description": "@deprecated Superseded by `valueFormat` (see `charts/value-format.ts`), which knows about millions as well as thousands — the old implementation rendered 1 500 000 as `1500k`. `false` still works and is equivalent to `valueFormat=\"number\"`; `true` is now the default behaviour and can be dropped. Removed in the next major (`docs/DEPRECATION.md` §1)."
-          },
-          {
             "name": "valueFormat",
             "optional": true,
             "type": "ChartValueFormat",
@@ -15753,12 +15729,6 @@
             "description": "`\"outside\"` (default) — tick labels in the margin beside the plot; `\"inside\"` — labels sit just above their grid line inside the plot."
           },
           {
-            "name": "formatLargeNumbers",
-            "optional": true,
-            "type": "boolean",
-            "description": "@deprecated Superseded by `valueFormat` (see `charts/value-format.ts`), which knows about millions as well as thousands — the old implementation rendered 1 500 000 as `1500k`. `false` still works and is equivalent to `valueFormat=\"number\"`; `true` is now the default behaviour and can be dropped. Removed in the next major (`docs/DEPRECATION.md` §1)."
-          },
-          {
             "name": "valueFormat",
             "optional": true,
             "type": "ChartValueFormat",
@@ -17807,7 +17777,7 @@
             "name": "height",
             "optional": true,
             "type": "number",
-            "description": "@deprecated Use `plotHeight` (`height={n}` is an alias for `plotHeight={n}`); removed in 5.0.0."
+            "description": "@deprecated Use `plotHeight` (`height={n}` is an alias for `plotHeight={n}`); removed in 6.0.0."
           },
           {
             "name": "margin",

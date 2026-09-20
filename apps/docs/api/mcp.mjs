@@ -1,5 +1,11 @@
 /**
- * Hosted brand-ui MCP server — https://elabs-ai.com/mcp (rewritten here).
+ * Hosted brand-ui MCP server for the Storybook project —
+ * https://storybook.elabs-ai.com/mcp (rewritten here from /api/mcp).
+ *
+ * The PUBLIC /mcp on elabs-ai.com and elabs-components.vercel.app is the website's own
+ * route (apps/home/app/mcp/route.ts) since the addresses moved. This one stays because
+ * it is a published endpoint someone may have configured, and because the Storybook host
+ * answers it with no dependency on the website's deploy. Same tools, same manifest.
  *
  * The lookup tools (info, search, docs, tokens, chart_for) over stateless
  * Streamable HTTP, answered from the committed repo manifest bundled into this

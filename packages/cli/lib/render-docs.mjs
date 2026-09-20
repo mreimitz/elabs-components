@@ -25,12 +25,12 @@ export const HOSTED_DOCS_URL = "https://elabs-ai.com";
 export const HOSTED_MCP_URL = `${HOSTED_DOCS_URL}/mcp`;
 
 /**
- * Where `npx shadcn@latest add <url>/<item>.json` resolves TODAY — the published GitHub
- * Pages registry (`registry/registry.json`'s own `homepage`, kept fresh by
- * `pnpm registry:publish`). `HOSTED_DOCS_URL` itself has no `/r` route until the site's own
- * routes exist (RM-105 — see `siteRoutes` on `renderLlmsHub`).
+ * Where `npx shadcn@latest add <url>/<item>.json` resolves — the website's own `/r` route,
+ * which is `registry/registry.json`'s `homepage`. Since the website took over the public
+ * addresses this is the same origin as `HOSTED_DOCS_URL`; it stays a separate constant
+ * because a fork can host the registry somewhere else.
  */
-export const REGISTRY_HOMEPAGE = "https://mreimitz.github.io/elabs-components/r";
+export const REGISTRY_HOMEPAGE = "https://elabs-ai.com/r";
 
 /** Packages in stable, dependency-order-ish display order (tokens → ui → domain). */
 const PKG_ORDER = [
@@ -372,9 +372,9 @@ export function renderReadmeCounts(manifest, root) {
  *   `llms.txt` and the site's own `/llms.txt` route agree byte-for-byte; a preview
  *   deployment can pass its own origin so it reports itself (RM-100, no live preview
  *   exists yet). `siteRoutes` (default false): opt the Docs-site and Registry links into
- *   the `/storybook/` + `/r` forms — only for a caller whose site actually serves them.
- *   `https://elabs-ai.com` is still the Storybook project until RM-105 moves the domain
- *   (no `/storybook/`, no `/r`), so the default stays the links that work there today.
+ *   the `/storybook/` + `/r` forms — only for a caller whose own origin serves them, i.e.
+ *   the website. The default suits a Storybook host, which serves `/?path=…` directly and
+ *   has no `/r`; on the public addresses that form 308-redirects, so it resolves either way.
  */
 export function renderLlmsHub(manifest, { siteOrigin = HOSTED_DOCS_URL, siteRoutes = false } = {}) {
   const mcpUrl = `${siteOrigin}/mcp`;

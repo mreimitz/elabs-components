@@ -79,14 +79,6 @@ export interface YAxisProps {
    */
   labelPlacement?: AxisLabelPlacement;
   /**
-   * @deprecated Superseded by `valueFormat` (see `charts/value-format.ts`), which
-   * knows about millions as well as thousands — the old implementation rendered
-   * 1 500 000 as `1500k`. `false` still works and is equivalent to
-   * `valueFormat="number"`; `true` is now the default behaviour and can be
-   * dropped. Removed in the next major (`docs/DEPRECATION.md` §1).
-   */
-  formatLargeNumbers?: boolean;
-  /**
    * How tick values are rendered. Default: `"compact"` — `1.5M`, not `1500k`
    * and not `1500000`. Pass `"number"` for every digit.
    */
@@ -184,7 +176,6 @@ const YAxisInner = memo(function YAxisInner({
   title,
   titlePlacement = "outside",
   labelPlacement = "outside",
-  formatLargeNumbers,
   valueFormat,
   currency,
   formatValue,
@@ -207,10 +198,7 @@ const YAxisInner = memo(function YAxisInner({
   const isLeft = orientation === "left";
   const isInside = labelPlacement === "inside";
 
-  // The deprecated boolean maps onto the format union rather than being ignored:
-  // `formatLargeNumbers={false}` meant "print the digits", which is exactly
-  // `valueFormat="number"`.
-  const resolvedFormat = valueFormat ?? (formatLargeNumbers === false ? "number" : undefined);
+  const resolvedFormat = valueFormat;
   // RM-108: explicit `numTicks` > numeric `tickCount` > the height-derived target.
   const tickTarget = resolveYAxisTickCount(
     resolveAxisTickTarget({

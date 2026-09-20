@@ -174,6 +174,19 @@ export function siteChecks(base, { version } = {}) {
 }
 
 /**
+ * A redirect target reduced to what is actually promised: the path and the DECODED query,
+ * with any host dropped. Exported so the self-test can pin the equivalences.
+ */
+export function decodeTarget(target) {
+  const path = String(target ?? "").replace(/^https?:\/\/[^/]+/, "");
+  const cut = path.indexOf("?");
+  if (cut < 0) return path;
+  const params = new URLSearchParams(path.slice(cut + 1));
+  const query = [...params].map(([k, v]) => `${k}=${v}`).join("&");
+  return `${path.slice(0, cut)}?${query}`;
+}
+
+/**
  * What is wrong with one response, given what was asked for. Pure; returns a list of
  * human-readable problems (empty = the address is fine).
  *
@@ -191,10 +204,13 @@ export function judge(check, seen) {
   }
   if (check.location) {
     // A redirect may name the target absolutely or relatively; only the path and query
-    // are the contract, and the host must not change.
+    // are the contract, and the host must not change. The query is compared DECODED:
+    // Next answers `?path=/docs/core-button--docs` as `?path=%2Fdocs%2Fcore-button--docs`,
+    // which is the same value to anything that parses it — asserting the raw bytes here
+    // failed a redirect that works, and the point of this check is the target, not its
+    // spelling.
     const got = String(seen.location ?? "");
-    const gotPath = got.replace(/^https?:\/\/[^/]+/, "");
-    if (gotPath !== check.location) {
+    if (decodeTarget(got) !== decodeTarget(check.location)) {
       problems.push(`redirects to ${got || "nowhere"}, expected ${check.location}`);
     }
   }
@@ -233,30 +249,58 @@ async function probe(check) {
 }
 
 /**
- * The proof the rewrite carries a WORKING Storybook and not just its shell: open a docs
- * page by the same `?path=` URL a person pastes, and assert the preview iframe rendered
- * a real button. A manager that loads while every preview is blank is the failure the
- * 2026-09-17 release shipped.
+ * The proof the rewrite carries a WORKING Storybook and not just its shell. A manager
+ * that loads while every preview is blank is the failure the 2026-09-17 release shipped,
+ * and it is invisible to a status-code check: `/storybook/` answers 200 either way.
+ *
+ * Two pages, because they fail differently:
+ *
+ *   1. the DEEP LINK a person pastes (`?path=/docs/…`) — proves the manager parsed the
+ *      query, resolved the entry and pointed its preview iframe at the right story;
+ *   2. the STORY ITSELF (`iframe.html?id=…&viewMode=story`) — proves a component really
+ *      mounted. It is asserted as "`#storybook-root` holds a rendered `<button>`", not by
+ *      a `data-slot`: `Button` predates that convention and emits none, and a selector
+ *      that matches nothing fails a working deployment.
  */
-async function iframeRendersAButton(base, chromium, { timeoutMs = 45_000 } = {}) {
+async function storybookReallyRenders(base, chromium, { timeoutMs = 45_000 } = {}) {
   const root = String(base).replace(/\/+$/, "");
   const browser = await chromium.launch();
+  const problems = [];
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    await page.goto(`${root}/storybook/?path=/docs/core-button--docs`, {
-      waitUntil: "load",
-      timeout: timeoutMs,
-    });
-    const frame = page.frameLocator("#storybook-preview-iframe");
-    await frame
-      .locator('[data-slot="button"]')
-      .first()
-      .waitFor({ state: "visible", timeout: timeoutMs });
-    return [];
-  } catch (err) {
-    return [
-      `the /storybook/?path= preview never rendered a button — ${String(err?.message ?? err).split("\n")[0]}`,
-    ];
+
+    try {
+      await page.goto(`${root}/storybook/?path=/docs/core-button--docs`, {
+        waitUntil: "load",
+        timeout: timeoutMs,
+      });
+      const preview = page.frameLocator("#storybook-preview-iframe");
+      await preview
+        .locator("text=@elabs-ai/components-ui")
+        .first()
+        .waitFor({ state: "attached", timeout: timeoutMs });
+    } catch (err) {
+      problems.push(
+        `the /storybook/?path= deep link never rendered its docs page — ${String(err?.message ?? err).split("\n")[0]}`,
+      );
+    }
+
+    try {
+      await page.goto(`${root}/storybook/iframe.html?id=core-button--default&viewMode=story`, {
+        waitUntil: "load",
+        timeout: timeoutMs,
+      });
+      await page
+        .locator("#storybook-root button")
+        .first()
+        .waitFor({ state: "visible", timeout: timeoutMs });
+    } catch (err) {
+      problems.push(
+        `a story never mounted through /storybook/ — ${String(err?.message ?? err).split("\n")[0]}`,
+      );
+    }
+
+    return problems;
   } finally {
     await browser.close();
   }
@@ -301,26 +345,26 @@ export async function main(argv) {
   const chromium = rewriteBroken ? undefined : await resolveChromium();
   if (!rewriteBroken && !chromium) {
     results.push({
-      name: "a Storybook docs page renders through /storybook/",
+      name: "Storybook really renders through /storybook/",
       url: base,
       problems: [
         "playwright is not installed — run `pnpm --filter @elabs-ai/components-docs exec " +
           "playwright install --with-deps chromium`",
       ],
     });
-    if (!asJson) log("✖ a Storybook docs page renders through /storybook/ (playwright missing)");
+    if (!asJson) log("✖ Storybook really renders through /storybook/ (playwright missing)");
   } else if (!rewriteBroken) {
-    const problems = await iframeRendersAButton(base, chromium);
+    const problems = await storybookReallyRenders(base, chromium);
     results.push({
-      name: "a Storybook docs page renders through /storybook/",
+      name: "Storybook really renders through /storybook/",
       url: base,
       problems,
     });
     if (!asJson) {
       log(
         problems.length
-          ? "✖ a Storybook docs page renders through /storybook/"
-          : "✔ a Storybook docs page renders through /storybook/",
+          ? "✖ Storybook really renders through /storybook/"
+          : "✔ Storybook really renders through /storybook/",
       );
       for (const p of problems) log(`    ${p}`);
     }
@@ -333,7 +377,8 @@ export async function main(argv) {
       const entries = all.filter((e) => ids.has(e.id));
       const browser = await chromium.launch();
       try {
-        const failures = await crawlStories({ browser, base: root, entries, log: () => {} });
+        // `crawlStories` returns `{ visited, failures }`, not a bare list.
+        const { failures } = await crawlStories({ browser, base: root, entries, log: () => {} });
         const problems = failures.map((f) => `${f.id}: ${f.problems.join("; ")}`);
         results.push({
           name: `${entries.length} sampled stories render through /storybook/`,

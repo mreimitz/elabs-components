@@ -6,4 +6,4 @@ Charts: every chart now measures its own container and adapts at two widths — 
 
 Migration: framed charts now grow with width (an 800 px wide `ChartFrame` draws a ~400 px plot instead of a fixed 260 px body); pass `plotHeight={260}` to keep the old look. Dashboard tiles (`chrome="tile"`) are unchanged.
 
-Deprecated: `height` on `ChartFrame`, `AutoChart` and `WaterfallChart` — use `plotHeight`. It still works as an alias, logs one development warning per page, and is removed in 5.0.0.
+Deprecated: `height` on `ChartFrame`, `AutoChart` and `WaterfallChart` — use `plotHeight`. It still works as an alias, logs one development warning per page, and is removed in the next major.

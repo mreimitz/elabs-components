@@ -32,13 +32,3 @@ export const NodeToolbar = (props: NodeToolbarProps) => (
     <NodeToolbarImpl data-slot="node-toolbar" {...props} />
   </Suspense>
 );
-
-/**
- * @deprecated Renamed to {@link NodeToolbar}. `Toolbar` is now the WAI-ARIA
- * toolbar in `@elabs-ai/components-ui`. This alias will be removed in
- * the next major.
- */
-export const Toolbar = NodeToolbar;
-
-/** @deprecated Renamed to {@link NodeToolbarProps}. */
-export type ToolbarProps = NodeToolbarProps;

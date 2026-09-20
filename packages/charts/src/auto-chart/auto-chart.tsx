@@ -1520,7 +1520,7 @@ export interface AutoChartProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    */
   plotHeight?: Responsive<ChartPlotHeight>;
   /**
-   * @deprecated Use `plotHeight`. Removed in 5.0.0. Until then it is read as
+   * @deprecated Use `plotHeight`. Removed in 6.0.0. Until then it is read as
    * `plotHeight` and logs one development warning per page.
    */
   height?: number;
@@ -1630,7 +1630,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   if (height !== undefined) {
     warnChartOnce(
       "AutoChart.height",
-      '[AutoChart] "height" is deprecated and will be removed in 5.0.0. Use "plotHeight": it sets the chart\'s own height, and the title and legend are added around it.',
+      '[AutoChart] "height" is deprecated and will be removed in 6.0.0. Use "plotHeight": it sets the chart\'s own height, and the title and legend are added around it.',
     );
   }
   const effectivePlotHeight = plotHeight ?? height;

@@ -251,7 +251,7 @@ export const FramedDeprecatedHeight: Story = {
     docs: {
       description: {
         story:
-          "Deprecated: `height` on ChartFrame is read as `plotHeight` (here 260 px, the old fixed body) and logs one development warning per page. It is removed in 5.0.0 — pass `plotHeight={260}` to keep this look.",
+          "Deprecated: `height` on ChartFrame is read as `plotHeight` (here 260 px, the old fixed body) and logs one development warning per page. It is removed in 6.0.0 — pass `plotHeight={260}` to keep this look.",
       },
     },
   },

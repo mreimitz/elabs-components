@@ -993,7 +993,7 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
   plotHeight?: Responsive<ChartPlotHeight>;
   /**
    * @deprecated Use `plotHeight` (`height={n}` is an alias for
-   * `plotHeight={n}`); removed in 5.0.0.
+   * `plotHeight={n}`); removed in 6.0.0.
    */
   height?: number;
   /** Chart margins. */
@@ -1049,7 +1049,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
     if (height !== undefined) {
       warnChartOnce(
         "WaterfallChart.height",
-        '[WaterfallChart] "height" is deprecated and will be removed in 5.0.0. Use "plotHeight".',
+        '[WaterfallChart] "height" is deprecated and will be removed in 6.0.0. Use "plotHeight".',
       );
     }
     // RM-122 data pipeline — differences/runningTotals → subtotals by group →

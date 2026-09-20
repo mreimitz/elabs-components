@@ -121,10 +121,10 @@ test("renderLlmsHub routes to per-package spokes and lists themes + entry points
   assert.match(hub, /npx -y @elabs-ai\/components-cli mcp/);
   assert.match(hub, /pnpm exec brand-ui info/);
   assert.match(hub, /tokens → ui\/icons → data/);
-  // DEFAULT (no siteRoutes): https://elabs-ai.com is still the Storybook project until
-  // RM-105 moves the domain — no /storybook/ route exists there, so the docs-site link is
-  // the bare origin (root IS Storybook) and the registry is the published GitHub Pages one,
-  // never a same-origin `/r` that would 404 (wave-3 ruling 18).
+  // DEFAULT (no siteRoutes): the shape for a Storybook host, whose root IS Storybook and
+  // which has no `/r` — so the docs-site link is the bare origin and the registry is the
+  // authored `homepage`. On the public addresses the bare origin 308-redirects into
+  // `/storybook/`, so this form resolves there too; `siteRoutes` below is the direct one.
   assert.match(
     hub,
     /- Docs site: https:\/\/elabs-ai\.com \(Storybook/,
@@ -133,7 +133,7 @@ test("renderLlmsHub routes to per-package spokes and lists themes + entry points
   assert.doesNotMatch(hub, /elabs-ai\.com\/storybook\//, "no /storybook/ link by default");
   assert.match(
     hub,
-    /npx shadcn@latest add https:\/\/mreimitz\.github\.io\/elabs-components\/r\/<item>\.json/,
+    /npx shadcn@latest add https:\/\/elabs-ai\.com\/r\/<item>\.json/,
     "registry defaults to the published GitHub Pages registry",
   );
   assert.match(
@@ -163,7 +163,15 @@ test("renderLlmsHub takes a siteOrigin override so a preview reports itself", ()
   // Still the default form (no siteRoutes) — a preview origin does not imply that origin
   // serves /storybook/ or /r.
   assert.match(hub, /- Docs site: https:\/\/rm-100\.vercel\.app \(Storybook/);
-  assert.doesNotMatch(hub, /elabs-ai\.com/, "no leftover production origin");
+  // Every URL this file says about ITSELF is the preview's. The one exception is the
+  // registry base: without `siteRoutes` the preview is not claimed to serve `/r`, so the
+  // line names where the registry really is — the production website. Anything else
+  // leaking the production origin is a bug, so assert on each line rather than on the blob.
+  const leaks = hub
+    .split("\n")
+    .filter((line) => line.includes("elabs-ai.com"))
+    .filter((line) => !line.includes("https://elabs-ai.com/r/"));
+  assert.deepEqual(leaks, [], "no leftover production origin outside the registry base");
 });
 
 test("renderLlmsHub combines siteOrigin + siteRoutes for a real preview of the site", () => {

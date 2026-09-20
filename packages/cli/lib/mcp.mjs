@@ -76,14 +76,13 @@ const RELEASE_TAG = `@elabs-ai/components-cli@${SERVER_INFO.version}`;
 const RAW_BASE = `https://raw.githubusercontent.com/mreimitz/elabs-components/${RELEASE_TAG}`;
 
 /**
- * Where `npx shadcn@latest add <url>/<item>.json` resolves TODAY — the published GitHub Pages
- * registry (`registry/registry.json`'s own `homepage`, kept fresh by `pnpm registry:publish`).
+ * Where `npx shadcn@latest add <url>/<item>.json` resolves — the website's own `/r` route,
+ * which is `registry/registry.json`'s `homepage` and the only place the registry is served.
  * A literal, not a runtime read of that file: this module ships inside the published
  * `@elabs-ai/components-cli` package and must work with no monorepo checkout on disk
- * (`npx @elabs-ai/components-cli mcp`), exactly like `DOCS_SITE_URL` above. Once the site's own
- * `/r` route exists (RM-105), a caller with `siteRoutes: true` gets `<siteOrigin>/r` instead.
+ * (`npx @elabs-ai/components-cli mcp`), exactly like `DOCS_SITE_URL` above.
  */
-export const REGISTRY_HOMEPAGE = "https://mreimitz.github.io/elabs-components/r";
+export const REGISTRY_HOMEPAGE = "https://elabs-ai.com/r";
 
 /** Playbook `template` paths are relative to the playbook folder. */
 const PLAYBOOK_DIR = "docs/playbooks";
@@ -97,13 +96,13 @@ const openablePath = (ctx, repoPath) =>
 /**
  * The live Storybook docs page for a component, from the manifest's storyId.
  *
- * Until RM-105 moves the domain, `https://elabs-ai.com` IS the Storybook project — it has no
- * `/storybook/` route, only `/?path=…` (which it answers directly, no redirect needed). So the
- * DEFAULT link, hosted or not, is `<origin>/?path=/docs/<id>`; `ctx.siteRoutes` opts a caller
- * into the SITE's own `/storybook/` route instead, for an instance that actually serves one
- * (`apps/home`, once live). `siteOrigin` defaults to the production site and is overridable per
- * request (hosted only — `ctx.siteOrigin`, sourced from the `SITE_ORIGIN` env var in the hosted
- * HTTP handler) so a preview reports its own origin.
+ * The DEFAULT link, hosted or not, is `<origin>/?path=/docs/<id>` — the form a Storybook host
+ * answers directly. `ctx.siteRoutes` opts a caller into the SITE's own `/storybook/` route
+ * instead, which is what the website's own `/mcp` passes. Both resolve on the public
+ * addresses: the website 308-redirects `/?path=…` into `/storybook/?path=…`, so links emitted
+ * by either branch keep working. `siteOrigin` defaults to the production site and is
+ * overridable per request (hosted only — `ctx.siteOrigin`, sourced from the `SITE_ORIGIN` env
+ * var in the hosted HTTP handler) so a preview reports its own origin.
  *
  * Local (stdio) ignores both `siteOrigin` and `siteRoutes` — always the production `/?path=`
  * link, byte-identical to before RM-100.
@@ -274,8 +273,9 @@ function toolInfo(ctx) {
   ];
   if (ctx.hosted) {
     const origin = ctx.siteOrigin || DOCS_SITE_URL;
-    // Same today-vs-site-routes split as `storyUrl` above: this server has no `/storybook/`
-    // or `/r` of its own until the site's own routes opt in (`ctx.siteRoutes`, RM-105).
+    // Same split as `storyUrl` above: a Storybook host serves neither `/storybook/` nor `/r`,
+    // so only a caller that opts in (`ctx.siteRoutes` — the website's own route) reports them
+    // relative to its own origin.
     const storybookEndpoint = ctx.siteRoutes ? `${origin}/storybook/` : origin;
     const registryEndpoint = ctx.siteRoutes ? `${origin}/r` : REGISTRY_HOMEPAGE;
     lines.push(

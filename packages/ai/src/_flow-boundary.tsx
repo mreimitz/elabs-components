@@ -47,7 +47,7 @@ import type { CanvasProps } from "./canvas";
 import type { ControlsProps } from "./controls";
 import type { NodeProps } from "./node";
 import type { PanelProps } from "./panel";
-import type { ToolbarProps } from "./toolbar";
+import type { NodeToolbarProps } from "./toolbar";
 
 const deleteKeyCode = ["Backspace", "Delete"];
 
@@ -247,7 +247,7 @@ export const Panel = ({ className, ...props }: PanelProps) => (
   />
 );
 
-export const Toolbar = ({ className, ...props }: ToolbarProps) => (
+export const Toolbar = ({ className, ...props }: NodeToolbarProps) => (
   <NodeToolbar
     className={cn("flex items-center gap-1 rounded-sm border bg-background p-1.5", className)}
     position={Position.Bottom}

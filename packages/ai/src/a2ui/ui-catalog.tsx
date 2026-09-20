@@ -75,6 +75,7 @@ import {
   Textarea,
   Timeline,
 } from "@elabs-ai/components-ui";
+import type { AlertTitleProps } from "@elabs-ai/components-ui";
 import type { ComponentType } from "react";
 
 import { A2UI_CATALOG_SCHEMA } from "./core/catalog.generated";
@@ -93,6 +94,17 @@ export type A2uiCatalog = Record<string, A2uiCatalogEntry>;
 // with validated, catalog-shaped props; each binding is a real ui component.
 type AnyComponent = ComponentType<any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- erased at the catalog boundary; props are validated against the schema
 
+/**
+ * `AlertTitle` inside a surface, as a `<div>` rather than its default `<h5>`.
+ *
+ * A surface is rendered into a host page whose heading outline the agent cannot see, so a
+ * fixed `h5` fails axe's `heading-order` under any host with no `h4` above it — which is
+ * most of them. The alert's `role="alert"` announces the title either way, so the heading
+ * adds nothing here; `CardTitle` defaults to `div` for the same reason. A host writing real
+ * code composes `<AlertTitle as="h3">`, where the level is knowable.
+ */
+const SurfaceAlertTitle = (props: AlertTitleProps) => <AlertTitle {...props} as="div" />;
+
 /** The `@elabs-ai/components-ui` bindings, one per non-builtin catalog type. */
 export const UI_CATALOG_BINDINGS: Record<string, AnyComponent> = {
   Accordion,
@@ -101,7 +113,7 @@ export const UI_CATALOG_BINDINGS: Record<string, AnyComponent> = {
   AccordionTrigger,
   Alert,
   AlertDescription,
-  AlertTitle,
+  AlertTitle: SurfaceAlertTitle,
   Avatar,
   AvatarFallback,
   Badge,

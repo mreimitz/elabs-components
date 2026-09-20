@@ -139,7 +139,7 @@ export interface ChoroplethChartProps {
    * ramps. `ChoroplethFeature getFeatureColor` / `fill` still override it.
    *
    * Deprecated form: a NUMBER is the projection scale, kept as an alias of
-   * `projectionScale` (removed in 5.0.0).
+   * `projectionScale` (removed in 6.0.0).
    */
   scale?: number | ChoroplethScaleSpec;
   /** Projection scale. If not provided, auto-calculated based on width (or solved by `fitToData`). */

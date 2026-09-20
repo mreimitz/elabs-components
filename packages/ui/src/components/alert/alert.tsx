@@ -47,14 +47,22 @@ export const Alert = forwardRef<
 export interface AlertTitleProps extends HTMLAttributes<HTMLHeadingElement> {
   /**
    * Render at a different heading level to fit the surrounding document
-   * outline (#329). The visual (`mb-1 font-medium leading-none
-   * tracking-tight`) is identical at every level. @default "h5"
+   * outline (#329), or as a `"div"` to stay out of the outline entirely. The
+   * visual (`mb-1 font-medium leading-none tracking-tight`) is identical for
+   * every value. @default "h5"
+   *
+   * `"div"` is for a title whose depth the author cannot know — content rendered
+   * into someone else's page, such as an A2UI surface, where a fixed `h5` breaks
+   * `heading-order` under any host that has no `h4` above it. The alert's own
+   * `role="alert"` announces the title either way, so nothing is lost; `CardTitle`
+   * makes the same default choice for the same reason.
    */
-  as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  as?: "div" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 }
 
-// Ref type matches the rendered element (`HTMLHeadingElement` for every `as`
-// value) — previously mismatched to `HTMLParagraphElement` (#329).
+// Ref type matches the rendered element (`HTMLHeadingElement` for every heading
+// `as` value, and structurally interchangeable with `div`) — previously
+// mismatched to `HTMLParagraphElement` (#329).
 export const AlertTitle = forwardRef<HTMLHeadingElement, AlertTitleProps>(function AlertTitle(
   { className, as: Tag = "h5", ...props },
   ref,

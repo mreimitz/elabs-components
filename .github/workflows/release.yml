@@ -182,58 +182,6 @@ jobs:
           printf '%s' "$PUBLISHED_PACKAGES" > "$RUNNER_TEMP/published-packages.json"
           pnpm release:smoke --manifest "$RUNNER_TEMP/published-packages.json"
 
-  # ── host the built shadcn registry on GitHub Pages (#31) ───────────────────
-  #
-  # Runs whenever the npm publish itself succeeded — `!cancelled()` opts out of the
-  # default `needs:` gate, so a failure in a post-publish step above (which cannot
-  # undo the publish) does not withhold the registry for packages already out.
-  #
-  # A push made with the default GITHUB_TOKEN does not trigger a Pages "Deploy from
-  # a branch" build, so checkout uses PAGES_DEPLOY_TOKEN and the first step proves it
-  # exists. This does not enable Pages; that is a one-time repo setting (#31).
-  publish-registry:
-    name: Publish the registry to GitHub Pages
-    needs: release
-    if: ${{ !cancelled() && needs.release.outputs.published == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Verify Pages deploy credential
-        env:
-          PAGES_DEPLOY_TOKEN: ${{ secrets.PAGES_DEPLOY_TOKEN }}
-        run: |
-          if [ -z "${PAGES_DEPLOY_TOKEN}" ]; then
-            echo "::error::secrets.PAGES_DEPLOY_TOKEN is empty — a push made with the default" >&2
-            echo "GITHUB_TOKEN does not trigger a GitHub Pages 'Deploy from a branch' build," >&2
-            echo "so the hosted registry would never update. Add a fine-grained PAT (Contents:" >&2
-            echo "Read and write on this repo) as the PAGES_DEPLOY_TOKEN repository secret." >&2
-            exit 1
-          fi
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Build the registry
-        run: pnpm registry:build
-
-      - name: Publish to gh-pages
-        run: pnpm registry:publish
-
   # ── deploy the released Storybook to Vercel production ─────────────────────
   #
   # TWO Vercel projects, one repo (ADR 0038 § operations):
@@ -258,8 +206,10 @@ jobs:
   # from the repo root and does NOT read .gitignore, and without it the deployment's
   # file manifest — one request, 10 MB limit — is rejected outright.
   #
-  # Runs after a successful npm publish (same `!cancelled()` reasoning as
-  # publish-registry), or from a manual run with the `deploy-docs` input.
+  # Runs whenever the npm publish itself succeeded — `!cancelled()` opts out of the
+  # default `needs:` gate, so a failure in a post-publish step of `release` (which
+  # cannot undo the publish) does not withhold the deploy for packages already out.
+  # Also runs from a manual run with the `deploy-docs` input.
   deploy-docs:
     name: Deploy Storybook to Vercel
     needs: release

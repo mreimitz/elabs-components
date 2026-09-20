@@ -152,13 +152,12 @@ are meant to be _copied into your repo_ to edit freely, with `components.json`
 configured:
 
 ```bash
-npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/ai-chat-shell.json
+npx shadcn add https://elabs-ai.com/r/ai-chat-shell.json
 ```
 
-> **Pin to a version** for stability across a later major:
-> `.../r/4.0.0/ai-chat-shell.json` instead of `.../r/latest/...`. The registry is
-> built and published to GitHub Pages on every release — `latest` always tracks
-> the newest release. If you'd
+> `/r` is served by the website and always carries the newest release; it is not
+> versioned, so pin a copied block in your own git history rather than in the URL.
+> `https://elabs-components.vercel.app/r/...` serves the same files. If you'd
 > rather not depend on the hosted copy at all, skip hosting entirely and copy
 > block source straight from `registry/blocks/<name>/`. Most consumers only need
 > the imported packages (steps 1–4); reach for copy-own only for one-off
@@ -227,7 +226,7 @@ new component end-to-end with `/new-component <pkg> <Name> "<purpose>"`; it writ
 | Before writing UI (every session)       | `brand-ui info` / `mcp__brand-ui__info`                                                   | your project |
 | Find a component                        | `brand-ui search <q>`                                                                     | your project |
 | Get a component's real props            | `brand-ui docs <Name>`                                                                    | your project |
-| Copy-own a prototype block              | `npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/<item>.json`         | your project |
+| Copy-own a prototype block              | `npx shadcn add https://elabs-ai.com/r/<item>.json`                                       | your project |
 | Check token/style violations            | `brand-ui audit <path>`                                                                   | your project |
 
 ## Theming basics

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T13:26:47.230Z",
+  "generatedAt": "2026-09-20T15:06:32.507Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -3849,11 +3849,6 @@
           "module": "packages/ai/src/tool.tsx"
         },
         {
-          "name": "Toolbar",
-          "kind": "value",
-          "module": "packages/ai/src/toolbar.tsx"
-        },
-        {
           "name": "ToolContent",
           "kind": "value",
           "module": "packages/ai/src/tool.tsx"
@@ -6074,10 +6069,6 @@
         {
           "name": "TokenUsageTriggerProps",
           "module": "packages/ai/src/token-usage.tsx"
-        },
-        {
-          "name": "ToolbarProps",
-          "module": "packages/ai/src/toolbar.tsx"
         },
         {
           "name": "ToolContentProps",
@@ -11450,12 +11441,6 @@
           ],
           "props": []
         },
-        "Toolbar": {
-          "extends": [
-            "NodeToolbarProps"
-          ],
-          "props": []
-        },
         "ToolContent": {
           "extends": [
             "ComponentProps<typeof CollapsibleContent>"
@@ -13646,32 +13631,6 @@
             "Dumping raw JSON into ToolOutput with no empty state — a tool that returned nothing still needs a rendered result."
           ]
         },
-        "Toolbar": {
-          "purpose": "A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls.",
-          "category": "action",
-          "relationships": {
-            "contains": [
-              "ToolbarButton",
-              "ToolbarSeparator",
-              "ToolbarToggleGroup",
-              "ToolbarToggleItem"
-            ],
-            "pairsWith": [
-              "Button",
-              "Toggle",
-              "Tooltip"
-            ],
-            "avoidNextTo": [
-              "ViewToolbar"
-            ]
-          },
-          "antiPatterns": [
-            "Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.",
-            "Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.",
-            "Putting a text input or a link inside it — the roving tabindex swallows the arrow keys those controls need.",
-            "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs-ai/components-ai."
-          ]
-        },
         "ToolResultCard": {
           "purpose": "The artifact a tool PRODUCED, presented as the headline — raised surface, no border, children carry the payload. Its header row is title | actions | status, where actions are scoped to the whole artifact (expand, download, open).",
           "category": "ai",
@@ -13820,7 +13779,6 @@
         "Suggestions": "ai-suggestion--docs",
         "TestResults": "ai-testresults--docs",
         "ToolResultCard": "ai-toolresultcard--docs",
-        "Toolbar": "layout-toolbar--docs",
         "TurnStatus": "ai-turnstatus--docs"
       }
     },
@@ -18368,7 +18326,7 @@
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `plotHeight`. Removed in 5.0.0. Until then it is read as `plotHeight` and logs one development warning per page."
+              "description": "@deprecated Use `plotHeight`. Removed in 6.0.0. Until then it is read as `plotHeight` and logs one development warning per page."
             },
             {
               "name": "loading",
@@ -19574,7 +19532,7 @@
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `plotHeight` — it sets the chart's own height, and the title, legend and notes are added around it. `height={n}` is now an alias for `plotHeight={n}` (it no longer fixes the body); removed in 5.0.0."
+              "description": "@deprecated Use `plotHeight` — it sets the chart's own height, and the title, legend and notes are added around it. `height={n}` is now an alias for `plotHeight={n}` (it no longer fixes the body); removed in 6.0.0."
             },
             {
               "name": "loading",
@@ -23855,7 +23813,7 @@
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `plotHeight` (`height={n}` is an alias for `plotHeight={n}`); removed in 5.0.0."
+              "description": "@deprecated Use `plotHeight` (`height={n}` is an alias for `plotHeight={n}`); removed in 6.0.0."
             },
             {
               "name": "margin",
@@ -24034,12 +23992,6 @@
               "optional": true,
               "type": "AxisLabelPlacement",
               "description": "`\"outside\"` (default) — tick labels in the margin beside the plot; `\"inside\"` — labels sit just above their grid line inside the plot."
-            },
-            {
-              "name": "formatLargeNumbers",
-              "optional": true,
-              "type": "boolean",
-              "description": "@deprecated Superseded by `valueFormat` (see `charts/value-format.ts`), which knows about millions as well as thousands — the old implementation rendered 1 500 000 as `1500k`. `false` still works and is equivalent to `valueFormat=\"number\"`; `true` is now the default behaviour and can be dropped. Removed in the next major (`docs/DEPRECATION.md` §1)."
             },
             {
               "name": "valueFormat",

@@ -49,17 +49,13 @@ Merging the Version PR leaves no pending changesets, so the next run publishes:
 5. **`pnpm release:smoke`** — installs every published package **from the registry** in a
    scratch dir, asserts each `exports` entry is in the tarball, runs the published CLI
    (`info --json`, `docs Button`) and checks the marketplace pointer on the default branch;
-6. **`publish-registry`** — builds the shadcn registry and pushes it to `gh-pages`
-   (`r/<version>/` + `r/latest/`). Needs `secrets.PAGES_DEPLOY_TOKEN`: a push with the
-   default `GITHUB_TOKEN` does not trigger a Pages build. Runs whenever the npm publish
-   succeeded, even if a later step of the release job failed.
-7. **`deploy-docs`** — deploys **Storybook** to its own Vercel project
+6. **`deploy-docs`** — deploys **Storybook** to its own Vercel project
    (`storybook.elabs-ai.com`) from the newest `@elabs-ai/components-cli@<version>` tag,
    then checks that its `/mcp` reports that version and **crawls every story the
    deployed Storybook serves** (`node scripts/release-smoke.mjs --stories-only`),
    failing on a visible error overlay, an uncaught page error, or a chart that measured
    to nothing.
-8. **`deploy-home`** — deploys the **website** to the project that owns the public
+7. **`deploy-home`** — deploys the **website** to the project that owns the public
    addresses, then runs `node scripts/site-smoke.mjs` against **both**
    `https://elabs-components.vercel.app` and `https://elabs-ai.com`: every path a
    consumer or an agent opens, on each address, plus 30 sampled stories crawled through
@@ -76,6 +72,11 @@ Merging the Version PR leaves no pending changesets, so the next run publishes:
    Which project is which, and what each address serves, is the operations table in
    [ADR 0038](./ADR/0038-home-site-in-apps-home.md) — including why `.vercelignore` at the
    repo root is what makes a CLI deploy possible at all.
+
+   This job also ships the **shadcn registry**: the website's build copies
+   `registry/__output` into `public/r/`, so `/r/registry.json` and `/r/<item>.json` are
+   part of the site. There is no separate registry publish — 5.0.0 removed the `gh-pages`
+   one (`docs/REGISTRY_GUIDELINES.md` § Distribution).
 
 Watch with `gh run list --workflow=Release`. Confirm: `npm view @elabs-ai/components-ui@<v>`,
 or re-run the smoke from a checkout: `GITHUB_REPOSITORY=mreimitz/elabs-components pnpm release:smoke`.

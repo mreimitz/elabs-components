@@ -17,7 +17,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
 | `@elabs-ai/components-ui` | packages/ui | 405 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 18 | 1 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
-| `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
+| `@elabs-ai/components-ai` | packages/ai | 448 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 33 | 7 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 229 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
@@ -977,7 +977,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TokenUsageReasoning | component |  | `@elabs-ai/components-ai` |  |
 | TokenUsageTrigger | component |  | `@elabs-ai/components-ai` |  |
 | Tool | component |  | `@elabs-ai/components-ai` | Renders one AI SDK ToolUIPart — header (type + state), the input, and the output or error. |
-| Toolbar | component |  | `@elabs-ai/components-ai` | A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls. |
 | ToolContent | component |  | `@elabs-ai/components-ai` |  |
 | ToolDetails | component |  | `@elabs-ai/components-ai` |  |
 | ToolHeader | component |  | `@elabs-ai/components-ai` |  |

@@ -20,7 +20,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { judge, sampleIds, siteChecks } from "./site-smoke.mjs";
+import { decodeTarget, judge, sampleIds, siteChecks } from "./site-smoke.mjs";
 
 const BASE = "https://elabs-ai.com";
 
@@ -101,6 +101,26 @@ test("/storybook/ passes on the manager bundle", () => {
     body: '<script type="module" src="./sb-manager/runtime.js"></script>',
   };
   assert.deepEqual(judge(c, seen), []);
+});
+
+test("a percent-encoded redirect target is the same target", () => {
+  // Next answers `?path=/docs/core-button--docs` as `?path=%2Fdocs%2Fcore-button--docs`.
+  // Asserting the raw bytes failed a redirect that works, on a live deployment.
+  const c = check("a legacy ?path= deep link");
+  const encoded = { status: 308, location: "/storybook/?path=%2Fdocs%2Fcore-button--docs" };
+  assert.deepEqual(judge(c, encoded), []);
+  assert.equal(
+    decodeTarget("/storybook/?path=%2Fdocs%2Fcore-button--docs"),
+    decodeTarget("https://elabs-ai.com/storybook/?path=/docs/core-button--docs"),
+  );
+});
+
+test("decodeTarget still separates two genuinely different targets", () => {
+  assert.notEqual(
+    decodeTarget("/storybook/?path=/docs/core-button--docs"),
+    decodeTarget("/storybook/?path=/docs/core-card--docs"),
+  );
+  assert.notEqual(decodeTarget("/storybook/"), decodeTarget("/storybook/iframe.html"));
 });
 
 test("a redirect is judged on path and query, whichever form Location takes", () => {

@@ -129,16 +129,16 @@ test("hosted search returns release-pinned raw URLs, not repo paths", async (t) 
   assert.doesNotMatch(text, /^ {4}templates\//m);
 });
 
-test("hosted docs prints the import line and the /?path= story URL (default — elabs-ai.com has no /storybook/ yet, wave-3 ruling 18)", async (t) => {
+test("hosted docs prints the import line and the /?path= story URL (the default, Storybook-host shape)", async (t) => {
   if (!manifest) return t.skip("not inside the brand-ui monorepo");
   const body = await (
     await post(rpc("tools/call", { name: "docs", arguments: { component: "Button" } }))
   ).json();
   const text = body.result.content[0].text;
   assert.match(text, /^import: import \{ Button \} from "@elabs-ai\/components-ui";$/m);
-  // The default (no `siteRoutes`) handler is what apps/docs/api/mcp.mjs runs at
-  // https://elabs-ai.com/mcp today — that site is still the Storybook project, answered
-  // directly at `/?path=`, not a `/storybook/` route that doesn't exist there.
+  // The default (no `siteRoutes`) handler is what apps/docs/api/mcp.mjs runs, on the
+  // Storybook host — answered directly at `/?path=`, not a `/storybook/` route that host
+  // does not have. The website's own /mcp passes `siteRoutes: true` (test below).
   assert.match(text, /^story: https:\/\/elabs-ai\.com\/\?path=\/docs\/core-button--docs$/m);
 });
 
@@ -172,12 +172,12 @@ test("info hands a fresh session the whole routine and the four DEFAULT hosted e
   assert.match(text, /the routine:/);
   for (const step of ["info", "search", "docs", "build", "audit"])
     assert.match(text, new RegExp(`^ {2}\\d\\. ${step}`, "m"), `routine names ${step}`);
-  // No `/storybook/` and no `/r` at https://elabs-ai.com today (wave-3 ruling 18): storybook
-  // falls back to the bare origin (root IS Storybook there) and registry to the published
-  // GitHub Pages registry, not a site route that would 404.
+  // Without `siteRoutes` the reported storybook endpoint is the bare origin (the shape a
+  // Storybook host serves) and the registry is the authored `homepage` rather than a route
+  // this server claims for itself.
   assert.match(
     text,
-    /^endpoints: mcp https:\/\/elabs-ai\.com\/mcp · llms https:\/\/elabs-ai\.com\/llms\.txt · storybook https:\/\/elabs-ai\.com · registry https:\/\/mreimitz\.github\.io\/elabs-components\/r$/m,
+    /^endpoints: mcp https:\/\/elabs-ai\.com\/mcp · llms https:\/\/elabs-ai\.com\/llms\.txt · storybook https:\/\/elabs-ai\.com · registry https:\/\/elabs-ai\.com\/r$/m,
   );
 });
 

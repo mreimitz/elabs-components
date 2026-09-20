@@ -329,3 +329,12 @@ tag. Moving an address between projects is never part of a rollback.
 `storybook.elabs-ai.com/mcp`. It is what `deploy-docs` smokes to prove the deployment that just
 went live is built from the release tag. The MCP endpoint consumers are told to add is the
 website's.
+
+**No longer duplicated:** the shadcn registry. It used to be published twice — once into
+`apps/home/public/r/` by the site build, once to a `gh-pages` branch under `/r/<version>/` and
+`/r/latest/` by a `publish-registry` release job. The second copy was never reachable (the Pages
+source was never switched to that branch and its deploy credential was never added, so every
+`mreimitz.github.io/elabs-components/r/…` URL answered 404), and two deploys answering one
+question is the failure this whole ADR is about. 5.0.0 removed the job, the publisher script and
+the versioned URL shape; `registry/registry.items.json`'s `homepage` now names
+`https://elabs-ai.com/r`, and `docs/REGISTRY_GUIDELINES.md` § Distribution is the reference.

@@ -42,7 +42,7 @@
     "map": "npx -y @elabs-ai/components-cli map scan.json --out migration"
   },
   "audit": "npx -y @elabs-ai/components-cli audit src --strict",
-  "registryHomepage": "https://mreimitz.github.io/elabs-components/r",
+  "registryHomepage": "https://elabs-ai.com/r",
   "perArchetype": [
     {
       "archetype": "ai-assistant",

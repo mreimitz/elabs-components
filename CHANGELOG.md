@@ -1,6 +1,190 @@
 # Changelog
 
-## Unreleased
+## v5.0.0 — 2026-09-20
+
+### ⚠️ BREAKING: two deprecated exports are removed
+
+Both were deprecated during 4.x and are removed here, on the schedule
+[`docs/DEPRECATION.md`](./docs/DEPRECATION.md) sets: deprecate in a minor, remove
+in the **next** major, never in the same release. Both are prop- or type-level, so
+TypeScript names every call site.
+
+**Migrating a consumer:**
+
+1. **`YAxis`'s `formatLargeNumbers` is gone** — use `valueFormat`.
+   - `formatLargeNumbers={false}` → `valueFormat="number"` (print every digit).
+   - `formatLargeNumbers` / `formatLargeNumbers={true}` → **delete it.** Compact is
+     the default, so `1.5M` is already what you get. The old boolean only knew about
+     thousands and rendered 1 500 000 as `1500k`.
+2. **`@elabs-ai/components-ai`'s `Toolbar` and `ToolbarProps` are gone** — rename the
+   import to `NodeToolbar` / `NodeToolbarProps`. They were aliases of exactly those.
+   The rename happened because `Toolbar` is the WAI-ARIA toolbar in
+   `@elabs-ai/components-ui`, and two different components under one name in one
+   import line is a trap.
+3. **The copy-own registry has one base URL, and it is the website's.** Install blocks
+   from `https://elabs-ai.com/r/<item>.json`. If your `components.json` registered the
+   old GitHub Pages base (`.../r/latest/{name}.json`), point it at
+   `https://elabs-ai.com/r/{name}.json`. No working URL changed — the Pages copy was
+   never reachable, since its deploy credential and the Pages source switch were never
+   added — but the documented one did. `/r` is not versioned: it serves the deployed
+   release, and the site only ever deploys a released version.
+
+Nothing is deprecated **and** removed in this release. `height` on `ChartFrame`,
+`AutoChart` and `WaterfallChart` (use `plotHeight`) and the numeric `scale` on
+`ChoroplethChart` (use `projectionScale`) are deprecated here, still work, warn once
+per page in development, and are removed in the next major.
+
+### ⚠️ Visible default changes — nothing to rename, but the picture moves
+
+Each of these is an intentional change to what a chart looks like with the same code.
+Every one has a one-prop way back.
+
+1. **A framed chart grows with its width.** An 800 px wide `ChartFrame` draws a ~400 px
+   plot instead of a fixed 260 px body, and `plotHeight` now sizes the _drawing area_
+   while the title, legend, notes and source row stack around it. Pass
+   `plotHeight={260}` for the old look. Dashboard tiles (`chrome="tile"`) are unchanged.
+2. **Multi-series line, area and composed charts label their series at the line's end**
+   instead of relying on a legend, when a series has a real display name (a `name` that
+   is set and differs from its `dataKey`). The plot gives up the right margin the longest
+   name needs; below 480 px, or when a name would take more than a third of the plot, the
+   names move into a key row above. Single-series charts and series known only by their
+   column name are untouched. Back out with `seriesLabel="none"` on the series, or
+   `labels: { series: "none" }` in an `AutoChart` spec.
+3. **`AutoChart`'s legend for `bar`, `pie`, `scatter` and `treemap` moved above the plot.**
+   It was a wrapping list _below_ the plot, outside the measured box, with square swatches;
+   it is now a real `ChartLegend` _inside_ the box and _above_ the plot, with round dots,
+   and it hides at the `narrow` tier or density `sm`, where the old list stayed. Which
+   series are listed, their order, their colours and the accessible name are unchanged.
+   No flag restores the old list: set `legend: false` to drop it, or drop the spec's
+   `legend` and compose `<ChartLegend layout="row" hideAtDensity={[]}>` under the chart.
+4. **`AutoChart` infers a different type in two cases** (only when you omit `type`; an
+   explicit `type` always wins). A share table with six or more categories and no
+   `groupSmall` now infers `bar` rather than `pie` — a pie is capped at five wedges, counted
+   after `groupSmall` folds its "Other" slice; add `groupSmall: { max: 4 }` or pass
+   `type: "pie"`. And `area` is now inferred for two or more temporal series that compose
+   one total (`stacked: "percent"`, or values summing to ~100 per row); pass `type: "line"`
+   to keep the old picture. No published story's inferred type changes.
+5. **A `ChartFrame` image export is the whole frame.** Download SVG/PNG now draws the title,
+   description, axis and legend text, notes and footer at the positions and colours shown on
+   screen, rather than the bare plot `<svg>`. `exportOptions={{ plain: true }}` gives the old
+   plot-only file.
+6. **`CardHeader` lays a `CardAction` out top-right** — it rendered below the description.
+
+### The public addresses are rearranged (ADR 0038)
+
+The website now owns `https://elabs-ai.com/` and `https://elabs-components.vercel.app/`,
+and both addresses behave identically:
+
+| Path                                 | Served by                                 |
+| ------------------------------------ | ----------------------------------------- |
+| `/`                                  | the website (`apps/home`)                 |
+| `/storybook/`                        | Storybook, rewritten from its own project |
+| `/mcp`                               | the hosted MCP server                     |
+| `/r/…`                               | the shadcn registry                       |
+| `/llms.txt`, `/.well-known/mcp.json` | the agent entry points                    |
+
+Storybook keeps a stable address of its own at `https://storybook.elabs-ai.com`. Older
+shared links keep working: `/?path=…` and `/iframe.html` redirect into `/storybook/`.
+The registry's second, unreachable GitHub Pages copy is gone, and with it the release
+job that pushed it. `node scripts/site-smoke.mjs <base-url>` proves a deploy: every path
+above, on each address, plus sampled stories crawled through the rewrite.
+
+### Charts: the publication-grade wave
+
+The chart package went from "renders the data" to "prints a defensible figure". Highlights,
+each opt-in unless listed above:
+
+- **Axes, format and labels.** `YAxis` takes `domain`, `scale` (`linear`/`log`/`sqrt`),
+  `ticks`, `tickCount`, `title` and `titlePlacement`; value formatting accepts an object spec
+  (`valueFormat={{ decimals: 1, abbreviate: true, sign: "always" }}`) rather than only the
+  four preset strings; a label engine adds `seriesLabel`, `valueLabels`, `Scatter` point
+  labels, `Bar` `showValues`, a collision solver, and a generated accessible description
+  for a labelled chart with no description of its own.
+- **Annotations and reference marks.** `annotations` on line, area, bar, composed, dumbbell
+  and waterfall charts; `PieChart` reference-ring labels now ride dotted leaders outside the
+  plot instead of colliding with slices.
+- **Per-family depth.** `BarChart` gains `stacked="percent"` and the full bar/column
+  vocabulary; `Line`/`Area` gain publication-grade richness; `PieChart` gains slice labels,
+  small-slice grouping, sort order and a half-donut; `Scatter` gains `sizeKey`/`sizeRange`
+  (area-scaled bubbles); `DumbbellChart` gains arrow and dot variants with sort, group and
+  delta controls; `WaterfallChart` reads real financial-bridge data (`dataFormat="runningTotals"`);
+  `TreemapChart` gains `showValues`; `HeatmapChart` renders its empty state inside the plot box.
+- **Composition.** `ChartMultiples` (small multiples, one chart per facet value);
+  dual-axis `ComposedChart` via `yAxes={{ align, proportional, zero }}`; a legend engine with
+  real toggle interactivity (`hiddenKeys`/`onToggleKey`); three `ChartTooltip` presets
+  (`rows`, the unchanged default; `table`, one column per series; `inline`, the value painted
+  at the mark with no box), plus touch pinning and nearest-series focus.
+- **Editorial chrome.** `ChartFrame` takes `notes`, a `byline`, a linked `source`, footer
+  `actions`, `altText` and `InlineChip` (a swatch in your prose that borrows a series colour).
+- **Responsive by measurement.** Every chart measures its own container and publishes
+  `data-chart-breakpoint` (`narrow` < 480 px, `medium` < 768 px, else `wide`); at `narrow` it
+  takes the `sm` density unless you say otherwise. `useChartBreakpoint()` reads it.
+- **Selection guidance.** `brand-ui chart-for` follows the editorial rules it documents, every
+  `ChartSpec` field carries a "when to use" paragraph, and five River recipes ship as stories.
+- **The dashboard sheet closes out** under `@elabs-ai/components-charts/dashboard`: a
+  spec-driven, drag-arranged sheet surface with its own test helpers and JSON schema.
+
+### Data, maps, flow and process
+
+- **`DataTable` gains a presentation layer**, all opt-in per column through `meta` or per
+  table: in-cell visuals (bars, sparklines, deltas, thematic fills), and pinned rows that are
+  placed correctly for screen readers in a virtualised table.
+- **Plan maps.** A non-geographic map: put a floor plan, a factory layout or a carriage in as
+  the map itself and draw on it in the plan's own units. `useTokenColor` is exported, because
+  WebGL cannot read a CSS variable and a consumer painting its own shapes needs the same seam
+  the package uses.
+- **Locator furniture** for editorial maps: `MapCanvas` publishes `data-map-breakpoint`, and
+  the map controls and loading state read their microcopy through `t()`.
+- **Thematic encoding, shared.** `colorScaleFor(values, spec)` in `@elabs-ai/components-ui` is
+  one pure value-to-colour decision, used by charts, the data table and maps alike.
+- **Flow** renders a weighted edge's live replay state on the edge itself (`FlowEdgeTokens`).
+- **`@elabs-ai/components-process`** ships its full surface: `ProcessMap` draws a
+  directly-follows graph from an event log, with the analysis vocabulary around it.
+
+### Agents: A2UI, retrieval and a scaffold that builds
+
+- **A2UI — the generative-UI path — ships.** `<A2uiSurface>` takes an agent's JSON description
+  of a screen (`{ "a2ui": "1", "root": … }` of catalog types), validates it against the catalog
+  and renders it with the real components; `on.<event>` bindings reach the host's `onAction`,
+  streaming prefixes build up node by node, and a settled invalid surface reports every problem
+  with its path. The shipped catalog is generated from the manifest; apps extend it with
+  `createA2uiCatalog` / `defineA2uiType`. Charts ship their half. The CLI gains
+  `brand-ui a2ui catalog | schema | validate | example`, the MCP server an `a2ui` tool, and the
+  JSON Schema publishes as `@elabs-ai/components-ai/a2ui/schema.json`.
+- **Retrieval that ranks.** `search` (CLI + MCP) is word-aware and ranked instead of a substring
+  filter, and `create` writes a scaffolded app that builds on the first try.
+- **A smaller first read.** `create` writes a short `brand-ui-context.md` — the routine, then one
+  name per component for the packages the app actually uses — so an agent's opening read is small.
+
+### UI
+
+`Meter` (a word-sized read-only quantity with the ARIA `meter` role), `CommandChip` (an install
+command with a per-host menu), `SurfaceTour`, `SpecPlayground`, `TokenSpotlight`, and a
+`ChatShell` whose transcript runs the full height and scrolls behind a floating composer.
+`GatesBand` collapses each category into a native disclosure instead of dumping every rule.
+Theme seams for brand fidelity: themes can reshape controls, tables, links, curtains, icons and
+headers, and every new token defaults to today's rendering, so existing themes look the same.
+
+### Fixed
+
+- **Charts** — `ChartFrame` no longer keeps a stale keyboard tab stop on a chart that stopped
+  scrolling; `AreaChart` streamgraph bands no longer fade at their own lower edge; a long
+  `source` string is readable instead of silently truncated; `XAxis`'s `periodTicks` long tick
+  lands on a real calendar boundary; six more chart families join the high-decoration pattern
+  channel; every keyboard datapoint target has a real accessible name without `datapointLabel`.
+- **UI** — `Command`'s inline list no longer scrolls the whole page; `SurfaceTour` no longer
+  makes the page scroll sideways at full viewport width; `Persona` no longer freezes the tab in
+  a React development build; a hovered sidebar row's muted meta line clears contrast in the
+  light theme; app-shell headers share one height in every theme, and `NavUser` sits in the
+  footer.
+- **Dashboard** — closing a tile's full-screen view always returns keyboard focus to the tile.
+- **Accessibility** — fixes across the screens the generative-surface merge brought in, behind
+  the blocking axe gate; `AccordionTrigger` takes `headingLevel`.
+- **CLI** — `docs --brief` is never longer than the full card; `create` no longer prints its
+  usage when the folder is named after its template; created apps download less and install
+  cleanly.
+
+## v4.2.0 — 2026-09-16
 
 ### Fixed: security, streaming performance, form controls and consistency (2026-09-15 review)
 

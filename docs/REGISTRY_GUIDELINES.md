@@ -39,36 +39,31 @@ array; each item has `$schema`, `name`, `type`, `title`, `description`,
 4. (Optional) `pnpm dlx shadcn@latest build registry/registry.json --output registry/__output`
    to emit the per-item JSON for static hosting.
 
-## Distribution: hosted on GitHub Pages, versioned (#31)
+## Distribution: served by the website at `/r`
 
 The registry **is** served at a real URL. `registry/registry.items.json` sets
-`homepage` to `https://mreimitz.github.io/elabs-components/r` — the base every
-built item resolves under — and `.github/workflows/release.yml`'s
-`publish-registry` job builds it (`pnpm registry:build`) and pushes the output
-to the repo's `gh-pages` branch (`pnpm registry:publish`, i.e.
-`scripts/publish-registry-pages.mjs`) on every version tag, right after that
-version's npm packages publish successfully.
+`homepage` to `https://elabs-ai.com/r` — the base every built item resolves
+under — and the website's own build puts the items there:
+`pnpm registry:build` emits `registry/__output/*.json`, and
+`apps/home/scripts/copy-registry-output.mjs` copies that into
+`apps/home/public/r/`, which Next serves as static files. So a release of the
+website ships the registry; there is no second deploy to keep in step.
 
-The path is **versioned**, so a block pinned to a version keeps resolving
-across a later major:
+Both public addresses serve it identically:
 
 ```
-https://mreimitz.github.io/elabs-components/r/<version>/<item>.json   # immutable per release
-https://mreimitz.github.io/elabs-components/r/latest/<item>.json      # moving alias
+https://elabs-ai.com/r/registry.json               # the index
+https://elabs-ai.com/r/<item>.json                 # one item
+https://elabs-components.vercel.app/r/<item>.json   # the same files
 ```
-
-So, once the maintainer has enabled GitHub Pages for this repo (**Settings →
-Pages → "Deploy from a branch" → `gh-pages` → `/(root)`** — that switch is a
-manual, outward-facing step this workflow deliberately does not flip):
 
 ```sh
-npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/data-table.json
-# or pinned to a version:
-npx shadcn add https://mreimitz.github.io/elabs-components/r/4.0.0/data-table.json
+npx shadcn add https://elabs-ai.com/r/data-table.json
 ```
 
-No automated check watches the published URLs; once Pages is enabled and a
-version has shipped, spot-check an item with the `npx shadcn add` command above.
+The path is **not** versioned: `/r` always serves the currently deployed
+release, and the site only ever deploys a released version. A consumer that
+needs an exact past revision pins it in git, not in the URL.
 
 The alternative that needs no hosting at all still works: copy the item's
 source straight out of `registry/blocks/<name>/` into the consuming repo and
@@ -94,16 +89,20 @@ fix up import aliases.
 - Stable, broadly-shared, centrally-updated → **package** (`@elabs-ai/components-*`).
 - Prototype-specific, per-app customization expected → **registry** block.
 
-## The registry IS published by a release (#106, superseded by #31)
+## The registry IS published by a release (#106, superseded)
 
-`pnpm check --rule registry-validate` runs on every PR, and — since #31 —
-`.github/workflows/release.yml` also runs `pnpm registry:build` and publishes
-the output to GitHub Pages via its `publish-registry` job (see "Distribution"
+`pnpm check --rule registry-validate` runs on every PR, and a release deploys
+the website, which serves the built registry at `/r` (see "Distribution"
 above). #106 originally documented the opposite as a **deliberate** decision,
 reasoned from "there is no hosted consumer path" — that premise stopped being
-true once GitHub Pages became reachable for this hosting shape, so the
-decision was reversed rather than left to rot as stale prose.
+true, so the decision was reversed rather than left to rot as stale prose.
 
-A release now moves **three** distribution surfaces in lockstep: the npm
-packages, the plugin marketplace pointer, and the hosted registry — each keyed
-to the same tagged version.
+For a while the registry was ALSO pushed to a `gh-pages` branch under a
+versioned path. That copy was never reachable — the Pages source was never
+switched and its deploy credential was never added, so every one of those URLs
+answered 404 — and it was a second deploy answering a question the website
+already answers. 5.0.0 removed it; `/r` is the one place the registry lives.
+
+A release moves **three** distribution surfaces in lockstep: the npm packages,
+the plugin marketplace pointer, and the website (which carries the registry and
+the hosted MCP) — each keyed to the same tagged version.

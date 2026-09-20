@@ -26,9 +26,9 @@ const registryPath = resolve(root, "registry/registry.json");
 // ---------------------------------------------------------------------------
 // `homepage` — OPTIONAL, but a real resolvable URL when present (#264, #31)
 // ---------------------------------------------------------------------------
-// The registry IS hosted since #31: `registry/registry.items.json` sets
-// `homepage` to the real GitHub Pages base URL, published on every release by
-// `scripts/publish-registry-pages.mjs` (see docs/REGISTRY_GUIDELINES.md). A
+// The registry IS hosted: `registry/registry.items.json` sets `homepage` to the
+// website's own `/r` route, which the site build fills from `registry/__output`
+// (see docs/REGISTRY_GUIDELINES.md). A
 // fork with no public host may still omit `homepage` (a private/internal
 // clone has nothing to name), so this stays a validator of SHAPE — absent is
 // fine, present-but-placeholder/non-https/empty is not — rather than a hard
