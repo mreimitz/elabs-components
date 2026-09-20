@@ -66,6 +66,16 @@ const SANITIZE = [
     "packages/charts/src/charts/area-chart.stories.tsx",
     "the @elabs-ai/components-charts area-chart example",
   ],
+  // The dashboard playbook cites the subpath's own README and its worked driver example, both
+  // of which live in the source tree only — a consumer has the published subpath instead.
+  [
+    "packages/charts/src/dashboard/examples/engine-driver/",
+    "the engine-driver example in @elabs-ai/components-charts/dashboard",
+  ],
+  ["packages/charts/src/dashboard/README.md", "the @elabs-ai/components-charts/dashboard README"],
+  // Specific before the generic `.claude/rules/` rewrite below, or this one reads as
+  // "the brand-ui rulesdashboard.md".
+  [".claude/rules/dashboard.md", "the brand-ui dashboard rule"],
   // Generator-provenance notes in the generated SKILL.md prose ("edit the source,
   // not here") — meaningless in a vendored kit; rewrite to consumer-neutral text.
   ["packages/cli/lib/render-docs.mjs", "the brand-ui doc generator"],
