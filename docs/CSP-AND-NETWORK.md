@@ -65,7 +65,8 @@ the `OpenIn*` links place the prompt text in the URL query string, so user
 content leaves your perimeter on click. Each provider is a separately exported
 component — the mitigation is not to render it.
 
-`www.npmjs.com`, `www.openstreetmap.org`, `carto.com` and `github.com` are
+`www.npmjs.com`, `www.openstreetmap.org`, `carto.com`, `www.naturalearthdata.com`
+and `github.com` are
 `AttributionPanel`'s links. They carry **no** user content — each is a fixed
 licence/provenance URL — so there is no egress concern beyond the click itself.
 `github.com` covers every adapted/vendored upstream and every vendored font,
