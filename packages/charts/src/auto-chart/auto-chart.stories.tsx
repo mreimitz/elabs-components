@@ -170,6 +170,23 @@ export const Scatter: Story = {
     } satisfies ChartSpec,
     height: 280,
   },
+  play: async ({ canvasElement }) => {
+    // RM-127 (a-4): the rows are NOT sorted by spend, so tick rows chosen in
+    // data order used to land two labels ~27 px apart and print through each
+    // other. Ticks are picked by painted x now — no two label boxes may touch.
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-slot="x-axis"] span').length).toBeGreaterThan(1),
+    );
+    const boxes = [...canvasElement.querySelectorAll('[data-slot="x-axis"] span')]
+      .map((node) => node.getBoundingClientRect())
+      .sort((a, b) => a.left - b.left);
+    for (let i = 1; i < boxes.length; i++) {
+      const previous = boxes[i - 1];
+      const current = boxes[i];
+      if (!previous || !current) continue;
+      expect(current.left).toBeGreaterThan(previous.right);
+    }
+  },
 };
 
 /** Radar chart comparing two teams across five metrics. */

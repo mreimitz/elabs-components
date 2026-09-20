@@ -144,7 +144,7 @@ export function YAxis(props: YAxisProps) {
   // RM-117: hand the chart's series colours to an enclosing ChartFrame
   // (read by InlineChip). No visual change; a no-op outside a frame.
   useChartFrameSeriesBridge();
-  const { containerRef } = useChartStable();
+  const { containerRef, xScaleType } = useChartStable();
   const { density } = useChartConfig();
   const dualAxis = useContext(DualAxisContext);
   const [mounted, setMounted] = useState(false);
@@ -154,10 +154,21 @@ export function YAxis(props: YAxisProps) {
   }, []);
 
   const container = containerRef.current;
+  // RM-127 (a-4): RM-072's trade reads "drop the VALUE axis, the CATEGORY axis
+  // still says what each mark is". A numeric x (`xScaleType: "linear"` — a
+  // scatter of spend against conversions) has no category axis: both axes are
+  // quantitative, so dropping this one leaves the plot with no readable scale
+  // in either direction. Such a chart keeps its value axis at `sm`, exactly as
+  // a dual-axis chart does.
+  const quantitativeX = xScaleType === "linear";
   // RM-072: the value axis is the first furniture a small tile drops — `sm`
   // keeps only the category axis, `xs` keeps none.
   // RM-121: a dual-axis chart keeps both value axes at `sm` (see `DualAxisContext`).
-  if (!(mounted && container) || density === "xs" || (density === "sm" && !dualAxis)) {
+  if (
+    !(mounted && container) ||
+    density === "xs" ||
+    (density === "sm" && !dualAxis && !quantitativeX)
+  ) {
     return null;
   }
 

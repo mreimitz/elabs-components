@@ -540,6 +540,30 @@ export function selectEvenlySpacedIndices(
 
   const resolveXPx = options?.resolveXPx ?? ((index: number) => index);
 
+  // RM-127 (a-4): the layout search below walks indices in DATA order and
+  // scores the PIXEL gap between neighbours, which only reads as "evenly
+  // spaced on screen" while data order matches x order. That holds for a time
+  // or band axis (both are built in order) but not for a numeric x
+  // (`xScaleType: "linear"`, e.g. a scatter), where the rows arrive in
+  // whatever order the caller has them — there `resolveXPx(next) -
+  // resolveXPx(prev)` goes negative and the winning layout can put two ticks a
+  // few pixels apart. Rank the rows by their painted x first, search in that
+  // order, then map the winners back to their real indices. Sorted input is
+  // the identity permutation, so every existing axis is byte-identical.
+  const byPosition = Array.from({ length }, (_, index) => index).sort(
+    (a, b) => resolveXPx(a) - resolveXPx(b),
+  );
+  if (byPosition.some((index, rank) => index !== rank)) {
+    const data = options?.data;
+    const dateLabels = options?.dateLabels;
+    return selectEvenlySpacedIndices(length, targetCount, {
+      ...options,
+      data: data ? byPosition.map((index) => data[index] ?? {}) : undefined,
+      dateLabels: dateLabels ? byPosition.map((index) => dateLabels[index] ?? "") : undefined,
+      resolveXPx: (rank) => resolveXPx(byPosition[rank] ?? rank),
+    }).map((rank) => byPosition[rank] ?? rank);
+  }
+
   const minCount = Math.max(2, targetCount - 1);
   const maxCount = Math.min(length, targetCount + 1);
 

@@ -51,7 +51,7 @@ import {
 import { ChartConfigProvider } from "./chart-config-context";
 import { LineChart } from "./line-chart";
 import { ScatterChart } from "./scatter-chart";
-import { generatePeriodTicks, isLongPeriodTick, XAxis } from "./x-axis";
+import { generatePeriodTicks, isLongPeriodTick, selectEvenlySpacedIndices, XAxis } from "./x-axis";
 import { YAxis } from "./y-axis";
 
 afterEach(cleanup);
@@ -507,6 +507,62 @@ describe("XAxis — numeric x domain / scale on ScatterChart (RM-108)", () => {
     );
     expect(warn.mock.calls.some(([message]) => String(message).startsWith("[XAxis x]"))).toBe(true);
     warn.mockRestore();
+  });
+});
+
+describe("XAxis / YAxis — an unsorted numeric x (RM-127, a-4)", () => {
+  // A scatter's rows arrive in whatever order the caller has them, so data
+  // order is NOT x order. Ranked by spend: 9000 · 10000 · 11500 · 14000 ·
+  // 16000 · 18000 · 22000.
+  const spend = [
+    { spend: 10000, conversions: 420 },
+    { spend: 14000, conversions: 580 },
+    { spend: 9000, conversions: 380 },
+    { spend: 18000, conversions: 720 },
+    { spend: 22000, conversions: 890 },
+    { spend: 16000, conversions: 640 },
+    { spend: 11500, conversions: 490 },
+  ];
+
+  it("picks tick rows by painted x, not by data index", () => {
+    // A 340 px plot over the 9000–22000 span: x(v) = (v - 9000) / 13000 * 340.
+    const xOf = (index: number) => (((spend[index]?.spend ?? 0) - 9000) / 13000) * 340;
+    const picked = selectEvenlySpacedIndices(spend.length, 2, { resolveXPx: xOf });
+    const positions = picked.map(xOf).sort((a, b) => a - b);
+    const gap = (positions.at(-1) ?? 0) - (positions[0] ?? 0);
+    // Index-order selection took rows 0 and 6 — 10000 and 11500, 27.5 px apart
+    // at this scale, which is narrower than either label. Every kept pair must
+    // now clear a 5-character label (~36 px) plus a gap.
+    expect(picked).toHaveLength(2);
+    expect(gap).toBeGreaterThan(44);
+  });
+
+  it("keeps a sorted series on exactly the indices it had before", () => {
+    const sorted = Array.from({ length: 10 }, (_, i) => i * 30);
+    expect(selectEvenlySpacedIndices(10, 4, { resolveXPx: (i) => sorted[i] ?? 0 })).toEqual(
+      selectEvenlySpacedIndices(10, 4),
+    );
+  });
+
+  it("keeps the value axis at the narrow tier when x is quantitative", () => {
+    // RM-072 drops the value axis at `sm` because the CATEGORY axis still
+    // names each mark. A scatter has no category axis, so dropping it would
+    // leave the plot with no scale in either direction.
+    const { container } = render(
+      <ChartConfigProvider value={{ breakpoint: "narrow" }}>
+        <ScatterChart data={spend} xDataKey="spend">
+          <XAxis />
+          <YAxis />
+        </ScatterChart>
+      </ChartConfigProvider>,
+    );
+    expect(container.querySelector('[data-slot="y-axis"]')).not.toBeNull();
+    const xLabelTexts = [...container.querySelectorAll('[data-slot="x-axis"] span')].map(
+      (node) => node.textContent ?? "",
+    );
+    expect(xLabelTexts).toContain("9000");
+    expect(xLabelTexts).toContain("22000");
+    expect(xLabelTexts).not.toContain("11500");
   });
 });
 
