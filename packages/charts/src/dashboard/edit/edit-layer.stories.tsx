@@ -270,6 +270,34 @@ async function pointerDrag(el: HTMLElement, dx: number, dy: number) {
   await sleep(16);
 }
 
+/**
+ * A synthetic pointer gesture, repeated only while it has left the layout untouched.
+ *
+ * dnd-kit cancels a drag whose draggable re-renders mid-gesture, and a resize handle lives in the
+ * tile chrome that re-renders on selection, focus and announcer updates. Under the full parallel
+ * story run that collision happens often enough that one attempt is not reliable: the resize step
+ * below read the tile's PRE-drag size, with the gesture silently cancelled rather than rejected.
+ *
+ * Retrying is safe ONLY while nothing has moved. The moment the layout changes the gesture landed,
+ * and a second one would apply a second delta — so this returns on the first observed change and
+ * never re-drags afterwards. If no attempt lands, the caller's own assertion reports it.
+ */
+async function pointerDragUntilApplied(
+  getTarget: () => HTMLElement,
+  dx: number,
+  dy: number,
+  readLayout: () => unknown,
+) {
+  const before = JSON.stringify(readLayout());
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await pointerDrag(getTarget(), dx, dy);
+    for (let waited = 0; waited < 1500; waited += 50) {
+      if (JSON.stringify(readLayout()) !== before) return;
+      await sleep(50);
+    }
+  }
+}
+
 const reset = async (spec: DashboardSpec) => {
   store().getState().actions.setSpec(spec);
   await sleep(50);
@@ -331,10 +359,15 @@ export const Fit24x12: Story = {
     await step("(c) drag the bottom-right handle by two cells", async () => {
       const tile = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
       tile.focus();
-      const handle = await canvas.findByRole("button", {
-        name: "Resize Revenue from bottom-right",
-      });
-      await pointerDrag(handle, 2 * p.width, 2 * p.height);
+      await canvas.findByRole("button", { name: "Resize Revenue from bottom-right" });
+      // Re-queried per attempt: a re-mounted chrome leaves the previous handle node detached.
+      const resizeHandle = () => {
+        sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!.focus();
+        return canvas.getByRole("button", { name: "Resize Revenue from bottom-right" });
+      };
+      await pointerDragUntilApplied(resizeHandle, 2 * p.width, 2 * p.height, () =>
+        layoutOf("chart-1"),
+      );
       await waitFor(() => expect(layoutOf("chart-1")).toMatchObject({ x: 0, y: 0, w: 8, h: 6 }));
       await reset(EDIT_FIT_SPEC);
     });
