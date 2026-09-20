@@ -49,6 +49,7 @@ import { ChartProvider, type LineConfig, type Margin, type TooltipData } from ".
 import {
   ChartDatapointLayer,
   type ChartDatapointTarget,
+  clampDatapointRectToPlot,
   MIN_DATAPOINT_TARGET_SIZE,
   padDatapointRect,
   useActivateDatapoint,
@@ -898,16 +899,22 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
         datum: row,
         value,
         category: row[xDataKey] as string | number | Date | undefined,
-        rect: padDatapointRect({
-          x: centerX - width / 2,
-          y: centerY - MIN_DATAPOINT_TARGET_SIZE / 2,
-          width,
-          height: MIN_DATAPOINT_TARGET_SIZE,
-        }),
+        // a-7: the band is centred on the point, so the first and last point
+        // of a series would hang half a band outside the plot — clamp it back.
+        rect: clampDatapointRectToPlot(
+          padDatapointRect({
+            x: centerX - width / 2,
+            y: centerY - MIN_DATAPOINT_TARGET_SIZE / 2,
+            width,
+            height: MIN_DATAPOINT_TARGET_SIZE,
+          }),
+          { x: margin.left, width: innerWidth },
+        ),
       };
     },
     [
       columnWidth,
+      innerWidth,
       lines,
       margin.left,
       margin.top,
