@@ -18,6 +18,14 @@ pnpm gen:check    # every generated artifact is fresh (pnpm gen rewrites them)
 The full rule list is the generated region of `.claude/rules/conventions.md`
 (`pnpm check --list` prints the same set).
 
+## Responsive chart, table and map work
+
+A change to a chart, a `DataTable` or a map is verified in a REAL browser at 380 / 600 /
+900 px page widths before it ships — no rule can see a legend that overlaps its plot. The
+contract behind those widths is machine-checked by `pnpm check --rule charts-responsive`:
+every chart container publishes its measured tier as `data-chart-breakpoint`, and a
+`Responsive<T>` prop is read only through `resolveResponsive` / `useResponsiveValue`.
+
 ## Adding a check
 
 A convention that reads repo files becomes a rule: follow `scripts/check/README.md`. A check

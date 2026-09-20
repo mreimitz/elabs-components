@@ -88,6 +88,22 @@ wide`, published as `data-chart-breakpoint` and read with `useChartBreakpoint()`
   host keeps the say per chart: a `density` given as `{ base, narrow }`, or an explicit
   legend / axis, wins over the tier default.
 - Fonts never scale with the tier; only layout decisions do.
+- `data` and `maps` keep deliberate COPIES of this measurement (`use-table-breakpoint.ts`,
+  `use-map-breakpoint.ts`) because neither may import `charts`. Change them together.
+
+## Labels, annotations, legends
+
+- **Labels** (RM-110): an end label is the default only for ≥2 `Line`/`Area` series with a
+  real `name`; an explicit `seriesLabel` (`"end"`/`"key"`/`"none"`, `Responsive`) always
+  wins. A label `layoutLabels` cannot place is restated `sr-only` beside the chart — a
+  dropped label is a layout decision, never a lost fact.
+- **Annotations** (RM-111): positions are data units; the `annotations` ARRAY ORDER is the
+  reading order of the numbered narrow-tier markers, `AnnotationKey` and the accessible
+  description. Ranges paint under the series, every other kind over.
+- **Legends** (RM-118): a container mounts `useContainerLegend`, which puts `ChartLegend`
+  INSIDE the measured box (above the plot, dot markers, `text-meta`) — a legend never
+  changes the tier the plot was sized for. A faceted grid gets ONE shared legend, never one
+  per panel; a toggle is a real `<button aria-pressed>` dimmed by opacity + line-through.
 
 ## Gantt
 
