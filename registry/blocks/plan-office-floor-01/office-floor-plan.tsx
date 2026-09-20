@@ -29,14 +29,19 @@ import {
 
 type RoomData = GeoJSON.FeatureCollection<GeoJSON.Polygon, RoomProperties>;
 
+const EMPTY_FLOOR: RoomData = { type: "FeatureCollection", features: [] };
+
 /** A room is free or in use — two of the four plan states, with their own words. */
 const ROOM_STATE: Partial<Record<PlanStatus, string>> = { free: "free", occupied: "in use" };
 
 export interface OfficeFloorPlanProps {
   /** Which level is shown first. The switch above the plan changes it. */
   level?: 3 | 4;
-  /** The rooms per level. Defaults to the sample building. */
-  floors?: Partial<Record<3 | 4, RoomData>>;
+  /**
+   * Show the floor with no rooms on it — the state a building with no survey data is
+   * in. Swap `data/office-floor.ts` for your own rooms once you have copied the block.
+   */
+  empty?: boolean;
   /**
    * Lay the surveyor’s drawing under the rooms — the custom background picture in
    * plan units. Held at low opacity: the drawing is context, the rooms are the ink.
@@ -54,13 +59,13 @@ export interface OfficeFloorPlanProps {
  */
 export function OfficeFloorPlan({
   level: initialLevel = 3,
-  floors,
+  empty = false,
   showDrawing = false,
   loading = false,
   className,
 }: OfficeFloorPlanProps) {
   const [level, setLevel] = useState<3 | 4>(initialLevel);
-  const rooms = floors?.[level] ?? (level === 3 ? officeFloorRooms : secondFloorRooms);
+  const rooms = empty ? EMPTY_FLOOR : level === 3 ? officeFloorRooms : secondFloorRooms;
 
   const regions = useMemo(
     () =>

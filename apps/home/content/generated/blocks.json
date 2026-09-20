@@ -1170,6 +1170,39 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "plan-factory-layout-01",
+    "title": "Plan — Factory layout",
+    "categories": ["plan"],
+    "dependencies": [
+      "@elabs-ai/components-maps",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "plan-office-floor-01",
+    "title": "Plan — Office floor",
+    "categories": ["plan"],
+    "dependencies": [
+      "@elabs-ai/components-maps",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "plan-seat-map-01",
+    "title": "Plan — Train seat map",
+    "categories": ["plan"],
+    "dependencies": [
+      "@elabs-ai/components-maps",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "process-explorer-page",
     "title": "Process explorer page",
     "categories": [],

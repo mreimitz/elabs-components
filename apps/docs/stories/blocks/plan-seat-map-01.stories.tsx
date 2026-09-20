@@ -64,6 +64,4 @@ export const EverySeatAtOnce: Story = { args: { mode: "regions" } };
 export const DirectionOfTravel: Story = { args: { showWalk: true } };
 
 /** No reservations on this service: a panel, not an empty plan. */
-export const NoSeatData: Story = {
-  args: { seats: { type: "FeatureCollection", features: [] } },
-};
+export const NoSeatData: Story = { args: { empty: true } };

@@ -54,8 +54,11 @@ export interface TrainSeatMapProps {
    * coach A to a seat in coach C.
    */
   showWalk?: boolean;
-  /** The seats. Defaults to one deterministic train. */
-  seats?: SeatData;
+  /**
+   * Show the service with no reservations at all. Swap `data/train-carriage.ts` for a
+   * real seat feed once you have copied the block.
+   */
+  empty?: boolean;
   className?: string;
 }
 
@@ -67,10 +70,13 @@ export interface TrainSeatMapProps {
 export function TrainSeatMap({
   mode = "groups",
   showWalk = false,
-  seats: seatsProp,
+  empty = false,
   className,
 }: TrainSeatMapProps) {
-  const seats = useMemo(() => seatsProp ?? trainCarriageSeats(), [seatsProp]);
+  const seats = useMemo<SeatData>(
+    () => (empty ? { type: "FeatureCollection", features: [] } : trainCarriageSeats()),
+    [empty],
+  );
   const regions = useMemo(
     () =>
       planRegionsFromGeoJSON(seats, {

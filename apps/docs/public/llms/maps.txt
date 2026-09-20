@@ -61,3 +61,4 @@ Import from `@elabs-ai/components-maps`. Part of brand-ui — see the root `llms
 - usePlanPatterns
 - usePlanProjection
 - usePlanSelection
+- useTokenColor

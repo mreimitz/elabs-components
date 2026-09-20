@@ -30771,104 +30771,6 @@
     "block": null,
     "template": null
   },
-  "components/maps/factory-plan": {
-    "section": "components",
-    "slug": "factory-plan",
-    "name": "Factory Plan",
-    "title": "Maps/Factory Plan",
-    "group": "Maps",
-    "package": "maps",
-    "component": "MapPlanLegend",
-    "importFrom": "@elabs-ai/components-maps",
-    "docsId": "maps-factory-plan--docs",
-    "file": "packages/maps/src/map-plan/factory-plan.stories.tsx",
-    "summary": "The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.",
-    "question": "",
-    "about": "",
-    "intent": {
-      "purpose": "The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.",
-      "category": "display",
-      "relationships": {
-        "pairsWith": ["MapGeoJSON", "MapPlanOverlay", "MapPlanTable"]
-      },
-      "stateTokens": {
-        "mark": "bg-<tone> swatch (the ≥3:1 fill rung)",
-        "text": "text-<tone>-text for the word (the ink rung)"
-      },
-      "antiPatterns": [
-        "Leaving it out because the colours are 'obvious' — the texture and the dash are the channels greyscale keeps, and nobody guesses what a dash means without a key.",
-        "Writing the status words in the component — they are a `labels` prop so an app can localize them."
-      ]
-    },
-    "api": [
-      {
-        "name": "MapPlanLegend",
-        "extends": [],
-        "props": [
-          {
-            "name": "labels",
-            "optional": false,
-            "type": "PlanStatusLabels",
-            "description": "The word for each status. A status with no word is left out of the legend."
-          },
-          {
-            "name": "statuses",
-            "optional": true,
-            "type": "readonly PlanStatus[]",
-            "description": "Only show these statuses, in this order. Defaults to all four, in table order."
-          },
-          {
-            "name": "counts",
-            "optional": true,
-            "type": "Partial<Record<PlanStatus, number>>",
-            "description": "Optional count per status, e.g. how many rooms are free right now."
-          },
-          {
-            "name": "label",
-            "optional": true,
-            "type": "string",
-            "description": "Accessible name for the legend as a whole."
-          },
-          {
-            "name": "className",
-            "optional": true,
-            "type": "string"
-          }
-        ],
-        "variants": null,
-        "defaultVariants": null
-      }
-    ],
-    "stories": [
-      {
-        "id": "maps-factory-plan--factory-floor",
-        "name": "Factory Floor",
-        "description": "The default is STATIC: one deterministic moment of the plant, so the story is reproducible and a screenshot means something."
-      },
-      {
-        "id": "maps-factory-plan--live-status",
-        "name": "Live Status",
-        "description": "The same plant, ticking. Each tick walks the same seeded sequence forward, so “live” never means “different every run”."
-      },
-      {
-        "id": "maps-factory-plan--shapes-only",
-        "name": "Shapes Only",
-        "description": "The plan alone, with no status at all — the shape of a bare plant floor."
-      },
-      {
-        "id": "maps-factory-plan--print-table",
-        "name": "Print Table",
-        "description": "Status as words only — what the plan looks like on paper, where WebGL prints blank."
-      },
-      {
-        "id": "maps-factory-plan--status-encoding",
-        "name": "Status Encoding",
-        "description": "Every status, side by side, at the size a legend swatch is actually read at."
-      }
-    ],
-    "block": null,
-    "template": null
-  },
   "components/maps/maparc": {
     "section": "components",
     "slug": "maparc",
@@ -32177,6 +32079,286 @@
     "block": null,
     "template": null
   },
+  "components/maps/mapplanimage": {
+    "section": "components",
+    "slug": "mapplanimage",
+    "name": "MapPlanImage",
+    "title": "Maps/MapPlanImage",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanImage",
+    "importFrom": "@elabs-ai/components-maps",
+    "docsId": "maps-mapplanimage--docs",
+    "file": "packages/maps/src/map-plan-image/map-plan-image.stories.tsx",
+    "summary": "The picture under a plan's shapes — a floor plan, a blueprint, a site photo — placed by its corner coordinates in plan units.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "The picture under a plan's shapes — a floor plan, a blueprint, a site photo — placed by its corner coordinates in plan units.",
+      "category": "display",
+      "relationships": {
+        "usedInside": ["MapCanvas"],
+        "pairsWith": ["MapGeoJSON", "MapPlanOverlay"]
+      },
+      "stateTokens": {
+        "surface": "always a --card layer under the raster at raster-opacity 0.30–0.40: the picture is context, the shapes are the ink"
+      },
+      "antiPatterns": [
+        "One baked-in-colour picture for every theme — a white floor plan either glares or swallows the data ink on a dark theme. Prefer vector-only, else swap the asset on the resolved theme, else desaturate it and dim it.",
+        "Tearing the component down to hide a floor — set `visible` (a visibility change) or swap `src`, so nothing refetches and nothing cross-fades.",
+        "Zooming a raster far past its native resolution — past roughly 2× it is mush; the shapes stay crisp, so let them carry the detail."
+      ]
+    },
+    "api": [
+      {
+        "name": "MapPlanImage",
+        "extends": [],
+        "props": [
+          {
+            "name": "src",
+            "optional": false,
+            "type": "MapPlanImageSource | { light: MapPlanImageSource; dark: MapPlanImageSource }",
+            "description": "The plan picture. Pass `{ light, dark }` to swap it with the theme."
+          },
+          {
+            "name": "alt",
+            "optional": true,
+            "type": "string",
+            "description": "What the picture shows, for anyone who cannot see it (\"Level 3 floor plan, 14 rooms around a central core\"). A plan drawn into WebGL has no accessible name of its own, so this is the only description of it."
+          },
+          {
+            "name": "id",
+            "optional": true,
+            "type": "string",
+            "description": "Optional identifier for the source/layer. Auto-generated if not provided."
+          },
+          {
+            "name": "extent",
+            "optional": true,
+            "type": "{ x: number; y: number; width: number; height: number }",
+            "description": "Where the picture sits, in PLAN units. Defaults to the whole plan extent, so a single full-bleed plan needs nothing here. Use it to place one wing, one machine cell or one carriage inside a larger plan."
+          },
+          {
+            "name": "coordinates",
+            "optional": true,
+            "type": "MapLibreGL.Coordinates",
+            "description": "The four corners in lng/lat (top-left, top-right, bottom-right, bottom-left) — an escape hatch that also works on an ordinary geographic canvas, like Leaflet's `imageOverlay`. Wins over `extent`."
+          },
+          {
+            "name": "opacity",
+            "optional": true,
+            "type": "number",
+            "description": "Opacity, 0–1 (default 1). A photographic or ink-heavy plan usually reads best held back around 0.35 so the data drawn on top stays the focus."
+          },
+          {
+            "name": "visible",
+            "optional": true,
+            "type": "boolean",
+            "description": "Hide the picture without tearing the source down — a multi-floor switch (default true)."
+          },
+          {
+            "name": "resampling",
+            "optional": true,
+            "type": "\"linear\" | \"nearest\"",
+            "description": "`\"nearest\"` keeps CAD line art crisp when zoomed past its native resolution."
+          },
+          {
+            "name": "beforeId",
+            "optional": true,
+            "type": "string",
+            "description": "MapLibre layer id to insert this layer before (z-order control)."
+          },
+          {
+            "name": "onLoad",
+            "optional": true,
+            "type": "() => void",
+            "description": "Fired once the picture has been fetched and decoded."
+          },
+          {
+            "name": "onError",
+            "optional": true,
+            "type": "(error: Error) => void",
+            "description": "Fired when the picture cannot be loaded. The plan itself keeps working without it."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "maps-mapplanimage--default",
+        "name": "Default",
+        "description": "The whole plan: the picture underneath, the shapes on top."
+      },
+      {
+        "id": "maps-mapplanimage--over-one-wing",
+        "name": "Over One Wing",
+        "description": "One wing only: `extent` places the picture in plan units, not across the whole plan."
+      },
+      {
+        "id": "maps-mapplanimage--floor-swap",
+        "name": "Floor Swap",
+        "description": "A floor swap: the same source, a new drawing — no refetch, no cross-fade."
+      },
+      {
+        "id": "maps-mapplanimage--hidden",
+        "name": "Hidden",
+        "description": "`visible={false}` toggles the layer’s visibility; the source stays, so nothing reloads."
+      },
+      {
+        "id": "maps-mapplanimage--loading",
+        "name": "Loading",
+        "description": "Nothing loaded yet: the canvas keeps the plan’s shape and says so once."
+      },
+      {
+        "id": "maps-mapplanimage--missing-picture",
+        "name": "Missing Picture",
+        "description": "The picture failed; the plan did not. `onError` reports it and the shapes stay, so the consumer decides what the gap should look like."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/maps/mapplanoverlay": {
+    "section": "components",
+    "slug": "mapplanoverlay",
+    "name": "MapPlanOverlay",
+    "title": "Maps/MapPlanOverlay",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanOverlay",
+    "importFrom": "@elabs-ai/components-maps",
+    "docsId": "maps-mapplanoverlay--docs",
+    "file": "packages/maps/src/map-plan/map-plan-overlay.stories.tsx",
+    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+      "category": "overlay",
+      "relationships": {
+        "usedInside": ["MapCanvas"],
+        "pairsWith": ["MapGeoJSON", "MapPlanLegend", "MapPlanTable", "MapPlanStatus"]
+      },
+      "stateTokens": {
+        "focus": "every region button carries the shared focus-ring — the canvas cannot show one",
+        "selected": "aria-pressed plus data-selected, mirrored into the shape layer via selectedId",
+        "active": "one channel for pointer hover AND keyboard focus, fed to MapGeoJSON hoveredId so the shape and the proxy light up together"
+      },
+      "antiPatterns": [
+        "Relying on the canvas alone for interaction — a room drawn in WebGL is not focusable, has no name and no pressed state. Without this overlay a plan is mouse-only.",
+        "Nesting the visible label inside the button — it is an aria-hidden SIBLING, and the button's accessible name already starts with the label verbatim (WCAG 2.5.3).",
+        "Walking 200+ regions with Tab and the arrows — set mode=\"groups\" so the first question is 'which coach?' and Enter goes in.",
+        "Unmounting off-screen regions to save DOM — focus would vanish mid-walk; they stay mounted and the camera eases to them instead."
+      ]
+    },
+    "api": [
+      {
+        "name": "MapPlanOverlay",
+        "extends": [],
+        "props": [
+          {
+            "name": "regions",
+            "optional": false,
+            "type": "readonly MapPlanRegion[]",
+            "description": "The interactive regions, in reading order. Keep the array MEMOIZED — it drives the projection pass."
+          },
+          {
+            "name": "label",
+            "optional": false,
+            "type": "string",
+            "description": "Accessible name for the set of regions (\"Rooms on level 3\"). Supplied by the consumer so it can be localized."
+          },
+          {
+            "name": "selectedId",
+            "optional": true,
+            "type": "string | readonly string[] | null",
+            "description": "The selected region id(s) — the same value handed to `<MapGeoJSON selectedId>`."
+          },
+          {
+            "name": "onSelect",
+            "optional": true,
+            "type": "(id: string | null, region: MapPlanRegion | null) => void",
+            "description": "Fired when a region is activated by click, `Enter` or `Space`; `null` on `Escape`."
+          },
+          {
+            "name": "onActiveChange",
+            "optional": true,
+            "type": "(id: string | null, region: MapPlanRegion | null) => void",
+            "description": "Fired when the pointer or keyboard focus moves to another region. Feed it to `<MapGeoJSON hoveredId>` so the shape and the proxy highlight together."
+          },
+          {
+            "name": "mode",
+            "optional": true,
+            "type": "MapPlanOverlayMode",
+            "description": "`\"regions\"` (default) puts one button on every region. `\"groups\"` puts one button on each `group` instead, and `Enter` descends into its members — the answer for a plan with more regions than a keyboard can reasonably walk (a train with 192 seats), where the first question is always \"which coach?\"."
+          },
+          {
+            "name": "describeGroup",
+            "optional": true,
+            "type": "(group: MapPlanGroup) => string",
+            "description": "The accessible description of a group's button — \"64 seats\", localized by the consumer. Group mode only."
+          },
+          {
+            "name": "showLabels",
+            "optional": true,
+            "type": "boolean",
+            "description": "Draw each region's label in the overlay (default true)."
+          },
+          {
+            "name": "labelMinZoom",
+            "optional": true,
+            "type": "number",
+            "description": "Hide the labels below this zoom, when a fitted plan is too small to read."
+          },
+          {
+            "name": "capturePointer",
+            "optional": true,
+            "type": "boolean",
+            "description": "Let the regions take the pointer as well as the keyboard (default true). With `false` the overlay is keyboard-only and clicks reach the canvas, where `<MapGeoJSON onClick>` picks the shape itself — the right choice for interlocking, non-rectangular shapes whose boxes overlap."
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string",
+            "description": "Extra classes for the overlay root."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "maps-mapplanoverlay--default",
+        "name": "Default",
+        "description": "One button per region: the default, for a plan a keyboard can walk."
+      },
+      {
+        "id": "maps-mapplanoverlay--groups",
+        "name": "Groups",
+        "description": "Group mode: one button per group, `Enter` to go in, `Escape` to come back out, `PageUp`/`PageDown` to change group at either level."
+      },
+      {
+        "id": "maps-mapplanoverlay--as-words",
+        "name": "As Words",
+        "description": "The plan as words only — what a printer gets, since a WebGL canvas prints blank."
+      },
+      {
+        "id": "maps-mapplanoverlay--loading",
+        "name": "Loading",
+        "description": "Nothing on the plan yet: the canvas keeps its shape and says so once."
+      },
+      {
+        "id": "maps-mapplanoverlay--no-regions",
+        "name": "No Regions",
+        "description": "A plan with no regions on it — a panel, not an empty grid."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/maps/maproute": {
     "section": "components",
     "slug": "maproute",
@@ -32284,299 +32466,6 @@
         "id": "maps-maproute--dashed",
         "name": "Dashed",
         "description": ""
-      }
-    ],
-    "block": null,
-    "template": null
-  },
-  "components/maps/plan-maps": {
-    "section": "components",
-    "slug": "plan-maps",
-    "name": "Plan Maps",
-    "title": "Maps/Plan Maps",
-    "group": "Maps",
-    "package": "maps",
-    "component": "MapPlanOverlay",
-    "importFrom": "@elabs-ai/components-maps",
-    "docsId": "maps-plan-maps--docs",
-    "file": "packages/maps/src/map-plan/plan-maps.stories.tsx",
-    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
-    "question": "",
-    "about": "",
-    "intent": {
-      "purpose": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
-      "category": "overlay",
-      "relationships": {
-        "usedInside": ["MapCanvas"],
-        "pairsWith": ["MapGeoJSON", "MapPlanLegend", "MapPlanTable", "MapPlanStatus"]
-      },
-      "stateTokens": {
-        "focus": "every region button carries the shared focus-ring — the canvas cannot show one",
-        "selected": "aria-pressed plus data-selected, mirrored into the shape layer via selectedId",
-        "active": "one channel for pointer hover AND keyboard focus, fed to MapGeoJSON hoveredId so the shape and the proxy light up together"
-      },
-      "antiPatterns": [
-        "Relying on the canvas alone for interaction — a room drawn in WebGL is not focusable, has no name and no pressed state. Without this overlay a plan is mouse-only.",
-        "Nesting the visible label inside the button — it is an aria-hidden SIBLING, and the button's accessible name already starts with the label verbatim (WCAG 2.5.3).",
-        "Walking 200+ regions with Tab and the arrows — set mode=\"groups\" so the first question is 'which coach?' and Enter goes in.",
-        "Unmounting off-screen regions to save DOM — focus would vanish mid-walk; they stay mounted and the camera eases to them instead."
-      ]
-    },
-    "api": [
-      {
-        "name": "MapPlanOverlay",
-        "extends": [],
-        "props": [
-          {
-            "name": "regions",
-            "optional": false,
-            "type": "readonly MapPlanRegion[]",
-            "description": "The interactive regions, in reading order. Keep the array MEMOIZED — it drives the projection pass."
-          },
-          {
-            "name": "label",
-            "optional": false,
-            "type": "string",
-            "description": "Accessible name for the set of regions (\"Rooms on level 3\"). Supplied by the consumer so it can be localized."
-          },
-          {
-            "name": "selectedId",
-            "optional": true,
-            "type": "string | readonly string[] | null",
-            "description": "The selected region id(s) — the same value handed to `<MapGeoJSON selectedId>`."
-          },
-          {
-            "name": "onSelect",
-            "optional": true,
-            "type": "(id: string | null, region: MapPlanRegion | null) => void",
-            "description": "Fired when a region is activated by click, `Enter` or `Space`; `null` on `Escape`."
-          },
-          {
-            "name": "onActiveChange",
-            "optional": true,
-            "type": "(id: string | null, region: MapPlanRegion | null) => void",
-            "description": "Fired when the pointer or keyboard focus moves to another region. Feed it to `<MapGeoJSON hoveredId>` so the shape and the proxy highlight together."
-          },
-          {
-            "name": "mode",
-            "optional": true,
-            "type": "MapPlanOverlayMode",
-            "description": "`\"regions\"` (default) puts one button on every region. `\"groups\"` puts one button on each `group` instead, and `Enter` descends into its members — the answer for a plan with more regions than a keyboard can reasonably walk (a train with 192 seats), where the first question is always \"which coach?\"."
-          },
-          {
-            "name": "describeGroup",
-            "optional": true,
-            "type": "(group: MapPlanGroup) => string",
-            "description": "The accessible description of a group's button — \"64 seats\", localized by the consumer. Group mode only."
-          },
-          {
-            "name": "showLabels",
-            "optional": true,
-            "type": "boolean",
-            "description": "Draw each region's label in the overlay (default true)."
-          },
-          {
-            "name": "labelMinZoom",
-            "optional": true,
-            "type": "number",
-            "description": "Hide the labels below this zoom, when a fitted plan is too small to read."
-          },
-          {
-            "name": "capturePointer",
-            "optional": true,
-            "type": "boolean",
-            "description": "Let the regions take the pointer as well as the keyboard (default true). With `false` the overlay is keyboard-only and clicks reach the canvas, where `<MapGeoJSON onClick>` picks the shape itself — the right choice for interlocking, non-rectangular shapes whose boxes overlap."
-          },
-          {
-            "name": "className",
-            "optional": true,
-            "type": "string",
-            "description": "Extra classes for the overlay root."
-          }
-        ],
-        "variants": null,
-        "defaultVariants": null
-      }
-    ],
-    "stories": [
-      {
-        "id": "maps-plan-maps--office-floor-plan",
-        "name": "Office Floor Plan",
-        "description": "The full showcase: an office floor in centimetres, keyboard-operable, with the same information repeated as words in the table below — a WebGL canvas prints blank and cannot be read by assistive technology."
-      },
-      {
-        "id": "maps-plan-maps--vector-only",
-        "name": "Vector Only",
-        "description": "The recommended default: no asset at all. A plan drawn as GeoJSON in plan units paints from tokens, themes correctly and never blurs."
-      },
-      {
-        "id": "maps-plan-maps--with-plan-image",
-        "name": "With Plan Image",
-        "description": "Draw the plan into a canvas and hand that to `MapPlanImage` — the same path a scanned drawing or a CAD export takes, without a network round trip. The picture is context, held back at low opacity; the data on top is the ink."
-      },
-      {
-        "id": "maps-plan-maps--multi-floor",
-        "name": "Multi Floor",
-        "description": "Two floors, one extent: switch the data, keep the camera."
-      },
-      {
-        "id": "maps-plan-maps--loading",
-        "name": "Loading",
-        "description": "Nothing to draw yet — the plan’s own skeleton, not a blank rectangle."
-      },
-      {
-        "id": "maps-plan-maps--empty-plan",
-        "name": "Empty Plan",
-        "description": "A plan with no regions on it — say so, rather than showing an empty grid."
-      },
-      {
-        "id": "maps-plan-maps--plan-image-missing",
-        "name": "Plan Image Missing",
-        "description": "The picture failed; the plan did not. `MapPlanImage` reports the failure and keeps the shapes, so the consumer decides what the gap should look like."
-      }
-    ],
-    "block": null,
-    "template": null
-  },
-  "components/maps/train-carriage": {
-    "section": "components",
-    "slug": "train-carriage",
-    "name": "Train Carriage",
-    "title": "Maps/Train Carriage",
-    "group": "Maps",
-    "package": "maps",
-    "component": "MapPlanOverlay",
-    "importFrom": "@elabs-ai/components-maps",
-    "docsId": "maps-train-carriage--docs",
-    "file": "packages/maps/src/map-plan/train-carriage.stories.tsx",
-    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
-    "question": "",
-    "about": "",
-    "intent": {
-      "purpose": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
-      "category": "overlay",
-      "relationships": {
-        "usedInside": ["MapCanvas"],
-        "pairsWith": ["MapGeoJSON", "MapPlanLegend", "MapPlanTable", "MapPlanStatus"]
-      },
-      "stateTokens": {
-        "focus": "every region button carries the shared focus-ring — the canvas cannot show one",
-        "selected": "aria-pressed plus data-selected, mirrored into the shape layer via selectedId",
-        "active": "one channel for pointer hover AND keyboard focus, fed to MapGeoJSON hoveredId so the shape and the proxy light up together"
-      },
-      "antiPatterns": [
-        "Relying on the canvas alone for interaction — a room drawn in WebGL is not focusable, has no name and no pressed state. Without this overlay a plan is mouse-only.",
-        "Nesting the visible label inside the button — it is an aria-hidden SIBLING, and the button's accessible name already starts with the label verbatim (WCAG 2.5.3).",
-        "Walking 200+ regions with Tab and the arrows — set mode=\"groups\" so the first question is 'which coach?' and Enter goes in.",
-        "Unmounting off-screen regions to save DOM — focus would vanish mid-walk; they stay mounted and the camera eases to them instead."
-      ]
-    },
-    "api": [
-      {
-        "name": "MapPlanOverlay",
-        "extends": [],
-        "props": [
-          {
-            "name": "regions",
-            "optional": false,
-            "type": "readonly MapPlanRegion[]",
-            "description": "The interactive regions, in reading order. Keep the array MEMOIZED — it drives the projection pass."
-          },
-          {
-            "name": "label",
-            "optional": false,
-            "type": "string",
-            "description": "Accessible name for the set of regions (\"Rooms on level 3\"). Supplied by the consumer so it can be localized."
-          },
-          {
-            "name": "selectedId",
-            "optional": true,
-            "type": "string | readonly string[] | null",
-            "description": "The selected region id(s) — the same value handed to `<MapGeoJSON selectedId>`."
-          },
-          {
-            "name": "onSelect",
-            "optional": true,
-            "type": "(id: string | null, region: MapPlanRegion | null) => void",
-            "description": "Fired when a region is activated by click, `Enter` or `Space`; `null` on `Escape`."
-          },
-          {
-            "name": "onActiveChange",
-            "optional": true,
-            "type": "(id: string | null, region: MapPlanRegion | null) => void",
-            "description": "Fired when the pointer or keyboard focus moves to another region. Feed it to `<MapGeoJSON hoveredId>` so the shape and the proxy highlight together."
-          },
-          {
-            "name": "mode",
-            "optional": true,
-            "type": "MapPlanOverlayMode",
-            "description": "`\"regions\"` (default) puts one button on every region. `\"groups\"` puts one button on each `group` instead, and `Enter` descends into its members — the answer for a plan with more regions than a keyboard can reasonably walk (a train with 192 seats), where the first question is always \"which coach?\"."
-          },
-          {
-            "name": "describeGroup",
-            "optional": true,
-            "type": "(group: MapPlanGroup) => string",
-            "description": "The accessible description of a group's button — \"64 seats\", localized by the consumer. Group mode only."
-          },
-          {
-            "name": "showLabels",
-            "optional": true,
-            "type": "boolean",
-            "description": "Draw each region's label in the overlay (default true)."
-          },
-          {
-            "name": "labelMinZoom",
-            "optional": true,
-            "type": "number",
-            "description": "Hide the labels below this zoom, when a fitted plan is too small to read."
-          },
-          {
-            "name": "capturePointer",
-            "optional": true,
-            "type": "boolean",
-            "description": "Let the regions take the pointer as well as the keyboard (default true). With `false` the overlay is keyboard-only and clicks reach the canvas, where `<MapGeoJSON onClick>` picks the shape itself — the right choice for interlocking, non-rectangular shapes whose boxes overlap."
-          },
-          {
-            "name": "className",
-            "optional": true,
-            "type": "string",
-            "description": "Extra classes for the overlay root."
-          }
-        ],
-        "variants": null,
-        "defaultVariants": null
-      }
-    ],
-    "stories": [
-      {
-        "id": "maps-train-carriage--seat-map",
-        "name": "Seat Map",
-        "description": "The seat map as a passenger meets it: coaches first, seats once you are in one. Statuses are seeded, so this is one deterministic train, not a different one every run."
-      },
-      {
-        "id": "maps-train-carriage--every-seat-at-once",
-        "name": "Every Seat At Once",
-        "description": "The same train with every seat on the overlay at once — 192 buttons, which the component warns about, and which is exactly why group mode is the default here."
-      },
-      {
-        "id": "maps-train-carriage--direction-of-travel",
-        "name": "Direction Of Travel",
-        "description": "Which way the train runs, and the walk from the door of coach A to a seat in coach C: chevrons along the aisle, and a curve built in PLAN units — a curve sampled in lng/lat would bow the wrong way once Mercator has had its say."
-      },
-      {
-        "id": "maps-train-carriage--whole-train-table",
-        "name": "Whole Train Table",
-        "description": "The train as words — the channel that survives a printer and a screen reader."
-      },
-      {
-        "id": "maps-train-carriage--loading",
-        "name": "Loading",
-        "description": "Nothing to show yet: the canvas holds its shape and says so once."
-      },
-      {
-        "id": "maps-train-carriage--no-seat-data",
-        "name": "No Seat Data",
-        "description": "No seat data at all — a panel, not an empty plan."
       }
     ],
     "block": null,
@@ -38767,6 +38656,48 @@
     },
     "template": null
   },
+  "blocks/maps-and-geo-factory-layout": {
+    "section": "blocks",
+    "slug": "maps-and-geo-factory-layout",
+    "name": "Factory Layout",
+    "title": "Patterns/Blocks/Maps and Geo/Factory Layout",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "FactoryLayout",
+    "importFrom": null,
+    "docsId": "patterns-blocks-maps-and-geo-factory-layout--docs",
+    "file": "apps/docs/stories/blocks/plan-factory-layout-01.stories.tsx",
+    "summary": "A plant floor in metres where each machine cell carries its state four times over: the tone wash, a hatch texture generated on a canvas, the outline dash and the word in the legend and table. State rides feature properties and hover/selection ride feature-state, so the channels never collide, and the four states stay four states in greyscale.",
+    "question": "Which cell stopped, and what is it costing the line?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-maps-and-geo-factory-layout--default",
+        "name": "Default",
+        "description": "Static by default: one deterministic moment of the plant, so a screenshot means something."
+      },
+      {
+        "id": "patterns-blocks-maps-and-geo-factory-layout--live-status",
+        "name": "Live Status",
+        "description": "The same plant, ticking. Each tick walks the same seeded sequence forward, so “live” never means “different every run”."
+      }
+    ],
+    "block": {
+      "name": "plan-factory-layout-01",
+      "title": "Plan — Factory layout",
+      "description": "A plant floor in metres where each machine cell carries its state four times over: the tone wash, a hatch texture generated on a canvas, the outline dash and the word in the legend and table. State rides feature properties and hover/selection ride feature-state, so the channels never collide, and the four states stay four states in greyscale.",
+      "categories": ["plan"],
+      "dependencies": [
+        "@elabs-ai/components-maps",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/maps-and-geo-fleet-tracker": {
     "section": "blocks",
     "slug": "maps-and-geo-fleet-tracker",
@@ -38848,6 +38779,115 @@
       "title": "Geo — Network map",
       "description": "A network on the map it runs on: MapCanvas in globe projection with one MapArc per lane, its width bound to volume through a paint expression, hubs as MapMarkers with tooltips, and a panel that ranks the lanes with a Meter and calls out the late ones. Selecting a lane on the map or in the list dims the rest and redraws that arc heavier.",
       "categories": ["geo"],
+      "dependencies": [
+        "@elabs-ai/components-maps",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/maps-and-geo-office-floor-plan": {
+    "section": "blocks",
+    "slug": "maps-and-geo-office-floor-plan",
+    "name": "Office Floor Plan",
+    "title": "Patterns/Blocks/Maps and Geo/Office Floor Plan",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "OfficeFloorPlan",
+    "importFrom": null,
+    "docsId": "patterns-blocks-maps-and-geo-office-floor-plan--docs",
+    "file": "apps/docs/stories/blocks/plan-office-floor-01.stories.tsx",
+    "summary": "Which rooms are free on a floor, on the building's own plan rather than a world map: MapCanvas plan declares the extent in centimetres, rooms are polygons whose state rides the fill tone and the outline dash, MapPlanOverlay gives every room a real button for the keyboard, and MapPlanTable repeats the floor as words. Optionally lays the surveyor's drawing underneath as a plan-unit background picture.",
+    "question": "Which rooms are free on this floor?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-maps-and-geo-office-floor-plan--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-maps-and-geo-office-floor-plan--upper-level",
+        "name": "Upper Level",
+        "description": "The floor above, same extent: switch the data, keep the camera."
+      },
+      {
+        "id": "patterns-blocks-maps-and-geo-office-floor-plan--with-survey-drawing",
+        "name": "With Survey Drawing",
+        "description": "The surveyor’s drawing underneath, as a custom background picture in plan units. It is held back at low opacity on purpose: the drawing is context, the rooms are the ink, and a picture with baked-in colours fights the theme."
+      },
+      {
+        "id": "patterns-blocks-maps-and-geo-office-floor-plan--loading",
+        "name": "Loading",
+        "description": "Nothing to draw yet — the plan holds its shape instead of collapsing."
+      },
+      {
+        "id": "patterns-blocks-maps-and-geo-office-floor-plan--empty-floor",
+        "name": "Empty Floor",
+        "description": "A floor with no rooms on it says so, rather than showing an empty grid."
+      }
+    ],
+    "block": {
+      "name": "plan-office-floor-01",
+      "title": "Plan — Office floor",
+      "description": "Which rooms are free on a floor, on the building's own plan rather than a world map: MapCanvas plan declares the extent in centimetres, rooms are polygons whose state rides the fill tone and the outline dash, MapPlanOverlay gives every room a real button for the keyboard, and MapPlanTable repeats the floor as words. Optionally lays the surveyor's drawing underneath as a plan-unit background picture.",
+      "categories": ["plan"],
+      "dependencies": [
+        "@elabs-ai/components-maps",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/maps-and-geo-train-seat-map": {
+    "section": "blocks",
+    "slug": "maps-and-geo-train-seat-map",
+    "name": "Train Seat Map",
+    "title": "Patterns/Blocks/Maps and Geo/Train Seat Map",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "TrainSeatMap",
+    "importFrom": null,
+    "docsId": "patterns-blocks-maps-and-geo-train-seat-map--docs",
+    "file": "apps/docs/stories/blocks/plan-seat-map-01.stories.tsx",
+    "summary": "A reservation seat map on a plan of the train: three coaches of 64 seats in centimetres, 192 regions. The overlay runs in group mode — one button per coach, Enter to go in, Escape to come back out — with an option to show the direction of travel and the walk between coaches.",
+    "question": "Which seat, in which coach?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-maps-and-geo-train-seat-map--default",
+        "name": "Default",
+        "description": "Coaches first, seats once you are inside one — the way a passenger asks."
+      },
+      {
+        "id": "patterns-blocks-maps-and-geo-train-seat-map--every-seat-at-once",
+        "name": "Every Seat At Once",
+        "description": "Every seat on the overlay at once — 192 buttons, which the overlay warns about in development, and which is exactly why group mode is the default."
+      },
+      {
+        "id": "patterns-blocks-maps-and-geo-train-seat-map--direction-of-travel",
+        "name": "Direction Of Travel",
+        "description": "Which way the train runs, and the walk from the door of coach A to a seat in coach C: chevrons along the aisle, and a curve sampled in plan units."
+      },
+      {
+        "id": "patterns-blocks-maps-and-geo-train-seat-map--no-seat-data",
+        "name": "No Seat Data",
+        "description": "No reservations on this service: a panel, not an empty plan."
+      }
+    ],
+    "block": {
+      "name": "plan-seat-map-01",
+      "title": "Plan — Train seat map",
+      "description": "A reservation seat map on a plan of the train: three coaches of 64 seats in centimetres, 192 regions. The overlay runs in group mode — one button per coach, Enter to go in, Escape to come back out — with an option to show the direction of travel and the walk between coaches.",
+      "categories": ["plan"],
       "dependencies": [
         "@elabs-ai/components-maps",
         "@elabs-ai/components-tokens",

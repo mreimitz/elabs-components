@@ -495,6 +495,19 @@
   },
   {
     "section": "blocks",
+    "slug": "maps-and-geo-factory-layout",
+    "name": "Factory Layout",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "FactoryLayout",
+    "summary": "A plant floor in metres where each machine cell carries its state four times over: the tone wash, a hatch texture generated on a canvas, the outline dash and the word in the legend and table. State rides feature properties and hover/selection ride feature-state, so the channels never collide, and the four states stay four states in greyscale.",
+    "question": "Which cell stopped, and what is it costing the line?",
+    "block": "plan-factory-layout-01",
+    "stories": 2,
+    "first": "patterns-blocks-maps-and-geo-factory-layout--default"
+  },
+  {
+    "section": "blocks",
     "slug": "marketing-faq",
     "name": "FAQ",
     "group": "Marketing",
@@ -986,6 +999,19 @@
     "block": "settings-notifications-01",
     "stories": 1,
     "first": "patterns-blocks-account-and-settings-notifications--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "maps-and-geo-office-floor-plan",
+    "name": "Office Floor Plan",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "OfficeFloorPlan",
+    "summary": "Which rooms are free on a floor, on the building's own plan rather than a world map: MapCanvas plan declares the extent in centimetres, rooms are polygons whose state rides the fill tone and the outline dash, MapPlanOverlay gives every room a real button for the keyboard, and MapPlanTable repeats the floor as words. Optionally lays the surveyor's drawing underneath as a plan-unit background picture.",
+    "question": "Which rooms are free on this floor?",
+    "block": "plan-office-floor-01",
+    "stories": 5,
+    "first": "patterns-blocks-maps-and-geo-office-floor-plan--default"
   },
   {
     "section": "blocks",
@@ -1519,6 +1545,19 @@
     "block": "agent-trace-waterfall-01",
     "stories": 2,
     "first": "patterns-blocks-agent-ops-trace-waterfall--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "maps-and-geo-train-seat-map",
+    "name": "Train Seat Map",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "TrainSeatMap",
+    "summary": "A reservation seat map on a plan of the train: three coaches of 64 seats in centimetres, 192 regions. The overlay runs in group mode — one button per coach, Enter to go in, Escape to come back out — with an option to show the direction of travel and the walk between coaches.",
+    "question": "Which seat, in which coach?",
+    "block": "plan-seat-map-01",
+    "stories": 4,
+    "first": "patterns-blocks-maps-and-geo-train-seat-map--default"
   },
   {
     "section": "blocks",
@@ -3355,19 +3394,6 @@
   },
   {
     "section": "components",
-    "slug": "factory-plan",
-    "name": "Factory Plan",
-    "group": "Maps",
-    "package": "maps",
-    "component": "MapPlanLegend",
-    "summary": "The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.",
-    "question": "",
-    "block": null,
-    "stories": 5,
-    "first": "maps-factory-plan--factory-floor"
-  },
-  {
-    "section": "components",
     "slug": "featuregrid",
     "name": "FeatureGrid",
     "group": "Marketing",
@@ -4161,6 +4187,32 @@
   },
   {
     "section": "components",
+    "slug": "mapplanimage",
+    "name": "MapPlanImage",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanImage",
+    "summary": "The picture under a plan's shapes — a floor plan, a blueprint, a site photo — placed by its corner coordinates in plan units.",
+    "question": "",
+    "block": null,
+    "stories": 6,
+    "first": "maps-mapplanimage--default"
+  },
+  {
+    "section": "components",
+    "slug": "mapplanoverlay",
+    "name": "MapPlanOverlay",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanOverlay",
+    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+    "question": "",
+    "block": null,
+    "stories": 5,
+    "first": "maps-mapplanoverlay--default"
+  },
+  {
+    "section": "components",
     "slug": "maproute",
     "name": "MapRoute",
     "group": "Maps",
@@ -4600,19 +4652,6 @@
     "block": null,
     "stories": 5,
     "first": "ai-plan--default"
-  },
-  {
-    "section": "components",
-    "slug": "plan-maps",
-    "name": "Plan Maps",
-    "group": "Maps",
-    "package": "maps",
-    "component": "MapPlanOverlay",
-    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
-    "question": "",
-    "block": null,
-    "stories": 7,
-    "first": "maps-plan-maps--office-floor-plan"
   },
   {
     "section": "components",
@@ -5705,19 +5744,6 @@
     "block": null,
     "stories": 1,
     "first": "overlays-tooltip--default"
-  },
-  {
-    "section": "components",
-    "slug": "train-carriage",
-    "name": "Train Carriage",
-    "group": "Maps",
-    "package": "maps",
-    "component": "MapPlanOverlay",
-    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
-    "question": "",
-    "block": null,
-    "stories": 6,
-    "first": "maps-train-carriage--seat-map"
   },
   {
     "section": "components",

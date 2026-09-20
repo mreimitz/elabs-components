@@ -90,7 +90,6 @@ function BayLayers({
   selectedId: readonly string[];
   hoveredId: string | null;
 }) {
-  const outline = useTokenColor("--border-strong");
   const primary = useTokenColor("--primary");
   const free = useTokenColor("--success");
   const busy = useTokenColor("--muted-foreground");

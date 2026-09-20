@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T09:22:13.307Z",
+  "generatedAt": "2026-09-20T10:10:19.942Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -733,6 +733,24 @@
       "type": "registry:block",
       "title": "Geo — Network map",
       "description": "A network on the map it runs on: MapCanvas in globe projection with one MapArc per lane, its width bound to volume through a paint expression, hubs as MapMarkers with tooltips, and a panel that ranks the lanes with a Meter and calls out the late ones. Selecting a lane on the map or in the list dims the rest and redraws that arc heavier."
+    },
+    {
+      "name": "plan-office-floor-01",
+      "type": "registry:block",
+      "title": "Plan — Office floor",
+      "description": "Which rooms are free on a floor, on the building's own plan rather than a world map: MapCanvas plan declares the extent in centimetres, rooms are polygons whose state rides the fill tone and the outline dash, MapPlanOverlay gives every room a real button for the keyboard, and MapPlanTable repeats the floor as words. Optionally lays the surveyor's drawing underneath as a plan-unit background picture."
+    },
+    {
+      "name": "plan-factory-layout-01",
+      "type": "registry:block",
+      "title": "Plan — Factory layout",
+      "description": "A plant floor in metres where each machine cell carries its state four times over: the tone wash, a hatch texture generated on a canvas, the outline dash and the word in the legend and table. State rides feature properties and hover/selection ride feature-state, so the channels never collide, and the four states stay four states in greyscale."
+    },
+    {
+      "name": "plan-seat-map-01",
+      "type": "registry:block",
+      "title": "Plan — Train seat map",
+      "description": "A reservation seat map on a plan of the train: three coaches of 64 seats in centimetres, 192 regions. The overlay runs in group mode — one button per coach, Enter to go in, Escape to come back out — with an option to show the direction of travel and the walk between coaches."
     },
     {
       "name": "infographic-journey-flow-01",
@@ -29693,6 +29711,11 @@
           "name": "usePlanSelection",
           "kind": "value",
           "module": "packages/maps/src/map-plan/use-plan-selection.ts"
+        },
+        {
+          "name": "useTokenColor",
+          "kind": "value",
+          "module": "packages/maps/src/lib/use-token-color.ts"
         }
       ],
       "types": [
@@ -31106,8 +31129,8 @@
         "MapControls": "maps-mapcontrols--docs",
         "MapGeoJSON": "maps-mapgeojson--docs",
         "MapMarker": "maps-mapmarker--docs",
-        "MapPlanLegend": "maps-factory-plan--docs",
-        "MapPlanOverlay": "maps-plan-maps--docs",
+        "MapPlanImage": "maps-mapplanimage--docs",
+        "MapPlanOverlay": "maps-mapplanoverlay--docs",
         "MapRoute": "maps-maproute--docs"
       }
     },

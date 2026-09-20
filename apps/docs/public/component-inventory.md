@@ -19,7 +19,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
-| `@elabs-ai/components-maps` | packages/maps | 22 | 4 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
+| `@elabs-ai/components-maps` | packages/maps | 22 | 5 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 225 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 9 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
@@ -1096,6 +1096,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | usePlanPatterns | hook |  | `@elabs-ai/components-maps` |  |
 | usePlanProjection | hook |  | `@elabs-ai/components-maps` |  |
 | usePlanSelection | hook |  | `@elabs-ai/components-maps` |  |
+| useTokenColor | hook |  | `@elabs-ai/components-maps` |  |
 
 ## @elabs-ai/components-charts
 

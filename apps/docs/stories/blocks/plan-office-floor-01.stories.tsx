@@ -58,6 +58,4 @@ export const WithSurveyDrawing: Story = { args: { showDrawing: true } };
 export const Loading: Story = { args: { loading: true } };
 
 /** A floor with no rooms on it says so, rather than showing an empty grid. */
-export const EmptyFloor: Story = {
-  args: { floors: { 3: { type: "FeatureCollection", features: [] } } },
-};
+export const EmptyFloor: Story = { args: { empty: true } };
