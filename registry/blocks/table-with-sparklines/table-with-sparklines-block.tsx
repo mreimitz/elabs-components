@@ -73,6 +73,26 @@ export function TableWithSparklinesBlock() {
         getRowId={(row) => row.service}
         caption="Requests per second by service, last 7 days"
       />
+      {/*
+        The dashed line is a fact about the data, so it is named where everyone
+        can read it — not only inside each row's accessible name. The swatch
+        repeats the mark exactly (same token, same dash rhythm) so it can be
+        matched to the plot rather than inferred.
+      */}
+      <p className="mt-2 flex items-center gap-2 text-meta text-muted-foreground">
+        <svg aria-hidden="true" width={20} height={8} viewBox="0 0 20 8" className="shrink-0">
+          <line
+            x1="0"
+            x2="20"
+            y1="4"
+            y2="4"
+            stroke="var(--chart-foreground-muted)"
+            strokeWidth={1}
+            strokeDasharray="2 3"
+          />
+        </svg>
+        Dashed line: each service’s target, in requests per second.
+      </p>
     </div>
   );
 }
