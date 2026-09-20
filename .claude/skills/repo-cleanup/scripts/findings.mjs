@@ -20,6 +20,7 @@ export const CATEGORIES = {
   usage: "TOK",
   config: "CFG",
   docs: "DOC",
+  provenance: "REF",
   repo: "REPO",
   git: "GIT",
   performance: "PERF",

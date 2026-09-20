@@ -60,7 +60,7 @@ Dark teal, lavender, orange, blue, olive, neutral. The sequential ramp runs mint
 - Heap's primary button is ink with a mint border, inverting on hover. brand-ui has no border
   token for filled buttons, so the theme uses the mint fill with ink text instead.
 - The light sidebar uses Heap's deep navy block, which keeps app chrome visually recessed.
-- No logo: `--brand-logo-*` stay `initial`, so the demo mark shows.
+- No logo: `--brand-logo-*` stay `initial`, so brand-ui’s own mark shows.
 
 ## Sources
 

@@ -221,8 +221,11 @@ steps a reader has to memorise rather than see.
 
 - **Colors:** edit token values per theme (start with `--primary`,
   `--background`, `--foreground`, `--accent`, `--ring`).
-- **Logo:** replace `packages/icons/src/brand-logo.tsx` (keep the `currentColor`
-  - variant API so consumers don't change).
+- **Logo:** set `--brand-logo-mark`, `--brand-logo-lockup` and
+  `--brand-logo-lockup-aspect` in your app's own CSS — all three together, since the
+  aspect token is also the switch that hides the built-in mark. Themes carry no logo
+  art. Replacing `packages/icons/src/brand-logo.tsx` is the fork path (keep the
+  `currentColor` + variant API so consumers don't change).
 - **Icons:** add brand icons under `packages/icons/src/sample-icons/` using the
   `createIcon` factory. `lucide-react` is the **default** library for generic UI
   glyphs (not a fallback) — see `.claude/rules/conventions.md` (Icons).

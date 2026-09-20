@@ -12,8 +12,8 @@ against docs.snowflake.com screenshots. Certainty per value:
 - **token** — a Balto/Stellar value, converted to `oklch()` unchanged.
 - **derived** — computed from token values (contrast lifts, extra chart series, ramps).
 
-The logo is Snowflake's trademark. This theme is for internal work and demos; public use
-needs Snowflake's permission.
+Snowflake's name and logo are its trademarks, and this theme ships none of its logo artwork.
+It is for internal work and demos; public use needs Snowflake's permission.
 
 ## What makes it Snowsight
 
@@ -66,10 +66,11 @@ around gray-15; mono is the blue-grey ladder. Gridlines `#eceef1` · `#293246`, 
 
 ## Logo
 
-`--brand-logo-mark` / `--brand-logo-lockup` are unchanged from the previous version (the
-snowflake bug and the mark + wordmark, all Snowflake Blue `#29b5e8`, aspect 4.1818). They were
-read through a summarising fetch, not downloaded byte-for-byte — replace them with the files
-from Snowflake's brand page before public use.
+None. The three `--brand-logo-*` tokens stay `initial`, so brand-ui's own mark shows, inked by
+this theme. An app that wants its own logo sets those tokens at the app level — see
+`themes/README.md`. (Earlier versions of this folder embedded the Snowflake bug and lockup; a
+theme carrying someone else's trademark is what `pnpm check --rule community-themes` now
+refuses.)
 
 ## Decisions taken
 
@@ -87,7 +88,7 @@ from Snowflake's brand page before public use.
 | s1  | `https://app.snowflake.com/static/generated-styles-*.css`, `styles-*.css`, `polaris-*.css` (build `main-82973`, 2026-09-18) — Balto + Stellar tokens, light and `.darkMode`                                                                                                 | first-party CSS         |
 | s2  | [Snowsight navigation menu](https://docs.snowflake.com/en/user-guide/ui-snowsight-navigation), [Exploring the Snowsight UI](https://docs.snowflake.com/en/user-guide/ui-snowsight-homepage), [Workspaces](https://docs.snowflake.com/en/user-guide/ui-snowsight/workspaces) | first-party screenshots |
 | s3  | [Getting Started with Snowflake quickstart](https://www.snowflake.com/en/developers/guides/getting-started-with-snowflake/) — worksheet, databases list                                                                                                                     | first-party screenshots |
-| s4  | [Snowflake brand guidelines](https://www.snowflake.com/brand-guidelines/) — logo colour                                                                                                                                                                                     | guideline               |
+| s4  | [Snowflake brand guidelines](https://www.snowflake.com/brand-guidelines/) — brand colour names                                                                                                                                                                              | guideline               |
 
 ## Use it
 

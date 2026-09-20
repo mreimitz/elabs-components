@@ -60,12 +60,14 @@ check("skill files present", () => {
     "scripts/usage-forensics.mjs",
     "scripts/doc-hygiene.mjs",
     "scripts/repo-inventory.mjs",
+    "scripts/reference-leakage.mjs",
     "scripts/measure-command.mjs",
     "references/finding-model.md",
     "references/safety-model.md",
     "references/context-budget.md",
     "references/token-forensics.md",
     "references/doc-hygiene.md",
+    "references/reference-leakage.md",
     "references/repo-hygiene.md",
     "references/stack-adapters.md",
     "references/remediation.md",
@@ -133,6 +135,7 @@ check("context-footprint runs and emits valid JSON", () => {
 for (const [name, script] of [
   ["doc-hygiene", "doc-hygiene.mjs"],
   ["repo-inventory", "repo-inventory.mjs"],
+  ["reference-leakage", "reference-leakage.mjs"],
 ]) {
   check(`${name} runs and emits valid JSON`, () => {
     const out = execFileSync(process.execPath, [join(SKILL_DIR, "scripts", script)], {
@@ -220,6 +223,7 @@ check("audit surface is read-only (no writes during detection)", () => {
     "context-footprint.mjs",
     "doc-hygiene.mjs",
     "repo-inventory.mjs",
+    "reference-leakage.mjs",
   ]) {
     execFileSync(process.execPath, [join(SKILL_DIR, "scripts", s)], {
       timeout: 120_000,

@@ -17,8 +17,8 @@ Lightning Blue has no dark mode. The dark scheme keeps SLDS 2's own dark palette
 (`light-dark()` pairs of the Cosmos theme, `@salesforce-ux/design-system-2@2.264.2`) on the
 Lightning Blue shape and type rules, so a dark option exists without inventing colours.
 
-The logo is Salesforce's trademark. This theme is for internal work and demos; public use
-needs Salesforce's permission.
+Salesforce's name and logo are its trademarks, and this theme ships none of its logo artwork.
+It is for internal work and demos; public use needs Salesforce's permission.
 
 ## What makes it Lightning
 
@@ -49,7 +49,7 @@ sidebar reproduces.
 | Tables                           | bold header, no zebra, 1 px row rule, `#f3f3f3` row hover                                                                               | `--table-*`                                               | token     |
 | Backdrop                         | `rgba(8,7,7,.6)`, no blur                                                                                                               | `--overlay`, `--overlay-blur: 0px`                        | token     |
 | Global header                    | 50 px                                                                                                                                   | `--header-size: 12` (48 px)                               | token     |
-| Logo                             | Salesforce cloud `#00a1e0` from the SLDS package                                                                                        | `--brand-logo-mark`                                       | token     |
+| Logo                             | none — the library mark shows, inked by the theme                                                                                       | `--brand-logo-*: initial`                                 | token     |
 
 ## Chart palette
 

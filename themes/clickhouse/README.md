@@ -12,8 +12,8 @@ clickhouse.com/docs. Certainty per value:
 - **token** — a click-ui value, converted to `oklch()` unchanged.
 - **derived** — computed from token values (contrast lifts, extra chart series, ramps).
 
-ClickHouse's name and logo are its trademarks. This theme is for internal work and demos;
-public use needs ClickHouse's permission.
+ClickHouse's name is its trademark, and this theme ships none of its logo artwork. It is for
+internal work and demos; public use needs ClickHouse's permission.
 
 ## What makes it ClickHouse
 
@@ -48,7 +48,7 @@ slightly lighter/darker active row and no coloured indicator.
 | Elevation                         | `0 4px 6px -1px lch(6.8 0 0 / .15)` menus, flat cards — dark 60 %                                                                                                                                             | `--shadow-strength: 0.6` · `2`, `--shadow-ring-color`                      | derived         |
 | Curtain                           | `lch(6.8 0 0 / .75)`, no blur                                                                                                                                                                                 | `--overlay`, `--overlay-blur: 0px`                                         | token           |
 | Icons                             | 16 px, 1.5 px stroke                                                                                                                                                                                          | `--icon-stroke: 1.5`                                                       | token           |
-| Logo                              | click-ui bars mark + wordmark, `#151515` on light, white on dark                                                                                                                                              | `--brand-logo-*`                                                           | token           |
+| Logo                              | none — the library mark shows, inked by the theme                                                                                                                                                             | `--brand-logo-*: initial`                                                  | token           |
 
 ## Chart palette
 
@@ -87,7 +87,6 @@ Gridlines `#e6e7e9` · `#323232`, axis labels `#696e79` · `#b3b6bd`.
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | s1  | [ClickHouse/click-ui](https://github.com/ClickHouse/click-ui) `src/theme/tokens/variables.light.ts` / `variables.dark.ts` (clone, 2026-09-18) | first-party tokens      |
 | s2  | [ClickHouse Cloud SQL console docs](https://clickhouse.com/docs/cloud/get-started/sql-console) — console screenshots (dark)                   | first-party screenshots |
-| s3  | [clickhouse-docs `static/img/*logo*.svg`](https://github.com/ClickHouse/clickhouse-docs) — logo artwork                                       | first-party SVG         |
 
 ## Use it
 

@@ -52,7 +52,11 @@ Web access was available; key facts were verified against official docs
 
 - Colors: token values in `packages/tokens/src/themes.css` (`:root`) and the
   reference themes in `packages/tokens/src/themes/`.
-- Logo: `packages/icons/src/brand-logo.tsx` (keep the `currentColor` + variant API).
+- Logo: no fork needed — point `--brand-logo-mark`, `--brand-logo-lockup` and
+  `--brand-logo-lockup-aspect` at your own art in your app's CSS (all three together; the
+  aspect token is what hides the built-in mark). A theme never carries logo art
+  (`pnpm check --rule community-themes`). Editing `packages/icons/src/brand-logo.tsx` is
+  the fork path only; keep the `currentColor` + variant API if you take it.
 - Icons: add to `packages/icons/src/sample-icons/` via `createIcon`.
 - Themes are token-driven and the set is **open**: a consumer writes their own
   `[data-theme]` stylesheet and registers it with `<ThemeProvider themes={…}>`,

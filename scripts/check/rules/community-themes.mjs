@@ -60,6 +60,9 @@ const TOKENS = [
   "--accent",
   "--accent-foreground",
   "--ring",
+  "--brand-logo-mark",
+  "--brand-logo-lockup",
+  "--brand-logo-lockup-aspect",
 ];
 const LIGHT = {
   "--background": "oklch(0.99 0.002 235)",
@@ -77,6 +80,10 @@ const LIGHT = {
   "--accent": "oklch(0.93 0.025 235)",
   "--accent-foreground": "oklch(0.25 0.02 235)",
   "--ring": "var(--primary)",
+  // A theme ships no logo art — the app overrides these (LOGO_TOKENS).
+  "--brand-logo-mark": "initial",
+  "--brand-logo-lockup": "initial",
+  "--brand-logo-lockup-aspect": "initial",
 };
 const DARK = {
   ...LIGHT,
@@ -129,7 +136,7 @@ function family(mutate = () => {}, schemes = ["light", "dark"]) {
 export default {
   id: "community-themes",
   scope: "themes",
-  doc: "Ship each downloadable theme family in `themes/<slug>/` complete and readable: one `[data-theme]` block per `<slug>-<scheme>.css` with a matching `color-scheme`, every contract token and nothing else, AA ink pairs, and a `theme.ts` + README that agree.",
+  doc: "Ship each downloadable theme family in `themes/<slug>/` complete and readable: one `[data-theme]` block per `<slug>-<scheme>.css` with a matching `color-scheme`, every contract token and nothing else, AA ink pairs, no logo art (`--brand-logo-*` stay `initial`, so brand-ui’s own mark shows and the app overrides it), and a `theme.ts` + README that agree.",
   baseline: "none",
   run(ctx) {
     for (const required of [TOKEN_NAMES, THEMES_ENGINE_CSS])
@@ -246,6 +253,19 @@ export default {
       family((f) => {
         f["ocean-fonts.css"] =
           '[data-theme="ocean-light"] { --primary: oklch(0.5 0 0); }\n@font-face { font-family: "Ocean Sans"; src: url("./fonts/ocean-sans/missing.woff2") format("woff2"); }';
+      }),
+      // a theme that embeds its own logo art (a trademark a theme may not carry)
+      family((f) => {
+        f["ocean-light.css"] = f["ocean-light.css"].replace(
+          "--brand-logo-mark: initial;",
+          '--brand-logo-mark: url("data:image/svg+xml,%3Csvg/%3E");',
+        );
+      }),
+      // logo art with its aspect switch, both schemes
+      family((f) => {
+        f["ocean-dark.css"] = f["ocean-dark.css"]
+          .replace("--brand-logo-lockup: initial;", '--brand-logo-lockup: url("/logo.svg");')
+          .replace("--brand-logo-lockup-aspect: initial;", "--brand-logo-lockup-aspect: 3.2;");
       }),
       // stray stylesheet, missing README
       family((f) => {

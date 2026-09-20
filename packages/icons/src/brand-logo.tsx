@@ -160,20 +160,26 @@ function hatchOffsets(): number[] {
 }
 const HATCH = hatchOffsets();
 
-/* ── Theme logo art ───────────────────────────────────────────────────────────
-   A theme that ships its own logo (e.g. a downloadable family in `themes/`)
-   declares three tokens in its stylesheet, so every BrandLogo — and every
-   AppIcon built on it — swaps with no code change and no provider:
+/* ── The consumer's own logo ──────────────────────────────────────────────────
+   An APP replaces the drawn mark by declaring three tokens in its own CSS, so
+   every BrandLogo — and every AppIcon built on it — swaps with no code change
+   and no provider:
 
      --brand-logo-mark          image for the square mark (`url(…)`)
      --brand-logo-lockup        image for the lockup
      --brand-logo-lockup-aspect lockup width ÷ height — AND the switch that hides
                                 the drawn mark below
 
-   The reference themes declare all three `initial` (guaranteed-invalid), so each
-   `var()` falls back and the drawn mark renders. A theme sets the three
-   together. The image is the theme's fixed colourway per mode; `title` stays the
-   accessible name, so pass the product name when the art carries a wordmark. */
+   Set all three together, or leave them alone and this mark renders: the aspect
+   token is the switch, so art supplied without it would sit BEHIND the drawn
+   mark. Every theme — the reference pair and the downloadable families in
+   `themes/` — declares all three `initial` (guaranteed-invalid), so each `var()`
+   falls back. A logo is the app's trademark, not a value a colour scheme may
+   carry, which is why a theme that pins one fails
+   `pnpm check --rule community-themes`; an app that wants a colourway per mode
+   scopes its override under `[data-theme="…"]`. An image carries its own
+   colours, so `title` stays the accessible name — pass the product name when the
+   art carries a wordmark. */
 const LOCKUP_ASPECT = "--brand-logo-lockup-aspect";
 
 /**
@@ -208,9 +214,9 @@ export const BrandLogo = forwardRef<SVGSVGElement, BrandLogoProps>(function Bran
   const isLockup = variant === "lockup";
   const vbWidth = isLockup ? brandLockupWidth(title) : BRAND_MARK_VIEWBOX_SIZE;
   const width = Math.round((height * vbWidth) / BRAND_MARK_VIEWBOX_SIZE);
-  // Theme-supplied logo art (see "Theme logo art" above). The reference themes
-  // declare these tokens `initial`, so every var() below takes its fallback and
-  // the drawn mark renders exactly as before.
+  // The consumer's own logo art (see the block above). Every theme declares these
+  // tokens `initial`, so every var() below takes its fallback and the drawn mark
+  // renders until an app sets them.
   const themeArtStyle: CSSProperties = {
     backgroundImage: `var(${isLockup ? "--brand-logo-lockup" : "--brand-logo-mark"}, none)`,
     backgroundPosition: "center",

@@ -95,8 +95,8 @@ export const AppIcon = forwardRef<HTMLSpanElement, AppIconProps>(function AppIco
       style={
         {
           height,
-          // A theme's own lockup art brings its own aspect (see BrandLogo's
-          // "Theme logo art"); without one this resolves to the wordmark width.
+          // An app's own lockup art brings its own aspect (see BrandLogo's
+          // "The consumer's own logo"); without one this is the wordmark width.
           "--app-icon-w-lockup": `calc(${height}px * var(--brand-logo-lockup-aspect, ${lockupWidth / height}))`,
           "--app-icon-w-mark": `${markWidth}px`,
         } as CSSProperties

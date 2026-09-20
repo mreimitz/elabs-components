@@ -1020,7 +1020,9 @@
      it. */
   --brand-mark-ring: currentColor;
   --brand-mark-tail: var(--primary);
-  /* Theme logo art — `initial` keeps the drawn mark (see BrandLogo). */
+  /* Logo art — the APP's, never a theme's. `initial` in every theme (enforced for
+     `themes/` families by `pnpm check --rule community-themes`), so BrandLogo draws
+     brand-ui's own mark; an app sets all three in its own CSS to swap it. */
   --brand-logo-mark: initial;
   --brand-logo-lockup: initial;
   --brand-logo-lockup-aspect: initial;

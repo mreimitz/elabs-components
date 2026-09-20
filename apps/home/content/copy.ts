@@ -592,7 +592,7 @@ export const themeSwatchesCopy = {
   createTheme: {
     heading: "Bring your own brand",
     description:
-      "An agent with the create-theme skill turns a brand's own material — links, a style sheet, a logo — into a new family.",
+      "An agent with the create-theme skill turns a brand's own material — links, a style sheet, screenshots — into a new family. Your logo stays yours: point three variables at it.",
     hostLabel: "Agent host",
   },
 } as const;

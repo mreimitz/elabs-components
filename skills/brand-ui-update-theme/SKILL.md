@@ -60,7 +60,9 @@ For each token the new material touches, one of:
 | **change derived tokens with it** | a changed primary moves its hover/pressed/ring/sidebar-primary too |
 
 Include each changed token in `proposal.json` with `"current"` set to its value in the
-family today, `"mode": "update"`. Logo and font changes follow `reference/research.md` §4–5.
+family today, `"mode": "update"`. Font changes follow `reference/research.md` §5. A logo is
+never one of them: the logo tokens stay `initial` (research §4), and an existing family that
+still pins logo art is fixed by resetting those tokens to `initial` in this pass.
 
 ### 4 · Draft, audit, propose — then stop
 
@@ -81,7 +83,7 @@ change per mode, and ask **Approve and write it / Change something / Cancel**.
    stylesheet as `--base`, the kit edits values in place, so its comments survive.
 2. Update the README: the "reproduces" table rows and the source ledger for every changed
    value; keep untouched rows.
-3. Logo or font changes: update the tokens in both modes, the fonts file and licence file.
+3. Font changes: update the tokens in both modes, the fonts file and licence file.
 4. Verify: `node <kit> audit …`; in the brand-ui source repo also
    `pnpm check --rule community-themes` and `pnpm gen`. Read the counts, not only the exit
    code.

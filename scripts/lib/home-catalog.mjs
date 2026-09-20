@@ -97,6 +97,10 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
     readFileSync(join(repoRoot, "scripts/lib/home-story-retitles.json"), "utf8"),
   ).titles;
   const aliases = {};
+  // Website-only family of a component whose Storybook group names another package.
+  const componentGroups = JSON.parse(
+    readFileSync(join(repoRoot, "scripts/lib/home-component-groups.json"), "utf8"),
+  ).groups;
   const { pages: docsPages } = indexStoryDocsPages(repoRoot);
 
   // name → { pkg, module } for every exported component, and per-package lookups.
@@ -150,7 +154,7 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
             : section === "blocks"
               ? "Compositions"
               : "Templates"
-        : parts[0];
+        : (componentGroups[`${pkgShort}/${parts[0]}`] ?? parts[0]);
     const intent = page.component ? lookup("intent", page.component) : null;
 
     // The component's own props plus those of the parts declared in the same folder

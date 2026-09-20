@@ -58,6 +58,21 @@ export const INK_PAIRS = [
 export const AA = 4.5;
 
 /**
+ * Logo tokens a theme must leave `initial`. A logo is a TRADEMARK owned by the
+ * product that uses brand-ui, not a value a colour scheme may carry: a theme that
+ * embeds one ships someone else's mark to every consumer who installs the family,
+ * and switching colour scheme would silently relabel the app. Every `BrandLogo` /
+ * `AppIcon` therefore falls back to brand-ui's own mark, inked by the theme
+ * (`--brand-mark-ring` / `--brand-mark-tail`), and the APP overrides these three
+ * at the app level when it wants its own (see `themes/README.md`).
+ */
+export const LOGO_TOKENS = [
+  "--brand-logo-mark",
+  "--brand-logo-lockup",
+  "--brand-logo-lockup-aspect",
+];
+
+/**
  * Format `content` as Prettier would for `path` (repo config), so generated and
  * scaffolded files pass `pnpm format:check` without a second step.
  */
@@ -300,6 +315,13 @@ export function auditFamily(
     const unknown = [...decls.keys()].filter((t) => !contract.has(t) && !overridable(t));
     if (unknown.length > 0) {
       errors.push(`${where}: token(s) outside the contract: ${unknown.join(", ")}`);
+    }
+
+    const logo = LOGO_TOKENS.filter((t) => decls.has(t) && decls.get(t) !== "initial");
+    if (logo.length > 0) {
+      errors.push(
+        `${where}: ${logo.join(", ")} must be "initial" — a theme ships no logo art; brand-ui's own mark shows and the APP overrides these tokens (themes/README.md)`,
+      );
     }
 
     for (const [fg, bg] of INK_PAIRS) {

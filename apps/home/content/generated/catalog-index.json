@@ -2772,7 +2772,7 @@
     "section": "components",
     "slug": "changereview",
     "name": "ChangeReview",
-    "group": "AI",
+    "group": "Data",
     "package": "ui",
     "component": "ChangeReview",
     "summary": "",

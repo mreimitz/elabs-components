@@ -48,12 +48,7 @@ project until they approve.
           "source": "s1",
           "confidence": "guideline"
         },
-        "--brand-logo-lockup": {
-          "value": "url(\"data:image/svg+xml,…\")",
-          "source": "s3",
-          "confidence": "measured"
-        },
-        "--brand-logo-lockup-aspect": { "value": "3.2", "source": "s3", "confidence": "measured" }
+        "--radius-base": { "value": "0.375rem", "source": "s2", "confidence": "measured" }
       }
     },
     "dark": { "tokens": {} }
@@ -121,8 +116,8 @@ otherwise open the file in their browser) and give them its location.
 
 ## Presenting it
 
-In the chat, beside the page: the brand colour and logo you chose and where they came
-from, how many values are `measured` / `guideline` / `derived` / `inferred`, every
+In the chat, beside the page: the brand colour you chose and where it came from, the note
+that the family ships no logo art and how the app sets its own, how many values are `measured` / `guideline` / `derived` / `inferred`, every
 deviation in one line each, and the open questions. Then ask one question with the options
 **Approve and write it**, **Change something** and **Cancel**. No files are written to the
 project before the answer is Approve.
