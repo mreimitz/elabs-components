@@ -4,8 +4,15 @@ import type MapLibreGL from "maplibre-gl";
 import { useEffect, useId, useMemo, useRef } from "react";
 
 import { useMap } from "../map-canvas/map-context";
-import { mergeHoverPaint } from "../lib/merge-hover-paint";
+import { mergeFeatureStatePaint } from "../lib/merge-hover-paint";
+import type { PlanPoint } from "../lib/plan-crs";
 import { useTokenColor } from "../lib/use-token-color";
+import { warnMapOnce } from "../lib/warn-once";
+
+/** Invisible line width, in px, that makes a hairline outline or a wall touchable. */
+const DEFAULT_HIT_WIDTH = 16;
+/** Half-size, in px, of the box a plan click is allowed to miss by. */
+const DEFAULT_PLAN_PICK_PADDING = 8;
 
 export type MapGeoJSONData<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties> =
   | GeoJSON.FeatureCollection<GeoJSON.Geometry, P>
@@ -28,18 +35,29 @@ export type MapGeoJSONEvent<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJso
   longitude: number;
   /** Latitude of the cursor at the time of the event. */
   latitude: number;
+  /**
+   * The cursor in PLAN units, when the canvas declares a `plan` extent —
+   * otherwise `null`. What a plan consumer actually wants: metres along the
+   * hall, not a synthesized longitude.
+   */
+  plan: PlanPoint | null;
   /** The underlying MapLibre mouse event for advanced use cases. */
   originalEvent: MapLibreGL.MapLayerMouseEvent;
 };
 
 export type MapGeoJSONProps<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties> = {
-  /** GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it from. */
+  /**
+   * GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it
+   * from. On a canvas with a `plan` extent the coordinates are PLAN units —
+   * `[x, y]` in the plan's own drawing units — and are converted for you.
+   */
   data: MapGeoJSONData<P>;
   /** Optional unique identifier prefix for the source/layers. Auto-generated if not provided. */
   id?: string;
   /**
-   * Feature property to promote to the feature `id`. Required for hover
-   * feature-state (`fillHoverPaint`) and stable `onHover`/`onClick` payloads.
+   * Feature property to promote to the feature `id`. Required for hover and
+   * selected feature-state (`fillHoverPaint`, `selectedId`) and stable
+   * `onHover`/`onClick` payloads.
    */
   promoteId?: string;
   /**
@@ -61,12 +79,48 @@ export type MapGeoJSONProps<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJso
    * as a `case` expression keyed on hover feature-state. Requires `promoteId`.
    */
   fillHoverPaint?: MapFillPaint;
+  /** The outline equivalent of `fillHoverPaint`. Requires `promoteId`. */
+  lineHoverPaint?: MapLinePaint;
+  /**
+   * Paint merged onto the fill layer for the feature(s) named by `selectedId`.
+   * Applied outside hover, so a selected feature still looks selected while the
+   * cursor is over it. Requires `promoteId`.
+   */
+  fillSelectedPaint?: MapFillPaint;
+  /** The outline equivalent of `fillSelectedPaint`. Requires `promoteId`. */
+  lineSelectedPaint?: MapLinePaint;
+  /**
+   * The selected feature id(s) — the promoted `promoteId` values. Selection is
+   * the consumer's state; this only paints it.
+   */
+  selectedId?: string | number | readonly (string | number)[] | null;
+  /**
+   * Take over the highlight: when set, the hover paint follows THIS id instead
+   * of the pointer. That is how `MapPlanOverlay` makes a keyboard-focused room
+   * light up exactly as a hovered one does — one channel, one appearance.
+   */
+  hoveredId?: string | number | null;
   /** Callback when a feature is clicked. */
   onClick?: (e: MapGeoJSONEvent<P>) => void;
   /** Callback fired when the hovered feature changes; `null` when the cursor leaves. */
   onHover?: (e: MapGeoJSONEvent<P> | null) => void;
-  /** Whether features respond to mouse events (default: false). */
+  /**
+   * Whether features respond to mouse events. Defaults to `false` on a
+   * geographic canvas and `true` on a plan canvas, where the shapes ARE the
+   * subject rather than a backdrop.
+   */
   interactive?: boolean;
+  /**
+   * How far, in px, a click may miss a shape and still land on it. Defaults to
+   * 8 px on a plan (so a 20 px seat is a 36 px touch target) and 0 elsewhere.
+   * An exact hit always wins over a padded one.
+   */
+  pickPadding?: number;
+  /**
+   * Width, in px, of the invisible line that makes an outline-only shape
+   * touchable (default 16). Only used when `fillPaint` is `false`.
+   */
+  hitWidth?: number;
   /** Optional MapLibre layer id to insert the layers before (z-order control). */
   beforeId?: string;
 };
@@ -76,6 +130,16 @@ export type MapGeoJSONProps<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJso
  * `MapRoute` / `MapArc` — drop it inside `<MapCanvas>` (typically with `blank`)
  * for choropleths and region/data maps. For full control over expressions and
  * multiple layers, manage layers directly via `useMap()` instead.
+ *
+ * On a canvas that declares a plan extent it is also the shape layer of a
+ * custom (non-geographic) map: rooms, machine cells, aisles and seats written
+ * in the plan's own units.
+ *
+ * ```tsx
+ * <MapCanvas blank plan={{ width: 2400, height: 1600, unit: "cm" }}>
+ *   <MapGeoJSON data={roomsInCentimetres} promoteId="id" selectedId={roomId} />
+ * </MapCanvas>
+ * ```
  */
 export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties>({
   data,
@@ -84,17 +148,28 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
   fillPaint,
   linePaint,
   fillHoverPaint,
+  lineHoverPaint,
+  fillSelectedPaint,
+  lineSelectedPaint,
+  selectedId,
+  hoveredId,
   onClick,
   onHover,
-  interactive = false,
+  interactive: interactiveProp,
+  pickPadding,
+  hitWidth = DEFAULT_HIT_WIDTH,
   beforeId,
 }: MapGeoJSONProps<P>) {
-  const { map, isLoaded } = useMap();
+  const { map, isLoaded, plan } = useMap();
   const autoId = useId();
   const id = propId ?? autoId;
   const sourceId = `geojson-source-${id}`;
   const fillLayerId = `geojson-fill-${id}`;
   const lineLayerId = `geojson-line-${id}`;
+  const hitLayerId = `geojson-hit-${id}`;
+
+  const interactive = interactiveProp ?? plan != null;
+  const pickPad = pickPadding ?? (plan ? DEFAULT_PLAN_PICK_PADDING : 0);
 
   // Theme-driven neutral defaults: landmass = the mid-neutral `--border` rung,
   // separators = the page surface. Both re-resolve on theme change.
@@ -103,21 +178,53 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
 
   const showFill = fillPaint !== false;
   const showLine = linePaint !== false;
+  // Without a fill there is nothing to click: a hairline outline is a 1 px
+  // target and a wall or conveyor has no interior at all.
+  const showHit = interactive && !showFill;
+
+  // Plan units in, Mercator out. A URL cannot be converted — the fetch happens
+  // inside the engine — so say so once instead of drawing the plan in the
+  // Atlantic.
+  if (plan && typeof data === "string") {
+    warnMapOnce(
+      "geojson-plan-url",
+      "<MapGeoJSON data={url}> cannot be converted to plan units. Fetch the GeoJSON yourself and pass the object, or pass coordinates already in lng/lat.",
+    );
+  }
+  if (interactive && !promoteId) {
+    warnMapOnce(
+      "geojson-promote-id",
+      "<MapGeoJSON interactive> needs `promoteId` to tell features apart: without it hover and selection paint nothing.",
+    );
+  }
+
+  const resolvedData = useMemo(
+    () => (plan && typeof data !== "string" ? plan.toGeoJSON(data) : data),
+    [plan, data],
+  );
 
   const mergedFillPaint = useMemo(
-    () => mergeHoverPaint({ "fill-color": defaultFill, ...(fillPaint || {}) }, fillHoverPaint),
-    [defaultFill, fillPaint, fillHoverPaint],
+    () =>
+      mergeFeatureStatePaint(
+        { "fill-color": defaultFill, ...(fillPaint || {}) },
+        { hover: fillHoverPaint, selected: fillSelectedPaint },
+      ),
+    [defaultFill, fillPaint, fillHoverPaint, fillSelectedPaint],
   );
   const mergedLinePaint = useMemo(
-    () => ({
-      "line-color": defaultLine,
-      "line-width": 0.5,
-      ...(linePaint || {}),
-    }),
-    [defaultLine, linePaint],
+    () =>
+      mergeFeatureStatePaint(
+        {
+          "line-color": defaultLine,
+          "line-width": 0.5,
+          ...(linePaint || {}),
+        },
+        { hover: lineHoverPaint, selected: lineSelectedPaint },
+      ),
+    [defaultLine, linePaint, lineHoverPaint, lineSelectedPaint],
   );
-  const latestRef = useRef({ onClick, onHover });
-  latestRef.current = { onClick, onHover };
+  const latestRef = useRef({ onClick, onHover, plan });
+  latestRef.current = { onClick, onHover, plan };
 
   // Add source on mount.
   useEffect(() => {
@@ -125,12 +232,13 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
 
     map.addSource(sourceId, {
       type: "geojson",
-      data,
+      data: resolvedData as never,
       ...(promoteId ? { promoteId } : {}),
     });
 
     return () => {
       try {
+        if (map.getLayer(hitLayerId)) map.removeLayer(hitLayerId);
         if (map.getLayer(lineLayerId)) map.removeLayer(lineLayerId);
         if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
@@ -145,8 +253,8 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
   useEffect(() => {
     if (!isLoaded || !map) return;
     const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource | undefined;
-    source?.setData(data as never);
-  }, [isLoaded, map, data, sourceId]);
+    source?.setData(resolvedData as never);
+  }, [isLoaded, map, resolvedData, sourceId]);
 
   // Sync layers and paint when visibility or styling changes.
   useEffect(() => {
@@ -183,6 +291,21 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
       map.removeLayer(lineLayerId);
     }
 
+    // Invisible, but still picked: MapLibre hit-tests geometry, not opacity.
+    if (showHit && !map.getLayer(hitLayerId)) {
+      map.addLayer(
+        {
+          id: hitLayerId,
+          type: "line",
+          source: sourceId,
+          paint: { "line-color": defaultLine, "line-opacity": 0, "line-width": hitWidth },
+        },
+        beforeId,
+      );
+    } else if (!showHit && map.getLayer(hitLayerId)) {
+      map.removeLayer(hitLayerId);
+    }
+
     if (showFill && map.getLayer(fillLayerId)) {
       for (const [key, value] of Object.entries(mergedFillPaint)) {
         map.setPaintProperty(fillLayerId, key as keyof MapFillPaint, value as never);
@@ -193,35 +316,103 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
         map.setPaintProperty(lineLayerId, key as keyof MapLinePaint, value as never);
       }
     }
+    if (showHit && map.getLayer(hitLayerId)) {
+      map.setPaintProperty(hitLayerId, "line-width", hitWidth);
+    }
   }, [
     isLoaded,
     map,
     sourceId,
     fillLayerId,
     lineLayerId,
+    hitLayerId,
     showFill,
     showLine,
+    showHit,
+    hitWidth,
+    defaultLine,
     mergedFillPaint,
     mergedLinePaint,
     beforeId,
   ]);
 
-  // Interaction handlers (bound to the fill layer).
+  // Selection is the consumer's state; mirror it into feature-state and clear
+  // whatever fell out of the set, so paint never sticks to a deselected shape.
+  const selectedKey = useMemo(() => {
+    if (selectedId == null) return "";
+    return (Array.isArray(selectedId) ? selectedId : [selectedId]).join(" ");
+  }, [selectedId]);
+  const appliedSelectionRef = useRef<(string | number)[]>([]);
   useEffect(() => {
-    if (!isLoaded || !map || !interactive || !showFill) return;
+    if (!isLoaded || !map || !map.getSource(sourceId)) return;
+    const next =
+      selectedId == null
+        ? []
+        : ((Array.isArray(selectedId) ? [...selectedId] : [selectedId]) as (string | number)[]);
 
-    let hoveredId: string | number | null = null;
+    for (const previous of appliedSelectionRef.current) {
+      if (!next.includes(previous)) {
+        map.setFeatureState({ source: sourceId, id: previous }, { selected: false });
+      }
+    }
+    for (const current of next) {
+      map.setFeatureState({ source: sourceId, id: current }, { selected: true });
+    }
+    appliedSelectionRef.current = next;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the ids themselves so an inline array literal doesn't re-run this
+  }, [isLoaded, map, sourceId, selectedKey]);
+
+  // A controlled highlight: the overlay's keyboard focus and the pointer must
+  // produce the same appearance, so when `hoveredId` is given the pointer stops
+  // writing hover state and this effect owns it instead.
+  const hoverIsControlled = hoveredId !== undefined;
+  const appliedHoverRef = useRef<string | number | null>(null);
+  useEffect(() => {
+    if (!hoverIsControlled || !isLoaded || !map || !map.getSource(sourceId)) return;
+    const previous = appliedHoverRef.current;
+    if (previous != null && previous !== hoveredId) {
+      map.setFeatureState({ source: sourceId, id: previous }, { hover: false });
+    }
+    if (hoveredId != null) {
+      map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: true });
+    }
+    appliedHoverRef.current = hoveredId ?? null;
+  }, [hoverIsControlled, hoveredId, isLoaded, map, sourceId]);
+
+  // Interaction handlers, bound to whichever layer carries the shape: the fill,
+  // or the invisible hit line when there is no fill.
+  const pickLayerId = showFill ? fillLayerId : hitLayerId;
+  useEffect(() => {
+    if (!isLoaded || !map || !interactive) return;
+    if (!showFill && !showHit) return;
+
+    let pointerHoverId: string | number | null = null;
 
     const setHover = (next: string | number | null) => {
-      if (next === hoveredId) return;
+      if (hoverIsControlled) return;
+      if (next === pointerHoverId) return;
       const sourceExists = !!map.getSource(sourceId);
-      if (hoveredId != null && sourceExists) {
-        map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
+      if (pointerHoverId != null && sourceExists) {
+        map.setFeatureState({ source: sourceId, id: pointerHoverId }, { hover: false });
       }
-      hoveredId = next;
+      pointerHoverId = next;
       if (next != null && sourceExists) {
         map.setFeatureState({ source: sourceId, id: next }, { hover: true });
       }
+    };
+
+    const payload = (
+      feature: MapLibreGL.MapGeoJSONFeature,
+      e: MapLibreGL.MapLayerMouseEvent,
+    ): MapGeoJSONEvent<P> => {
+      const planCrs = latestRef.current.plan;
+      return {
+        feature: feature as unknown as MapGeoJSONFeature<P>,
+        longitude: e.lngLat.lng,
+        latitude: e.lngLat.lat,
+        plan: planCrs ? planCrs.toPlan([e.lngLat.lng, e.lngLat.lat]) : null,
+        originalEvent: e,
+      };
     };
 
     const handleMouseMove = (e: MapLibreGL.MapLayerMouseEvent) => {
@@ -230,14 +421,9 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
       map.getCanvas().style.cursor = "pointer";
 
       const featureId = feature.id;
-      if (featureId === hoveredId) return;
+      if (featureId === pointerHoverId) return;
       setHover(featureId ?? null);
-      latestRef.current.onHover?.({
-        feature: feature as unknown as MapGeoJSONFeature<P>,
-        longitude: e.lngLat.lng,
-        latitude: e.lngLat.lat,
-        originalEvent: e,
-      });
+      latestRef.current.onHover?.(payload(feature, e));
     };
 
     const handleMouseLeave = () => {
@@ -246,29 +432,59 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
       latestRef.current.onHover?.(null);
     };
 
-    const handleClick = (e: MapLibreGL.MapLayerMouseEvent) => {
-      const feature = e.features?.[0];
-      if (!feature) return;
-      latestRef.current.onClick?.({
-        feature: feature as unknown as MapGeoJSONFeature<P>,
-        longitude: e.lngLat.lng,
-        latitude: e.lngLat.lat,
-        originalEvent: e,
-      });
+    /**
+     * An exact hit always wins; only when nothing is under the pointer does the
+     * padded box get a say. On a plan that turns a 20 px seat into a target a
+     * fingertip can actually land on.
+     */
+    const pickPadded = (e: MapLibreGL.MapLayerMouseEvent) => {
+      const exact = map.queryRenderedFeatures(e.point, { layers: [pickLayerId] });
+      if (exact.length > 0) return exact[0];
+      const { x, y } = e.point;
+      const box = [
+        [x - pickPad, y - pickPad],
+        [x + pickPad, y + pickPad],
+      ] as unknown as Parameters<typeof map.queryRenderedFeatures>[0];
+      return map.queryRenderedFeatures(box, { layers: [pickLayerId] })[0];
     };
 
-    map.on("mousemove", fillLayerId, handleMouseMove);
-    map.on("mouseleave", fillLayerId, handleMouseLeave);
-    map.on("click", fillLayerId, handleClick);
+    const handleClick = (e: MapLibreGL.MapLayerMouseEvent) => {
+      const feature = pickPad > 0 ? pickPadded(e) : e.features?.[0];
+      if (!feature) return;
+      latestRef.current.onClick?.(payload(feature, e));
+    };
+
+    map.on("mousemove", pickLayerId, handleMouseMove);
+    map.on("mouseleave", pickLayerId, handleMouseLeave);
+    // A padded click must hear about the misses too, so it listens on the map.
+    if (pickPad > 0) {
+      map.on("click", handleClick);
+    } else {
+      map.on("click", pickLayerId, handleClick);
+    }
 
     return () => {
-      map.off("mousemove", fillLayerId, handleMouseMove);
-      map.off("mouseleave", fillLayerId, handleMouseLeave);
-      map.off("click", fillLayerId, handleClick);
+      map.off("mousemove", pickLayerId, handleMouseMove);
+      map.off("mouseleave", pickLayerId, handleMouseLeave);
+      if (pickPad > 0) {
+        map.off("click", handleClick);
+      } else {
+        map.off("click", pickLayerId, handleClick);
+      }
       setHover(null);
       map.getCanvas().style.cursor = "";
     };
-  }, [isLoaded, map, fillLayerId, sourceId, interactive, showFill]);
+  }, [
+    isLoaded,
+    map,
+    pickLayerId,
+    sourceId,
+    interactive,
+    showFill,
+    showHit,
+    pickPad,
+    hoverIsControlled,
+  ]);
 
   return null;
 }

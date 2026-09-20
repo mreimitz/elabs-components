@@ -971,6 +971,28 @@ describe("BarChart richness (RM-113)", () => {
     expect(container.querySelectorAll(".text-chart-value")).toHaveLength(0);
   });
 
+  it("labels only the bars a showValues filter lets through", () => {
+    const { container } = render(
+      <BarChart
+        animationDuration={0}
+        data={[
+          { name: "Alpha", v: 30 },
+          { name: "Beta", v: 80 },
+          { name: "Gamma", v: 55 },
+        ]}
+        xDataKey="name"
+      >
+        <Bar
+          animate={false}
+          dataKey="v"
+          showValues={{ filter: (datum) => datum.name === "Beta" }}
+        />
+      </BarChart>,
+    );
+    const labels = [...container.querySelectorAll(".text-chart-value")];
+    expect(labels.map((label) => label.textContent)).toEqual(["80"]);
+  });
+
   // Integration with RM-111: the annotations prop wraps the plot that carries
   // the RM-113 props, and a row note follows its category through a sort.
   it("keeps the comparison layer and moves an annotation row note with sort", () => {

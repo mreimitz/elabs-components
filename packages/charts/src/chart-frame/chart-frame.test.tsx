@@ -1219,3 +1219,24 @@ describe("InlineChip (RM-117)", () => {
     );
   });
 });
+
+describe("ChartFrame titleSize", () => {
+  it("default keeps the card title; headline takes the title role and a reading-size description", () => {
+    const { rerender } = render(
+      <ChartFrame title="Finding" description="How to read it">
+        <div />
+      </ChartFrame>,
+    );
+    expect(screen.getByText("Finding").className).toContain("text-base");
+    expect(screen.getByText("Finding").className).not.toContain("text-title");
+
+    rerender(
+      <ChartFrame title="Finding" description="How to read it" titleSize="headline">
+        <div />
+      </ChartFrame>,
+    );
+    expect(screen.getByText("Finding").className).toContain("text-title");
+    expect(screen.getByText("Finding").className).not.toContain("text-base");
+    expect(screen.getByText("How to read it").className).toContain("text-foreground");
+  });
+});

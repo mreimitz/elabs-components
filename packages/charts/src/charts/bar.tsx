@@ -29,6 +29,7 @@ import {
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
 import { useChartValueSetFormatter } from "./chart-formatters";
+import type { ChartValueFormat } from "./value-format";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart-selection";
 import { transitionWithDelay } from "./motion-utils";
@@ -165,6 +166,12 @@ export type BarAnimationType = "grow" | "fade";
 export interface BarShowValuesSpec {
   placement?: "inside" | "outside" | "auto";
   visibility?: "always" | "hover";
+  /**
+   * Label only the bars this returns `true` for — the few columns that are the story,
+   * while the context bars stay bare. Receives the raw datum and its row index.
+   * Default: every bar is labelled.
+   */
+  filter?: (datum: Record<string, unknown>, index: number) => boolean;
 }
 
 /**
@@ -233,6 +240,12 @@ export interface BarProps {
    * 24 px along the value axis stays unlabelled.
    */
   showValues?: BarShowValues;
+  /**
+   * How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: " %" }`,
+   * `{ style: "currency", abbreviate: true }`, `{ sign: "always" }`). One notation for the whole
+   * series, as without it. Unset: today's locale number. A percent stack still prints shares.
+   */
+  valueFormat?: ChartValueFormat;
   /**
    * Draw each bar as a countable `UnitStack` of `floor(value / unit)` rungs
    * (vertical bars, `kind="rung"`) or ticks (horizontal bars,
@@ -396,6 +409,7 @@ const BarInner = memo(function BarInner({
   stackGap = 0,
   groupGap = 4,
   showValues,
+  valueFormat,
   unit,
   highlightKey,
   palette,
@@ -474,7 +488,13 @@ const BarInner = memo(function BarInner({
     () => data.map((d) => d[dataKey]).filter((v): v is number => typeof v === "number"),
     [data, dataKey],
   );
-  const formatValue = useChartValueSetFormatter(seriesValues);
+  const formatValue = useChartValueSetFormatter(seriesValues, valueFormat);
+  // A `valueFormat` that sets `sign` prints the sign itself ("+4.2" / "−5.6" / "(5.6)") — adding
+  // the label's own minus on top would double it.
+  const formatOwnsSign =
+    typeof valueFormat === "object" &&
+    valueFormat.sign !== undefined &&
+    valueFormat.sign !== "auto";
   // Percent stacks (RM-113) label each segment with its SHARE, one notation.
   const formatShare = useChartValueSetFormatter(seriesValues, "percent");
 
@@ -752,8 +772,14 @@ const BarInner = memo(function BarInner({
     // along the value axis stays unlabelled.
     const segmentFits =
       !bar.extent || (isHorizontal ? barW : barHeight) >= MIN_SEGMENT_LABEL_LENGTH;
+    const passesFilter = labelSpec?.filter ? labelSpec.filter(bar.datum, bar.index) : true;
     const showLabel =
-      Boolean(labelMode) && thickness >= MIN_LABEL_BAR_WIDTH && settled && hoverGate && segmentFits;
+      Boolean(labelMode) &&
+      thickness >= MIN_LABEL_BAR_WIDTH &&
+      settled &&
+      hoverGate &&
+      segmentFits &&
+      passesFilter;
 
     let labelX = 0;
     let labelY = 0;
@@ -762,7 +788,7 @@ const BarInner = memo(function BarInner({
     const labelText =
       bar.extent && stackMode === "percent"
         ? formatShare(bar.extent[1] - bar.extent[0])
-        : isNegative
+        : isNegative && !formatOwnsSign
           ? `${MINUS_SIGN}${formatValue(Math.abs(bar.value))}`
           : formatValue(bar.value);
     if (showLabel && bar.extent) {

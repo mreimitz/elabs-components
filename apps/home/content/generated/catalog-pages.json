@@ -7462,8 +7462,8 @@
           {
             "name": "track",
             "optional": true,
-            "type": "boolean",
-            "description": "Paint a `--chart-mono-2` track behind each bar to the axis maximum (\"to 100 %\"). Default: false"
+            "type": "boolean | { fill?: string }",
+            "description": "Paint a track behind each bar to the axis maximum (\"to 100 %\"). `true` uses `--chart-mono-2`, a mark-weight grey; `{ fill }` names another ink — a surface tone such as `var(--chart-segment-background)` when the track should read as paper, not as data. Default: false"
           },
           {
             "name": "overlays",
@@ -7624,6 +7624,12 @@
             "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled."
           },
           {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares."
+          },
+          {
             "name": "unit",
             "optional": true,
             "type": "number",
@@ -7646,6 +7652,38 @@
             "optional": true,
             "type": "boolean",
             "description": "Draw a 0.8px `--chart-foreground-muted` hairline at the zero baseline across the whole plot. Default: auto — shown whenever ANY bar series in this chart has a negative value; pass `false` to force it off on this series, or `true` to force it on even with all-positive data."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "BarValueAxis",
+        "extends": [],
+        "props": [
+          {
+            "name": "position",
+            "optional": true,
+            "type": "\"top\" | \"bottom\"",
+            "description": "Where the tick labels sit. Default: `\"bottom\"`."
+          },
+          {
+            "name": "numTicks",
+            "optional": true,
+            "type": "number",
+            "description": "About how many ticks to aim for. Default: 5, fewer when the plot is narrow."
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How the tick values print — a preset or a spec (`{ suffix: \" h\" }`). Default: `\"compact\"`."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "string",
+            "description": "A short name for the axis, printed after the last tick (\"hours\")."
           }
         ],
         "variants": null,
@@ -9261,6 +9299,12 @@
             "optional": true,
             "type": "ChartFrameChrome",
             "description": "Surface drawn around the chart (RM-072). Default `\"card\"` — byte-identical to a frame without the prop. See `ChartFrameChrome`."
+          },
+          {
+            "name": "titleSize",
+            "optional": true,
+            "type": "\"default\" | \"headline\"",
+            "description": "How loud the title is. `\"default\"` is a card title inside a dashboard — one of many. `\"headline\"` is a published figure standing on its own: the title takes the `text-title` role and balances its lines, and the description steps up to body size in the foreground ink, because in a standalone figure the description is reading text, not a caption."
           },
           {
             "name": "headerSlot",
@@ -16119,8 +16163,8 @@
           {
             "name": "track",
             "optional": true,
-            "type": "boolean",
-            "description": "Paint a `--chart-mono-2` track behind each bar to the axis maximum (\"to 100 %\"). Default: false"
+            "type": "boolean | { fill?: string }",
+            "description": "Paint a track behind each bar to the axis maximum (\"to 100 %\"). `true` uses `--chart-mono-2`, a mark-weight grey; `{ fill }` names another ink — a surface tone such as `var(--chart-segment-background)` when the track should read as paper, not as data. Default: false"
           },
           {
             "name": "overlays",
@@ -16281,6 +16325,12 @@
             "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled."
           },
           {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares."
+          },
+          {
             "name": "unit",
             "optional": true,
             "type": "number",
@@ -16303,6 +16353,38 @@
             "optional": true,
             "type": "boolean",
             "description": "Draw a 0.8px `--chart-foreground-muted` hairline at the zero baseline across the whole plot. Default: auto — shown whenever ANY bar series in this chart has a negative value; pass `false` to force it off on this series, or `true` to force it on even with all-positive data."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "BarValueAxis",
+        "extends": [],
+        "props": [
+          {
+            "name": "position",
+            "optional": true,
+            "type": "\"top\" | \"bottom\"",
+            "description": "Where the tick labels sit. Default: `\"bottom\"`."
+          },
+          {
+            "name": "numTicks",
+            "optional": true,
+            "type": "number",
+            "description": "About how many ticks to aim for. Default: 5, fewer when the plot is narrow."
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How the tick values print — a preset or a spec (`{ suffix: \" h\" }`). Default: `\"compact\"`."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "string",
+            "description": "A short name for the axis, printed after the last tick (\"hours\")."
           }
         ],
         "variants": null,
@@ -30671,6 +30753,104 @@
     "block": null,
     "template": null
   },
+  "components/maps/factory-plan": {
+    "section": "components",
+    "slug": "factory-plan",
+    "name": "Factory Plan",
+    "title": "Maps/Factory Plan",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanLegend",
+    "importFrom": "@elabs-ai/components-maps",
+    "docsId": "maps-factory-plan--docs",
+    "file": "packages/maps/src/map-plan/factory-plan.stories.tsx",
+    "summary": "The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.",
+      "category": "display",
+      "relationships": {
+        "pairsWith": ["MapGeoJSON", "MapPlanOverlay", "MapPlanTable"]
+      },
+      "stateTokens": {
+        "mark": "bg-<tone> swatch (the ≥3:1 fill rung)",
+        "text": "text-<tone>-text for the word (the ink rung)"
+      },
+      "antiPatterns": [
+        "Leaving it out because the colours are 'obvious' — the texture and the dash are the channels greyscale keeps, and nobody guesses what a dash means without a key.",
+        "Writing the status words in the component — they are a `labels` prop so an app can localize them."
+      ]
+    },
+    "api": [
+      {
+        "name": "MapPlanLegend",
+        "extends": [],
+        "props": [
+          {
+            "name": "labels",
+            "optional": false,
+            "type": "PlanStatusLabels",
+            "description": "The word for each status. A status with no word is left out of the legend."
+          },
+          {
+            "name": "statuses",
+            "optional": true,
+            "type": "readonly PlanStatus[]",
+            "description": "Only show these statuses, in this order. Defaults to all four, in table order."
+          },
+          {
+            "name": "counts",
+            "optional": true,
+            "type": "Partial<Record<PlanStatus, number>>",
+            "description": "Optional count per status, e.g. how many rooms are free right now."
+          },
+          {
+            "name": "label",
+            "optional": true,
+            "type": "string",
+            "description": "Accessible name for the legend as a whole."
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string"
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "maps-factory-plan--factory-floor",
+        "name": "Factory Floor",
+        "description": "The default is STATIC: one deterministic moment of the plant, so the story is reproducible and a screenshot means something."
+      },
+      {
+        "id": "maps-factory-plan--live-status",
+        "name": "Live Status",
+        "description": "The same plant, ticking. Each tick walks the same seeded sequence forward, so “live” never means “different every run”."
+      },
+      {
+        "id": "maps-factory-plan--shapes-only",
+        "name": "Shapes Only",
+        "description": "The plan alone, with no status at all — the shape of a bare plant floor."
+      },
+      {
+        "id": "maps-factory-plan--print-table",
+        "name": "Print Table",
+        "description": "Status as words only — what the plan looks like on paper, where WebGL prints blank."
+      },
+      {
+        "id": "maps-factory-plan--status-encoding",
+        "name": "Status Encoding",
+        "description": "Every status, side by side, at the size a legend swatch is actually read at."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/maps/maparc": {
     "section": "components",
     "slug": "maparc",
@@ -30788,14 +30968,22 @@
     "importFrom": "@elabs-ai/components-maps",
     "docsId": "maps-mapcanvas--docs",
     "file": "packages/maps/src/map-canvas/map-canvas.stories.tsx",
-    "summary": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.",
+    "summary": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. With `plan` it is a non-geographic plan instead (a floor, a plant, a carriage) and every layer inside speaks plan units.",
     "question": "",
     "about": "",
     "intent": {
-      "purpose": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.",
+      "purpose": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. With `plan` it is a non-geographic plan instead (a floor, a plant, a carriage) and every layer inside speaks plan units.",
       "category": "data",
       "relationships": {
-        "contains": ["MapMarker", "MapControls", "MapClusterLayer", "MapGeoJSON", "MapRoute"]
+        "contains": [
+          "MapMarker",
+          "MapControls",
+          "MapClusterLayer",
+          "MapGeoJSON",
+          "MapRoute",
+          "MapPlanImage",
+          "MapPlanOverlay"
+        ]
       },
       "stateTokens": {
         "loading": "loading → Spinner overlay (role=\"status\")"
@@ -30803,7 +30991,10 @@
       "antiPatterns": [
         "Hiding MapLibre's attribution control — the default Carto basemap styles/tiles require it.",
         "Importing maplibre-gl CSS in the app — MapCanvas imports its own CSS plus the brand popup overrides.",
-        "Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL."
+        "Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL.",
+        "Mapping plan units into DEGREES to fake a plan coordinate system — degrees are not linear on screen, so a 16:9 plan renders at 2:1. Declare `plan` and let createPlanCrs map into normalized Mercator, where a rectangle stays a rectangle at every zoom.",
+        "Leaving rotation and pitch on for a plan — a tilted floor plan is unreadable. The `plan` prop turns dragRotate, pitchWithRotate and touchPitch off; do not switch them back on.",
+        "Combining `plan` with a globe projection — a plan is flat; the projection is ignored with a one-time warning."
       ]
     },
     "api": [
@@ -30863,6 +31054,18 @@
             "optional": true,
             "type": "boolean",
             "description": "Show a loading overlay on the map (e.g. while the app fetches map data)."
+          },
+          {
+            "name": "plan",
+            "optional": true,
+            "type": "PlanExtent | PlanCrs",
+            "description": "Turn the canvas into a CUSTOM (non-geographic) plan map: a floor plan, a factory layout, a train carriage, a rack elevation. Pass the plan's extent (`{ width, height }` in the plan's own units) or a `createPlanCrs(…)` result, and every layer inside then speaks PLAN coordinates instead of lng/lat — shapes, routes, markers and popups alike. The plan is fitted on mount, pan and zoom are clamped to its extent, and rotation and pitch are off (a rotated floor plan is unreadable). Pair it with `blank` and, for a picture under the shapes, `<MapPlanImage>`. The plan coordinate system is synthesized on Web Mercator, so it is not a georeference: distances belong to the plan, and a scale bar would lie."
+          },
+          {
+            "name": "fitPlan",
+            "optional": true,
+            "type": "boolean",
+            "description": "Fit a plan map to its extent on mount and whenever the extent changes (default: true). Ignored on a geographic map, and skipped when the camera is driven through `viewport`."
           }
         ],
         "variants": null,
@@ -30870,20 +31073,8 @@
       },
       {
         "name": "MapMarker",
-        "extends": ["Omit<MarkerOptions, \"element\">"],
+        "extends": ["MapPosition", "Omit<MarkerOptions, \"element\">"],
         "props": [
-          {
-            "name": "longitude",
-            "optional": false,
-            "type": "number",
-            "description": "Longitude coordinate for the marker position."
-          },
-          {
-            "name": "latitude",
-            "optional": false,
-            "type": "number",
-            "description": "Latitude coordinate for the marker position."
-          },
           {
             "name": "children",
             "optional": false,
@@ -30911,20 +31102,20 @@
           {
             "name": "onDragStart",
             "optional": true,
-            "type": "(lngLat: { lng: number; lat: number }) => void",
-            "description": "Callback when a drag starts (requires `draggable`)."
+            "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+            "description": "Callback when a drag starts (requires `draggable`). The plan point is `null` off a plan."
           },
           {
             "name": "onDrag",
             "optional": true,
-            "type": "(lngLat: { lng: number; lat: number }) => void",
-            "description": "Callback during a drag (requires `draggable`)."
+            "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+            "description": "Callback during a drag (requires `draggable`). The plan point is `null` off a plan."
           },
           {
             "name": "onDragEnd",
             "optional": true,
-            "type": "(lngLat: { lng: number; lat: number }) => void",
-            "description": "Callback when a drag ends (requires `draggable`)."
+            "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+            "description": "Callback when a drag ends (requires `draggable`). The plan point is `null` off a plan."
           }
         ],
         "variants": null,
@@ -30963,6 +31154,24 @@
             "optional": true,
             "type": "boolean",
             "description": "Show a fullscreen toggle button (default: false)."
+          },
+          {
+            "name": "showFit",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a button that frames the whole plan again — a plan map has an edge to come back to, so this defaults to ON there and off on a geographic map."
+          },
+          {
+            "name": "fitBounds",
+            "optional": true,
+            "type": "[[number, number], [number, number]]",
+            "description": "What the fit button frames. Defaults to the plan's own extent; pass bounds to frame something else (one wing, the selected cluster)."
+          },
+          {
+            "name": "onFit",
+            "optional": true,
+            "type": "() => void",
+            "description": "Called after the camera has been asked to frame the plan."
           },
           {
             "name": "className",
@@ -31050,7 +31259,7 @@
             "name": "data",
             "optional": false,
             "type": "MapGeoJSONData<P>",
-            "description": "GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it from."
+            "description": "GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it from. On a canvas with a `plan` extent the coordinates are PLAN units — `[x, y]` in the plan's own drawing units — and are converted for you."
           },
           {
             "name": "id",
@@ -31062,7 +31271,7 @@
             "name": "promoteId",
             "optional": true,
             "type": "string",
-            "description": "Feature property to promote to the feature `id`. Required for hover feature-state (`fillHoverPaint`) and stable `onHover`/`onClick` payloads."
+            "description": "Feature property to promote to the feature `id`. Required for hover and selected feature-state (`fillHoverPaint`, `selectedId`) and stable `onHover`/`onClick` payloads."
           },
           {
             "name": "fillPaint",
@@ -31083,6 +31292,36 @@
             "description": "Paint merged onto the fill layer for the feature under the cursor, applied as a `case` expression keyed on hover feature-state. Requires `promoteId`."
           },
           {
+            "name": "lineHoverPaint",
+            "optional": true,
+            "type": "MapLinePaint",
+            "description": "The outline equivalent of `fillHoverPaint`. Requires `promoteId`."
+          },
+          {
+            "name": "fillSelectedPaint",
+            "optional": true,
+            "type": "MapFillPaint",
+            "description": "Paint merged onto the fill layer for the feature(s) named by `selectedId`. Applied outside hover, so a selected feature still looks selected while the cursor is over it. Requires `promoteId`."
+          },
+          {
+            "name": "lineSelectedPaint",
+            "optional": true,
+            "type": "MapLinePaint",
+            "description": "The outline equivalent of `fillSelectedPaint`. Requires `promoteId`."
+          },
+          {
+            "name": "selectedId",
+            "optional": true,
+            "type": "string | number | readonly (string | number)[] | null",
+            "description": "The selected feature id(s) — the promoted `promoteId` values. Selection is the consumer's state; this only paints it."
+          },
+          {
+            "name": "hoveredId",
+            "optional": true,
+            "type": "string | number | null",
+            "description": "Take over the highlight: when set, the hover paint follows THIS id instead of the pointer. That is how `MapPlanOverlay` makes a keyboard-focused room light up exactly as a hovered one does — one channel, one appearance."
+          },
+          {
             "name": "onClick",
             "optional": true,
             "type": "(e: MapGeoJSONEvent<P>) => void",
@@ -31098,7 +31337,19 @@
             "name": "interactive",
             "optional": true,
             "type": "boolean",
-            "description": "Whether features respond to mouse events (default: false)."
+            "description": "Whether features respond to mouse events. Defaults to `false` on a geographic canvas and `true` on a plan canvas, where the shapes ARE the subject rather than a backdrop."
+          },
+          {
+            "name": "pickPadding",
+            "optional": true,
+            "type": "number",
+            "description": "How far, in px, a click may miss a shape and still land on it. Defaults to 8 px on a plan (so a 20 px seat is a 36 px touch target) and 0 elsewhere. An exact hit always wins over a padded one."
+          },
+          {
+            "name": "hitWidth",
+            "optional": true,
+            "type": "number",
+            "description": "Width, in px, of the invisible line that makes an outline-only shape touchable (default 16). Only used when `fillPaint` is `false`."
           },
           {
             "name": "beforeId",
@@ -31124,7 +31375,7 @@
             "name": "coordinates",
             "optional": false,
             "type": "[number, number][]",
-            "description": "Array of [longitude, latitude] coordinate pairs defining the route."
+            "description": "Array of [longitude, latitude] coordinate pairs defining the route — or, in a `<MapCanvas plan>`, [x, y] pairs in plan units."
           },
           {
             "name": "color",
@@ -31151,6 +31402,18 @@
             "description": "Dash pattern [dash length, gap length] for dashed lines."
           },
           {
+            "name": "direction",
+            "optional": true,
+            "type": "MapRouteDirection",
+            "description": "Draw chevrons along the line to show which way it runs (default: \"none\"). A conveyor, a one-way aisle and a walking route all need this, and an arrow is a second channel that greyscale keeps."
+          },
+          {
+            "name": "directionSpacing",
+            "optional": true,
+            "type": "number",
+            "description": "Distance between chevrons in px (default: 80)."
+          },
+          {
             "name": "onClick",
             "optional": true,
             "type": "() => void",
@@ -31173,6 +31436,154 @@
             "optional": true,
             "type": "boolean",
             "description": "Whether the route is interactive — shows a pointer cursor on hover (default: true)."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MapPlanImage",
+        "extends": [],
+        "props": [
+          {
+            "name": "src",
+            "optional": false,
+            "type": "MapPlanImageSource | { light: MapPlanImageSource; dark: MapPlanImageSource }",
+            "description": "The plan picture. Pass `{ light, dark }` to swap it with the theme."
+          },
+          {
+            "name": "alt",
+            "optional": true,
+            "type": "string",
+            "description": "What the picture shows, for anyone who cannot see it (\"Level 3 floor plan, 14 rooms around a central core\"). A plan drawn into WebGL has no accessible name of its own, so this is the only description of it."
+          },
+          {
+            "name": "id",
+            "optional": true,
+            "type": "string",
+            "description": "Optional identifier for the source/layer. Auto-generated if not provided."
+          },
+          {
+            "name": "extent",
+            "optional": true,
+            "type": "{ x: number; y: number; width: number; height: number }",
+            "description": "Where the picture sits, in PLAN units. Defaults to the whole plan extent, so a single full-bleed plan needs nothing here. Use it to place one wing, one machine cell or one carriage inside a larger plan."
+          },
+          {
+            "name": "coordinates",
+            "optional": true,
+            "type": "MapLibreGL.Coordinates",
+            "description": "The four corners in lng/lat (top-left, top-right, bottom-right, bottom-left) — an escape hatch that also works on an ordinary geographic canvas, like Leaflet's `imageOverlay`. Wins over `extent`."
+          },
+          {
+            "name": "opacity",
+            "optional": true,
+            "type": "number",
+            "description": "Opacity, 0–1 (default 1). A photographic or ink-heavy plan usually reads best held back around 0.35 so the data drawn on top stays the focus."
+          },
+          {
+            "name": "visible",
+            "optional": true,
+            "type": "boolean",
+            "description": "Hide the picture without tearing the source down — a multi-floor switch (default true)."
+          },
+          {
+            "name": "resampling",
+            "optional": true,
+            "type": "\"linear\" | \"nearest\"",
+            "description": "`\"nearest\"` keeps CAD line art crisp when zoomed past its native resolution."
+          },
+          {
+            "name": "beforeId",
+            "optional": true,
+            "type": "string",
+            "description": "MapLibre layer id to insert this layer before (z-order control)."
+          },
+          {
+            "name": "onLoad",
+            "optional": true,
+            "type": "() => void",
+            "description": "Fired once the picture has been fetched and decoded."
+          },
+          {
+            "name": "onError",
+            "optional": true,
+            "type": "(error: Error) => void",
+            "description": "Fired when the picture cannot be loaded. The plan itself keeps working without it."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MapPlanOverlay",
+        "extends": [],
+        "props": [
+          {
+            "name": "regions",
+            "optional": false,
+            "type": "readonly MapPlanRegion[]",
+            "description": "The interactive regions, in reading order. Keep the array MEMOIZED — it drives the projection pass."
+          },
+          {
+            "name": "label",
+            "optional": false,
+            "type": "string",
+            "description": "Accessible name for the set of regions (\"Rooms on level 3\"). Supplied by the consumer so it can be localized."
+          },
+          {
+            "name": "selectedId",
+            "optional": true,
+            "type": "string | readonly string[] | null",
+            "description": "The selected region id(s) — the same value handed to `<MapGeoJSON selectedId>`."
+          },
+          {
+            "name": "onSelect",
+            "optional": true,
+            "type": "(id: string | null, region: MapPlanRegion | null) => void",
+            "description": "Fired when a region is activated by click, `Enter` or `Space`; `null` on `Escape`."
+          },
+          {
+            "name": "onActiveChange",
+            "optional": true,
+            "type": "(id: string | null, region: MapPlanRegion | null) => void",
+            "description": "Fired when the pointer or keyboard focus moves to another region. Feed it to `<MapGeoJSON hoveredId>` so the shape and the proxy highlight together."
+          },
+          {
+            "name": "mode",
+            "optional": true,
+            "type": "MapPlanOverlayMode",
+            "description": "`\"regions\"` (default) puts one button on every region. `\"groups\"` puts one button on each `group` instead, and `Enter` descends into its members — the answer for a plan with more regions than a keyboard can reasonably walk (a train with 192 seats), where the first question is always \"which coach?\"."
+          },
+          {
+            "name": "describeGroup",
+            "optional": true,
+            "type": "(group: MapPlanGroup) => string",
+            "description": "The accessible description of a group's button — \"64 seats\", localized by the consumer. Group mode only."
+          },
+          {
+            "name": "showLabels",
+            "optional": true,
+            "type": "boolean",
+            "description": "Draw each region's label in the overlay (default true)."
+          },
+          {
+            "name": "labelMinZoom",
+            "optional": true,
+            "type": "number",
+            "description": "Hide the labels below this zoom, when a fitted plan is too small to read."
+          },
+          {
+            "name": "capturePointer",
+            "optional": true,
+            "type": "boolean",
+            "description": "Let the regions take the pointer as well as the keyboard (default true). With `false` the overlay is keyboard-only and clicks reach the canvas, where `<MapGeoJSON onClick>` picks the shape itself — the right choice for interlocking, non-rectangular shapes whose boxes overlap."
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string",
+            "description": "Extra classes for the overlay root."
           }
         ],
         "variants": null,
@@ -31230,7 +31641,8 @@
       },
       "antiPatterns": [
         "Hardcoding the cluster step colors — the steps resolve from the status tokens.",
-        "Clustering a handful of points — plain MapMarkers read better below roughly 50 points."
+        "Clustering a handful of points — plain MapMarkers read better below roughly 50 points.",
+        "Using it on a plan map — the count is a symbol text-field, and a plan's blank style has no glyph endpoint, so every count renders as nothing. Group the points yourself and draw them with MapGeoJSON."
       ]
     },
     "api": [
@@ -31352,6 +31764,24 @@
             "description": "Show a fullscreen toggle button (default: false)."
           },
           {
+            "name": "showFit",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a button that frames the whole plan again — a plan map has an edge to come back to, so this defaults to ON there and off on a geographic map."
+          },
+          {
+            "name": "fitBounds",
+            "optional": true,
+            "type": "[[number, number], [number, number]]",
+            "description": "What the fit button frames. Defaults to the plan's own extent; pass bounds to frame something else (one wing, the selected cluster)."
+          },
+          {
+            "name": "onFit",
+            "optional": true,
+            "type": "() => void",
+            "description": "Called after the camera has been asked to frame the plan."
+          },
+          {
             "name": "className",
             "optional": true,
             "type": "string",
@@ -31418,7 +31848,7 @@
             "name": "data",
             "optional": false,
             "type": "MapGeoJSONData<P>",
-            "description": "GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it from."
+            "description": "GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it from. On a canvas with a `plan` extent the coordinates are PLAN units — `[x, y]` in the plan's own drawing units — and are converted for you."
           },
           {
             "name": "id",
@@ -31430,7 +31860,7 @@
             "name": "promoteId",
             "optional": true,
             "type": "string",
-            "description": "Feature property to promote to the feature `id`. Required for hover feature-state (`fillHoverPaint`) and stable `onHover`/`onClick` payloads."
+            "description": "Feature property to promote to the feature `id`. Required for hover and selected feature-state (`fillHoverPaint`, `selectedId`) and stable `onHover`/`onClick` payloads."
           },
           {
             "name": "fillPaint",
@@ -31451,6 +31881,36 @@
             "description": "Paint merged onto the fill layer for the feature under the cursor, applied as a `case` expression keyed on hover feature-state. Requires `promoteId`."
           },
           {
+            "name": "lineHoverPaint",
+            "optional": true,
+            "type": "MapLinePaint",
+            "description": "The outline equivalent of `fillHoverPaint`. Requires `promoteId`."
+          },
+          {
+            "name": "fillSelectedPaint",
+            "optional": true,
+            "type": "MapFillPaint",
+            "description": "Paint merged onto the fill layer for the feature(s) named by `selectedId`. Applied outside hover, so a selected feature still looks selected while the cursor is over it. Requires `promoteId`."
+          },
+          {
+            "name": "lineSelectedPaint",
+            "optional": true,
+            "type": "MapLinePaint",
+            "description": "The outline equivalent of `fillSelectedPaint`. Requires `promoteId`."
+          },
+          {
+            "name": "selectedId",
+            "optional": true,
+            "type": "string | number | readonly (string | number)[] | null",
+            "description": "The selected feature id(s) — the promoted `promoteId` values. Selection is the consumer's state; this only paints it."
+          },
+          {
+            "name": "hoveredId",
+            "optional": true,
+            "type": "string | number | null",
+            "description": "Take over the highlight: when set, the hover paint follows THIS id instead of the pointer. That is how `MapPlanOverlay` makes a keyboard-focused room light up exactly as a hovered one does — one channel, one appearance."
+          },
+          {
             "name": "onClick",
             "optional": true,
             "type": "(e: MapGeoJSONEvent<P>) => void",
@@ -31466,7 +31926,19 @@
             "name": "interactive",
             "optional": true,
             "type": "boolean",
-            "description": "Whether features respond to mouse events (default: false)."
+            "description": "Whether features respond to mouse events. Defaults to `false` on a geographic canvas and `true` on a plan canvas, where the shapes ARE the subject rather than a backdrop."
+          },
+          {
+            "name": "pickPadding",
+            "optional": true,
+            "type": "number",
+            "description": "How far, in px, a click may miss a shape and still land on it. Defaults to 8 px on a plan (so a 20 px seat is a 36 px touch target) and 0 elsewhere. An exact hit always wins over a padded one."
+          },
+          {
+            "name": "hitWidth",
+            "optional": true,
+            "type": "number",
+            "description": "Width, in px, of the invisible line that makes an outline-only shape touchable (default 16). Only used when `fillPaint` is `false`."
           },
           {
             "name": "beforeId",
@@ -31526,20 +31998,8 @@
     "api": [
       {
         "name": "MapMarker",
-        "extends": ["Omit<MarkerOptions, \"element\">"],
+        "extends": ["MapPosition", "Omit<MarkerOptions, \"element\">"],
         "props": [
-          {
-            "name": "longitude",
-            "optional": false,
-            "type": "number",
-            "description": "Longitude coordinate for the marker position."
-          },
-          {
-            "name": "latitude",
-            "optional": false,
-            "type": "number",
-            "description": "Latitude coordinate for the marker position."
-          },
           {
             "name": "children",
             "optional": false,
@@ -31567,20 +32027,20 @@
           {
             "name": "onDragStart",
             "optional": true,
-            "type": "(lngLat: { lng: number; lat: number }) => void",
-            "description": "Callback when a drag starts (requires `draggable`)."
+            "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+            "description": "Callback when a drag starts (requires `draggable`). The plan point is `null` off a plan."
           },
           {
             "name": "onDrag",
             "optional": true,
-            "type": "(lngLat: { lng: number; lat: number }) => void",
-            "description": "Callback during a drag (requires `draggable`)."
+            "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+            "description": "Callback during a drag (requires `draggable`). The plan point is `null` off a plan."
           },
           {
             "name": "onDragEnd",
             "optional": true,
-            "type": "(lngLat: { lng: number; lat: number }) => void",
-            "description": "Callback when a drag ends (requires `draggable`)."
+            "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+            "description": "Callback when a drag ends (requires `draggable`). The plan point is `null` off a plan."
           }
         ],
         "variants": null,
@@ -31729,7 +32189,7 @@
             "name": "coordinates",
             "optional": false,
             "type": "[number, number][]",
-            "description": "Array of [longitude, latitude] coordinate pairs defining the route."
+            "description": "Array of [longitude, latitude] coordinate pairs defining the route — or, in a `<MapCanvas plan>`, [x, y] pairs in plan units."
           },
           {
             "name": "color",
@@ -31754,6 +32214,18 @@
             "optional": true,
             "type": "[number, number]",
             "description": "Dash pattern [dash length, gap length] for dashed lines."
+          },
+          {
+            "name": "direction",
+            "optional": true,
+            "type": "MapRouteDirection",
+            "description": "Draw chevrons along the line to show which way it runs (default: \"none\"). A conveyor, a one-way aisle and a walking route all need this, and an arrow is a second channel that greyscale keeps."
+          },
+          {
+            "name": "directionSpacing",
+            "optional": true,
+            "type": "number",
+            "description": "Distance between chevrons in px (default: 80)."
           },
           {
             "name": "onClick",
@@ -31794,6 +32266,299 @@
         "id": "maps-maproute--dashed",
         "name": "Dashed",
         "description": ""
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/maps/plan-maps": {
+    "section": "components",
+    "slug": "plan-maps",
+    "name": "Plan Maps",
+    "title": "Maps/Plan Maps",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanOverlay",
+    "importFrom": "@elabs-ai/components-maps",
+    "docsId": "maps-plan-maps--docs",
+    "file": "packages/maps/src/map-plan/plan-maps.stories.tsx",
+    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+      "category": "overlay",
+      "relationships": {
+        "usedInside": ["MapCanvas"],
+        "pairsWith": ["MapGeoJSON", "MapPlanLegend", "MapPlanTable", "MapPlanStatus"]
+      },
+      "stateTokens": {
+        "focus": "every region button carries the shared focus-ring — the canvas cannot show one",
+        "selected": "aria-pressed plus data-selected, mirrored into the shape layer via selectedId",
+        "active": "one channel for pointer hover AND keyboard focus, fed to MapGeoJSON hoveredId so the shape and the proxy light up together"
+      },
+      "antiPatterns": [
+        "Relying on the canvas alone for interaction — a room drawn in WebGL is not focusable, has no name and no pressed state. Without this overlay a plan is mouse-only.",
+        "Nesting the visible label inside the button — it is an aria-hidden SIBLING, and the button's accessible name already starts with the label verbatim (WCAG 2.5.3).",
+        "Walking 200+ regions with Tab and the arrows — set mode=\"groups\" so the first question is 'which coach?' and Enter goes in.",
+        "Unmounting off-screen regions to save DOM — focus would vanish mid-walk; they stay mounted and the camera eases to them instead."
+      ]
+    },
+    "api": [
+      {
+        "name": "MapPlanOverlay",
+        "extends": [],
+        "props": [
+          {
+            "name": "regions",
+            "optional": false,
+            "type": "readonly MapPlanRegion[]",
+            "description": "The interactive regions, in reading order. Keep the array MEMOIZED — it drives the projection pass."
+          },
+          {
+            "name": "label",
+            "optional": false,
+            "type": "string",
+            "description": "Accessible name for the set of regions (\"Rooms on level 3\"). Supplied by the consumer so it can be localized."
+          },
+          {
+            "name": "selectedId",
+            "optional": true,
+            "type": "string | readonly string[] | null",
+            "description": "The selected region id(s) — the same value handed to `<MapGeoJSON selectedId>`."
+          },
+          {
+            "name": "onSelect",
+            "optional": true,
+            "type": "(id: string | null, region: MapPlanRegion | null) => void",
+            "description": "Fired when a region is activated by click, `Enter` or `Space`; `null` on `Escape`."
+          },
+          {
+            "name": "onActiveChange",
+            "optional": true,
+            "type": "(id: string | null, region: MapPlanRegion | null) => void",
+            "description": "Fired when the pointer or keyboard focus moves to another region. Feed it to `<MapGeoJSON hoveredId>` so the shape and the proxy highlight together."
+          },
+          {
+            "name": "mode",
+            "optional": true,
+            "type": "MapPlanOverlayMode",
+            "description": "`\"regions\"` (default) puts one button on every region. `\"groups\"` puts one button on each `group` instead, and `Enter` descends into its members — the answer for a plan with more regions than a keyboard can reasonably walk (a train with 192 seats), where the first question is always \"which coach?\"."
+          },
+          {
+            "name": "describeGroup",
+            "optional": true,
+            "type": "(group: MapPlanGroup) => string",
+            "description": "The accessible description of a group's button — \"64 seats\", localized by the consumer. Group mode only."
+          },
+          {
+            "name": "showLabels",
+            "optional": true,
+            "type": "boolean",
+            "description": "Draw each region's label in the overlay (default true)."
+          },
+          {
+            "name": "labelMinZoom",
+            "optional": true,
+            "type": "number",
+            "description": "Hide the labels below this zoom, when a fitted plan is too small to read."
+          },
+          {
+            "name": "capturePointer",
+            "optional": true,
+            "type": "boolean",
+            "description": "Let the regions take the pointer as well as the keyboard (default true). With `false` the overlay is keyboard-only and clicks reach the canvas, where `<MapGeoJSON onClick>` picks the shape itself — the right choice for interlocking, non-rectangular shapes whose boxes overlap."
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string",
+            "description": "Extra classes for the overlay root."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "maps-plan-maps--office-floor-plan",
+        "name": "Office Floor Plan",
+        "description": "The full showcase: an office floor in centimetres, keyboard-operable, with the same information repeated as words in the table below — a WebGL canvas prints blank and cannot be read by assistive technology."
+      },
+      {
+        "id": "maps-plan-maps--vector-only",
+        "name": "Vector Only",
+        "description": "The recommended default: no asset at all. A plan drawn as GeoJSON in plan units paints from tokens, themes correctly and never blurs."
+      },
+      {
+        "id": "maps-plan-maps--with-plan-image",
+        "name": "With Plan Image",
+        "description": "Draw the plan into a canvas and hand that to `MapPlanImage` — the same path a scanned drawing or a CAD export takes, without a network round trip. The picture is context, held back at low opacity; the data on top is the ink."
+      },
+      {
+        "id": "maps-plan-maps--multi-floor",
+        "name": "Multi Floor",
+        "description": "Two floors, one extent: switch the data, keep the camera."
+      },
+      {
+        "id": "maps-plan-maps--loading",
+        "name": "Loading",
+        "description": "Nothing to draw yet — the plan’s own skeleton, not a blank rectangle."
+      },
+      {
+        "id": "maps-plan-maps--empty-plan",
+        "name": "Empty Plan",
+        "description": "A plan with no regions on it — say so, rather than showing an empty grid."
+      },
+      {
+        "id": "maps-plan-maps--plan-image-missing",
+        "name": "Plan Image Missing",
+        "description": "The picture failed; the plan did not. `MapPlanImage` reports the failure and keeps the shapes, so the consumer decides what the gap should look like."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/maps/train-carriage": {
+    "section": "components",
+    "slug": "train-carriage",
+    "name": "Train Carriage",
+    "title": "Maps/Train Carriage",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanOverlay",
+    "importFrom": "@elabs-ai/components-maps",
+    "docsId": "maps-train-carriage--docs",
+    "file": "packages/maps/src/map-plan/train-carriage.stories.tsx",
+    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+      "category": "overlay",
+      "relationships": {
+        "usedInside": ["MapCanvas"],
+        "pairsWith": ["MapGeoJSON", "MapPlanLegend", "MapPlanTable", "MapPlanStatus"]
+      },
+      "stateTokens": {
+        "focus": "every region button carries the shared focus-ring — the canvas cannot show one",
+        "selected": "aria-pressed plus data-selected, mirrored into the shape layer via selectedId",
+        "active": "one channel for pointer hover AND keyboard focus, fed to MapGeoJSON hoveredId so the shape and the proxy light up together"
+      },
+      "antiPatterns": [
+        "Relying on the canvas alone for interaction — a room drawn in WebGL is not focusable, has no name and no pressed state. Without this overlay a plan is mouse-only.",
+        "Nesting the visible label inside the button — it is an aria-hidden SIBLING, and the button's accessible name already starts with the label verbatim (WCAG 2.5.3).",
+        "Walking 200+ regions with Tab and the arrows — set mode=\"groups\" so the first question is 'which coach?' and Enter goes in.",
+        "Unmounting off-screen regions to save DOM — focus would vanish mid-walk; they stay mounted and the camera eases to them instead."
+      ]
+    },
+    "api": [
+      {
+        "name": "MapPlanOverlay",
+        "extends": [],
+        "props": [
+          {
+            "name": "regions",
+            "optional": false,
+            "type": "readonly MapPlanRegion[]",
+            "description": "The interactive regions, in reading order. Keep the array MEMOIZED — it drives the projection pass."
+          },
+          {
+            "name": "label",
+            "optional": false,
+            "type": "string",
+            "description": "Accessible name for the set of regions (\"Rooms on level 3\"). Supplied by the consumer so it can be localized."
+          },
+          {
+            "name": "selectedId",
+            "optional": true,
+            "type": "string | readonly string[] | null",
+            "description": "The selected region id(s) — the same value handed to `<MapGeoJSON selectedId>`."
+          },
+          {
+            "name": "onSelect",
+            "optional": true,
+            "type": "(id: string | null, region: MapPlanRegion | null) => void",
+            "description": "Fired when a region is activated by click, `Enter` or `Space`; `null` on `Escape`."
+          },
+          {
+            "name": "onActiveChange",
+            "optional": true,
+            "type": "(id: string | null, region: MapPlanRegion | null) => void",
+            "description": "Fired when the pointer or keyboard focus moves to another region. Feed it to `<MapGeoJSON hoveredId>` so the shape and the proxy highlight together."
+          },
+          {
+            "name": "mode",
+            "optional": true,
+            "type": "MapPlanOverlayMode",
+            "description": "`\"regions\"` (default) puts one button on every region. `\"groups\"` puts one button on each `group` instead, and `Enter` descends into its members — the answer for a plan with more regions than a keyboard can reasonably walk (a train with 192 seats), where the first question is always \"which coach?\"."
+          },
+          {
+            "name": "describeGroup",
+            "optional": true,
+            "type": "(group: MapPlanGroup) => string",
+            "description": "The accessible description of a group's button — \"64 seats\", localized by the consumer. Group mode only."
+          },
+          {
+            "name": "showLabels",
+            "optional": true,
+            "type": "boolean",
+            "description": "Draw each region's label in the overlay (default true)."
+          },
+          {
+            "name": "labelMinZoom",
+            "optional": true,
+            "type": "number",
+            "description": "Hide the labels below this zoom, when a fitted plan is too small to read."
+          },
+          {
+            "name": "capturePointer",
+            "optional": true,
+            "type": "boolean",
+            "description": "Let the regions take the pointer as well as the keyboard (default true). With `false` the overlay is keyboard-only and clicks reach the canvas, where `<MapGeoJSON onClick>` picks the shape itself — the right choice for interlocking, non-rectangular shapes whose boxes overlap."
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string",
+            "description": "Extra classes for the overlay root."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "maps-train-carriage--seat-map",
+        "name": "Seat Map",
+        "description": "The seat map as a passenger meets it: coaches first, seats once you are in one. Statuses are seeded, so this is one deterministic train, not a different one every run."
+      },
+      {
+        "id": "maps-train-carriage--every-seat-at-once",
+        "name": "Every Seat At Once",
+        "description": "The same train with every seat on the overlay at once — 192 buttons, which the component warns about, and which is exactly why group mode is the default here."
+      },
+      {
+        "id": "maps-train-carriage--direction-of-travel",
+        "name": "Direction Of Travel",
+        "description": "Which way the train runs, and the walk from the door of coach A to a seat in coach C: chevrons along the aisle, and a curve built in PLAN units — a curve sampled in lng/lat would bow the wrong way once Mercator has had its say."
+      },
+      {
+        "id": "maps-train-carriage--whole-train-table",
+        "name": "Whole Train Table",
+        "description": "The train as words — the channel that survives a printer and a screen reader."
+      },
+      {
+        "id": "maps-train-carriage--loading",
+        "name": "Loading",
+        "description": "Nothing to show yet: the canvas holds its shape and says so once."
+      },
+      {
+        "id": "maps-train-carriage--no-seat-data",
+        "name": "No Seat Data",
+        "description": "No seat data at all — a panel, not an empty plan."
       }
     ],
     "block": null,
@@ -35684,6 +36449,43 @@
     },
     "template": null
   },
+  "blocks/editorial-charts-area-against-a-threshold": {
+    "section": "blocks",
+    "slug": "editorial-charts-area-against-a-threshold",
+    "name": "Area Against a Threshold",
+    "title": "Patterns/Blocks/Editorial Charts/Area Against a Threshold",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryAreaThreshold",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-area-against-a-threshold--docs",
+    "file": "apps/docs/stories/blocks/chart-story-area-threshold-01.stories.tsx",
+    "summary": "A whole published figure: one line against a labelled threshold, the area between them filled in one colour below and another above, both sides named on the plot, a final-value note, method note, byline, linked source and Get the data.",
+    "question": "Since when are we over the line?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-area-against-a-threshold--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-area-threshold-01",
+      "title": "Chart story: Area Against a Threshold",
+      "description": "A whole published figure: one line against a labelled threshold, the area between them filled in one colour below and another above, both sides named on the plot, a final-value note, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
   "blocks/editorial-charts-bubble-almanac": {
     "section": "blocks",
     "slug": "editorial-charts-bubble-almanac",
@@ -35721,6 +36523,154 @@
     },
     "template": null
   },
+  "blocks/editorial-charts-diverging-bars": {
+    "section": "blocks",
+    "slug": "editorial-charts-diverging-bars",
+    "name": "Diverging Bars",
+    "title": "Patterns/Blocks/Editorial Charts/Diverging Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarDiverging",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-diverging-bars--docs",
+    "file": "apps/docs/stories/blocks/chart-story-bar-diverging-01.stories.tsx",
+    "summary": "A whole published figure: signed horizontal bars from a shared zero line, gains and losses in two colours keyed inside the description, signed value labels, a row note beside the outlier, method note, byline, linked source and Get the data.",
+    "question": "Who is ahead, who is behind, and by how much?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-diverging-bars--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-bar-diverging-01",
+      "title": "Chart story: Diverging Bars",
+      "description": "A whole published figure: signed horizontal bars from a shared zero line, gains and losses in two colours keyed inside the description, signed value labels, a row note beside the outlier, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-diverging-columns": {
+    "section": "blocks",
+    "slug": "editorial-charts-diverging-columns",
+    "name": "Diverging Columns",
+    "title": "Patterns/Blocks/Editorial Charts/Diverging Columns",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryColumnDiverging",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-diverging-columns--docs",
+    "file": "apps/docs/stories/blocks/chart-story-column-diverging-01.stories.tsx",
+    "summary": "A whole published figure: columns above and below zero in two colours whose key is written into the description, a note on the low point, signed axis, method note, byline, linked source and Get the data.",
+    "question": "When did it turn, and when did it turn back?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-diverging-columns--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-column-diverging-01",
+      "title": "Chart story: Diverging Columns",
+      "description": "A whole published figure: columns above and below zero in two colours whose key is written into the description, a note on the low point, signed axis, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-highlighted-columns": {
+    "section": "blocks",
+    "slug": "editorial-charts-highlighted-columns",
+    "name": "Highlighted Columns",
+    "title": "Patterns/Blocks/Editorial Charts/Highlighted Columns",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryColumnHighlight",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-highlighted-columns--docs",
+    "file": "apps/docs/stories/blocks/chart-story-column-highlight-01.stories.tsx",
+    "summary": "A whole published figure: grey context columns, the columns after the event in the accent colour with value labels, an arrowed note naming the event, method note, byline, linked source and Get the data.",
+    "question": "What changed, and since when?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-highlighted-columns--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-column-highlight-01",
+      "title": "Chart story: Highlighted Columns",
+      "description": "A whole published figure: grey context columns, the columns after the event in the accent colour with value labels, an arrowed note naming the event, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-highlighted-lines": {
+    "section": "blocks",
+    "slug": "editorial-charts-highlighted-lines",
+    "name": "Highlighted Lines",
+    "title": "Patterns/Blocks/Editorial Charts/Highlighted Lines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineHighlight",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-highlighted-lines--docs",
+    "file": "apps/docs/stories/blocks/chart-story-line-highlight-01.stories.tsx",
+    "summary": "A whole published figure: three named, coloured lines in front of a field of thin grey ones, names at the line ends, a note in the series colour, hover that lifts one line, method note, byline, linked source and Get the data.",
+    "question": "Which few stand out from the many?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-highlighted-lines--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-line-highlight-01",
+      "title": "Chart story: Highlighted Lines",
+      "description": "A whole published figure: three named, coloured lines in front of a field of thin grey ones, names at the line ends, a note in the series colour, hover that lifts one line, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
   "blocks/editorial-charts-hourglass-stream": {
     "section": "blocks",
     "slug": "editorial-charts-hourglass-stream",
@@ -35755,6 +36705,80 @@
         "@elabs-ai/components-ui"
       ],
       "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-line-with-events": {
+    "section": "blocks",
+    "slug": "editorial-charts-line-with-events",
+    "name": "Line With Events",
+    "title": "Patterns/Blocks/Editorial Charts/Line With Events",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineEvents",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-line-with-events--docs",
+    "file": "apps/docs/stories/blocks/chart-story-line-events-01.stories.tsx",
+    "summary": "A whole published figure: one long weekly line over shaded peak seasons, dashed and dotted event lines, a target line, an arrowed note on the record low, a notes line that explains the shading, byline, linked source and Get the data.",
+    "question": "What happened, and what did it cost?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-line-with-events--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-line-events-01",
+      "title": "Chart story: Line With Events",
+      "description": "A whole published figure: one long weekly line over shaded peak seasons, dashed and dotted event lines, a target line, an arrowed note on the record low, a notes line that explains the shading, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-lines-with-projection": {
+    "section": "blocks",
+    "slug": "editorial-charts-lines-with-projection",
+    "name": "Lines With Projection",
+    "title": "Patterns/Blocks/Editorial Charts/Lines With Projection",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineProjection",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-lines-with-projection--docs",
+    "file": "apps/docs/stories/blocks/chart-story-line-projection-01.stories.tsx",
+    "summary": "A whole published figure: two crossing lines named at their ends, a shaded and labelled plan range in which the lines turn dashed, an arrowed note at the crossing, the colour key written into the description, method note, byline, linked source and Get the data.",
+    "question": "When do they cross, and how much of that is forecast?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-lines-with-projection--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-line-projection-01",
+      "title": "Chart story: Lines With Projection",
+      "description": "A whole published figure: two crossing lines named at their ends, a shaded and labelled plan range in which the lines turn dashed, an arrowed note at the crossing, the colour key written into the description, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
     },
     "template": null
   },
@@ -35802,6 +36826,154 @@
         "@elabs-ai/components-ui"
       ],
       "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-range-bars": {
+    "section": "blocks",
+    "slug": "editorial-charts-range-bars",
+    "name": "Range Bars",
+    "title": "Patterns/Blocks/Editorial Charts/Range Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarRange",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-range-bars--docs",
+    "file": "apps/docs/stories/blocks/chart-story-bar-range-01.stories.tsx",
+    "summary": "A whole published figure: a range plot drawn with bar overlays — fastest to slowest, the middle half and a median tick per row on one shared axis, with its key above the plot, method note, byline, linked source and Get the data.",
+    "question": "How wide is the spread, and where is the typical case?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-range-bars--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-bar-range-01",
+      "title": "Chart story: Range Bars",
+      "description": "A whole published figure: a range plot drawn with bar overlays — fastest to slowest, the middle half and a median tick per row on one shared axis, with its key above the plot, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-ranked-bars": {
+    "section": "blocks",
+    "slug": "editorial-charts-ranked-bars",
+    "name": "Ranked Bars",
+    "title": "Patterns/Blocks/Editorial Charts/Ranked Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarHighlight",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-ranked-bars--docs",
+    "file": "apps/docs/stories/blocks/chart-story-bar-highlight-01.stories.tsx",
+    "summary": "A whole published figure: ranked horizontal bars on a track to 100 %, the three lowest and three highest rows in colour and the rest as grey context, a colour key above the plot, values inside the bars, method note, byline, linked source and Get the data.",
+    "question": "Who is at the top, and who is at the bottom?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-ranked-bars--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-bar-highlight-01",
+      "title": "Chart story: ranked bars, extremes highlighted",
+      "description": "A whole published figure: ranked horizontal bars on a track to 100 %, the three lowest and three highest rows in colour and the rest as grey context, a colour key above the plot, values inside the bars, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-seasons-as-dots-and-lines": {
+    "section": "blocks",
+    "slug": "editorial-charts-seasons-as-dots-and-lines",
+    "name": "Seasons as Dots and Lines",
+    "title": "Patterns/Blocks/Editorial Charts/Seasons as Dots and Lines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineSeasons",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-seasons-as-dots-and-lines--docs",
+    "file": "apps/docs/stories/blocks/chart-story-line-seasons-01.stories.tsx",
+    "summary": "A whole published figure: twenty seasons of daily readings as small dots coloured by decade, two average lines and the current year on top, the colour key carried by the title's own words, two notes on the cloud, method note, byline and linked source.",
+    "question": "Is this year unusual, and is the decade?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-seasons-as-dots-and-lines--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-line-seasons-01",
+      "title": "Chart story: Seasons as Dots and Lines",
+      "description": "A whole published figure: twenty seasons of daily readings as small dots coloured by decade, two average lines and the current year on top, the colour key carried by the title's own words, two notes on the cloud, method note, byline and linked source.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-stacked-among-plain-bars": {
+    "section": "blocks",
+    "slug": "editorial-charts-stacked-among-plain-bars",
+    "name": "Stacked Among Plain Bars",
+    "title": "Patterns/Blocks/Editorial Charts/Stacked Among Plain Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarStackedMix",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-stacked-among-plain-bars--docs",
+    "file": "apps/docs/stories/blocks/chart-story-bar-stacked-mix-01.stories.tsx",
+    "summary": "A whole published figure: one ranked list where the comparison rows are plain grey bars and the rows the story is about are stacked by component, with totals, a colour key, method note, byline, linked source and Get the data.",
+    "question": "How big is it next to everything else, and what is it made of?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-stacked-among-plain-bars--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-bar-stacked-mix-01",
+      "title": "Chart story: Stacked Among Plain Bars",
+      "description": "A whole published figure: one ranked list where the comparison rows are plain grey bars and the rows the story is about are stacked by component, with totals, a colour key, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
     },
     "template": null
   },

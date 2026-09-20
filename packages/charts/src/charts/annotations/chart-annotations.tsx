@@ -250,6 +250,7 @@ function renderRange(
   index: number,
   scales: AnnotationScales,
   patternId: string,
+  lines: readonly LineConfig[],
 ): ReactNode {
   const isX = annotation.x1 !== undefined;
   const span = isX
@@ -260,11 +261,29 @@ function renderRange(
   const start = clamp(span[0], 0, limit);
   const end = clamp(span[1], 0, limit);
   if (end <= start) return null;
-  const fill = annotation.pattern === "stripes" ? `url(#${patternId})` : RANGE_FILL;
+  const tinted = annotation.color !== undefined && annotation.color !== "muted";
+  const ink = tinted ? resolveAnnotationInk(annotation.color, lines) : RANGE_FILL;
+  const striped = annotation.pattern === "stripes";
+  // A tinted striped band needs its own hatch: the shared pattern carries the furniture ink.
+  const ownPatternId = `${patternId}-${index}`;
+  const fill = striped ? `url(#${tinted ? ownPatternId : patternId})` : ink;
   return (
     <g data-annotation-index={index} data-slot="chart-annotations-range" key={`range-${index}`}>
+      {striped && tinted ? (
+        <defs>
+          <PatternLines
+            height={STRIPE_PITCH}
+            id={ownPatternId}
+            orientation={["diagonal"]}
+            stroke={ink}
+            strokeWidth={STRIPE_WIDTH}
+            width={STRIPE_PITCH}
+          />
+        </defs>
+      ) : null}
       <rect
         fill={fill}
+        fillOpacity={annotation.opacity}
         height={isX ? scales.innerHeight : end - start}
         width={isX ? end - start : scales.innerWidth}
         x={isX ? start : 0}
@@ -764,7 +783,7 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
     for (const entry of plan) {
       const { annotation, index } = entry;
       if (annotation.kind === "range") {
-        if (back) ranges.push(renderRange(annotation, index, scales, patternId));
+        if (back) ranges.push(renderRange(annotation, index, scales, patternId, lines));
         continue;
       }
       if (!front) continue;

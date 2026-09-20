@@ -23,10 +23,64 @@ export * from "./map-route";
 export * from "./map-arc";
 export * from "./map-geojson";
 export * from "./map-cluster-layer";
+export * from "./map-plan-image";
+export * from "./map-plan";
+
+// Custom (non-geographic) plans: a floor plan, a factory layout, a carriage as
+// the map itself. MapLibre is Web Mercator only, so `createPlanCrs` synthesizes
+// the plan's own coordinate system on top of it — declare it once with
+// `<MapCanvas plan>` and every layer then speaks plan units.
+export {
+  createPlanCrs,
+  PLAN_MERCATOR_SPAN,
+  type PlanCrs,
+  type PlanExtent,
+  type PlanImageCoordinates,
+  type PlanPoint,
+} from "./lib/plan-crs";
+export {
+  planBoundsOfGeometry,
+  planBoundsUnion,
+  planGroupId,
+  planGroupsFromRegions,
+  planRegionCentre,
+  planRegionsFromGeoJSON,
+  type MapPlanGroup,
+  type MapPlanRegion,
+  type PlanRegionBounds,
+  type PlanRegionField,
+  type PlanRegionFields,
+} from "./lib/plan-regions";
+export {
+  usePlanProjection,
+  type PlanScreenBox,
+  type UsePlanProjectionOptions,
+} from "./lib/use-plan-projection";
+export {
+  PLAN_FILL_OPACITY,
+  PLAN_STATUS_ENCODING,
+  PLAN_STATUSES,
+  planStatusMatch,
+  type PlanDash,
+  type PlanPatternKind,
+  type PlanStatus,
+  type PlanStatusEncoding,
+} from "./lib/plan-status";
+export { createPlanPatternTile, planPatternImageId, usePlanPatterns } from "./lib/plan-patterns";
+export {
+  createRouteArrowImage,
+  routeArrowImageId,
+  ROUTE_ARROW_SIZE,
+  type RouteArrowImage,
+} from "./lib/route-arrow";
+export type { MapGeoPosition, MapPlanPosition, MapPosition } from "./lib/map-position";
 
 // Convenience re-exports so consumers can type map work without a direct
 // maplibre-gl dependency.
 export type {
+  Coordinates,
+  FitBoundsOptions,
+  ImageSourceSpecification,
   LngLatLike,
   LngLatBoundsLike,
   StyleSpecification,

@@ -667,6 +667,13 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * to a frame without the prop. See `ChartFrameChrome`.
    */
   chrome?: ChartFrameChrome;
+  /**
+   * How loud the title is. `"default"` is a card title inside a dashboard — one of many.
+   * `"headline"` is a published figure standing on its own: the title takes the `text-title`
+   * role and balances its lines, and the description steps up to body size in the foreground
+   * ink, because in a standalone figure the description is reading text, not a caption.
+   */
+  titleSize?: "default" | "headline";
   /** `chrome="tile"` only: replaces the default title/description header. */
   headerSlot?: ReactNode;
   /**
@@ -719,6 +726,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     exportOptions,
     footerLabels,
     chrome = "card",
+    titleSize = "default",
     headerSlot,
     menuSlot,
     onExpandChange,
@@ -796,6 +804,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
       <ChartFrameInner
         ref={ref}
         chrome={chrome}
+        titleSize={titleSize}
         headerSlot={headerSlot}
         menuSlot={menuSlot}
         className={className}
@@ -823,6 +832,10 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
  * Content boxes whose size sets the chart body's scroll size: a chart's own drawing (the
  * outermost `<svg>`, not its parts), a canvas plot, the table view.
  */
+/** `titleSize="headline"`: a figure's own headline, and a description that is reading text. */
+const HEADLINE_TITLE = "text-title text-balance";
+const HEADLINE_DESCRIPTION = "text-body text-foreground";
+
 const OVERFLOW_CONTENT_BOXES = "svg:not(svg svg), canvas, table";
 /** An added or removed node that may hold (or be) one of {@link OVERFLOW_CONTENT_BOXES}. */
 const isContentBox = (node: Node) =>
@@ -844,6 +857,7 @@ interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "tit
   actions?: ChartFrameAction[];
   footerLabels?: Partial<ChartFooterLabels>;
   chrome: ChartFrameChrome;
+  titleSize: "default" | "headline";
   headerSlot?: ReactNode;
   menuSlot?: ChartFrameProps["menuSlot"];
   children: ReactNode;
@@ -864,6 +878,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
     actions: footerActions,
     footerLabels,
     chrome,
+    titleSize,
     headerSlot,
     menuSlot,
     className,
@@ -878,6 +893,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   // clamp the title to one line and collapse the toolbar to Expand
   // (`useToolbarCollapsed`, #444). `md`/`lg` leave the header untouched.
   const compact = density === "xs" || density === "sm";
+  const headline = titleSize === "headline";
   const visibleDescription = density === "xs" ? undefined : description;
   // RM-117: a chart inside the frame (AutoChart) may hand chrome up; the
   // frame's own props win.
@@ -1217,8 +1233,16 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                 <div className="min-w-0 flex-1">{headerSlot}</div>
               ) : (
                 <div className="min-w-0 flex-1 space-y-1">
-                  {title && <CardTitle className={cn(compact && "truncate")}>{title}</CardTitle>}
-                  {visibleDescription && <CardDescription>{visibleDescription}</CardDescription>}
+                  {title && (
+                    <CardTitle className={cn(headline && HEADLINE_TITLE, compact && "truncate")}>
+                      {title}
+                    </CardTitle>
+                  )}
+                  {visibleDescription && (
+                    <CardDescription className={cn(headline && HEADLINE_DESCRIPTION)}>
+                      {visibleDescription}
+                    </CardDescription>
+                  )}
                 </div>
               )}
               {menuSlot !== undefined ? menu : <ChartFrameToolbar />}
@@ -1255,9 +1279,17 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
           <div className={compact ? "min-w-0 space-y-1" : "space-y-1"}>
             {title && (
-              <CardTitle className={cn("text-base", compact && "truncate")}>{title}</CardTitle>
+              <CardTitle
+                className={cn(headline ? HEADLINE_TITLE : "text-base", compact && "truncate")}
+              >
+                {title}
+              </CardTitle>
             )}
-            {visibleDescription && <CardDescription>{visibleDescription}</CardDescription>}
+            {visibleDescription && (
+              <CardDescription className={cn(headline && HEADLINE_DESCRIPTION)}>
+                {visibleDescription}
+              </CardDescription>
+            )}
           </div>
           <ChartFrameToolbar />
         </CardHeader>

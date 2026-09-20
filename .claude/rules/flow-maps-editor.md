@@ -36,6 +36,18 @@ Decoration dial policy → `conventions.md` (tokens-level, not specific to these
   or change the tile source before going public. Locked by `map-canvas.test.tsx`.
 - MapLibre can't render in jsdom — unit tests mock the engine; real rendering/a11y from
   Storybook story tests, both themes.
+- **Custom (non-geographic) plans** — a floor plan, a plant layout, a carriage — are
+  `<MapCanvas plan={{width,height,unit}}>`; `createPlanCrs` maps plan units linearly into
+  normalized MERCATOR (never degrees: degrees stretch a 16:9 plan to 2:1), and every layer
+  inside then takes plan units. Rotation/pitch off, camera clamped to the plan.
+- A plan's status rides feature PROPERTIES (`fill-pattern`, `line-dasharray` — the spec
+  refuses `feature-state` for both), hover/selection ride feature STATE (opacity, width,
+  colour). `PLAN_STATUS_ENCODING` + `usePlanPatterns` keep texture, dash, glyph and word in
+  step; `MapPlanLegend`/`MapPlanTable` repeat all of it as words.
+- A shape drawn in WebGL is not focusable, so every plan carries `MapPlanOverlay` (one real
+  `<button aria-pressed>` per region, `mode="groups"` past ~250 regions) and ONE
+  `MapPlanStatus` live region. No `symbol` `text-field` labels on a blank style — no glyph
+  endpoint, so text renders as nothing; `icon-image` (generated on a canvas) is fine.
 
 ## Editor (@elabs-ai/components-editor)
 

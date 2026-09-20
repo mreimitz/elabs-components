@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T22:03:10.640Z",
+  "generatedAt": "2026-09-20T01:33:27.790Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1039,6 +1039,78 @@
       "type": "registry:block",
       "title": "Template — Project hub",
       "description": "Projects, the issue board, team load and members as one product: the workspace shell's navigation swaps views in place, the project-cards, kanban-board and settings-members blocks do the work, one dock explains the project or issue last opened, and every view reads the same issues so a move on the board changes the load, the overview and the navigation counts."
+    },
+    {
+      "name": "chart-story-parts",
+      "type": "registry:block",
+      "title": "Chart story parts",
+      "description": "Shared by every chart-story block: the byline and source each figure signs with, and a seeded random for its fictional data."
+    },
+    {
+      "name": "chart-story-bar-highlight-01",
+      "type": "registry:block",
+      "title": "Chart story: ranked bars, extremes highlighted",
+      "description": "A whole published figure: ranked horizontal bars on a track to 100 %, the three lowest and three highest rows in colour and the rest as grey context, a colour key above the plot, values inside the bars, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-bar-diverging-01",
+      "type": "registry:block",
+      "title": "Chart story: Diverging Bars",
+      "description": "A whole published figure: signed horizontal bars from a shared zero line, gains and losses in two colours keyed inside the description, signed value labels, a row note beside the outlier, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-bar-range-01",
+      "type": "registry:block",
+      "title": "Chart story: Range Bars",
+      "description": "A whole published figure: a range plot drawn with bar overlays — fastest to slowest, the middle half and a median tick per row on one shared axis, with its key above the plot, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-bar-stacked-mix-01",
+      "type": "registry:block",
+      "title": "Chart story: Stacked Among Plain Bars",
+      "description": "A whole published figure: one ranked list where the comparison rows are plain grey bars and the rows the story is about are stacked by component, with totals, a colour key, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-column-highlight-01",
+      "type": "registry:block",
+      "title": "Chart story: Highlighted Columns",
+      "description": "A whole published figure: grey context columns, the columns after the event in the accent colour with value labels, an arrowed note naming the event, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-column-diverging-01",
+      "type": "registry:block",
+      "title": "Chart story: Diverging Columns",
+      "description": "A whole published figure: columns above and below zero in two colours whose key is written into the description, a note on the low point, signed axis, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-line-highlight-01",
+      "type": "registry:block",
+      "title": "Chart story: Highlighted Lines",
+      "description": "A whole published figure: three named, coloured lines in front of a field of thin grey ones, names at the line ends, a note in the series colour, hover that lifts one line, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-line-projection-01",
+      "type": "registry:block",
+      "title": "Chart story: Lines With Projection",
+      "description": "A whole published figure: two crossing lines named at their ends, a shaded and labelled plan range in which the lines turn dashed, an arrowed note at the crossing, the colour key written into the description, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-line-events-01",
+      "type": "registry:block",
+      "title": "Chart story: Line With Events",
+      "description": "A whole published figure: one long weekly line over shaded peak seasons, dashed and dotted event lines, a target line, an arrowed note on the record low, a notes line that explains the shading, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-area-threshold-01",
+      "type": "registry:block",
+      "title": "Chart story: Area Against a Threshold",
+      "description": "A whole published figure: one line against a labelled threshold, the area between them filled in one colour below and another above, both sides named on the plot, a final-value note, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-line-seasons-01",
+      "type": "registry:block",
+      "title": "Chart story: Seasons as Dots and Lines",
+      "description": "A whole published figure: twenty seasons of daily readings as small dots coloured by decade, two average lines and the current year on top, the colour key carried by the title's own words, two notes on the cloud, method note, byline and linked source."
     }
   ],
   "templates": [
@@ -13621,6 +13693,11 @@
           "module": "packages/charts/src/charts/bar-chart.tsx"
         },
         {
+          "name": "BarValueAxis",
+          "kind": "value",
+          "module": "packages/charts/src/charts/bar-value-axis.tsx"
+        },
+        {
           "name": "BarXAxis",
           "kind": "value",
           "module": "packages/charts/src/charts/bar-x-axis.tsx"
@@ -15029,6 +15106,10 @@
         {
           "name": "BarShowValuesSpec",
           "module": "packages/charts/src/charts/bar.tsx"
+        },
+        {
+          "name": "BarValueAxisProps",
+          "module": "packages/charts/src/charts/bar-value-axis.tsx"
         },
         {
           "name": "BarXAxisProps",
@@ -18151,6 +18232,12 @@
               "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled."
             },
             {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares."
+            },
+            {
               "name": "unit",
               "optional": true,
               "type": "number",
@@ -18340,8 +18427,8 @@
             {
               "name": "track",
               "optional": true,
-              "type": "boolean",
-              "description": "Paint a `--chart-mono-2` track behind each bar to the axis maximum (\"to 100 %\"). Default: false"
+              "type": "boolean | { fill?: string }",
+              "description": "Paint a track behind each bar to the axis maximum (\"to 100 %\"). `true` uses `--chart-mono-2`, a mark-weight grey; `{ fill }` names another ink — a surface tone such as `var(--chart-segment-background)` when the track should read as paper, not as data. Default: false"
             },
             {
               "name": "overlays",
@@ -18420,6 +18507,35 @@
               "optional": true,
               "type": "ContainerLegendProp",
               "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
+            }
+          ]
+        },
+        "BarValueAxis": {
+          "extends": [],
+          "props": [
+            {
+              "name": "position",
+              "optional": true,
+              "type": "\"top\" | \"bottom\"",
+              "description": "Where the tick labels sit. Default: `\"bottom\"`."
+            },
+            {
+              "name": "numTicks",
+              "optional": true,
+              "type": "number",
+              "description": "About how many ticks to aim for. Default: 5, fewer when the plot is narrow."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How the tick values print — a preset or a spec (`{ suffix: \" h\" }`). Default: `\"compact\"`."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "string",
+              "description": "A short name for the axis, printed after the last tick (\"hours\")."
             }
           ]
         },
@@ -19237,6 +19353,12 @@
               "optional": true,
               "type": "ChartFrameChrome",
               "description": "Surface drawn around the chart (RM-072). Default `\"card\"` — byte-identical to a frame without the prop. See `ChartFrameChrome`."
+            },
+            {
+              "name": "titleSize",
+              "optional": true,
+              "type": "\"default\" | \"headline\"",
+              "description": "How loud the title is. `\"default\"` is a card title inside a dashboard — one of many. `\"headline\"` is a published figure standing on its own: the title takes the `text-title` role and balances its lines, and the description steps up to body size in the foreground ink, because in a standalone figure the description is reading text, not a caption."
             },
             {
               "name": "headerSlot",
@@ -29383,6 +29505,31 @@
           "module": "packages/maps/src/map-marker/map-marker.tsx"
         },
         {
+          "name": "MapPlanImage",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan-image/map-plan-image.tsx"
+        },
+        {
+          "name": "MapPlanLegend",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/map-plan-legend.tsx"
+        },
+        {
+          "name": "MapPlanOverlay",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/map-plan-overlay.tsx"
+        },
+        {
+          "name": "MapPlanStatus",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/map-plan-status.tsx"
+        },
+        {
+          "name": "MapPlanTable",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/map-plan-table.tsx"
+        },
+        {
           "name": "MapPopup",
           "kind": "value",
           "module": "packages/maps/src/map-popup/map-popup.tsx"
@@ -29391,6 +29538,31 @@
           "name": "MapRoute",
           "kind": "value",
           "module": "packages/maps/src/map-route/map-route.tsx"
+        },
+        {
+          "name": "PLAN_FILL_OPACITY",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PLAN_MERCATOR_SPAN",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PLAN_STATUS_ENCODING",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PLAN_STATUSES",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "ROUTE_ARROW_SIZE",
+          "kind": "value",
+          "module": "packages/maps/src/lib/route-arrow.ts"
         }
       ],
       "hooks": [
@@ -29398,12 +29570,39 @@
           "name": "useMap",
           "kind": "value",
           "module": "packages/maps/src/map-canvas/map-context.ts"
+        },
+        {
+          "name": "usePlanPatterns",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-patterns.ts"
+        },
+        {
+          "name": "usePlanProjection",
+          "kind": "value",
+          "module": "packages/maps/src/lib/use-plan-projection.ts"
+        },
+        {
+          "name": "usePlanSelection",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/use-plan-selection.ts"
         }
       ],
       "types": [
         {
           "name": "BasemapTheme",
           "module": "packages/maps/src/map-canvas/map-context.ts"
+        },
+        {
+          "name": "Coordinates",
+          "module": "packages/maps/src/index.ts"
+        },
+        {
+          "name": "FitBoundsOptions",
+          "module": "packages/maps/src/index.ts"
+        },
+        {
+          "name": "ImageSourceSpecification",
+          "module": "packages/maps/src/index.ts"
         },
         {
           "name": "LngLatBoundsLike",
@@ -29474,6 +29673,10 @@
           "module": "packages/maps/src/map-geojson/map-geojson.tsx"
         },
         {
+          "name": "MapGeoPosition",
+          "module": "packages/maps/src/lib/map-position.ts"
+        },
+        {
           "name": "MapLayerMouseEvent",
           "module": "packages/maps/src/index.ts"
         },
@@ -29510,8 +29713,60 @@
           "module": "packages/maps/src/index.ts"
         },
         {
+          "name": "MapPlanGroup",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "MapPlanImageProps",
+          "module": "packages/maps/src/map-plan-image/map-plan-image.tsx"
+        },
+        {
+          "name": "MapPlanImageSource",
+          "module": "packages/maps/src/map-plan-image/map-plan-image.tsx"
+        },
+        {
+          "name": "MapPlanLegendProps",
+          "module": "packages/maps/src/map-plan/map-plan-legend.tsx"
+        },
+        {
+          "name": "MapPlanOverlayMode",
+          "module": "packages/maps/src/map-plan/map-plan-overlay.tsx"
+        },
+        {
+          "name": "MapPlanOverlayProps",
+          "module": "packages/maps/src/map-plan/map-plan-overlay.tsx"
+        },
+        {
+          "name": "MapPlanPosition",
+          "module": "packages/maps/src/lib/map-position.ts"
+        },
+        {
+          "name": "MapPlanRegion",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "MapPlanStatusProps",
+          "module": "packages/maps/src/map-plan/map-plan-status.tsx"
+        },
+        {
+          "name": "MapPlanTableColumn",
+          "module": "packages/maps/src/map-plan/map-plan-table.tsx"
+        },
+        {
+          "name": "MapPlanTableProps",
+          "module": "packages/maps/src/map-plan/map-plan-table.tsx"
+        },
+        {
           "name": "MapPopupProps",
           "module": "packages/maps/src/map-popup/map-popup.tsx"
+        },
+        {
+          "name": "MapPosition",
+          "module": "packages/maps/src/lib/map-position.ts"
+        },
+        {
+          "name": "MapRouteDirection",
+          "module": "packages/maps/src/map-route/map-route.tsx"
         },
         {
           "name": "MapRouteProps",
@@ -29526,18 +29781,134 @@
           "module": "packages/maps/src/map-canvas/map-canvas.tsx"
         },
         {
+          "name": "PlanCrs",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PlanDash",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PlanExtent",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PlanImageCoordinates",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PlanPatternKind",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PlanPoint",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PlanRegionBounds",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "PlanRegionField",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "PlanRegionFields",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "PlanScreenBox",
+          "module": "packages/maps/src/lib/use-plan-projection.ts"
+        },
+        {
+          "name": "PlanSelection",
+          "module": "packages/maps/src/map-plan/use-plan-selection.ts"
+        },
+        {
+          "name": "PlanStatus",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PlanStatusEncoding",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PlanStatusLabels",
+          "module": "packages/maps/src/map-plan/map-plan-legend.tsx"
+        },
+        {
           "name": "ProjectionSpecification",
           "module": "packages/maps/src/index.ts"
         },
         {
+          "name": "RouteArrowImage",
+          "module": "packages/maps/src/lib/route-arrow.ts"
+        },
+        {
           "name": "StyleSpecification",
           "module": "packages/maps/src/index.ts"
+        },
+        {
+          "name": "UsePlanProjectionOptions",
+          "module": "packages/maps/src/lib/use-plan-projection.ts"
+        },
+        {
+          "name": "UsePlanSelectionOptions",
+          "module": "packages/maps/src/map-plan/use-plan-selection.ts"
         }
       ],
       "otherExports": [
         {
           "name": "buildArcCoordinates",
           "module": "packages/maps/src/lib/arc-math.ts"
+        },
+        {
+          "name": "createPlanCrs",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "createPlanPatternTile",
+          "module": "packages/maps/src/lib/plan-patterns.ts"
+        },
+        {
+          "name": "createRouteArrowImage",
+          "module": "packages/maps/src/lib/route-arrow.ts"
+        },
+        {
+          "name": "planBoundsOfGeometry",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planBoundsUnion",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planGroupId",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planGroupsFromRegions",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planPatternImageId",
+          "module": "packages/maps/src/lib/plan-patterns.ts"
+        },
+        {
+          "name": "planRegionCentre",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planRegionsFromGeoJSON",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planStatusMatch",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "routeArrowImageId",
+          "module": "packages/maps/src/lib/route-arrow.ts"
         }
       ],
       "props": {
@@ -29669,6 +30040,18 @@
               "optional": true,
               "type": "boolean",
               "description": "Show a loading overlay on the map (e.g. while the app fetches map data)."
+            },
+            {
+              "name": "plan",
+              "optional": true,
+              "type": "PlanExtent | PlanCrs",
+              "description": "Turn the canvas into a CUSTOM (non-geographic) plan map: a floor plan, a factory layout, a train carriage, a rack elevation. Pass the plan's extent (`{ width, height }` in the plan's own units) or a `createPlanCrs(…)` result, and every layer inside then speaks PLAN coordinates instead of lng/lat — shapes, routes, markers and popups alike. The plan is fitted on mount, pan and zoom are clamped to its extent, and rotation and pitch are off (a rotated floor plan is unreadable). Pair it with `blank` and, for a picture under the shapes, `<MapPlanImage>`. The plan coordinate system is synthesized on Web Mercator, so it is not a georeference: distances belong to the plan, and a scale bar would lie."
+            },
+            {
+              "name": "fitPlan",
+              "optional": true,
+              "type": "boolean",
+              "description": "Fit a plan map to its extent on mount and whenever the extent changes (default: true). Ignored on a geographic map, and skipped when the camera is driven through `viewport`."
             }
           ]
         },
@@ -29759,6 +30142,24 @@
               "description": "Show a fullscreen toggle button (default: false)."
             },
             {
+              "name": "showFit",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show a button that frames the whole plan again — a plan map has an edge to come back to, so this defaults to ON there and off on a geographic map."
+            },
+            {
+              "name": "fitBounds",
+              "optional": true,
+              "type": "[[number, number], [number, number]]",
+              "description": "What the fit button frames. Defaults to the plan's own extent; pass bounds to frame something else (one wing, the selected cluster)."
+            },
+            {
+              "name": "onFit",
+              "optional": true,
+              "type": "() => void",
+              "description": "Called after the camera has been asked to frame the plan."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string",
@@ -29785,7 +30186,7 @@
               "name": "data",
               "optional": false,
               "type": "MapGeoJSONData<P>",
-              "description": "GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it from."
+              "description": "GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it from. On a canvas with a `plan` extent the coordinates are PLAN units — `[x, y]` in the plan's own drawing units — and are converted for you."
             },
             {
               "name": "id",
@@ -29797,7 +30198,7 @@
               "name": "promoteId",
               "optional": true,
               "type": "string",
-              "description": "Feature property to promote to the feature `id`. Required for hover feature-state (`fillHoverPaint`) and stable `onHover`/`onClick` payloads."
+              "description": "Feature property to promote to the feature `id`. Required for hover and selected feature-state (`fillHoverPaint`, `selectedId`) and stable `onHover`/`onClick` payloads."
             },
             {
               "name": "fillPaint",
@@ -29818,6 +30219,36 @@
               "description": "Paint merged onto the fill layer for the feature under the cursor, applied as a `case` expression keyed on hover feature-state. Requires `promoteId`."
             },
             {
+              "name": "lineHoverPaint",
+              "optional": true,
+              "type": "MapLinePaint",
+              "description": "The outline equivalent of `fillHoverPaint`. Requires `promoteId`."
+            },
+            {
+              "name": "fillSelectedPaint",
+              "optional": true,
+              "type": "MapFillPaint",
+              "description": "Paint merged onto the fill layer for the feature(s) named by `selectedId`. Applied outside hover, so a selected feature still looks selected while the cursor is over it. Requires `promoteId`."
+            },
+            {
+              "name": "lineSelectedPaint",
+              "optional": true,
+              "type": "MapLinePaint",
+              "description": "The outline equivalent of `fillSelectedPaint`. Requires `promoteId`."
+            },
+            {
+              "name": "selectedId",
+              "optional": true,
+              "type": "string | number | readonly (string | number)[] | null",
+              "description": "The selected feature id(s) — the promoted `promoteId` values. Selection is the consumer's state; this only paints it."
+            },
+            {
+              "name": "hoveredId",
+              "optional": true,
+              "type": "string | number | null",
+              "description": "Take over the highlight: when set, the hover paint follows THIS id instead of the pointer. That is how `MapPlanOverlay` makes a keyboard-focused room light up exactly as a hovered one does — one channel, one appearance."
+            },
+            {
               "name": "onClick",
               "optional": true,
               "type": "(e: MapGeoJSONEvent<P>) => void",
@@ -29833,7 +30264,19 @@
               "name": "interactive",
               "optional": true,
               "type": "boolean",
-              "description": "Whether features respond to mouse events (default: false)."
+              "description": "Whether features respond to mouse events. Defaults to `false` on a geographic canvas and `true` on a plan canvas, where the shapes ARE the subject rather than a backdrop."
+            },
+            {
+              "name": "pickPadding",
+              "optional": true,
+              "type": "number",
+              "description": "How far, in px, a click may miss a shape and still land on it. Defaults to 8 px on a plan (so a 20 px seat is a 36 px touch target) and 0 elsewhere. An exact hit always wins over a padded one."
+            },
+            {
+              "name": "hitWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Width, in px, of the invisible line that makes an outline-only shape touchable (default 16). Only used when `fillPaint` is `false`."
             },
             {
               "name": "beforeId",
@@ -29845,21 +30288,10 @@
         },
         "MapMarker": {
           "extends": [
+            "MapPosition",
             "Omit<MarkerOptions, \"element\">"
           ],
           "props": [
-            {
-              "name": "longitude",
-              "optional": false,
-              "type": "number",
-              "description": "Longitude coordinate for the marker position."
-            },
-            {
-              "name": "latitude",
-              "optional": false,
-              "type": "number",
-              "description": "Latitude coordinate for the marker position."
-            },
             {
               "name": "children",
               "optional": false,
@@ -29887,20 +30319,20 @@
             {
               "name": "onDragStart",
               "optional": true,
-              "type": "(lngLat: { lng: number; lat: number }) => void",
-              "description": "Callback when a drag starts (requires `draggable`)."
+              "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+              "description": "Callback when a drag starts (requires `draggable`). The plan point is `null` off a plan."
             },
             {
               "name": "onDrag",
               "optional": true,
-              "type": "(lngLat: { lng: number; lat: number }) => void",
-              "description": "Callback during a drag (requires `draggable`)."
+              "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+              "description": "Callback during a drag (requires `draggable`). The plan point is `null` off a plan."
             },
             {
               "name": "onDragEnd",
               "optional": true,
-              "type": "(lngLat: { lng: number; lat: number }) => void",
-              "description": "Callback when a drag ends (requires `draggable`)."
+              "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+              "description": "Callback when a drag ends (requires `draggable`). The plan point is `null` off a plan."
             }
           ]
         },
@@ -29988,23 +30420,286 @@
             }
           ]
         },
+        "MapPlanImage": {
+          "extends": [],
+          "props": [
+            {
+              "name": "src",
+              "optional": false,
+              "type": "MapPlanImageSource | { light: MapPlanImageSource; dark: MapPlanImageSource }",
+              "description": "The plan picture. Pass `{ light, dark }` to swap it with the theme."
+            },
+            {
+              "name": "alt",
+              "optional": true,
+              "type": "string",
+              "description": "What the picture shows, for anyone who cannot see it (\"Level 3 floor plan, 14 rooms around a central core\"). A plan drawn into WebGL has no accessible name of its own, so this is the only description of it."
+            },
+            {
+              "name": "id",
+              "optional": true,
+              "type": "string",
+              "description": "Optional identifier for the source/layer. Auto-generated if not provided."
+            },
+            {
+              "name": "extent",
+              "optional": true,
+              "type": "{ x: number; y: number; width: number; height: number }",
+              "description": "Where the picture sits, in PLAN units. Defaults to the whole plan extent, so a single full-bleed plan needs nothing here. Use it to place one wing, one machine cell or one carriage inside a larger plan."
+            },
+            {
+              "name": "coordinates",
+              "optional": true,
+              "type": "MapLibreGL.Coordinates",
+              "description": "The four corners in lng/lat (top-left, top-right, bottom-right, bottom-left) — an escape hatch that also works on an ordinary geographic canvas, like Leaflet's `imageOverlay`. Wins over `extent`."
+            },
+            {
+              "name": "opacity",
+              "optional": true,
+              "type": "number",
+              "description": "Opacity, 0–1 (default 1). A photographic or ink-heavy plan usually reads best held back around 0.35 so the data drawn on top stays the focus."
+            },
+            {
+              "name": "visible",
+              "optional": true,
+              "type": "boolean",
+              "description": "Hide the picture without tearing the source down — a multi-floor switch (default true)."
+            },
+            {
+              "name": "resampling",
+              "optional": true,
+              "type": "\"linear\" | \"nearest\"",
+              "description": "`\"nearest\"` keeps CAD line art crisp when zoomed past its native resolution."
+            },
+            {
+              "name": "beforeId",
+              "optional": true,
+              "type": "string",
+              "description": "MapLibre layer id to insert this layer before (z-order control)."
+            },
+            {
+              "name": "onLoad",
+              "optional": true,
+              "type": "() => void",
+              "description": "Fired once the picture has been fetched and decoded."
+            },
+            {
+              "name": "onError",
+              "optional": true,
+              "type": "(error: Error) => void",
+              "description": "Fired when the picture cannot be loaded. The plan itself keeps working without it."
+            }
+          ]
+        },
+        "MapPlanLegend": {
+          "extends": [],
+          "props": [
+            {
+              "name": "labels",
+              "optional": false,
+              "type": "PlanStatusLabels",
+              "description": "The word for each status. A status with no word is left out of the legend."
+            },
+            {
+              "name": "statuses",
+              "optional": true,
+              "type": "readonly PlanStatus[]",
+              "description": "Only show these statuses, in this order. Defaults to all four, in table order."
+            },
+            {
+              "name": "counts",
+              "optional": true,
+              "type": "Partial<Record<PlanStatus, number>>",
+              "description": "Optional count per status, e.g. how many rooms are free right now."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the legend as a whole."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
+        "MapPlanOverlay": {
+          "extends": [],
+          "props": [
+            {
+              "name": "regions",
+              "optional": false,
+              "type": "readonly MapPlanRegion[]",
+              "description": "The interactive regions, in reading order. Keep the array MEMOIZED — it drives the projection pass."
+            },
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "Accessible name for the set of regions (\"Rooms on level 3\"). Supplied by the consumer so it can be localized."
+            },
+            {
+              "name": "selectedId",
+              "optional": true,
+              "type": "string | readonly string[] | null",
+              "description": "The selected region id(s) — the same value handed to `<MapGeoJSON selectedId>`."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "(id: string | null, region: MapPlanRegion | null) => void",
+              "description": "Fired when a region is activated by click, `Enter` or `Space`; `null` on `Escape`."
+            },
+            {
+              "name": "onActiveChange",
+              "optional": true,
+              "type": "(id: string | null, region: MapPlanRegion | null) => void",
+              "description": "Fired when the pointer or keyboard focus moves to another region. Feed it to `<MapGeoJSON hoveredId>` so the shape and the proxy highlight together."
+            },
+            {
+              "name": "mode",
+              "optional": true,
+              "type": "MapPlanOverlayMode",
+              "description": "`\"regions\"` (default) puts one button on every region. `\"groups\"` puts one button on each `group` instead, and `Enter` descends into its members — the answer for a plan with more regions than a keyboard can reasonably walk (a train with 192 seats), where the first question is always \"which coach?\"."
+            },
+            {
+              "name": "describeGroup",
+              "optional": true,
+              "type": "(group: MapPlanGroup) => string",
+              "description": "The accessible description of a group's button — \"64 seats\", localized by the consumer. Group mode only."
+            },
+            {
+              "name": "showLabels",
+              "optional": true,
+              "type": "boolean",
+              "description": "Draw each region's label in the overlay (default true)."
+            },
+            {
+              "name": "labelMinZoom",
+              "optional": true,
+              "type": "number",
+              "description": "Hide the labels below this zoom, when a fitted plan is too small to read."
+            },
+            {
+              "name": "capturePointer",
+              "optional": true,
+              "type": "boolean",
+              "description": "Let the regions take the pointer as well as the keyboard (default true). With `false` the overlay is keyboard-only and clicks reach the canvas, where `<MapGeoJSON onClick>` picks the shape itself — the right choice for interlocking, non-rectangular shapes whose boxes overlap."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string",
+              "description": "Extra classes for the overlay root."
+            }
+          ]
+        },
+        "MapPlanStatus": {
+          "extends": [],
+          "props": [
+            {
+              "name": "message",
+              "optional": false,
+              "type": "string",
+              "description": "The sentence to announce. Change it when something a person needs to hear changed — a selection, a status transition — never on every tick of a number."
+            },
+            {
+              "name": "coalesceMs",
+              "optional": true,
+              "type": "number",
+              "description": "Milliseconds between announcements (default 2000)."
+            },
+            {
+              "name": "visible",
+              "optional": true,
+              "type": "boolean",
+              "description": "Also show the message (default false: it is an announcement, not chrome)."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
+        "MapPlanTable": {
+          "extends": [],
+          "props": [
+            {
+              "name": "regions",
+              "optional": false,
+              "type": "readonly MapPlanRegion[]",
+              "description": "The same regions the plan draws."
+            },
+            {
+              "name": "caption",
+              "optional": false,
+              "type": "string",
+              "description": "What the table is a table of (\"Every room on level 3, with its state\")."
+            },
+            {
+              "name": "columns",
+              "optional": true,
+              "type": "readonly MapPlanTableColumn[]",
+              "description": "Extra columns after the name. The status column is built in when `status` is given."
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "(region: MapPlanRegion) => PlanStatus | undefined",
+              "description": "A region's status, if the plan has one. Adds a status column with the word."
+            },
+            {
+              "name": "statusLabels",
+              "optional": true,
+              "type": "Partial<Record<PlanStatus, string>>",
+              "description": "The word for each status — supplied by the consumer, so it can be localized."
+            },
+            {
+              "name": "statusHeader",
+              "optional": true,
+              "type": "string",
+              "description": "Header for the built-in status column."
+            },
+            {
+              "name": "nameHeader",
+              "optional": true,
+              "type": "string",
+              "description": "Header for the name column."
+            },
+            {
+              "name": "selectedId",
+              "optional": true,
+              "type": "string | readonly string[] | null",
+              "description": "The selected region id(s), mirrored as a row state."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "(id: string, region: MapPlanRegion) => void",
+              "description": "Called when a row is chosen — the table is a second way to reach a region."
+            },
+            {
+              "name": "printOnly",
+              "optional": true,
+              "type": "boolean",
+              "description": "Hide the table on screen and keep it for print (default false). A WebGL canvas prints blank, so a plan that is meant to be printed needs this."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
         "MapPopup": {
           "extends": [
+            "MapPosition",
             "Omit<PopupOptions, \"className\" | \"closeButton\">"
           ],
           "props": [
-            {
-              "name": "longitude",
-              "optional": false,
-              "type": "number",
-              "description": "Longitude coordinate for the popup position."
-            },
-            {
-              "name": "latitude",
-              "optional": false,
-              "type": "number",
-              "description": "Latitude coordinate for the popup position."
-            },
             {
               "name": "onClose",
               "optional": true,
@@ -30044,7 +30739,7 @@
               "name": "coordinates",
               "optional": false,
               "type": "[number, number][]",
-              "description": "Array of [longitude, latitude] coordinate pairs defining the route."
+              "description": "Array of [longitude, latitude] coordinate pairs defining the route — or, in a `<MapCanvas plan>`, [x, y] pairs in plan units."
             },
             {
               "name": "color",
@@ -30069,6 +30764,18 @@
               "optional": true,
               "type": "[number, number]",
               "description": "Dash pattern [dash length, gap length] for dashed lines."
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "MapRouteDirection",
+              "description": "Draw chevrons along the line to show which way it runs (default: \"none\"). A conveyor, a one-way aisle and a walking route all need this, and an arrow is a second channel that greyscale keeps."
+            },
+            {
+              "name": "directionSpacing",
+              "optional": true,
+              "type": "number",
+              "description": "Distance between chevrons in px (default: 80)."
             },
             {
               "name": "onClick",
@@ -30099,7 +30806,7 @@
       },
       "intent": {
         "MapCanvas": {
-          "purpose": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.",
+          "purpose": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. With `plan` it is a non-geographic plan instead (a floor, a plant, a carriage) and every layer inside speaks plan units.",
           "category": "data",
           "relationships": {
             "contains": [
@@ -30107,7 +30814,9 @@
               "MapControls",
               "MapClusterLayer",
               "MapGeoJSON",
-              "MapRoute"
+              "MapRoute",
+              "MapPlanImage",
+              "MapPlanOverlay"
             ]
           },
           "stateTokens": {
@@ -30116,7 +30825,10 @@
           "antiPatterns": [
             "Hiding MapLibre's attribution control — the default Carto basemap styles/tiles require it.",
             "Importing maplibre-gl CSS in the app — MapCanvas imports its own CSS plus the brand popup overrides.",
-            "Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL."
+            "Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL.",
+            "Mapping plan units into DEGREES to fake a plan coordinate system — degrees are not linear on screen, so a 16:9 plan renders at 2:1. Declare `plan` and let createPlanCrs map into normalized Mercator, where a rectangle stays a rectangle at every zoom.",
+            "Leaving rotation and pitch on for a plan — a tilted floor plan is unreadable. The `plan` prop turns dragRotate, pitchWithRotate and touchPitch off; do not switch them back on.",
+            "Combining `plan` with a globe projection — a plan is flat; the projection is ignored with a one-time warning."
           ]
         },
         "MapClusterLayer": {
@@ -30135,7 +30847,8 @@
           },
           "antiPatterns": [
             "Hardcoding the cluster step colors — the steps resolve from the status tokens.",
-            "Clustering a handful of points — plain MapMarkers read better below roughly 50 points."
+            "Clustering a handful of points — plain MapMarkers read better below roughly 50 points.",
+            "Using it on a plan map — the count is a symbol text-field, and a plan's blank style has no glyph endpoint, so every count renders as nothing. Group the points yourself and draw them with MapGeoJSON."
           ]
         },
         "MapMarker": {
@@ -30158,6 +30871,106 @@
           "antiPatterns": [
             "Hardcoding a marker color — resolve a semantic token; WebGL can't read CSS variables directly.",
             "Hundreds of individual markers — switch to MapClusterLayer above roughly 50 points."
+          ]
+        },
+        "MapPlanImage": {
+          "purpose": "The picture under a plan's shapes — a floor plan, a blueprint, a site photo — placed by its corner coordinates in plan units.",
+          "category": "display",
+          "relationships": {
+            "usedInside": [
+              "MapCanvas"
+            ],
+            "pairsWith": [
+              "MapGeoJSON",
+              "MapPlanOverlay"
+            ]
+          },
+          "stateTokens": {
+            "surface": "always a --card layer under the raster at raster-opacity 0.30–0.40: the picture is context, the shapes are the ink"
+          },
+          "antiPatterns": [
+            "One baked-in-colour picture for every theme — a white floor plan either glares or swallows the data ink on a dark theme. Prefer vector-only, else swap the asset on the resolved theme, else desaturate it and dim it.",
+            "Tearing the component down to hide a floor — set `visible` (a visibility change) or swap `src`, so nothing refetches and nothing cross-fades.",
+            "Zooming a raster far past its native resolution — past roughly 2× it is mush; the shapes stay crisp, so let them carry the detail."
+          ]
+        },
+        "MapPlanLegend": {
+          "purpose": "The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.",
+          "category": "display",
+          "relationships": {
+            "pairsWith": [
+              "MapGeoJSON",
+              "MapPlanOverlay",
+              "MapPlanTable"
+            ]
+          },
+          "stateTokens": {
+            "mark": "bg-<tone> swatch (the ≥3:1 fill rung)",
+            "text": "text-<tone>-text for the word (the ink rung)"
+          },
+          "antiPatterns": [
+            "Leaving it out because the colours are 'obvious' — the texture and the dash are the channels greyscale keeps, and nobody guesses what a dash means without a key.",
+            "Writing the status words in the component — they are a `labels` prop so an app can localize them."
+          ]
+        },
+        "MapPlanOverlay": {
+          "purpose": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+          "category": "overlay",
+          "relationships": {
+            "usedInside": [
+              "MapCanvas"
+            ],
+            "pairsWith": [
+              "MapGeoJSON",
+              "MapPlanLegend",
+              "MapPlanTable",
+              "MapPlanStatus"
+            ]
+          },
+          "stateTokens": {
+            "focus": "every region button carries the shared focus-ring — the canvas cannot show one",
+            "selected": "aria-pressed plus data-selected, mirrored into the shape layer via selectedId",
+            "active": "one channel for pointer hover AND keyboard focus, fed to MapGeoJSON hoveredId so the shape and the proxy light up together"
+          },
+          "antiPatterns": [
+            "Relying on the canvas alone for interaction — a room drawn in WebGL is not focusable, has no name and no pressed state. Without this overlay a plan is mouse-only.",
+            "Nesting the visible label inside the button — it is an aria-hidden SIBLING, and the button's accessible name already starts with the label verbatim (WCAG 2.5.3).",
+            "Walking 200+ regions with Tab and the arrows — set mode=\"groups\" so the first question is 'which coach?' and Enter goes in.",
+            "Unmounting off-screen regions to save DOM — focus would vanish mid-walk; they stay mounted and the camera eases to them instead."
+          ]
+        },
+        "MapPlanStatus": {
+          "purpose": "One polite live region per plan, announcing selection and state changes; coalesced so a busy plan does not talk over the person using it.",
+          "category": "feedback",
+          "relationships": {
+            "pairsWith": [
+              "MapPlanOverlay",
+              "MapGeoJSON"
+            ]
+          },
+          "stateTokens": {
+            "region": "role=\"status\" aria-live=\"polite\", sr-only unless `visible`"
+          },
+          "antiPatterns": [
+            "Feeding it a ticking number — a live region that re-reads a counter is worse than silence.",
+            "Rendering more than one per plan — the announcements collide and neither is heard."
+          ]
+        },
+        "MapPlanTable": {
+          "purpose": "The plan as words: one row per region with its state, for anyone who cannot see the canvas, wants to sort it, or is printing it.",
+          "category": "data",
+          "relationships": {
+            "pairsWith": [
+              "MapPlanOverlay",
+              "MapPlanLegend"
+            ]
+          },
+          "stateTokens": {
+            "selected": "data-selected plus aria-selected when rows are selectable"
+          },
+          "antiPatterns": [
+            "Hiding it as an sr-only twin — the information is useful to everyone, and a hidden twin quietly rots.",
+            "Shipping a plan meant for paper without it — a WebGL canvas prints as a blank rectangle; printOnly is what fills it."
           ]
         },
         "MapPopup": {
@@ -30185,6 +30998,8 @@
         "MapControls": "maps-mapcontrols--docs",
         "MapGeoJSON": "maps-mapgeojson--docs",
         "MapMarker": "maps-mapmarker--docs",
+        "MapPlanLegend": "maps-factory-plan--docs",
+        "MapPlanOverlay": "maps-plan-maps--docs",
         "MapRoute": "maps-maproute--docs"
       }
     },

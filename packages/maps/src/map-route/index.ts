@@ -1,1 +1,1 @@
-export { MapRoute, type MapRouteProps } from "./map-route";
+export { MapRoute, type MapRouteProps, type MapRouteDirection } from "./map-route";

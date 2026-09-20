@@ -36,7 +36,10 @@ export const FILE_CEILINGS = {
   "apps/docs/public/llms/editor.txt": 5632,
   "apps/docs/public/llms/flow.txt": 3328,
   "apps/docs/public/llms/icons.txt": 2816,
-  "apps/docs/public/llms/maps.txt": 2816,
+  // Raised from 2816 when the package grew custom plan maps: a plan has its own
+  // coordinate system, its own keyboard overlay and its own status encoding, and
+  // an agent that does not read them writes a mouse-only plan in degrees.
+  "apps/docs/public/llms/maps.txt": 6656,
   "apps/docs/public/llms/marketing.txt": 2560,
   "apps/docs/public/llms/process.txt": 6912,
   "apps/docs/public/llms/terminal.txt": 19712,

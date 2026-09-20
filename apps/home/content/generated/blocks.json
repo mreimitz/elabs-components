@@ -155,6 +155,138 @@
     "archetype": "dashboard"
   },
   {
+    "name": "chart-story-area-threshold-01",
+    "title": "Chart story: Area Against a Threshold",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-bar-diverging-01",
+    "title": "Chart story: Diverging Bars",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-bar-highlight-01",
+    "title": "Chart story: ranked bars, extremes highlighted",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-bar-range-01",
+    "title": "Chart story: Range Bars",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-bar-stacked-mix-01",
+    "title": "Chart story: Stacked Among Plain Bars",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-column-diverging-01",
+    "title": "Chart story: Diverging Columns",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-column-highlight-01",
+    "title": "Chart story: Highlighted Columns",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-line-events-01",
+    "title": "Chart story: Line With Events",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-line-highlight-01",
+    "title": "Chart story: Highlighted Lines",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-line-projection-01",
+    "title": "Chart story: Lines With Projection",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-line-seasons-01",
+    "title": "Chart story: Seasons as Dots and Lines",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-parts",
+    "title": "Chart story parts",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "checkout-01",
     "title": "Checkout",
     "categories": ["commerce"],

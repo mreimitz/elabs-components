@@ -8,12 +8,9 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useLocale } from "@elabs-ai/components-ui";
 
 import { useMap } from "../map-canvas/map-context";
+import { resolveMapPosition, type MapPosition } from "../lib/map-position";
 
-export type MapPopupProps = {
-  /** Longitude coordinate for the popup position. */
-  longitude: number;
-  /** Latitude coordinate for the popup position. */
-  latitude: number;
+export type MapPopupProps = MapPosition & {
   /** Callback when the popup is closed. */
   onClose?: () => void;
   /** Popup content. */
@@ -25,20 +22,28 @@ export type MapPopupProps = {
 } & Omit<PopupOptions, "className" | "closeButton">;
 
 /**
- * A standalone popup anchored at a lng/lat (not attached to a marker) —
- * typically rendered conditionally from app state (e.g. after a layer click).
+ * A standalone popup anchored at a lng/lat — or, on a canvas with a `plan`
+ * extent, at a plan `x`/`y`. Not attached to a marker; typically rendered
+ * conditionally from app state (e.g. after a layer click).
  */
 export function MapPopup({
-  longitude,
-  latitude,
+  longitude: longitudeProp,
+  latitude: latitudeProp,
+  x,
+  y,
   onClose,
   children,
   className,
   closeButton = false,
   ...popupOptions
 }: MapPopupProps) {
-  const { map } = useMap();
+  const { map, plan } = useMap();
   const { t } = useLocale();
+  const [longitude, latitude] = resolveMapPosition(
+    { longitude: longitudeProp, latitude: latitudeProp, x, y },
+    plan,
+    "MapPopup",
+  );
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const container = useMemo(() => document.createElement("div"), []);

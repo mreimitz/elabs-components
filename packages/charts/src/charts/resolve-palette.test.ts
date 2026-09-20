@@ -119,6 +119,16 @@ describe("resolveColorBy", () => {
     for (const item of items) expect(item.color).toMatch(/^var\(--chart-\d+\)$/);
   });
 
+  it("categorical: `colors` pins a category, the rest keep the palette", () => {
+    const { colorOf, items } = resolveColorBy([{ r: "N" }, { r: "S" }], {
+      key: "r",
+      colors: { N: "var(--chart-mono-1)" },
+    });
+    expect(colorOf({ r: "N" })).toBe("var(--chart-mono-1)");
+    expect(items[0]?.color).toBe("var(--chart-mono-1)");
+    expect(colorOf({ r: "S" })).toMatch(/^var\(--chart-\d+\)$/);
+  });
+
   it("sequential: buckets a numeric column onto `steps` ramp steps", () => {
     const rows = [{ v: 0 }, { v: 50 }, { v: 100 }];
     const { colorOf, items } = resolveColorBy(rows, { key: "v", scale: "sequential", steps: 3 });

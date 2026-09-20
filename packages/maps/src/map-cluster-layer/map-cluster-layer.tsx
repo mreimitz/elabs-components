@@ -5,6 +5,7 @@ import { useEffect, useId, useMemo } from "react";
 
 import { useMap } from "../map-canvas/map-context";
 import { useTokenColor } from "../lib/use-token-color";
+import { warnMapOnce } from "../lib/warn-once";
 
 export type MapClusterLayerProps<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties> =
   {
@@ -38,6 +39,11 @@ const DEFAULT_CLUSTER_THRESHOLDS: [number, number] = [100, 750];
  * Clustered point rendering for large point datasets. Cluster circles step
  * through the status tokens (success → warning → destructive) as the point
  * count grows; strokes and count labels use the page surface for contrast.
+ *
+ * NOT for a plan map. The count inside each circle is a `symbol` `text-field`,
+ * and a blank style — which every plan uses — ships no glyph endpoint, so the
+ * counts would silently render as nothing at all. Cluster plan points yourself
+ * and draw the groups with `MapGeoJSON`, or put the count in the DOM overlay.
  */
 export function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties>({
   data,
@@ -49,12 +55,19 @@ export function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.Ge
   onPointClick,
   onClusterClick,
 }: MapClusterLayerProps<P>) {
-  const { map, isLoaded } = useMap();
+  const { map, isLoaded, plan } = useMap();
   const id = useId();
   const sourceId = `cluster-source-${id}`;
   const clusterLayerId = `clusters-${id}`;
   const clusterCountLayerId = `cluster-count-${id}`;
   const unclusteredLayerId = `unclustered-point-${id}`;
+
+  if (plan) {
+    warnMapOnce(
+      "cluster-layer-plan",
+      "<MapClusterLayer> is not for a plan map: its count label is a symbol text-field, and a plan's blank style has no glyph endpoint, so the counts render as nothing.",
+    );
+  }
 
   const success = useTokenColor("--success");
   const warning = useTokenColor("--warning");

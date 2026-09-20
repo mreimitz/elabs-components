@@ -945,6 +945,102 @@
       "title": "Template — Project hub",
       "description": "Projects, the issue board, team load and members as one product: the workspace shell's navigation swaps views in place, the project-cards, kanban-board and settings-members blocks do the work, one dock explains the project or issue last opened, and every view reads the same issues so a move on the board changes the load, the overview and the navigation counts.",
       "categories": ["template"]
+    },
+    {
+      "name": "chart-story-parts",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-parts",
+      "title": "Chart story parts",
+      "description": "Shared by every chart-story block: the byline and source each figure signs with, and a seeded random for its fictional data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bar-highlight-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bar-highlight-01",
+      "title": "Chart story: ranked bars, extremes highlighted",
+      "description": "A whole published figure: ranked horizontal bars on a track to 100 %, the three lowest and three highest rows in colour and the rest as grey context, a colour key above the plot, values inside the bars, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bar-diverging-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bar-diverging-01",
+      "title": "Chart story: Diverging Bars",
+      "description": "A whole published figure: signed horizontal bars from a shared zero line, gains and losses in two colours keyed inside the description, signed value labels, a row note beside the outlier, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bar-range-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bar-range-01",
+      "title": "Chart story: Range Bars",
+      "description": "A whole published figure: a range plot drawn with bar overlays — fastest to slowest, the middle half and a median tick per row on one shared axis, with its key above the plot, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bar-stacked-mix-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bar-stacked-mix-01",
+      "title": "Chart story: Stacked Among Plain Bars",
+      "description": "A whole published figure: one ranked list where the comparison rows are plain grey bars and the rows the story is about are stacked by component, with totals, a colour key, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-column-highlight-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-column-highlight-01",
+      "title": "Chart story: Highlighted Columns",
+      "description": "A whole published figure: grey context columns, the columns after the event in the accent colour with value labels, an arrowed note naming the event, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-column-diverging-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-column-diverging-01",
+      "title": "Chart story: Diverging Columns",
+      "description": "A whole published figure: columns above and below zero in two colours whose key is written into the description, a note on the low point, signed axis, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-line-highlight-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-line-highlight-01",
+      "title": "Chart story: Highlighted Lines",
+      "description": "A whole published figure: three named, coloured lines in front of a field of thin grey ones, names at the line ends, a note in the series colour, hover that lifts one line, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-line-projection-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-line-projection-01",
+      "title": "Chart story: Lines With Projection",
+      "description": "A whole published figure: two crossing lines named at their ends, a shaded and labelled plan range in which the lines turn dashed, an arrowed note at the crossing, the colour key written into the description, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-line-events-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-line-events-01",
+      "title": "Chart story: Line With Events",
+      "description": "A whole published figure: one long weekly line over shaded peak seasons, dashed and dotted event lines, a target line, an arrowed note on the record low, a notes line that explains the shading, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-area-threshold-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-area-threshold-01",
+      "title": "Chart story: Area Against a Threshold",
+      "description": "A whole published figure: one line against a labelled threshold, the area between them filled in one colour below and another above, both sides named on the plot, a final-value note, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-line-seasons-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-line-seasons-01",
+      "title": "Chart story: Seasons as Dots and Lines",
+      "description": "A whole published figure: twenty seasons of daily readings as small dots coloured by decade, two average lines and the current year on top, the colour key carried by the title's own words, two notes on the cloud, method note, byline and linked source.",
+      "categories": ["chart-editorial"]
     }
   ]
 }

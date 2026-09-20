@@ -2090,16 +2090,28 @@ export const INTENT = {
   // Sourced from .claude/rules/flow-maps-editor.md (Maps: token paints, attribution, WebGL).
 
   MapCanvas: {
-    purpose: "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.",
+    purpose:
+      "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. With `plan` it is a non-geographic plan instead (a floor, a plant, a carriage) and every layer inside speaks plan units.",
     category: "data",
     relationships: {
-      contains: ["MapMarker", "MapControls", "MapClusterLayer", "MapGeoJSON", "MapRoute"],
+      contains: [
+        "MapMarker",
+        "MapControls",
+        "MapClusterLayer",
+        "MapGeoJSON",
+        "MapRoute",
+        "MapPlanImage",
+        "MapPlanOverlay",
+      ],
     },
     stateTokens: { loading: 'loading → Spinner overlay (role="status")' },
     antiPatterns: [
       "Hiding MapLibre's attribution control — the default Carto basemap styles/tiles require it.",
       "Importing maplibre-gl CSS in the app — MapCanvas imports its own CSS plus the brand popup overrides.",
       "Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL.",
+      "Mapping plan units into DEGREES to fake a plan coordinate system — degrees are not linear on screen, so a 16:9 plan renders at 2:1. Declare `plan` and let createPlanCrs map into normalized Mercator, where a rectangle stays a rectangle at every zoom.",
+      "Leaving rotation and pitch on for a plan — a tilted floor plan is unreadable. The `plan` prop turns dragRotate, pitchWithRotate and touchPitch off; do not switch them back on.",
+      "Combining `plan` with a globe projection — a plan is flat; the projection is ignored with a one-time warning.",
     ],
   },
 
@@ -2136,6 +2148,84 @@ export const INTENT = {
     antiPatterns: [
       "Hardcoding the cluster step colors — the steps resolve from the status tokens.",
       "Clustering a handful of points — plain MapMarkers read better below roughly 50 points.",
+      "Using it on a plan map — the count is a symbol text-field, and a plan's blank style has no glyph endpoint, so every count renders as nothing. Group the points yourself and draw them with MapGeoJSON.",
+    ],
+  },
+
+  MapPlanImage: {
+    purpose:
+      "The picture under a plan's shapes — a floor plan, a blueprint, a site photo — placed by its corner coordinates in plan units.",
+    category: "display",
+    relationships: { usedInside: ["MapCanvas"], pairsWith: ["MapGeoJSON", "MapPlanOverlay"] },
+    stateTokens: {
+      surface:
+        "always a --card layer under the raster at raster-opacity 0.30–0.40: the picture is context, the shapes are the ink",
+    },
+    antiPatterns: [
+      "One baked-in-colour picture for every theme — a white floor plan either glares or swallows the data ink on a dark theme. Prefer vector-only, else swap the asset on the resolved theme, else desaturate it and dim it.",
+      "Tearing the component down to hide a floor — set `visible` (a visibility change) or swap `src`, so nothing refetches and nothing cross-fades.",
+      "Zooming a raster far past its native resolution — past roughly 2× it is mush; the shapes stay crisp, so let them carry the detail.",
+    ],
+  },
+
+  MapPlanOverlay: {
+    purpose:
+      "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+    category: "overlay",
+    relationships: {
+      usedInside: ["MapCanvas"],
+      pairsWith: ["MapGeoJSON", "MapPlanLegend", "MapPlanTable", "MapPlanStatus"],
+    },
+    stateTokens: {
+      focus: "every region button carries the shared focus-ring — the canvas cannot show one",
+      selected: "aria-pressed plus data-selected, mirrored into the shape layer via selectedId",
+      active:
+        "one channel for pointer hover AND keyboard focus, fed to MapGeoJSON hoveredId so the shape and the proxy light up together",
+    },
+    antiPatterns: [
+      "Relying on the canvas alone for interaction — a room drawn in WebGL is not focusable, has no name and no pressed state. Without this overlay a plan is mouse-only.",
+      "Nesting the visible label inside the button — it is an aria-hidden SIBLING, and the button's accessible name already starts with the label verbatim (WCAG 2.5.3).",
+      "Walking 200+ regions with Tab and the arrows — set mode=\"groups\" so the first question is 'which coach?' and Enter goes in.",
+      "Unmounting off-screen regions to save DOM — focus would vanish mid-walk; they stay mounted and the camera eases to them instead.",
+    ],
+  },
+
+  MapPlanLegend: {
+    purpose:
+      "The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.",
+    category: "display",
+    relationships: { pairsWith: ["MapGeoJSON", "MapPlanOverlay", "MapPlanTable"] },
+    stateTokens: {
+      mark: "bg-<tone> swatch (the ≥3:1 fill rung)",
+      text: "text-<tone>-text for the word (the ink rung)",
+    },
+    antiPatterns: [
+      "Leaving it out because the colours are 'obvious' — the texture and the dash are the channels greyscale keeps, and nobody guesses what a dash means without a key.",
+      "Writing the status words in the component — they are a `labels` prop so an app can localize them.",
+    ],
+  },
+
+  MapPlanTable: {
+    purpose:
+      "The plan as words: one row per region with its state, for anyone who cannot see the canvas, wants to sort it, or is printing it.",
+    category: "data",
+    relationships: { pairsWith: ["MapPlanOverlay", "MapPlanLegend"] },
+    stateTokens: { selected: "data-selected plus aria-selected when rows are selectable" },
+    antiPatterns: [
+      "Hiding it as an sr-only twin — the information is useful to everyone, and a hidden twin quietly rots.",
+      "Shipping a plan meant for paper without it — a WebGL canvas prints as a blank rectangle; printOnly is what fills it.",
+    ],
+  },
+
+  MapPlanStatus: {
+    purpose:
+      "One polite live region per plan, announcing selection and state changes; coalesced so a busy plan does not talk over the person using it.",
+    category: "feedback",
+    relationships: { pairsWith: ["MapPlanOverlay", "MapGeoJSON"] },
+    stateTokens: { region: 'role="status" aria-live="polite", sr-only unless `visible`' },
+    antiPatterns: [
+      "Feeding it a ticking number — a live region that re-reads a counter is worse than silence.",
+      "Rendering more than one per plan — the announcements collide and neither is heard.",
     ],
   },
 

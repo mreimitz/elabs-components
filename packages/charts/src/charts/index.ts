@@ -24,6 +24,8 @@ export { Bar, type BarAnimationType, type BarLineCap, type BarProps } from "./ba
 export { BarChart, type BarChartProps, type BarOrientation } from "./bar-chart";
 export { BarXAxis, type BarXAxisProps } from "./bar-x-axis";
 export { BarYAxis, type BarYAxisProps } from "./bar-y-axis";
+// BarValueAxis — the value axis of a horizontal BarChart
+export { BarValueAxis, type BarValueAxisProps } from "./bar-value-axis";
 export { Candlestick, type CandlestickProps } from "./candlestick";
 export {
   CandlestickChart,

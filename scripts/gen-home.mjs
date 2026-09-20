@@ -89,7 +89,7 @@ const PACKAGE_BLURBS = {
     "Chat: ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, Sources, CodeBlock, Artifact.",
   "@elabs-ai/components-flow": "Branded React Flow canvas, nodes, edges, controls, inspector.",
   "@elabs-ai/components-maps":
-    "Token-driven MapLibre GL maps: MapCanvas, MapMarker, MapPopup, MapControls, MapRoute, MapArc, MapGeoJSON, MapClusterLayer.",
+    "Token-driven MapLibre GL maps: MapCanvas, MapMarker, MapPopup, MapControls, MapRoute, MapArc, MapGeoJSON, MapClusterLayer — and custom plan maps (a floor plan, a plant layout, a carriage) drawn in their own units.",
   "@elabs-ai/components-charts":
     "MetricCard, MetricGrid, ChartCard, ChartFrame, AutoChart (spec-driven via a serializable ChartSpec).",
   "@elabs-ai/components-marketing":

@@ -595,6 +595,116 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
+  "chart-story-bar-highlight-01": dynamic(
+    () =>
+      import("../blocks/chart-story-bar-highlight-01/chart-story-bar-highlight").then(
+        (m) => m.ChartStoryBarHighlight,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-bar-diverging-01": dynamic(
+    () =>
+      import("../blocks/chart-story-bar-diverging-01/chart-story-bar-diverging").then(
+        (m) => m.ChartStoryBarDiverging,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-bar-range-01": dynamic(
+    () =>
+      import("../blocks/chart-story-bar-range-01/chart-story-bar-range").then(
+        (m) => m.ChartStoryBarRange,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-bar-stacked-mix-01": dynamic(
+    () =>
+      import("../blocks/chart-story-bar-stacked-mix-01/chart-story-bar-stacked-mix").then(
+        (m) => m.ChartStoryBarStackedMix,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-column-highlight-01": dynamic(
+    () =>
+      import("../blocks/chart-story-column-highlight-01/chart-story-column-highlight").then(
+        (m) => m.ChartStoryColumnHighlight,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-column-diverging-01": dynamic(
+    () =>
+      import("../blocks/chart-story-column-diverging-01/chart-story-column-diverging").then(
+        (m) => m.ChartStoryColumnDiverging,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-line-highlight-01": dynamic(
+    () =>
+      import("../blocks/chart-story-line-highlight-01/chart-story-line-highlight").then(
+        (m) => m.ChartStoryLineHighlight,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-line-projection-01": dynamic(
+    () =>
+      import("../blocks/chart-story-line-projection-01/chart-story-line-projection").then(
+        (m) => m.ChartStoryLineProjection,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-line-events-01": dynamic(
+    () =>
+      import("../blocks/chart-story-line-events-01/chart-story-line-events").then(
+        (m) => m.ChartStoryLineEvents,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-area-threshold-01": dynamic(
+    () =>
+      import("../blocks/chart-story-area-threshold-01/chart-story-area-threshold").then(
+        (m) => m.ChartStoryAreaThreshold,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-line-seasons-01": dynamic(
+    () =>
+      import("../blocks/chart-story-line-seasons-01/chart-story-line-seasons").then(
+        (m) => m.ChartStoryLineSeasons,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
 };
 
 /**

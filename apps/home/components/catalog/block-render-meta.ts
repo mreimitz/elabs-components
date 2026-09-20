@@ -79,6 +79,17 @@ const BLOCKS = {
   "flow-builder": "flow",
   "flow-canvas": "flow",
   "process-explorer-page": "screen",
+  "chart-story-bar-highlight-01": "flow",
+  "chart-story-bar-diverging-01": "flow",
+  "chart-story-bar-range-01": "flow",
+  "chart-story-bar-stacked-mix-01": "flow",
+  "chart-story-column-highlight-01": "flow",
+  "chart-story-column-diverging-01": "flow",
+  "chart-story-line-highlight-01": "flow",
+  "chart-story-line-projection-01": "flow",
+  "chart-story-line-events-01": "flow",
+  "chart-story-area-threshold-01": "flow",
+  "chart-story-line-seasons-01": "flow",
 } as const satisfies Record<string, BlockStage>;
 
 export type NativeBlockName = keyof typeof BLOCKS;

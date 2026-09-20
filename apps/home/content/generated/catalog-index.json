@@ -53,6 +53,19 @@
   },
   {
     "section": "blocks",
+    "slug": "editorial-charts-area-against-a-threshold",
+    "name": "Area Against a Threshold",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryAreaThreshold",
+    "summary": "A whole published figure: one line against a labelled threshold, the area between them filled in one colour below and another above, both sides named on the plot, a final-value note, method note, byline, linked source and Get the data.",
+    "question": "Since when are we over the line?",
+    "block": "chart-story-area-threshold-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-area-against-a-threshold--default"
+  },
+  {
+    "section": "blocks",
     "slug": "stat-cards-area-stat",
     "name": "Area Stat",
     "group": "Stat Cards",
@@ -313,6 +326,32 @@
   },
   {
     "section": "blocks",
+    "slug": "editorial-charts-diverging-bars",
+    "name": "Diverging Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarDiverging",
+    "summary": "A whole published figure: signed horizontal bars from a shared zero line, gains and losses in two colours keyed inside the description, signed value labels, a row note beside the outlier, method note, byline, linked source and Get the data.",
+    "question": "Who is ahead, who is behind, and by how much?",
+    "block": "chart-story-bar-diverging-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-diverging-bars--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "editorial-charts-diverging-columns",
+    "name": "Diverging Columns",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryColumnDiverging",
+    "summary": "A whole published figure: columns above and below zero in two colours whose key is written into the description, a note on the low point, signed axis, method note, byline, linked source and Get the data.",
+    "question": "When did it turn, and when did it turn back?",
+    "block": "chart-story-column-diverging-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-diverging-columns--default"
+  },
+  {
+    "section": "blocks",
     "slug": "application-empty-states",
     "name": "Empty States",
     "group": "Application",
@@ -521,6 +560,32 @@
   },
   {
     "section": "blocks",
+    "slug": "editorial-charts-highlighted-columns",
+    "name": "Highlighted Columns",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryColumnHighlight",
+    "summary": "A whole published figure: grey context columns, the columns after the event in the accent colour with value labels, an arrowed note naming the event, method note, byline, linked source and Get the data.",
+    "question": "What changed, and since when?",
+    "block": "chart-story-column-highlight-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-highlighted-columns--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "editorial-charts-highlighted-lines",
+    "name": "Highlighted Lines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineHighlight",
+    "summary": "A whole published figure: three named, coloured lines in front of a field of thin grey ones, names at the line ends, a note in the series colour, hover that lifts one line, method note, byline, linked source and Get the data.",
+    "question": "Which few stand out from the many?",
+    "block": "chart-story-line-highlight-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-highlighted-lines--default"
+  },
+  {
+    "section": "blocks",
     "slug": "editorial-charts-hourglass-stream",
     "name": "Hourglass Stream",
     "group": "Editorial Charts",
@@ -622,6 +687,32 @@
     "block": "stat-card-line-01",
     "stories": 1,
     "first": "patterns-blocks-stat-cards-line-stat--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "editorial-charts-line-with-events",
+    "name": "Line With Events",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineEvents",
+    "summary": "A whole published figure: one long weekly line over shaded peak seasons, dashed and dotted event lines, a target line, an arrowed note on the record low, a notes line that explains the shading, byline, linked source and Get the data.",
+    "question": "What happened, and what did it cost?",
+    "block": "chart-story-line-events-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-line-with-events--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "editorial-charts-lines-with-projection",
+    "name": "Lines With Projection",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineProjection",
+    "summary": "A whole published figure: two crossing lines named at their ends, a shaded and labelled plan range in which the lines turn dashed, an arrowed note at the crossing, the colour key written into the description, method note, byline, linked source and Get the data.",
+    "question": "When do they cross, and how much of that is forecast?",
+    "block": "chart-story-line-projection-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-lines-with-projection--default"
   },
   {
     "section": "blocks",
@@ -937,6 +1028,32 @@
   },
   {
     "section": "blocks",
+    "slug": "editorial-charts-range-bars",
+    "name": "Range Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarRange",
+    "summary": "A whole published figure: a range plot drawn with bar overlays — fastest to slowest, the middle half and a median tick per row on one shared axis, with its key above the plot, method note, byline, linked source and Get the data.",
+    "question": "How wide is the spread, and where is the typical case?",
+    "block": "chart-story-bar-range-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-range-bars--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "editorial-charts-ranked-bars",
+    "name": "Ranked Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarHighlight",
+    "summary": "A whole published figure: ranked horizontal bars on a track to 100 %, the three lowest and three highest rows in colour and the rest as grey context, a colour key above the plot, values inside the bars, method note, byline, linked source and Get the data.",
+    "question": "Who is at the top, and who is at the bottom?",
+    "block": "chart-story-bar-highlight-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-ranked-bars--default"
+  },
+  {
+    "section": "blocks",
     "slug": "kpi-cards-ratio-and-unit",
     "name": "Ratio and Unit",
     "group": "KPI Cards",
@@ -1015,6 +1132,19 @@
   },
   {
     "section": "blocks",
+    "slug": "editorial-charts-seasons-as-dots-and-lines",
+    "name": "Seasons as Dots and Lines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineSeasons",
+    "summary": "A whole published figure: twenty seasons of daily readings as small dots coloured by decade, two average lines and the current year on top, the colour key carried by the title's own words, two notes on the cloud, method note, byline and linked source.",
+    "question": "Is this year unusual, and is the decade?",
+    "block": "chart-story-line-seasons-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-seasons-as-dots-and-lines--default"
+  },
+  {
+    "section": "blocks",
     "slug": "commerce-shopping-cart",
     "name": "Shopping Cart",
     "group": "Commerce",
@@ -1051,6 +1181,19 @@
     "block": "spend-against-limit-01",
     "stories": 4,
     "first": "patterns-blocks-agent-ops-spend-against-limit--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "editorial-charts-stacked-among-plain-bars",
+    "name": "Stacked Among Plain Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarStackedMix",
+    "summary": "A whole published figure: one ranked list where the comparison rows are plain grey bars and the rows the story is about are stacked by component, with totals, a colour key, method note, byline, linked source and Get the data.",
+    "question": "How big is it next to everything else, and what is it made of?",
+    "block": "chart-story-bar-stacked-mix-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-stacked-among-plain-bars--default"
   },
   {
     "section": "blocks",
@@ -3017,6 +3160,19 @@
   },
   {
     "section": "components",
+    "slug": "factory-plan",
+    "name": "Factory Plan",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanLegend",
+    "summary": "The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.",
+    "question": "",
+    "block": null,
+    "stories": 5,
+    "first": "maps-factory-plan--factory-floor"
+  },
+  {
+    "section": "components",
     "slug": "featuregrid",
     "name": "FeatureGrid",
     "group": "Marketing",
@@ -3750,7 +3906,7 @@
     "group": "Maps",
     "package": "maps",
     "component": "MapCanvas",
-    "summary": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.",
+    "summary": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. With `plan` it is a non-geographic plan instead (a floor, a plant, a carriage) and every layer inside speaks plan units.",
     "question": "",
     "block": null,
     "stories": 4,
@@ -4249,6 +4405,19 @@
     "block": null,
     "stories": 5,
     "first": "ai-plan--default"
+  },
+  {
+    "section": "components",
+    "slug": "plan-maps",
+    "name": "Plan Maps",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanOverlay",
+    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+    "question": "",
+    "block": null,
+    "stories": 7,
+    "first": "maps-plan-maps--office-floor-plan"
   },
   {
     "section": "components",
@@ -5341,6 +5510,19 @@
     "block": null,
     "stories": 1,
     "first": "overlays-tooltip--default"
+  },
+  {
+    "section": "components",
+    "slug": "train-carriage",
+    "name": "Train Carriage",
+    "group": "Maps",
+    "package": "maps",
+    "component": "MapPlanOverlay",
+    "summary": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+    "question": "",
+    "block": null,
+    "stories": 6,
+    "first": "maps-train-carriage--seat-map"
   },
   {
     "section": "components",

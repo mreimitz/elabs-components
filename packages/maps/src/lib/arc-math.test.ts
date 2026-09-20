@@ -33,6 +33,25 @@ describe("buildArcCoordinates", () => {
     expect(points.at(-1)![0]).toBeCloseTo(237.6, 5);
   });
 
+  it("keeps a plan coordinate where it was put when wrapping is off", () => {
+    // A 1600-unit-wide hall: x = 900 is a place on the floor, not a longitude.
+    // Unwrapping it to 540 would move the arc's end 360 units to the left.
+    const wrapped = buildArcCoordinates([100, 50], [900, 50], 0, 8);
+    const plan = buildArcCoordinates([100, 50], [900, 50], 0, 8, false);
+
+    expect(wrapped.at(-1)![0]).toBe(540);
+    expect(plan.at(-1)![0]).toBe(900);
+  });
+
+  it("still curves in plan space, symmetrically about the straight line", () => {
+    const points = buildArcCoordinates([0, 0], [800, 0], 0.2, 16, false);
+
+    expect(points).toHaveLength(17);
+    expect(points[0]).toEqual([0, 0]);
+    expect(points.at(-1)).toEqual([800, 0]);
+    expect(Math.abs(points[8]![1])).toBeGreaterThan(0);
+  });
+
   it("bends to the opposite side with negative curvature", () => {
     const up = buildArcCoordinates([0, 0], [20, 0], 0.2, 8);
     const down = buildArcCoordinates([0, 0], [20, 0], -0.2, 8);

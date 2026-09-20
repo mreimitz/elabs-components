@@ -198,15 +198,22 @@ function realRows(rows: readonly Record<string, unknown>[]) {
   return rows.filter((row) => !isBarGroupHeaderRow(row));
 }
 
-/** `track`: a `--chart-mono-2` bar from 0 to the axis maximum behind every bar. */
-export function BarTrackLayer({ max, ...geometry }: BarLayerGeometry & { max: number }) {
+/**
+ * `track`: a bar from 0 to the axis maximum behind every bar — `--chart-mono-2` unless the
+ * caller names a quieter surface (`track={{ fill }}`).
+ */
+export function BarTrackLayer({
+  max,
+  fill = TRACK_INK,
+  ...geometry
+}: BarLayerGeometry & { max: number; fill?: string }) {
   return (
     <g aria-hidden="true" data-slot="bar-chart-track">
       {realRows(geometry.rows).map((row) => {
         const band = geometry.bandOf(row);
         if (band === undefined) return null;
         const rect = valueRect(geometry, 0, max, band, geometry.bandWidth);
-        return <rect fill={TRACK_INK} key={geometry.rowKey(row)} {...rect} />;
+        return <rect fill={fill} key={geometry.rowKey(row)} {...rect} />;
       })}
     </g>
   );
