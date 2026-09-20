@@ -69,7 +69,13 @@ const SHAPE_CLASSES: Record<MapLegendShape, string> = {
 
 const LAYOUT_CLASSES: Record<MapLegendLayout, string> = {
   list: "flex flex-col gap-1",
-  grid: "grid grid-cols-[repeat(auto-fill,minmax(7rem,1fr))] gap-x-3 gap-y-1",
+  // `auto-fit`, never `auto-fill` (c-5): `auto-fill` keeps the tracks a wide
+  // strip could hold even when nothing occupies them, so four keys on an
+  // 868 px strip got 113.7 px each and "Greater Toronto Area" truncated with
+  // three empty tracks beside it. `auto-fit` collapses the empty tracks and
+  // the real keys share the full width; a key with more items than fit wraps
+  // exactly as before.
+  grid: "grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-x-3 gap-y-1",
 };
 
 function isColorScale(scale: MapLegendScale): scale is ColorScale {
