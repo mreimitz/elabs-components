@@ -320,6 +320,17 @@
     "archetype": "dashboard"
   },
   {
+    "name": "chart-story-heat-table-01",
+    "title": "Chart story: Heat table",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "chart-story-line-events-01",
     "title": "Chart story: Line With Events",
     "categories": ["chart-editorial"],
@@ -399,6 +410,17 @@
   {
     "name": "chart-story-range-plot-01",
     "title": "Chart story: Range plot with deltas",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-table-scorecard-01",
+    "title": "Chart story: Table with bars and sparklines",
     "categories": ["chart-editorial"],
     "dependencies": [
       "@elabs-ai/components-charts",

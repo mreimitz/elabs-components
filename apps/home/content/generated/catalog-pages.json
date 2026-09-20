@@ -36930,6 +36930,43 @@
     },
     "template": null
   },
+  "blocks/editorial-charts-heat-table": {
+    "section": "blocks",
+    "slug": "editorial-charts-heat-table",
+    "name": "Heat table",
+    "title": "Patterns/Blocks/Editorial Charts/Heat table",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryHeatTable",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-heat-table--docs",
+    "file": "apps/docs/stories/blocks/chart-story-heat-table-01.stories.tsx",
+    "summary": "A heat table: a depot by weekday matrix with printed values, five sequential steps, a key that states each range and the maximum ringed.",
+    "question": "How do I show every number and still let the pattern show first?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-heat-table--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-heat-table-01",
+      "title": "Chart story: Heat table",
+      "description": "A heat table: a depot by weekday matrix with printed values, five sequential steps, a key that states each range and the maximum ringed.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
   "blocks/editorial-charts-highlighted-columns": {
     "section": "blocks",
     "slug": "editorial-charts-highlighted-columns",
@@ -37374,6 +37411,43 @@
       "name": "chart-story-bar-stacked-mix-01",
       "title": "Chart story: Stacked Among Plain Bars",
       "description": "A whole published figure: one ranked list where the comparison rows are plain grey bars and the rows the story is about are stacked by component, with totals, a colour key, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
+  "blocks/editorial-charts-table-with-bars-and-sparklines": {
+    "section": "blocks",
+    "slug": "editorial-charts-table-with-bars-and-sparklines",
+    "name": "Table with bars and sparklines",
+    "title": "Patterns/Blocks/Editorial Charts/Table with bars and sparklines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryTableScorecard",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-table-with-bars-and-sparklines--docs",
+    "file": "apps/docs/stories/blocks/chart-story-table-scorecard-01.stories.tsx",
+    "summary": "A scorecard table: bar cells, a shaded heat column, category dots, sparklines with the last point emphasised and signed, coloured change.",
+    "question": "How do I make a table readable at a glance?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-table-with-bars-and-sparklines--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-table-scorecard-01",
+      "title": "Chart story: Table with bars and sparklines",
+      "description": "A scorecard table: bar cells, a shaded heat column, category dots, sparklines with the last point emphasised and signed, coloured change.",
       "categories": ["chart-editorial"],
       "dependencies": [
         "@elabs-ai/components-charts",

@@ -3295,6 +3295,48 @@
         }
       ],
       "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-table-scorecard-01",
+      "type": "registry:block",
+      "title": "Chart story: Table with bars and sparklines",
+      "description": "A scorecard table: bar cells, a shaded heat column, category dots, sparklines with the last point emphasised and signed, coloured change.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-table-scorecard-01/chart-story-table-scorecard.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-table-scorecard-01/chart-story-table-scorecard.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-heat-table-01",
+      "type": "registry:block",
+      "title": "Chart story: Heat table",
+      "description": "A heat table: a depot by weekday matrix with printed values, five sequential steps, a key that states each range and the maximum ringed.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-heat-table-01/chart-story-heat-table.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-heat-table-01/chart-story-heat-table.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
     }
   ]
 }

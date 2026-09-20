@@ -113,9 +113,11 @@ export function HeatmapLegend({
   const hasHover = typeof hover === "number" && Number.isFinite(hover);
   const markerT = hasHover ? rampPositionOf(hover as number, [lo, hi]) : null;
   const stepWidth = hi === lo ? 0 : (hi - lo) / swatches.length;
+  // `"ranges"` stretches each swatch over its label's column; `"endpoints"` keeps the 16 px step.
+  const stepWidthClass = labelMode === "ranges" ? "w-full" : "w-4";
   const stepSpans = swatches.map((swatch, index) => (
     <span
-      className={cn("h-2.5 w-4", continuous ? "rounded-none" : "rounded-[2px]")}
+      className={cn("h-2.5", stepWidthClass, continuous ? "rounded-none" : "rounded-[2px]")}
       data-slot="heatmap-legend-step"
       // A ramp step's identity IS its position: two samples of a continuous
       // scale can legitimately resolve to the same ink.
@@ -127,6 +129,10 @@ export function HeatmapLegend({
       }}
     />
   ));
+  const rangeTexts = swatches.map(
+    (_, index) =>
+      `${formatValue(lo + stepWidth * index)}–${formatValue(lo + stepWidth * (index + 1))}`,
+  );
 
   return (
     <div
@@ -156,23 +162,14 @@ export function HeatmapLegend({
               continuous ? "gap-x-0" : "gap-x-0.5",
             )}
           >
-            {swatches.map((swatch, index) => [
-              <span
-                className={cn("h-2.5 w-full", continuous ? "rounded-none" : "rounded-[2px]")}
-                data-slot="heatmap-legend-step"
-                key={`step-${index}`}
-                style={{
-                  backgroundColor: swatch.color,
-                  backgroundImage: swatch.hatched ? NEGATIVE_HATCH_BACKGROUND : undefined,
-                  opacity: swatch.opacity,
-                }}
-              />,
+            {rangeTexts.flatMap((text, column) => [
+              stepSpans[column],
               <span
                 className="px-1 text-center whitespace-nowrap"
                 data-slot="heatmap-legend-range-label"
-                key={`range-${index}`}
+                key={`range-${text}`}
               >
-                {formatValue(lo + stepWidth * index)}–{formatValue(lo + stepWidth * (index + 1))}
+                {text}
               </span>,
             ])}
           </span>

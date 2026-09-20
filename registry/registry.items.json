@@ -1145,6 +1145,22 @@
       "title": "Chart story: Waterfall with subtotals",
       "description": "A horizontal waterfall: monthly steps, automatic quarterly subtotals, a closing total and a plot zoomed to the differences.",
       "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-table-scorecard-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-table-scorecard-01",
+      "title": "Chart story: Table with bars and sparklines",
+      "description": "A scorecard table: bar cells, a shaded heat column, category dots, sparklines with the last point emphasised and signed, coloured change.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-heat-table-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-heat-table-01",
+      "title": "Chart story: Heat table",
+      "description": "A heat table: a depot by weekday matrix with printed values, five sequential steps, a key that states each range and the maximum ringed.",
+      "categories": ["chart-editorial"]
     }
   ]
 }

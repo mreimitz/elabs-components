@@ -123,6 +123,7 @@ export {
   AreaBand,
   AreaChartLoading,
   Bar,
+  BarValueAxis,
   BarXAxis,
   BarYAxis,
   Candlestick,

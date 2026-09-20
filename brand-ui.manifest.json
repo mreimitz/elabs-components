@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T01:33:27.790Z",
+  "generatedAt": "2026-09-20T09:22:13.307Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1111,6 +1111,96 @@
       "type": "registry:block",
       "title": "Chart story: Seasons as Dots and Lines",
       "description": "A whole published figure: twenty seasons of daily readings as small dots coloured by decade, two average lines and the current year on top, the colour key carried by the title's own words, two notes on the cloud, method note, byline and linked source."
+    },
+    {
+      "name": "chart-story-area-multiples-01",
+      "type": "registry:block",
+      "title": "Chart story: Area multiples",
+      "description": "Small-multiple area charts on one shared scale: a dotted network average behind every panel, the same shaded event, and the latest value in each panel title."
+    },
+    {
+      "name": "chart-story-column-panels-01",
+      "type": "registry:block",
+      "title": "Chart story: Column panels with ranges",
+      "description": "Two column panels on one shared axis, with the promoter and detractor ranges of the scale shaded and named, and a computed share in each panel title."
+    },
+    {
+      "name": "chart-story-dual-axis-01",
+      "type": "registry:block",
+      "title": "Chart story: Dual axis columns and line",
+      "description": "Columns on the left axis and a line on the right: axes coloured like their series, ticks aligned on shared gridlines, a shaded range, and a table tooltip."
+    },
+    {
+      "name": "chart-story-pareto-01",
+      "type": "registry:block",
+      "title": "Chart story: Pareto",
+      "description": "A Pareto chart: sorted columns on the left axis and the labelled cumulative share on the right, with a computed headline."
+    },
+    {
+      "name": "chart-story-donut-01",
+      "type": "registry:block",
+      "title": "Chart story: Donut with total",
+      "description": "A donut with the total in the hole, outside labels on leaders stating name and share, and small slices folded into Other."
+    },
+    {
+      "name": "chart-story-pie-pair-01",
+      "type": "registry:block",
+      "title": "Chart story: Donuts then and now",
+      "description": "Two donuts under one shared colour key: the year in the hole, shares inside the slices, the same slice order in both."
+    },
+    {
+      "name": "chart-story-bubble-01",
+      "type": "registry:block",
+      "title": "Chart story: Bubble chart",
+      "description": "A bubble scatter on a log axis: size by head count, colour by region with a key, a dashed trend, selective point labels and a text annotation."
+    },
+    {
+      "name": "chart-story-calendar-01",
+      "type": "registry:block",
+      "title": "Chart story: Calendar heatmap",
+      "description": "A calendar heatmap: weeks as columns, weekdays as rows, six sequential steps and a key that states each range."
+    },
+    {
+      "name": "chart-story-dot-plot-01",
+      "type": "registry:block",
+      "title": "Chart story: Dot plot with range",
+      "description": "A dot plot: three dots per row joined by their range, a colour key, a top value axis and rows sorted by the headline value."
+    },
+    {
+      "name": "chart-story-range-plot-01",
+      "type": "registry:block",
+      "title": "Chart story: Range plot with deltas",
+      "description": "A grouped range plot: hollow before, filled after, a signed delta per row, group headers and a top value axis."
+    },
+    {
+      "name": "chart-story-arrow-plot-01",
+      "type": "registry:block",
+      "title": "Chart story: Arrow plot with target band",
+      "description": "An arrow plot: one arrow per row coloured by direction, percent deltas, a shaded target band and a computed headline."
+    },
+    {
+      "name": "chart-story-waterfall-bridge-01",
+      "type": "registry:block",
+      "title": "Chart story: Waterfall bridge",
+      "description": "A revenue bridge: coloured increases and decreases between two totals, thin connectors, matched-colour labels and a callout on the step that matters."
+    },
+    {
+      "name": "chart-story-waterfall-running-01",
+      "type": "registry:block",
+      "title": "Chart story: Waterfall with subtotals",
+      "description": "A horizontal waterfall: monthly steps, automatic quarterly subtotals, a closing total and a plot zoomed to the differences."
+    },
+    {
+      "name": "chart-story-table-scorecard-01",
+      "type": "registry:block",
+      "title": "Chart story: Table with bars and sparklines",
+      "description": "A scorecard table: bar cells, a shaded heat column, category dots, sparklines with the last point emphasised and signed, coloured change."
+    },
+    {
+      "name": "chart-story-heat-table-01",
+      "type": "registry:block",
+      "title": "Chart story: Heat table",
+      "description": "A heat table: a depot by weekday matrix with printed values, five sequential steps, a key that states each range and the maximum ringed."
     }
   ],
   "templates": [
@@ -19923,6 +20013,12 @@
               "description": "Gap in px between stacked segments. Default: 0"
             },
             {
+              "name": "insetBars",
+              "optional": true,
+              "type": "boolean",
+              "description": "Keep the first and last column inside the plot: the x range is inset by half a slot, so no column runs over an axis. Default `false` — columns centre on the plot edges, as before."
+            },
+            {
               "name": "onPhaseChange",
               "optional": true,
               "type": "(phase: ChartPhase) => void"
@@ -20166,6 +20262,12 @@
               "optional": true,
               "type": "boolean",
               "description": "`variant=\"dots\"` only: draws a bar between the row's lowest and highest dot. Default `false`."
+            },
+            {
+              "name": "keyColors",
+              "optional": true,
+              "type": "Readonly<Record<string, string>>",
+              "description": "`variant=\"dots\"` only: pin a value key to a colour (`{ Target: \"var(--chart-mono-2)\" }`) — dots and the colour key follow. Keys left out keep their palette colour. Default: none."
             },
             {
               "name": "arrowWidth",
@@ -22069,7 +22171,13 @@
               "name": "innerRadius",
               "optional": true,
               "type": "number",
-              "description": "Inner radius for donut charts. Default: 0 (solid pie)"
+              "description": "Inner radius for donut charts, in px — or, below `1`, as a fraction of the outer radius (`0.6` keeps a responsive donut a donut at every size). Default: 0 (solid pie)"
+            },
+            {
+              "name": "align",
+              "optional": true,
+              "type": "\"start\" | \"center\"",
+              "description": "Where the square plot sits in a container wider than it is tall: `\"start\"` (default, as before) or `\"center\"` — centred, and outside labels may run past the square into the free room either side instead of being clipped at it."
             },
             {
               "name": "padAngle",

@@ -828,6 +828,26 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
+  "chart-story-table-scorecard-01": dynamic(
+    () =>
+      import("../blocks/chart-story-table-scorecard-01/chart-story-table-scorecard").then(
+        (m) => m.ChartStoryTableScorecard,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-heat-table-01": dynamic(
+    () =>
+      import("../blocks/chart-story-heat-table-01/chart-story-heat-table").then(
+        (m) => m.ChartStoryHeatTable,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
 };
 
 /**

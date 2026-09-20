@@ -651,6 +651,19 @@
   },
   {
     "section": "blocks",
+    "slug": "editorial-charts-heat-table",
+    "name": "Heat table",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryHeatTable",
+    "summary": "A heat table: a depot by weekday matrix with printed values, five sequential steps, a key that states each range and the maximum ringed.",
+    "question": "How do I show every number and still let the pattern show first?",
+    "block": "chart-story-heat-table-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-heat-table--default"
+  },
+  {
+    "section": "blocks",
     "slug": "marketing-hero",
     "name": "Hero",
     "group": "Marketing",
@@ -1402,6 +1415,19 @@
     "block": "kpi-streak-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-streak--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "editorial-charts-table-with-bars-and-sparklines",
+    "name": "Table with bars and sparklines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryTableScorecard",
+    "summary": "A scorecard table: bar cells, a shaded heat column, category dots, sparklines with the last point emphasised and signed, coloured change.",
+    "question": "How do I make a table readable at a glance?",
+    "block": "chart-story-table-scorecard-01",
+    "stories": 1,
+    "first": "patterns-blocks-editorial-charts-table-with-bars-and-sparklines--default"
   },
   {
     "section": "blocks",

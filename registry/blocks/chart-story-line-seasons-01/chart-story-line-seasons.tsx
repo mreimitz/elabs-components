@@ -85,14 +85,13 @@ function ReadingDots() {
   const { xScale, yScale } = useChart();
   return (
     <g aria-hidden="true" data-slot="chart-story-reading-dots">
-      {SEASON.readings.map((reading, index) => (
+      {SEASON.readings.map((reading) => (
         <circle
           cx={xScale(new Date(SEASON_START + reading.day * DAY))}
           cy={yScale(reading.value)}
           fill={reading.late ? LATE_INK : EARLY_INK}
           fillOpacity={0.6}
-          // eslint-disable-next-line react/no-array-index-key -- a fixed, generated list
-          key={index}
+          key={`${reading.day}-${reading.value}`}
           r={1.3}
         />
       ))}

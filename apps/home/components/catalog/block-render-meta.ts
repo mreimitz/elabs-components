@@ -103,6 +103,8 @@ const BLOCKS = {
   "chart-story-arrow-plot-01": "flow",
   "chart-story-waterfall-bridge-01": "flow",
   "chart-story-waterfall-running-01": "flow",
+  "chart-story-table-scorecard-01": "flow",
+  "chart-story-heat-table-01": "flow",
 } as const satisfies Record<string, BlockStage>;
 
 export type NativeBlockName = keyof typeof BLOCKS;
