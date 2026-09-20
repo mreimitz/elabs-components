@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T01:02:52.308Z",
+  "generatedAt": "2026-09-20T09:16:44.137Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -30361,6 +30361,12 @@
               "description": "Whether features respond to mouse events (default: false)."
             },
             {
+              "name": "featureLabel",
+              "optional": true,
+              "type": "(feature: MapGeoJSONFeature<P>, index: number) => string",
+              "description": "The text of a feature in the keyboard list an `interactive` map renders — one visually-hidden button per feature, so the values a pointer reveals on hover are reachable by Tab and readable by a screen reader (WCAG 2.1.1 and 1.3.1). Say what the region is AND what it is worth — the same sentence a hover readout prints. Defaults to the promoted id."
+            },
+            {
               "name": "beforeId",
               "optional": true,
               "type": "string",
@@ -30518,6 +30524,12 @@
               "optional": true,
               "type": "(lngLat: { lng: number; lat: number }) => void",
               "description": "Callback when a drag ends (requires `draggable`)."
+            },
+            {
+              "name": "dragLabel",
+              "optional": true,
+              "type": "string",
+              "description": "The accessible name of a `draggable` marker — say what it moves (\"Depot location\"). Defaults to the locale seam's generic name. Ignored when the marker is not draggable."
             }
           ]
         },

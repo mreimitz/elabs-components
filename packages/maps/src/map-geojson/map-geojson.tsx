@@ -110,9 +110,8 @@ export type MapGeoJSONProps<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJso
    * The text of a feature in the keyboard list an `interactive` map renders —
    * one visually-hidden button per feature, so the values a pointer reveals
    * on hover are reachable by Tab and readable by a screen reader (WCAG 2.1.1
-   * and 1.3.1). Say what the region is AND what it is worth
-   * (`(f) => \`\${f.properties.name}: \${f.properties.value}\`\`). Defaults to the
-   * promoted id.
+   * and 1.3.1). Say what the region is AND what it is worth — the same
+   * sentence a hover readout prints. Defaults to the promoted id.
    */
   featureLabel?: (feature: MapGeoJSONFeature<P>, index: number) => string;
   /** Optional MapLibre layer id to insert the layers before (z-order control). */
