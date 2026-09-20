@@ -47,7 +47,8 @@ import {
 } from "./lib/community-themes.mjs";
 import { indexStoryDocsPages } from "../packages/cli/lib/story-ids.mjs";
 import { handleMessage, LOCAL_ONLY_TOOLS, SERVER_INFO, TOOLS } from "../packages/cli/lib/mcp.mjs";
-import { HOSTED_MCP_URL } from "../packages/cli/lib/render-docs.mjs";
+import { HOSTED_DOCS_URL, HOSTED_MCP_URL } from "../packages/cli/lib/render-docs.mjs";
+import { ARCHETYPES } from "../packages/cli/lib/engine.mjs";
 import { HOME_MCP_OPTIONS } from "../apps/home/lib/mcp-site-options.mjs";
 // RM-101
 import { A2UI_EXAMPLE, validateSurface } from "../packages/cli/lib/a2ui.mjs";
@@ -343,6 +344,19 @@ export function buildStoryIds({ repoRoot = REPO_ROOT } = {}) {
 
 // ─────────────────────────────────── install.json ─────────────────────────────
 
+/** `pnpm add …` → the same install for npm. The site shows both; neither is typed by hand. */
+const npmForm = (pnpmCommand) =>
+  pnpmCommand.replace(/^pnpm add -D /, "npm install -D ").replace(/^pnpm add /, "npm install ");
+
+/**
+ * "owner/repo" of the public repository — what `/plugin marketplace add` and `npx skills add`
+ * take. Read from the CLI package's own `repository.url`, so a repo move is one edit.
+ */
+export function repoSlug(repositoryUrl) {
+  const match = /github\.com[/:]([^/]+\/[^/.]+?)(?:\.git)?$/.exec(repositoryUrl ?? "");
+  return match ? match[1] : null;
+}
+
 export function buildInstall(manifest, registry, cli) {
   const archetypes = [...manifest.playbooks]
     .map((p) => ({
@@ -352,16 +366,43 @@ export function buildInstall(manifest, registry, cli) {
     .sort((a, b) => a.archetype.localeCompare(b.archetype));
 
   const marketplace = json(".claude-plugin/marketplace.json");
+  const plugin = json(".claude-plugin/plugin.json");
   const pluginName = marketplace.plugins[0]?.name ?? marketplace.name;
+  const cliPackage = json("packages/cli/package.json");
+  const slug = repoSlug(cliPackage.repository?.url);
 
+  // The two packages every app needs first.
+  const TOKENS = "@elabs-ai/components-tokens";
+  const UI = "@elabs-ai/components-ui";
+  const baseCommand = `pnpm add ${TOKENS} ${UI}`;
   return {
     cli: cli.cliInstallCommand,
+    cliNpm: npmForm(cli.cliInstallCommand),
+    cliPackage: cliPackage.name,
     hostedMcp: { command: cli.hostedMcpCommand, url: cli.hostedMcpUrl },
     localMcp: { command: cli.localMcpCommand },
+    llmsTxt: `${HOSTED_DOCS_URL}/llms.txt`,
     plugin: {
-      marketplaceAdd: "/plugin marketplace add <path-to-this-repo>",
-      install: `/plugin install ${pluginName}`,
+      marketplaceAdd: `/plugin marketplace add ${slug}`,
+      install: `/plugin install ${pluginName}@${marketplace.name}`,
+      skillCount: plugin.skills.length,
     },
+    skills: { add: `npx skills add ${slug}` },
+    base: { command: baseCommand, npm: npmForm(baseCommand) },
+    // `create` validates --template against the CLI's own ARCHETYPES; the site lists the same.
+    create: {
+      prefix: `npx -y ${cliPackage.name} create`,
+      templates: [...ARCHETYPES],
+      run: {
+        command: "cd my-app && pnpm install && pnpm dev",
+        npm: "cd my-app && npm install && npm run dev",
+      },
+    },
+    migrate: {
+      scan: `npx -y ${cliPackage.name} scan . --json > scan.json`,
+      map: `npx -y ${cliPackage.name} map scan.json --out migration`,
+    },
+    audit: `npx -y ${cliPackage.name} audit src --strict`,
     registryHomepage: registry.homepage ?? null,
     perArchetype: archetypes,
   };

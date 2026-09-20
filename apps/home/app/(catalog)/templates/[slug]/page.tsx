@@ -6,6 +6,8 @@ import { DocPage } from "../../../../components/catalog/doc-page";
 import { catalogPage, entriesOf } from "../../../../lib/catalog";
 import { install, playbooks } from "../../../../lib/content";
 import { catalogCopy, heroCopy, tourCopy } from "../../../../content/copy";
+import { newProjectPrompt } from "../../../../content/prompts";
+import { PromptCard } from "../../../../components/start/prompt-card";
 
 type Params = { slug: string };
 
@@ -32,6 +34,7 @@ export default async function TemplatePage({ params }: { params: Promise<Params>
   if (!page) notFound();
   const playbook = playbooks.find((p) => p.archetype === slug);
   const useCase = (tourCopy.tabs as Record<string, { useCase: string } | undefined>)[slug]?.useCase;
+  const scaffoldable = install.create.templates.includes(slug);
   const chip = heroCopy.chip;
   const labels = (label: string) => ({
     copy: chip.copy,
@@ -67,35 +70,33 @@ export default async function TemplatePage({ params }: { params: Promise<Params>
         </div>
       ) : null}
       {playbook ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          <CommandChip
-            aria-label={catalogCopy.detail.scaffold}
-            hosts={[
-              {
-                id: "scaffold",
-                label: catalogCopy.detail.scaffold,
-                command: `npx -y ${CLI_PACKAGE} create my-${slug} --template ${slug}`,
-              },
-            ]}
-            labels={labels(catalogCopy.detail.scaffold)}
-            className="w-full"
-          />
-          <CommandChip
-            aria-label={catalogCopy.detail.prompt}
-            hosts={[
-              {
-                id: "prompt",
-                label: catalogCopy.detail.prompt,
-                command: tourCopy.prompt({
-                  mcpUrl: install.hostedMcp.url,
-                  archetype: slug,
-                  intent: playbook.intent,
-                  useCase: useCase ?? playbook.intent,
-                }),
-              },
-            ]}
-            labels={labels(catalogCopy.detail.prompt)}
-            className="w-full"
+        <div className="flex flex-col gap-3">
+          {scaffoldable ? (
+            <CommandChip
+              aria-label={catalogCopy.detail.scaffold}
+              hosts={[
+                {
+                  id: "scaffold",
+                  label: catalogCopy.detail.scaffold,
+                  command: `npx -y ${CLI_PACKAGE} create my-${slug} --template ${slug}`,
+                },
+              ]}
+              labels={labels(catalogCopy.detail.scaffold)}
+              className="w-full"
+            />
+          ) : null}
+          <PromptCard
+            compact
+            prompt={
+              scaffoldable
+                ? newProjectPrompt({ template: slug, description: useCase })
+                : tourCopy.prompt({
+                    mcpUrl: install.hostedMcp.url,
+                    archetype: slug,
+                    intent: playbook.intent,
+                    useCase: useCase ?? playbook.intent,
+                  })
+            }
           />
         </div>
       ) : null}

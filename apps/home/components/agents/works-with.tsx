@@ -183,7 +183,7 @@ export function WorksWith() {
           packageOptions={buildPackageOptions()}
           blockOptions={buildBlockOptions()}
           hostTabs={buildHostTabs()}
-          prompt={installTabsCopy.prompt(install.hostedMcp.url)}
+          prompt={installTabsCopy.prompt(install.hostedMcp.url, install.llmsTxt)}
         />
       </div>
     </section>

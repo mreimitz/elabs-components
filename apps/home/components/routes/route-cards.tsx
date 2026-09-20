@@ -28,9 +28,7 @@ export function RouteCards() {
           description={routeCardsCopy.adopt.description}
           footer={
             <Button variant="link" size="sm" asChild className="h-auto p-0">
-              <a href={storybookDocsHref(routeCardsCopy.adopt.docId)}>
-                {routeCardsCopy.adopt.action}
-              </a>
+              <a href={routeCardsCopy.adopt.href}>{routeCardsCopy.adopt.action}</a>
             </Button>
           }
         />

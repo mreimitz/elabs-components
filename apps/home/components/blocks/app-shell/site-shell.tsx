@@ -45,6 +45,7 @@ import {
   PanelRight,
   Scale,
   Shapes,
+  Rocket,
   Sparkles,
   Table2,
   Terminal,
@@ -325,7 +326,15 @@ function SiteNavRail({ pathname }: { pathname: string }) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {needle ? null : (
-                  <PlainItem href="/" label={copy.nav.overview} icon={Home} pathname={pathname} />
+                  <>
+                    <PlainItem href="/" label={copy.nav.overview} icon={Home} pathname={pathname} />
+                    <PlainItem
+                      href="/start"
+                      label={copy.nav.start}
+                      icon={Rocket}
+                      pathname={pathname}
+                    />
+                  </>
                 )}
                 {sections.map((branch) => (
                   <Branch
@@ -412,6 +421,7 @@ const STATIC_LABELS: Record<string, string> = {
   "/blocks": catalogCopy.sections.blocks,
   "/charts": catalogCopy.sections.charts,
   "/components": catalogCopy.sections.components,
+  "/start": copy.nav.start,
   "/agents": copy.nav.agents,
   "/attributions": copy.nav.attributions,
   "/resources": copy.nav.resources,

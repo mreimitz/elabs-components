@@ -19,6 +19,10 @@ import {
 import { entryForComponent, hrefOf, type CatalogApi, type CatalogPage } from "../../lib/catalog";
 import { install } from "../../lib/content";
 import { catalogCopy, heroCopy } from "../../content/copy";
+import { startCopy } from "../../content/start-copy";
+import { blockPrompt, componentPrompt, packageInstall } from "../../content/prompts";
+import { CommandLine } from "../start/command-line";
+import { PromptCard } from "../start/prompt-card";
 import { BlockHero } from "./block-renders";
 import type { NativeBlockName } from "./block-render-meta";
 import { LiveExample, LiveExamplesCount, LiveSection, MissingExamples } from "./story-availability";
@@ -198,6 +202,21 @@ export function DocPage({
   const installLine = page.block
     ? `npx shadcn@latest add ${install.registryHomepage}/${page.block.name}.json`
     : null;
+  // The package to install: the import specifier without any subpath.
+  const pkg = page.importFrom ? page.importFrom.split("/").slice(0, 2).join("/") : null;
+  const pkgInstall = page.component && pkg ? packageInstall(pkg) : null;
+  // One prompt per page, from the same source as `/start` (`content/prompts.ts`). Template
+  // pages bring their own (the scaffold prompt) through `children`.
+  const agentPrompt = page.block
+    ? blockPrompt({ name: page.block.name, title: page.name })
+    : page.component && pkg
+      ? componentPrompt({
+          name: page.component,
+          pkg,
+          kind: page.section === "charts" ? "chart" : "component",
+        })
+      : null;
+  const showAgentRoute = Boolean(agentPrompt) && page.section !== "templates";
   // What the enlarge dialog's detail pane shows for every example on this page.
   const expandDetail: StoryExpandDetail = {
     pageName: page.name,
@@ -271,13 +290,35 @@ export function DocPage({
           ) : null}
           {/* A natively rendered block is on the page already; only embedded pages owe a note. */}
           {nativeBlock ? null : <MissingExamples stories={page.stories} />}
-          {importLine || installLine ? (
+          {(importLine || installLine) && !showAgentRoute ? (
             <div className="grid gap-3 md:grid-cols-2">
               {installLine ? <Copyable label={copy.install} command={installLine} /> : null}
               {importLine ? <Copyable label={copy.import} command={importLine} /> : null}
             </div>
           ) : null}
           {children}
+          {showAgentRoute && agentPrompt ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="flex min-w-0 flex-col gap-3">
+                {installLine ? <Copyable label={copy.install} command={installLine} /> : null}
+                {importLine ? <Copyable label={copy.import} command={importLine} /> : null}
+                {pkgInstall ? (
+                  <CommandLine
+                    label={startCopy.component.install}
+                    command={pkgInstall.command}
+                    npm={pkgInstall.npm}
+                  />
+                ) : null}
+                <p className="text-meta text-muted-foreground">
+                  {startCopy.wiring.lead}{" "}
+                  <a className="underline underline-offset-2 focus-ring" href="/start#wiring">
+                    {startCopy.wiring.title}
+                  </a>
+                </p>
+              </div>
+              <PromptCard prompt={agentPrompt} compact />
+            </div>
+          ) : null}
         </section>
 
         {uses.length > 0 || avoid.length > 0 ? (

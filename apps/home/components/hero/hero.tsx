@@ -42,9 +42,7 @@ export function Hero() {
         <p className="text-subtitle text-pretty text-muted-foreground">{heroCopy.sub}</p>
         <div className="flex flex-wrap justify-center gap-3">
           <Button asChild size="lg">
-            <a href={`/storybook/?path=/docs/${heroCopy.ctaPrimaryStoryId}`}>
-              {heroCopy.ctaPrimary}
-            </a>
+            <a href={heroCopy.ctaPrimaryHref}>{heroCopy.ctaPrimary}</a>
           </Button>
           <Button asChild size="lg" variant="outline">
             <a href={heroCopy.ctaSecondaryHref}>{heroCopy.ctaSecondary}</a>

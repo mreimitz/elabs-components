@@ -81,7 +81,7 @@ export const heroCopy = {
   sub: "React components for dashboards, data grids, AI chat, node canvases, maps, editors and process maps — on one token system, and legible to coding agents.",
   ctaPrimary: "Get started",
   /** Storybook's "Docs/Getting Started" page (not a component, so not in story-ids.json). */
-  ctaPrimaryStoryId: "docs-getting-started--docs",
+  ctaPrimaryHref: "/start",
   ctaSecondary: "Browse templates",
   ctaSecondaryHref: "/templates",
   switchLabel: "Theme family",
@@ -521,8 +521,8 @@ export const worksWithCopy = {
 
 export const installTabsCopy = {
   heading: "Install it your way",
-  prompt: (mcpUrl: string) =>
-    `Use brand-ui — MCP at ${mcpUrl}, docs at /llms.txt — to build a screen for our support queue.`,
+  prompt: (mcpUrl: string, llmsTxt: string) =>
+    `Use brand-ui — MCP at ${mcpUrl}, docs at ${llmsTxt} — to build a screen for our support queue.`,
 } as const;
 
 export const routeCardsCopy = {
@@ -530,9 +530,9 @@ export const routeCardsCopy = {
   adopt: {
     title: "Adopt",
     description: "Start here — pick a path, run the commands.",
-    action: "Getting Started",
-    /** `Docs/Getting Started` — same id `SiteFooter` links to (`shellCopy.footer.gettingStartedDocId`). */
-    docId: "docs-getting-started--docs",
+    action: "Get started",
+    /** The site's own Getting Started (`app/start`); Storybook's page stays the reference. */
+    href: "/start",
   },
   pointAgent: {
     title: "Point your agent",
@@ -1057,6 +1057,7 @@ export const siteShellCopy = {
   groups: { explore: "Explore", components: "Components", more: "More" },
   nav: {
     overview: "Overview",
+    start: "Get started",
     agents: "For agents",
     themes: "Themes",
     storybook: "Storybook",

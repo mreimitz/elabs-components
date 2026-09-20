@@ -18,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),
+    { url: `${HOSTED_DOCS_URL}/start`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${HOSTED_DOCS_URL}/agents`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${HOSTED_DOCS_URL}/llms.txt`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${HOSTED_DOCS_URL}/storybook/`, changeFrequency: "weekly", priority: 0.6 },

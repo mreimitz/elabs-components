@@ -112,9 +112,19 @@ export type StoryIds = Record<string, string>;
 
 export interface InstallContent {
   cli: string;
+  cliNpm: string;
+  cliPackage: string;
   hostedMcp: { command: string; url: string };
   localMcp: { command: string };
-  plugin: { marketplaceAdd: string; install: string };
+  /** The absolute llms.txt url — a prompt is pasted somewhere else, so it never says "/llms.txt". */
+  llmsTxt: string;
+  plugin: { marketplaceAdd: string; install: string; skillCount: number };
+  skills: { add: string };
+  /** tokens + ui: what every app installs first. */
+  base: { command: string; npm: string };
+  create: { prefix: string; templates: string[]; run: { command: string; npm: string } };
+  migrate: { scan: string; map: string };
+  audit: string;
   registryHomepage: string | null;
   perArchetype: { archetype: string; command: string }[];
 }

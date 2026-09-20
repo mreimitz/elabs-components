@@ -1,5 +1,7 @@
 {
   "cli": "pnpm add -D @elabs-ai/components-cli",
+  "cliNpm": "npm install -D @elabs-ai/components-cli",
+  "cliPackage": "@elabs-ai/components-cli",
   "hostedMcp": {
     "command": "claude mcp add --transport http brand-ui https://elabs-ai.com/mcp",
     "url": "https://elabs-ai.com/mcp"
@@ -7,10 +9,39 @@
   "localMcp": {
     "command": "npx -y @elabs-ai/components-cli mcp"
   },
+  "llmsTxt": "https://elabs-ai.com/llms.txt",
   "plugin": {
-    "marketplaceAdd": "/plugin marketplace add <path-to-this-repo>",
-    "install": "/plugin install brand-ui"
+    "marketplaceAdd": "/plugin marketplace add mreimitz/elabs-components",
+    "install": "/plugin install brand-ui@brand-ui",
+    "skillCount": 9
   },
+  "skills": {
+    "add": "npx skills add mreimitz/elabs-components"
+  },
+  "base": {
+    "command": "pnpm add @elabs-ai/components-tokens @elabs-ai/components-ui",
+    "npm": "npm install @elabs-ai/components-tokens @elabs-ai/components-ui"
+  },
+  "create": {
+    "prefix": "npx -y @elabs-ai/components-cli create",
+    "templates": [
+      "dashboard",
+      "data-app",
+      "ai-assistant",
+      "flow-workspace",
+      "settings",
+      "marketing"
+    ],
+    "run": {
+      "command": "cd my-app && pnpm install && pnpm dev",
+      "npm": "cd my-app && npm install && npm run dev"
+    }
+  },
+  "migrate": {
+    "scan": "npx -y @elabs-ai/components-cli scan . --json > scan.json",
+    "map": "npx -y @elabs-ai/components-cli map scan.json --out migration"
+  },
+  "audit": "npx -y @elabs-ai/components-cli audit src --strict",
   "registryHomepage": "https://mreimitz.github.io/elabs-components/r",
   "perArchetype": [
     {
