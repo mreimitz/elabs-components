@@ -3,26 +3,37 @@
 /**
  * Infographic — "Which depot is the outlier?".
  *
- * Twelve depots, one tiny 13-week line per tile, ALL thirteen weeks drawn on
- * the SAME y-axis (the shared min–max across every depot and every week) —
- * the one thing that makes tile HEIGHT an honest, directly comparable signal
- * instead of twelve independently-autoscaled shapes that would all look
- * equally "busy". One depot is emphasised — a distinct line/ring colour and a
- * bold, ringed last point (`PeakRing`, `@elabs-ai/components-charts`) — with
- * everything else drawn in a single muted neutral. The emphasis colour is
- * never the only channel: the outlier tile also gets a background wash, a
- * bold label and the ring's own dashed SHAPE (WCAG 1.4.1).
+ * Twelve depots, one tiny 13-week line per panel, ALL of them drawn on the
+ * SAME y-axis — the one thing that makes panel HEIGHT an honest, directly
+ * comparable signal instead of twelve independently-autoscaled shapes that
+ * would all look equally "busy".
  *
- * Built as a bespoke grid of hand-rolled inline-SVG mini charts (never
- * `Sparkline`, which has no seam for an external per-point mark like
- * `PeakRing`) — the same "compose from `marks/`" recipe the
- * `chart-editorial-*` blocks use (`.claude/rules/charts.md` § Marks).
+ * The grid is `ChartMultiples` (`@elabs-ai/components-charts`), not a bespoke
+ * inline-SVG grid: the shared domain, the responsive column packing, the
+ * synced hover and the per-panel value-in-title all come from the real
+ * engine, so a copy-owner tunes props instead of maintaining scale maths.
+ * Each panel title carries the depot's latest reading, replaced by the
+ * hovered week's reading while any panel is hovered — one hover reads the
+ * same week across all twelve depots at once.
+ *
+ * One depot is emphasised, and never by colour alone (WCAG 1.4.1): a thicker
+ * line in the status ink, the dashed SHAPE of `PeakRing` around its last
+ * point, a trend glyph and a bold label in its title, and the deviation
+ * stated in words in the "how to read" line underneath.
  *
  * Copy-own it: `npx shadcn add infographic-small-multiples-01`.
  */
 
 import { TrendingDown, TrendingUp } from "lucide-react";
-import { PeakRing } from "@elabs-ai/components-charts";
+import {
+  ChartMultiples,
+  type ChartMultiplesHover,
+  type ChartMultiplesPanel,
+  Line,
+  LineChart,
+  PeakRing,
+  useChart,
+} from "@elabs-ai/components-charts";
 import { Badge, Card, CardContent, Skeleton } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
@@ -48,11 +59,16 @@ export interface InfographicSmallMultiplesProps {
   className?: string;
 }
 
-const TILE_WIDTH = 148;
-const TILE_HEIGHT = 52;
-const TILE_PAD_X = 4;
-const TILE_PAD_Y = 4;
-const DOMAIN_PAD_RATIO = 0.05;
+/** Panel plot height in px — a sparkline rung, not the `ChartMultiples` 200 px default. */
+const PANEL_HEIGHT = 56;
+/** Narrowest panel the `"auto"` packing will make, in px. */
+const MIN_PANEL_WIDTH = 132;
+
+/** One panel's rows: the week's position in the trailing window, and that week's reading. */
+interface WeekRow extends Record<string, unknown> {
+  week: number;
+  value: number;
+}
 
 interface Outlier {
   region: RegionSeries;
@@ -89,13 +105,25 @@ function findOutlier(regions: RegionSeries[]): Outlier {
   };
 }
 
-/** The padded `[min, max]` shared across every region's every week — the ONE scale every tile plots against. */
-function sharedDomain(regions: RegionSeries[]): [number, number] {
+/** The `[min, max]` across every region's every week — the ONE scale every panel plots against. */
+function sharedExtent(regions: RegionSeries[]): [number, number] {
   const values = regions.flatMap((r) => r.weekly);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const pad = (max - min) * DOMAIN_PAD_RATIO || 1;
-  return [min - pad, max + pad];
+  return [Math.min(...values), Math.max(...values)];
+}
+
+/** `ChartMultiples` panels, one per depot, in the network's own order. */
+function regionPanels(regions: RegionSeries[]) {
+  return regions.map((region) => ({
+    data: region.weekly.map((value, i): WeekRow => ({ value, week: i + 1 })),
+    key: region.id,
+    title: region.label,
+  }));
+}
+
+/** The dashed ring around the outlier's latest reading — the non-colour channel, drawn on the real scales. */
+function LastPointRing({ week, value, stroke }: { week: number; value: number; stroke: string }) {
+  const { xScale, yScale } = useChart();
+  return <PeakRing cx={Number(xScale(week))} cy={Number(yScale(value))} r={5} stroke={stroke} />;
 }
 
 /**
@@ -144,7 +172,7 @@ export function InfographicSmallMultiples({
     );
   }
 
-  const domain = sharedDomain(regions);
+  const [domainMin, domainMax] = sharedExtent(regions);
   const outlier = findOutlier(regions);
   // `formatKpiValue` never pads a whole number ("98"), so it can sit beside a
   // decimal reading ("83.1%") at a different precision in the SAME range —
@@ -157,9 +185,43 @@ export function InfographicSmallMultiples({
       maximumFractionDigits: 1,
     }).format(value)}%`;
   const isGood = outlier.direction === "above";
+  const tone = isGood ? "success" : "destructive";
+  const TrendIcon = isGood ? TrendingUp : TrendingDown;
+  // Written out, never `text-${tone}-text`: Tailwind only ships a class it can see in the source.
+  const outlierInkClass = isGood ? "text-success-text" : "text-destructive-text";
   const headline = isGood
     ? `${outlier.region.label} is pulling far ahead of its regional peers`
     : `${outlier.region.label} is falling behind its regional peers`;
+
+  const panelTitle = (
+    panel: ChartMultiplesPanel<WeekRow>,
+    hovered?: ChartMultiplesHover<WeekRow>,
+  ) => {
+    const isOutlier = panel.key === outlier.region.id;
+    const reading = hovered?.value ?? panel.stats.end;
+    return (
+      <div className="flex min-w-0 items-center justify-between gap-1">
+        <span
+          className={cn(
+            "flex min-w-0 items-center gap-1 text-caption",
+            isOutlier ? "font-medium text-foreground" : "text-muted-foreground",
+          )}
+        >
+          {isOutlier ? <TrendIcon aria-hidden="true" className="size-3 shrink-0" /> : null}
+          <span className="min-w-0 truncate">{panel.title}</span>
+        </span>
+        <span
+          className={cn(
+            "shrink-0 text-meta tabular-nums",
+            isOutlier ? outlierInkClass : "text-muted-foreground",
+          )}
+          data-slot="infographic-small-multiples-value"
+        >
+          {reading == null ? "—" : formatKpiValue(reading, "percent", locale)}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <Card className={cn("w-full", className)} data-slot="infographic-small-multiples">
@@ -182,125 +244,58 @@ export function InfographicSmallMultiples({
           </p>
         </div>
 
-        {/* `@container` on this wrapper, `@sm:`/`@lg:`/`@3xl:` on the grid
-            inside — a viewport breakpoint fires from the BROWSER width, which
-            would still force a wide grid onto a narrow sidebar card; see
-            `kpi-forecast-01`'s identical note. */}
-        <div className="@container" data-slot="infographic-small-multiples-grid-wrap">
-          <div
-            className="grid grid-cols-2 gap-x-3 gap-y-2 @sm:grid-cols-3 @lg:grid-cols-4 @3xl:grid-cols-6"
-            data-slot="infographic-small-multiples-grid"
-          >
-            {regions.map((region) => (
-              <RegionTile
-                domain={domain}
-                isOutlier={region.id === outlier.region.id}
-                key={region.id}
-                locale={locale}
-                region={region}
-                tone={isGood ? "success" : "destructive"}
-              />
-            ))}
-          </div>
-        </div>
+        <ChartMultiples<WeekRow>
+          // Two columns on a phone, not `ChartMultiples`' own one-column
+          // narrow default: these panels are sparkline-sized, so a single
+          // column would make a twelve-screen card of a twelve-tile grid.
+          columns={{ base: "auto", narrow: 2 }}
+          dataKeys={["value"]}
+          data-slot="infographic-small-multiples-grid"
+          minPanelWidth={MIN_PANEL_WIDTH}
+          panelHeight={PANEL_HEIGHT}
+          panelTitle={panelTitle}
+          panels={regionPanels(regions)}
+          scales={{ y: "shared", yDomain: [domainMin, domainMax] }}
+          xDataKey="week"
+        >
+          {(panel) => {
+            const isOutlier = panel.key === outlier.region.id;
+            const stroke = isOutlier ? `var(--${tone})` : "var(--chart-foreground-muted)";
+            const last = panel.data[panel.data.length - 1];
+            return (
+              <LineChart
+                accessibleLabel={`${panel.title} — ${metricLabel}, 13 weeks`}
+                data={panel.data}
+                margin={{ bottom: 4, left: 4, right: 6, top: 4 }}
+                xDataKey="week"
+              >
+                <Line
+                  dataKey="value"
+                  name={panel.title}
+                  stroke={stroke}
+                  strokeWidth={isOutlier ? 2 : 1.25}
+                />
+                {isOutlier && last ? (
+                  <LastPointRing stroke={stroke} value={last.value} week={last.week} />
+                ) : null}
+              </LineChart>
+            );
+          }}
+        </ChartMultiples>
 
         <p className="text-caption text-muted-foreground">
-          How to read: every tile plots the same 13 weeks on the same{" "}
+          How to read: every panel plots the same 13 weeks on the same{" "}
           <span className="tabular-nums">
-            {formatDomainBound(domain[0])}–{formatDomainBound(domain[1])}
+            {formatDomainBound(domainMin)}–{formatDomainBound(domainMax)}
           </span>{" "}
-          axis, so tile height compares directly. The ringed point is {outlier.region.label}’s
-          latest reading, <span className="tabular-nums">{outlier.deviationPp}pp</span>{" "}
-          {outlier.direction} the network median of{" "}
+          axis, so panel height compares directly; hovering one panel reads the same week in all
+          twelve. The ringed point is {outlier.region.label}’s latest reading,{" "}
+          <span className="tabular-nums">{outlier.deviationPp}pp</span> {outlier.direction} the
+          network median of{" "}
           <span className="tabular-nums">{formatKpiValue(outlier.median, "percent", locale)}</span>.
         </p>
         <KpiAsOf date={AS_OF_DATE} locale={locale} source={DATA_SOURCE} />
       </CardContent>
     </Card>
-  );
-}
-
-function RegionTile({
-  region,
-  isOutlier,
-  tone,
-  domain,
-  locale,
-}: {
-  region: RegionSeries;
-  isOutlier: boolean;
-  tone: "success" | "destructive";
-  domain: [number, number];
-  locale: string;
-}) {
-  const values = region.weekly;
-  const last = values[values.length - 1] ?? 0;
-  // Plain linear interpolation onto the shared [min, max] domain — no chart
-  // library needed for a single, fixed-range axis, and it keeps this
-  // registry item free of a third-party runtime dependency it would
-  // otherwise have to declare via `extraDependencies` (`.claude/rules/registry.md`).
-  const [domainMin, domainMax] = domain;
-  const domainSpan = domainMax - domainMin || 1;
-  const yTop = TILE_PAD_Y;
-  const yBottom = TILE_HEIGHT - TILE_PAD_Y;
-  const yScale = (value: number) => yBottom - ((value - domainMin) / domainSpan) * (yBottom - yTop);
-  const innerWidth = TILE_WIDTH - TILE_PAD_X * 2;
-  const stepX = values.length > 1 ? innerWidth / (values.length - 1) : 0;
-  const points = values.map((value, i) => `${TILE_PAD_X + i * stepX},${yScale(value)}`).join(" ");
-  const lastX = TILE_PAD_X + (values.length - 1) * stepX;
-  const lastY = yScale(last);
-  const lineColor = isOutlier ? `var(--${tone})` : "var(--chart-foreground-muted)";
-  const TrendIcon = tone === "success" ? TrendingUp : TrendingDown;
-
-  return (
-    <div
-      className={cn(
-        "min-w-0 space-y-1 rounded-md p-1.5",
-        isOutlier && (tone === "success" ? "bg-success/10" : "bg-destructive/10"),
-      )}
-      data-slot="infographic-small-multiples-tile"
-    >
-      <div className="flex items-center justify-between gap-1">
-        <span
-          className={cn(
-            "flex min-w-0 items-center gap-1 text-caption",
-            isOutlier ? "font-medium text-foreground" : "text-muted-foreground",
-          )}
-        >
-          {isOutlier ? <TrendIcon aria-hidden="true" className="size-3 shrink-0" /> : null}
-          <span className="min-w-0 truncate">{region.label}</span>
-        </span>
-        <span
-          className={cn(
-            "shrink-0 text-meta tabular-nums",
-            isOutlier
-              ? tone === "success"
-                ? "text-success-text"
-                : "text-destructive-text"
-              : "text-muted-foreground",
-          )}
-        >
-          {formatKpiValue(last, "percent", locale)}
-        </span>
-      </div>
-      <svg
-        aria-hidden="true"
-        className="block w-full"
-        role="presentation"
-        style={{ height: TILE_HEIGHT }}
-        viewBox={`0 0 ${TILE_WIDTH} ${TILE_HEIGHT}`}
-      >
-        <polyline
-          fill="none"
-          points={points}
-          stroke={lineColor}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={isOutlier ? 2 : 1.25}
-        />
-        <circle cx={lastX} cy={lastY} fill={lineColor} r={2} />
-        {isOutlier ? <PeakRing cx={lastX} cy={lastY} r={5.5} stroke={lineColor} /> : null}
-      </svg>
-    </div>
   );
 }

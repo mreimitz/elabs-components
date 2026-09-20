@@ -31,5 +31,22 @@ interactive map is unchanged, and no shipped story rendered both.
 frame's image export roles a bare legend's labels as legend text rather than plain chart
 labels. Classes, layout and accessible name are unchanged.
 
+**Registry blocks — two infographics now compose the new chart props.** Both are copy-own
+items, so an existing copy is untouched until you re-run `npx shadcn add`.
+
+`infographic-annotated-trend-01`: before, a `Card` with a hand-drawn `Leader` + `HaloText`
+per event and a fixed 288 px plot. After, a `ChartFrame` (the finding as the title, the
+method note, a byline and the source row, plus flip-to-table and CSV of the same weeks)
+around a `LineChart` whose events are declarative `annotations` — so under 480 px the notes
+become numbered markers with a key under the plot, and every note is restated in the
+figure's description. The value axis is now framed around the series instead of including
+zero, which is what makes the outage week read as a drop rather than a ripple; pass your own
+`domain` to change it.
+
+`infographic-small-multiples-01`: before, a bespoke grid of inline-SVG mini charts. After, a
+`ChartMultiples` grid — same shared y-axis and same ringed outlier, plus the value in every
+panel title, swapped for the hovered week's reading so one hover reads the same week across
+all twelve panels. Two columns on a phone, packed to the container above that.
+
 Also: the bundled choropleth world fixture now credits Natural Earth (public domain) and
 `world-atlas` (ISC) in the attribution panel.
