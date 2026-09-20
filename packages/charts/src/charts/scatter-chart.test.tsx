@@ -561,6 +561,13 @@ describe("Scatter — RM-115 sizeKey / colorBy / shapeBy / trend", () => {
     const fills = points.map((p) => fillCircleOf(p)?.getAttribute("fill"));
     expect(fills[0]).not.toBe(fills[1]);
     expect(fills[2]).toBe("var(--chart-2)"); // no `region` on this row → falls back to `fill`
+    // With no `stroke` set, a point's ring is its own colour, never the series colour.
+    for (const [i, point] of points.entries()) {
+      const strokes = Array.from(point.querySelectorAll("[stroke]"))
+        .map((el) => el.getAttribute("stroke"))
+        .filter((value) => value && value !== "none" && !value.includes("background"));
+      for (const stroke of strokes) expect(stroke).toBe(fills[i]);
+    }
   });
 
   it("shapeBy assigns a distinct marker shape per category", () => {

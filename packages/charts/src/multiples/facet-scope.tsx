@@ -53,7 +53,13 @@ export function applyFacetScope(
 ): ReactNode {
   const out: ReactNode[] = [];
   if (scope.baselineKey && (options.baseline ?? true)) {
-    out.push(createElement(FacetBaseline, { dataKey: scope.baselineKey, key: "facet-baseline" }));
+    out.push(
+      createElement(FacetBaseline, {
+        dataKey: scope.baselineKey,
+        key: "facet-baseline",
+        style: scope.baselineStyle,
+      }),
+    );
   }
   // `toArray` keys each child so the rebuilt list renders without key warnings.
   for (const child of Children.toArray(children)) {
@@ -109,13 +115,17 @@ export function useFacetScopedChildren(
 export interface FacetBaselineProps {
   /** Row key of the baseline values. */
   dataKey: string;
+  /** Stroke style. Default `"solid"`. */
+  style?: "solid" | "dashed" | "dotted";
 }
+
+const BASELINE_DASH = { solid: undefined, dashed: "5 4", dotted: "1 4" } as const;
 
 /**
  * The muted reference series a panel repeats behind its own series. Ink only
  * (`aria-hidden` via the chart's svg); its values are not a datapoint target.
  */
-export function FacetBaseline({ dataKey }: FacetBaselineProps) {
+export function FacetBaseline({ dataKey, style = "solid" }: FacetBaselineProps) {
   const { data, xAccessor, xScale } = useChartStable();
   const yScale = useYScale();
   const path = useMemo(() => {
@@ -134,6 +144,7 @@ export function FacetBaseline({ dataKey }: FacetBaselineProps) {
       fill="none"
       pointerEvents="none"
       stroke={chartCssVars.foregroundMuted}
+      strokeDasharray={BASELINE_DASH[style]}
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={FACET_BASELINE_STROKE_WIDTH}

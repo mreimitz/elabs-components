@@ -231,6 +231,9 @@ export function roundDownNice(value: number): number {
  * absolute value, once the zero baseline is gone, can only honestly be a
  * POSITION (a point), never a length.
  */
+/** Share of the steps' swing a zoomed domain adds at each end, so end labels stay in the plot. */
+const ZOOM_LABEL_ROOM = 0.12;
+
 export function computeWaterfallZoomDomain(rows: readonly WaterfallRow[]): WaterfallZoomResult {
   const stepRows = rows.filter((r) => r.kind === "step");
   const checkpointRows = rows.filter((r) => r.kind !== "step");
@@ -246,5 +249,7 @@ export function computeWaterfallZoomDomain(rows: readonly WaterfallRow[]): Water
   if (!(minTotal - 0 > swing)) {
     return fallback;
   }
-  return { domain: [roundDownNice(min), max], zoomed: true };
+  // Room for an outside label at either end: the extreme step no longer ends on the plot edge.
+  const pad = swing * ZOOM_LABEL_ROOM;
+  return { domain: [roundDownNice(min - pad), max + pad], zoomed: true };
 }

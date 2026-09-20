@@ -24,6 +24,7 @@ function ScopeProbe() {
       data-testid={`probe-${scope?.panelKey}`}
       data-bottom={String(scope?.bottom)}
       data-ticks={scope?.yTicks?.join(",")}
+      data-baseline-style={scope?.baselineStyle}
       onBlur={() => scope?.onHoverCategory?.(null)}
       onFocus={() => scope?.onHoverCategory?.(new Date(2024, 1, 1))}
       type="button"
@@ -186,5 +187,15 @@ describe("ChartMultiples", () => {
       (html ?? "").replace(/(id|aria-labelledby|aria-describedby)="[^"]*"/g, "");
     expect(panelKeys(explicit.container)).toEqual(["DRAM", "HDD", "NAND"]);
     expect(normalize(autoHtml)).toBe(normalize(explicitHtml));
+  });
+});
+
+describe("the baseline style", () => {
+  it("hands `baseline.style` to every panel, and nothing when it is unset", () => {
+    const { unmount } = renderMultiples({ baseline: { key: "HDD", style: "dotted" } });
+    expect(screen.getByTestId("probe-DRAM").getAttribute("data-baseline-style")).toBe("dotted");
+    unmount();
+    renderMultiples({ baseline: { key: "HDD" } });
+    expect(screen.getByTestId("probe-DRAM").getAttribute("data-baseline-style")).toBeNull();
   });
 });

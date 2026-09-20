@@ -1,5 +1,6 @@
 "use client";
 
+import { svgIdPart } from "./svg-id";
 import { curveLinear } from "@visx/curve";
 import { LinePath } from "@visx/shape";
 import { useCallback, useId, useMemo } from "react";
@@ -59,8 +60,8 @@ export function ProfitLossLine({
   const reactId = useId();
   const fadeSides = resolveFadeSides(fadeEdges);
   const fadeStops = fadeSides.any ? fadeGradientStops(fadeSides) : null;
-  const positiveGradientId = `profit-loss-gradient-pos-${dataKey}-${reactId}`;
-  const negativeGradientId = `profit-loss-gradient-neg-${dataKey}-${reactId}`;
+  const positiveGradientId = `profit-loss-gradient-pos-${svgIdPart(dataKey)}-${reactId}`;
+  const negativeGradientId = `profit-loss-gradient-neg-${svgIdPart(dataKey)}-${reactId}`;
 
   const focusedLegendIndex = useMemo(() => {
     if (hoveredIndex !== null) {

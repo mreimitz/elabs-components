@@ -3022,6 +3022,279 @@
         }
       ],
       "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-area-multiples-01",
+      "type": "registry:block",
+      "title": "Chart story: Area multiples",
+      "description": "Small-multiple area charts on one shared scale: a dotted network average behind every panel, the same shaded event, and the latest value in each panel title.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-area-multiples-01/chart-story-area-multiples.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-area-multiples-01/chart-story-area-multiples.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-column-panels-01",
+      "type": "registry:block",
+      "title": "Chart story: Column panels with ranges",
+      "description": "Two column panels on one shared axis, with the promoter and detractor ranges of the scale shaded and named, and a computed share in each panel title.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-column-panels-01/chart-story-column-panels.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-column-panels-01/chart-story-column-panels.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-dual-axis-01",
+      "type": "registry:block",
+      "title": "Chart story: Dual axis columns and line",
+      "description": "Columns on the left axis and a line on the right: axes coloured like their series, ticks aligned on shared gridlines, a shaded range, and a table tooltip.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-dual-axis-01/chart-story-dual-axis.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-dual-axis-01/chart-story-dual-axis.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-pareto-01",
+      "type": "registry:block",
+      "title": "Chart story: Pareto",
+      "description": "A Pareto chart: sorted columns on the left axis and the labelled cumulative share on the right, with a computed headline.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-pareto-01/chart-story-pareto.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-pareto-01/chart-story-pareto.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-donut-01",
+      "type": "registry:block",
+      "title": "Chart story: Donut with total",
+      "description": "A donut with the total in the hole, outside labels on leaders stating name and share, and small slices folded into Other.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-donut-01/chart-story-donut.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-donut-01/chart-story-donut.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-pie-pair-01",
+      "type": "registry:block",
+      "title": "Chart story: Donuts then and now",
+      "description": "Two donuts under one shared colour key: the year in the hole, shares inside the slices, the same slice order in both.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-pie-pair-01/chart-story-pie-pair.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-pie-pair-01/chart-story-pie-pair.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-bubble-01",
+      "type": "registry:block",
+      "title": "Chart story: Bubble chart",
+      "description": "A bubble scatter on a log axis: size by head count, colour by region with a key, a dashed trend, selective point labels and a text annotation.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-bubble-01/chart-story-bubble.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-bubble-01/chart-story-bubble.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-calendar-01",
+      "type": "registry:block",
+      "title": "Chart story: Calendar heatmap",
+      "description": "A calendar heatmap: weeks as columns, weekdays as rows, six sequential steps and a key that states each range.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-calendar-01/chart-story-calendar.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-calendar-01/chart-story-calendar.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-dot-plot-01",
+      "type": "registry:block",
+      "title": "Chart story: Dot plot with range",
+      "description": "A dot plot: three dots per row joined by their range, a colour key, a top value axis and rows sorted by the headline value.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-dot-plot-01/chart-story-dot-plot.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-dot-plot-01/chart-story-dot-plot.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-range-plot-01",
+      "type": "registry:block",
+      "title": "Chart story: Range plot with deltas",
+      "description": "A grouped range plot: hollow before, filled after, a signed delta per row, group headers and a top value axis.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-range-plot-01/chart-story-range-plot.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-range-plot-01/chart-story-range-plot.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-arrow-plot-01",
+      "type": "registry:block",
+      "title": "Chart story: Arrow plot with target band",
+      "description": "An arrow plot: one arrow per row coloured by direction, percent deltas, a shaded target band and a computed headline.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-arrow-plot-01/chart-story-arrow-plot.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-arrow-plot-01/chart-story-arrow-plot.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-waterfall-bridge-01",
+      "type": "registry:block",
+      "title": "Chart story: Waterfall bridge",
+      "description": "A revenue bridge: coloured increases and decreases between two totals, thin connectors, matched-colour labels and a callout on the step that matters.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-waterfall-bridge-01/chart-story-waterfall-bridge.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-waterfall-bridge-01/chart-story-waterfall-bridge.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-waterfall-running-01",
+      "type": "registry:block",
+      "title": "Chart story: Waterfall with subtotals",
+      "description": "A horizontal waterfall: monthly steps, automatic quarterly subtotals, a closing total and a plot zoomed to the differences.",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-waterfall-running-01/chart-story-waterfall-running.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-waterfall-running-01/chart-story-waterfall-running.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
     }
   ]
 }

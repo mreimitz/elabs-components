@@ -1131,6 +1131,31 @@ describe("DumbbellChart legend (RM-118)", () => {
     }
   });
 
+  it("pins a dot key to a colour with keyColors, on the dots and nowhere else", () => {
+    const { container } = render(
+      <DumbbellChart
+        category="product"
+        data={scoresData}
+        endKey="themB"
+        keyColors={{ themA: "var(--chart-mono-2)" }}
+        startKey="us"
+        valueKeys={["us", "themA", "themB"]}
+        variant="dots"
+      />,
+    );
+    const dots = [...container.querySelectorAll('[data-slot="dumbbell-chart-dot"]')];
+    const inkOf = (key: string) =>
+      new Set(
+        dots
+          .filter((dot) => dot.getAttribute("data-dot-key") === key)
+          .map(
+            (dot) => dot.getAttribute("fill") ?? dot.querySelector("[fill]")?.getAttribute("fill"),
+          ),
+      );
+    expect([...inkOf("themA")]).toEqual(["var(--chart-mono-2)"]);
+    expect(inkOf("us").has("var(--chart-mono-2)")).toBe(false);
+  });
+
   it("a truthy legend on the default 'dumbbell' variant renders nothing — no discrete key to show", () => {
     const { container } = render(
       <DumbbellChart

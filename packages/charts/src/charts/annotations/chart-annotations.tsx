@@ -262,7 +262,9 @@ function renderRange(
   const end = clamp(span[1], 0, limit);
   if (end <= start) return null;
   const tinted = annotation.color !== undefined && annotation.color !== "muted";
-  const ink = tinted ? resolveAnnotationInk(annotation.color, lines) : RANGE_FILL;
+  const ink = tinted
+    ? resolveAnnotationInk(annotation.color as AnnotationColor, lines)
+    : RANGE_FILL;
   const striped = annotation.pattern === "stripes";
   // A tinted striped band needs its own hatch: the shared pattern carries the furniture ink.
   const ownPatternId = `${patternId}-${index}`;

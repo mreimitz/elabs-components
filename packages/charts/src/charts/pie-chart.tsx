@@ -186,8 +186,17 @@ export interface PieChartProps extends ChartSelectionProps {
    * optionally per breakpoint.
    */
   plotHeight?: Responsive<ChartPlotHeight>;
-  /** Inner radius for donut charts. Default: 0 (solid pie) */
+  /**
+   * Inner radius for donut charts, in px — or, below `1`, as a fraction of the outer radius
+   * (`0.6` keeps a responsive donut a donut at every size). Default: 0 (solid pie)
+   */
   innerRadius?: number;
+  /**
+   * Where the square plot sits in a container wider than it is tall: `"start"` (default, as
+   * before) or `"center"` — centred, and outside labels may run past the square into the
+   * free room either side instead of being clipped at it.
+   */
+  align?: "start" | "center";
   /** Padding angle between slices in radians. Default: 0 */
   padAngle?: number;
   /** Corner radius for rounded slice edges. Default: 0 */
@@ -338,6 +347,7 @@ interface PieChartInnerProps {
   labels?: PieChartLabelsConfig;
   sort: "desc" | "none";
   half: boolean;
+  align?: "start" | "center";
 }
 
 function generatePieArcPath(
@@ -430,6 +440,7 @@ const PieChartCore = memo(function PieChartCore({
   labels,
   sort,
   half,
+  align = "start",
 }: PieChartInnerProps) {
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
@@ -477,7 +488,9 @@ const PieChartCore = memo(function PieChartCore({
   const labelGutter = labelPlacement === "outside" ? PIE_OUTSIDE_LABEL_GUTTER : 0;
   const padding = hoverOffset + referenceRingGutter + labelGutter;
   const outerRadius = center - padding;
-  const innerRadius = innerRadiusProp;
+  // A value below 1 is a share of the outer radius (a 0.6 px hole was never a donut).
+  const innerRadius =
+    innerRadiusProp > 0 && innerRadiusProp < 1 ? outerRadius * innerRadiusProp : innerRadiusProp;
 
   // Calculate total value
   const totalValue = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data]);
@@ -765,13 +778,18 @@ const PieChartCore = memo(function PieChartCore({
             gridTemplateRows: "1fr",
             width: size,
             height: size,
+            ...(align === "center" ? { marginInline: "auto" } : null),
           }}
         >
           {/* SVG layer with pie slices */}
           <svg
             aria-hidden="true"
             height={size}
-            style={{ gridArea: "1 / 1", contain: "layout style paint" }}
+            style={
+              align === "center"
+                ? { gridArea: "1 / 1", overflow: "visible" }
+                : { gridArea: "1 / 1", contain: "layout style paint" }
+            }
             width={size}
           >
             {/* Defs for patterns and gradients */}
@@ -957,6 +975,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     groupSmall,
     sort: sortProp,
     half = false,
+    align = "start",
     children,
     copyValueOnActivate,
     onDatapointClick,
@@ -1123,6 +1142,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
             enterStaggerScale={enterStaggerScale}
             enterTransition={enterTransition}
             geometryScrubbing={geometryScrubbing}
+            align={align}
             half={half}
             height={fixedSize}
             hoveredIndexProp={effectiveHoveredIndex}
@@ -1168,6 +1188,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
               enterStaggerScale={enterStaggerScale}
               enterTransition={enterTransition}
               geometryScrubbing={geometryScrubbing}
+              align={align}
               half={half}
               height={height}
               hoveredIndexProp={effectiveHoveredIndex}

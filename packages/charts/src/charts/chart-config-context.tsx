@@ -190,6 +190,8 @@ export interface ChartFacetScopeValue {
   xDomain?: [Date, Date];
   /** Row key drawn as a muted baseline series behind the panel's own series. */
   baselineKey?: string;
+  /** Stroke style of that baseline. Default `"solid"`. */
+  baselineStyle?: "solid" | "dashed" | "dotted";
   /** Synced hover: the category hovered in ANY panel, `null` when none. Unset → not synced. */
   hoverCategory?: ChartHoverCategory;
   /** Reports this panel's hovered category (move → category, leave → `null`). */

@@ -123,6 +123,11 @@ export interface ComposedChartProps extends ChartSelectionProps, ChartHoverLinkP
   stacked?: boolean | "percent";
   /** Gap in px between stacked segments. Default: 0 */
   stackGap?: number;
+  /**
+   * Keep the first and last column inside the plot: the x range is inset by half a slot, so
+   * no column runs over an axis. Default `false` — columns centre on the plot edges, as before.
+   */
+  insetBars?: boolean;
   onPhaseChange?: (phase: ChartPhase) => void;
   /**
    * Drill-down (#349). Fires when a datapoint is activated by pointer OR
@@ -520,6 +525,7 @@ interface ChartInnerProps {
   barGap?: number;
   stacked?: boolean | "percent";
   stackGap?: number;
+  insetBars?: boolean;
   chartStatus?: ChartStatus;
   loadingLabel?: string;
   onDatapointClick?: ChartDatapointClickHandler;
@@ -572,6 +578,7 @@ function ChartInner({
   barGap,
   stacked = false,
   stackGap = 0,
+  insetBars = false,
   chartStatus,
   loadingLabel,
   copyValueOnActivate,
@@ -688,6 +695,7 @@ function ChartInner({
         clipPathId={clipPathId}
         composedBarDataKeys={barDataKeys.length > 0 ? barDataKeys : undefined}
         composedBarGap={barGap}
+        composedBarInset={insetBars}
         composedBarSize={barSize}
         composedMaxBarSize={maxBarSize}
         composedStacked={Boolean(stacked)}
@@ -773,6 +781,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     barGap = 4,
     stacked = false,
     stackGap = 0,
+    insetBars = false,
     onPhaseChange,
     copyValueOnActivate,
     onDatapointClick,
@@ -922,6 +931,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 onPhaseChange={handlePhaseChange}
                 revealSignature={revealSignature}
                 stacked={stacked}
+                insetBars={insetBars}
                 stackGap={stackGap}
                 width={width}
                 xDataKey={xDataKey}

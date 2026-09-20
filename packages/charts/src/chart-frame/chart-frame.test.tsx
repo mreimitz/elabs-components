@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { ChartMultiples } from "../multiples/chart-multiples";
 import { useEffect, useState } from "react";
 import { render, screen, fireEvent, act, within, waitFor } from "@testing-library/react";
 import { ChartFrame, type ChartFrameProps } from "./chart-frame";
@@ -1026,6 +1027,26 @@ describe("ChartFrame bounded body for non-chart content", () => {
       </ChartFrame>,
     );
     expect(bodyBox(chart.container).style.height).toBe("");
+  });
+
+  it("releases the body for small multiples too: a panel keeps the frame's registration", () => {
+    const { container } = render(
+      <ChartFrame title="Revenue by region">
+        <ChartMultiples
+          by="region"
+          data={sampleData.map((row, i) => ({ ...row, region: i % 2 ? "North" : "South" }))}
+          dataKeys={["revenue"]}
+          xDataKey="month"
+        >
+          {(panel) => (
+            <BarChart animationDuration={0} data={panel.data} xDataKey="month">
+              <Bar dataKey="revenue" fill="var(--chart-1)" />
+            </BarChart>
+          )}
+        </ChartMultiples>
+      </ChartFrame>,
+    );
+    expect(bodyBox(container).style.height).toBe("");
   });
 });
 

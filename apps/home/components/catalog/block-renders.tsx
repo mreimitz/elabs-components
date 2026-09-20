@@ -705,6 +705,129 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
+  "chart-story-area-multiples-01": dynamic(
+    () =>
+      import("../blocks/chart-story-area-multiples-01/chart-story-area-multiples").then(
+        (m) => m.ChartStoryAreaMultiples,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-column-panels-01": dynamic(
+    () =>
+      import("../blocks/chart-story-column-panels-01/chart-story-column-panels").then(
+        (m) => m.ChartStoryColumnPanels,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-dual-axis-01": dynamic(
+    () =>
+      import("../blocks/chart-story-dual-axis-01/chart-story-dual-axis").then(
+        (m) => m.ChartStoryDualAxis,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-pareto-01": dynamic(
+    () =>
+      import("../blocks/chart-story-pareto-01/chart-story-pareto").then((m) => m.ChartStoryPareto),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-donut-01": dynamic(
+    () => import("../blocks/chart-story-donut-01/chart-story-donut").then((m) => m.ChartStoryDonut),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-pie-pair-01": dynamic(
+    () =>
+      import("../blocks/chart-story-pie-pair-01/chart-story-pie-pair").then(
+        (m) => m.ChartStoryPiePair,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-bubble-01": dynamic(
+    () =>
+      import("../blocks/chart-story-bubble-01/chart-story-bubble").then((m) => m.ChartStoryBubble),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-calendar-01": dynamic(
+    () =>
+      import("../blocks/chart-story-calendar-01/chart-story-calendar").then(
+        (m) => m.ChartStoryCalendar,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-dot-plot-01": dynamic(
+    () =>
+      import("../blocks/chart-story-dot-plot-01/chart-story-dot-plot").then(
+        (m) => m.ChartStoryDotPlot,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-range-plot-01": dynamic(
+    () =>
+      import("../blocks/chart-story-range-plot-01/chart-story-range-plot").then(
+        (m) => m.ChartStoryRangePlot,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-arrow-plot-01": dynamic(
+    () =>
+      import("../blocks/chart-story-arrow-plot-01/chart-story-arrow-plot").then(
+        (m) => m.ChartStoryArrowPlot,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-waterfall-bridge-01": dynamic(
+    () =>
+      import("../blocks/chart-story-waterfall-bridge-01/chart-story-waterfall-bridge").then(
+        (m) => m.ChartStoryWaterfallBridge,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "chart-story-waterfall-running-01": dynamic(
+    () =>
+      import("../blocks/chart-story-waterfall-running-01/chart-story-waterfall-running").then(
+        (m) => m.ChartStoryWaterfallRunning,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
 };
 
 /**

@@ -146,7 +146,46 @@ export function HeatmapLegend({
           {formatValue(lo)}
         </span>
       ) : null}
-      {hasHover && markerT !== null ? (
+      {labelMode === "ranges" ? (
+        // One column per step, as wide as the widest label: the swatch on top, its
+        // `from–to` under it, so no two labels can run into each other.
+        <span aria-hidden="true" className="relative" data-slot="heatmap-legend-strip">
+          <span
+            className={cn(
+              "grid auto-cols-fr grid-flow-col grid-rows-[auto_auto] gap-y-0.5 tabular-nums",
+              continuous ? "gap-x-0" : "gap-x-0.5",
+            )}
+          >
+            {swatches.map((swatch, index) => [
+              <span
+                className={cn("h-2.5 w-full", continuous ? "rounded-none" : "rounded-[2px]")}
+                data-slot="heatmap-legend-step"
+                key={`step-${index}`}
+                style={{
+                  backgroundColor: swatch.color,
+                  backgroundImage: swatch.hatched ? NEGATIVE_HATCH_BACKGROUND : undefined,
+                  opacity: swatch.opacity,
+                }}
+              />,
+              <span
+                className="px-1 text-center whitespace-nowrap"
+                data-slot="heatmap-legend-range-label"
+                key={`range-${index}`}
+              >
+                {formatValue(lo + stepWidth * index)}–{formatValue(lo + stepWidth * (index + 1))}
+              </span>,
+            ])}
+          </span>
+          {hasHover && markerT !== null ? (
+            <span
+              className="pointer-events-none absolute top-0 h-2.5 w-0.5 -translate-x-1/2 bg-chart-foreground transition-[left] duration-fast ease-standard motion-reduce:transition-none"
+              data-slot="heatmap-legend-marker"
+              data-ramp-marker-value={hover}
+              style={{ left: `${markerT * 100}%` }}
+            />
+          ) : null}
+        </span>
+      ) : hasHover && markerT !== null ? (
         // Only the hovered render gains the wrapping strip: it is the sole
         // reason a positioning ancestor is needed, so the default (no hover)
         // render stays the exact pre-RM-118 markup byte-for-byte. Both
@@ -179,19 +218,7 @@ export function HeatmapLegend({
         <span aria-hidden="true" className="tabular-nums">
           {formatValue(hi)}
         </span>
-      ) : (
-        <span aria-hidden="true" className="flex items-center gap-0.5 tabular-nums">
-          {swatches.map((_, index) => (
-            <span
-              className="w-4 text-center first:text-start last:text-end"
-              data-slot="heatmap-legend-range-label"
-              key={`range-${index}`}
-            >
-              {formatValue(lo + stepWidth * index)}–{formatValue(lo + stepWidth * (index + 1))}
-            </span>
-          ))}
-        </span>
-      )}
+      ) : null}
       {/* One key per non-value state, and only for a state the grid actually
           holds (#251): a key for a category with no members is its own small lie. */}
       {emptyValue === "quiet" && zeroCount > 0 ? (

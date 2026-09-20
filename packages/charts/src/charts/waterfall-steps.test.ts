@@ -222,6 +222,10 @@ describe("computeWaterfallZoomDomain", () => {
     for (const row of rows.filter((r) => r.kind !== "step")) {
       expect(row.base).toBeLessThan(lo);
     }
+    // Both ends keep room for an outside label: no step ends on the plot edge.
+    const steps = rows.filter((r) => r.kind === "step");
+    expect(hi).toBeGreaterThan(Math.max(...steps.map((r) => r.top)));
+    expect(lo).toBeLessThan(Math.min(...steps.map((r) => r.base)));
   });
 
   it("keeps every difference bar's length proportional to its own value under the zoomed domain", () => {

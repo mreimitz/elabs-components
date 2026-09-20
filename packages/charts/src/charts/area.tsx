@@ -1,5 +1,6 @@
 "use client";
 
+import { svgIdPart } from "./svg-id";
 import { scaleLinear } from "@visx/scale";
 import { Area as VisxArea, AreaClosed, LinePath } from "@visx/shape";
 import {
@@ -520,9 +521,9 @@ export function Area({
 
   // Unique IDs for this area
   const uniqueId = useId();
-  const gradientId = `area-gradient-${dataKey}-${uniqueId}`;
-  const strokeGradientId = `area-stroke-gradient-${dataKey}-${uniqueId}`;
-  const edgeMaskId = `area-edge-mask-${dataKey}-${uniqueId}`;
+  const gradientId = `area-gradient-${svgIdPart(dataKey)}-${uniqueId}`;
+  const strokeGradientId = `area-stroke-gradient-${svgIdPart(dataKey)}-${uniqueId}`;
+  const edgeMaskId = `area-edge-mask-${svgIdPart(dataKey)}-${uniqueId}`;
   const edgeGradientId = `${edgeMaskId}-gradient`;
 
   const isPatternFill = useDecorationPattern || fill.startsWith("url(");

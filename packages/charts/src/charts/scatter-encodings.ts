@@ -76,6 +76,11 @@ export interface ScatterColorByConfig {
   scale?: "categorical" | "sequential" | "diverging";
   /** Bucket count for `"sequential"` / `"diverging"`. Default: 5. */
   steps?: number;
+  /**
+   * Categorical only: pin a category to a colour (`{ France: "var(--chart-mono-2)" }`).
+   * Categories left out keep their palette colour. Default: none pinned.
+   */
+  colors?: Readonly<Record<string, string>>;
 }
 
 export interface ScatterEncodingLegendItem {
@@ -153,13 +158,14 @@ export function resolveColorBy(
     const colors = resolvePalette("categorical" as ChartPalette, categories.length, {
       explicit: false,
     });
-    const colorByLabel = new Map(categories.map((label, i) => [label, colors[i]]));
+    const pinned = categories.map((label, i) => colorBy.colors?.[label] ?? colors[i]);
+    const colorByLabel = new Map(categories.map((label, i) => [label, pinned[i]]));
     return {
       colorOf: (row) => {
         const raw = row[key];
         return raw == null ? undefined : colorByLabel.get(String(raw));
       },
-      legend: categories.map((label, i) => ({ label, color: colors[i] })),
+      legend: categories.map((label, i) => ({ label, color: pinned[i] })),
     };
   }
 

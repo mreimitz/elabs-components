@@ -1041,6 +1041,110 @@
       "title": "Chart story: Seasons as Dots and Lines",
       "description": "A whole published figure: twenty seasons of daily readings as small dots coloured by decade, two average lines and the current year on top, the colour key carried by the title's own words, two notes on the cloud, method note, byline and linked source.",
       "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-area-multiples-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-area-multiples-01",
+      "title": "Chart story: Area multiples",
+      "description": "Small-multiple area charts on one shared scale: a dotted network average behind every panel, the same shaded event, and the latest value in each panel title.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-column-panels-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-column-panels-01",
+      "title": "Chart story: Column panels with ranges",
+      "description": "Two column panels on one shared axis, with the promoter and detractor ranges of the scale shaded and named, and a computed share in each panel title.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-dual-axis-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-dual-axis-01",
+      "title": "Chart story: Dual axis columns and line",
+      "description": "Columns on the left axis and a line on the right: axes coloured like their series, ticks aligned on shared gridlines, a shaded range, and a table tooltip.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-pareto-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-pareto-01",
+      "title": "Chart story: Pareto",
+      "description": "A Pareto chart: sorted columns on the left axis and the labelled cumulative share on the right, with a computed headline.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-donut-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-donut-01",
+      "title": "Chart story: Donut with total",
+      "description": "A donut with the total in the hole, outside labels on leaders stating name and share, and small slices folded into Other.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-pie-pair-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-pie-pair-01",
+      "title": "Chart story: Donuts then and now",
+      "description": "Two donuts under one shared colour key: the year in the hole, shares inside the slices, the same slice order in both.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bubble-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bubble-01",
+      "title": "Chart story: Bubble chart",
+      "description": "A bubble scatter on a log axis: size by head count, colour by region with a key, a dashed trend, selective point labels and a text annotation.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-calendar-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-calendar-01",
+      "title": "Chart story: Calendar heatmap",
+      "description": "A calendar heatmap: weeks as columns, weekdays as rows, six sequential steps and a key that states each range.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-dot-plot-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-dot-plot-01",
+      "title": "Chart story: Dot plot with range",
+      "description": "A dot plot: three dots per row joined by their range, a colour key, a top value axis and rows sorted by the headline value.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-range-plot-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-range-plot-01",
+      "title": "Chart story: Range plot with deltas",
+      "description": "A grouped range plot: hollow before, filled after, a signed delta per row, group headers and a top value axis.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-arrow-plot-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-arrow-plot-01",
+      "title": "Chart story: Arrow plot with target band",
+      "description": "An arrow plot: one arrow per row coloured by direction, percent deltas, a shaded target band and a computed headline.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-waterfall-bridge-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-waterfall-bridge-01",
+      "title": "Chart story: Waterfall bridge",
+      "description": "A revenue bridge: coloured increases and decreases between two totals, thin connectors, matched-colour labels and a callout on the step that matters.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-waterfall-running-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-waterfall-running-01",
+      "title": "Chart story: Waterfall with subtotals",
+      "description": "A horizontal waterfall: monthly steps, automatic quarterly subtotals, a closing total and a plot zoomed to the differences.",
+      "categories": ["chart-editorial"]
     }
   ]
 }

@@ -60,10 +60,10 @@ export function ChartStoryLineEvents({ className }: { className?: string }) {
       <LineChart
         accessibleLabel="Weekly customer satisfaction, 2022 to 2025"
         annotations={[
-          { kind: "range", x1: "2022-11-01", x2: "2022-12-31", label: "Peak" },
-          { kind: "range", x1: "2023-11-01", x2: "2023-12-31", label: "Peak" },
-          { kind: "range", x1: "2024-11-01", x2: "2024-12-31", label: "Peak" },
-          { kind: "range", x1: "2025-11-01", x2: "2025-12-28", label: "Peak" },
+          { kind: "range", x1: "2022-11-01", x2: "2022-12-31", label: "Peak", opacity: 0.5 },
+          { kind: "range", x1: "2023-11-01", x2: "2023-12-31", label: "Peak", opacity: 0.5 },
+          { kind: "range", x1: "2024-11-01", x2: "2024-12-31", label: "Peak", opacity: 0.5 },
+          { kind: "range", x1: "2025-11-01", x2: "2025-12-28", label: "Peak", opacity: 0.5 },
           { kind: "line", x: "2024-04-08", label: "Carrier strike", style: "dashed" },
           { kind: "line", x: "2024-11-25", label: "Live tracking", style: "dotted" },
           { kind: "line", y: 80, label: "Target: 80 %", style: "dashed" },
@@ -77,10 +77,11 @@ export function ChartStoryLineEvents({ className }: { className?: string }) {
           },
         ]}
         data={SATISFACTION}
+        margin={{ left: 56 }}
         xDataKey="date"
       >
         <Grid horizontal />
-        <Line dataKey={SCORE} fadeEdges={false} stroke="var(--chart-1)" strokeWidth={2} />
+        <Line dataKey={SCORE} fadeEdges={false} stroke="var(--chart-div-neg-1)" strokeWidth={2} />
         <XAxis />
         <YAxis domain={[50, 100]} valueFormat={{ suffix: " %" }} />
         <ChartTooltip unit="%" />

@@ -72,9 +72,10 @@ export function ChartStoryLineProjection({ className }: { className?: string }) 
           },
           {
             kind: "text",
-            x: `${crossingYear - 5}-01-01`,
-            y: 72,
-            width: 22,
+            x: `${crossingYear + 2}-06-01`,
+            y: 50,
+            anchor: "w",
+            width: 16,
             text: `The lines cross in ${crossingYear}`,
             connector: {
               to: { x: `${crossingYear}-01-01`, y: Number(crossing[ELECTRIC]) },

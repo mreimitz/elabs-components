@@ -105,7 +105,10 @@ export interface ChartMultiplesScales {
   yDomain?: AxisDomain;
 }
 
-export type ChartMultiplesBaseline = { key: string } | { series: string };
+export type ChartMultiplesBaseline = ({ key: string } | { series: string }) & {
+  /** Stroke style of the repeated series. Default `"solid"`. */
+  style?: "solid" | "dashed" | "dotted";
+};
 
 export interface ChartMultiplesProps<
   T extends Record<string, unknown> = Record<string, unknown>,
@@ -421,6 +424,7 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
           yTicks: scale.ticks,
           xDomain: sharedXDomain,
           baselineKey,
+          baselineStyle: baseline?.style,
           hoverCategory: syncHover ? hoverCategory : undefined,
           onHoverCategory: syncHover ? reporters.get(panel.key) : undefined,
         };

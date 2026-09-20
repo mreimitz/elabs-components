@@ -1,5 +1,6 @@
 "use client";
 
+import { svgIdPart } from "./svg-id";
 import { LinePath } from "@visx/shape";
 import { type ReactNode, useCallback, useId, useMemo, useRef, useState } from "react";
 import type { Responsive } from "./chart-breakpoint";
@@ -360,7 +361,7 @@ export function Line({
   ]);
 
   const reactId = useId();
-  const gradientId = `line-gradient-${dataKey}-${reactId}`;
+  const gradientId = `line-gradient-${svgIdPart(dataKey)}-${reactId}`;
 
   const getY = useCallback(
     (d: Record<string, unknown>) => {

@@ -155,8 +155,30 @@
     "archetype": "dashboard"
   },
   {
+    "name": "chart-story-area-multiples-01",
+    "title": "Chart story: Area multiples",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "chart-story-area-threshold-01",
     "title": "Chart story: Area Against a Threshold",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-arrow-plot-01",
+    "title": "Chart story: Arrow plot with target band",
     "categories": ["chart-editorial"],
     "dependencies": [
       "@elabs-ai/components-charts",
@@ -210,6 +232,28 @@
     "archetype": "dashboard"
   },
   {
+    "name": "chart-story-bubble-01",
+    "title": "Chart story: Bubble chart",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-calendar-01",
+    "title": "Chart story: Calendar heatmap",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "chart-story-column-diverging-01",
     "title": "Chart story: Diverging Columns",
     "categories": ["chart-editorial"],
@@ -223,6 +267,50 @@
   {
     "name": "chart-story-column-highlight-01",
     "title": "Chart story: Highlighted Columns",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-column-panels-01",
+    "title": "Chart story: Column panels with ranges",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-donut-01",
+    "title": "Chart story: Donut with total",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-dot-plot-01",
+    "title": "Chart story: Dot plot with range",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-dual-axis-01",
+    "title": "Chart story: Dual axis columns and line",
     "categories": ["chart-editorial"],
     "dependencies": [
       "@elabs-ai/components-charts",
@@ -276,8 +364,63 @@
     "archetype": "dashboard"
   },
   {
+    "name": "chart-story-pareto-01",
+    "title": "Chart story: Pareto",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "chart-story-parts",
     "title": "Chart story parts",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-pie-pair-01",
+    "title": "Chart story: Donuts then and now",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-range-plot-01",
+    "title": "Chart story: Range plot with deltas",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-waterfall-bridge-01",
+    "title": "Chart story: Waterfall bridge",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-waterfall-running-01",
+    "title": "Chart story: Waterfall with subtotals",
     "categories": ["chart-editorial"],
     "dependencies": [
       "@elabs-ai/components-charts",

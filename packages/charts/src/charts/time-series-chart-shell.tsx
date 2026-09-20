@@ -299,6 +299,8 @@ export interface TimeSeriesChartInnerProps {
   clipPathId: string;
   /** Optional ComposedChart bar layout (forwarded into context). */
   composedBarDataKeys?: string[];
+  /** Inset the x range by half a slot so edge columns stay inside the plot. */
+  composedBarInset?: boolean;
   composedBarSize?: number;
   composedMaxBarSize?: number;
   composedBarGap?: number;
@@ -467,6 +469,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   legendVisible,
   clipPathId,
   composedBarDataKeys,
+  composedBarInset = false,
   composedBarSize,
   composedMaxBarSize,
   composedBarGap,
@@ -662,11 +665,17 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       ? xDomain[1].getTime()
       : (extent(plotData, (d) => xAccessor(d).getTime())[1] ?? minTime);
 
+    // `insetBars`: every column gets a full slot, so the first and last one end at the plot edge.
+    const slots = plotData.length;
+    const inset =
+      composedBarInset && (composedBarDataKeys?.length ?? 0) > 0 && slots > 0
+        ? innerWidth / slots / 2
+        : 0;
     return scaleTime({
-      range: [0, innerWidth],
+      range: [inset, innerWidth - inset],
       domain: [minTime, maxTime],
     });
-  }, [innerWidth, plotData, xAccessor, xDomain]);
+  }, [innerWidth, plotData, xAccessor, xDomain, composedBarInset, composedBarDataKeys]);
 
   // When brushing, keep the full series for path rendering so edge fades stay
   // anchored to the viewport while the line pans through them. Y-domain and
@@ -684,8 +693,18 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     if (slotCount < 2) {
       return 0;
     }
+    if (composedBarInset && (composedBarDataKeys?.length ?? 0) > 0) {
+      return innerWidth / slotCount;
+    }
     return innerWidth / (slotCount - 1);
-  }, [innerWidth, visiblePlotData.length, xDomain, xDomainSlotCount]);
+  }, [
+    innerWidth,
+    visiblePlotData.length,
+    xDomain,
+    xDomainSlotCount,
+    composedBarInset,
+    composedBarDataKeys,
+  ]);
 
   const yDomainSkeletonByAxis = useMemo(
     () =>

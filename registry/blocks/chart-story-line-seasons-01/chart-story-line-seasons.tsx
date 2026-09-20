@@ -45,11 +45,11 @@ function buildSeason() {
   const current = new Array<number>(SEASON_DAYS).fill(0);
   for (let year = 2006; year <= 2025; year += 1) {
     const late = year >= 2016;
-    const strength = (late ? 1.55 : 1) * (0.8 + random() * 0.5) * (year === 2019 ? 1.9 : 1);
+    const strength = (late ? 1.55 : 1) * (0.8 + random() * 0.5) * (year === 2019 ? 1.5 : 1);
     let burst = 0;
     for (let day = 0; day < SEASON_DAYS; day += 1) {
       const season = Math.exp(-((day - 104) ** 2) / (2 * 34 ** 2));
-      if (random() < 0.03 * season) burst = 1.5 + random() * (late ? 5 : 2.5);
+      if (random() < 0.03 * season) burst = 0.5 + random() * (late ? 1.6 : 0.7);
       burst *= 0.72;
       const value = Math.max(0, season * strength * (14 + random() * 22) * (1 + burst));
       readings.push({ day, value, late });
@@ -64,16 +64,18 @@ function buildSeason() {
     });
   const early = smooth(sums.early);
   const lateAverage = smooth(sums.late);
+  const thisYear = smooth(current);
   const rows = Array.from({ length: SEASON_DAYS }, (_, day) => ({
     date: new Date(SEASON_START + day * DAY),
     [EARLY]: Number(early[day]!.toFixed(1)),
     [LATE]: Number(lateAverage[day]!.toFixed(1)),
     // The log was exported on 18 June: the current year stops there.
-    [CURRENT]: day <= 78 ? Number(current[day]!.toFixed(1)) : null,
+    [CURRENT]: day <= 78 ? Number(thisYear[day]!.toFixed(1)) : null,
   }));
   const earlyMax = Math.max(...readings.filter((r) => !r.late).map((r) => r.value));
-  const peakDay = current.indexOf(Math.max(...current.slice(0, 79)));
-  return { readings, rows, earlyMax, peak: { day: peakDay, value: current[peakDay]! } };
+  const top = Math.ceil(Math.max(...readings.map((r) => r.value)) / 20) * 20;
+  const peakDay = thisYear.indexOf(Math.max(...thisYear.slice(0, 79)));
+  return { readings, rows, earlyMax, top, peak: { day: peakDay, value: thisYear[peakDay]! } };
 }
 
 const SEASON = buildSeason();
@@ -130,7 +132,7 @@ export function ChartStoryLineSeasons({ className }: { className?: string }) {
           {
             kind: "text",
             x: "2025-08-24",
-            y: SEASON.peak.value * 0.92,
+            y: SEASON.top * 0.9,
             width: 20,
             text: "Most of the readings up here are from the heat wave of 2019",
           },
@@ -166,7 +168,7 @@ export function ChartStoryLineSeasons({ className }: { className?: string }) {
           strokeWidth={2.5}
         />
         <XAxis />
-        <YAxis valueFormat={{ suffix: "k" }} />
+        <YAxis domain={[0, SEASON.top]} valueFormat={{ suffix: "k" }} />
       </LineChart>
     </ChartFrame>
   );

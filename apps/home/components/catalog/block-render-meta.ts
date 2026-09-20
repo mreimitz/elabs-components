@@ -90,6 +90,19 @@ const BLOCKS = {
   "chart-story-line-events-01": "flow",
   "chart-story-area-threshold-01": "flow",
   "chart-story-line-seasons-01": "flow",
+  "chart-story-area-multiples-01": "flow",
+  "chart-story-column-panels-01": "flow",
+  "chart-story-dual-axis-01": "flow",
+  "chart-story-pareto-01": "flow",
+  "chart-story-donut-01": "flow",
+  "chart-story-pie-pair-01": "flow",
+  "chart-story-bubble-01": "flow",
+  "chart-story-calendar-01": "flow",
+  "chart-story-dot-plot-01": "flow",
+  "chart-story-range-plot-01": "flow",
+  "chart-story-arrow-plot-01": "flow",
+  "chart-story-waterfall-bridge-01": "flow",
+  "chart-story-waterfall-running-01": "flow",
 } as const satisfies Record<string, BlockStage>;
 
 export type NativeBlockName = keyof typeof BLOCKS;

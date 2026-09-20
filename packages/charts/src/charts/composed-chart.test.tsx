@@ -45,15 +45,18 @@ vi.mock("./time-series-chart-shell", () => {
     TimeSeriesChartInner: ({
       children,
       hiddenKeys,
+      composedBarInset,
     }: {
       children: React.ReactNode;
       hiddenKeys?: ReadonlySet<string>;
+      composedBarInset?: boolean;
     }) =>
       React.createElement(
         "svg",
         {
           "data-testid": "chart-inner",
           "data-hidden-keys": hiddenKeys ? Array.from(hiddenKeys).join(",") : "",
+          "data-bar-inset": String(Boolean(composedBarInset)),
         },
         children,
       ),
@@ -100,6 +103,21 @@ describe("ComposedChart", () => {
       </ComposedChart>,
     );
     expect(container.firstChild).toBeInTheDocument();
+  });
+
+  it("hands `insetBars` to the shell, off by default", () => {
+    const { getByTestId, rerender } = render(
+      <ComposedChart data={minimalData}>
+        <Sentinel />
+      </ComposedChart>,
+    );
+    expect(getByTestId("chart-inner").getAttribute("data-bar-inset")).toBe("false");
+    rerender(
+      <ComposedChart data={minimalData} insetBars>
+        <Sentinel />
+      </ComposedChart>,
+    );
+    expect(getByTestId("chart-inner").getAttribute("data-bar-inset")).toBe("true");
   });
 
   it("merges a forwarded ref onto the container div", () => {
