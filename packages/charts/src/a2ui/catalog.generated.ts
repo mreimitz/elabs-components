@@ -322,7 +322,7 @@ export const CHARTS_A2UI_CATALOG_SCHEMA: ChartsA2uiCatalogSchema = {
       target: {
         type: "number",
         description:
-          'A horizontal reference line ("goal", "quota") drawn across the plot in `--chart-foreground`, dashed — never recolours the series even when the latest value f…',
+          'A horizontal reference line ("goal", "quota") drawn across the plot in `--chart-foreground-muted`, dashed — never recolours the series even when the latest v…',
       },
       values: {
         type: "array",

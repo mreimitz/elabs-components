@@ -9,6 +9,7 @@ import { BarChart } from "../charts/bar-chart";
 import { BarXAxis } from "../charts/bar-x-axis";
 import { ChartLegend } from "../charts/chart-legend";
 import { ChartTooltip } from "../charts/tooltip";
+import { ChartConfigProvider } from "../charts/chart-config-context";
 
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
 vi.mock("@visx/responsive", () => {
@@ -487,6 +488,52 @@ describe("ChartFrame export controls (RM-042)", () => {
     expect(clickSpy).not.toHaveBeenCalled();
 
     clickSpy.mockRestore();
+  });
+});
+
+/**
+ * b-3 — in a 280 px card the five export buttons held 178 px of the 278 px
+ * header row and the title wrapped one word per line: 13 lines of a 57 px
+ * column. Side by side, a toolbar is a fixed width and the title is whatever
+ * is left, so below the narrow tier the header stacks and the title gets the
+ * whole row. (The toolbar's own collapse, #444, only fires for a frame with an
+ * `expand` feature to collapse into, so it cannot be the guard.)
+ */
+describe("ChartFrame header at the narrow tier", () => {
+  const longTitle = "A one-week depot outage cost more volume than the price change ever did";
+
+  function headerOf(container: HTMLElement): HTMLElement {
+    return container.querySelector<HTMLElement>('[data-slot="card-header"]')!;
+  }
+
+  it("stacks the title above the actions below 480 px of frame width", () => {
+    const { container } = render(
+      <ChartConfigProvider value={{ breakpoint: "narrow" }}>
+        <ChartFrame title={longTitle} data={sampleData}>
+          <FakeChartSvg />
+        </ChartFrame>
+      </ChartConfigProvider>,
+    );
+    const header = headerOf(container);
+    expect(header).toHaveClass("flex-col");
+    expect(header).not.toHaveClass("flex-row");
+    // The title is a full-width row of its own, no longer a flex sibling
+    // competing with the toolbar for the same line.
+    const title = container.querySelector('[data-slot="card-title"]')!;
+    expect(title.parentElement?.parentElement).toBe(header);
+    // The actions keep their own row, right-aligned where they were.
+    expect(header.lastElementChild).toHaveClass("justify-end");
+  });
+
+  it("keeps one row at the wide tier", () => {
+    const { container } = render(
+      <ChartConfigProvider value={{ breakpoint: "wide" }}>
+        <ChartFrame title={longTitle} data={sampleData}>
+          <FakeChartSvg />
+        </ChartFrame>
+      </ChartConfigProvider>,
+    );
+    expect(headerOf(container)).toHaveClass("flex-row");
   });
 });
 

@@ -3155,6 +3155,46 @@ describe("DataTable — presentation layer", () => {
     expect(screen.getAllByRole("columnheader")[0]).toHaveTextContent("#");
   });
 
+  /**
+   * b-5 — the same table, read: the ranks are the DATA order, so after the
+   * sort above they read 2, 1, 3 beside a descending column. That is only
+   * honest if the table says which position it is printing, in BOTH channels
+   * — the header's accessible name for AT, and a printed key for everyone
+   * else. A bare "#" said it in neither.
+   */
+  it("showRanks says which position it prints — named for AT, printed as a key", () => {
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City" },
+      { accessorKey: "rides", header: "Rides", enableSorting: true },
+    ];
+    const { container } = render(<DataTable columns={cols} data={cities} showRanks />);
+    expect(screen.getAllByRole("columnheader")[0]).toHaveAccessibleName(
+      "Position in the data as supplied",
+    );
+    const key = container.querySelector('[data-slot="data-table-rank-key"]');
+    expect(key).toHaveTextContent(
+      "# is each row’s position in the data as supplied, not its position in this view — sorting never renumbers it.",
+    );
+  });
+
+  it("showRanks: a caller's own rankLabel names the column and the key", () => {
+    const cols: ColumnDef<CityRow>[] = [{ accessorKey: "city", header: "City" }];
+    const { container } = render(
+      <DataTable columns={cols} data={cities} showRanks rankLabel="Rank in the 2024 census" />,
+    );
+    expect(screen.getAllByRole("columnheader")[0]).toHaveAccessibleName("Rank in the 2024 census");
+    expect(container.querySelector('[data-slot="data-table-rank-key"]')).toHaveTextContent(
+      "# — Rank in the 2024 census",
+    );
+  });
+
+  it("no ranks, no key: the rank key never renders for a table without showRanks", () => {
+    const cols: ColumnDef<CityRow>[] = [{ accessorKey: "city", header: "City" }];
+    const { container } = render(<DataTable columns={cols} data={cities} />);
+    expect(container.querySelector('[data-slot="data-table-rank-key"]')).toBeNull();
+    expect(container.querySelector('[data-slot="data-table-legends"]')).toBeNull();
+  });
+
   it('searchMode="exact" matches whole, case-insensitive values only', () => {
     const { container, rerender } = render(
       <DataTable columns={columns} data={data} initialView={{ globalFilter: "et" }} />,
@@ -3289,6 +3329,47 @@ describe("DataTable — presentation layer", () => {
     expect(new Set(colMaxes)).toEqual(new Set(["8"]));
     // Each cell's numbers are in the accessible tree.
     expect(container.querySelector("tbody tr td:nth-child(2)")).toHaveTextContent(/1.*4.*2/);
+  });
+
+  /**
+   * b-6 — a bar coloured by `region` in a table that prints no region column
+   * carried that category in hue alone: nothing named the groups, and two of
+   * the three categorical tokens are 5/255 apart in greyscale. The key names
+   * them (WCAG 1.4.1), once per source key however many columns use it.
+   */
+  it("a colorBy column draws a named category key, once per source key", () => {
+    const cols: ColumnDef<CityRow>[] = [
+      {
+        accessorKey: "rides",
+        header: "Rides",
+        meta: { visual: { kind: "bar", colorBy: "region", legend: "Region" } },
+      },
+      {
+        accessorKey: "change",
+        header: "Change",
+        meta: { visual: { kind: "bar", colorBy: "region" } },
+      },
+    ];
+    render(<DataTable columns={cols} data={cities} />);
+    const key = screen.getByRole("group", { name: "Region" });
+    expect([...key.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
+      "North",
+      "South",
+      "All",
+    ]);
+    expect(screen.getAllByRole("group", { name: "Region" })).toHaveLength(1);
+  });
+
+  it("legend: false opts a colorBy column out of the key", () => {
+    const cols: ColumnDef<CityRow>[] = [
+      {
+        accessorKey: "rides",
+        header: "Rides",
+        meta: { visual: { kind: "bar", colorBy: "region", legend: false } },
+      },
+    ];
+    const { container } = render(<DataTable columns={cols} data={cities} />);
+    expect(container.querySelector('[data-slot="category-legend"]')).toBeNull();
   });
 
   it("meta.format formats the default cell; colorBy washes by category", () => {

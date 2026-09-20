@@ -4,8 +4,21 @@ import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { barGeometry } from "../cell-scales";
 
-/** A positive bar's fill: the first series colour. */
-export const BAR_CELL_POSITIVE_COLOR = "var(--chart-1)";
+/**
+ * A positive bar's fill: the diverging ramp's positive end — the brand-hue arm
+ * (117.6) that MIRRORS `BAR_CELL_NEGATIVE_COLOR`, so the two arms of a signed
+ * column are drawn at the same weight instead of one shouting over the other.
+ *
+ * NOT `--chart-1` (the first series colour) any more. `--chart-1` is a
+ * CATEGORICAL token — it answers "which series", it carries no contrast
+ * guarantee, and on `light` it is a signed-off 1.4.11 exemption (see
+ * `CHART_1411_EXEMPT` in packages/tokens/src/charts-contrast.test.ts): it
+ * measures 1.42:1 on `--card` and 1.30:1 on the bar's own `bg-muted` track, so
+ * the bar read as a wash exactly where its LENGTH is the whole message. The
+ * diverging ramp is the one gated ≥3:1 in every theme, including its mid step —
+ * measured 8.99:1 on `--card` in light and dark alike.
+ */
+export const BAR_CELL_POSITIVE_COLOR = "var(--chart-div-pos-2)";
 /** A negative bar's fill: the diverging ramp's negative end. */
 export const BAR_CELL_NEGATIVE_COLOR = "var(--chart-div-neg-2)";
 

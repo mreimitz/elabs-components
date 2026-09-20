@@ -70,8 +70,13 @@ export interface SparklineProps extends Omit<
   fit?: "fixed" | "fill";
   /**
    * A horizontal reference line ("goal", "quota") drawn across the plot in
-   * `--chart-foreground`, dashed — never recolours the series even when the
-   * latest value falls short; status is the card's job, not the sparkline's.
+   * `--chart-foreground-muted`, dashed — never recolours the series even when
+   * the latest value falls short; status is the card's job, not the
+   * sparkline's.
+   *
+   * The reference sits a rung BELOW the data it is read against (b-7): the
+   * series is promoted to `--chart-foreground` whenever any reference is
+   * drawn, so the measured thing is always the strongest mark on the plot.
    */
   target?: number;
   /**
@@ -370,7 +375,16 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
       // `fit="fill"` keeps `width` equal to the real measured pixel width
       // instead of stretching a mismatched viewBox to fit.
       data-slot="sparkline"
-      className={cn("shrink-0 text-muted-foreground", className)}
+      // `currentColor` is the SERIES ink (the line, and the bars' fill). With
+      // a reference drawn across the plot it has to outrank that reference,
+      // so it takes the full chart ink; a lone sparkline keeps the quieter
+      // muted rung it has always had. A caller's own text colour still wins,
+      // `cn` merging last.
+      className={cn(
+        hasReferences ? "text-chart-foreground" : "text-muted-foreground",
+        "shrink-0",
+        className,
+      )}
       {...props}
     >
       {band ? (
@@ -399,7 +413,11 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
           x2={plotWidth}
           y1={yFor(target)}
           y2={yFor(target)}
-          stroke="var(--chart-foreground)"
+          // The reference rung, never the data rung — see `target` in the
+          // props: painted in `--chart-foreground` it was the darkest ink on
+          // the plot in light and the lightest in dark, i.e. the dominant mark
+          // in both, while the actual series was drawn in muted ink.
+          stroke="var(--chart-foreground-muted)"
           strokeWidth={CHART_HAIRLINE_WIDTH}
           strokeDasharray={TARGET_DASH}
         />

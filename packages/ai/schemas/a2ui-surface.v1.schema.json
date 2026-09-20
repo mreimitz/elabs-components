@@ -4081,7 +4081,7 @@
               "type": "boolean"
             },
             "target": {
-              "description": "A horizontal reference line (\"goal\", \"quota\") drawn across the plot in `--chart-foreground`, dashed — never recolours the series even when the latest value f…",
+              "description": "A horizontal reference line (\"goal\", \"quota\") drawn across the plot in `--chart-foreground-muted`, dashed — never recolours the series even when the latest v…",
               "type": "number"
             },
             "values": {

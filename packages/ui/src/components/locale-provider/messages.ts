@@ -305,6 +305,16 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // override renders locale-appropriate digits/grouping instead of a raw
   // Latin-digit JS number).
   "data.table.resizeColumnValue": { one: "{size} pixel", other: "{size} pixels" },
+  // `showRanks` (RM-123). The printed number is the row's position in the DATA
+  // AS SUPPLIED, not its position on screen: it travels with its row through
+  // sorting, filtering and paging, so beside a sorted column it legitimately
+  // reads 2, 1, 6, 4. That rule is invisible in a column headed by a bare "#",
+  // which reads as a broken ranking — so it is said twice: `rankHeader` is the
+  // column's accessible NAME (the "#" glyph is decorative beside it), and
+  // `rankKey` is the one-line key printed above the table for everyone else.
+  "data.table.rankHeader": "Position in the data as supplied",
+  "data.table.rankKey":
+    "# is each row’s position in the data as supplied, not its position in this view — sorting never renumbers it.",
   // Row drag-reorder (#13). `reorderHandle`/`reorderColumnHeader` name the
   // grip control and its column; the four `reorder*` announcement keys back
   // the aria-live region dnd-kit's `accessibility.announcements` renders on

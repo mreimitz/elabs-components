@@ -119,6 +119,30 @@ describe("Sparkline", () => {
   });
 
   describe("target", () => {
+    /**
+     * b-7 — the reference outranked the data: the dashed target was painted in
+     * `--chart-foreground` (the darkest ink in light, the lightest in dark —
+     * the dominant mark either way) while the series it exists to be read
+     * against was drawn in the muted rung. The measured thing has to be the
+     * strongest mark on the plot.
+     */
+    it("draws the series above the reference rung, never below it", () => {
+      const { container } = render(<Sparkline values={[10, 20, 82]} target={90} />);
+      const svg = container.querySelector('[data-slot="sparkline"]')!;
+      // `currentColor` is the series ink (the line's stroke, the bars' fill).
+      expect(svg).toHaveClass("text-chart-foreground");
+      expect(svg).not.toHaveClass("text-muted-foreground");
+      expect(container.querySelector('[data-slot="sparkline-target"]')).toHaveAttribute(
+        "stroke",
+        "var(--chart-foreground-muted)",
+      );
+    });
+    it("a sparkline with nothing to outrank keeps the quiet series rung", () => {
+      const { container } = render(<Sparkline values={[10, 20, 82]} />);
+      expect(container.querySelector('[data-slot="sparkline"]')).toHaveClass(
+        "text-muted-foreground",
+      );
+    });
     it("draws a target line and widens the bar domain so nothing clips", () => {
       const { container } = render(<Sparkline values={[10, 20, 82]} target={90} />);
       const line = container.querySelector('[data-slot="sparkline-target"]');

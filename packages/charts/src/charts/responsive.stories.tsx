@@ -183,7 +183,12 @@ export const Heatmap: Story = {
 // squeezes the plot.
 
 const ONE_LINE_TITLE = "Revenue by region";
-const TWO_LINE_TITLE = "Revenue by region, net of returns";
+// Long enough to wrap onto a second line across the WHOLE 400 px card, not
+// only across what a side-by-side toolbar left over: below the narrow tier the
+// header stacks and the title owns the full row (b-3), so a title picked
+// against the old, squeezed width would now fit on one line and this story
+// would stop showing what it is named for.
+const TWO_LINE_TITLE = "Revenue by region, net of returns and intra-group transfers";
 
 function RegionBars({ label }: { label: string }) {
   return (
