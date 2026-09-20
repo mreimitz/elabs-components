@@ -207,6 +207,18 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "editorial-table",
+    "title": "Editorial table",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "escalation-boundary-01",
     "title": "Escalation Boundary — Where does autonomy end?",
     "categories": ["agent-ops"],
@@ -656,6 +668,19 @@
     "categories": [],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
+  },
+  {
+    "name": "table-with-sparklines",
+    "title": "Table with sparklines",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
   },
   {
     "name": "terminal-session-idle",

@@ -5,12 +5,17 @@ import { Locate, Maximize, Minus, Plus } from "lucide-react";
 import { Spinner } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
+import { useMapFrame } from "../lib/use-map-breakpoint";
 import { useMap } from "../map-canvas/map-context";
 
 export interface MapControlsProps {
   /** Position of the controls on the map (default: "bottom-right"). */
   position?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
-  /** Show zoom in/out buttons (default: true). */
+  /**
+   * Show zoom in/out buttons. Default: true on an interactive map, false on a
+   * static one (`<MapCanvas interactive={false}>`), whose whole point is a
+   * fixed view — set `showZoom` explicitly to override either way.
+   */
   showZoom?: boolean;
   /** Show a compass button to reset bearing/pitch (default: false). */
   showCompass?: boolean;
@@ -74,7 +79,7 @@ function ControlButton({
 /** Branded zoom / compass / locate / fullscreen controls. Render inside `<MapCanvas>`. */
 export function MapControls({
   position = "bottom-right",
-  showZoom = true,
+  showZoom,
   showCompass = false,
   showLocate = false,
   showFullscreen = false,
@@ -83,6 +88,11 @@ export function MapControls({
   onLocateError,
 }: MapControlsProps) {
   const { map } = useMap();
+  const { interactive } = useMapFrame();
+  // A static map (`interactive={false}`) is a fixed editorial view: zoom chrome
+  // invites a gesture the map will not answer, and a click leaves the reader on
+  // a frame they cannot pan back from. The host may still ask for it.
+  const zoomVisible = showZoom ?? interactive;
   const [waitingForLocation, setWaitingForLocation] = useState(false);
 
   const handleZoomIn = useCallback(() => {
@@ -131,11 +141,14 @@ export function MapControls({
     }
   }, [map]);
 
+  // Nothing to show (a static map with no explicit group) renders no box at all.
+  if (!zoomVisible && !showCompass && !showLocate && !showFullscreen) return null;
+
   return (
     <div
       className={cn("absolute z-10 flex flex-col gap-1.5", positionClasses[position], className)}
     >
-      {showZoom && (
+      {zoomVisible && (
         <ControlGroup>
           <ControlButton onClick={handleZoomIn} label="Zoom in">
             <Plus className="size-4" aria-hidden="true" />

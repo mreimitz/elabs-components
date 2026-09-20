@@ -327,7 +327,7 @@
       "type": "registry:block",
       "root": "registry/blocks/infographic-annotated-trend-01",
       "title": "Infographic — What happened, and when?",
-      "description": "\"What happened, and when?\" — a 20-week LineChart with up to three labelled events anchored to the exact data point they explain, connected by a Leader, never a legend. Compact keeps only the most consequential event.",
+      "description": "\"What happened, and when?\" — a 20-week LineChart whose events are declarative annotations anchored to the exact data point they explain, inside a ChartFrame that carries the finding, the method note, a byline and the source row. Under 480 px the notes become numbered markers with a key.",
       "categories": ["infographic"]
     },
     {
@@ -359,7 +359,7 @@
       "type": "registry:block",
       "root": "registry/blocks/infographic-small-multiples-01",
       "title": "Infographic — Which depot is the outlier?",
-      "description": "\"Which depot is the outlier?\" — twelve depots, one tiny 13-week line per tile, every tile on the same shared y-axis so height compares directly, with the one depot that stands out ringed and coloured (PeakRing) while every other depot stays on a muted neutral.",
+      "description": "\"Which depot is the outlier?\" — twelve depots in a ChartMultiples grid, one 13-week line per panel on one shared y-axis so height compares directly, each panel title showing its latest reading (or the hovered week’s, synced across every panel), with the outlier ringed (PeakRing), thicker and glyphed while every other depot stays on a muted neutral.",
       "categories": ["infographic"]
     },
     {
@@ -513,6 +513,22 @@
       "title": "Handoff Inspector — Where was the context dropped?",
       "description": "One edge of a multi-agent run: sender → a metric pill on the arrow (context size, latency, tokens, fields present of required) → receiver; a context-comparison table (sent vs expected, status badge per field) that shows the required field that was not sent; the payload size against the workflow baseline as a Meter with a marker; and the edge’s 24-hour health beside it.",
       "categories": ["agent-ops"]
+    },
+    {
+      "name": "table-with-sparklines",
+      "type": "registry:block",
+      "root": "registry/blocks/table-with-sparklines",
+      "title": "Table with sparklines",
+      "description": "A DataTable whose trend column renders the charts Sparkline — a target line, a fitted width and a spoken label per row. `@elabs-ai/components-data` may not import `@elabs-ai/components-charts`, so this composition is copy-owned rather than a `data` feature. For a plain in-cell trend that shares one scale down the column, `meta.visual: { kind: \"sparkline\" }` is lighter and needs no charts install.",
+      "categories": ["data"]
+    },
+    {
+      "name": "editorial-table",
+      "type": "registry:block",
+      "root": "registry/blocks/editorial-table",
+      "title": "Editorial table",
+      "description": "A published table rather than an app grid: a zero-based bar column on one shared range, a diverging heatmap column centred on zero with its own colour key, and a mini-columns column for the quarterly shape — all from `data`'s own cell layer, no charts install. `layout=\"auto\"` flips it to a card list below 450 px on the same table instance, so the sort bar keeps working. Every visual keeps its value in the accessible tree.",
+      "categories": ["data"]
     }
   ]
 }

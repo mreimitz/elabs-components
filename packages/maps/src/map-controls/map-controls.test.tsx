@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -28,6 +28,40 @@ describe("MapControls", () => {
     expect(
       screen.queryByRole("button", { name: "Reset bearing to north" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("hides zoom chrome on a static map, and renders no control box at all", async () => {
+    const { container } = render(
+      <MapCanvas interactive={false}>
+        <MapControls />
+      </MapCanvas>,
+    );
+    await waitFor(() => {
+      expect(container.querySelector("[data-slot='map-canvas']")).not.toBeNull();
+    });
+    expect(screen.queryByRole("button", { name: "Zoom in" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Zoom out" })).not.toBeInTheDocument();
+    // No empty, absolutely-positioned control box left behind either.
+    expect(container.querySelector(".absolute.z-10")).toBeNull();
+  });
+
+  it("keeps zoom chrome on a static map when the host asks for it", async () => {
+    render(
+      <MapCanvas interactive={false}>
+        <MapControls showZoom />
+      </MapCanvas>,
+    );
+    expect(await screen.findByRole("button", { name: "Zoom in" })).toBeInTheDocument();
+  });
+
+  it("still renders an explicitly enabled group on a static map", async () => {
+    render(
+      <MapCanvas interactive={false}>
+        <MapControls showFullscreen />
+      </MapCanvas>,
+    );
+    expect(await screen.findByRole("button", { name: "Toggle fullscreen" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Zoom in" })).not.toBeInTheDocument();
   });
 
   it("renders compass, locate and fullscreen controls when enabled", async () => {

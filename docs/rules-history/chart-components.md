@@ -440,3 +440,54 @@ static-class conversion #394 shipped. Resolving the sub-11px/13px cases is
 tracked as residual scope on **#394/#319**, routed through
 `brand-ui-design-system-architect` before implementation — do not silently round
 these to the nearest role.
+
+## 2026-09-20 — Datawrapper parity track (RM-107 … RM-127)
+
+Source: `docs/review/2026-09-18-datawrapper-gap-analysis.md`. The track added four rules to
+`.claude/rules/charts.md` (the "Responsive" section from RM-107, and "Labels, annotations,
+legends" at closure). The rationale each rule carries in one line is recorded here in full.
+
+**Why the tier is measured on the container, not the viewport (ADR 0039).** A chart is as
+often a dashboard tile 320 px wide inside a 1600 px page as it is a full-bleed figure. A
+viewport media query gets both wrong in opposite directions. `useMeasuredChartBreakpoint`
+reads the plot root's own box and publishes `data-chart-breakpoint`, so a tile and a figure
+each get the tier they actually occupy, and a story can be driven at a real page width to
+prove it. `data` (`use-table-breakpoint.ts`, 450 px) and `maps` (`use-map-breakpoint.ts`,
+480/768 px) hold deliberate copies because the one-way dependency graph forbids importing
+`charts` sideways; the copies are cheap (a `ResizeObserver` and two numbers) and the
+alternative — moving the hook down into `ui` — would put a chart concern in the foundation
+package for three consumers. The thresholds 480 and 768 are the Tailwind `sm`/`md` rungs, so
+a host that lays its page out on those rungs sees the chart change tier at the same place
+its grid does.
+
+**Why fonts never scale with the tier.** Scaling type with the container reproduces the
+density scale badly and twice: `--type-factor` (`data-density`) already owns text size, and a
+second, container-driven multiplier makes two charts side by side at different widths print
+the same number at different sizes. Only layout decisions — how many ticks, whether the
+legend and the value axis show, whether a note becomes a numbered marker — react to the tier.
+
+**Why a dropped label is restated `sr-only`.** The label solver (`layoutLabels`) drops a
+label that will not fit without a collision. Dropping the MARK is a layout decision; dropping
+the FACT is a data loss that a sighted user recovers by hovering and a screen-reader user
+never recovers at all. The restatement beside the chart keeps the fact in the accessible tree
+at every tier, which is also what makes the narrow tier's aggressive label culling safe.
+
+**Why annotation reading order is array order.** Annotations are placed in data units, so
+their painted order is whatever the scales produce — which changes when the data changes, the
+sort changes, or the tier flips a note into a numbered marker. Tying the numbering, the
+`AnnotationKey` rows and the accessible description to the author's array order instead gives
+one stable sequence the author controls, and makes the narrow-tier marker numbers match the
+key rows without a second sort.
+
+**Why the legend sits inside the measured box.** A legend rendered as a sibling ABOVE the
+plot root changes the plot's height but is not part of what the plot measured, so a chart
+could resolve `medium`, grow a two-row legend, and end up drawing a `medium` layout in a
+`narrow` amount of space. `useContainerLegend` places `ChartLegend` inside the measured box
+so the tier and the space agree. One shared legend per faceted grid (never one per panel)
+follows from the same box: the panels share a scale, so they share the key.
+
+**Rejected: a `mobile*` prop family.** `mobileLegend`, `mobileTicks` and friends were
+rejected because each one is a second source of truth for a decision the tier already makes,
+and none of them compose — a host that wants three tiers needs a third prop name. `Responsive<T>`
+(`T | { base, medium?, narrow? }`, desktop-first, cascading) is one shape for every per-tier
+prop, read only through `resolveResponsive` / `useResponsiveValue`.

@@ -485,6 +485,10 @@ export interface DataTableProps<TData, TValue> extends Omit<
    * is silently disabled (a dev warning fires) when both are set. Combining
    * it with active `sorting` also fires a dev warning (both still work, but
    * a sort re-orders the very rows a drag just moved, which reads as broken).
+   *
+   * Table-only. The card layout (`layout="cards"`, or `"auto"` at the narrow
+   * tier) has no grip column and no row to drop onto, so reorder is a no-op
+   * there and `onRowReorder` never fires; a dev warning says so once per mount.
    */
   enableRowReorder?: boolean;
   /**
@@ -1464,6 +1468,26 @@ function DataTableInner<TData, TValue>(
     layout === "auto" || hasShowAt,
   );
   const cardsActive = layout === "cards" || (layout === "auto" && breakpoint === "narrow");
+  // Row reorder is table-only (RM-123): a card is a `<dl>` in a `<ul>`, with no
+  // grip column and no row to drop onto, so dnd-kit is not mounted at all in
+  // the card branch. That is a deliberate, documented no-op rather than a
+  // half-working drag — but a silent one is a trap, so say it once per mount.
+  const warnedCardReorderRef = useRef(false);
+  useEffect(() => {
+    if (
+      process.env.NODE_ENV !== "production" &&
+      cardsActive &&
+      enableRowReorder &&
+      !warnedCardReorderRef.current
+    ) {
+      warnedCardReorderRef.current = true;
+      console.warn(
+        "[DataTable] `enableRowReorder` is ignored in the card layout — a card list has no " +
+          "grip column and no drop target, so `onRowReorder` will never fire. Keep " +
+          '`layout="table"` for reordering, or offer the move as a row action in cards.',
+      );
+    }
+  }, [cardsActive, enableRowReorder]);
   // Published only when a presentation prop is in play, so the default DOM is
   // unchanged: `data-layout` is what renders, `data-breakpoint` what was measured.
   const presentationAttrs =
@@ -1499,7 +1523,13 @@ function DataTableInner<TData, TValue>(
   // (header rows occupy 1..headerRowCount). Falls back to rows.length for the
   // client path; uses the server `rowCount` total when provided.
   const headerRowCount = table.getHeaderGroups().length;
-  const ariaRowCount = (rowCount ?? rows.length) + headerRowCount;
+  // `rows` is the CENTRE row model when `stickyRows` is on, so the pinned rows
+  // above and below it are extra mounted rows. They join the count, and they
+  // take the first / last indices, so `aria-rowindex` still rises with DOM
+  // order — a screen reader hears "row 1 of 121", never an unplaced row.
+  const centreRowCount = rowCount ?? rows.length;
+  const ariaRowCount = centreRowCount + topRows.length + bottomRows.length + headerRowCount;
+  const firstCentreRowIndex = headerRowCount + topRows.length + 1;
 
   // ── Row drag-reorder (#13) ────────────────────────────────────────────────
   // `rowActionName` (defined below, but hoisted as a function declaration) is
@@ -2795,7 +2825,11 @@ function DataTableInner<TData, TValue>(
           renderEmptyBody()
         ) : (
           <>
-            {topRows.map((row, i) => renderRow(row, i))}
+            {topRows.map((row, i) =>
+              renderRow(row, i, {
+                "aria-rowindex": headerRowCount + i + 1,
+              } as React.HTMLAttributes<HTMLTableRowElement>),
+            )}
             {/* Top spacer — real <tr> so table layout is preserved */}
             {paddingTop > 0 && (
               <tr aria-hidden="true">
@@ -2810,8 +2844,9 @@ function DataTableInner<TData, TValue>(
               return renderRow(row, virtualRow.index, {
                 ref: virtualizer.measureElement as React.Ref<HTMLTableRowElement>,
                 "data-index": virtualRow.index,
-                // Absolute 1-based row position; header row(s) occupy 1..headerRowCount.
-                "aria-rowindex": headerRowCount + virtualRow.index + 1,
+                // Absolute 1-based row position; header row(s) occupy
+                // 1..headerRowCount and any top-pinned rows the slots after them.
+                "aria-rowindex": firstCentreRowIndex + virtualRow.index,
               } as React.HTMLAttributes<HTMLTableRowElement>);
             })}
             {/* Bottom spacer */}
@@ -2820,7 +2855,11 @@ function DataTableInner<TData, TValue>(
                 <td style={{ height: paddingBottom }} colSpan={colCount + leadingColCount} />
               </tr>
             )}
-            {bottomRows.map((row, i) => renderRow(row, i))}
+            {bottomRows.map((row, i) =>
+              renderRow(row, i, {
+                "aria-rowindex": firstCentreRowIndex + centreRowCount + i,
+              } as React.HTMLAttributes<HTMLTableRowElement>),
+            )}
           </>
         )}
       </tbody>

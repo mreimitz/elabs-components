@@ -115,6 +115,13 @@
     "escapeHatch": "n/a",
     "usedBy": ["packages/ai/src/index.ts"]
   },
+  "www.naturalearthdata.com": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "AttributionPanel link for the Natural Earth terms of use — the public-domain source behind the bundled choropleth world fixture. An <a href> the user clicks, never a fetch; the fixture itself is compiled into the package.",
+    "escapeHatch": "Don't render AttributionPanel's `data` category — the credit is courtesy, not a licence obligation.",
+    "usedBy": ["packages/ui/src/components/attribution-panel/attributions.generated.ts"]
+  },
   "www.npmjs.com": {
     "directive": "none",
     "kind": "navigation",

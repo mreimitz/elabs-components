@@ -18,7 +18,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Answers “what happened, and when?” — a weekly line with up to three events labelled directly on the data point they explain, connected by a Leader, never a legend. The headline states the finding in words. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-annotated-trend-01` (pulls `kpi-card-parts`).",
+          "Answers “what happened, and when?” — a weekly line with up to three events written as declarative `annotations`, each connected to the data point it explains, never a legend. `ChartFrame` carries the editorial chrome: the finding as the title, the method note, a byline and the source row. Under 480 px the notes become numbered markers with a key under the plot. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-annotated-trend-01` (pulls `kpi-card-parts`).",
       },
     },
   },

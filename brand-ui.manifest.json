@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T23:23:59.878Z",
+  "generatedAt": "2026-09-20T01:02:52.308Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -576,7 +576,7 @@
       "name": "infographic-annotated-trend-01",
       "type": "registry:block",
       "title": "Infographic — What happened, and when?",
-      "description": "\"What happened, and when?\" — a 20-week LineChart with up to three labelled events anchored to the exact data point they explain, connected by a Leader, never a legend. Compact keeps only the most consequential event."
+      "description": "\"What happened, and when?\" — a 20-week LineChart whose events are declarative annotations anchored to the exact data point they explain, inside a ChartFrame that carries the finding, the method note, a byline and the source row. Under 480 px the notes become numbered markers with a key."
     },
     {
       "name": "kpi-status-threshold-01",
@@ -600,7 +600,7 @@
       "name": "infographic-small-multiples-01",
       "type": "registry:block",
       "title": "Infographic — Which depot is the outlier?",
-      "description": "\"Which depot is the outlier?\" — twelve depots, one tiny 13-week line per tile, every tile on the same shared y-axis so height compares directly, with the one depot that stands out ringed and coloured (PeakRing) while every other depot stays on a muted neutral."
+      "description": "\"Which depot is the outlier?\" — twelve depots in a ChartMultiples grid, one 13-week line per panel on one shared y-axis so height compares directly, each panel title showing its latest reading (or the hovered week’s, synced across every panel), with the outlier ringed (PeakRing), thicker and glyphed while every other depot stays on a muted neutral."
     },
     {
       "name": "infographic-before-after-01",
@@ -715,6 +715,18 @@
       "type": "registry:block",
       "title": "Handoff Inspector — Where was the context dropped?",
       "description": "One edge of a multi-agent run: sender → a metric pill on the arrow (context size, latency, tokens, fields present of required) → receiver; a context-comparison table (sent vs expected, status badge per field) that shows the required field that was not sent; the payload size against the workflow baseline as a Meter with a marker; and the edge’s 24-hour health beside it."
+    },
+    {
+      "name": "table-with-sparklines",
+      "type": "registry:block",
+      "title": "Table with sparklines",
+      "description": "A DataTable whose trend column renders the charts Sparkline — a target line, a fitted width and a spoken label per row. `@elabs-ai/components-data` may not import `@elabs-ai/components-charts`, so this composition is copy-owned rather than a `data` feature. For a plain in-cell trend that shares one scale down the column, `meta.visual: { kind: \"sparkline\" }` is lighter and needs no charts install."
+    },
+    {
+      "name": "editorial-table",
+      "type": "registry:block",
+      "title": "Editorial table",
+      "description": "A published table rather than an app grid: a zero-based bar column on one shared range, a diverging heatmap column centred on zero with its own colour key, and a mini-columns column for the quarterly shape — all from `data`'s own cell layer, no charts install. `layout=\"auto\"` flips it to a card list below 450 px on the same table instance, so the sort bar keeps working. Every visual keeps its value in the accessible tree."
     }
   ],
   "templates": [
@@ -26669,7 +26681,7 @@
               "name": "enableRowReorder",
               "optional": true,
               "type": "boolean",
-              "description": "Opt-in row drag-reorder. Off by default — an existing table renders byte-identical markup with no extra DOM per row until this is set. Fully controlled like every other slice: the component never mutates `data` itself, it only reports the move via `onRowReorder`; the caller re-orders `data` in response. Keyboard-operable out of the box (`@dnd-kit`'s default keyboard sensor): Space/Enter picks a row up, Arrow Up/Down moves it, Space/Enter drops it, Escape cancels. Every position change is announced through a live region (WCAG 4.1.3). Mutually exclusive with `enableRowVirtualization` — a windowed table can't keep dnd-kit's sortable list and a virtualizer in sync, so reorder is silently disabled (a dev warning fires) when both are set. Combining it with active `sorting` also fires a dev warning (both still work, but a sort re-orders the very rows a drag just moved, which reads as broken)."
+              "description": "Opt-in row drag-reorder. Off by default — an existing table renders byte-identical markup with no extra DOM per row until this is set. Fully controlled like every other slice: the component never mutates `data` itself, it only reports the move via `onRowReorder`; the caller re-orders `data` in response. Keyboard-operable out of the box (`@dnd-kit`'s default keyboard sensor): Space/Enter picks a row up, Arrow Up/Down moves it, Space/Enter drops it, Escape cancels. Every position change is announced through a live region (WCAG 4.1.3). Mutually exclusive with `enableRowVirtualization` — a windowed table can't keep dnd-kit's sortable list and a virtualizer in sync, so reorder is silently disabled (a dev warning fires) when both are set. Combining it with active `sorting` also fires a dev warning (both still work, but a sort re-orders the very rows a drag just moved, which reads as broken). Table-only. The card layout (`layout=\"cards\"`, or `\"auto\"` at the narrow tier) has no grip column and no row to drop onto, so reorder is a no-op there and `onRowReorder` never fires; a dev warning says so once per mount."
             },
             {
               "name": "onRowReorder",
@@ -30233,7 +30245,7 @@
               "name": "showZoom",
               "optional": true,
               "type": "boolean",
-              "description": "Show zoom in/out buttons (default: true)."
+              "description": "Show zoom in/out buttons. Default: true on an interactive map, false on a static one (`<MapCanvas interactive={false}>`), whose whole point is a fixed view — set `showZoom` explicitly to override either way."
             },
             {
               "name": "showCompass",

@@ -27,7 +27,18 @@ top-level group for `palette="categorical"` (real hover-dim on the group's tiles
 row per `valueKeys` entry for `variant="dots"` (real hover-dim on that key's dots across every
 row), replacing its own pre-existing, always-on corner colour-key badge when `legend` is set (that
 badge is unchanged when `legend` stays unset). `AutoChart` forwards `spec.legend` to `bar`, `pie`,
-`scatter` and `treemap`, retiring its own `AutoLegend` fallback for those four. `dumbbell` stays on
+`scatter` and `treemap`, retiring its own `AutoLegend` fallback for those four.
+
+**Visible default change — the `AutoChart` legend look for `bar`, `pie`, `scatter` and
+`treemap`.** Before: a wrapping `<ul>` BELOW the plot, outside the box the chart measured,
+with 10 px square swatches in muted ink. After: a `ChartLegend` INSIDE the measured box and
+ABOVE the plot, with round dot markers, wrapped in a row at `wide`/`medium` and stacked at
+`narrow` — and hidden entirely at `narrow` or density `sm`, where the old list stayed
+visible. Which series are listed, their order, their colours and the legend's accessible
+name ("Chart legend") are unchanged. No flag restores the old list: a spec that wants the
+legend gone sets `legend: false`, and a spec that wants the old below-the-plot placement, or
+a legend that survives the `narrow` tier, drops the spec's `legend` and composes
+`<ChartLegend layout="row" hideAtDensity={[]}>` under the chart itself. `dumbbell` stays on
 `AutoLegend`: `ChartSpec` has no `valueKeys`/`variant` field, so `DumbbellChart`'s own `legend`
 (dots-only) would render nothing for any AutoChart-driven spec today — wiring it in would have
 silently dropped the existing before/after key on every multi-series AutoChart dumbbell.

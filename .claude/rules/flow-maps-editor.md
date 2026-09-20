@@ -40,7 +40,9 @@ Decoration dial policy → `conventions.md` (tokens-level, not specific to these
   article must not steal the page's scroll. Static disables the gesture handlers only;
   MapLibre's `interactive:false` is never passed (it drops the listeners, killing
   tooltips/popups). A static map sizes itself: `height` default is `{base:{aspect:1.6},
-narrow:{aspect:1}}` via CSS `aspect-ratio`, which a parent with a definite height wins.
+narrow:{aspect:1}}` via CSS `aspect-ratio`, which a parent with a definite height wins. It
+  also drops the zoom chrome: `MapControls`' `showZoom` follows the map's interactivity, so
+  a static map shows no gesture affordance unless the host asks for one.
 - **Furniture** (`MapLegend`, `MapScaleBar`, `MapNorthArrow`, `MapInset`,
   `MapAnnotation`) is composed as MapCanvas children. Anything outside the map box
   (legend `above`/`below`, the narrow annotation key) portals into the frame's strips via

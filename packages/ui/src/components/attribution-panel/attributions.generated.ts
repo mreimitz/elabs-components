@@ -2,7 +2,7 @@
 // Run `pnpm gen` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm gen:check` fails on a stale copy.
 //
-// 120 entries (data: 2, source: 20, font: 2, dependency: 96).
+// 122 entries (data: 4, source: 20, font: 2, dependency: 96).
 
 import type { Attribution } from "./attribution-types";
 
@@ -30,6 +30,30 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     url: "https://www.openstreetmap.org/copyright",
     usedBy: ["@elabs-ai/components-maps"],
     required: true,
+  },
+  {
+    version: null,
+    note: "The `countries-110m` TopoJSON build of Natural Earth that `world-fixture.ts` was converted from (once, offline — no TopoJSON decoder ships). ISC requires the copyright notice.",
+    id: "world-atlas",
+    category: "data",
+    name: "world-atlas",
+    license: "ISC",
+    copyright: "Copyright 2013-2024 Michael Bostock",
+    url: "https://github.com/topojson/world-atlas",
+    usedBy: ["@elabs-ai/components-charts"],
+    required: true,
+  },
+  {
+    version: null,
+    note: 'The 1:110m admin-0 country outlines behind `ChoroplethChart`\'s bundled "world" fixture (packages/charts/src/charts/choropleth/world-fixture.ts). Public domain, so the credit is courtesy, not an obligation.',
+    id: "natural-earth",
+    category: "data",
+    name: "Natural Earth",
+    license: "public-domain",
+    copyright: "Public domain (Natural Earth terms of use)",
+    url: "https://www.naturalearthdata.com/about/terms-of-use/",
+    usedBy: ["@elabs-ai/components-charts"],
+    required: false,
   },
   {
     version: null,

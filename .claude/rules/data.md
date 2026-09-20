@@ -41,18 +41,10 @@ paths:
   with the shorter number the longer track — it then draws a longer bar for a smaller
   value, and a diverging column's zero rule lands on a different x in every row.
 - **The table breakpoint is a deliberate copy** of charts' `useMeasuredChartBreakpoint`
-  (`use-table-breakpoint.ts`), because `data` may not import `charts`. It measures the
-  table's own box, not the viewport. Keep this thresholds table and the one in the file
-  equal:
-
-  | Tier     | Container width |
-  | -------- | --------------- |
-  | `narrow` | < 450 px        |
-  | `wide`   | ≥ 450 px        |
-
-  `meta.showAt` and `layout="auto"` (cards under `narrow`) read it. `layout` defaults to
-  `"table"` — no default changes.
-
+  (`use-table-breakpoint.ts`), because `data` may not import `charts`: it measures the
+  table's OWN box — `narrow < 450 ≤ wide` — and `meta.showAt` / `layout="auto"` (cards
+  under `narrow`) read it. `layout` defaults to `"table"`; keep the number here and in the
+  file equal.
 - Cards (`layout="cards"`/`"auto"`) are a `<ul>` of `<li><dl>` rows on the SAME TanStack
   instance: sorting (a sort bar), selection and row click keep working; row reorder is
   table-only.
