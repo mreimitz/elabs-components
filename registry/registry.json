@@ -1731,6 +1731,81 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "plan-office-floor-01",
+      "type": "registry:block",
+      "title": "Plan — Office floor",
+      "description": "Which rooms are free on a floor, on the building's own plan rather than a world map: MapCanvas plan declares the extent in centimetres, rooms are polygons whose state rides the fill tone and the outline dash, MapPlanOverlay gives every room a real button for the keyboard, and MapPlanTable repeats the floor as words. Optionally lays the surveyor's drawing underneath as a plan-unit background picture.",
+      "dependencies": [
+        "@elabs-ai/components-maps",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/plan-office-floor-01/data/office-floor.ts",
+          "type": "registry:component",
+          "target": "components/plan-office-floor-01/data/office-floor.ts"
+        },
+        {
+          "path": "registry/blocks/plan-office-floor-01/office-floor-plan.tsx",
+          "type": "registry:component",
+          "target": "components/plan-office-floor-01/office-floor-plan.tsx"
+        }
+      ],
+      "categories": ["plan"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "plan-factory-layout-01",
+      "type": "registry:block",
+      "title": "Plan — Factory layout",
+      "description": "A plant floor in metres where each machine cell carries its state four times over: the tone wash, a hatch texture generated on a canvas, the outline dash and the word in the legend and table. State rides feature properties and hover/selection ride feature-state, so the channels never collide, and the four states stay four states in greyscale.",
+      "dependencies": [
+        "@elabs-ai/components-maps",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/plan-factory-layout-01/data/factory-floor.ts",
+          "type": "registry:component",
+          "target": "components/plan-factory-layout-01/data/factory-floor.ts"
+        },
+        {
+          "path": "registry/blocks/plan-factory-layout-01/factory-layout.tsx",
+          "type": "registry:component",
+          "target": "components/plan-factory-layout-01/factory-layout.tsx"
+        }
+      ],
+      "categories": ["plan"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "plan-seat-map-01",
+      "type": "registry:block",
+      "title": "Plan — Train seat map",
+      "description": "A reservation seat map on a plan of the train: three coaches of 64 seats in centimetres, 192 regions. The overlay runs in group mode — one button per coach, Enter to go in, Escape to come back out — with an option to show the direction of travel and the walk between coaches.",
+      "dependencies": [
+        "@elabs-ai/components-maps",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/plan-seat-map-01/data/train-carriage.ts",
+          "type": "registry:component",
+          "target": "components/plan-seat-map-01/data/train-carriage.ts"
+        },
+        {
+          "path": "registry/blocks/plan-seat-map-01/train-seat-map.tsx",
+          "type": "registry:component",
+          "target": "components/plan-seat-map-01/train-seat-map.tsx"
+        }
+      ],
+      "categories": ["plan"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "infographic-journey-flow-01",
       "type": "registry:block",
       "title": "Infographic — Where do they drop off?",
