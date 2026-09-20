@@ -199,7 +199,11 @@ export class MockMap {
   }
   setPaintProperty() {}
   setLayoutProperty() {}
-  setFeatureState() {}
+  /** Observable feature-state, keyed by feature id — the hover highlight. */
+  featureStates = new Map<string | number, Record<string, unknown>>();
+  setFeatureState(target: { id: string | number }, state: Record<string, unknown>) {
+    this.featureStates.set(target.id, { ...this.featureStates.get(target.id), ...state });
+  }
   queryRenderedFeatures() {
     return [];
   }

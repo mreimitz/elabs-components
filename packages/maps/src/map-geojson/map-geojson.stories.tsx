@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, waitFor } from "storybook/test";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 
 import { MapCanvas } from "../map-canvas";
@@ -110,6 +111,12 @@ function ChoroplethDemo() {
             ] as never,
           }}
           fillHoverPaint={{ "fill-opacity": 1 }}
+          // c-2: the fill lives in WebGL, so without this the 24 values are
+          // reachable by mouse only. One visually-hidden button per region
+          // carries the same sentence the readout prints.
+          featureLabel={(feature) =>
+            `${feature.properties.name}: ${(feature.properties.value * 100).toFixed(0)}%`
+          }
           onHover={(e) => setHovered(e?.feature.properties ?? null)}
         />
       </MapCanvas>
@@ -122,6 +129,26 @@ function ChoroplethDemo() {
 
 export const InteractiveHover: Story = {
   render: () => <ChoroplethDemo />,
+  play: async ({ canvasElement }) => {
+    // c-2 (WCAG 2.1.1 / 1.3.1): before the fix the only tab stop in the story
+    // was the map canvas, and none of the 24 region values had any DOM at all.
+    const list = await waitFor(() => {
+      const element = canvasElement.querySelector('[data-slot="map-geojson-keyboard-list"]');
+      expect(element).not.toBeNull();
+      return element as HTMLElement;
+    });
+    const buttons = [...list.querySelectorAll("button")];
+    await expect(buttons).toHaveLength(24);
+    await expect(buttons[0]).toHaveAccessibleName("Region 1: 37%");
+
+    // Focusing a region updates the very readout the pointer drives.
+    buttons[9]?.focus();
+    await waitFor(() =>
+      expect(canvasElement.textContent).toContain(
+        buttons[9]?.textContent ?? "no region under focus",
+      ),
+    );
+  },
 };
 
 function AreaMarkersDemo() {

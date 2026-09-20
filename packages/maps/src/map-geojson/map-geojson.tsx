@@ -53,8 +53,12 @@ export type MapGeoJSONEvent<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJso
   longitude: number;
   /** Latitude of the cursor at the time of the event. */
   latitude: number;
-  /** The underlying MapLibre mouse event for advanced use cases. */
-  originalEvent: MapLibreGL.MapLayerMouseEvent;
+  /**
+   * The underlying MapLibre mouse event for advanced use cases. `null` when
+   * the feature was reached from the KEYBOARD rather than a pointer — there is
+   * no mouse event behind that (c-4/c-2, WCAG 2.1.1).
+   */
+  originalEvent: MapLibreGL.MapLayerMouseEvent | null;
 };
 
 export type MapGeoJSONProps<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties> = {
@@ -102,6 +106,15 @@ export type MapGeoJSONProps<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJso
   onHover?: (e: MapGeoJSONEvent<P> | null) => void;
   /** Whether features respond to mouse events (default: false). */
   interactive?: boolean;
+  /**
+   * The text of a feature in the keyboard list an `interactive` map renders —
+   * one visually-hidden button per feature, so the values a pointer reveals
+   * on hover are reachable by Tab and readable by a screen reader (WCAG 2.1.1
+   * and 1.3.1). Say what the region is AND what it is worth
+   * (`(f) => \`\${f.properties.name}: \${f.properties.value}\`\`). Defaults to the
+   * promoted id.
+   */
+  featureLabel?: (feature: MapGeoJSONFeature<P>, index: number) => string;
   /** Optional MapLibre layer id to insert the layers before (z-order control). */
   beforeId?: string;
 };
@@ -125,6 +138,7 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
   onClick,
   onHover,
   interactive = false,
+  featureLabel,
   beforeId,
 }: MapGeoJSONProps<P>) {
   const { map, isLoaded } = useMap();
@@ -185,6 +199,10 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
   );
   const latestRef = useRef({ onClick, onHover });
   latestRef.current = { onClick, onHover };
+  // c-2: the pointer path owns the hover feature-state inside its effect; the
+  // keyboard list below drives the SAME highlight through this handle, so a
+  // focused region lights up exactly as a hovered one does.
+  const setHoverRef = useRef<((next: string | number | null) => void) | null>(null);
 
   // Add source on mount.
   useEffect(() => {
@@ -393,6 +411,7 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
       });
     };
 
+    setHoverRef.current = setHover;
     map.on("mousemove", fillLayerId, handleMouseMove);
     map.on("mouseleave", fillLayerId, handleMouseLeave);
     map.on("click", fillLayerId, handleClick);
@@ -402,11 +421,142 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
       map.off("mouseleave", fillLayerId, handleMouseLeave);
       map.off("click", fillLayerId, handleClick);
       setHover(null);
+      setHoverRef.current = null;
       map.getCanvas().style.cursor = "";
     };
   }, [isLoaded, map, fillLayerId, sourceId, interactive, showFill]);
 
-  return null;
+  // c-2 (WCAG 2.1.1, 1.3.1): the fill layer lives in WebGL, so an interactive
+  // choropleth had no DOM at all — its values were reachable by mouse only,
+  // with no tab stop, no text alternative and nothing for a screen reader to
+  // read. One visually-hidden button per feature gives every region a tab stop
+  // whose name IS its value; focusing it lights the region and fires the same
+  // `onHover` the pointer does, so a host readout follows the keyboard for
+  // free. Hidden, not absent: the map itself is the picture.
+  const keyboardFeatures = useMemo(
+    () => (interactive && showFill ? listKeyboardFeatures<P>(data, promoteId) : []),
+    [interactive, showFill, data, promoteId],
+  );
+
+  const reach = (entry: KeyboardFeature<P>) => {
+    setHoverRef.current?.(entry.id ?? null);
+    latestRef.current.onHover?.({
+      feature: entry.feature,
+      longitude: entry.longitude,
+      latitude: entry.latitude,
+      originalEvent: null,
+    });
+  };
+
+  if (keyboardFeatures.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="sr-only" data-slot="map-geojson-keyboard-list">
+      <ul>
+        {keyboardFeatures.map((entry, index) => (
+          <li key={entry.key}>
+            <button
+              onBlur={() => {
+                setHoverRef.current?.(null);
+                latestRef.current.onHover?.(null);
+              }}
+              onClick={() =>
+                latestRef.current.onClick?.({
+                  feature: entry.feature,
+                  longitude: entry.longitude,
+                  latitude: entry.latitude,
+                  originalEvent: null,
+                })
+              }
+              onFocus={() => reach(entry)}
+              type="button"
+            >
+              {featureLabel?.(entry.feature, index) ?? entry.fallbackLabel}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** One row of the keyboard list: a feature, where it sits and what it is called. */
+interface KeyboardFeature<P extends GeoJSON.GeoJsonProperties> {
+  key: string;
+  id: string | number | undefined;
+  feature: MapGeoJSONFeature<P>;
+  longitude: number;
+  latitude: number;
+  fallbackLabel: string;
+}
+
+/** Every coordinate in a geometry, flattened — enough for a bounding box. */
+function geometryPositions(geometry: GeoJSON.Geometry): GeoJSON.Position[] {
+  if (geometry.type === "GeometryCollection") {
+    return geometry.geometries.flatMap(geometryPositions);
+  }
+  if (geometry.type === "Point") {
+    return [geometry.coordinates];
+  }
+  // Every remaining geometry nests Positions 1–3 arrays deep.
+  const flatten = (value: unknown): GeoJSON.Position[] =>
+    Array.isArray(value) && typeof value[0] === "number"
+      ? [value as GeoJSON.Position]
+      : Array.isArray(value)
+        ? value.flatMap(flatten)
+        : [];
+  return flatten(geometry.coordinates);
+}
+
+/** The centre of a geometry's bounding box — where a keyboard "hover" lands. */
+function geometryCentre(geometry: GeoJSON.Geometry): [number, number] {
+  const positions = geometryPositions(geometry);
+  if (positions.length === 0) return [0, 0];
+  let west = Number.POSITIVE_INFINITY;
+  let east = Number.NEGATIVE_INFINITY;
+  let south = Number.POSITIVE_INFINITY;
+  let north = Number.NEGATIVE_INFINITY;
+  for (const [lng, lat] of positions) {
+    west = Math.min(west, lng ?? 0);
+    east = Math.max(east, lng ?? 0);
+    south = Math.min(south, lat ?? 0);
+    north = Math.max(north, lat ?? 0);
+  }
+  return [(west + east) / 2, (south + north) / 2];
+}
+
+/**
+ * The features a keyboard list can offer. A `data` URL is fetched by MapLibre
+ * itself and never reaches React, and a bare Geometry carries no properties to
+ * read — both give an empty list rather than a row that says nothing.
+ */
+function listKeyboardFeatures<P extends GeoJSON.GeoJsonProperties>(
+  data: MapGeoJSONData<P>,
+  promoteId: string | undefined,
+): KeyboardFeature<P>[] {
+  if (typeof data === "string") return [];
+  const features =
+    data.type === "FeatureCollection" ? data.features : data.type === "Feature" ? [data] : [];
+  return features.map((feature, index) => {
+    const promoted = promoteId ? feature.properties?.[promoteId] : undefined;
+    const id =
+      typeof promoted === "string" || typeof promoted === "number"
+        ? promoted
+        : typeof feature.id === "string" || typeof feature.id === "number"
+          ? feature.id
+          : undefined;
+    const [longitude, latitude] = geometryCentre(feature.geometry);
+    return {
+      key: `${id ?? index}`,
+      id,
+      feature: feature as unknown as MapGeoJSONFeature<P>,
+      longitude,
+      latitude,
+      fallbackLabel: `${id ?? index + 1}`,
+    };
+  });
 }
 
 /**
