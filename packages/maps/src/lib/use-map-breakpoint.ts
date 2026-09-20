@@ -121,11 +121,26 @@ function validHeight(value: MapHeight | undefined): MapHeight | undefined {
 }
 
 /**
+ * The map box's geometry is LAYOUT THE ENGINE MEASURES, so it must never
+ * interpolate. `transition-property` defaults to `all`, and the house
+ * reduced-motion clamp sets `transition-duration: 0.01ms !important` on every
+ * element — which turns a height / aspect-ratio change into a (very short)
+ * transition that still lands one animation frame later. Under a busy WebGL
+ * first paint that frame arrived ~0.7 s late, so MapLibre measured the box
+ * mid-transition (348×218 on a box that ends up 348×348) and fitted `bounds`
+ * to a rectangle that never existed. `none` beats any stylesheet from the
+ * inline style, and the clamp only forces DURATIONS, never the property list.
+ */
+const NO_GEOMETRY_TRANSITION = { transitionProperty: "none" } as const;
+
+/**
  * The container style for a `height` at `breakpoint`. An explicit `height`
  * sets the box outright (`height: auto` releases the `h-full` class for an
  * aspect). Without one, only an `aspect-ratio` is set — CSS ignores it while
  * the parent gives the map a definite height, so a map in a sized parent
  * looks exactly as before; a map in an unsized parent stops collapsing to 0.
+ * Every branch pins {@link NO_GEOMETRY_TRANSITION} so the box resizes in the
+ * same frame the rule changes.
  */
 export function resolveMapHeightStyle(
   height: MapResponsive<MapHeight> | undefined,
@@ -133,10 +148,12 @@ export function resolveMapHeightStyle(
 ): CSSProperties {
   const own =
     height === undefined ? undefined : validHeight(resolveMapResponsive(height, breakpoint));
-  if (typeof own === "number") return { height: own };
-  if (own) return { height: "auto", aspectRatio: `${own.aspect} / 1` };
+  if (typeof own === "number") return { ...NO_GEOMETRY_TRANSITION, height: own };
+  if (own) return { ...NO_GEOMETRY_TRANSITION, height: "auto", aspectRatio: `${own.aspect} / 1` };
   const fallback = resolveMapResponsive(DEFAULT_MAP_HEIGHT, breakpoint);
-  return typeof fallback === "number" ? {} : { aspectRatio: `${fallback.aspect} / 1` };
+  return typeof fallback === "number"
+    ? { ...NO_GEOMETRY_TRANSITION }
+    : { ...NO_GEOMETRY_TRANSITION, aspectRatio: `${fallback.aspect} / 1` };
 }
 
 // ── Measuring ────────────────────────────────────────────────────────────────

@@ -115,6 +115,13 @@ function applyProjection(map: MapLibreGL.Map, projection: MapLibreGL.ProjectionS
   map.setProjection(projection);
 }
 
+/** A box's measured size as a comparable key, or `null` while it has none. */
+function boxSize(node: HTMLElement): string | null {
+  const { width, height } = node.getBoundingClientRect();
+  if (!(width > 0) || !(height > 0)) return null;
+  return `${Math.round(width)}×${Math.round(height)}`;
+}
+
 /** The imperative handle exposed by `<MapCanvas ref>`: the MapLibre map itself. */
 export type MapCanvasRef = MapLibreGL.Map;
 
@@ -284,6 +291,33 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
   const heightRef = useRef(height);
   heightRef.current = height;
 
+  // ── Keeping a bounds-framed map framed ─────────────────────────────────────
+  // MapLibre fits `bounds` ONCE, against the box it measures at construction.
+  // A box that settles later — a responsive height resolving after the first
+  // paint, a side panel opening, a tier flip — leaves the viewport fitted to a
+  // rectangle that no longer exists (a 348×218 fit kept on a 348×348 box put
+  // North America on a Lake Ontario locator). So: re-fit whenever the box
+  // changes size, until someone moves the map themselves.
+  const { bounds, fitBoundsOptions } = props;
+  const refitRef = useRef({ bounds, fitBoundsOptions });
+  refitRef.current = { bounds, fitBoundsOptions };
+  const isControlledRef = useRef(isControlled);
+  isControlledRef.current = isControlled;
+  /** `true` once a gesture (or the controlled `viewport`) owns the viewport. */
+  const userMovedRef = useRef(false);
+  /** The box size the current viewport was fitted against. */
+  const fittedSizeRef = useRef<string | null>(null);
+
+  const syncBox = useCallback((map: MapLibreGL.Map, node: HTMLElement) => {
+    const size = boxSize(node);
+    if (!size || size === fittedSizeRef.current) return;
+    fittedSizeRef.current = size;
+    map.resize();
+    const { bounds: currentBounds, fitBoundsOptions: currentOptions } = refitRef.current;
+    if (!currentBounds || userMovedRef.current || isControlledRef.current) return;
+    map.fitBounds(currentBounds, { ...currentOptions, duration: 0 });
+  }, []);
+
   // Initialize the map.
   useEffect(() => {
     if (!containerRef.current) return;
@@ -364,9 +398,21 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
       onViewportChangeRef.current?.(getViewport(map));
     };
 
+    // A gesture carries the DOM event that caused it; our own `fitBounds` /
+    // `jumpTo` does not. Once a person has moved the map, a later box change
+    // resizes the canvas but must never yank the view back to `bounds`.
+    const handleMoveStart = (event?: { originalEvent?: unknown }) => {
+      if (event?.originalEvent) userMovedRef.current = true;
+    };
+
+    // The size the constructor fitted `bounds` against — the baseline every
+    // later box change is compared to.
+    fittedSizeRef.current = boxSize(containerRef.current);
+
     map.on("load", loadHandler);
     map.on("styledata", styleDataHandler);
     map.on("move", handleMove);
+    map.on("movestart", handleMoveStart);
     setMapInstance(map);
 
     return () => {
@@ -374,6 +420,7 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
       map.off("load", loadHandler);
       map.off("styledata", styleDataHandler);
       map.off("move", handleMove);
+      map.off("movestart", handleMoveStart);
       map.remove();
       setIsLoaded(false);
       setIsStyleLoaded(false);
@@ -451,13 +498,27 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     mapInstance.getCanvas().tabIndex = isStatic ? -1 : 0;
   }, [mapInstance, isStatic]);
 
+  // Watch the box: any size change resizes the canvas and re-fits `bounds`.
+  useEffect(() => {
+    if (!mapInstance || !containerNode) return undefined;
+    const sync = () => syncBox(mapInstance, containerNode);
+    sync();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(sync);
+    observer.observe(containerNode);
+    return () => observer.disconnect();
+  }, [mapInstance, containerNode, syncBox]);
+
   // A tier change can swap the box's height (the default goes square at
-  // `narrow`); resize straight away rather than wait on MapLibre's observer.
+  // `narrow`); sync at commit rather than wait on the observer's next frame.
   const heightStyle = resolveMapHeightStyle(height, breakpoint);
   const heightKey = `${heightStyle.height ?? ""}|${heightStyle.aspectRatio ?? ""}`;
+  const appliedHeightKeyRef = useRef(heightKey);
   useEffect(() => {
-    mapInstance?.resize();
-  }, [mapInstance, heightKey]);
+    if (!mapInstance || !containerNode || heightKey === appliedHeightKeyRef.current) return;
+    appliedHeightKeyRef.current = heightKey;
+    syncBox(mapInstance, containerNode);
+  }, [mapInstance, containerNode, heightKey, syncBox]);
 
   // Furniture outside the map box (legends `above` / `below`, the narrow
   // annotation key) portals into strips rendered only while something asks.
