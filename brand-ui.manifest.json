@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T12:33:30.901Z",
+  "generatedAt": "2026-09-20T13:26:47.230Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1267,6 +1267,36 @@
       "type": "registry:block",
       "title": "Catalog guardrail",
       "description": "A surface that tries custom styles, an iframe, an inline handler and an unknown event, refused with every problem and its path, next to the repaired surface the agent sent after reading that list."
+    },
+    {
+      "name": "a2ui-assistant-page",
+      "type": "registry:block",
+      "title": "Template — Generative UI assistant",
+      "description": "An assistant that answers with screens: five real conversations (a refund decision, an analytics answer with charts, an incident form, a release plan, a surface the catalog refuses) streamed in as A2UI data and rendered from the merged ui + charts catalog. Every click and change reaches the app as a named action that drives the next turn; the inspector shows the wire JSON, the action log and the catalog."
+    },
+    {
+      "name": "document-parts",
+      "type": "registry:block",
+      "title": "Document block parts",
+      "description": "Shared by every document block: a fictional supplier data room (a contract, a policy, a quality report, a defect log, a batch record, an inspection log, a chart and a source file) as FileSource values."
+    },
+    {
+      "name": "document-library-01",
+      "type": "registry:block",
+      "title": "Document library",
+      "description": "A data room with the file open beside the list: folders, a filter and one FileViewer that renders markdown, CSV, JSON, code, logs and images through lazily loaded adapters, with the viewer's own toolbar, find-in-document, pager and zoom."
+    },
+    {
+      "name": "answer-with-sources-01",
+      "type": "registry:block",
+      "title": "Answer with sources",
+      "description": "An answer whose numbered citations open the source document at the quoted sentence: the viewer swaps files, locates the quote, scrolls to it and marks it — and says so when a cited passage is not in the file."
+    },
+    {
+      "name": "document-review-01",
+      "type": "registry:block",
+      "title": "Document review",
+      "description": "Findings beside the contract they point at: selecting one scrolls to the clause and marks it, verdict buttons record the decision and advance the queue, and progress and the open filter derive from the verdicts."
     }
   ],
   "templates": [
@@ -41895,7 +41925,7 @@
       "props": {
         "AccordionTrigger": {
           "extends": [
-            "ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>"
+            "ComponentPropsWithoutRef<\n  typeof AccordionPrimitive.Trigger\n>"
           ],
           "props": [
             {

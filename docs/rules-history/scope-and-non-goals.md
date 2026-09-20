@@ -54,5 +54,5 @@ A component library that grows a runtime becomes lock-in and stops being composa
 opposite of the source-owned, build-with-it model (D1, D4). Keeping model/transport concerns
 out of `@elabs-ai/components-*` is what lets many apps and many agents drive the same components. The
 import-discipline half (types-only `ai`) is in
-[`ai-sdk-vs-a2ui.md`](../../.claude/rules/ai-sdk-vs-a2ui.md) (D6) and enforced by a CI gate + hook (ADR
+`ai-sdk-vs-a2ui.md` (D6, since consolidated into `.claude/rules/ai.md`) and enforced by a CI gate + hook (ADR
 [`0008`](../ADR/0008-ai-sdk-types-only-dependency.md)).

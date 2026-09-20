@@ -88,11 +88,13 @@ export function useStreamedSurface(
     setLength(full.length);
   }, [full.length, stop]);
 
+  // For one render after a NEW spec arrives, `length` still belongs to the previous one.
+  const received = Math.min(length, full.length);
   return {
-    text: full.slice(0, length),
+    text: full.slice(0, received),
     full,
-    isStreaming: length < full.length,
-    progress: full.length === 0 ? 1 : length / full.length,
+    isStreaming: received < full.length,
+    progress: full.length === 0 ? 1 : received / full.length,
     replay: start,
     finish,
   };

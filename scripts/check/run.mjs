@@ -12,7 +12,7 @@
  *     --list              id, scope, baseline, doc
  *     --update-baseline   record current results (ratchet down) [--force to raise]
  *     --test              every rule's fixtures + every scripts/**\/*.test.mjs self-test
- *     --docs [--check]    render rule docs into .claude/rules/conventions.md
+ *     --docs [--check]    render rule docs into docs/GATES.md
  *
  * Test seams (used by run.test.mjs): --root, --rules-dir, --baseline-file, --conventions,
  * --commands-file. With --rules-dir and no --commands-file, no commands run, and --test
@@ -38,7 +38,7 @@ import { createFsContext, createMemoryContext } from "./context.mjs";
 import { RULES_DIR, SCOPES, loadRules, runnerFor, validateRules } from "./registry.mjs";
 
 const REPO_ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
-export const CONVENTIONS_PATH = join(REPO_ROOT, ".claude", "rules", "conventions.md");
+export const RULE_DOCS_PATH = join(REPO_ROOT, "docs", "GATES.md");
 export const DOCS_START = "<!-- brand-ui:gen:check-rules:start -->";
 export const DOCS_END = "<!-- brand-ui:gen:check-rules:end -->";
 const FINDINGS_CAP = 50;
@@ -275,7 +275,7 @@ export async function main(argv = [], { log = console.log, error = console.error
   }
   const root = o.root ? resolve(o.root) : REPO_ROOT;
   const baselinePath = o.baselinePath ? resolve(o.baselinePath) : BASELINE_PATH;
-  const conventionsPath = o.conventionsPath ? resolve(o.conventionsPath) : CONVENTIONS_PATH;
+  const conventionsPath = o.conventionsPath ? resolve(o.conventionsPath) : RULE_DOCS_PATH;
   const loaded = await loadRules(o.rulesDir ? resolve(o.rulesDir) : RULES_DIR);
   const all = loaded.map((l) => l.rule);
 
@@ -301,7 +301,7 @@ export async function main(argv = [], { log = console.log, error = console.error
         error(`✖ check --docs: ${conventionsPath} is stale — run \`pnpm gen\`.`);
         return 1;
       }
-      log("✔ check --docs: conventions are up to date.");
+      log("✔ check --docs: the rule catalogue is up to date.");
       return 0;
     }
     if (next !== current) writeFileSync(conventionsPath, next);

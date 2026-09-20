@@ -92,6 +92,19 @@
   },
   {
     "section": "blocks",
+    "slug": "documents-answer-with-sources",
+    "name": "Answer with sources",
+    "group": "Documents",
+    "package": "patterns",
+    "component": "AnswerWithSources",
+    "summary": "An answer whose numbered citations open the source document at the quoted sentence: the viewer swaps files, locates the quote, scrolls to it and marks it — and says so when a cited passage is not in the file.",
+    "question": "How does a reader check an AI answer against the documents it cites?",
+    "block": "answer-with-sources-01",
+    "stories": 1,
+    "first": "patterns-blocks-documents-answer-with-sources--default"
+  },
+  {
+    "section": "blocks",
     "slug": "editorial-charts-area-against-a-threshold",
     "name": "Area Against a Threshold",
     "group": "Editorial Charts",
@@ -466,6 +479,32 @@
     "block": "chart-story-column-diverging-01",
     "stories": 1,
     "first": "patterns-blocks-editorial-charts-diverging-columns--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "documents-document-library",
+    "name": "Document library",
+    "group": "Documents",
+    "package": "patterns",
+    "component": "DocumentLibrary",
+    "summary": "A data room with the file open beside the list: folders, a filter and one FileViewer that renders markdown, CSV, JSON, code, logs and images through lazily loaded adapters, with the viewer's own toolbar, find-in-document, pager and zoom.",
+    "question": "How do I let people open any file without leaving the product?",
+    "block": "document-library-01",
+    "stories": 1,
+    "first": "patterns-blocks-documents-document-library--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "documents-document-review",
+    "name": "Document review",
+    "group": "Documents",
+    "package": "patterns",
+    "component": "DocumentReview",
+    "summary": "Findings beside the contract they point at: selecting one scrolls to the clause and marks it, verdict buttons record the decision and advance the queue, and progress and the open filter derive from the verdicts.",
+    "question": "How do I review a contract finding by finding?",
+    "block": "document-review-01",
+    "stories": 1,
+    "first": "patterns-blocks-documents-document-review--default"
   },
   {
     "section": "blocks",
@@ -5006,6 +5045,19 @@
   },
   {
     "section": "components",
+    "slug": "recipes",
+    "name": "Recipes",
+    "group": "Viewer",
+    "package": "viewer",
+    "component": "FileViewer",
+    "summary": "Render a file the app did not write (upload, signed URL, agent output) — detects the format, loads the matching adapter on demand, draws it with brand-ui components.",
+    "question": "Attachments, uploads, side-by-side revisions and a custom format",
+    "block": null,
+    "stories": 4,
+    "first": "viewer-recipes--attachment-preview"
+  },
+  {
+    "section": "components",
     "slug": "resizable",
     "name": "Resizable",
     "group": "Layout",
@@ -6225,6 +6277,19 @@
     "block": null,
     "stories": 1,
     "first": "patterns-templates-starters-flow-workspace--default"
+  },
+  {
+    "section": "templates",
+    "slug": "generative-ui-assistant",
+    "name": "Generative UI Assistant",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "A2uiAssistantPage",
+    "summary": "An assistant that answers with screens: five real conversations (a refund decision, an analytics answer with charts, an incident form, a release plan, a surface the catalog refuses) streamed in as A2UI data and rendered from the merged ui + charts catalog. Every click and change reaches the app as a named action that drives the next turn; the inspector shows the wire JSON, the action log and the catalog.",
+    "question": "For products where the agent answers with a screen, not a paragraph",
+    "block": "a2ui-assistant-page",
+    "stories": 5,
+    "first": "patterns-templates-ai-products-generative-ui-assistant--default"
   },
   {
     "section": "templates",

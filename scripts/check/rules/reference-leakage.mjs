@@ -45,6 +45,13 @@ const IGNORE = [
  * package source's own JSDoc, so a mention here is a SYMPTOM and the fix is
  * upstream. Counting them would double-count every leak and churn the baseline
  * on every `pnpm gen`, which is how a ratchet stops meaning anything.
+ *
+ * Two shapes qualify. A whole generated FILE matches `GENERATED` below. A
+ * generated REGION inside an otherwise hand-written file is delimited by the
+ * repo's own `brand-ui:gen:<name>:start/end` markers and is matched by
+ * `GEN_REGION` — scoped that way so relocating a generated block into a
+ * hand-written document exempts the block and nothing else. The prose around
+ * it stays fully enforced.
  */
 const GENERATED = [
   /(^|\/)generated(\/|\.)/,
@@ -53,6 +60,11 @@ const GENERATED = [
   /(^|\/)CHANGELOG\.md$/,
   /^llms(\.txt|\/)/,
 ];
+
+const GEN_REGION = {
+  start: /<!--\s*brand-ui:gen:[\w-]+:start\s*-->/,
+  end: /<!--\s*brand-ui:gen:[\w-]+:end\s*-->/,
+};
 
 const GLOBS = [
   "packages/*/{src,lib,bin,schemas}/**/*.{ts,tsx,mjs,cjs,js,json,md,mdx,css}",
@@ -80,8 +92,12 @@ export function scanReferenceLeakage(ctx) {
       continue;
     }
 
+    const fileIsGenerated = GENERATED.some((g) => g.test(file));
+    let inGenRegion = false;
     let offset = 0;
     for (const line of text.split("\n")) {
+      if (GEN_REGION.start.test(line)) inGenRegion = true;
+      else if (GEN_REGION.end.test(line)) inGenRegion = false;
       const spans = specifierSpans(line);
       for (const p of PRODUCTS) {
         p.re.lastIndex = 0;
@@ -96,7 +112,7 @@ export function scanReferenceLeakage(ctx) {
               `third-party product name \`${m[0]}\` in a ${zone} surface — ` +
               "attribution and theme files are the only places a product may be named" +
               (context === "unclassified" ? "" : ` (reads as a ${context})`),
-            ...(p.tier === "review" || GENERATED.some((g) => g.test(file)) ? { warn: true } : {}),
+            ...(p.tier === "review" || fileIsGenerated || inGenRegion ? { warn: true } : {}),
           });
         }
       }

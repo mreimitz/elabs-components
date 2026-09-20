@@ -20,7 +20,7 @@ A single global bump to satisfy the load-bearing case is wrong, and the math pro
 it: to clear 3:1 vs a white card, `--border` L would have to drop from 0.92 to ~0.67
 (light/light) — a heavy mid-gray hairline on _every_ card, table, input, and
 divider, which visibly breaks brand-ui's stated "restrained, modern enterprise SaaS,
-app-first" aesthetic ([`.claude/rules/design-system.md`](../../.claude/rules/design-system.md)).
+app-first" aesthetic ([`design-system.md`](../rules-history/design-system.md)).
 WCAG 1.4.11 compliance is **pair-relative**, so one global token over-corrects.
 
 ## Decision
@@ -47,7 +47,7 @@ as the policy that makes the subtle default compliant.**
   non-text 3:1 gate asserting `border-strong` and `input` ≥ 3:1 on `--card` and
   `--background` in all themes — so the calibration can't regress.
 - **Placement policy** in
-  [`.claude/rules/styling-and-tokens.md`](../../.claude/rules/styling-and-tokens.md):
+  [`styling-and-tokens.md`](../rules-history/styling-and-tokens.md):
   redundant boundary → `border`; sole structural cue → `border-strong`; form field →
   `border-input`. Decision test: _"If I deleted this line, could a sighted user still
   tell the two regions apart?"_
@@ -57,7 +57,7 @@ as the policy that makes the subtle default compliant.**
 - **Global `--border` bump to ≥3:1 (Option 1).** Simplest and most uniform, but the
   math forces a heavy mid-gray hairline on every surface — it optimizes the contrast
   number over the goal (a restrained system that is _also_ compliant), exactly the
-  "false rigor" [`conceptual-framing.md`](../../.claude/rules/conceptual-framing.md)
+  "false rigor" [`conceptual-framing.md`](../rules-history/conceptual-framing.md)
   warns against. Rejected.
 - **Pure content-/elevation-cue (Option 3).** Lean on the 1.4.11 redundant-boundary
   exemption everywhere and never add a strong token. Correct for decorative edges, but

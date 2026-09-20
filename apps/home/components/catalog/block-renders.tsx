@@ -883,6 +883,40 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
+  "a2ui-assistant-page": dynamic(
+    () =>
+      import("../blocks/a2ui-assistant-page/a2ui-assistant-page").then((m) => {
+        const Page = m.default;
+        return function Framed() {
+          return <Page frame="container" />;
+        };
+      }),
+    { ssr: false, loading: pending },
+  ),
+  "document-library-01": dynamic(
+    () => import("../blocks/document-library-01/document-library").then((m) => m.DocumentLibrary),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "answer-with-sources-01": dynamic(
+    () =>
+      import("../blocks/answer-with-sources-01/answer-with-sources").then(
+        (m) => m.AnswerWithSources,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "document-review-01": dynamic(
+    () => import("../blocks/document-review-01/document-review").then((m) => m.DocumentReview),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
 };
 
 /**

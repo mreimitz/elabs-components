@@ -86,6 +86,51 @@ const PATTERNS = [
   },
 ];
 
+/**
+ * A BARE (unquoted) number after a COLON is serialised data, not a credential —
+ * and rewriting one destroys the file it sits in. `"floorTokens": 108543` in
+ * this skill's own `usage-forensics.json` matched the assigned-secret pattern
+ * (the key ends in "Tokens") and became `"floorTokens": [REDACTED:…]`, which is
+ * not JSON: 46 numeric fields eaten, and the whole evidence file unparseable.
+ *
+ * The exemption is deliberately the smallest one that fixes that, because this
+ * is a security seam. It needs ALL FOUR of:
+ *   1. no quotes — a QUOTED value is still redacted whatever it holds, digits
+ *      included, so no secret-shaped STRING stops being caught;
+ *   2. the whole value is a number (hex `0x…` is not a number here, on purpose);
+ *   3. the separator is a COLON — the JSON/YAML/markdown `key: value` shape;
+ *   4. the KEY does not END in a credential word (`SECRET_KEY_TAIL`). Testing
+ *      the value alone was not enough: it let `password: 12345678`,
+ *      `api_token: 9876543210987654` and `"secret": 12345678901234` through,
+ *      which is exactly the leak this seam exists to stop. The counting fields
+ *      that motivated the exemption are PLURAL (`floorTokens`, `tokens`,
+ *      `modelledCacheReadTokens` — every numeric key in this skill's own
+ *      evidence files), and a plural does not end in the singular word, so the
+ *      JSON round-trip stays intact.
+ *
+ * Shell-shaped assignments are untouched: `password=12345678` and
+ * `--password 12345678` still redact, so nothing that could plausibly carry a
+ * numeric credential through a captured command line stops being caught.
+ */
+const BARE_NUMBER = /^[+-]?\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+const COLON_ASSIGNMENT = /:\s*$/;
+
+/**
+ * A key whose name ends in one of these IS the credential, so its value is
+ * redacted whatever shape it has. Anchored at the END on purpose: `api_token`
+ * matches, `floorTokens` and `tokenCount` do not.
+ */
+const SECRET_KEY_TAIL =
+  /(?:password|passwd|secret|credentials?|token|auth|apikey|privatekey|accesskey)$/;
+
+/** Strip quotes, separator and word punctuation to compare the key itself. */
+function keyTail(prefix) {
+  return prefix
+    .replace(/["'`]?\s*[:=]\s*$/, "")
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toLowerCase();
+}
+
 /** Length classes keep some signal without keeping any of the value. */
 function lengthClass(n) {
   if (n < 16) return "short";
@@ -115,14 +160,24 @@ export function redactWithStats(input) {
     // Fresh lastIndex per call — these regexes are module-level and /g.
     re.lastIndex = 0;
     text = text.replace(re, (match, ...rest) => {
-      hits[name] = (hits[name] ?? 0) + 1;
       if (name === "assigned-secret" || name === "flag-secret") {
         // groups: (1) key + separator, (2) optional quote, (3) value.
+        const [prefix, quote, value] = rest;
+        // A serialised numeric field is left exactly as it was found, and is
+        // not even counted as a hit — it was never a secret (see BARE_NUMBER).
+        if (
+          !quote &&
+          BARE_NUMBER.test(value) &&
+          COLON_ASSIGNMENT.test(prefix) &&
+          !SECRET_KEY_TAIL.test(keyTail(prefix))
+        )
+          return match;
+        hits[name] = (hits[name] ?? 0) + 1;
         // The key is KEPT — a field named `password` is information the report
         // wants; only its value is destroyed.
-        const [prefix, quote, value] = rest;
         return `${prefix}${quote}${placeholder(kind, value)}${quote}`;
       }
+      hits[name] = (hits[name] ?? 0) + 1;
       if (name === "url-userinfo") {
         const scheme = rest[0];
         return `${scheme}://${placeholder(kind, match)}@`;

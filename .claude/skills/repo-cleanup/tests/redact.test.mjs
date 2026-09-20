@@ -149,3 +149,78 @@ test("redact is total: empty and non-string inputs do not throw", () => {
   assert.equal(redact(undefined), "");
   assert.equal(redact(null), "");
 });
+
+test("a numeric field named like a secret survives a JSON round-trip", () => {
+  // Regression: `.repo-cleanup/evidence/usage-forensics.json` was written as
+  // INVALID JSON. `"floorTokens": 108543` matched the assigned-secret pattern
+  // (the key ends in "Tokens") and the NUMBER was replaced by a bracketed
+  // placeholder, so the evidence file no longer parsed. 46 fields were eaten
+  // across one file. A bare, unquoted number is a measurement, not a
+  // credential — quoted values are still redacted (see the next test).
+  const evidence = {
+    floorTokens: 108543,
+    modelledCacheReadTokens: 2117424,
+    splitCacheReadTokens: -1234.5,
+    authRetryDelayMs: 1.25e7,
+    note: "ordinary prose about tokens and auth",
+  };
+  const out = redact(JSON.stringify(evidence, null, 2));
+  const parsed = JSON.parse(out); // threw before the fix
+  assert.deepEqual(parsed, evidence, "redact() rewrote a numeric measurement");
+});
+
+test("a numeric secret is still redacted unless it is a serialised JSON field", () => {
+  // The exemption must be exactly "unquoted number after a colon", nothing
+  // wider. A quoted value still goes whatever it holds, and a shell-shaped
+  // assignment — where a numeric password is plausible — is untouched.
+  const cases = [
+    ['{"password": "108543219876"}', "108543219876"],
+    ["token='9876543210'", "9876543210"],
+    ["--auth-token '1234567890'", "1234567890"],
+    ["password=12345678", "12345678"],
+    ["mysql -u root --password 987654321", "987654321"],
+    ["PGPASSWORD=1234567890 psql", "1234567890"],
+  ];
+  for (const [input, secret] of cases) {
+    const out = redact(input);
+    assert.ok(!out.includes(secret), `missed a quoted numeric secret: ${input}`);
+    assert.match(out, /\[REDACTED:SECRET_ASSIGNMENT/);
+  }
+});
+
+test("a colon-assigned number IS redacted when the key itself is the credential", () => {
+  // The exemption originally tested only the VALUE's shape, so these three
+  // leaked into evidence files unredacted. A field whose NAME ends in a
+  // credential word is a credential whatever it holds.
+  const cases = [
+    ["password: 12345678", "12345678"],
+    ["api_token: 9876543210987654", "9876543210987654"],
+    ['"secret": 12345678901234', "12345678901234"],
+    ['"apiKey": 1234567890', "1234567890"],
+    ["client_secret: 12345678", "12345678"],
+    ["credentials: 12345678", "12345678"],
+  ];
+  for (const [input, secret] of cases) {
+    const out = redact(input);
+    assert.ok(!out.includes(secret), `numeric secret survived: ${input}`);
+    assert.match(out, /\[REDACTED:SECRET_ASSIGNMENT/);
+  }
+});
+
+test("a counting field keeps the exemption — the key is plural, not a credential", () => {
+  // The two halves must not collide: these are the numeric keys that actually
+  // occur in this skill's own evidence output, and every one of them must
+  // survive byte-identical or the JSON regression comes straight back.
+  const kept = [
+    '"floorTokens": 108543',
+    '"modelledCacheReadTokens": 399590885',
+    '"splitCacheReadTokens": 2117424',
+    '"alwaysLoadedEstimatedTokens": 108543',
+    '"tokens": 1234567',
+    '"tokenCount": 1234567',
+    "authRetryDelayMs: 12500000",
+  ];
+  for (const input of kept) {
+    assert.equal(redact(input), input, `rewrote a measurement: ${input}`);
+  }
+});

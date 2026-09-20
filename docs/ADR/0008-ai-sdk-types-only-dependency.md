@@ -37,8 +37,8 @@ in [`docs/DECISIONS.md`](../DECISIONS.md).
   or a second message model (A2UI/AG-UI) — is a mapping edit, not a repo-wide sweep.
 - This is **enforced, not just stated**: the gate `scripts/check-ai-sdk-types-only.mjs`
   fails CI (`pnpm ai:types-only`) on any runtime import, and a warn-only PostToolUse
-  hook (`.claude/hooks/check-ai-sdk-types-only.sh`) flags it at edit time. Operational
-  rule: [`.claude/rules/ai-sdk-vs-a2ui.md`](../../.claude/rules/ai-sdk-vs-a2ui.md) (D6).
+  hook (`.claude/hooks/check-ai-sdk-types-only.sh`) flags it at edit time. This guidance
+  (formerly its own rule file) is now covered by `.claude/rules/ai.md` (D6).
 
 ## Alternatives considered
 

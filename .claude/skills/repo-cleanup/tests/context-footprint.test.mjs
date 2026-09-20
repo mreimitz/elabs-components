@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
@@ -175,4 +175,75 @@ test("CLI entrypoint emits parseable JSON and writes nothing", () => {
   assert.equal(json.schema, "repo-cleanup/context-footprint@1");
   const after = execFileSync("git", ["status", "--porcelain"], { cwd: HERE, encoding: "utf8" });
   assert.equal(before, after, "a read-only analyzer changed the working tree");
+});
+
+/**
+ * Regression: every `.claude/rules/*.md` was counted as always-loaded. A rule
+ * carrying `paths:` frontmatter loads only when a matching file is touched, so
+ * the per-request figure was overstated — by 32,539 bytes in the repo that
+ * reported this, where 9 of 12 rule files are path-scoped.
+ *
+ * Built in a temp dir rather than the shared node-app fixture, so the numbers
+ * asserted here belong to this test alone.
+ */
+function scaffoldRules() {
+  const root = mkdtempSync(join(tmpdir(), "repo-cleanup-rules-"));
+  const rules = join(root, ".claude", "rules");
+  mkdirSync(rules, { recursive: true });
+  writeFileSync(join(root, "CLAUDE.md"), "# project\n");
+  writeFileSync(join(rules, "always.md"), "# always-on rule\n");
+  writeFileSync(
+    join(rules, "scoped-list.md"),
+    '---\npaths:\n  - "packages/ai/**"\n  - "packages/terminal/**"\n---\n\n# scoped\n',
+  );
+  writeFileSync(join(rules, "scoped-inline.md"), '---\npaths: ["registry/**"]\n---\n\n# scoped\n');
+  return root;
+}
+
+test("a rule with `paths:` frontmatter is path-scoped, not always-loaded", () => {
+  const root = scaffoldRules();
+  try {
+    const r = measure(root);
+    const byPath = Object.fromEntries(r.instructions.map((e) => [e.path, e]));
+    const always = byPath[join(".claude", "rules", "always.md")];
+    const scopedList = byPath[join(".claude", "rules", "scoped-list.md")];
+    const scopedInline = byPath[join(".claude", "rules", "scoped-inline.md")];
+
+    assert.equal(always.alwaysLoaded, true, "a rule with no `paths:` is still per-request");
+    assert.equal(scopedList.alwaysLoaded, false, "`paths:` means conditional, not per-request");
+    assert.equal(scopedList.scope, "project-rules-scoped");
+    assert.deepEqual(scopedList.matchPaths, ["packages/ai/**", "packages/terminal/**"]);
+    assert.deepEqual(scopedInline.matchPaths, ["registry/**"], "the inline list form is read too");
+
+    // Both numbers are kept, and they are distinguishable.
+    assert.equal(
+      r.totals.alwaysLoadedBytes,
+      byPath["CLAUDE.md"].bytes + always.bytes,
+      "a path-scoped rule must not inflate the per-request figure",
+    );
+    assert.equal(r.totals.pathScopedRuleBytes, scopedList.bytes + scopedInline.bytes);
+    assert.equal(
+      r.totals.instructionBytesIfEveryScopeMatched,
+      r.totals.alwaysLoadedBytes + r.totals.conditionalInstructionBytes,
+    );
+    assert.ok(
+      r.totals.pathScopedRuleBytes > 0 &&
+        r.totals.alwaysLoadedBytes < r.totals.instructionBytesIfEveryScopeMatched,
+      "sanity: the two figures are genuinely different here",
+    );
+
+    // Every total a report might quote says what it means.
+    for (const key of Object.keys(r.totalsLegend)) {
+      assert.ok(key in r.totals, `legend describes a total that does not exist: ${key}`);
+    }
+    assert.match(r.totalsLegend.alwaysLoadedBytes, /EVERY request/);
+    assert.match(r.totalsLegend.instructionBytesIfEveryScopeMatched, /never quote this/);
+
+    const obs = r.observations.find((o) => o.code === "CTX.path-scoped-rules");
+    assert.ok(obs, "path-scoped rules must be reported, not silently dropped");
+    assert.equal(obs.data.files, 2);
+    assert.equal(obs.data.bytes, r.totals.pathScopedRuleBytes);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
