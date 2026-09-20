@@ -115,6 +115,45 @@ function applyProjection(map: MapLibreGL.Map, projection: MapLibreGL.ProjectionS
   map.setProjection(projection);
 }
 
+/**
+ * Hide (or restore) the basemap's OWN text labels — every symbol layer that
+ * draws a `text-field` (c-6 / c-11).
+ *
+ * A basemap's labels are drawn for a full-size map. Inside a 96 px inset they
+ * are sliced mid-word by the frame ("EUROP", "AMERIC") and louder than the
+ * globe they caption; on a locator they print a place name the editorial
+ * marker names again 16 px away. Both are the Datawrapper recipe's answer:
+ * the basemap draws the ground, the map's own labels do the naming.
+ *
+ * `hidden` records what THIS call turned off, so restoring never reveals a
+ * layer the style itself shipped hidden.
+ */
+function applyBasemapLabels(map: MapLibreGL.Map, visible: boolean, hidden: Set<string>) {
+  let style: MapLibreGL.StyleSpecification | undefined;
+  try {
+    style = map.getStyle?.();
+  } catch {
+    // style mid-reload
+    return;
+  }
+  if (!style?.layers) return;
+  if (visible) {
+    for (const id of hidden) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "visible");
+    }
+    hidden.clear();
+    return;
+  }
+  for (const layer of style.layers) {
+    if (layer.type !== "symbol") continue;
+    if (!layer.layout || !("text-field" in layer.layout)) continue;
+    if (hidden.has(layer.id)) continue;
+    if (map.getLayoutProperty?.(layer.id, "visibility") === "none") continue;
+    map.setLayoutProperty(layer.id, "visibility", "none");
+    hidden.add(layer.id);
+  }
+}
+
 /** A box's measured size as a comparable key, or `null` while it has none. */
 function boxSize(node: HTMLElement): string | null {
   const { width, height } = node.getBoundingClientRect();
@@ -147,6 +186,14 @@ export type MapCanvasProps = {
    * visualizations. Ignored when an explicit `styles` prop is provided.
    */
   blank?: boolean;
+  /**
+   * Draw the basemap's own place labels. `false` leaves the ground and hides
+   * every text label the basemap style carries, so the map's own labels
+   * (`MapMarker`'s `label`, `MapAnnotation`) are the only naming on it — the
+   * locator recipe, and the default inside `MapInset`, where a full-size
+   * label is sliced by the frame. Default `true`.
+   */
+  basemapLabels?: boolean;
   /**
    * Map projection: `"mercator"` (MapLibre's default) or `"globe"` for a 3D
    * globe view, or a full MapLibre projection spec. Feature-detected: a
@@ -218,6 +265,7 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     theme: themeProp,
     styles,
     blank = false,
+    basemapLabels = true,
     projection: projectionProp,
     viewport,
     onViewportChange,
@@ -478,6 +526,14 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     applyProjection(mapInstance, projection);
   }, [mapInstance, isStyleLoaded, projection]);
 
+  // Basemap labels on / off (c-6, c-11). Re-runs after every style load, so a
+  // theme flip (which swaps the whole style) does not bring the labels back.
+  const hiddenLabelLayersRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!mapInstance || !isStyleLoaded) return;
+    applyBasemapLabels(mapInstance, basemapLabels, hiddenLabelLayersRef.current);
+  }, [mapInstance, isStyleLoaded, basemapLabels, themeKey]);
+
   // Static mode on / off after mount. Untouched until the map is first made
   // static, so an interactive map keeps MapLibre's own setup exactly.
   const handlerOptionsRef = useRef<Partial<Record<GestureHandlerKey, unknown>>>(props);
@@ -497,6 +553,15 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     mapInstance.getCanvasContainer().classList.toggle("maplibregl-interactive", !isStatic);
     mapInstance.getCanvas().tabIndex = isStatic ? -1 : 0;
   }, [mapInstance, isStatic]);
+
+  // c-10: the canvas is a tab stop MapLibre owns, so before this it painted
+  // the BROWSER's default focus ring (`1px auto rgb(0, 95, 204)` in light,
+  // `rgb(153, 200, 255)` in dark) — visible, but not the theme's. The house
+  // indicator is a utility class, so the element simply wears it.
+  useEffect(() => {
+    if (!mapInstance) return;
+    mapInstance.getCanvas()?.classList.add("focus-ring");
+  }, [mapInstance]);
 
   // Watch the box: any size change resizes the canvas and re-fits `bounds`.
   useEffect(() => {

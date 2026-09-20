@@ -26,6 +26,13 @@ export interface MapInsetProps extends HTMLAttributes<HTMLDivElement> {
   styles?: MapCanvasProps["styles"];
   /** A tile-less inset — pair it with your own layers via `styles`. */
   blank?: boolean;
+  /**
+   * Draw the basemap's own place labels inside the inset. Default `false`
+   * (c-6): a basemap's labels are sized for a full map, so in an 88–128 px
+   * frame they are sliced mid-word ("EUROP", "AMERIC") and read louder than
+   * the globe they caption. An inset is a locator SHAPE, not a second map.
+   */
+  basemapLabels?: boolean;
 }
 
 /** How many zoom levels a `region` inset sits below the main map. */
@@ -49,9 +56,17 @@ function readView(map: NonNullable<ReturnType<typeof useMap>["map"]>): MainView 
   };
 }
 
-/** The zoom at which a globe fills ~90 % of a `width`-px box at `latitude`. */
-function globeZoom(width: number, latitude: number): number {
-  const scale = (0.9 * width * Math.PI * Math.cos((latitude * Math.PI) / 180)) / 512;
+/**
+ * The zoom at which a globe fills ~90 % of a `width`-px box.
+ *
+ * Latitude-independent on purpose (c-6): the old `cos(latitude)` factor is
+ * Mercator's scale correction, and a globe projection does not stretch with
+ * latitude — it only made the sphere shrink the further the main map sat from
+ * the equator (a Toronto locator's globe came out ~28 % narrower than the same
+ * globe over the Gulf of Guinea).
+ */
+function globeZoom(width: number): number {
+  const scale = (0.9 * width * Math.PI) / 512;
   return Math.log2(Math.max(scale, 1e-3));
 }
 
@@ -135,10 +150,7 @@ function InsetFollower({ view, kind }: { view: MainView; kind: MapInsetKind }) {
   useEffect(() => {
     if (!map || !isLoaded) return;
     const width = boxWidth || map.getContainer().clientWidth;
-    const zoom =
-      kind === "globe"
-        ? globeZoom(width, view.center[1])
-        : Math.max(0, view.zoom - REGION_ZOOM_OUT);
+    const zoom = kind === "globe" ? globeZoom(width) : Math.max(0, view.zoom - REGION_ZOOM_OUT);
     map.jumpTo({ center: view.center, zoom });
 
     const [west, south, east, north] = view.bounds;
@@ -185,6 +197,7 @@ export const MapInset = forwardRef<HTMLDivElement, MapInsetProps>(function MapIn
     size: sizeProp = { base: 128, narrow: 88 },
     styles,
     blank,
+    basemapLabels = false,
     className,
     style,
     ...props
@@ -241,6 +254,7 @@ export const MapInset = forwardRef<HTMLDivElement, MapInsetProps>(function MapIn
           projection={kind === "globe" ? "globe" : undefined}
           styles={styles}
           blank={blank}
+          basemapLabels={basemapLabels}
         >
           <InsetFollower view={view} kind={kind} />
         </MapCanvas>
