@@ -658,3 +658,55 @@ describe("test double — axis contract (RM-108)", () => {
     ).toThrow(/"fit" must be one of/);
   });
 });
+
+describe("XAxis — month labels thin instead of printing through each other (RM-127, b-2)", () => {
+  // The `infographic-annotated-trend-01` block's own series: 20 weekly points
+  // in a 280 px card. Its four month labels read "May 26Jun 26Jul 26Aug 26" —
+  // measured overlaps 110.4 / 68.8 / 64.0 px² at 380, 600 and 900 px alike,
+  // because the card, not the viewport, sets the plot width.
+  const weekly20 = Array.from({ length: 20 }, (_, i) => ({
+    date: new Date(2026, 3, 6 + i * 7),
+    value: 500 + i,
+  }));
+
+  function paintedLabels(width: number): string[] {
+    parentSize.width = width;
+    const { container } = render(
+      <LineChart data={weekly20}>
+        <XAxis periodTicks="week" />
+      </LineChart>,
+    );
+    const labels = [...container.querySelectorAll('[data-slot="x-axis"] span')].map(
+      (node) => node.textContent ?? "",
+    );
+    cleanup();
+    parentSize.width = 560;
+    return labels;
+  }
+
+  /** `x-axis.tsx`'s own rough estimate: 7 px a character plus an 8 px gap. */
+  function estimatedWidthPx(labels: string[]): number {
+    const widest = labels.reduce((longest, label) => Math.max(longest, label.length), 0);
+    return labels.length * (widest * 7 + 8);
+  }
+
+  it("keeps every label inside the plot at the block's measured plot width", () => {
+    // The browser measured the block's plot at ~110 px inside its 280 px card
+    // (four ticks 36 px apart); the chart's own margin is 40 px either side.
+    const labels = paintedLabels(190);
+    const innerWidth = 190 - 80;
+    expect(labels.length).toBeGreaterThanOrEqual(2);
+    expect(estimatedWidthPx(labels)).toBeLessThanOrEqual(innerWidth);
+  });
+
+  it("still prints the denser set when the plot is wide enough for it", () => {
+    const wide = paintedLabels(900);
+    const narrow = paintedLabels(190);
+    expect(wide.length).toBeGreaterThan(narrow.length);
+    // Thinning takes every Nth tick of the SAME calendar step, so the narrow
+    // axis' labels are a subset of the wide one's — same cadence, fewer of them.
+    for (const label of narrow) {
+      expect(wide).toContain(label);
+    }
+  });
+});

@@ -817,6 +817,54 @@ function estimateTickSetWidthPx(count: number, sampleLabel: string): number {
   return count * (sampleLabel.length * CALENDAR_TICK_CHAR_PX + CALENDAR_TICK_GAP_PX);
 }
 
+/** The widest label a tick set paints, for {@link estimateTickSetWidthPx}. */
+function widestLabel(ticks: Date[], resolveDateLabel: (date: Date) => string): string {
+  let widest = "";
+  for (const tick of ticks) {
+    const label = resolveDateLabel(tick);
+    if (label.length > widest.length) {
+      widest = label;
+    }
+  }
+  return widest;
+}
+
+/**
+ * Thins a calendar tick set by an integer STRIDE until its labels fit the plot
+ * (RM-127, b-2). `chooseCalendarStep` picks the sparsest step whose COUNT
+ * lands in the target band, but on a narrow plot even that step can be too
+ * dense and there may be no sparser step in the band at all — a 20-week domain
+ * offers a 1-month step (4 ticks) and then nothing until a 3-month step (1
+ * tick), so the 4 labels were kept and printed through each other: measured on
+ * `patterns-blocks-infographics-annotated-trend--compact`, "May 26"/"Jun 26"
+ * overlapped by 110.4 px², "Jun 26"/"Jul 26" by 68.8 px², "Jul 26"/"Aug 26" by
+ * 64.0 px².
+ *
+ * Taking every 2nd (then 3rd, …) tick keeps the cadence calendar-aligned and
+ * the step's own UNIT intact (the format rung reads the unit, not the count),
+ * which is how a Datawrapper time axis thins. Never goes below two ticks — an
+ * axis still names both ends of its domain — and a set that already fits is
+ * returned untouched.
+ */
+function thinTicksToFit(
+  ticks: Date[],
+  plotWidthPx: number,
+  resolveDateLabel: (date: Date) => string,
+): Date[] {
+  if (ticks.length <= 2 || !Number.isFinite(plotWidthPx) || plotWidthPx <= 0) {
+    return ticks;
+  }
+  const label = widestLabel(ticks, resolveDateLabel);
+  const maxStride = Math.ceil(ticks.length / 2);
+  for (let stride = 1; stride <= maxStride; stride++) {
+    const thinned = ticks.filter((_, index) => index % stride === 0);
+    if (thinned.length <= 2 || estimateTickSetWidthPx(thinned.length, label) <= plotWidthPx) {
+      return thinned;
+    }
+  }
+  return ticks;
+}
+
 /**
  * Picks a calendar STEP (from {@link CALENDAR_STEP_LADDER}) whose resulting
  * tick count lands in a band around `targetCount` — `[targetCount − 1,
@@ -860,6 +908,15 @@ function chooseCalendarStep(
     (candidate) => candidate.ticks.length >= lowerBound && candidate.ticks.length <= upperBound,
   );
 
+  // b-2: whichever candidate wins below, its labels still have to fit — the
+  // ladder's steps are coarse, so the sparsest one IN the band can be denser
+  // than the plot can print. `thinTicksToFit` takes every 2nd/3rd tick of the
+  // winner, keeping the step (and so the format rung) it chose.
+  const fitted = (candidate: { step: CalendarStep; ticks: Date[] }) => ({
+    step: candidate.step,
+    ticks: thinTicksToFit(candidate.ticks, plotWidthPx, resolveDateLabel),
+  });
+
   if (inBand.length === 0) {
     let closest = candidates[0]!;
     let closestDiff = Math.abs(closest.ticks.length - targetCount);
@@ -873,7 +930,7 @@ function chooseCalendarStep(
         closestDiff = diff;
       }
     }
-    return closest;
+    return fitted(closest);
   }
 
   const densestFirst = [...inBand].sort((a, b) => b.ticks.length - a.ticks.length);
@@ -883,7 +940,7 @@ function chooseCalendarStep(
       return candidate;
     }
   }
-  return densestFirst[densestFirst.length - 1]!;
+  return fitted(densestFirst[densestFirst.length - 1]!);
 }
 
 /** `chooseCalendarStep`'s ticks only — `buildDomainTicks`'s own entry point. */
