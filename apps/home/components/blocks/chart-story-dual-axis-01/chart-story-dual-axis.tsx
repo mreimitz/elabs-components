@@ -107,7 +107,22 @@ export function ChartStoryDualAxis({ className }: { className?: string }) {
           yAxisId="right"
         />
         <XAxis />
-        <ChartTooltip variant="table" />
+        <ChartTooltip
+          rows={(point) => [
+            {
+              color: "var(--chart-mono-2)",
+              label: "Parcels delivered",
+              value: Number(point[VOLUME]),
+              unit: "m",
+            },
+            {
+              color: "var(--chart-div-neg-1)",
+              label: "Cost per parcel",
+              value: Number(point[COST]),
+              valueFormat: { prefix: "€ ", decimals: 2 },
+            },
+          ]}
+        />
       </ComposedChart>
     </ChartFrame>
   );

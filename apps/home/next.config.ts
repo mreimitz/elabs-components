@@ -24,6 +24,12 @@ const STORYBOOK_DEV_ROOT_PATHS = [
   "/vite-inject-mocker-entry.js",
   "/sb-preview/:path*",
   "/sb-common-assets/:path*",
+  "/sb-addons/:path*",
+  "/sb-manager/:path*",
+  // Files inside Vite's root (apps/docs) come back as root-absolute module urls; stories in
+  // packages/* are outside it and arrive as /@fs/… instead.
+  "/.storybook/:path*",
+  "/stories/:path*",
 ];
 
 // Workspace packages export their TypeScript source, so Next compiles them.
