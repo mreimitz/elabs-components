@@ -27,6 +27,35 @@ export function planPatternImageId(kind: PlanPatternKind): string {
   return `plan-pattern-${kind}`;
 }
 
+/**
+ * A hatch at `spacing` px, as segments that overshoot the tile on both ends.
+ *
+ * The lines are laid out so the set repeats under a TILE-sized shift in either
+ * axis — that, not the overshoot alone, is what makes the tile seamless. Each
+ * line is written as the two points where it meets the tile's own axes, so one
+ * of them always crosses the tile's middle rather than clipping a corner: a
+ * corner-only line paints nothing and leaves the status untextured.
+ *
+ * `RISING` runs bottom-left to top-right (canvas y grows downward, so these are
+ * the `x + y = c` lines); `FALLING` is its mirror, and the two together are the
+ * crosshatch.
+ */
+const OVERSHOOT = TILE / 2;
+
+function RISING(spacing: number): [number, number, number, number][] {
+  const lines: [number, number, number, number][] = [];
+  for (let c = 0; c <= TILE * 2; c += spacing) {
+    lines.push([-OVERSHOOT, c + OVERSHOOT, TILE + OVERSHOOT, c - TILE - OVERSHOOT]);
+  }
+  return lines;
+}
+
+function FALLING(spacing: number): [number, number, number, number][] {
+  return RISING(spacing).map(
+    ([x1, y1, x2, y2]) => [x1, TILE - y1, x2, TILE - y2] as [number, number, number, number],
+  );
+}
+
 function strokeLines(
   context: CanvasRenderingContext2D,
   lines: [number, number, number, number][],
@@ -64,40 +93,13 @@ export function createPlanPatternTile(
   context.globalAlpha = INK_ALPHA;
   context.strokeStyle = ink;
 
-  // Each set of lines is drawn twice, offset by one tile, so the pattern joins
-  // across tile edges instead of showing a seam.
   if (kind === "diagonal") {
-    strokeLines(
-      context,
-      [
-        [-TILE, TILE, TILE, -TILE],
-        [0, TILE * 2, TILE * 2, 0],
-      ],
-      1.5,
-    );
+    strokeLines(context, RISING(TILE), 1.5);
   } else if (kind === "cross") {
-    strokeLines(
-      context,
-      [
-        [-TILE, TILE, TILE, -TILE],
-        [0, TILE * 2, TILE * 2, 0],
-        [-TILE, -TILE, TILE, TILE],
-        [0, 0, TILE * 2, TILE * 2],
-      ],
-      1.25,
-    );
+    strokeLines(context, [...RISING(TILE), ...FALLING(TILE)], 1.25);
   } else {
     // dense: half the spacing of `diagonal`, so the two never read alike.
-    strokeLines(
-      context,
-      [
-        [-TILE, TILE / 2, TILE / 2, -TILE],
-        [-TILE / 2, TILE, TILE, -TILE / 2],
-        [0, TILE * 1.5, TILE * 1.5, 0],
-        [TILE / 2, TILE * 2, TILE * 2, TILE / 2],
-      ],
-      1.25,
-    );
+    strokeLines(context, RISING(TILE / 2), 1.25);
   }
 
   return canvas;

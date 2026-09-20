@@ -129,12 +129,9 @@ describe("createPlanPatternTile", () => {
     ];
 
     // `cross` hatches both ways; the other two run one way only.
-    const slopes = (state: RecordingContext) =>
-      new Set(
-        state.lines.map((line) =>
-          Math.sign((line.to[1] - line.from[1]) / (line.to[0] - line.from[0])),
-        ),
-      );
+    const slopeSign = (line: DrawnLine) =>
+      Math.sign((line.to[1] - line.from[1]) / (line.to[0] - line.from[0]));
+    const slopes = (state: RecordingContext) => new Set(state.lines.map(slopeSign));
     expect(slopes(diagonal).size).toBe(1);
     expect(slopes(cross).size).toBe(2);
     // `dense` is the same direction as `diagonal` at half the spacing, so it
@@ -150,6 +147,28 @@ describe("createPlanPatternTile", () => {
         expect(coordinates.some((value) => value < 0 || value > 16)).toBe(true);
       }
     }
+
+    // …and every line actually crosses the tile's middle third. A hatch line
+    // that only clips a corner passes every assertion above while painting
+    // nothing: the status then has no texture at all, which is how a
+    // corner-only `cross` shipped looking exactly like `dense`.
+    const crossesTheMiddle = (line: DrawnLine) => {
+      const [x1, y1] = line.from;
+      const [x2, y2] = line.to;
+      for (let step = 0; step <= 100; step += 1) {
+        const t = step / 100;
+        const x = x1 + (x2 - x1) * t;
+        const y = y1 + (y2 - y1) * t;
+        if (x > 16 / 3 && x < (16 * 2) / 3 && y > 16 / 3 && y < (16 * 2) / 3) return true;
+      }
+      return false;
+    };
+    for (const state of recorded) {
+      expect(state.lines.filter(crossesTheMiddle).length).toBeGreaterThan(0);
+    }
+    // `cross` crosses the middle in BOTH directions — the crosshatch is the
+    // whole point of it being a separate texture.
+    expect(new Set(cross.lines.filter(crossesTheMiddle).map(slopeSign)).size).toBe(2);
   });
 });
 
