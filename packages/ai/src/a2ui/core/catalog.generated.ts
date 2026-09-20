@@ -45,7 +45,14 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
   },
   AccordionTrigger: {
     children: true,
-    props: {},
+    props: {
+      headingLevel: {
+        type: "number",
+        enum: [2, 3, 4, 5, 6],
+        description:
+          "The heading level Radix's `Accordion.Header` renders. Radix hardcodes `h3`, which skips a level whenever the accordion sits directly under the page `h1` — so…",
+      },
+    },
     events: {},
     source: "@elabs-ai/components-ui",
   },

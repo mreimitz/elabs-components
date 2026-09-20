@@ -1,4 +1,5 @@
 {
+  "A2uiAssistantPage": "patterns-templates-ai-products-generative-ui-assistant--docs",
   "A2uiDecision": "patterns-blocks-generative-ui-agent-asks-for-a-decision--docs",
   "A2uiForm": "patterns-blocks-generative-ui-agent-built-form--docs",
   "A2uiGuardrail": "patterns-blocks-generative-ui-catalog-guardrail--docs",
@@ -20,6 +21,7 @@
   "Alert": "states-alert--docs",
   "AlertDialog": "overlays-alertdialog--docs",
   "AmbientField": "display-ambientfield--docs",
+  "AnswerWithSources": "patterns-blocks-documents-answer-with-sources--docs",
   "AppIcon": "icons-appicon--docs",
   "ApprovalCard": "ai-approvalcard--docs",
   "AppSidebar": "layout-appsidebar--docs",
@@ -139,7 +141,9 @@
   "DiffEditor": "editor-diffeditor--docs",
   "DiffView": "ai-diffview--docs",
   "DistributionChart": "charts-distributionchart--docs",
+  "DocumentLibrary": "patterns-blocks-documents-document-library--docs",
   "DocumentOutline": "editor-documentoutline--docs",
+  "DocumentReview": "patterns-blocks-documents-document-review--docs",
   "DottedChart": "process-dottedchart--docs",
   "Drawer": "overlays-drawer--docs",
   "DropdownMenu": "overlays-dropdownmenu--docs",

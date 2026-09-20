@@ -110,6 +110,10 @@ const BLOCKS = {
   "a2ui-form-01": "flow",
   "a2ui-streaming-01": "flow",
   "a2ui-guardrail-01": "flow",
+  "a2ui-assistant-page": "screen",
+  "document-library-01": "flow",
+  "answer-with-sources-01": "flow",
+  "document-review-01": "flow",
 } as const satisfies Record<string, BlockStage>;
 
 export type NativeBlockName = keyof typeof BLOCKS;

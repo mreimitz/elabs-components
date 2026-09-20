@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T10:10:19.942Z",
+  "generatedAt": "2026-09-20T12:23:36.850Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1219,6 +1219,72 @@
       "type": "registry:block",
       "title": "Chart story: Heat table",
       "description": "A heat table: a depot by weekday matrix with printed values, five sequential steps, a key that states each range and the maximum ringed."
+    },
+    {
+      "name": "a2ui-parts",
+      "type": "registry:block",
+      "title": "A2UI showcase parts",
+      "description": "Shared by every A2UI block: the merged ui + charts catalog, the validated example surfaces, a streamed-surface hook, the surface stage, the wire-JSON pane and the host action log."
+    },
+    {
+      "name": "a2ui-decision-01",
+      "type": "registry:block",
+      "title": "Agent asks for a decision",
+      "description": "An agent-designed approval screen (facts, the policy exception, a note, three ways out) rendered from A2UI data. Buttons name host actions; the app answers each one with the agent's next surface, and logs what it received."
+    },
+    {
+      "name": "a2ui-insight-01",
+      "type": "registry:block",
+      "title": "Analytics answer with charts",
+      "description": "An A2UI answer composed by the agent: a headline, KPI tiles with sparklines, two AutoChart figures titled with their findings, the method and follow-up actions. A click on the chart drills into the next surface."
+    },
+    {
+      "name": "a2ui-form-01",
+      "type": "registry:block",
+      "title": "Agent-built form",
+      "description": "A form the agent pre-filled from an alert: inputs, selects, radios, a slider and switches from the catalog. Every change is a named action the host folds into one draft, shown live; submit hands the draft over and the agent answers with a timeline."
+    },
+    {
+      "name": "a2ui-streaming-01",
+      "type": "registry:block",
+      "title": "Streaming surface",
+      "description": "The wire JSON beside the surface it becomes: A2uiSurface takes the streamed prefix, closes open brackets, prunes nodes that do not validate yet and paints the rest, with progress and replay."
+    },
+    {
+      "name": "a2ui-guardrail-01",
+      "type": "registry:block",
+      "title": "Catalog guardrail",
+      "description": "A surface that tries custom styles, an iframe, an inline handler and an unknown event, refused with every problem and its path, next to the repaired surface the agent sent after reading that list."
+    },
+    {
+      "name": "a2ui-assistant-page",
+      "type": "registry:block",
+      "title": "Template — Generative UI assistant",
+      "description": "An assistant that answers with screens: five real conversations (a refund decision, an analytics answer with charts, an incident form, a release plan, a surface the catalog refuses) streamed in as A2UI data and rendered from the merged ui + charts catalog. Every click and change reaches the app as a named action that drives the next turn; the inspector shows the wire JSON, the action log and the catalog."
+    },
+    {
+      "name": "document-parts",
+      "type": "registry:block",
+      "title": "Document block parts",
+      "description": "Shared by every document block: a fictional supplier data room (a contract, a policy, a quality report, a defect log, a batch record, an inspection log, a chart and a source file) as FileSource values."
+    },
+    {
+      "name": "document-library-01",
+      "type": "registry:block",
+      "title": "Document library",
+      "description": "A data room with the file open beside the list: folders, a filter and one FileViewer that renders markdown, CSV, JSON, code, logs and images through lazily loaded adapters, with the viewer's own toolbar, find-in-document, pager and zoom."
+    },
+    {
+      "name": "answer-with-sources-01",
+      "type": "registry:block",
+      "title": "Answer with sources",
+      "description": "An answer whose numbered citations open the source document at the quoted sentence: the viewer swaps files, locates the quote, scrolls to it and marks it — and says so when a cited passage is not in the file."
+    },
+    {
+      "name": "document-review-01",
+      "type": "registry:block",
+      "title": "Document review",
+      "description": "Findings beside the contract they point at: selecting one scrolls to the clause and marks it, verdict buttons record the decision and advance the queue, and progress and the open filter derive from the verdicts."
     }
   ],
   "templates": [
@@ -40713,6 +40779,19 @@
         }
       },
       "props": {
+        "AccordionTrigger": {
+          "extends": [
+            "ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>"
+          ],
+          "props": [
+            {
+              "name": "headingLevel",
+              "optional": true,
+              "type": "2 | 3 | 4 | 5 | 6",
+              "description": "The heading level Radix's `Accordion.Header` renders. Radix hardcodes `h3`, which skips a level whenever the accordion sits directly under the page `h1` — so the level is the caller's to set. Visually identical at every level: the type comes from the trigger, not the heading. @default 3"
+            }
+          ]
+        },
         "AdvancedGroup": {
           "extends": [
             "Omit<HTMLAttributes<HTMLDivElement>, \"title\">"

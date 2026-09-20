@@ -1,5 +1,18 @@
 [
   {
+    "name": "a2ui-assistant-page",
+    "title": "Template — Generative UI assistant",
+    "categories": ["template"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "a2ui-decision-01",
     "title": "Agent asks for a decision",
     "categories": ["generative-ui"],
@@ -131,6 +144,18 @@
       "@elabs-ai/components-icons",
       "@elabs-ai/components-tokens",
       "@elabs-ai/components-ui"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "answer-with-sources-01",
+    "title": "Answer with sources",
+    "categories": ["documents"],
+    "dependencies": [
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@elabs-ai/components-viewer",
+      "lucide-react"
     ],
     "archetype": "ai-assistant"
   },
@@ -688,6 +713,37 @@
     "title": "Decision Record — Why did the AI do that?",
     "categories": ["agent-ops"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "document-library-01",
+    "title": "Document library",
+    "categories": ["documents"],
+    "dependencies": [
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@elabs-ai/components-viewer",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "document-parts",
+    "title": "Document block parts",
+    "categories": ["documents"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "document-review-01",
+    "title": "Document review",
+    "categories": ["documents"],
+    "dependencies": [
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@elabs-ai/components-viewer",
+      "lucide-react"
+    ],
     "archetype": "ai-assistant"
   },
   {

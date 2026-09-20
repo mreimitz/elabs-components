@@ -497,6 +497,10 @@
             },
             "aria-hidden": {
               "type": "boolean"
+            },
+            "headingLevel": {
+              "description": "The heading level Radix's `Accordion.Header` renders. Radix hardcodes `h3`, which skips a level whenever the accordion sits directly under the page `h1` — so…",
+              "enum": [2, 3, 4, 5, 6]
             }
           },
           "additionalProperties": false

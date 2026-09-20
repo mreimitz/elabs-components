@@ -3434,6 +3434,11 @@
           "target": "components/a2ui-parts/action-log.tsx"
         },
         {
+          "path": "registry/blocks/a2ui-parts/catalog-browser.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-parts/catalog-browser.tsx"
+        },
+        {
           "path": "registry/blocks/a2ui-parts/catalog.ts",
           "type": "registry:component",
           "target": "components/a2ui-parts/catalog.ts"
@@ -3571,6 +3576,111 @@
         }
       ],
       "categories": ["generative-ui"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "a2ui-assistant-page",
+      "type": "registry:block",
+      "title": "Template — Generative UI assistant",
+      "description": "An assistant that answers with screens: five real conversations (a refund decision, an analytics answer with charts, an incident form, a release plan, a surface the catalog refuses) streamed in as A2UI data and rendered from the merged ui + charts catalog. Every click and change reaches the app as a named action that drives the next turn; the inspector shows the wire JSON, the action log and the catalog.",
+      "registryDependencies": ["a2ui-parts", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/a2ui-assistant-page/a2ui-assistant-page.tsx",
+          "type": "registry:component",
+          "target": "components/a2ui-assistant-page/a2ui-assistant-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "document-parts",
+      "type": "registry:block",
+      "title": "Document block parts",
+      "description": "Shared by every document block: a fictional supplier data room (a contract, a policy, a quality report, a defect log, a batch record, an inspection log, a chart and a source file) as FileSource values.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/document-parts/files.ts",
+          "type": "registry:component",
+          "target": "components/document-parts/files.ts"
+        }
+      ],
+      "categories": ["documents"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "document-library-01",
+      "type": "registry:block",
+      "title": "Document library",
+      "description": "A data room with the file open beside the list: folders, a filter and one FileViewer that renders markdown, CSV, JSON, code, logs and images through lazily loaded adapters, with the viewer's own toolbar, find-in-document, pager and zoom.",
+      "registryDependencies": ["document-parts"],
+      "dependencies": [
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-viewer",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/document-library-01/document-library.tsx",
+          "type": "registry:component",
+          "target": "components/document-library-01/document-library.tsx"
+        }
+      ],
+      "categories": ["documents"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "answer-with-sources-01",
+      "type": "registry:block",
+      "title": "Answer with sources",
+      "description": "An answer whose numbered citations open the source document at the quoted sentence: the viewer swaps files, locates the quote, scrolls to it and marks it — and says so when a cited passage is not in the file.",
+      "registryDependencies": ["document-parts"],
+      "dependencies": [
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-viewer",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/answer-with-sources-01/answer-with-sources.tsx",
+          "type": "registry:component",
+          "target": "components/answer-with-sources-01/answer-with-sources.tsx"
+        }
+      ],
+      "categories": ["documents"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "document-review-01",
+      "type": "registry:block",
+      "title": "Document review",
+      "description": "Findings beside the contract they point at: selecting one scrolls to the clause and marks it, verdict buttons record the decision and advance the queue, and progress and the open filter derive from the verdicts.",
+      "registryDependencies": ["document-parts"],
+      "dependencies": [
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-viewer",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/document-review-01/document-review.tsx",
+          "type": "registry:component",
+          "target": "components/document-review-01/document-review.tsx"
+        }
+      ],
+      "categories": ["documents"]
     }
   ]
 }

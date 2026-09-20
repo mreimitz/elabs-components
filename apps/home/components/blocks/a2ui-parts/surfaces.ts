@@ -2418,7 +2418,7 @@ export const GUARDRAIL_INVALID: A2uiSurfaceSpec = {
       {
         type: "Card",
         props: {
-          className: "bg-[#ff0044] text-white",
+          className: "promo-banner brand-red",
           style: {
             boxShadow: "0 0 40px red",
           },

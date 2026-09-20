@@ -21640,7 +21640,22 @@
     "question": "",
     "about": "",
     "intent": null,
-    "api": [],
+    "api": [
+      {
+        "name": "AccordionTrigger",
+        "extends": ["ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>"],
+        "props": [
+          {
+            "name": "headingLevel",
+            "optional": true,
+            "type": "2 | 3 | 4 | 5 | 6",
+            "description": "The heading level Radix's `Accordion.Header` renders. Radix hardcodes `h3`, which skips a level whenever the accordion sits directly under the page `h1` — so the level is the caller's to set. Visually identical at every level: the type comes from the trigger, not the heading. @default 3"
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
     "stories": [
       {
         "id": "disclosure-accordion--default",
@@ -36356,6 +36371,120 @@
     },
     "template": null
   },
+  "blocks/documents-answer-with-sources": {
+    "section": "blocks",
+    "slug": "documents-answer-with-sources",
+    "name": "Answer with sources",
+    "title": "Patterns/Blocks/Documents/Answer with sources",
+    "group": "Documents",
+    "package": "patterns",
+    "component": "AnswerWithSources",
+    "importFrom": null,
+    "docsId": "patterns-blocks-documents-answer-with-sources--docs",
+    "file": "apps/docs/stories/blocks/answer-with-sources-01.stories.tsx",
+    "summary": "An answer whose numbered citations open the source document at the quoted sentence: the viewer swaps files, locates the quote, scrolls to it and marks it — and says so when a cited passage is not in the file.",
+    "question": "How does a reader check an AI answer against the documents it cites?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-documents-answer-with-sources--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "answer-with-sources-01",
+      "title": "Answer with sources",
+      "description": "An answer whose numbered citations open the source document at the quoted sentence: the viewer swaps files, locates the quote, scrolls to it and marks it — and says so when a cited passage is not in the file.",
+      "categories": ["documents"],
+      "dependencies": [
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-viewer",
+        "lucide-react"
+      ],
+      "registryDependencies": ["document-parts"]
+    },
+    "template": null
+  },
+  "blocks/documents-document-library": {
+    "section": "blocks",
+    "slug": "documents-document-library",
+    "name": "Document library",
+    "title": "Patterns/Blocks/Documents/Document library",
+    "group": "Documents",
+    "package": "patterns",
+    "component": "DocumentLibrary",
+    "importFrom": null,
+    "docsId": "patterns-blocks-documents-document-library--docs",
+    "file": "apps/docs/stories/blocks/document-library-01.stories.tsx",
+    "summary": "A data room with the file open beside the list: folders, a filter and one FileViewer that renders markdown, CSV, JSON, code, logs and images through lazily loaded adapters, with the viewer's own toolbar, find-in-document, pager and zoom.",
+    "question": "How do I let people open any file without leaving the product?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-documents-document-library--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "document-library-01",
+      "title": "Document library",
+      "description": "A data room with the file open beside the list: folders, a filter and one FileViewer that renders markdown, CSV, JSON, code, logs and images through lazily loaded adapters, with the viewer's own toolbar, find-in-document, pager and zoom.",
+      "categories": ["documents"],
+      "dependencies": [
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-viewer",
+        "lucide-react"
+      ],
+      "registryDependencies": ["document-parts"]
+    },
+    "template": null
+  },
+  "blocks/documents-document-review": {
+    "section": "blocks",
+    "slug": "documents-document-review",
+    "name": "Document review",
+    "title": "Patterns/Blocks/Documents/Document review",
+    "group": "Documents",
+    "package": "patterns",
+    "component": "DocumentReview",
+    "importFrom": null,
+    "docsId": "patterns-blocks-documents-document-review--docs",
+    "file": "apps/docs/stories/blocks/document-review-01.stories.tsx",
+    "summary": "Findings beside the contract they point at: selecting one scrolls to the clause and marks it, verdict buttons record the decision and advance the queue, and progress and the open filter derive from the verdicts.",
+    "question": "How do I review a contract finding by finding?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-documents-document-review--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "document-review-01",
+      "title": "Document review",
+      "description": "Findings beside the contract they point at: selecting one scrolls to the clause and marks it, verdict buttons record the decision and advance the queue, and progress and the open filter derive from the verdicts.",
+      "categories": ["documents"],
+      "dependencies": [
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-viewer",
+        "lucide-react"
+      ],
+      "registryDependencies": ["document-parts"]
+    },
+    "template": null
+  },
   "blocks/editorial-charts-area-against-a-threshold": {
     "section": "blocks",
     "slug": "editorial-charts-area-against-a-threshold",
@@ -39991,6 +40120,65 @@
         "spend-against-limit-01",
         "workspace-shell"
       ]
+    },
+    "template": null
+  },
+  "templates/generative-ui-assistant": {
+    "section": "templates",
+    "slug": "generative-ui-assistant",
+    "name": "Generative UI Assistant",
+    "title": "Patterns/Templates/AI Products/Generative UI Assistant",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "A2uiAssistantPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-ai-products-generative-ui-assistant--docs",
+    "file": "apps/docs/stories/templates-a2ui-assistant.stories.tsx",
+    "summary": "An assistant that answers with screens: five real conversations (a refund decision, an analytics answer with charts, an incident form, a release plan, a surface the catalog refuses) streamed in as A2UI data and rendered from the merged ui + charts catalog. Every click and change reaches the app as a named action that drives the next turn; the inspector shows the wire JSON, the action log and the catalog.",
+    "question": "For products where the agent answers with a screen, not a paragraph",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-ai-products-generative-ui-assistant--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-templates-ai-products-generative-ui-assistant--analytics-answer",
+        "name": "Analytics Answer",
+        "description": "An analytics answer: KPI tiles, two AutoChart figures and a drill-down on click."
+      },
+      {
+        "id": "patterns-templates-ai-products-generative-ui-assistant--incident-form",
+        "name": "Incident Form",
+        "description": "A form the agent pre-filled; the inspector opens on the actions the host receives."
+      },
+      {
+        "id": "patterns-templates-ai-products-generative-ui-assistant--guardrail",
+        "name": "Guardrail",
+        "description": "What the catalog refuses — and the repaired surface after the error list goes back."
+      },
+      {
+        "id": "patterns-templates-ai-products-generative-ui-assistant--catalog",
+        "name": "Catalog",
+        "description": "The inspector on the catalog: every type the agent may draw, with its events."
+      }
+    ],
+    "block": {
+      "name": "a2ui-assistant-page",
+      "title": "Template — Generative UI assistant",
+      "description": "An assistant that answers with screens: five real conversations (a refund decision, an analytics answer with charts, an incident form, a release plan, a surface the catalog refuses) streamed in as A2UI data and rendered from the merged ui + charts catalog. Every click and change reaches the app as a named action that drives the next turn; the inspector shows the wire JSON, the action log and the catalog.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["a2ui-parts", "workspace-shell"]
     },
     "template": null
   },
@@ -46485,6 +46673,272 @@
         "id": "viewer-fileviewer--find-in-source-code",
         "name": "Find In Source Code",
         "description": "The same search over a source file — marks survive syntax colouring."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/viewer/recipes": {
+    "section": "components",
+    "slug": "recipes",
+    "name": "Recipes",
+    "title": "Viewer/Recipes",
+    "group": "Viewer",
+    "package": "viewer",
+    "component": "FileViewer",
+    "importFrom": "@elabs-ai/components-viewer",
+    "docsId": "viewer-recipes--docs",
+    "file": "packages/viewer/src/file-viewer/file-viewer-recipes.stories.tsx",
+    "summary": "Render a file the app did not write (upload, signed URL, agent output) — detects the format, loads the matching adapter on demand, draws it with brand-ui components.",
+    "question": "Attachments, uploads, side-by-side revisions and a custom format",
+    "about": "",
+    "intent": {
+      "purpose": "Render a file the app did not write (upload, signed URL, agent output) — detects the format, loads the matching adapter on demand, draws it with brand-ui components.",
+      "category": "display",
+      "relationships": {
+        "contains": ["FileViewerToolbar", "FileViewerContent"],
+        "pairsWith": [
+          "FileViewerProvider",
+          "FileViewerSkeleton",
+          "FileViewerError",
+          "FileViewerEmpty"
+        ]
+      },
+      "stateTokens": {
+        "frame": "bg-card + border-border + shadow-sm — a resting raised surface, not a float",
+        "toolbar divider": "border-border-strong — the sole structural cue between toolbar and content (same fill, no elevation change), so the WCAG 1.4.11 strong rung"
+      },
+      "antiPatterns": [
+        "Adding a per-format branch to FileViewerContent — a format is an adapter registration (registry.register), never a switch in the shell.",
+        "Making a parser a plain dependency — every parser engine is an OPTIONAL peer, so a consumer who skips it gets the panel naming the package instead of a build error.",
+        "Returning HTML from an adapter — adapters emit a DATA model that brand-ui components render; that is the only reason an arbitrary file inherits the theme.",
+        "Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@elabs-ai/components-editor).",
+        "Clearing an error with the `loading` prop — a parent's loading is additive; it can add the not-ready state but never hide a real failure."
+      ]
+    },
+    "api": [
+      {
+        "name": "FileViewer",
+        "extends": [
+          "Omit<FileViewerProviderProps, \"children\">",
+          "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+        ],
+        "props": [
+          {
+            "name": "children",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Replace the default composition. Rendered inside the provider AND the frame."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "FileViewerContent",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "FileViewerFind",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "FileViewerFrame",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "FileViewerHighlightStatus",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "FileViewerPager",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "FileViewerProvider",
+        "extends": [],
+        "props": [
+          {
+            "name": "source",
+            "optional": true,
+            "type": "FileSource",
+            "description": "The file to show. `undefined` is the empty state, not an error."
+          },
+          {
+            "name": "registry",
+            "optional": true,
+            "type": "ViewerRegistry",
+            "description": "Adapters available to this viewer. Defaults to the built-ins. Pass your own to add a format, drop one, or override a built-in."
+          },
+          {
+            "name": "loading",
+            "optional": true,
+            "type": "boolean",
+            "description": "Force the not-ready state while a parent fetches the source itself. ORed with the viewer's own loading — a parent can add loading, never remove it."
+          },
+          {
+            "name": "baseHeadingLevel",
+            "optional": true,
+            "type": "ProseHeadingLevel",
+            "description": "The rung a viewed document's own top-level heading renders at. Default `2`. A file carries its OWN heading tree, and that tree is only correct relative to the page hosting it: a README's `#` rendered as an `<h1>` inside an app that already has one puts two `h1`s in a screen reader's flat heading list, and the frame's `<section aria-label>` does not fix that — most screen readers list headings flat, not per landmark. The default assumes the common case, a viewer embedded BELOW the page's own heading; pass `1` when the viewer genuinely is the page. Adapters that render no headings ignore it. Same seam as `@elabs-ai/components-ai`'s `MarkdownView baseHeadingLevel`."
+          },
+          {
+            "name": "highlights",
+            "optional": true,
+            "type": "readonly DocumentHighlight[]",
+            "description": "The parts of the document to point at — an answer's citations, a search result's context, anything the app already knows about the file. A PROP rather than provider-only state because citations originate outside the viewer entirely: the chat pane that produced them usually lives in another route, and it owns which one the reader clicked. Pass `defaultHighlights` instead to let the viewer own them."
+          },
+          {
+            "name": "defaultHighlights",
+            "optional": true,
+            "type": "readonly DocumentHighlight[]",
+            "description": "Uncontrolled initial citations. Ignored when `highlights` is supplied."
+          },
+          {
+            "name": "onHighlightsChange",
+            "optional": true,
+            "type": "(highlights: readonly DocumentHighlight[]) => void"
+          },
+          {
+            "name": "activeHighlightId",
+            "optional": true,
+            "type": "string | null",
+            "description": "Which citation the viewer is pointed at. `null` is \"none\" explicitly; `undefined` is what selects uncontrolled mode, so the two are not interchangeable here."
+          },
+          {
+            "name": "defaultActiveHighlightId",
+            "optional": true,
+            "type": "string | null"
+          },
+          {
+            "name": "onActiveHighlightChange",
+            "optional": true,
+            "type": "(id: string | null) => void"
+          },
+          {
+            "name": "pageNumber",
+            "optional": true,
+            "type": "number",
+            "description": "Which page the viewer is on, 1-based — controlled. A trio (`component-api.md`) rather than provider-only state because the page is routinely something the APP owns: a deep link to page 7, a URL the reader can share, a position restored from a \"continue reading\" record. Clamped to the document on read, so an out-of-range value degrades to the nearest real page instead of blanking the canvas."
+          },
+          {
+            "name": "defaultPageNumber",
+            "optional": true,
+            "type": "number",
+            "description": "Uncontrolled initial page. Ignored when `pageNumber` is supplied."
+          },
+          {
+            "name": "onPageNumberChange",
+            "optional": true,
+            "type": "(page: number) => void"
+          },
+          {
+            "name": "zoom",
+            "optional": true,
+            "type": "ZoomLevel",
+            "description": "The scale to draw at, or a fit mode — controlled. Persisting a reader's preferred zoom across files and sessions is the reason this is a prop."
+          },
+          {
+            "name": "defaultZoom",
+            "optional": true,
+            "type": "ZoomLevel",
+            "description": "Uncontrolled initial zoom. Ignored when `zoom` is supplied. Defaults to `\"fit-width\"`, not `1`: a viewer's job on open is to show the document, and a 4000px scan or an A4 page at 100% in a 600px pane shows its top-left corner. Every reader-facing PDF viewer opens fitted for the same reason. Pass `1` for true 100%."
+          },
+          {
+            "name": "onZoomChange",
+            "optional": true,
+            "type": "(zoom: ZoomLevel) => void"
+          },
+          {
+            "name": "rotation",
+            "optional": true,
+            "type": "DocumentRotation",
+            "description": "Quarter-turns clockwise — controlled."
+          },
+          {
+            "name": "defaultRotation",
+            "optional": true,
+            "type": "DocumentRotation",
+            "description": "Uncontrolled initial rotation. Ignored when `rotation` is supplied. Default `0`."
+          },
+          {
+            "name": "onRotationChange",
+            "optional": true,
+            "type": "(rotation: DocumentRotation) => void"
+          },
+          {
+            "name": "children",
+            "optional": false,
+            "type": "ReactNode"
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "FileViewerRotate",
+        "extends": ["HTMLAttributes<HTMLButtonElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "FileViewerToolbar",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "actions",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Extra controls, placed after the built-in actions."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "FileViewerZoom",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "viewer-recipes--attachment-preview",
+        "name": "Attachment Preview",
+        "description": "A message with three attachments of three formats. Every chip opens the SAME `FileViewer` in a dialog; the adapter for a format is fetched the first time a file of that kind is opened."
+      },
+      {
+        "id": "viewer-recipes--upload-and-preview",
+        "name": "Upload And Preview",
+        "description": "`{ kind: \"file\", file }` takes a `File` straight from an input or a drop: nothing is uploaded and nothing leaves the browser. Pick any file on your machine to try the adapters on real content; with nothing picked the viewer shows its empty state."
+      },
+      {
+        "id": "viewer-recipes--compare-revisions",
+        "name": "Compare Revisions",
+        "description": "Two providers, two documents, one screen. Each side marks the passages that differ from the other through the same highlight layer citations use, so \"what changed\" is a list of quotes — the output of any text diff — and not a second rendering mode."
+      },
+      {
+        "id": "viewer-recipes--custom-format",
+        "name": "Custom Format",
+        "description": "The registry is the extension point: this story adds a subtitle (`.srt`) adapter in forty lines and hands the registry to the viewer. The shell — identity row, download, loading, empty and error states — is the same one every built-in format gets, because the adapter supplies only `load` and a `Renderer`."
       }
     ],
     "block": null,
