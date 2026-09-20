@@ -195,6 +195,8 @@ and `<Card stacked>`; `fillStyle="hatch"` on bar series plus the scale-free `Rul
   `source` string is readable instead of silently truncated; `XAxis`'s `periodTicks` long tick
   lands on a real calendar boundary; six more chart families join the high-decoration pattern
   channel; every keyboard datapoint target has a real accessible name without `datapointLabel`.
+  A chart that carries both value labels and annotations no longer renders in an endless loop:
+  the value labels place first and the notes place around them.
 - **UI** — `Command`'s inline list no longer scrolls the whole page; `SurfaceTour` no longer
   makes the page scroll sideways at full viewport width; `Persona` no longer freezes the tab in
   a React development build; a hovered sidebar row's muted meta line clears contrast in the

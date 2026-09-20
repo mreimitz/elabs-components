@@ -17,7 +17,6 @@ import type { ChartAnnotation } from "./annotations/annotation-types"; // Annota
 import {
   placementRects,
   useAnnotationLayoutScope,
-  useAnnotationObstacles,
   usePublishAnnotationObstacles,
 } from "./annotations/annotation-layout-context"; // Annotations — RM-111
 import { estimateTextWidth } from "./use-text-measurer"; // Annotations — RM-111
@@ -554,22 +553,28 @@ function WaterfallBars({
   // note names this explicitly ("waterfall difference labels"), not a
   // time-boxed simplification.
   //
-  // Obstacles: RM-111's own annotation notes (`useAnnotationObstacles` — the
-  // OTHER half of the existing bidirectional exchange: `ChartAnnotations`
-  // already treats a waterfall's value labels as ITS obstacle, see
-  // `chart-annotations.tsx`'s doc comment) plus ONE conservative rect for the
-  // category axis. The axis rect is the axis's own reserved MARGIN band
-  // (`reserveCategoryAxisMargin`, `bar-chart.tsx`) — BarXAxis/BarYAxis never
-  // paint a tick label outside the margin the plan grew for them, so this one
-  // rect is a strict superset of every real tick-label rect regardless of
-  // which rung of the axis's own wrap/tilt/stride cascade fired. That keeps
-  // this a single pass: no second collision engine re-deriving the axis's own
-  // fit logic, just the box it is already known to stay inside.
+  // Obstacles: ONE conservative rect for the category axis. It is the axis's own reserved MARGIN
+  // band (`reserveCategoryAxisMargin`, `bar-chart.tsx`) — BarXAxis/BarYAxis never paint a tick
+  // label outside the margin the plan grew for them, so this one rect is a strict superset of
+  // every real tick-label rect regardless of which rung of the axis's own wrap/tilt/stride
+  // cascade fired. That keeps this a single pass: no second collision engine re-deriving the
+  // axis's own fit logic, just the box it is already known to stay inside.
   //
-  // `bounds` is the same plot inner box, so a label can never nudge INTO the
-  // axis margin either — the obstacle rect above is what makes that explicit
-  // to `layoutLabels`'s solver rather than merely implied by clipping.
-  const annotationObstacles = useAnnotationObstacles();
+  // `bounds` is the same plot inner box, so a label can never nudge INTO the axis margin either —
+  // the obstacle rect above is what makes that explicit to `layoutLabels`'s solver rather than
+  // merely implied by clipping.
+  //
+  // **Annotation notes are deliberately NOT obstacles here.** They used to be, which made the
+  // exchange with `ChartAnnotations` bidirectional: that layer places its notes around this
+  // chart's value labels (see its doc comment) while this solver placed its labels around those
+  // notes. Two solvers each avoiding the other's output has no fixed point in general, and on a
+  // chart carrying both — `labels` plus any `annotations` — the two oscillated: every pass
+  // published different label geometry, which re-laid the notes out, which moved the labels
+  // again, until React aborted the tree with "Maximum update depth exceeded". Ordering the pass
+  // fixes it: the data's own value labels place first, then the commentary places around them and
+  // demotes what it cannot fit, which is the mechanism annotations already have for exactly this.
+  // Dropping the axis rect or the note-avoidance from `ChartAnnotations` instead would trade a
+  // deterministic layout for a prettier one that sometimes never settles.
   const labelLayout = useMemo(() => {
     if (!labels || geometry.length === 0) return null;
     const inside = labels.placement === "inside";
@@ -623,7 +628,7 @@ function WaterfallBars({
       : { height: margin.bottom, width: innerWidth, x: 0, y: innerHeight };
     return layoutLabels(boxes, {
       bounds: { height: innerHeight, width: innerWidth, x: 0, y: 0 },
-      obstacles: [...annotationObstacles, axisObstacle],
+      obstacles: [axisObstacle],
     });
   }, [
     labels,
@@ -638,7 +643,6 @@ function WaterfallBars({
     innerWidth,
     innerHeight,
     margin,
-    annotationObstacles,
   ]);
   const labelPlacementByRow = useMemo(() => {
     if (!labelLayout) return null;

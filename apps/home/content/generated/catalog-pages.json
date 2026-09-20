@@ -7905,6 +7905,11 @@
         "description": "Default grouped bar chart with two series and a tooltip."
       },
       {
+        "id": "charts-barchart--showcase",
+        "name": "Showcase",
+        "description": "Everything the parity waves added to `BarChart`, composed on one realistic chart: stacked segments ordered largest-first with a total past each bar (`stacked` + `stackOrder=\"desc\"` + `showTotals`), rows sorted by that total (`sort=\"desc\"`), a toggleable container legend naming the two series (`legend={{ interactive: \"toggle\" }}`), a pinned, compact-formatted value axis (`YAxis domain`/`title`), and long region names that wrap onto two lines rather than tilt. `ChartFrame` adds the title, description, notes, source and export chrome around it. Left out: the placement-`\"auto\"`/hover-only value-label mode (`showValues={{ placement: \"auto\" }}` / `{ visibility: \"hover\" }`) doesn’t read here — a stacked layout always centres a segment’s label regardless of placement, so the two features conflict, and the always-on centred label reads better on a totals chart."
+      },
+      {
         "id": "charts-barchart--single-series",
         "name": "Single Series",
         "description": "Single-series bar chart — simplest usage."
@@ -18088,6 +18093,11 @@
         "id": "charts-waterfallchart--default",
         "name": "Default",
         "description": "Gross → refunds → COGS → ops → net: connectors hand off at the running total, totals draw from zero, labels are signed."
+      },
+      {
+        "id": "charts-waterfallchart--showcase",
+        "name": "Showcase",
+        "description": "Everything the parity waves added to `WaterfallChart`, composed on one realistic bridge: monthly steps grouped into an auto-inserted quarterly subtotal (`subtotalBy=\"quarter\"`), decreases sorted first within each quarter (`sort=\"decreasesFirst\"`), every row labelled with its percent change in its own row colour (`labels={{ totals: \"all\", differences: \"percent\", matchColor: true }}`), thicker hand-off connectors (`connectors=\"thick\"`), and a row note, a target line and a floating note (`annotations`). `ChartFrame` adds the title, description, notes, source and export chrome around it. Left out: `zoomToDifferences` and `dataFormat=\"runningTotals\"` — the first tells a different story (a huge, near-flat balance whose swings are tiny beside it, not this bridge's additive quarterly growth) and the second is an input-format convenience with no visual difference from the delta rows used here."
       },
       {
         "id": "charts-waterfallchart--horizontal",

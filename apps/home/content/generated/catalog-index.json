@@ -1868,7 +1868,7 @@
     "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
     "question": "",
     "block": null,
-    "stories": 37,
+    "stories": 38,
     "first": "charts-barchart--default"
   },
   {
@@ -2414,7 +2414,7 @@
     "summary": "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
     "question": "",
     "block": null,
-    "stories": 13,
+    "stories": 14,
     "first": "charts-waterfallchart--default"
   },
   {

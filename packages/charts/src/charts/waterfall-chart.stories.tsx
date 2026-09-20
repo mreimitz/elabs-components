@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { ChartFrame } from "../chart-frame/chart-frame";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { WaterfallChart, type WaterfallDatum, type WaterfallStep } from "./waterfall-chart";
 
@@ -40,6 +41,88 @@ export const Default: Story = {
   render: () => (
     <div className="h-72 w-[560px]">
       <WaterfallChart accessibleLabel="Gross to net revenue bridge" data={grossToNet} />
+    </div>
+  ),
+};
+
+// A two-quarter ARR bridge: monthly steps carry a `quarter` field for
+// `subtotalBy`, and the closing balance is its own explicit total.
+const arrBridge: WaterfallDatum[] = [
+  { kind: "total", label: "Opening ARR", value: 1000 },
+  { label: "Jan New", quarter: "Q1", value: 80 },
+  { label: "Feb New", quarter: "Q1", value: 60 },
+  { label: "Mar Churn", quarter: "Q1", value: -35 },
+  { label: "Apr New", quarter: "Q2", value: 90 },
+  { label: "May Churn", quarter: "Q2", value: -40 },
+  { label: "Jun Upsell", quarter: "Q2", value: 55 },
+  { kind: "total", label: "Closing ARR", value: 1210 },
+];
+
+const arrBridgeColumns = [
+  { key: "label", header: "Step" },
+  { key: "value", header: "Change ($k)" },
+];
+
+/**
+ * Everything the parity waves added to `WaterfallChart`, composed on one
+ * realistic bridge: monthly steps grouped into an auto-inserted quarterly
+ * subtotal (`subtotalBy="quarter"`), decreases sorted first within each
+ * quarter (`sort="decreasesFirst"`), every row labelled with its percent
+ * change in its own row colour (`labels={{ totals: "all", differences:
+ * "percent", matchColor: true }}`), thicker hand-off connectors
+ * (`connectors="thick"`), and a row note, a target line and a floating note
+ * (`annotations`). `ChartFrame` adds the title, description, notes, source
+ * and export chrome around it.
+ *
+ * Left out: `zoomToDifferences` and `dataFormat="runningTotals"` — the first
+ * tells a different story (a huge, near-flat balance whose swings are tiny
+ * beside it, not this bridge's additive quarterly growth) and the second is
+ * an input-format convenience with no visual difference from the delta rows
+ * used here.
+ */
+export const Showcase: Story = {
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        story:
+          "A quarterly ARR bridge with an auto-inserted subtotal after Q1, decreases sorted first within each quarter, percent-change labels coloured to match each row, thickened hand-off connectors, a row note on the worst month, a dotted target line and a floating note — all inside a frame with title, notes, source and export.",
+      },
+    },
+  },
+  render: () => (
+    <div className="w-full max-w-[720px]">
+      <ChartFrame
+        title="ARR grew 21 % in H1 2026, weathering churn in March and May"
+        description="Monthly change in annual recurring revenue (ARR) from January through June 2026, in thousands of dollars; the darker bars mark the quarterly subtotal and the opening/closing totals."
+        notes="Percent labels are each month’s change as a share of the running total the month began with."
+        source="Source: Finance systems, closed monthly"
+        data={arrBridge}
+        columns={arrBridgeColumns}
+      >
+        <WaterfallChart
+          accessibleDescription="Opening 1,000, a Q1 subtotal of 1,105 after March’s churn, and a closing balance of 1,210."
+          accessibleLabel="ARR bridge from opening to closing balance, by month"
+          annotations={[
+            { kind: "row", category: "Mar Churn", text: "Worst month of Q1" },
+            { kind: "line", y: 1250, label: "2026 target", style: "dotted" },
+            {
+              kind: "text",
+              x: "Jun Upsell",
+              y: 1260,
+              text: "Upsell offsets May’s losses",
+              anchor: "s",
+              width: 25,
+            },
+          ]}
+          connectors="thick"
+          data={arrBridge}
+          labels={{ differences: "percent", matchColor: true, totals: "all" }}
+          margin={{ top: 64 }}
+          sort="decreasesFirst"
+          subtotalBy="quarter"
+        />
+      </ChartFrame>
     </div>
   ),
 };

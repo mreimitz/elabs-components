@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { ChartFrame } from "../chart-frame/chart-frame";
 import { Ruler } from "../marks";
 import { Bar } from "./bar";
 import type { ChartDatapoint } from "./chart-datapoint";
@@ -47,6 +48,83 @@ export const Default: Story = {
         <BarXAxis />
         <ChartTooltip />
       </BarChart>
+    </div>
+  ),
+};
+
+// Long, two-word region names (the same wrap-triggering shape as the
+// Charts/Axes "Wrapped category labels" story) carrying two stackable
+// series so the parity-wave gains compose on one realistic chart.
+const regionVisitors = [
+  { region: "Northern Territory", New: 8200, Returning: 5100 },
+  { region: "Western Australia", New: 15300, Returning: 9400 },
+  { region: "South Australia", New: 11200, Returning: 7300 },
+  { region: "New South Wales", New: 26800, Returning: 17900 },
+  { region: "Victoria Mainland", New: 22100, Returning: 15200 },
+  { region: "Queensland Coastal", New: 14700, Returning: 9600 },
+];
+
+const regionVisitorColumns = [
+  { key: "region", header: "Region" },
+  { key: "New", header: "New visitors" },
+  { key: "Returning", header: "Returning visitors" },
+];
+
+/**
+ * Everything the parity waves added to `BarChart`, composed on one realistic
+ * chart: stacked segments ordered largest-first with a total past each bar
+ * (`stacked` + `stackOrder="desc"` + `showTotals`), rows sorted by that total
+ * (`sort="desc"`), a toggleable container legend naming the two series
+ * (`legend={{ interactive: "toggle" }}`), a pinned, compact-formatted value
+ * axis (`YAxis domain`/`title`), and long region names that wrap onto two
+ * lines rather than tilt. `ChartFrame` adds the title, description, notes,
+ * source and export chrome around it.
+ *
+ * Left out: the placement-`"auto"`/hover-only value-label mode
+ * (`showValues={{ placement: "auto" }}` / `{ visibility: "hover" }`) doesn’t
+ * read here — a stacked layout always centres a segment’s label regardless
+ * of placement, so the two features conflict, and the always-on centred
+ * label reads better on a totals chart.
+ */
+export const Showcase: Story = {
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        story:
+          "A stacked, sortable bar chart of new versus returning visitors by region, with a toggleable legend, per-segment and per-bar total labels, a pinned value axis, wrapping category labels for long region names, and a surrounding frame with title, notes, source and export.",
+      },
+    },
+  },
+  render: () => (
+    <div className="w-full max-w-[720px]">
+      <ChartFrame
+        title="New South Wales draws more than three times the Northern Territory’s H1 visitors"
+        description="New vs. returning site visitors by region, January–June 2026; returning visitors are recognised by a first-party cookie."
+        notes="Visits with blocked cookies count as new every time, which slightly overstates the new-visitor share."
+        source="Internal analytics, updated weekly"
+        data={regionVisitors}
+        columns={regionVisitorColumns}
+      >
+        <BarChart
+          accessibleLabel="New versus returning visitors by region"
+          accessibleDescription="Six regions, stacked totals from 13,300 in the Northern Territory to 44,700 in New South Wales, sorted largest first."
+          data={regionVisitors}
+          legend={{ interactive: "toggle" }}
+          showTotals
+          sort="desc"
+          stacked
+          stackOrder="desc"
+          xDataKey="region"
+        >
+          <Grid horizontal />
+          <Bar dataKey="New" fill="var(--chart-1)" lineCap="butt" showValues="inside" />
+          <Bar dataKey="Returning" fill="var(--chart-2)" lineCap="butt" showValues="inside" />
+          <BarXAxis />
+          <YAxis domain={[0, 50000]} title="Visitors" />
+          <ChartTooltip />
+        </BarChart>
+      </ChartFrame>
     </div>
   ),
 };

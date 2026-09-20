@@ -179,6 +179,7 @@
 
 ### Patch Changes
 
+- A chart carrying BOTH value labels and annotations no longer renders in a loop. `WaterfallChart`'s label solver treated annotation notes as obstacles while `ChartAnnotations` places its notes around that chart's value labels, so each pass moved the other's boxes and React aborted the tree with "Maximum update depth exceeded". The value labels now place first and the notes place around them, demoting what will not fit — the mechanism annotations already have. Publishing an unchanged set of obstacle boxes also no longer wakes every reader.
 - 779c040: Theme seams for brand fidelity. Every addition is opt-in: each new token defaults to today's rendering, so existing themes look the same.
 
   `@elabs-ai/components-tokens` adds 30 contract tokens, which every `[data-theme]` block now has to define:
