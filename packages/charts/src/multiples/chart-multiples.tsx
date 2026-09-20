@@ -43,6 +43,7 @@ import {
   splitFacetRows,
 } from "./facet-layout";
 import { FacetPanel } from "./facet-panel";
+import { tickTargetForHeight } from "../charts/tick-targets";
 import { computeFacetScales, facetValueExtent } from "./facet-scales";
 import {
   type FacetPanelStats,
@@ -336,6 +337,14 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
     () => (baselineKey ? [...dataKeys, baselineKey] : dataKeys),
     [dataKeys, baselineKey],
   );
+  // a-15: a short panel gets fewer shared ticks, the same rule a lone chart
+  // follows (`tickTargetForHeight`) — at `panelHeight={140}` five labels sat
+  // 15 px apart with a 15 px line box, so "1,000" and "1,500" overlapped by
+  // 31.8 px². An aspect-sized panel keeps the default target.
+  const panelTickTarget = useMemo(() => {
+    const resolved = resolveResponsive(panelHeight, breakpoint);
+    return typeof resolved === "number" ? tickTargetForHeight(resolved) : undefined;
+  }, [panelHeight, breakpoint]);
   const yMode = scales?.y ?? "shared";
   const rangeRounding = scales?.rangeRounding;
   const yDomain = scales?.yDomain;
@@ -350,9 +359,10 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
             baselineKey && keys !== scaleKeys ? [...keys, baselineKey] : keys,
           );
         }),
-        { y: yMode, rangeRounding, yDomain },
+        { y: yMode, rangeRounding, tickTarget: panelTickTarget, yDomain },
       ),
     [
+      panelTickTarget,
       visible,
       scaleKeys,
       valueKeyOf,

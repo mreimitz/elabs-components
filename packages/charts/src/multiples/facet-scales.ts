@@ -28,6 +28,14 @@ export interface FacetScalesOptions {
   yDomain?: AxisDomain;
   /** Force a zero-including domain (bars, stacked areas — length encodings). */
   includeZero?: boolean;
+  /**
+   * Tick-count target for a shared domain. Default
+   * {@link FACET_SHARED_TICK_TARGET}; `ChartMultiples` lowers it on a SHORT
+   * panel, the way `tickTargetForHeight` (charts/tick-targets) does for a lone
+   * chart (RM-127, a-15) — five labels in a 140 px panel are 15 px apart with
+   * a 15 px line box, so their boxes touch.
+   */
+  tickTarget?: number;
   /** Intervals per range-rounded panel. Default {@link FACET_ROUNDED_INTERVALS}. */
   intervals?: number;
 }
@@ -114,7 +122,8 @@ export function sharedFacetScale(
   let lo = typeof pinLo === "number" ? pinLo : autoLow(min, includeZero);
   let hi = typeof pinHi === "number" ? pinHi : autoHigh(max, includeZero);
   if (hi <= lo) hi = lo + (Math.abs(lo) || 1);
-  const step = niceStepAtLeast((hi - lo) / FACET_SHARED_TICK_TARGET);
+  const tickTarget = Math.max(2, Math.round(options.tickTarget ?? FACET_SHARED_TICK_TARGET));
+  const step = niceStepAtLeast((hi - lo) / tickTarget);
   if (typeof pinLo !== "number") lo = clean(Math.floor(lo / step + 1e-9) * step);
   if (typeof pinHi !== "number") hi = clean(Math.ceil(hi / step - 1e-9) * step);
   return { domain: [lo, hi], ticks: ticksAtStep(lo, hi, step) };

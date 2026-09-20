@@ -75,6 +75,23 @@ describe("ChartMultiples", () => {
     ).toBe("1");
   });
 
+  it("asks for fewer shared ticks in a short panel (RM-127, a-15)", () => {
+    // The ATM grid's own shape: two countries, hundreds of machines, panels
+    // 140 px tall. Five labels there are 15 px apart with a 15 px line box.
+    const tall = [
+      { chip: "DRAM", date: new Date(2024, 0, 1), price: 284 },
+      { chip: "DRAM", date: new Date(2024, 1, 1), price: 1104 },
+      { chip: "NAND", date: new Date(2024, 0, 1), price: 180 },
+      { chip: "NAND", date: new Date(2024, 1, 1), price: 1058 },
+    ];
+    const short = renderMultiples({ data: tall, panelHeight: 140 });
+    expect(screen.getByTestId("probe-DRAM").dataset.ticks).toBe("0,500,1000,1500");
+    short.unmount();
+    // An aspect-sized panel is not short, so it keeps the default target.
+    renderMultiples({ data: tall, panelHeight: { aspect: 2 } });
+    expect(screen.getByTestId("probe-DRAM").dataset.ticks).toBe("0,250,500,750,1000,1250");
+  });
+
   it("hands every panel the same shared ticks", () => {
     renderMultiples();
     const ticks = ["DRAM", "NAND", "HDD"].map(
