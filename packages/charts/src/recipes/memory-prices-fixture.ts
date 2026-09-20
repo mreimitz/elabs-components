@@ -2,9 +2,12 @@
  * memory-prices-fixture — seeded, FICTIONAL storage prices for the River
  * "memory prices" recipe (`docs/review/datawrapper/dw-river.md` §2).
  *
- * The original series is not public domain, so these dollars-per-gigabyte are
+ * The original series is not public domain, so these dollars-per-TERABYTE are
  * invented: a per-technology base, a monthly trend and a seeded wobble from
- * {@link seededRnd}, never `Math.random`.
+ * {@link seededRnd}, never `Math.random`. The unit is a terabyte rather than a
+ * gigabyte so every panel's own axis has real digits to show — at
+ * dollars-per-gigabyte the two cheapest technologies round to `0` on every
+ * tick, which is a picture that says nothing.
  */
 
 import { seededRnd } from "../marks/seeded-rnd";
@@ -13,15 +16,15 @@ import { seededRnd } from "../marks/seeded-rnd";
 export interface MemoryPriceRow extends Record<string, unknown> {
   tech: string;
   month: Date;
-  /** Dollars per gigabyte. */
+  /** Dollars per terabyte. */
   price: number;
 }
 
 const TECHS: Array<{ tech: string; base: number; monthly: number }> = [
-  { tech: "DRAM", base: 3.4, monthly: -0.045 },
-  { tech: "NAND flash", base: 0.098, monthly: -0.0012 },
-  { tech: "Hard disk", base: 0.021, monthly: -0.00018 },
-  { tech: "Optical", base: 0.042, monthly: -0.0004 },
+  { tech: "DRAM", base: 3400, monthly: -45 },
+  { tech: "NAND flash", base: 98, monthly: -1.2 },
+  { tech: "Hard disk", base: 21, monthly: -0.18 },
+  { tech: "Optical", base: 42, monthly: -0.4 },
 ];
 
 const MONTHS = 36;
@@ -33,7 +36,7 @@ export const MEMORY_PRICES: MemoryPriceRow[] = TECHS.flatMap(({ tech, base, mont
     month: new Date(2022, m, 1),
     price: Number(
       Math.max(base * 0.1, base + monthly * m + (seededRnd(m, t + 11) - 0.5) * base * 0.05).toFixed(
-        4,
+        2,
       ),
     ),
   })),

@@ -296,9 +296,9 @@ export const GroupedRangeBarsFromSpec: Story = {
 
 // ── 4. Area small multiples with delta figures (memory prices) ───────────────
 
-const dollarsPerGb = new Intl.NumberFormat("en-US", {
+const dollarsPerTb = new Intl.NumberFormat("en-US", {
   currency: "USD",
-  maximumSignificantDigits: 2,
+  maximumFractionDigits: 0,
   style: "currency",
 });
 const changePercent = new Intl.NumberFormat("en-US", {
@@ -313,7 +313,7 @@ function MemoryPanelTitle(
 ) {
   const figure =
     hovered?.value != null
-      ? dollarsPerGb.format(hovered.value)
+      ? dollarsPerTb.format(hovered.value)
       : changePercent.format((panel.stats.deltaPercent ?? 0) / 100);
   return (
     <div className="flex min-w-0 items-baseline justify-between gap-2">
@@ -349,7 +349,7 @@ export const AreaMultiplesDeltaFigures: Story = {
     >
       {(panel) => (
         <AreaChart
-          accessibleLabel={`${panel.title} price per gigabyte`}
+          accessibleLabel={`${panel.title} price per terabyte`}
           data={panel.data}
           xDataKey="month"
         >
@@ -379,7 +379,7 @@ export const AreaMultiplesFromSpec: Story = {
     <AutoChart
       spec={{
         type: "area",
-        title: "Storage price per gigabyte",
+        title: "Storage price per terabyte",
         data: MEMORY_PRICES,
         x: "month",
         series: ["price"],
