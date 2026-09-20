@@ -65,9 +65,9 @@ export function AgentTraceWaterfall({
         <CardContent className="p-5">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h3 className="text-title text-foreground">
+              <h2 className="text-title text-foreground">
                 Trace <span className="font-mono">{run.id}</span>
-              </h3>
+              </h2>
               <StatusBadge
                 status={
                   failed

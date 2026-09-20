@@ -107,13 +107,13 @@ export function KanbanBoard({
               onDrop={(event) => drop(event, column.id)}
             >
               <header className="flex items-center justify-between gap-2 px-1">
-                <h3 className="flex items-center gap-2 text-body font-semibold">
+                <h2 className="flex items-center gap-2 text-body font-semibold">
                   {column.label}
                   <span className="text-meta font-normal text-muted-foreground tabular-nums">
                     {cards.length}
                     {column.limit !== undefined ? ` / ${column.limit}` : ""}
                   </span>
-                </h3>
+                </h2>
                 <span className="text-caption text-muted-foreground tabular-nums">
                   {points} pts
                 </span>

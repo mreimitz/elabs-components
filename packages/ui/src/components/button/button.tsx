@@ -23,8 +23,13 @@ export const buttonVariants = cva(
           "inset-ring inset-ring-secondary-border bg-secondary text-secondary-text hover:bg-secondary/80",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active",
+        // `text-foreground` is load-bearing, not decoration: an outline button
+        // paints its OWN `bg-background` plate, so inheriting the surrounding
+        // ink turns it invisible on a coloured band (a `bg-primary` CTA handed
+        // it `--primary-foreground`, 1.06:1 against its own plate). A caller's
+        // own `text-*` still wins through `cn()`.
         outline:
-          "border border-button-outline-border bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-button-outline-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
         // The calm "outlined but quiet" rung (#194, research 02 §3a). `outline` uses
         // `--button-outline-border` (default `var(--input)`, split from the
         // form-field token), `outline-subtle` uses `border-border`. Since the ADR
@@ -34,7 +39,7 @@ export const buttonVariants = cva(
         // different edges) and to avoid churning `outline-subtle` callers (e.g.
         // change-review.tsx). `outline` stays for genuinely form-adjacent controls.
         "outline-subtle":
-          "border border-border bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         // #399 — a link button is TEXT on the page: `--link` defaults to the
         // on-surface `--primary-text` rung; `bg-primary` above keeps the fill rung.

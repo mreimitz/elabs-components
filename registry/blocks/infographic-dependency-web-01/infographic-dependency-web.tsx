@@ -43,11 +43,11 @@ export function InfographicDependencyWeb({
             {nodes.length} services · {links.length} calls
           </Badge>
         </div>
-        <h3 className="text-title text-balance text-foreground">
+        <h2 className="text-title text-balance text-foreground">
           {busiest
             ? `${busiest.count} services lean on ${busiest.label}: it is the one to keep standing`
             : "No service depends on another"}
-        </h3>
+        </h2>
         <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
           <div className="min-w-0">
             <NetworkChart

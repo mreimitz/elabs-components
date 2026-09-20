@@ -64,7 +64,7 @@ export function InsightFeed({
         <Card aria-busy={loading || undefined} className="min-w-0" data-slot="insight-feed-main">
           <CardContent className="p-5">
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="text-subtitle text-foreground">What changed while you were away</h3>
+              <h2 className="text-subtitle text-foreground">What changed while you were away</h2>
               <p className="text-caption tabular-nums text-muted-foreground">
                 {formatCount(applied, locale)} applied · {formatCount(sent, locale)} sent to you
               </p>
@@ -103,7 +103,7 @@ export function InsightFeed({
             {held.length > 0 ? (
               <Card>
                 <CardContent className="p-5">
-                  <h3 className="mb-3 text-subtitle text-foreground">Needs a person</h3>
+                  <h2 className="mb-3 text-subtitle text-foreground">Needs a person</h2>
                   <ul className="space-y-3">
                     {held.map((h) => (
                       <li className="flex gap-2.5" key={h.id}>
@@ -137,7 +137,7 @@ export function InsightFeed({
             <Card>
               <CardContent className="p-5">
                 <div className="mb-3 flex items-baseline justify-between gap-2">
-                  <h3 className="text-subtitle text-foreground">Derivation load</h3>
+                  <h2 className="text-subtitle text-foreground">Derivation load</h2>
                   <span className="text-caption text-muted-foreground">last 24 h</span>
                 </div>
                 <dl className="space-y-2">
@@ -224,10 +224,10 @@ function InsightRow({
         {isConflict ? <TriangleAlert className="size-3.5" /> : index}
       </span>
       <div className="min-w-0 space-y-2">
-        <h4 className="text-subtitle text-foreground">
+        <h3 className="text-subtitle text-foreground">
           <span className="sr-only">{isConflict ? "Conflict: " : `Change ${index}: `}</span>
           {item.headline}
-        </h4>
+        </h3>
         <p className="text-body text-muted-foreground">{item.explanation}</p>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-1">
           <div className="flex flex-wrap items-center gap-2">

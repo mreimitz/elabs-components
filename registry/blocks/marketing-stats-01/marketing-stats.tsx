@@ -16,7 +16,10 @@ const DEFAULT_STATS: Stat[] = [
 ];
 
 const wordmark = (name: string) => (
-  <span className="text-subtitle font-semibold text-muted-foreground" key={name}>
+  // `LogoStrip` fades its row to `opacity-70 grayscale` for real logo ART.
+  // Text inside that row still owes 4.5:1, and muted ink lands at 3.0:1 once
+  // faded — so a text wordmark uses the full foreground rung.
+  <span className="text-subtitle font-semibold text-foreground" key={name}>
     {name}
   </span>
 );

@@ -13,7 +13,6 @@ import {
   Input,
   Meter,
   NumberInput,
-  Separator,
 } from "@elabs-ai/components-ui";
 import { formatMoney, ProductArt, products, type Product } from "../commerce-parts/catalog";
 
@@ -219,8 +218,9 @@ export function ShoppingCart({
                 <dt className="text-muted-foreground">Delivery</dt>
                 <dd>{delivery === 0 ? "Free" : money(delivery)}</dd>
               </div>
-              <Separator />
-              <div className="flex justify-between text-subtitle font-semibold">
+              {/* A `<dl>` may not directly contain a decorative `Separator` (it renders
+                  `role="none"`), so the total row carries the rule itself. */}
+              <div className="flex justify-between border-t border-border pt-2 text-subtitle font-semibold">
                 <dt>Total</dt>
                 <dd>{money(total)}</dd>
               </div>

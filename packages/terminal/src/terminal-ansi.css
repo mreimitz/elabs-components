@@ -132,7 +132,13 @@
   font-weight: bold;
 }
 .ansi-dim {
-  opacity: 0.5;
+  /* SGR 2 (faint). ansi-to-react's own inline mode uses 0.5, which lands at
+     4.2:1 for `--terminal-foreground` on `--terminal-background` — under AA at
+     the 13px terminal size. 0.7 keeps faint text visibly quieter than normal
+     text (7:1 against ~12:1) while staying AA in every theme. A faint run that
+     also carries a COLOUR spends that token's own headroom; the 16-slot palette
+     is clamped for full-opacity text, so colour + faint is the caller's call. */
+  opacity: 0.7;
 }
 .ansi-italic {
   font-style: italic;

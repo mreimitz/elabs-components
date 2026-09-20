@@ -250,7 +250,9 @@ export default function MarketDeskPage({
                     <FieldLabel>Lane</FieldLabel>
                     <FieldControl>
                       <Select onValueChange={setSymbol} value={symbol}>
-                        <SelectTrigger>
+                        {/* A `role="combobox"` button is never named by its contents — that text is
+                            the VALUE — and a `<label for>` cannot name a button. */}
+                        <SelectTrigger aria-label="Lane">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

@@ -216,7 +216,7 @@ export function AgentRunReview({
             state={approved === null ? "approval-requested" : "approval-responded"}
           >
             <ApprovalCardRequest>
-              <ApprovalCardTitle>
+              <ApprovalCardTitle as="h3">
                 Send the four carrier notes from <strong>ops@acme-logistics.example</strong>?
               </ApprovalCardTitle>
               <ApprovalCardDescription>
@@ -231,10 +231,10 @@ export function AgentRunReview({
               </ApprovalCardActions>
             </ApprovalCardRequest>
             <ApprovalCardAccepted>
-              <ApprovalCardTitle>Approved — four notes sent.</ApprovalCardTitle>
+              <ApprovalCardTitle as="h3">Approved — four notes sent.</ApprovalCardTitle>
             </ApprovalCardAccepted>
             <ApprovalCardRejected>
-              <ApprovalCardTitle>
+              <ApprovalCardTitle as="h3">
                 Stopped — nothing was sent. The drafts are kept.
               </ApprovalCardTitle>
             </ApprovalCardRejected>

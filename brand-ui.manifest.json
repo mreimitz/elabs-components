@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T12:15:43.355Z",
+  "generatedAt": "2026-09-20T12:33:30.901Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -41893,6 +41893,19 @@
         }
       },
       "props": {
+        "AccordionTrigger": {
+          "extends": [
+            "ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>"
+          ],
+          "props": [
+            {
+              "name": "headingLevel",
+              "optional": true,
+              "type": "2 | 3 | 4 | 5 | 6",
+              "description": "The heading level Radix's `Accordion.Header` renders. Radix hardcodes `h3`, which skips a level whenever the accordion sits directly under the page `h1` — so the level is the caller's to set. Visually identical at every level: the type comes from the trigger, not the heading. @default 3"
+            }
+          ]
+        },
         "AdvancedGroup": {
           "extends": [
             "Omit<HTMLAttributes<HTMLDivElement>, \"title\">"

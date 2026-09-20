@@ -101,7 +101,7 @@ export function ProjectCards({ projects = seedProjects, onOpen, className }: Pro
                       <span className="text-caption text-muted-foreground">
                         <span className="text-code">{project.id}</span> · {project.kind}
                       </span>
-                      <h3 className="text-subtitle font-semibold">
+                      <h2 className="text-subtitle font-semibold">
                         <button
                           className="rounded-sm text-start after:absolute after:inset-0 focus-ring"
                           onClick={() => onOpen?.(project)}
@@ -109,7 +109,7 @@ export function ProjectCards({ projects = seedProjects, onOpen, className }: Pro
                         >
                           {project.name}
                         </button>
-                      </h3>
+                      </h2>
                     </div>
                     <Badge variant={HEALTH_BADGE[health]}>{health}</Badge>
                   </div>

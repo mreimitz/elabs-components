@@ -152,7 +152,9 @@ export function MarketingContact({
                   <FieldLabel>What is it about?</FieldLabel>
                   <FieldControl>
                     <Select onValueChange={set("topic")} value={values.topic}>
-                      <SelectTrigger>
+                      {/* A `role="combobox"` button is never named by its contents — that text is
+                          the VALUE — and a `<label for>` cannot name a button. */}
+                      <SelectTrigger aria-label="What is it about?">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

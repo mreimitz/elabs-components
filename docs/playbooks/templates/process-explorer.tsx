@@ -73,6 +73,7 @@ import {
   ToggleGroupItem,
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
   useLocale,
 } from "@elabs-ai/components-ui";
@@ -486,14 +487,18 @@ function ToolbarToggle({
   children: ReactNode;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Toggle aria-label={label} pressed={pressed} onPressedChange={onPressedChange} size="sm">
-          {children}
-        </Toggle>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
+    // Self-provided, like `IconButton` — a Radix `Tooltip` throws without a
+    // provider above it, and this toolbar is dropped into any shell.
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Toggle aria-label={label} pressed={pressed} onPressedChange={onPressedChange} size="sm">
+            {children}
+          </Toggle>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

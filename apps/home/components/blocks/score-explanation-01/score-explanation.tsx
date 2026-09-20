@@ -54,9 +54,9 @@ export function ScoreExplanation({
     <Card className={cn("@container", className)} data-slot="score-explanation">
       <CardContent className="p-5">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-subtitle text-foreground">
+          <h2 className="text-subtitle text-foreground">
             Why {subject} is <span className="tabular-nums">{formatCount(score, locale)}</span>
-          </h3>
+          </h2>
         </div>
 
         <ol className="space-y-2.5" data-slot="score-explanation-list">

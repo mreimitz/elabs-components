@@ -172,14 +172,14 @@ export function ProductDetail({
 
           <Accordion collapsible type="single">
             <AccordionItem value="materials">
-              <AccordionTrigger>Materials and care</AccordionTrigger>
+              <AccordionTrigger headingLevel={2}>Materials and care</AccordionTrigger>
               <AccordionContent>
                 Full-grain leather upper, recycled polyester lining, resoleable rubber outsole.
                 Brush off dry mud; re-wax twice a year.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="fit">
-              <AccordionTrigger>Fit</AccordionTrigger>
+              <AccordionTrigger headingLevel={2}>Fit</AccordionTrigger>
               <AccordionContent>
                 True to size with a roomy toe box. Between sizes, go up half for thick socks.
               </AccordionContent>

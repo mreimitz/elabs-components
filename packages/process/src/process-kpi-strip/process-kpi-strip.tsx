@@ -159,20 +159,20 @@ function InlineKpi({
   loading: boolean;
 }) {
   return (
-    <div
-      data-slot="process-kpi-strip-cell"
-      className="flex flex-1 items-center justify-between gap-3 px-4 py-2"
-    >
-      <div className="flex flex-col">
-        <dt className="text-meta whitespace-nowrap text-muted-foreground">{label}</dt>
-        <dd className="text-subtitle font-semibold tabular-nums whitespace-nowrap">
+    // A `div` inside a `<dl>` may hold nothing but `dt`/`dd` — so the cell is
+    // exactly those two, and the trend rides INSIDE the `dd` beside the number
+    // rather than as a third sibling.
+    <div data-slot="process-kpi-strip-cell" className="flex flex-1 flex-col px-4 py-2">
+      <dt className="text-meta whitespace-nowrap text-muted-foreground">{label}</dt>
+      <dd className="flex items-center justify-between gap-3">
+        <span className="text-subtitle font-semibold tabular-nums whitespace-nowrap">
           {loading ? <Skeleton className="mt-1 h-5 w-14" /> : value}
-        </dd>
-      </div>
-      {/* The trend is the first thing to go when the ribbon is short of room; the number stays. */}
-      {!loading && visual ? (
-        <div className="hidden shrink-0 text-muted-foreground @4xl:block">{visual}</div>
-      ) : null}
+        </span>
+        {/* The trend is the first thing to go when the ribbon is short of room; the number stays. */}
+        {!loading && visual ? (
+          <span className="hidden shrink-0 text-muted-foreground @4xl:block">{visual}</span>
+        ) : null}
+      </dd>
     </div>
   );
 }

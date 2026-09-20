@@ -158,7 +158,9 @@ export function SettingsProfile({
               <FieldLabel>Time zone</FieldLabel>
               <FieldControl>
                 <Select onValueChange={set("timezone")} value={values.timezone}>
-                  <SelectTrigger>
+                  {/* A `role="combobox"` button is never named by its contents — that text is
+                      the VALUE — and a `<label for>` cannot name a button. */}
+                  <SelectTrigger aria-label="Time zone">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

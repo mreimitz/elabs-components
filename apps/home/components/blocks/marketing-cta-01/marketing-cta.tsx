@@ -41,7 +41,11 @@ export function MarketingCta({
           <>
             {description}
             {reassurance ? (
-              <span className="mt-3 block text-meta text-muted-foreground">{reassurance}</span>
+              // On `CTASection`'s solid `bg-primary` plate the ink is INHERITED —
+              // `text-muted-foreground` here reads 4.19:1 on that plate, and an
+              // alpha-faded `-foreground` would step outside the plate's ink
+              // contract. Quieter comes from the type rung, not the colour.
+              <span className="mt-3 block text-meta">{reassurance}</span>
             ) : null}
           </>
         }

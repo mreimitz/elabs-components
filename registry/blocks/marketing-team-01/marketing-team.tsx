@@ -71,7 +71,8 @@ export function MarketingTeam({
             </Avatar>
             <div className="flex min-w-0 flex-col gap-1">
               <h3 className="text-body font-semibold">{member.name}</h3>
-              <p className="text-meta text-primary">{member.role}</p>
+              {/* The ink rung, not the `--primary` FILL: the fill reads 1.4:1 as text. */}
+              <p className="text-meta text-primary-text">{member.role}</p>
               <p className="text-body text-muted-foreground text-pretty">{member.bio}</p>
             </div>
           </li>
