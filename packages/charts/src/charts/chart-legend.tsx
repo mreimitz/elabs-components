@@ -510,6 +510,13 @@ export function ChartLegend({
 
   return (
     <div
+      // RM-127: the export layer (`measureChartExportLayer`) roles a text run by
+      // the nearest `data-slot` ancestor, so without this a BARE `<ChartLegend>`
+      // composed into a `ChartFrame` exported its labels as plain chart labels.
+      // `useContainerLegend` already wraps its own legend in
+      // `data-slot="container-legend-root"`; this is the same fact for the
+      // direct caller, and the root slot every component owes conventions.md.
+      data-slot="chart-legend"
       className={cn(
         "legend-container flex",
         // Byte-identical to the pre-existing "flex flex-col gap-2" string for

@@ -107,3 +107,23 @@ describe("ChartLegend — layout prop (RM-118, sitting 3 bug fix)", () => {
     expect(button?.className).toContain("w-full");
   });
 });
+
+describe("ChartLegend — export role (RM-127)", () => {
+  it("names its root so the export layer roles its text as a legend, not a plain label", () => {
+    // `measureChartExportLayer` (chart-frame/export-layer.tsx) walks up from a
+    // text run to the nearest `data-slot` and maps a slot CONTAINING "legend"
+    // to the `legend` role. A bare `<ChartLegend>` composed into a `ChartFrame`
+    // used to have no slot at all, so its labels exported as plain chart labels
+    // while the identical `useContainerLegend` legend exported correctly.
+    const { container } = render(
+      <LocaleProvider>
+        <ChartLegend items={items} />
+      </LocaleProvider>,
+    );
+    const root = container.querySelector<HTMLElement>("[data-slot='chart-legend']");
+    expect(root).not.toBeNull();
+    expect(root).toHaveClass("legend-container");
+    // The label really does sit inside that slot — the walk finds it.
+    expect(screen.getByText("Revenue").closest("[data-slot='chart-legend']")).toBe(root);
+  });
+});
